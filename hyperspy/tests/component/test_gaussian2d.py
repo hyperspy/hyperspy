@@ -72,7 +72,7 @@ class TestSymmetricGaussian2DValues:
         nt.assert_almost_equal(gt.argmax(axis=1)[0], 500)
 
 
-class TestGaussian2D:
+class TestGaussian2DFitting:
 
     """Test using a 2-D Gaussian generated with
     Gaussian2D(
@@ -91,3 +91,24 @@ class TestGaussian2D:
         s_model = m.as_signal()
         residual = (s_model-self.s).sum()
         nt.assert_true(residual < 1)
+
+class TestGaussian2D:
+
+    def setUp(self):
+        self.g = gaussian2d.Gaussian2D(
+            centre_x=-5.,
+            centre_y=-5.,
+            sigma_x=1.,
+            sigma_y=2.,
+            )
+
+    def test_ellipticity(self):
+        g = self.g
+        nt.assert_equal(g.ellipticity, 0.5) 
+
+    def test_rotation_wrap(self):
+        g = self.g
+        g.rotation.value = 2*np.pi
+        nt.assert_equal(g.rotation.value, 0.0) 
+        g.rotation.value = 3/2*np.pi
+        nt.assert_equal(g.rotation.value, np.pi/2) 
