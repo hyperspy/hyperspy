@@ -43,8 +43,8 @@ class Gaussian2D(Component):
     |    theta   | rotation  |
     +------------+-----------+
 
-    The rotation value is in radians from the x-axis.
-    The rotation in degrees can be accessed using the property
+    The rotation value is in radians from the x-axis, and is constrained
+    between 0 and pi.
     rotation_degrees which will give the angle between the x-axis and the
     major axis, ergo between the x-axis and the highest sigma.
 
@@ -56,6 +56,10 @@ class Gaussian2D(Component):
     The `rotation_degrees` attribute returns the angle between
     the major axis (the largest sigma), and the positive
     horizontal axis.
+
+    See Also
+    --------
+    SymmetricGaussian2D : faster fitting, but no rotation or different sigma
     """
 
     def __init__(self,
@@ -81,6 +85,7 @@ class Gaussian2D(Component):
         self.centre_x.value = centre_x
         self.centre_y.value = centre_y
         self.rotation.value = rotation
+        self.rotation.wrapped_value = (0.0, math.pi)
 
     def function(self, x, y):
         A = self.A.value
@@ -103,14 +108,6 @@ class Gaussian2D(Component):
         return A * (1 / (sx * sy * pi2)) * np.exp(-(a*(x - x0) ** 2 +
                                                   2*b*(x - x0) * (y - y0) +
                                                   c*(y - y0) ** 2))
-
-    @property
-    def rotation(self):
-        return self.rotation.value
-
-    @rotation.setter
-    def rotation(self, value):
-        self.rotation.value = value % math.pi
 
     @property
     def ellipticity(self):
