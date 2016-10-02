@@ -40,6 +40,10 @@ class SymmetricGaussian2D(Component):
     +------------+-----------+
     |      s     |   sigma   |
     +------------+-----------+
+
+    See also
+    --------
+    Gaussian2D : elliptical 2D Gaussian
     """
 
     def __init__(self,

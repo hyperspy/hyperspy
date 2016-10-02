@@ -45,8 +45,6 @@ class Gaussian2D(Component):
 
     The rotation value is in radians from the x-axis, and is constrained
     between 0 and pi.
-    rotation_degrees which will give the angle between the x-axis and the
-    major axis, ergo between the x-axis and the highest sigma.
 
     For convenience the `fwhm_x` and `fwhm_y` attributes can be used to
     get and set the full-with-half-maximums.
@@ -71,7 +69,7 @@ class Gaussian2D(Component):
                  rotation=0.01,
                  ):
         """Note: the rotation value is given in
-        radians."""
+        radians, and is constrained between 0 and pi."""
         Component.__init__(self, ['A',
                                   'sigma_x',
                                   'sigma_y',
