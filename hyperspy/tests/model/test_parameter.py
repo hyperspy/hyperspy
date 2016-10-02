@@ -53,6 +53,27 @@ class TestParameterLen1:
     def test_set_value(self):
         self.par.value = 2
         assert_equal(self.par.value, 2)
+    
+    def test_wrapped_value(self):
+        self.par.wrapped_value = (0.0,1.0)
+        self.par.value = 0.5
+        assert_equal(self.par.value, 0.5)
+        self.par.value = 1.5
+        assert_equal(self.par.value, 0.5)
+        self.par.value = -0.1
+        assert_equal(self.par.value, 0.9)
+
+        self.par.wrapped_value = (1.0,3.0)
+        self.par.value = 1.5
+        assert_equal(self.par.value, 1.5)
+        self.par.value = 3.1
+        assert_equal(self.par.value, 1.1)
+        self.par.value = 0.9 
+        assert_equal(self.par.value, 2.9)
+
+        self.par.wrapped_value = None
+        self.par.value = 100.0
+        assert_equal(self.par.value, 100)
 
     @raises(ValueError)
     def test_set_value_wrong_length(self):

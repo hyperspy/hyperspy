@@ -237,7 +237,9 @@ class Parameter(t.HasTraits):
             return
 
         if self.wrapped_value is not None:
-            value = (value - self.wrapped_value[0]) % self.wrapped_value[1]
+
+            value = (value - self.wrapped_value[0]) % (
+                    self.wrapped_value[1]-self.wrapped_value[0])
             value += self.wrapped_value[0]
 
         if self.ext_bounded is False:
