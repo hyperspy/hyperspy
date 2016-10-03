@@ -35,6 +35,18 @@ data_dict = {'dm3_1D_data': {},
              'dm3_3D_data': {}, }
 
 
+def test_missing_tag():
+    fname = os.path.join(my_path, "dm3_2D_data",
+                         "test_diffraction_pattern_tags_removed.dm3")
+    s = load(fname)
+    md = s.metadata
+    nt.assert_almost_equal(md.Acquisition_instrument.TEM.beam_energy, 200.0)
+    nt.assert_almost_equal(md.Acquisition_instrument.TEM.exposure_time, 0.2)
+    nt.assert_equal(md.General.date, "2014-07-09")
+    nt.assert_equal(md.General.time, "18:56:37")
+    nt.assert_equal(md.General.title, "test_diffraction_pattern_tags_removed")
+
+
 def test_read_TEM_metadata():
     fname = os.path.join(my_path, "tiff_files", "test_dm_image_um_unit.dm3")
     s = load(fname)
