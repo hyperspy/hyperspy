@@ -786,7 +786,7 @@ class ImageObject(object):
             return 'TEM'
 
     def _get_time(self, time):
-        dt = datetime.strptime(time, "%I:%M:%S %p")
+        dt = dateutil.parser.parse(time)
         return dt.time().isoformat()
 
     def _get_date(self, date):
