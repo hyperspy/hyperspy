@@ -810,12 +810,7 @@ class ImageObject(object):
             return 'TEM'
 
     def _get_time(self, time):
-        formatting = ["%H:%M:%S", # most commun
-        dt = datetime.strptime(time, "%I:%M:%S %p")
-                      ]
-        for string in formatting:
-            try:
-                dt = datetime.strptime(time, string)
+        dt = dateutil.parser.parse(time)
         return dt.time().isoformat()
 
     def _get_date(self, date):
