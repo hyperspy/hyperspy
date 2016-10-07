@@ -335,6 +335,7 @@ class ORPCA:
         if self.method in ('CF', 'BCD'):
             self.A = np.zeros((self.rank, self.rank))
             self.B = np.zeros((m, self.rank))
+        return X
 
     def _initialize(self, X):
         m = self.nfeatures
@@ -369,7 +370,7 @@ class ORPCA:
 
     def fit(self, X, iterating=None):
         if self.nfeatures is None:
-            self._setup(X)
+            X = self._setup(X)
 
         if iterating is None:
             iterating = self.iterating
