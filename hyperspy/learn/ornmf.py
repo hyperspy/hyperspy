@@ -27,7 +27,9 @@ _logger = logging.getLogger(__name__)
 
 def _thresh(R, lambda1, M):
     res = np.abs(R) - lambda1
-    return np.sign(R) * np.min(np.max(res, 0), M)
+    res[res<0] *= 0
+    res[res>M] = M
+    return np.sign(R) * res
 
 def _mrdivide(A, B):
     """like in Matlab! (solves xA = B)
@@ -42,25 +44,29 @@ def _mrdivide(A, B):
         return A / B
 
 def _project(W):
-    return _mrdivide(np.max(W, 0),
-                     np.diag(np.max(np.sqrt(W**2, axis=0),
-                                    axis=0)))
+    newW = W.copy()
+    newW[W<0] = 0
+    
+    sumsq = np.sqrt(np.sum(W**2, axis=0))
+    sumsq[sumsq<1] = 1
+    return _mrdivide(newW, np.diag(sumsq)).T
 
 class OPGD:
 
     def __init__(self, rank, batch_size, lambda1=None, max_value=None):
         self.iterating = None
         self.rank = rank
-        self.batch_size = batch_size, 
-        self.lambda1 = lambda1 # TODO: Can be None, change once data comes
+        self.batch_size = batch_size
+        self.lambda1 = lambda1
+        self.features = None
         # just random numbers for now
         if max_value is None:
-            max_value = 15
+            max_value = 0.7
         self.max_value = max_value
-        self.maxItr1 = 1e5
+        self.maxItr1 = 1e2
         self.maxItr2 = 1e3
         self.eps1 = 1e-3
-        self.eps2 = 1e-5
+        self.eps2 = 1e-6
         self.stepMulp = 1.
         self.H = []
         self.R = []
@@ -68,7 +74,7 @@ class OPGD:
     def _setup(self, X):
         # figure out how many features, F. K is the rank
         if isinstance(X, np.ndarray):
-            F, _ = X.shape
+            _, F = X.shape
             self.iterating = False
         else:
             x = next(X)
@@ -76,11 +82,13 @@ class OPGD:
             X = chain([x], X)
             self.iterating = True
         self.features = F
+        self.lambda1 = 1/np.sqrt(F)
         self.h = np.random.rand(self.rank, self.batch_size)
         self.r = np.random.rand(self.features, self.batch_size)
 
         self.A = np.zeros((self.rank, self.rank))
         self.B = np.zeros((self.features, self.rank))
+        self.W = np.random.rand(self.features, self.rank)
         return X
 
     def fit(self, values, iterating=None):
@@ -111,7 +119,7 @@ class OPGD:
             self._fit_batch(np.stack(last_batch[left_samples-self.batch_size:]
                                      +this_batch, axis=-1))
 
-    def _fit_batch(values):
+    def _fit_batch(self, values):
         self._update_hr(values)
         # store the values to have a "history"
         self.H.append(self.h)
@@ -129,15 +137,15 @@ class OPGD:
 
         while n<=2 or (np.abs((lasttwo[1] - lasttwo[0])/lasttwo[0]) >
                        self.eps1 and n<self.maxItr1):
-            self.h = np.max(self.h-eta*self.W.T.dot(
-                self.W.dot(self.h) + self.r - values), 0)
+            self.h -= eta*self.W.T.dot(self.W.dot(self.h) + self.r - values)
+            self.h[self.h<0] *= 0
             self.r = _thresh(values - self.W.dot(self.h), self.lambda1,
-                             self.max_val)
+                             self.max_value)
             n += 1
             lasttwo[0] = lasttwo[1]
             lasttwo[1] = 0.5 * np.linalg.norm(
-                values - self.W.dot(h) - self.r, 'fro')**2 +
-                self.lambda1*np.sum(np.abs(r))
+                values - self.W.dot(self.h) - self.r, 'fro')**2 + \
+                    self.lambda1*np.sum(np.abs(self.r))
 
     def _update_W(self):
 
