@@ -4115,20 +4115,16 @@ class BaseSignal(FancySlicing,
         s2 = self.deepcopy()
         if rotate_dimension == "navigation":
             s2 = s2.T
-            print(s2)
             s2 = s2.as_signal2D((-1,-2))
-            print(s2)
 
         s2.map(scipy.ndimage.rotate, angle=angle, reshape=reshape)
 
-        if crop == True:
-            # This is currently bugged because as of Hyperspy v1.1 s.T rotates the navigation dimension image as it
+        if crop == True and reshape == False:
+            # This is currently slightly bugged with reshape because as of Hyperspy v1.1 s.T rotates the navigation dimension image as it
             # becomes the signal dimension.
             w, h = get_signal_width_height(self.T.as_signal2D((-1,-2)))
-            print(w,h)
             crop_w, crop_h = get_largest_rectangle_from_rotation(w, h, angle)
             crop_w, crop_h = math.floor(crop_w), math.floor(crop_h)
-            print("Cropped width:", crop_w)
             w, h = get_signal_width_height(s2)
             center = (w / 2, h / 2)
 
@@ -4137,11 +4133,7 @@ class BaseSignal(FancySlicing,
             y1 = math.ceil(center[1] - crop_h / 2)
             y2 = math.floor(center[1] + crop_h / 2)
 
-            s2.data[x1,y1] = s2.data[x1,y1] * 10
-            s2.data[x1, y2] = s2.data[x1, y2] * 10
-            s2.data[x2, y1] = s2.data[x2, y1] * 10
-            s2.data[x2, y2] = s2.data[x2, y2] * 10
-            #s2 = s2.isig[x1:x2, y1:y2]
+            s2 = s2.isig[x1:x2, y1:y2]
         if rotate_dimension == "navigation":
             s2 = s2.as_signal2D((-1, -2))
             s2 = s2.T
