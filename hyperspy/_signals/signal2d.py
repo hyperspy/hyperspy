@@ -198,44 +198,6 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
 
     return -np.array((shift0, shift1)), max_val
 
-
-def get_largest_rectangle_from_rotation(width, height, angle):
-    """
-    Given a rectangle of size wxh that has been rotated by 'angle' (in
-    degrees), computes the width and height of the largest possible
-    axis-aligned rectangle (maximal area) within the rotated rectangle.
-    from: http://stackoverflow.com/a/16778797/1018861
-    In hyperspy, it is centered around centre coordinate of the signal.
-    """
-    import math
-    angle = math.radians(angle)
-    if width <= 0 or height <= 0:
-        return 0, 0
-
-    width_is_longer = width >= height
-    side_long, side_short = (width, height) if width_is_longer else (height, width)
-
-    # since the solutions for angle, -angle and 180-angle are all the same,
-    # if suffices to look at the first quadrant and the absolute values of sin,cos:
-    sin_a, cos_a = abs(math.sin(angle)), abs(math.cos(angle))
-    if side_short <= 2. * sin_a * cos_a * side_long:
-        # half constrained case: two crop corners touch the longer side,
-        #   the other two corners are on the mid-line parallel to the longer line
-        x = 0.5 * side_short
-        wr, hr = (x / sin_a, x / cos_a) if width_is_longer else (x / cos_a, x / sin_a)
-    else:
-        # fully constrained case: crop touches all 4 sides
-        cos_2a = cos_a * cos_a - sin_a * sin_a
-        wr, hr = (width * cos_a - height * sin_a) / cos_2a, (height * cos_a - width * sin_a) / cos_2a
-    return wr, hr
-
-
-def get_signal_width_height(s):
-    "Return pixel width and height of a signal"
-    w = s.axes_manager[s.axes_manager.signal_indices_in_array[1]].size
-    h = s.axes_manager[s.axes_manager.signal_indices_in_array[0]].size
-    return (w, h)
-
 class Signal2D(BaseSignal, CommonSignal2D):
 
     """
@@ -643,56 +605,3 @@ class Signal2D(BaseSignal, CommonSignal2D):
         ramp += ramp_y * yy
         self.data += ramp
 
-
-
-    def rotate(self, angle, reshape=False, crop=False, out=None,
-               record=True, *args, **kwargs):
-        """Rotates and interpolates the signal by an angle in degrees
-
-        Parameters
-        ----------
-        angle : {int, float}
-            In degrees, the angle by which the image shall be rotated anti-clockwise.
-        reshape : bool [False]
-            Increases the size of the signal (if necessary), to avoid cropping any of the signal.
-        crop : bool [False]
-            Crops the signal around its centre to its largest area without any black corners, based on
-            a geometric calculation: http://stackoverflow.com/a/16778797/1018861
-        out : To be filled by Dev
-        record : To be filled by Dev (UI)
-
-        See also
-        --------
-        Dev: Suggestions?
-
-        Examples
-        --------
-        >>> # Rotate and crop an image to its largest area without black corners.
-        >>> s = hs.signals.Signal2D(sc.misc.ascent())
-        >>> s2 = s.rotate(angle=45, reshape=False, crop=True)
-        >>> s2.plot()
-
-
-        """
-        import scipy.ndimage
-        import math
-
-        s2 = self.deepcopy()
-        s2.map(scipy.ndimage.rotate, angle=angle, reshape=reshape)
-
-        if crop == False:
-            return s2
-        elif crop == True:
-            w, h = get_signal_width_height(s2)
-
-            crop_w, crop_h = get_largest_rectangle_from_rotation(w, h, angle)
-            crop_w, crop_h = math.floor(crop_w), math.floor(crop_h)
-            center = (w / 2, h / 2)
-
-            x1 = math.ceil(center[0] - crop_w / 2)
-            x2 = math.floor(center[0] + crop_w / 2)
-            y1 = math.ceil(center[1] - crop_h / 2)
-            y2 = math.floor(center[1] + crop_h / 2)
-
-            s2 = s2.isig[x1:x2, y1:y2]
-            return s2
