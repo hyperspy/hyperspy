@@ -26,6 +26,8 @@ from hyperspy.io_plugins.blockfile import get_default_header
 from hyperspy.misc.array_tools import sarray2dict
 import warnings
 
+from hyperspy.misc.test_utils import assert_deep_almost_equal
+
 
 try:
     WindowsError
@@ -130,20 +132,34 @@ def test_load2():
 def test_save_load_cycle():
     sig_reload = None
     signal = hs.load(file2)
-    try:
-        signal.save(save_path, overwrite=True)
-        sig_reload = hs.load(save_path)
-        np.testing.assert_equal(signal.data, sig_reload.data)
-        nt.assert_equal(signal.axes_manager.as_dictionary(),
-                        sig_reload.axes_manager.as_dictionary())
-        nt.assert_equal(signal.original_metadata.as_dictionary(),
-                        sig_reload.original_metadata.as_dictionary())
-        nt.assert_is_instance(signal, hs.signals.Signal2D)
-    finally:
-        # Delete reference to close memmap file!
-        del sig_reload
-        gc.collect()
-        _remove_file(save_path)
+    nt.assert_equal(signal.metadata.General.original_filename, 'test2.blo')
+    nt.assert_equal(signal.metadata.General.date, "2015-12-01")
+    nt.assert_equal(signal.metadata.General.time, "15:43:09.828057")
+    nt.assert_equal(
+        signal.metadata.General.notes,
+        "Precession angle : \r\nPrecession Frequency : \r\nCamera gamma : on")
+    signal.save(save_path, overwrite=True)
+    sig_reload = hs.load(save_path)
+    np.testing.assert_equal(signal.data, sig_reload.data)
+    nt.assert_equal(signal.axes_manager.as_dictionary(),
+                    sig_reload.axes_manager.as_dictionary())
+    nt.assert_equal(signal.original_metadata.as_dictionary(),
+                    sig_reload.original_metadata.as_dictionary())
+    # change original_filename to make the metadata of both signals equals
+    sig_reload.metadata.General.original_filename = signal.metadata.General.original_filename
+    assert_deep_almost_equal(signal.metadata.as_dictionary(),
+                             sig_reload.metadata.as_dictionary())
+    nt.assert_equal(
+        signal.metadata.General.date,
+        sig_reload.metadata.General.date)
+    nt.assert_equal(
+        signal.metadata.General.time,
+        sig_reload.metadata.General.time)
+    nt.assert_is_instance(signal, hs.signals.Signal2D)
+    # Delete reference to close memmap file!
+    del sig_reload
+    gc.collect()
+    _remove_file(save_path)
 
 
 def test_different_x_y_scale_units():

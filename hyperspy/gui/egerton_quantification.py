@@ -324,6 +324,8 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                     self.noise_type = "heteroscedastic"
                 else:
                     self.noise_type = "white"
+            else:
+                self.noise_type = "shot noise"
         else:
             self.noise_type = "shot noise"
 

@@ -35,11 +35,11 @@ entry
       title        = {hyperspy: HyperSpy 1.1},
       month        = aug,
       year         = 2016,
-      doi          = {10.5281/zenodo.59293},
-      url          = {http://dx.doi.org/10.5281/zenodo.59293}
+      doi          = {10.5281/zenodo.60697},
+      url          = {http://dx.doi.org/10.5281/zenodo.60697}
     }
     
 or click on the DOI badge below for more citation formats.
 
-.. image:: https://zenodo.org/badge/doi/10.5281/zenodo.59293.svg
-   :target: http://dx.doi.org/10.5281/zenodo.59293
+.. image:: https://zenodo.org/badge/doi/10.5281/zenodo.60697.svg
+   :target: http://dx.doi.org/10.5281/zenodo.60697

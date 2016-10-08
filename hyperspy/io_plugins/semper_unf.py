@@ -72,17 +72,12 @@
 #  57-99   all free/zero except for use by DATA cmd
 # 101-256  title (ic chars)
 
-try:
-    from collections import OrderedDict
-    ordict = True
-except ImportError:  # happens with Python < 2.7
-    ordict = False
-
-from time import strftime
+from collections import OrderedDict
 import struct
 from functools import partial
 import logging
 import warnings
+from datetime import datetime
 
 import numpy as np
 from traits.api import Undefined
@@ -308,7 +303,7 @@ class SemperFormat(object):
         label['ICLASS'] = self.metadata.get('ICLASS', 6)  # 6: Undefined!
         label['IFORM'] = iform
         label['IWP'] = self.metadata.get('IWP', 0)  # seems standard
-        date = self.metadata.get('DATE', strftime('%Y-%m-%d %H:%M:%S'))
+        date = self.metadata.get('DATE', "%s" % datetime.now())
         year, time = date.split(' ')
         date_ints = (list(map(int, year.split('-'))) +
                      list(map(int, time.split(':'))))
@@ -378,12 +373,7 @@ class SemperFormat(object):
             SEMPER file format object containing the loaded information.
 
         """
-        if ordict:
-            metadata = OrderedDict()
-        else:
-            _logger.warning(
-                'OrderedDict is not available, using a standard dictionary.\n')
-            metadata = {}
+        metadata = OrderedDict()
         with open(filename, 'rb') as f:
             # Read header:
             rec_length = np.fromfile(
@@ -578,13 +568,15 @@ class SemperFormat(object):
         iclass = cls.ICLASS_DICT_INV.get(record_by, 6)  # 6: undefined
         data, iform = cls._check_format(data)
         title = signal.metadata.General.as_dictionary().get('title', Undefined)
-        if ordict:
-            metadata = OrderedDict()
+        metadata = OrderedDict()
+        if 'date' in signal.metadata.General.keys(
+        ) and 'time' in signal.metadata.General.keys():
+            dt = "%s %s" % (signal.metadata.General.date,
+                            signal.metadata.General.time)
         else:
-            _logger.warning(
-                'OrderedDict is not available, using a standard dictionary!')
-            metadata = {}
-        metadata.update({'DATE': strftime('%Y-%m-%d %H:%M:%S'),
+            dt = "%s" % datetime.now()
+
+        metadata.update({'DATE': "%s" % dt.split('.')[0],
                          'ICLASS': iclass,
                          'IFORM': iform,
                          'IVERSN': 2,  # Current standard
@@ -629,9 +621,21 @@ class SemperFormat(object):
             signal.axes_manager[i].scale = self.scales[i]
             signal.axes_manager[i].offset = self.offsets[i]
             signal.axes_manager[i].units = self.units[i]
-        signal.metadata.General.title = self.title
+        signal.metadata.set_item('General.title', self.title)
+        if 'DATE' in self.metadata.keys():
+            date, time = self._convert_date_time_from_label()
+            signal.metadata.set_item('General.date', date)
+            signal.metadata.set_item('General.time', time)
         signal.original_metadata.add_dictionary(self.metadata)
         return signal
+
+    def _convert_date_time_from_label(self):
+        # Convert the label['DATE'] to ISO 8601 for metadata
+        try:
+            dt = datetime.strptime(self.metadata['DATE'], "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            dt = datetime.strptime(self.metadata['DATE'], "%y-%m-%d %H:%M:%S")
+        return dt.date().isoformat(), dt.time().isoformat()
 
     def log_info(self):
         """log important flag information of the :class:`.~SemperFormat`
