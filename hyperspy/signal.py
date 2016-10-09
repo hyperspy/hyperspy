@@ -4138,7 +4138,7 @@ class BaseSignal(FancySlicing,
 
 
         rotated_signal = signal(rotated_data)
-        new_lengths = [width, height]
+        new_lengths = [new_width, new_height]
         if rotate_dimension=="navigation":
             for n, newlength in zip(rotated_signal.axes_manager.navigation_indices_in_array, new_lengths):
                 rotated_signal.axes_manager[n].scale = newlength / rotated_signal.axes_manager[n].size
