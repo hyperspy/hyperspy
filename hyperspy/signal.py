@@ -4116,6 +4116,15 @@ class BaseSignal(FancySlicing,
         else:
             axes = s2.axes_manager.signal_indices_in_array
 
+        if s2.axes_manager.signal_dimension == 1:
+            from hyperspy._signals.signal1d import Signal1D as signal
+        elif s2.axes_manager.signal_dimension == 2:
+            from hyperspy._signals.signal2d import Signal2D as signal
+        else:
+            warnings.warn(
+                "Rotation can only be done on signals with one or two signal"
+                "dimensions only. Returning the original signal")
+            return(s2)
         rotated_data = rotate(s2.data, angle=angle, axes=axes, reshape=reshape)
 
         width = s2.axes_manager[0].scale * s2.axes_manager[0].size
@@ -4126,19 +4135,32 @@ class BaseSignal(FancySlicing,
         new_width = abs(width*math.cos(radangle)) + abs(height*math.sin(radangle))
         new_height = abs(width*math.sin(radangle)) + abs(height*math.cos(radangle))
 
-        from hyperspy._signals.signal2d import Signal2D
-        from hyperspy._signals.signal1d import Signal1D
 
-        rotated_signal = Signal1D(rotated_data)
+
+        rotated_signal = signal(rotated_data)
         new_lengths = [width, height]
-        for n, newlength in zip(rotated_signal.axes_manager.navigation_indices_in_array, new_lengths):
-            rotated_signal.axes_manager[n].scale = newlength / rotated_signal.axes_manager[n].size
-            rotated_signal.axes_manager[n].units = s2.axes_manager[n].units
-            rotated_signal.axes_manager[n].name = s2.axes_manager[n].name
-
         if rotate_dimension=="navigation":
+            for n, newlength in zip(rotated_signal.axes_manager.navigation_indices_in_array, new_lengths):
+                rotated_signal.axes_manager[n].scale = newlength / rotated_signal.axes_manager[n].size
+                rotated_signal.axes_manager[n].offset = s2.axes_manager[n].offset
+                rotated_signal.axes_manager[n].units = s2.axes_manager[n].units
+                rotated_signal.axes_manager[n].name = s2.axes_manager[n].name
+
             for n in rotated_signal.axes_manager.signal_indices_in_array:
-                rotated_signal.axes_manager[n].scale = s2.axes_manager[n].offset
+                rotated_signal.axes_manager[n].scale = s2.axes_manager[n].scale
+                rotated_signal.axes_manager[n].offset = s2.axes_manager[n].offset
+                rotated_signal.axes_manager[n].units = s2.axes_manager[n].units
+                rotated_signal.axes_manager[n].name = s2.axes_manager[n].name
+
+        else:
+            for n, newlength in zip(rotated_signal.axes_manager.signal_indices_in_array, new_lengths):
+                rotated_signal.axes_manager[n].scale = newlength / rotated_signal.axes_manager[n].size
+                rotated_signal.axes_manager[n].offset = s2.axes_manager[n].offset
+                rotated_signal.axes_manager[n].units = s2.axes_manager[n].units
+                rotated_signal.axes_manager[n].name = s2.axes_manager[n].name
+
+            for n in rotated_signal.axes_manager.navigation_indices_in_array:
+                rotated_signal.axes_manager[n].scale = s2.axes_manager[n].scale
                 rotated_signal.axes_manager[n].offset = s2.axes_manager[n].offset
                 rotated_signal.axes_manager[n].units = s2.axes_manager[n].units
                 rotated_signal.axes_manager[n].name = s2.axes_manager[n].name
