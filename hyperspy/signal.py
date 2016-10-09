@@ -4107,17 +4107,41 @@ class BaseSignal(FancySlicing,
         >>> s = hs.signals.Signal2D(sc.misc.ascent())
         >>> s.rotate(angle=45, reshape=False, crop=True)
         >>> s.plot()
-
-
         """
-        import scipy.ndimage
+        from scipy.ndimage.interpolation import rotate
         import math
         s2 = self.deepcopy()
         if rotate_dimension == "navigation":
-            s2 = s2.T
-            s2 = s2.as_signal2D((-1,-2))
+            axes = s2.axes_manager.navigation_indices_in_array
+        else:
+            axes = s2.axes_manager.signal_indices_in_array
 
-        s2.map(scipy.ndimage.rotate, angle=angle, reshape=reshape)
+        rotated_data = rotate(s2.data, angle=angle, axes=axes, reshape=reshape)
+
+        width = s2.axes_manager[0].scale * s2.axes_manager[0].size
+        height = s2.axes_manager[1].scale * s2.axes_manager[1].size
+
+        radangle = math.radians(angle)
+
+        new_width = abs(width*math.cos(radangle)) + abs(height*math.sin(radangle))
+        new_height = abs(width*math.sin(radangle)) + abs(height*math.cos(radangle))
+
+        from hyperspy._signals.signal2d import Signal2D
+        from hyperspy._signals.signal1d import Signal1D
+
+        rotated_signal = Signal1D(rotated_data)
+        new_lengths = [width, height]
+        for n, newlength in zip(rotated_signal.axes_manager.navigation_indices_in_array, new_lengths):
+            rotated_signal.axes_manager[n].scale = newlength / rotated_signal.axes_manager[n].size
+            rotated_signal.axes_manager[n].units = s2.axes_manager[n].units
+            rotated_signal.axes_manager[n].name = s2.axes_manager[n].name
+
+        if rotate_dimension=="navigation":
+            for n in rotated_signal.axes_manager.signal_indices_in_array:
+                rotated_signal.axes_manager[n].scale = s2.axes_manager[n].offset
+                rotated_signal.axes_manager[n].offset = s2.axes_manager[n].offset
+                rotated_signal.axes_manager[n].units = s2.axes_manager[n].units
+                rotated_signal.axes_manager[n].name = s2.axes_manager[n].name
 
         # Reshape currently overrides crop
         if crop == True and reshape == False:
@@ -4126,7 +4150,7 @@ class BaseSignal(FancySlicing,
             w, h = get_signal_width_height(self.T.as_signal2D((-1,-2)))
             crop_w, crop_h = get_largest_rectangle_from_rotation(w, h, angle)
             crop_w, crop_h = math.floor(crop_w), math.floor(crop_h)
-            w, h = get_signal_width_height(s2)
+            w, h = get_signal_width_height(rotated_signal)
             center = (w / 2, h / 2)
 
             x1 = math.ceil(center[0] - crop_w / 2)
@@ -4134,14 +4158,14 @@ class BaseSignal(FancySlicing,
             y1 = math.ceil(center[1] - crop_h / 2)
             y2 = math.floor(center[1] + crop_h / 2)
 
-            s2 = s2.isig[x1:x2, y1:y2]
-        if rotate_dimension == "navigation":
-            s2 = s2.as_signal2D((-1, -2))
-            s2 = s2.T
+            rotated_signal = rotated_signal.isig[x1:x2, y1:y2]
+        #if rotate_dimension == "navigation":
+        #    s2 = s2.as_signal2D((-1, -2))
+        #    s2 = s2.T
         if out == None:
-            return s2
+            return rotated_signal
         else:
-            out = s2
+            out = rotated_signal
 
 
 ARITHMETIC_OPERATORS = (
