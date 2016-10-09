@@ -4119,9 +4119,10 @@ class BaseSignal(FancySlicing,
 
         s2.map(scipy.ndimage.rotate, angle=angle, reshape=reshape)
 
+        # Reshape currently overrides crop
         if crop == True and reshape == False:
-            # This is currently slightly bugged with reshape because as of Hyperspy v1.1 s.T rotates the navigation dimension image as it
-            # becomes the signal dimension.
+            # Cropping to largest rectangle with reshape = True is currently slightly bugged with reshape because as of Hyperspy v1.1 s.T rotates the navigation dimension image as it
+            # becomes the signal dimension. Currently returns the wrong centre and width/height if reshape is True.
             w, h = get_signal_width_height(self.T.as_signal2D((-1,-2)))
             crop_w, crop_h = get_largest_rectangle_from_rotation(w, h, angle)
             crop_w, crop_h = math.floor(crop_w), math.floor(crop_h)
@@ -4137,7 +4138,10 @@ class BaseSignal(FancySlicing,
         if rotate_dimension == "navigation":
             s2 = s2.as_signal2D((-1, -2))
             s2 = s2.T
-        return s2
+        if out == None:
+            return s2
+        else:
+            out = s2
 
 
 ARITHMETIC_OPERATORS = (
