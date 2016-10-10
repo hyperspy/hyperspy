@@ -4081,7 +4081,7 @@ class BaseSignal(FancySlicing,
         """
         return self.transpose()
 
-    def rotate(self, angle, rotate_dimension='signal', reshape=False, crop=False, out=None, *args, **kwargs):
+    def rotate(self, angle, rotate_dimension='signal', reshape=True, crop=False, out=None, *args, **kwargs):
         """Rotates and interpolates the signal or navigation dimension by an angle in degrees.
         Preserves the signal/navigation shape.
         Reshape preserves the entire signal/navigation dimension by increasing the shape and introducing zeroes.
@@ -4108,7 +4108,7 @@ class BaseSignal(FancySlicing,
         --------
         >>> # Rotate and crop an image to its largest area without black corners.
         >>> s = hs.signals.Signal2D(sc.misc.ascent())
-        >>> s.rotate(angle=45, reshape=False, crop=True)
+        >>> s = s.rotate(angle=45, crop=True)
         >>> s.plot()
         """
         from scipy.ndimage.interpolation import rotate
@@ -4178,13 +4178,15 @@ class BaseSignal(FancySlicing,
                 rotated_signal.axes_manager[n].name = s2.axes_manager[n].name
 
         # Reshape currently overrides crop
-        if crop == True and reshape == False:
+        if crop == True:
             # Cropping to largest rectangle with reshape = True is currently slightly bugged with reshape because as of Hyperspy v1.1 s.T rotates the navigation dimension image as it
             # becomes the signal dimension. Currently returns the wrong centre and width/height if reshape is True.
-            w, h = get_signal_width_height(self.T.as_signal2D((-1,-2)))
+            w = s2.axes_manager[width_dimension].size
+            h = s2.axes_manager[height_dimension].size
             crop_w, crop_h = get_largest_rectangle_from_rotation(w, h, angle)
             crop_w, crop_h = math.floor(crop_w), math.floor(crop_h)
-            w, h = get_signal_width_height(rotated_signal)
+            w = rotated_signal.axes_manager[width_dimension].size
+            h = rotated_signal.axes_manager[height_dimension].size
             center = (w / 2, h / 2)
 
             x1 = math.ceil(center[0] - crop_w / 2)
@@ -4192,8 +4194,12 @@ class BaseSignal(FancySlicing,
             y1 = math.ceil(center[1] - crop_h / 2)
             y2 = math.floor(center[1] + crop_h / 2)
 
-            rotated_signal = rotated_signal.isig[x1:x2, y1:y2]
-        #if rotate_dimension == "navigation":
+
+            if rotate_dimension == "navigation":
+                rotated_signal = rotated_signal.inav[x1:x2, y1:y2]
+            else:
+                rotated_signal = rotated_signal.isig[x1:x2, y1:y2]
+
         #    s2 = s2.as_signal2D((-1, -2))
         #    s2 = s2.T
         if out == None:
