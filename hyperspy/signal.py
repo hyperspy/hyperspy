@@ -4134,11 +4134,12 @@ class BaseSignal(FancySlicing,
 
         new_width = abs(width*math.cos(radangle)) + abs(height*math.sin(radangle))
         new_height = abs(width*math.sin(radangle)) + abs(height*math.cos(radangle))
-
+        print(new_width)
+        print(new_height)
 
 
         rotated_signal = signal(rotated_data)
-        new_lengths = [new_width, new_height]
+        new_lengths = [new_height, new_width]
         if rotate_dimension=="navigation":
             for n, newlength in zip(rotated_signal.axes_manager.navigation_indices_in_array, new_lengths):
                 rotated_signal.axes_manager[n].scale = newlength / rotated_signal.axes_manager[n].size
@@ -4155,6 +4156,7 @@ class BaseSignal(FancySlicing,
         else:
             for n, newlength in zip(rotated_signal.axes_manager.signal_indices_in_array, new_lengths):
                 rotated_signal.axes_manager[n].scale = newlength / rotated_signal.axes_manager[n].size
+                print(rotated_signal.axes_manager[n].scale)
                 rotated_signal.axes_manager[n].offset = s2.axes_manager[n].offset
                 rotated_signal.axes_manager[n].units = s2.axes_manager[n].units
                 rotated_signal.axes_manager[n].name = s2.axes_manager[n].name
