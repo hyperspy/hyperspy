@@ -4082,7 +4082,11 @@ class BaseSignal(FancySlicing,
         return self.transpose()
 
     def rotate(self, angle, rotate_dimension='signal', reshape=False, crop=False, out=None, *args, **kwargs):
-        """Rotates and interpolates the signal by an angle in degrees
+        """Rotates and interpolates the signal or navigation dimension by an angle in degrees.
+        Preserves the signal/navigation shape.
+        Reshape preserves the entire signal/navigation dimension by increasing the shape and introducing zeroes.
+        Crop crops the signal/navigation dimension to the largest rectangle without black regions
+
 
         Parameters
         ----------
