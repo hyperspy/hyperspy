@@ -4136,24 +4136,29 @@ class BaseSignal(FancySlicing,
             return s2
         rotated_data = rotate(s2.data, angle=angle, axes=axes, reshape=reshape)
 
+        # Get height and width indices of the dimension being rotated
         if rotate_dimension == 'navigation':
             height_dimension, width_dimension = s2.axes_manager.navigation_indices_in_array
         else:
             height_dimension, width_dimension = s2.axes_manager.signal_indices_in_array
 
-        width = s2.axes_manager[width_dimension].scale * s2.axes_manager[width_dimension].size
-        height = s2.axes_manager[height_dimension].scale * s2.axes_manager[height_dimension].size
+        old_width = s2.axes_manager[width_dimension].scale * s2.axes_manager[width_dimension].size
+        old_height = s2.axes_manager[height_dimension].scale * s2.axes_manager[height_dimension].size
 
+        # Some simple maths to calculate the new width and lengths
         radangle = math.radians(angle)
-
-        new_width = abs(width*math.cos(radangle)) + abs(height*math.sin(radangle))
-        new_height = abs(width*math.sin(radangle)) + abs(height*math.cos(radangle))
+        new_width = abs(old_width*math.cos(radangle)) + abs(old_height*math.sin(radangle))
+        new_height = abs(old_width*math.sin(radangle)) + abs(old_height*math.cos(radangle))
+        new_lengths = [new_height, new_width]
 
         rotated_signal = signal(rotated_data)
-        new_lengths = [new_height, new_width]
+        #
         if rotate_dimension== 'navigation':
             for n, newlength in zip(rotated_signal.axes_manager.navigation_indices_in_array, new_lengths):
-                rotated_signal.axes_manager[n].scale = newlength / rotated_signal.axes_manager[n].size
+                if reshape == False:
+                    rotated_signal.axes_manager[n].scale = s2.axes_manager[n].scale
+                else:
+                    rotated_signal.axes_manager[n].scale = newlength / rotated_signal.axes_manager[n].size
                 rotated_signal.axes_manager[n].offset = s2.axes_manager[n].offset
                 rotated_signal.axes_manager[n].units = s2.axes_manager[n].units
                 rotated_signal.axes_manager[n].name = s2.axes_manager[n].name
@@ -4166,7 +4171,10 @@ class BaseSignal(FancySlicing,
 
         else:
             for n, newlength in zip(rotated_signal.axes_manager.signal_indices_in_array, new_lengths):
-                rotated_signal.axes_manager[n].scale = newlength / rotated_signal.axes_manager[n].size
+                if reshape == False:
+                    rotated_signal.axes_manager[n].scale = s2.axes_manager[n].scale
+                else:
+                    rotated_signal.axes_manager[n].scale = newlength / rotated_signal.axes_manager[n].size
                 rotated_signal.axes_manager[n].offset = s2.axes_manager[n].offset
                 rotated_signal.axes_manager[n].units = s2.axes_manager[n].units
                 rotated_signal.axes_manager[n].name = s2.axes_manager[n].name
@@ -4187,8 +4195,9 @@ class BaseSignal(FancySlicing,
             crop_w, crop_h = math.floor(crop_w), math.floor(crop_h)
             w = rotated_signal.axes_manager[width_dimension].size
             h = rotated_signal.axes_manager[height_dimension].size
-            center = (w / 2, h / 2)
+            center = (w / 2, h / 2) # position of centre of new rectangle
 
+            # Coordinates of corners of the new rectangle
             x1 = math.ceil(center[0] - crop_w / 2)
             x2 = math.floor(center[0] + crop_w / 2)
             y1 = math.ceil(center[1] - crop_h / 2)
@@ -4200,8 +4209,6 @@ class BaseSignal(FancySlicing,
             else:
                 rotated_signal = rotated_signal.isig[x1:x2, y1:y2]
 
-        #    s2 = s2.as_signal2D((-1, -2))
-        #    s2 = s2.T
         if out == None:
             return rotated_signal
         else:
