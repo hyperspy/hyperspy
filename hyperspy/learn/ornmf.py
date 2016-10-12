@@ -123,8 +123,8 @@ class OPGD:
         left_samples = len(this_batch)
         if left_samples > 0:
             data = np.concatenate(
-                [self._last_batch[left_samples-self.batch_size:,:],
-                 np.stack(this_batch, axis=-1)], axis=0)
+                [self._last_batch[:, left_samples-self.batch_size:],
+                 np.stack(this_batch, axis=-1)], axis=1)
             self._fit_batch(data)
             pbar.update(left_samples)
 
