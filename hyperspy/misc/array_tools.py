@@ -8,6 +8,7 @@ except ImportError:
 import warnings
 
 import numpy as np
+import math as math
 
 
 def get_array_memory_size_in_GiB(shape, dtype):
