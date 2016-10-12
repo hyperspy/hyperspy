@@ -306,6 +306,15 @@ class EELSCLEdge(Component):
         """Returns the number of counts in barns
 
         """
+        shift = self.onset_energy.value - self.GOS.onset_energy
+        if shift != self.GOS.energy_shift:
+            # Because hspy Events are not executed in any given order,
+            # an external function could be in the same event execution list
+            # as _integrate_GOS and be executed first. That can potentially
+            # cause an error that enforcing _integrate_GOS here prevents. Note
+            # that this is suboptimal because _integrate_GOS is computed twice
+            # unnecessarily.
+            self._integrate_GOS()
         Emax = self.GOS.energy_axis[-1] + self.GOS.energy_shift
         cts = np.zeros((len(E)))
         bsignal = (E >= self.onset_energy.value)

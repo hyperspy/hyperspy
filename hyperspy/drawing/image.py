@@ -69,6 +69,7 @@ class ImagePlot(BlittedFigure):
         self.plot_ticks = False
         self.colorbar = True
         self._colorbar = None
+        self.quantity_label = ''
         self.figure = None
         self.ax = None
         self.title = ''
@@ -193,8 +194,6 @@ class ImagePlot(BlittedFigure):
     def optimize_contrast(self, data):
         if (self._vmin_user is not None and self._vmax_user is not None):
             return
-        if np.issubdtype(data.dtype, complex):
-            data = np.log(np.abs(data))
         self._vmin_auto, self._vmax_auto = utils.contrast_stretching(
             data, self.saturated_pixels)
 
@@ -263,6 +262,8 @@ class ImagePlot(BlittedFigure):
 
         if self.colorbar is True:
             self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
+            self._colorbar.set_label(
+                self.quantity_label, rotation=-90, va='bottom')
             self._colorbar.ax.yaxis.set_animated(True)
 
         self.figure.canvas.draw()
@@ -328,8 +329,6 @@ class ImagePlot(BlittedFigure):
                 redraw_colorbar = True
                 ims[0].autoscale()
 
-        if np.issubdtype(data.dtype, complex):
-            data = np.log(np.abs(data))
         if self.plot_indices is True:
             self._text.set_text(self.axes_manager.indices)
         if self.no_nans:

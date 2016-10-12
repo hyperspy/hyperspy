@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
 import scipy as sp
-import warnings
+import logging
 from scipy.fftpack import fftn, ifftn
 
 from hyperspy.defaults_parser import preferences
@@ -28,7 +28,11 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
-from hyperspy.docstrings.plot import BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING
+from hyperspy.docstrings.plot import (
+    BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
+
+
+_logger = logging.getLogger(__name__)
 
 
 def shift_image(im, shift, interpolation_order=1, fill_value=np.nan):
