@@ -405,7 +405,7 @@ class LazySignal(BaseSignal):
             yield self.data[tuple(getitem)]
 
     def decomposition(self, output_dimension, kind='PCA',
-                      get=threaded.get, blocksize=None, **kwargs):
+                      get=threaded.get, num_chunks=None, **kwargs):
         """Perform Incremental (Batch) PCA on the data, keeping n significant
         components.
 
@@ -415,63 +415,80 @@ class LazySignal(BaseSignal):
                 the number of significant components to keep
             get : dask scheduler
                 the dask scheduler to use for computations
-            blocksize : int
-                the size of blocks to pass to the PCA model. Larger blocks
-                require more memory, but should run faster. Has to be at least
-                equal to the output_dimension.
+            num_chunks : int
+                the number of dask chunks to pass to the decomposition model.
+                More chunks require more memory, but should run faster. Will be
+                increased to contain atleast output_dimension signals.
             **kwargs
-                passed to the partial_fit.
+                passed to the partial_fit/fit functions.
 
         """
         explained_variance = None
         explained_variance_ratio = None
-        data = self.data.reshape((self.axes_manager.navigation_size,
-                                  self.axes_manager.signal_size))
-        if blocksize is not None and output_dimension > blocksize:
-            raise ValueError('too small blocksize, has to be more than '
-                             'output_dimension')
-        if blocksize is not None:
-            data = data.rechunk((blocksize, data.shape[1]))
-        elif output_dimension > np.min(data.chunks[0]):
-            data = data.rechunk((output_dimension, data.shape[1]))
-
-        nblocks = len(data.chunks[0])
+        data = self.data.reshape((self.axes_manager.navigation_shape[::-1]+
+                                  (self.axes_manager.signal_size,)))
+        from itertools import product
+        from toolz import curry
+        num_chunks = 1 if num_chunks is None else num_chunks
+        blocksize = np.min([np.multiply(*ar) for ar in 
+                            product(*data.chunks[:-1])])
+        if blocksize/output_dimension < num_chunks:
+            num_chunks = np.ceil(blocsize/output_dimension)
 
         if kind == 'PCA':
-
             from sklearn.decomposition import IncrementalPCA
             ipca = IncrementalPCA(n_components=output_dimension)
-            try:
-                for i in progressbar(range(nblocks), total=nblocks, leave=True):
-                    thedata = get(data.dask, (data.name, i, 0))
-                    ipca = ipca.partial_fit(thedata, **kwargs)
+            method = curry(ipca.partial_fit, **kwargs)
 
-            except KeyboardInterrupt:
-                pass
+        elif kind == 'ORPCA':
+            from hyperspy.learn.rpca import ORPCA
+            kwargs['fast'] = True
+            _orpca = ORPCA(output_dimension, **kwargs)
+            method = _orpca.fit
 
+        elif kind == 'ORNMF':
+            from hyperspy.learn.ornmf import OPGD
+            _opgd = OPGD(output_dimension, blocksize, **kwargs)
+            method = _opgd.fit
+        else:
+            raise ValueError('kind not known')
+
+
+        blocksize *= num_chunks
+        indices = product(*[range(len(c)) for c in data.chunks[:-1]])
+        nblocks = np.multiply(*[len(c) for c in data.chunks[:-1]])
+        this_data = []
+        try:
+            for ind in progressbar(indices, total=nblocks, leave=True,
+                                   desc='Data chunks'):
+                chunk = get(data.dask, (data.name,)+ind+(0,))
+                chunk = chunk.reshape(-1, self.axes_manager.signal_size)
+                this_data.append(chunk)
+                if len(this_data) == num_chunks:
+                    thedata = np.concatenate(this_data, axis=0)
+                    method(thedata)
+                    this_data = []
+            if len(this_data):
+                thedata = np.concatenate(this_data, axis=0)
+                method(thedata)
+        except KeyboardInterrupt:
+            pass
+
+        if kind == 'PCA':
             explained_variance = ipca.explained_variance_
             explained_variance_ratio = ipca.explained_variance_ratio_
             factors = ipca.components_.T
             loadings = transform(ipca, data).compute()
 
         elif kind == 'ORPCA':
-            from hyperspy.learn.rpca import ORPCA
-            kwargs['fast'] = True
-            _orpca = ORPCA(output_dimension, **kwargs)
-            try:
-                for i in progressbar(range(nblocks), total=nblocks, leave=True,
-                                     desc='Data chunks'):
-                    thedata = get(data.dask, (data.name, i, 0))
-                    _orpca.fit(thedata, iterating=True)
-            except KeyboardInterrupt:
-                pass
-
             _, _, U, S, V = _orpca.finish()
-
             factors = U * S
             loadings = V
             explained_variance = S ** 2 / len(factors)
 
+        elif kind == 'ORNMF':
+            factors = _opgd.W
+            loadings = np.stack(_opgd.H, axis=1)
 
         if explained_variance is not None and \
                 explained_variance_ratio is None:

@@ -53,7 +53,8 @@ def _project(W):
 
 class OPGD:
 
-    def __init__(self, rank, batch_size, lambda1=None, max_value=None):
+    def __init__(self, rank, batch_size, lambda1=None, max_value=None,
+                 store_r=False):
         self.iterating = None
         self.rank = rank
         self.batch_size = batch_size
@@ -69,7 +70,10 @@ class OPGD:
         self.eps2 = 1e-6
         self.stepMulp = 1.
         self.H = []
-        self.R = []
+        if store_r:
+            self.R = []
+        else:
+            self.R = None
 
     def _setup(self, X):
         # figure out how many features, F. K is the rank
@@ -82,7 +86,8 @@ class OPGD:
             X = chain([x], X)
             self.iterating = True
         self.features = F
-        self.lambda1 = 1/np.sqrt(F)
+        if self.lambda1 is None:
+            self.lambda1 = 1/np.sqrt(F)
         self.h = np.random.rand(self.rank, self.batch_size)
         self.r = np.random.rand(self.features, self.batch_size)
 
@@ -106,27 +111,30 @@ class OPGD:
             num = values.shape[0]
             values = iter(values)
         this_batch = []
-        # when we run out of samples for the full back, re-use some
-        last_batch = None
-        pbar = progressbar(leave=False, total=num)
+        # when we run out of samples for the full batch, re-use some
+        pbar = progressbar(leave=False, total=num,
+                           disable=(self.batch_size==num))
         for val in values:
             this_batch.append(val)
             if len(this_batch) == self.batch_size:
                 self._fit_batch(np.stack(this_batch, axis=-1))
-                last_batch = this_batch
                 this_batch = []
                 pbar.update(self.batch_size)
         left_samples = len(this_batch)
         if left_samples > 0:
-            self._fit_batch(np.stack(last_batch[left_samples-self.batch_size:]
-                                     +this_batch, axis=-1))
+            data = np.concatenate(
+                [self._last_batch[left_samples-self.batch_size:,:],
+                 np.stack(this_batch, axis=-1)], axis=0)
+            self._fit_batch(data)
             pbar.update(left_samples)
 
     def _fit_batch(self, values):
+        self._last_batch = values
         self._update_hr(values)
         # store the values to have a "history"
         self.H.append(self.h)
-        self.R.append(self.r)
+        if self.R is not None:
+            self.R.append(self.r)
         self.A += self.h.dot(self.h.T)
         self.B += (values-self.r).dot(self.h.T)
         self._update_W()
