@@ -31,17 +31,17 @@ def _thresh(R, lambda1, M):
     res[res>M] = M
     return np.sign(R) * res
 
-def _mrdivide(A, B):
-    """like in Matlab! (solves xA = B)
+def _mrdivide(B, A):
+    """like in Matlab! (solves xB = A)
     """
-    if isinstance(A, np.ndarray):
-        if len(set(A.shape)) == 1:
+    if isinstance(B, np.ndarray):
+        if len(B.shape) == 2 and B.shape[0] == B.shape[1]:
             # square array
             return np.linalg.solve(A.T, B.T).T
         else:
             return np.linalg.lstsq(A.T, B.T)[0].T
     else:
-        return A / B
+        return B / A
 
 def _project(W):
     newW = W.copy()
@@ -49,7 +49,7 @@ def _project(W):
     
     sumsq = np.sqrt(np.sum(W**2, axis=0))
     sumsq[sumsq<1] = 1
-    return _mrdivide(newW, np.diag(sumsq)).T
+    return _mrdivide(newW, np.diag(sumsq))
 
 class OPGD:
 
@@ -103,21 +103,24 @@ class OPGD:
         num = None
         if isinstance(values, np.ndarray):
             # make an iterator anyway
-            num = values.shape[1]
+            num = values.shape[0]
             values = iter(values)
         this_batch = []
         # when we run out of samples for the full back, re-use some
         last_batch = None
-        for val in progressbar(values, leave=False, total=num):
+        pbar = progressbar(leave=False, total=num)
+        for val in values:
             this_batch.append(val)
             if len(this_batch) == self.batch_size:
                 self._fit_batch(np.stack(this_batch, axis=-1))
                 last_batch = this_batch
                 this_batch = []
+                pbar.update(self.batch_size)
         left_samples = len(this_batch)
         if left_samples > 0:
             self._fit_batch(np.stack(last_batch[left_samples-self.batch_size:]
                                      +this_batch, axis=-1))
+            pbar.update(left_samples)
 
     def _fit_batch(self, values):
         self._update_hr(values)
@@ -130,6 +133,7 @@ class OPGD:
 
 
     def _update_hr(self, values):
+        _logger.debug("start update HR")
         n = 0
         lasttwo = np.zeros(2)
         L = np.linalg.norm(self.W,2)**2
@@ -137,6 +141,7 @@ class OPGD:
 
         while n<=2 or (np.abs((lasttwo[1] - lasttwo[0])/lasttwo[0]) >
                        self.eps1 and n<self.maxItr1):
+            _logger.debug('n = {}'.format(n))
             self.h -= eta*self.W.T.dot(self.W.dot(self.h) + self.r - values)
             self.h[self.h<0] *= 0
             self.r = _thresh(values - self.W.dot(self.h), self.lambda1,
@@ -147,7 +152,10 @@ class OPGD:
                 values - self.W.dot(self.h) - self.r, 'fro')**2 + \
                     self.lambda1*np.sum(np.abs(self.r))
 
+        _logger.debug("end update HR")
+
     def _update_W(self):
+        _logger.debug("start update W")
 
         n = 0
         lasttwo = np.zeros(2)
@@ -158,7 +166,10 @@ class OPGD:
 
         while n<=2 or (np.abs((lasttwo[1] - lasttwo[0])/lasttwo[0]) >
                        self.eps2 and n<self.maxItr2):
+            _logger.debug('n = {}'.format(n))
             self.W = _project(self.W - eta*(self.W.dot(A) - B))
+            n += 1
             lasttwo[0] = lasttwo[1]
             lasttwo[1] = 0.5 * np.trace(self.W.T.dot(self.W).dot(A)) - \
                     np.trace(self.W.T.dot(B))
+        _logger.debug("end update W")
