@@ -242,16 +242,39 @@ class EDSSpectrum(Signal1D):
         ----------
         self: numpy.array
             the original spectrum
-        step: a list of floats for each dimension specify the new:old pixel
+        scale: a list of floats for each dimension specify the new:old pixel
         ratio
-        e.g. a ratio of 1 is no binning in that direction.
+        e.g. [1, 1, 2]
+            a ratio of 1 is no binning in the x and y directions.
              a ratio of 2 means that each pixel in the new spectrum is
-             twice the width of the pixels in the old spectrum.
+             twice the width of the pixels in the old spectrum, in the energy,
+             dimension.
 
         Return
         ------
         numpy.array of the spectrum with new dimensions width/step.
+
+
+        Examples
+        --------
+        Input:
+        spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
+        spectrum.data[1, 2, 9] = 5
+        print(spectrum)
+        print ('Sum = ', sum(sum(sum(spectrum.data))))
+        scale = [2, 2, 5]
+        test = spectrum.linear_bin(step)
+        print(test)
+        print('Sum = ', sum(sum(sum(test.data))))
+
+        Output:
+        <EDSTEMSpectrum, title: , dimensions: (4, 4|10)>
+        Sum =  164.0
+        <EDSTEMSpectrum, title: , dimensions: (2, 2|2)>
+        Sum =  164.0
+
         """
+
         shape2 = self.data.shape
         if len(shape2) != len(scale):
             raise ValueError(
