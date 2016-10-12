@@ -263,7 +263,7 @@ class EDSSpectrum(Signal1D):
         print(spectrum)
         print ('Sum = ', sum(sum(sum(spectrum.data))))
         scale = [2, 2, 5]
-        test = spectrum.linear_bin(step)
+        test = spectrum.linear_bin(scale)
         print(test)
         print('Sum = ', sum(sum(sum(test.data))))
 
