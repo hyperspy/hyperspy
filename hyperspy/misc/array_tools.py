@@ -8,6 +8,7 @@ except ImportError:
 import warnings
 
 import numpy as np
+import math as math
 
 
 def get_array_memory_size_in_GiB(shape, dtype):
@@ -96,9 +97,70 @@ def rebin(a, new_shape):
     new_shape = tuple(int(ns) for ns in new_shape)
     factor = np.asarray(shape) // np.asarray(new_shape)
     evList = ['a.reshape('] + \
-             ['new_shape[%d],factor[%d],' % (i, i) for i in range(lenShape)] + \
+             ['new_shape[%d],factor[%d],' % (i, i) for i in range(lenShape)] +\
              [')'] + ['.sum(%d)' % (i + 1) for i in range(lenShape)]
     return eval(''.join(evList))
+
+
+def linear_bin(s, scale):
+
+    """
+    Binning of the spectrum image by a non-integer pixel value.
+
+    Parameters
+    ----------
+    originalSpectrum: numpy.array
+        the original spectrum
+    step: a list of floats for each dimension specify the new:old pixel
+    ratio
+    e.g. a ratio of 1 is no binning
+         a ratio of 2 means that each pixel in the new spectrum is
+         twice the size of the pixels in the old spectrum.
+
+    Return
+    ------
+    numpy.array of the spectrum with new dimensions width/step.
+    """
+
+    shape = s.shape
+    if len(shape) != len(scale):
+        raise ValueError(
+           'The list of bins must match the number of dimensions, including the\
+            energy dimension.\
+            In order to not bin in any of these dimensions specifically, \
+            simply set the value in shape to 1')
+
+    for k, step in enumerate(scale):
+        shape = s.shape
+        newSpectrum = np.zeros((math.ceil(shape[0]/step),
+                                shape[1], shape[2]), dtype='float')
+        if k != 0:
+            s = np.swapaxes(s, 0, k)
+            shape = s.shape
+            newSpectrum = np.zeros((math.ceil(shape[0]/step),
+                                    shape[1], shape[2]), dtype='float')
+        for j in range(0, math.ceil(shape[0]/step)):
+            bottomPos = (j*step)
+            topPos = ((1 + j) * step)
+            if topPos > shape[0]:
+                topPos = shape[0]
+            while (topPos - bottomPos) >= 1:
+                if math.ceil(bottomPos) - bottomPos != 0:
+                    newSpectrum[j] = (newSpectrum[j] +
+                                      s[math.floor(bottomPos)] *
+                                      (math.ceil(bottomPos) - bottomPos))
+                    bottomPos = math.ceil(bottomPos)
+                else:
+                    newSpectrum[j] = newSpectrum[j] + s[bottomPos]
+                    bottomPos += 1
+            if topPos != bottomPos:
+                newSpectrum[j] = (newSpectrum[j] +
+                                  s[math.floor(bottomPos)] *
+                                  (topPos - bottomPos))
+        if k != 0:
+            newSpectrum = np.swapaxes(newSpectrum, 0, k)
+
+    return newSpectrum
 
 
 def sarray2dict(sarray, dictionary=None):
