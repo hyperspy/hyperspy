@@ -141,7 +141,6 @@ class OPGD:
 
 
     def _update_hr(self, values):
-        _logger.debug("start update HR")
         n = 0
         lasttwo = np.zeros(2)
         L = np.linalg.norm(self.W,2)**2
@@ -149,7 +148,6 @@ class OPGD:
 
         while n<=2 or (np.abs((lasttwo[1] - lasttwo[0])/lasttwo[0]) >
                        self.eps1 and n<self.maxItr1):
-            _logger.debug('n = {}'.format(n))
             self.h -= eta*self.W.T.dot(self.W.dot(self.h) + self.r - values)
             self.h[self.h<0] *= 0
             self.r = _thresh(values - self.W.dot(self.h), self.lambda1,
@@ -160,11 +158,7 @@ class OPGD:
                 values - self.W.dot(self.h) - self.r, 'fro')**2 + \
                     self.lambda1*np.sum(np.abs(self.r))
 
-        _logger.debug("end update HR")
-
     def _update_W(self):
-        _logger.debug("start update W")
-
         n = 0
         lasttwo = np.zeros(2)
         L = np.linalg.norm(self.A,'fro');
@@ -174,10 +168,8 @@ class OPGD:
 
         while n<=2 or (np.abs((lasttwo[1] - lasttwo[0])/lasttwo[0]) >
                        self.eps2 and n<self.maxItr2):
-            _logger.debug('n = {}'.format(n))
             self.W = _project(self.W - eta*(self.W.dot(A) - B))
             n += 1
             lasttwo[0] = lasttwo[1]
             lasttwo[1] = 0.5 * np.trace(self.W.T.dot(self.W).dot(A)) - \
                     np.trace(self.W.T.dot(B))
-        _logger.debug("end update W")

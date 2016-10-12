@@ -488,7 +488,7 @@ class LazySignal(BaseSignal):
 
         elif kind == 'ORNMF':
             factors = _opgd.W
-            loadings = np.stack(_opgd.H, axis=1)
+            loadings = np.concatenate(_opgd.H, axis=1)
 
         if explained_variance is not None and \
                 explained_variance_ratio is None:
