@@ -19,6 +19,7 @@ import itertools
 import logging
 
 import numpy as np
+import math as math
 import warnings
 from matplotlib import pyplot as plt
 
@@ -230,6 +231,87 @@ class EDSSpectrum(Signal1D):
                 s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time\
                     *= factor
         return s
+
+    def linear_bin(self, scale):
+
+        """
+        Binning of the spectrum image by a non-integer pixel value.
+
+        Parameters
+        ----------
+        self: numpy.array
+            the original spectrum
+        step: a list of floats for each dimension specify the new:old pixel
+        ratio
+        e.g. a ratio of 1 is no binning in that direction.
+             a ratio of 2 means that each pixel in the new spectrum is
+             twice the width of the pixels in the old spectrum.
+
+        Return
+        ------
+        numpy.array of the spectrum with new dimensions width/step.
+        """
+        shape2 = self.data.shape
+        if len(shape2) != len(scale):
+            raise ValueError(
+               'The list of bins must match the number of dimensions, including the\
+                energy dimension.\
+                In order to not bin in any of these dimensions specifically, \
+                simply set the value in shape to 1')
+
+        spectrum = self.deepcopy()
+        s = spectrum.data
+        newSpectrum = np.zeros(s.shape)
+        newSpectrum[:] = s
+
+        for k, step in enumerate(scale):
+
+            shape2 = newSpectrum.shape
+            s = np.zeros(newSpectrum.shape)
+            s[:] = newSpectrum
+            newSpectrum = np.zeros((math.ceil(shape2[0]/step),
+                                    shape2[1], shape2[2]), dtype='float')
+            if k != 0:
+                s = np.swapaxes(s, 0, k)
+                shape2 = s.shape
+                newSpectrum = np.zeros((math.ceil(shape2[0]/step),
+                                        shape2[1], shape2[2]), dtype='float')
+            for j in range(0, math.ceil(shape2[0]/step)):
+                bottomPos = (j*step)
+                topPos = ((1 + j) * step)
+                if topPos > shape2[0]:
+                    topPos = shape2[0]
+                while (topPos - bottomPos) >= 1:
+                    if math.ceil(bottomPos) - bottomPos != 0:
+                        newSpectrum[j] = (newSpectrum[j] +
+                                          s[math.floor(bottomPos)] *
+                                          (math.ceil(bottomPos) - bottomPos))
+                        bottomPos = math.ceil(bottomPos)
+                    else:
+                        newSpectrum[j] = newSpectrum[j] + s[bottomPos]
+                        bottomPos += 1
+                if topPos != bottomPos:
+                    newSpectrum[j] = (newSpectrum[j] +
+                                      s[math.floor(bottomPos)] *
+                                      (topPos - bottomPos))
+            if k != 0:
+                newSpectrum = np.swapaxes(newSpectrum, 0, k)
+
+        m = self._deepcopy_with_new_data(newSpectrum)
+
+        m.get_dimensions_from_data()
+        for s, step in zip(m.axes_manager._axes, scale):
+            s.scale /= step
+        if "Acquisition_instrument.SEM.Detector.EDS.live_time" in m.metadata:
+            for i in scale:
+                m.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time\
+                    *= i
+        if "Acquisition_instrument.TEM.Detector.EDS.live_time" in m.metadata:
+            for i in scale:
+                m.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time\
+                    *= i
+
+        return m
 
     def set_elements(self, elements):
         """Erase all elements and set them.
