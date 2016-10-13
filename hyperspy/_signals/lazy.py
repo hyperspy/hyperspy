@@ -421,7 +421,9 @@ class LazySignal(BaseSignal):
             # chunk = chunk.reshape(-1, self.axes_manager.signal_size)
 
     def decomposition(self, output_dimension, kind='PCA',
-                      get=threaded.get, num_chunks=None, **kwargs):
+                      get=threaded.get, num_chunks=None, 
+                      refine=True,
+                      **kwargs):
         """Perform Incremental (Batch) PCA on the data, keeping n significant
         components.
 
@@ -467,7 +469,6 @@ class LazySignal(BaseSignal):
 
         elif kind == 'ONMF':
             from hyperspy.learn.onmf import ONMF
-            refine = kwargs.pop('refine', False)
             batch_size = kwargs.pop('batch_size', None)
             _onmf = ONMF(output_dimension, **kwargs)
             method = curry(_onmf.fit, batch_size=batch_size)
@@ -511,6 +512,17 @@ class LazySignal(BaseSignal):
             _, _, U, S, V = _orpca.finish()
             factors = U * S
             loadings = V
+            if refine:
+                _orpca.R = []
+                for chunk in progressbar(self._block_iterator(flat_signal=True,
+                                                              get=get),
+                                         total=nblocks,
+                                         leave=False,
+                                         desc='Data chunks'):
+                    chunk = chunk.reshape(-1, self.axes_manager.signal_size)
+                    _orpca.project(chunk)
+                _, _, _, _, loadings = _orpca.finish()
+
             explained_variance = S ** 2 / len(factors)
 
         elif kind == 'ONMF':
@@ -539,25 +551,26 @@ class LazySignal(BaseSignal):
             explained_variance_ratio = \
                 explained_variance / explained_variance.sum()
 
-        # Fix the block-scrambled loadings
-        ndim = self.axes_manager.navigation_dimension
-        splits = np.cumsum([np.multiply(*ar)
-                            for ar in product(*nav_chunks)][:-1]).tolist()
-        all_chunks = [ar.T.reshape((output_dimension,) + shape) for shape, ar in
-                      zip(product(*nav_chunks), np.split(loadings, splits))]
+        if kind in ['ORNMF', 'ONMF', 'ORPCA']:
+            # Fix the block-scrambled loadings
+            ndim = self.axes_manager.navigation_dimension
+            splits = np.cumsum([np.multiply(*ar)
+                                for ar in product(*nav_chunks)][:-1]).tolist()
+            all_chunks = [ar.T.reshape((output_dimension,) + shape) for shape, ar in
+                          zip(product(*nav_chunks), np.split(loadings, splits))]
 
-        def split_stack_list(what, step, axis):
-            total = len(what)
-            if total != step:
-                return [np.concatenate(what[i:i + step], axis=axis) for i in
-                        range(0, total, step)]
-            else:
-                return np.concatenate(what, axis=axis)
-        for chunks, axis in zip(nav_chunks[::-1], range(ndim, 0, -1)):
-            step = len(chunks)
-            all_chunks = split_stack_list(all_chunks, step, axis)
+            def split_stack_list(what, step, axis):
+                total = len(what)
+                if total != step:
+                    return [np.concatenate(what[i:i + step], axis=axis) for i in
+                            range(0, total, step)]
+                else:
+                    return np.concatenate(what, axis=axis)
+            for chunks, axis in zip(nav_chunks[::-1], range(ndim, 0, -1)):
+                step = len(chunks)
+                all_chunks = split_stack_list(all_chunks, step, axis)
 
-        loadings = all_chunks.reshape((output_dimension, -1)).T
+            loadings = all_chunks.reshape((output_dimension, -1)).T
 
         target = self.learning_results
         target.factors = factors

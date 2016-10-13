@@ -35,9 +35,11 @@ def _thresh(X, lambda1, vmax):
     np.clip(res, -vmax, vmax, out=res)  
     return res
     
-def _solveproj(v, W, lambda1, kappa=1, h=None, r=None):
+def _solveproj(v, W, lambda1, kappa=1, h=None, r=None, vmax=None):
     m, n = W.shape
     v = v.T
+    if vmax is None:
+        vmax = v.max()
     if len(v.shape) == 2:
         batch_size = v.shape[1]
         rshape = (m, batch_size)
@@ -69,7 +71,7 @@ def _solveproj(v, W, lambda1, kappa=1, h=None, r=None):
         
         # Solve for r
         rtmp = r
-        r = _thresh(v - np.dot(W, h), lambda1, v.max())
+        r = _thresh(v - np.dot(W, h), lambda1, vmax)
         
         # Stop conditions
         stoph = np.linalg.norm(h - htmp, 2) 
@@ -166,9 +168,11 @@ class ONMF:
         if isinstance(X, np.ndarray):
             num = X.shape[0]
             X = iter(X)
-        h, r = None, None
         for v in progressbar(X, leave=False, total=num):
-            h, r = _solveproj(v, self.W, self.lambda1, self.kappa, h=h, r=r)
+            # want to start with fresh results and not clip, so that chunks are
+            # smooth
+            h, r = _solveproj(v, self.W, self.lambda1, self.kappa,
+                              vmax=np.inf)
             H.append(h.copy())
             if return_R:
                 R.append(r.copy())

@@ -414,6 +414,16 @@ class ORPCA:
                            + thislambda1 * self.L) / learn
             self.t += 1
 
+    def project(self, X):
+        num = None
+        if isinstance(X, np.ndarray):
+            num = X.shape[0]
+            X = iter(X)
+        for v in progressbar(X, leave=False, total=num):
+            r, _ = _solveproj(v, self.L, self.I, self.lambda2)
+            self.R.append(r.copy())
+
+
     def finish(self):
 
         R = np.stack(self.R, axis=-1)
