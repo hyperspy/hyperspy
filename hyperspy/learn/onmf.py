@@ -94,6 +94,7 @@ class ONMF:
             self.R = None
 
     def _setup(self, X, normalize=False):
+        self.h, self.r = None, None
         if isinstance(X, np.ndarray):
             n, m = X.shape
             if normalize:
@@ -137,7 +138,7 @@ class ONMF:
         if isinstance(X, np.ndarray):
             num = X.shape[0]
             X = iter(X)
-        r, h = None, None
+        r, h = self.r, self.h
         for v in progressbar(X, leave=False, total=num, disable=num==1):
             h, r = _solveproj(v, self.W, self.lambda1, self.kappa, 
                               r=r, h=h)
@@ -152,6 +153,8 @@ class ONMF:
             self.W -= eta * (np.dot(self.W, self.A) - self.B)
             np.maximum(self.W, 0.0, out=self.W)                 
             self.W /= max(np.linalg.norm(self.W, 'fro'), 1.0)  
+        self.r = r
+        self.h = h
 
     def project(self, X, return_R=False):
         # could be called project..?
@@ -178,7 +181,10 @@ class ONMF:
 
     def finish(self):
         if len(self.H) > 0:
-            H = np.stack(self.H, axis=-1)
+            if len(self.H[0].shape) == 1:
+                H = np.stack(self.H, axis=-1)
+            else:
+                H = np.concatenate(self.H, axis=1)
             return self.W, H
         else:
             return self.W, 0
