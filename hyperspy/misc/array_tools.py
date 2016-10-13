@@ -133,7 +133,7 @@ def _linear_bin(s, scale):
             In order to not bin in any of these dimensions specifically, \
             simply set the value in shape to 1')
 
-    for k, step in enumerate(scale):
+    for dimension_number, step in enumerate(scale):
         shape2 = newSpectrum.shape
         s = np.zeros(shape2)
         s[:] = newSpectrum
@@ -142,10 +142,10 @@ def _linear_bin(s, scale):
 
             s = np.swapaxes(s, 0, dimension_number)
             shape2 = s.shape
-        newshape = ()
-        for i, dimension_size in enumerate(shape):
+        new_shape = tuple()
+        for i, dimension_size in enumerate(shape2):
             if i == 0:
-                new_shape += (math.ceil(dimension_size / binning_factor),)
+                new_shape += (math.ceil(dimension_size / step),)
             else:
                 new_shape += (dimension_size,)
         newSpectrum = np.zeros(new_shape, dtype="float")
