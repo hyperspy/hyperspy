@@ -224,18 +224,22 @@ class EDSSpectrum(Signal1D):
                    np.array(new_shape_in_array))
         s = super(EDSSpectrum, self).rebin(new_shape)
         # modify time per spectrum
+        if "Acquisition_instrument.SEM.Detector.EDS.real_time" in s.metadata:
+            for i, t in enumerate(s.axes_manager.navigation_axes):
+                s.metadata.Acquisition_instrument.SEM.Detector.EDS.real_time\
+                    *= factors[i]
         if "Acquisition_instrument.SEM.Detector.EDS.live_time" in s.metadata:
-            for factor in factors:
+            for i, t in enumerate(s.axes_manager.navigation_axes):
                 s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time\
-                    *= factor
+                    *= factors[i]
+        if "Acquisition_instrument.TEM.Detector.EDS.real_time" in s.metadata:
+            for i, t in enumerate(s.axes_manager.navigation_axes):
                 s.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time\
-                    *= factor
+                    *= factors[i]
         if "Acquisition_instrument.TEM.Detector.EDS.live_time" in s.metadata:
-            for factor in factors:
+            for i, t in enumerate(m.axes_manager.navigation_axes):
                 s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time\
-                    *= factor
-                s.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time\
-                    *= factor
+                    *= factors[i]
         return s
 
     def linear_bin(self, scale):
@@ -290,18 +294,22 @@ class EDSSpectrum(Signal1D):
         m.get_dimensions_from_data()
         for s, step in zip(m.axes_manager._axes, scale):
             s.scale /= step
-        if "Acquisition_instrument.SEM.Detector.EDS.live_time" in m.metadata:
-            for i in scale:
+        if "Acquisition_instrument.SEM.Detector.EDS.real_time" in m.metadata:
+            for i, t in enumerate(m.axes_manager.navigation_axes):
                 m.metadata.Acquisition_instrument.SEM.Detector.EDS.real_time\
-                    *= i
+                    *= scale[i]
+        if "Acquisition_instrument.SEM.Detector.EDS.live_time" in m.metadata:
+            for i, t in enumerate(m.axes_manager.navigation_axes):
                 m.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time\
-                    *= i
-        if "Acquisition_instrument.TEM.Detector.EDS.live_time" in m.metadata:
-            for i in scale:
+                    *= scale[i]
+        if "Acquisition_instrument.TEM.Detector.EDS.real_time" in m.metadata:
+            for i, t in enumerate(m.axes_manager.navigation_axes):
                 m.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time\
-                    *= i
+                    *= scale[i]
+        if "Acquisition_instrument.TEM.Detector.EDS.live_time" in m.metadata:
+            for i, t in enumerate(m.axes_manager.navigation_axes):
                 m.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time\
-                    *= i
+                    *= scale[i]
 
         return m
 
