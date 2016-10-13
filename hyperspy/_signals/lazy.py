@@ -404,6 +404,21 @@ class LazySignal(BaseSignal):
                 getitem[ind] = res
             yield self.data[tuple(getitem)]
 
+    def _block_iterator(self, flat_signal=True, get=threaded.get):
+        from itertools import product
+        nav_chunks = self.data.chunks[:self.axes_manager.navigation_dimension]
+        data = self.data.reshape((self.axes_manager.navigation_shape[::-1]+
+                                  (self.axes_manager.signal_size,)))
+
+        indices = product(*[range(len(c)) for c in nav_chunks])
+        for ind in indices:
+            chunk = get(data.dask, (data.name,)+ind+(0,))
+            if not flat_signal:
+                chunk = chunk.reshape(chunk.shape[:-1] +
+                                      self.axes_manager.signal_shape)
+            yield chunk
+            # chunk = chunk.reshape(-1, self.axes_manager.signal_size)
+
     def decomposition(self, output_dimension, kind='PCA',
                       get=threaded.get, num_chunks=None, **kwargs):
         """Perform Incremental (Batch) PCA on the data, keeping n significant
@@ -419,19 +434,22 @@ class LazySignal(BaseSignal):
                 the number of dask chunks to pass to the decomposition model.
                 More chunks require more memory, but should run faster. Will be
                 increased to contain atleast output_dimension signals.
+            refine : bool
+                for ONMF, if to reproject loadings after learning factors.
             **kwargs
                 passed to the partial_fit/fit functions.
 
         """
         explained_variance = None
         explained_variance_ratio = None
-        data = self.data.reshape((self.axes_manager.navigation_shape[::-1]+
-                                  (self.axes_manager.signal_size,)))
-        from itertools import product
+        # data = self.data.reshape((self.axes_manager.navigation_shape[::-1]+
+        #                           (self.axes_manager.signal_size,)))
+        nav_chunks = self.data.chunks[:self.axes_manager.navigation_dimension]
         from toolz import curry
+        from itertools import product
         num_chunks = 1 if num_chunks is None else num_chunks
         blocksize = np.min([np.multiply(*ar) for ar in 
-                            product(*data.chunks[:-1])])
+                            product(*nav_chunks)])
         if blocksize/output_dimension < num_chunks:
             num_chunks = np.ceil(blocsize/output_dimension)
 
@@ -446,6 +464,13 @@ class LazySignal(BaseSignal):
             _orpca = ORPCA(output_dimension, **kwargs)
             method = _orpca.fit
 
+        elif kind == 'ONMF':
+            from hyperspy.learn.onmf import ONMF
+            refine = kwargs.pop('refine', False)
+            batch_size = kwargs.pop('batch_size', None)
+            _onmf = ONMF(output_dimension, **kwargs)
+            method = curry(_onmf.fit, batch_size=batch_size)
+
         elif kind == 'ORNMF':
             from hyperspy.learn.ornmf import OPGD
             _opgd = OPGD(output_dimension, blocksize, **kwargs)
@@ -455,13 +480,14 @@ class LazySignal(BaseSignal):
 
 
         blocksize *= num_chunks
-        indices = product(*[range(len(c)) for c in data.chunks[:-1]])
-        nblocks = np.multiply(*[len(c) for c in data.chunks[:-1]])
+        nblocks = np.multiply(*[len(c) for c in nav_chunks])
         this_data = []
         try:
-            for ind in progressbar(indices, total=nblocks, leave=True,
-                                   desc='Data chunks'):
-                chunk = get(data.dask, (data.name,)+ind+(0,))
+            for chunk in progressbar(self._block_iterator(flat_signal=True,
+                                                          get=get),
+                                     total=nblocks,
+                                     leave=True,
+                                     desc='Data chunks'):
                 chunk = chunk.reshape(-1, self.axes_manager.signal_size)
                 this_data.append(chunk)
                 if len(this_data) == num_chunks:
@@ -485,6 +511,23 @@ class LazySignal(BaseSignal):
             factors = U * S
             loadings = V
             explained_variance = S ** 2 / len(factors)
+
+        elif kind == 'ONMF':
+            factors, loadings = _onmf.finish()
+            # if explicitly want to refine of did not finish the learning of
+            # the full dataset, but want to project it.
+            if refine or not isinstance(loadings, np.ndarray) or \
+                loadings.shape[1] != self.axes_manager.navigation_size:
+                H = []
+                for chunk in progressbar(self._block_iterator(flat_signal=True,
+                                                              get=get),
+                                         total=nblocks,
+                                         leave=False,
+                                         desc='Data chunks'):
+                    chunk = chunk.reshape(-1, self.axes_manager.signal_size)
+                    H.append(_onmf.project(chunk))
+                loadings = np.concatenate(H, axis=1)
+            loadings = loadings.T
 
         elif kind == 'ORNMF':
             factors = _opgd.W
