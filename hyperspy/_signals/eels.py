@@ -1297,8 +1297,6 @@ class EELSSpectrum(Signal1D):
         """
 
         spectrum = self.data
-        newSpectrum = np.zeros(spectrum.shape)
-        newSpectrum = spectrum[:]
         newSpectrum = _linear_bin(spectrum, scale)
 
         m = self._deepcopy_with_new_data(newSpectrum)
