@@ -2316,8 +2316,7 @@ class BaseSignal(FancySlicing,
         signal_dimension = self.axes_manager.signal_dimension
         # The following reverses the order of binning factors for the signal dimensions, as is necessary for signal2Ds
         scale = scale[0:-signal_dimension] + scale[::-1][0:signal_dimension]
-        newSpectrum = np.zeros(spectrum.shape)
-        newSpectrum = spectrum[:]
+
         newSpectrum = _linear_bin(spectrum, scale)
 
         m = self._deepcopy_with_new_data(newSpectrum)
