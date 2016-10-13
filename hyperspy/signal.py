@@ -2324,7 +2324,7 @@ class BaseSignal(FancySlicing,
 
         m.get_dimensions_from_data()
         for s, step in zip(m.axes_manager._axes, scale):
-            s.scale *= step
+            s.scale /= step
 
         return m
 
