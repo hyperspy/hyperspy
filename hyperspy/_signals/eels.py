@@ -1305,5 +1305,9 @@ class EELSSpectrum(Signal1D):
         m.get_dimensions_from_data()
         for s, step in zip(m.axes_manager._axes, scale):
             s.scale /= step
+        if "Acquisition_instrument.TEM.Detector.EELS.dwell_time" in m.metadata: # Correct label to be determined
+            for i, t in enumerate(m.axes_manager.navigation_axes): # May not be dwell time, but "exposure".
+                m.metadata.Acquisition_instrument.TEM.Detector.EELS.dwell_time \
+                    *= scale[i]
 
         return m
