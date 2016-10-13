@@ -102,7 +102,7 @@ def rebin(a, new_shape):
     return eval(''.join(evList))
 
 
-def linear_bin(s, scale):
+def _linear_bin(s, scale):
 
     """
     Binning of the spectrum image by a non-integer pixel value.
@@ -123,8 +123,10 @@ def linear_bin(s, scale):
     """
 
     shape2 = s.shape
+    newSpectrum = np.zeros(s.shape)
+    newSpectrum = s[:]
 
-    if len(shape) != len(scale):
+    if len(shape2) != len(scale):
         raise ValueError(
            'The list of bins must match the number of dimensions, including the\
             energy dimension.\
@@ -132,9 +134,8 @@ def linear_bin(s, scale):
             simply set the value in shape to 1')
 
     for k, step in enumerate(scale):
-
         shape2 = newSpectrum.shape
-        s = np.zeros(newSpectrum.shape)
+        s = np.zeros(shape2)
         s[:] = newSpectrum
         newSpectrum = np.zeros((math.ceil(shape2[0]/step),
                                 shape2[1], shape2[2]), dtype='float')
@@ -164,7 +165,6 @@ def linear_bin(s, scale):
                                   (topPos - bottomPos))
         if k != 0:
             newSpectrum = np.swapaxes(newSpectrum, 0, k)
-
     return newSpectrum
 
 

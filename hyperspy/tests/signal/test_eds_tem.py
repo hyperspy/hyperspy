@@ -323,18 +323,18 @@ class Test_eds_markers:
 
 class Test_linear_bin:
     def test_linear_bin1(self):
-        spectrum = hs.signals.EDSTEMSpectrum(np.ones([3, 3, 1]))
+        spectrum = EDSTEMSpectrum(np.ones([3, 3, 1]))
         res = spectrum.linear_bin([1.5, 1.5, 1])
         np.testing.assert_allclose(res.data[1], [[2.25], [2.25]], atol=1e-3)
 
     def test_linear_bin2(self):
-        spectrum = hs.signals.EDSTEMSpectrum(np.ones([3, 3, 1]))
+        spectrum = EDSTEMSpectrum(np.ones([3, 3, 1]))
         spectrum2 = spectrum.linear_bin([1.5, 1.5, 1])
         np.testing.assert_allclose(np.sum(spectrum.data),
                                    np.sum(spectrum2.data))
 
     def test_linear_bin3(self):
-        spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
+        spectrum = EDSTEMSpectrum(np.ones([4, 4, 10]))
         res = spectrum.linear_bin([0.2, 0.2, 5])
         np.testing.assert_allclose(res.data.shape,
                                    (20, 20, 2))
