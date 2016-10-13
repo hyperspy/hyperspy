@@ -414,6 +414,7 @@ class LazySignal(BaseSignal):
         for ind in indices:
             chunk = get(data.dask, (data.name,)+ind+(0,))
             if not flat_signal:
+                # TODO: check if need to reverse the signal_shape
                 chunk = chunk.reshape(chunk.shape[:-1] +
                                       self.axes_manager.signal_shape)
             yield chunk
@@ -537,6 +538,26 @@ class LazySignal(BaseSignal):
                 explained_variance_ratio is None:
             explained_variance_ratio = \
                 explained_variance / explained_variance.sum()
+
+        # Fix the block-scrambled loadings
+        ndim = self.axes_manager.navigation_dimension
+        splits = np.cumsum([np.multiply(*ar)
+                            for ar in product(*nav_chunks)][:-1]).tolist()
+        all_chunks = [ar.T.reshape((output_dimension,) + shape) for shape, ar in
+                      zip(product(*nav_chunks), np.split(loadings, splits))]
+
+        def split_stack_list(what, step, axis):
+            total = len(what)
+            if total != step:
+                return [np.concatenate(what[i:i + step], axis=axis) for i in
+                        range(0, total, step)]
+            else:
+                return np.concatenate(what, axis=axis)
+        for chunks, axis in zip(nav_chunks[::-1], range(ndim, 0, -1)):
+            step = len(chunks)
+            all_chunks = split_stack_list(all_chunks, step, axis)
+
+        loadings = all_chunks.reshape((output_dimension, -1)).T
 
         target = self.learning_results
         target.factors = factors
