@@ -34,6 +34,7 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
+from hyperspy.misc.array_tools import _linear_bin
 
 _logger = logging.getLogger(__name__)
 
