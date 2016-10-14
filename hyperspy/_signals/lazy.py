@@ -473,10 +473,6 @@ class LazySignal(BaseSignal):
             _onmf = ONMF(output_dimension, **kwargs)
             method = curry(_onmf.fit, batch_size=batch_size)
 
-        elif kind == 'ORNMF':
-            from hyperspy.learn.ornmf import OPGD
-            _opgd = OPGD(output_dimension, blocksize, **kwargs)
-            method = _opgd.fit
         else:
             raise ValueError('kind not known')
 
@@ -541,10 +537,6 @@ class LazySignal(BaseSignal):
                     H.append(_onmf.project(chunk))
                 loadings = np.concatenate(H, axis=1)
             loadings = loadings.T
-
-        elif kind == 'ORNMF':
-            factors = _opgd.W
-            loadings = np.concatenate(_opgd.H, axis=1).T
 
         if explained_variance is not None and \
                 explained_variance_ratio is None:

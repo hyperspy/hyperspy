@@ -34,6 +34,25 @@ def _thresh(X, lambda1, vmax):
     res *= np.sign(X)
     np.clip(res, -vmax, vmax, out=res)  
     return res
+
+def _mrdivide(B, A):
+    """like in Matlab! (solves xB = A)
+    """
+    if isinstance(B, np.ndarray):
+        if len(B.shape) == 2 and B.shape[0] == B.shape[1]:
+            # square array
+            return np.linalg.solve(A.T, B.T).T
+        else:
+            return np.linalg.lstsq(A.T, B.T)[0].T
+    else:
+        return B / A
+
+def _project(W):
+    newW = W.copy()
+    np.maximum(newW, 0, out=newW)
+    sumsq = np.sqrt(np.sum(W**2, axis=0))
+    np.maximum(sumsq, 1, out=sumsq)
+    return _mrdivide(newW, np.diag(sumsq))
     
 def _solveproj(v, W, lambda1, kappa=1, h=None, r=None, vmax=None):
     m, n = W.shape
@@ -44,8 +63,6 @@ def _solveproj(v, W, lambda1, kappa=1, h=None, r=None, vmax=None):
         batch_size = v.shape[1]
         rshape = (m, batch_size)
         hshape = (n, batch_size)
-        # r = np.zeros((m, batch_size))
-        # h = np.zeros((n, batch_size))
     else:
         rshape = m,
         hshape = n,
@@ -84,7 +101,8 @@ def _solveproj(v, W, lambda1, kappa=1, h=None, r=None, vmax=None):
 
 class ONMF:
 
-    def __init__(self, rank, lambda1=1., kappa=1., store_r=False):
+    def __init__(self, rank, lambda1=1., kappa=1., store_r=False, robust=False):
+        self.robust = robust
         self.nfeatures = None
         self.rank = rank
         self.lambda1 = lambda1
@@ -148,15 +166,32 @@ class ONMF:
             if self.R is not None:
                 self.R.append(r)
 
-            # Solve for W
             self.A += prod(h, h.T)
             self.B += prod((v.T - r), h.T)
-            eta = self.kappa / np.linalg.norm(self.A, 'fro')
+            self._solve_W()
+        self.r = r
+        self.h = h
+
+    def _solve_W(self):
+        eta = self.kappa / np.linalg.norm(self.A, 'fro')
+        if self.robust:
+            # exactly as in the paper
+            n = 0
+            lasttwo = np.zeros(2)
+            while n<=2 or (np.abs((lasttwo[1] - lasttwo[0])/lasttwo[0]) >
+                           1e-5 and n<1e9):
+                self.W -= eta * (np.dot(self.W, self.A) - self.B)
+                self.W = _project(self.W)
+                n += 1
+                lasttwo[0] = lasttwo[1]
+                lasttwo[1] = 0.5 * np.trace(self.W.T.dot(self.W).dot(self.A)) - \
+                        np.trace(self.W.T.dot(self.B))
+        else:
+            # Tom's approach
             self.W -= eta * (np.dot(self.W, self.A) - self.B)
             np.maximum(self.W, 0.0, out=self.W)                 
             self.W /= max(np.linalg.norm(self.W, 'fro'), 1.0)  
-        self.r = r
-        self.h = h
+
 
     def project(self, X, return_R=False):
         # could be called project..?
