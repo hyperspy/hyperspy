@@ -119,7 +119,11 @@ def _linear_bin(s, scale):
 
     Return
     ------
-    numpy.array of the spectrum with new dimensions width/step.
+    An np.array with new dimensions width/scale for each
+    dimension in the data.
+    *Please note that the final row in each dimension may appear black, if
+    a fractional number of pixels are left over. It can be removed but has
+    been left to preserve total counts before and after binning.*
     """
 
     shape2 = s.shape

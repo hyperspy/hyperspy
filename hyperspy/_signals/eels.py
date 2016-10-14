@@ -1273,13 +1273,18 @@ class EELSSpectrum(Signal1D):
 
         Return
         ------
-        numpy.array of the spectrum with new dimensions width/step.
+        A new spectrum image with new dimensions width/scale for each
+        dimension in the data. The axes scales and dwell_time/exposure are also
+        corrected accordinly.
+        *Please note that the final row in each dimension may appear black, if
+        a fractional number of pixels are left over. It can be removed but has
+        been left to preserve total counts before and after binning.*
 
 
         Examples
         --------
         Input:
-        spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
+        spectrum = hs.signals.EELSSpectrum(np.ones([4, 4, 10]))
         spectrum.data[1, 2, 9] = 5
         print(spectrum)
         print ('Sum = ', sum(sum(sum(spectrum.data))))
@@ -1289,9 +1294,9 @@ class EELSSpectrum(Signal1D):
         print('Sum = ', sum(sum(sum(test.data))))
 
         Output:
-        <EDSTEMSpectrum, title: , dimensions: (4, 4|10)>
+        <EELSSpectrum, title: , dimensions: (4, 4|10)>
         Sum =  164.0
-        <EDSTEMSpectrum, title: , dimensions: (2, 2|2)>
+        <EELSSpectrum, title: , dimensions: (2, 2|2)>
         Sum =  164.0
 
         """

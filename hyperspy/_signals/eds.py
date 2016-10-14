@@ -261,7 +261,12 @@ class EDSSpectrum(Signal1D):
 
         Return
         ------
-        numpy.array of the spectrum with new dimensions width/step.
+        A new spectrum image with new dimensions width/scale for each
+        dimension in the data. The axes scales and real_time/live_time are also
+        corrected accordingly.
+        *Please note that the final row in each dimension may appear black, if
+        a fractional number of pixels are left over. It can be removed but has
+        been left to preserve total counts before and after binning.*
 
 
         Examples
