@@ -33,6 +33,12 @@ The Signal class and its specilized subclasses:
     DielectricFunction
         For dielectric function data with signal_dimension equal 1. The signal
         is unbinned by default.
+    HolographyImage
+        For 2D-images taken via electron holography. Electron wave as
+        ComplexSignal2D can be reconstructed from them.
+    ElectronWaveImage
+        For 2D-images representing electron wave. It includes holography data
+        processing functionality
 
 """
 
@@ -47,3 +53,6 @@ from hyperspy._signals.eds_sem import EDSSEMSpectrum
 from hyperspy._signals.eds_tem import EDSTEMSpectrum
 from hyperspy._signals.dielectric_function import DielectricFunction
 from hyperspy.signal import BaseSignal
+from hyperspy._signals.hologram_image import HologramImage
+from hyperspy._signals.electron_wave_image import ElectronWaveImage
+
