@@ -285,15 +285,13 @@ class EDSSpectrum(Signal1D):
         """
 
         spectrum = self.data
-        newSpectrum = np.zeros(spectrum.shape)
-        newSpectrum = spectrum[:]
         newSpectrum = _linear_bin(spectrum, scale)
 
         m = self._deepcopy_with_new_data(newSpectrum)
 
         m.get_dimensions_from_data()
         for s, step in zip(m.axes_manager._axes, scale):
-            s.scale /= step
+            s.scale *= step
         if "Acquisition_instrument.SEM.Detector.EDS.real_time" in m.metadata:
             for i, t in enumerate(m.axes_manager.navigation_axes):
                 m.metadata.Acquisition_instrument.SEM.Detector.EDS.real_time\

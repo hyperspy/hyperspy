@@ -34,6 +34,7 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
+from hyperspy.misc.array_tools import _linear_bin
 
 _logger = logging.getLogger(__name__)
 
@@ -1252,3 +1253,60 @@ class EELSSpectrum(Signal1D):
                           GOS=GOS,
                           dictionary=dictionary)
         return model
+
+    def linear_bin(self, scale):
+
+        """
+        Binning of the spectrum image by a non-integer pixel value.
+
+        Parameters
+        ----------
+        self: numpy.array
+            the original spectrum
+        scale: a list of floats for each dimension specify the new:old pixel
+        ratio
+        e.g. [1, 1, 2]
+            a ratio of 1 is no binning in the x and y directions.
+             a ratio of 2 means that each pixel in the new spectrum is
+             twice the width of the pixels in the old spectrum, in the energy,
+             dimension.
+
+        Return
+        ------
+        numpy.array of the spectrum with new dimensions width/step.
+
+
+        Examples
+        --------
+        Input:
+        spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
+        spectrum.data[1, 2, 9] = 5
+        print(spectrum)
+        print ('Sum = ', sum(sum(sum(spectrum.data))))
+        scale = [2, 2, 5]
+        test = spectrum.linear_bin(scale)
+        print(test)
+        print('Sum = ', sum(sum(sum(test.data))))
+
+        Output:
+        <EDSTEMSpectrum, title: , dimensions: (4, 4|10)>
+        Sum =  164.0
+        <EDSTEMSpectrum, title: , dimensions: (2, 2|2)>
+        Sum =  164.0
+
+        """
+
+        spectrum = self.data
+        newSpectrum = _linear_bin(spectrum, scale)
+
+        m = self._deepcopy_with_new_data(newSpectrum)
+
+        m.get_dimensions_from_data()
+        for s, step in zip(m.axes_manager._axes, scale):
+            s.scale *= step
+        if "Acquisition_instrument.TEM.Detector.EELS.dwell_time" in m.metadata: # Correct label to be determined
+            for i, t in enumerate(m.axes_manager.navigation_axes): # May not be dwell time, but "exposure".
+                m.metadata.Acquisition_instrument.TEM.Detector.EELS.dwell_time \
+                    *= scale[i]
+
+        return m
