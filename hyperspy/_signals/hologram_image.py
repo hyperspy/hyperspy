@@ -17,14 +17,12 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from skimage import draw
-from scipy.fftpack import ifft2, fftshift, fft2
-from numpy.linalg import norm
+from scipy.fftpack import fft2, ifft2, fftshift
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 from hyperspy.signals import Signal2D
 from collections import OrderedDict
 import logging
+
 _logger = logging.getLogger(__name__)
 
 
@@ -33,22 +31,39 @@ class HologramImage(Signal2D):
 
     _signal_type = 'hologram'
 
-    def reconstruct_phase(self, reference=None, rec_param=None, show_phase=False,
-                          fresnel_fringe_filter=False, verbose=False):
-        """Reconstruct holography data
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.sampling = (self.axes_manager[0].scale, self.axes_manager[1].scale)
+        self.f_sampling = np.divide(1, [a * b for a, b in zip(self.data.shape, self.sampling)])
+
+    def reconstruct_phase(self, reference=None, sb_size=None, sb_smooth=None, sb_unit=None,
+                          sb='lower', sb_pos=None, output_shape=None, plotting=False):
+        """Reconstruct electron holograms.
 
         Parameters
         ----------
         reference : ndarray, :class:`~hyperspy.signals.Signal2D
             Vacuum reference hologram.
-        rec_param : tuple
-            Reconstruction parameters in sequence (SBrect(x0, y0, x1, y1), SB size)
-        show_phase : boolean
-            set True to plot phase after the reconstruction
-        fresnel_fringe_filter : boolean
-            set True to apply an automatic filtering of biprisms fresnel fringe
-        verbose : boolean
-            set True to see details of the reconstruction (i.e. SB selection)
+        sb_size : float
+            Sideband radius of the aperture in corresponding unit (see 'sb_unit'). If None,
+            the radius of the aperture is set to 1/3 of the distance between sideband and
+            centerband.
+        sb_smooth : float, optional
+            Smoothness of the aperture in the same unit as sb_size.
+        sb_unit : str, optional
+            Unit of the two sideband parameters 'sb_size' and 'sb_smoothness'.
+            Default: None - Sideband size given in pixels
+            'nm': Size and smoothness of the aperture are given in 1/nm.
+            'mrad': Size and smoothness of the aperture are given in mrad.
+        sb : str, optional
+            Select which sideband is selected. 'upper' or 'lower'.
+        sb_pos : tuple, optional
+            Sideband position in pixel. If None, sideband is determined automatically from FFT.
+        output_shape: tuple, optional
+            Choose a new output shape. Default is the shape of the input hologram. The output
+            shape should not be larger than the input shape.
+        plotting : boolean
+            Shows details of the reconstruction (i.e. SB selection).
 
         Returns
         -------
@@ -57,229 +72,248 @@ class HologramImage(Signal2D):
 
         Notes
         -----
-        The reconstruction parameters assigned interactively if rec_param is not given.
-        Use wave.rec_param to extract reconstruction parameters, which can be used for batch processing
-
-        See Also
-        --------
-
+        Use wave.rec_param to extract reconstruction parameters, which can be used for batch
+        processing.
         """
 
-        holo_size = self.data.shape
-        holo_data = self.data
+        ref_data = None
 
         # Parsing reference input:
-        if reference is None:  # to reconstruct hologram WITHOUT a reference
-            eh_hw_fft = fftshift(fft2(holo_data))
-        elif isinstance(reference, Signal2D):
-            # to reconstruct hologram WITH a reference
-            ref_data = reference.data
-            eh_hw_fft = fftshift((fft2(ref_data)))
+        if reference is not None:
+            if isinstance(reference, Signal2D):
+                ref_data = reference.data
+            else:
+                ref_data = reference
+
+        fft_holo = fft2(self.data) / np.prod(self.data.shape)
+
+        # Find sideband position
+        if sb_pos is None:
+            if reference is None:
+                sb_pos = self.find_sideband_position(self.data, self.sampling, sb=sb)
+            else:
+                sb_pos = self.find_sideband_position(ref_data, self.sampling, sb=sb)
         else:
-            ref_data = reference
-            eh_hw_fft = fftshift((fft2(ref_data)))
+            sb_pos = sb_pos
 
-        # Preparing reconstruction parameters:
-        if rec_param is None:
-            eh_hw_fft_half = eh_hw_fft[0:np.int(holo_size[0] / 2.02), :]  # selects half of the fft excluding
-            # fraction of points in the middle
-            sb_pos = tuple(np.unravel_index(eh_hw_fft_half.argmax(), eh_hw_fft_half.shape))  # Center of selected
-            #  Side Band
+        if sb_size is None:
+            sb_size = np.linalg.norm(sb_pos) / 3  # in pixels
 
-            # Default SB size is 1/2 of the distance to main band
-            sb_size = int(norm(np.subtract(sb_pos, (holo_size[0] / 2, holo_size[1] / 2)))) // 4 * 2  # To be sure of
-            # even integer number, still questionable if it even number is needed...
+        # Convert sideband sie from 1/nm or mrad to pixels
+        if sb_unit == 'nm':
+            sb_size /= np.mean(self.f_sampling)
+            sb_smooth /= np.mean(self.f_sampling)
+        elif sb_unit == 'mrad':
+            try:
+                ht = self.metadata.Acquisition_instrument.TEM.beam_energy
+            except AttributeError:
+                ht = int(input('Enter beam energy in kV: '))
+            wavelength = 1.239842447 / np.sqrt(ht * (1022 + ht))  # in nm
+            sb_size /= (1000 * wavelength * np.mean(self.f_sampling))
+            sb_smooth /= (1000 * wavelength * np.mean(self.f_sampling))
 
-            rec_param = (sb_pos[1] - 1, sb_pos[0] - 1, sb_pos[1] + 1, sb_pos[0] + 1, sb_size)
+        # Standard edge smoothness of sideband aperture 5% of sb_size
+        if sb_smooth is None:
+            sb_smooth = 0.05 * sb_size
 
-            _logger.info('Sideband size in pixels: {}'.format(sb_size))
+        # Reconstruction parameters are stored in rec_param
+        rec_param = [sb_pos, sb_size, sb_smooth]
 
-            #
-            # GUI based reconstruction, has to be redone using Hyperspy GUI:
-            # f, ax = plt.subplots(1, 1)
-            # ax.imshow(np.log(np.absolute(eh_hw_fft)),
-            #           cmap=cm.binary_r)  # Magnification might be added;
-            # # getting rectangular ROI
-            # rect = RoiRect()
-            # if hasattr(f.canvas.manager, 'window'):
-            #     f.canvas.manager.window.raise_()
-            # plt.waitforbuttonpress(100)
-            # plt.waitforbuttonpress(5)
-            # # Use this one in the case of usage of rect_roi obj:
-            # arect = eh_hw_fft[rect.y0:rect.y1, rect.x0:rect.x1]
-            # # Sideband position,find the max number and its [c,r]
-            # sb_pos = np.unravel_index(arect.argmax(), arect.shape)  # Center of selected sideBand
-            # # Use this one in the case of usage of rect_roi obj
-            # sb_pos = [np.round(rect.y0) + sb_pos[0], np.round(rect.x0) + sb_pos[1]]
-            # a = 1.0
-            # sb_size = np.round(np.array([a / 3, a / 2, a]) *
-            #                    (norm(np.subtract(sb_pos, [holo_size[0] / 2, holo_size[1] / 2])) * np.sqrt(2)))
-            # # To be sure of even number, still questionable if it is needed:
-            # sb_size = sb_size - np.mod(sb_size, 2)
-            # print("Sideband range in pixels")
-            # print("%d %d %d" % (sb_size[0], sb_size[1], sb_size[2]))
-            # # Choose SideBand size
-            # sb_size = input("Choose Sideband size  pixel = ")
-            # sb_size = sb_size - np.mod(sb_size, 2)  # to be sure of even number...
-            # print("Sideband Size in pixels")
-            # print("%d" % sb_size)
-            # plt.close(f)
-            # rec_param = (rect.x0, rect.y0, rect.x1, rect.y1, sb_size)
-        else:
-            arect = eh_hw_fft[rec_param[1]:rec_param[3], rec_param[0]:rec_param[2]]
-            sb_pos = tuple(np.unravel_index(arect.argmax(),
-                                            arect.shape))  # Center of selected sideBand
-            sb_pos = (rec_param[1] + sb_pos[1], rec_param[0] + sb_pos[0])
-            sb_size = rec_param[4]
+        # ???
+        _logger.info('Sideband pos in pixels: {}'.format(sb_pos))
+        _logger.info('Sideband aperture radius in pixels: {}'.format(sb_size))
+        _logger.info('Sideband aperture smoothness in pixels: {}'.format(sb_smooth))
 
-        if verbose:
-            plt.figure()
-            plt.imshow(np.log(np.abs(eh_hw_fft)))
-            plt.hold(True)
-            plt.plot(sb_pos[1], sb_pos[0], 'r+')
+        # Shows the selected sideband and the position of the sideband
+        if plotting:
+            fig, axs = plt.subplots(1, 1, figsize=(4, 4))
+            axs.imshow(np.abs(fft_holo), clim=(0, 2.2))
+            axs.scatter(sb_pos[1], sb_pos[0], s=20, color='red', marker='x')
+            axs.set_xlim(sb_pos[1]-sb_size, sb_pos[1]+sb_size)
+            axs.set_ylim(sb_pos[0]-sb_size, sb_pos[0]+sb_size)
+            plt.show()
 
         # Reconstruction
-        if fresnel_fringe_filter:
-            fresnel_width = None
-        else:
-            fresnel_width = 0
-
-        if ref_data is None:
+        if reference is None:
             w_ref = 1
         else:
-            w_ref = self._reconstruct(ref_data.data, sb_size, sb_pos, fresnel_width=fresnel_width)  # reference electron wave
-
-        w_obj = self._reconstruct(holo_data, sb_size, sb_pos, fresnel_width=fresnel_width)  # object wave
+            # reference electron wave
+            w_ref = self._reconstruct(holo_data=ref_data, holo_sampling=self.sampling,
+                                      sb_size=sb_size, sb_pos=sb_pos, sb_smoothness=sb_smooth,
+                                      output_shape=output_shape, plotting=plotting)
+        # object wave
+        w_obj = self._reconstruct(holo_data=self.data, holo_sampling=self.sampling,
+                                  sb_size=sb_size, sb_pos=sb_pos, sb_smoothness=sb_smooth,
+                                  output_shape=output_shape, plotting=plotting)
 
         wave = w_obj / w_ref
         wave_image = self._deepcopy_with_new_data(wave)
-        wave_image.set_signal_type('electron_wave')  # New signal is an electron wave image!
-        rec_param_dict = OrderedDict([('sb_pos_x0', rec_param[0]), ('sb_pos_y0', rec_param[1]),
-                                      ('sb_pos_x1', rec_param[2]), ('sb_pos_y1', rec_param[3]),
-                                      ('sb_size', rec_param[4])])
+        wave_image.set_signal_type('wave')  # New signal is a wave image!
+        rec_param_dict = OrderedDict([('sb_pos', rec_param[0]), ('sb_size', rec_param[1]),
+                                      ('sb_smoothness', rec_param[2])])
 
         wave_image.metadata.Signal.add_node('holo_rec_param')
         wave_image.metadata.Signal.holo_rec_param.add_dictionary(rec_param_dict)
-        wave_image.axes_manager[0].scale = wave_image.axes_manager[0].scale*holo_size[0]/wave.shape[0]
-        wave_image.axes_manager[1].scale = wave_image.axes_manager[1].scale*holo_size[1]/wave.shape[1]
-        if show_phase:
-            phase = np.angle(wave)
-            f, ax = plt.subplots(1, 1)
-            ax.imshow(phase, cmap=cm.binary_r)
-            # f.canvas.manager.window.raise_()
+
+        wave_image.axes_manager[0].size = wave.data.shape[0]
+        wave_image.axes_manager[1].size = wave.data.shape[1]
+        wave_image.axes_manager[0].scale = self.sampling[0] * self.data.shape[0] / \
+                                           wave.data.shape[0]
+        wave_image.axes_manager[1].scale = self.sampling[1] * self.data.shape[1] / \
+                                           wave.data.shape[1]
 
         return wave_image
 
-
     @staticmethod
-    def _reconstruct(holo_data, sb_size, sb_pos, fresnel_ratio=0.3, fresnel_width=6):
-        """Core function for holographic reconstruction performing following steps:
-
-        * 2D FFT without apodisation;
-
-        * Cutting out sideband;
-
-        * Centering sideband;
-
-        * Applying round window;
-
-        * Applying sinc filter;
-
-        * Applying automatic filtering of Fresnel fringe (Fresnel filtering);
-
-        * Inverse FFT.
+    def _reconstruct(holo_data, holo_sampling, sb_size, sb_pos, sb_smoothness, output_shape=None,
+                     plotting=False):
+        """Core function for holographic reconstruction.
 
         Parameters
         ----------
         holo_data : array_like
             Holographic data array
-        sb_size : int
-            Size of the sideband filter in px
+        holo_sampling : tuple
+            Sampling rate of the hologram in y and x direction.
+        sb_size : float
+            Size of the sideband filter in pixel.
         sb_pos : tuple
-            Vector of two elements with sideband coordinates [y,x]
-        fresnel_ratio : float
-            The ratio of Fresnel filter with respect to the sideband size
-        fresnel_width : int
-            Width of fresnel fringe filter in px, set to 0 to disable filtering
+            Sideband position in pixel.
+        sb_smoothness: float
+            Smoothness of the aperture in pixel.
+        output_shape: tuple, optional
+            New output shape.
+        plotting : boolean
+            Shows details of the reconstruction (i.e. SB selection).
 
         Returns
         -------
             wav : nparray
                 Reconstructed electron wave
 
-        Notes
-        -----
-
-        Disabeling of Fresnel filter is not implemented
-
-        See Also
-        --------
-
-        reconstruct
-
         """
-        # TODO: Parsing of the input has to be redone
-        # TODO: Add smoothing of Fresnel filter
-        # TODO: Add other smoothing options?
 
-        image_size = sb_size*2
         holo_size = holo_data.shape
-        holo_data = np.float64(holo_data)
+        f_sampling = np.divide(1, [a * b for a, b in zip(holo_size, holo_sampling)])
 
-        h_hw_fft = fftshift(fft2(holo_data))  # <---- NO Hanning filtering
+        fft_exp = fft2(holo_data) / np.prod(holo_size)
 
-        sb_roi = h_hw_fft[(sb_pos[0]-image_size//2):(sb_pos[0]+image_size//2),
-                 (sb_pos[1]-image_size//2):(sb_pos[1]+image_size//2)]
+        f_freq = freq_array(holo_data.shape, holo_sampling)
 
-        (sb_ny, sb_nx) = sb_roi.shape
-        sb_l = min(sb_ny / 2, sb_nx / 2)
-        cen_yx = [sb_ny / 2, sb_nx / 2]
+        sb_size *= np.mean(f_sampling)
+        sb_smoothness *= np.mean(f_sampling)
+        aperture = aperture_function(f_freq, sb_size, sb_smoothness)
 
-        # Circular Aperture
-        cgrid_y = np.arange(-sb_ny / 2, sb_ny / 2, 1)
-        cgrid_x = np.arange(-sb_nx / 2, sb_nx / 2, 1)
-        (sb_xx, sb_yy) = np.meshgrid(cgrid_x, cgrid_y)
-        sb_r = np.sqrt(sb_xx ** 2 + sb_yy ** 2)
-        c_mask = np.zeros((sb_nx, sb_ny))  # Original: cMask=zeros(SB_Ny,SB_Nx);
+        fft_shifted = np.roll(fft_exp, sb_pos[0], axis=0)
+        fft_shifted = np.roll(fft_shifted, sb_pos[1], axis=1)
 
-        c_mask[sb_r < sb_size] = 1
+        if plotting:
+            fig, axs = plt.subplots(1, 1, figsize=(4, 4))
+            axs.imshow(np.abs(fftshift(fft_shifted * aperture)), clim=(0, 0.1))
+            axs.scatter(sb_pos[1], sb_pos[0], s=10, color='red', marker='x')
+            axs.set_xlim(int(holo_size[0]/2) - sb_size/np.mean(f_sampling), int(holo_size[0]/2) +
+                         sb_size/np.mean(f_sampling))
+            axs.set_ylim(int(holo_size[1]/2) - sb_size/np.mean(f_sampling), int(holo_size[1]/2) +
+                         sb_size/np.mean(f_sampling))
+            plt.show()
 
-        # Fresnel Mask
-        ang = np.arctan2((holo_size[0] / 2 - sb_pos[0]), (holo_size[1] / 2 - sb_pos[1]))  # [-pi pi]
+        fft_aperture = fft_shifted * aperture
 
-        p_one = np.round([fresnel_ratio * sb_l * np.sin(ang), fresnel_ratio * sb_l * np.cos(ang)])
-        p_two = np.round([sb_l * np.sin(ang), sb_l * np.cos(ang)])
+        if output_shape is not None:
+            y_min = int(holo_size[0] / 2 - output_shape[0] / 2)
+            y_max = int(holo_size[0] / 2 + output_shape[0] / 2)
+            x_min = int(holo_size[1] / 2 - output_shape[1] / 2)
+            x_max = int(holo_size[1] / 2 + output_shape[1] / 2)
 
-        ang_one = (ang - np.pi / 2) % (2 * np.pi )
-        ang_two = (ang + np.pi / 2) % (2 * np.pi )
+            fft_aperture = fftshift(fftshift(fft_aperture)[y_min:y_max, x_min:x_max])
 
-        r = fresnel_width / 2
-        aa = np.round([p_one[0] + r * np.sin(ang_one), p_one[1] + r * np.cos(ang_one)]) + cen_yx
-        bb = np.round([p_one[0] + r * np.sin(ang_two), p_one[1] + r * np.cos(ang_two)]) + cen_yx
-        cc = np.round([p_two[0] + r * np.sin(ang_two), p_two[1] + r * np.cos(ang_two)]) + cen_yx
-        dd = np.round([p_two[0] + r * np.sin(ang_one), p_two[1] + r * np.cos(ang_one)]) + cen_yx
+        wav = ifft2(fft_aperture) * np.prod(holo_data.shape)
 
-        abcd = np.array([aa, bb, cc, dd])
-        f_mask = _poly_to_mask(abcd[:, 1], abcd[:, 0], sb_roi.shape)
-
-        sinc_k = 5.0  # Sink times SBsize
-        w_one = np.sinc(
-            np.linspace(-sb_ny/2, sb_ny/2, image_size) * np.pi / (sinc_k * sb_size))
-        w_one = w_one.reshape(image_size, 1)
-        w_two = np.sinc(
-            np.linspace(-sb_nx/2, sb_nx/2, image_size) * np.pi / (sinc_k * sb_size))
-        window = w_one.dot(w_two.reshape(1, image_size))
-
-        # IFFT
-        wav = ifft2(fftshift(sb_roi * c_mask * np.logical_not(f_mask) * window))
         return wav
 
+    @staticmethod
+    def find_sideband_position(holo_data, holo_sampling, ap_cb_radius=None, sb='lower'):
+        """
+        Finds the position of the sideband and returns its position.
 
-def _poly_to_mask(vertex_row_coords, vertex_col_coords, shape):
+        Parameters
+        ----------
+        holo_data: ndarray
+            The data of the hologram.
+        holo_sampling: tuple
+            The sampling rate in both image directions.
+        ap_cb_radius: float, optional
+            The aperture radius used to mask out the centerband.
+        sb : str, optional
+            Chooses which sideband is taken. 'lower' or 'upper'
+
+        Returns
+        -------
+        Tuple of the sideband position (y, x), referred to the unshifted FFT.
+        """
+
+        sb_pos = (0, 0)
+
+        f_freq = freq_array(holo_data.shape, holo_sampling)
+
+        # If aperture radius of centerband is not given, it will be set to 5 % of the Nyquist
+        # frequency.
+        if ap_cb_radius is None:
+            ap_cb_radius = 1 / 20. * np.max(f_freq)
+
+        # A small aperture masking out the centerband.
+        ap_cb = np.subtract(1, aperture_function(f_freq, ap_cb_radius, 0))
+
+        fft_holo = fft2(holo_data) / np.prod(holo_data.shape)
+        fft_filtered = fft_holo * ap_cb
+
+        # Sideband position in pixels referred to unshifted FFT
+        if sb == 'lower':
+            fft_sb = fft_filtered[:int(fft_filtered.shape[0] / 2), :]
+            sb_pos = tuple(np.unravel_index(fft_sb.argmax(), fft_sb.shape))
+        elif sb == 'upper':
+            fft_sb = fft_filtered[int(fft_filtered.shape[0] / 2):, :]
+            sb_pos = tuple(np.unravel_index(fft_sb.argmax(), fft_sb.shape))
+            sb_pos = np.add(sb_pos, (int(fft_filtered.shape[0] / 2), 0))
+
+        return sb_pos
+
+
+def aperture_function(r, apradius, rsmooth):
     """
-    Creates a polygon mask
+    A smooth aperture function that decays from apradius-rsmooth to apradius+rsmooth.
+
+    Parameters
+    ----------
+    r : ndarray
+        Array of input data (e.g. frequencies)
+    apradius : float
+        Radius (center) of the smooth aperture. Decay starts at apradius - rsmooth.
+    rsmooth : float
+        Smoothness in halfwidth. rsmooth = 1 will cause a decay from 1 to 0 over 2 pixel.
     """
-    fill_row_coords, fill_col_coords = draw.polygon(vertex_row_coords, vertex_col_coords, shape)
-    mask = np.zeros(shape, dtype=np.bool)
-    mask[fill_row_coords, fill_col_coords] = True
-    return mask
+
+    return 0.5 * (1. - np.tanh((np.absolute(r) - apradius) / (0.5 * rsmooth)))
+
+
+def freq_array(shape, sampling):
+    """
+    Makes up a frequency array.
+
+    Parameters
+    ----------
+    shape : tuple
+        The shape of the array.
+    sampling: tuple
+        The sampling rates of the array.
+
+    Returns
+    -------
+    Array of the frequencies.
+    """
+    f_freq_1d_y = np.fft.fftfreq(shape[0], sampling[0])
+    f_freq_1d_x = np.fft.fftfreq(shape[1], sampling[1])
+    f_freq_mesh = np.meshgrid(f_freq_1d_x, f_freq_1d_y)
+    f_freq = np.hypot(f_freq_mesh[0], f_freq_mesh[1])
+
+    return f_freq
