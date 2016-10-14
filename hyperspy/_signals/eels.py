@@ -343,8 +343,8 @@ class EELSSpectrum(Signal1D):
                              disable=not show_progressbar,
                              leave=True) as pbar:
                 for i, (i0, th, s) in enumerate(zip(I0._iterate_signal(),
-                                                    threshold._iterate_signal(),
-                                                    self)):
+                                                threshold._iterate_signal(),
+                                                self)):
                     if np.isnan(th[0]):
                         i0[:] = np.nan
                     else:
@@ -973,9 +973,9 @@ class EELSSpectrum(Signal1D):
             The sample thickness in nm. Used for normalization of the
             SSD to obtain the energy loss function. It is only required when
             `n` is None. If the thickness is the same for all spectra it can be
-            given by a number. Otherwise, it can be provided as a BaseSignal with
-            signal dimension 0 and navigation_dimension equal to the current
-            signal.
+            given by a number. Otherwise, it can be provided as a BaseSignal
+            with signal dimension 0 and navigation_dimension equal to the
+            current signal.
         delta : float
             A small number (0.1-0.5 eV) added to the energy axis in
             specific steps of the calculation the surface loss correction to
@@ -1304,9 +1304,14 @@ class EELSSpectrum(Signal1D):
         m.get_dimensions_from_data()
         for s, step in zip(m.axes_manager._axes, scale):
             s.scale *= step
-        if "Acquisition_instrument.TEM.Detector.EELS.dwell_time" in m.metadata: # Correct label to be determined
-            for i, t in enumerate(m.axes_manager.navigation_axes): # May not be dwell time, but "exposure".
-                m.metadata.Acquisition_instrument.TEM.Detector.EELS.dwell_time \
+        if "Acquisition_instrument.TEM.Detector.EELS.dwell_time" in m.metadata:
+            for i, t in enumerate(m.axes_manager.navigation_axes):
+                m.metadata.Acquisition_instrument.TEM.Detector.EELS.dwell_time\
+                    *= scale[i]
+
+        if "Acquisition_instrument.TEM.Detector.EELS.exposure" in m.metadata:
+            for i, t in enumerate(m.axes_manager.navigation_axes):
+                m.metadata.Acquisition_instrument.TEM.Detector.EELS.dwell_time\
                     *= scale[i]
 
         return m
