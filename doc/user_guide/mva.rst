@@ -204,23 +204,30 @@ the following code will train ORPCA using the first 32 samples of the data.
                        output_dimension=3
                        training_samples=32)
 
-Finally, online RPCA includes two alternative methods to the default solver,
+Finally, online RPCA includes three alternative methods to the default solver,
 which can again improve the convergence and speed of the algorithm. The first
 is block-coordinate descent (BCD), and the second is based on stochastic gradient
 descent (SGD), which takes an additional parameter to set the learning rate.
+The third method is MomentumSGD, which improves the algorithm's ability to
+deal with local minima. This takes the additional parameter "momentum", which
+should be between 0 and 1.
 
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
                        output_dimension=3
-                       method='BCD',
-                       training_samples=32)
+                       method='BCD')
 
    >>> s.decomposition(algorithm='ORPCA',
                        output_dimension=3
                        method='SGD',
+                       learning_rate=1.1)
+
+   >>> s.decomposition(algorithm='ORPCA',
+                       output_dimension=3
+                       method='MomentumSGD',
                        learning_rate=1.1,
-                       training_samples=32)
+                       momentum=0.5)
 
 Non-negative matrix factorization
 ----------------------------

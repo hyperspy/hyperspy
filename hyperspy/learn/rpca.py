@@ -221,7 +221,8 @@ def orpca(X, rank, fast=False,
           method=None,
           learning_rate=None,
           init=None,
-          training_samples=None):
+          training_samples=None
+          momentum=None):
     """
     This function performs Online Robust PCA
     with missing or corrupted data.
@@ -238,10 +239,11 @@ def orpca(X, rank, fast=False,
     lambda2 : None | float
         Sparse error regularization parameter.
         If None, set to 1 / sqrt(nsamples)
-    method : None | 'CF' | 'BCD' | 'SGD'
+    method : None | 'CF' | 'BCD' | 'SGD' | 'MomentumSGD'
         'CF'  - Closed-form solver
         'BCD' - Block-coordinate descent
         'SGD' - Stochastic gradient descent
+        'MomentumSGD' - Stochastic gradient descent with momentum
         If None, set to 'CF'
     learning_rate : None | float
         Learning rate for the stochastic gradient
@@ -251,10 +253,13 @@ def orpca(X, rank, fast=False,
         'qr'   - QR-based initialization
         'rand' - Random initialization
         If None, set to 'qr'
-    training_samples : integer
+    training_samples : None | integer
         Specifies the number of training samples to use in
         the 'qr' initialization
         If None, set to 10
+    momentum : None | integer
+        Hyperparameter for 'MomentumSGD' method.
+        If None, set to 0.5
 
     Returns
     -------
@@ -275,7 +280,8 @@ def orpca(X, rank, fast=False,
 
     It has been updated to include a new initialization method based
     on a QR decomposition of the first n "training" samples of the data.
-    A stochastic gradient descent solver is also implemented.
+    A stochastic gradient descent (SGD) solver is also implemented,
+    along with a MomentumSGD solver for improved convergence.
 
     """
     if fast is True and sklearn_installed is True:
@@ -316,13 +322,18 @@ def orpca(X, rank, fast=False,
                                 "not specified. Defaulting to 10 samples")
                 training_samples = 10
     if learning_rate is None:
-        if method == 'SGD':
+        if method in ('SGD', 'MomentumSGD'):
             _logger.warning("Learning rate for SGD algorithm is "
                             "set to default: 1.0")
             learning_rate = 1.0
+    if momentum is None:
+        if method == 'MomentumSGD':
+            _logger.warning("Momentum parameter for SGD algorithm is "
+                            "set to default: 0.5")
+            momentum = 0.5
 
     # Check options are valid
-    if method not in ('CF', 'BCD', 'SGD'):
+    if method not in ('CF', 'BCD', 'SGD', 'MomentumSGD'):
         raise ValueError("'method' not recognised")
     if init not in ('qr', 'rand'):
         raise ValueError("'method' not recognised")
@@ -337,11 +348,11 @@ def orpca(X, rank, fast=False,
     # Initialize the subspace estimate
     if init == 'qr':
         Y2 = X[:, :training_samples]
-        L, tmp = scipy.linalg.qr(Y2, mode='economic')
+        L, _ = scipy.linalg.qr(Y2, mode='economic')
         L = L[:, :rank]
     elif init == 'rand':
         Y2 = np.random.randn(m, rank)
-        L, tmp = scipy.linalg.qr(Y2, mode='economic')
+        L, _ = scipy.linalg.qr(Y2, mode='economic')
 
     R = np.zeros((rank, n))
     I = lambda1 * np.eye(rank)
@@ -351,6 +362,11 @@ def orpca(X, rank, fast=False,
     if method in ('CF', 'BCD'):
         A = np.zeros((rank, rank))
         B = np.zeros((m, rank))
+
+    # Extra variables for MomentumSGD method
+    if method == 'MomentumSGD':
+        vold = np.zeros(L.shape)
+        vnew = vold
 
     for t in range(n):
         if t == 0 or np.mod(t + 1, np.round(n / 10)) == 0:
@@ -378,6 +394,14 @@ def orpca(X, rank, fast=False,
             L = L - (np.dot(L, np.outer(r, r.T))
                      - np.outer((z - e), r.T)
                      + lambda1 * L) / learn
+        elif method == 'MomentumSGD':
+            # Stochastic gradient descent with momentum
+            learn = learning_rate * (1 + learning_rate * lambda1 * t)
+            vold = momentum * vnew
+            vnew = (np.dot(L, np.outer(r, r.T))
+                     - np.outer((z - e), r.T)
+                     + lambda1 * L) / learn
+            L = L - (vold + vnew)
 
     # Rescale
     Xhat = (np.dot(L, R) * X_max) + X_min
