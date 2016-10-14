@@ -281,7 +281,8 @@ def orpca(X, rank, fast=False,
     It has been updated to include a new initialization method based
     on a QR decomposition of the first n "training" samples of the data.
     A stochastic gradient descent (SGD) solver is also implemented,
-    along with a MomentumSGD solver for improved convergence.
+    along with a MomentumSGD solver for improved convergence and robustness
+    with local minima.
 
     """
     if fast is True and sklearn_installed is True:
@@ -339,6 +340,12 @@ def orpca(X, rank, fast=False,
         raise ValueError("'method' not recognised")
     if init == 'qr' and training_samples < rank:
         raise ValueError("'training_samples' must be >= 'output_dimension'")
+    if momentum < 0. or momentum > 1:
+        raise ValueError("'momentum' must be between 0 and 1")
+    if lambda1 < 0.:
+        raise ValueError("'lambda1' must be positive")
+    if lambda2 < 0.:
+        raise ValueError("'lambda2' must be positive")
 
     # Get min & max of data matrix for scaling
     X_max = np.max(X)
