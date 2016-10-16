@@ -201,30 +201,43 @@ the following code will train ORPCA using the first 32 samples of the data.
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
-                       output_dimension=3
+                       output_dimension=3,
                        training_samples=32)
 
-Finally, online RPCA includes three alternative methods to the default solver,
-which can again improve the convergence and speed of the algorithm. The first
-is block-coordinate descent (BCD), and the second is based on stochastic gradient
-descent (SGD), which takes an additional parameter to set the learning rate.
-The third method is MomentumSGD, which improves the algorithm's ability to
-deal with local minima. This takes the additional parameter "momentum", which
-should be between 0 and 1.
+Finally, online RPCA includes three alternative methods to the default
+closed-form solver, which can again improve both the convergence and speed
+of the algorithm. These are particularly useful for very large datasets.
+
+The first method is block-coordinate descent (BCD), and takes no
+additional parameters:
 
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
-                       output_dimension=3
+                       output_dimension=3,
                        method='BCD')
 
+The second is based on stochastic gradient descent (SGD), and takes an
+additional parameter to set the learning rate. The learning rate dictates
+the size of the steps taken by the gradient descent algorithm, and setting
+it too large can lead to oscillations that prevent the algorithm from
+finding the correct minima. Usually a value between 1 and 2 works well:
+
+.. code-block:: python
+
    >>> s.decomposition(algorithm='ORPCA',
-                       output_dimension=3
+                       output_dimension=3,
                        method='SGD',
                        learning_rate=1.1)
 
+The third method is MomentumSGD, which improves the algorithm's ability to
+deal with local minima. This takes the further parameter "momentum", which
+should be a fraction between 0 and 1.
+
+.. code-block:: python
+
    >>> s.decomposition(algorithm='ORPCA',
-                       output_dimension=3
+                       output_dimension=3,
                        method='MomentumSGD',
                        learning_rate=1.1,
                        momentum=0.5)
