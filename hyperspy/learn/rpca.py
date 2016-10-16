@@ -284,6 +284,11 @@ def orpca(X, rank, fast=False,
     along with a MomentumSGD solver for improved convergence and robustness
     with local minima.
 
+    More information about the gradient descent methods and choosing
+    appropriate parameters can be found here:
+       Sebastian Ruder, "An overview of gradient descent optimization
+       algorithms", arXiv:1609.04747, (2016), http://arxiv.org/abs/1609.04747.
+
     """
     if fast is True and sklearn_installed is True:
         def svd(X):
