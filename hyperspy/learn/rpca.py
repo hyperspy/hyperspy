@@ -342,7 +342,7 @@ def orpca(X, rank, fast=False,
     if method not in ('CF', 'BCD', 'SGD', 'MomentumSGD'):
         raise ValueError("'method' not recognised")
     if init not in ('qr', 'rand'):
-        raise ValueError("'method' not recognised")
+        raise ValueError("'init' not recognised")
     if init == 'qr' and training_samples < rank:
         raise ValueError("'training_samples' must be >= 'output_dimension'")
     if momentum < 0. or momentum > 1:
