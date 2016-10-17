@@ -221,7 +221,7 @@ def orpca(X, rank, fast=False,
           method=None,
           learning_rate=None,
           init=None,
-          training_samples=None
+          training_samples=None,
           momentum=None):
     """
     This function performs Online Robust PCA
