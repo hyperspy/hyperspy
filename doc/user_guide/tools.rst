@@ -811,8 +811,8 @@ be a divisor of the original shape.
 
 .. versionadded:: 1.1
 The second, uses the :py:meth:`~.signals.eds.linear_bin` to rebin the data,
-by a given ratio., or list of ratios. These can also be non-integers and less
-than one in order to 'up-sample'. e.g:
+by a given ratio, or list of ratios. These can also be non-integers and less
+than one in order to 'up-sample', for example:
 
 .. code-block:: python
 
