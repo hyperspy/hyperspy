@@ -343,8 +343,6 @@ def orpca(X, rank, fast=False,
         raise ValueError("'init' not recognised")
     if init == 'qr' and training_samples < rank:
         raise ValueError("'training_samples' must be >= 'output_dimension'")
-    if method == 'MomentSGD' and momentum < 0. or momentum > 1:
-        raise ValueError("'momentum' must be between 0 and 1")
 
     # Get min & max of data matrix for scaling
     X_max = np.max(X)
