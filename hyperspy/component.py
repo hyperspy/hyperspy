@@ -84,6 +84,12 @@ class Parameter(t.HasTraits):
         Similar to ext_force_positive, but in this case the bounds are
         defined by bmin and bmax. It is a better idea to use
         an optimizer that supports bounding though.
+    wrapped_value : tuple (low_value, high_value)
+        Constraits the values between low_value and high_value wrapping
+        the value: (((value - low_value) % high_value) + low_value
+        Usueful in for example phases, which commonly wrap between 0
+        and 2*pi. If ext_bounded is True, the value might be clipped
+        by bmin and bmax.
 
     Methods
     -------
@@ -158,6 +164,7 @@ class Parameter(t.HasTraits):
                            'twin_inverse_function': ('fn', None),
                            }
         self._slicing_whitelist = {'map': 'inav'}
+        self.wrapped_value = None
 
     def _load_dictionary(self, dictionary):
         """Load data from dictionary
@@ -228,6 +235,12 @@ class Parameter(t.HasTraits):
             if self.twin_inverse_function is not None:
                 self.twin.value = self.twin_inverse_function(value)
             return
+
+        if self.wrapped_value is not None:
+
+            value = (value - self.wrapped_value[0]) % (
+                    self.wrapped_value[1]-self.wrapped_value[0])
+            value += self.wrapped_value[0]
 
         if self.ext_bounded is False:
             self.__value = value

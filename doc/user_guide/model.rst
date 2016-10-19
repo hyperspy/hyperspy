@@ -97,6 +97,7 @@ The following components are currently available for one-dimensional models:
 .. versionadded:: 1.0 The following components are currently available for two-dimensional models:
 
 * :py:class:`~._components.gaussian2d.Gaussian2D`
+* :py:class:`~._components.symmetric_gaussian2d.SymmetricGaussian2D`
 
 However, this doesn't mean that you have to limit yourself to this meagre list of functions.
 A new function can easily be written or a custom function may be specified as below.

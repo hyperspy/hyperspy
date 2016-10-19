@@ -40,6 +40,24 @@ class Gaussian2D(Component):
     +------------+-----------+
     |   s_x,s_y  |   sigma   |
     +------------+-----------+
+    |    theta   | rotation  |
+    +------------+-----------+
+
+    The rotation value is in radians from the x-axis, and is constrained
+    between 0 and pi.
+
+    For convenience the `fwhm_x` and `fwhm_y` attributes can be used to
+    get and set the full-with-half-maximums.
+
+    The `ellipticity` attribute returns `sigma_x`/`sigma_y`.
+
+    The `rotation_degrees` attribute returns the angle between
+    the major axis (the largest sigma), and the positive
+    horizontal axis.
+
+    See Also
+    --------
+    SymmetricGaussian2D : faster fitting, but no rotation or different sigma
     """
 
     def __init__(self,
@@ -48,20 +66,24 @@ class Gaussian2D(Component):
                  sigma_y=1.,
                  centre_x=0.,
                  centre_y=0.,
+                 rotation=0.01,
                  ):
+        """Note: the rotation value is given in
+        radians, and is constrained between 0 and pi."""
         Component.__init__(self, ['A',
                                   'sigma_x',
                                   'sigma_y',
                                   'centre_x',
                                   'centre_y',
+                                  'rotation',
                                   ])
         self.A.value = A
         self.sigma_x.value = sigma_x
         self.sigma_y.value = sigma_y
         self.centre_x.value = centre_x
         self.centre_y.value = centre_y
-
-# TODO: add boundaries and gradients for enhancement
+        self.rotation.value = rotation
+        self.rotation.wrapped_value = (0.0, math.pi)
 
     def function(self, x, y):
         A = self.A.value
@@ -69,11 +91,25 @@ class Gaussian2D(Component):
         sy = self.sigma_y.value
         x0 = self.centre_x.value
         y0 = self.centre_y.value
+        theta = self.rotation.value
 
-        return A * (1 / (sx * sy * pi2)) * np.exp(-((x - x0) ** 2
-                                                    / (2 * sx ** 2)
-                                                    + (y - y0) ** 2
-                                                    / (2 * sy ** 2)))
+        sx2 = sx**2
+        sy2 = sy**2
+        cos_theta2 = math.cos(theta)**2
+        sin_theta2 = math.sin(theta)**2
+        sin_2theta = math.sin(2*theta)
+
+        a = cos_theta2/(2*sx2) + sin_theta2/(2*sy2)
+        b = -sin_2theta/(4*sx2) + sin_2theta/(4*sy2)
+        c = sin_theta2/(2*sx2) + cos_theta2/(2*sy2)
+
+        return A * (1 / (sx * sy * pi2)) * np.exp(-(a*(x - x0) ** 2 +
+                                                  2*b*(x - x0) * (y - y0) +
+                                                  c*(y - y0) ** 2))
+
+    @property
+    def ellipticity(self):
+        return self.sigma_x.value/self.sigma_y.value
 
     @property
     def fwhm_x(self):
@@ -90,3 +126,12 @@ class Gaussian2D(Component):
     @fwhm_y.setter
     def fwhm_y(self, value):
         self.sigma_y.value = value / sigma2fwhm
+
+    @property
+    def rotation_degrees(self):
+        """Angle between major axis and x-axis."""
+        rotation = math.fmod(self.rotation.value, pi2)
+        if self.sigma_x.value > self.sigma_y.value:
+            return math.degrees(rotation)
+        else:
+            return math.degrees(rotation-pi2/4)
