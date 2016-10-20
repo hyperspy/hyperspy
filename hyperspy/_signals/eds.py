@@ -237,7 +237,7 @@ class EDSSpectrum(Signal1D):
                 s.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time\
                     *= factors[i]
         if "Acquisition_instrument.TEM.Detector.EDS.live_time" in s.metadata:
-            for i, t in enumerate(m.axes_manager.navigation_axes):
+            for i, t in enumerate(s.axes_manager.navigation_axes):
                 s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time\
                     *= factors[i]
         return s

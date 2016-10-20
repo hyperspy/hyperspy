@@ -166,7 +166,7 @@ def _linear_bin(s, scale):
                                       (math.ceil(bottomPos) - bottomPos))
                     bottomPos = math.ceil(bottomPos)
                 else:
-                    newSpectrum[j] = newSpectrum[j] + s[bottomPos]
+                    newSpectrum[j] = newSpectrum[j] + s[int(bottomPos)]
                     bottomPos += 1
             if topPos != bottomPos:
                 newSpectrum[j] = (newSpectrum[j] +
