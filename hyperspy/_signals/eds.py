@@ -262,15 +262,15 @@ class EDSSpectrum(Signal1D):
          crop: when binning by a non-integer number of pixels it is likely that
                the final row in each dimension contains less than the full
                quota to fill one pixel.
-               e.g. 5*5 array binned by 2.1 will produce two rows containing
-               2.1 pixels and one row containing only 0.8 pixels worth.
-               Selection crop as on or off determines whether or not this
-               cropped from the final binned array or not.
+             e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
+             pixels and one row containing only 0.8 pixels worth. Selection of
+             crop = 'on' or crop = 'off' determines whether or not this 'black'
+             line is cropped from the final binned array or not.
 
-        *Please note that if crop = off is used:the final row in each dimension
-        may appear black, if a fractional number of pixels are left over. It
-        can be removed but has been left to preserve total counts before and
-        after binning.*
+        *Please note that if crop = 'off' is used:the final row in each
+        dimension may appear black, if a fractional number of pixels are left
+        over. It can be removed but has been left to preserve total counts
+        before and after binning.*
 
         Return
         ------
