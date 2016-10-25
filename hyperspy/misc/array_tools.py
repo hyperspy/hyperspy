@@ -102,7 +102,8 @@ def rebin(a, new_shape):
     return eval(''.join(evList))
 
 
-def _linear_bin(s, scale):
+def _linear_bin(s, scale,
+                crop='on'):
 
     """
     Binning of the spectrum image by a non-integer pixel value.
@@ -111,19 +112,30 @@ def _linear_bin(s, scale):
     ----------
     originalSpectrum: numpy.array
         the original spectrum
-    scale: a list of floats for each dimension specify the new:old pixel
-    ratio
-    e.g. a ratio of 1 is no binning
-         a ratio of 2 means that each pixel in the new spectrum is
-         twice the size of the pixels in the old spectrum.
+
+    scale: a list of floats for each dimension specify the new:old pixel ratio
+        e.g. a ratio of 1 is no binning
+             a ratio of 2 means that each pixel in the new spectrum is
+             twice the size of the pixels in the old spectrum.
+
+    crop: when binning by a non-integer number of pixels it is likely that
+         the final row in each dimension contains less than the full quota to
+         fill one pixel.
+         e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
+         pixels and one row containing only 0.8 pixels worth. Selection crop as
+         on or off determines whether or not this cropped from the final
+         binned array or not.
+
+    *Please note that if crop = 'off' is used:the final row in each dimension
+    may appear black, if a fractional number of pixels are left over. It
+    can be removed but has been left to preserve total counts before and
+    after binning.*
 
     Return
     ------
     An np.array with new dimensions width/scale for each
     dimension in the data.
-    *Please note that the final row in each dimension may appear black, if
-    a fractional number of pixels are left over. It can be removed but has
-    been left to preserve total counts before and after binning.*
+
     """
 
     shape2 = s.shape
@@ -149,12 +161,19 @@ def _linear_bin(s, scale):
         new_shape = tuple()
         for i, dimension_size in enumerate(shape2):
             if i == 0:
-                new_shape += (math.ceil(dimension_size / step),)
+                if crop == 'on':
+                    new_shape += (math.floor(dimension_size / step),)
+                else:
+                    new_shape += (math.ceil(dimension_size / step),)
             else:
                 new_shape += (dimension_size,)
         newSpectrum = np.zeros(new_shape, dtype="float")
 
-        for j in range(0, math.ceil(shape2[0]/step)):
+        if crop == 'on':
+            k = math.floor(shape2[0]/step)
+        else:
+            k = math.ceil(shape2[0]/step)
+        for j in range(0, k):
             bottomPos = (j*step)
             topPos = ((1 + j) * step)
             if topPos > shape2[0]:
@@ -174,6 +193,7 @@ def _linear_bin(s, scale):
                                   (topPos - bottomPos))
         if dimension_number != 0:
             newSpectrum = np.swapaxes(newSpectrum, 0, dimension_number)
+
     return newSpectrum
 
 

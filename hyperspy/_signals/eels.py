@@ -1254,7 +1254,7 @@ class EELSSpectrum(Signal1D):
                           dictionary=dictionary)
         return model
 
-    def linear_bin(self, scale):
+    def linear_bin(self, scale, crop='on'):
 
         """
         Binning of the spectrum image by a non-integer pixel value.
@@ -1263,23 +1263,32 @@ class EELSSpectrum(Signal1D):
         ----------
         self: numpy.array
             the original spectrum
+
         scale: a list of floats for each dimension specify the new:old pixel
-        ratio
-        e.g. [1, 1, 2]
-            a ratio of 1 is no binning in the x and y directions.
-             a ratio of 2 means that each pixel in the new spectrum is
-             twice the width of the pixels in the old spectrum, in the energy,
-             dimension.
+               ratio
+              e.g. [1, 1, 2]
+              a ratio of 1 is no binning in the x and y directions.
+              a ratio of 2 means that each pixel in the new spectrum is
+              twice the width of the pixels in the old spectrum, in the energy,
+              dimension.
+         crop: when binning by a non-integer number of pixels it is likely that
+               the final row in each dimension contains less than the full
+               quota to fill one pixel.
+               e.g. 5*5 array binned by 2.1 will produce two rows containing
+               2.1 pixels and one row containing only 0.8 pixels worth.
+               Selection crop as on or off determines whether or not this
+               cropped from the final binned array or not.
+
+        *Please note that if crop = off is used:the final row in each dimension
+        may appear black, if a fractional number of pixels are left over. It
+        can be removed but has been left to preserve total counts before and
+        after binning.*
 
         Return
         ------
         A new spectrum image with new dimensions width/scale for each
         dimension in the data. The axes scales and dwell_time/exposure are also
         corrected accordinly.
-        *Please note that the final row in each dimension may appear black, if
-        a fractional number of pixels are left over. It can be removed but has
-        been left to preserve total counts before and after binning.*
-
 
         Examples
         --------
@@ -1302,7 +1311,7 @@ class EELSSpectrum(Signal1D):
         """
 
         spectrum = self.data
-        newSpectrum = _linear_bin(spectrum, scale)
+        newSpectrum = _linear_bin(spectrum, scale, crop)
 
         m = self._deepcopy_with_new_data(newSpectrum)
 
