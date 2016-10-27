@@ -282,7 +282,7 @@ def orpca(X, rank, fast=False,
     on a QR decomposition of the first n "training" samples of the data.
     A stochastic gradient descent (SGD) solver is also implemented,
     along with a MomentumSGD solver for improved convergence and robustness
-    with local minima. More information about the gradient descent
+    with respect to local minima. More information about the gradient descent
     methods and choosing appropriate parameters can be found here:
        Sebastian Ruder, "An overview of gradient descent optimization
        algorithms", arXiv:1609.04747, (2016), http://arxiv.org/abs/1609.04747.
