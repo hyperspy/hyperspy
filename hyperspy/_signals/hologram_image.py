@@ -98,7 +98,7 @@ class HologramImage(Signal2D):
         if sb_size is None:
             h = np.array((np.asarray(sb_pos) - np.asarray([0, 0]),
                          np.asarray(sb_pos) - np.asarray([0, self.data.shape[1]]),
-                         np.asarray(sb_pos) - np.asarray([self.data.shape[0], 1]),
+                         np.asarray(sb_pos) - np.asarray([self.data.shape[0], 0]),
                          np.asarray(sb_pos) - np.asarray(self.data.shape)))
             sb_size = np.linalg.norm(h, axis=1)
 
