@@ -21,7 +21,7 @@ from scipy.fftpack import fft2, ifft2, fftshift
 import matplotlib.pyplot as plt
 from hyperspy.signals import Signal2D
 from collections import OrderedDict
-from hyperspy.misc.holography.reconstruct import reconstruct, freq_array, aperture_function
+from hyperspy.misc.holography.reconstruct import reconstruct, find_sideband_position
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -86,14 +86,12 @@ class HologramImage(Signal2D):
             else:
                 ref_data = reference
 
-        fft_holo = fft2(self.data) / np.prod(self.data.shape)
-
         # Find sideband position
         if sb_pos is None:
             if reference is None:
-                sb_pos = self.find_sideband_position(self.data, self.sampling, sb=sb)
+                sb_pos = find_sideband_position(self.data, self.sampling, sb=sb)
             else:
-                sb_pos = self.find_sideband_position(ref_data, self.sampling, sb=sb)
+                sb_pos = find_sideband_position(ref_data, self.sampling, sb=sb)
         else:
             sb_pos = sb_pos
 
@@ -127,6 +125,7 @@ class HologramImage(Signal2D):
 
         # Shows the selected sideband and the position of the sideband
         if plotting:
+            fft_holo = fft2(self.data) / np.prod(self.data.shape)
             fig, axs = plt.subplots(1, 1, figsize=(4, 4))
             axs.imshow(np.abs(fft_holo), clim=(0, 2.2))
             axs.scatter(sb_pos[1], sb_pos[0], s=20, color='red', marker='x')
@@ -164,52 +163,3 @@ class HologramImage(Signal2D):
                                            wave.data.shape[1]
 
         return wave_image
-
-    @staticmethod
-    def find_sideband_position(holo_data, holo_sampling, ap_cb_radius=None, sb='lower'):
-        """
-        Finds the position of the sideband and returns its position.
-
-        Parameters
-        ----------
-        holo_data: ndarray
-            The data of the hologram.
-        holo_sampling: tuple
-            The sampling rate in both image directions.
-        ap_cb_radius: float, optional
-            The aperture radius used to mask out the centerband.
-        sb : str, optional
-            Chooses which sideband is taken. 'lower' or 'upper'
-
-        Returns
-        -------
-        Tuple of the sideband position (y, x), referred to the unshifted FFT.
-        """
-
-        sb_pos = (0, 0)
-
-        f_freq = freq_array(holo_data.shape, holo_sampling)
-
-        # If aperture radius of centerband is not given, it will be set to 5 % of the Nyquist
-        # frequency.
-        if ap_cb_radius is None:
-            ap_cb_radius = 1 / 20. * np.max(f_freq)
-
-        # A small aperture masking out the centerband.
-        ap_cb = np.subtract(1, aperture_function(f_freq, ap_cb_radius, 0))
-
-        fft_holo = fft2(holo_data) / np.prod(holo_data.shape)
-        fft_filtered = fft_holo * ap_cb
-
-        # Sideband position in pixels referred to unshifted FFT
-        if sb == 'lower':
-            fft_sb = fft_filtered[:int(fft_filtered.shape[0] / 2), :]
-            sb_pos = tuple(np.unravel_index(fft_sb.argmax(), fft_sb.shape))
-        elif sb == 'upper':
-            fft_sb = fft_filtered[int(fft_filtered.shape[0] / 2):, :]
-            sb_pos = tuple(np.unravel_index(fft_sb.argmax(), fft_sb.shape))
-            sb_pos = np.add(sb_pos, (int(fft_filtered.shape[0] / 2), 0))
-
-        return sb_pos
-
-

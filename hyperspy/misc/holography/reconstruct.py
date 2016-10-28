@@ -26,6 +26,53 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
+def find_sideband_position(holo_data, holo_sampling, ap_cb_radius=None, sb='lower'):
+        """
+        Finds the position of the sideband and returns its position.
+
+        Parameters
+        ----------
+        holo_data: ndarray
+            The data of the hologram.
+        holo_sampling: tuple
+            The sampling rate in both image directions.
+        ap_cb_radius: float, optional
+            The aperture radius used to mask out the centerband.
+        sb : str, optional
+            Chooses which sideband is taken. 'lower' or 'upper'
+
+        Returns
+        -------
+        Tuple of the sideband position (y, x), referred to the unshifted FFT.
+        """
+
+        sb_pos = (0, 0)
+
+        f_freq = freq_array(holo_data.shape, holo_sampling)
+
+        # If aperture radius of centerband is not given, it will be set to 5 % of the Nyquist
+        # frequency.
+        if ap_cb_radius is None:
+            ap_cb_radius = 1 / 20. * np.max(f_freq)
+
+        # A small aperture masking out the centerband.
+        ap_cb = np.subtract(1, aperture_function(f_freq, ap_cb_radius, 0))
+
+        fft_holo = fft2(holo_data) / np.prod(holo_data.shape)
+        fft_filtered = fft_holo * ap_cb
+
+        # Sideband position in pixels referred to unshifted FFT
+        if sb == 'lower':
+            fft_sb = fft_filtered[:int(fft_filtered.shape[0] / 2), :]
+            sb_pos = tuple(np.unravel_index(fft_sb.argmax(), fft_sb.shape))
+        elif sb == 'upper':
+            fft_sb = fft_filtered[int(fft_filtered.shape[0] / 2):, :]
+            sb_pos = tuple(np.unravel_index(fft_sb.argmax(), fft_sb.shape))
+            sb_pos = np.add(sb_pos, (int(fft_filtered.shape[0] / 2), 0))
+
+        return sb_pos
+
+
 def reconstruct(holo_data, holo_sampling, sb_size, sb_pos, sb_smoothness, output_shape=None,
                      plotting=False):
         """Core function for holographic reconstruction.
