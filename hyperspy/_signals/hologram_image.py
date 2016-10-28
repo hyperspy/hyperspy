@@ -100,7 +100,7 @@ class HologramImage(Signal2D):
                          np.asarray(sb_pos) - np.asarray([0, self.data.shape[1]]),
                          np.asarray(sb_pos) - np.asarray([self.data.shape[0], 0]),
                          np.asarray(sb_pos) - np.asarray(self.data.shape)))
-            sb_size = np.linalg.norm(h, axis=1)
+            sb_size = np.min(np.linalg.norm(h, axis=1))
 
         # Convert sideband sie from 1/nm or mrad to pixels
         if sb_unit == 'nm':
