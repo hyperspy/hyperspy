@@ -21,6 +21,7 @@ from scipy.fftpack import fft2, ifft2, fftshift
 import matplotlib.pyplot as plt
 from hyperspy.signals import Signal2D
 from collections import OrderedDict
+from hyperspy.misc.holography.reconstruct import reconstruct, freq_array, aperture_function
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -138,11 +139,11 @@ class HologramImage(Signal2D):
             w_ref = 1
         else:
             # reference electron wave
-            w_ref = self._reconstruct(holo_data=ref_data, holo_sampling=self.sampling,
+            w_ref = reconstruct(holo_data=ref_data, holo_sampling=self.sampling,
                                       sb_size=sb_size, sb_pos=sb_pos, sb_smoothness=sb_smooth,
                                       output_shape=output_shape, plotting=plotting)
         # object wave
-        w_obj = self._reconstruct(holo_data=self.data, holo_sampling=self.sampling,
+        w_obj = reconstruct(holo_data=self.data, holo_sampling=self.sampling,
                                   sb_size=sb_size, sb_pos=sb_pos, sb_smoothness=sb_smooth,
                                   output_shape=output_shape, plotting=plotting)
 
@@ -163,73 +164,6 @@ class HologramImage(Signal2D):
                                            wave.data.shape[1]
 
         return wave_image
-
-    @staticmethod
-    def _reconstruct(holo_data, holo_sampling, sb_size, sb_pos, sb_smoothness, output_shape=None,
-                     plotting=False):
-        """Core function for holographic reconstruction.
-
-        Parameters
-        ----------
-        holo_data : array_like
-            Holographic data array
-        holo_sampling : tuple
-            Sampling rate of the hologram in y and x direction.
-        sb_size : float
-            Size of the sideband filter in pixel.
-        sb_pos : tuple
-            Sideband position in pixel.
-        sb_smoothness: float
-            Smoothness of the aperture in pixel.
-        output_shape: tuple, optional
-            New output shape.
-        plotting : boolean
-            Shows details of the reconstruction (i.e. SB selection).
-
-        Returns
-        -------
-            wav : nparray
-                Reconstructed electron wave
-
-        """
-
-        holo_size = holo_data.shape
-        f_sampling = np.divide(1, [a * b for a, b in zip(holo_size, holo_sampling)])
-
-        fft_exp = fft2(holo_data) / np.prod(holo_size)
-
-        f_freq = freq_array(holo_data.shape, holo_sampling)
-
-        sb_size *= np.mean(f_sampling)
-        sb_smoothness *= np.mean(f_sampling)
-        aperture = aperture_function(f_freq, sb_size, sb_smoothness)
-
-        fft_shifted = np.roll(fft_exp, sb_pos[0], axis=0)
-        fft_shifted = np.roll(fft_shifted, sb_pos[1], axis=1)
-
-        if plotting:
-            fig, axs = plt.subplots(1, 1, figsize=(4, 4))
-            axs.imshow(np.abs(fftshift(fft_shifted * aperture)), clim=(0, 0.1))
-            axs.scatter(sb_pos[1], sb_pos[0], s=10, color='red', marker='x')
-            axs.set_xlim(int(holo_size[0]/2) - sb_size/np.mean(f_sampling), int(holo_size[0]/2) +
-                         sb_size/np.mean(f_sampling))
-            axs.set_ylim(int(holo_size[1]/2) - sb_size/np.mean(f_sampling), int(holo_size[1]/2) +
-                         sb_size/np.mean(f_sampling))
-            plt.show()
-
-        fft_aperture = fft_shifted * aperture
-
-        if output_shape is not None:
-            y_min = int(holo_size[0] / 2 - output_shape[0] / 2)
-            y_max = int(holo_size[0] / 2 + output_shape[0] / 2)
-            x_min = int(holo_size[1] / 2 - output_shape[1] / 2)
-            x_max = int(holo_size[1] / 2 + output_shape[1] / 2)
-
-            fft_aperture = fftshift(fftshift(fft_aperture)[y_min:y_max, x_min:x_max])
-
-        wav = ifft2(fft_aperture) * np.prod(holo_data.shape)
-
-        return wav
 
     @staticmethod
     def find_sideband_position(holo_data, holo_sampling, ap_cb_radius=None, sb='lower'):
@@ -279,41 +213,3 @@ class HologramImage(Signal2D):
         return sb_pos
 
 
-def aperture_function(r, apradius, rsmooth):
-    """
-    A smooth aperture function that decays from apradius-rsmooth to apradius+rsmooth.
-
-    Parameters
-    ----------
-    r : ndarray
-        Array of input data (e.g. frequencies)
-    apradius : float
-        Radius (center) of the smooth aperture. Decay starts at apradius - rsmooth.
-    rsmooth : float
-        Smoothness in halfwidth. rsmooth = 1 will cause a decay from 1 to 0 over 2 pixel.
-    """
-
-    return 0.5 * (1. - np.tanh((np.absolute(r) - apradius) / (0.5 * rsmooth)))
-
-
-def freq_array(shape, sampling):
-    """
-    Makes up a frequency array.
-
-    Parameters
-    ----------
-    shape : tuple
-        The shape of the array.
-    sampling: tuple
-        The sampling rates of the array.
-
-    Returns
-    -------
-    Array of the frequencies.
-    """
-    f_freq_1d_y = np.fft.fftfreq(shape[0], sampling[0])
-    f_freq_1d_x = np.fft.fftfreq(shape[1], sampling[1])
-    f_freq_mesh = np.meshgrid(f_freq_1d_x, f_freq_1d_y)
-    f_freq = np.hypot(f_freq_mesh[0], f_freq_mesh[1])
-
-    return f_freq
