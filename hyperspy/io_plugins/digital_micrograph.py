@@ -785,17 +785,11 @@ class ImageObject(object):
             return 'TEM'
 
     def _get_time(self, time):
-        try:
-            dt = datetime.strptime(time, "%I:%M:%S %p")
-        except:
-            dt = datetime.strptime(time, "%H:%M:%S")
+        dt = datetime.strptime(time, "%I:%M:%S %p")
         return dt.time().isoformat()
 
     def _get_date(self, date):
-        try:
-            dt = datetime.strptime(date, "%m/%d/%Y")
-        except:
-            dt = datetime.strptime(date, "%d/%m/%Y")
+        dt = datetime.strptime(date, "%m/%d/%Y")
         return dt.date().isoformat()
 
     def _get_microscope_name(self, ImageTags):
