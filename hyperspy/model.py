@@ -1092,7 +1092,7 @@ class BaseModel(list):
                     self.signal()[np.where(self.channel_switches)],
                     sx=None,
                     sy=(1 / weights if weights is not None else None))
-                myodr = odr.ODR(mydata, modelo, beta0=self.p0[:])
+                myodr = odr.ODR(mydata, modelo, beta0=self.p0[:], **kwargs)
                 myoutput = myodr.run()
                 result = myoutput.beta
                 self.p_std = myoutput.sd_beta
@@ -1112,7 +1112,7 @@ class BaseModel(list):
                               'y': self.signal()[self.channel_switches],
                               'weights': weights},
                           autoderivative=autoderivative,
-                          quiet=1)
+                          quiet=1, **kwargs)
                 self.p0 = m.params
 
                 if hasattr(self, 'axis') and (self.axis.size > len(self.p0)) \
