@@ -34,13 +34,6 @@ from hyperspy.io_plugins import io_plugins, default_write_ext
 _logger = logging.getLogger(__name__)
 
 
-# Utility string:
-f_error_fmt = (
-    "\tFile %d:\n"
-    "\t\t%d signals\n"
-    "\t\tPath: %s")
-
-
 def load(filenames=None,
          signal_type=None,
          stack=False,
@@ -86,9 +79,7 @@ def load(filenames=None,
         the data into a single object is attempted. All files must match
         in shape. It is possible to store the data in a memory mapped
         temporary file instead of in memory setting mmap_mode. The title is set
-        to the name of the folder containing the files. If each file contains
-        multiple (N) signals, N stacks will be created, with the requirement
-        that each file contains the same number of signals.
+        to the name of the folder containing the files.
     stack_axis : {None, int, str}
         If None, the signals are stacked over a new axis. The data must
         have the same dimensions. Otherwise the
