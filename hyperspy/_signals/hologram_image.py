@@ -19,9 +19,9 @@
 import numpy as np
 from scipy.fftpack import fft2, ifft2, fftshift
 import matplotlib.pyplot as plt
-from hyperspy.signals import Signal2D
+from hyperspy.signals import Signal2D, BaseSignal
 from collections import OrderedDict
-from hyperspy.misc.holography.reconstruct import reconstruct, find_sideband_position
+from hyperspy.misc.holography.reconstruct import reconstruct, find_sideband_position, find_sideband_size
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -36,6 +36,49 @@ class HologramImage(Signal2D):
         super().__init__(*args, **kwargs)
         self.sampling = (self.axes_manager[0].scale, self.axes_manager[1].scale)
         self.f_sampling = np.divide(1, [a * b for a, b in zip(self.data.shape, self.sampling)])
+
+    def find_sideband_position(self, ap_cb_radius=None, sb='lower'):
+        """
+        Finds the position of the sideband and returns its position.
+
+        Parameters
+        ----------
+        ap_cb_radius: float, optional
+            The aperture radius used to mask out the centerband.
+        sb : str, optional
+            Chooses which sideband is taken. 'lower' or 'upper'
+
+        Returns
+        -------
+        Tuple of the sideband position (y, x), referred to the unshifted FFT.
+        """
+        sb_position = np.zeros((self.axes_manager.navigation_size, 2), dtype='int64')
+        for i in range(self.axes_manager.navigation_size):
+            sb_position[i] = find_sideband_position(self.inav[i].data, self.sampling, ap_cb_radius, sb)
+
+        return sb_position
+
+    def find_sideband_size(self, sb_pos):
+        """
+        Finds the position of the sideband and returns its position.
+
+        Parameters
+        ----------
+        sb_pos : tuple
+            The sideband position (y, x), referred to the non-shifted FFT.
+
+        Returns
+        -------
+        Sideband size (y, x), referred to the unshifted FFT.
+        """
+        sb_size = np.zeros(self.axes_manager.navigation_size)
+        if isinstance(sb_pos, BaseSignal):
+            sb_pos = sb_pos.data
+
+        for i in range(self.axes_manager.navigation_size):
+            sb_size[i] = find_sideband_size(self.inav[i].data, sb_pos[i])
+
+        return sb_size
 
     def reconstruct_phase(self, reference=None, sb_size=None, sb_smooth=None, sb_unit=None,
                           sb='lower', sb_pos=None, output_shape=None, plotting=False):
@@ -89,20 +132,16 @@ class HologramImage(Signal2D):
         # Find sideband position
         if sb_pos is None:
             if reference is None:
-                sb_pos = find_sideband_position(self.data, self.sampling, sb=sb)
+                sb_pos = self.find_sideband_position(sb=sb)
+            elif isinstance(reference, HologramImage):
+                sb_pos = reference.find_sideband_position(sb=sb)
             else:
                 sb_pos = find_sideband_position(ref_data, self.sampling, sb=sb)
-        else:
-            sb_pos = sb_pos
 
-        if sb_size is None:
-            h = np.array((np.asarray(sb_pos) - np.asarray([0, 0]),
-                         np.asarray(sb_pos) - np.asarray([0, self.data.shape[1]]),
-                         np.asarray(sb_pos) - np.asarray([self.data.shape[0], 0]),
-                         np.asarray(sb_pos) - np.asarray(self.data.shape)))
-            sb_size = np.min(np.linalg.norm(h, axis=1))
+        if sb_size is None:  # Default value is 1/2 distance between sideband and central band
+            sb_size = self.find_sideband_size(sb_pos)
 
-        # Convert sideband sie from 1/nm or mrad to pixels
+        # Convert sideband size from 1/nm or mrad to pixels
         if sb_unit == 'nm':
             sb_size /= np.mean(self.f_sampling)
             sb_smooth /= np.mean(self.f_sampling)
@@ -117,7 +156,7 @@ class HologramImage(Signal2D):
 
         # Standard edge smoothness of sideband aperture 5% of sb_size
         if sb_smooth is None:
-            sb_smooth = 0.05 * sb_size
+            sb_smooth = sb_size * 0.05
 
         # Reconstruction parameters are stored in rec_param
         rec_param = [sb_pos, sb_size, sb_smooth]
@@ -140,30 +179,39 @@ class HologramImage(Signal2D):
         # Reconstruction
         if reference is None:
             w_ref = 1
-        else:
+        elif isinstance(reference,Signal2D):
             # reference electron wave
+            w_ref = np.zeros(reference.data.shape, dtype='complex')
+            for i in range(reference.axes_manager.navigation_size):
+                w_ref[i] = reconstruct(reference.inav[i].data, holo_sampling=self.sampling,
+                                    sb_size=sb_size[i], sb_pos=sb_pos[i], sb_smoothness=sb_smooth[i],
+                                    output_shape=output_shape, plotting=plotting)
+        else:
             w_ref = reconstruct(holo_data=ref_data, holo_sampling=self.sampling,
-                                      sb_size=sb_size, sb_pos=sb_pos, sb_smoothness=sb_smooth,
-                                      output_shape=output_shape, plotting=plotting)
-        # object wave
-        w_obj = reconstruct(holo_data=self.data, holo_sampling=self.sampling,
-                                  sb_size=sb_size, sb_pos=sb_pos, sb_smoothness=sb_smooth,
-                                  output_shape=output_shape, plotting=plotting)
+                                sb_size=sb_size, sb_pos=sb_pos, sb_smoothness=sb_smooth,
+                                output_shape=output_shape, plotting=plotting)
+
+        # object waveholo
+        w_obj = np.zeros(self.data.shape, dtype='complex')
+        for i in range(self.axes_manager.navigation_size):
+            w_obj[i] = reconstruct(self.inav[i].data, holo_sampling=self.sampling,
+                                sb_size=sb_size[i], sb_pos=sb_pos[i], sb_smoothness=sb_smooth[i],
+                                output_shape=output_shape, plotting=plotting)
 
         wave = w_obj / w_ref
         wave_image = self._deepcopy_with_new_data(wave)
-        wave_image.set_signal_type('wave')  # New signal is a wave image!
+        wave_image.set_signal_type('electron_wave')  # New signal is a wave image!
         rec_param_dict = OrderedDict([('sb_pos', rec_param[0]), ('sb_size', rec_param[1]),
                                       ('sb_smoothness', rec_param[2])])
 
         wave_image.metadata.Signal.add_node('holo_rec_param')
         wave_image.metadata.Signal.holo_rec_param.add_dictionary(rec_param_dict)
 
-        wave_image.axes_manager[0].size = wave.data.shape[0]
-        wave_image.axes_manager[1].size = wave.data.shape[1]
-        wave_image.axes_manager[0].scale = self.sampling[0] * self.data.shape[0] / \
-                                           wave.data.shape[0]
-        wave_image.axes_manager[1].scale = self.sampling[1] * self.data.shape[1] / \
-                                           wave.data.shape[1]
+        # wave_image.axes_manager[0].size = wave.data.shape[0]
+        # wave_image.axes_manager[1].size = wave.data.shape[1]
+        # wave_image.axes_manager[0].scale = self.sampling[0] * self.data.shape[0] / \
+        #                                    wave.data.shape[0]
+        # wave_image.axes_manager[1].scale = self.sampling[1] * self.data.shape[1] / \
+        #                                    wave.data.shape[1]
 
         return wave_image

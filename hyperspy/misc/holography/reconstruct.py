@@ -73,6 +73,33 @@ def find_sideband_position(holo_data, holo_sampling, ap_cb_radius=None, sb='lowe
         return sb_pos
 
 
+def find_sideband_size(holo_data, sb_pos, sb_size_ratio=0.5):
+    """
+    Finds the size of sideband filter
+
+    Parameters
+    ----------
+    holo_data : array_like
+            Holographic data array
+    sb_pos : tuple
+        The sideband position (y, x), referred to the non-shifted FFT.
+    sb_size_ratio : float, optional
+        Size of sideband as a fraction of the distance to central band
+
+    Returns
+    -------
+    sb_size : float
+        Size of sideband filter
+
+    """
+
+    h = np.array((np.asarray(sb_pos) - np.asarray([0, 0]),
+                         np.asarray(sb_pos) - np.asarray([0, holo_data.shape[1]]),
+                         np.asarray(sb_pos) - np.asarray([holo_data.shape[0], 0]),
+                         np.asarray(sb_pos) - np.asarray(holo_data.shape))) * sb_size_ratio
+    return np.min(np.linalg.norm(h, axis=1))
+
+
 def reconstruct(holo_data, holo_sampling, sb_size, sb_pos, sb_smoothness, output_shape=None,
                      plotting=False):
         """Core function for holographic reconstruction.
