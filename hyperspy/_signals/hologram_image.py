@@ -184,8 +184,8 @@ class HologramImage(Signal2D):
             w_ref = np.zeros(reference.data.shape, dtype='complex')
             for i in range(reference.axes_manager.navigation_size):
                 w_ref[i] = reconstruct(reference.inav[i].data, holo_sampling=self.sampling,
-                                    sb_size=sb_size[i], sb_pos=sb_pos[i], sb_smoothness=sb_smooth[i],
-                                    output_shape=output_shape, plotting=plotting)
+                                       sb_size=sb_size[i], sb_pos=sb_pos[i], sb_smoothness=sb_smooth[i],
+                                       output_shape=output_shape, plotting=plotting)
         else:
             w_ref = reconstruct(holo_data=ref_data, holo_sampling=self.sampling,
                                 sb_size=sb_size, sb_pos=sb_pos, sb_smoothness=sb_smooth,
@@ -195,8 +195,8 @@ class HologramImage(Signal2D):
         w_obj = np.zeros(self.data.shape, dtype='complex')
         for i in range(self.axes_manager.navigation_size):
             w_obj[i] = reconstruct(self.inav[i].data, holo_sampling=self.sampling,
-                                sb_size=sb_size[i], sb_pos=sb_pos[i], sb_smoothness=sb_smooth[i],
-                                output_shape=output_shape, plotting=plotting)
+                                   sb_size=sb_size[i], sb_pos=sb_pos[i], sb_smoothness=sb_smooth[i],
+                                   output_shape=output_shape, plotting=plotting)
 
         wave = w_obj / w_ref
         wave_image = self._deepcopy_with_new_data(wave)
