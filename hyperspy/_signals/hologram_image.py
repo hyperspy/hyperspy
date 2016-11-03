@@ -52,10 +52,12 @@ class HologramImage(Signal2D):
         -------
         Tuple of the sideband position (y, x), referred to the unshifted FFT.
         """
-        sb_position = np.zeros((self.axes_manager.navigation_size, 2), dtype='int64')
-        for i in range(self.axes_manager.navigation_size):
-            sb_position[i] = find_sideband_position(self.inav[i].data, self.sampling, ap_cb_radius, sb)
-
+        if self.axes_manager.navigation_size:
+            sb_position = np.zeros((self.axes_manager.navigation_size, 2), dtype='int64')
+            for i in range(self.axes_manager.navigation_size):
+                sb_position[i] = find_sideband_position(self.inav[i].data, self.sampling, ap_cb_radius, sb)
+        else:
+            sb_position = find_sideband_position(self.data, self.sampling, ap_cb_radius, sb)
         return sb_position
 
     def find_sideband_size(self, sb_pos):
@@ -71,12 +73,17 @@ class HologramImage(Signal2D):
         -------
         Sideband size (y, x), referred to the unshifted FFT.
         """
-        sb_size = np.zeros(self.axes_manager.navigation_size)
         if isinstance(sb_pos, BaseSignal):
             sb_pos = sb_pos.data
 
-        for i in range(self.axes_manager.navigation_size):
-            sb_size[i] = find_sideband_size(self.inav[i].data, sb_pos[i])
+        if self.axes_manager.navigation_size:
+            sb_size = np.zeros(self.axes_manager.navigation_size)
+
+            for i in range(self.axes_manager.navigation_size):
+                sb_size[i] = find_sideband_size(self.inav[i].data, sb_pos[i])
+
+        else:
+            sb_size = find_sideband_size(self.data, sb_pos)
 
         return sb_size
 
@@ -181,22 +188,32 @@ class HologramImage(Signal2D):
             w_ref = 1
         elif isinstance(reference,Signal2D):
             # reference electron wave
-            w_ref = np.zeros(reference.data.shape, dtype='complex')
-            for i in range(reference.axes_manager.navigation_size):
-                w_ref[i] = reconstruct(reference.inav[i].data, holo_sampling=self.sampling,
-                                       sb_size=sb_size[i], sb_pos=sb_pos[i], sb_smoothness=sb_smooth[i],
-                                       output_shape=output_shape, plotting=plotting)
+            if reference.axes_manager.navigation_size:
+                w_ref = np.zeros(reference.data.shape, dtype='complex')
+                for i in range(reference.axes_manager.navigation_size):
+                    w_ref[i] = reconstruct(reference.inav[i].data, holo_sampling=self.sampling,
+                                           sb_size=sb_size[i], sb_pos=sb_pos[i], sb_smoothness=sb_smooth[i],
+                                           output_shape=output_shape, plotting=plotting)
+            else:
+                w_ref = reconstruct(reference.data, holo_sampling=self.sampling,
+                                    sb_size=sb_size, sb_pos=sb_pos, sb_smoothness=sb_smooth,
+                                    output_shape=output_shape, plotting=plotting)
         else:
             w_ref = reconstruct(holo_data=ref_data, holo_sampling=self.sampling,
                                 sb_size=sb_size, sb_pos=sb_pos, sb_smoothness=sb_smooth,
                                 output_shape=output_shape, plotting=plotting)
 
         # object waveholo
-        w_obj = np.zeros(self.data.shape, dtype='complex')
-        for i in range(self.axes_manager.navigation_size):
-            w_obj[i] = reconstruct(self.inav[i].data, holo_sampling=self.sampling,
-                                   sb_size=sb_size[i], sb_pos=sb_pos[i], sb_smoothness=sb_smooth[i],
-                                   output_shape=output_shape, plotting=plotting)
+        if self.axes_manager.navigation_size:
+            w_obj = np.zeros(self.data.shape, dtype='complex')
+            for i in range(self.axes_manager.navigation_size):
+                w_obj[i] = reconstruct(self.inav[i].data, holo_sampling=self.sampling,
+                                       sb_size=sb_size[i], sb_pos=sb_pos[i], sb_smoothness=sb_smooth[i],
+                                       output_shape=output_shape, plotting=plotting)
+        else:
+            w_obj = reconstruct(self.data, holo_sampling=self.sampling,
+                                sb_size=sb_size, sb_pos=sb_pos, sb_smoothness=sb_smooth,
+                                output_shape=output_shape, plotting=plotting)
 
         wave = w_obj / w_ref
         wave_image = self._deepcopy_with_new_data(wave)
