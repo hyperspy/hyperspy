@@ -165,9 +165,6 @@ class HologramImage(Signal2D):
         if sb_smooth is None:
             sb_smooth = sb_size * 0.05
 
-        # Reconstruction parameters are stored in rec_param
-        rec_param = [sb_pos, sb_size, sb_smooth]
-
         # ???
         _logger.info('Sideband pos in pixels: {}'.format(sb_pos))
         _logger.info('Sideband aperture radius in pixels: {}'.format(sb_size))
@@ -218,11 +215,14 @@ class HologramImage(Signal2D):
         wave = w_obj / w_ref
         wave_image = self._deepcopy_with_new_data(wave)
         wave_image.set_signal_type('electron_wave')  # New signal is a wave image!
-        rec_param_dict = OrderedDict([('sb_pos', rec_param[0]), ('sb_size', rec_param[1]),
-                                      ('sb_smoothness', rec_param[2])])
 
-        wave_image.metadata.Signal.add_node('holo_rec_param')
-        wave_image.metadata.Signal.holo_rec_param.add_dictionary(rec_param_dict)
+        # Reconstruction parameters are stored in rec_param
+        # rec_param = [sb_pos, sb_size, sb_smooth]
+        rec_param_dict = OrderedDict([('sb_position', sb_pos), ('sb_size', sb_size),
+                                      ('sb_units', sb_unit), ('sb_smoothness', sb_smooth)])
+
+        wave_image.metadata.Signal.add_node('holo_reconstruction_parameters')
+        wave_image.metadata.Signal.holo_reconstruction_parameters.add_dictionary(rec_param_dict)
 
         # wave_image.axes_manager[0].size = wave.data.shape[0]
         # wave_image.axes_manager[1].size = wave.data.shape[1]

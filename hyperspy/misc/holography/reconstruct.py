@@ -64,11 +64,11 @@ def find_sideband_position(holo_data, holo_sampling, ap_cb_radius=None, sb='lowe
         # Sideband position in pixels referred to unshifted FFT
         if sb == 'lower':
             fft_sb = fft_filtered[:int(fft_filtered.shape[0] / 2), :]
-            sb_pos = tuple(np.unravel_index(fft_sb.argmax(), fft_sb.shape))
+            sb_pos = np.asarray(np.unravel_index(fft_sb.argmax(), fft_sb.shape))
         elif sb == 'upper':
             fft_sb = fft_filtered[int(fft_filtered.shape[0] / 2):, :]
-            sb_pos = tuple(np.unravel_index(fft_sb.argmax(), fft_sb.shape))
-            sb_pos = np.add(sb_pos, (int(fft_filtered.shape[0] / 2), 0))
+            sb_pos = (np.unravel_index(fft_sb.argmax(), fft_sb.shape))
+            sb_pos = np.asarray(np.add(sb_pos, (int(fft_filtered.shape[0] / 2), 0)))
 
         return sb_pos
 

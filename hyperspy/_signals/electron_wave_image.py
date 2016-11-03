@@ -27,13 +27,12 @@ class ElectronWaveImage(ComplexSignal2D):
     _signal_type = 'electron_wave'
 
     @property
-    def rec_param(self):
-        assert self.metadata.Signal.has_item('holo_rec_param'), "No reconstruction parameters assigned to the wave"
+    def reconstruction_parameters(self):
+        assert self.metadata.Signal.has_item('holo_reconstruction_parameters'), "No reconstruction parameters assigned to the wave"
 
-        rec_param = (self.metadata.Signal.holo_rec_param.as_dictionary()['sb_pos_x0'],
-                     self.metadata.Signal.holo_rec_param.as_dictionary()['sb_pos_y0'],
-                     self.metadata.Signal.holo_rec_param.as_dictionary()['sb_pos_x1'],
-                     self.metadata.Signal.holo_rec_param.as_dictionary()['sb_pos_y1'],
-                     self.metadata.Signal.holo_rec_param.as_dictionary()['sb_size'])
+        rec_param = (self.metadata.Signal.holo_reconstruction_parameters.as_dictionary()['sb_position'],
+                     self.metadata.Signal.holo_reconstruction_parameters.as_dictionary()['sb_size'],
+                     self.metadata.Signal.holo_reconstruction_parameters.as_dictionary()['sb_smoothness'],
+                     self.metadata.Signal.holo_reconstruction_parameters.as_dictionary()['sb_units'])
 
         return rec_param

@@ -21,7 +21,6 @@ import numpy as np
 import numpy.testing as nt
 
 import hyperspy.api as hs
-from scipy.interpolate import interp2d
 
 
 class TestCaseHologramImage(object):
@@ -40,26 +39,24 @@ class TestCaseHologramImage(object):
 
     def test_reconstruct_phase(self):
         wave_image = self.holo_image.reconstruct_phase(self.ref)
-        rec_param_cc = [self.img_size-wave_image.rec_param[2], self.img_size-wave_image.rec_param[3],
-                        self.img_size-wave_image.rec_param[0], self.img_size-wave_image.rec_param[1],
-                        wave_image.rec_param[4]]
-        wave_image_cc = self.holo_image.reconstruct_phase(self.ref_image, rec_param=rec_param_cc)
-        x_start = int(wave_image.rec_param[4]*2/10)
-        x_stop = int(wave_image.rec_param[4]*2*9/10)
+        sb_pos_cc = [self.img_size, self.img_size] - wave_image.reconstruction_parameters[0]
+        sb_size_cc = wave_image.reconstruction_parameters[1]
+        sb_smoothness_cc = wave_image.reconstruction_parameters[2]
+        sb_units_cc = wave_image.reconstruction_parameters[3]
+        wave_image_cc = self.holo_image.reconstruct_phase(self.ref_image, sb_pos=sb_pos_cc, sb_size=sb_size_cc,
+                                                          sb_smooth=sb_smoothness_cc, sb_unit=sb_units_cc)
+        x_start = int(wave_image.reconstruction_parameters[1]*2/10)
+        x_stop = int(wave_image.reconstruction_parameters[1]*2*9/10)
         wave_crop = wave_image.data[x_start:x_stop, x_start:x_stop]
         wave_cc_crop = wave_image_cc.data[x_start:x_stop, x_start:x_stop]
 
         nt.assert_allclose(wave_crop, np.conj(wave_cc_crop), rtol=1e-3)  # asserts that waves from different
         # sidebands are complex conjugate; this also tests possibility of reconstruction with given rec_param
 
-        # interpolate reconstructed phase to compare with the input (reference phase):
-        interp_x = np.arange(wave_image.rec_param[4]*2)
-        phase_interp = interp2d(interp_x, interp_x, wave_image.unwrapped_phase().data, kind='cubic')
-        phase_new = phase_interp(np.linspace(0, wave_image.rec_param[4]*2, self.img_size),
-                                 np.linspace(0, wave_image.rec_param[4]*2, self.img_size))
+        # Cropping the reconstructed and original phase images and comparing:
         x_start = int(self.img_size/10)
         x_stop = self.img_size-1-int(self.img_size/10)
-        phase_new_crop = phase_new[x_start:x_stop, x_start:x_stop]
+        phase_new_crop = wave_image.unwrapped_phase().data[x_start:x_stop, x_start:x_stop]
         phase_ref_crop = self.phase_ref[x_start:x_stop, x_start:x_stop]
         nt.assert_almost_equal(phase_new_crop, phase_ref_crop, decimal=2)
 
