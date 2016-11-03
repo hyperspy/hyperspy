@@ -26,7 +26,7 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-def find_sideband_position(holo_data, holo_sampling, ap_cb_radius=None, sb='lower'):
+def find_sideband_position(holo_data, holo_sampling, central_band_mask_radius=None, sb='lower'):
         """
         Finds the position of the sideband and returns its position.
 
@@ -36,7 +36,7 @@ def find_sideband_position(holo_data, holo_sampling, ap_cb_radius=None, sb='lowe
             The data of the hologram.
         holo_sampling: tuple
             The sampling rate in both image directions.
-        ap_cb_radius: float, optional
+        central_band_mask_radius: float, optional
             The aperture radius used to mask out the centerband.
         sb : str, optional
             Chooses which sideband is taken. 'lower' or 'upper'
@@ -46,34 +46,34 @@ def find_sideband_position(holo_data, holo_sampling, ap_cb_radius=None, sb='lowe
         Tuple of the sideband position (y, x), referred to the unshifted FFT.
         """
 
-        sb_pos = (0, 0)
+        sb_position = (0, 0)
 
         f_freq = freq_array(holo_data.shape, holo_sampling)
 
         # If aperture radius of centerband is not given, it will be set to 5 % of the Nyquist
         # frequency.
-        if ap_cb_radius is None:
-            ap_cb_radius = 1 / 20. * np.max(f_freq)
+        if central_band_mask_radius is None:
+            central_band_mask_radius = 1 / 20. * np.max(f_freq)
 
         # A small aperture masking out the centerband.
-        ap_cb = np.subtract(1, aperture_function(f_freq, ap_cb_radius, 0))
+        aperture_central_band = np.subtract(1, aperture_function(f_freq, central_band_mask_radius, 0))
 
         fft_holo = fft2(holo_data) / np.prod(holo_data.shape)
-        fft_filtered = fft_holo * ap_cb
+        fft_filtered = fft_holo * aperture_central_band
 
         # Sideband position in pixels referred to unshifted FFT
         if sb == 'lower':
             fft_sb = fft_filtered[:int(fft_filtered.shape[0] / 2), :]
-            sb_pos = np.asarray(np.unravel_index(fft_sb.argmax(), fft_sb.shape))
+            sb_position = np.asarray(np.unravel_index(fft_sb.argmax(), fft_sb.shape))
         elif sb == 'upper':
             fft_sb = fft_filtered[int(fft_filtered.shape[0] / 2):, :]
-            sb_pos = (np.unravel_index(fft_sb.argmax(), fft_sb.shape))
-            sb_pos = np.asarray(np.add(sb_pos, (int(fft_filtered.shape[0] / 2), 0)))
+            sb_position = (np.unravel_index(fft_sb.argmax(), fft_sb.shape))
+            sb_position = np.asarray(np.add(sb_position, (int(fft_filtered.shape[0] / 2), 0)))
 
-        return sb_pos
+        return sb_position
 
 
-def find_sideband_size(holo_data, sb_pos, sb_size_ratio=0.5):
+def find_sideband_size(holo_data, sb_position, sb_size_ratio=0.5):
     """
     Finds the size of sideband filter
 
@@ -81,7 +81,7 @@ def find_sideband_size(holo_data, sb_pos, sb_size_ratio=0.5):
     ----------
     holo_data : array_like
             Holographic data array
-    sb_pos : tuple
+    sb_position : tuple
         The sideband position (y, x), referred to the non-shifted FFT.
     sb_size_ratio : float, optional
         Size of sideband as a fraction of the distance to central band
@@ -93,14 +93,14 @@ def find_sideband_size(holo_data, sb_pos, sb_size_ratio=0.5):
 
     """
 
-    h = np.array((np.asarray(sb_pos) - np.asarray([0, 0]),
-                         np.asarray(sb_pos) - np.asarray([0, holo_data.shape[1]]),
-                         np.asarray(sb_pos) - np.asarray([holo_data.shape[0], 0]),
-                         np.asarray(sb_pos) - np.asarray(holo_data.shape))) * sb_size_ratio
+    h = np.array((np.asarray(sb_position) - np.asarray([0, 0]),
+                         np.asarray(sb_position) - np.asarray([0, holo_data.shape[1]]),
+                         np.asarray(sb_position) - np.asarray([holo_data.shape[0], 0]),
+                         np.asarray(sb_position) - np.asarray(holo_data.shape))) * sb_size_ratio
     return np.min(np.linalg.norm(h, axis=1))
 
 
-def reconstruct(holo_data, holo_sampling, sb_size, sb_pos, sb_smoothness, output_shape=None,
+def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness, output_shape=None,
                      plotting=False):
         """Core function for holographic reconstruction.
 
@@ -112,7 +112,7 @@ def reconstruct(holo_data, holo_sampling, sb_size, sb_pos, sb_smoothness, output
             Sampling rate of the hologram in y and x direction.
         sb_size : float
             Size of the sideband filter in pixel.
-        sb_pos : tuple
+        sb_position : tuple
             Sideband position in pixel.
         sb_smoothness: float
             Smoothness of the aperture in pixel.
@@ -139,13 +139,13 @@ def reconstruct(holo_data, holo_sampling, sb_size, sb_pos, sb_smoothness, output
         sb_smoothness *= np.mean(f_sampling)
         aperture = aperture_function(f_freq, sb_size, sb_smoothness)
 
-        fft_shifted = np.roll(fft_exp, sb_pos[0], axis=0)
-        fft_shifted = np.roll(fft_shifted, sb_pos[1], axis=1)
+        fft_shifted = np.roll(fft_exp, sb_position[0], axis=0)
+        fft_shifted = np.roll(fft_shifted, sb_position[1], axis=1)
 
         if plotting:
             fig, axs = plt.subplots(1, 1, figsize=(4, 4))
             axs.imshow(np.abs(fftshift(fft_shifted * aperture)), clim=(0, 0.1))
-            axs.scatter(sb_pos[1], sb_pos[0], s=10, color='red', marker='x')
+            axs.scatter(sb_position[1], sb_position[0], s=10, color='red', marker='x')
             axs.set_xlim(int(holo_size[0]/2) - sb_size/np.mean(f_sampling), int(holo_size[0]/2) +
                          sb_size/np.mean(f_sampling))
             axs.set_ylim(int(holo_size[1]/2) - sb_size/np.mean(f_sampling), int(holo_size[1]/2) +
