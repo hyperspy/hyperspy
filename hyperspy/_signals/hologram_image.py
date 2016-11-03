@@ -52,6 +52,7 @@ class HologramImage(Signal2D):
         -------
         Tuple of the sideband position (y, x), referred to the unshifted FFT.
         """
+
         if self.axes_manager.navigation_size:
             sb_position = np.zeros((self.axes_manager.navigation_size, 2), dtype='int64')
             for i in range(self.axes_manager.navigation_size):
@@ -127,15 +128,6 @@ class HologramImage(Signal2D):
         processing.
         """
 
-        ref_data = None
-
-        # Parsing reference input:
-        if reference is not None:
-            if isinstance(reference, Signal2D):
-                ref_data = reference.data
-            else:
-                ref_data = reference
-
         # Find sideband position
         if sb_pos is None:
             if reference is None:
@@ -143,7 +135,7 @@ class HologramImage(Signal2D):
             elif isinstance(reference, HologramImage):
                 sb_pos = reference.find_sideband_position(sb=sb)
             else:
-                sb_pos = find_sideband_position(ref_data, self.sampling, sb=sb)
+                sb_pos = find_sideband_position(reference, self.sampling, sb=sb)
 
         if sb_size is None:  # Default value is 1/2 distance between sideband and central band
             sb_size = self.find_sideband_size(sb_pos)
@@ -165,20 +157,24 @@ class HologramImage(Signal2D):
         if sb_smooth is None:
             sb_smooth = sb_size * 0.05
 
+        # Find output shape:
+        if output_shape is None:
+            output_shape = self.axes_manager.signal_shape
+
         # ???
         _logger.info('Sideband pos in pixels: {}'.format(sb_pos))
         _logger.info('Sideband aperture radius in pixels: {}'.format(sb_size))
         _logger.info('Sideband aperture smoothness in pixels: {}'.format(sb_smooth))
 
         # Shows the selected sideband and the position of the sideband
-        if plotting:
-            fft_holo = fft2(self.data) / np.prod(self.data.shape)
-            fig, axs = plt.subplots(1, 1, figsize=(4, 4))
-            axs.imshow(np.abs(fft_holo), clim=(0, 2.2))
-            axs.scatter(sb_pos[1], sb_pos[0], s=20, color='red', marker='x')
-            axs.set_xlim(sb_pos[1]-sb_size, sb_pos[1]+sb_size)
-            axs.set_ylim(sb_pos[0]-sb_size, sb_pos[0]+sb_size)
-            plt.show()
+        # if plotting:
+        #     fft_holo = fft2(self.data) / np.prod(self.data.shape)
+        #     fig, axs = plt.subplots(1, 1, figsize=(4, 4))
+        #     axs.imshow(np.abs(fft_holo), clim=(0, 2.2))
+        #     axs.scatter(sb_pos[1], sb_pos[0], s=20, color='red', marker='x')
+        #     axs.set_xlim(sb_pos[1]-sb_size, sb_pos[1]+sb_size)
+        #     axs.set_ylim(sb_pos[0]-sb_size, sb_pos[0]+sb_size)
+        #     plt.show()
 
         # Reconstruction
         if reference is None:
@@ -186,7 +182,7 @@ class HologramImage(Signal2D):
         elif isinstance(reference,Signal2D):
             # reference electron wave
             if reference.axes_manager.navigation_size:
-                w_ref = np.zeros(reference.data.shape, dtype='complex')
+                w_ref = np.zeros((reference.axes_manager.navigation_size, ) + output_shape, dtype='complex')
                 for i in range(reference.axes_manager.navigation_size):
                     w_ref[i] = reconstruct(reference.inav[i].data, holo_sampling=self.sampling,
                                            sb_size=sb_size[i], sb_pos=sb_pos[i], sb_smoothness=sb_smooth[i],
@@ -196,13 +192,13 @@ class HologramImage(Signal2D):
                                     sb_size=sb_size, sb_pos=sb_pos, sb_smoothness=sb_smooth,
                                     output_shape=output_shape, plotting=plotting)
         else:
-            w_ref = reconstruct(holo_data=ref_data, holo_sampling=self.sampling,
+            w_ref = reconstruct(holo_data=reference, holo_sampling=self.sampling,
                                 sb_size=sb_size, sb_pos=sb_pos, sb_smoothness=sb_smooth,
                                 output_shape=output_shape, plotting=plotting)
 
-        # object waveholo
+        # object electron wave:
         if self.axes_manager.navigation_size:
-            w_obj = np.zeros(self.data.shape, dtype='complex')
+            w_obj = np.zeros((self.axes_manager.navigation_size, ) + output_shape, dtype='complex')
             for i in range(self.axes_manager.navigation_size):
                 w_obj[i] = reconstruct(self.inav[i].data, holo_sampling=self.sampling,
                                        sb_size=sb_size[i], sb_pos=sb_pos[i], sb_smoothness=sb_smooth[i],
@@ -216,19 +212,18 @@ class HologramImage(Signal2D):
         wave_image = self._deepcopy_with_new_data(wave)
         wave_image.set_signal_type('electron_wave')  # New signal is a wave image!
 
-        # Reconstruction parameters are stored in rec_param
-        # rec_param = [sb_pos, sb_size, sb_smooth]
+        # Reconstruction parameters are stored in holo_reconstruction_parameters:
         rec_param_dict = OrderedDict([('sb_position', sb_pos), ('sb_size', sb_size),
                                       ('sb_units', sb_unit), ('sb_smoothness', sb_smooth)])
 
         wave_image.metadata.Signal.add_node('holo_reconstruction_parameters')
         wave_image.metadata.Signal.holo_reconstruction_parameters.add_dictionary(rec_param_dict)
 
-        # wave_image.axes_manager[0].size = wave.data.shape[0]
-        # wave_image.axes_manager[1].size = wave.data.shape[1]
-        # wave_image.axes_manager[0].scale = self.sampling[0] * self.data.shape[0] / \
-        #                                    wave.data.shape[0]
-        # wave_image.axes_manager[1].scale = self.sampling[1] * self.data.shape[1] / \
-        #                                    wave.data.shape[1]
+        wave_image.axes_manager.signal_axes[0].size = output_shape[0]
+        wave_image.axes_manager.signal_axes[1].size = output_shape[1]
+        wave_image.axes_manager.signal_axes[0].scale = self.sampling[0] * self.axes_manager.signal_shape[0] / \
+                                                       output_shape[0]
+        wave_image.axes_manager.signal_axes[1].scale = self.sampling[1] * self.axes_manager.signal_shape[1] / \
+                                                       output_shape[1]
 
         return wave_image
