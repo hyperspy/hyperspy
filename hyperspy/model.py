@@ -30,6 +30,7 @@ from scipy.optimize import (leastsq, least_squares,
                             minimize, differential_evolution)
 from scipy.linalg import svd
 from numpy.linalg import lstsq as linear
+from scipy.optimize import nnls
 
 from contextlib import contextmanager
 
@@ -939,10 +940,10 @@ class BaseModel(list):
 
             if method == 'ml':
                 weights = None
-                if fitter in ("leastsq", "odr", "mpfit", "linear"):
+                if fitter in ("leastsq", "odr", "mpfit", "linear", "non_negative_linear"):
                     raise NotImplementedError(
                         "Maximum likelihood estimation is not supported "
-                        'for the "leastsq", "mpfit", "odr" or "linear" optimizers')
+                        'for the "leastsq", "mpfit", "odr", "linear" or "non_negative_linear" optimizers')
             elif method == "ls":
                 metadata = self.signal.metadata
                 if "Signal.Noise_properties.variance" not in metadata:
@@ -1060,6 +1061,15 @@ class BaseModel(list):
                 component_data = np.array([component.function(signal_axis) /
                                            for component in self if len(component.free_parameters) > 0])
                 output = linear(component_data.T, self.signal()[np.where(self.channel_switches)], **kwargs)
+
+                self.p0 = tuple([oldp0*factor for oldp0, factor in zip(self.p0, output[0])])
+                self.fit_output = output
+
+            elif fitter == "non_negative_linear":
+                signal_axis = self.axis.axis[np.where(self.channel_switches)]
+                component_data = np.array([component.function(signal_axis) /
+                                           for component in self if len(component.free_parameters) > 0])
+                output = nnls(component_data.T, self.signal()[np.where(self.channel_switches)], **kwargs)
 
                 self.p0 = tuple([oldp0*factor for oldp0, factor in zip(self.p0, output[0])])
                 self.fit_output = output
