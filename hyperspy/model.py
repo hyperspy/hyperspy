@@ -27,10 +27,9 @@ import numpy as np
 import scipy
 import scipy.odr as odr
 from scipy.optimize import (leastsq, least_squares,
-                            minimize, differential_evolution)
+                            minimize, differential_evolution, nnls)
 from scipy.linalg import svd
 from numpy.linalg import lstsq as linear
-from scipy.optimize import nnls
 
 from contextlib import contextmanager
 
