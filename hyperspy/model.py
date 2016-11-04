@@ -1065,7 +1065,7 @@ class BaseModel(list):
 
             elif fitter == "linear":
                 signal_axis = self.axis.axis[np.where(self.channel_switches)]
-                component_data = np.array([component.function(signal_axis) /
+                component_data = np.array([component.function(signal_axis) \
                                            for component in self if len(component.free_parameters) > 0])
                 output = linear(component_data.T, self.signal()[np.where(self.channel_switches)], **kwargs)
 
@@ -1074,7 +1074,7 @@ class BaseModel(list):
 
             elif fitter == "non_negative_linear":
                 signal_axis = self.axis.axis[np.where(self.channel_switches)]
-                component_data = np.array([component.function(signal_axis) /
+                component_data = np.array([component.function(signal_axis) \
                                            for component in self if len(component.free_parameters) > 0])
                 output = nnls(component_data.T, self.signal()[np.where(self.channel_switches)], **kwargs)
 
