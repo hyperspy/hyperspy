@@ -863,7 +863,7 @@ class BaseModel(list):
         method : {'ls', 'ml'}
             Choose 'ls' (default) for least-squares and 'ml' for Poisson
             maximum likelihood estimation. The latter is not available when
-            'fitter' is "leastsq", "odr" or "mpfit".
+            'fitter' is "leastsq", "odr", "mpfit", "linear" or "non_negative_linear".
         grad : bool
             If True, the analytical gradient is used if defined to
             speed up the optimization.
