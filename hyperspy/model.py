@@ -838,6 +838,13 @@ class BaseModel(list):
                 "odr" performs the optimization using the orthogonal distance
                 regression algorithm. It does not support bounds.
 
+                "linear" performs least-squares fitting using linear regression. It does
+                not support bounds, but should be very fast.
+
+                "non_negative_linear" performs least-squares fitting using linear
+                regression (like "linear") under the constraint that none of the
+                solutions can be negative.
+
                 "Nelder-Mead", "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B"
                 and "TNC" are wrappers for scipy.optimize.minimize(). Only
                 "L-BFGS-B" and "TNC" support bounds.
