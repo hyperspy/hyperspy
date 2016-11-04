@@ -29,6 +29,8 @@ import scipy.odr as odr
 from scipy.optimize import (leastsq, least_squares,
                             minimize, differential_evolution)
 from scipy.linalg import svd
+from numpy.linalg import lstsq as linear
+
 from contextlib import contextmanager
 
 from hyperspy.external.progressbar import progressbar
@@ -937,10 +939,10 @@ class BaseModel(list):
 
             if method == 'ml':
                 weights = None
-                if fitter in ("leastsq", "odr", "mpfit"):
+                if fitter in ("leastsq", "odr", "mpfit", "linear"):
                     raise NotImplementedError(
                         "Maximum likelihood estimation is not supported "
-                        'for the "leastsq", "mpfit" or "odr" optimizers')
+                        'for the "leastsq", "mpfit", "odr" or "linear" optimizers')
             elif method == "ls":
                 metadata = self.signal.metadata
                 if "Signal.Noise_properties.variance" not in metadata:
@@ -1052,6 +1054,16 @@ class BaseModel(list):
                         (self._errfunc(self.p0, *args) ** 2).sum() /
                         (len(args[0]) - len(self.p0)))
                 self.fit_output = m
+
+            elif fitter == "linear":
+                signal_axis = self.axis.axis[np.where(self.channel_switches)]
+                component_data = np.array([component.function(signal_axis) /
+                                           for component in self if len(component.free_parameters) > 0])
+                output = linear(component_data.T, self.signal()[np.where(self.channel_switches)], **kwargs)
+
+                self.p0 = tuple([oldp0*factor for oldp0, factor in zip(self.p0, output[0])])
+                self.fit_output = output
+
             else:
                 # General optimizers
                 # Least squares or maximum likelihood
