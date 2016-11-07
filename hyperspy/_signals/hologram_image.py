@@ -17,12 +17,11 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from scipy.fftpack import fft2, ifft2, fftshift
-import matplotlib.pyplot as plt
 from hyperspy.signals import Signal2D, BaseSignal
 from collections import OrderedDict
 from hyperspy.misc.holography.reconstruct import reconstruct, find_sideband_position, find_sideband_size
 import logging
+import warnings
 
 _logger = logging.getLogger(__name__)
 
@@ -129,7 +128,19 @@ class HologramImage(Signal2D):
         """
 
         # Find sideband position
+        folded = self.unfold_navigation_space()
+        folded_ref = False
+        if isinstance(reference, Signal2D):
+            if not isinstance(reference, HologramImage):
+                warnings.warn('The reference image signal type is not HologramImage. It will be converted to '
+                              'HologramImage automatically.')
+                reference.set_signal_type('hologram')
+
+            folded_ref = reference.unfold_navigation_space()
+
         if sb_position is None:
+            warnings.warn('Sideband position is not specified. The sideband will be found automatically which may'
+                          'cause wrong results.')
             if reference is None:
                 sb_position = self.find_sideband_position(sb=sb)
             elif isinstance(reference, HologramImage):
@@ -140,6 +151,10 @@ class HologramImage(Signal2D):
         if sb_size is None:  # Default value is 1/2 distance between sideband and central band
             sb_size = self.find_sideband_size(sb_position)
 
+        # Standard edge smoothness of sideband aperture 5% of sb_size
+        if sb_smooth is None:
+            sb_smooth = sb_size * 0.05
+
         # Convert sideband size from 1/nm or mrad to pixels
         if sb_unit == 'nm':
             sb_size /= np.mean(self.f_sampling)
@@ -149,13 +164,13 @@ class HologramImage(Signal2D):
                 ht = self.metadata.Acquisition_instrument.TEM.beam_energy
             except AttributeError:
                 ht = int(input('Enter beam energy in kV: '))
+                self.metadata.add_node('Acquisition_instrument')
+                self.metadata.Acquisition_instrument.add_node('TEM')
+                self.metadata.Acquisition_instrument.TEM.add_node('beam_energy')
+                self.metadata.Acquisition_instrument.TEM.beam_energy = ht
             wavelength = 1.239842447 / np.sqrt(ht * (1022 + ht))  # in nm
             sb_size /= (1000 * wavelength * np.mean(self.f_sampling))
             sb_smooth /= (1000 * wavelength * np.mean(self.f_sampling))
-
-        # Standard edge smoothness of sideband aperture 5% of sb_size
-        if sb_smooth is None:
-            sb_smooth = sb_size * 0.05
 
         # Find output shape:
         if output_shape is None:
@@ -179,7 +194,7 @@ class HologramImage(Signal2D):
         # Reconstruction
         if reference is None:
             wave_reference = 1
-        elif isinstance(reference,Signal2D):
+        elif isinstance(reference, Signal2D):
             # reference electron wave
             if reference.axes_manager.navigation_size:
                 wave_reference = np.zeros((reference.axes_manager.navigation_size, ) + output_shape, dtype='complex')
@@ -225,5 +240,10 @@ class HologramImage(Signal2D):
                                                        output_shape[0]
         wave_image.axes_manager.signal_axes[1].scale = self.sampling[1] * self.axes_manager.signal_shape[1] / \
                                                        output_shape[1]
+        if folded:
+            self.fold()
+            wave_image.fold()
+        if folded_ref:
+            reference.fold()
 
         return wave_image

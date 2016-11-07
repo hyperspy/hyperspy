@@ -102,9 +102,6 @@ class TestCaseHologramImage(object):
         nt.assert_almost_equal(phase_new_crop1, phase_ref_crop1, decimal=2)
 
 
-
-
-
 if __name__ == '__main__':
     import nose
     nose.run(defaultTest=__name__)
