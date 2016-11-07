@@ -26,15 +26,14 @@ import hyperspy.api as hs
 def test_rec_param():
     wave_image = hs.signals.ElectronWaveImage(
         np.exp(1j * (np.indices((3, 3)).sum(axis=0) + 4)))
-    rec_param = np.arange(5)
-    rec_param_dict = OrderedDict([('sb_pos_x0', rec_param[0]), ('sb_pos_y0', rec_param[1]),
-                                      ('sb_pos_x1', rec_param[2]), ('sb_pos_y1', rec_param[3]),
-                                      ('sb_size', rec_param[4])])
+    rec_param = np.arange(4)
+    rec_param_dict = OrderedDict([('sb_position', rec_param[0]), ('sb_size', rec_param[1]),
+                                  ('sb_smoothness', rec_param[2]), ('sb_units', rec_param[3])])
 
-    wave_image.metadata.Signal.add_node('holo_rec_param')
-    wave_image.metadata.Signal.holo_rec_param.add_dictionary(rec_param_dict)
+    wave_image.metadata.Signal.add_node('holo_reconstruction_parameters')
+    wave_image.metadata.Signal.holo_reconstruction_parameters.add_dictionary(rec_param_dict)
 
-    nt.assert_equal(wave_image.rec_param, rec_param)
+    nt.assert_equal(wave_image.reconstruction_parameters, rec_param)
 
 
 if __name__ == '__main__':
