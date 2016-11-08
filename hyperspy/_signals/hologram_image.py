@@ -233,14 +233,20 @@ class HologramImage(Signal2D):
                 if reference.axes_manager.navigation_size != self.axes_manager.navigation_size:  # case when navdim of
                     # reference is >0 and not equal to that of self:
 
-                    warnings.warn('The navigation size of the reference and the hologram do not match! Reference wave'
+                    warnings.warn('The navigation size of the reference and the hologram do not match! Reference wave '
                                   'will be averaged')
                     wave_reference = np.mean(wave_reference, axis=0)
 
             else:
-                wave_reference = reconstruct(reference.data, holo_sampling=self.sampling,
-                                             sb_size=sb_size, sb_position=sb_position, sb_smoothness=sb_smooth,
-                                             output_shape=output_shape, plotting=plotting)
+                if self.axes_manager.navigation_size:  # use only one slice of reconstruction parameters for reference:
+                    wave_reference = reconstruct(reference.data, holo_sampling=self.sampling,
+                                                 sb_size=sb_size[0], sb_position=sb_position[0],
+                                                 sb_smoothness=sb_smooth[0],
+                                                 output_shape=output_shape, plotting=plotting)
+                else:
+                    wave_reference = reconstruct(reference.data, holo_sampling=self.sampling,
+                                                 sb_size=sb_size, sb_position=sb_position, sb_smoothness=sb_smooth,
+                                                 output_shape=output_shape, plotting=plotting)
 
         wave = wave_object / wave_reference
         wave_image = self._deepcopy_with_new_data(wave)
