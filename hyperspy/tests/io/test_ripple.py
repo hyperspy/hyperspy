@@ -119,7 +119,7 @@ def test_save_ripple_EDS_signal_no_metadata():
         # for windows
         del s2
         gc.collect()
-                
+
 
 def test_ripple():
     with tempfile.TemporaryDirectory() as tmpdir:
