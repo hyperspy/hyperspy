@@ -73,13 +73,13 @@ def find_sideband_position(holo_data, holo_sampling, central_band_mask_radius=No
         return sb_position
 
 
-def find_sideband_size(holo_data, sb_position, sb_size_ratio=0.5):
+def find_sideband_size(holo_shape, sb_position, sb_size_ratio=0.5):
     """
     Finds the size of sideband filter
 
     Parameters
     ----------
-    holo_data : array_like
+    holo_shape : array_like
             Holographic data array
     sb_position : tuple
         The sideband position (y, x), referred to the non-shifted FFT.
@@ -94,9 +94,9 @@ def find_sideband_size(holo_data, sb_position, sb_size_ratio=0.5):
     """
 
     h = np.array((np.asarray(sb_position) - np.asarray([0, 0]),
-                         np.asarray(sb_position) - np.asarray([0, holo_data.shape[1]]),
-                         np.asarray(sb_position) - np.asarray([holo_data.shape[0], 0]),
-                         np.asarray(sb_position) - np.asarray(holo_data.shape))) * sb_size_ratio
+                         np.asarray(sb_position) - np.asarray([0, holo_shape[1]]),
+                         np.asarray(sb_position) - np.asarray([holo_shape[0], 0]),
+                         np.asarray(sb_position) - np.asarray(holo_shape))) * sb_size_ratio
     return np.min(np.linalg.norm(h, axis=1))
 
 

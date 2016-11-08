@@ -1,0 +1,510 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.12: http://docutils.sourceforge.net/" />
+<title>Electron Holography</title>
+<style type="text/css">
+
+/*
+:Author: David Goodger (goodger@python.org)
+:Id: $Id: html4css1.css 7614 2013-02-21 15:55:51Z milde $
+:Copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+
+See http://docutils.sf.net/docs/howto/html-stylesheets.html for how to
+customize this style sheet.
+*/
+
+/* used to remove borders from tables and images */
+.borderless, table.borderless td, table.borderless th {
+  border: 0 }
+
+table.borderless td, table.borderless th {
+  /* Override padding for "table.docutils td" with "! important".
+     The right padding separates the table cells. */
+  padding: 0 0.5em 0 0 ! important }
+
+.first {
+  /* Override more specific margin styles with "! important". */
+  margin-top: 0 ! important }
+
+.last, .with-subtitle {
+  margin-bottom: 0 ! important }
+
+.hidden {
+  display: none }
+
+a.toc-backref {
+  text-decoration: none ;
+  color: black }
+
+blockquote.epigraph {
+  margin: 2em 5em ; }
+
+dl.docutils dd {
+  margin-bottom: 0.5em }
+
+object[type="image/svg+xml"], object[type="application/x-shockwave-flash"] {
+  overflow: hidden;
+}
+
+/* Uncomment (and remove this text!) to get bold-faced definition list terms
+dl.docutils dt {
+  font-weight: bold }
+*/
+
+div.abstract {
+  margin: 2em 5em }
+
+div.abstract p.topic-title {
+  font-weight: bold ;
+  text-align: center }
+
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
+
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
+
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title, .code .error {
+  color: red ;
+  font-weight: bold ;
+  font-family: sans-serif }
+
+/* Uncomment (and remove this text!) to get reduced vertical space in
+   compound paragraphs.
+div.compound .compound-first, div.compound .compound-middle {
+  margin-bottom: 0.5em }
+
+div.compound .compound-last, div.compound .compound-middle {
+  margin-top: 0.5em }
+*/
+
+div.dedication {
+  margin: 2em 5em ;
+  text-align: center ;
+  font-style: italic }
+
+div.dedication p.topic-title {
+  font-weight: bold ;
+  font-style: normal }
+
+div.figure {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+div.footer, div.header {
+  clear: both;
+  font-size: smaller }
+
+div.line-block {
+  display: block ;
+  margin-top: 1em ;
+  margin-bottom: 1em }
+
+div.line-block div.line-block {
+  margin-top: 0 ;
+  margin-bottom: 0 ;
+  margin-left: 1.5em }
+
+div.sidebar {
+  margin: 0 0 0.5em 1em ;
+  border: medium outset ;
+  padding: 1em ;
+  background-color: #ffffee ;
+  width: 40% ;
+  float: right ;
+  clear: right }
+
+div.sidebar p.rubric {
+  font-family: sans-serif ;
+  font-size: medium }
+
+div.system-messages {
+  margin: 5em }
+
+div.system-messages h1 {
+  color: red }
+
+div.system-message {
+  border: medium outset ;
+  padding: 1em }
+
+div.system-message p.system-message-title {
+  color: red ;
+  font-weight: bold }
+
+div.topic {
+  margin: 2em }
+
+h1.section-subtitle, h2.section-subtitle, h3.section-subtitle,
+h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
+  margin-top: 0.4em }
+
+h1.title {
+  text-align: center }
+
+h2.subtitle {
+  text-align: center }
+
+hr.docutils {
+  width: 75% }
+
+img.align-left, .figure.align-left, object.align-left {
+  clear: left ;
+  float: left ;
+  margin-right: 1em }
+
+img.align-right, .figure.align-right, object.align-right {
+  clear: right ;
+  float: right ;
+  margin-left: 1em }
+
+img.align-center, .figure.align-center, object.align-center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.align-left {
+  text-align: left }
+
+.align-center {
+  clear: both ;
+  text-align: center }
+
+.align-right {
+  text-align: right }
+
+/* reset inner alignment in figures */
+div.align-right {
+  text-align: inherit }
+
+/* div.align-center * { */
+/*   text-align: left } */
+
+ol.simple, ul.simple {
+  margin-bottom: 1em }
+
+ol.arabic {
+  list-style: decimal }
+
+ol.loweralpha {
+  list-style: lower-alpha }
+
+ol.upperalpha {
+  list-style: upper-alpha }
+
+ol.lowerroman {
+  list-style: lower-roman }
+
+ol.upperroman {
+  list-style: upper-roman }
+
+p.attribution {
+  text-align: right ;
+  margin-left: 50% }
+
+p.caption {
+  font-style: italic }
+
+p.credits {
+  font-style: italic ;
+  font-size: smaller }
+
+p.label {
+  white-space: nowrap }
+
+p.rubric {
+  font-weight: bold ;
+  font-size: larger ;
+  color: maroon ;
+  text-align: center }
+
+p.sidebar-title {
+  font-family: sans-serif ;
+  font-weight: bold ;
+  font-size: larger }
+
+p.sidebar-subtitle {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+p.topic-title {
+  font-weight: bold }
+
+pre.address {
+  margin-bottom: 0 ;
+  margin-top: 0 ;
+  font: inherit }
+
+pre.literal-block, pre.doctest-block, pre.math, pre.code {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+pre.code .ln { color: grey; } /* line numbers */
+pre.code, code { background-color: #eeeeee }
+pre.code .comment, code .comment { color: #5C6576 }
+pre.code .keyword, code .keyword { color: #3B0D06; font-weight: bold }
+pre.code .literal.string, code .literal.string { color: #0C5404 }
+pre.code .name.builtin, code .name.builtin { color: #352B84 }
+pre.code .deleted, code .deleted { background-color: #DEB0A1}
+pre.code .inserted, code .inserted { background-color: #A3D289}
+
+span.classifier {
+  font-family: sans-serif ;
+  font-style: oblique }
+
+span.classifier-delimiter {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+span.interpreted {
+  font-family: sans-serif }
+
+span.option {
+  white-space: nowrap }
+
+span.pre {
+  white-space: pre }
+
+span.problematic {
+  color: red }
+
+span.section-subtitle {
+  /* font-size relative to parent (h1..h6 element) */
+  font-size: 80% }
+
+table.citation {
+  border-left: solid 1px gray;
+  margin-left: 1px }
+
+table.docinfo {
+  margin: 2em 4em }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em }
+
+table.footnote {
+  border-left: solid 1px black;
+  margin-left: 1px }
+
+table.docutils td, table.docutils th,
+table.docinfo td, table.docinfo th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top }
+
+table.docutils th.field-name, table.docinfo th.docinfo-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap ;
+  padding-left: 0 }
+
+/* "booktabs" style (no vertical lines) */
+table.docutils.booktabs {
+  border: 0px;
+  border-top: 2px solid;
+  border-bottom: 2px solid;
+  border-collapse: collapse;
+}
+table.docutils.booktabs * {
+  border: 0px;
+}
+table.docutils.booktabs th {
+  border-bottom: thin solid;
+  text-align: left;
+}
+
+h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
+h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
+  font-size: 100% }
+
+ul.auto-toc {
+  list-style-type: none }
+
+</style>
+</head>
+<body>
+<div class="document" id="electron-holography">
+<h1 class="title">Electron Holography</h1>
+
+<p>HyperSpy provides the user with two classes which can be used to process electron holography data:</p>
+<ul>
+<li><p class="first"><a href="#id1"><span class="problematic" id="id2">:py:class:`~._signals.hologram_image.HologramImage`</span></a></p>
+<div class="system-message" id="id1">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/Users/vadim/Work_Recent/Prog/_Py/hyperspy/doc/user_guide/electron_holography.rst</tt>, line 6); <em><a href="#id2">backlink</a></em></p>
+<p>Unknown interpreted text role &quot;py:class&quot;.</p>
+</div>
+</li>
+<li><p class="first"><a href="#id3"><span class="problematic" id="id4">:py:class:`~._signals.electron_wave_image.ElectronWaveImage`</span></a></p>
+<div class="system-message" id="id3">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/Users/vadim/Work_Recent/Prog/_Py/hyperspy/doc/user_guide/electron_holography.rst</tt>, line 7); <em><a href="#id4">backlink</a></em></p>
+<p>Unknown interpreted text role &quot;py:class&quot;.</p>
+</div>
+</li>
+</ul>
+<p>The classes inherit from <a href="#id5"><span class="problematic" id="id6">:py:class:`~._signals.signal2d.Signal2D`</span></a> and <a href="#id7"><span class="problematic" id="id8">:py:class:`~._signals.electron_wave_image.ComplexSignal2D`</span></a>
+classes respectively and thus can use all of its functionality. The usage of both classes is explained in the following sections.</p>
+<div class="system-message" id="id5">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/Users/vadim/Work_Recent/Prog/_Py/hyperspy/doc/user_guide/electron_holography.rst</tt>, line 9); <em><a href="#id6">backlink</a></em></p>
+Unknown interpreted text role &quot;py:class&quot;.</div>
+<div class="system-message" id="id7">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/Users/vadim/Work_Recent/Prog/_Py/hyperspy/doc/user_guide/electron_holography.rst</tt>, line 9); <em><a href="#id8">backlink</a></em></p>
+Unknown interpreted text role &quot;py:class&quot;.</div>
+<div class="section" id="the-hologramimage-class">
+<h1>The HologramImage class</h1>
+<p>The <a href="#id9"><span class="problematic" id="id10">:py:class:`~._signals.hologram_image.HologramImage`</span></a> class is designed to hold images acquired via
+electron holography.</p>
+<div class="system-message" id="id9">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/Users/vadim/Work_Recent/Prog/_Py/hyperspy/doc/user_guide/electron_holography.rst</tt>, line 16); <em><a href="#id10">backlink</a></em></p>
+Unknown interpreted text role &quot;py:class&quot;.</div>
+<p>To transform a <a href="#id11"><span class="problematic" id="id12">:py:class:`~._signals.signal2d.Signal2D`</span></a> (or subclass) into a
+<a href="#id13"><span class="problematic" id="id14">:py:class:`~._signals.hologram_image.HologramImage`</span></a> use:</p>
+<div class="system-message" id="id11">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/Users/vadim/Work_Recent/Prog/_Py/hyperspy/doc/user_guide/electron_holography.rst</tt>, line 19); <em><a href="#id12">backlink</a></em></p>
+Unknown interpreted text role &quot;py:class&quot;.</div>
+<div class="system-message" id="id13">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/Users/vadim/Work_Recent/Prog/_Py/hyperspy/doc/user_guide/electron_holography.rst</tt>, line 19); <em><a href="#id14">backlink</a></em></p>
+Unknown interpreted text role &quot;py:class&quot;.</div>
+<pre class="code python literal-block">
+<span class="operator">&gt;&gt;&gt;</span> <span class="name">im</span><span class="operator">.</span><span class="name">set_signal_type</span><span class="punctuation">(</span><span class="literal string single">'hologram'</span><span class="punctuation">)</span>
+</pre>
+<div class="section" id="reconstruction-of-holograms">
+<h2>Reconstruction of holograms</h2>
+<p>The detailed description of electron holography and reconstruction of holograms can be found in literature
+<a class="reference external" href="http://www.nature.com/doifinder/10.1038/161777a0">[Gabor1948]</a>,
+<a class="reference external" href="http://www.springer.com/us/book/9783540645559">[Tonomura1999]</a>,
+<a class="reference external" href="http://dx.doi.org/10.1146/annurev.matsci.37.052506.084219">[McCartney2007]</a>,
+<a class="reference external" href="http://dx.doi.org/10.1016/0304-3991(93)90130-P">[Joy1993]</a>. Fourier based reconstruction of off-axis holograms
+(includes finding a side band in FFT, isolating and filtering it, recenter and calculate inverse Fourier transform)
+can be performed using <a href="#id15"><span class="problematic" id="id16">:py:func:`~._signals.hologram_image.HologramImage.reconstruct_phase`</span></a> method
+which returns a <a href="#id17"><span class="problematic" id="id18">:py:class:`~._signals.electron_wave_image.ElectronWaveImage`</span></a> class, containing the reconstructed
+electron wave. The <cite>reconstruct_phase</cite> method takes sideband position and size as parameters:</p>
+<div class="system-message" id="id15">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/Users/vadim/Work_Recent/Prog/_Py/hyperspy/doc/user_guide/electron_holography.rst</tt>, line 29); <em><a href="#id16">backlink</a></em></p>
+Unknown interpreted text role &quot;py:func&quot;.</div>
+<div class="system-message" id="id17">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/Users/vadim/Work_Recent/Prog/_Py/hyperspy/doc/user_guide/electron_holography.rst</tt>, line 29); <em><a href="#id18">backlink</a></em></p>
+Unknown interpreted text role &quot;py:class&quot;.</div>
+<pre class="code python literal-block">
+<span class="operator">&gt;&gt;&gt;</span> <span class="name">wave_image</span> <span class="operator">=</span> <span class="name">im</span><span class="operator">.</span><span class="name">reconstruct_phase</span><span class="punctuation">(</span><span class="name">sb_position</span><span class="operator">=</span><span class="punctuation">(</span><span class="operator">&lt;</span><span class="name">x</span><span class="operator">&gt;</span><span class="punctuation">,</span> <span class="operator">&lt;</span><span class="name">y</span><span class="operator">&gt;</span><span class="punctuation">),</span> <span class="name">sb_size</span><span class="operator">=</span><span class="name">sb_radius</span><span class="punctuation">)</span>
+</pre>
+<p>The parameters can be found automatically by calling following methods:</p>
+<pre class="code python literal-block">
+<span class="operator">&gt;&gt;&gt;</span> <span class="name">sb_position</span> <span class="operator">=</span> <span class="name">im</span><span class="operator">.</span><span class="name">find_sideband_position</span><span class="punctuation">(</span><span class="name">ap_cb_radius</span><span class="operator">=</span><span class="name builtin pseudo">None</span><span class="punctuation">,</span> <span class="name">sb</span><span class="operator">=</span><span class="literal string single">'lower'</span><span class="punctuation">)</span>
+<span class="operator">&gt;&gt;&gt;</span> <span class="name">sb_size</span> <span class="operator">=</span> <span class="name">im</span><span class="operator">.</span><span class="name">find_sideband_size</span><span class="punctuation">(</span><span class="name">sb_position</span><span class="punctuation">)</span>
+</pre>
+<p><cite>find_sideband_position</cite> method searches for maximum of intensity in upper or lower part of FFT pattern (parameter <cite>sb</cite>)
+excluding the middle area defined by <cite>ap_cb_radius</cite>. <cite>find_sideband_size</cite> method calculates the radius of the sideband
+filter as half of the distance to the central band which is commonly used for strong phase objects. Alternatively,
+the sideband filter radius can be recalculate as 1/3 of the distance (often used for weak phase objects) for example:</p>
+<pre class="code python literal-block">
+<span class="operator">&gt;&gt;&gt;</span> <span class="name">sb_size</span> <span class="operator">=</span> <span class="name">sb_size</span> <span class="operator">*</span> <span class="literal number integer">2</span> <span class="operator">/</span> <span class="literal number integer">3</span>
+</pre>
+<p>To reconstruct the hologram with a vacuum reference wave, the reference hologram should be provided to the method either as Hyperspy's
+<a href="#id19"><span class="problematic" id="id20">:py:class:`~._signals.hologram_image.HologramImage`</span></a> or as a nparray:</p>
+<div class="system-message" id="id19">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/Users/vadim/Work_Recent/Prog/_Py/hyperspy/doc/user_guide/electron_holography.rst</tt>, line 60); <em><a href="#id20">backlink</a></em></p>
+Unknown interpreted text role &quot;py:class&quot;.</div>
+<pre class="code python literal-block">
+<span class="operator">&gt;&gt;&gt;</span> <span class="name">wave_image</span> <span class="operator">=</span> <span class="name">im</span><span class="operator">.</span><span class="name">reconstruct_phase</span><span class="punctuation">(</span><span class="name">reference_hologram</span><span class="punctuation">,</span> <span class="name">sb_position</span><span class="operator">=</span><span class="name">sb_position</span><span class="punctuation">,</span> <span class="name">sb_size</span><span class="operator">=</span><span class="name">sb_sb_size</span><span class="punctuation">)</span>
+</pre>
+<p>Additionally, it is possible to change the smoothness of the sideband filter edge (which is by default set to 5% of the
+filter radius) using parameter <cite>sb_smooth</cite>.</p>
+<p>Both <cite>sb_size</cite> and <cite>sb_smooth</cite> can be provided in desired units rather than pixels (by default) by setting <cite>sb_unit</cite>
+value either to <cite>mrad</cite> or <cite>nm</cite> for milliradians or inverse nanometers respectively. For example:</p>
+<pre class="code python literal-block">
+<span class="operator">&gt;&gt;&gt;</span> <span class="name">wave_image</span> <span class="operator">=</span> <span class="name">im</span><span class="operator">.</span><span class="name">reconstruct_phase</span><span class="punctuation">(</span><span class="name">reference_hologram</span><span class="punctuation">,</span> <span class="name">sb_position</span><span class="operator">=</span><span class="name">sb_position</span><span class="punctuation">,</span> <span class="name">sb_size</span><span class="operator">=</span><span class="literal number integer">30</span><span class="punctuation">,</span>
+                                      <span class="name">sb_smooth</span><span class="operator">=</span><span class="literal number float">0.05</span><span class="operator">*</span><span class="literal number integer">30</span><span class="punctuation">,</span><span class="name">sb_unit</span><span class="operator">=</span><span class="literal string single">'mrad'</span><span class="punctuation">)</span>
+</pre>
+<p>Also the <cite>reconstruct_phase</cite> method can output wave images with desired size (shape). By default the shape of the
+original hologram is preserved. Though this leads to oversampling of the output wave images, since the information is
+limited by the size of the sideband filter. To avoid oversampling the the output shape can be set to the diameter of the
+sideband as follows:</p>
+<pre class="code python literal-block">
+<span class="operator">&gt;&gt;&gt;</span> <span class="name">wave_image</span> <span class="operator">=</span> <span class="name">im</span><span class="operator">.</span><span class="name">reconstruct_phase</span><span class="punctuation">(</span><span class="name">reference_hologram</span><span class="punctuation">,</span> <span class="name">sb_position</span><span class="operator">=</span><span class="name">sb_position</span><span class="punctuation">,</span>
+                                      <span class="name">sb_size</span><span class="operator">=</span><span class="name">sb_sb_size</span><span class="punctuation">,</span> <span class="name">output_shape</span><span class="operator">=</span><span class="punctuation">(</span><span class="literal number integer">2</span><span class="operator">*</span><span class="name">sb_size</span><span class="punctuation">,</span> <span class="literal number integer">2</span><span class="operator">*</span><span class="name">sb_size</span><span class="punctuation">))</span>
+</pre>
+<p>Note that the <cite>reconstruct_phase</cite> method can be called without parameters, which will cause their automatic assignment
+by <cite>find_sideband_position</cite> and <cite>find_sideband_size</cite> methods. This, however, is not recommended for not experienced
+users.</p>
+<p>After the reconstruction the reconstruction parameters can be extracted from metadata of wave_image as follows:</p>
+<pre class="code python literal-block">
+<span class="operator">&gt;&gt;&gt;</span> <span class="name">sb_position</span><span class="punctuation">,</span> <span class="name">sb_size</span><span class="punctuation">,</span> <span class="name">sb_smooth</span> <span class="operator">=</span> <span class="name">wave_image</span><span class="operator">.</span><span class="name">reconstruction_parameters</span>
+</pre>
+<p>This option can be used for batch processing of holograms with the same parameters.</p>
+<p>Further analyses of the reconstructed wave (phase) can be done using <a href="#id21"><span class="problematic" id="id22">:py:class:`~._signals.electron_wave_image.ElectronWaveImage`</span></a> class
+functionality (see bellow).</p>
+<div class="system-message" id="id21">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/Users/vadim/Work_Recent/Prog/_Py/hyperspy/doc/user_guide/electron_holography.rst</tt>, line 102); <em><a href="#id22">backlink</a></em></p>
+Unknown interpreted text role &quot;py:class&quot;.</div>
+</div>
+</div>
+<div class="section" id="the-electronwaveimage-class">
+<h1>The ElectronWaveImage class</h1>
+<p>The <a href="#id23"><span class="problematic" id="id24">:py:class:`~._signals.electron_wave_image.ElectronWaveImage`</span></a> class can hold information about the complex electron
+wave. As such, relevant properties like the <cite>amplitude</cite>, <cite>phase</cite> and the <cite>real</cite> and <cite>imag</cite> part can be
+directly accessed and return appropriate <a href="#id25"><span class="problematic" id="id26">:py:class:`~._signals.signal2d.Signal2D`</span></a> signals.</p>
+<div class="system-message" id="id23">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/Users/vadim/Work_Recent/Prog/_Py/hyperspy/doc/user_guide/electron_holography.rst</tt>, line 109); <em><a href="#id24">backlink</a></em></p>
+Unknown interpreted text role &quot;py:class&quot;.</div>
+<div class="system-message" id="id25">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/Users/vadim/Work_Recent/Prog/_Py/hyperspy/doc/user_guide/electron_holography.rst</tt>, line 109); <em><a href="#id26">backlink</a></em></p>
+Unknown interpreted text role &quot;py:class&quot;.</div>
+<p>To transform a <a href="#id27"><span class="problematic" id="id28">:py:class:`~._signals.complex_signal2d.ComplexSignal2D`</span></a> (or subclass) into a
+<a href="#id29"><span class="problematic" id="id30">:py:class:`~._signals.electron_wave_image.ElectronWaveImage`</span></a> use:</p>
+<div class="system-message" id="id27">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/Users/vadim/Work_Recent/Prog/_Py/hyperspy/doc/user_guide/electron_holography.rst</tt>, line 113); <em><a href="#id28">backlink</a></em></p>
+Unknown interpreted text role &quot;py:class&quot;.</div>
+<div class="system-message" id="id29">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/Users/vadim/Work_Recent/Prog/_Py/hyperspy/doc/user_guide/electron_holography.rst</tt>, line 113); <em><a href="#id30">backlink</a></em></p>
+Unknown interpreted text role &quot;py:class&quot;.</div>
+<pre class="code python literal-block">
+<span class="operator">&gt;&gt;&gt;</span> <span class="name">im</span><span class="operator">.</span><span class="name">set_signal_type</span><span class="punctuation">(</span><span class="literal string single">'electron_wave'</span><span class="punctuation">)</span>
+</pre>
+<div class="section" id="unwrap-the-phase">
+<h2>Unwrap the phase</h2>
+<p>With the <a href="#id31"><span class="problematic" id="id32">:py:func:`~._signals.electron_wave_image.ElectronWaveImage.get_unwrapped_phase`</span></a> method the phase can be
+unwrapped and returned as an <a href="#id33"><span class="problematic" id="id34">:class:`~hyperspy._signals.signal2d.Signal2D`</span></a>. The underlying method is
+<a href="#id35"><span class="problematic" id="id36">:py:func:`~skimage.restoration.unwrap`</span></a>.</p>
+<div class="system-message" id="id31">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/Users/vadim/Work_Recent/Prog/_Py/hyperspy/doc/user_guide/electron_holography.rst</tt>, line 124); <em><a href="#id32">backlink</a></em></p>
+Unknown interpreted text role &quot;py:func&quot;.</div>
+<div class="system-message" id="id33">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/Users/vadim/Work_Recent/Prog/_Py/hyperspy/doc/user_guide/electron_holography.rst</tt>, line 124); <em><a href="#id34">backlink</a></em></p>
+Unknown interpreted text role &quot;class&quot;.</div>
+<div class="system-message" id="id35">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/Users/vadim/Work_Recent/Prog/_Py/hyperspy/doc/user_guide/electron_holography.rst</tt>, line 124); <em><a href="#id36">backlink</a></em></p>
+Unknown interpreted text role &quot;py:func&quot;.</div>
+</div>
+<div class="section" id="add-a-linear-ramp">
+<h2>Add a linear ramp</h2>
+<p>A linear ramp can be added to the wave via the <a href="#id37"><span class="problematic" id="id38">:py:func:`~._signals.electron_wave_image.ElectronWaveImage.add_phase_ramp`</span></a>
+method. The parameters <cite>ramp_x</cite> and <cite>ramp_y</cite> dictate the slope of the ramp in <cite>x</cite>- and <cite>y</cite> direction,
+while the offset is determined by the <cite>offset</cite> parameter. The fulcrum of the linear ramp is at the origin
+and the slopes are given in units of the axis with the according scale taken into account.
+Both are available via the <a href="#id39"><span class="problematic" id="id40">:py:class:`~.axes.AxesManager`</span></a> of the signal.</p>
+<div class="system-message" id="id37">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/Users/vadim/Work_Recent/Prog/_Py/hyperspy/doc/user_guide/electron_holography.rst</tt>, line 132); <em><a href="#id38">backlink</a></em></p>
+Unknown interpreted text role &quot;py:func&quot;.</div>
+<div class="system-message" id="id39">
+<p class="system-message-title">System Message: ERROR/3 (<tt class="docutils">/Users/vadim/Work_Recent/Prog/_Py/hyperspy/doc/user_guide/electron_holography.rst</tt>, line 132); <em><a href="#id40">backlink</a></em></p>
+Unknown interpreted text role &quot;py:class&quot;.</div>
+</div>
+</div>
+</div>
+</body>
+</html>

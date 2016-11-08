@@ -48,7 +48,7 @@ class TestCaseHologramImage(object):
 
     def test_reconstruct_phase(self):
 
-        # Testing reconstruction of a single hologram with a reference (as a np array an as HologramImage) with default
+        # Testing reconstruction of a single hologram with a reference (as a np array and as HologramImage) with default
         # output size with an without input sideband parameters:
 
         wave_image = self.holo_image.reconstruct_phase(self.ref)
