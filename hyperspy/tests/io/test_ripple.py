@@ -75,7 +75,7 @@ def test_write_with_metadata():
         gc.collect()
 
 
-def test_save_ripple_EELS_no_metadata():
+def test_save_ripple_EELS_signal_no_metadata():
     data = np.arange(5 * 10 * 15).reshape((5, 10, 15))
     s = signals.Signal1D(data)
     s.set_signal_type("EELS")
@@ -90,6 +90,36 @@ def test_save_ripple_EELS_no_metadata():
         del s2
         gc.collect()
 
+
+def test_save_ripple_EDS_signal_no_metadata():
+    data = np.arange(5 * 10 * 15).reshape((5, 10, 15))
+    s = signals.Signal1D(data)
+    s.set_signal_type("EDS_TEM")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        fname = os.path.join(tmpdir, 'test_write_EDS_TEM_without_metadata.rpl')
+        s.save(fname)
+        s2 = load(fname)
+        np.testing.assert_allclose(s.data, s2.data)
+        nt.assert_equal(s.metadata.Signal.signal_type,
+                        s2.metadata.Signal.signal_type)
+        # for windows
+        del s2
+        gc.collect()
+
+    data = np.arange(5 * 10 * 15).reshape((5, 10, 15))
+    s = signals.Signal1D(data)
+    s.set_signal_type("EDS_SEM")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        fname = os.path.join(tmpdir, 'test_write_EDS_SEM_without_metadata.rpl')
+        s.save(fname)
+        s2 = load(fname)
+        np.testing.assert_allclose(s.data, s2.data)
+        nt.assert_equal(s.metadata.Signal.signal_type,
+                        s2.metadata.Signal.signal_type)
+        # for windows
+        del s2
+        gc.collect()
+                
 
 def test_ripple():
     with tempfile.TemporaryDirectory() as tmpdir:
