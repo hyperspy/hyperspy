@@ -24,6 +24,7 @@ import logging
 from distutils.version import LooseVersion
 
 import numpy as np
+import dill
 import scipy
 import scipy.odr as odr
 from scipy.optimize import (leastsq, least_squares,
@@ -60,6 +61,14 @@ class DummyComponentsContainer:
 components = DummyComponentsContainer()
 components.__dict__.update(components1d.__dict__)
 components.__dict__.update(components2d.__dict__)
+
+def reconstruct_component(comp_dictionary, **init_args):
+    _id = comp_dictionary['_id_name']
+    try:
+        _class = getattr(components, _id)
+    except AttributeError:
+        _class = dill.loads(comp_dictionary['_class_dump'])
+    return _class(**init_args)
 
 
 class ModelComponents(object):
@@ -280,7 +289,7 @@ class BaseModel(list):
                     if 'init' in parse_flag_string(flags_str):
                         init_args[k] = reconstruct_object(flags_str, comp[k])
 
-                self.append(getattr(components, comp['_id_name'])(**init_args))
+                self.append(reconstruct_component(comp, **init_args))
                 id_dict.update(self[-1]._load_dictionary(comp))
             # deal with twins:
             for comp in dic['components']:
@@ -1813,7 +1822,7 @@ class ModelSpecialSlicers(object):
                 flags_str, value = v
                 if 'init' in parse_flag_string(flags_str):
                     init_args[k] = value
-            _model.append(getattr(components, comp._id_name)(**init_args))
+            _model.append(comp.__class__(**init_args))
         copy_slice_from_whitelist(self.model,
                                   _model,
                                   dims,
