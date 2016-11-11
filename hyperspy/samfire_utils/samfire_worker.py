@@ -63,13 +63,6 @@ class Worker:
             if isinstance(var, BaseSignal):
                 var.data = var.data.copy()
         self._array_views_to_copies()
-        # self.model.signal.data = self.model.signal.data.copy()
-        # if hasattr(self.model, 'corr'):
-        #     self.model.corr.data = self.model.corr.data.copy()
-        # if not hasattr(self.model, 'low_loss'):
-        #     self.model.low_loss = None
-        # if self.model.low_loss is not None:
-        #     self.model.low_loss.data = self.model.low_loss.data.copy()
 
     def _array_views_to_copies(self):
         dct = self.model.__dict__
@@ -86,6 +79,12 @@ class Worker:
         self.optional_names = optional_names
         _logger.debug('Setting optional names in worker {} to '
                       '{}'.format(self.identity, self.optional_names))
+
+    def set_parameter_boundaries(self, received):
+        for rec, comp in zip(received, self.model):
+            for (bmin, bmax), par in zip(rec, comp.parameters):
+                par.bmin = bmin
+                par.bmax = bmax
 
     def generate_values_iterator(self, turned_on_names):
         tmp = []

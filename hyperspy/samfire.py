@@ -476,7 +476,7 @@ class Samfire:
                     value_dict['signal.data'] = value_dict[
                         'signal.data'].compute()
                 if self.model.signal.metadata.has_item(
-                    'Signal.Noise_properties.variace'):
+                        'Signal.Noise_properties.variance'):
                     var = self.model.signal.metadata.Signal.Noise_properties.variance
                     if isinstance(var, BaseSignal):
                         if var._lazy:
