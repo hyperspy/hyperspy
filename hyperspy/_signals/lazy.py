@@ -522,17 +522,20 @@ class LazySignal(BaseSignal):
             factors, loadings = _onmf.finish()
             # if explicitly want to refine of did not finish the learning of
             # the full dataset, but want to project it.
-            if refine or not isinstance(loadings, np.ndarray) or \
-                loadings.shape[1] != self.axes_manager.navigation_size:
-                H = []
-                for chunk in progressbar(self._block_iterator(flat_signal=True,
-                                                              get=get),
-                                         total=nblocks,
-                                         leave=False,
-                                         desc='Data chunks'):
-                    chunk = chunk.reshape(-1, self.axes_manager.signal_size)
-                    H.append(_onmf.project(chunk))
-                loadings = np.concatenate(H, axis=1)
+            try:
+                if refine or not isinstance(loadings, np.ndarray) or \
+                    loadings.shape[1] != self.axes_manager.navigation_size:
+                    H = []
+                    for chunk in progressbar(self._block_iterator(flat_signal=True,
+                                                                  get=get),
+                                             total=nblocks,
+                                             leave=False,
+                                             desc='Data chunks'):
+                        chunk = chunk.reshape(-1, self.axes_manager.signal_size)
+                        H.append(_onmf.project(chunk))
+                    loadings = np.concatenate(H, axis=1)
+            except KeyboardInterrupt:
+                pass
             loadings = loadings.T
 
         if explained_variance is not None and \
