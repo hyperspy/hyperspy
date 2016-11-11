@@ -445,14 +445,15 @@ class LazySignal(BaseSignal):
         """
         explained_variance = None
         explained_variance_ratio = None
-        # data = self.data.reshape((self.axes_manager.navigation_shape[::-1]+
-        #                           (self.axes_manager.signal_size,)))
         nav_chunks = self.data.chunks[:self.axes_manager.navigation_dimension]
         from toolz import curry
         from itertools import product
         num_chunks = 1 if num_chunks is None else num_chunks
-        blocksize = np.min([np.multiply(*ar) for ar in 
-                            product(*nav_chunks)])
+        if self.axes_manager.navigation_dimension > 1:
+            blocksize = np.min([np.multiply(*ar) for ar in
+                                product(*nav_chunks)])
+        else:
+            blocksize = np.min(nav_chunks)
         if blocksize/output_dimension < num_chunks:
             num_chunks = np.ceil(blocsize/output_dimension)
 
