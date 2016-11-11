@@ -543,7 +543,7 @@ class LazySignal(BaseSignal):
         if kind in ['ORNMF', 'ONMF', 'ORPCA']:
             # Fix the block-scrambled loadings
             ndim = self.axes_manager.navigation_dimension
-            splits = np.cumsum([np.multiply(*ar)
+            splits = np.cumsum([np.multiply(1, *ar)
                                 for ar in product(*nav_chunks)][:-1]).tolist()
             all_chunks = [ar.T.reshape((output_dimension,) + shape) for shape, ar in
                           zip(product(*nav_chunks), np.split(loadings, splits))]
