@@ -335,6 +335,7 @@ class ORPCA:
         if self.method in ('CF', 'BCD'):
             self.A = np.zeros((self.rank, self.rank))
             self.B = np.zeros((m, self.rank))
+        return X
 
     def _initialize(self, X):
         m = self.nfeatures
@@ -369,7 +370,7 @@ class ORPCA:
 
     def fit(self, X, iterating=None):
         if self.nfeatures is None:
-            self._setup(X)
+            X = self._setup(X)
 
         if iterating is None:
             iterating = self.iterating
@@ -412,6 +413,16 @@ class ORPCA:
                            - np.outer((z - e), r.T)
                            + thislambda1 * self.L) / learn
             self.t += 1
+
+    def project(self, X):
+        num = None
+        if isinstance(X, np.ndarray):
+            num = X.shape[0]
+            X = iter(X)
+        for v in progressbar(X, leave=False, total=num):
+            r, _ = _solveproj(v, self.L, self.I, self.lambda2)
+            self.R.append(r.copy())
+
 
     def finish(self):
 
