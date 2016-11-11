@@ -449,13 +449,12 @@ class LazySignal(BaseSignal):
         from toolz import curry
         from itertools import product
         num_chunks = 1 if num_chunks is None else num_chunks
-        if self.axes_manager.navigation_dimension > 1:
-            blocksize = np.min([np.multiply(*ar) for ar in
-                                product(*nav_chunks)])
-        else:
-            blocksize = np.min(nav_chunks)
+        blocksize = np.min([np.multiply(1, *ar) for ar in
+                            product(*nav_chunks)])
+        nblocks = np.multiply(1, *[len(c) for c in nav_chunks])
         if blocksize/output_dimension < num_chunks:
             num_chunks = np.ceil(blocsize/output_dimension)
+        blocksize *= num_chunks
 
         if kind == 'PCA':
             from sklearn.decomposition import IncrementalPCA
@@ -477,9 +476,6 @@ class LazySignal(BaseSignal):
         else:
             raise ValueError('kind not known')
 
-
-        blocksize *= num_chunks
-        nblocks = np.multiply(*[len(c) for c in nav_chunks])
         this_data = []
         try:
             for chunk in progressbar(self._block_iterator(flat_signal=True,
