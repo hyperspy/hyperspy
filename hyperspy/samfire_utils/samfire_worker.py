@@ -81,6 +81,12 @@ class Worker:
         _logger.debug('Setting optional names in worker {} to '
                       '{}'.format(self.identity, self.optional_names))
 
+    def set_parameter_boundaries(self, received):
+        for rec, comp in zip(received, self.model):
+            for (bmin, bmax), par in zip(rec, comp.parameters):
+                par.bmin = bmin
+                par.bmax = bmax
+
     def generate_values_iterator(self, turned_on_names):
         tmp = []
         name_list = []

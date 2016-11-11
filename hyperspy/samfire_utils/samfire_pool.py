@@ -127,8 +127,8 @@ class SamfirePool(ParallelPool):
         samfire : samfire
             the SAMFire object that will be using the pool
         """
+        _logger.debug('starting prepare_workers')
         self.samf = samfire
-
         mall = samfire.model
         model = mall.inav[mall.axes_manager.indices]
         model.store('z')
@@ -138,6 +138,7 @@ class SamfirePool(ParallelPool):
         optional_names = {mall[c].name for c in samfire.optional_components}
 
         if self.is_ipyparallel:
+            _logger.debug('preparing ipyparallel workers')
             direct_view = self.pool.client[:self.num_workers]
             direct_view.block = True
             direct_view.execute("from hyperspy.samfire_utils.samfire_worker"
@@ -155,6 +156,7 @@ class SamfirePool(ParallelPool):
                               self.rworker, optional_names)
 
         if self.is_multiprocessing:
+            _logger.debug('preparing multiprocessing workers')
             manager = Manager()
             self.shared_queue = manager.Queue()
             self.result_queue = manager.Queue()
@@ -173,10 +175,13 @@ class SamfirePool(ParallelPool):
         samfire = self.samf
         optional_names = {samfire.model[c].name for c in
                           samfire.optional_components}
+        boundaries = tuple(tuple((par.bmin, par.bmax) for par in
+                                 comp.parameters) for comp in self.samf.model)
         if self.is_multiprocessing:
             for this_queue in self.workers.values():
                 this_queue.put(('set_optional_names', (optional_names,)))
                 this_queue.put(('setup_test', (samfire.metadata._gt_dump,)))
+                this_queue.put(('set_parameter_boundaries', (boundaries,)))
         elif self.is_ipyparallel:
             direct_view = self.pool.client[:self.num_workers]
             direct_view.block = True
@@ -184,6 +189,9 @@ class SamfirePool(ParallelPool):
                               self.rworker, optional_names)
             direct_view.apply(lambda worker, ts: worker.setup_test(ts),
                               self.rworker, samfire.metadata._gt_dump)
+            direct_view.apply(lambda worker, ts:
+                              worker.set_parameter_boundaries(ts),
+                              self.rworker, boundaries)
 
     def ping_workers(self, timeout=None):
         """Pings the workers and records one-way trip time and (if available)
