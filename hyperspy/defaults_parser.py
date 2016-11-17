@@ -260,7 +260,7 @@ def config2template(template, config):
             if name == 'fine_structure_smoothing':
                 value = float(value)
             config_dict[name] = value
-        traited_class.set(True, **config_dict)
+        traited_class.trait_set(True, **config_dict)
 
 
 def dictionary_from_template(template):
