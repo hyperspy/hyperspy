@@ -786,12 +786,18 @@ class ImageObject(object):
             return 'TEM'
 
     def _get_time(self, time):
-        dt = dateutil.parser.parse(time)
-        return dt.time().isoformat()
+        try:
+            dt = dateutil.parser.parse(time)
+            return dt.time().isoformat()
+        except:
+            _logger.warning("Time string, %s,  could not be parsed", time)
 
     def _get_date(self, date):
-        dt = dateutil.parser.parse(date)
-        return dt.date().isoformat()
+        try:
+            dt = dateutil.parser.parse(date)
+            return dt.date().isoformat()
+        except:
+            _logger.warning("Date string, %s,  could not be parsed", date)
 
     def _get_microscope_name(self, ImageTags):
         try:
