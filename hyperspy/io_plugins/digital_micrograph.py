@@ -23,7 +23,6 @@
 
 import os
 import logging
-from datetime import datetime
 import dateutil.parser
 
 import numpy as np
