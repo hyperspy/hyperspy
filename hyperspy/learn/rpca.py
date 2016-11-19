@@ -221,7 +221,7 @@ def orpca(X, rank, fast=False,
           method=None,
           learning_rate=None,
           init=None,
-          training_samples=None
+          training_samples=None,
           momentum=None):
     """
     This function performs Online Robust PCA
@@ -282,10 +282,8 @@ def orpca(X, rank, fast=False,
     on a QR decomposition of the first n "training" samples of the data.
     A stochastic gradient descent (SGD) solver is also implemented,
     along with a MomentumSGD solver for improved convergence and robustness
-    with local minima.
-
-    More information about the gradient descent methods and choosing
-    appropriate parameters can be found here:
+    with respect to local minima. More information about the gradient descent
+    methods and choosing appropriate parameters can be found here:
        Sebastian Ruder, "An overview of gradient descent optimization
        algorithms", arXiv:1609.04747, (2016), http://arxiv.org/abs/1609.04747.
 
@@ -345,12 +343,6 @@ def orpca(X, rank, fast=False,
         raise ValueError("'init' not recognised")
     if init == 'qr' and training_samples < rank:
         raise ValueError("'training_samples' must be >= 'output_dimension'")
-    if momentum < 0. or momentum > 1:
-        raise ValueError("'momentum' must be between 0 and 1")
-    if lambda1 < 0.:
-        raise ValueError("'lambda1' must be positive")
-    if lambda2 < 0.:
-        raise ValueError("'lambda2' must be positive")
 
     # Get min & max of data matrix for scaling
     X_max = np.max(X)
@@ -419,7 +411,8 @@ def orpca(X, rank, fast=False,
     Xhat = (np.dot(L, R) * X_max) + X_min
     Ehat = (E * X_max) + X_min
 
-    # Do final SVD
+    # Do final SVD to return loadings and
+    # components for the decomposition model
     U, S, Vh = svd(Xhat)
     V = Vh.T
 

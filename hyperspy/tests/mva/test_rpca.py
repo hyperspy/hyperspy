@@ -98,7 +98,7 @@ class TestORPCA:
         self.X = X
         self.learning_rate = 1.1
         self.training_samples = 32
-        self.momentum = 0.5
+        self.momentum = 0.1
 
         # Test tolerance
         self.tol = 1e-3
