@@ -142,17 +142,17 @@ def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness, o
         fft_shifted = np.roll(fft_exp, sb_position[0], axis=0)
         fft_shifted = np.roll(fft_shifted, sb_position[1], axis=1)
 
+        fft_aperture = fft_shifted * aperture
+
         if plotting:
             fig, axs = plt.subplots(1, 1, figsize=(4, 4))
-            axs.imshow(np.abs(fftshift(fft_shifted * aperture)), clim=(0, 0.1))
+            axs.imshow(np.abs(fftshift(fft_aperture)), clim=(0, 0.1))
             axs.scatter(sb_position[1], sb_position[0], s=10, color='red', marker='x')
             axs.set_xlim(int(holo_size[0]/2) - sb_size/np.mean(f_sampling), int(holo_size[0]/2) +
                          sb_size/np.mean(f_sampling))
             axs.set_ylim(int(holo_size[1]/2) - sb_size/np.mean(f_sampling), int(holo_size[1]/2) +
                          sb_size/np.mean(f_sampling))
             plt.show()
-
-        fft_aperture = fft_shifted * aperture
 
         if output_shape is not None:
             y_min = int(holo_size[0] / 2 - output_shape[0] / 2)
