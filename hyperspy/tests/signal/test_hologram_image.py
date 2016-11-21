@@ -52,14 +52,15 @@ class TestCaseHologramImage(object):
         # output size with an without input sideband parameters:
 
         wave_image = self.holo_image.reconstruct_phase(self.ref)
-        sb_pos_cc = [self.img_size, self.img_size] - wave_image.reconstruction_parameters[0]
-        sb_size_cc = wave_image.reconstruction_parameters[1]
-        sb_smoothness_cc = wave_image.reconstruction_parameters[2]
-        sb_units_cc = wave_image.reconstruction_parameters[3]
+        sb_pos_cc = [self.img_size, self.img_size] - wave_image.reconstruction_parameters[
+            'sb_position']
+        sb_size_cc = wave_image.reconstruction_parameters['sb_size']
+        sb_smoothness_cc = wave_image.reconstruction_parameters['sb_smoothness']
+        sb_units_cc = wave_image.reconstruction_parameters['sb_units']
         wave_image_cc = self.holo_image.reconstruct_phase(self.ref_image, sb_position=sb_pos_cc, sb_size=sb_size_cc,
                                                           sb_smoothness=sb_smoothness_cc, sb_unit=sb_units_cc)
-        x_start = int(wave_image.reconstruction_parameters[1]*2/10)
-        x_stop = int(wave_image.reconstruction_parameters[1]*2*9/10)
+        x_start = int(wave_image.reconstruction_parameters['sb_size']*2/10)
+        x_stop = int(wave_image.reconstruction_parameters['sb_size']*2*9/10)
         wave_crop = wave_image.data[x_start:x_stop, x_start:x_stop]
         wave_cc_crop = wave_image_cc.data[x_start:x_stop, x_start:x_stop]
 

@@ -134,8 +134,8 @@ class HologramImage(Signal2D):
         # Parsing reference:
         if not isinstance(reference, HologramImage):
             if isinstance(reference, Signal2D):
-                warnings.warn('The reference image signal type is not HologramImage. It will be converted to '
-                              'HologramImage automatically.')
+                _logger.warning('The reference image signal type is not HologramImage. It will '
+                                'be converted to HologramImage automatically.')
                 reference.set_signal_type('hologram')
             elif reference is not None:
                 reference = HologramImage(reference)
