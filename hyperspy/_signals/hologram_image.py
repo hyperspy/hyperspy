@@ -64,11 +64,11 @@ class HologramImage(Signal2D):
 
     def find_sideband_size(self, sb_position):
         """
-        Finds the position of the sideband and returns its position.
+        Finds the size of the sideband and returns its position.
 
         Parameters
         ----------
-        sb_position : tuple
+        sb_position : array, :class:`~hyperspy.signals.BaseSignal
             The sideband position (y, x), referred to the non-shifted FFT.
 
         Returns
@@ -89,7 +89,7 @@ class HologramImage(Signal2D):
 
         return sb_size
 
-    def reconstruct_phase(self, reference=None, sb_size=None, sb_smooth=None, sb_unit=None,
+    def reconstruct_phase(self, reference=None, sb_size=None, sb_smoothness=None, sb_unit=None,
                           sb='lower', sb_position=None, output_shape=None, plotting=False):
         """Reconstruct electron holograms.
 
@@ -101,7 +101,7 @@ class HologramImage(Signal2D):
             Sideband radius of the aperture in corresponding unit (see 'sb_unit'). If None,
             the radius of the aperture is set to 1/3 of the distance between sideband and
             centerband.
-        sb_smooth : float, optional
+        sb_smoothness : float, optional
             Smoothness of the aperture in the same unit as sb_size.
         sb_unit : str, optional
             Unit of the two sideband parameters 'sb_size' and 'sb_smoothness'.
@@ -165,13 +165,13 @@ class HologramImage(Signal2D):
         folded = self.unfold_navigation_space()
 
         # Standard edge smoothness of sideband aperture 5% of sb_size
-        if sb_smooth is None:
-            sb_smooth = sb_size * 0.05
+        if sb_smoothness is None:
+            sb_smoothness = sb_size * 0.05
 
         # Convert sideband size from 1/nm or mrad to pixels
         if sb_unit == 'nm':
             sb_size /= np.mean(self.f_sampling)
-            sb_smooth /= np.mean(self.f_sampling)
+            sb_smoothness /= np.mean(self.f_sampling)
         elif sb_unit == 'mrad':
             try:
                 ht = self.metadata.Acquisition_instrument.TEM.beam_energy
@@ -183,7 +183,7 @@ class HologramImage(Signal2D):
                 self.metadata.Acquisition_instrument.TEM.beam_energy = ht
             wavelength = 1.239842447 / np.sqrt(ht * (1022 + ht))  # in nm
             sb_size /= (1000 * wavelength * np.mean(self.f_sampling))
-            sb_smooth /= (1000 * wavelength * np.mean(self.f_sampling))
+            sb_smoothness /= (1000 * wavelength * np.mean(self.f_sampling))
 
         # Find output shape:
         if output_shape is None:
@@ -192,7 +192,7 @@ class HologramImage(Signal2D):
         # ???
         _logger.info('Sideband pos in pixels: {}'.format(sb_position))
         _logger.info('Sideband aperture radius in pixels: {}'.format(sb_size))
-        _logger.info('Sideband aperture smoothness in pixels: {}'.format(sb_smooth))
+        _logger.info('Sideband aperture smoothness in pixels: {}'.format(sb_smoothness))
 
         # Shows the selected sideband and the position of the sideband
         # if plotting:
@@ -209,11 +209,11 @@ class HologramImage(Signal2D):
             wave_object = np.zeros((self.axes_manager.navigation_size, ) + output_shape, dtype='complex')
             for i in range(self.axes_manager.navigation_size):
                 wave_object[i] = reconstruct(self.inav[i].data, holo_sampling=self.sampling,
-                                             sb_size=sb_size[i], sb_position=sb_position[i], sb_smoothness=sb_smooth[i],
+                                             sb_size=sb_size[i], sb_position=sb_position[i], sb_smoothness=sb_smoothness[i],
                                              output_shape=output_shape, plotting=plotting)
         else:
             wave_object = reconstruct(self.data, holo_sampling=self.sampling,
-                                      sb_size=sb_size, sb_position=sb_position, sb_smoothness=sb_smooth,
+                                      sb_size=sb_size, sb_position=sb_position, sb_smoothness=sb_smoothness,
                                       output_shape=output_shape, plotting=plotting)
         # Reconstructing reference wave and applying it (division):
         folded_ref = False
@@ -227,7 +227,7 @@ class HologramImage(Signal2D):
                 wave_reference = np.zeros((reference.axes_manager.navigation_size, ) + output_shape, dtype='complex')
                 for i in range(reference.axes_manager.navigation_size):
                     wave_reference[i] = reconstruct(reference.inav[i].data, holo_sampling=self.sampling,
-                                                    sb_size=sb_size[i], sb_position=sb_position[i], sb_smoothness=sb_smooth[i],
+                                                    sb_size=sb_size[i], sb_position=sb_position[i], sb_smoothness=sb_smoothness[i],
                                                     output_shape=output_shape, plotting=plotting)
 
                 if reference.axes_manager.navigation_size != self.axes_manager.navigation_size:  # case when navdim of
@@ -241,11 +241,11 @@ class HologramImage(Signal2D):
                 if self.axes_manager.navigation_size:  # use only one slice of reconstruction parameters for reference:
                     wave_reference = reconstruct(reference.data, holo_sampling=self.sampling,
                                                  sb_size=sb_size[0], sb_position=sb_position[0],
-                                                 sb_smoothness=sb_smooth[0],
+                                                 sb_smoothness=sb_smoothness[0],
                                                  output_shape=output_shape, plotting=plotting)
                 else:
                     wave_reference = reconstruct(reference.data, holo_sampling=self.sampling,
-                                                 sb_size=sb_size, sb_position=sb_position, sb_smoothness=sb_smooth,
+                                                 sb_size=sb_size, sb_position=sb_position, sb_smoothness=sb_smoothness,
                                                  output_shape=output_shape, plotting=plotting)
 
         wave = wave_object / wave_reference
@@ -254,7 +254,7 @@ class HologramImage(Signal2D):
 
         # Reconstruction parameters are stored in holo_reconstruction_parameters:
         rec_param_dict = OrderedDict([('sb_position', sb_position), ('sb_size', sb_size),
-                                      ('sb_units', sb_unit), ('sb_smoothness', sb_smooth)])
+                                      ('sb_units', sb_unit), ('sb_smoothness', sb_smoothness)])
 
         wave_image.metadata.Signal.add_node('holo_reconstruction_parameters')
         wave_image.metadata.Signal.holo_reconstruction_parameters.add_dictionary(rec_param_dict)
