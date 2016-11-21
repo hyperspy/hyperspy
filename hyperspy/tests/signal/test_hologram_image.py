@@ -57,7 +57,7 @@ class TestCaseHologramImage(object):
         sb_smoothness_cc = wave_image.reconstruction_parameters[2]
         sb_units_cc = wave_image.reconstruction_parameters[3]
         wave_image_cc = self.holo_image.reconstruct_phase(self.ref_image, sb_position=sb_pos_cc, sb_size=sb_size_cc,
-                                                          sb_smooth=sb_smoothness_cc, sb_unit=sb_units_cc)
+                                                          sb_smoothness=sb_smoothness_cc, sb_unit=sb_units_cc)
         x_start = int(wave_image.reconstruction_parameters[1]*2/10)
         x_stop = int(wave_image.reconstruction_parameters[1]*2*9/10)
         wave_crop = wave_image.data[x_start:x_stop, x_start:x_stop]
@@ -79,7 +79,7 @@ class TestCaseHologramImage(object):
         output_shape = (np.int(sb_size2[0]*2), np.int(sb_size2[0]*2))
 
         wave_image2 = self.holo_image2.reconstruct_phase(reference=self.ref_image2, sb_position=sb_position2,
-                                                         sb_size=sb_size2, sb_smooth=sb_size2*0.05,
+                                                         sb_size=sb_size2, sb_smoothness=sb_size2 * 0.05,
                                                          output_shape=output_shape)
 
         # interpolate reconstructed phase to compare with the input (reference phase):

@@ -119,7 +119,7 @@ def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness, o
         output_shape: tuple, optional
             New output shape.
         plotting : boolean
-            Shows details of the reconstruction (i.e. SB selection).
+            Plots the masked sideband used for reconstruction.
 
         Returns
         -------
