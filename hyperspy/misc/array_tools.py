@@ -110,8 +110,7 @@ def _linear_bin(s, scale,
 
     Parameters
     ----------
-    originalSpectrum: numpy.array
-        the original spectrum
+    originalSpectrum: numpy.array, or the s.data, where s is a signal array.
 
     scale: a list of floats for each dimension specify the new:old pixel ratio
         e.g. a ratio of 1 is no binning
@@ -123,10 +122,10 @@ def _linear_bin(s, scale,
          fill one pixel.
          e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
          pixels and one row containing only 0.8 pixels worth. Selection of
-         crop = 'on' or crop = 'off' determines whether or not this 'black'
+         crop = 'True' or crop = 'False' determines whether or not this 'black'
          line is cropped from the final binned array or not.
 
-    *Please note that if crop = 'off' is used:the final row in each
+    *Please note that if crop = 'False' is used:the final row in each
     dimension may appear black, if a fractional number of pixels are left
     over. It can be removed but has been left to preserve total counts
     before and after binning.*
@@ -161,7 +160,7 @@ def _linear_bin(s, scale,
         new_shape = tuple()
         for i, dimension_size in enumerate(shape2):
             if i == 0:
-                if crop == 'on':
+                if crop == 'True':
                     new_shape += (math.floor(dimension_size / step),)
                 else:
                     new_shape += (math.ceil(dimension_size / step),)
@@ -169,7 +168,7 @@ def _linear_bin(s, scale,
                 new_shape += (dimension_size,)
         newSpectrum = np.zeros(new_shape, dtype="float")
 
-        if crop == 'on':
+        if crop == 'True':
             k = math.floor(shape2[0]/step)
         else:
             k = math.ceil(shape2[0]/step)

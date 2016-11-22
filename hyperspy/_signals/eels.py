@@ -1254,16 +1254,13 @@ class EELSSpectrum(Signal1D):
                           dictionary=dictionary)
         return model
 
-    def linear_bin(self, scale, crop='on'):
+    def linear_bin(self, scale, crop='Trues'):
 
         """
         Binning of the spectrum image by a non-integer pixel value.
 
         Parameters
         ----------
-        self: numpy.array
-            the original spectrum
-
         scale: a list of floats for each dimension specify the new:old pixel
                ratio
               e.g. [1, 1, 2]
@@ -1276,10 +1273,10 @@ class EELSSpectrum(Signal1D):
                quota to fill one pixel.
              e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
              pixels and one row containing only 0.8 pixels worth. Selection of
-             crop = 'on' or crop = 'off' determines whether or not this 'black'
-             line is cropped from the final binned array or not.
+             crop = 'True' or crop = 'False' determines whether or not this
+             'black' line is cropped from the final binned array or not.
 
-        *Please note that if crop = 'off' is used:the final row in each
+        *Please note that if crop = 'False' is used:the final row in each
         dimension may appear black, if a fractional number of pixels are left
         over. It can be removed but has been left to preserve total counts
         before and after binning.*
