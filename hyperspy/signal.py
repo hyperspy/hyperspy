@@ -3270,7 +3270,7 @@ class BaseSignal(FancySlicing,
                 " axes.")
         # If the function has an axis argument and the signal dimension is 1,
         # we suppose that it can operate on the full array and we don't
-        # interate over the coordinates.
+        # iterate over the coordinates.
         try:
             fargs = inspect.signature(function).parameters.keys()
         except TypeError:
@@ -3286,7 +3286,7 @@ class BaseSignal(FancySlicing,
             self._map_all(function, **kwargs)
         # If the function has an axes argument
         # we suppose that it can operate on the full array and we don't
-        # interate over the coordinates.
+        # iterate over the coordinates.
         elif not ndkwargs and "axes" in fargs and not threaded:
             kwargs['axes'] = tuple([axis.index_in_array for axis in
                                     self.axes_manager.signal_axes])
@@ -3343,6 +3343,10 @@ class BaseSignal(FancySlicing,
                 iterating += k,
                 iterators += repeat(v, size),
 
+        res_data = np.empty(self.axes_manager._navigation_shape_in_array,
+                            dtype='O')
+        shapes = set()
+
         iterators = (self._iterate_signal(),) + iterators
 
         def figure_out_kwargs(data):
@@ -3362,13 +3366,38 @@ class BaseSignal(FancySlicing,
             thismap = executor.map
         else:
             from builtins import map as thismap
-        for data, res in progressbar(zip(self._iterate_signal(),
-                                         thismap(func, zip(*iterators))),
-                                     disable=not show_progressbar,
-                                     total=size, leave=True):
-            data[:] = res
+        for ind, res in progressbar(zip(range(self.axes_manager.navigation_size),
+                                        thismap(func, zip(*iterators))),
+                                    disable=not show_progressbar,
+                                    total=size, leave=True):
+            res_data.flat[ind] = res
+            try:
+                shapes.add(res.shape)
+            except AttributeError:
+                shapes.add(None)
         if threaded:
             executor.shutdown()
+
+        # Combine data if required
+        shapes = list(shapes)
+        nav_shape = res_data.shape
+        if len(shapes) == 1 and shapes[0] is not None:
+            sig_shape = shapes[0]
+            res_data = np.stack(res_data.flat).reshape(nav_shape + sig_shape)
+            if self.data.shape == res_data.shape:
+                self.data[:] = res_data
+            else:
+                self.data = res_data
+            for ind in range(len(sig_shape) -
+                             self.axes_manager.signal_dimension, 0, -1):
+                self.axes_manager._append_axis(sig_shape[-ind], navigate=False)
+            # self.get_dimensions_from_data()
+        else:
+            self.data = res_data
+            self.axes_manager.remove(self.axes_manager.signal_axes)
+            self.__class__ = BaseSignal
+            self.__init__(**self._to_dictionary(add_models=True))
+
 
     def copy(self):
         try:
