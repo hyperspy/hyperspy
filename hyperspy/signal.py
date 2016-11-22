@@ -3350,8 +3350,11 @@ class BaseSignal(FancySlicing,
             if k not in iterating:
                 iterating += k,
                 iterators += repeat(v, size),
-
-        res_data = np.empty(self.axes_manager._navigation_shape_in_array,
+        res_shape = self.axes_manager._navigation_shape_in_array
+        # no navigation
+        if not len(res_shape):
+            res_shape = (1,)
+        res_data = np.empty(res_shape,
                             dtype='O')
         shapes = set()
 
@@ -3374,7 +3377,7 @@ class BaseSignal(FancySlicing,
             thismap = executor.map
         else:
             from builtins import map as thismap
-        for ind, res in progressbar(zip(range(self.axes_manager.navigation_size),
+        for ind, res in progressbar(zip(range(res_data.size),
                                         thismap(func, zip(*iterators))),
                                     disable=not show_progressbar,
                                     total=size, leave=True):
@@ -3388,9 +3391,11 @@ class BaseSignal(FancySlicing,
 
         # Combine data if required
         shapes = list(shapes)
-        nav_shape = res_data.shape
+        nav_shape = self.axes_manager._navigation_shape_in_array
         if len(shapes) == 1 and shapes[0] is not None:
             sig_shape = shapes[0]
+            if sig_shape == (1,):
+                sig_shape = ()
             res_data = np.stack(res_data.flat).reshape(nav_shape + sig_shape)
             if self.data.shape == res_data.shape:
                 self.data[:] = res_data

@@ -62,7 +62,7 @@ class TestImage:
         imt = im.deepcopy()
         for s, t in zip([im, imt], [False, True]):
             s.map(rotate, angle=45, reshape=False, show_progressbar=None,
-                    threaded=t)
+                  threaded=t)
             np.testing.assert_allclose(s.data, np.array(
                 [[[0., 2.23223305, 0.],
                   [0.46446609, 4., 7.53553391],
@@ -71,6 +71,29 @@ class TestImage:
                  [[0., 11.23223305, 0.],
                   [9.46446609, 13., 16.53553391],
                   [0., 14.76776695, 0.]]]))
+
+    def test_different_shapes(self):
+        im = self.im
+        imt = im.deepcopy()
+        angles = hs.signals.BaseSignal([0, 45])
+        for s, t in zip([im, imt], [False, True]):
+            s.map(rotate, angle=angles.T, reshape=True, show_progressbar=None,
+                  threaded=t)
+            # the dtype
+            nt.assert_is(s.data.dtype, np.dtype('O'))
+            # the special slicing
+            nt.assert_is(s.inav[0].data, s.data[0])
+            # actual values
+            np.testing.assert_allclose(s.data[0],
+                                       np.arange(9.).reshape((3, 3)),
+                                       atol=1e-7)
+            np.testing.assert_allclose(s.data[1],
+                                       np.array([[0.,   0.,   0.,   0.],
+                                                 [0.,  10.34834957,
+                                                     13.88388348,   0.],
+                                                 [0.,  12.11611652,
+                                                     15.65165043,   0.],
+                                                 [0.,   0.,   0.,   0.]]))
 
 
 class TestSignal1D:
