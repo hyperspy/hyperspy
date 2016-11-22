@@ -784,6 +784,33 @@ arguments as in the following example.
   Rotation of images using :py:meth:`~.signal.BaseSignal.map` with different
   arguments for each image in the stack.
 
+If all function calls do not return identically-shaped results, only navigation
+information is preserved, and the signal data is replaced by an array where
+each element corresponds to the result of the function (or arbitrary object
+type). As such, most HyperSpy functions cannot operate on such Signal, and the
+data should be accessed directly:
+
+.. code-block:: python
+
+    >>> import scipy.ndimage
+    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.ascent()]*4))
+    >>> angles = hs.signals.BaseSignal(np.array([0, 45, 90, 135]))
+    >>> image_stack.map(scipy.ndimage.rotate,
+    ...                            angle=angles.T,
+    ...                            reshape=True)
+    100%|████████████████████████████████████████████| 4/4 [00:00<00:00, 18.42it/s]
+
+    >>> image_stack
+    <BaseSignal, title: , dimensions: (4|)>
+    >>> image_stack.data.dtype
+    dtype('O')
+    >>> for d in image_stack.data.flat:
+    ...     print(d.shape)
+    (512, 512)
+    (724, 724)
+    (512, 512)
+    (724, 724)
+
 Cropping
 ^^^^^^^^
 

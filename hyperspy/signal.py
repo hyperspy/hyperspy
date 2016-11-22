@@ -3199,16 +3199,18 @@ class BaseSignal(FancySlicing,
             threaded=False, **kwargs):
         """Apply a function to the signal data at all the coordinates.
 
-        The function must operate on numpy arrays and the output *must have the
-        same dimensions as the input*. The function is applied to the data at
+        The function must operate on numpy arrays, but the output no longer has
+        to be of the same dimensions. The function is applied to the data at
         each coordinate and the result is stored in the current signal i.e.
-        this method operates *in-place*.  Any extra keyword argument is passed
-        to the function. The keywords can take different values at different
-        coordinates. If the function takes an `axis` or `axes` argument, the
-        function is assumed to be vectorial and the signal axes are assigned to
-        `axis` or `axes`.  Otherwise, the signal is iterated over the
-        navigation axes and a progress bar is displayed to monitor the
-        progress.
+        this method operates *in-place* and overwrites the data. Any extra
+        keyword argument is passed to the function. The keywords can take
+        different values at different coordinates. If the function takes an
+        `axis` or `axes` argument, the function is assumed to be vectorial and
+        the signal axes are assigned to `axis` or `axes`.  Otherwise, the
+        signal is iterated over the navigation axes and a progress bar is
+        displayed to monitor the progress.
+
+        Navigation dimensions and information is always preserved.
 
         Parameters
         ----------
@@ -3226,6 +3228,12 @@ class BaseSignal(FancySlicing,
 
         Notes
         -----
+        If the function results do not have identical shapes, the data is
+        replaced by an array of navigation shape, where each element
+        corresponds to the result of the function (of arbitraty object type).
+        As such, most functions are not able to operate on the result and the
+        data should be used directly.
+
         This method is similar to Python's :func:`map` that can also be utilize
         with a :class:`Signal` instance for similar purposes. However, this
         method has the advantage of being faster because it iterates the numpy
@@ -3391,13 +3399,11 @@ class BaseSignal(FancySlicing,
             for ind in range(len(sig_shape) -
                              self.axes_manager.signal_dimension, 0, -1):
                 self.axes_manager._append_axis(sig_shape[-ind], navigate=False)
-            # self.get_dimensions_from_data()
         else:
             self.data = res_data
             self.axes_manager.remove(self.axes_manager.signal_axes)
             self.__class__ = BaseSignal
             self.__init__(**self._to_dictionary(add_models=True))
-
 
     def copy(self):
         try:
