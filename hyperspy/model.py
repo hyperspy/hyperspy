@@ -448,10 +448,12 @@ class BaseModel(list):
             signal = out
             data = signal.data
 
-        if threaded is None or threaded is True:
+        if threaded is True:
             from os import cpu_count
             threaded = cpu_count()
-        if isinstance(threaded, int) and threaded < 2:
+        if not isinstance(threaded, int):
+            threaded = int(threaded)
+        if threaded < 2:
             threaded = False
         if threaded is False:
             self._as_signal_iter(component_list=component_list,
@@ -460,22 +462,27 @@ class BaseModel(list):
         else:
             am = self.axes_manager
             nav_shape = am.navigation_shape
-            # if data is None:
-            #     data = np.empty(self.signal.data.shape, dtype='float')
-            #     data.fill(np.nan)
             if len(nav_shape):
                 ind = np.argmax(nav_shape)
-            else:
-                raise ValueError('No navigation space')
-            size = nav_shape[ind]
-            splits = [len(sp) for sp in np.array_split(np.arange(size), threaded)]
+                size = nav_shape[ind]
+            if not len(nav_shape) or size < 4:
+                # no or not enough navigation, just run without threads
+                return self.as_signal(component_list=component_list,
+                                      out_of_range_to_nan=out_of_range_to_nan,
+                                      show_progressbar=show_progressbar,
+                                      out=signal,
+                                      threaded=False)
+            threaded = min(threaded, size / 2)
+            splits = [len(sp) for sp in np.array_split(np.arange(size),
+                                                       threaded)]
             models = []
             data_slices = []
-            slices = [slice(None),]*len(nav_shape)
+            slices = [slice(None), ] * len(nav_shape)
             for sp, csm in zip(splits, np.cumsum(splits)):
-                slices[ind] = slice(csm-sp, csm)
+                slices[ind] = slice(csm - sp, csm)
                 models.append(self.inav[tuple(slices)])
-                array_slices = self.signal._get_array_slices(tuple(slices), True)
+                array_slices = self.signal._get_array_slices(tuple(slices),
+                                                             True)
                 data_slices.append(data[array_slices])
             from concurrent.futures import ThreadPoolExecutor
             with ThreadPoolExecutor(max_workers=threaded) as exe:
@@ -1820,6 +1827,9 @@ class ModelSpecialSlicers(object):
                                       dims,
                                       (slices, array_slices),
                                       self.isNavigation)
+            if _model.axes_manager.navigation_size < 2:
+                if co.active_is_multidimensional:
+                    cn.active = co._active_array[array_slices[:dims[0]]]
             for po, pn in zip(co.parameters, cn.parameters):
                 copy_slice_from_whitelist(po,
                                           pn,
