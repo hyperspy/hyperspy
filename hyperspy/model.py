@@ -395,7 +395,7 @@ class BaseModel(list):
             self.update_plot()
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
-                  show_progressbar=None):
+                  show_progressbar=None, out=None, threaded=False):
         """Returns a recreation of the dataset using the model.
         the spectral range that is not fitted is filled with nans.
 
@@ -410,6 +410,14 @@ class BaseModel(list):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        out : {None, BaseSignal}
+            The signal where to put the result into. Convenient for parallel
+            processing. If None (default), creates a new one. If passed, it is
+            assumed to be of correct shape and dtype and not checked.
+        threaded : bool, int
+            If True or more than 1, perform the recreation parallely using as
+            many threads as specified. If True, as many threads as CPU cores
+            available are used.
 
         Returns
         -------
@@ -427,6 +435,71 @@ class BaseModel(list):
         >>> s2 = m.as_signal(component_list=[l1])
 
         """
+        if out is None:
+            data = np.empty(self.signal.data.shape, dtype='float')
+            data.fill(np.nan)
+            signal = self.signal.__class__(
+                data,
+                axes=self.signal.axes_manager._get_axes_dicts())
+            signal.metadata.General.title = (
+                self.signal.metadata.General.title + " from fitted model")
+            signal.metadata.Signal.binned = self.signal.metadata.Signal.binned
+        else:
+            signal = out
+            data = signal.data
+
+        if threaded is True:
+            from os import cpu_count
+            threaded = cpu_count()
+        if not isinstance(threaded, int):
+            threaded = int(threaded)
+        if threaded < 2:
+            threaded = False
+        if threaded is False:
+            self._as_signal_iter(component_list=component_list,
+                                 out_of_range_to_nan=out_of_range_to_nan,
+                                 show_progressbar=show_progressbar, data=data)
+        else:
+            am = self.axes_manager
+            nav_shape = am.navigation_shape
+            if len(nav_shape):
+                ind = np.argmax(nav_shape)
+                size = nav_shape[ind]
+            if not len(nav_shape) or size < 4:
+                # no or not enough navigation, just run without threads
+                return self.as_signal(component_list=component_list,
+                                      out_of_range_to_nan=out_of_range_to_nan,
+                                      show_progressbar=show_progressbar,
+                                      out=signal,
+                                      threaded=False)
+            threaded = min(threaded, size / 2)
+            splits = [len(sp) for sp in np.array_split(np.arange(size),
+                                                       threaded)]
+            models = []
+            data_slices = []
+            slices = [slice(None), ] * len(nav_shape)
+            for sp, csm in zip(splits, np.cumsum(splits)):
+                slices[ind] = slice(csm - sp, csm)
+                models.append(self.inav[tuple(slices)])
+                array_slices = self.signal._get_array_slices(tuple(slices),
+                                                             True)
+                data_slices.append(data[array_slices])
+            from concurrent.futures import ThreadPoolExecutor
+            with ThreadPoolExecutor(max_workers=threaded) as exe:
+                _map = exe.map(
+                    lambda thing: thing[0]._as_signal_iter(
+                        data=thing[1],
+                        component_list=component_list,
+                        out_of_range_to_nan=out_of_range_to_nan,
+                        show_progressbar=show_progressbar), 
+                    zip(models, data_slices))
+            _ = next(_map)
+        return signal
+
+    def _as_signal_iter(self, component_list=None, out_of_range_to_nan=True,
+                        show_progressbar=None, data=None):
+        if data is None:
+            raise ValueError('No data supplied')
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
@@ -441,8 +514,6 @@ class BaseModel(list):
                             continue    # Keep active_map
                         component_.active_is_multidimensional = False
                     component_.active = active
-            data = np.empty(self.signal.data.shape, dtype='float')
-            data.fill(np.nan)
             if out_of_range_to_nan is True:
                 channel_switches_backup = copy.copy(self.channel_switches)
                 self.channel_switches[:] = True
@@ -457,13 +528,6 @@ class BaseModel(list):
                     non_convolved=not self.convolved, onlyactive=True).ravel()
             if out_of_range_to_nan is True:
                 self.channel_switches[:] = channel_switches_backup
-            signal = self.signal.__class__(
-                data,
-                axes=self.signal.axes_manager._get_axes_dicts())
-            signal.metadata.General.title = (
-                self.signal.metadata.General.title + " from fitted model")
-            signal.metadata.Signal.binned = self.signal.metadata.Signal.binned
-        return signal
 
     @property
     def _plot_active(self):
@@ -770,9 +834,9 @@ class BaseModel(list):
 
     def _errfunc4mpfit(self, p, fjac=None, x=None, y=None, weights=None):
         if fjac is None:
-            errfunc = self._model_function(p) - y
+            errfunc = self._model_function(p).ravel() - y
             if weights is not None:
-                errfunc *= weights
+                errfunc *= weights.ravel()
             status = 0
             return [status, errfunc]
         else:
@@ -1047,7 +1111,9 @@ class BaseModel(list):
                           autoderivative=autoderivative,
                           quiet=1)
                 self.p0 = m.params
-                if (self.axis.size > len(self.p0)) and m.perror is not None:
+
+                if hasattr(self, 'axis') and (self.axis.size > len(self.p0)) \
+                   and m.perror is not None:
                     self.p_std = m.perror * np.sqrt(
                         (self._errfunc(self.p0, *args) ** 2).sum() /
                         (len(args[0]) - len(self.p0)))
@@ -1761,6 +1827,9 @@ class ModelSpecialSlicers(object):
                                       dims,
                                       (slices, array_slices),
                                       self.isNavigation)
+            if _model.axes_manager.navigation_size < 2:
+                if co.active_is_multidimensional:
+                    cn.active = co._active_array[array_slices[:dims[0]]]
             for po, pn in zip(co.parameters, cn.parameters):
                 copy_slice_from_whitelist(po,
                                           pn,

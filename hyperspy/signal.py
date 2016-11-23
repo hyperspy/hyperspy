@@ -3195,19 +3195,22 @@ class BaseSignal(FancySlicing,
     get_histogram.__doc__ %= OUT_ARG
 
     def map(self, function,
-            show_progressbar=None, **kwargs):
+            show_progressbar=None,
+            threaded=False, **kwargs):
         """Apply a function to the signal data at all the coordinates.
 
-        The function must operate on numpy arrays and the output *must have the
-        same dimensions as the input*. The function is applied to the data at
+        The function must operate on numpy arrays, but the output no longer has
+        to be of the same dimensions. The function is applied to the data at
         each coordinate and the result is stored in the current signal i.e.
-        this method operates *in-place*.  Any extra keyword argument is passed
-        to the function. The keywords can take different values at different
-        coordinates. If the function takes an `axis` or `axes` argument, the
-        function is assumed to be vectorial and the signal axes are assigned to
-        `axis` or `axes`.  Otherwise, the signal is iterated over the
-        navigation axes and a progress bar is displayed to monitor the
-        progress.
+        this method operates *in-place* and overwrites the data. Any extra
+        keyword argument is passed to the function. The keywords can take
+        different values at different coordinates. If the function takes an
+        `axis` or `axes` argument, the function is assumed to be vectorial and
+        the signal axes are assigned to `axis` or `axes`.  Otherwise, the
+        signal is iterated over the navigation axes and a progress bar is
+        displayed to monitor the progress.
+
+        Navigation dimensions and information is always preserved.
 
         Parameters
         ----------
@@ -3217,11 +3220,20 @@ class BaseSignal(FancySlicing,
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        threaded : bool
+            if True, the mapping will be performed in a threaded (parallel)
+            manner.
         keyword arguments : any valid keyword argument
             All extra keyword arguments are passed to the
 
         Notes
         -----
+        If the function results do not have identical shapes, the data is
+        replaced by an array of navigation shape, where each element
+        corresponds to the result of the function (of arbitraty object type).
+        As such, most functions are not able to operate on the result and the
+        data should be used directly.
+
         This method is similar to Python's :func:`map` that can also be utilize
         with a :class:`Signal` instance for similar purposes. However, this
         method has the advantage of being faster because it iterates the numpy
@@ -3266,7 +3278,7 @@ class BaseSignal(FancySlicing,
                 " axes.")
         # If the function has an axis argument and the signal dimension is 1,
         # we suppose that it can operate on the full array and we don't
-        # interate over the coordinates.
+        # iterate over the coordinates.
         try:
             fargs = inspect.signature(function).parameters.keys()
         except TypeError:
@@ -3279,26 +3291,124 @@ class BaseSignal(FancySlicing,
             kwargs['axis'] = \
                 self.axes_manager.signal_axes[-1].index_in_array
 
-            self.data = function(self.data, **kwargs)
+            self._map_all(function, **kwargs)
         # If the function has an axes argument
         # we suppose that it can operate on the full array and we don't
-        # interate over the coordinates.
-        elif not ndkwargs and "axes" in fargs:
+        # iterate over the coordinates.
+        elif not ndkwargs and "axes" in fargs and not threaded:
             kwargs['axes'] = tuple([axis.index_in_array for axis in
                                     self.axes_manager.signal_axes])
-            self.data = function(self.data, **kwargs)
+            self._map_all(function, **kwargs)
         else:
             # Iteration over coordinates.
-            iterators = [signal[1]._iterate_signal() for signal in ndkwargs]
-            iterators = tuple([self._iterate_signal()] + iterators)
-            for data in progressbar(zip(*iterators),
-                                    disable=not show_progressbar,
-                                    total=self.axes_manager.navigation_size,
-                                    leave=True):
-                for (key, value), datum in zip(ndkwargs, data[1:]):
-                    kwargs[key] = datum[0]
-                data[0][:] = function(data[0], **kwargs)
+            self._map_iterate(function, iterating_kwargs=ndkwargs,
+                              show_progressbar=show_progressbar,
+                              threaded=threaded,
+                              **kwargs)
         self.events.data_changed.trigger(obj=self)
+
+    def _map_all(self, function, **kwargs):
+        """The function has to have either 'axis' or 'axes' keyword argument,
+        and hence support operating on the full dataset efficiently.
+
+        Replaced for lazy signals"""
+        self.data = function(self.data, **kwargs)
+
+    def _map_iterate(self, function, iterating_kwargs=(),
+                     show_progressbar=None, threaded=False,
+                     **kwargs):
+        """Iterates the signal navigation space applying the function.
+
+        Paratemers
+        ----------
+        function : callable
+            the function to apply
+        iterating_kwargs : tuple of tuples
+            a tuple with structure (('key1', value1), ('key2', value2), ..)
+            where the key-value pairs will be passed as kwargs for the
+            callable, and the values will be iterated together with the signal
+            navigation.
+        threaded : bool
+            if True, the mapping will be performed in a threaded (parallel)
+            manner.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
+
+        Notes
+        -----
+        This method is replaced for lazy signals.
+        """
+        iterators = tuple(signal[1]._iterate_signal()
+                          if isinstance(signal[1], BaseSignal) else signal[1]
+                          for signal in iterating_kwargs)
+        # make all kwargs iterating for simplicity:
+        from itertools import repeat
+        size = max(1, self.axes_manager.navigation_size)
+        iterating = tuple(key for key, value in iterating_kwargs)
+        for k, v in kwargs.items():
+            if k not in iterating:
+                iterating += k,
+                iterators += repeat(v, size),
+        res_shape = self.axes_manager._navigation_shape_in_array
+        # no navigation
+        if not len(res_shape):
+            res_shape = (1,)
+        res_data = np.empty(res_shape,
+                            dtype='O')
+        shapes = set()
+
+        iterators = (self._iterate_signal(),) + iterators
+
+        def figure_out_kwargs(data):
+            _kwargs = {k: v for k, v in zip(iterating, data[1:])}
+            for k, v in iterating_kwargs:
+                if isinstance(v, BaseSignal) and len(_kwargs[k]) == 1:
+                    _kwargs[k] = _kwargs[k][0]
+            return data[0], _kwargs
+
+        def func(*args):
+            dat, these_kwargs = figure_out_kwargs(*args)
+            return function(dat, **these_kwargs)
+
+        if threaded:
+            from concurrent.futures import ThreadPoolExecutor
+            executor = ThreadPoolExecutor()
+            thismap = executor.map
+        else:
+            from builtins import map as thismap
+        for ind, res in progressbar(zip(range(res_data.size),
+                                        thismap(func, zip(*iterators))),
+                                    disable=not show_progressbar,
+                                    total=size, leave=True):
+            res_data.flat[ind] = res
+            try:
+                shapes.add(res.shape)
+            except AttributeError:
+                shapes.add(None)
+        if threaded:
+            executor.shutdown()
+
+        # Combine data if required
+        shapes = list(shapes)
+        nav_shape = self.axes_manager._navigation_shape_in_array
+        if len(shapes) == 1 and shapes[0] is not None:
+            sig_shape = shapes[0]
+            if sig_shape == (1,):
+                sig_shape = ()
+            res_data = np.stack(res_data.flat).reshape(nav_shape + sig_shape)
+            if self.data.shape == res_data.shape:
+                self.data[:] = res_data
+            else:
+                self.data = res_data
+            for ind in range(len(sig_shape) -
+                             self.axes_manager.signal_dimension, 0, -1):
+                self.axes_manager._append_axis(sig_shape[-ind], navigate=False)
+        else:
+            self.data = res_data
+            self.axes_manager.remove(self.axes_manager.signal_axes)
+            self.__class__ = BaseSignal
+            self.__init__(**self._to_dictionary(add_models=True))
 
     def copy(self):
         try:

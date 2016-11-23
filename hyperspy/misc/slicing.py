@@ -207,8 +207,13 @@ class FancySlicing(object):
 
     def _slicer(self, slices, isNavigation=None, out=None):
         array_slices = self._get_array_slices(slices, isNavigation)
+        new_data = self.data[array_slices]
+        if new_data.size == 1 and new_data.dtype is np.dtype('O') and \
+           isinstance(new_data[0], np.ndarray):
+            new_data = new_data[0]
+
         if out is None:
-            _obj = self._deepcopy_with_new_data(self.data[array_slices],
+            _obj = self._deepcopy_with_new_data(new_data,
                                                 copy_variance=True)
             _to_remove = []
             for slice_, axis in zip(array_slices, _obj.axes_manager._axes):
@@ -220,7 +225,7 @@ class FancySlicing(object):
             for _ind in reversed(sorted(_to_remove)):
                 _obj._remove_axis(_ind)
         else:
-            out.data = self.data[array_slices]
+            out.data = new_data
             _obj = out
             i = 0
             for slice_, axis_src in zip(array_slices, self.axes_manager._axes):
