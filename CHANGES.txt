@@ -28,20 +28,20 @@ Enhancements
   supported file formats when available.
 
 v1.1
-====
+---
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
 <https://github.com/hyperspy/hyperspy/issues?q=label%3Abug+is%3Aclosed+milestone%3A1.1>`_.
 
 NEW
----
+~~~
 
 * :ref:`signal.transpose`.
 * :ref:`protochips-format` reader.
 
 Enhancements
-------------
+~~~
 
 
 * :py:meth:`~.model.BaseModel.fit` takes a new algorithm, the global optimizer
@@ -54,7 +54,7 @@ Enhancements
 
 
 v1.0.1
-======
+---
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -135,7 +135,7 @@ API changes
 
 
 v0.8.5
-======
+---
 
 
 This is a maintenance release. Follow the following links for details on all
@@ -150,14 +150,14 @@ It also includes a new feature and introduces an important API change that
 will be fully enforced in Hyperspy 1.0.
 
 New feature
------------
+~~~
 
 * Widgets to interact with the model components in the Jupyter Notebook.
   See :ref:`here <notebook_interaction-label>` and
   `#1007 <https://github.com/hyperspy/hyperspy/pull/1007>`_ .
 
 API changes
------------
+~~~
 
 The new :py:class:`~.signal.BaseSignal`,
 :py:class:`~._signals.signal1d.Signal1D` and
@@ -170,13 +170,13 @@ deprecate `as_signal1D`, `as_signal2D`, `to_spectrum` and `to_image`. See `#963
 
 
 v0.8.4
-======
+---
 
 This release adds support for Python 3 and drops support for Python 2. In all
 other respects it is identical to v0.8.3.
 
 v0.8.3
-======
+---
 
 This is a maintenance release that includes fixes for multiple bugs, some
 enhancements, new features and API changes. This is set to be the last HyperSpy
@@ -203,14 +203,14 @@ Follow the following links for details on all the `bugs fixed
 .. _changes_0.8.2:
 
 v0.8.2
-======
+---
 
 This is a maintenance release that fixes an issue with the Python installers. Those who have successfully installed v0.8.1 do not need to upgrade.
 
 .. _changes_0.8.1:
 
 v0.8.1
-======
+---
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -226,7 +226,7 @@ It also includes some new features and introduces important API changes that
 will be fully enforced in Hyperspy 1.0.
 
 New features
-------------
+~~~
 * Support for IPython 3.0.
 * ``%hyperspy`` :ref:`IPython magic <magic-label>` to easily and transparently import HyperSpy, matplotlib and numpy when using IPython.
 * :py:class:`~._components.expression.Expression` model component to easily create analytical function components. More details
@@ -237,7 +237,7 @@ New features
   that includes pretty printing of the components.
 
 API changes
------------
+~~~
 
 * :py:mod:`~.hyperspy.hspy` is now deprecated in favour of the new
   :py:mod:`~.hyperspy.api`. The new API renames and/or move several modules as
@@ -322,7 +322,7 @@ API changes
     + ``add_axes`` -> ``set_mpl_ax``
 
 v0.7.3
-======
+---
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.3 milestone
@@ -332,7 +332,7 @@ in the github repository.
 .. _changes_0.7.2:
 
 v0.7.2
-======
+---
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.2 milestone
@@ -342,7 +342,7 @@ in the github repository.
 .. _changes_0.7.1:
 
 v0.7.1
-======
+---
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.1 milestone
@@ -351,7 +351,7 @@ in the github repository.
 
 
 New features
-------------
+~~~
 .. _changes_0.7.1:
 
 * Add suspend/resume model plot updating. See :ref:`model.visualization`.
@@ -586,10 +586,10 @@ API changes
 .. _changes_0.5.1:
 
 v0.5.1
-======
+---
 
 New features
-------------
+~~~
 * New Signal method `get_current_signal` proposed by magnunor.
 * New Signal `save` method keyword `extension` to easily change the saving format while keeping the same file name.
 * New EELSSpectrum methods: estimate_elastic_scattering_intensity, fourier_ratio_deconvolution, richardson_lucy_deconvolution, power_law_extrapolation.
@@ -598,7 +598,7 @@ New features
 
 
 Major bugs fixed
-----------------
+~~~
 * The `print_current_values` Model method was raising errors when fine structure was enabled or when only_free = False.
 *  The `load` function `signal_type` keyword was not passed to the readers.
 * The spikes removal tool was unable to find the next spikes when the spike was detected close to the limits of the spectrum.
@@ -612,7 +612,7 @@ Major bugs fixed
 
 
 API changes
------------
+~~~
 * EELSSPectrum.find_low_loss_centre was renamed to estimate_zero_loss_peak_centre.
 * EELSSPectrum.calculate_FWHM was renamed to estimate_FWHM.
 
@@ -681,10 +681,10 @@ API changes
 .. _changes_0.4.1:
 
 v0.4.1
-======
+---
 
 New features
-------------
+~~~
 
  * Added TIFF 16, 32 and 64 bits support by using (and distributing) Christoph Gohlke's `tifffile library <http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`_.
  * Improved UTF8 support.
@@ -698,14 +698,14 @@ New features
 
 
 Bugs fixed
-----------
+~~~
  * Non-ascii characters breaking IO and print features fixed.
  * Loading of multiple files at once using wildcards fixed.
  * Remove broken hyperspy-gui script.
  * Remove unmantained and broken 2D peak finding and analysis features.
 
 Syntax changes
---------------
+~~~
  * In EELS automatic background feature creates a PowerLaw component, adds it to the model an add it to a variable in the user namespace. The variable has been renamed from `bg` to `background`.
  * pes_gaussian Component renamed to pes_core_line_shape.
 
@@ -819,3 +819,4 @@ Syntax changes
  * The documentation was updated to reflex the last changes.
  * The microscopes.csv file was updated so it no longer contains the
    Orsay VG parameters.
+   
