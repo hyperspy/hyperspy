@@ -245,7 +245,7 @@ template['General'].logging_level = 'WARNING'
 def template2config(template, config):
     for section, traited_class in template.items():
         config.add_section(section)
-        for key, item in traited_class.get().items():
+        for key, item in traited_class.trait_get().items():
             config.set(section, key, str(item))
 
 
@@ -260,7 +260,7 @@ def config2template(template, config):
             if name == 'fine_structure_smoothing':
                 value = float(value)
             config_dict[name] = value
-        traited_class.set(True, **config_dict)
+        traited_class.trait_set(True, **config_dict)
 
 
 def dictionary_from_template(template):
