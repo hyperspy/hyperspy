@@ -784,6 +784,28 @@ arguments as in the following example.
   Rotation of images using :py:meth:`~.signal.BaseSignal.map` with different
   arguments for each image in the stack.
 
+
+.. versionadded:: 1.2.0
+    ``parallel`` keyword.
+
+The execution can be sped up by passing ``parallel`` keyword to the
+:py:meth:`~.signal.BaseSignal.map` method:
+
+.. code-block:: python
+
+    >>> import time
+    >>> def slow_func(data):
+    ...     time.sleep(1.)
+    ...     return data+1
+    >>> s = hs.signals.Signal1D(np.arange(20).reshape((20,1)))
+    >>> s
+    <Signal1D, title: , dimensions: (20|1)>
+    >>> s.map(slow_func, parallel=False)
+    100%|██████████████████████████████████████| 20/20 [00:20<00:00,  1.00s/it]
+    >>> # some operations will be done in parallel:
+    >>> s.map(slow_func, parallel=True)
+    100%|██████████████████████████████████████| 20/20 [00:02<00:00,  6.73it/s]
+
 Cropping
 ^^^^^^^^
 
