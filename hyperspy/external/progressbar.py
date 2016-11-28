@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from tqdm import tqdm
+from tqdm import tqdm, tqdm_notebook
 
 
 def progressbar(*args, **kwargs):
@@ -27,5 +27,9 @@ def progressbar(*args, **kwargs):
     %s
     """
     kwargs['position'] = 0
-    return tqdm(*args, **kwargs)
+    try:
+        return tqdm_notebook(*args, **kwargs)
+    except:
+        return tqdm(*args, **kwargs)
 progressbar.__doc__ %= (tqdm.__doc__, tqdm.__init__.__doc__)
+
