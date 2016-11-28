@@ -116,14 +116,18 @@ class TestPolynomial:
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
         m.append(hs.model.components1D.Polynomial(order=2))
-        m[0].coefficients.value = (0.5, 2, 3)
+        coeff_values = (0.5, 2, 3)
         self.m = m
         s_2d = hs.signals.Signal1D(np.arange(1000).reshape(10, 100))
         self.m_2d = s_2d.create_model()
-        self.m_2d.append(m[0])
+        self.m_2d.append(hs.model.components1D.Polynomial(order=2))
         s_3d = hs.signals.Signal1D(np.arange(1000).reshape(2, 5, 100))
         self.m_3d = s_3d.create_model()
-        self.m_3d.append(m[0])
+        self.m_3d.append(hs.model.components1D.Polynomial(order=2))
+        # if same component is pased, axes_managers get mixed up, tests
+        # sometimes randomly fail
+        for _m in [self.m, self.m_2d, self.m_3d]:
+            _m[0].coefficients.value = coeff_values
 
     def test_gradient(self):
         c = self.m[0]

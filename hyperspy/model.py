@@ -395,7 +395,7 @@ class BaseModel(list):
             self.update_plot()
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
-                  show_progressbar=None, out=None, threaded=False):
+                  show_progressbar=None, out=None, parallel=None):
         """Returns a recreation of the dataset using the model.
         the spectral range that is not fitted is filled with nans.
 
@@ -414,7 +414,7 @@ class BaseModel(list):
             The signal where to put the result into. Convenient for parallel
             processing. If None (default), creates a new one. If passed, it is
             assumed to be of correct shape and dtype and not checked.
-        threaded : bool, int
+        parallel : bool, int
             If True or more than 1, perform the recreation parallely using as
             many threads as specified. If True, as many threads as CPU cores
             available are used.
@@ -435,6 +435,8 @@ class BaseModel(list):
         >>> s2 = m.as_signal(component_list=[l1])
 
         """
+        if parallel is None:
+            parallel = preferences.General.parallel
         if out is None:
             data = np.empty(self.signal.data.shape, dtype='float')
             data.fill(np.nan)
@@ -448,14 +450,14 @@ class BaseModel(list):
             signal = out
             data = signal.data
 
-        if threaded is True:
+        if parallel is True:
             from os import cpu_count
-            threaded = cpu_count()
-        if not isinstance(threaded, int):
-            threaded = int(threaded)
-        if threaded < 2:
-            threaded = False
-        if threaded is False:
+            parallel = cpu_count()
+        if not isinstance(parallel, int):
+            parallel = int(parallel)
+        if parallel < 2:
+            parallel = False
+        if parallel is False:
             self._as_signal_iter(component_list=component_list,
                                  out_of_range_to_nan=out_of_range_to_nan,
                                  show_progressbar=show_progressbar, data=data)
@@ -470,11 +472,11 @@ class BaseModel(list):
                 return self.as_signal(component_list=component_list,
                                       out_of_range_to_nan=out_of_range_to_nan,
                                       show_progressbar=show_progressbar,
-                                      out=signal,
-                                      threaded=False)
-            threaded = min(threaded, size / 2)
+                                      out=signal, parallel=False)
+            parallel = min(parallel, size / 2)
+            print('Parallel is {}'.format(parallel))
             splits = [len(sp) for sp in np.array_split(np.arange(size),
-                                                       threaded)]
+                                                       parallel)]
             models = []
             data_slices = []
             slices = [slice(None), ] * len(nav_shape)
@@ -485,7 +487,7 @@ class BaseModel(list):
                                                              True)
                 data_slices.append(data[array_slices])
             from concurrent.futures import ThreadPoolExecutor
-            with ThreadPoolExecutor(max_workers=threaded) as exe:
+            with ThreadPoolExecutor(max_workers=parallel) as exe:
                 _map = exe.map(
                     lambda thing: thing[0]._as_signal_iter(
                         data=thing[1],

@@ -3196,7 +3196,7 @@ class BaseSignal(FancySlicing,
 
     def map(self, function,
             show_progressbar=None,
-            threaded=False, **kwargs):
+            parallel=None, **kwargs):
         """Apply a function to the signal data at all the coordinates.
 
         The function must operate on numpy arrays, but the output no longer has
@@ -3220,7 +3220,7 @@ class BaseSignal(FancySlicing,
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
-        threaded : bool
+        parallel : {None,bool,int}
             if True, the mapping will be performed in a threaded (parallel)
             manner.
         keyword arguments : any valid keyword argument
@@ -3256,8 +3256,6 @@ class BaseSignal(FancySlicing,
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
         """
-        if show_progressbar is None:
-            show_progressbar = preferences.General.show_progressbar
         # Sepate ndkwargs
         ndkwargs = ()
         for key, value in kwargs.items():
@@ -3295,7 +3293,7 @@ class BaseSignal(FancySlicing,
         # If the function has an axes argument
         # we suppose that it can operate on the full array and we don't
         # iterate over the coordinates.
-        elif not ndkwargs and "axes" in fargs and not threaded:
+        elif not ndkwargs and "axes" in fargs and not parallel:
             kwargs['axes'] = tuple([axis.index_in_array for axis in
                                     self.axes_manager.signal_axes])
             self._map_all(function, **kwargs)
@@ -3303,7 +3301,7 @@ class BaseSignal(FancySlicing,
             # Iteration over coordinates.
             self._map_iterate(function, iterating_kwargs=ndkwargs,
                               show_progressbar=show_progressbar,
-                              threaded=threaded,
+                              parallel=parallel,
                               **kwargs)
         self.events.data_changed.trigger(obj=self)
 
@@ -3315,7 +3313,7 @@ class BaseSignal(FancySlicing,
         self.data = function(self.data, **kwargs)
 
     def _map_iterate(self, function, iterating_kwargs=(),
-                     show_progressbar=None, threaded=False,
+                     show_progressbar=None, parallel=None,
                      **kwargs):
         """Iterates the signal navigation space applying the function.
 
@@ -3328,17 +3326,62 @@ class BaseSignal(FancySlicing,
             where the key-value pairs will be passed as kwargs for the
             callable, and the values will be iterated together with the signal
             navigation.
-        threaded : bool
+        parallel : {None, bool}
             if True, the mapping will be performed in a threaded (parallel)
-            manner.
+            manner. If None the default from `preferences` is used.
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        **kwargs
+            passed to the function as constant kwargs
 
         Notes
         -----
         This method is replaced for lazy signals.
+
+        Examples
+        --------
+
+        Pass a larger array of different shape
+
+        >>> s = hs.signals.Signal1D(np.arange(20.).reshape((20,1)))
+        >>> def func(data, value=0):
+        ...     return data + value
+        >>> # pay attention that it's a tuple of tuples - need commas
+        >>> s._map_iterate(func,
+        ...                iterating_kwargs=(('value',
+        ...                                    np.random.rand(5,400).flat),))
+        >>> s.data.T
+        array([[  0.82869603,   1.04961735,   2.21513949,   3.61329091,
+                  4.2481755 ,   5.81184375,   6.47696867,   7.07682618,
+                  8.16850697,   9.37771809,  10.42794054,  11.24362699,
+                 12.11434077,  13.98654036,  14.72864184,  15.30855499,
+                 16.96854373,  17.65077064,  18.64925703,  19.16901297]])
+
+        Storing function result to other signal (e.g. calculated shifts)
+
+        >>> s = hs.signals.Signal1D(np.arange(20.).reshape((5,4)))
+        >>> def func(data): # the original function
+        ...     return data.sum()
+        >>> result = s._get_navigation_signal().T
+        >>> def wrapped(*args, data=None):
+        ...     return func(data)
+        >>> result._map_iterate(wrapped,
+        ...                     iterating_kwargs=(('data', s),))
+        >>> result.data
+        array([  6.,  22.,  38.,  54.,  70.])
+
         """
+        if parallel is None:
+            parallel = preferences.General.parallel
+        if parallel:
+            from os import cpu_count
+            parallel = cpu_count()
+        # Because by default it's assumed to be I/O bound, and cpu_count*5 is
+        # used. For us this is not the case.
+
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         iterators = tuple(signal[1]._iterate_signal()
                           if isinstance(signal[1], BaseSignal) else signal[1]
                           for signal in iterating_kwargs)
@@ -3371,9 +3414,9 @@ class BaseSignal(FancySlicing,
             dat, these_kwargs = figure_out_kwargs(*args)
             return function(dat, **these_kwargs)
 
-        if threaded:
+        if parallel:
             from concurrent.futures import ThreadPoolExecutor
-            executor = ThreadPoolExecutor()
+            executor = ThreadPoolExecutor(max_workers=parallel)
             thismap = executor.map
         else:
             from builtins import map as thismap
@@ -3386,7 +3429,7 @@ class BaseSignal(FancySlicing,
                 shapes.add(res.shape)
             except AttributeError:
                 shapes.add(None)
-        if threaded:
+        if parallel:
             executor.shutdown()
 
         # Combine data if required
