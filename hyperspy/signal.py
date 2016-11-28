@@ -3409,6 +3409,7 @@ class BaseSignal(FancySlicing,
             self.axes_manager.remove(self.axes_manager.signal_axes)
             self.__class__ = BaseSignal
             self.__init__(**self._to_dictionary(add_models=True))
+        self.get_dimensions_from_data()
 
     def copy(self):
         try:
