@@ -45,7 +45,7 @@ class ScalableFixedPattern(Component):
     .. code-block:: ipython
 
         In [1]: s = load('my_spectrum.hdf5')
-        In [2] : my_fixed_pattern = components.ScalableFixedPattern(s))
+        In [2]: my_fixed_pattern = components.ScalableFixedPattern(s))
 
     Attributes
     ----------
@@ -87,9 +87,9 @@ class ScalableFixedPattern(Component):
         ----------
         x : array
             The spectral axis of the fixed pattern
-        kind: str or int, optional
+        kind : str or int, optional
             Specifies the kind of interpolation as a string
-            ('linear','nearest', 'zero', 'slinear', 'quadratic, 'cubic')
+            ('linear', 'nearest', 'zero', 'slinear', 'quadratic, 'cubic')
             or as an integer specifying the order of the spline interpolator
             to use. Default is 'linear'.
 
