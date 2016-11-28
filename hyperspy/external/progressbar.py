@@ -26,5 +26,6 @@ def progressbar(*args, **kwargs):
     %s
     %s
     """
+    kwargs['position'] = 0
     return tqdm(*args, **kwargs)
 progressbar.__doc__ %= (tqdm.__doc__, tqdm.__init__.__doc__)

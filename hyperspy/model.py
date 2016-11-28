@@ -474,7 +474,6 @@ class BaseModel(list):
                                       show_progressbar=show_progressbar,
                                       out=signal, parallel=False)
             parallel = min(parallel, size / 2)
-            print('Parallel is {}'.format(parallel))
             splits = [len(sp) for sp in np.array_split(np.arange(size),
                                                        parallel)]
             models = []
