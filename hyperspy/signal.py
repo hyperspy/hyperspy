@@ -3444,6 +3444,10 @@ class BaseSignal(FancySlicing,
                 self.data[:] = res_data
             else:
                 self.data = res_data
+            # remove if too many axes
+            self.axes_manager.remove(
+                self.axes_manager.signal_axes[len(sig_shape):])
+            # add additional required axes
             for ind in range(len(sig_shape) -
                              self.axes_manager.signal_dimension, 0, -1):
                 self.axes_manager._append_axis(sig_shape[-ind], navigate=False)
