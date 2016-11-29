@@ -26,7 +26,6 @@ def progressbar(*args, **kwargs):
     %s
     %s
     """
-    kwargs['position'] = 0
     try:
         return tqdm_notebook(*args, **kwargs)
     except:

@@ -492,13 +492,16 @@ class BaseModel(list):
                         data=thing[1],
                         component_list=component_list,
                         out_of_range_to_nan=out_of_range_to_nan,
-                        show_progressbar=show_progressbar), 
-                    zip(models, data_slices))
+                        show_progressbar=thing[2] + 1),
+                    zip(models, data_slices, range(int(parallel))))
             _ = next(_map)
         return signal
 
     def _as_signal_iter(self, component_list=None, out_of_range_to_nan=True,
                         show_progressbar=None, data=None):
+        # Note that show_progressbar can be an int to determine the progressbar
+        # position for a thread-friendly bars. Otherwise race conditions are
+        # ugly...
         if data is None:
             raise ValueError('No data supplied')
         if show_progressbar is None:
@@ -519,14 +522,15 @@ class BaseModel(list):
                 channel_switches_backup = copy.copy(self.channel_switches)
                 self.channel_switches[:] = True
             maxval = self.axes_manager.navigation_size
-            show_progressbar = show_progressbar and (maxval > 0)
-            for index in progressbar(self.axes_manager, total=maxval,
-                                     disable=not show_progressbar,
-                                     leave=True):
+            enabled = show_progressbar and (maxval > 0)
+            pbar = progressbar(total=maxval, disable=not enabled,
+                               position=show_progressbar, leave=True)
+            for index in self.axes_manager:
                 self.fetch_stored_values(only_fixed=False)
                 data[self.axes_manager._getitem_tuple][
                     np.where(self.channel_switches)] = self.__call__(
                     non_convolved=not self.convolved, onlyactive=True).ravel()
+                pbar.update(1)
             if out_of_range_to_nan is True:
                 self.channel_switches[:] = channel_switches_backup
 
