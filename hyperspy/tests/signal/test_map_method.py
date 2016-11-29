@@ -140,3 +140,57 @@ class TestSignal0D:
                   parallel=t)
             np.testing.assert_allclose(s.data, self.s.inav[1, 1].data ** 2)
             nt.assert_true(m.data_changed.called)
+
+
+_alphabet = 'abcdefghijklmnopqrstuvwxyz'
+
+
+class TestChangingAxes:
+
+    def setup(self):
+        self.base = hs.signals.BaseSignal(np.empty((2, 3, 4, 5, 6, 7)))
+        for ax, name in zip(self.base.axes_manager._axes, _alphabet):
+            ax.name = name
+
+    def test_one_nav_reducing(self):
+        s = self.base.transpose(signal_axes=4).inav[0, 0]
+        s.map(np.mean, axis=1)
+        nt.assert_equal(list('def'), [ax.name for ax in
+                                      s.axes_manager._axes])
+        nt.assert_equal(0, len(s.axes_manager.navigation_axes))
+        s.map(np.mean, axis=(1, 2))
+        nt.assert_equal(['f'], [ax.name for ax in s.axes_manager._axes])
+        nt.assert_equal(0, len(s.axes_manager.navigation_axes))
+
+    def test_one_nav_increasing(self):
+        s = self.base.transpose(signal_axes=4).inav[0, 0]
+        s.map(np.tile, reps=(2, 1, 1, 1, 1))
+        nt.assert_equal(len(s.axes_manager.signal_axes), 5)
+        nt.assert_true(set('cdef') <= {ax.name for ax in
+                                       s.axes_manager._axes})
+        nt.assert_equal(0, len(s.axes_manager.navigation_axes))
+        nt.assert_equal(s.data.shape, (2, 4, 5, 6, 7))
+
+    def test_reducing(self):
+        s = self.base.transpose(signal_axes=4)
+        s.map(np.mean, axis=1)
+        nt.assert_equal(list('abdef'), [ax.name for ax in
+                                        s.axes_manager._axes])
+        nt.assert_equal(2, len(s.axes_manager.navigation_axes))
+        s.map(np.mean, axis=(1, 2))
+        nt.assert_equal(['f'], [ax.name for ax in
+                                s.axes_manager.signal_axes])
+        nt.assert_equal(list('ba'), [ax.name for ax in
+                                     s.axes_manager.navigation_axes])
+        nt.assert_equal(2, len(s.axes_manager.navigation_axes))
+
+    def test_increasing(self):
+        s = self.base.transpose(signal_axes=4)
+        s.map(np.tile, reps=(2, 1, 1, 1, 1))
+        nt.assert_equal(len(s.axes_manager.signal_axes), 5)
+        nt.assert_true(set('cdef') <= {ax.name for ax in
+                                       s.axes_manager.signal_axes})
+        nt.assert_equal(list('ba'), [ax.name for ax in
+                                     s.axes_manager.navigation_axes])
+        nt.assert_equal(2, len(s.axes_manager.navigation_axes))
+        nt.assert_equal(s.data.shape, (2, 3, 2, 4, 5, 6, 7))
