@@ -73,7 +73,7 @@ def find_sideband_position(holo_data, holo_sampling, central_band_mask_radius=No
         return sb_position
 
 
-def find_sideband_size(holo_shape, sb_position, sb_size_ratio=0.5):
+def find_sideband_size(sb_position, holo_shape, sb_size_ratio=0.5):
     """
     Finds the size of sideband filter
 

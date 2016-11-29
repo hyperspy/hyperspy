@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from hyperspy.signals import Signal2D, BaseSignal
+from hyperspy.signals import Signal2D, BaseSignal, Signal1D
 from collections import OrderedDict
 from hyperspy.misc.holography.reconstruct import reconstruct, find_sideband_position, find_sideband_size
 import logging
@@ -49,17 +49,16 @@ class HologramImage(Signal2D):
 
         Returns
         -------
-        Tuple of the sideband position (y, x), referred to the unshifted FFT.
+        Signal1D instance of sideband positions (y, x), referred to the unshifted FFT.
         """
 
-        if self.axes_manager.navigation_size:
-            self.unfold_navigation_space()
-            sb_position = np.zeros((self.axes_manager.navigation_size, 2), dtype='int64')
-            for i in range(self.axes_manager.navigation_size):
-                sb_position[i] = find_sideband_position(self.inav[i].data, self.sampling, ap_cb_radius, sb)
-            self.fold()
-        else:
-            sb_position = find_sideband_position(self.data, self.sampling, ap_cb_radius, sb)
+        sb_position_temp = self.deepcopy()
+        sb_position_temp.map(find_sideband_position, holo_sampling=self.sampling, central_band_mask_radius=ap_cb_radius,
+                             sb=sb)
+
+        # Workaround to a map disfunctionality:
+        sb_position = Signal1D(sb_position_temp.data)
+
         return sb_position
 
     def find_sideband_size(self, sb_position):
@@ -68,24 +67,18 @@ class HologramImage(Signal2D):
 
         Parameters
         ----------
-        sb_position : array, :class:`~hyperspy.signals.BaseSignal
+        sb_position : :class:`~hyperspy.signals.BaseSignal
             The sideband position (y, x), referred to the non-shifted FFT.
 
         Returns
         -------
-        Sideband size (y, x), referred to the unshifted FFT.
+        Signal 1D instance with sideband size, referred to the unshifted FFT.
         """
-        if isinstance(sb_position, BaseSignal):
-            sb_position = sb_position.data
+        sb_size_temp = sb_position.deepcopy()
+        sb_size_temp.map(find_sideband_size, holo_shape=self.axes_manager.signal_shape)
 
-        if self.axes_manager.navigation_size:
-            sb_size = np.zeros(self.axes_manager.navigation_size)
-
-            for i in range(self.axes_manager.navigation_size):
-                sb_size[i] = find_sideband_size(self.axes_manager.signal_shape, sb_position[i])
-
-        else:
-            sb_size = find_sideband_size(self.axes_manager.signal_shape, sb_position)
+        # Workaround to a map disfunctionality:
+        sb_size = BaseSignal(sb_position_temp.data).T
 
         return sb_size
 
@@ -129,8 +122,6 @@ class HologramImage(Signal2D):
         processing.
         """
 
-        # Unfolding self:
-
         # Parsing reference:
         if not isinstance(reference, HologramImage):
             if isinstance(reference, Signal2D):
@@ -140,6 +131,12 @@ class HologramImage(Signal2D):
             elif reference is not None:
                 reference = HologramImage(reference)
 
+        # Testing match of navigation axes of reference and self (exception: reference nav_dim=1):
+        if (reference and not reference.axes_manager.navigation_shape == self.axes_manager.navigation_shape
+            and reference.axes_manager.navigation_size):
+
+            raise ValueError('The navigation dimensions of object and reference holograms do not match')
+
         # Parsing sideband position:
         if sb_position is None:
             warnings.warn('Sideband position is not specified. The sideband will be found automatically which may '
@@ -148,21 +145,28 @@ class HologramImage(Signal2D):
                 sb_position = self.find_sideband_position(sb=sb)
             else:
                 sb_position = reference.find_sideband_position(sb=sb)
+        elif (sb_position is isinstance(sb_position, BaseSignal)
+            and sb_position.axes_manager.navigation_shape != self.axes_manager.navigation_shape
+            and sb_position.axes_manager.navigation_size == 0):
 
-        if self.axes_manager.navigation_size:
-            if sb_position.ndim == 1:
-                sb_position = np.stack([sb_position]*self.axes_manager.navigation_size)
+            sb_position_temp = sb_position.data
 
-            elif sb_position.ndim == 2 and sb_position.shape[0] != self.axes_manager.navigation_size:
-                warnings.warn('The sideband position size does not match the size of the hologram image! '
-                              'The first values of sideband position will be used to reconstruct all slices'
-                              'of hologram image.')
-                sb_position = np.stack([sb_position[0]]*self.axes_manager.navigation_size)
 
+        # if self.axes_manager.navigation_size:  # we better do this step in reconstruction...
+        #     if sb_position.ndim == 1: # That would be if the sb_position is an nd array... should be fixed...
+        #         sb_position = np.stack([sb_position]*self.axes_manager.navigation_size)
+
+        # Parsing sideband size
         if sb_size is None:  # Default value is 1/2 distance between sideband and central band
-            sb_size = self.find_sideband_size(sb_position)
+            if reference is None:
+                sb_size = self.find_sideband_size(sb_position)
+            else:
+                sb_size = reference.find_sideband_size(sb_position)
+        elif (sb_size is isinstance(sb_position, BaseSignal)
+            and sb_size.axes_manager.navigation_shape != self.axes_manager.navigation_shape
+            and sb_size.axes_manager.navigation_size == 0):
 
-        folded = self.unfold_navigation_space()
+            sb_size_temp = sb_size.data
 
         # Standard edge smoothness of sideband aperture 5% of sb_size
         if sb_smoothness is None:
@@ -204,53 +208,62 @@ class HologramImage(Signal2D):
         #     axs.set_ylim(sb_position[0]-sb_size, sb_position[0]+sb_size)
         #     plt.show()
 
-        # object electron wave:
-        if self.axes_manager.navigation_size:
-            wave_object = np.zeros((self.axes_manager.navigation_size, ) + output_shape, dtype='complex')
-            for i in range(self.axes_manager.navigation_size):
-                wave_object[i] = reconstruct(self.inav[i].data, holo_sampling=self.sampling,
-                                             sb_size=sb_size[i], sb_position=sb_position[i], sb_smoothness=sb_smoothness[i],
-                                             output_shape=output_shape, plotting=plotting)
-        else:
-            wave_object = reconstruct(self.data, holo_sampling=self.sampling,
-                                      sb_size=sb_size, sb_position=sb_position, sb_smoothness=sb_smoothness,
-                                      output_shape=output_shape, plotting=plotting)
-        # Reconstructing reference wave and applying it (division):
-        folded_ref = False
+        # Reconstructing object electron wave:
+        wave_object = self.deepcopy()
 
+        # Checking if reference is a single image, which requires sideband parameters as a nparray to avoid iteration
+        # trough those:
+        if sb_position.axes_manager.navigation_size == self.axes_manager.navigation_sizeholo
+            wave_object.map(reconstruct, holo_sampling=self.sampling, sb_size=sb_size.data,
+                            sb_position=sb_position.data, sb_smoothness=sb_smoothness.data,
+                            output_shape=output_shape, plotting=plotting)
+
+        else:  # reference dimensions matches the object hologram dimensions
+            wave_object.map(reconstruct, holo_sampling=self.sampling, sb_size=sb_size, sb_position=sb_position,
+                            sb_smoothness=sb_smoothness, output_shape=output_shape, plotting=plotting)
+        wave_object.set_signal_type('electron_wave')  # New signal is a wave image!
+
+        # The lines bellow should be revisited once map function is fixed:
+        wave_object.axes_manager.signal_axes[0].size = output_shape[0]
+        wave_object.axes_manager.signal_axes[1].size = output_shape[1]
+        wave_object.axes_manager.signal_axes[0].scale = self.sampling[0] * self.axes_manager.signal_shape[0] / \
+                                                        output_shape[0]
+        wave_object.axes_manager.signal_axes[1].scale = self.sampling[1] * self.axes_manager.signal_shape[1] / \
+                                                        output_shape[1]
+
+        # Reconstructing reference wave and applying it (division):
         if reference is None:
             wave_reference = 1
         else:
-            # reference electron wave
-            if reference.axes_manager.navigation_size:
-                folded_ref = reference.unfold_navigation_space()
-                wave_reference = np.zeros((reference.axes_manager.navigation_size, ) + output_shape, dtype='complex')
-                for i in range(reference.axes_manager.navigation_size):
-                    wave_reference[i] = reconstruct(reference.inav[i].data, holo_sampling=self.sampling,
-                                                    sb_size=sb_size[i], sb_position=sb_position[i], sb_smoothness=sb_smoothness[i],
-                                                    output_shape=output_shape, plotting=plotting)
+            if reference.axes_manager.navigation_size != self.axes_manager.navigation_size:  # case when refernce is 1d
+                wave_reference = reference.deepcopy()
+            wave_reference.map(reconstruct, holo_sampling=self.sampling, sb_size=sb_size, sb_position=sb_position,
+                               sb_smoothness=sb_smoothness, output_shape=output_shape, plotting=plotting)
 
-                if reference.axes_manager.navigation_size != self.axes_manager.navigation_size:  # case when navdim of
-                    # reference is >0 and not equal to that of self:
 
-                    warnings.warn('The navigation size of the reference and the hologram do not match! Reference wave '
-                                  'will be averaged')
-                    wave_reference = np.mean(wave_reference, axis=0)
+                # reference is >0 and not equal to that of self:
+
+                warnings.warn('The navigation size of the reference and the hologram do not match! Reference wave '
+                              'will be averaged')
+                wave_reference = np.mean(wave_reference, axis=0)
 
             else:
-                if self.axes_manager.navigation_size:  # use only one slice of reconstruction parameters for reference:
-                    wave_reference = reconstruct(reference.data, holo_sampling=self.sampling,
-                                                 sb_size=sb_size[0], sb_position=sb_position[0],
-                                                 sb_smoothness=sb_smoothness[0],
-                                                 output_shape=output_shape, plotting=plotting)
-                else:
-                    wave_reference = reconstruct(reference.data, holo_sampling=self.sampling,
-                                                 sb_size=sb_size, sb_position=sb_position, sb_smoothness=sb_smoothness,
-                                                 output_shape=output_shape, plotting=plotting)
+                wave_reference = reconstruct(reference.data, holo_sampling=self.sampling,
+                                             sb_size=sb_size[0], sb_position=sb_position[0],
+                                             sb_smoothness=sb_smoothness[0],
+                                             output_shape=output_shape, plotting=plotting)
 
-        wave = wave_object / wave_reference
-        wave_image = self._deepcopy_with_new_data(wave)
-        wave_image.set_signal_type('electron_wave')  # New signal is a wave image!
+            wave_object.set_signal_type('electron_wave')  # New signal is a wave image!
+
+            # The lines bellow should be revisited once map function is fixed:
+            wave_reference.axes_manager.signal_axes[0].size = output_shape[0]
+            wave_reference.axes_manager.signal_axes[1].size = output_shape[1]
+            wave_reference.axes_manager.signal_axes[0].scale = self.sampling[0] * self.axes_manager.signal_shape[0] / \
+                                                               output_shape[0]
+            wave_reference.axes_manager.signal_axes[1].scale = self.sampling[1] * self.axes_manager.signal_shape[1] / \
+                                                               output_shape[1]
+
+        wave_image = wave_object / wave_reference
 
         # Reconstruction parameters are stored in holo_reconstruction_parameters:
         rec_param_dict = OrderedDict([('sb_position', sb_position), ('sb_size', sb_size),
@@ -259,12 +272,7 @@ class HologramImage(Signal2D):
         wave_image.metadata.Signal.add_node('holo_reconstruction_parameters')
         wave_image.metadata.Signal.holo_reconstruction_parameters.add_dictionary(rec_param_dict)
 
-        wave_image.axes_manager.signal_axes[0].size = output_shape[0]
-        wave_image.axes_manager.signal_axes[1].size = output_shape[1]
-        wave_image.axes_manager.signal_axes[0].scale = self.sampling[0] * self.axes_manager.signal_shape[0] / \
-                                                       output_shape[0]
-        wave_image.axes_manager.signal_axes[1].scale = self.sampling[1] * self.axes_manager.signal_shape[1] / \
-                                                       output_shape[1]
+
         if folded:
             self.fold()
             wave_image.fold()
