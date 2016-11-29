@@ -213,7 +213,7 @@ class HologramImage(Signal2D):
 
         # Checking if reference is a single image, which requires sideband parameters as a nparray to avoid iteration
         # trough those:
-        if sb_position.axes_manager.navigation_size == self.axes_manager.navigation_sizeholo
+        if sb_position.axes_manager.navigation_size == self.axes_manager.navigation_size:
             wave_object.map(reconstruct, holo_sampling=self.sampling, sb_size=sb_size.data,
                             sb_position=sb_position.data, sb_smoothness=sb_smoothness.data,
                             output_shape=output_shape, plotting=plotting)
@@ -232,36 +232,36 @@ class HologramImage(Signal2D):
                                                         output_shape[1]
 
         # Reconstructing reference wave and applying it (division):
-        if reference is None:
-            wave_reference = 1
-        else:
-            if reference.axes_manager.navigation_size != self.axes_manager.navigation_size:  # case when refernce is 1d
-                wave_reference = reference.deepcopy()
-            wave_reference.map(reconstruct, holo_sampling=self.sampling, sb_size=sb_size, sb_position=sb_position,
-                               sb_smoothness=sb_smoothness, output_shape=output_shape, plotting=plotting)
-
-
-                # reference is >0 and not equal to that of self:
-
-                warnings.warn('The navigation size of the reference and the hologram do not match! Reference wave '
-                              'will be averaged')
-                wave_reference = np.mean(wave_reference, axis=0)
-
-            else:
-                wave_reference = reconstruct(reference.data, holo_sampling=self.sampling,
-                                             sb_size=sb_size[0], sb_position=sb_position[0],
-                                             sb_smoothness=sb_smoothness[0],
-                                             output_shape=output_shape, plotting=plotting)
-
-            wave_object.set_signal_type('electron_wave')  # New signal is a wave image!
-
-            # The lines bellow should be revisited once map function is fixed:
-            wave_reference.axes_manager.signal_axes[0].size = output_shape[0]
-            wave_reference.axes_manager.signal_axes[1].size = output_shape[1]
-            wave_reference.axes_manager.signal_axes[0].scale = self.sampling[0] * self.axes_manager.signal_shape[0] / \
-                                                               output_shape[0]
-            wave_reference.axes_manager.signal_axes[1].scale = self.sampling[1] * self.axes_manager.signal_shape[1] / \
-                                                               output_shape[1]
+        # if reference is None:
+        #     wave_reference = 1
+        # else:
+        #     if reference.axes_manager.navigation_size != self.axes_manager.navigation_size:  # case when refernce is 1d
+        #         wave_reference = reference.deepcopy()
+        #     wave_reference.map(reconstruct, holo_sampling=self.sampling, sb_size=sb_size, sb_position=sb_position,
+        #                        sb_smoothness=sb_smoothness, output_shape=output_shape, plotting=plotting)
+        #
+        #
+        #         # reference is >0 and not equal to that of self:
+        #
+        #         warnings.warn('The navigation size of the reference and the hologram do not match! Reference wave '
+        #                       'will be averaged')
+        #         wave_reference = np.mean(wave_reference, axis=0)
+        #
+        #     else:
+        #         wave_reference = reconstruct(reference.data, holo_sampling=self.sampling,
+        #                                      sb_size=sb_size[0], sb_position=sb_position[0],
+        #                                      sb_smoothness=sb_smoothness[0],
+        #                                      output_shape=output_shape, plotting=plotting)
+        #
+        #     wave_object.set_signal_type('electron_wave')  # New signal is a wave image!
+        #
+        #     # The lines bellow should be revisited once map function is fixed:
+        #     wave_reference.axes_manager.signal_axes[0].size = output_shape[0]
+        #     wave_reference.axes_manager.signal_axes[1].size = output_shape[1]
+        #     wave_reference.axes_manager.signal_axes[0].scale = self.sampling[0] * self.axes_manager.signal_shape[0] / \
+        #                                                        output_shape[0]
+        #     wave_reference.axes_manager.signal_axes[1].scale = self.sampling[1] * self.axes_manager.signal_shape[1] / \
+        #                                                        output_shape[1]
 
         wave_image = wave_object / wave_reference
 
@@ -271,12 +271,5 @@ class HologramImage(Signal2D):
 
         wave_image.metadata.Signal.add_node('holo_reconstruction_parameters')
         wave_image.metadata.Signal.holo_reconstruction_parameters.add_dictionary(rec_param_dict)
-
-
-        if folded:
-            self.fold()
-            wave_image.fold()
-        if folded_ref:
-            reference.fold()
 
         return wave_image
