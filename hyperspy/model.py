@@ -395,7 +395,7 @@ class BaseModel(list):
             self.update_plot()
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
-                  show_progressbar=None, out=None, threaded=False):
+                  show_progressbar=None, out=None, parallel=None):
         """Returns a recreation of the dataset using the model.
         the spectral range that is not fitted is filled with nans.
 
@@ -414,7 +414,7 @@ class BaseModel(list):
             The signal where to put the result into. Convenient for parallel
             processing. If None (default), creates a new one. If passed, it is
             assumed to be of correct shape and dtype and not checked.
-        threaded : bool, int
+        parallel : bool, int
             If True or more than 1, perform the recreation parallely using as
             many threads as specified. If True, as many threads as CPU cores
             available are used.
@@ -435,6 +435,8 @@ class BaseModel(list):
         >>> s2 = m.as_signal(component_list=[l1])
 
         """
+        if parallel is None:
+            parallel = preferences.General.parallel
         if out is None:
             data = np.empty(self.signal.data.shape, dtype='float')
             data.fill(np.nan)
@@ -448,14 +450,14 @@ class BaseModel(list):
             signal = out
             data = signal.data
 
-        if threaded is True:
+        if parallel is True:
             from os import cpu_count
-            threaded = cpu_count()
-        if not isinstance(threaded, int):
-            threaded = int(threaded)
-        if threaded < 2:
-            threaded = False
-        if threaded is False:
+            parallel = cpu_count()
+        if not isinstance(parallel, int):
+            parallel = int(parallel)
+        if parallel < 2:
+            parallel = False
+        if parallel is False:
             self._as_signal_iter(component_list=component_list,
                                  out_of_range_to_nan=out_of_range_to_nan,
                                  show_progressbar=show_progressbar, data=data)
@@ -470,11 +472,10 @@ class BaseModel(list):
                 return self.as_signal(component_list=component_list,
                                       out_of_range_to_nan=out_of_range_to_nan,
                                       show_progressbar=show_progressbar,
-                                      out=signal,
-                                      threaded=False)
-            threaded = min(threaded, size / 2)
+                                      out=signal, parallel=False)
+            parallel = min(parallel, size / 2)
             splits = [len(sp) for sp in np.array_split(np.arange(size),
-                                                       threaded)]
+                                                       parallel)]
             models = []
             data_slices = []
             slices = [slice(None), ] * len(nav_shape)
@@ -485,19 +486,22 @@ class BaseModel(list):
                                                              True)
                 data_slices.append(data[array_slices])
             from concurrent.futures import ThreadPoolExecutor
-            with ThreadPoolExecutor(max_workers=threaded) as exe:
+            with ThreadPoolExecutor(max_workers=parallel) as exe:
                 _map = exe.map(
                     lambda thing: thing[0]._as_signal_iter(
                         data=thing[1],
                         component_list=component_list,
                         out_of_range_to_nan=out_of_range_to_nan,
-                        show_progressbar=show_progressbar), 
-                    zip(models, data_slices))
+                        show_progressbar=thing[2] + 1),
+                    zip(models, data_slices, range(int(parallel))))
             _ = next(_map)
         return signal
 
     def _as_signal_iter(self, component_list=None, out_of_range_to_nan=True,
                         show_progressbar=None, data=None):
+        # Note that show_progressbar can be an int to determine the progressbar
+        # position for a thread-friendly bars. Otherwise race conditions are
+        # ugly...
         if data is None:
             raise ValueError('No data supplied')
         if show_progressbar is None:
@@ -518,14 +522,15 @@ class BaseModel(list):
                 channel_switches_backup = copy.copy(self.channel_switches)
                 self.channel_switches[:] = True
             maxval = self.axes_manager.navigation_size
-            show_progressbar = show_progressbar and (maxval > 0)
-            for index in progressbar(self.axes_manager, total=maxval,
-                                     disable=not show_progressbar,
-                                     leave=True):
+            enabled = show_progressbar and (maxval > 0)
+            pbar = progressbar(total=maxval, disable=not enabled,
+                               position=show_progressbar, leave=True)
+            for index in self.axes_manager:
                 self.fetch_stored_values(only_fixed=False)
                 data[self.axes_manager._getitem_tuple][
                     np.where(self.channel_switches)] = self.__call__(
                     non_convolved=not self.convolved, onlyactive=True).ravel()
+                pbar.update(1)
             if out_of_range_to_nan is True:
                 self.channel_switches[:] = channel_switches_backup
 
