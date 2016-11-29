@@ -6,7 +6,7 @@ Getting started
 
 Starting Python in Windows
 ----------------------------
-If you used the bundle installation you should be able to use the context menus to get started. Right-click on the folder containing the data you wish to analyse and select "Jupyter notebook here" or "Jupyter qtconsole here". We recommend the former, since notebooks have many advantages over convetional consoles, as will be illustrated in later sections. The examples in some later sections assume Notebook operation. A new tab should appear in your default browser listing the files in the selected folder. To start a python notebook choose "Python 3" in the "New" drop-down menu at the top right of the page. Another new tab will open which is your Notebook.
+If you used the bundle installation you should be able to use the context menus to get started. Right-click on the folder containing the data you wish to analyse and select "Jupyter notebook here" or "Jupyter qtconsole here". We recommend the former, since notebooks have many advantages over conventional consoles, as will be illustrated in later sections. The examples in some later sections assume Notebook operation. A new tab should appear in your default browser listing the files in the selected folder. To start a python notebook choose "Python 3" in the "New" drop-down menu at the top right of the page. Another new tab will open which is your Notebook.
 
 Starting Python in Linux and MacOS
 ------------------------------------

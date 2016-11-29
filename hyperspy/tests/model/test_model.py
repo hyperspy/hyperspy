@@ -1020,8 +1020,8 @@ class TestAsSignal:
 
     def test_threaded_identical(self):
         # all components
-        s = self.m.as_signal(show_progressbar=False, threaded=True)
-        s1 = self.m.as_signal(show_progressbar=False, threaded=False)
+        s = self.m.as_signal(show_progressbar=False, parallel=True)
+        s1 = self.m.as_signal(show_progressbar=False, parallel=False)
         np.testing.assert_allclose(s1.data, s.data)
 
         # more complicated
@@ -1029,20 +1029,20 @@ class TestAsSignal:
         self.m[0]._active_array[0] = False
         for component in [0, 1]:
             s = self.m.as_signal(component_list=[component],
-                                 show_progressbar=False, threaded=True)
+                                 show_progressbar=False, parallel=True)
             s1 = self.m.as_signal(component_list=[component],
-                                  show_progressbar=False, threaded=False)
+                                  show_progressbar=False, parallel=False)
             np.testing.assert_allclose(s1.data, s.data)
 
     def test_all_components_simple(self):
         for th in [True, False]:
-            s = self.m.as_signal(show_progressbar=False, threaded=th)
+            s = self.m.as_signal(show_progressbar=False, parallel=th)
             nt.assert_true(np.all(s.data == 4.))
 
     def test_one_component_simple(self):
         for th in [True, False]:
             s = self.m.as_signal(component_list=[0], show_progressbar=False,
-                                 threaded=th)
+                                 parallel=th)
             nt.assert_true(np.all(s.data == 2.))
             nt.assert_true(self.m[1].active)
 
@@ -1050,12 +1050,12 @@ class TestAsSignal:
         self.m[0].active_is_multidimensional = True
 
         for th in [True, False]:
-            s = self.m.as_signal(show_progressbar=False, threaded=th)
+            s = self.m.as_signal(show_progressbar=False, parallel=th)
             nt.assert_true(np.all(s.data == 4.))
 
         self.m[0]._active_array[0] = False
         for th in [True, False]:
-            s = self.m.as_signal(show_progressbar=False, threaded=th)
+            s = self.m.as_signal(show_progressbar=False, parallel=th)
             np.testing.assert_array_equal(
                 s.data, np.array([np.ones((2, 5)) * 2, np.ones((2, 5)) * 4]))
             nt.assert_true(self.m[0].active_is_multidimensional)
@@ -1065,24 +1065,24 @@ class TestAsSignal:
 
         for th in [True, False]:
             s = self.m.as_signal(component_list=[0], show_progressbar=False,
-                                 threaded=th)
+                                 parallel=th)
             nt.assert_true(np.all(s.data == 2.))
             nt.assert_true(self.m[1].active)
             nt.assert_false(self.m[1].active_is_multidimensional)
 
             s = self.m.as_signal(component_list=[1], show_progressbar=False,
-                                 threaded=th)
+                                 parallel=th)
             np.testing.assert_equal(s.data, 2.)
             nt.assert_true(self.m[0].active_is_multidimensional)
 
         self.m[0]._active_array[0] = False
         for th in [True, False]:
             s = self.m.as_signal(component_list=[1], show_progressbar=False,
-                                 threaded=th)
+                                 parallel=th)
             nt.assert_true(np.all(s.data == 2.))
 
             s = self.m.as_signal(component_list=[0], show_progressbar=False,
-                                 threaded=th)
+                                 parallel=th)
             np.testing.assert_array_equal(s.data, np.array([np.zeros((2, 5)),
                                                             np.ones((2, 5)) * 2]))
 
