@@ -21,6 +21,7 @@ import logging
 import numpy as np
 import warnings
 from matplotlib import pyplot as plt
+from distutils.version import StrictVersion
 
 from hyperspy import utils
 from hyperspy._signals.signal1d import Signal1D
