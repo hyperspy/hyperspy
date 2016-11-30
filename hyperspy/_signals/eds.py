@@ -20,6 +20,7 @@ import logging
 
 import numpy as np
 import warnings
+import matplotlib
 from matplotlib import pyplot as plt
 from distutils.version import StrictVersion
 
