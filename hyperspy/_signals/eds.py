@@ -980,7 +980,7 @@ class EDSSpectrum(Signal1D):
         """
         per_xray = len(position[0])
         colors = itertools.cycle(np.sort(
-            plt.rcParams['axes.prop_cycle'] * per_xray))
+            plt.rcParams['axes.prop_cycle'].by_key()["color"] * per_xray))
         for x, color in zip(np.ravel(position), colors):
             line = markers.vertical_line(x=x, color=color, **kwargs)
             self.add_marker(line)
