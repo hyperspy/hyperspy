@@ -208,9 +208,11 @@ class FancySlicing(object):
     def _slicer(self, slices, isNavigation=None, out=None):
         array_slices = self._get_array_slices(slices, isNavigation)
         new_data = self.data[array_slices]
-        if new_data.size == 1 and new_data.dtype is np.dtype('O') and \
-           isinstance(new_data[0], np.ndarray):
-            new_data = new_data[0]
+        if new_data.size == 1 and new_data.dtype is np.dtype('O'):
+            if isinstance(new_data[0], np.ndarray):
+                return self.__class__(new_data[0]).transpose(navigation_axes=0)
+            else:
+                return new_data[0]
 
         if out is None:
             _obj = self._deepcopy_with_new_data(new_data,
