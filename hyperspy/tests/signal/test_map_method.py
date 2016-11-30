@@ -82,7 +82,7 @@ class TestImage:
             # the dtype
             nt.assert_is(s.data.dtype, np.dtype('O'))
             # the special slicing
-            nt.assert_is(s.inav[0].data, s.data[0])
+            nt.assert_is(s.inav[0].data.base, s.data[0])
             # actual values
             np.testing.assert_allclose(s.data[0],
                                        np.arange(9.).reshape((3, 3)),
