@@ -1049,7 +1049,7 @@ def plot_spectra(
             raise ValueError("Color must be None, a valid matplotlib color "
                              "string or a list of valid matplotlib colors.")
     else:
-        if StrictVersion(matplotlib.__version__) <= 1.5.1:
+        if StrictVersion(matplotlib.__version__) <= "1.5.1":
             color = itertools.cycle(plt.rcParams['axes.prop_cycle'].by_key()["color"])
         else:
             color = itertools.cycle(plt.rcParams['axes.color_cycle'])
