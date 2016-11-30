@@ -3472,7 +3472,7 @@ class BaseSignal(FancySlicing,
             sig.data = res_data
             sig.axes_manager.remove(sig.axes_manager.signal_axes)
             sig.__class__ = BaseSignal
-            sig.__init__(**self._to_dictionary(add_models=True))
+            sig.__init__(**sig._to_dictionary(add_models=True))
         sig.get_dimensions_from_data()
         return res
 
