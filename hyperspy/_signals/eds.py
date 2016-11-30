@@ -979,8 +979,12 @@ class EDSSpectrum(Signal1D):
             keywords argument for markers.vertical_line
         """
         per_xray = len(position[0])
-        colors = itertools.cycle(np.sort(
-            plt.rcParams['axes.prop_cycle'].by_key()["color"] * per_xray))
+        if StrictVersion(matplotlib.__version__) <= 1.5.1:
+            colors = itertools.cycle(np.sort(
+                plt.rcParams['axes.prop_cycle'].by_key()["color"] * per_xray))
+        else:
+            colors = itertools.cycle(np.sort(
+                plt.rcParams['axes.color_cycle'] * per_xray))
         for x, color in zip(np.ravel(position), colors):
             line = markers.vertical_line(x=x, color=color, **kwargs)
             self.add_marker(line)
