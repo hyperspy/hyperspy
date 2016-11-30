@@ -784,6 +784,41 @@ arguments as in the following example.
   Rotation of images using :py:meth:`~.signal.BaseSignal.map` with different
   arguments for each image in the stack.
 
+.. versionadded:: 1.2.0
+    ``inplace`` keyword and non-preserved output shapes
+
+If all function calls do not return identically-shaped results, only navigation
+information is preserved, and the final result is an array where
+each element corresponds to the result of the function (or arbitrary object
+type). As such, most HyperSpy functions cannot operate on such Signal, and the
+data should be accessed directly.
+
+``inplace`` keyword (by default ``True``) of the
+:py:meth:`~.signal.BaseSignal.map` method allows either overwriting the current
+data (default, ``True``) or storing it to a new signal (``False``).
+
+.. code-block:: python
+
+    >>> import scipy.ndimage
+    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.ascent()]*4))
+    >>> angles = hs.signals.BaseSignal(np.array([0, 45, 90, 135]))
+    >>> result = image_stack.map(scipy.ndimage.rotate,
+    ...                            angle=angles.T,
+    ...                            inplace=False,
+    ...                            reshape=True)
+    100%|████████████████████████████████████████████| 4/4 [00:00<00:00, 18.42it/s]
+
+    >>> result
+    <BaseSignal, title: , dimensions: (4|)>
+    >>> image_stack.data.dtype
+    dtype('O')
+    >>> for d in result.data.flat:
+    ...     print(d.shape)
+    (512, 512)
+    (724, 724)
+    (512, 512)
+    (724, 724)
+
 
 .. versionadded:: 1.2.0
     ``parallel`` keyword.
@@ -805,6 +840,7 @@ The execution can be sped up by passing ``parallel`` keyword to the
     >>> # some operations will be done in parallel:
     >>> s.map(slow_func, parallel=True)
     100%|██████████████████████████████████████| 20/20 [00:02<00:00,  6.73it/s]
+
 
 Cropping
 ^^^^^^^^

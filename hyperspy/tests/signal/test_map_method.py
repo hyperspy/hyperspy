@@ -62,7 +62,7 @@ class TestImage:
         imt = im.deepcopy()
         for s, t in zip([im, imt], [False, True]):
             s.map(rotate, angle=45, reshape=False, show_progressbar=None,
-                    parallel=t)
+                  parallel=t)
             np.testing.assert_allclose(s.data, np.array(
                 [[[0., 2.23223305, 0.],
                   [0.46446609, 4., 7.53553391],
@@ -71,6 +71,29 @@ class TestImage:
                  [[0., 11.23223305, 0.],
                   [9.46446609, 13., 16.53553391],
                   [0., 14.76776695, 0.]]]))
+
+    def test_different_shapes(self):
+        im = self.im
+        imt = im.deepcopy()
+        angles = hs.signals.BaseSignal([0, 45])
+        for s, t in zip([im, imt], [False, True]):
+            s.map(rotate, angle=angles.T, reshape=True, show_progressbar=None,
+                  parallel=t)
+            # the dtype
+            nt.assert_is(s.data.dtype, np.dtype('O'))
+            # the special slicing
+            nt.assert_is(s.inav[0].data.base, s.data[0])
+            # actual values
+            np.testing.assert_allclose(s.data[0],
+                                       np.arange(9.).reshape((3, 3)),
+                                       atol=1e-7)
+            np.testing.assert_allclose(s.data[1],
+                                       np.array([[0.,   0.,   0.,   0.],
+                                                 [0.,  10.34834957,
+                                                     13.88388348,   0.],
+                                                 [0.,  12.11611652,
+                                                     15.65165043,   0.],
+                                                 [0.,   0.,   0.,   0.]]))
 
 
 class TestSignal1D:
@@ -117,3 +140,77 @@ class TestSignal0D:
                   parallel=t)
             np.testing.assert_allclose(s.data, self.s.inav[1, 1].data ** 2)
             nt.assert_true(m.data_changed.called)
+
+
+_alphabet = 'abcdefghijklmnopqrstuvwxyz'
+
+
+class TestChangingAxes:
+
+    def setup(self):
+        self.base = hs.signals.BaseSignal(np.empty((2, 3, 4, 5, 6, 7)))
+        for ax, name in zip(self.base.axes_manager._axes, _alphabet):
+            ax.name = name
+
+    def test_one_nav_reducing(self):
+        s = self.base.transpose(signal_axes=4).inav[0, 0]
+        s.map(np.mean, axis=1)
+        nt.assert_equal(list('def'), [ax.name for ax in
+                                      s.axes_manager._axes])
+        nt.assert_equal(0, len(s.axes_manager.navigation_axes))
+        s.map(np.mean, axis=(1, 2))
+        nt.assert_equal(['f'], [ax.name for ax in s.axes_manager._axes])
+        nt.assert_equal(0, len(s.axes_manager.navigation_axes))
+
+    def test_one_nav_increasing(self):
+        s = self.base.transpose(signal_axes=4).inav[0, 0]
+        s.map(np.tile, reps=(2, 1, 1, 1, 1))
+        nt.assert_equal(len(s.axes_manager.signal_axes), 5)
+        nt.assert_true(set('cdef') <= {ax.name for ax in
+                                       s.axes_manager._axes})
+        nt.assert_equal(0, len(s.axes_manager.navigation_axes))
+        nt.assert_equal(s.data.shape, (2, 4, 5, 6, 7))
+
+    def test_reducing(self):
+        s = self.base.transpose(signal_axes=4)
+        s.map(np.mean, axis=1)
+        nt.assert_equal(list('abdef'), [ax.name for ax in
+                                        s.axes_manager._axes])
+        nt.assert_equal(2, len(s.axes_manager.navigation_axes))
+        s.map(np.mean, axis=(1, 2))
+        nt.assert_equal(['f'], [ax.name for ax in
+                                s.axes_manager.signal_axes])
+        nt.assert_equal(list('ba'), [ax.name for ax in
+                                     s.axes_manager.navigation_axes])
+        nt.assert_equal(2, len(s.axes_manager.navigation_axes))
+
+    def test_increasing(self):
+        s = self.base.transpose(signal_axes=4)
+        s.map(np.tile, reps=(2, 1, 1, 1, 1))
+        nt.assert_equal(len(s.axes_manager.signal_axes), 5)
+        nt.assert_true(set('cdef') <= {ax.name for ax in
+                                       s.axes_manager.signal_axes})
+        nt.assert_equal(list('ba'), [ax.name for ax in
+                                     s.axes_manager.navigation_axes])
+        nt.assert_equal(2, len(s.axes_manager.navigation_axes))
+        nt.assert_equal(s.data.shape, (2, 3, 2, 4, 5, 6, 7))
+
+def test_new_axes():
+    s = hs.signals.Signal1D(np.empty((10,10)))
+    s.axes_manager.navigation_axes[0].name = 'a'
+    s.axes_manager.signal_axes[0].name = 'b'
+    def test_func(d, i):
+        _slice = () + (None,)*i + (slice(None),)
+        return d[_slice]
+    res = s.map(test_func, inplace=False,
+                i=hs.signals.BaseSignal(np.arange(10)).T)
+    nt.assert_is_not_none(res)
+    sl = res.inav[:2]
+    nt.assert_equal(sl.axes_manager._axes[-1].name, 'a')
+    sl = res.inav[-1]
+    nt.assert_is_instance(sl, hs.signals.BaseSignal)
+    ax_names = {ax.name for ax in sl.axes_manager._axes}
+    nt.assert_equal(len(ax_names), 1)
+    nt.assert_false('a' in ax_names)
+    nt.assert_false('b' in ax_names)
+    nt.assert_equal(0, sl.axes_manager.navigation_dimension)
