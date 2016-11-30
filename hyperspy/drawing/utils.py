@@ -1048,7 +1048,7 @@ def plot_spectra(
             raise ValueError("Color must be None, a valid matplotlib color "
                              "string or a list of valid matplotlib colors.")
     else:
-        color = itertools.cycle(plt.rcParams['axes.color_cycle'])
+        color = itertools.cycle(plt.rcParams['axes.prop_cycle'].by_key()["color"])
 
     if line_style is not None:
         if isinstance(line_style, str):
