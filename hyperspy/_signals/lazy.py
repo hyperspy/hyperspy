@@ -448,10 +448,15 @@ class LazySignal(BaseSignal):
         nav_chunks = self.data.chunks[:self.axes_manager.navigation_dimension]
         from toolz import curry
         from itertools import product
+        def mult(*args):
+            res = 1
+            for arg in args:
+                res *= arg
+            return res
         num_chunks = 1 if num_chunks is None else num_chunks
-        blocksize = np.min([np.multiply(1, *ar) for ar in
+        blocksize = np.min([mult(*ar) for ar in
                             product(*nav_chunks)])
-        nblocks = np.multiply(1, *[len(c) for c in nav_chunks])
+        nblocks = mult(*[len(c) for c in nav_chunks])
         if blocksize/output_dimension < num_chunks:
             num_chunks = np.ceil(blocsize/output_dimension)
         blocksize *= num_chunks
@@ -546,7 +551,7 @@ class LazySignal(BaseSignal):
         if kind in ['ORNMF', 'ONMF', 'ORPCA']:
             # Fix the block-scrambled loadings
             ndim = self.axes_manager.navigation_dimension
-            splits = np.cumsum([np.multiply(1, *ar)
+            splits = np.cumsum([mult(*ar)
                                 for ar in product(*nav_chunks)][:-1]).tolist()
             all_chunks = [ar.T.reshape((output_dimension,) + shape) for shape, ar in
                           zip(product(*nav_chunks), np.split(loadings, splits))]
