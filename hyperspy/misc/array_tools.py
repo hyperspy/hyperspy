@@ -154,8 +154,8 @@ def _linear_bin(s, scale,
     newSpectrum = s[:]
     for dimension_number, step in enumerate(scale):
 
-        latestSpectrum = np.zeros(newSpectrum.shape)
-        latestSpectrum[:] = newSpectrum
+        # Is this the same as the original copy operation
+        latestSpectrum = np.copy(newSpectrum)
         if dimension_number != 0:
             latestSpectrum = np.swapaxes(s, 0, dimension_number)
 
