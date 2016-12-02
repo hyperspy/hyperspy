@@ -136,17 +136,14 @@ def _linear_bin(s, scale,
     dimension in the data.
 
     """
-
-    shape2 = s.shape
-    newSpectrum = s[:]
-
-    if len(shape2) != len(scale):
+    if len(s.shape) != len(scale):
         raise ValueError(
            'The list of bins must match the number of dimensions, including the\
             energy dimension.\
             In order to not bin in any of these dimensions specifically, \
             simply set the value in shape to 1')
 
+    newSpectrum = s[:]
     for dimension_number, step in enumerate(scale):
         shape2 = newSpectrum.shape
         s = np.zeros(shape2)
