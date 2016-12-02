@@ -136,6 +136,14 @@ def _linear_bin(s, scale,
     dimension in the data.
 
     """
+    def string_to_bool(text):
+        true_synonyms = {'yes','on','true'}
+        if text.lower() in true_synonyms:
+            return True
+        else:
+            return False
+    crop = string_to_bool(crop)
+
     if len(s.shape) != len(scale):
         raise ValueError(
            'The list of bins must match the number of dimensions, including the\
