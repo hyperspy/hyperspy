@@ -154,10 +154,10 @@ def _linear_bin(s, scale,
     newSpectrum = s[:]
     for dimension_number, step in enumerate(scale):
 
-        s = np.zeros(newSpectrum.shape)
-        s[:] = newSpectrum
+        latestSpectrum = np.zeros(newSpectrum.shape)
+        latestSpectrum[:] = newSpectrum
         if dimension_number != 0:
-            s = np.swapaxes(s, 0, dimension_number)
+            latestSpectrum = np.swapaxes(s, 0, dimension_number)
 
         def get_dimension(i, size):
             if i != 0:
@@ -174,20 +174,20 @@ def _linear_bin(s, scale,
         k = newSpectrum.shape[0]
         for j in range(k):
             bottomPos = j*step
-            topPos = min((1+j)*step, s.shape[0])
-            updated_value = new_spectrum[j]
+            topPos = min((1+j)*step, latestSpectrum.shape[0])
+            updatedValue = newSpectrum[j]
             while (topPos - bottomPos) >= 1:
                 if math.ceil(bottomPos) - bottomPos != 0:
-                    updated_value += s[math.floor(bottomPos)] * \
+                    updatedValue += latestSpectrum[math.floor(bottomPos)] * \
                                (math.ceil(bottomPos) - bottomPos)
                     bottomPos = math.ceil(bottomPos)
                 else:
-                    updated_value += s[int(bottomPos)]
+                    updatedValue += latestSpectrum[int(bottomPos)]
                     bottomPos += 1
             if topPos != bottomPos:
-                updated_value += s[math.floor(bottomPos)]*(topPos-bottomPos)
+                updatedValue += s[math.floor(bottomPos)]*(topPos-bottomPos)
             # Update new_spectrum
-            new_spectrum[j] = updated_value
+            newSpectrum[j] = updatedValue
 
         if dimension_number != 0:
             newSpectrum = np.swapaxes(newSpectrum, 0, dimension_number)
