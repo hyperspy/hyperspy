@@ -166,11 +166,10 @@ def _linear_bin(s, scale,
                 new_size = math.floor(size / step)
             else:
                 new_size = math.ceil(size / step)
-            return (new_size,)
+            return new_size
 
-        newSpectrum = np.zeros(tuple(get_dimension(i, dimension_size)
-                                     for i, dimension_size
-                                     in enumerate(s.shape)),
+        newSpectrum = np.zeros([get_dimension(i, dimension_size)
+                                for i, dimension_size in enumerate(s.shape)],
                                dtype="float")
         k = newSpectrum.shape[0]
         for j in range(k):
