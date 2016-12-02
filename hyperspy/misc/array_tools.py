@@ -156,7 +156,6 @@ def _linear_bin(s, scale,
 
         s = np.zeros(newSpectrum.shape)
         s[:] = newSpectrum
-
         if dimension_number != 0:
             s = np.swapaxes(s, 0, dimension_number)
 
@@ -177,20 +176,19 @@ def _linear_bin(s, scale,
         for j in range(k):
             bottomPos = j*step
             topPos = min((1+j)*step, dim_0)
-            element = new_spectrum[j]
+            updated_value = new_spectrum[j]
             while (topPos - bottomPos) >= 1:
                 if math.ceil(bottomPos) - bottomPos != 0:
-                    element += s[math.floor(bottomPos)] * \
+                    updated_value += s[math.floor(bottomPos)] * \
                                (math.ceil(bottomPos) - bottomPos)
                     bottomPos = math.ceil(bottomPos)
                 else:
-                    element += s[int(bottomPos)]
+                    updated_value += s[int(bottomPos)]
                     bottomPos += 1
             if topPos != bottomPos:
-                element += s[math.floor(bottomPos)] * (topPos - bottomPos)
-
-            # Update new_spectrum. Just floats, right?
-            new_spectrum[j] = element
+                updated_value += s[math.floor(bottomPos)]*(topPos-bottomPos)
+            # Update new_spectrum
+            new_spectrum[j] = updated_value
 
         if dimension_number != 0:
             newSpectrum = np.swapaxes(newSpectrum, 0, dimension_number)
