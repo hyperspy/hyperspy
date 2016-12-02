@@ -159,22 +159,21 @@ def _linear_bin(s, scale,
 
         if dimension_number != 0:
             s = np.swapaxes(s, 0, dimension_number)
-        new_shape = tuple()
-        for i, dimension_size in enumerate(s.shape):
-            if i == 0:
-                if crop == 'True':
-                    new_shape += (math.floor(dimension_size / step),)
-                else:
-                    new_shape += (math.ceil(dimension_size / step),)
-            else:
-                new_shape += (dimension_size,)
-        newSpectrum = np.zeros(new_shape, dtype="float")
 
+        def get_dimension(i, size):
+            if i != 0:
+                new_size = size
+            elif crop:
+                new_size = math.floor(size / step)
+            else:
+                new_size = math.ceil(size / step)
+            return (new_size,)
+
+        new_shape = tuple(get_dimension(i, dimension_size)
+                          for i, dimension_size in enumerate(s.shape))
+        newSpectrum = np.zeros(new_shape, dtype="float")
         dim_0 = s.shape[0]
-        if crop == 'True':
-            k = math.floor(dim_0/step)
-        else:
-            k = math.ceil(dim_0/step)
+        k = get_dimension(0, dim_0)
         for j in range(k):
             bottomPos = (j*step)
             topPos = ((1 + j) * step)
