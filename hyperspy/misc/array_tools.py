@@ -103,7 +103,7 @@ def rebin(a, new_shape):
 
 
 def _linear_bin(s, scale,
-                crop='on'):
+                crop_str='True'):
 
     """
     Binning of the spectrum image by a non-integer pixel value.
@@ -117,13 +117,13 @@ def _linear_bin(s, scale,
              a ratio of 2 means that each pixel in the new spectrum is
              twice the size of the pixels in the old spectrum.
 
-    crop: when binning by a non-integer number of pixels it is likely that
+    crop_str: when binning by a non-integer number of pixels it is likely that
          the final row in each dimension contains less than the full quota to
          fill one pixel.
          e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
          pixels and one row containing only 0.8 pixels worth. Selection of
-         crop = 'True' or crop = 'False' determines whether or not this 'black'
-         line is cropped from the final binned array or not.
+         crop_str = 'True' or crop = 'False' determines whether or not this
+         'black' line is cropped from the final binned array or not.
 
     *Please note that if crop = 'False' is used:the final row in each
     dimension may appear black, if a fractional number of pixels are left
@@ -138,7 +138,7 @@ def _linear_bin(s, scale,
     """
     def string_to_bool(text):
         return text.lower() in {'yes', 'on', 'true'}
-    crop = string_to_bool(crop)
+    crop = string_to_bool(crop_str)
 
     if len(s.shape) != len(scale):
         raise ValueError(
