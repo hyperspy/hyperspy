@@ -171,11 +171,10 @@ def _linear_bin(s, scale,
         new_shape = tuple(get_dimension(i, dimension_size)
                           for i, dimension_size in enumerate(s.shape))
         newSpectrum = np.zeros(new_shape, dtype="float")
-        dim_0 = s.shape[0]
-        k = get_dimension(0, dim_0)
+        k = get_dimension(0, s.shape[0])
         for j in range(k):
             bottomPos = j*step
-            topPos = min((1+j)*step, dim_0)
+            topPos = min((1+j)*step, s.shape[0])
             updated_value = new_spectrum[j]
             while (topPos - bottomPos) >= 1:
                 if math.ceil(bottomPos) - bottomPos != 0:
