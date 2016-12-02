@@ -168,10 +168,11 @@ def _linear_bin(s, scale,
                 new_size = math.ceil(size / step)
             return (new_size,)
 
-        new_shape = tuple(get_dimension(i, dimension_size)
-                          for i, dimension_size in enumerate(s.shape))
-        newSpectrum = np.zeros(new_shape, dtype="float")
-        k = get_dimension(0, s.shape[0])
+        newSpectrum = np.zeros(tuple(get_dimension(i, dimension_size)
+                                     for i, dimension_size
+                                     in enumerate(s.shape)),
+                               dtype="float")
+        k = newSpectrum.shape[0]
         for j in range(k):
             bottomPos = j*step
             topPos = min((1+j)*step, s.shape[0])
