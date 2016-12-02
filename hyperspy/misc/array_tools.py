@@ -138,7 +138,6 @@ def _linear_bin(s, scale,
     """
 
     shape2 = s.shape
-    newSpectrum = np.zeros(s.shape)
     newSpectrum = s[:]
 
     if len(shape2) != len(scale):
