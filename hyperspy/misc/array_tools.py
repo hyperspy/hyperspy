@@ -185,7 +185,8 @@ def _linear_bin(s, scale,
                     updatedValue += latestSpectrum[int(bottomPos)]
                     bottomPos += 1
             if topPos != bottomPos:
-                updatedValue += s[math.floor(bottomPos)]*(topPos-bottomPos)
+                updatedValue += latestSpectrum[
+                                math.floor(bottomPos)]*(topPos-bottomPos)
             # Update new_spectrum
             newSpectrum[j] = updatedValue
 
