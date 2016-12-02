@@ -1722,12 +1722,12 @@ class ModelSpecialSlicers(object):
             slices,
             self.isNavigation)
         _signal = self.model.signal._slicer(slices, self.isNavigation)
-        if _signal.metadata.Signal.signal_type == 'EELS':
-            _model = _signal.create_model(
-                auto_background=False,
-                auto_add_edges=False)
-        else:
-            _model = _signal.create_model()
+        # let's not do anything automatically, since then it's difficult to keep
+        # track of the components:
+        import inspect
+        pars = inspect.signature(_signal.create_model).parameters
+        kwargs = {key: False for key in pars.keys() if key.startswith('auto_')}
+        _model = _signal.create_model(**kwargs)
 
         dims = (self.model.axes_manager.navigation_dimension,
                 self.model.axes_manager.signal_dimension)
