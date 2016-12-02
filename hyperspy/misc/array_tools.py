@@ -137,11 +137,7 @@ def _linear_bin(s, scale,
 
     """
     def string_to_bool(text):
-        true_synonyms = {'yes','on','true'}
-        if text.lower() in true_synonyms:
-            return True
-        else:
-            return False
+        return text.lower() in {'yes', 'on', 'true'}
     crop = string_to_bool(crop)
 
     if len(s.shape) != len(scale):
