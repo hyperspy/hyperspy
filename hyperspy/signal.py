@@ -3196,21 +3196,21 @@ class BaseSignal(FancySlicing,
 
     def map(self, function,
             show_progressbar=None,
-            parallel=None, **kwargs):
+            parallel=None, inplace=True,
+            **kwargs):
         """Apply a function to the signal data at all the coordinates.
 
-        The function must operate on numpy arrays, but the output no longer has
-        to be of the same dimensions. The function is applied to the data at
-        each coordinate and the result is stored in the current signal i.e.
-        this method operates *in-place* and overwrites the data. Any extra
-        keyword argument is passed to the function. The keywords can take
-        different values at different coordinates. If the function takes an
-        `axis` or `axes` argument, the function is assumed to be vectorial and
-        the signal axes are assigned to `axis` or `axes`.  Otherwise, the
-        signal is iterated over the navigation axes and a progress bar is
-        displayed to monitor the progress.
+        The function must operate on numpy arrays. It is applied to the data at
+        each navigation coordinate pixel-py-pixel. Any extra keyword argument
+        is passed to the function. The keywords can take different values at
+        different coordinates. If the function takes an `axis` or `axes`
+        argument, the function is assumed to be vectorial and the signal axes
+        are assigned to `axis` or `axes`.  Otherwise, the signal is iterated
+        over the navigation axes and a progress bar is displayed to monitor the
+        progress.
 
-        Navigation dimensions and information is always preserved.
+        In general, only navigation axes (order, calibration and number) is
+        guaranteed to be preserved.
 
         Parameters
         ----------
@@ -3223,16 +3223,18 @@ class BaseSignal(FancySlicing,
         parallel : {None,bool,int}
             if True, the mapping will be performed in a threaded (parallel)
             manner.
+        inplace : bool
+            if True (default), the data is replaced by the result. Otherwise a
+            new signal with the results is returned.
         keyword arguments : any valid keyword argument
             All extra keyword arguments are passed to the
 
         Notes
         -----
-        If the function results do not have identical shapes, the data is
-        replaced by an array of navigation shape, where each element
-        corresponds to the result of the function (of arbitraty object type).
-        As such, most functions are not able to operate on the result and the
-        data should be used directly.
+        If the function results do not have identical shapes, the result is an
+        array of navigation shape, where each element corresponds to the result
+        of the function (of arbitraty object type). As such, most functions are
+        not able to operate on the result and the data should be used directly.
 
         This method is similar to Python's :func:`map` that can also be utilize
         with a :class:`Signal` instance for similar purposes. However, this
@@ -3289,32 +3291,38 @@ class BaseSignal(FancySlicing,
             kwargs['axis'] = \
                 self.axes_manager.signal_axes[-1].index_in_array
 
-            self._map_all(function, **kwargs)
+            res = self._map_all(function, inplace=inplace, **kwargs)
         # If the function has an axes argument
         # we suppose that it can operate on the full array and we don't
         # iterate over the coordinates.
         elif not ndkwargs and "axes" in fargs and not parallel:
             kwargs['axes'] = tuple([axis.index_in_array for axis in
                                     self.axes_manager.signal_axes])
-            self._map_all(function, **kwargs)
+            res = self._map_all(function, inplace=inplace, **kwargs)
         else:
             # Iteration over coordinates.
-            self._map_iterate(function, iterating_kwargs=ndkwargs,
-                              show_progressbar=show_progressbar,
-                              parallel=parallel,
-                              **kwargs)
-        self.events.data_changed.trigger(obj=self)
+            res = self._map_iterate(function, iterating_kwargs=ndkwargs,
+                                    show_progressbar=show_progressbar,
+                                    parallel=parallel, inplace=inplace,
+                                    **kwargs)
+        if inplace:
+            self.events.data_changed.trigger(obj=self)
+        return res
 
-    def _map_all(self, function, **kwargs):
+    def _map_all(self, function, inplace=True, **kwargs):
         """The function has to have either 'axis' or 'axes' keyword argument,
         and hence support operating on the full dataset efficiently.
 
         Replaced for lazy signals"""
-        self.data = function(self.data, **kwargs)
+        newdata = function(self.data, **kwargs)
+        if inplace:
+            self.data = newdata
+            return None
+        return self._deepcopy_with_new_data(newdata)
 
     def _map_iterate(self, function, iterating_kwargs=(),
                      show_progressbar=None, parallel=None,
-                     **kwargs):
+                     inplace=True, **kwargs):
         """Iterates the signal navigation space applying the function.
 
         Paratemers
@@ -3435,28 +3443,38 @@ class BaseSignal(FancySlicing,
         # Combine data if required
         shapes = list(shapes)
         nav_shape = self.axes_manager._navigation_shape_in_array
+        res = None # the returned thing
         if len(shapes) == 1 and shapes[0] is not None:
             sig_shape = shapes[0]
             if sig_shape == (1,):
                 sig_shape = ()
             res_data = np.stack(res_data.flat).reshape(nav_shape + sig_shape)
-            if self.data.shape == res_data.shape:
-                self.data[:] = res_data
+            if inplace:
+                sig = self # the modified thing
+                if self.data.shape == res_data.shape:
+                    self.data[:] = res_data
+                else:
+                    self.data = res_data
             else:
-                self.data = res_data
+                res = sig = self._deepcopy_with_new_data(res_data)
             # remove if too many axes
-            self.axes_manager.remove(
-                self.axes_manager.signal_axes[len(sig_shape):])
+            sig.axes_manager.remove(
+                sig.axes_manager.signal_axes[len(sig_shape):])
             # add additional required axes
             for ind in range(len(sig_shape) -
-                             self.axes_manager.signal_dimension, 0, -1):
-                self.axes_manager._append_axis(sig_shape[-ind], navigate=False)
+                             sig.axes_manager.signal_dimension, 0, -1):
+                sig.axes_manager._append_axis(sig_shape[-ind], navigate=False)
         else:
-            self.data = res_data
-            self.axes_manager.remove(self.axes_manager.signal_axes)
-            self.__class__ = BaseSignal
-            self.__init__(**self._to_dictionary(add_models=True))
-        self.get_dimensions_from_data()
+            if inplace:
+                sig = self
+            else:
+                res = sig = self._deepcopy_with_new_data()
+            sig.data = res_data
+            sig.axes_manager.remove(sig.axes_manager.signal_axes)
+            sig.__class__ = BaseSignal
+            sig.__init__(**sig._to_dictionary(add_models=True))
+        sig.get_dimensions_from_data()
+        return res
 
     def copy(self):
         try:

@@ -82,7 +82,7 @@ class TestImage:
             # the dtype
             nt.assert_is(s.data.dtype, np.dtype('O'))
             # the special slicing
-            nt.assert_is(s.inav[0].data, s.data[0])
+            nt.assert_is(s.inav[0].data.base, s.data[0])
             # actual values
             np.testing.assert_allclose(s.data[0],
                                        np.arange(9.).reshape((3, 3)),
@@ -194,3 +194,23 @@ class TestChangingAxes:
                                      s.axes_manager.navigation_axes])
         nt.assert_equal(2, len(s.axes_manager.navigation_axes))
         nt.assert_equal(s.data.shape, (2, 3, 2, 4, 5, 6, 7))
+
+def test_new_axes():
+    s = hs.signals.Signal1D(np.empty((10,10)))
+    s.axes_manager.navigation_axes[0].name = 'a'
+    s.axes_manager.signal_axes[0].name = 'b'
+    def test_func(d, i):
+        _slice = () + (None,)*i + (slice(None),)
+        return d[_slice]
+    res = s.map(test_func, inplace=False,
+                i=hs.signals.BaseSignal(np.arange(10)).T)
+    nt.assert_is_not_none(res)
+    sl = res.inav[:2]
+    nt.assert_equal(sl.axes_manager._axes[-1].name, 'a')
+    sl = res.inav[-1]
+    nt.assert_is_instance(sl, hs.signals.BaseSignal)
+    ax_names = {ax.name for ax in sl.axes_manager._axes}
+    nt.assert_equal(len(ax_names), 1)
+    nt.assert_false('a' in ax_names)
+    nt.assert_false('b' in ax_names)
+    nt.assert_equal(0, sl.axes_manager.navigation_dimension)
