@@ -230,9 +230,9 @@ finding the correct minima. Usually a value between 1 and 2 works well:
                        method='SGD',
                        learning_rate=1.1)
 
-The third method is MomentumSGD, which improves the algorithm's ability to
-deal with local minima. This takes the further parameter "momentum", which
-should be a fraction between 0 and 1.
+The third method is MomentumSGD, which typically improves the convergence
+properties of stochastic gradient descent. This takes the further parameter
+"momentum", which should be a fraction between 0 and 1.
 
 .. code-block:: python
 
