@@ -500,16 +500,6 @@ class Samfire:
                 item = k[:-5]
                 getattr(m, item).data[m_ind], dict_[k] = \
                     dict_[k].copy(), getattr(m, item).data[m_ind].copy()
-        # self.model.dof.data[m_ind], dict_['dof.data'] = dict_[
-        #     'dof.data'].copy(), self.model.dof.data[m_ind].copy()
-
-        # if 'chisq.data' in dict_:
-        #     self.model.chisq.data[m_ind], dict_['chisq.data'] = dict_[
-        #         'chisq.data'].copy(), self.model.chisq.data[m_ind].copy()
-        # if 'corr.data' in dict_:
-        #     self.model.corr.data[m_ind], dict_['corr.data'] = dict_[
-        #         'corr.data'].copy(), self.model.corr.data[m_ind].copy()
-
         for comp_name, comp in dict_['components'].items():
             # only active components are sent
             if self.model[comp_name].active_is_multidimensional:
