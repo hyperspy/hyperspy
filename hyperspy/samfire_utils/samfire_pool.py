@@ -52,7 +52,7 @@ class SamfirePool(ParallelPool):
         information. In case of multiprocessing, starts worker listening to the
         queues.
     update_parameters
-        updates the parameters in the workers
+        updates various worker parameters
     ping_workers
         pings all workers. Stores the one-way trip time and the process_id
         (pid) of each worker if available
@@ -171,7 +171,12 @@ class SamfirePool(ParallelPool):
                                                            self.result_queue))
 
     def update_parameters(self):
-        """Updates the optional names on the workers"""
+        """Updates various worker parameters.
+        
+        Currently updates:
+            - Optional components (that can be switched off by the worker)
+            - Parameter boundaries
+            - Goodness test"""
         samfire = self.samf
         optional_names = {samfire.model[c].name for c in
                           samfire.optional_components}
