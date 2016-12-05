@@ -23,6 +23,10 @@ from itertools import combinations, product
 from queue import Empty
 import dill
 import numpy as np
+import matplotlib
+
+matplotlib.rcParams['backend'] = 'Agg'
+
 from hyperspy.signal import BaseSignal
 from hyperspy.utils.model_selection import AICc
 
@@ -44,29 +48,48 @@ class Worker:
         self.last_time = 1
         self.optional_names = set()
         self.model = None
+        self.parameters = {}
 
     def create_model(self, signal_dict, model_letter):
         _logger.debug('Creating model in worker {}'.format(self.identity))
         sig = BaseSignal(**signal_dict)
         sig._assign_subclass()
         self.model = sig.models[model_letter].restore()
-        self.model.signal.data = self.model.signal.data.copy()
         for component in self.model:
             component.active_is_multidimensional = False
             component.active = True
             for par in component.parameters:
                 par.map = par.map.copy()
 
-        var = self.model.signal.metadata.Signal.Noise_properties.variance
-        if isinstance(var, BaseSignal):
-            var.data = var.data.copy()
-        if self.model.low_loss is not None:
-            self.model.low_loss.data = self.model.low_loss.data.copy()
+        if self.model.signal.metadata.has_item(
+            'Signal.Noise_properties.variance'):
+            var = self.model.signal.metadata.Signal.Noise_properties.variance
+            if isinstance(var, BaseSignal):
+                var.data = var.data.copy()
+        self._array_views_to_copies()
+
+    def _array_views_to_copies(self):
+        dct = self.model.__dict__
+        self.parameters = {}
+        for k, v in dct.items():
+            if isinstance(v, BaseSignal):
+                v.data = v.data.copy()
+                if k not in ['signal', 'image', 'spectrum'] and not \
+                   k.startswith('_'):
+                    self.parameters[k] = None
+            if isinstance(v, np.ndarray):
+                dct[k] = v.copy()
 
     def set_optional_names(self, optional_names):
         self.optional_names = optional_names
         _logger.debug('Setting optional names in worker {} to '
                       '{}'.format(self.identity, self.optional_names))
+
+    def set_parameter_boundaries(self, received):
+        for rec, comp in zip(received, self.model):
+            for (bmin, bmax), par in zip(rec, comp.parameters):
+                par.bmin = bmin
+                par.bmax = bmax
 
     def generate_values_iterator(self, turned_on_names):
         tmp = []
@@ -144,9 +167,11 @@ class Worker:
         self.fitting_kwargs = self.value_dict.pop('fitting_kwargs', {})
         self.model.signal.data[:] = self.value_dict.pop('signal.data')
 
-        var = self.model.signal.metadata.Signal.Noise_properties.variance
-        if isinstance(var, BaseSignal):
-            var.data[:] = self.value_dict.pop('variance.data')
+        if self.model.signal.metadata.has_item(
+            'Signal.Noise_properties.variance'):
+            var = self.model.signal.metadata.Signal.Noise_properties.variance
+            if isinstance(var, BaseSignal):
+                var.data[:] = self.value_dict.pop('variance.data')
 
         if 'low_loss.data' in self.value_dict:
             self.model.low_loss.data[:] = self.value_dict.pop('low_loss.data')
@@ -180,20 +205,20 @@ class Worker:
             self.best_values = self._collect_values()
             self.best_AICc = new_AICc
             self.best_dof = len(self.model.p0)
-            self.best_chisq = self.model.chisq.data[0]
+            for k in self.parameters.keys():
+                self.parameters[k] = getattr(self.model, k).data[0]
 
     def send_results(self, current=False):
         if current:
-            self.best_chisq = self.model.chisq.data[0]
-            self.best_dof = len(self.model.p0)
             self.best_values = self._collect_values()
+            for k in self.parameters.keys():
+                self.parameters[k] = getattr(self.model, k).data[0]
         if len(self.best_values):  # i.e. we have a good result
             _logger.debug('we have a good result in worker '
                           '{}'.format(self.identity))
-            result = {'chisq.data': np.array(self.best_chisq),
-                      'dof.data': np.array(self.best_dof),
-                      'components': self.best_values
-                      }
+            result = {k+'.data': np.array(v) for k, v in
+                      self.parameters.items()}
+            result['components'] = self.best_values
             found_solution = True
         else:
             _logger.debug("we don't have a good result in worker "
