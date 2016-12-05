@@ -242,7 +242,7 @@ class EDSSpectrum(Signal1D):
                     *= factors[i]
         return s
 
-    def linear_bin(self, scale, crop='True'):
+    def linear_bin(self, scale, crop=True):
 
         """
         Binning of the spectrum image by a non-integer pixel value.
