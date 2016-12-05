@@ -150,10 +150,12 @@ def _linear_bin(s, scale,
     newSpectrum = s[:]
     for dimension_number, step in enumerate(scale):
 
-        # Is this the same as the original copy operation
         latestSpectrum = np.copy(newSpectrum)
+
         if dimension_number != 0:
-            latestSpectrum = np.swapaxes(s, 0, dimension_number)
+            latestSpectrum = np.swapaxes(latestSpectrum, 0, dimension_number)
+
+        size = latestSpectrum.shape
 
         def get_dimension(i, size):
             if i != 0:
@@ -165,12 +167,14 @@ def _linear_bin(s, scale,
             return new_size
 
         newSpectrum = np.zeros([get_dimension(i, dimension_size)
-                                for i, dimension_size in enumerate(s.shape)],
+                                for i, dimension_size in
+                                enumerate(size)],
                                dtype="float")
+
         k = newSpectrum.shape[0]
         for j in range(k):
             bottomPos = j*step
-            topPos = min((1+j)*step, latestSpectrum.shape[0])
+            topPos = min((1+j)*step, size[0])
             updatedValue = newSpectrum[j]
             while (topPos - bottomPos) >= 1:
                 if math.ceil(bottomPos) - bottomPos != 0:
