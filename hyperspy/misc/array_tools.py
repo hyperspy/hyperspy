@@ -103,7 +103,7 @@ def rebin(a, new_shape):
 
 
 def _linear_bin(s, scale,
-                crop_str='True'):
+                crop=True):
 
     """
     Binning of the spectrum image by a non-integer pixel value.
@@ -136,10 +136,6 @@ def _linear_bin(s, scale,
     dimension in the data.
 
     """
-    def string_to_bool(text):
-        return text.lower() in {'yes', 'on', 'true'}
-    crop = string_to_bool(crop_str)
-
     if len(s.shape) != len(scale):
         raise ValueError(
            'The list of bins must match the number of dimensions, including the\
