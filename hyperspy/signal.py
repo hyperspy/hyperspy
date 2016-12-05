@@ -2271,7 +2271,7 @@ class BaseSignal(FancySlicing,
 
     rebin.__doc__ %= OUT_ARG
 
-    def linear_bin(self, scale, crop='on'):
+    def linear_bin(self, scale, crop=True):
 
         """
         Binning of the spectrum image by a non-integer pixel value.
