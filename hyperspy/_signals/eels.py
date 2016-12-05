@@ -1254,7 +1254,7 @@ class EELSSpectrum(Signal1D):
                           dictionary=dictionary)
         return model
 
-    def linear_bin(self, scale, crop='Trues'):
+    def Linear_bin(self, scale, crop=True):
 
         """
         Binning of the spectrum image by a non-integer pixel value.
