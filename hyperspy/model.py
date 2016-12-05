@@ -1722,8 +1722,9 @@ class ModelSpecialSlicers(object):
             slices,
             self.isNavigation)
         _signal = self.model.signal._slicer(slices, self.isNavigation)
-        # let's not do anything automatically, since then it's difficult to keep
-        # track of the components:
+        # TODO: for next major release, change model creation defaults to not
+        # automate anything. For now we explicitly look for "auto_" kwargs and
+        # disable them:
         import inspect
         pars = inspect.signature(_signal.create_model).parameters
         kwargs = {key: False for key in pars.keys() if key.startswith('auto_')}
