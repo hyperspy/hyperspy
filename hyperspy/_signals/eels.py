@@ -288,12 +288,13 @@ class EELSSpectrum(Signal1D):
                 else self.axes_manager[-1].axis[0])
         right = (right if right < self.axes_manager[-1].axis[-1]
                  else self.axes_manager[-1].axis[-1])
-        self.align1D(
-            left,
-            right,
-            also_align=also_align,
-            show_progressbar=show_progressbar,
-            **kwargs)
+        if self.axes_manager.navigation_size > 1:
+            self.align1D(
+                left,
+                right,
+                also_align=also_align,
+                show_progressbar=show_progressbar,
+                **kwargs)
         zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
         if calibrate is True:
             substract_from_offset(without_nans(zlpc.data).mean(),
