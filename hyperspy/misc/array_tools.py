@@ -103,7 +103,7 @@ def rebin(a, new_shape):
 
 
 def _linear_bin(s, scale,
-                crop='on'):
+                crop_str='True'):
 
     """
     Binning of the spectrum image by a non-integer pixel value.
@@ -117,13 +117,13 @@ def _linear_bin(s, scale,
              a ratio of 2 means that each pixel in the new spectrum is
              twice the size of the pixels in the old spectrum.
 
-    crop: when binning by a non-integer number of pixels it is likely that
+    crop_str: when binning by a non-integer number of pixels it is likely that
          the final row in each dimension contains less than the full quota to
          fill one pixel.
          e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
          pixels and one row containing only 0.8 pixels worth. Selection of
-         crop = 'True' or crop = 'False' determines whether or not this 'black'
-         line is cropped from the final binned array or not.
+         crop_str = 'True' or crop = 'False' determines whether or not this
+         'black' line is cropped from the final binned array or not.
 
     *Please note that if crop = 'False' is used:the final row in each
     dimension may appear black, if a fractional number of pixels are left
@@ -136,60 +136,60 @@ def _linear_bin(s, scale,
     dimension in the data.
 
     """
+    def string_to_bool(text):
+        return text.lower() in {'yes', 'on', 'true'}
+    crop = string_to_bool(crop_str)
 
-    shape2 = s.shape
-    newSpectrum = np.zeros(s.shape)
-    newSpectrum = s[:]
-
-    if len(shape2) != len(scale):
+    if len(s.shape) != len(scale):
         raise ValueError(
            'The list of bins must match the number of dimensions, including the\
             energy dimension.\
             In order to not bin in any of these dimensions specifically, \
             simply set the value in shape to 1')
 
+    newSpectrum = s[:]
     for dimension_number, step in enumerate(scale):
-        shape2 = newSpectrum.shape
-        s = np.zeros(shape2)
-        s[:] = newSpectrum
+
+        latestSpectrum = np.copy(newSpectrum)
 
         if dimension_number != 0:
+            latestSpectrum = np.swapaxes(latestSpectrum, 0, dimension_number)
 
-            s = np.swapaxes(s, 0, dimension_number)
-            shape2 = s.shape
-        new_shape = tuple()
-        for i, dimension_size in enumerate(shape2):
-            if i == 0:
-                if crop == 'True':
-                    new_shape += (math.floor(dimension_size / step),)
-                else:
-                    new_shape += (math.ceil(dimension_size / step),)
+        size = latestSpectrum.shape
+
+        def get_dimension(i, size):
+            if i != 0:
+                new_size = size
+            elif crop:
+                new_size = math.floor(size / step)
             else:
-                new_shape += (dimension_size,)
-        newSpectrum = np.zeros(new_shape, dtype="float")
+                new_size = math.ceil(size / step)
+            return new_size
 
-        if crop == 'True':
-            k = math.floor(shape2[0]/step)
-        else:
-            k = math.ceil(shape2[0]/step)
-        for j in range(0, k):
-            bottomPos = (j*step)
-            topPos = ((1 + j) * step)
-            if topPos > shape2[0]:
-                topPos = shape2[0]
+        newSpectrum = np.zeros([get_dimension(i, dimension_size)
+                                for i, dimension_size in
+                                enumerate(size)],
+                               dtype="float")
+
+        k = newSpectrum.shape[0]
+        for j in range(k):
+            bottomPos = j*step
+            topPos = min((1+j)*step, size[0])
+            updatedValue = newSpectrum[j]
             while (topPos - bottomPos) >= 1:
                 if math.ceil(bottomPos) - bottomPos != 0:
-                    newSpectrum[j] = (newSpectrum[j] +
-                                      s[math.floor(bottomPos)] *
-                                      (math.ceil(bottomPos) - bottomPos))
+                    updatedValue += latestSpectrum[math.floor(bottomPos)] * \
+                               (math.ceil(bottomPos) - bottomPos)
                     bottomPos = math.ceil(bottomPos)
                 else:
-                    newSpectrum[j] = newSpectrum[j] + s[int(bottomPos)]
+                    updatedValue += latestSpectrum[int(bottomPos)]
                     bottomPos += 1
             if topPos != bottomPos:
-                newSpectrum[j] = (newSpectrum[j] +
-                                  s[math.floor(bottomPos)] *
-                                  (topPos - bottomPos))
+                updatedValue += latestSpectrum[
+                                math.floor(bottomPos)]*(topPos-bottomPos)
+            # Update new_spectrum
+            newSpectrum[j] = updatedValue
+
         if dimension_number != 0:
             newSpectrum = np.swapaxes(newSpectrum, 0, dimension_number)
 
