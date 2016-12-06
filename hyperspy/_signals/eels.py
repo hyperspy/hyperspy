@@ -1277,7 +1277,7 @@ class EELSSpectrum(Signal1D):
              crop = 'True' or crop = 'False' determines whether or not this
              'black' line is cropped from the final binned array or not.
 
-        *Please note that if crop = 'False' is used:the final row in each
+        *Please note that if crop=False is used, the final row in each
         dimension may appear black, if a fractional number of pixels are left
         over. It can be removed but has been left to preserve total counts
         before and after binning.*
@@ -1286,7 +1286,7 @@ class EELSSpectrum(Signal1D):
         ------
         A new spectrum image with new dimensions width/scale for each
         dimension in the data. The axes scales and dwell_time/exposure are also
-        corrected accordinly.
+        corrected accordingly.
 
         Examples
         --------
