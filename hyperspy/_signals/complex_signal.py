@@ -135,7 +135,7 @@ class ComplexSignal_mixin:
         return angle
 
     def unwrapped_phase(self, wrap_around=False, seed=None,
-                        show_progressbar=None):
+                        show_progressbar=None, parallel=None):
         """Return the unwrapped phase as an appropriate HyperSpy signal.
 
         Parameters
@@ -152,6 +152,8 @@ class ComplexSignal_mixin:
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        parallel : {Bool, None, int}
+            Perform the operation parallely
 
         Returns
         -------
@@ -170,7 +172,8 @@ class ComplexSignal_mixin:
         from skimage.restoration import unwrap_phase
         phase = self.phase
         phase.map(unwrap_phase, wrap_around=wrap_around, seed=seed,
-                  show_progressbar=show_progressbar)
+                  show_progressbar=show_progressbar, ragged=False,
+                  parallel=parallel)
         phase.metadata.General.title = 'unwrapped {}'.format(
             phase.metadata.General.title)
         return phase  # Now unwrapped!

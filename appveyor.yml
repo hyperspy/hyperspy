@@ -55,7 +55,6 @@ install:
   - "%CMD_IN_ENV% conda install -yq %TEST_DEPS%"
   - "%CMD_IN_ENV% conda install -yq %DEPS%"
     # Having 'sip' folder on path confuses import of `sip`.
-  - "%CMD_IN_ENV% move %PYTHON%\\sip %PYTHON%\\Lib\\site-packages\\PyQt4\\sip"
   - "%CMD_IN_ENV% conda install pip"
   # TODO: Remove once anaconda taitsui package is at v5:
   - "IF \"%PYTHON_MAJOR%\" EQU \"3\" pip install --upgrade traitsui tqdm"

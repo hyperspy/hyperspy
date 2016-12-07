@@ -372,6 +372,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 crop=True,
                 expand=False,
                 fill_value=np.nan,
+                parallel=None,
                 show_progressbar=None):
         """Shift the data in place over the signal axis by the amount specified
         by an array.
@@ -394,6 +395,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         fill_value : float
             If crop is False fill the data outside of the original
             interval with the given value where needed.
+        parallel : {None, bool}
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
@@ -469,7 +471,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
                           offset=axis.offset,
                           scale=axis.scale,
                           size=axis.size,
-                          show_progressbar=show_progressbar)
+                          show_progressbar=show_progressbar,
+                          parallel=parallel,
+                          ragged=False)
 
         if crop and not expand:
             self.crop(axis.index_in_axes_manager,
@@ -478,7 +482,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         self.events.data_changed.trigger(obj=self)
 
-    def interpolate_in_between(self, start, end, delta=3,
+    def interpolate_in_between(self, start, end, delta=3, parallel=None,
                                show_progressbar=None, **kwargs):
         """Replace the data in a given range by interpolation.
         The operation is performed in place.
@@ -492,6 +496,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        parallel: {None, bool}
         All extra keyword arguments are passed to
         scipy.interpolate.interp1d. See the function documentation
         for details.
@@ -517,8 +522,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 **kwargs)
             dat[i1:i2] = dat_int(list(range(i1, i2)))
             return dat
-        self._map_iterate(interpolating_function,
-                          show_progressbar=show_progressbar)
+        self._map_iterate(interpolating_function, ragged=False,
+                          parallel=parallel, show_progressbar=show_progressbar)
         self.events.data_changed.trigger(obj=self)
 
     def _check_navigation_mask(self, mask):
@@ -541,6 +546,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                          interpolate=True,
                          number_of_interpolation_points=5,
                          mask=None,
+                         parallel=None,
                          show_progressbar=None):
         """Estimate the shifts in the current signal axis using
          cross-correlation.
@@ -572,6 +578,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
+        parallel : {None, bool}
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
@@ -612,6 +619,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
                                   ref=ref,
                                   ip=ip,
                                   interpolate=interpolate,
+                                  ragged=False,
+                                  parallel=parallel,
                                   show_progressbar=show_progressbar,)
         shift_array = shift_signal.data
         if max_shift is not None:
@@ -830,7 +839,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             axis = self.axes_manager.signal_axes[0]
             self.map(savgol_filter, window_length=window_length,
                      polyorder=polynomial_order, deriv=differential_order,
-                     delta=axis.scale,)
+                     delta=axis.scale, ragged=False)
         else:
             # Interactive mode
             smoother = SmoothingSavitzkyGolay(self)
@@ -844,7 +853,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
     def smooth_lowess(self,
                       smoothing_parameter=None,
                       number_of_iterations=None,
-                      show_progressbar=None):
+                      show_progressbar=None,
+                      parallel=None):
         """Lowess data smoothing in place.
         If `smoothing_parameter` or `number_of_iterations` are None the method
         is run in interactive mode.
@@ -859,6 +869,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        parallel : {Bool, None, int}
+            Perform the operation parallely
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
@@ -886,9 +898,12 @@ class Signal1D(BaseSignal, CommonSignal1D):
                      it=number_of_iterations,
                      is_sorted=True,
                      return_sorted=False,
-                     show_progressbar=show_progressbar)
+                     show_progressbar=show_progressbar,
+                     ragged=False,
+                     parallel=parallel)
 
-    def smooth_tv(self, smoothing_parameter=None, show_progressbar=None):
+    def smooth_tv(self, smoothing_parameter=None, show_progressbar=None,
+                  parallel=None):
         """Total variation data smoothing in place.
         Parameters
         ----------
@@ -898,6 +913,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        parallel : {Bool, None, int}
+            Perform the operation parallely
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
@@ -908,7 +925,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
             smoother.edit_traits()
         else:
             self.map(_tv_denoise_1d, weight=smoothing_parameter,
-                     show_progressbar=show_progressbar)
+                     ragged=False,
+                     show_progressbar=show_progressbar,
+                     parallel=parallel)
 
     def filter_butterworth(self,
                            cutoff_frequency_ratio=None,
@@ -1059,7 +1078,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 "FWHM must be greater than zero")
         axis = self.axes_manager.signal_axes[0]
         FWHM *= 1 / axis.scale
-        self.map(gaussian_filter1d, sigma=FWHM / 2.35482)
+        self.map(gaussian_filter1d, sigma=FWHM / 2.35482, ragged=False)
 
     def hanning_taper(self, side='both', channels=None, offset=0):
         """Apply a hanning taper to the data in place.
@@ -1196,6 +1215,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                             factor=0.5,
                             window=None,
                             return_interval=False,
+                            parallel=None,
                             show_progressbar=None):
         """Estimate the width of the highest intensity of peak
         of the spectra at a given fraction of its maximum.
@@ -1219,6 +1239,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             If True, returns 2 extra signals with the positions of the
             desired height fraction at the left and right of the
             peak.
+        parallel : {None, bool}
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
@@ -1236,19 +1257,12 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if not 0 < factor < 1:
             raise ValueError("factor must be between 0 and 1.")
 
-        left, right = (self._get_navigation_signal(dtype='float'),
-                       self._get_navigation_signal(dtype='float'))
         axis = self.axes_manager.signal_axes[0]
         # x = axis.axis
         maxval = self.axes_manager.navigation_size
         show_progressbar = show_progressbar and maxval > 0
-        for _s in (left, right):
-            _s.axes_manager.set_signal_dimension(0)
-        both = stack((left, right))
-        both.axes_manager[-1].navigate = False
 
-        def estimating_function(both,
-                                spectrum=None,
+        def estimating_function(spectrum,
                                 window=None,
                                 factor=0.5,
                                 axis=None):
@@ -1269,17 +1283,15 @@ class Signal1D(BaseSignal, CommonSignal1D):
             else:
                 return np.full((2,), np.nan)
 
-        both._map_iterate(estimating_function,
-                          iterating_kwargs=(
-                              ('spectrum', self),),
+        both = self._map_iterate(estimating_function,
                           window=window,
                           factor=factor,
                           axis=axis,
+                          ragged=False,
+                          inplace=False,
+                          parallel=parallel,
                           show_progressbar=show_progressbar)
-        left, right = both.split()
-        for _s in (left, right):
-            _s.axes_manager.set_signal_dimension(
-                self.axes_manager.navigation_dimension)
+        left, right = both.T.split()
         width = right - left
         if factor == 0.5:
             width.metadata.General.title = (

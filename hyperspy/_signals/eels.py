@@ -293,12 +293,13 @@ class EELSSpectrum_mixin:
                 else self.axes_manager[-1].axis[0])
         right = (right if right < self.axes_manager[-1].axis[-1]
                  else self.axes_manager[-1].axis[-1])
-        self.align1D(
-            left,
-            right,
-            also_align=also_align,
-            show_progressbar=show_progressbar,
-            **kwargs)
+        if self.axes_manager.navigation_size > 1:
+            self.align1D(
+                left,
+                right,
+                also_align=also_align,
+                show_progressbar=show_progressbar,
+                **kwargs)
         zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
         if calibrate is True:
             substract_from_offset(without_nans(zlpc.data).mean(),
@@ -342,37 +343,31 @@ class EELSSpectrum_mixin:
         if isinstance(threshold, numbers.Number):
             I0 = self.isig[:threshold].integrate1D(-1)
         else:
-            I0 = self._get_navigation_signal()
-            I0.axes_manager.set_signal_dimension(0)
+            ax = self.axes_manager.signal_axes[0]
+            # I0 = self._get_navigation_signal()
+            # I0.axes_manager.set_signal_dimension(0)
             threshold.axes_manager.set_signal_dimension(0)
-
-            def estimating_function(current_value, threshold=None,
-                                    indices=None,
-                                    signal=None):
+            binned = self.metadata.Signal.binned
+            def estimating_function(data, threshold=None):
                 if np.isnan(threshold):
                     return np.nan
                 else:
-                    px = signal.inav[indices].isig[:threshold]
-                    return px.integrate1D(-1).data
+                    # the object is just an array, so have to reimplement
+                    # integrate1D. However can make certain assumptions, for
+                    # example 1D signal and pretty much always binned. Should
+                    # probably at some point be joint
+                    ind = ax.value2index(threshold)
+                    data = data[:ind]
+                    if binned:
+                        return data.sum()        
+                    else:
+                        from scipy.integrate import simps
+                        axis = ax.axis[:ind]
+                        return simps(y=data, x=axis)
 
-            I0._map_iterate(estimating_function,
-                            iterating_kwargs=(('threshold', threshold),
-                                              ('indices', self.axes_manager)),
-                            signal=self,
-                            show_progressbar=show_progressbar)
-            # TODO: delete the following when tested that works. Seems broken
-            # anyway (old implementation)
-
-            # for i, s in progressbar(enumerate(self),
-            #                         total=self.axes_manager.navigation_size,
-            #                         disable=not show_progressbar,
-            #                         leave=True):
-            #     threshold_ = threshold.isig[I0.axes_manager.indices].data[0]
-            #     if np.isnan(threshold_):
-            #         s.data[:] = np.nan
-            #     else:
-            #         s.data[:] = (self.inav[I0.axes_manager.indices].isig[
-            #                      :threshold_].integrate1D(-1).data)
+            I0 = self.map(estimating_function, threshold=threshold,
+                          ragged=False, show_progressbar=show_progressbar,
+                          inplace=False)
         I0.metadata.General.title = (
             self.metadata.General.title + ' elastic intensity')
         I0.set_signal_type("")

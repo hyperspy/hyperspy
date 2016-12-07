@@ -356,37 +356,52 @@ class LazySignal(BaseSignal):
             da.nanmax(data),)
         return _mean, _std, _min, _q1, _q2, _q3, _max
 
-    def _map_all(self, function, **kwargs):
+    def _map_all(self, function, inplace=True, **kwargs):
         calc_result = dd(function)(self.data, **kwargs)
-        self.data = da.from_delayed(calc_result, shape=self.data.shape)
+        if inplace:
+            self.data = da.from_delayed(calc_result, shape=self.data.shape)
+            return None
+        return self._deepcopy_with_new_data(calc_result)
 
     def _map_iterate(self, function, iterating_kwargs=(),
-                     show_progressbar=None, **kwargs):
+                     show_progressbar=None, parallel=None,
+                     ragged=None,
+                     inplace=True, **kwargs):
+        if ragged not in (True, False):
+            raise ValueError('"ragged" kwarg has to be bool for lazy signals')
         _logger.debug("Entering '_map_iterate'")
         self._make_sure_data_is_contiguous()
-        orig_shape = self.data.shape
-        iterators = tuple(signal[1]._iterate_signal()
-                          if isinstance(signal[1], BaseSignal) else signal[1]
-                          for signal in iterating_kwargs)
+
+        size = max(1, self.axes_manager.navigation_size)
+        from hyperspy.misc.utils import (create_map_objects,
+                                         map_result_construction)
+        func, iterators = create_map_objects(function, size, iterating_kwargs,
+                                             **kwargs)
         iterators = (self._iterate_signal(),) + iterators
-        all_delayed = []
-        pixel_shape = self.axes_manager.signal_shape[::-1]
-        _logger.debug("Entering delayed-creating loop")
-        for data in zip(*iterators):
-            for (key, value), datum in zip(iterating_kwargs, data[1:]):
-                if isinstance(value, BaseSignal) and len(datum) == 1:
-                    kwargs[key] = datum[0]
-                else:
-                    kwargs[key] = datum
-            all_delayed.append(dd(function)(data[0], **kwargs))
-        _logger.debug("Entering dask.array-creating loop")
-        pixels = [da.from_delayed(res, shape=pixel_shape) for res in
-                  all_delayed]
-        _logger.debug("stacking pixels")
-        data_stacked = da.stack(pixels, axis=0)
-        _logger.debug("reshaping mapped data")
-        self.data = data_stacked.reshape(orig_shape)
-        _logger.debug("Exit '_map_iterate'")
+        res_shape = self.axes_manager._navigation_shape_in_array
+
+        all_delayed = [dd(func)(data) for data in zip(*iterators)]
+
+        if ragged:
+            sig_shape = ()
+            sig_dtype = np.dtype('O')
+        else:
+            one_compute = all_delayed[0].compute()
+            sig_shape = one_compute.shape
+            sig_dtype = one_compute.dtype
+        pixels = [da.from_delayed(res, shape=sig_shape, dtype=sig_dtype) for
+                  res in all_delayed]
+
+        for step in reversed(res_shape):
+            _len = len(pixels)
+            starts = range(0, _len, step)
+            ends = range(step, _len+step, step)
+            pixels = [da.stack(pixels[s:e], axis=0) for 
+                      s,e in zip(starts, ends)]
+        result = pixels[0]
+        res = map_result_construction(self, inplace, result, ragged, sig_shape,
+                                      lazy=True)
+        return res
 
     def _iterate_signal(self):
         if self.axes_manager.navigation_size < 2:
@@ -396,7 +411,7 @@ class LazySignal(BaseSignal):
         nav_dim = self.axes_manager.navigation_dimension
         sig_dim = self.axes_manager.signal_dimension
         from itertools import product
-        nav_indices = self.axes_manager.navigation_indices_in_array
+        nav_indices = self.axes_manager.navigation_indices_in_array[::-1]
         nav_lengths = np.atleast_1d(np.array(self.data.shape)[list(nav_indices)])
         getitem = [slice(None)] * (nav_dim + sig_dim)
         for indices in product(*[range(l) for l in nav_lengths]):

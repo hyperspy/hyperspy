@@ -457,7 +457,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
                 correlation_threshold=None,
                 chunk_size=30,
                 interpolation_order=1,
-                show_progressbar=None):
+                show_progressbar=None,
+                parallel=None):
         """Align the images in place using user provided shifts or by
         estimating the shifts.
         Please, see `estimate_shift2D` docstring for details
@@ -480,6 +481,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         interpolation_order: int, default 1.
             The order of the spline interpolation. Default is 1, linear
             interpolation.
+        parallel : {None, bool}
         Returns
         -------
         shifts : np.array
@@ -553,6 +555,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
         # Translate with sub-pixel precision if necesary
         self._map_iterate(shift_image, iterating_kwargs=(('shift', -shifts),),
                           fill_value=fill_value,
+                          ragged=False,
+                          parallel=parallel,
                           interpolation_order=interpolation_order,
                           show_progressbar=show_progressbar)
         if crop and not expand:

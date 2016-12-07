@@ -3277,19 +3277,22 @@ class BaseSignal(FancySlicing,
     get_histogram.__doc__ %= OUT_ARG
 
     def map(self, function,
-            show_progressbar=None, **kwargs):
+            show_progressbar=None,
+            parallel=None, inplace=True, ragged=None,
+            **kwargs):
         """Apply a function to the signal data at all the coordinates.
 
-        The function must operate on numpy arrays and the output *must have the
-        same dimensions as the input*. The function is applied to the data at
-        each coordinate and the result is stored in the current signal i.e.
-        this method operates *in-place*.  Any extra keyword argument is passed
-        to the function. The keywords can take different values at different
-        coordinates. If the function takes an `axis` or `axes` argument, the
-        function is assumed to be vectorial and the signal axes are assigned to
-        `axis` or `axes`.  Otherwise, the signal is iterated over the
-        navigation axes and a progress bar is displayed to monitor the
+        The function must operate on numpy arrays. It is applied to the data at
+        each navigation coordinate pixel-py-pixel. Any extra keyword argument
+        is passed to the function. The keywords can take different values at
+        different coordinates. If the function takes an `axis` or `axes`
+        argument, the function is assumed to be vectorial and the signal axes
+        are assigned to `axis` or `axes`.  Otherwise, the signal is iterated
+        over the navigation axes and a progress bar is displayed to monitor the
         progress.
+
+        In general, only navigation axes (order, calibration and number) is
+        guaranteed to be preserved.
 
         Parameters
         ----------
@@ -3299,11 +3302,28 @@ class BaseSignal(FancySlicing,
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        parallel : {None,bool,int}
+            if True, the mapping will be performed in a threaded (parallel)
+            manner.
+        inplace : bool
+            if True (default), the data is replaced by the result. Otherwise a
+            new signal with the results is returned.
+        ragged : {None, bool}
+            Indicates if results for each navigation pixel are of identical
+            shape (and/or numpy arrays to begin with). If None, appropriate
+            choice is made while processing. None is not allowed for Lazy
+            signals!
         keyword arguments : any valid keyword argument
             All extra keyword arguments are passed to the
 
         Notes
         -----
+        If the function results do not have identical shapes, the result is an
+        array of navigation shape, where each element corresponds to the result
+        of the function (of arbitraty object type), called "ragged array". As
+        such, most functions are not able to operate on the result and the data
+        should be used directly.
+
         This method is similar to Python's :func:`map` that can also be utilize
         with a :class:`Signal` instance for similar purposes. However, this
         method has the advantage of being faster because it iterates the numpy
@@ -3326,8 +3346,6 @@ class BaseSignal(FancySlicing,
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=sigmas)
 
         """
-        if show_progressbar is None:
-            show_progressbar = preferences.General.show_progressbar
         # Sepate ndkwargs
         ndkwargs = ()
         for key, value in kwargs.items():
@@ -3348,7 +3366,7 @@ class BaseSignal(FancySlicing,
                 " axes.")
         # If the function has an axis argument and the signal dimension is 1,
         # we suppose that it can operate on the full array and we don't
-        # interate over the coordinates.
+        # iterate over the coordinates.
         try:
             fargs = inspect.signature(function).parameters.keys()
         except TypeError:
@@ -3361,42 +3379,169 @@ class BaseSignal(FancySlicing,
             kwargs['axis'] = \
                 self.axes_manager.signal_axes[-1].index_in_array
 
-            self._map_all(function, **kwargs)
+            res = self._map_all(function, inplace=inplace, **kwargs)
         # If the function has an axes argument
         # we suppose that it can operate on the full array and we don't
-        # interate over the coordinates.
-        elif not ndkwargs and "axes" in fargs:
+        # iterate over the coordinates.
+        elif not ndkwargs and "axes" in fargs and not parallel:
             kwargs['axes'] = tuple([axis.index_in_array for axis in
                                     self.axes_manager.signal_axes])
-            self._map_all(function, **kwargs)
+            res = self._map_all(function, inplace=inplace, **kwargs)
         else:
             # Iteration over coordinates.
-            self._map_iterate(function, ndkwargs,
-                              show_progressbar=show_progressbar,
-                              **kwargs)
-        self.events.data_changed.trigger(obj=self)
+            res = self._map_iterate(function, iterating_kwargs=ndkwargs,
+                                    show_progressbar=show_progressbar,
+                                    parallel=parallel, inplace=inplace,
+                                    ragged=ragged,
+                                    **kwargs)
+        if inplace:
+            self.events.data_changed.trigger(obj=self)
+        return res
 
-    def _map_all(self, function, **kwargs):
-        """Function that can be replaced for lazy signals"""
-        self.data = function(self.data, **kwargs)
+    def _map_all(self, function, inplace=True, **kwargs):
+        """The function has to have either 'axis' or 'axes' keyword argument,
+        and hence support operating on the full dataset efficiently.
+
+        Replaced for lazy signals"""
+        newdata = function(self.data, **kwargs)
+        if inplace:
+            self.data = newdata
+            return None
+        return self._deepcopy_with_new_data(newdata)
 
     def _map_iterate(self, function, iterating_kwargs=(),
-                     show_progressbar=None, **kwargs):
-        """Function that can be replaced for lazy signals"""
-        iterators = tuple(signal[1]._iterate_signal()
-                          if isinstance(signal[1], BaseSignal) else signal[1]
-                          for signal in iterating_kwargs)
+                     show_progressbar=None, parallel=None,
+                     ragged=None,
+                     inplace=True, **kwargs):
+        """Iterates the signal navigation space applying the function.
+
+        Paratemers
+        ----------
+        function : callable
+            the function to apply
+        iterating_kwargs : tuple of tuples
+            a tuple with structure (('key1', value1), ('key2', value2), ..)
+            where the key-value pairs will be passed as kwargs for the
+            callable, and the values will be iterated together with the signal
+            navigation.
+        parallel : {None, bool}
+            if True, the mapping will be performed in a threaded (parallel)
+            manner. If None the default from `preferences` is used.
+        inplace : bool
+            if True (default), the data is replaced by the result. Otherwise a
+            new signal with the results is returned.
+        ragged : {None, bool}
+            Indicates if results for each navigation pixel are of identical
+            shape (and/or numpy arrays to begin with). If None, appropriate
+            choice is made while processing. None is not allowed for Lazy
+            signals!
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
+        **kwargs
+            passed to the function as constant kwargs
+
+        Notes
+        -----
+        This method is replaced for lazy signals.
+
+        Examples
+        --------
+
+        Pass a larger array of different shape
+
+        >>> s = hs.signals.Signal1D(np.arange(20.).reshape((20,1)))
+        >>> def func(data, value=0):
+        ...     return data + value
+        >>> # pay attention that it's a tuple of tuples - need commas
+        >>> s._map_iterate(func,
+        ...                iterating_kwargs=(('value',
+        ...                                    np.random.rand(5,400).flat),))
+        >>> s.data.T
+        array([[  0.82869603,   1.04961735,   2.21513949,   3.61329091,
+                  4.2481755 ,   5.81184375,   6.47696867,   7.07682618,
+                  8.16850697,   9.37771809,  10.42794054,  11.24362699,
+                 12.11434077,  13.98654036,  14.72864184,  15.30855499,
+                 16.96854373,  17.65077064,  18.64925703,  19.16901297]])
+
+        Storing function result to other signal (e.g. calculated shifts)
+
+        >>> s = hs.signals.Signal1D(np.arange(20.).reshape((5,4)))
+        >>> def func(data): # the original function
+        ...     return data.sum()
+        >>> result = s._get_navigation_signal().T
+        >>> def wrapped(*args, data=None):
+        ...     return func(data)
+        >>> result._map_iterate(wrapped,
+        ...                     iterating_kwargs=(('data', s),))
+        >>> result.data
+        array([  6.,  22.,  38.,  54.,  70.])
+
+        """
+        if parallel is None:
+            parallel = preferences.General.parallel
+        if parallel:
+            from os import cpu_count
+            parallel = cpu_count()
+        # Because by default it's assumed to be I/O bound, and cpu_count*5 is
+        # used. For us this is not the case.
+
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
+
+        size = max(1, self.axes_manager.navigation_size)
+        from hyperspy.misc.utils import (create_map_objects,
+                                         map_result_construction)
+        func, iterators = create_map_objects(function, size, iterating_kwargs,
+                                             **kwargs)
         iterators = (self._iterate_signal(),) + iterators
-        for data in progressbar(zip(*iterators),
-                                disable=not show_progressbar,
-                                total=self.axes_manager.navigation_size,
-                                leave=True):
-            for (key, value), datum in zip(iterating_kwargs, data[1:]):
-                if isinstance(value, BaseSignal) and len(datum) == 1:
-                    kwargs[key] = datum[0]
-                else:
-                    kwargs[key] = datum
-            data[0][:] = function(data[0], **kwargs)
+        res_shape = self.axes_manager._navigation_shape_in_array
+        # no navigation
+        if not len(res_shape):
+            res_shape = (1,)
+        # pre-allocate some space
+        res_data = np.empty(res_shape, dtype='O')
+        shapes = set()
+
+        # parallel or sequential maps
+        if parallel:
+            from concurrent.futures import ThreadPoolExecutor
+            executor = ThreadPoolExecutor(max_workers=parallel)
+            thismap = executor.map
+        else:
+            from builtins import map as thismap
+
+        for ind, res in progressbar(zip(range(res_data.size),
+                                        thismap(func, zip(*iterators))),
+                                    disable=not show_progressbar,
+                                    total=size, leave=True):
+            res_data.flat[ind] = res
+            if ragged is False:
+                # to be able to break quickly and not waste time / resources
+                shapes.add(res.shape)
+                if len(shapes) != 1:
+                    raise ValueError('The result shapes are not identical, but'
+                                     'ragged=False')
+            else:
+                try:
+                    shapes.add(res.shape)
+                except AttributeError:
+                    shapes.add(None)
+        if parallel:
+            executor.shutdown()
+
+        # Combine data if required
+        shapes = list(shapes)
+        suitable_shapes = len(shapes) == 1 and shapes[0] is not None
+        ragged = ragged or not suitable_shapes
+        sig_shape = None
+        if not ragged:
+            sig_shape = () if shapes[0] == (1,) else shapes[0]
+            res_data = np.stack(res_data.flat).reshape(
+                self.axes_manager._navigation_shape_in_array + sig_shape)
+        res = map_result_construction(self, inplace, res_data, ragged,
+                                      sig_shape)
+        return res
 
     def copy(self):
         try:
@@ -3571,10 +3716,9 @@ class BaseSignal(FancySlicing,
             raise ValueError("`gain_factor` must be positive.")
         if correlation_factor < 0:
             raise ValueError("`correlation_factor` must be positive.")
-
-        variance = (dc * gain_factor + gain_offset) * correlation_factor
-        variance = np.clip(variance, gain_offset * correlation_factor, np.inf)
-
+        variance = self._estimate_poissonian_noise_variance(dc, gain_factor,
+                                                            gain_offset,
+                                                            correlation_factor)
 # Why the same type? Does not make sense, as it's just variance - probably
 # should be just a generic signal
         #variance = type(self)(variance)
@@ -3584,6 +3728,13 @@ class BaseSignal(FancySlicing,
                                            self.metadata.General.title)
         self.metadata.set_item(
             "Signal.Noise_properties.variance", variance)
+
+    @staticmethod
+    def _estimate_poissonian_noise_variance(dc, gain_factor, gain_offset,
+                                            correlation_factor):
+        variance = (dc * gain_factor + gain_offset) * correlation_factor
+        variance = np.clip(variance, gain_offset * correlation_factor, np.inf)
+        return variance
 
     def get_current_signal(self, auto_title=True, auto_filename=True):
         """Returns the data at the current coordinates as a Signal subclass.

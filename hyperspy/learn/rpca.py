@@ -440,9 +440,9 @@ class ORPCA:
         # in the SVD.
         S[self.rank:] = 0.
         if len(self.E):
-            return Xhat, Ehat, U, S, V
+            return Xhat.T, Ehat, U, S, V
         else:
-            return Xhat, 1, U, S, V
+            return Xhat.T, 1, U, S, V
 
 
 def orpca(X, rank, fast=False,

@@ -327,7 +327,8 @@ def assign_signal_subclass(dtype,
     if np.issubdtype(dtype, complex):
         dtype = 'complex'
     elif ('float' in dtype.name or 'int' in dtype.name or
-          'void' in dtype.name or 'bool' in dtype.name):
+          'void' in dtype.name or 'bool' in dtype.name or
+          'object' in dtype.name):
         dtype = 'real'
     else:
         raise ValueError('Data type "{}" not understood!'.format(dtype.name))

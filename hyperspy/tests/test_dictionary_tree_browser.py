@@ -77,6 +77,7 @@ class TestDictionaryBrowser:
                         "leaf211": 211},
                 },
                 "_sig_Some name": {
+                    'attributes': {'_lazy': False},
                     'axes': [
                         {
                             'name': 'x',
@@ -92,7 +93,6 @@ class TestDictionaryBrowser:
                             'title': ''},
                         'Signal': {
                             'binned': False,
-                            'lazy': False,
                             'signal_type': ''},
                         '_HyperSpy': {
                             'Folding': {
