@@ -419,8 +419,26 @@ class LazySignal(BaseSignal):
                 getitem[ind] = res
             yield self.data[tuple(getitem)]
 
+    def _block_iterator(self, flat_signal=True, get=threaded.get):
+        from itertools import product
+        nav_chunks = self.data.chunks[:self.axes_manager.navigation_dimension]
+        data = self.data.reshape((self.axes_manager.navigation_shape[::-1]+
+                                  (self.axes_manager.signal_size,)))
+
+        indices = product(*[range(len(c)) for c in nav_chunks])
+        for ind in indices:
+            chunk = get(data.dask, (data.name,)+ind+(0,))
+            if not flat_signal:
+                # TODO: check if need to reverse the signal_shape
+                chunk = chunk.reshape(chunk.shape[:-1] +
+                                      self.axes_manager.signal_shape)
+            yield chunk
+            # chunk = chunk.reshape(-1, self.axes_manager.signal_size)
+
     def decomposition(self, output_dimension, kind='PCA',
-                      get=threaded.get, blocksize=None, **kwargs):
+                      get=threaded.get, num_chunks=None, 
+                      refine=True,
+                      **kwargs):
         """Perform Incremental (Batch) PCA on the data, keeping n significant
         components.
 
@@ -430,68 +448,136 @@ class LazySignal(BaseSignal):
                 the number of significant components to keep
             get : dask scheduler
                 the dask scheduler to use for computations
-            blocksize : int
-                the size of blocks to pass to the PCA model. Larger blocks
-                require more memory, but should run faster. Has to be at least
-                equal to the output_dimension.
+            num_chunks : int
+                the number of dask chunks to pass to the decomposition model.
+                More chunks require more memory, but should run faster. Will be
+                increased to contain atleast output_dimension signals.
+            refine : bool
+                for ONMF, if to reproject loadings after learning factors.
             **kwargs
-                passed to the partial_fit.
+                passed to the partial_fit/fit functions.
 
         """
         explained_variance = None
         explained_variance_ratio = None
-        data = self.data.reshape((self.axes_manager.navigation_size,
-                                  self.axes_manager.signal_size))
-        if blocksize is not None and output_dimension > blocksize:
-            raise ValueError('too small blocksize, has to be more than '
-                             'output_dimension')
-        if blocksize is not None:
-            data = data.rechunk((blocksize, data.shape[1]))
-        elif output_dimension > np.min(data.chunks[0]):
-            data = data.rechunk((output_dimension, data.shape[1]))
-
-        nblocks = len(data.chunks[0])
+        nav_chunks = self.data.chunks[:self.axes_manager.navigation_dimension]
+        from toolz import curry
+        from itertools import product
+        num_chunks = 1 if num_chunks is None else num_chunks
+        blocksize = np.min([np.multiply(1, *ar) for ar in
+                            product(*nav_chunks)])
+        nblocks = np.multiply(1, *[len(c) for c in nav_chunks])
+        if blocksize/output_dimension < num_chunks:
+            num_chunks = np.ceil(blocsize/output_dimension)
+        blocksize *= num_chunks
 
         if kind == 'PCA':
-
             from sklearn.decomposition import IncrementalPCA
             ipca = IncrementalPCA(n_components=output_dimension)
-            try:
-                for i in progressbar(range(nblocks), total=nblocks, leave=True):
-                    thedata = get(data.dask, (data.name, i, 0))
-                    ipca = ipca.partial_fit(thedata, **kwargs)
+            method = curry(ipca.partial_fit, **kwargs)
 
-            except KeyboardInterrupt:
-                pass
+        elif kind == 'ORPCA':
+            from hyperspy.learn.rpca import ORPCA
+            kwargs['fast'] = True
+            _orpca = ORPCA(output_dimension, **kwargs)
+            method = _orpca.fit
 
+        elif kind == 'ONMF':
+            from hyperspy.learn.onmf import ONMF
+            batch_size = kwargs.pop('batch_size', None)
+            _onmf = ONMF(output_dimension, **kwargs)
+            method = curry(_onmf.fit, batch_size=batch_size)
+
+        else:
+            raise ValueError('kind not known')
+
+        this_data = []
+        try:
+            for chunk in progressbar(self._block_iterator(flat_signal=True,
+                                                          get=get),
+                                     total=nblocks,
+                                     leave=True,
+                                     desc='Data chunks'):
+                chunk = chunk.reshape(-1, self.axes_manager.signal_size)
+                this_data.append(chunk)
+                if len(this_data) == num_chunks:
+                    thedata = np.concatenate(this_data, axis=0)
+                    method(thedata)
+                    this_data = []
+            if len(this_data):
+                thedata = np.concatenate(this_data, axis=0)
+                method(thedata)
+        except KeyboardInterrupt:
+            pass
+
+        if kind == 'PCA':
             explained_variance = ipca.explained_variance_
             explained_variance_ratio = ipca.explained_variance_ratio_
             factors = ipca.components_.T
             loadings = transform(ipca, data).compute()
 
         elif kind == 'ORPCA':
-            from hyperspy.learn.rpca import ORPCA
-            kwargs['fast'] = True
-            _orpca = ORPCA(output_dimension, **kwargs)
-            try:
-                for i in progressbar(range(nblocks), total=nblocks, leave=True,
-                                     desc='Data chunks'):
-                    thedata = get(data.dask, (data.name, i, 0))
-                    _orpca.fit(thedata, iterating=True)
-            except KeyboardInterrupt:
-                pass
-
             _, _, U, S, V = _orpca.finish()
-
             factors = U * S
             loadings = V
+            if refine:
+                _orpca.R = []
+                for chunk in progressbar(self._block_iterator(flat_signal=True,
+                                                              get=get),
+                                         total=nblocks,
+                                         leave=False,
+                                         desc='Data chunks'):
+                    chunk = chunk.reshape(-1, self.axes_manager.signal_size)
+                    _orpca.project(chunk)
+                _, _, _, _, loadings = _orpca.finish()
+
             explained_variance = S ** 2 / len(factors)
 
+        elif kind == 'ONMF':
+            factors, loadings = _onmf.finish()
+            # if explicitly want to refine of did not finish the learning of
+            # the full dataset, but want to project it.
+            try:
+                if refine or not isinstance(loadings, np.ndarray) or \
+                    loadings.shape[1] != self.axes_manager.navigation_size:
+                    H = []
+                    for chunk in progressbar(self._block_iterator(flat_signal=True,
+                                                                  get=get),
+                                             total=nblocks,
+                                             leave=False,
+                                             desc='Data chunks'):
+                        chunk = chunk.reshape(-1, self.axes_manager.signal_size)
+                        H.append(_onmf.project(chunk))
+                    loadings = np.concatenate(H, axis=1)
+            except KeyboardInterrupt:
+                pass
+            loadings = loadings.T
 
         if explained_variance is not None and \
                 explained_variance_ratio is None:
             explained_variance_ratio = \
                 explained_variance / explained_variance.sum()
+
+        if kind in ['ORNMF', 'ONMF', 'ORPCA']:
+            # Fix the block-scrambled loadings
+            ndim = self.axes_manager.navigation_dimension
+            splits = np.cumsum([np.multiply(1, *ar)
+                                for ar in product(*nav_chunks)][:-1]).tolist()
+            all_chunks = [ar.T.reshape((output_dimension,) + shape) for shape, ar in
+                          zip(product(*nav_chunks), np.split(loadings, splits))]
+
+            def split_stack_list(what, step, axis):
+                total = len(what)
+                if total != step:
+                    return [np.concatenate(what[i:i + step], axis=axis) for i in
+                            range(0, total, step)]
+                else:
+                    return np.concatenate(what, axis=axis)
+            for chunks, axis in zip(nav_chunks[::-1], range(ndim, 0, -1)):
+                step = len(chunks)
+                all_chunks = split_stack_list(all_chunks, step, axis)
+
+            loadings = all_chunks.reshape((output_dimension, -1)).T
 
         target = self.learning_results
         target.factors = factors
