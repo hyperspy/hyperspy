@@ -19,6 +19,7 @@ HyperSpy User Guide (DRAFT)
     signal2d.rst
     visualisation.rst
     mva.rst
+    clustering.rst
     model.rst
     samfire.rst
     eels.rst
