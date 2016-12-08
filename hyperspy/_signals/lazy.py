@@ -36,12 +36,18 @@ _logger = logging.getLogger(__name__)
 
 lazyerror = NotImplementedError('This method is not available in lazy signals')
 
+
 def _transform(model, x):
     return model.transform(x)
 
+
 def transform(model, x):
     func = partial(_transform, model)
-    return x.map_blocks(func, chunks=(x.chunks[0], (model.n_components,)), drop_axis=1, new_axis=1)
+    return x.map_blocks(
+        func,
+        chunks=(x.chunks[0], (model.n_components, )),
+        drop_axis=1,
+        new_axis=1)
 
 
 class LazySignal(BaseSignal):
@@ -98,10 +104,13 @@ class LazySignal(BaseSignal):
                 chunks[ax.index_in_array] = dc.shape[ax.index_in_array],
             return tuple(chunks)
 
-        sizes = [ax.size for ax in self.axes_manager._axes
-                 if ax not in need_axes]
-        indices = [ax.index_in_array for ax in self.axes_manager._axes
-                   if ax not in need_axes]
+        sizes = [
+            ax.size for ax in self.axes_manager._axes if ax not in need_axes
+        ]
+        indices = [
+            ax.index_in_array for ax in self.axes_manager._axes
+            if ax not in need_axes
+        ]
 
         while True:
             if np.product(sizes) <= num_that_fit:
@@ -114,12 +123,11 @@ class LazySignal(BaseSignal):
         for i in range(ndim):
             if i in indices:
                 size = float(dc.shape[i])
-                split_array = np.array_split(np.arange(size),
-                                             np.ceil(size /
-                                                     sizes[indices.index(i)]))
+                split_array = np.array_split(
+                    np.arange(size), np.ceil(size / sizes[indices.index(i)]))
                 chunks.append(tuple(len(sp) for sp in split_array))
             else:
-                chunks.append((dc.shape[i],))
+                chunks.append((dc.shape[i], ))
         return tuple(chunks)
 
     def _make_lazy(self, axis=None, rechunk=False):
@@ -128,8 +136,7 @@ class LazySignal(BaseSignal):
             if self.data.chunks != new_chunks and rechunk:
                 self.data = self.data.rechunk(new_chunks)
         else:
-            self.data = da.from_array(self.data,
-                                      chunks=new_chunks)
+            self.data = da.from_array(self.data, chunks=new_chunks)
 
     def _lazy_data(self, axis=None):
         self._make_lazy(axis=axis)
@@ -141,8 +148,7 @@ class LazySignal(BaseSignal):
 
         def get_dask_function(numpy_name):
             # Translate from the default numpy to dask functions
-            translations = {'amax': 'max',
-                            'amin': 'min'}
+            translations = {'amax': 'max', 'amin': 'min'}
             if numpy_name in translations:
                 numpy_name = translations[numpy_name]
             return getattr(da, numpy_name)
@@ -150,14 +156,14 @@ class LazySignal(BaseSignal):
         function = get_dask_function(function.__name__)
         axes = self.axes_manager[axes]
         if not np.iterable(axes):
-            axes = (axes,)
+            axes = (axes, )
         ar_axes = tuple(ax.index_in_array for ax in axes)
         if len(ar_axes) == 1:
             ar_axes = ar_axes[0]
         current_data = self._lazy_data(axis=axes)
         new_data = function(current_data, axis=ar_axes)
         if not new_data.ndim:
-            new_data = new_data.reshape((1,))
+            new_data = new_data.reshape((1, ))
         if out:
             if out.data.shape == new_data.shape:
                 out.data = new_data
@@ -179,14 +185,13 @@ class LazySignal(BaseSignal):
             raise ValueError("Wrong shape size")
         new_shape_in_array = []
         for axis in self.axes_manager._axes:
-            new_shape_in_array.append(
-                new_shape[axis.index_in_axes_manager])
-        factors = (np.array(self.data.shape) /
-                   np.array(new_shape_in_array))
-        axis = {ax.index_in_array: ax for ax in
-                self.axes_manager._axes}[factors.argmax()]
+            new_shape_in_array.append(new_shape[axis.index_in_axes_manager])
+        factors = (np.array(self.data.shape) / np.array(new_shape_in_array))
+        axis = {ax.index_in_array: ax
+                for ax in self.axes_manager._axes}[factors.argmax()]
         self._make_lazy(axis=axis)
         return super().rebin(new_shape, out=out)
+
     rebin.__doc__ = BaseSignal.rebin.__doc__
 
     def __array__(self, dtype=None):
@@ -216,15 +221,14 @@ class LazySignal(BaseSignal):
             slice1 = tuple(slice1)
             slice2 = tuple(slice2)
             if n > 1:
-                return dask_diff(
-                    arr[slice1] - arr[slice2], n - 1, axis=axis)
+                return dask_diff(arr[slice1] - arr[slice2], n - 1, axis=axis)
             else:
                 return arr[slice1] - arr[slice2]
 
         current_data = self._lazy_data(axis=axis)
         new_data = dask_diff(current_data, order, arr_axis)
         if not new_data.ndim:
-            new_data = new_data.reshape((1,))
+            new_data = new_data.reshape((1, ))
 
         s = out or self._deepcopy_with_new_data(new_data)
         if out:
@@ -242,6 +246,7 @@ class LazySignal(BaseSignal):
             return s
         else:
             out.events.data_changed.trigger(obj=out)
+
     diff.__doc__ = BaseSignal.diff.__doc__
 
     def integrate_simpson(self, axis, out=None):
@@ -254,14 +259,19 @@ class LazySignal(BaseSignal):
         data = self._lazy_data(axis=axis)
         chunks = data.chunks
         d_chunks = [data[_slice] for _slice in slices_from_chunks(chunks)]
-        integs = [del_do(integrate.simps, pure=True)(dc, x=axis.axis,
-                                                     axis=axis.index_in_array)
-                  for dc in d_chunks]
+        integs = [
+            del_do(
+                integrate.simps, pure=True)(dc,
+                                            x=axis.axis,
+                                            axis=axis.index_in_array)
+            for dc in d_chunks
+        ]
         shapes = product(*chunks)
         result_list = [
             da.from_delayed(
-                integ, shape, dtype=data.dtype) for integ, shape
-            in zip(integs, shapes)]
+                integ, shape, dtype=data.dtype)
+            for integ, shape in zip(integs, shapes)
+        ]
         new_data = da.concatenate(result_list, axis=axis.index_in_array)
         s = out or self._deepcopy_with_new_data(new_data)
         if out:
@@ -275,6 +285,7 @@ class LazySignal(BaseSignal):
         else:
             s._remove_axis(axis.index_in_axes_manager)
             return s
+
     integrate_simpson.__doc__ = BaseSignal.integrate_simpson.__doc__
 
     def valuemax(self, axis, out=None):
@@ -288,10 +299,10 @@ class LazySignal(BaseSignal):
         else:
             out.data = data
             out.events.data_changed.trigger(obj=out)
+
     valuemax.__doc__ = BaseSignal.valuemax.__doc__
 
-    def get_histogram(self, bins='freedman', out=None,
-                      **kwargs):
+    def get_histogram(self, bins='freedman', out=None, **kwargs):
         if 'range_bins' in kwargs:
             _logger.warning("'range_bins' argument not supported for lazy "
                             "signals")
@@ -312,13 +323,14 @@ class LazySignal(BaseSignal):
         hist_spec.axes_manager[0].offset = bin_edges[0]
         hist_spec.axes_manager[0].size = hist.shape[-1]
         hist_spec.axes_manager[0].name = 'value'
-        hist_spec.metadata.General.title = (self.metadata.General.title +
-                                            " histogram")
+        hist_spec.metadata.General.title = (
+            self.metadata.General.title + " histogram")
         hist_spec.metadata.Signal.binned = True
         if out is None:
             return hist_spec
         else:
             out.events.data_changed.trigger(obj=out)
+
     get_histogram.__doc__ = BaseSignal.get_histogram.__doc__
 
     @staticmethod
@@ -334,6 +346,7 @@ class LazySignal(BaseSignal):
         if isinstance(res.data, da.Array):
             res = res.as_lazy()
         return res
+
     _get_navigation_signal.__doc__ = BaseSignal._get_navigation_signal.__doc__
 
     def _get_signal_signal(self, data=None, dtype=None):
@@ -341,6 +354,7 @@ class LazySignal(BaseSignal):
         if isinstance(res.data, da.Array):
             res = res.as_lazy()
         return res
+
     _get_signal_signal.__doc__ = BaseSignal._get_signal_signal.__doc__
 
     def _calculate_summary_statistics(self):
@@ -353,7 +367,7 @@ class LazySignal(BaseSignal):
             da.percentile(_raveled, [25, ]),
             da.percentile(_raveled, [50, ]),
             da.percentile(_raveled, [75, ]),
-            da.nanmax(data),)
+            da.nanmax(data), )
         return _mean, _std, _min, _q1, _q2, _q3, _max
 
     def _map_all(self, function, inplace=True, **kwargs):
@@ -363,10 +377,14 @@ class LazySignal(BaseSignal):
             return None
         return self._deepcopy_with_new_data(calc_result)
 
-    def _map_iterate(self, function, iterating_kwargs=(),
-                     show_progressbar=None, parallel=None,
+    def _map_iterate(self,
+                     function,
+                     iterating_kwargs=(),
+                     show_progressbar=None,
+                     parallel=None,
                      ragged=None,
-                     inplace=True, **kwargs):
+                     inplace=True,
+                     **kwargs):
         if ragged not in (True, False):
             raise ValueError('"ragged" kwarg has to be bool for lazy signals')
         _logger.debug("Entering '_map_iterate'")
@@ -377,7 +395,7 @@ class LazySignal(BaseSignal):
                                          map_result_construction)
         func, iterators = create_map_objects(function, size, iterating_kwargs,
                                              **kwargs)
-        iterators = (self._iterate_signal(),) + iterators
+        iterators = (self._iterate_signal(), ) + iterators
         res_shape = self.axes_manager._navigation_shape_in_array
 
         all_delayed = [dd(func)(data) for data in zip(*iterators)]
@@ -389,18 +407,22 @@ class LazySignal(BaseSignal):
             one_compute = all_delayed[0].compute()
             sig_shape = one_compute.shape
             sig_dtype = one_compute.dtype
-        pixels = [da.from_delayed(res, shape=sig_shape, dtype=sig_dtype) for
-                  res in all_delayed]
+        pixels = [
+            da.from_delayed(
+                res, shape=sig_shape, dtype=sig_dtype) for res in all_delayed
+        ]
 
         for step in reversed(res_shape):
             _len = len(pixels)
             starts = range(0, _len, step)
-            ends = range(step, _len+step, step)
-            pixels = [da.stack(pixels[s:e], axis=0) for 
-                      s,e in zip(starts, ends)]
+            ends = range(step, _len + step, step)
+            pixels = [
+                da.stack(
+                    pixels[s:e], axis=0) for s, e in zip(starts, ends)
+            ]
         result = pixels[0]
-        res = map_result_construction(self, inplace, result, ragged, sig_shape,
-                                      lazy=True)
+        res = map_result_construction(
+            self, inplace, result, ragged, sig_shape, lazy=True)
         return res
 
     def _iterate_signal(self):
@@ -412,7 +434,8 @@ class LazySignal(BaseSignal):
         sig_dim = self.axes_manager.signal_dimension
         from itertools import product
         nav_indices = self.axes_manager.navigation_indices_in_array[::-1]
-        nav_lengths = np.atleast_1d(np.array(self.data.shape)[list(nav_indices)])
+        nav_lengths = np.atleast_1d(
+            np.array(self.data.shape)[list(nav_indices)])
         getitem = [slice(None)] * (nav_dim + sig_dim)
         for indices in product(*[range(l) for l in nav_lengths]):
             for res, ind in zip(indices, nav_indices):
@@ -422,20 +445,23 @@ class LazySignal(BaseSignal):
     def _block_iterator(self, flat_signal=True, get=threaded.get):
         from itertools import product
         nav_chunks = self.data.chunks[:self.axes_manager.navigation_dimension]
-        data = self.data.reshape((self.axes_manager.navigation_shape[::-1]+
-                                  (self.axes_manager.signal_size,)))
+        data = self.data.reshape((self.axes_manager.navigation_shape[::-1] +
+                                  (self.axes_manager.signal_size, )))
 
         indices = product(*[range(len(c)) for c in nav_chunks])
         for ind in indices:
-            chunk = get(data.dask, (data.name,)+ind+(0,))
+            chunk = get(data.dask, (data.name, ) + ind + (0, ))
             if not flat_signal:
                 # TODO: check if need to reverse the signal_shape
                 chunk = chunk.reshape(chunk.shape[:-1] +
                                       self.axes_manager.signal_shape)
             yield chunk
 
-    def decomposition(self, output_dimension, kind='PCA',
-                      get=threaded.get, num_chunks=None, 
+    def decomposition(self,
+                      output_dimension,
+                      kind='PCA',
+                      get=threaded.get,
+                      num_chunks=None,
                       refine=True,
                       **kwargs):
         """Perform Incremental (Batch) decomposition on the data, keeping n
@@ -465,17 +491,18 @@ class LazySignal(BaseSignal):
         nav_chunks = self.data.chunks[:self.axes_manager.navigation_dimension]
         from toolz import curry
         from itertools import product
+
         def mult(*args):
             ans = 1.
             for ar in args:
                 ans *= ar
             return ans
+
         num_chunks = 1 if num_chunks is None else num_chunks
-        blocksize = np.min([mult(*ar) for ar in
-                            product(*nav_chunks)])
+        blocksize = np.min([mult(*ar) for ar in product(*nav_chunks)])
         nblocks = mult(*[len(c) for c in nav_chunks])
-        if blocksize/output_dimension < num_chunks:
-            num_chunks = np.ceil(blocsize/output_dimension)
+        if blocksize / output_dimension < num_chunks:
+            num_chunks = np.ceil(blocsize / output_dimension)
         blocksize *= num_chunks
 
         ## LEARN
@@ -501,11 +528,12 @@ class LazySignal(BaseSignal):
 
         this_data = []
         try:
-            for chunk in progressbar(self._block_iterator(flat_signal=True,
-                                                          get=get),
-                                     total=nblocks,
-                                     leave=True,
-                                     desc='Data chunks'):
+            for chunk in progressbar(
+                    self._block_iterator(
+                        flat_signal=True, get=get),
+                    total=nblocks,
+                    leave=True,
+                    desc='Data chunks'):
                 chunk = chunk.reshape(-1, self.axes_manager.signal_size)
                 this_data.append(chunk)
                 if len(this_data) == num_chunks:
@@ -517,7 +545,7 @@ class LazySignal(BaseSignal):
                 method(thedata)
         except KeyboardInterrupt:
             pass
-        
+
         # GET RESULTS (recalc loadings if required)
 
         if kind == 'PCA':
@@ -532,16 +560,17 @@ class LazySignal(BaseSignal):
             loadings = V
             if refine:
                 _orpca.R = []
-                for chunk in progressbar(self._block_iterator(flat_signal=True,
-                                                              get=get),
-                                         total=nblocks,
-                                         leave=False,
-                                         desc='Data chunks'):
+                for chunk in progressbar(
+                        self._block_iterator(
+                            flat_signal=True, get=get),
+                        total=nblocks,
+                        leave=False,
+                        desc='Data chunks'):
                     chunk = chunk.reshape(-1, self.axes_manager.signal_size)
                     _orpca.project(chunk)
                 _, _, _, _, loadings = _orpca.finish()
 
-            explained_variance = S ** 2 / len(factors)
+            explained_variance = S**2 / len(factors)
 
         elif kind == 'ONMF':
             factors, loadings = _onmf.finish()
@@ -553,11 +582,14 @@ class LazySignal(BaseSignal):
                 if refine or not isinstance(loadings, np.ndarray) or \
                     loadings.shape[1] != self.axes_manager.navigation_size:
                     H = []
-                    for chunk in progressbar(self._block_iterator(flat_signal=True, get=get),
-                                             total=nblocks,
-                                             leave=False,
-                                             desc='Data chunks'):
-                        chunk = chunk.reshape(-1, self.axes_manager.signal_size)
+                    for chunk in progressbar(
+                            self._block_iterator(
+                                flat_signal=True, get=get),
+                            total=nblocks,
+                            leave=False,
+                            desc='Data chunks'):
+                        chunk = chunk.reshape(-1,
+                                              self.axes_manager.signal_size)
                         H.append(_onmf.project(chunk))
                     loadings = np.concatenate(H, axis=1)
             except KeyboardInterrupt:
@@ -574,19 +606,25 @@ class LazySignal(BaseSignal):
         if kind in ['ORNMF', 'ONMF', 'ORPCA']:
             # Fix the block-scrambled loadings
             ndim = self.axes_manager.navigation_dimension
-            splits = np.cumsum([mult(*ar) for ar in
-                                product(*nav_chunks)][:-1]).tolist()
-            all_chunks = [ar.T.reshape((output_dimension,) + shape) for 
-                          shape, ar in zip(product(*nav_chunks),
-                                           np.split(loadings, splits))]
+            splits = np.cumsum([mult(*ar)
+                                for ar in product(*nav_chunks)][:-1]).tolist()
+            all_chunks = [
+                ar.T.reshape((output_dimension, ) + shape)
+                for shape, ar in zip(
+                    product(*nav_chunks), np.split(loadings, splits))
+            ]
 
             def split_stack_list(what, step, axis):
                 total = len(what)
                 if total != step:
-                    return [np.concatenate(what[i:i + step], axis=axis) for i
-                            in range(0, total, step)]
+                    return [
+                        np.concatenate(
+                            what[i:i + step], axis=axis)
+                        for i in range(0, total, step)
+                    ]
                 else:
                     return np.concatenate(what, axis=axis)
+
             for chunks, axis in zip(nav_chunks[::-1], range(ndim, 0, -1)):
                 step = len(chunks)
                 all_chunks = split_stack_list(all_chunks, step, axis)
