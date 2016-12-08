@@ -28,6 +28,8 @@ try:
 except:
     mdp_installed = False
 
+from skcmeans.algorithms import Hard, Probabilistic, Possibilistic, \
+    GustafsonKesselMixin
 
 from hyperspy.misc.machine_learning import import_sklearn
 import hyperspy.misc.io.tools as io_tools
@@ -39,6 +41,12 @@ from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack, ordinal
 
 _logger = logging.getLogger(__name__)
+
+
+class ProbabilisticGK(Probabilistic, GustafsonKesselMixin):
+    pass
+class PossibilisticGK(Possibilistic, GustafsonKesselMixin):
+    pass
 
 
 def centering_and_whitening(X):
@@ -93,6 +101,91 @@ class MVA():
     def __init__(self):
         if not hasattr(self, 'learning_results'):
             self.learning_results = LearningResults()
+
+    def cluster(self,
+                n_clusters,
+                algorithm='probabilistic',
+                gustafson_kessel=False,
+                navigation_mask=None,
+                signal_mask=None,
+                reproject=None,
+                **kwargs
+                ):
+        if gustafson_kessel:
+            algorithm += 'gk'
+        algorithms = {
+            'probabilistic': Probabilistic,
+            'possibilistic': Possibilistic,
+            'probabilisticgk': ProbabilisticGK,
+            'possibilisticgk': PossibilisticGK,
+        }
+        Algorithm = algorithms[algorithm]
+        if self.axes_manager.navigation_size < 2:
+            raise AttributeError("It is not possible to cluster a dataset "
+                                 "with navigation_size < 2")
+        self._data_before_treatments = self.data.copy()
+        target = LearningResults()
+        self._unfolded4clustering = self.unfold()
+
+        try:
+            # Deal with masks
+            if hasattr(navigation_mask, 'ravel'):
+                navigation_mask = navigation_mask.ravel()
+
+            if hasattr(signal_mask, 'ravel'):
+                signal_mask = signal_mask.ravel()
+            dc = (self.data if self.axes_manager[0].index_in_array == 0
+                  else self.data.T)
+            if navigation_mask is None:
+                navigation_mask = slice(None)
+            else:
+                navigation_mask = ~navigation_mask
+            if signal_mask is None:
+                signal_mask = slice(None)
+            else:
+                signal_mask = ~signal_mask
+
+            # Cluster the masked data
+            alg = Algorithm(n_clusters=n_clusters, **kwargs)
+            alg.fit(dc[:, signal_mask][navigation_mask, :])
+            memberships = alg.memberships
+            centers = alg.centers
+
+            target.memberships = memberships
+            target.centers = centers
+            if self._unfolded4clustering is True:
+                folding = \
+                    self.metadata._HyperSpy.Folding
+                target.original_shape = folding.original_shape
+
+            if not isinstance(signal_mask, slice):
+                # Store the (inverted, as inputed) signal mask
+                target.signal_mask = ~signal_mask.reshape(
+                    self.axes_manager._signal_shape_in_array)
+                if reproject not in ('both', 'signal'):
+                    factors = np.zeros(
+                        (dc.shape[-1], target.factors.shape[1]))
+                    factors[signal_mask, :] = target.factors
+                    factors[~signal_mask, :] = np.nan
+                    target.factors = factors
+            if not isinstance(navigation_mask, slice):
+                # Store the (inverted, as inputed) navigation mask
+                target.navigation_mask = ~navigation_mask.reshape(
+                    self.axes_manager._navigation_shape_in_array)
+                if reproject not in ('both', 'navigation'):
+                    loadings = np.zeros(
+                        (dc.shape[0], target.loadings.shape[1]))
+                    loadings[navigation_mask, :] = target.loadings
+                    loadings[~navigation_mask, :] = np.nan
+                    target.loadings = loadings
+        finally:
+            if self._unfolded4clustering is True:
+                self.fold()
+                self._unfolded4clustering = False
+            self.learning_results.__dict__.update(target.__dict__)
+            # undo any pre-treatments
+            self.undo_treatments()
+
 
     def decomposition(self,
                       normalize_poissonian_noise=False,
@@ -1213,6 +1306,10 @@ class LearningResults(object):
     output_dimension = None
     mean = None
     centre = None
+    # Clustering
+    centers = None
+    memberships = None
+    covariances = None
     # Unmixing
     bss_algorithm = None
     unmixing_matrix = None
