@@ -24,7 +24,6 @@ import scipy.linalg
 from scipy.stats import halfnorm
 from hyperspy.external.progressbar import progressbar
 
-
 _logger = logging.getLogger(__name__)
 
 
@@ -32,8 +31,9 @@ def _thresh(X, lambda1, vmax):
     res = np.abs(X) - lambda1
     np.maximum(res, 0.0, out=res)
     res *= np.sign(X)
-    np.clip(res, -vmax, vmax, out=res)  
+    np.clip(res, -vmax, vmax, out=res)
     return res
+
 
 def _mrdivide(B, A):
     """like in Matlab! (solves xB = A)
@@ -47,13 +47,15 @@ def _mrdivide(B, A):
     else:
         return B / A
 
+
 def _project(W):
     newW = W.copy()
     np.maximum(newW, 0, out=newW)
     sumsq = np.sqrt(np.sum(W**2, axis=0))
     np.maximum(sumsq, 1, out=sumsq)
     return _mrdivide(newW, np.diag(sumsq))
-    
+
+
 def _solveproj(v, W, lambda1, kappa=1, h=None, r=None, vmax=None):
     m, n = W.shape
     v = v.T
@@ -77,7 +79,7 @@ def _solveproj(v, W, lambda1, kappa=1, h=None, r=None, vmax=None):
     maxiter = 1e9
     iters = 0
 
-    while True:        
+    while True:
         iters += 1
         if iters % 10 == 0:
             _logger.debug('solveproj iter #{}'.format(iters))
@@ -85,23 +87,24 @@ def _solveproj(v, W, lambda1, kappa=1, h=None, r=None, vmax=None):
         htmp = h
         h = h - eta * np.dot(W.T, np.dot(W, h) + r - v)
         np.maximum(h, 0.0, out=h)
-        
+
         # Solve for r
         rtmp = r
         r = _thresh(v - np.dot(W, h), lambda1, vmax)
-        
+
         # Stop conditions
-        stoph = np.linalg.norm(h - htmp, 2) 
+        stoph = np.linalg.norm(h - htmp, 2)
         stopr = np.linalg.norm(r - rtmp, 2)
         stop = max(stoph, stopr) / m
-        if stop < 1e-5 or iters > maxiter:            
+        if stop < 1e-5 or iters > maxiter:
             break
-    
+
     return h, r
 
-class ONMF:
 
-    def __init__(self, rank, lambda1=1., kappa=1., store_r=False, robust=False):
+class ONMF:
+    def __init__(self, rank, lambda1=1., kappa=1., store_r=False,
+                 robust=False):
         self.robust = robust
         self.nfeatures = None
         self.rank = rank
@@ -136,7 +139,7 @@ class ONMF:
             X = chain([x], X)
 
         self.nfeatures = m
-        
+
         self.W = np.abs(avg * halfnorm.rvs(size=(self.nfeatures, self.rank)) /
                         np.sqrt(self.rank))
 
@@ -159,9 +162,8 @@ class ONMF:
             num = X.shape[0]
             X = iter(X)
         r, h = self.r, self.h
-        for v in progressbar(X, leave=False, total=num, disable=num==1):
-            h, r = _solveproj(v, self.W, self.lambda1, self.kappa, 
-                              r=r, h=h)
+        for v in progressbar(X, leave=False, total=num, disable=num == 1):
+            h, r = _solveproj(v, self.W, self.lambda1, self.kappa, r=r, h=h)
             self.H.append(h)
             if self.R is not None:
                 self.R.append(r)
@@ -178,8 +180,8 @@ class ONMF:
             # exactly as in the paper
             n = 0
             lasttwo = np.zeros(2)
-            while n<=2 or (np.abs((lasttwo[1] - lasttwo[0])/lasttwo[0]) >
-                           1e-5 and n<1e9):
+            while n <= 2 or (np.abs(
+                (lasttwo[1] - lasttwo[0]) / lasttwo[0]) > 1e-5 and n < 1e9):
                 self.W -= eta * (np.dot(self.W, self.A) - self.B)
                 self.W = _project(self.W)
                 n += 1
@@ -189,12 +191,10 @@ class ONMF:
         else:
             # Tom's approach
             self.W -= eta * (np.dot(self.W, self.A) - self.B)
-            np.maximum(self.W, 0.0, out=self.W)                 
-            self.W /= max(np.linalg.norm(self.W, 'fro'), 1.0)  
-
+            np.maximum(self.W, 0.0, out=self.W)
+            self.W /= max(np.linalg.norm(self.W, 'fro'), 1.0)
 
     def project(self, X, return_R=False):
-        # could be called project..?
         H = []
         if return_R:
             R = []
@@ -206,8 +206,7 @@ class ONMF:
         for v in progressbar(X, leave=False, total=num):
             # want to start with fresh results and not clip, so that chunks are
             # smooth
-            h, r = _solveproj(v, self.W, self.lambda1, self.kappa,
-                              vmax=np.inf)
+            h, r = _solveproj(v, self.W, self.lambda1, self.kappa, vmax=np.inf)
             H.append(h.copy())
             if return_R:
                 R.append(r.copy())

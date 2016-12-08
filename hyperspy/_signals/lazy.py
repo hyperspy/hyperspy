@@ -433,19 +433,21 @@ class LazySignal(BaseSignal):
                 chunk = chunk.reshape(chunk.shape[:-1] +
                                       self.axes_manager.signal_shape)
             yield chunk
-            # chunk = chunk.reshape(-1, self.axes_manager.signal_size)
 
     def decomposition(self, output_dimension, kind='PCA',
                       get=threaded.get, num_chunks=None, 
                       refine=True,
                       **kwargs):
-        """Perform Incremental (Batch) PCA on the data, keeping n significant
-        components.
+        """Perform Incremental (Batch) decomposition on the data, keeping n
+        significant components.
 
         Parameters
         ----------
             output_dimension : int
                 the number of significant components to keep
+            kind : str
+                One of ('PCA', 'ORPCA', 'ONMF'). By default batch PCA from
+                scikit-learn.
             get : dask scheduler
                 the dask scheduler to use for computations
             num_chunks : int
@@ -463,14 +465,20 @@ class LazySignal(BaseSignal):
         nav_chunks = self.data.chunks[:self.axes_manager.navigation_dimension]
         from toolz import curry
         from itertools import product
+        def mult(*args):
+            ans = 1.
+            for ar in args:
+                ans *= ar
+            return ans
         num_chunks = 1 if num_chunks is None else num_chunks
-        blocksize = np.min([np.multiply(1, *ar) for ar in
+        blocksize = np.min([mult(*ar) for ar in
                             product(*nav_chunks)])
-        nblocks = np.multiply(1, *[len(c) for c in nav_chunks])
+        nblocks = mult(*[len(c) for c in nav_chunks])
         if blocksize/output_dimension < num_chunks:
             num_chunks = np.ceil(blocsize/output_dimension)
         blocksize *= num_chunks
 
+        ## LEARN
         if kind == 'PCA':
             from sklearn.decomposition import IncrementalPCA
             ipca = IncrementalPCA(n_components=output_dimension)
@@ -509,6 +517,8 @@ class LazySignal(BaseSignal):
                 method(thedata)
         except KeyboardInterrupt:
             pass
+        
+        # GET RESULTS (recalc loadings if required)
 
         if kind == 'PCA':
             explained_variance = ipca.explained_variance_
@@ -535,14 +545,15 @@ class LazySignal(BaseSignal):
 
         elif kind == 'ONMF':
             factors, loadings = _onmf.finish()
-            # if explicitly want to refine of did not finish the learning of
-            # the full dataset, but want to project it.
+            # if explicitly want to refine 
+            # OR
+            # did not finish the learning of the full dataset, but want to
+            # project it.
             try:
                 if refine or not isinstance(loadings, np.ndarray) or \
                     loadings.shape[1] != self.axes_manager.navigation_size:
                     H = []
-                    for chunk in progressbar(self._block_iterator(flat_signal=True,
-                                                                  get=get),
+                    for chunk in progressbar(self._block_iterator(flat_signal=True, get=get),
                                              total=nblocks,
                                              leave=False,
                                              desc='Data chunks'):
@@ -558,19 +569,22 @@ class LazySignal(BaseSignal):
             explained_variance_ratio = \
                 explained_variance / explained_variance.sum()
 
+        # RESHUFFLE
+
         if kind in ['ORNMF', 'ONMF', 'ORPCA']:
             # Fix the block-scrambled loadings
             ndim = self.axes_manager.navigation_dimension
-            splits = np.cumsum([np.multiply(1, *ar)
-                                for ar in product(*nav_chunks)][:-1]).tolist()
-            all_chunks = [ar.T.reshape((output_dimension,) + shape) for shape, ar in
-                          zip(product(*nav_chunks), np.split(loadings, splits))]
+            splits = np.cumsum([mult(*ar) for ar in
+                                product(*nav_chunks)][:-1]).tolist()
+            all_chunks = [ar.T.reshape((output_dimension,) + shape) for 
+                          shape, ar in zip(product(*nav_chunks),
+                                           np.split(loadings, splits))]
 
             def split_stack_list(what, step, axis):
                 total = len(what)
                 if total != step:
-                    return [np.concatenate(what[i:i + step], axis=axis) for i in
-                            range(0, total, step)]
+                    return [np.concatenate(what[i:i + step], axis=axis) for i
+                            in range(0, total, step)]
                 else:
                     return np.concatenate(what, axis=axis)
             for chunks, axis in zip(nav_chunks[::-1], range(ndim, 0, -1)):
