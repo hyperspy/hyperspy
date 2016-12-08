@@ -181,8 +181,7 @@ class MVA():
             if hasattr(signal_mask, 'ravel'):
                 signal_mask = signal_mask.ravel()
             if not use_decomposition_results:
-                dc = (self.data if self.axes_manager[0].index_in_array == 0
-                      else self.data.T)
+                dc = self.data if self.axes_manager[0].index_in_array == 0 else self.data.T
             else:
                 dc = self.learning_results.loadings.copy()
             if navigation_mask is None:
@@ -203,8 +202,7 @@ class MVA():
             target.memberships = memberships
             target.centers = centers
             if self._unfolded4clustering is True:
-                folding = \
-                    self.metadata._HyperSpy.Folding
+                folding = self.metadata._HyperSpy.Folding
                 target.original_shape = folding.original_shape
 
             # Reproject
@@ -220,7 +218,7 @@ class MVA():
                     self.axes_manager._signal_shape_in_array)
                 if reproject not in ('both', 'signal'):
                     centers = np.zeros(
-                        (dc.shape[-1], target.centers.shape[1]))
+                        (n_clusters, dc.shape[-1]))
                     centers[:, signal_mask] = target.centers
                     centers[:, ~signal_mask] = np.nan
                     target.centers = centers
