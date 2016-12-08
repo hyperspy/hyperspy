@@ -132,7 +132,7 @@ class MVA():
                 self._data_before_treatments = self.learning_results.loadings.copy()
             else:
                 raise ValueError("`use_decomposition_results` is set to True but no "
-                                 "decomposition loadings have been found. Set "
+                                 "decomposition memberships have been found. Set "
                                  "`use_decomposition_results` to False or run a "
                                  "decomposition.")
         target = LearningResults()
@@ -172,26 +172,33 @@ class MVA():
                     self.metadata._HyperSpy.Folding
                 target.original_shape = folding.original_shape
 
+            # Reproject
+            if use_decomposition_results and reproject:
+                factors = self.learning_results.factors
+                centers = np.dot(centers, factors.T)
+                target.centers = centers
+
+            # Sort out masked data
             if not isinstance(signal_mask, slice):
                 # Store the (inverted, as inputed) signal mask
                 target.signal_mask = ~signal_mask.reshape(
                     self.axes_manager._signal_shape_in_array)
                 if reproject not in ('both', 'signal'):
-                    factors = np.zeros(
-                        (dc.shape[-1], target.factors.shape[1]))
-                    factors[signal_mask, :] = target.factors
-                    factors[~signal_mask, :] = np.nan
-                    target.factors = factors
+                    centers = np.zeros(
+                        (dc.shape[-1], target.centers.shape[1]))
+                    centers[:, signal_mask] = target.centers
+                    centers[:, ~signal_mask] = np.nan
+                    target.centers = centers
             if not isinstance(navigation_mask, slice):
                 # Store the (inverted, as inputed) navigation mask
                 target.navigation_mask = ~navigation_mask.reshape(
                     self.axes_manager._navigation_shape_in_array)
                 if reproject not in ('both', 'navigation'):
-                    loadings = np.zeros(
-                        (dc.shape[0], target.loadings.shape[1]))
-                    loadings[navigation_mask, :] = target.loadings
-                    loadings[~navigation_mask, :] = np.nan
-                    target.loadings = loadings
+                    memberships = np.zeros(
+                        (dc.shape[0], target.memberships.shape[1]))
+                    memberships[navigation_mask, :] = target.memberships
+                    memberships[~navigation_mask, :] = np.nan
+                    target.memberships = memberships
         finally:
             if self._unfolded4clustering is True:
                 self.fold()
