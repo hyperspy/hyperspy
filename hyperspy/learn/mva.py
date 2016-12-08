@@ -107,14 +107,50 @@ class MVA():
                 algorithm='probabilistic',
                 gustafson_kessel=False,
                 use_decomposition_results=True,
+                reproject=True,
                 navigation_mask=None,
                 signal_mask=None,
-                reproject=None,
                 **kwargs
                 ):
+        """Fuzzy c-means clustering with a choice of algorithms.
+
+        Results are stored in `learning_results`.
+
+        Parameters
+        ----------
+        n_clusters : int
+            Number of clusters to find.
+        algorithm : 'hard' | 'probabilistic' | 'possibilistic'
+            Algorithm used to find cluster centers and memberships. Refer to `
+            scikit-cmeans` documentation for further information.
+        gustafson_kessel : bool
+            If True, the Gustafson-Kessel variant of the above algorithms will
+            be used, allowing the clusters to have ellipsoidal character.
+        use_decomposition_results : bool
+            If True (recommended) the signal's decomposition results are used
+            for clustering. If this option is not used, a `MemoryError` may
+            arise during the clustering algorithm unless the Signal has a fairly
+            small `signal_dimension`.
+        reproject : bool
+            If True and `use_decomposition_results` is True, the derived cluster
+            centers will be reprojected into the original data dimension using
+            the decomposition factors.
+        navigation_mask : boolean numpy array
+            The navigation locations marked as True are not used in the
+            decomposition.
+        signal_mask : boolean numpy array
+            The signal locations marked as True are not used in the
+            decomposition.
+        **kwargs
+            Additional parameters passed to the clustering algorithm. This may
+            include `n_init`, the number of times the algorithm is restarted
+            to optimize results.
+
+        """
         if gustafson_kessel:
             algorithm += 'gk'
         algorithms = {
+            'hard': Hard,
             'probabilistic': Probabilistic,
             'possibilistic': Possibilistic,
             'probabilisticgk': ProbabilisticGK,
