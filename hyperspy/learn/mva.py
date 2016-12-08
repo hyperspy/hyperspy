@@ -107,6 +107,7 @@ class MVA():
                 n_clusters,
                 algorithm='probabilistic',
                 gustafson_kessel=False,
+                use_decomposition_results=True,
                 navigation_mask=None,
                 signal_mask=None,
                 reproject=None,
@@ -124,7 +125,16 @@ class MVA():
         if self.axes_manager.navigation_size < 2:
             raise AttributeError("It is not possible to cluster a dataset "
                                  "with navigation_size < 2")
-        self._data_before_treatments = self.data.copy()
+        if not use_decomposition_results:
+            self._data_before_treatments = self.data.copy()
+        else:
+            if self.learning_results.loadings is not None:
+                self._data_before_treatments = self.learning_results.loadings.copy()
+            else:
+                raise ValueError("`use_decomposition_results` is set to True but no "
+                                 "decomposition loadings have been found. Set "
+                                 "`use_decomposition_results` to False or run a "
+                                 "decomposition.")
         target = LearningResults()
         self._unfolded4clustering = self.unfold()
 
@@ -135,8 +145,11 @@ class MVA():
 
             if hasattr(signal_mask, 'ravel'):
                 signal_mask = signal_mask.ravel()
-            dc = (self.data if self.axes_manager[0].index_in_array == 0
-                  else self.data.T)
+            if not use_decomposition_results:
+                dc = (self.data if self.axes_manager[0].index_in_array == 0
+                      else self.data.T)
+            else:
+                dc = self.learning_results.loadings.copy()
             if navigation_mask is None:
                 navigation_mask = slice(None)
             else:
@@ -185,7 +198,8 @@ class MVA():
                 self._unfolded4clustering = False
             self.learning_results.__dict__.update(target.__dict__)
             # undo any pre-treatments
-            self.undo_treatments()
+            if not use_decomposition_results:
+                self.undo_treatments()
 
 
     def decomposition(self,
