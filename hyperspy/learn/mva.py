@@ -202,6 +202,8 @@ class MVA():
 
             target.memberships = memberships
             target.centers = centers
+            target.n_clusters = n_clusters
+
             if self._unfolded4clustering is True:
                 folding = self.metadata._HyperSpy.Folding
                 target.original_shape = folding.original_shape
@@ -1200,6 +1202,7 @@ class LearningResults(object):
     # Clustering
     centers = None
     memberships = None
+    n_clusters = None
     covariances = None
     # Unmixing
     bss_algorithm = None
