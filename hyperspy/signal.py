@@ -1298,6 +1298,34 @@ class MVATools(object):
             axis.navigate = False
         return signal
 
+    def get_cluster_memberships(self):
+        """Return cluster memberships as a Signal.
+
+        See Also
+        --------
+        get_cluster_centers
+
+        """
+        signal = self._get_loadings(self.learning_results.memberships)
+        signal.axes_manager._axes[0].name = "Cluster index"
+        signal.metadata.General.title = \
+            "Cluster memberships of " + self.metadata.General.title
+        return signal
+
+    def get_cluster_centers(self):
+        """Return the cluster centers as a Signal.
+
+        See Also
+        -------
+        get_cluster_memberships
+
+        """
+        signal = self._get_factors(self.learning_results.centers.T)
+        signal.axes_manager._axes[0].name = "Cluster index"
+        signal.metadata.General.title = ("Cluster centers of " +
+                                         self.metadata.General.title)
+        return signal
+
     def get_decomposition_loadings(self):
         """Return the decomposition loadings as a Signal.
 
