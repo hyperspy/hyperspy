@@ -970,7 +970,7 @@ class MVATools(object):
             factors = None
 
         if cluster_ids is None:
-            cluster_ids = self.learning_results.output_dimension
+            cluster_ids = self.learning_results.n_clusters
         return self._plot_loadings(
             memberships,
             comp_ids=cluster_ids,
