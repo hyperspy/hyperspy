@@ -1546,6 +1546,22 @@ class MVATools(object):
         loadings.plot(navigator=loadings_navigator)
         factors.plot(navigator=factors_navigator)
 
+    def plot_cluster_results(self,
+                             centers_navigator="auto",
+                             memberships_navigator="auto",
+                             centers_dim=2,
+                             memberships_dim=2
+                             ):
+        centers = self.get_cluster_centers()
+        memberships = self.get_cluster_memberships()
+        centers.axes_manager._axes[0] = memberships.axes_manager._axes[0]
+        if memberships.axes_manager.signal_dimension > 2:
+            memberships.axes_manager.set_signal_dimension(memberships_dim)
+        if centers.axes_manager.signal_dimension > 2:
+            centers.axes_manager.set_signal_dimension(centers_dim)
+        memberships.plot(navigator=memberships_navigator)
+        centers.plot(navigator=centers_navigator)
+
     def plot_decomposition_results(self,
                                    factors_navigator="auto",
                                    loadings_navigator="auto",
