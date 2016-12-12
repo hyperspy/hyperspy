@@ -243,6 +243,7 @@ class MVA():
             # undo any pre-treatments
             if not use_decomposition_results:
                 self.undo_treatments()
+            return alg
 
 
     def decomposition(self,
