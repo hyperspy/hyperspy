@@ -735,6 +735,59 @@ class MVATools(object):
                         filename = os.path.join(folder, filename)
                     s.save(filename)
 
+    def plot_cluster_centers(self,
+                             cluster_ids=None,
+                             calibrate=True,
+                             same_window=None,
+                             comp_label="Cluster center",
+                             per_row=3):
+        """Plot centers from a cluster analysis.
+
+        Parameters
+        ----------
+        cluster_ids : None, int, or list of ints
+            if None, returns maps of all clusters.
+            if int, returns maps of clusters with ids from 0 to given
+            int.
+            if list of ints, returns maps of clusters with ids in
+            given list.
+        calibrate :
+            if True, calibrates plots where calibration is available
+            from the axes_manager. If False, plots are in pixels/channels.
+        same_window : bool
+            if True, plots each center to the same window.  They are
+            not scaled.
+        comp_label : string
+            the label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting
+            in the same window)
+        per_row : int
+            the number of plots in each row, when the same_window parameter is
+            True.
+
+        See Also
+        --------
+        plot_cluster_memberships
+
+        """
+        if self.axes_manager.signal_dimension > 2:
+            raise NotImplementedError("This method cannot plot factors of "
+                                      "signals of dimension higher than 2."
+                                      "You can use "
+                                      "`plot_decomposition_results` instead.")
+        if same_window is None:
+            same_window = preferences.MachineLearning.same_window
+        factors = self.learning_results.centers.T
+        if cluster_ids is None:
+            cluster_ids = self.learning_results.n_clusters
+
+        return self._plot_factors_or_pchars(factors,
+                                            comp_ids=cluster_ids,
+                                            calibrate=calibrate,
+                                            same_window=same_window,
+                                            comp_label=comp_label,
+                                            per_row=per_row)
+
     def plot_decomposition_factors(self,
                                    comp_ids=None,
                                    calibrate=True,
@@ -857,6 +910,77 @@ class MVATools(object):
                                             same_window=same_window,
                                             comp_label=comp_label,
                                             per_row=per_row)
+
+    def plot_cluster_memberships(self,
+                                 cluster_ids=None,
+                                 calibrate=True,
+                                 same_window=None,
+                                 comp_label="Cluster membership",
+                                 with_centers=False,
+                                 cmap=plt.cm.gray,
+                                 no_nans=False,
+                                 per_row=3):
+        """Plot memberships from a cluster analysis.
+
+        Parameters
+        ----------
+        cluster_ids : None, int, or list of ints
+            if None, returns maps of all clusters.
+            if int, returns maps of clusters with ids from 0 to
+            given int.
+            if list of ints, returns maps of clusters with ids in
+            given list.
+        calibrate : bool
+            if True, calibrates plots where calibration is available
+            from the axes_manager.  If False, plots are in pixels/channels.
+        same_window : bool
+            if True, plots each membership to the same window.  They are
+            not scaled.
+        comp_label : string,
+            The label that is either the plot title (if plotting in
+            separate windows) or the label in the legend (if plotting
+            in the same window). In this case, each membership line can be
+            toggled on and off by clicking on the legended line.
+        with_centers : bool
+            If True, also returns figure(s) with the centers for the
+            given cluster_ids.
+        cmap : matplotlib colormap
+            The colormap used for the membership image, or for peak
+            characteristics, the colormap used for the scatter plot of
+            some peak characteristic.
+        no_nans : bool
+            If True, removes NaN's from the membership plots.
+        per_row : int
+            the number of plots in each row, when the same_window
+            parameter is True.
+
+        """
+
+        if self.axes_manager.navigation_dimension > 2:
+            raise NotImplementedError("This method cannot plot loadings of "
+                                      "dimension higher than 2."
+                                      "You can use "
+                                      "`plot_decomposition_results` instead.")
+        if same_window is None:
+            same_window = preferences.MachineLearning.same_window
+        memberships = self.learning_results.memberships.T
+        if with_centers:
+            factors = self.learning_results.centers.T
+        else:
+            factors = None
+
+        if cluster_ids is None:
+            cluster_ids = self.learning_results.output_dimension
+        return self._plot_loadings(
+            memberships,
+            comp_ids=cluster_ids,
+            with_factors=with_centers,
+            factors=factors,
+            same_window=same_window,
+            comp_label=comp_label,
+            cmap=cmap,
+            no_nans=no_nans,
+            per_row=per_row)
 
     def plot_decomposition_loadings(self,
                                     comp_ids=None,
