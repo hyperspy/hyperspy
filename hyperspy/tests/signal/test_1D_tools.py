@@ -276,7 +276,7 @@ class TestSmoothing:
             raise SkipTest
         frac = 0.5
         it = 1
-        data = self.s.data.copy()
+        data = self.s.data.astype('float')
         for i in range(data.shape[0]):
             data[i, :] = lowess(
                 endog=data[i, :],
@@ -292,7 +292,7 @@ class TestSmoothing:
 
     def test_tv(self):
         weight = 1
-        data = self.s.data.copy()
+        data = self.s.data.astype('float')
         for i in range(data.shape[0]):
             data[i, :] = _tv_denoise_1d(
                 im=data[i, :],
