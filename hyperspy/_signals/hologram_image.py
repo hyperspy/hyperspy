@@ -231,7 +231,7 @@ class HologramImage(Signal2D):
 
 
         # ???
-        _logger.info('Sideband pos in pixels: {}'.format(sb_position))
+        _logger.info('Sideband position in pixels: {}'.format(sb_position))
         _logger.info('Sideband aperture radius in pixels: {}'.format(sb_size))
         _logger.info('Sideband aperture smoothness in pixels: {}'.format(sb_smoothness))
 
