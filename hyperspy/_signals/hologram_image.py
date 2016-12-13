@@ -223,8 +223,11 @@ class HologramImage(Signal2D):
 
         # Find output shape:
         if output_shape is None:
-            output_shape = np.int(sb_size*2, sb_size*2)  # is bad, one should parse sb_size first
-            # output_shape = self.axes_manager.signal_shape
+            # if sb_size.axes_manager.navigation_size > 0: #  Future improvement will give a possibility to choose
+            #     output_shape = (np.int(sb_size.inav[0].data*2), np.int(sb_size.inav[0].data*2))
+            # else:
+            #     output_shape = (np.int(sb_size.data*2), np.int(sb_size.data*2))
+            output_shape = self.axes_manager.signal_shape
 
 
         # ???
