@@ -46,6 +46,8 @@ class HologramImage(Signal2D):
             The aperture radius used to mask out the centerband.
         sb : str, optional
             Chooses which sideband is taken. 'lower' or 'upper'
+        show_progressbar : boolean
+            Shows progressbar while iterating over different slices of the signal (passes the parameter to map method).
 
         Returns
         -------
@@ -69,6 +71,8 @@ class HologramImage(Signal2D):
         ----------
         sb_position : :class:`~hyperspy.signals.BaseSignal
             The sideband position (y, x), referred to the non-shifted FFT.
+        show_progressbar: boolean
+            Shows progressbar while iterating over different slices of the signal (passes the parameter to map method).
 
         Returns
         -------
@@ -81,7 +85,14 @@ class HologramImage(Signal2D):
 
     def reconstruct_phase(self, reference=None, sb_size=None, sb_smoothness=None, sb_unit=None,
                           sb='lower', sb_position=None, output_shape=None, plotting=False, show_progressbar=False):
-        """Reconstruct electron holograms.
+        """Reconstruct electron holograms. Operates on multidimensional hyperspy signals. There are several usage
+        schemes:
+         1. Reconstruct 1d or Nd hologram without reference
+         2. Reconstruct 1d or Nd hologram using single reference hologram
+         3. Reconstruct Nd hologram using Nd reference hologram (applies each reference to each hologram in Nd stack)
+
+         The reconstruction parameters (sb_position, sb_size, sb_smoothness) have to be 1d or to have same
+         dimensionality as the hologram.
 
         Parameters
         ----------
@@ -90,7 +101,7 @@ class HologramImage(Signal2D):
         sb_size : float, :class:`~hyperspy.signals.BaseSignal
             Sideband radius of the aperture in corresponding unit (see 'sb_unit'). If None,
             the radius of the aperture is set to 1/3 of the distance between sideband and
-            centerband.
+            centreband.
         sb_smoothness : float, :class:`~hyperspy.signals.BaseSignal
             Smoothness of the aperture in the same unit as sb_size.
         sb_unit : str, optional
@@ -117,8 +128,7 @@ class HologramImage(Signal2D):
 
         Notes
         -----
-        Use wave.rec_param to extract reconstruction parameters, which can be used for batch
-        processing.
+
         """
 
         # Parsing reference:
@@ -253,14 +263,6 @@ class HologramImage(Signal2D):
         wave_object.map(reconstruct, holo_sampling=self.sampling, sb_size=sb_size_temp,
                         sb_position=sb_position_temp, sb_smoothness=sb_smoothness_temp,
                         output_shape=output_shape, plotting=plotting, show_progressbar=show_progressbar)
-
-        # The lines bellow should be revisited once map function is fixed:
-        # wave_object.axes_manager.signal_axes[0].size = output_shape[0]
-        # wave_object.axes_manager.signal_axes[1].size = output_shape[1]
-        # wave_object.axes_manager.signal_axes[0].scale = self.sampling[0] * self.axes_manager.signal_shape[0] / \
-        #                                                 output_shape[0]
-        # wave_object.axes_manager.signal_axes[1].scale = self.sampling[1] * self.axes_manager.signal_shape[1] / \
-        #                                                 output_shape[1]
 
         # Reconstructing reference wave and applying it (division):
         if reference is None:
