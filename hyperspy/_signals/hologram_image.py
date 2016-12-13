@@ -22,6 +22,7 @@ from collections import OrderedDict
 from hyperspy.misc.holography.reconstruct import reconstruct, find_sideband_position, find_sideband_size
 import logging
 import warnings
+import scipy.constants as constants
 
 _logger = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class HologramImage(Signal2D):
 
         Parameters
         ----------
-        ap_cb_radius: float, optional
+        ap_cb_radius: float, None
             The aperture radius used to mask out the centerband.
         sb : str, optional
             Chooses which sideband is taken. 'lower' or 'upper'
@@ -84,7 +85,8 @@ class HologramImage(Signal2D):
         return sb_size
 
     def reconstruct_phase(self, reference=None, sb_size=None, sb_smoothness=None, sb_unit=None,
-                          sb='lower', sb_position=None, output_shape=None, plotting=False, show_progressbar=False):
+                          sb='lower', sb_position=None, output_shape=None, plotting=False, show_progressbar=False,
+                          log_parameters=True):
         """Reconstruct electron holograms. Operates on multidimensional hyperspy signals. There are several usage
         schemes:
          1. Reconstruct 1d or Nd hologram without reference
@@ -96,30 +98,32 @@ class HologramImage(Signal2D):
 
         Parameters
         ----------
-        reference : ndarray, :class:`~hyperspy.signals.Signal2D
+        reference : ndarray, :class:`~hyperspy.signals.Signal2D, None
             Vacuum reference hologram.
-        sb_size : float, :class:`~hyperspy.signals.BaseSignal
+        sb_size : float, :class:`~hyperspy.signals.BaseSignal, None
             Sideband radius of the aperture in corresponding unit (see 'sb_unit'). If None,
             the radius of the aperture is set to 1/3 of the distance between sideband and
             centreband.
-        sb_smoothness : float, :class:`~hyperspy.signals.BaseSignal
+        sb_smoothness : float, :class:`~hyperspy.signals.BaseSignal, None
             Smoothness of the aperture in the same unit as sb_size.
-        sb_unit : str, optional
+        sb_unit : str, None
             Unit of the two sideband parameters 'sb_size' and 'sb_smoothness'.
             Default: None - Sideband size given in pixels
             'nm': Size and smoothness of the aperture are given in 1/nm.
             'mrad': Size and smoothness of the aperture are given in mrad.
-        sb : str, optional
+        sb : str, None
             Select which sideband is selected. 'upper' or 'lower'.
-        sb_position : tuple, :class:`~hyperspy.signals.Signal1D
+        sb_position : tuple, :class:`~hyperspy.signals.Signal1D, None
             Sideband position in pixel. If None, sideband is determined automatically from FFT.
-        output_shape: tuple, optional
+        output_shape: tuple, None
             Choose a new output shape. Default is the shape of the input hologram. The output
             shape should not be larger than the input shape.
         plotting : boolean
             Shows details of the reconstruction (i.e. SB selection).
         show_progressbar : boolean
             Shows progressbar while iterating over different slices of the signal (passes the parameter to map method).
+        log_parameters : boolean
+            Logs reconstruction parameters
 
         Returns
         -------
@@ -227,7 +231,9 @@ class HologramImage(Signal2D):
                 self.metadata.Acquisition_instrument.add_node('TEM')
                 self.metadata.Acquisition_instrument.TEM.add_node('beam_energy')
                 self.metadata.Acquisition_instrument.TEM.beam_energy = ht
-            wavelength = 1.239842447 / np.sqrt(ht * (1022 + ht))  # in nm
+            momentum = 2 * constants.m_e * constants.elementary_charge * ht * 1000 *\
+                       (1 + constants.elementary_charge *ht * 1000 / (2 * constants.m_e * constants.c ** 2))
+            wavelength = constants.h / np.sqrt(momentum)
             sb_size_temp /= (1000 * wavelength * np.mean(self.f_sampling))
             sb_smoothness /= (1000 * wavelength * np.mean(self.f_sampling))
 
@@ -239,11 +245,11 @@ class HologramImage(Signal2D):
             #     output_shape = (np.int(sb_size.data*2), np.int(sb_size.data*2))
             output_shape = self.axes_manager.signal_shape
 
-
-        # ???
-        _logger.info('Sideband position in pixels: {}'.format(sb_position))
-        _logger.info('Sideband aperture radius in pixels: {}'.format(sb_size))
-        _logger.info('Sideband aperture smoothness in pixels: {}'.format(sb_smoothness))
+        # Logging the reconstruction parameters if appropriate:
+        if log_parameters:
+            _logger.info('Sideband position in pixels: {}'.format(sb_position))
+            _logger.info('Sideband aperture radius in pixels: {}'.format(sb_size))
+            _logger.info('Sideband aperture smoothness in pixels: {}'.format(sb_smoothness))
 
         # Shows the selected sideband and the position of the sideband
         # if plotting:
