@@ -3619,7 +3619,8 @@ class BaseSignal(FancySlicing,
             res_data = np.stack(res_data.flat).reshape(nav_shape + sig_shape)
             if inplace:
                 sig = self # the modified thing
-                if self.data.shape == res_data.shape:
+                if (self.data.shape == res_data.shape and
+                        np.can_cast(res_data.dtype, self.data.dtype)):
                     self.data[:] = res_data
                 else:
                     self.data = res_data
