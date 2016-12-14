@@ -220,8 +220,8 @@ class HologramImage(Signal2D):
 
         # Convert sideband size from 1/nm or mrad to pixels
         if sb_unit == 'nm':
-            sb_size_temp /= np.mean(self.f_sampling)
-            sb_smoothness /= np.mean(self.f_sampling)
+            sb_size_temp = sb_size_temp / np.mean(self.f_sampling)
+            sb_smoothness = sb_smoothness / np.mean(self.f_sampling)
         elif sb_unit == 'mrad':
             try:
                 ht = self.metadata.Acquisition_instrument.TEM.beam_energy
@@ -232,10 +232,12 @@ class HologramImage(Signal2D):
                 self.metadata.Acquisition_instrument.TEM.add_node('beam_energy')
                 self.metadata.Acquisition_instrument.TEM.beam_energy = ht
             momentum = 2 * constants.m_e * constants.elementary_charge * ht * 1000 *\
-                       (1 + constants.elementary_charge *ht * 1000 / (2 * constants.m_e * constants.c ** 2))
-            wavelength = constants.h / np.sqrt(momentum)
-            sb_size_temp /= (1000 * wavelength * np.mean(self.f_sampling))
-            sb_smoothness /= (1000 * wavelength * np.mean(self.f_sampling))
+                       (1 + constants.elementary_charge * ht * 1000 / (2 * constants.m_e *
+                                                                       constants.c ** 2))
+            wavelength = constants.h / np.sqrt(momentum) * 1e9 # in nm
+            sb_size_temp = sb_size_temp / (1000 * wavelength * np.mean(self.f_sampling))
+            sb_smoothness_temp = sb_smoothness_temp / (1000 * wavelength * np.mean(
+                self.f_sampling))
 
         # Find output shape:
         if output_shape is None:
@@ -317,8 +319,9 @@ class HologramImage(Signal2D):
                                                        output_shape[1]
 
         # Reconstruction parameters are stored in holo_reconstruction_parameters:
-        rec_param_dict = OrderedDict([('sb_position', sb_position), ('sb_size', sb_size),
-                                      ('sb_units', sb_unit), ('sb_smoothness', sb_smoothness)])
+        rec_param_dict = OrderedDict([('sb_position', sb_position_temp), ('sb_size', sb_size_temp),
+                                      ('sb_units', sb_unit), ('sb_smoothness',
+                                                              sb_smoothness_temp)])
 
         wave_image.metadata.Signal.add_node('holo_reconstruction_parameters')
         wave_image.metadata.Signal.holo_reconstruction_parameters.add_dictionary(rec_param_dict)
