@@ -57,10 +57,8 @@ import numpy as np
 from struct import unpack as strct_unp
 from zlib import decompress as unzip_block
 
-from warnings import warn
 import logging
 _logger = logging.getLogger(__name__)
-
 
 try:
     from hyperspy.io_plugins import unbcf_fast
@@ -977,8 +975,8 @@ def file_reader(filename, select_type=None, index=0, downsample=1,
     instrument -- str, either 'TEM' or 'SEM'. Default is None.
       """
     # warn the user only once about shortcomings of bcf
-    warn("""bruker composite files (bcf) by design does not contain/have not saved:
-    live/dead/real times, FWHM""")
+    _logger.warning("""bruker composite files (bcf) by design does not contain/have not saved:
+    live/dead/real times, FWHM""", norepeat=True)
     
     # objectified bcf file:
     obj_bcf = BCF_reader(filename)
