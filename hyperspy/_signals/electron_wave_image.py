@@ -26,9 +26,11 @@ class ElectronWaveImage(ComplexSignal2D):
 
     _signal_type = 'electron_wave'
 
-    @property
-    def reconstruction_parameters(self):
-        assert self.metadata.Signal.has_item('holo_reconstruction_parameters'), \
-            "No reconstruction parameters assigned to the wave"
+    # The class is empty at the moment, but some electron wave specific methods will be added later.
 
-        return self.metadata.Signal.holo_reconstruction_parameters.as_dictionary()
+    # @property
+    # def reconstruction_parameters(self):
+    #     assert self.metadata.Signal.has_item('holo_reconstruction_parameters'), \
+    #         "No reconstruction parameters assigned to the wave"
+    #
+    #     return self.metadata.Signal.holo_reconstruction_parameters.as_dictionary()
