@@ -55,7 +55,6 @@ def _project(W):
     np.maximum(sumsq, 1, out=sumsq)
     return _mrdivide(newW, np.diag(sumsq))
 
-
 def _solveproj(v, W, lambda1, kappa=1, h=None, r=None, vmax=None):
     m, n = W.shape
     v = v.T
@@ -200,13 +199,16 @@ class ONMF:
             R = []
 
         num = None
+        W = self.W
+        lam1 = self.lambda1
+        kap = self.kappa
         if isinstance(X, np.ndarray):
             num = X.shape[0]
             X = iter(X)
         for v in progressbar(X, leave=False, total=num):
             # want to start with fresh results and not clip, so that chunks are
             # smooth
-            h, r = _solveproj(v, self.W, self.lambda1, self.kappa, vmax=np.inf)
+            h, r = _solveproj(v, W, lam1, kap, vmax=np.inf)
             H.append(h.copy())
             if return_R:
                 R.append(r.copy())

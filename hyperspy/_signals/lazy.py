@@ -502,7 +502,7 @@ class LazySignal(BaseSignal):
         blocksize = np.min([mult(*ar) for ar in product(*nav_chunks)])
         nblocks = mult(*[len(c) for c in nav_chunks])
         if blocksize / output_dimension < num_chunks:
-            num_chunks = np.ceil(blocsize / output_dimension)
+            num_chunks = np.ceil(blocksize / output_dimension)
         blocksize *= num_chunks
 
         ## LEARN
@@ -533,7 +533,7 @@ class LazySignal(BaseSignal):
                         flat_signal=True, get=get),
                     total=nblocks,
                     leave=True,
-                    desc='Data chunks'):
+                    desc='Learn'):
                 chunk = chunk.reshape(-1, self.axes_manager.signal_size)
                 this_data.append(chunk)
                 if len(this_data) == num_chunks:
@@ -565,7 +565,7 @@ class LazySignal(BaseSignal):
                             flat_signal=True, get=get),
                         total=nblocks,
                         leave=False,
-                        desc='Data chunks'):
+                        desc='Project'):
                     chunk = chunk.reshape(-1, self.axes_manager.signal_size)
                     _orpca.project(chunk)
                 _, _, _, _, loadings = _orpca.finish()
@@ -581,16 +581,16 @@ class LazySignal(BaseSignal):
             try:
                 if refine or not isinstance(loadings, np.ndarray) or \
                     loadings.shape[1] != self.axes_manager.navigation_size:
-                    H = []
-                    for chunk in progressbar(
-                            self._block_iterator(
-                                flat_signal=True, get=get),
-                            total=nblocks,
-                            leave=False,
-                            desc='Data chunks'):
-                        chunk = chunk.reshape(-1,
-                                              self.axes_manager.signal_size)
-                        H.append(_onmf.project(chunk))
+
+                    _map = map(
+                        lambda thing: _onmf.project(
+                            thing.reshape(-1,
+                                          self.axes_manager.signal_size)),
+                        self._block_iterator(flat_signal=True, get=get)
+                    )
+
+                    H = [_ for _ in progressbar(_map, total=nblocks,
+                                                desc='Project')]
                     loadings = np.concatenate(H, axis=1)
             except KeyboardInterrupt:
                 pass
@@ -608,28 +608,29 @@ class LazySignal(BaseSignal):
             ndim = self.axes_manager.navigation_dimension
             splits = np.cumsum([mult(*ar)
                                 for ar in product(*nav_chunks)][:-1]).tolist()
-            all_chunks = [
-                ar.T.reshape((output_dimension, ) + shape)
-                for shape, ar in zip(
-                    product(*nav_chunks), np.split(loadings, splits))
-            ]
+            if splits:
+                all_chunks = [
+                    ar.T.reshape((output_dimension, ) + shape)
+                    for shape, ar in zip(
+                        product(*nav_chunks), np.split(loadings, splits))
+                ]
 
-            def split_stack_list(what, step, axis):
-                total = len(what)
-                if total != step:
-                    return [
-                        np.concatenate(
-                            what[i:i + step], axis=axis)
-                        for i in range(0, total, step)
-                    ]
-                else:
-                    return np.concatenate(what, axis=axis)
+                def split_stack_list(what, step, axis):
+                    total = len(what)
+                    if total != step:
+                        return [
+                            np.concatenate(
+                                what[i:i + step], axis=axis)
+                            for i in range(0, total, step)
+                        ]
+                    else:
+                        return np.concatenate(what, axis=axis)
 
-            for chunks, axis in zip(nav_chunks[::-1], range(ndim, 0, -1)):
-                step = len(chunks)
-                all_chunks = split_stack_list(all_chunks, step, axis)
+                for chunks, axis in zip(nav_chunks[::-1], range(ndim, 0, -1)):
+                    step = len(chunks)
+                    all_chunks = split_stack_list(all_chunks, step, axis)
 
-            loadings = all_chunks.reshape((output_dimension, -1)).T
+                loadings = all_chunks.reshape((output_dimension, -1)).T
 
         target = self.learning_results
         target.factors = factors
