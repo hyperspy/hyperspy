@@ -1294,7 +1294,13 @@ class LearningResults(object):
         if hasattr(self, 'output_dimension') and self.output_dimension \
                 is not None:
             self.output_dimension = int(self.output_dimension)
+
+        # n_clusters is an array after loading, convert it to int
+        if hasattr(self, 'n_clusters') and self.n_clusters is not None:
+            self.n_clusters = int(self.n_clusters
+
         _logger.info(self._summary())
+
 
     def summary(self):
         """Prints a summary of the decomposition and demixing parameters
