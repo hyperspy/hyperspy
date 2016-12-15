@@ -37,6 +37,7 @@ from hyperspy.learn.rpca import rpca_godec, orpca
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack
+import numpy as np
 
 
 _logger = logging.getLogger(__name__)
@@ -958,8 +959,10 @@ class MVA():
             ax.semilogy()
         return ax
 
-    def scree_plot(self, n=50, log=True, highlight=0,
-                   highlight_col='#C24D52', col='#4A70B0', markersize=100):
+    def scree_plot(self, n=50, log=True, cutoff=0.01, signal_num=0,
+                   signal_fmt=None, noise_fmt=None, axes_titles=None,
+                   fig=None, ax=None,
+                   **kwargs):
         """Plot the decomposition explained variance ratio vs index number
         (Scree Plot). This method is an alternative to
         `plot_explained_variance_ratio`
@@ -970,19 +973,48 @@ class MVA():
             Number of components to plot.
         log : bool
             If True, the y axis uses a log scale.
-        highlight : int
-            Number of components to highlight as important.
-        highlight_col : str or color tuple
-            Color that will be used to plot the first number of components
-            specified by the `highlight` parameter.
-        col : str or color tuple
-            Color that will be used to plot remaining components.
-        markersize : int
-            Size of markers on plot.
+        cutoff : float or None
+            y-position at which to draw a line showing the cutoff between
+            signal and noise
+        signal_num : int
+            Number of components to highlight as important
+            (i.e. the signal components as opposed to noise).
+            Only used if `cutoff` is None, will be automatically determined
+            otherwise
+        signal_fmt : dict
+            Dictionary of matplotlib formatting values for the signal
+            components
+        noise_fmt : dict
+            Dictionary of matplotlib formatting values for the noise
+            components
+        axes_titles: dict or None
+            dictionary with two keys ('x' and 'y') with customized titles as
+            items. If None, sensible defaults will be used.
+        fig : matplotlib figure or None
+            If None, a default figure will be created, otherwise will plot
+            into fig
+        ax : matplotlib ax (subplot) or None
+            If None, a default ax will be created, otherwise will plot into ax
+        **kwargs
+            remaining keyword arguments are passed to matplotlib.figure()
+
+        Example
+        --------
+        To generate a Scree plot with customized symbols for signal vs.
+        noise components and a modified cutoff value:
+
+        >>> s = hs.load("some_spectrum_image")
+        >>> s.decomposition()
+        >>> s.scree_plot(n=40,
+        >>>              cutoff=0.005,
+        >>>              signal_fmt={'marker': 'v', 's': 150, 'c': 'pink'}
+        >>>              noise_fmt={'marker': '*', 's': 200, 'c': 'green'})
 
         Returns
         -------
+
         ax : matplotlib.axes
+
 
         See Also:
         ---------
@@ -993,32 +1025,63 @@ class MVA():
 
         """
         s = self.get_explained_variance_ratio()
+
+        if cutoff:
+            signal_num = np.where((s < cutoff).data)[0][0]
+
+        if signal_fmt is None:
+            signal_fmt = {'c': '#C24D52',
+                          's': 100,
+                          'marker': "^",
+                          'zorder': 3}
+
+        if noise_fmt is None:
+            noise_fmt = {'c': '#4A70B0',
+                         's': 100,
+                         'marker': 'o',
+                         'zorder': 3}
+
+        if axes_titles is None:
+            axes_titles = {'y': "Proportion of variance",
+                           'x': "Principal component number"}
+
         if n < s.axes_manager[-1].size:
             s = s.isig[:n]
-        plt.figure()
-        ax = plt.gca()
+
+        if fig is None:
+            fig = plt.figure(**kwargs)
+
+        if ax is None:
+            ax = fig.add_subplot(111)
+
         if log:
             ax.semilogy()
 
-        if highlight > 0:
-            plt.scatter(range(highlight),
-                        s[:highlight].data,
-                        c=highlight_col,
-                        s=markersize)
-            plt.scatter(range(highlight, n),
-                        s[highlight:n].data,
-                        c=col,
-                        s=markersize)
+        if cutoff:
+            ax.axhline(cutoff,
+                       linewidth=2,
+                       color='gray',
+                       linestyle='dashed',
+                       zorder=1)
+
+        if signal_num > 0:
+            ax.scatter(range(signal_num),
+                       s.isig[:signal_num].data,
+                       **signal_fmt)
+            ax.scatter(range(signal_num, n),
+                       s.isig[signal_num:n].data,
+                       **noise_fmt)
         else:
-            plt.scatter(range(n),
-                        s[:n].data,
-                        c=col,
-                        s=markersize)
-        ax.set_ylabel("Explained variance ratio")
-        ax.set_xlabel("Principal component number")
+            ax.scatter(range(n),
+                       s.isig[:n].data,
+                       **noise_fmt)
+
+        ax.set_ylabel(axes_titles['y'])
+        ax.set_xlabel(axes_titles['x'])
         ax.margins(0.05)
         ax.autoscale()
         ax.set_title(s.metadata.General.title, y=1.01)
+
         return ax
 
     def plot_cumulative_explained_variance_ratio(self, n=50):
