@@ -79,17 +79,23 @@ of the data (or equivalently, the number of components that should be retained -
 see below).
 
 To obtain a scree plot for your dataset, run the
-:py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio` method:
+:py:meth:`~.learn.mva.MVA.scree_plot` method:
 
 .. code-block:: python
 
-    >>> ax = s.plot_explained_variance_ratio()
+    >>> ax = s.scree_plot()
 
 .. figure::  images/screeplot.png
    :align:   center
    :width:   500
 
    PCA scree plot
+
+The default options for this method will automatically insert a cutoff value
+at 1% of the variance, and style the components above this value distinctly
+from the remaining components. This option (together with many others), can be
+customized to develop a figure of your liking. See the documentation of
+:py:meth:`~.learn.mva.MVA.scree_plot` for more details.
 
 Note that in the figure, the first component has index 0. This is because
 Python uses zero based indexing i.e. the initial element of a sequence is found
