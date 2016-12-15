@@ -1297,7 +1297,7 @@ class LearningResults(object):
 
         # n_clusters is an array after loading, convert it to int
         if hasattr(self, 'n_clusters') and self.n_clusters is not None:
-            self.n_clusters = int(self.n_clusters
+            self.n_clusters = int(self.n_clusters)
 
         _logger.info(self._summary())
 
