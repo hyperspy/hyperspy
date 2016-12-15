@@ -792,8 +792,11 @@ def spd_reader(filename,
 
     # Get name of .spc file from the .spd map (if not explicitly given):
     if not spc_fname:
-        spc_fname = os.path.splitext(os.path.basename(filename))[
+        spc_path = os.path.dirname(filename)
+        spc_basename = os.path.splitext(os.path.basename(filename))[
             0] + '.spc'
+        spc_fname = os.path.join(spc_path, spc_basename)
+
     read_spc = os.path.isfile(spc_fname)
     if not read_spc:
         print('Could not find .spc file named {}.\n' \
@@ -801,10 +804,13 @@ def spd_reader(filename,
 
     # Get name of .ipr file from bitmap image (if not explicitly given):
     if not ipr_fname:
-        ipr_fname = os.path.splitext(
+        ipr_basename = os.path.splitext(
             os.path.basename(
                 original_metadata['spd_header'][
-                    'fName']))[0] + b'.ipr'
+                    'fName']))[0].decode() + '.ipr'
+        ipr_path = os.path.dirname(filename)
+        ipr_fname = os.path.join(ipr_path, ipr_basename)
+
     read_ipr = os.path.isfile(ipr_fname)
     if not read_ipr:
         print('Could not find .ipr file named {}.\n' \
