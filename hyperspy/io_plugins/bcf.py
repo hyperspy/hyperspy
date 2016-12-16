@@ -974,9 +974,6 @@ def file_reader(filename, select_type=None, index=0, downsample=1,
        crop or enlarge energy range at max values. (default None)
     instrument -- str, either 'TEM' or 'SEM'. Default is None.
       """
-    # warn the user only once about shortcomings of bcf
-    _logger.warning("""bruker composite files (bcf) by design does not contain/have not saved:
-    live/dead/real times, FWHM""", norepeat=True)
     
     # objectified bcf file:
     obj_bcf = BCF_reader(filename)
