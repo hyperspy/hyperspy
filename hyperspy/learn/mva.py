@@ -960,8 +960,8 @@ class MVA():
         return ax
 
     def scree_plot(self, n=50, log=True, cutoff=0.01, signal_num=0,
-                   signal_fmt=None, noise_fmt=None, axes_titles=None,
-                   fig=None, ax=None,
+                   start_at=0, signal_fmt=None, noise_fmt=None,
+                   axes_titles=None, fig=None, ax=None,
                    **kwargs):
         """Plot the decomposition explained variance ratio vs index number
         (Scree Plot). This method is an alternative to
@@ -981,6 +981,9 @@ class MVA():
             (i.e. the signal components as opposed to noise).
             Only used if `cutoff` is None, will be automatically determined
             otherwise
+        start_at : int
+            Number to use as starting point for numbering of the principal
+            components (usually 0 or 1)
         signal_fmt : dict
             Dictionary of matplotlib formatting values for the signal
             components
@@ -1065,14 +1068,14 @@ class MVA():
                        zorder=1)
 
         if signal_num > 0:
-            ax.scatter(range(signal_num),
+            ax.scatter(range(start_at, signal_num + start_at),
                        s.isig[:signal_num].data,
                        **signal_fmt)
-            ax.scatter(range(signal_num, n),
+            ax.scatter(range(signal_num + start_at, n + start_at),
                        s.isig[signal_num:n].data,
                        **noise_fmt)
         else:
-            ax.scatter(range(n),
+            ax.scatter(range(start_at, n + start_at),
                        s.isig[:n].data,
                        **noise_fmt)
 
