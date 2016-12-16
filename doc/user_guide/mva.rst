@@ -83,7 +83,7 @@ To obtain a scree plot for your dataset, run the
 
 .. code-block:: python
 
-    >>> ax = s.scree_plot()
+    >>> ax = s.scree_plot(n=20)
 
 .. figure::  images/screeplot.png
    :align:   center
@@ -99,7 +99,19 @@ customized to develop a figure of your liking. See the documentation of
 
 Note that in the figure, the first component has index 0. This is because
 Python uses zero based indexing i.e. the initial element of a sequence is found
-at index 0.
+at index 0. To switch to a "number-based" (rather than "index-based")
+notation, provide a dictionary defining the axis type to the method:
+
+.. code-block:: python
+
+    >>> ax = s.scree_plot(n=20, xaxis={'type':'number',
+    >>>                                'labeling':'ordinal'})
+
+.. figure::  images/screeplot2.png
+   :align:   center
+   :width:   500
+
+   PCA scree plot with number-based axis labeling
 
 .. versionadded:: 0.7
 

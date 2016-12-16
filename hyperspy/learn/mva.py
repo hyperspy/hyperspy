@@ -36,7 +36,7 @@ from hyperspy.learn.mlpca import mlpca
 from hyperspy.learn.rpca import rpca_godec, orpca
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
-from hyperspy.misc.utils import stack
+from hyperspy.misc.utils import stack, ordinal
 import numpy as np
 
 
@@ -960,7 +960,7 @@ class MVA():
         return ax
 
     def scree_plot(self, n=50, log=True, cutoff=0.01, signal_num=0,
-                   start_at=0, signal_fmt=None, noise_fmt=None,
+                   xaxis=None, signal_fmt=None, noise_fmt=None,
                    axes_titles=None, fig=None, ax=None,
                    **kwargs):
         """Plot the decomposition explained variance ratio vs index number
@@ -981,9 +981,16 @@ class MVA():
             (i.e. the signal components as opposed to noise).
             Only used if `cutoff` is None, will be automatically determined
             otherwise
-        start_at : int
-            Number to use as starting point for numbering of the principal
-            components (usually 0 or 1)
+        xaxis : dict or None
+            Dictionary defining type of labeling for x-axis. Should
+            have two keys: ``'type'`` and ``'labeling'``.
+            ``xaxis['type']`` should have str value ``'index'`` or
+            ``'number'``, and is used to determine if axis will be labeled
+            starting at 0 (i.e. "pythonic index" labeling) or at 1 (number
+            labeling).
+            ``xaxis['labeling']`` should have str value ``'ordinal'`` or
+            ``'cardinal'``, and is used to determine the format of the tick
+            labels (i.e. "1st" or "1", respectively).
         signal_fmt : dict
             Dictionary of matplotlib formatting values for the signal
             components
@@ -1044,9 +1051,24 @@ class MVA():
                          'marker': 'o',
                          'zorder': 3}
 
+        # Sane defaults for xaxis labeling
+        if xaxis is None:
+            xaxis = {}
+
+        if 'type' not in xaxis:
+            xaxis['type'] = 'index'
+            _logger.warning('\'type\' not found in xaxis dict; '
+                            'defaulting to \'index\'')
+
+        if 'labeling' not in xaxis:
+            labeling = 'cardinal' if xaxis['type'] == 'index' else 'ordinal'
+            xaxis['labeling'] = labeling
+            _logger.warning('\'labeling\' not found in xaxis dict; '
+                            'defaulting to \'{}\''.format(labeling))
+
         if axes_titles is None:
             axes_titles = {'y': "Proportion of variance",
-                           'x': "Principal component number"}
+                           'x': "Principal component {}".format(xaxis['type'])}
 
         if n < s.axes_manager[-1].size:
             s = s.isig[:n]
@@ -1068,16 +1090,30 @@ class MVA():
                        zorder=1)
 
         if signal_num > 0:
-            ax.scatter(range(start_at, signal_num + start_at),
+            ax.scatter(range(signal_num),
                        s.isig[:signal_num].data,
                        **signal_fmt)
-            ax.scatter(range(signal_num + start_at, n + start_at),
+            ax.scatter(range(signal_num, n),
                        s.isig[signal_num:n].data,
                        **noise_fmt)
         else:
-            ax.scatter(range(start_at, n + start_at),
+            ax.scatter(range(n),
                        s.isig[:n].data,
                        **noise_fmt)
+
+        if xaxis['type'] == 'index':
+            locs = ax.get_xticks()
+            if xaxis['labeling'] == 'ordinal':
+                ax.set_xticklabels([ordinal(int(i)) for i in locs])
+            else:
+                ax.set_xticklabels([int(i) for i in locs])
+
+        if xaxis['type'] == 'number':
+            locs = ax.get_xticks()
+            if xaxis['labeling'] == 'ordinal':
+                ax.set_xticklabels([ordinal(int(i + 1)) for i in locs])
+            else:
+                ax.set_xticklabels([int(i + 1) for i in locs])
 
         ax.set_ylabel(axes_titles['y'])
         ax.set_xlabel(axes_titles['x'])
