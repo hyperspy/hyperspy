@@ -740,6 +740,7 @@ class MVATools(object):
                                    calibrate=True,
                                    same_window=None,
                                    comp_label='Decomposition factor',
+                                   cmap=plt.cm.gray,
                                    per_row=3):
         """Plot factors from a decomposition.
 
@@ -767,11 +768,9 @@ class MVATools(object):
             separate windows) or the label in the legend (if plotting
             in the
             same window)
-
         cmap : The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
-
         per_row : int, the number of plots in each row, when the
         same_window
             parameter is True.
@@ -797,6 +796,7 @@ class MVATools(object):
                                             calibrate=calibrate,
                                             same_window=same_window,
                                             comp_label=comp_label,
+                                            cmap=cmap,
                                             per_row=per_row)
 
     def plot_bss_factors(self, comp_ids=None, calibrate=True,
