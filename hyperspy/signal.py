@@ -3579,8 +3579,9 @@ class BaseSignal(FancySlicing,
             s = Signal2D(data,
                          axes=self.axes_manager._get_navigation_axes_dicts())
         else:
-            s = BaseSignal(np.zeros(self.axes_manager._navigation_shape_in_array,
-                                    dtype=self.data.dtype),
+            s = BaseSignal(
+                np.zeros(self.axes_manager._navigation_shape_in_array,
+                         dtype=self.data.dtype),
                            axes=self.axes_manager._get_navigation_axes_dicts())
             s.axes_manager.set_signal_dimension(
                 self.axes_manager.navigation_dimension)
