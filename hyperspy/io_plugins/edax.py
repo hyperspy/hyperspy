@@ -671,6 +671,7 @@ def spc_reader(filename,
         Switch to control if all of the .spc header is read, or just the
         important parts for import into HyperSpy
     **kwargs
+        Remaining arguments are passed to the Numpy ``memmap`` function
 
     Returns
     -------
@@ -691,9 +692,11 @@ def spc_reader(filename,
         nz = original_metadata['spc_header']['numPts']
         data_offset = original_metadata['spc_header']['dataStart']
 
+        mode = kwargs.pop('mode', 'c')
+
         # Read data from file into a numpy memmap object
-        data = np.memmap(f, mode='c', offset=data_offset,
-                         dtype='u4', shape=(1, nz)).squeeze()
+        data = np.memmap(f, mode=mode, offset=data_offset,
+                         dtype='u4', shape=(1, nz), **kwargs).squeeze()
 
     # create the energy axis dictionary:
     energy_axis = {
@@ -758,6 +761,7 @@ def spd_reader(filename,
         Switch to control if all of the .spc header is read, or just the
         important parts for import into HyperSpy
     kwargs**
+        Remaining arguments are passed to the Numpy ``memmap`` function
 
     Returns
     -------
@@ -782,9 +786,11 @@ def spd_reader(filename,
                      '4': 'u4'}[str(original_metadata['spd_header'][
                          'countBytes'])]
 
+        mode = kwargs.pop('mode', 'c')
+
         # Read data from file into a numpy memmap object
-        data = np.memmap(f, mode='c', offset=data_offset, dtype=data_type
-                         ).squeeze().reshape((nz, nx, ny), order='F').T
+        data = np.memmap(f, mode=mode, offset=data_offset, dtype=data_type,
+                         **kwargs).squeeze().reshape((nz, nx, ny), order='F').T
 
     # Convert char arrays to strings:
     original_metadata['spd_header']['tag'] = \
