@@ -31,7 +31,7 @@ class TestSpcSpectrum:
         nt.assert_equal((4096,), self.spc.data.shape)       # test data shape
         nt.assert_equal(
             [0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 10, 4, 10, 10, 45, 87, 146, 236,
-             312, 342], self.spc.data.tolist()[:20])   # test 1st 20 datapoints
+             312, 342], self.spc.data[:20].tolist())   # test 1st 20 datapoints
 
     def test_parameters(self):
         elements = self.spc.metadata.as_dictionary()['Sample']['elements']
@@ -52,8 +52,8 @@ class TestSpcSpectrum:
         nt.assert_almost_equal(50.000004, eds_dict['live_time'], places=6)
 
         # Testing elements
-        nt.assert_equal(['Al', 'C', 'Ce', 'Cu', 'F', 'Ho', 'Mg', 'O'],
-                        sorted(elements))
+        nt.assert_set_equal({'Al', 'C', 'Ce', 'Cu', 'F', 'Ho', 'Mg', 'O'},
+                            set(elements))
 
         # Testing HyperSpy parameters
         nt.assert_equal(True, signal_dict['binned'])
@@ -156,8 +156,8 @@ class TestSpdMap:
         nt.assert_almost_equal(2621.4399, eds_dict['live_time'], places=4)
 
         # Testing elements
-        nt.assert_equal(['Ce', 'Co', 'Cr', 'Fe', 'Gd', 'La', 'Mg', 'O', 'Sr'],
-                        sorted(elements))
+        nt.assert_set_equal({'Ce', 'Co', 'Cr', 'Fe', 'Gd', 'La', 'Mg', 'O',
+                             'Sr'}, set(elements))
 
         # Testing HyperSpy parameters
         nt.assert_equal(True, signal_dict['binned'])
