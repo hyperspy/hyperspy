@@ -51,13 +51,15 @@ except ImportError:
 required to read Bruker bcf files.
 Try to install python-lxml package with pip or other python packaging system""")
 
+import json
 import codecs
+from ast import literal_eval
 from datetime import datetime, timedelta
 import numpy as np
 from struct import unpack as strct_unp
 from zlib import decompress as unzip_block
-
 import logging
+
 _logger = logging.getLogger(__name__)
 
 try:
@@ -418,6 +420,43 @@ class SFS_reader(object):
         return item
 
 
+def interpret(string):
+    """interpret any string and return casted to appropriate
+    dtype python object
+    """
+    try:
+        return literal_eval(string)
+    except (ValueError, SyntaxError):
+        # SyntaxError due to:
+        # literal_eval have problems with strings like this '8842_80' 
+        return string
+
+
+class ObjectifyJSONEncoder(json.JSONEncoder):
+    """ JSON encoder that can handle simple lxml objectify types,
+        Handles xml attributes, also returns all data types"""
+    def default(self, o):
+        dictionary = {}
+        if hasattr(o, '__dict__') and len(o.__dict__) > 0:
+            d1 = o.__dict__.copy()
+            for k in d1.keys():
+                if len(d1[k]) > 1:
+                    d1[k] = [interpret(i.text) for i in d1[k]]
+            dictionary.update(d1)
+        if len(o.attrib) > 0:
+            d2 = dict(o.attrib)
+            for j in d2.keys():
+                d2[j] = interpret(d2[j])
+            dictionary.update(d2)
+        if o.text is not None:
+            if len(dictionary) > 0:
+                dictionary.update({'value': o.pyval})
+            else:
+                return interpret(o.text)
+        if len(dictionary) > 0:
+            return dictionary
+
+
 class EDXSpectrum(object):
 
     def __init__(self, spectrum):
@@ -429,25 +468,53 @@ class EDXSpectrum(object):
         spectrum -- lxml objectified xml where spectrum.attrib['Type'] should
             be 'TRTSpectrum'
         """
-        self.zeroPeakPosition = int(
-            spectrum.TRTHeaderedClass.ClassInstance.ZeroPeakPosition)
-        self.amplification = int(
-            spectrum.TRTHeaderedClass.ClassInstance.Amplification)
-        self.shapingTime = int(
-            spectrum.TRTHeaderedClass.ClassInstance.ShapingTime)
-        self.detectorType = str(
-            spectrum.TRTHeaderedClass.ClassInstance[1].Type)
-        self.hv = float(
-            spectrum.TRTHeaderedClass.ClassInstance[2].PrimaryEnergy)
-        self.elevationAngle = float(
-            spectrum.TRTHeaderedClass.ClassInstance[2].ElevationAngle)
-        self.azimutAngle = float(
-            spectrum.TRTHeaderedClass.ClassInstance[2].AzimutAngle)
-        self.calibAbs = float(spectrum.ClassInstance[0].CalibAbs)
-        self.calibLin = float(spectrum.ClassInstance[0].CalibLin)
-        self.chnlCnt = int(spectrum.ClassInstance[0].ChannelCount)
-        self.date = str(spectrum.ClassInstance[0].Date)
-        self.time = str(spectrum.ClassInstance[0].Time)
+        TRTHeader = spectrum.TRTHeaderedClass
+        #<ClassInstance Type="TRTSpectrumHardwareHeader>:
+        hardware_header = TRTHeader.ClassInstance
+        #<ClassInstance Type="TRTDetectorHeader>:
+        detector_header = TRTHeader.ClassInstance[1]
+        #<ClassInstance Type="TRTESMAHeader">:
+        esma_header = TRTHeader.ClassInstance[2]
+        #what TRT means?
+        #ESMA could stand for Electron Scanning Microscope Analysis
+        spectrum_header = spectrum.ClassInstance[0]
+        
+        # map stuff from harware xml branch:
+        self.hardware_metadata = json.loads(json.dumps(hardware_header,
+                                                       cls=ObjectifyJSONEncoder))
+        self.amplification = self.hardware_metadata['Amplification']  # USED
+        
+        # map stuff from detector xml branch
+        self.detector_metadata = json.loads(json.dumps(detector_header,
+                                                       cls=ObjectifyJSONEncoder))
+        self.detector_type = self.detector_metadata['Type']  # USED 
+        
+        #decode silly hidden detector layer info:
+        det_l_str = self.detector_metadata['DetLayers']
+        dec_det_l_str = codecs.decode(det_l_str.encode('ascii'), 'base64')
+        mini_xml = objectify.fromstring(unzip_block(dec_det_l_str))
+        self.detector_metadata['DetLayers'] = {}  # Overwrite with dict
+        for i in mini_xml.getchildren():
+            self.detector_metadata['DetLayers'][i.tag] = dict(i.attrib)        
+        
+        # map stuff from esma xml branch:
+        self.esma_metadata = json.loads(json.dumps(esma_header,
+                                                   cls=ObjectifyJSONEncoder))
+        #USED:
+        self.hv = self.esma_metadata['PrimaryEnergy']
+        self.elevationAngle = self.esma_metadata['ElevationAngle']
+        self.azimutAngle = self.esma_metadata['AzimutAngle']
+        
+        # map stuff from spectra xml branch:
+        self.spectrum_metadata = json.loads(json.dumps(spectrum_header,
+                                                       cls=ObjectifyJSONEncoder))
+        self.calibAbs = self.spectrum_metadata['CalibAbs']
+        self.calibLin = self.spectrum_metadata['CalibLin']
+        self.chnlCnt = self.spectrum_metadata['ChannelCount']
+        self.date = self.spectrum_metadata['Date']  # Not Used?
+        self.time = self.spectrum_metadata['Time']  # Not Used?
+        
+        #main data:
         self.data = np.fromstring(str(spectrum.Channels), dtype='Q', sep=",")
         self.energy = np.arange(self.calibAbs,
                                 self.calibLin * self.chnlCnt + self.calibAbs,
@@ -528,8 +595,7 @@ class HyperHeader(object):
         self.image.x_res = float(semData.DX)  # in micrometers
         self.image.y_res = float(semData.DY)  # in micrometers
         semStageData = root.xpath("ClassInstance[@Type='TRTSEMStageData']")[0]
-        # stage position data in um cast to m (that data anyway is not used
-        # by hyperspy):
+        # stage position:
         try:
             self.stage.x = float(semStageData.X)  # in micrometers
             self.stage.y = float(semStageData.Y)  # in micrometers
@@ -974,9 +1040,6 @@ def file_reader(filename, select_type=None, index=0, downsample=1,
        crop or enlarge energy range at max values. (default None)
     instrument -- str, either 'TEM' or 'SEM'. Default is None.
       """
-    # warn the user only once about shortcomings of bcf
-    _logger.warning("""bruker composite files (bcf) by design does not contain/have not saved:
-    live/dead/real times, FWHM""", norepeat=True)
     
     # objectified bcf file:
     obj_bcf = BCF_reader(filename)
@@ -1081,7 +1144,7 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
                                  'EDS': {
                                      'azimuth_angle': eds_metadata.azimutAngle,
                                      'elevation_angle': eds_metadata.elevationAngle,
-                                     'detector_type': eds_metadata.detectorType
+                                     'detector_type': eds_metadata.detector_type
                                  }
                              }
                          }
@@ -1096,7 +1159,11 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
         'Signal': {'signal_type': 'EDS_%s' % mode,
                          'record_by': 'spectrum',
                          'quantity': 'X-rays (Counts)'},
-    }
+    },
+        'original_metadata': {'hardware': eds_metadata.hardware_metadata,
+                              'detector': eds_metadata.detector_metadata,
+                              'analysis': eds_metadata.esma_metadata,
+                              'spectrum': eds_metadata.spectrum_metadata}
     }]
     return hyperspectra
 
