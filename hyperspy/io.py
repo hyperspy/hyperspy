@@ -51,8 +51,11 @@ def load(filenames=None,
          **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure
+
     Supported formats: HDF5, msa, Gatan dm3, Ripple (rpl+raw), Bruker bcf,
-    FEI ser and emi, hdf5, SEMPER unf, EMD, tif and a number of image formats.
+    FEI ser and emi, hdf5, SEMPER unf, EMD, EDAX spd/spc, tif, and a number
+    of image formats.
+
     Any extra keyword is passed to the corresponsing reader. For
     available options see their individual documentation.
     Parameters
@@ -234,7 +237,8 @@ def load_single_file(filename,
     """
     Load any supported file into an HyperSpy structure
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw),
-    Bruker bcf, FEI ser and emi, hdf5 and SEMPER unf.
+    Bruker bcf, FEI ser and emi, EDAX spc and spd, hdf5, and SEMPER unf.
+
     Parameters
     ----------
     filename : string
