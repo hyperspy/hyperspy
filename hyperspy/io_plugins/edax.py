@@ -800,20 +800,14 @@ def spd_reader(filename,
         spd_header['fName'][0].view('S120')[0]
 
     # Get name of .spc file from the .spd map (if not explicitly given):
-    if not spc_fname:
+    if spc_fname is None:
         spc_path = os.path.dirname(filename)
         spc_basename = os.path.splitext(os.path.basename(filename))[
             0] + '.spc'
         spc_fname = os.path.join(spc_path, spc_basename)
 
-    read_spc = os.path.isfile(spc_fname)
-    if not read_spc:
-        _logger.warning('Could not find .spc file named {}.\n'
-                        'No spectral metadata will be loaded.'
-                        '\n'.format(spc_fname))
-
     # Get name of .ipr file from bitmap image (if not explicitly given):
-    if not ipr_fname:
+    if ipr_fname is None:
         ipr_basename = os.path.splitext(
             os.path.basename(
                 original_metadata['spd_header'][
@@ -821,11 +815,9 @@ def spd_reader(filename,
         ipr_path = os.path.dirname(filename)
         ipr_fname = os.path.join(ipr_path, ipr_basename)
 
+    # Flags to control reading of files
+    read_spc = os.path.isfile(spc_fname)
     read_ipr = os.path.isfile(ipr_fname)
-    if not read_ipr:
-        _logger.warning('Could not find .ipr file named {}.\n'
-                        'No spatial calibration will be loaded.'
-                        '\n'.format(ipr_fname))
 
     # Read the .ipr header (if possible)
     if read_ipr:
@@ -834,6 +826,10 @@ def spd_reader(filename,
                                      dtype=get_ipr_dtype_list(endianess),
                                      count=1)
             original_metadata['ipr_header'] = sarray2dict(ipr_header)
+    else:
+        _logger.warning('Could not find .ipr file named {}.\n'
+                        'No spatial calibration will be loaded.'
+                        '\n'.format(ipr_fname))
 
     # Read the .spc header (if possible)
     if read_spc:
@@ -845,6 +841,10 @@ def spd_reader(filename,
                                      count=1)
             spc_dict = sarray2dict(spc_header)
             original_metadata['spc_header'] = spc_dict
+    else:
+        _logger.warning('Could not find .spc file named {}.\n'
+                        'No spectral metadata will be loaded.'
+                        '\n'.format(spc_fname))
 
     # create the energy axis dictionary:
     energy_axis = {
