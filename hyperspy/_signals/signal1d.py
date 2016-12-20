@@ -179,8 +179,10 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                         c1 = coef[2]
                         c2 = coef[1]
                         c3 = coef[0]
-                        width = np.linalg.norm(
-                            stdev * 2.35703 / (np.sqrt(2) * np.sqrt(-1 * c3)))
+                        with np.errstate(invalid='ignore'):
+                            width = np.linalg.norm(stdev * 2.35703 /
+                                                   (np.sqrt(2) * np.sqrt(-1 *
+                                                                         c3)))
                         # if the peak is too narrow for least-squares
                         # technique to work  well, just use the max value
                         # of y in the sub-group of points near peak.
