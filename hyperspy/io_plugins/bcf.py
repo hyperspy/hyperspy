@@ -446,7 +446,11 @@ class ObjectifyJSONEncoder(json.JSONEncoder):
         if len(o.attrib) > 0:
             d2 = dict(o.attrib)
             for j in d2.keys():
-                d2[j] = interpret(d2[j])
+                if j in dictionary.keys():
+                    d2['Class' + j] = interpret(d2[j])
+                    del d2[j]
+                else:
+                    d2[j] = interpret(d2[j])
             dictionary.update(d2)
         if o.text is not None:
             if len(dictionary) > 0:
