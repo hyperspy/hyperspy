@@ -37,8 +37,6 @@ from hyperspy.learn.rpca import rpca_godec, orpca
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack, ordinal
-import numpy as np
-
 
 _logger = logging.getLogger(__name__)
 
