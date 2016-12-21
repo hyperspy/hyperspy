@@ -959,10 +959,10 @@ class MVA():
     #         ax.semilogy()
     #     return ax
 
-    def plot_explained_variance_ratio(self, n=None, log=True, cutoff=0.01,
-                                      signal_num=0, xaxis=None,
-                                      signal_fmt=None, noise_fmt=None,
-                                      axes_titles=None, fig=None, ax=None,
+    def plot_explained_variance_ratio(self, n=None, log=True, threshold=0,
+                                      hline=True, xaxis_type='index',
+                                      xaxis_labeling=None, signal_fmt=None,
+                                      noise_fmt=None, fig=None, ax=None,
                                       **kwargs):
         """Plot the decomposition explained variance ratio vs index number
         (Scree Plot).
@@ -973,33 +973,39 @@ class MVA():
             Number of components to plot. If None, all components will be plot
         log : bool
             If True, the y axis uses a log scale.
-        cutoff : float or None
-            y-position at which to draw a line showing the cutoff between
-            signal and noise
-        signal_num : int
-            Number of components to highlight as important
-            (i.e. the signal components as opposed to noise).
-            Only used if `cutoff` is None, will be automatically determined
-            otherwise
-        xaxis : dict or None
-            Dictionary defining type of labeling for x-axis. Should
-            have two keys: ``'type'`` and ``'labeling'``.
-            ``xaxis['type']`` should have str value ``'index'`` or
-            ``'number'``, and is used to determine if axis will be labeled
-            starting at 0 (i.e. "pythonic index" labeling) or at 1 (number
-            labeling).
-            ``xaxis['labeling']`` should have str value ``'ordinal'`` or
-            ``'cardinal'``, and is used to determine the format of the tick
-            labels (i.e. "1st" or "1", respectively).
+        threshold : float or int
+            Threshold used to determine how many components should be
+            highlighted as signal (as opposed to noise).
+            If a float (between 0 and 1), ``threshold`` will be
+            interpreted as a cutoff value, defining the variance at which to
+            draw a line showing the cutoff between signal and noise;
+            the number of signal components will be automatically determined
+            by the cutoff value.
+            If an int, ``threshold`` is interpreted as the number of
+            components to highlight as signal (and no cutoff line will be
+            drawn)
+        hline: bool
+            Whether or not to draw a horizontal line defining the variance
+            cutoff. Default is to draw the line at the value given in
+            ``threshold`` (if float), or at the last component defined as
+            signal (if int). If no threshold give, ``hline`` is set to
+            ``False``.
+        xaxis_type : {'index', 'number'}
+            Determines the type of labeling applied to the x-axis.
+            If ``'index'``, axis will be labeled starting at 0 (i.e.
+            "pythonic index" labeling); if ``'number'``, it will start at 1
+            (number labeling).
+        xaxis_labeling : {'ordinal', 'cardinal', None}
+            Determines the format of the x-axis tick labels. If ``'ordinal'``,
+            "1st, 2nd, ..." will be used; if ``'cardinal'``, "1, 2,
+            ..." will be used. If None, an appropriate default will be
+            selected.
         signal_fmt : dict
             Dictionary of matplotlib formatting values for the signal
             components
         noise_fmt : dict
             Dictionary of matplotlib formatting values for the noise
             components
-        axes_titles: dict or None
-            dictionary with two keys ('x' and 'y') with customized titles as
-            items. If None, sensible defaults will be used.
         fig : matplotlib figure or None
             If None, a default figure will be created, otherwise will plot
             into fig
@@ -1010,15 +1016,19 @@ class MVA():
 
         Example
         --------
-        To generate a Scree plot with customized symbols for signal vs.
-        noise components and a modified cutoff value:
+        To generate a scree plot with customized symbols for signal vs.
+        noise components and a modified cutoff threshold value:
 
         >>> s = hs.load("some_spectrum_image")
         >>> s.decomposition()
-        >>> s.scree_plot(n=40,
-        >>>              cutoff=0.005,
-        >>>              signal_fmt={'marker': 'v', 's': 150, 'c': 'pink'}
-        >>>              noise_fmt={'marker': '*', 's': 200, 'c': 'green'})
+        >>> s.plot_explained_variance_ratio(n=40,
+        >>>                                 threshold=0.005,
+        >>>                                 signal_fmt={'marker': 'v',
+        >>>                                             's': 150,
+        >>>                                             'c': 'pink'}
+        >>>                                 noise_fmt={'marker': '*',
+        >>>                                             's': 200,
+        >>>                                             'c': 'green'})
 
         Returns
         -------
@@ -1039,15 +1049,24 @@ class MVA():
         if n is None:
             n = len(self.learning_results.explained_variance_ratio)
 
-        if cutoff:
-            signal_num = np.where((s < cutoff).data)[0][0]
+        # Determine right number of components for signal and cutoff value
+        if isinstance(threshold, float):
+            n_signal_pcs = np.where((s < threshold).data)[0][0]
+            cutoff = threshold
+        else:
+            n_signal_pcs = threshold
+            cutoff = s.data[n_signal_pcs - 1]
+            if n_signal_pcs == 0:
+                hline = False
 
+        # Some default formatting for signal markers
         if signal_fmt is None:
             signal_fmt = {'c': '#C24D52',
                           's': 100,
                           'marker': "^",
                           'zorder': 3}
 
+        # Some default formatting for noise markers
         if noise_fmt is None:
             noise_fmt = {'c': '#4A70B0',
                          's': 100,
@@ -1055,23 +1074,11 @@ class MVA():
                          'zorder': 3}
 
         # Sane defaults for xaxis labeling
-        if xaxis is None:
-            xaxis = {}
+        if xaxis_labeling is None:
+            xaxis_labeling = 'cardinal' if xaxis_type == 'index' else 'ordinal'
 
-        if 'type' not in xaxis:
-            xaxis['type'] = 'index'
-            _logger.info('\'type\' not found in xaxis dict; '
-                         'defaulting to \'index\'')
-
-        if 'labeling' not in xaxis:
-            labeling = 'cardinal' if xaxis['type'] == 'index' else 'ordinal'
-            xaxis['labeling'] = labeling
-            _logger.info('\'labeling\' not found in xaxis dict; '
-                         'defaulting to \'{}\''.format(labeling))
-
-        if axes_titles is None:
-            axes_titles = {'y': "Proportion of variance",
-                           'x': "Principal component {}".format(xaxis['type'])}
+        axes_titles = {'y': "Proportion of variance",
+                       'x': "Principal component {}".format(xaxis_type)}
 
         if n < s.axes_manager[-1].size:
             s = s.isig[:n]
@@ -1085,35 +1092,35 @@ class MVA():
         if log:
             ax.semilogy()
 
-        if cutoff:
+        if hline:
             ax.axhline(cutoff,
                        linewidth=2,
                        color='gray',
                        linestyle='dashed',
                        zorder=1)
 
-        if signal_num > 0:
-            ax.scatter(range(signal_num),
-                       s.isig[:signal_num].data,
+        if n_signal_pcs > 0:
+            ax.scatter(range(n_signal_pcs),
+                       s.isig[:n_signal_pcs].data,
                        **signal_fmt)
-            ax.scatter(range(signal_num, n),
-                       s.isig[signal_num:n].data,
+            ax.scatter(range(n_signal_pcs, n),
+                       s.isig[n_signal_pcs:n].data,
                        **noise_fmt)
         else:
             ax.scatter(range(n),
                        s.isig[:n].data,
                        **noise_fmt)
 
-        if xaxis['type'] == 'index':
+        if xaxis_type == 'index':
             locs = ax.get_xticks()
-            if xaxis['labeling'] == 'ordinal':
+            if xaxis_labeling == 'ordinal':
                 ax.set_xticklabels([ordinal(int(i)) for i in locs])
             else:
                 ax.set_xticklabels([int(i) for i in locs])
 
-        if xaxis['type'] == 'number':
+        if xaxis_type == 'number':
             locs = ax.get_xticks()
-            if xaxis['labeling'] == 'ordinal':
+            if xaxis_labeling == 'ordinal':
                 ax.set_xticklabels([ordinal(int(i + 1)) for i in locs])
             else:
                 ax.set_xticklabels([int(i + 1) for i in locs])
