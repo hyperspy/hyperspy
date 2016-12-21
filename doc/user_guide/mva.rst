@@ -79,11 +79,11 @@ of the data (or equivalently, the number of components that should be retained -
 see below).
 
 To obtain a scree plot for your dataset, run the
-:py:meth:`~.learn.mva.MVA.scree_plot` method:
+:py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio` method:
 
 .. code-block:: python
 
-    >>> ax = s.scree_plot(n=20)
+    >>> ax = s.plot_explained_variance_ratio(n=20)
 
 .. figure::  images/screeplot.png
    :align:   center
@@ -91,27 +91,34 @@ To obtain a scree plot for your dataset, run the
 
    PCA scree plot
 
-The default options for this method will automatically insert a cutoff value
-at 1% of the variance, and style the components above this value distinctly
-from the remaining components. This option (together with many others), can be
-customized to develop a figure of your liking. See the documentation of
-:py:meth:`~.learn.mva.MVA.scree_plot` for more details.
+The default options for this method will plot a bare scree plot, but the
+method's arguments allow for a great deal of customization. For
+example, by specifying a ``threshold`` value, a cutoff line will be drawn at
+the total variance specified, and the components above this value will be
+styled distinctly from the remaining components to show which are considered
+signal, as opposed to noise. Alternatively, by providing an integer value
+for ``threshold``, the line will be drawn at the specified component (see
+below). These options (together with many others), can be customized to
+develop a figure of your liking. See the documentation of
+:py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio` for more details.
 
-Note that in the figure, the first component has index 0. This is because
+Note that in the above figure, the first component has index 0. This is because
 Python uses zero based indexing i.e. the initial element of a sequence is found
 at index 0. To switch to a "number-based" (rather than "index-based")
-notation, provide a dictionary defining the axis type to the method:
+notation, specify the ``xaxis_type`` parameter:
 
 .. code-block:: python
 
-    >>> ax = s.scree_plot(n=20, xaxis={'type':'number',
-    >>>                                'labeling':'ordinal'})
+    >>> ax = s.plot_explained_variance_ratio(n=20,
+    >>>                                      threshold=4,
+    >>>                                      xaxis_type='number')
 
 .. figure::  images/screeplot2.png
    :align:   center
    :width:   500
 
-   PCA scree plot with number-based axis labeling
+   PCA scree plot with number-based axis labeling and a threshold value
+   specified
 
 .. versionadded:: 0.7
 

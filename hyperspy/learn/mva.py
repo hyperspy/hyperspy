@@ -1036,12 +1036,13 @@ class MVA():
         ax : matplotlib.axes
 
 
-        See Also:
-        ---------
+        See Also
+        --------
 
-        `get_explained_variance_ration`, `decomposition`,
-        `get_decomposition_loadings`,
-        `get_decomposition_factors`, `plot_explained_variance_ratio`.
+        :py:meth:`~.learn.mva.MVA.decomposition`,
+        :py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`,
+        :py:meth:`~.signal.MVATools.get_decomposition_loadings`,
+        :py:meth:`~.signal.MVATools.get_decomposition_factors`
 
         """
         s = self.get_explained_variance_ratio()
