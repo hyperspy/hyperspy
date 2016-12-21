@@ -921,56 +921,56 @@ class MVA():
         s.axes_manager[-1].units = ''
         return s
 
-    def plot_explained_variance_ratio(self, n=50, log=True):
-        """Plot the decomposition explained variance ratio vs index number.
+    # def plot_explained_variance_ratio(self, n=50, log=True):
+    #     """Plot the decomposition explained variance ratio vs index number.
+    #
+    #     Parameters
+    #     ----------
+    #     n : int
+    #         Number of components.
+    #     log : bool
+    #         If True, the y axis uses a log scale.
+    #
+    #     Returns
+    #     -------
+    #     ax : matplotlib.axes
+    #
+    #     See Also:
+    #     ---------
+    #
+    #     `get_explained_variance_ration`, `decomposition`,
+    #     `get_decomposition_loadings`,
+    #     `get_decomposition_factors`.
+    #
+    #     """
+    #     s = self.get_explained_variance_ratio()
+    #     if n < s.axes_manager[-1].size:
+    #         s = s.isig[:n]
+    #     s.plot()
+    #     ax = s._plot.signal_plot.ax
+    #     # ax.plot(range(n), target.explained_variance_ratio[:n], 'o',
+    #     #         label=label)
+    #     ax.set_ylabel("Explained variance ratio")
+    #     ax.margins(0.05)
+    #     ax.autoscale()
+    #     ax.lines[0].set_marker("o")
+    #     ax.lines[0].set_linestyle("None")
+    #     if log is True:
+    #         ax.semilogy()
+    #     return ax
 
-        Parameters
-        ----------
-        n : int
-            Number of components.
-        log : bool
-            If True, the y axis uses a log scale.
-
-        Returns
-        -------
-        ax : matplotlib.axes
-
-        See Also:
-        ---------
-
-        `get_explained_variance_ration`, `decomposition`,
-        `get_decomposition_loadings`,
-        `get_decomposition_factors`.
-
-        """
-        s = self.get_explained_variance_ratio()
-        if n < s.axes_manager[-1].size:
-            s = s.isig[:n]
-        s.plot()
-        ax = s._plot.signal_plot.ax
-        # ax.plot(range(n), target.explained_variance_ratio[:n], 'o',
-        #         label=label)
-        ax.set_ylabel("Explained variance ratio")
-        ax.margins(0.05)
-        ax.autoscale()
-        ax.lines[0].set_marker("o")
-        ax.lines[0].set_linestyle("None")
-        if log is True:
-            ax.semilogy()
-        return ax
-
-    def scree_plot(self, n=50, log=True, cutoff=0.01, signal_num=0,
-                   xaxis=None, signal_fmt=None, noise_fmt=None,
-                   axes_titles=None, fig=None, ax=None,
-                   **kwargs):
+    def plot_explained_variance_ratio(self, n=None, log=True, cutoff=0.01,
+                                      signal_num=0, xaxis=None,
+                                      signal_fmt=None, noise_fmt=None,
+                                      axes_titles=None, fig=None, ax=None,
+                                      **kwargs):
         """Plot the decomposition explained variance ratio vs index number
-        (Scree Plot). This method is an alternative to
-        `plot_explained_variance_ratio`
+        (Scree Plot).
 
         Parameters
         ----------
-        n : int
-            Number of components to plot.
+        n : int or None
+            Number of components to plot. If None, all components will be plot
         log : bool
             If True, the y axis uses a log scale.
         cutoff : float or None
@@ -1036,6 +1036,9 @@ class MVA():
         """
         s = self.get_explained_variance_ratio()
 
+        if n is None:
+            n = len(self.learning_results.explained_variance_ratio)
+
         if cutoff:
             signal_num = np.where((s < cutoff).data)[0][0]
 
@@ -1057,14 +1060,14 @@ class MVA():
 
         if 'type' not in xaxis:
             xaxis['type'] = 'index'
-            _logger.warning('\'type\' not found in xaxis dict; '
-                            'defaulting to \'index\'')
+            _logger.info('\'type\' not found in xaxis dict; '
+                         'defaulting to \'index\'')
 
         if 'labeling' not in xaxis:
             labeling = 'cardinal' if xaxis['type'] == 'index' else 'ordinal'
             xaxis['labeling'] = labeling
-            _logger.warning('\'labeling\' not found in xaxis dict; '
-                            'defaulting to \'{}\''.format(labeling))
+            _logger.info('\'labeling\' not found in xaxis dict; '
+                         'defaulting to \'{}\''.format(labeling))
 
         if axes_titles is None:
             axes_titles = {'y': "Proportion of variance",
