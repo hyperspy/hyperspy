@@ -576,8 +576,7 @@ class HyperHeader(object):
         self._set_image(root)
         self.elements = {}
         self._set_elements(root)
-        self.line_counter = np.fromstring(str(root.LineCounter),
-                                          dtype=np.uint16, sep=',')
+        self.line_counter = interpret(root.LineCounter.text)
         self.channel_count = int(root.ChCount)
         self.mapping_count = int(root.DetectorCount)
         self.channel_factors = {}

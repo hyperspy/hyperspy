@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+import json
 from nose.plugins.skip import SkipTest
 
 import nose.tools as nt
@@ -122,7 +123,14 @@ def test_hyperspy_wrap():
                          'signal_type': 'EDS_SEM'}}
 
     md_ref['General']['original_filename'] = hype.metadata.General.original_filename
+    filename_omd = os.path.join(my_path,
+                                'bcf_data',
+                                'test_TEM_original_metadata.json')
+    with open(filename_omd) as fn:
+        #original_metadata:
+        omd_ref = json.load(fn)
     assert_deep_almost_equal(hype.metadata.as_dictionary(), md_ref)
+    assert_deep_almost_equal(hype.original_metadata.as_dictionary(), omd_ref)
     nt.assert_equal(hype.metadata.General.date, "2016-04-01")
     nt.assert_equal(hype.metadata.General.time, "17:05:03")
     nt.assert_equal(hype.metadata.Signal.quantity, "X-rays (Counts)")
