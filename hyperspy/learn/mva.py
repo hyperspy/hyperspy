@@ -1014,7 +1014,14 @@ class MVA():
 
         # Determine right number of components for signal and cutoff value
         if isinstance(threshold, float):
-            n_signal_pcs = np.where((s < threshold).data)[0][0]
+            if not 0 < threshold < 1:
+                raise ValueError('Variance threshold should be between 0 and'
+                                 ' 1')
+            # Catch if the threshold is less than the minimum variance value:
+            if threshold < s.data.min():
+                n_signal_pcs = n
+            else:
+                n_signal_pcs = np.where((s < threshold).data)[0][0]
         else:
             n_signal_pcs = threshold
             if n_signal_pcs == 0:
@@ -1079,7 +1086,11 @@ class MVA():
                        linestyle='dashed',
                        zorder=1)
 
-        if n_signal_pcs > 0:
+        if n_signal_pcs == n:
+            ax.scatter(range(n),
+                       s.isig[:n].data,
+                       **signal_fmt)
+        elif n_signal_pcs > 0:
             ax.scatter(range(n_signal_pcs),
                        s.isig[:n_signal_pcs].data,
                        **signal_fmt)
