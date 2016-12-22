@@ -19,7 +19,7 @@
 import numpy as np
 from hyperspy.signals import Signal2D, BaseSignal, Signal1D
 from collections import OrderedDict
-from hyperspy.misc.holography.reconstruct import reconstruct, find_sideband_position, find_sideband_size
+from hyperspy.misc.holography.reconstruct import reconstruct, estimate_sideband_position, estimate_sideband_size
 import logging
 import warnings
 import scipy.constants as constants
@@ -32,14 +32,17 @@ class HologramImage(Signal2D):
 
     _signal_type = 'hologram'
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.sampling = (self.axes_manager[0].scale, self.axes_manager[1].scale)
-        self.f_sampling = np.divide(1, [a * b for a, b in zip(self.data.shape, self.sampling)])
+    @property
+    def sampling(self):
+        return self.axes_manager.signal_axes[0].scale, self.axes_manager.signal_axes[1].scale
 
-    def find_sideband_position(self, ap_cb_radius=None, sb='lower', show_progressbar=False):
+    @property
+    def f_sampling(self):
+        return np.divide(1, [a * b for a, b in zip(self.axes_manager.signal_shape, self.sampling)])
+
+    def estimate_sideband_position(self, ap_cb_radius=None, sb='lower', show_progressbar=False):
         """
-        Finds the position of the sideband and returns its position.
+        Estimates the position of the sideband and returns its position.
 
         Parameters
         ----------
@@ -55,18 +58,19 @@ class HologramImage(Signal2D):
         Signal1D instance of sideband positions (y, x), referred to the unshifted FFT.
         """
 
-        sb_position = self.deepcopy()
-        sb_position.map(find_sideband_position, holo_sampling=self.sampling, central_band_mask_radius=ap_cb_radius,
-                        sb=sb, show_progressbar=show_progressbar)
+        # sb_position = self.deepcopy()
+        sb_position = self.map(estimate_sideband_position, holo_sampling=self.sampling,
+                               central_band_mask_radius=ap_cb_radius, sb=sb, show_progressbar=show_progressbar,
+                               inplace=False)
 
         # Workaround to a map disfunctionality:
         sb_position.set_signal_type('signal1d')
 
         return sb_position
 
-    def find_sideband_size(self, sb_position, show_progressbar=False):
+    def estimate_sideband_size(self, sb_position, show_progressbar=False):
         """
-        Finds the size of the sideband and returns its position.
+        Estimates the size of the sideband and returns its size.
 
         Parameters
         ----------
@@ -79,8 +83,9 @@ class HologramImage(Signal2D):
         -------
         Signal 1D instance with sideband size, referred to the unshifted FFT.
         """
-        sb_size = sb_position.deepcopy()
-        sb_size.map(find_sideband_size, holo_shape=self.axes_manager.signal_shape, show_progressbar=show_progressbar)
+
+        sb_size = sb_position.map(estimate_sideband_size, holo_shape=self.axes_manager.signal_shape,
+                                  show_progressbar=show_progressbar, inplace=False)
 
         return sb_size
 
@@ -100,11 +105,11 @@ class HologramImage(Signal2D):
         ----------
         reference : ndarray, :class:`~hyperspy.signals.Signal2D, None
             Vacuum reference hologram.
-        sb_size : float, :class:`~hyperspy.signals.BaseSignal, None
+        sb_size : float, ndarray, :class:`~hyperspy.signals.BaseSignal, None
             Sideband radius of the aperture in corresponding unit (see 'sb_unit'). If None,
             the radius of the aperture is set to 1/3 of the distance between sideband and
             centreband.
-        sb_smoothness : float, :class:`~hyperspy.signals.BaseSignal, None
+        sb_smoothness : float, ndarray, :class:`~hyperspy.signals.BaseSignal, None
             Smoothness of the aperture in the same unit as sb_size.
         sb_unit : str, None
             Unit of the two sideband parameters 'sb_size' and 'sb_smoothness'.
@@ -114,7 +119,8 @@ class HologramImage(Signal2D):
         sb : str, None
             Select which sideband is selected. 'upper' or 'lower'.
         sb_position : tuple, :class:`~hyperspy.signals.Signal1D, None
-            Sideband position in pixel. If None, sideband is determined automatically from FFT.
+            The sideband position (y, x), referred to the non-shifted FFT. If None, sideband is determined
+            automatically from FFT.
         output_shape: tuple, None
             Choose a new output shape. Default is the shape of the input hologram. The output
             shape should not be larger than the input shape.
@@ -135,9 +141,17 @@ class HologramImage(Signal2D):
 
         """
 
+        # TODO: Use defaults for choosing sideband, smoothness, relative filter size and output shape if not provided
+        # TODO: Design a way to store reconstruction parameters ready for quick inspection
+
         # Parsing reference:
         if not isinstance(reference, HologramImage):
             if isinstance(reference, Signal2D):
+                if (not reference.axes_manager.navigation_shape == self.axes_manager.navigation_shape
+                    and reference.axes_manager.navigation_size):
+
+                    raise ValueError('The navigation dimensions of object and reference holograms do not match')
+
                 _logger.warning('The reference image signal type is not HologramImage. It will '
                                 'be converted to HologramImage automatically.')
                 reference.set_signal_type('hologram')
@@ -152,22 +166,29 @@ class HologramImage(Signal2D):
 
         # Parsing sideband position:
         if sb_position is None:
-            warnings.warn('Sideband position is not specified. The sideband will be found automatically which may '
-                          'cause wrong results.')
+            _logger.warning('Sideband position is not specified. The sideband will be found automatically which may '
+                            'cause wrong results.')
             if reference is None:
-                sb_position = self.find_sideband_position(sb=sb)
+                sb_position = self.estimate_sideband_position(sb=sb)
             else:
-                sb_position = reference.find_sideband_position(sb=sb)
+                sb_position = reference.estimate_sideband_position(sb=sb)
 
         else:
+            if isinstance(sb_position, BaseSignal) and not sb_position._signal_dimension == 1:
+                    raise ValueError('sb_position dimension has to be 1')
+
             if not isinstance(sb_position, Signal1D):
                 sb_position = Signal1D(sb_position)
 
+            if not sb_position.axes_manager.signal_size == 2:
+                raise ValueError('sb_position should to have signal size of 2')
+
         if sb_position.axes_manager.navigation_size != self.axes_manager.navigation_size:
             if sb_position.axes_manager.navigation_size:
-                warnings.warn('Sideband position dimensions do not match neither reference nor hologram dimensions.'
-                              'The reconstruction will be performed with the first values')
-                sb_position_temp = sb_position.inav[0].data
+                # warnings.warn('Sideband position dimensions do not match neither reference nor hologram dimensions.'
+                #               'The reconstruction will be performed with the first values')
+                # sb_position_temp = sb_position.inav[0].data
+                raise ValueError('Sideband position dimensions do not match neither reference nor hologram dimensions.')
             else:  # sb_position navdim=0, therefore map function should not iterate it:
                 sb_position_temp = sb_position.data
         else:
@@ -177,9 +198,9 @@ class HologramImage(Signal2D):
         # Parsing sideband size
         if sb_size is None:  # Default value is 1/2 distance between sideband and central band
             if reference is None:
-                sb_size = self.find_sideband_size(sb_position)
+                sb_size = self.estimate_sideband_size(sb_position)
             else:
-                sb_size = reference.find_sideband_size(sb_position)
+                sb_size = reference.estimate_sideband_size(sb_position)
         else:
             if not isinstance(sb_size, BaseSignal):
                 if isinstance(sb_size, np.ndarray) and sb_size.size > 1:  # transpose if np.array of multiple instances
@@ -189,9 +210,8 @@ class HologramImage(Signal2D):
 
         if sb_size.axes_manager.navigation_size != self.axes_manager.navigation_size:
             if sb_size.axes_manager.navigation_size:
-                warnings.warn('Sideband size dimensions do not match neither reference nor hologram dimensions.'
-                              'The reconstruction will be performed with the first value.')
-                sb_size_temp = np.float64(sb_size.inav[0].data)
+                raise ValueError('Sideband size dimensions do not match neither reference nor hologram dimensions.')
+
             else:  # sb_position navdim=0, therefore map function should not iterate it:
                 sb_size_temp = np.float64(sb_size.data)
         else:
@@ -210,9 +230,9 @@ class HologramImage(Signal2D):
 
         if sb_smoothness.axes_manager.navigation_size != self.axes_manager.navigation_size:
             if sb_smoothness.axes_manager.navigation_size:
-                warnings.warn('Sideband smoothness dimensions do not match neither reference nor hologram dimensions.'
-                              'The reconstruction will be performed with the first value.')
-                sb_smoothness_temp = np.float64(sb_smoothness.inav[0].data)
+                raise ValueError('Sideband smoothness dimensions do not match neither reference nor hologram '
+                                 'dimensions.')
+
             else:  # sb_position navdim=0, therefore map function should not iterate it:
                 sb_smoothness_temp = np.float64(sb_smoothness.data)
         else:

@@ -76,8 +76,8 @@ class TestCaseHologramImage(object):
         nt.assert_almost_equal(phase_new_crop, phase_ref_crop, decimal=2)
 
         # Testing reconstruction with non-standard output size for stacked images:
-        sb_position2 = self.ref_image2.find_sideband_position(sb='upper')
-        sb_size2 = self.ref_image2.find_sideband_size(sb_position2)
+        sb_position2 = self.ref_image2.estimate_sideband_position(sb='upper')
+        sb_size2 = self.ref_image2.estimate_sideband_size(sb_position2)
         output_shape = (np.int(sb_size2.inav[0].data*2), np.int(sb_size2.inav[0].data*2))
 
         wave_image2 = self.holo_image2.reconstruct_phase(reference=self.ref_image2, sb_position=sb_position2,
