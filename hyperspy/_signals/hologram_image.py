@@ -40,6 +40,56 @@ class HologramImage(Signal2D):
     def f_sampling(self):
         return np.divide(1, [a * b for a, b in zip(self.axes_manager.signal_shape, self.sampling)])
 
+    def set_microscope_parameters(self,
+                                  beam_energy=None,
+                                  biprism_voltage=None,
+                                  tilt_alpha=None,
+                                  tilt_beta=None):
+        """Set the microscope parameters.
+
+        If no arguments are given, raises an interactive mode to fill
+        the values.
+
+        Parameters
+        ----------
+        beam_energy: float
+            The energy of the electron beam in keV
+        biprism_voltage : float
+            In volts
+        tilt_alpha : float
+            In degree
+        tilt_beta : float
+            In degree
+
+        Examples
+        --------
+
+        >>> s.set_microscope_parameters(beam_energy=300.)
+        >>> print('Now set to %s keV' %
+        >>>       s.metadata.Acquisition_instrument.
+        >>>       TEM.beam_energy)
+
+        Now set to 300.0 keV
+
+        """
+        md = self.metadata
+
+        if beam_energy is not None:
+            md.set_item("Acquisition_instrument.TEM.beam_energy", beam_energy)
+        if biprism_voltage is not None:
+            md.set_item(
+                "Acquisition_instrument.TEM.Holography.Biprism_voltage",
+                biprism_voltage)
+        if tilt_alpha is not None:
+            md.set_item("Acquisition_instrument.TEM.Tilt_alpha", tilt_alpha)
+        if tilt_beta is not None:
+            md.set_item(
+                "Acquisition_instrument.TEM.Tilt_beta",
+                tilt_beta)
+
+        # if {beam_energy, biprism_voltage, tilt_alpha, tilt_beta} == {None}:
+        #     self._are_microscope_parameters_missing()
+
     def estimate_sideband_position(self, ap_cb_radius=None, sb='lower', show_progressbar=False):
         """
         Estimates the position of the sideband and returns its position.
@@ -91,7 +141,7 @@ class HologramImage(Signal2D):
 
     def reconstruct_phase(self, reference=None, sb_size=None, sb_smoothness=None, sb_unit=None,
                           sb='lower', sb_position=None, output_shape=None, plotting=False, show_progressbar=False,
-                          store_parameters=False):
+                          store_parameters=True):
         """Reconstruct electron holograms. Operates on multidimensional hyperspy signals. There are several usage
         schemes:
          1. Reconstruct 1d or Nd hologram without reference
@@ -128,8 +178,8 @@ class HologramImage(Signal2D):
             Shows details of the reconstruction (i.e. SB selection).
         show_progressbar : boolean
             Shows progressbar while iterating over different slices of the signal (passes the parameter to map method).
-        log_parameters : boolean
-            Logs reconstruction parameters
+        store_parameters : boolean
+            Store reconstruction parameters in metadata
 
         Returns
         -------
@@ -244,18 +294,18 @@ class HologramImage(Signal2D):
             sb_size_temp = sb_size_temp / np.mean(self.f_sampling)
             sb_smoothness = sb_smoothness / np.mean(self.f_sampling)
         elif sb_unit == 'mrad':
+
             try:
                 ht = self.metadata.Acquisition_instrument.TEM.beam_energy
-            except AttributeError:
-                ht = int(input('Enter beam energy in kV: '))
-                self.metadata.add_node('Acquisition_instrument')
-                self.metadata.Acquisition_instrument.add_node('TEM')
-                self.metadata.Acquisition_instrument.TEM.add_node('beam_energy')
-                self.metadata.Acquisition_instrument.TEM.beam_energy = ht
+            except:
+                raise AttributeError("Please define the beam energy."
+                                     "You can do this e.g. by using the "
+                                     "set_microscope_parameters method")
+
             momentum = 2 * constants.m_e * constants.elementary_charge * ht * 1000 *\
                        (1 + constants.elementary_charge * ht * 1000 / (2 * constants.m_e *
                                                                        constants.c ** 2))
-            wavelength = constants.h / np.sqrt(momentum) * 1e9 # in nm
+            wavelength = constants.h / np.sqrt(momentum) * 1e9  # in nm
             sb_size_temp = sb_size_temp / (1000 * wavelength * np.mean(self.f_sampling))
             sb_smoothness_temp = sb_smoothness_temp / (1000 * wavelength * np.mean(
                 self.f_sampling))
@@ -337,5 +387,6 @@ class HologramImage(Signal2D):
             wave_image.metadata.Signal.add_node('Holography')
             wave_image.metadata.Signal.Holography.add_node('Reconstruction_parameters')
             wave_image.metadata.Signal.Holography.Reconstruction_parameters.add_dictionary(rec_param_dict)
+            _logger.info('Reconstruction parameters stored in metadata')
 
         return wave_image
