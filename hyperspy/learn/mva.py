@@ -920,7 +920,7 @@ class MVA():
         return s
 
     def plot_explained_variance_ratio(self, n=None, log=True, threshold=0,
-                                      hline=True, xaxis_type='index',
+                                      hline='auto', xaxis_type='index',
                                       xaxis_labeling=None, signal_fmt=None,
                                       noise_fmt=None, fig=None, ax=None,
                                       **kwargs):
@@ -944,12 +944,14 @@ class MVA():
             If an int, ``threshold`` is interpreted as the number of
             components to highlight as signal (and no cutoff line will be
             drawn)
-        hline: bool
-            Whether or not to draw a horizontal line defining the variance
-            cutoff. Default is to draw the line at the value given in
-            ``threshold`` (if float), or at the last component defined as
-            signal (if int). If no threshold given, ``hline`` is
-            automatically set to ``False``.
+        hline: {'auto', True, False}
+            Whether or not to draw a horizontal line illustrating the variance
+            cutoff for signal/noise determination. Default is to draw the line
+            at the value given in ``threshold`` (if it is a float) and not
+            draw in the case  ``threshold`` is an int, or not given.
+            If True, (and ``threshold`` is an int), the line will be drawn
+            through the last component defined as signal.
+            If False, the line will not be drawn in any circumstance.
         xaxis_type : {'index', 'number'}
             Determines the type of labeling applied to the x-axis.
             If ``'index'``, axis will be labeled starting at 0 (i.e.
@@ -1013,12 +1015,29 @@ class MVA():
         # Determine right number of components for signal and cutoff value
         if isinstance(threshold, float):
             n_signal_pcs = np.where((s < threshold).data)[0][0]
-            cutoff = threshold
         else:
             n_signal_pcs = threshold
-            cutoff = s.data[n_signal_pcs - 1]
             if n_signal_pcs == 0:
                 hline = False
+
+        # Handling hline logic
+        if hline == 'auto':
+            # Set cutoff to threshold if float
+            if isinstance(threshold, float):
+                cutoff = threshold
+            # Turn off the hline otherwise
+            else:
+                hline = False
+        # If hline is True and threshold is int, set cutoff at value of last
+        # signal component
+        elif hline:
+            if isinstance(threshold, float):
+                cutoff = threshold
+            elif n_signal_pcs > 0:
+                cutoff = s.data[n_signal_pcs - 1]
+        # Catches hline==False and hline==True (if threshold not given)
+        else:
+            hline = False
 
         # Some default formatting for signal markers
         if signal_fmt is None:
