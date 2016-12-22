@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from hyperspy._signals.complex_signal2d import ComplexSignal2D
+from hyperspy.signals import BaseSignal, Signal1D, ComplexSignal2D
 
 
 class ElectronWaveImage(ComplexSignal2D):
@@ -26,11 +26,28 @@ class ElectronWaveImage(ComplexSignal2D):
 
     _signal_type = 'electron_wave'
 
-    # The class is empty at the moment, but some electron wave specific methods will be added later.
+    def display_reconstruction_parameters(self):
+        assert self.metadata.Signal.has_item('Holography.Reconstruction_parameters'), \
+            "No reconstruction parameters assigned to the wave"
 
-    # @property
-    # def reconstruction_parameters(self):
-    #     assert self.metadata.Signal.has_item('holo_reconstruction_parameters'), \
-    #         "No reconstruction parameters assigned to the wave"
-    #
-    #     return self.metadata.Signal.holo_reconstruction_parameters.as_dictionary()
+        sb_position = self.metadata.Signal.Holography.Reconstruction_parameters.sb_position
+        sb_size = self.metadata.Signal.Holography.Reconstruction_parameters.sb_size
+        sb_smoothness = self.metadata.Signal.Holography.Reconstruction_parameters.sb_smoothness
+        sb_unit = self.metadata.Signal.Holography.Reconstruction_parameters.sb_units
+
+        if isinstance(sb_position, Signal1D):
+            print('sb_position = ', sb_position.data)
+        else:
+            print('sb_position = ', sb_position)
+
+        if isinstance(sb_size, BaseSignal):
+            print('sb_size = ', sb_size.data)
+        else:
+            print('sb_size= ', sb_size)
+
+        if isinstance(sb_smoothness, BaseSignal):
+            print('sb_smoothness = ', sb_smoothness.data)
+        else:
+            print('sb_smoothness = ', sb_smoothness)
+
+        print('sb_unit = ', sb_unit)
