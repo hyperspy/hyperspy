@@ -919,44 +919,6 @@ class MVA():
         s.axes_manager[-1].units = ''
         return s
 
-    # def plot_explained_variance_ratio(self, n=50, log=True):
-    #     """Plot the decomposition explained variance ratio vs index number.
-    #
-    #     Parameters
-    #     ----------
-    #     n : int
-    #         Number of components.
-    #     log : bool
-    #         If True, the y axis uses a log scale.
-    #
-    #     Returns
-    #     -------
-    #     ax : matplotlib.axes
-    #
-    #     See Also:
-    #     ---------
-    #
-    #     `get_explained_variance_ration`, `decomposition`,
-    #     `get_decomposition_loadings`,
-    #     `get_decomposition_factors`.
-    #
-    #     """
-    #     s = self.get_explained_variance_ratio()
-    #     if n < s.axes_manager[-1].size:
-    #         s = s.isig[:n]
-    #     s.plot()
-    #     ax = s._plot.signal_plot.ax
-    #     # ax.plot(range(n), target.explained_variance_ratio[:n], 'o',
-    #     #         label=label)
-    #     ax.set_ylabel("Explained variance ratio")
-    #     ax.margins(0.05)
-    #     ax.autoscale()
-    #     ax.lines[0].set_marker("o")
-    #     ax.lines[0].set_linestyle("None")
-    #     if log is True:
-    #         ax.semilogy()
-    #     return ax
-
     def plot_explained_variance_ratio(self, n=None, log=True, threshold=0,
                                       hline=True, xaxis_type='index',
                                       xaxis_labeling=None, signal_fmt=None,
@@ -986,8 +948,8 @@ class MVA():
             Whether or not to draw a horizontal line defining the variance
             cutoff. Default is to draw the line at the value given in
             ``threshold`` (if float), or at the last component defined as
-            signal (if int). If no threshold give, ``hline`` is set to
-            ``False``.
+            signal (if int). If no threshold given, ``hline`` is
+            automatically set to ``False``.
         xaxis_type : {'index', 'number'}
             Determines the type of labeling applied to the x-axis.
             If ``'index'``, axis will be labeled starting at 0 (i.e.
