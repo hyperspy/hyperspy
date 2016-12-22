@@ -125,7 +125,7 @@ def test_hyperspy_wrap():
     md_ref['General']['original_filename'] = hype.metadata.General.original_filename
     filename_omd = os.path.join(my_path,
                                 'bcf_data',
-                                'test_TEM_original_metadata.json')
+                                'test_original_metadata.json')
     with open(filename_omd) as fn:
         #original_metadata:
         omd_ref = json.load(fn)
