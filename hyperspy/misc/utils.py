@@ -26,6 +26,7 @@ import collections
 import tempfile
 import unicodedata
 from contextlib import contextmanager
+from ..misc.signal_tools import broadcast_signals
 
 import numpy as np
 
@@ -808,18 +809,20 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
 
     axis_input = copy.deepcopy(axis)
     # Get the real signal with the most axes to get metadata/class/etc
-    first = sorted(
-        next(filter(lambda _s: isinstance(_s, BaseSignal), signal_list)),
-        key=lambda _s: _s.data.ndim)[0]
+    # first = sorted(filter(lambda _s: isinstance(_s, BaseSignal), signal_list),
+    #                key=lambda _s: _s.data.ndim)[-1]
+    first = next(filter(lambda _s: isinstance(_s, BaseSignal), signal_list))
 
-    # Cast numbers / arrays as signals. Will broadcast later
+    # Cast numbers as signals. Will broadcast later
+
     for i, _s in enumerate(signal_list):
-        if isinstance(_s, (Number, da.Array, np.ndarray)):
+        if isinstance(_s, BaseSignal):
+            pass
+        elif isinstance(_s, Number):
             sig = BaseSignal(_s)
-            if sig.data.ndim <= first.data.ndim:
-                signal_list[i] = sig
-            else:
-                raise ValueError("Too large arrays passed")
+            signal_list[i] = sig
+        else:
+            raise ValueError("{} type cannot be stacked.".format(type(_s)))
 
     if lazy is None:
         lazy = any(_s._lazy for _s in signal_list)
@@ -833,44 +836,16 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         if not _s._lazy:
             signal_list[i] = _s.as_lazy()
 
-    shapes = list({_s.data.shape for _s in signal_list})
-
-    # Figure out the final shape in the determined directions and test if can
-    # broadcast
-    max_shape_len = max((len(_shape) for _shape in shapes))
+    newlist = broadcast_signals(*signal_list, ignore_axis=axis_input)
     if axis is not None:
-        axis = first.axes_manager[axis]
-        ai = axis.index_in_array
-
-    reverse_final_shape = []
-    for i, ax in enumerate(zip_longest(*map(reversed, shapes), fillvalue=1)):
-        if axis is None or max_shape_len - i - 1 != axis.index_in_array:
-            _max = np.max(ax)
-            if all(_sh == _max or _sh == 1 for _sh in ax):
-                reverse_final_shape.append(_max)
-            else:
-                raise ValueError("Cannot broadcast input shapes")
-        else:
-            # this is just a marker to be replaced
-            reverse_final_shape.append(None)
-    # Broadcast as required.
-    datalist = []
-    step_sizes = []
-    for _s in signal_list:
-        ds = _s.data.shape
-        thisshape = reverse_final_shape.copy()[::-1]
-        if axis is not None:
-            if len(ds) - 1 >= ai:
-                thisshape[ai] = _s.data.shape[ai]
-            else:
-                thisshape[ai] = 1
-            step_sizes.append(thisshape[ai])
-        datalist.append(da.broadcast_to(_s.data, thisshape))
+        step_sizes = [s.axes_manager[axis].size for s in newlist]
+        axis = newlist[0].axes_manager[axis]
+    datalist = [s.data for s in newlist]
     newdata = da.stack(datalist, axis=0) if axis is None else \
         da.concatenate(datalist, axis=axis.index_in_array)
-    if axis is None:
+    if axis_input is None:
         signal = first.__class__(newdata)
-        signal.axes_manager._axes[1:] = copy.deepcopy(first.axes_manager._axes)
+        signal.axes_manager._axes[1:] = copy.deepcopy(newlist[0].axes_manager._axes)
         axis_name = new_axis_name
         axis_names = [axis_.name for axis_ in signal.axes_manager._axes[1:]]
         j = 1
@@ -886,7 +861,9 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
             "Stack of " + first.metadata.General.title)
         signal.original_metadata = DictionaryTreeBrowser({})
     else:
-        signal = first._deepcopy_with_new_data(newdata)
+        signal = newlist[0]._deepcopy_with_new_data(newdata)
+        signal._lazy = False
+        signal._assign_subclass()
     signal.get_dimensions_from_data()
     signal.original_metadata.add_node('stack_elements')
 
@@ -913,6 +890,8 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
             s.metadata.Signal.Noise_properties.variance for s in signal_list
         ], axis)
         signal.metadata.set_item('Signal.Noise_properties.variance', variance)
+
+    # Leave as lazy, compute or store as required
     if lazy:
         signal = signal.as_lazy()
     elif mmap:

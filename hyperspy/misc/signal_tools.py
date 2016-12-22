@@ -90,7 +90,8 @@ def broadcast_signals(*args, ignore_axis=None):
             thisshape = new_data_shape.copy()
             if ignore_axis is not None:
                 _id = new_data_shape.index(None)
-                thisshape[_id] = data.shape[_id]
+                newlen = data.shape[_id] if len(data.shape) > _id else 1
+                thisshape[_id] = newlen
             thisshape = tuple(thisshape)
             if data.shape != thisshape:
                 if isinstance(data, np.ndarray):
