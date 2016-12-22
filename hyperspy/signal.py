@@ -53,7 +53,8 @@ from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
-from hyperspy.misc.signal_tools import are_signals_aligned
+from hyperspy.misc.signal_tools import (are_signals_aligned,
+                                        broadcast_signals)
 
 import warnings
 
@@ -1570,62 +1571,9 @@ class BaseSignal(FancySlicing,
                     raise ValueError(exception_message)
                 else:
                     # They are broadcastable but have different number of axes
-                    new_nav_axes = []
-                    for saxis, oaxis in zip(
-                            sam.navigation_axes, oam.navigation_axes):
-                        new_nav_axes.append(saxis if saxis.size > 1 or
-                                            oaxis.size == 1 else
-                                            oaxis)
-                    bigger_am = None
-                    if sam.navigation_dimension != oam.navigation_dimension:
-                        bigger_am = (sam
-                                     if sam.navigation_dimension >
-                                     oam.navigation_dimension
-                                     else oam)
-                        new_nav_axes.extend(
-                            bigger_am.navigation_axes[len(new_nav_axes):])
-                    # Because they are broadcastable and navigation axes come
-                    # first in the data array, we don't need to pad the data
-                    # array.
-                    new_sig_axes = []
-                    for saxis, oaxis in zip(
-                            sam.signal_axes, oam.signal_axes):
-                        new_sig_axes.append(saxis if saxis.size > 1 or
-                                            oaxis.size == 1 else
-                                            oaxis)
-                    if sam.signal_dimension != oam.signal_dimension:
-                        bigger_am = (
-                            sam if sam.signal_dimension > oam.signal_dimension
-                            else oam)
-                        new_sig_axes.extend(
-                            bigger_am.signal_axes[len(new_sig_axes):])
-                    sdim_diff = abs(sam.signal_dimension -
-                                    oam.signal_dimension)
-                    sdata = self._data_aligned_with_axes
-                    odata = other._data_aligned_with_axes
-                    if len(new_nav_axes) and sdim_diff:
-                        # Do the np.expand_dims ourselves, so that it works with
-                        # dask as well
-                        if bigger_am is sam:
-                            # Pad odata
-                            while sdim_diff:
-                                # odata = np.expand_dims(
-                                #     odata, oam.navigation_dimension)
-                                slices = (slice(None),) * \
-                                    oam.navigation_dimension
-                                slices += (None, Ellipsis)
-                                odata = odata[slices]
-                                sdim_diff -= 1
-                        else:
-                            # Pad sdata
-                            while sdim_diff:
-                                # sdata = np.expand_dims(
-                                #     sdata, sam.navigation_dimension)
-                                slices = (slice(None),) * \
-                                    sam.navigation_dimension
-                                slices += (None, Ellipsis)
-                                sdata = sdata[slices]
-                                sdim_diff -= 1
+                    ns, no = broadcast_signals(self, other)
+                    sdata = ns.data
+                    odata= no.data
                     if op_name in INPLACE_OPERATORS:
                         # This should raise a ValueError if the operation
                         # changes the shape of the object on the left.
@@ -1633,14 +1581,7 @@ class BaseSignal(FancySlicing,
                         self.axes_manager._sort_axes()
                         return self
                     else:
-                        ns = self._deepcopy_with_new_data(
-                            getattr(sdata, op_name)(odata))
-                        new_axes = new_nav_axes[::-1] + new_sig_axes[::-1]
-                        ns.axes_manager._axes = [axis.copy()
-                                                 for axis in new_axes]
-                        if bigger_am is oam:
-                            ns = ns.transpose(
-                                signal_axes=other.axes_manager.signal_dimension)
+                        ns.data = getattr(sdata, op_name)(odata)
                         return ns
 
         else:
