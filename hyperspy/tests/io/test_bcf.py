@@ -112,7 +112,7 @@ def test_hyperspy_wrap():
                                                                       'azimuth_angle': 90.0}},
                                                  'stage_x': 62409.2,
                                                  'magnification': 131.1433,
-                                                 'tilt_stage': 0.0}},
+                                                 'tilt_stage': 0.5}},
               'General': {'title': 'EDX',
                           'time': '17:05:03',
                           'original_filename': 'P45_instructively_packed_16bit_compressed.bcf',
