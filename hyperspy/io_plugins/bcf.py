@@ -741,6 +741,17 @@ class HyperHeader(object):
         index -- index of hypermap/spectra (default 0)
         """
         return self.spectra_data[index]
+    
+    def calc_real_time(self):
+        """calculate and return real time for whole hypermap
+        in seconds
+        """
+        line_cnt_sum = np.sum(self.line_counter)
+        line_avg = self.image.dsp_metadata['LineAverage']
+        pix_avg = self.image.dsp_metadata['PixelAverage']
+        pix_time = self.image.dsp_metadata['PixelTime']
+        width = self.image.width
+        return line_cnt_sum * line_avg * pix_avg * pix_time * width / 1000000.0
 
 
 class BCF_reader(SFS_reader):
@@ -1040,7 +1051,7 @@ def file_reader(filename, select_type=None, index=0, downsample=1,
       or just hyper spectral mapping data. (default None)
     index -- index of dataset in bcf v2 (delaut 0)
     downsample -- the downsample ratio of hyperspectral array (downsampling
-      hight and width only), can be integer from 1 to inf, where '1' means
+      height and width only), can be integer from 1 to inf, where '1' means
       no downsampling will be applied (default 1).
     cutoff_at_kV -- if set (can be int of float >= 0) can be used either, to
        crop or enlarge energy range at max values. (default None)
@@ -1150,7 +1161,8 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
                                  'EDS': {
                                      'azimuth_angle': eds_metadata.azimutAngle,
                                      'elevation_angle': eds_metadata.elevationAngle,
-                                     'detector_type': eds_metadata.detector_type
+                                     'detector_type': eds_metadata.detector_type,
+                                     'real_time': obj_bcf.header.calc_real_time()
                                  }
                              }
                          }
