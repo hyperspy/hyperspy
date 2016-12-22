@@ -750,7 +750,7 @@ def without_nans(data):
 
 
 def stack(signal_list, axis=None, new_axis_name='stack_element',
-          mmap=False, mmap_dir=None,):
+          mmap=False, mmap_dir=None, lazy=None):
     """Concatenate the signals in the list over a given axis or a new axis.
 
     The title is set to that of the first signal in the list.
@@ -780,6 +780,9 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         If mmap_dir is not None, and stack and mmap are True, the memory
         mapped file will be created in the given directory,
         otherwise the default directory is used.
+    lazy: {bool, None}
+        Returns a LazySignal if True. If None, only returns lazy rezult if at
+        least one is lazy.
 
     Returns
     -------
@@ -798,95 +801,132 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]])
 
     """
+    from itertools import zip_longest
+    from hyperspy.signals import BaseSignal
+    import dask.array as da
+    from numbers import Number
 
     axis_input = copy.deepcopy(axis)
+    # Get the real signal with the most axes to get metadata/class/etc
+    first = sorted(
+        next(filter(lambda _s: isinstance(_s, BaseSignal), signal_list)),
+        key=lambda _s: _s.data.ndim)[0]
+
+    # Cast numbers / arrays as signals. Will broadcast later
+    for i, _s in enumerate(signal_list):
+        if isinstance(_s, (Number, da.Array, np.ndarray)):
+            sig = BaseSignal(_s)
+            if sig.data.ndim <= first.data.ndim:
+                signal_list[i] = sig
+            else:
+                raise ValueError("Too large arrays passed")
+
+    if lazy is None:
+        lazy = any(_s._lazy for _s in signal_list)
+    if not isinstance(lazy, bool):
+        raise ValueError("'lazy' argument has to be None, True or False")
+    if lazy and mmap:
+        raise ValueError("Can't be lazy and memory-mapped")
+
+    # Cast all as lazy if required
+    for i, _s in enumerate(signal_list):
+        if not _s._lazy:
+            signal_list[i] = _s.as_lazy()
+
+    shapes = list({_s.data.shape for _s in signal_list})
+
+    # Figure out the final shape in the determined directions and test if can
+    # broadcast
+    max_shape_len = max((len(_shape) for _shape in shapes))
+    if axis is not None:
+        axis = first.axes_manager[axis]
+        ai = axis.index_in_array
+
+    reverse_final_shape = []
+    for i, ax in enumerate(zip_longest(*map(reversed, shapes), fillvalue=1)):
+        if axis is None or max_shape_len - i - 1 != axis.index_in_array:
+            _max = np.max(ax)
+            if all(_sh == _max or _sh == 1 for _sh in ax):
+                reverse_final_shape.append(_max)
+            else:
+                raise ValueError("Cannot broadcast input shapes")
+        else:
+            # this is just a marker to be replaced
+            reverse_final_shape.append(None)
+    # Broadcast as required.
+    datalist = []
+    step_sizes = []
+    for _s in signal_list:
+        ds = _s.data.shape
+        thisshape = reverse_final_shape.copy()[::-1]
+        if axis is not None:
+            if len(ds) - 1 >= ai:
+                thisshape[ai] = _s.data.shape[ai]
+            else:
+                thisshape[ai] = 1
+            step_sizes.append(thisshape[ai])
+        datalist.append(da.broadcast_to(_s.data, thisshape))
+    newdata = da.stack(datalist, axis=0) if axis is None else \
+        da.concatenate(datalist, axis=axis.index_in_array)
+    if axis is None:
+        signal = first.__class__(newdata)
+        signal.axes_manager._axes[1:] = copy.deepcopy(first.axes_manager._axes)
+        axis_name = new_axis_name
+        axis_names = [axis_.name for axis_ in signal.axes_manager._axes[1:]]
+        j = 1
+        while axis_name in axis_names:
+            axis_name = new_axis_name + "_%i" % j
+            j += 1
+        eaxis = signal.axes_manager._axes[0]
+        eaxis.name = axis_name
+        eaxis.navigate = True  # This triggers _update_parameters
+        signal.metadata = copy.deepcopy(first.metadata)
+        # Get the title from 1st object
+        signal.metadata.General.title = (
+            "Stack of " + first.metadata.General.title)
+        signal.original_metadata = DictionaryTreeBrowser({})
+    else:
+        signal = first._deepcopy_with_new_data(newdata)
+    signal.get_dimensions_from_data()
+    signal.original_metadata.add_node('stack_elements')
 
     for i, obj in enumerate(signal_list):
-        if i == 0:
-            if axis is None:
-                original_shape = obj.data.shape
-                stack_shape = tuple([len(signal_list), ]) + original_shape
-                tempf = None
-                if mmap is False:
-                    data = np.empty(stack_shape,
-                                    dtype=obj.data.dtype)
-                else:
-                    tempf = tempfile.NamedTemporaryFile(
-                        dir=mmap_dir)
-                    data = np.memmap(tempf,
-                                     dtype=obj.data.dtype,
-                                     mode='w+',
-                                     shape=stack_shape,)
-
-                signal = type(obj)(data=data)
-                signal.axes_manager._axes[
-                    1:] = copy.deepcopy(
-                    obj.axes_manager._axes)
-                axis_name = new_axis_name
-                axis_names = [axis_.name for axis_ in
-                              signal.axes_manager._axes[1:]]
-                j = 1
-                while axis_name in axis_names:
-                    axis_name = new_axis_name + "_%i" % j
-                    j += 1
-                eaxis = signal.axes_manager._axes[0]
-                eaxis.name = axis_name
-                eaxis.navigate = True  # This triggers _update_parameters
-                signal.metadata = copy.deepcopy(obj.metadata)
-                # Get the title from 1st object
-                signal.metadata.General.title = (
-                    "Stack of " + obj.metadata.General.title)
-                signal.original_metadata = DictionaryTreeBrowser({})
-            else:
-                axis = obj.axes_manager[axis]
-                signal = obj.deepcopy()
-
-            signal.original_metadata.add_node('stack_elements')
-
-        # Store parameters
-        signal.original_metadata.stack_elements.add_node(
-            'element%i' % i)
-        node = signal.original_metadata.stack_elements[
-            'element%i' % i]
+        signal.original_metadata.stack_elements.add_node('element%i' % i)
+        node = signal.original_metadata.stack_elements['element%i' % i]
         node.original_metadata = \
             obj.original_metadata.as_dictionary()
         node.metadata = \
             obj.metadata.as_dictionary()
 
-        if axis is None:
-            if obj.data.shape != original_shape:
-                raise IOError(
-                    "Only files with data of the same shape can be stacked")
-            signal.data[i, ...] = obj.data
-            del obj
-    if axis is not None:
-        signal.data = np.concatenate([signal_.data for signal_ in signal_list],
-                                     axis=axis.index_in_array)
-        signal.get_dimensions_from_data()
-
     if axis_input is None:
         axis_input = signal.axes_manager[-1 + 1j].index_in_axes_manager
         step_sizes = 1
-    else:
-        step_sizes = [obj.axes_manager[axis_input].size
-                      for obj in signal_list]
 
-    signal.metadata._HyperSpy.set_item(
-        'Stacking_history.axis',
-        axis_input)
-    signal.metadata._HyperSpy.set_item(
-        'Stacking_history.step_sizes',
-        step_sizes)
-    from hyperspy.signal import BaseSignal
-    if np.all([s.metadata.has_item('Signal.Noise_properties.variance')
-               for s in signal_list]):
-        if np.all([isinstance(s.metadata.Signal.Noise_properties.variance, BaseSignal)
-                   for s in signal_list]):
-            variance = stack(
-                [s.metadata.Signal.Noise_properties.variance for s in signal_list], axis)
-            signal.metadata.set_item(
-                'Signal.Noise_properties.variance',
-                variance)
+    signal.metadata._HyperSpy.set_item('Stacking_history.axis', axis_input)
+    signal.metadata._HyperSpy.set_item('Stacking_history.step_sizes',
+                                       step_sizes)
+    if np.all([
+            s.metadata.has_item('Signal.Noise_properties.variance')
+            for s in signal_list
+    ]):
+        variance = stack([
+            s.metadata.Signal.Noise_properties.variance for s in signal_list
+        ], axis)
+        signal.metadata.set_item('Signal.Noise_properties.variance', variance)
+    if lazy:
+        signal = signal.as_lazy()
+    elif mmap:
+        tempf = tempfile.NamedTemporaryFile(dir=mmap_dir)
+        data = np.memmap(
+            tempf,
+            dtype=signal.data.dtype,
+            mode='w+',
+            shape=signal.data.shape, )
+        signal.data.store(data)
+        signal.data = data
+    else:
+        signal.data = signal.data.compute()
+
     return signal
 
 
