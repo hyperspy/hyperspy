@@ -91,7 +91,7 @@ class HologramImage(Signal2D):
 
     def reconstruct_phase(self, reference=None, sb_size=None, sb_smoothness=None, sb_unit=None,
                           sb='lower', sb_position=None, output_shape=None, plotting=False, show_progressbar=False,
-                          log_parameters=True):
+                          store_parameters=False):
         """Reconstruct electron holograms. Operates on multidimensional hyperspy signals. There are several usage
         schemes:
          1. Reconstruct 1d or Nd hologram without reference
@@ -143,6 +143,7 @@ class HologramImage(Signal2D):
 
         # TODO: Use defaults for choosing sideband, smoothness, relative filter size and output shape if not provided
         # TODO: Design a way to store reconstruction parameters ready for quick inspection
+        # TODO: Plot FFT with marked SB and SB filter if plotting is enabled
 
         # Parsing reference:
         if not isinstance(reference, HologramImage):
@@ -268,66 +269,55 @@ class HologramImage(Signal2D):
             output_shape = self.axes_manager.signal_shape
 
         # Logging the reconstruction parameters if appropriate:
-        if log_parameters:
-            _logger.info('Sideband position in pixels: {}'.format(sb_position))
-            _logger.info('Sideband aperture radius in pixels: {}'.format(sb_size))
-            _logger.info('Sideband aperture smoothness in pixels: {}'.format(sb_smoothness))
-
-        # Shows the selected sideband and the position of the sideband
-        # if plotting:
-        #     fft_holo = fft2(self.data) / np.prod(self.data.shape)
-        #     fig, axs = plt.subplots(1, 1, figsize=(4, 4))
-        #     axs.imshow(np.abs(fft_holo), clim=(0, 2.2))
-        #     axs.scatter(sb_position[1], sb_position[0], s=20, color='red', marker='x')
-        #     axs.set_xlim(sb_position[1]-sb_size, sb_position[1]+sb_size)
-        #     axs.set_ylim(sb_position[0]-sb_size, sb_position[0]+sb_size)
-        #     plt.show()
+        _logger.info('Sideband position in pixels: {}'.format(sb_position))
+        _logger.info('Sideband aperture radius in pixels: {}'.format(sb_size))
+        _logger.info('Sideband aperture smoothness in pixels: {}'.format(sb_smoothness))
 
         # Reconstructing object electron wave:
-        wave_object = self.deepcopy()
 
         # Checking if reference is a single image, which requires sideband parameters as a nparray to avoid iteration
         # trough those:
-        wave_object.map(reconstruct, holo_sampling=self.sampling, sb_size=sb_size_temp,
-                        sb_position=sb_position_temp, sb_smoothness=sb_smoothness_temp,
-                        output_shape=output_shape, plotting=plotting, show_progressbar=show_progressbar)
+        wave_object = self.map(reconstruct, holo_sampling=self.sampling, sb_size=sb_size_temp,
+                               sb_position=sb_position_temp, sb_smoothness=sb_smoothness_temp,
+                               output_shape=output_shape, plotting=plotting, show_progressbar=show_progressbar,
+                               inplace=False)
 
         # Reconstructing reference wave and applying it (division):
         if reference is None:
             wave_reference = 1
         elif reference.axes_manager.navigation_size != self.axes_manager.navigation_size:  # case when reference is 1d
-            wave_reference = reference.deepcopy()
 
             # Prepare parameters for reconstruction of the reference wave:
 
-            if reference.axes_manager.navigation_size != sb_position.axes_manager.navigation_size:  # 1d reference, but
-                # parameters are multidimensional
+            if reference.axes_manager.navigation_size == 0 and sb_position.axes_manager.navigation_size > 0:
+                # 1d reference, but parameters are multidimensional
                 sb_position_ref = sb_position.inav[0].data
             else:
                 sb_position_ref = sb_position_temp
 
-            if reference.axes_manager.navigation_size != sb_size.axes_manager.navigation_size:  # 1d reference, but
-                # parameters are multidimensional
+            if reference.axes_manager.navigation_size == 0 and sb_size.axes_manager.navigation_size > 0:
+                # 1d reference, but parameters are multidimensional
                 sb_size_ref = np.float64(sb_size.inav[0].data)
             else:
                 sb_size_ref = sb_size_temp
 
-            if reference.axes_manager.navigation_size != sb_smoothness.axes_manager.navigation_size:  # 1d reference, but
-                # parameters are multidimensional
+            if reference.axes_manager.navigation_size == 0 and sb_smoothness.axes_manager.navigation_size > 0:
+                # 1d reference, but parameters are multidimensional
                 sb_smoothness_ref = np.float64(sb_smoothness.inav[0].data)
             else:
                 sb_smoothness_ref = sb_smoothness_temp
             #
 
-            wave_reference.map(reconstruct, holo_sampling=self.sampling, sb_size=sb_size_ref,
-                               sb_position=sb_position_ref, sb_smoothness=sb_smoothness_ref, output_shape=output_shape,
-                               plotting=plotting, show_progressbar=show_progressbar)
+            wave_reference = reference.map(reconstruct, holo_sampling=self.sampling, sb_size=sb_size_ref,
+                                           sb_position=sb_position_ref, sb_smoothness=sb_smoothness_ref,
+                                           output_shape=output_shape, plotting=plotting,
+                                           show_progressbar=show_progressbar, inplace=False)
 
         else:
-            wave_reference = reference.deepcopy()
-            wave_reference.map(reconstruct, holo_sampling=self.sampling, sb_size=sb_size_temp,
-                               sb_position=sb_position_temp, sb_smoothness=sb_smoothness_temp,
-                               output_shape=output_shape, plotting=plotting, show_progressbar=show_progressbar)
+            wave_reference = reference.map(reconstruct, holo_sampling=self.sampling, sb_size=sb_size_temp,
+                                           sb_position=sb_position_temp, sb_smoothness=sb_smoothness_temp,
+                                           output_shape=output_shape, plotting=plotting,
+                                           show_progressbar=show_progressbar, inplace=False)
 
         wave_image = wave_object / wave_reference
 
@@ -339,11 +329,13 @@ class HologramImage(Signal2D):
                                                        output_shape[1]
 
         # Reconstruction parameters are stored in holo_reconstruction_parameters:
-        rec_param_dict = OrderedDict([('sb_position', sb_position_temp), ('sb_size', sb_size_temp),
-                                      ('sb_units', sb_unit), ('sb_smoothness',
-                                                              sb_smoothness_temp)])
 
-        wave_image.metadata.Signal.add_node('holo_reconstruction_parameters')
-        wave_image.metadata.Signal.holo_reconstruction_parameters.add_dictionary(rec_param_dict)
+        if store_parameters:
+            rec_param_dict = OrderedDict([('sb_position', sb_position_temp), ('sb_size', sb_size_temp),
+                                          ('sb_units', sb_unit), ('sb_smoothness',
+                                                                  sb_smoothness_temp)])
+            wave_image.metadata.Signal.add_node('Holography')
+            wave_image.metadata.Signal.Holography.add_node('Reconstruction_parameters')
+            wave_image.metadata.Signal.Holography.Reconstruction_parameters.add_dictionary(rec_param_dict)
 
         return wave_image

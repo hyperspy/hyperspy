@@ -51,13 +51,13 @@ class TestCaseHologramImage(object):
         # Testing reconstruction of a single hologram with a reference (as a np array and as HologramImage) with default
         # output size with an without input sideband parameters:
 
-        wave_image = self.holo_image.reconstruct_phase(self.ref)
-        sb_pos_cc = wave_image.metadata.Signal.holo_reconstruction_parameters.sb_position * (-1) +\
+        wave_image = self.holo_image.reconstruct_phase(self.ref, store_parameters=True)
+        sb_pos_cc = wave_image.metadata.Signal.Holography.Reconstruction_parameters.sb_position * (-1) +\
                     [self.img_size, self.img_size]
 
-        sb_size_cc = wave_image.metadata.Signal.holo_reconstruction_parameters.sb_size
-        sb_smoothness_cc = wave_image.metadata.Signal.holo_reconstruction_parameters.sb_smoothness
-        sb_units_cc = wave_image.metadata.Signal.holo_reconstruction_parameters.sb_units
+        sb_size_cc = wave_image.metadata.Signal.Holography.Reconstruction_parameters.sb_size
+        sb_smoothness_cc = wave_image.metadata.Signal.Holography.Reconstruction_parameters.sb_smoothness
+        sb_units_cc = wave_image.metadata.Signal.Holography.Reconstruction_parameters.sb_units
         wave_image_cc = self.holo_image.reconstruct_phase(self.ref_image, sb_position=sb_pos_cc, sb_size=sb_size_cc,
                                                           sb_smoothness=sb_smoothness_cc, sb_unit=sb_units_cc)
         x_start = int(wave_image.axes_manager.signal_shape[0] / 10)
