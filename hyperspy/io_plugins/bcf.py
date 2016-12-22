@@ -232,7 +232,7 @@ but compression signature is missing in the header. Aborting....""")
 
     def _iter_read_compr_chunks(self):
         """Generate and return reader and decompressor iterator
-        for compressed file with zlib or bzip2 compression.
+        for compressed with zlib compression sfs internal file.
 
         Returns:
         iterator of decompressed data chunks.
@@ -281,9 +281,7 @@ but compression signature is missing in the header. Aborting....""")
 
 
 class SFS_reader(object):
-
     """Class to read sfs file.
-
     SFS is AidAim software's(tm) single file system.
     The class provides basic reading capabilities of such container.
     It is capable to read compressed data in zlib, but
@@ -613,8 +611,13 @@ class HyperHeader(object):
             self.stage.rotation = float(semStageData.Rotation)  # in degrees
         except AttributeError:
             self.stage.rotation = None
+        try:
+            self.stage.tilt_stage = float(semStageData.Tilt)
+        except AttributeError:
+            self.stage.tilt_stage = None
         DSPConf = root.xpath("ClassInstance[@Type='TRTDSPConfiguration']")[0]
-        self.stage.tilt_angle = float(DSPConf.TiltAngle)
+        self.image.dsp_metadata = json.loads(json.dumps(DSPConf,
+            cls=ObjectifyJSONEncoder))
 
     def _set_image(self, root):
         """Wrap objectified xml part with image to class attributes
@@ -1091,7 +1094,7 @@ def bcf_imagery(obj_bcf, instrument=None):
                      # possibilities to get such parameter from bruker
                      # or some SEM's'
                      'beam_energy': obj_bcf.header.sem.hv,
-                     'tilt_stage': obj_bcf.header.stage.tilt_angle,
+                     'tilt_stage': obj_bcf.header.stage.tilt_stage,
                      'stage_x': obj_bcf.header.stage.x,
                      'stage_y': obj_bcf.header.stage.y
                  }
@@ -1140,7 +1143,7 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
                              # possibilities to get such parameter from bruker
                              # or some SEM's'
                              'beam_energy': obj_bcf.header.sem.hv,
-                             'tilt_stage': obj_bcf.header.stage.tilt_angle,
+                             'tilt_stage': obj_bcf.header.stage.tilt_stage,
                              'stage_x': obj_bcf.header.stage.x,
                              'stage_y': obj_bcf.header.stage.y,
                              'magnification': obj_bcf.header.sem.mag,
@@ -1164,10 +1167,12 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
                          'record_by': 'spectrum',
                          'quantity': 'X-rays (Counts)'},
     },
-        'original_metadata': {'hardware': eds_metadata.hardware_metadata,
-                              'detector': eds_metadata.detector_metadata,
-                              'analysis': eds_metadata.esma_metadata,
-                              'spectrum': eds_metadata.spectrum_metadata}
+        'original_metadata': {'Hardware': eds_metadata.hardware_metadata,
+                              'Detector': eds_metadata.detector_metadata,
+                              'Analysis': eds_metadata.esma_metadata,
+                              'Spectrum': eds_metadata.spectrum_metadata,
+                              'DSP Configuration': obj_bcf.header.image.dsp_metadata,
+                              'Line counter': obj_bcf.header.line_counter}
     }]
     return hyperspectra
 
