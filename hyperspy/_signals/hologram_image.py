@@ -142,8 +142,8 @@ class HologramImage(Signal2D):
     def reconstruct_phase(self, reference=None, sb_size=None, sb_smoothness=None, sb_unit=None,
                           sb='lower', sb_position=None, output_shape=None, plotting=False, show_progressbar=False,
                           store_parameters=True):
-        """Reconstruct electron holograms. Operates on multidimensional hyperspy signals. There are several usage
-        schemes:
+        """Reconstruct electron holograms with square shape. Operates on multidimensional hyperspy signals. There are
+        several usage schemes:
          1. Reconstruct 1d or Nd hologram without reference
          2. Reconstruct 1d or Nd hologram using single reference hologram
          3. Reconstruct Nd hologram using Nd reference hologram (applies each reference to each hologram in Nd stack)
@@ -154,7 +154,7 @@ class HologramImage(Signal2D):
         Parameters
         ----------
         reference : ndarray, :class:`~hyperspy.signals.Signal2D, None
-            Vacuum reference hologram.
+            Vacuum reference hologram with square shape.
         sb_size : float, ndarray, :class:`~hyperspy.signals.BaseSignal, None
             Sideband radius of the aperture in corresponding unit (see 'sb_unit'). If None,
             the radius of the aperture is set to 1/3 of the distance between sideband and
@@ -192,8 +192,13 @@ class HologramImage(Signal2D):
         """
 
         # TODO: Use defaults for choosing sideband, smoothness, relative filter size and output shape if not provided
-        # TODO: Design a way to store reconstruction parameters ready for quick inspection
         # TODO: Plot FFT with marked SB and SB filter if plotting is enabled
+        # TODO: Expand reconstruction for non-square images
+
+        # Checking if the hologram has square shape:
+        assert self.axes_manager.signal_shape[0] == self.axes_manager.signal_shape[1],\
+            NotImplementedError('Reconstruction of non-square images will be implemented in future releases. Use .crop'
+                                'method at the moment')
 
         # Parsing reference:
         if not isinstance(reference, HologramImage):

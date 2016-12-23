@@ -29,22 +29,49 @@ class TestCaseHologramImage(object):
     def setUp(self):
         self.img_size = 1024
         fringe_direction = -np.pi/6
+        fringe_spacing = 5.23
+        fringe_direction3 = np.pi/3
+        fringe_spacing3 = 6.11
         x, y = np.meshgrid(np.linspace(-self.img_size/2, self.img_size/2-1, self.img_size),
                            np.linspace(-self.img_size/2, self.img_size/2-1, self.img_size))
         x2, z2, y2 = np.meshgrid(np.linspace(-self.img_size/2, self.img_size/2-1, self.img_size),
                                  np.array([0, 1]),
                                  np.linspace(-self.img_size/2, self.img_size/2-1, self.img_size))
+
+        x3, z3, y3 = np.meshgrid(np.linspace(-self.img_size/4, self.img_size/4-1, self.img_size/2),
+                                 np.arange(6),
+                                 np.linspace(-self.img_size/4, self.img_size/4-1, self.img_size/2))
+
         self.phase_ref = np.pi*x/(self.img_size/2.2)
         # self.phase_ref2 = np.pi*(x2+self.img_size/2)**z2/(self.img_size/2.2)
         self.phase_ref2 = np.pi*x2*(1-z2)/(self.img_size/2.2) + np.pi*y2*z2/(self.img_size/2.2)
-        holo = 2 * (1 + np.cos(self.phase_ref+5.23/(2*np.pi)*(x*np.cos(fringe_direction) + y*np.sin(fringe_direction))))
-        holo2 = 2 * (1 + np.cos(self.phase_ref2+5.23/(2*np.pi)*(x2*np.cos(fringe_direction) + y2*np.sin(fringe_direction))))
-        self.holo_image = hs.signals.HologramImage(holo)
-        self.holo_image2 = hs.signals.HologramImage(holo2)
+        self.phase_ref3 = np.pi*x3*(1-z3/6)/(self.img_size/1.8) + np.pi*y3*z3/6/(self.img_size/1.8)
+
+        # self.phase_ref3 = np.append(np.append(self.phase_ref2[:, 0:512, 0:512], self.phase_ref2[:, 0:512, 512:1024], 0),
+        #                             self.phase_ref2[:, 512:1024, 0:512], 0).reshape((3, 2, 512, 512))
+        holo = 2 * (1 + np.cos(self.phase_ref+fringe_spacing/(2*np.pi)*(x*np.cos(fringe_direction) +
+                                                                        y*np.sin(fringe_direction))))
+        holo2 = 2 * (1 + np.cos(self.phase_ref2+fringe_spacing/(2*np.pi)*(x2*np.cos(fringe_direction) +
+                                                                          y2*np.sin(fringe_direction))))
+        holo3 = 2 * (1 + np.cos(self.phase_ref3+fringe_spacing3/(2*np.pi)*(x3*np.cos(fringe_direction3) +
+                                                                           y3*np.sin(fringe_direction3))))
+        # holo3 = np.append(np.append(holo2[:, 0:512, 0:512], holo2[:, 0:512, 512:1024], 0),
+        #                   holo2[:, 512:1024, 0:512], 0).reshape((3, 2, 512, 512))
+
         self.ref = 2 * (1 + np.cos(5.23/(2*np.pi)*(x*np.cos(fringe_direction) + y*np.sin(fringe_direction))))
         self.ref2 = 2 * (1 + np.cos(5.23/(2*np.pi)*(x2*np.cos(fringe_direction) + y2*np.sin(fringe_direction))))
+        self.ref3 = 2 * (1 + np.cos(fringe_spacing3/(2*np.pi)*(x3*np.cos(fringe_direction3) +
+                                                               y3*np.sin(fringe_direction3))))
+
+        # Creating HologramImage signals for test:
+        self.holo_image = hs.signals.HologramImage(holo)
+        self.holo_image2 = hs.signals.HologramImage(holo2)  # (2|1024, 1024) signal
+
         self.ref_image = hs.signals.HologramImage(self.ref)
         self.ref_image2 = hs.signals.HologramImage(self.ref2)
+        self.ref_image3 = hs.signals.HologramImage(self.ref3.reshape(2, 3, self.img_size/2, self.img_size/2))
+
+        self.holo_image3 = hs.signals.HologramImage(holo3.reshape(2, 3, self.img_size/2, self.img_size/2))
 
     def test_reconstruct_phase(self):
 
@@ -103,6 +130,18 @@ class TestCaseHologramImage(object):
         nt.assert_almost_equal(phase_new_crop0, phase_ref_crop0, decimal=2)
         nt.assert_almost_equal(phase_new_crop1, phase_ref_crop1, decimal=2)
 
+        # Testing reconstruction with multidimensional images using 1d image as a refernce:
+        wave_image3 = self.holo_image3.reconstruct_phase(self.ref_image3.inav[0, 0], sb='upper')
+
+        # Cropping the reconstructed and original phase images and comparing:
+        x_start = int(self.img_size/2/9)  # img_size/2 since the holo_image3 is twice smaller than the original ones
+        x_stop = self.img_size/2-1-int(self.img_size/2/9)  # larger fringes require larger crop
+        phase3_new_crop = wave_image3.unwrapped_phase()
+        phase3_new_crop.crop(2, x_start, x_stop)
+        phase3_new_crop.crop(3, x_start, x_stop)
+        phase3_ref_crop = self.phase_ref3.reshape(2, 3, self.img_size/2, self.img_size/2)[:, :, x_start:x_stop,
+                          x_start:x_stop]
+        nt.assert_almost_equal(phase3_new_crop.data, phase3_ref_crop, decimal=2)
 
 if __name__ == '__main__':
     import nose
