@@ -21,7 +21,6 @@ from hyperspy.signals import Signal2D, BaseSignal, Signal1D
 from collections import OrderedDict
 from hyperspy.misc.holography.reconstruct import reconstruct, estimate_sideband_position, estimate_sideband_size
 import logging
-import warnings
 import scipy.constants as constants
 
 _logger = logging.getLogger(__name__)
@@ -134,7 +133,7 @@ class HologramImage(Signal2D):
         Signal 1D instance with sideband size, referred to the unshifted FFT.
         """
 
-        sb_size = sb_position.map(estimate_sideband_size, holo_shape=self.axes_manager.signal_shape,
+        sb_size = sb_position.map(estimate_sideband_size, holo_shape=self.axes_manager.signal_shape[::-1],
                                   show_progressbar=show_progressbar, inplace=False)
 
         return sb_size
@@ -142,7 +141,7 @@ class HologramImage(Signal2D):
     def reconstruct_phase(self, reference=None, sb_size=None, sb_smoothness=None, sb_unit=None,
                           sb='lower', sb_position=None, output_shape=None, plotting=False, show_progressbar=False,
                           store_parameters=True):
-        """Reconstruct electron holograms with square shape. Operates on multidimensional hyperspy signals. There are
+        """Reconstruct electron holograms. Operates on multidimensional hyperspy signals. There are
         several usage schemes:
          1. Reconstruct 1d or Nd hologram without reference
          2. Reconstruct 1d or Nd hologram using single reference hologram
@@ -154,11 +153,11 @@ class HologramImage(Signal2D):
         Parameters
         ----------
         reference : ndarray, :class:`~hyperspy.signals.Signal2D, None
-            Vacuum reference hologram with square shape.
+            Vacuum reference hologram.
         sb_size : float, ndarray, :class:`~hyperspy.signals.BaseSignal, None
             Sideband radius of the aperture in corresponding unit (see 'sb_unit'). If None,
             the radius of the aperture is set to 1/3 of the distance between sideband and
-            centreband.
+            center band.
         sb_smoothness : float, ndarray, :class:`~hyperspy.signals.BaseSignal, None
             Smoothness of the aperture in the same unit as sb_size.
         sb_unit : str, None
@@ -193,12 +192,6 @@ class HologramImage(Signal2D):
 
         # TODO: Use defaults for choosing sideband, smoothness, relative filter size and output shape if not provided
         # TODO: Plot FFT with marked SB and SB filter if plotting is enabled
-        # TODO: Expand reconstruction for non-square images
-
-        # Checking if the hologram has square shape:
-        assert self.axes_manager.signal_shape[0] == self.axes_manager.signal_shape[1],\
-            NotImplementedError('Reconstruction of non-square images will be implemented in future releases. Use .crop'
-                                'method at the moment')
 
         # Parsing reference:
         if not isinstance(reference, HologramImage):
@@ -322,6 +315,7 @@ class HologramImage(Signal2D):
             # else:
             #     output_shape = (np.int(sb_size.data*2), np.int(sb_size.data*2))
             output_shape = self.axes_manager.signal_shape
+            output_shape = output_shape[::-1]
 
         # Logging the reconstruction parameters if appropriate:
         _logger.info('Sideband position in pixels: {}'.format(sb_position))

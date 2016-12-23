@@ -34,7 +34,7 @@ The detailed description of electron holography and reconstruction of holograms 
 (includes finding a side band in FFT, isolating and filtering it, recenter and calculate inverse Fourier transform)
 can be performed using :py:func:`~._signals.hologram_image.HologramImage.reconstruct_phase` method
 which returns a :py:class:`~._signals.electron_wave_image.ElectronWaveImage` class, containing the reconstructed
-electron wave. At the moment the reconstruction can be done using square images only! The `reconstruct_phase` method
+electron wave. The `reconstruct_phase` method
 takes sideband position and size as parameters:
 
 .. code-block:: python
