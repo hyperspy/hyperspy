@@ -148,6 +148,7 @@ def load(filenames=None,
 
     """
     kwds['signal_type'] = signal_type
+    lazy = kwds.get('lazy', None)
     if filenames is None:
         if hyperspy.defaults_parser.preferences.General.interactive is True:
             from hyperspy.gui.tools import Load
@@ -219,7 +220,7 @@ def load(filenames=None,
                 signal = signals[i]   # Sublist, with len = len(filenames)
                 signal = hyperspy.misc.utils.stack(
                     signal, axis=stack_axis, new_axis_name=new_axis_name,
-                    mmap=mmap, mmap_dir=mmap_dir)
+                    mmap=mmap, mmap_dir=mmap_dir, lazy=lazy)
                 signal.metadata.General.title = os.path.split(
                     os.path.split(os.path.abspath(filenames[0]))[0])[1]
                 _logger.info('Individual files loaded correctly')
