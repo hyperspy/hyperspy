@@ -235,6 +235,11 @@ can be accessed in HyperSpy with:
 Unlike PCA, NMF forces the components to be strictly non-negative, which can aid
 the physical interpretation of components for count data such as images, EELS or EDS.
 
+NMF takes the optional argument "output_dimension", which determines the number
+of components to keep. Setting this to a small number is recommended to keep
+the computation time small. Often it is useful to run a PCA decomposition first
+and use the scree plot to determine a value for "output_dimension".
+
 Blind Source Separation
 =======================
 
