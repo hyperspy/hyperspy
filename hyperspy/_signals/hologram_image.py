@@ -370,7 +370,8 @@ class HologramImage(Signal2D):
 
         wave_image = wave_object / wave_reference
 
-        wave_image.set_signal_type('electron_wave')  # New signal is a wave image!
+        # wave_image.set_signal_type('electron_wave')  # New signal is a wave image!
+        wave_image.set_signal_type('complex_signal2d')  # New signal is a complex
 
         wave_image.axes_manager.signal_axes[0].scale = self.sampling[0] * self.axes_manager.signal_shape[0] / \
                                                        output_shape[0]
