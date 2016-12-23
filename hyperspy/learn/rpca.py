@@ -233,32 +233,33 @@ def orpca(X, rank, fast=False,
         is the [nfeatures x nsamples] matrix of observations.
     rank : int
         The model dimensionality.
-    lambda1 : None | float
+    lambda1 : {None, float}
         Nuclear norm regularization parameter.
         If None, set to 1 / sqrt(nsamples)
-    lambda2 : None | float
+    lambda2 : {None, float}
         Sparse error regularization parameter.
         If None, set to 1 / sqrt(nsamples)
-    method : None | 'CF' | 'BCD' | 'SGD' | 'MomentumSGD'
+    method : {None, 'CF', 'BCD', 'SGD', 'MomentumSGD'}
         'CF'  - Closed-form solver
         'BCD' - Block-coordinate descent
         'SGD' - Stochastic gradient descent
         'MomentumSGD' - Stochastic gradient descent with momentum
         If None, set to 'CF'
-    learning_rate : None | float
+    learning_rate : {None, float}
         Learning rate for the stochastic gradient
         descent algorithm
         If None, set to 1
-    init : None | 'qr' | 'rand'
+    init : {None, 'qr', 'rand'}
         'qr'   - QR-based initialization
         'rand' - Random initialization
         If None, set to 'qr'
-    training_samples : None | integer
+    training_samples : {None, integer}
         Specifies the number of training samples to use in
         the 'qr' initialization
         If None, set to 10
-    momentum : None | integer
-        Hyperparameter for 'MomentumSGD' method.
+    momentum : {None, float}
+        Momentum parameter for 'MomentumSGD' method, should be
+        a float between 0 and 1.
         If None, set to 0.5
 
     Returns
@@ -343,6 +344,9 @@ def orpca(X, rank, fast=False,
         raise ValueError("'init' not recognised")
     if init == 'qr' and training_samples < rank:
         raise ValueError("'training_samples' must be >= 'output_dimension'")
+    if method == 'MomentumSGD':
+        if momentum > 1. or momentum < 0.:
+            raise ValueError("'momentum' must be a float between 0 and 1")
 
     # Get min & max of data matrix for scaling
     X_max = np.max(X)
