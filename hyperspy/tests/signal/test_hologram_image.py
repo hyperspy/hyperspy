@@ -69,9 +69,9 @@ class TestCaseHologramImage(object):
 
         self.ref_image = hs.signals.HologramImage(self.ref)
         self.ref_image2 = hs.signals.HologramImage(self.ref2)
-        self.ref_image3 = hs.signals.HologramImage(self.ref3.reshape(2, 3, self.img_size/2, self.img_size/2))
+        self.ref_image3 = hs.signals.HologramImage(self.ref3.reshape(2, 3, int(self.img_size/2), int(self.img_size/2)))
 
-        self.holo_image3 = hs.signals.HologramImage(holo3.reshape(2, 3, self.img_size/2, self.img_size/2))
+        self.holo_image3 = hs.signals.HologramImage(holo3.reshape(2, 3, int(self.img_size/2), int(self.img_size/2)))
 
     def test_reconstruct_phase(self):
 
@@ -139,8 +139,8 @@ class TestCaseHologramImage(object):
         phase3_new_crop = wave_image3.unwrapped_phase()
         phase3_new_crop.crop(2, x_start, x_stop)
         phase3_new_crop.crop(3, x_start, x_stop)
-        phase3_ref_crop = self.phase_ref3.reshape(2, 3, self.img_size/2, self.img_size/2)[:, :, x_start:x_stop,
-                          x_start:x_stop]
+        phase3_ref_crop = self.phase_ref3.reshape(2, 3, int(self.img_size/2), int(self.img_size/2))[:, :,
+                          x_start:x_stop, x_start:x_stop]
         nt.assert_almost_equal(phase3_new_crop.data, phase3_ref_crop, decimal=2)
 
 if __name__ == '__main__':
