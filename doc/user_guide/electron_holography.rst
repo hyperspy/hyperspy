@@ -13,7 +13,7 @@ classes respectively and thus can use all of its functionality. The usage of bot
 The HologramImage class
 =======================
 
-The :py:class:`~._signals.hologram_image.HologramImage` class is designed to hold images acquired via
+The :py:class:`~._signals.hologram_image.HologramImage` class is designed to contain images acquired via
 electron holography.
 
 To transform a :py:class:`~._signals.signal2d.Signal2D` (or subclass) into a
@@ -34,7 +34,8 @@ The detailed description of electron holography and reconstruction of holograms 
 (includes finding a side band in FFT, isolating and filtering it, recenter and calculate inverse Fourier transform)
 can be performed using :py:func:`~._signals.hologram_image.HologramImage.reconstruct_phase` method
 which returns a :py:class:`~._signals.electron_wave_image.ElectronWaveImage` class, containing the reconstructed
-electron wave. The `reconstruct_phase` method takes sideband position and size as parameters:
+electron wave. At the moment the reconstruction can be done using square images only! The `reconstruct_phase` method
+takes sideband position and size as parameters:
 
 .. code-block:: python
 
@@ -44,11 +45,11 @@ The parameters can be found automatically by calling following methods:
 
 .. code-block:: python
 
-    >>> sb_position = im.find_sideband_position(ap_cb_radius=None, sb='lower')
-    >>> sb_size = im.find_sideband_size(sb_position)
+    >>> sb_position = im.estimate_sideband_position(ap_cb_radius=None, sb='lower')
+    >>> sb_size = im.estimate_sideband_size(sb_position)
 
-`find_sideband_position` method searches for maximum of intensity in upper or lower part of FFT pattern (parameter `sb`)
-excluding the middle area defined by `ap_cb_radius`. `find_sideband_size` method calculates the radius of the sideband
+`estimate_sideband_position` method searches for maximum of intensity in upper or lower part of FFT pattern (parameter `sb`)
+excluding the middle area defined by `ap_cb_radius`. `estimate_sideband_size` method calculates the radius of the sideband
 filter as half of the distance to the central band which is commonly used for strong phase objects. Alternatively,
 the sideband filter radius can be recalculate as 1/3 of the distance (often used for weak phase objects) for example:
 
@@ -66,15 +67,15 @@ To reconstruct the hologram with a vacuum reference wave, the reference hologram
 
 
 Additionally, it is possible to change the smoothness of the sideband filter edge (which is by default set to 5% of the
-filter radius) using parameter `sb_smooth`.
+filter radius) using parameter `sb_smoothness`.
 
-Both `sb_size` and `sb_smooth` can be provided in desired units rather than pixels (by default) by setting `sb_unit`
+Both `sb_size` and `sb_smoothness` can be provided in desired units rather than pixels (by default) by setting `sb_unit`
 value either to `mrad` or `nm` for milliradians or inverse nanometers respectively. For example:
 
 .. code-block:: python
 
     >>> wave_image = im.reconstruct_phase(reference_hologram, sb_position=sb_position, sb_size=30,
-                                          sb_smooth=0.05*30,sb_unit='mrad')
+                                          sb_smoothness=0.05*30,sb_unit='mrad')
 
 Also the `reconstruct_phase` method can output wave images with desired size (shape). By default the shape of the
 original hologram is preserved. Though this leads to oversampling of the output wave images, since the information is
@@ -87,17 +88,18 @@ sideband as follows:
                                           sb_size=sb_sb_size, output_shape=(2*sb_size, 2*sb_size))
 
 Note that the `reconstruct_phase` method can be called without parameters, which will cause their automatic assignment
-by `find_sideband_position` and `find_sideband_size` methods. This, however, is not recommended for not experienced
+by `estimate_sideband_position` and `estimate_sideband_size` methods. This, however, is not recommended for not experienced
 users.
 
-After the reconstruction the reconstruction parameters can be extracted from metadata of wave_image as follows:
+After the reconstruction the reconstruction parameters can be viewed as follows:
 
 .. code-block:: python
 
-    >>> sb_position, sb_size, sb_smooth = wave_image.reconstruction_parameters
+    >>> wave_image.display_reconstruction_parameters
 
 
-This option can be used for batch processing of holograms with the same parameters.
+This option can be used for example to check the sideband size value in px after reconstruction with `sb_size` given in
+mrad or nm.
 
 Further analyses of the reconstructed wave (phase) can be done using :py:class:`~._signals.electron_wave_image.ElectronWaveImage` class
 functionality (see bellow).
