@@ -629,13 +629,20 @@ class ImageObject(object):
             return ""
 
     def _get_data_array(self):
+        need_to_close = False
+        if self.file.closed:
+            self.file = open(self.filename, "rb")
+            need_to_close = True
         self.file.seek(self.imdict.ImageData.Data.offset)
         count = self.imdict.ImageData.Data.size
         if self.imdict.ImageData.DataType in (27, 28):  # Packed complex
             count = int(count / 2)
-        return np.fromfile(self.file,
+        data = np.fromfile(self.file,
                            dtype=self.dtype,
                            count=count)
+        if need_to_close:
+            self.file.close()
+        return data
 
     @property
     def size(self):
@@ -957,7 +964,7 @@ class ImageObject(object):
         return mapping
 
 
-def file_reader(filename, record_by=None, order=None):
+def file_reader(filename, record_by=None, order=None, lazy=False):
     """Reads a DM3 file and loads the data into the appropriate class.
     data_id can be specified to load a given image within a DM3 file that
     contains more than one dataset.
@@ -990,8 +997,17 @@ def file_reader(filename, record_by=None, order=None):
             if image.to_spectrum is True:
                 post_process.append(lambda s: s.to_signal1D())
             post_process.append(lambda s: s.squeeze())
+            if lazy:
+                image.filename = filename
+                from dask.array import from_delayed
+                import dask.delayed as dd
+                val = dd(image.get_data, pure=True)()
+                data = from_delayed(val, shape=image.shape,
+                                    dtype=image.dtype)
+            else:
+                data = image.get_data()
             imd.append(
-                {'data': image.get_data(),
+                {'data': data,
                  'axes': axes,
                  'metadata': mp,
                  'original_metadata': dm.tags_dict,

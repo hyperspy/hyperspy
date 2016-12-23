@@ -273,7 +273,7 @@ def emi_reader(filename, dump_xml=False, **kwds):
     for f in ser_files:
         _logger.info("Opening %s", f)
         try:
-            sers.append(ser_reader(f, objects))
+            sers.append(ser_reader(f, objects, **kwds))
         except IOError:  # Probably a single spectrum that we don't support
             continue
 
@@ -579,33 +579,25 @@ def ser_reader(filename, objects=None, *args, **kwds):
         elif axis['units'] == '1/meters':
             axis['units'] = '1/nm'
             axis['scale'] /= 10 ** 9
-    # If the acquisition stops before finishing the job, the stored file will
-    # report the requested size even though no values are recorded. Therefore
-    # if the shapes of the retrieved array does not match that of the data
-    # dimensions we must fill the rest with zeros or (better) nans if the
-    # dtype is float
-    if np.cumprod(array_shape)[-1] != np.cumprod(data['Array'].shape)[-1]:
-        dc = np.zeros(np.cumprod(array_shape)[-1],
-                      dtype=data['Array'].dtype)
-        if dc.dtype is np.dtype('f') or dc.dtype is np.dtype('f8'):
-            dc[:] = np.nan
-        dc[:data['Array'].ravel().shape[0]] = data['Array'].ravel()
-    else:
-        dc = data['Array']
 
-    dc = dc.reshape(array_shape)
-    if record_by == 'image':
-        dc = dc[..., ::-1, :]
+    lazy = kwds.pop('lazy', False)
+    if lazy:
+        from dask import delayed
+        from dask.array import from_delayed
+        val = delayed(load_only_data, pure=True)(filename, array_shape,
+                                                 record_by, len(axes))
+        dc = from_delayed(val, shape=array_shape,
+                          dtype=data['Array'].dtype)
+    else:
+        dc = load_only_data(filename, array_shape, record_by, len(axes),
+                            data=data)
+
     if ordict:
         original_metadata = OrderedDict()
     else:
         original_metadata = {}
     header_parameters = sarray2dict(header)
     sarray2dict(data, header_parameters)
-    if len(axes) != len(dc.shape):
-        dc = dc.squeeze()
-    if len(axes) != len(dc.shape):
-        raise IOError("Please report this issue to the HyperSpy developers.")
     # We remove the Array key to save memory avoiding duplication
     del header_parameters['Array']
     original_metadata['ser_header_parameters'] = header_parameters
@@ -627,6 +619,32 @@ def ser_reader(filename, objects=None, *args, **kwds):
         'mapping': mapping}
     return dictionary
 
+
+def load_only_data(filename, array_shape, record_by, num_axes, data=None):
+    if data is None:
+        _, data = load_ser_file(filename)
+    # If the acquisition stops before finishing the job, the stored file will
+    # report the requested size even though no values are recorded. Therefore
+    # if the shapes of the retrieved array does not match that of the data
+    # dimensions we must fill the rest with zeros or (better) nans if the
+    # dtype is float
+    if np.cumprod(array_shape)[-1] != np.cumprod(data['Array'].shape)[-1]:
+        dc = np.zeros(np.cumprod(array_shape)[-1],
+                      dtype=data['Array'].dtype)
+        if dc.dtype is np.dtype('f') or dc.dtype is np.dtype('f8'):
+            dc[:] = np.nan
+        dc[:data['Array'].ravel().shape[0]] = data['Array'].ravel()
+    else:
+        dc = data['Array']
+
+    dc = dc.reshape(array_shape)
+    if record_by == 'image':
+        dc = dc[..., ::-1, :]
+    if num_axes != len(dc.shape):
+        dc = dc.squeeze()
+    if num_axes != len(dc.shape):
+        raise IOError("Please report this issue to the HyperSpy developers.")
+    return dc
 
 def _guess_units_from_mode(objects_dict, header):
     # in case the xml file doesn't contain the "Mode" or the header doesn't

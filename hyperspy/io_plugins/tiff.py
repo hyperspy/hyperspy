@@ -21,6 +21,7 @@ import logging
 import warnings
 from distutils.version import LooseVersion
 
+import numpy as np
 import traits.api as t
 from hyperspy.misc import rgb_tools
 
@@ -153,9 +154,10 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
         import_local_tifffile = kwds.pop('import_local_tifffile')
 
     imsave, TiffFile = _import_tifffile_library(import_local_tifffile)
+    lazy = kwds.pop('lazy', False)
+    memmap = kwds.pop('memmap', False)
     with TiffFile(filename, **kwds) as tiff:
-        # TODO add memmap mode kwargs here?
-        dc = tiff.asarray()
+
         # change in the Tifffiles API
         if hasattr(tiff.series[0], 'axes'):
             # in newer version the axes is an attribute
@@ -163,10 +165,22 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
         else:
             # old version
             axes = tiff.series[0]['axes']
-        _logger.debug("Is RGB: %s" % tiff.is_rgb)
-        if tiff.is_rgb:
-            dc = rgb_tools.regular_array2rgbx(dc)
+        is_rgb = tiff.is_rgb
+        _logger.debug("Is RGB: %s" % is_rgb)
+        series = tiff.series[0]
+        if hasattr(series, 'shape'):
+            shape = series.shape
+            dtype = series.dtype
+        else:
+            shape = series['shape']
+            dtype = series['dtype']
+        if is_rgb:
             axes = axes[:-1]
+            names = ['R', 'G', 'B', 'A']
+            lastshape = shape[-1]
+            dtype = np.dtype({'names': names[:lastshape],
+                              'formats': [dtype] * lastshape})
+            shape = shape[:-1]
         op = {}
         for key, tag in tiff[0].tags.items():
             op[key] = tag.value
@@ -176,11 +190,11 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
         _logger.debug("Photometric: %s" % op['photometric'])
         _logger.debug('is_imagej: {}'.format(tiff[0].is_imagej))
 
-        _logger.debug("data shape: {0}".format(dc.shape))
 
         # workaround for 'palette' photometric, keep only 'X' and 'Y' axes
+        sl = None
         if op['photometric'] == 3:
-            sl = [0] * dc.ndim
+            sl = [0] * len(shape)
             names = []
             for i, axis in enumerate(axes):
                 if axis == 'X' or axis == 'Y':
@@ -188,7 +202,8 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
                     names.append(axes_label_codes[axis])
                 else:
                     axes.replace(axis, '')
-            dc = dc[sl]
+            shape = tuple(_sh for _s, _sh in zip(sl, shape)
+                          if isinstance(_s, slice))
         _logger.debug("names: {0}".format(names))
 
         scales = [1.0] * len(names)
@@ -196,7 +211,8 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
         units = [t.Undefined] * len(names)
         try:
             scales_d, units_d, offsets_d, intensity_axis = \
-                _parse_scale_unit(tiff, op, dc, force_read_resolution)
+                _parse_scale_unit(tiff, op, shape,
+                                  force_read_resolution)
             for i, name in enumerate(names):
                 if name == 'height':
                     scales[i], units[i] = scales_d['x'], units_d['x']
@@ -216,7 +232,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
                  'offset': offset,
                  'units': unit,
                  }
-                for size, name, scale, offset, unit in zip(dc.shape, names,
+                for size, name, scale, offset, unit in zip(shape, names,
                                                            scales, offsets,
                                                            units)]
 
@@ -233,6 +249,17 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
                    'gain_offset': intensity_axis['offset']}
             md['Signal']['Noise_properties'] = {'Variance_linear_model': dic}
 
+    data_args = TiffFile, filename, is_rgb, sl
+    if lazy:
+        from dask import delayed
+        from dask.array import from_delayed
+        memmap = True
+        val = delayed(_load_data, pure=True)(*data_args, memmap=memmap, **kwds)
+        dc = from_delayed(val, dtype=dtype, shape=shape)
+        # TODO: maybe just pass the memmap from tiffile?
+    else:
+        dc = _load_data(*data_args, memmap=memmap, **kwds)
+
     return [{'data': dc,
              'original_metadata': op,
              'axes': axes,
@@ -240,7 +267,18 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
              }]
 
 
-def _parse_scale_unit(tiff, op, dc, force_read_resolution):
+def _load_data(TF, filename, is_rgb, sl=None, memmap=False, **kwds):
+    with TF(filename, **kwds) as tiff:
+        dc = tiff.asarray(memmap=memmap)
+        _logger.debug("data shape: {0}".format(dc.shape))
+        if is_rgb:
+            dc = rgb_tools.regular_array2rgbx(dc)
+        if sl is not None:
+            dc = dc[sl]
+        return dc
+
+
+def _parse_scale_unit(tiff, op, shape, force_read_resolution):
     axes_l = ['x', 'y', 'z']
     scales = {axis: 1.0 for axis in axes_l}
     offsets = {axis: 0.0 for axis in axes_l}
@@ -309,7 +347,7 @@ def _parse_scale_unit(tiff, op, dc, force_read_resolution):
         # It seems that Zeiss software doesn't store/compute correctly the
         # scale in the metadata... it needs to be corrected by the image
         # resolution.
-        corr = 1024 / max(size for size in dc.shape)
+        corr = 1024 / max(size for size in shape)
         scales['x'], scales['y'] = _get_scale_Zeiss(op, corr)
         for key in ['x', 'y']:
             units[key] = 'm'

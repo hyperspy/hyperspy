@@ -386,6 +386,9 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     if not rawfname:
         raise IOError('RAW file "%s" does not exists' % rawfname)
     else:
+        lazy = kwds.pop('lazy', False)
+        if lazy:
+            mmap_mode = 'r'
         data = read_raw(rpl_info, rawfname, mmap_mode=mmap_mode)
 
     if rpl_info['record-by'] == 'vector':

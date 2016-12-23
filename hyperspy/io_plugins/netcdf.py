@@ -107,8 +107,7 @@ def file_reader(filename, *args, **kwds):
             dictionary = nc_hyperspy_reader_0dot1(
                 ncfile,
                 filename,
-                *
-                args,
+                *args,
                 **kwds)
     else:
         ncfile.close()

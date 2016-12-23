@@ -372,7 +372,10 @@ class EMD(object):
         self._log.info(info_str)
 
 
-def file_reader(filename, load_to_memory=True, log_info=False, **kwds):
+def file_reader(filename, load_to_memory=True, log_info=False,
+                lazy=False, **kwds):
+    if lazy:
+        load_to_memory = False
     emd = EMD.load_from_emd(filename, load_to_memory)
     if log_info:
         emd.log_info()

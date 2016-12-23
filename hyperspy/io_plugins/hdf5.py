@@ -113,7 +113,10 @@ def get_hspy_format_version(f):
 
 
 def file_reader(filename, backing_store=False, load_to_memory=True,
-                **kwds):
+                lazy=False, **kwds):
+    # TODO: check if have to cast as dask arrays as well
+    if lazy:
+        load_to_memory = False
     mode = kwds.pop('mode', 'r+')
     f = h5py.File(filename, mode=mode, **kwds)
     # Getting the format version here also checks if it is a valid HSpy

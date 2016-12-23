@@ -157,9 +157,12 @@ def get_header_from_signal(signal, endianess='<'):
 
 
 def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
-                **kwds):
+                lazy=False, **kwds):
     _logger.debug("Reading blockfile: %s" % filename)
     metadata = {}
+    if lazy:
+        load_to_memory = False
+        mmap_mode = 'r'
     # Makes sure we open in right mode:
     if '+' in mmap_mode or ('write' in mmap_mode and
                             'copyonwrite' != mmap_mode):
