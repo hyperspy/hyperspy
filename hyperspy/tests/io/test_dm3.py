@@ -52,6 +52,28 @@ def test_read_TEM_metadata():
     nt.assert_equal(md.Signal.signal_type, "")
 
 
+def test_read_Diffraction_metadata():
+    fname = os.path.join(
+        my_path,
+        "dm3_2D_data",
+        "test_diffraction_pattern.dm3")
+    s = load(fname)
+    md = s.metadata
+    nt.assert_equal(md.Acquisition_instrument.TEM.acquisition_mode, "TEM")
+    nt.assert_almost_equal(md.Acquisition_instrument.TEM.beam_energy, 200.0)
+    nt.assert_almost_equal(md.Acquisition_instrument.TEM.exposure_time, 0.2)
+    nt.assert_almost_equal(md.Acquisition_instrument.TEM.camera_length, 320.0)
+    nt.assert_equal(md.Acquisition_instrument.TEM.microscope, "FEI Tecnai")
+    nt.assert_equal(md.General.date, "2014-07-09")
+    nt.assert_equal(
+        md.General.original_filename,
+        "test_diffraction_pattern.dm3")
+    nt.assert_equal(md.General.title, "test_diffraction_pattern")
+    nt.assert_equal(md.General.time, "18:56:37")
+    nt.assert_equal(md.Signal.quantity, "Intensity")
+    nt.assert_equal(md.Signal.signal_type, "")
+
+
 def test_read_STEM_metadata():
     fname = os.path.join(my_path, "dm3_2D_data", "test_STEM_image.dm3")
     s = load(fname)
@@ -106,6 +128,12 @@ def test_read_EELS_metadata():
     nt.assert_equal(md.General.time, "19:35:17")
     nt.assert_equal(md.Signal.quantity, "Electrons (Counts)")
     nt.assert_equal(md.Signal.signal_type, "EELS")
+    nt.assert_almost_equal(
+        md.Signal.Noise_properties.Variance_linear_model.gain_factor,
+        0.1285347)
+    nt.assert_almost_equal(
+        md.Signal.Noise_properties.Variance_linear_model.gain_offset,
+        0.0)
 
 
 def test_read_EDS_metadata():
@@ -137,8 +165,29 @@ def test_read_EDS_metadata():
     nt.assert_equal(md.General.time, "21:46:19")
     nt.assert_equal(md.Signal.quantity, "X-rays (Counts)")
     nt.assert_equal(md.Signal.signal_type, "EDS_TEM")
+    nt.assert_almost_equal(
+        md.Signal.Noise_properties.Variance_linear_model.gain_factor,
+        1.0)
+    nt.assert_almost_equal(
+        md.Signal.Noise_properties.Variance_linear_model.gain_offset,
+        0.0)
 
-
+def test_location():
+    fname_list = ['Fei HAADF-DE_location.dm3', 'Fei HAADF-FR_location.dm3',
+                  'Fei HAADF-MX_location.dm3', 'Fei HAADF-UK_location.dm3']
+    s = load(os.path.join(my_path, "dm3_locale", fname_list[0]))
+    nt.assert_equal(s.metadata.General.date, "2016-08-27")
+    nt.assert_equal(s.metadata.General.time, "20:54:33")
+    s = load(os.path.join(my_path, "dm3_locale", fname_list[1]))
+    nt.assert_equal(s.metadata.General.date, "2016-08-27")
+    nt.assert_equal(s.metadata.General.time, "20:55:20")
+    s = load(os.path.join(my_path, "dm3_locale", fname_list[2]))
+    nt.assert_equal(s.metadata.General.date, "2016-08-27")
+#    nt.assert_equal(s.metadata.General.time, "20:55:20") # MX not working
+    s = load(os.path.join(my_path, "dm3_locale", fname_list[3]))
+    nt.assert_equal(s.metadata.General.date, "2016-08-27")
+    nt.assert_equal(s.metadata.General.time, "20:52:30")
+    
 def test_loading():
     dims = range(1, 4)
     for dim in dims:

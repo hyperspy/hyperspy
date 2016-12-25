@@ -23,7 +23,7 @@
 
 import os
 import logging
-from datetime import datetime
+import dateutil.parser
 
 import numpy as np
 import traits.api as t
@@ -785,12 +785,18 @@ class ImageObject(object):
             return 'TEM'
 
     def _get_time(self, time):
-        dt = datetime.strptime(time, "%I:%M:%S %p")
-        return dt.time().isoformat()
+        try:
+            dt = dateutil.parser.parse(time)
+            return dt.time().isoformat()
+        except:
+            _logger.warning("Time string, %s,  could not be parsed", time)
 
     def _get_date(self, date):
-        dt = datetime.strptime(date, "%m/%d/%Y")
-        return dt.date().isoformat()
+        try:
+            dt = dateutil.parser.parse(date)
+            return dt.date().isoformat()
+        except:
+            _logger.warning("Date string, %s,  could not be parsed", date)
 
     def _get_microscope_name(self, ImageTags):
         try:
@@ -823,12 +829,6 @@ class ImageObject(object):
             "ImageList.TagGroup0.ImageTags.Microscope Info.Illumination Mode": (
                 "Acquisition_instrument.TEM.acquisition_mode",
                 self._get_mode),
-            "ImageList.TagGroup0.ImageTags.Microscope Info.STEM Camera Length": (
-                "Acquisition_instrument.TEM.camera_length",
-                None),
-            "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
-                "Acquisition_instrument.TEM.magnification",
-                None),
             "ImageList.TagGroup0.ImageTags.Microscope Info.Probe Current (nA)": (
                 "Acquisition_instrument.TEM.beam_current",
                 None),
@@ -839,7 +839,36 @@ class ImageObject(object):
                 "Sample.description",
                 self._parse_string),
         }
+
         if "Microscope_Info" in self.imdict.ImageTags.keys():
+            is_TEM = (
+                'TEM' == self.imdict.ImageTags.Microscope_Info.Illumination_Mode)
+            is_diffraction = (
+                'DIFFRACTION' == self.imdict.ImageTags.Microscope_Info.Imaging_Mode)
+
+            if is_TEM:
+                if is_diffraction:
+                    mapping.update({
+                        "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
+                            "Acquisition_instrument.TEM.camera_length",
+                            None),
+                    })
+                else:
+                    mapping.update({
+                        "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
+                            "Acquisition_instrument.TEM.magnification",
+                            None),
+                    })
+            else:
+                mapping.update({
+                    "ImageList.TagGroup0.ImageTags.Microscope Info.STEM Camera Length": (
+                        "Acquisition_instrument.TEM.camera_length",
+                        None),
+                    "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
+                        "Acquisition_instrument.TEM.magnification",
+                        None),
+                })
+
             mapping.update({
                 "ImageList.TagGroup0.ImageTags": (
                     "Acquisition_instrument.TEM.microscope",

@@ -481,8 +481,6 @@ class BaseModel(list):
             for parameter in component.parameters:
                 parameter.events.value_changed.connect(
                     self._model_line.update, [])
-        if self._plot_components is True:
-            self._connect_component_lines()
 
     def _disconnect_parameters2update_plot(self, components):
         if self._model_line is None:
@@ -492,8 +490,6 @@ class BaseModel(list):
             for parameter in component.parameters:
                 parameter.events.value_changed.disconnect(
                     self._model_line.update)
-        if self._plot_components is True:
-            self._disconnect_component_lines()
 
     def update_plot(self, *args, **kwargs):
         """Update model plot.
@@ -911,10 +907,10 @@ class BaseModel(list):
         if bounded is True:
             if fitter not in ("leastsq", "mpfit", "TNC",
                               "L-BFGS-B", "Differential Evolution"):
-                raise NotImplementedError("Bounded optimization is only "
-                                          "supported by 'leastsq', "
-                                          "'mpfit', 'TNC', 'L-BFGS-B' or"
-                                          "'Differential Evolution'.")
+                raise ValueError("Bounded optimization is only "
+                                 "supported by 'leastsq', "
+                                 "'mpfit', 'TNC', 'L-BFGS-B' or"
+                                 "'Differential Evolution'.")
             else:
                 # this has to be done before setting the p0,
                 # so moved things around
@@ -1195,14 +1191,6 @@ class BaseModel(list):
         masked_elements = 0 if mask is None else mask.sum()
         maxval = self.axes_manager.navigation_size - masked_elements
         show_progressbar = show_progressbar and (maxval > 0)
-        if 'bounded' in kwargs and kwargs['bounded'] is True:
-            if kwargs['fitter'] not in ("leastsq", "TNC", "L_BFGS-B", "mpfit"):
-                _logger.info(
-                    "The chosen fitter does not suppport bounding."
-                    "If you require bounding please select one of the "
-                    "following fitters instead: 'leastsq', 'TNC', "
-                    "'L_BFGS-B', 'mpfit'")
-                kwargs['bounded'] = False
         i = 0
         with self.axes_manager.events.indices_changed.suppress_callback(
                 self.fetch_stored_values):
@@ -1734,12 +1722,13 @@ class ModelSpecialSlicers(object):
             slices,
             self.isNavigation)
         _signal = self.model.signal._slicer(slices, self.isNavigation)
-        if _signal.metadata.Signal.signal_type == 'EELS':
-            _model = _signal.create_model(
-                auto_background=False,
-                auto_add_edges=False)
-        else:
-            _model = _signal.create_model()
+        # TODO: for next major release, change model creation defaults to not
+        # automate anything. For now we explicitly look for "auto_" kwargs and
+        # disable them:
+        import inspect
+        pars = inspect.signature(_signal.create_model).parameters
+        kwargs = {key: False for key in pars.keys() if key.startswith('auto_')}
+        _model = _signal.create_model(**kwargs)
 
         dims = (self.model.axes_manager.navigation_dimension,
                 self.model.axes_manager.signal_dimension)
