@@ -423,7 +423,7 @@ class ORPCA:
                 self.L -= (np.dot(self.L, np.outer(r, r.T))
                            - np.outer((z - e), r.T)
                            + thislambda1 * self.L) / learn
-            elif method == 'MomentumSGD':
+            elif self.method == 'MomentumSGD':
                 # Stochastic gradient descent with momentum
                 learn = self.learning_rate * (1 + self.learning_rate *
                                               thislambda1 * self.t)
