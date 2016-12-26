@@ -368,7 +368,7 @@ class EDSTEM_mixin:
         elif navigation_mask is not None:
             navigation_mask = navigation_mask.data
         xray_lines = self.metadata.Sample.xray_lines
-        composition = utils.stack(intensities)
+        composition = utils.stack(intensities, lazy=False)
         if method == 'CL':
             composition.data = utils_eds.quantification_cliff_lorimer(
                 composition.data, kfactors=factors,
@@ -387,8 +387,7 @@ class EDSTEM_mixin:
                 cross_sections=factors,
                 dose=self._get_dose(method))
             composition.data = results[0] * 100
-            number_of_atoms = utils.stack(intensities)
-            number_of_atoms.data = results[1]
+            number_of_atoms = composition._deepcopy_with_new_data(results[1])
             number_of_atoms = number_of_atoms.split()
         else:
             raise ValueError('Please specify method for quantification,'
