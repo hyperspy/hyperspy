@@ -26,6 +26,7 @@ from hyperspy.drawing.utils import plot_RGB_map
 
 mplv = get_matplotlib_version_label()
 scalebar_color = 'blue'
+default_tol = 0.05
 
 
 def _generate_image_stack_signal():
@@ -62,7 +63,7 @@ def _set_signal_axes(axes_manager, name=t.Undefined, units=t.Undefined,
 
 
 @image_comparison(baseline_images=['%s_rgb_image' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_rgb_image():
     w = 20
     ch1 = hs.signals.Signal2D(np.arange(w * w).reshape(w, w))
@@ -96,7 +97,7 @@ def _test_plot_nav0_sig2():
 
 
 @image_comparison(baseline_images=['%s_nav0_signal2_1sig' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_plot_nav0_sig2():
     _test_plot_nav0_sig2()
 
@@ -115,7 +116,7 @@ def _test_plot_nav0_sig2_axes_ticks():
 
 
 @image_comparison(baseline_images=['%s_nav0_signal2_2sig' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_plot_nav0_sig2_axes_ticks():
     _test_plot_nav0_sig2_axes_ticks()
 
@@ -134,7 +135,7 @@ def _test_plot_nav0_sig2_no_scalebar():
 
 
 @image_comparison(baseline_images=['%s_nav0_signal2_3sig' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_plot_nav0_sig2_no_scalebar():
     _test_plot_nav0_sig2_no_scalebar()
 
@@ -158,7 +159,7 @@ def _test_plot_nav0_sig2_different_signal_axes_scale():
 
 @image_comparison(baseline_images=['%s_nav0_signal2_4nav' % mplv,
                                    '%s_nav0_signal2_4nav' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_plot_nav0_sig2_different_signal_axes_scale():
     _test_plot_nav0_sig2_different_signal_axes_scale()
 
@@ -192,7 +193,7 @@ def _test_plot_nav2_sig2():
 
 @image_comparison(baseline_images=['%s_nav2_signal2_1nav' % mplv,
                                    '%s_nav2_signal2_1sig' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_plot_nav2_sig2():
     _test_plot_nav2_sig2()
 
@@ -205,7 +206,7 @@ def test_plot_nav2_sig2_close():
 
 @image_comparison(baseline_images=['%s_nav2_signal2_2nav' % mplv,
                                    '%s_nav2_signal2_2sig' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_plot_nav2_sig2_no_scalebar():
     s = _setup_nav2_sig2()
     s.metadata.General.title = '2: Nav 2, Sig 2, without scalebar'
@@ -235,7 +236,7 @@ def test_plot_nav2_sig2_no_scalebar():
 
 
 @image_comparison(baseline_images=['%s_plot_multiple_images' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_plot_multiple_images():
     image = _generate_image_stack_signal()
 
@@ -245,7 +246,7 @@ def test_plot_multiple_images():
 
 
 @image_comparison(baseline_images=['%s_plot_multiple_images_label' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_plot_multiple_images_label():
     image = _generate_image_stack_signal()
 
@@ -257,7 +258,7 @@ def test_plot_multiple_images_label():
 
 
 @image_comparison(baseline_images=['%s_plot_multiple_images_list' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_plot_multiple_images_list():
     # load red channel of raccoon as an image
     image0 = hs.signals.Signal2D(scipy.misc.face()[:, :, 0])

@@ -24,6 +24,7 @@ from hyperspy.misc.test_utils import get_matplotlib_version_label, update_close_
 
 mplv = get_matplotlib_version_label()
 scalebar_color = 'blue'
+default_tol = 0.05
 
 
 def _set_navigation_axes(axes_manager, name=t.Undefined, units=t.Undefined,
@@ -48,7 +49,7 @@ def _set_signal_axes(axes_manager, name=t.Undefined, units=t.Undefined,
 @image_comparison(baseline_images=['%s_plot_spectra_cascade' % mplv,
                                    '%s_plot_spectra_heatmap' % mplv,
                                    '%s_plot_spectra_mosaic' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_plot_spectra():
     import scipy.misc
     s = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
@@ -61,7 +62,7 @@ def test_plot_spectra():
                                    '%s_plot_spectra_sync_1sig' % mplv,
                                    '%s_plot_spectra_sync_2nav' % mplv,
                                    '%s_plot_spectra_sync_2sig' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_plot_spectra_sync():
     import scipy.misc
     s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0).inav[:, :3]
@@ -81,7 +82,7 @@ def _test_plot_nav0_sig1():
 
 
 @image_comparison(baseline_images=['%s_nav0_signal1_sig' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_plot_nav0_sig1():
     _test_plot_nav0_sig1()
 
@@ -116,7 +117,7 @@ def _test_plot_nav1_sig1():
 
 @image_comparison(baseline_images=['%s_nav1_signal1_1nav' % mplv,
                                    '%s_nav1_signal1_1sig' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_plot_nav1_sig1():
     _test_plot_nav1_sig1()
 
@@ -136,7 +137,7 @@ def _test_plot_nav1_sig1_complex():
 
 @image_comparison(baseline_images=['%s_nav1_signal1_2nav_complex' % mplv,
                                    '%s_nav1_signal1_2sig_complex' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_plot_nav1_sig1_complex():
     _test_plot_nav1_sig1_complex()
 
@@ -168,7 +169,7 @@ def _test_plot_nav2_sig1():
 
 @image_comparison(baseline_images=['%s_nav2_signal1_1nav' % mplv,
                                    '%s_nav2_signal1_1sig' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_plot_nav2_sig1():
     _test_plot_nav2_sig1()
 
@@ -193,7 +194,7 @@ def _test_plot_nav2_sig1_two_cursors():
 
 @image_comparison(baseline_images=['%s_nav2_signal1_2nav_two_cursors' % mplv,
                                    '%s_nav2_signal1_2sig_two_cursors' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_plot_nav2_sig1_two_cursors():
     _test_plot_nav2_sig1_two_cursors()
 

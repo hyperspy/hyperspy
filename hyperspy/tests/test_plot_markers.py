@@ -25,6 +25,7 @@ from hyperspy.utils import markers
 from hyperspy.misc.test_utils import get_matplotlib_version_label, update_close_figure
 
 mplv = get_matplotlib_version_label()
+default_tol = 0.05
 
 
 class Test_markers:
@@ -133,7 +134,7 @@ def _test_plot_rectange_markers():
 
 
 @image_comparison(baseline_images=['%s_plot_rectangle_markers' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_plot_rectange_markers():
     _test_plot_rectange_markers()
 
@@ -158,7 +159,7 @@ def _test_plot_point_markers():
 
 
 @image_comparison(baseline_images=['%s_plot_point_markers' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_plot_point_markers():
     _test_plot_point_markers()
 
@@ -183,7 +184,7 @@ def _test_plot_text_markers():
 
 @image_comparison(baseline_images=['%s_plot_text_markers_nav' % mplv,
                                    '%s_plot_text_markers_sig' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_plot_text_markers():
     _test_plot_text_markers()
 
@@ -210,7 +211,7 @@ def _test_plot_line_markers():
 
 
 @image_comparison(baseline_images=['%s_plot_line_markers' % mplv],
-                  extensions=['png'])
+                  extensions=['png'], tol=default_tol)
 def test_plot_line_markers():
     _test_plot_line_markers()
 
