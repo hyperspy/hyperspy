@@ -237,7 +237,7 @@ class ORPCA:
 
     def __init__(self, rank, fast=False, lambda1=None, lambda2=None,
                  method=None, learning_rate=None, init=None,
-                 training_samples=None):
+                 training_samples=None, momentum=None):
 
         self.nfeatures = None
         self.normalize = False
@@ -270,10 +270,16 @@ class ORPCA:
                                 "not specified. Defaulting to %d samples" %
                                 training_samples)
         if learning_rate is None:
-            if method == 'SGD':
+            if method in ('SGD', 'MomentumSGD'):
                 _logger.warning("Learning rate for SGD algorithm is "
                                 "set to default: 1.0")
                 learning_rate = 1.0
+        if momentum is None:
+            if method == 'MomentumSGD':
+                _logger.warning("Momentum parameter for SGD algorithm is "
+                                "set to default: 0.5")
+                momentum = 0.5
+
 
         self.rank = rank
         self.lambda1 = lambda1
@@ -282,15 +288,18 @@ class ORPCA:
         self.init = init
         self.training_samples = training_samples
         self.learning_rate = learning_rate
+        self.momentum=momentum
 
         # Check options are valid
-        if method not in ('CF', 'BCD', 'SGD'):
+        if method not in ('CF', 'BCD', 'SGD', 'MomentumSGD'):
             raise ValueError("'method' not recognised")
         if not isinstance(init, np.ndarray) and init not in ('qr', 'rand'):
             raise ValueError("'method' not recognised")
         if init == 'qr' and training_samples < rank:
             raise ValueError(
                 "'training_samples' must be >= 'output_dimension'")
+        if method == 'MomentumSGD' and (momentum > 1. or momentum < 0.):
+            raise ValueError("'momentum' must be a float between 0 and 1")
 
     def _setup(self, X, normalize=False):
 
@@ -335,6 +344,8 @@ class ORPCA:
         if self.method in ('CF', 'BCD'):
             self.A = np.zeros((self.rank, self.rank))
             self.B = np.zeros((m, self.rank))
+        if self.method == 'MomentumSGD':
+            self.vnew = np.zeros_like(self.L)
         return X
 
     def _initialize(self, X):
@@ -412,6 +423,15 @@ class ORPCA:
                 self.L -= (np.dot(self.L, np.outer(r, r.T))
                            - np.outer((z - e), r.T)
                            + thislambda1 * self.L) / learn
+            elif method == 'MomentumSGD':
+                # Stochastic gradient descent with momentum
+                learn = self.learning_rate * (1 + self.learning_rate *
+                                              thislambda1 * self.t)
+                vold = self.momentum * self.vnew
+                self.vnew = (np.dot(self.L, np.outer(r, r.T))
+                         - np.outer((z - e), r.T)
+                         + thislambda1 * self.L) / learn
+                self.L -= (vold + self.vnew)
             self.t += 1
 
     def project(self, X):
@@ -462,42 +482,48 @@ def orpca(X, rank, fast=False,
           method=None,
           learning_rate=None,
           init=None,
-          training_samples=None):
+          training_samples=None,
+          momentum=None):
     """
     This function performs Online Robust PCA
     with missing or corrupted data.
 
     Parameters
     ----------
-    X : numpy array | iterator
+    X : {numpy array, iterator}
         [nfeatures x nsamples] matrix of observations
         or an iterator that yields samples, each with nfeatures elements.
     rank : int
         The model dimensionality.
-    lambda1 : None | float
+    lambda1 : {None, float}
         Nuclear norm regularization parameter.
-        If None, set to 1 / sqrt(nfeatures)
-    lambda2 : None | float
+        If None, set to 1 / sqrt(nsamples)
+    lambda2 : {None, float}
         Sparse error regularization parameter.
-        If None, set to 1 / sqrt(nfeatures)
-    method : None | 'CF' | 'BCD' | 'SGD'
+        If None, set to 1 / sqrt(nsamples)
+    method : {None, 'CF', 'BCD', 'SGD', 'MomentumSGD'}
         'CF'  - Closed-form solver
         'BCD' - Block-coordinate descent
         'SGD' - Stochastic gradient descent
+        'MomentumSGD' - Stochastic gradient descent with momentum
         If None, set to 'CF'
-    learning_rate : None | float
+    learning_rate : {None, float}
         Learning rate for the stochastic gradient
         descent algorithm
         If None, set to 1
-    init : None | 'qr' | 'rand' | np.ndarray
+    init : {None, 'qr', 'rand', np.ndarray}
         'qr'   - QR-based initialization
         'rand' - Random initialization
         np.ndarray if the shape [nfeatures x rank].
         If None, set to 'qr'
-    training_samples : integer
+    training_samples : {None, integer}
         Specifies the number of training samples to use in
         the 'qr' initialization
         If None, set to 10
+    momentum : {None, float}
+        Momentum parameter for 'MomentumSGD' method, should be
+        a float between 0 and 1.
+        If None, set to 0.5
 
     Returns
     -------
@@ -518,13 +544,19 @@ def orpca(X, rank, fast=False,
 
     It has been updated to include a new initialization method based
     on a QR decomposition of the first n "training" samples of the data.
-    A stochastic gradient descent solver is also implemented.
+    A stochastic gradient descent (SGD) solver is also implemented,
+    along with a MomentumSGD solver for improved convergence and robustness
+    with respect to local minima. More information about the gradient descent
+    methods and choosing appropriate parameters can be found here:
+       Sebastian Ruder, "An overview of gradient descent optimization
+       algorithms", arXiv:1609.04747, (2016), http://arxiv.org/abs/1609.04747.
 
     """
     _orpca = ORPCA(rank, fast=fast, lambda1=lambda1,
                    lambda2=lambda2, method=method,
                    learning_rate=learning_rate, init=init,
-                   training_samples=training_samples)
+                   training_samples=training_samples,
+                   momentum=momentum)
     _orpca._setup(X, normalize=True)
     _orpca.fit(X)
     return _orpca.finish()
