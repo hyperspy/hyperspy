@@ -283,6 +283,7 @@ def load_with_reader(filename,
                      reader,
                      signal_type=None,
                      **kwds):
+    lazy = kwds.get('lazy', False)
     file_data_list = reader.file_reader(filename,
                                         **kwds)
     objects = []
@@ -293,7 +294,7 @@ def load_with_reader(filename,
                 signal_dict["metadata"]["Signal"] = {}
             if signal_type is not None:
                 signal_dict['metadata']["Signal"]['signal_type'] = signal_type
-            objects.append(dict2signal(signal_dict))
+            objects.append(dict2signal(signal_dict, lazy=lazy))
             folder, filename = os.path.split(os.path.abspath(filename))
             filename, extension = os.path.splitext(filename)
             objects[-1].tmp_parameters.folder = folder
@@ -368,7 +369,7 @@ def assign_signal_subclass(dtype,
                 1 and s._signal_type == ""][0]
 
 
-def dict2signal(signal_dict):
+def dict2signal(signal_dict, lazy=False):
     """Create a signal (or subclass) instance defined by a dictionary
 
     Parameters
@@ -406,7 +407,10 @@ def dict2signal(signal_dict):
 
     signal = assign_signal_subclass(signal_dimension=signal_dimension,
                                     signal_type=signal_type,
-                                    dtype=signal_dict['data'].dtype,)(**signal_dict)
+                                    dtype=signal_dict['data'].dtype,
+                                    lazy=lazy)(**signal_dict)
+    if signal._lazy:
+        signal._make_lazy()
     if signal.axes_manager.signal_dimension != signal_dimension:
         # This may happen when the signal dimension couldn't be matched with
         # any specialised subclass
