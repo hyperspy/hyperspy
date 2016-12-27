@@ -599,24 +599,6 @@ class HyperHeader(object):
         # stage position:
         self.stage_metadata = json.loads(json.dumps(semStageData,
             cls=ObjectifyJSONEncoder))
-        
-        #try:
-        #    self.stage.x = float(semStageData.X)  # in micrometers
-        #    self.stage.y = float(semStageData.Y)  # in micrometers
-        #except AttributeError:
-        #    self.stage.x = self.stage.y = None
-        #try:
-        #    self.stage.z = float(semStageData.Z)  # in micrometers
-        #except AttributeError:
-        #    self.stage.z = None
-        #try:
-        #    self.stage.rotation = float(semStageData.Rotation)  # in degrees
-        #except AttributeError:
-        #    self.stage.rotation = None
-        #try:
-        #    self.stage.tilt_stage = float(semStageData.Tilt)
-        #except AttributeError:
-        #    self.stage.tilt_stage = None
         DSPConf = root.xpath("ClassInstance[@Type='TRTDSPConfiguration']")[0]
         self.image.dsp_metadata = json.loads(json.dumps(DSPConf,
             cls=ObjectifyJSONEncoder))
