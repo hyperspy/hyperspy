@@ -751,7 +751,8 @@ class HyperHeader(object):
         pix_avg = self.image.dsp_metadata['PixelAverage']
         pix_time = self.image.dsp_metadata['PixelTime']
         width = self.image.width
-        return line_cnt_sum * line_avg * pix_avg * pix_time * width / 1000000.0
+        real_time = line_cnt_sum * line_avg * pix_avg * pix_time * width / 1000000.0
+        return float(real_time)
 
 
 class BCF_reader(SFS_reader):
