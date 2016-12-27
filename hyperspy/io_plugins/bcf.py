@@ -444,8 +444,8 @@ class ObjectifyJSONEncoder(json.JSONEncoder):
         if len(o.attrib) > 0:
             d2 = dict(o.attrib)
             for j in d2.keys():
-                if j in dictionary.keys():
-                    d2['Class' + j] = interpret(d2[j])
+                if j in dictionary.keys() or j == 'Type':
+                    d2['XmlClass' + j] = interpret(d2[j])
                     del d2[j]
                 else:
                     d2[j] = interpret(d2[j])
@@ -597,26 +597,50 @@ class HyperHeader(object):
         self.image.y_res = float(semData.DY)  # in micrometers
         semStageData = root.xpath("ClassInstance[@Type='TRTSEMStageData']")[0]
         # stage position:
-        try:
-            self.stage.x = float(semStageData.X)  # in micrometers
-            self.stage.y = float(semStageData.Y)  # in micrometers
-        except AttributeError:
-            self.stage.x = self.stage.y = None
-        try:
-            self.stage.z = float(semStageData.Z)  # in micrometers
-        except AttributeError:
-            self.stage.z = None
-        try:
-            self.stage.rotation = float(semStageData.Rotation)  # in degrees
-        except AttributeError:
-            self.stage.rotation = None
-        try:
-            self.stage.tilt_stage = float(semStageData.Tilt)
-        except AttributeError:
-            self.stage.tilt_stage = None
+        self.stage_metadata = json.loads(json.dumps(semStageData,
+            cls=ObjectifyJSONEncoder))
+        
+        #try:
+        #    self.stage.x = float(semStageData.X)  # in micrometers
+        #    self.stage.y = float(semStageData.Y)  # in micrometers
+        #except AttributeError:
+        #    self.stage.x = self.stage.y = None
+        #try:
+        #    self.stage.z = float(semStageData.Z)  # in micrometers
+        #except AttributeError:
+        #    self.stage.z = None
+        #try:
+        #    self.stage.rotation = float(semStageData.Rotation)  # in degrees
+        #except AttributeError:
+        #    self.stage.rotation = None
+        #try:
+        #    self.stage.tilt_stage = float(semStageData.Tilt)
+        #except AttributeError:
+        #    self.stage.tilt_stage = None
         DSPConf = root.xpath("ClassInstance[@Type='TRTDSPConfiguration']")[0]
         self.image.dsp_metadata = json.loads(json.dumps(DSPConf,
             cls=ObjectifyJSONEncoder))
+        
+    def get_acq_instrument_dict(self, detector=False, **kwargs):
+        """return python dictionary with aquisition instrument
+        mandatory data
+        """
+        acq_inst = {
+                    'beam_energy': self.sem.hv,
+                    'magnification': self.sem.mag,
+                    }
+        if 'Tilt' in self.stage_metadata:
+            acq_inst['tilt_stage'] = self.stage_metadata['Tilt']
+        if detector:
+            eds_metadata = self.get_spectra_metadata(**kwargs)
+            acq_inst['Detector'] = {'EDS': {
+                                     'azimuth_angle': eds_metadata.azimutAngle,
+                                     'elevation_angle': eds_metadata.elevationAngle,
+                                     'detector_type': eds_metadata.detector_type,
+                                     'real_time': self.calc_real_time()
+                                           }
+                                   }
+        return acq_inst
 
     def _set_image(self, root):
         """Wrap objectified xml part with image to class attributes
@@ -1098,24 +1122,20 @@ def bcf_imagery(obj_bcf, instrument=None):
                        'units': 'µm'}],
              'metadata':
              # where is no way to determine what kind of instrument was used:
-             # TEM or SEM
+             # TEM or SEM (mode variable)
              {'Acquisition_instrument': {
-                 mode: {
-                     #'beam_current': 0.0,  # There is no technical
-                     # possibilities to get such parameter from bruker
-                     # or some SEM's'
-                     'beam_energy': obj_bcf.header.sem.hv,
-                     'tilt_stage': obj_bcf.header.stage.tilt_stage,
-                     'stage_x': obj_bcf.header.stage.x,
-                     'stage_y': obj_bcf.header.stage.y
-                 }
-             },
-                 'General': {'original_filename': obj_bcf.filename.split('/')[-1],
+                 mode: obj_bcf.header.get_acq_instrument_dict()
+                 },
+              'General': {'original_filename': obj_bcf.filename.split('/')[-1],
                              'title': img.detector_name},
-                 'Sample': {'name': obj_bcf.header.name},
-                 'Signal': {'signal_type': img.detector_name,
+              'Sample': {'name': obj_bcf.header.name},
+              'Signal': {'signal_type': img.detector_name,
                             'record_by': 'image'},
-             }
+             },
+              'original_metadata': {
+                        'DSP Configuration': obj_bcf.header.image.dsp_metadata,
+                        'Stage': obj_bcf.header.stage_metadata
+                                                 }
              })
     return imagery_list
 
@@ -1148,26 +1168,10 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
                      'metadata':
                      # where is no way to determine what kind of instrument was used:
                      # TEM or SEM
-                     {'Acquisition_instrument': {
-                         mode: {
-                             #'beam_current': 0.0,  # There is no technical
-                             # possibilities to get such parameter from bruker
-                             # or some SEM's'
-                             'beam_energy': obj_bcf.header.sem.hv,
-                             'tilt_stage': obj_bcf.header.stage.tilt_stage,
-                             'stage_x': obj_bcf.header.stage.x,
-                             'stage_y': obj_bcf.header.stage.y,
-                             'magnification': obj_bcf.header.sem.mag,
-                             'Detector': {
-                                 'EDS': {
-                                     'azimuth_angle': eds_metadata.azimutAngle,
-                                     'elevation_angle': eds_metadata.elevationAngle,
-                                     'detector_type': eds_metadata.detector_type,
-                                     'real_time': obj_bcf.header.calc_real_time()
-                                 }
-                             }
-                         }
-                     },
+        {'Acquisition_instrument': {
+                         mode: obj_bcf.header.get_acq_instrument_dict(detector=True,
+                                                                      index=index)
+                         },
         'General': {'original_filename': obj_bcf.filename.split('/')[-1],
                          'title': 'EDX',
                          'date': obj_bcf.header.date,
@@ -1177,15 +1181,16 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
                          'xray_lines': sorted(gen_elem_list(obj_bcf.header.elements))},
         'Signal': {'signal_type': 'EDS_%s' % mode,
                          'record_by': 'spectrum',
-                         'quantity': 'X-rays (Counts)'},
-    },
+                         'quantity': 'X-rays (Counts)'}
+        },
         'original_metadata': {'Hardware': eds_metadata.hardware_metadata,
                               'Detector': eds_metadata.detector_metadata,
                               'Analysis': eds_metadata.esma_metadata,
                               'Spectrum': eds_metadata.spectrum_metadata,
                               'DSP Configuration': obj_bcf.header.image.dsp_metadata,
-                              'Line counter': obj_bcf.header.line_counter}
-    }]
+                              'Line counter': obj_bcf.header.line_counter,
+                              'Stage': obj_bcf.header.stage_metadata}
+        }]
     return hyperspectra
 
 
