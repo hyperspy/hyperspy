@@ -26,7 +26,7 @@ import h5py
 import numpy as np
 import dask.array as da
 from traits.api import Undefined
-from hyperspy.misc.utils import ensure_unicode
+from hyperspy.misc.utils import ensure_unicode, multiply
 from hyperspy.axes import AxesManager
 
 _logger = logging.getLogger(__name__)
@@ -467,7 +467,7 @@ def get_signal_chunks(shape, dtype, signal_axes=None):
 
     # largely based on the guess_chunk in h5py
     CHUNK_MAX = 1024 * 1024
-    want_to_keep = np.product([shape[i] for i in signal_axes]) * typesize
+    want_to_keep = multiply([shape[i] for i in signal_axes]) * typesize
     if want_to_keep >= CHUNK_MAX:
         chunks = [1 for _ in shape]
         for i in signal_axes:
@@ -480,12 +480,12 @@ def get_signal_chunks(shape, dtype, signal_axes=None):
                             signal_axes)
     nchange = len(navigation_axes)
     while True:
-        chunk_bytes = np.product(chunks) * typesize
+        chunk_bytes = multiply(chunks) * typesize
 
         if chunk_bytes < CHUNK_MAX:
             break
 
-        if np.product([chunks[i] for i in navigation_axes]) == 1:
+        if multiply([chunks[i] for i in navigation_axes]) == 1:
             break
         change = navigation_axes[idx % nchange]
         chunks[change] = np.ceil(chunks[change] / 2.0)

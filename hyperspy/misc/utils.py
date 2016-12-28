@@ -977,7 +977,6 @@ def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
 
     return func, iterators
 
-
 def map_result_construction(signal,
                             inplace,
                             result,
@@ -1011,3 +1010,19 @@ def map_result_construction(signal,
             sig.axes_manager._append_axis(sig_shape[-ind], navigate=False)
     sig.get_dimensions_from_data()
     return res
+
+def multiply(iterable):
+    """Return product of sequence of numbers.
+
+    Equivalent of functools.reduce(operator.mul, iterable, 1).
+
+    >>> product([2**8, 2**30])
+    274877906944
+    >>> product([])
+    1
+
+    """
+    prod = 1
+    for i in iterable:
+        prod *= i
+    return prod

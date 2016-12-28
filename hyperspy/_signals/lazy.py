@@ -24,9 +24,10 @@ import dask.array as da
 import dask.delayed as dd
 from dask import threaded
 from dask.diagnostics import ProgressBar
+from itertools import product
 
 from hyperspy.signal import BaseSignal
-from hyperspy.misc.utils import underline
+from hyperspy.misc.utils import underline, multiply
 from hyperspy.external.progressbar import progressbar
 from hyperspy.external.astroML.histtools import dasky_histogram
 from hyperspy.defaults_parser import preferences
@@ -92,7 +93,7 @@ class LazySignal(BaseSignal):
             need_axes = self.axes_manager.signal_axes
 
         typesize = dc.dtype.itemsize
-        want_to_keep = np.product([ax.size for ax in need_axes]) * typesize
+        want_to_keep = multiply([ax.size for ax in need_axes]) * typesize
 
         # @mrocklin reccomends to have around 100MB chunks, so we do that:
         num_that_fit = int(100. * 2.**20 / want_to_keep)
@@ -113,7 +114,7 @@ class LazySignal(BaseSignal):
         ]
 
         while True:
-            if np.product(sizes) <= num_that_fit:
+            if multiply(sizes) <= num_that_fit:
                 break
 
             i = np.argmax(sizes)
@@ -253,7 +254,6 @@ class LazySignal(BaseSignal):
         axis = self.axes_manager[axis]
         from dask.delayed import do as del_do
         from dask.array.core import slices_from_chunks
-        from itertools import product
         from scipy import integrate
         axis = self.axes_manager[axis]
         data = self._lazy_data(axis=axis)
@@ -432,7 +432,6 @@ class LazySignal(BaseSignal):
         self._make_sure_data_is_contiguous()
         nav_dim = self.axes_manager.navigation_dimension
         sig_dim = self.axes_manager.signal_dimension
-        from itertools import product
         nav_indices = self.axes_manager.navigation_indices_in_array[::-1]
         nav_lengths = np.atleast_1d(
             np.array(self.data.shape)[list(nav_indices)])
@@ -443,7 +442,6 @@ class LazySignal(BaseSignal):
             yield self.data[tuple(getitem)]
 
     def _block_iterator(self, flat_signal=True, get=threaded.get):
-        from itertools import product
         nav_chunks = self.data.chunks[:self.axes_manager.navigation_dimension]
         data = self.data.reshape((self.axes_manager.navigation_shape[::-1] +
                                   (self.axes_manager.signal_size, )))
@@ -490,17 +488,10 @@ class LazySignal(BaseSignal):
         explained_variance_ratio = None
         nav_chunks = self.data.chunks[:self.axes_manager.navigation_dimension]
         from toolz import curry
-        from itertools import product
-
-        def mult(*args):
-            ans = 1.
-            for ar in args:
-                ans *= ar
-            return ans
 
         num_chunks = 1 if num_chunks is None else num_chunks
-        blocksize = np.min([mult(*ar) for ar in product(*nav_chunks)])
-        nblocks = mult(*[len(c) for c in nav_chunks])
+        blocksize = np.min([multiply(ar) for ar in product(*nav_chunks)])
+        nblocks = multiply([len(c) for c in nav_chunks])
         if blocksize / output_dimension < num_chunks:
             num_chunks = np.ceil(blocksize / output_dimension)
         blocksize *= num_chunks
@@ -606,7 +597,7 @@ class LazySignal(BaseSignal):
         if kind in ['ORNMF', 'ONMF', 'ORPCA']:
             # Fix the block-scrambled loadings
             ndim = self.axes_manager.navigation_dimension
-            splits = np.cumsum([mult(*ar)
+            splits = np.cumsum([multiply(ar)
                                 for ar in product(*nav_chunks)][:-1]).tolist()
             if splits:
                 all_chunks = [
