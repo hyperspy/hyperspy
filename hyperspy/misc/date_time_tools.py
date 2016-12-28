@@ -21,10 +21,10 @@ from dateutil import tz, parser
 
 
 def metadata_to_datetime(metadata):
-    date = metadata.General.date
-    time = metadata.General.time
-    if 'timezone' in metadata.General:
-        return parser.parse('%sT%s %s' % (date, time, metadata.General.timezone))
+    date = metadata['General']['date']
+    time = metadata['General']['time']
+    if 'time_zone' in metadata['General']:
+        return parser.parse('%sT%s %s' % (date, time, metadata['General']['time_zone']))
     else:
         return parser.parse('%sT%s' % (date, time))
 
@@ -45,6 +45,8 @@ def ISO_format_to_serial_date(date, time, timezone='UTC'):
 
 
 def datetime_to_serial_date(dt):
+    if dt.tzname() is None:
+        dt = dt.replace(tzinfo=tz.tzutc())
     origin = datetime.datetime(1899, 12, 30, tzinfo=tz.tzutc())
     delta = dt - origin
     return float(delta.days) + (float(delta.seconds) / 86400.0)
