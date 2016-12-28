@@ -628,7 +628,7 @@ class HyperHeader(object):
                                      'real_time': self.calc_real_time()
                                            }
                                    }
-            if 'azimutAngle' in eds_metadata.esma_metadata:
+            if 'AzimutAngle' in eds_metadata.esma_metadata:
                 acq_inst['Detector']['EDS']['azimuth_angle'] = eds_metadata.esma_metadata['AzimutAngle']
         return acq_inst
 
