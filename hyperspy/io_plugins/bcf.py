@@ -505,7 +505,7 @@ class EDXSpectrum(object):
         #USED:
         self.hv = self.esma_metadata['PrimaryEnergy']
         self.elevationAngle = self.esma_metadata['ElevationAngle']
-        self.azimutAngle = self.esma_metadata['AzimutAngle']
+        #self.azimutAngle = self.esma_metadata['AzimutAngle']
         
         # map stuff from spectra xml branch:
         self.spectrum_metadata = json.loads(json.dumps(spectrum_header,
@@ -579,7 +579,7 @@ class HyperHeader(object):
         self.line_counter = interpret(root.LineCounter.text)
         self.channel_count = int(root.ChCount)
         self.mapping_count = int(root.DetectorCount)
-        self.channel_factors = {}
+        #self.channel_factors = {}
         self.spectra_data = {}
         self._set_sum_edx(root)
 
@@ -593,8 +593,14 @@ class HyperHeader(object):
         self.sem.wd = float(semData.WD)  # in mm
         self.sem.mag = float(semData.Mag)  # in times
         # image/hypermap resolution in um/pixel:
-        self.image.x_res = float(semData.DX)  # in micrometers
-        self.image.y_res = float(semData.DY)  # in micrometers
+        try:
+            self.image.x_res = float(semData.DX)  # in micrometers
+            self.image.y_res = float(semData.DY)  # in micrometers
+            self.units = 'µm'
+        except AttributeError:
+            self.image.x_res = 1.0  # in pixels
+            self.image.y_res = 1.0  # in pixels
+            self.units = 'pix'
         semStageData = root.xpath("ClassInstance[@Type='TRTSEMStageData']")[0]
         # stage position:
         self.stage_metadata = json.loads(json.dumps(semStageData,
@@ -616,12 +622,14 @@ class HyperHeader(object):
         if detector:
             eds_metadata = self.get_spectra_metadata(**kwargs)
             acq_inst['Detector'] = {'EDS': {
-                                     'azimuth_angle': eds_metadata.azimutAngle,
+                                     #'azimuth_angle': eds_metadata.azimutAngle,
                                      'elevation_angle': eds_metadata.elevationAngle,
                                      'detector_type': eds_metadata.detector_type,
                                      'real_time': self.calc_real_time()
                                            }
                                    }
+            if 'azimutAngle' in eds_metadata.esma_metadata:
+                acq_inst['Detector']['EDS']['azimuth_angle'] = eds_metadata.esma_metadata['AzimutAngle']
         return acq_inst
 
     def _set_image(self, root):
@@ -665,8 +673,8 @@ class HyperHeader(object):
 
     def _set_sum_edx(self, root):
         for i in range(self.mapping_count):
-            self.channel_factors[i] = int(root.xpath("ChannelFactor" +
-                                                     str(i))[0])
+            #self.channel_factors[i] = int(root.xpath("ChannelFactor" +
+            #                                         str(i))[0])
             self.spectra_data[i] = EDXSpectrum(root.xpath("SpectrumData" +
                                                           str(i))[0].ClassInstance)
 
@@ -1096,12 +1104,12 @@ def bcf_imagery(obj_bcf, instrument=None):
                        'size': obj_bcf.header.image.height,
                        'offset': 0,
                        'scale': obj_bcf.header.image.y_res,
-                       'units': 'µm'},
+                       'units': obj_bcf.header.units},
                       {'name': 'width',
                        'size': obj_bcf.header.image.width,
                        'offset': 0,
                        'scale': obj_bcf.header.image.x_res,
-                       'units': 'µm'}],
+                       'units': obj_bcf.header.units}],
              'metadata':
              # where is no way to determine what kind of instrument was used:
              # TEM or SEM (mode variable)
@@ -1136,12 +1144,12 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
                                'size': obj_bcf.hypermap[index].hypermap.shape[0],
                                'offset': 0,
                                'scale': obj_bcf.hypermap[index].ycalib,
-                               'units': 'µm'},
+                               'units': obj_bcf.header.units},
                               {'name': 'width',
                                'size': obj_bcf.hypermap[index].hypermap.shape[1],
                                'offset': 0,
                                'scale': obj_bcf.hypermap[index].xcalib,
-                               'units': 'µm'},
+                               'units': obj_bcf.header.units},
                               {'name': 'Energy',
                                'size': obj_bcf.hypermap[index].hypermap.shape[2],
                                'offset': obj_bcf.hypermap[index].calib_abs,
