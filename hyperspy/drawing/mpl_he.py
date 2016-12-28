@@ -35,6 +35,7 @@ class MPL_HyperExplorer(object):
         self.axes_manager = None
         self.signal_title = ''
         self.navigator_title = ''
+        self.quantity_label = ''
         self.signal_plot = None
         self.navigator_plot = None
         self.axis = None

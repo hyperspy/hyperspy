@@ -237,6 +237,9 @@ class TestEstimatePeakWidth:
         nt.assert_equal(width, 2.35482074)
         nt.assert_equal(left, 0.82258963)
         nt.assert_equal(right, 3.17741037)
+        for t in (width, left, right):
+            nt.assert_equal(t.metadata.Signal.signal_type, "")
+            nt.assert_equal(t.axes_manager.signal_dimension, 0)
 
     def test_too_narrow_range(self):
         width, left, right = self.s.estimate_peak_width(
@@ -273,7 +276,7 @@ class TestSmoothing:
             raise SkipTest
         frac = 0.5
         it = 1
-        data = self.s.data.copy()
+        data = self.s.data.astype('float')
         for i in range(data.shape[0]):
             data[i, :] = lowess(
                 endog=data[i, :],
@@ -289,7 +292,7 @@ class TestSmoothing:
 
     def test_tv(self):
         weight = 1
-        data = self.s.data.copy()
+        data = self.s.data.astype('float')
         for i in range(data.shape[0]):
             data[i, :] = _tv_denoise_1d(
                 im=data[i, :],

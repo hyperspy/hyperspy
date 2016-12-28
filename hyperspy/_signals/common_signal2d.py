@@ -33,5 +33,7 @@ class CommonSignal2D(object):
         signals.Signal1D.to_signal1D : performs the inverse operation on one
         dimensional signals.
 
+        as_signal2D, transpose, hs.transpose
+
         """
         return self.as_signal1D(0 + 3j)

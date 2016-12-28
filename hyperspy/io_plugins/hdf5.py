@@ -18,8 +18,9 @@
 
 from distutils.version import StrictVersion
 import warnings
-import datetime
 import logging
+import datetime
+import ast
 
 import h5py
 import numpy as np
@@ -43,7 +44,7 @@ default_extension = 4
 
 # Writing capabilities
 writes = True
-version = "2.1"
+version = "2.2"
 
 # -----------------------
 # File format description
@@ -73,6 +74,10 @@ version = "2.1"
 # Experiments instance
 #
 # CHANGES
+#
+# v2.2
+# - store more metadata as string: date, time, notes, authors and doi
+# - store quantity for intensity axis
 #
 # v2.1
 # - Store the navigate attribute.
@@ -416,8 +421,6 @@ def dict2hdfgroup(dictionary, group, **kwds):
             dict2hdfgroup(value.as_dictionary(),
                           group.create_group('_hspy_AxesManager_' + key),
                           **kwds)
-        elif isinstance(value, (datetime.date, datetime.time)):
-            group.attrs["_datetime_" + key] = repr(value)
         elif isinstance(value, list):
             if len(value):
                 parse_structure(key, group, value, '_list_', **kwds)
@@ -465,11 +468,16 @@ def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
             dictionary[key[len('_tuple_empty_'):]] = ()
         elif key.startswith('_bs_'):
             dictionary[key[len('_bs_'):]] = value.tostring()
-# The following is commented out as it could be used to evaluate
-# arbitrary code i.e. it was a security flaw. We should instead
-# use a standard string for date and time.
-#        elif key.startswith('_datetime_'):
-#            dictionary[key.replace("_datetime_", "")] = eval(value)
+        # The following two elif stataments enable reading date and time from
+        # v < 2 of HyperSpy's metadata specifications
+        elif key.startswith('_datetime_date'):
+            date_iso = datetime.date(
+                *ast.literal_eval(value[value.index("("):])).isoformat()
+            dictionary[key.replace("_datetime_", "")] = date_iso
+        elif key.startswith('_datetime_time'):
+            date_iso = datetime.time(
+                *ast.literal_eval(value[value.index("("):])).isoformat()
+            dictionary[key.replace("_datetime_", "")] = date_iso
         else:
             dictionary[key] = value
     if not isinstance(group, h5py.Dataset):

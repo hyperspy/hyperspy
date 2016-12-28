@@ -49,7 +49,9 @@ def _from_serial_date(serial):
     secs = (serial % 1.0) * 86400.0
     dt = timedelta(int(serial), secs, secs / 1000)
     utc = origin + dt
-    return utc.astimezone(tz.tzlocal())
+    date = "%s" % utc.astimezone(tz.tzlocal()).date()
+    time = "%s" % utc.astimezone(tz.tzlocal()).time()
+    return date, time
 
 
 def _to_serial_date(dt):
@@ -61,8 +63,6 @@ def _to_serial_date(dt):
 mapping = {
     'blockfile_header.Beam_energy':
     ("Acquisition_instrument.TEM.beam_energy", lambda x: x * 1e-3),
-    'blockfile_header.Acquisition_time':
-    ("General.time", _from_serial_date),
     'blockfile_header.Camera_length':
     ("Acquisition_instrument.TEM.camera_length", lambda x: x * 1e-4),
     'blockfile_header.Scan_rotation':
@@ -221,7 +221,11 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
     units = ['nm', 'nm', 'cm', 'cm']
     names = ['y', 'x', 'dy', 'dx']
     scales = [header['SY'], header['SX'], SDP, SDP]
-    metadata = {'General': {'original_filename': os.path.split(filename)[1]},
+    date, time = _from_serial_date(header['Acquisition_time'])
+    metadata = {'General': {'original_filename': os.path.split(filename)[1],
+                            'date': date,
+                            'time': time,
+                            'notes': header['Note']},
                 "Signal": {'signal_type': "diffraction",
                            'record_by': 'image', },
                 }

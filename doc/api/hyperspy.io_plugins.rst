@@ -44,6 +44,14 @@ hyperspy.io_plugins.emd module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.io_plugins.edax module
+-------------------------------
+
+.. automodule:: hyperspy.io_plugins.edax
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.io_plugins.fei module
 ------------------------------
 
@@ -88,6 +96,14 @@ hyperspy.io_plugins.netcdf module
 ---------------------------------
 
 .. automodule:: hyperspy.io_plugins.netcdf
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.io_plugins.protochips module
+-------------------------------------
+
+.. automodule:: hyperspy.io_plugins.protochips
     :members:
     :undoc-members:
     :show-inheritance:

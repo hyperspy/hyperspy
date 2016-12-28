@@ -81,7 +81,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         self.xlabel = '%s' % str(self.axes_manager.signal_axes[0])
         if self.axes_manager.signal_axes[0].units is not Undefined:
             self.xlabel += ' (%s)' % self.axes_manager.signal_axes[0].units
-        self.ylabel = 'Intensity'
+        self.ylabel = self.quantity_label
         self.axis = self.axes_manager.signal_axes[0]
         sf = signal1d.Signal1DFigure(title=self.signal_title +
                                      " Signal")
