@@ -2,7 +2,7 @@
 Signal2D Tools
 **************
 
-The methods described in this section are only available for one-dimensional signals in the Signal1D class.
+The methods described in this section are only available for two-dimensional signals in the Signal2D class.
 
 Two dimensional signal registration (alignment)
 -----------------------------------------------
