@@ -21,7 +21,8 @@ from traits.api import Undefined
 import numpy as np
 import logging
 import warnings
-import datetime, dateutil
+import datetime
+import dateutil
 
 from hyperspy.misc.array_tools import sarray2dict, dict2sarray
 from hyperspy.misc.date_time_tools import serial_date_to_ISO_format, datetime_to_serial_date

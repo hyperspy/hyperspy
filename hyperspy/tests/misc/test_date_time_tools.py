@@ -16,18 +16,65 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import numpy as np
 import datetime
 from dateutil import tz
 import hyperspy.misc.date_time_tools as dtt
+from hyperspy.misc.utils import DictionaryTreeBrowser
+from hyperspy.misc.test_utils import assert_deep_almost_equal
 
+md1 = DictionaryTreeBrowser({'General': {'date': '2014-12-27',
+                                         'time': '00:00:00',
+                                         'time_zone': 'UTC'}})
 dt1 = datetime.datetime(2014, 12, 27, 00, 00, 00, tzinfo=tz.tzutc())
 serial1 = 42000.00
+md2 = DictionaryTreeBrowser({'General': {'date': '2124-03-25',
+                                         'time': '10:04:48',
+                                         'time_zone': 'UTC'}})
 dt2 = datetime.datetime(2124, 3, 25, 10, 4, 48, tzinfo=tz.tzutc())
 serial2 = 81900.42
+
+md3 = DictionaryTreeBrowser({'General': {'date': '2016-07-12',
+                                         'time': '22:57:32'}})
 dt3 = datetime.datetime(2016, 7, 12, 22, 57, 32)
 serial3 = 42563.95662037037
 
 
+def test_get_date_time_from_metadata():
+    assert dtt.get_date_time_from_metadata(md1) == '2014-12-27T00:00:00+00:00'
+    assert dtt.get_date_time_from_metadata(md1, formatting='ISO') == '2014-12-27T00:00:00+00:00'
+    assert dtt.get_date_time_from_metadata(md1, formatting='datetime64') == np.datetime64('2014-12-27T00:00:00.000000')
+    assert dtt.get_date_time_from_metadata(md1, formatting='datetime') == dt1
+
+    assert dtt.get_date_time_from_metadata(md2) == '2124-03-25T10:04:48+00:00'
+    assert dtt.get_date_time_from_metadata(md2, formatting='datetime') == dt2
+    assert dtt.get_date_time_from_metadata(md2, formatting='datetime64') == np.datetime64('2124-03-25T10:04:48.000000')
+
+    assert dtt.get_date_time_from_metadata(md3) == '2016-07-12T22:57:32'
+    assert dtt.get_date_time_from_metadata(md3, formatting='datetime') == dt3
+    assert dtt.get_date_time_from_metadata(md3, formatting='datetime64') == np.datetime64('2016-07-12T22:57:32.000000')
+
+
+def _defaut_metadata():
+    md = DictionaryTreeBrowser({'General': {'date': '2016-01-01',
+                                            'time': '00:00:00',
+                                            'time_zone': 'GMT'}})
+    return md
+    
+
+def test_update_date_time_in_metadata():
+    md = DictionaryTreeBrowser({'General': {}})
+    assert_deep_almost_equal(md1.as_dictionary(),
+                             dtt.update_date_time_in_metadata(dt1, md).as_dictionary())    
+
+    assert_deep_almost_equal(md2.as_dictionary(),
+                             dtt.update_date_time_in_metadata(dt2, md).as_dictionary())
+    
+#    assert_deep_almost_equal(md3.as_dictionary(),
+#                             dtt.update_date_time_in_metadata(dt3, md).as_dictionary())
+#
+
+    
 def test_serial_date_to_ISO_format():
     iso1 = dtt.serial_date_to_ISO_format(serial1)
     dt1_local = dt1.astimezone(tz.tzlocal())
