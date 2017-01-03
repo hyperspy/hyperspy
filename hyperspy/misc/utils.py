@@ -181,6 +181,8 @@ class DictionaryTreeBrowser(object):
     as_dictionary : returns a dictionary representation of the object.
     set_item : easily set items, creating any necessary node on the way.
     add_node : adds a node.
+    has_item : check the existence of an item
+    del_item : delete an item
 
     Examples
     --------
@@ -328,6 +330,9 @@ class DictionaryTreeBrowser(object):
     def __setitem__(self, key, value):
         self.__setattr__(key, value)
 
+    def __delitem__(self, key):
+        self.__delattr__(key)
+        
     def __getattribute__(self, name):
         if isinstance(name, bytes):
             name = name.decode()
@@ -472,6 +477,50 @@ class DictionaryTreeBrowser(object):
         else:
             raise AttributeError("Item not in dictionary browser")
 
+    def del_item(self, item_path):
+        """Given a path, delete the key.
+
+        The nodes of the path are separated using periods.
+
+        Parameters
+        ----------
+        item_path : Str
+            A string describing the path with each item separated by
+            full stops (periods)
+
+        Examples
+        --------
+
+        >>> dict = {'Branch':{'Leaf1':{'caterpillar':False, 'color':'green'}}}
+        >>> dict_browser = DictionaryTreeBrowser(dict)
+        >>> dict_browser
+        └── Branch
+            └── Leaf1
+                ├── caterpillar = False
+                └── color = green
+        >>> dict_browser.del_item('Branch.Leaf1.color')
+        >>> dict_browser
+        └── Branch
+            └── leaf1
+                └── caterpillar = False
+        """
+        if isinstance(item_path, str):
+            item_path = item_path.split('.')
+        else:
+            item_path = copy.copy(item_path)
+        attrib = item_path.pop(0)
+        if hasattr(self, attrib):
+            if len(item_path) == 0:
+                del self[attrib]
+            else:
+                item = self[attrib]
+                if isinstance(item, type(self)):
+                    item.del_item(item_path)
+                else:
+                    raise AttributeError("Item not in dictionary browser")
+        else:
+            raise AttributeError("Item not in dictionary browser")
+            
     def __contains__(self, item):
         return self.has_item(item_path=item)
 

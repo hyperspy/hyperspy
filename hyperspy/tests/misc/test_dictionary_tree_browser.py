@@ -103,6 +103,44 @@ class TestDictionaryBrowser:
                     'tmp_parameters': {}}},
             d)
 
+    def test_has_item(self):
+        assert self.tree.has_item('Node1') is True
+        assert self.tree.has_item('Node3') is False
+        assert self.tree.has_item('Node1.Node11') is True
+        assert self.tree.has_item('Node1.Node11.leaf111') is True
+        assert self.tree.has_item('Node1.Node11.leaf112') is False
+        assert self.tree.has_item('Node2.Node11.leaf112') is False
+
+    def test_get_item(self):
+        assert self.tree.get_item('Node1.Node11.leaf111') == 111
+        assert self.tree.get_item('Node2.leaf21') == 21
+
+    def test_del_item(self):
+        self.tree.del_item('Node1.Node11.leaf111')
+        assert self.tree.as_dictionary() == {
+            "Node1": {"leaf11": 11,
+                      "Node11": {},
+                      },
+            "Node2": {"leaf21": 21,
+                      "Node21": {"leaf211": 211},
+                      },
+        }
+
+        self.tree.del_item('Node1.leaf11')
+        assert self.tree.as_dictionary() == {
+            "Node1": {"Node11": {},
+                      },
+            "Node2": {"leaf21": 21,
+                      "Node21": {"leaf211": 211},
+                      },
+        }
+
+        self.tree.del_item('Node1')
+        assert self.tree.as_dictionary() == {"Node2": {"leaf21": 21,
+                                                       "Node21": {"leaf211": 211},
+                                                       },
+                                             }
+
     def _test_date_time(self, dt_str='now'):
         dt0 = np.datetime64(dt_str)
         data_str, time_str = np.datetime_as_string(dt0).split('T')
