@@ -213,6 +213,10 @@ class HologramImage(Signal2D):
 
             raise ValueError('The navigation dimensions of object and reference holograms do not match')
 
+        if reference and not reference.axes_manager.signal_shape == self.axes_manager.signal_shape:
+
+            raise ValueError('The signal dimensions of object and reference holograms do not match')
+
         # Parsing sideband position:
         if sb_position is None:
             _logger.warning('Sideband position is not specified. The sideband will be found automatically which may '
