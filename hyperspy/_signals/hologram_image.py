@@ -378,9 +378,9 @@ class HologramImage(Signal2D):
         wave_image.set_signal_type('complex_signal2d')  # New signal is a complex
 
         wave_image.axes_manager.signal_axes[0].scale = self.sampling[0] * self.axes_manager.signal_shape[0] / \
-                                                       output_shape[0]
-        wave_image.axes_manager.signal_axes[1].scale = self.sampling[1] * self.axes_manager.signal_shape[1] / \
                                                        output_shape[1]
+        wave_image.axes_manager.signal_axes[1].scale = self.sampling[1] * self.axes_manager.signal_shape[1] / \
+                                                       output_shape[0]
 
         # Reconstruction parameters are stored in holo_reconstruction_parameters:
 
