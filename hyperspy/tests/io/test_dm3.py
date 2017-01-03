@@ -25,6 +25,8 @@ from .generate_dm_testing_files import dm3_data_types
 import nose.tools as nt
 from hyperspy.io import load
 
+from hyperspy.io_plugins.digital_micrograph import DigitalMicrographReader, ImageObject
+
 my_path = os.path.dirname(__file__)
 
 # When running the loading test the data of the files that passes it are
@@ -33,6 +35,55 @@ my_path = os.path.dirname(__file__)
 data_dict = {'dm3_1D_data': {},
              'dm3_2D_data': {},
              'dm3_3D_data': {}, }
+
+
+class test_ImageObject():
+
+    def setUp(self):
+        self.imageobject = ImageObject({}, "")
+
+    def _load_file(self, fname):
+        with open(fname, "rb") as f:
+            dm = DigitalMicrographReader(f)
+            dm.parse_file()
+            self.imdict = dm.get_image_dictionaries()
+        return [ImageObject(imdict, fname) for imdict in self.imdict]
+
+    def test_get_microscope_name(self):
+        fname = os.path.join(my_path, "dm3_2D_data",
+                             "test_diffraction_pattern_tags_removed.dm3")
+        images = self._load_file(fname)
+        image = images[0]
+        # Should return None because the tags are missing
+        assert image._get_microscope_name(image.imdict.ImageTags) is None
+
+        fname = os.path.join(my_path, "dm3_2D_data",
+                             "test_diffraction_pattern.dm3")
+        images = self._load_file(fname)
+        image = images[0]
+        assert image._get_microscope_name(
+            image.imdict.ImageTags) == "FEI Tecnai"
+
+    def test_get_date(self):
+        assert self.imageobject._get_date("11/13/2016") == "2016-11-13"
+
+    def test_get_time(self):
+        assert self.imageobject._get_time("6:56:37 pm") == "18:56:37"
+
+    def test_parse_string(self):
+        assert self.imageobject._parse_string("") is None
+        assert self.imageobject._parse_string("string") is "string"
+
+def test_missing_tag():
+    fname = os.path.join(my_path, "dm3_2D_data",
+                         "test_diffraction_pattern_tags_removed.dm3")
+    s = load(fname)
+    md = s.metadata
+    nt.assert_almost_equal(md.Acquisition_instrument.TEM.beam_energy, 200.0)
+    nt.assert_almost_equal(md.Acquisition_instrument.TEM.exposure_time, 0.2)
+    nt.assert_equal(md.General.date, "2014-07-09")
+    nt.assert_equal(md.General.time, "18:56:37")
+    nt.assert_equal(md.General.title, "test_diffraction_pattern_tags_removed")
 
 
 def test_read_TEM_metadata():

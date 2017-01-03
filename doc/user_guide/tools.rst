@@ -60,6 +60,40 @@ in the :py:attr:`~.signal.BaseSignal.metadata` attribute and the axes
 information (including calibration) can be accessed (and modified) in the
 :py:attr:`~.signal.BaseSignal.axes_manager` attribute.
 
+Signal initialization
+---------------------
+
+Many of the values in the :py:attr:`~.signal.BaseSignal.axes_manager` can be
+set when making the :py:class:`~.signal.BaseSignal` object.
+
+.. code-block:: python
+
+    >>> dict0 = {'size': 10, 'name':'Ax0', 'units':'A', 'scale':0.2, 'offset':1}
+    >>> dict1 = {'size': 20, 'name':'Ax1', 'units':'B', 'scale':0.1, 'offset':2} 
+    >>> s = hs.signals.BaseSignal(np.random.random((10,20)), axes=[dict0, dict1])
+    >>> s.axes_manager
+    <Axes manager, axes: (|20, 10)>
+		Name |   size |  index |  offset |   scale |  units 
+    ================ | ====== | ====== | ======= | ======= | ====== 
+    ---------------- | ------ | ------ | ------- | ------- | ------ 
+	       Axes1 |     20 |        |       2 |     0.1 |      B 
+	       Axes0 |     10 |        |       1 |     0.2 |      A
+
+This also applies to the :py:attr:`~.signal.BaseSignal.metadata`.
+
+.. code-block:: python
+
+    >>> metadata_dict = {'General':{'name':'A BaseSignal'}}
+    >>> metadata_dict['General']['title'] = 'A BaseSignal title'
+    >>> s = hs.signals.BaseSignal(np.arange(10), metadata=metadata_dict)
+    >>> s.metadata
+    ├── General
+    │   ├── name = A BaseSignal
+    │   └── title = A BaseSignal title
+    └── Signal
+	├── binned = False
+	└── signal_type =
+
 
 The navigation and signal dimensions
 ------------------------------------
