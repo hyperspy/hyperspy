@@ -39,7 +39,7 @@ takes sideband position and size as parameters:
 
 .. code-block:: python
 
-    >>> wave_image = im.reconstruct_phase(sb_position=(<x>, <y>), sb_size=sb_radius)
+    >>> wave_image = im.reconstruct_phase(sb_position=(<y>, <x>), sb_size=sb_radius)
 
 The parameters can be found automatically by calling following methods:
 
