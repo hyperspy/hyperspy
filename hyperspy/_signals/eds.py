@@ -22,7 +22,7 @@ import numpy as np
 import warnings
 import matplotlib
 from matplotlib import pyplot as plt
-from distutils.version import StrictVersion
+from distutils.version import LooseVersion
 
 from hyperspy import utils
 from hyperspy._signals.signal1d import Signal1D
@@ -981,7 +981,7 @@ class EDSSpectrum(Signal1D):
             keywords argument for markers.vertical_line
         """
         per_xray = len(position[0])
-        if StrictVersion(matplotlib.__version__) >= "1.5.3":
+        if LooseVersion(matplotlib.__version__) >= "1.5.3":
             colors = itertools.cycle(np.sort(
                 plt.rcParams['axes.prop_cycle'].by_key()["color"] * per_xray))
         else:
