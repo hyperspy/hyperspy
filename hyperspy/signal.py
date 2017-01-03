@@ -740,6 +740,7 @@ class MVATools(object):
                                    calibrate=True,
                                    same_window=None,
                                    comp_label='Decomposition factor',
+                                   cmap=plt.cm.gray,
                                    per_row=3):
         """Plot factors from a decomposition.
 
@@ -767,11 +768,9 @@ class MVATools(object):
             separate windows) or the label in the legend (if plotting
             in the
             same window)
-
         cmap : The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
-
         per_row : int, the number of plots in each row, when the
         same_window
             parameter is True.
@@ -797,6 +796,7 @@ class MVATools(object):
                                             calibrate=calibrate,
                                             same_window=same_window,
                                             comp_label=comp_label,
+                                            cmap=cmap,
                                             per_row=per_row)
 
     def plot_bss_factors(self, comp_ids=None, calibrate=True,
@@ -3451,7 +3451,8 @@ class BaseSignal(FancySlicing,
             res_data = np.stack(res_data.flat).reshape(nav_shape + sig_shape)
             if inplace:
                 sig = self # the modified thing
-                if self.data.shape == res_data.shape:
+                if (self.data.shape == res_data.shape and
+                        np.can_cast(res_data.dtype, self.data.dtype)):
                     self.data[:] = res_data
                 else:
                     self.data = res_data
@@ -3755,8 +3756,9 @@ class BaseSignal(FancySlicing,
             s = Signal2D(data,
                          axes=self.axes_manager._get_navigation_axes_dicts())
         else:
-            s = BaseSignal(np.zeros(self.axes_manager._navigation_shape_in_array,
-                                    dtype=self.data.dtype),
+            s = BaseSignal(
+                np.zeros(self.axes_manager._navigation_shape_in_array,
+                         dtype=self.data.dtype),
                            axes=self.axes_manager._get_navigation_axes_dicts())
             s.axes_manager.set_signal_dimension(
                 self.axes_manager.navigation_dimension)
