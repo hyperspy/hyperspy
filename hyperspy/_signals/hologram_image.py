@@ -22,9 +22,17 @@ from collections import OrderedDict
 from hyperspy.misc.holography.reconstruct import reconstruct, estimate_sideband_position, estimate_sideband_size
 import logging
 import scipy.constants as constants
+from contextlib import contextmanager
 
 _logger = logging.getLogger(__name__)
 
+@contextmanager
+def unfold(s):
+    try:
+        s.unfold_navigation_space()
+        yield s
+    finally:
+        s.fold()
 
 class HologramImage(Signal2D):
     """Image subclass for holograms acquired via off-axis electron holography."""
@@ -290,7 +298,7 @@ class HologramImage(Signal2D):
                                                              (self.axes_manager.signal_axes[0].scale,
                                                               self.axes_manager.signal_axes[1].scale))])
             sb_size_temp = sb_size_temp / np.mean(f_sampling)
-            sb_smoothness = sb_smoothness / np.mean(f_sampling)
+            sb_smoothness_temp = sb_smoothness_temp / np.mean(f_sampling)
         elif sb_unit == 'mrad':
             f_sampling = np.divide(1, [a * b for a, b in zip(self.axes_manager.signal_shape,
                                                              (self.axes_manager.signal_axes[0].scale,
@@ -343,19 +351,22 @@ class HologramImage(Signal2D):
 
             if reference.axes_manager.navigation_size == 0 and sb_position.axes_manager.navigation_size > 0:
                 # 1d reference, but parameters are multidimensional
-                sb_position_ref = sb_position.inav[0].data
+                with unfold(sb_position_temp) as sb_position_temp_unfolded:
+                    sb_position_ref = sb_position_temp_unfolded.inav[0].data
             else:
                 sb_position_ref = sb_position_temp
 
             if reference.axes_manager.navigation_size == 0 and sb_size.axes_manager.navigation_size > 0:
                 # 1d reference, but parameters are multidimensional
-                sb_size_ref = np.float64(sb_size.inav[0].data)
+                with unfold(sb_size_temp) as sb_size_temp_unfolded:
+                    sb_size_ref = np.float64(sb_size_temp_unfolded.inav[0].data)
             else:
                 sb_size_ref = sb_size_temp
 
             if reference.axes_manager.navigation_size == 0 and sb_smoothness.axes_manager.navigation_size > 0:
                 # 1d reference, but parameters are multidimensional
-                sb_smoothness_ref = np.float64(sb_smoothness.inav[0].data)
+                with unfold(sb_smoothness_temp) as sb_smoothness_temp_unfolded:
+                    sb_smoothness_ref = np.float64(sb_smoothness_temp_unfolded.inav[0].data)
             else:
                 sb_smoothness_ref = sb_smoothness_temp
             #

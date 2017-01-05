@@ -75,6 +75,14 @@ class TestCaseHologramImage(object):
 
         self.holo_image3 = hs.signals.HologramImage(holo3.reshape(2, 3, self.img_size3x, self.img_size3y))
 
+    def test_set_microscope_parameters(self):
+        self.holo_image.set_microscope_parameters(beam_energy=300., biprism_voltage=80.5, tilt_alpha=2.2,
+                                                  tilt_beta=0.)
+        nt.assert_equal(self.holo_image.metadata.Acquisition_instrument.TEM.beam_energy, 300.)
+        nt.assert_equal(self.holo_image.metadata.Acquisition_instrument.TEM.Holography.Biprism_voltage, 80.5)
+        nt.assert_equal(self.holo_image.metadata.Acquisition_instrument.TEM.Tilt_alpha, 2.2)
+        nt.assert_equal(self.holo_image.metadata.Acquisition_instrument.TEM.Tilt_beta, 0.)
+
     def test_reconstruct_phase(self):
 
         # 1. Testing reconstruction of a single hologram with a reference (as a np array and as HologramImage) with
@@ -132,7 +140,7 @@ class TestCaseHologramImage(object):
         nt.assert_almost_equal(phase_new_crop0, phase_ref_crop0, decimal=2)
         nt.assert_almost_equal(phase_new_crop1, phase_ref_crop1, decimal=2)
 
-        # 3. Testing reconstruction with multidimensional images (3, 2| 512, 768) using 1d image as a refernce:
+        # 3. Testing reconstruction with multidimensional images (3, 2| 512, 768) using 1d image as a reference:
         wave_image3 = self.holo_image3.reconstruct_phase(self.ref_image3.inav[0, 0], sb='upper')
 
         # Cropping the reconstructed and original phase images and comparing:
@@ -146,6 +154,27 @@ class TestCaseHologramImage(object):
         phase3_ref_crop = self.phase_ref3.reshape(2, 3, self.img_size3x, self.img_size3y)[:, :, x_start:x_stop,
                           y_start:y_stop]
         nt.assert_almost_equal(phase3_new_crop.data, phase3_ref_crop, decimal=2)
+
+        # 3a. Testing reconstruction with input parameters in 'nm' and with multiple parameter input,
+        # but reference ndim=0:
+
+        sb_position3 = self.ref_image3.estimate_sideband_position(sb='upper')
+        f_sampling = np.divide(1, [a * b for a, b in zip(self.ref_image3.axes_manager.signal_shape,
+                                                         (self.ref_image3.axes_manager.signal_axes[0].scale,
+                                                          self.ref_image3.axes_manager.signal_axes[1].scale))])
+        sb_size3 = self.ref_image3.estimate_sideband_size(sb_position3) * np.mean(f_sampling)
+        sb_smoothness3 = sb_size3 * 0.05
+        sb_units3 = 'nm'
+
+        wave_image3a = self.holo_image3.reconstruct_phase(self.ref_image3.inav[0, 0], sb_position=sb_position3,
+                                                          sb_size=sb_size3, sb_smoothness=sb_smoothness3,
+                                                          sb_unit=sb_units3)
+        phase3a_new_crop = wave_image3a.unwrapped_phase()
+        phase3a_new_crop.crop(2, y_start, y_stop)
+        phase3a_new_crop.crop(3, x_start, x_stop)
+        nt.assert_almost_equal(phase3a_new_crop.data, phase3_ref_crop, decimal=2)
+
+
 
         # 4. Testing raises:
         #   a. Mismatch of navigation dimensions of object and reference holograms, except if reference hologram ndim=0
