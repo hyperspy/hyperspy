@@ -147,6 +147,28 @@ class TestCaseHologramImage(object):
                           y_start:y_stop]
         nt.assert_almost_equal(phase3_new_crop.data, phase3_ref_crop, decimal=2)
 
+        # 4. Testing raises:
+        #   a. Mismatch of navigation dimensions of object and reference holograms, except if reference hologram ndim=0
+        nt.assert_raises(ValueError, self.holo_image3.reconstruct_phase, self.ref_image3.inav[0, :])
+        #   b. Mismatch of signal shapes of object and reference holograms
+        nt.assert_raises(ValueError, self.holo_image3.reconstruct_phase,
+                         self.ref_image3.inav[:, :].isig[y_start:y_stop, x_start:x_stop])
+
+        #   c. Mismatch of signal shape of sb_position
+        sb_position_mismatched = hs.signals.Signal2D(np.arange(9).reshape((3, 3)))
+        nt.assert_raises(ValueError, self.holo_image3.reconstruct_phase, sb_position=sb_position_mismatched)
+
+        #   d. Mismatch of navigation dimensions of reconstruction parameters
+        sb_position_mismatched = hs.signals.Signal1D(np.arange(16).reshape((8, 2)))
+        sb_size_mismatched = hs.signals.BaseSignal(np.arange(9)).T
+        sb_smoothness_mismatched = hs.signals.BaseSignal(np.arange(9)).T
+        nt.assert_raises(ValueError, self.holo_image3.reconstruct_phase, sb_position=sb_position_mismatched)
+        nt.assert_raises(ValueError, self.holo_image3.reconstruct_phase, sb_size=sb_size_mismatched)
+        nt.assert_raises(ValueError, self.holo_image3.reconstruct_phase, sb_smoothness=sb_smoothness_mismatched)
+
+        #   e. Beam energy is not assigned, while 'mrad' units selected
+        nt.assert_raises(AttributeError, self.holo_image3.reconstruct_phase, sb_size=40, sb_unit='mrad')
+
 if __name__ == '__main__':
     import nose
     nose.run(defaultTest=__name__)

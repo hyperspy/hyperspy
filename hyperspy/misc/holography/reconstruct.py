@@ -19,8 +19,6 @@
 import numpy as np
 from scipy.fftpack import fft2, ifft2, fftshift
 import matplotlib.pyplot as plt
-from hyperspy.signals import Signal2D
-from collections import OrderedDict
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -146,7 +144,7 @@ def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness, o
     fft_aperture = fft_shifted * aperture
 
     if plotting:
-        fig, axs = plt.subplots(1, 1, figsize=(4, 4))
+        _, axs = plt.subplots(1, 1, figsize=(4, 4))
         axs.imshow(np.abs(fftshift(fft_aperture)), clim=(0, 0.1))
         axs.scatter(sb_position[1], sb_position[0], s=10, color='red', marker='x')
         axs.set_xlim(int(holo_size[0]/2) - sb_size/np.mean(f_sampling), int(holo_size[0]/2) +

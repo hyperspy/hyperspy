@@ -221,7 +221,7 @@ class HologramImage(Signal2D):
 
         else:
             if isinstance(sb_position, BaseSignal) and not sb_position._signal_dimension == 1:
-                    raise ValueError('sb_position dimension has to be 1')
+                raise ValueError('sb_position dimension has to be 1')
 
             if not isinstance(sb_position, Signal1D):
                 sb_position = Signal1D(sb_position)
