@@ -66,7 +66,7 @@ try:
     from hyperspy.io_plugins import unbcf_fast
     fast_unbcf = True
     _logger.info("The fast cython based bcf unpacking library were found")
-except ImportError:
+except ImportError:  # pragma: no cover
     fast_unbcf = False
     _logger.warning("""unbcf_fast library is not present...
 Falling back to slow python only backend.""")
@@ -589,13 +589,13 @@ class HyperHeader(object):
         """
         semData = root.xpath("ClassInstance[@Type='TRTSEMData']")[0]
         # sem acceleration voltage, working distance, magnification:
-        self.sem.hv = float(semData.HV)  # in kV
-        self.sem.wd = float(semData.WD)  # in mm
-        self.sem.mag = float(semData.Mag)  # in times
+        self.sem.hv = semData.HV.pyval  # in kV
+        self.sem.wd = semData.WD.pyval  # in mm
+        self.sem.mag = semData.Mag.pyval  # in times
         # image/hypermap resolution in um/pixel:
         try:
-            self.image.x_res = float(semData.DX)  # in micrometers
-            self.image.y_res = float(semData.DY)  # in micrometers
+            self.image.x_res = semData.DX.pyval  # in micrometers
+            self.image.y_res = semData.DY.pyval  # in micrometers
             self.units = 'µm'
         except AttributeError:
             self.image.x_res = 1.0  # in pixels
