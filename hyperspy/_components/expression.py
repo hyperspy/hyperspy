@@ -89,7 +89,7 @@ class Expression(Component):
         import sympy
         self._add_rotation = kwargs.pop("add_rotation", False)
         self._str_expression = expression
-        self.compile_function(module=module)
+        self.compile_function(module=module, position=position)
         # Initialise component
         Component.__init__(self, self._parameter_strings)
         self._whitelist['expression'] = ('init', expression)
@@ -101,7 +101,11 @@ class Expression(Component):
         self.name = name
         # Set the position parameter
         if position:
-            self._position = getattr(self, position)
+            if self._is2D:
+                self._position_x = getattr(self, position[0])
+                self._position_y = getattr(self, position[1])
+            else:
+                self._position = getattr(self, position)
         # Set the initial value of the parameters
         if kwargs:
             for kwarg, value in kwargs.items():
@@ -111,7 +115,7 @@ class Expression(Component):
             self.__doc__ = _CLASS_DOC % (
                 name, sympy.latex(sympy.sympify(expression)))
 
-    def compile_function(self, module="numpy"):
+    def compile_function(self, module="numpy", position=False):
         import sympy
         from sympy.utilities.lambdify import lambdify
         expr = sympy.sympify(self._str_expression)
@@ -123,8 +127,16 @@ class Expression(Component):
         if self._is2D:
             y = y[0]
         if self._is2D and self._add_rotation:
-            rotx = sympy.sympify("x * cos(angle) - y * sin(angle)")
-            roty = sympy.sympify("x * sin(angle) + y * cos(angle)")
+            if position: # Rotate around the "center" of the function
+                rotx = sympy.sympify(
+                    "{0} + (x - {0}) * cos(angle) - (y - {1}) * sin(angle)"\
+                        .format(*position))
+                roty = sympy.sympify(
+                    "{1} + (x - {0}) * sin(angle) + (y - {1}) * cos(angle)"\
+                        .format(*position))
+            else: # Rotate around the origin
+                rotx = sympy.sympify("x * cos(angle) - y * sin(angle)")
+                roty = sympy.sympify("x * sin(angle) + y * cos(angle)")
             expr = expr.subs({"x": rotx, "y": roty}, simultaneous=False)
         rvars = sympy.symbols([s.name for s in expr.free_symbols], real=True)
         real_expr = expr.subs(
