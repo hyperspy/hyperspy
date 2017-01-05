@@ -31,12 +31,6 @@ class HologramImage(Signal2D):
 
     _signal_type = 'hologram'
 
-    @property
-    def f_sampling(self):
-        return np.divide(1, [a * b for a, b in zip(self.axes_manager.signal_shape,
-                                                   (self.axes_manager.signal_axes[0].scale,
-                                                    self.axes_manager.signal_axes[1].scale))])
-
     def set_microscope_parameters(self,
                                   beam_energy=None,
                                   biprism_voltage=None,
@@ -292,10 +286,15 @@ class HologramImage(Signal2D):
 
         # Convert sideband size from 1/nm or mrad to pixels
         if sb_unit == 'nm':
-            sb_size_temp = sb_size_temp / np.mean(self.f_sampling)
-            sb_smoothness = sb_smoothness / np.mean(self.f_sampling)
+            f_sampling = np.divide(1, [a * b for a, b in zip(self.axes_manager.signal_shape,
+                                                             (self.axes_manager.signal_axes[0].scale,
+                                                              self.axes_manager.signal_axes[1].scale))])
+            sb_size_temp = sb_size_temp / np.mean(f_sampling)
+            sb_smoothness = sb_smoothness / np.mean(f_sampling)
         elif sb_unit == 'mrad':
-
+            f_sampling = np.divide(1, [a * b for a, b in zip(self.axes_manager.signal_shape,
+                                                             (self.axes_manager.signal_axes[0].scale,
+                                                              self.axes_manager.signal_axes[1].scale))])
             try:
                 ht = self.metadata.Acquisition_instrument.TEM.beam_energy
             except:
@@ -307,9 +306,8 @@ class HologramImage(Signal2D):
                        (1 + constants.elementary_charge * ht * 1000 / (2 * constants.m_e *
                                                                        constants.c ** 2))
             wavelength = constants.h / np.sqrt(momentum) * 1e9  # in nm
-            sb_size_temp = sb_size_temp / (1000 * wavelength * np.mean(self.f_sampling))
-            sb_smoothness_temp = sb_smoothness_temp / (1000 * wavelength * np.mean(
-                self.f_sampling))
+            sb_size_temp = sb_size_temp / (1000 * wavelength * np.mean(f_sampling))
+            sb_smoothness_temp = sb_smoothness_temp / (1000 * wavelength * np.mean(f_sampling))
 
         # Find output shape:
         if output_shape is None:
