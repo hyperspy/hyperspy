@@ -18,12 +18,14 @@ def _fill_function_args(fn):
 
     return fn_wrapped
 
+
 def _fill_function_args_2d(fn):
     @wraps(fn)
     def fn_wrapped(self, x, y):
         return fn(x, y, *[p.value for p in self.parameters])
 
     return fn_wrapped
+
 
 class Expression(Component):
 
@@ -109,7 +111,6 @@ class Expression(Component):
             self.__doc__ = _CLASS_DOC % (
                 name, sympy.latex(sympy.sympify(expression)))
 
-
     def compile_function(self, module="numpy"):
         import sympy
         from sympy.utilities.lambdify import lambdify
@@ -143,9 +144,8 @@ class Expression(Component):
         self._f = lambdify(variables + parameters, eval_expr,
                            modules=module, dummify=False)
 
-
         if self._is2D:
-            f = lambda x,y: self._f(x, y, *[p.value for p in self.parameters])
+            f = lambda x, y: self._f(x, y, *[p.value for p in self.parameters])
         else:
             f = lambda x: self._f(x, *[p.value for p in self.parameters])
         setattr(self, "function", f)
