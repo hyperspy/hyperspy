@@ -35,6 +35,9 @@ from hyperspy.docstrings.plot import (
 _logger = logging.getLogger(__name__)
 
 
+_logger = logging.getLogger(__name__)
+
+
 def shift_image(im, shift, interpolation_order=1, fill_value=np.nan):
     fractional, integral = np.modf(shift)
     if fractional.any():
@@ -123,9 +126,10 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         apply a median filter for noise reduction
     hanning : bool
         Apply a 2d hanning filter
-    plot : bool
-        If True plots the images after applying the filters and
-        the phase correlation
+    plot : bool | matplotlib.Figure
+        If True, plots the images after applying the filters and the phase
+        correlation. If a figure instance, the images will be plotted to the
+        given figure.
     reference : \'current\' | \'cascade\'
         If \'current\' (default) the image at the current
         coordinates is taken as reference. If \'cascade\' each image
@@ -182,15 +186,34 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
     max_val = phase_correlation.max()
 
     # Plot on demand
-    if plot is True:
-        f, axarr = plt.subplots(1, 3)
-        axarr[0].imshow(ref)
-        axarr[1].imshow(image)
-        axarr[2].imshow(phase_correlation)
-        axarr[0].set_title('Reference')
-        axarr[1].set_title('Signal2D')
-        axarr[2].set_title('Phase correlation')
-        plt.show()
+    if plot is True or isinstance(plot, plt.Figure):
+        if isinstance(plot, plt.Figure):
+            f = plot
+            axarr = plot.axes
+            if len(axarr) < 3:
+                for i in range(3):
+                    f.add_subplot(1, 3, i)
+                axarr = plot.axes
+        else:
+            f, axarr = plt.subplots(1, 3)
+        full_plot = len(axarr[0].images) == 0
+        if full_plot:
+            axarr[0].set_title('Reference')
+            axarr[1].set_title('Image')
+            axarr[2].set_title('Phase correlation')
+            axarr[0].imshow(ref)
+            axarr[1].imshow(image)
+            d = (np.array(phase_correlation.shape) - 1) // 2
+            extent = [-d[1], d[1], -d[0], d[0]]
+            axarr[2].imshow(np.fft.fftshift(phase_correlation),
+                            extent=extent)
+            plt.show()
+        else:
+            axarr[0].images[0].set_data(ref)
+            axarr[1].images[0].set_data(image)
+            axarr[2].images[0].set_data(np.fft.fftshift(phase_correlation))
+            # TODO: Renormalize images
+            f.canvas.draw()
     # Liberate the memory. It is specially necessary if it is a
     # memory map
     del ref
@@ -301,9 +324,11 @@ class Signal2D(BaseSignal, CommonSignal2D):
             apply a median filter for noise reduction
         hanning : bool
             Apply a 2d hanning filter
-        plot : bool
+        plot : bool or "reuse"
             If True plots the images after applying the filters and
-            the phase correlation
+            the phase correlation. If 'reuse', it will also plot the images,
+            but it will only use one figure, and continously update the images
+            in that figure as it progresses through the stack.
         dtype : str or dtype
             Typecode or data-type in which the calculations must be
             performed.
@@ -340,6 +365,9 @@ class Signal2D(BaseSignal, CommonSignal2D):
         shifts = []
         nrows = None
         images_number = self.axes_manager._max_index + 1
+        if plot == 'reuse':
+            # Reuse figure for plots
+            plot = plt.figure()
         if reference == 'stat':
             nrows = images_number if chunk_size is None else \
                 min(images_number, chunk_size)
