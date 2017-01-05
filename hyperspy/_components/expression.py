@@ -127,14 +127,14 @@ class Expression(Component):
         if self._is2D:
             y = y[0]
         if self._is2D and self._add_rotation:
-            if position: # Rotate around the "center" of the function
+            if position:  # Rotate around the "center" of the function
                 rotx = sympy.sympify(
-                    "{0} + (x - {0}) * cos(angle) - (y - {1}) * sin(angle)"\
+                    "{0} + (x - {0}) * cos(angle) - (y - {1}) * sin(angle)"
                         .format(*position))
                 roty = sympy.sympify(
-                    "{1} + (x - {0}) * sin(angle) + (y - {1}) * cos(angle)"\
+                    "{1} + (x - {0}) * sin(angle) + (y - {1}) * cos(angle)"
                         .format(*position))
-            else: # Rotate around the origin
+            else:  # Rotate around the origin
                 rotx = sympy.sympify("x * cos(angle) - y * sin(angle)")
                 roty = sympy.sympify("x * sin(angle) + y * cos(angle)")
             expr = expr.subs({"x": rotx, "y": roty}, simultaneous=False)
