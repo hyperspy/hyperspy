@@ -32,12 +32,10 @@ class HologramImage(Signal2D):
     _signal_type = 'hologram'
 
     @property
-    def sampling(self):
-        return self.axes_manager.signal_axes[0].scale, self.axes_manager.signal_axes[1].scale
-
-    @property
     def f_sampling(self):
-        return np.divide(1, [a * b for a, b in zip(self.axes_manager.signal_shape, self.sampling)])
+        return np.divide(1, [a * b for a, b in zip(self.axes_manager.signal_shape,
+                                                   (self.axes_manager.signal_axes[0].scale,
+                                                    self.axes_manager.signal_axes[1].scale))])
 
     def set_microscope_parameters(self,
                                   beam_energy=None,
@@ -108,7 +106,8 @@ class HologramImage(Signal2D):
         """
 
         # sb_position = self.deepcopy()
-        sb_position = self.map(estimate_sideband_position, holo_sampling=self.sampling,
+        sb_position = self.map(estimate_sideband_position, holo_sampling=(self.axes_manager.signal_axes[0].scale,
+                                                                          self.axes_manager.signal_axes[1].scale),
                                central_band_mask_radius=ap_cb_radius, sb=sb, show_progressbar=show_progressbar,
                                inplace=False)
 
@@ -330,7 +329,9 @@ class HologramImage(Signal2D):
 
         # Checking if reference is a single image, which requires sideband parameters as a nparray to avoid iteration
         # trough those:
-        wave_object = self.map(reconstruct, holo_sampling=self.sampling, sb_size=sb_size_temp,
+        wave_object = self.map(reconstruct, holo_sampling=(self.axes_manager.signal_axes[0].scale,
+                                                           self.axes_manager.signal_axes[1].scale),
+                               sb_size=sb_size_temp,
                                sb_position=sb_position_temp, sb_smoothness=sb_smoothness_temp,
                                output_shape=output_shape, plotting=plotting, show_progressbar=show_progressbar,
                                inplace=False)
@@ -361,13 +362,17 @@ class HologramImage(Signal2D):
                 sb_smoothness_ref = sb_smoothness_temp
             #
 
-            wave_reference = reference.map(reconstruct, holo_sampling=self.sampling, sb_size=sb_size_ref,
+            wave_reference = reference.map(reconstruct, holo_sampling=(self.axes_manager.signal_axes[0].scale,
+                                                                       self.axes_manager.signal_axes[1].scale),
+                                           sb_size=sb_size_ref,
                                            sb_position=sb_position_ref, sb_smoothness=sb_smoothness_ref,
                                            output_shape=output_shape, plotting=plotting,
                                            show_progressbar=show_progressbar, inplace=False)
 
         else:
-            wave_reference = reference.map(reconstruct, holo_sampling=self.sampling, sb_size=sb_size_temp,
+            wave_reference = reference.map(reconstruct, holo_sampling=(self.axes_manager.signal_axes[0].scale,
+                                                                       self.axes_manager.signal_axes[1].scale),
+                                           sb_size=sb_size_temp,
                                            sb_position=sb_position_temp, sb_smoothness=sb_smoothness_temp,
                                            output_shape=output_shape, plotting=plotting,
                                            show_progressbar=show_progressbar, inplace=False)
@@ -377,10 +382,10 @@ class HologramImage(Signal2D):
         # wave_image.set_signal_type('electron_wave')  # New signal is a wave image!
         wave_image.set_signal_type('complex_signal2d')  # New signal is a complex
 
-        wave_image.axes_manager.signal_axes[0].scale = self.sampling[0] * self.axes_manager.signal_shape[0] / \
-                                                       output_shape[1]
-        wave_image.axes_manager.signal_axes[1].scale = self.sampling[1] * self.axes_manager.signal_shape[1] / \
-                                                       output_shape[0]
+        wave_image.axes_manager.signal_axes[0].scale = self.axes_manager.signal_axes[0].scale * \
+                                                       self.axes_manager.signal_shape[0] / output_shape[1]
+        wave_image.axes_manager.signal_axes[1].scale = self.axes_manager.signal_axes[1].scale * \
+                                                       self.axes_manager.signal_shape[1] / output_shape[0]
 
         # Reconstruction parameters are stored in holo_reconstruction_parameters:
 
