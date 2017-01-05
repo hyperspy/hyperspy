@@ -29,6 +29,7 @@ For more details see each component docstring.
 """
 
 from hyperspy._components.gaussian2d import Gaussian2D
+from hyperspy._components.expression import Expression
 
 # Generating the documentation
 

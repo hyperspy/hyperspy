@@ -18,6 +18,12 @@ def _fill_function_args(fn):
 
     return fn_wrapped
 
+def _fill_function_args_2d(fn):
+    @wraps(fn)
+    def fn_wrapped(self, x, y):
+        return fn(x, y, *[p.value for p in self.parameters])
+
+    return fn_wrapped
 
 class Expression(Component):
 
@@ -36,7 +42,8 @@ class Expression(Component):
         expression: str
             Component function in SymPy text expression format. See the SymPy
             documentation for details. The only additional constraint is that
-            the variable must be `x`. Also, in `module` is "numexpr" the
+            the variable(s) must be `x` or `x` and `y` for a 2D component.
+            Also, in `module` is "numexpr" the
             functions are limited to those that numexpr support. See its
             documentation for details.
         name : str
@@ -48,6 +55,9 @@ class Expression(Component):
         module: {"numpy", "numexpr"}, default "numpy"
             Module used to evaluate the function. numexpr is often faster but
             it supports less functions.
+        add_rotation: bool, default False
+            This is only relevant for 2D components. If `True` it automatically
+            adds `rotation_angle` parameter.
 
         **kwargs
              Keyword arguments can be used to initialise the value of the
@@ -75,6 +85,7 @@ class Expression(Component):
         """
 
         import sympy
+        self._add_rotation = kwargs.pop("add_rotation", False)
         self._str_expression = expression
         self.compile_function(module=module)
         # Initialise component
@@ -83,6 +94,8 @@ class Expression(Component):
         self._whitelist['name'] = ('init', name)
         self._whitelist['position'] = ('init', position)
         self._whitelist['module'] = ('init', module)
+        if self._is2D:
+            self._whitelist['add_rotation'] = ('init', self._add_rotation)
         self.name = name
         # Set the position parameter
         if position:
@@ -96,14 +109,22 @@ class Expression(Component):
             self.__doc__ = _CLASS_DOC % (
                 name, sympy.latex(sympy.sympify(expression)))
 
-    def function(self, x):
-        return self._f(x, *[p.value for p in self.parameters])
 
     def compile_function(self, module="numpy"):
         import sympy
         from sympy.utilities.lambdify import lambdify
         expr = sympy.sympify(self._str_expression)
-
+        # Extract x
+        x, = [symbol for symbol in expr.free_symbols if symbol.name == "x"]
+        # Extract y
+        y = [symbol for symbol in expr.free_symbols if symbol.name == "y"]
+        self._is2D = True if y else False
+        if self._is2D:
+            y = y[0]
+        if self._is2D and self._add_rotation:
+            rotx = sympy.sympify("x * cos(angle) - y * sin(angle)")
+            roty = sympy.sympify("x * sin(angle) + y * cos(angle)")
+            expr = expr.subs({"x": rotx, "y": roty}, simultaneous=False)
         rvars = sympy.symbols([s.name for s in expr.free_symbols], real=True)
         real_expr = expr.subs(
             {orig: real_ for (orig, real_) in zip(expr.free_symbols, rvars)})
@@ -112,21 +133,30 @@ class Expression(Component):
 
         eval_expr = expr.evalf()
         # Extract parameters
+        variables = ("x", "y") if self._is2D else ("x", )
         parameters = [
-            symbol for symbol in expr.free_symbols if symbol.name != "x"]
+            symbol for symbol in expr.free_symbols
+            if symbol.name not in variables]
         parameters.sort(key=lambda x: x.name)  # to have a reliable order
-        # Extract x
-        x, = [symbol for symbol in expr.free_symbols if symbol.name == "x"]
         # Create compiled function
-        self._f = lambdify([x] + parameters, eval_expr,
+        variables = [x, y] if self._is2D else [x]
+        self._f = lambdify(variables + parameters, eval_expr,
                            modules=module, dummify=False)
+
+
+        if self._is2D:
+            f = lambda x,y: self._f(x, y, *[p.value for p in self.parameters])
+        else:
+            f = lambda x: self._f(x, *[p.value for p in self.parameters])
+        setattr(self, "function", f)
         parnames = [symbol.name for symbol in parameters]
         self._parameter_strings = parnames
+        ffargs = _fill_function_args_2d if self._is2D else _fill_function_args
         for parameter in parameters:
             grad_expr = sympy.diff(eval_expr, parameter)
             setattr(self,
                     "_f_grad_%s" % parameter.name,
-                    lambdify([x] + parameters,
+                    lambdify(variables + parameters,
                              grad_expr.evalf(),
                              modules=module,
                              dummify=False)
@@ -134,7 +164,7 @@ class Expression(Component):
 
             setattr(self,
                     "grad_%s" % parameter.name,
-                    _fill_function_args(
+                    ffargs(
                         getattr(
                             self,
                             "_f_grad_%s" %
