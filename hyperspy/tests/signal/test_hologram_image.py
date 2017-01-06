@@ -89,7 +89,7 @@ class TestCaseHologramImage(object):
         # default output size with an without input sideband parameters:
 
         wave_image = self.holo_image.reconstruct_phase(self.ref, store_parameters=True)
-        sb_pos_cc = wave_image.metadata.Signal.Holography.Reconstruction_parameters.sb_position * (-1) +\
+        sb_pos_cc = wave_image.metadata.Signal.Holography.Reconstruction_parameters.sb_position * (-1) + \
                     [self.img_size, self.img_size]
 
         sb_size_cc = wave_image.metadata.Signal.Holography.Reconstruction_parameters.sb_size
@@ -120,6 +120,11 @@ class TestCaseHologramImage(object):
         wave_image2 = self.holo_image2.reconstruct_phase(reference=self.ref_image2, sb_position=sb_position2,
                                                          sb_size=sb_size2, sb_smoothness=sb_size2 * 0.05,
                                                          output_shape=output_shape)
+        #   a. Reconstruction with parameters provided as ndarrays should be identical to above:
+        wave_image2a = self.holo_image2.reconstruct_phase(reference=self.ref_image2.data, sb_position=sb_position2.data,
+                                                          sb_size=sb_size2.data, sb_smoothness=sb_size2.data * 0.05,
+                                                          output_shape=output_shape)
+        nt.assert_equal(wave_image2, wave_image2a)
 
         # interpolate reconstructed phase to compare with the input (reference phase):
         interp_x = np.arange(output_shape[0])
@@ -179,6 +184,9 @@ class TestCaseHologramImage(object):
         # 4. Testing raises:
         #   a. Mismatch of navigation dimensions of object and reference holograms, except if reference hologram ndim=0
         nt.assert_raises(ValueError, self.holo_image3.reconstruct_phase, self.ref_image3.inav[0, :])
+        reference4a = self.ref_image3.inav[0, :]
+        reference4a.set_signal_type('signal2d')
+        nt.assert_raises(ValueError, self.holo_image3.reconstruct_phase, reference=reference4a)
         #   b. Mismatch of signal shapes of object and reference holograms
         nt.assert_raises(ValueError, self.holo_image3.reconstruct_phase,
                          self.ref_image3.inav[:, :].isig[y_start:y_stop, x_start:x_stop])
