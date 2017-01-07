@@ -12,7 +12,8 @@ from hyperspy.misc.test_utils import assert_deep_almost_equal
 test_files = ['P45_instructively_packed_16bit_compressed.bcf',
               'P45_12bit_packed_8bit.bcf',
               'P45_the_default_job.bcf',
-              'test_TEM.bcf']
+              'test_TEM.bcf',
+              'Hitachi_TM3030Plus.bcf']
 np_file = ['P45_16bit.npy', 'P45_16bit_ds.npy']
 
 my_path = os.path.dirname(__file__)
