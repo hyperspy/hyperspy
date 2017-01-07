@@ -26,7 +26,7 @@ install:
   - conda create -n testenv --yes $DEPS
   - source activate testenv
   - conda install pip
-  - pip install coverage coveralls traits traitsui requests tqdm
+  - pip install coverage coveralls traits traitsui requests tqdm pytz
   - python setup.py install
 
 script:
