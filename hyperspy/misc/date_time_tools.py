@@ -19,23 +19,15 @@
 import numpy as np
 import datetime
 from dateutil import tz, parser
+import pytz
 import logging
 
 _logger = logging.getLogger(__name__)
 
 
-def metadata_to_datetime(metadata):
-    date = metadata['General']['date']
-    time = metadata['General']['time']
-    if 'time_zone' in metadata['General']:
-        return parser.parse('%sT%s %s' % (date, time, metadata['General']['time_zone']))
-    else:
-        return parser.parse('%sT%s' % (date, time))
-        
-
 def get_date_time_from_metadata(metadata, formatting='ISO'):
     """ Get the date and time from a metadata tree.
-        
+
         Parameters
         ----------
             metadata : metadata object
@@ -48,7 +40,7 @@ def get_date_time_from_metadata(metadata, formatting='ISO'):
         Return
         ----------
             string, datetime.datetime or numpy.datetime64 object
-                
+
         Example
         -------
         >>> s = hs.load("example1.msa")
@@ -58,24 +50,38 @@ def get_date_time_from_metadata(metadata, formatting='ISO'):
             │   ├── original_filename = example1.msa
             │   ├── time = 12:00:00
             │   └── title = NIO EELS OK SHELL
-        
+
         >>> s = get_date_time_from_metadata(s.metadata)
         '1991-10-01T12:00:00'
         >>> s = get_date_time_from_metadata(s.metadata, format='ISO')
         '1991-10-01T12:00:00'
         >>> s = get_date_time_from_metadata(s.metadata, format='datetime')
-        
-        >>> s = get_date_time_from_metadata(s.metadata, format='datetime64')
-        
-    """
-    date = metadata['General']['date']
-    time = metadata['General']['time']
 
-    if 'time_zone' in metadata['General']:
-        dt = parser.parse('%sT%s%s' % (date, time, metadata['General']['time_zone']))
-    else:
+        >>> s = get_date_time_from_metadata(s.metadata, format='datetime64')
+
+    """
+    time = date = time_zone = None
+    if metadata.has_item('General.date'):
+        date = metadata['General']['date']
+    if metadata.has_item('General.time'):
+        time = metadata['General']['time']
+    if date and time:
         dt = parser.parse('%sT%s' % (date, time))
-        
+        if 'time_zone' in metadata['General']:
+            try:
+                time_zone = pytz.timezone(metadata['General']['time_zone'])
+                dt = time_zone.localize(dt)
+            except pytz.UnknownTimeZoneError:
+                time_zone_offset = pytz.FixedOffset(
+                    metadata['General']['time_zone'])
+                dt = parser.parse('%sT%s%s' % (date, time, time_zone_offset))
+    elif not date and time:
+        dt = parser.parse('%s' % time).time()
+    elif date and not time:
+        dt = parser.parse('%s' % date).date()
+    else:
+        return
+
     if formatting == 'ISO':
         res = dt.isoformat()
     if formatting == 'datetime':
@@ -83,40 +89,70 @@ def get_date_time_from_metadata(metadata, formatting='ISO'):
     # numpy.datetime64 doesn't support time zone
     if formatting == 'datetime64':
         res = np.datetime64('%sT%s' % (date, time))
-        
+
     return res
 
-        
+
 def update_date_time_in_metadata(dt, metadata):
-    """
-    TODO: documentation
+    """ Update the date and time in a metadata tree.
+
+        Parameters
+        ----------
+            dt : date and time information: it can be a ISO 8601 string,
+                a datetime.datetime or a numpy.datetime64 object
+            metadata : metadata object to update
+
+        Return
+        ----------
+            metadata object
+
+        Example
+        -------
+        >>> s = hs.load("example1.msa")
+        >>> dt = '2016-12-12T12:12:12-05:00'
+        >>> s.metadata = update_date_time_in_metadata(dt, s.metadata)
+        >>> s.metadata
+            ├── General
+            │   ├── date = 2016-12-12
+            │   ├── original_filename = example1.msa
+            │   ├── time = 12:12:12
+            │   ├── time_zone = 'EST'
+            │   └── title = NIO EELS OK SHELL
     """
     time_zone = None
     if isinstance(dt, str):
-        split = datetime.split('T')
-        date = split[0]
-        time = split[1]
-        if len(split) == 2:
-            time_zone = datetime.split('T')[2]
+        sp = dt.split('T')
+        date = sp[0]
+        time = sp[1]
+        if '+' in sp[1]:
+            time = "%s" % sp[1].split('+')[0]
+            time_zone = "+%s" % sp[1].split('+')[1]
+        elif '-' in sp[1]:
+            time = "%s" % sp[1].split('-')[0]
+            time_zone = "-%s" % sp[1].split('-')[1]
     if isinstance(dt, datetime.datetime):
         date = dt.date().isoformat()
         time = dt.time().isoformat()
-        if dt.tzname() is not None:
+        if dt.tzname():
             time_zone = dt.tzname()
-            metadata.set_item('General.time_zone', time_zone)
-    
+
     metadata.set_item('General.date', date)
     metadata.set_item('General.time', time)
+    if time_zone:
+        metadata.set_item('General.time_zone', time_zone)
     if metadata.has_item('General.time_zone') and not time_zone:
-        pass
-#        TODO: remove time_zone when necessary
+        del metadata.General.time_zone
     return metadata
 
-        
+
 def serial_date_to_ISO_format(serial):
+    """
+    Convert serial_date to a tuple of string (date, time, time_zone) in ISO 
+    format. By default, the serial date is converted in local time zone.
+    """
     # Excel date&time format
     origin = datetime.datetime(1899, 12, 30, tzinfo=tz.tzutc())
-    secs = (serial % 1.0) * 86400.0
+    secs = round(serial % 1.0 * 86400)
     delta = datetime.timedelta(int(serial), secs, secs / 1E6)
     dt_utc = origin + delta
     dt_local = dt_utc.astimezone(tz.tzlocal())
@@ -124,11 +160,15 @@ def serial_date_to_ISO_format(serial):
 
 
 def ISO_format_to_serial_date(date, time, timezone='UTC'):
+    """ Convert ISO format to a serial date. """
+    if timezone is None:
+        timezone = 'UTC'
     dt = parser.parse('%sT%s%s' % (date, time, timezone))
     return datetime_to_serial_date(dt)
 
 
 def datetime_to_serial_date(dt):
+    """ Convert datetime.datetime object to a serial date. """
     if dt.tzname() is None:
         dt = dt.replace(tzinfo=tz.tzutc())
     origin = datetime.datetime(1899, 12, 30, tzinfo=tz.tzutc())
