@@ -190,3 +190,9 @@ def test_get_mode():
     s = load(filename, select_type='spectrum')
     nt.assert_equal(s.metadata.Signal.signal_type, "EDS_TEM")
     nt.assert_true(isinstance(s, signals.EDSTEMSpectrum))
+    
+
+def test_wrong_file():
+    filename = os.path.join(my_path, 'bcf_data', 'Nope.bcf')
+    with nt.assert_raises(TypeError):
+        load(filename)
