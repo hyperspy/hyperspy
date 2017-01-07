@@ -63,6 +63,7 @@ in the following sections of this chapter.
     │   ├── original_filename
     │   ├── notes
     │   ├── time
+    │   ├── time_zone
     │   └── title
     ├── Sample
     │   ├── description
@@ -95,6 +96,11 @@ original_filename
 
     If the signal was loaded from a file this key stores the name of the
     original file.
+
+time_zone
+    type: Str
+
+    The time zone as defined in 'pytz.all_timezones' of the pytz library, e. g. "UTC", "Europe/London", etc. It can also be a time offset, e. g. "+03:00" or "-05:00".
 
 time
     type: Str
