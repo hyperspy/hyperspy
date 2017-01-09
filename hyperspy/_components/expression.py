@@ -33,7 +33,8 @@ class Expression(Component):
     """
 
     def __init__(self, expression, name, position=None, module="numpy",
-                 autodoc=True, **kwargs):
+                 autodoc=True, add_rotation=False, rotation_center=None,
+                 **kwargs):
         """Create a component from a string expression.
 
         It automatically generates the partial derivatives and the
@@ -53,14 +54,19 @@ class Expression(Component):
         position: str, optional
             The parameter name that defines the position of the component if
             applicable. It enables adjusting the position of the component
-            interactively in a model.
+            interactively in a model. 2D components require passing a tuple
+            with the name of the two parameters e.g. `("x0", "y0")`.
         module: {"numpy", "numexpr"}, default "numpy"
             Module used to evaluate the function. numexpr is often faster but
             it supports less functions and requires installing numexpr.
         add_rotation: bool, default False
             This is only relevant for 2D components. If `True` it automatically
             adds `rotation_angle` parameter.
-
+        rotation_center: {None, tuple}
+            If None, the rotation center is the center i.e. (0, 0) if `position`
+            is not defined, otherwise the center is the coordinates specified
+            by `position`. Alternatively a tuple with the (x, y) coordinates
+            of the center can be provided.
         **kwargs
              Keyword arguments can be used to initialise the value of the
              parameters.
@@ -72,7 +78,6 @@ class Expression(Component):
 
         Examples
         --------
-
         The following creates a Gaussian component and set the initial value
         of the parameters:
 
@@ -87,9 +92,12 @@ class Expression(Component):
         """
 
         import sympy
-        self._add_rotation = kwargs.pop("add_rotation", False)
+        self._add_rotation = add_rotation
         self._str_expression = expression
-        self.compile_function(module=module, position=position)
+        if rotation_center is None:
+            self.compile_function(module=module, position=position)
+        else:
+            self.compile_function(module=module, position=rotation_center)
         # Initialise component
         Component.__init__(self, self._parameter_strings)
         self._whitelist['expression'] = ('init', expression)
@@ -98,6 +106,7 @@ class Expression(Component):
         self._whitelist['module'] = ('init', module)
         if self._is2D:
             self._whitelist['add_rotation'] = ('init', self._add_rotation)
+            self._whitelist['rotation_center'] = ('init', rotation_center)
         self.name = name
         # Set the position parameter
         if position:
