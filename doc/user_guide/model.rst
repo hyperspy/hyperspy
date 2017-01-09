@@ -137,14 +137,16 @@ we create a 2D gaussian that rotates around its center:
 
 .. code-block:: python
 
-    g = hs.model.components2D.Expression("k * exp(-((x-x0)**2 / (2 * sx ** 2) + (y-y0)**2 / (2 * sy ** 2)))",
-                                         "Gaussian2d", add_rotation=True, position=("x0", "y0"),
-                                         module="numpy", )
+    g = hs.model.components2D.Expression(
+        "k * exp(-((x-x0)**2 / (2 * sx ** 2) + (y-y0)**2 / (2 * sy ** 2)))",
+        "Gaussian2d", add_rotation=True, position=("x0", "y0"),
+        module="numpy", )
 
 
-:py:class:`~._components.expression.Expression` is only useful for analytical
-functions. If you know how to write the function with Python, turning it into
-a component is very easy modifying the following template:
+Of course :py:class:`~._components.expression.Expression` is only useful for analytical
+functions. For more general components you need to create the component "by hand". The
+good news is that, if you know how to write the function with Python, turning it into
+a component is very easy, just modify the following template to suit your needs:
 
 
 .. code-block:: python
