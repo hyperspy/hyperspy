@@ -171,6 +171,8 @@ def test_fast_bcf():
 
 
 def test_get_mode():
+    if skip_test:
+        raise SkipTest
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     s = load(filename, select_type='spectrum', instrument='SEM')
     nt.assert_equal(s.metadata.Signal.signal_type, "EDS_SEM")
@@ -193,6 +195,8 @@ def test_get_mode():
     
 
 def test_wrong_file():
+    if skip_test:
+        raise SkipTest
     filename = os.path.join(my_path, 'bcf_data', 'Nope.bcf')
     with nt.assert_raises(TypeError):
         load(filename)
