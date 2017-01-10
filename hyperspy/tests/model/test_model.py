@@ -327,7 +327,7 @@ class TestModel1D:
         m.append(hs.model.components1D.Offset())
         m[0].notebook_interaction()
         m[0].offset.notebook_interaction()
-        
+
     def test_access_component_by_name(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
