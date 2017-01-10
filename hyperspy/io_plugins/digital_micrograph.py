@@ -23,7 +23,7 @@
 
 import os
 import logging
-from datetime import datetime
+import dateutil.parser
 
 import numpy as np
 import traits.api as t
@@ -785,19 +785,26 @@ class ImageObject(object):
             return 'TEM'
 
     def _get_time(self, time):
-        dt = datetime.strptime(time, "%I:%M:%S %p")
-        return dt.time().isoformat()
+        try:
+            dt = dateutil.parser.parse(time)
+            return dt.time().isoformat()
+        except:
+            _logger.warning("Time string, %s,  could not be parsed", time)
 
     def _get_date(self, date):
-        dt = datetime.strptime(date, "%m/%d/%Y")
-        return dt.date().isoformat()
+        try:
+            dt = dateutil.parser.parse(date)
+            return dt.date().isoformat()
+        except:
+            _logger.warning("Date string, %s,  could not be parsed", date)
 
     def _get_microscope_name(self, ImageTags):
         try:
             if ImageTags.Session_Info.Microscope != "[]":
                 return ImageTags.Session_Info.Microscope
         except AttributeError:
-            return ImageTags.Microscope_Info.Name
+            if 'Name' in ImageTags['Microscope_Info'].keys():
+                return ImageTags.Microscope_Info.Name
 
     def _parse_string(self, tag):
         if len(tag) == 0:
@@ -835,10 +842,13 @@ class ImageObject(object):
         }
 
         if "Microscope_Info" in self.imdict.ImageTags.keys():
-            is_TEM = (
-                'TEM' == self.imdict.ImageTags.Microscope_Info.Illumination_Mode)
-            is_diffraction = (
-                'DIFFRACTION' == self.imdict.ImageTags.Microscope_Info.Imaging_Mode)
+            is_TEM = is_diffraction = None
+            if "Illumination_Mode" in self.imdict.ImageTags['Microscope_Info'].keys():
+                is_TEM = (
+                    'TEM' == self.imdict.ImageTags.Microscope_Info.Illumination_Mode)
+            if "Imaging_Mode" in self.imdict.ImageTags['Microscope_Info'].keys():
+                is_diffraction = (
+                    'DIFFRACTION' == self.imdict.ImageTags.Microscope_Info.Imaging_Mode)
 
             if is_TEM:
                 if is_diffraction:

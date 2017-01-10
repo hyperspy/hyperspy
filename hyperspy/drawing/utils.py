@@ -26,6 +26,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import hyperspy as hs
+from distutils.version import LooseVersion
 
 from hyperspy.defaults_parser import preferences
 
@@ -1048,7 +1049,10 @@ def plot_spectra(
             raise ValueError("Color must be None, a valid matplotlib color "
                              "string or a list of valid matplotlib colors.")
     else:
-        color = itertools.cycle(plt.rcParams['axes.color_cycle'])
+        if LooseVersion(mpl.__version__) >= "1.5.3":
+            color = itertools.cycle(plt.rcParams['axes.prop_cycle'].by_key()["color"])
+        else:
+            color = itertools.cycle(plt.rcParams['axes.color_cycle'])
 
     if line_style is not None:
         if isinstance(line_style, str):

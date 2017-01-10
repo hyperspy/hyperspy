@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+import json
 from nose.plugins.skip import SkipTest
 
 import nose.tools as nt
@@ -11,7 +12,8 @@ from hyperspy.misc.test_utils import assert_deep_almost_equal
 test_files = ['P45_instructively_packed_16bit_compressed.bcf',
               'P45_12bit_packed_8bit.bcf',
               'P45_the_default_job.bcf',
-              'test_TEM.bcf']
+              'test_TEM.bcf',
+              'Hitachi_TM3030Plus.bcf']
 np_file = ['P45_16bit.npy', 'P45_16bit_ds.npy']
 
 my_path = os.path.dirname(__file__)
@@ -104,15 +106,14 @@ def test_hyperspy_wrap():
               'Sample': {'xray_lines': ['Al_Ka', 'Ca_Ka', 'Cl_Ka', 'Fe_Ka', 'K_Ka', 'Mg_Ka', 'Na_Ka', 'O_Ka', 'P_Ka', 'Si_Ka', 'Ti_Ka'],
                          'elements': ['Al', 'Ca', 'Cl', 'Fe', 'K', 'Mg', 'Na', 'O', 'P', 'Si', 'Ti'],
                          'name': 'Map data 232'},
-              'Acquisition_instrument': {'SEM': {'stage_y': 36517.61,
-                                                 'beam_energy': 20.0,
+              'Acquisition_instrument': {'SEM': {'beam_energy': 20.0,
                                                  'Detector': {'EDS': {'detector_type': 'XFlash 6|10',
                                                                       'energy_resolution_MnKa': 130.0,
                                                                       'elevation_angle': 35.0,
-                                                                      'azimuth_angle': 90.0}},
-                                                 'stage_x': 62409.2,
+                                                                      'azimuth_angle': 90.0,
+                                                                      'real_time': 328.8}},
                                                  'magnification': 131.1433,
-                                                 'tilt_stage': 0.0}},
+                                                 'tilt_stage': 0.5}},
               'General': {'title': 'EDX',
                           'time': '17:05:03',
                           'original_filename': 'P45_instructively_packed_16bit_compressed.bcf',
@@ -122,7 +123,14 @@ def test_hyperspy_wrap():
                          'signal_type': 'EDS_SEM'}}
 
     md_ref['General']['original_filename'] = hype.metadata.General.original_filename
+    filename_omd = os.path.join(my_path,
+                                'bcf_data',
+                                'test_original_metadata.json')
+    with open(filename_omd) as fn:
+        #original_metadata:
+        omd_ref = json.load(fn)
     assert_deep_almost_equal(hype.metadata.as_dictionary(), md_ref)
+    assert_deep_almost_equal(hype.original_metadata.as_dictionary(), omd_ref)
     nt.assert_equal(hype.metadata.General.date, "2016-04-01")
     nt.assert_equal(hype.metadata.General.time, "17:05:03")
     nt.assert_equal(hype.metadata.Signal.quantity, "X-rays (Counts)")
@@ -163,6 +171,8 @@ def test_fast_bcf():
 
 
 def test_get_mode():
+    if skip_test:
+        raise SkipTest
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     s = load(filename, select_type='spectrum', instrument='SEM')
     nt.assert_equal(s.metadata.Signal.signal_type, "EDS_SEM")
@@ -182,3 +192,11 @@ def test_get_mode():
     s = load(filename, select_type='spectrum')
     nt.assert_equal(s.metadata.Signal.signal_type, "EDS_TEM")
     nt.assert_true(isinstance(s, signals.EDSTEMSpectrum))
+    
+
+def test_wrong_file():
+    if skip_test:
+        raise SkipTest
+    filename = os.path.join(my_path, 'bcf_data', 'Nope.bcf')
+    with nt.assert_raises(TypeError):
+        load(filename)

@@ -126,3 +126,42 @@ class TestDictionaryBrowser:
         # time in the DictionaryBrowser
         dt_str = '2016-08-05T10:13:15.450580'
         self._test_date_time(dt_str)
+
+    def test_has_item(self):
+        # Check that it finds all actual items:
+        assert self.tree.has_item('Node1')
+        assert self.tree.has_item('Node1.leaf11')
+        assert self.tree.has_item('Node1.Node11')
+        assert self.tree.has_item('Node1.Node11.leaf111')
+        assert self.tree.has_item('Node2')
+        assert self.tree.has_item('Node2.leaf21')
+        assert self.tree.has_item('Node2.Node21')
+        assert self.tree.has_item('Node2.Node21.leaf211')
+
+        # Check that it doesn't find non-existant ones
+        assert not self.tree.has_item('Node3')
+        assert not self.tree.has_item('General')
+        assert not self.tree.has_item('Node1.leaf21')
+        assert not self.tree.has_item('')
+        assert not self.tree.has_item('.')
+        assert not self.tree.has_item('..Node1')
+
+    def test_get_item(self):
+        # Check that it gets all leaf nodes:
+        nt.assert_equal(self.tree.get_item('Node1.leaf11'), 11)
+        nt.assert_equal(self.tree.get_item('Node1.Node11.leaf111'), 111)
+        nt.assert_equal(self.tree.get_item('Node2.leaf21'), 21)
+        nt.assert_equal(self.tree.get_item('Node2.Node21.leaf211'), 211)
+
+        # Check that it gets all leaf nodes, also with given default:
+        nt.assert_equal(self.tree.get_item('Node1.leaf11', 44), 11)
+        nt.assert_equal(self.tree.get_item('Node1.Node11.leaf111', 44), 111)
+        nt.assert_equal(self.tree.get_item('Node2.leaf21', 44), 21)
+        nt.assert_equal(self.tree.get_item('Node2.Node21.leaf211', 44), 211)
+
+        # Check that it returns the default value for various incorrect paths:
+        nt.assert_equal(self.tree.get_item('Node1.leaf33', 44), 44)
+        nt.assert_equal(self.tree.get_item('Node1.leaf11.leaf111', 44), 44)
+        nt.assert_equal(self.tree.get_item('Node1.Node31.leaf311', 44), 44)
+        nt.assert_equal(self.tree.get_item('Node1.Node21.leaf311', 44), 44)
+        nt.assert_equal(self.tree.get_item('.Node1.Node21.leaf311', 44), 44)
