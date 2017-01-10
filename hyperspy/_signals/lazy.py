@@ -447,17 +447,73 @@ class LazySignal(BaseSignal):
                                   (self.axes_manager.signal_size, )))
 
         indices = product(*[range(len(c)) for c in nav_chunks])
+        data = data.reshape((self.axes_manager.navigation_shape[::-1] +
+                                  (self.axes_manager.signal_size, )))
+
+        if signal_mask is not None:
+            if isinstance(signal_mask, BaseSignal):
+                signal_mask = signal_mask.data
+            if isinstance(signal_mask, da.Array):
+                signal_mask = signal_mask.compute()
+            if isinstance(signal_mask, np.ndarray):
+                signal_mask = signal_mask.ravel()
+            else:
+                raise ValueError("signal_mask has to be a signal, numpy or"
+                                 " dask array, but "
+                                 "{} ".format(type(signal_mask))
+                                 "was given")
+            if not flat_signal:
+                signal_mask = ~signal_mask
+        elif flat_signal:
+            signal_mask = slice(None)
+        else:
+            signal_mask = np.zeros(self.axes_manager.signal_size,
+                                   dtype='bool')
+
+        if navigation_mask is not None:
+            if isinstance(navigation_mask, BaseSignal):
+                navigation_mask = navigation_mask.data
+            if isinstance(navigation_mask, np.ndarray):
+                navigation_mask = da.from_array(navigation_mask,
+                                                chunks=nav_chunks)
+            if isinstance(navigation_mask, da.Array):
+                if navigation_mask.chunks != nav_chunks:
+                    navigation_mask = navigation_mask.rechunk(nav_chunks)
+            else:
+                raise ValueError("navigation_mask has to be a signal, numpy or"
+                                 " dask array, but "
+                                 "{} ".format(type(signal_mask))
+                                 "was given")
+        elif flat_signal:
+            nav_mask = da.ones(self.axes_manager.navigation_shape[::-1],
+                               chunks=nav_chunks,
+                               dtype='bool')
+        else:
+            nav_mask = da.zeros(self.axes_manager.navigation_shape[::-1],
+                               chunks=nav_chunks,
+                               dtype='bool')
         for ind in indices:
             chunk = get(data.dask, (data.name, ) + ind + (0, ))
-            if not flat_signal:
+            n_mask = get(nav_mask.dask, (nav_mask.name,) + ind)
+            if flat_signal:
+                yield chunk[n_mask,...][..., signal_mask]
+            else:
                 # TODO: check if need to reverse the signal_shape
-                chunk = chunk.reshape(chunk.shape[:-1] +
-                                      self.axes_manager.signal_shape)
-            yield chunk
+                try:
+                    chunk[n_mask, ...] = np.nan
+                    chunk[..., signal_mask] = np.nan
+                except ValueError:
+                    chunk[n_mask, ...] = 0
+                    chunk[..., signal_mask] = 0
+                yield chunk.reshape(chunk.shape[:-1] +
+                                    self.axes_manager.signal_shape)
+
 
     def decomposition(self,
                       output_dimension,
-                      kind='PCA',
+                      algorithm='PCA',
+                      signal_mask=None,
+                      navigation_mask=None,
                       get=threaded.get,
                       num_chunks=None,
                       refine=True,
@@ -486,7 +542,8 @@ class LazySignal(BaseSignal):
         """
         explained_variance = None
         explained_variance_ratio = None
-        nav_chunks = self.data.chunks[:self.axes_manager.navigation_dimension]
+        nav_chunks = self._data_aligned_with_axes.chunks[
+            :self.axes_manager.navigation_dimension]
         from toolz import curry
 
         num_chunks = 1 if num_chunks is None else num_chunks
@@ -515,13 +572,15 @@ class LazySignal(BaseSignal):
             method = curry(_onmf.fit, batch_size=batch_size)
 
         else:
-            raise ValueError('kind not known')
+            raise ValueError('algorithm not known')
 
         this_data = []
         try:
             for chunk in progressbar(
                     self._block_iterator(
-                        flat_signal=True, get=get),
+                        flat_signal=True, get=get,
+                        signal_mask=signal_mask,
+                        navigation_mask=navigation_mask),
                     total=nblocks,
                     leave=True,
                     desc='Learn'):
