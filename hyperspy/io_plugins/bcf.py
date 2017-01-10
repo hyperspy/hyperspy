@@ -66,7 +66,7 @@ try:
     from hyperspy.io_plugins import unbcf_fast
     fast_unbcf = True
     _logger.info("The fast cython based bcf unpacking library were found")
-except ImportError:
+except ImportError:  # pragma: no cover
     fast_unbcf = False
     _logger.warning("""unbcf_fast library is not present...
 Falling back to slow python only backend.""")
@@ -232,7 +232,7 @@ but compression signature is missing in the header. Aborting....""")
 
     def _iter_read_compr_chunks(self):
         """Generate and return reader and decompressor iterator
-        for compressed file with zlib or bzip2 compression.
+        for compressed with zlib compression sfs internal file.
 
         Returns:
         iterator of decompressed data chunks.
@@ -281,9 +281,7 @@ but compression signature is missing in the header. Aborting....""")
 
 
 class SFS_reader(object):
-
     """Class to read sfs file.
-
     SFS is AidAim software's(tm) single file system.
     The class provides basic reading capabilities of such container.
     It is capable to read compressed data in zlib, but
@@ -446,7 +444,11 @@ class ObjectifyJSONEncoder(json.JSONEncoder):
         if len(o.attrib) > 0:
             d2 = dict(o.attrib)
             for j in d2.keys():
-                d2[j] = interpret(d2[j])
+                if j in dictionary.keys() or j == 'Type':
+                    d2['XmlClass' + j] = interpret(d2[j])
+                    del d2[j]
+                else:
+                    d2[j] = interpret(d2[j])
             dictionary.update(d2)
         if o.text is not None:
             if len(dictionary) > 0:
@@ -503,7 +505,7 @@ class EDXSpectrum(object):
         #USED:
         self.hv = self.esma_metadata['PrimaryEnergy']
         self.elevationAngle = self.esma_metadata['ElevationAngle']
-        self.azimutAngle = self.esma_metadata['AzimutAngle']
+        #self.azimutAngle = self.esma_metadata['AzimutAngle']
         
         # map stuff from spectra xml branch:
         self.spectrum_metadata = json.loads(json.dumps(spectrum_header,
@@ -574,11 +576,10 @@ class HyperHeader(object):
         self._set_image(root)
         self.elements = {}
         self._set_elements(root)
-        self.line_counter = np.fromstring(str(root.LineCounter),
-                                          dtype=np.uint16, sep=',')
+        self.line_counter = interpret(root.LineCounter.text)
         self.channel_count = int(root.ChCount)
         self.mapping_count = int(root.DetectorCount)
-        self.channel_factors = {}
+        #self.channel_factors = {}
         self.spectra_data = {}
         self._set_sum_edx(root)
 
@@ -588,29 +589,48 @@ class HyperHeader(object):
         """
         semData = root.xpath("ClassInstance[@Type='TRTSEMData']")[0]
         # sem acceleration voltage, working distance, magnification:
-        self.sem.hv = float(semData.HV)  # in kV
-        self.sem.wd = float(semData.WD)  # in mm
-        self.sem.mag = float(semData.Mag)  # in times
+        self.sem.hv = semData.HV.pyval  # in kV
+        self.sem.wd = semData.WD.pyval  # in mm
+        self.sem.mag = semData.Mag.pyval  # in times
         # image/hypermap resolution in um/pixel:
-        self.image.x_res = float(semData.DX)  # in micrometers
-        self.image.y_res = float(semData.DY)  # in micrometers
+        try:
+            self.image.x_res = semData.DX.pyval  # in micrometers
+            self.image.y_res = semData.DY.pyval  # in micrometers
+            self.units = 'µm'
+        except AttributeError:
+            self.image.x_res = 1.0  # in pixels
+            self.image.y_res = 1.0  # in pixels
+            self.units = 'pix'
         semStageData = root.xpath("ClassInstance[@Type='TRTSEMStageData']")[0]
         # stage position:
-        try:
-            self.stage.x = float(semStageData.X)  # in micrometers
-            self.stage.y = float(semStageData.Y)  # in micrometers
-        except AttributeError:
-            self.stage.x = self.stage.y = None
-        try:
-            self.stage.z = float(semStageData.Z)  # in micrometers
-        except AttributeError:
-            self.stage.z = None
-        try:
-            self.stage.rotation = float(semStageData.Rotation)  # in degrees
-        except AttributeError:
-            self.stage.rotation = None
+        self.stage_metadata = json.loads(json.dumps(semStageData,
+            cls=ObjectifyJSONEncoder))
         DSPConf = root.xpath("ClassInstance[@Type='TRTDSPConfiguration']")[0]
-        self.stage.tilt_angle = float(DSPConf.TiltAngle)
+        self.image.dsp_metadata = json.loads(json.dumps(DSPConf,
+            cls=ObjectifyJSONEncoder))
+        
+    def get_acq_instrument_dict(self, detector=False, **kwargs):
+        """return python dictionary with aquisition instrument
+        mandatory data
+        """
+        acq_inst = {
+                    'beam_energy': self.sem.hv,
+                    'magnification': self.sem.mag,
+                    }
+        if 'Tilt' in self.stage_metadata:
+            acq_inst['tilt_stage'] = self.stage_metadata['Tilt']
+        if detector:
+            eds_metadata = self.get_spectra_metadata(**kwargs)
+            acq_inst['Detector'] = {'EDS': {
+                                     #'azimuth_angle': eds_metadata.azimutAngle,
+                                     'elevation_angle': eds_metadata.elevationAngle,
+                                     'detector_type': eds_metadata.detector_type,
+                                     'real_time': self.calc_real_time()
+                                           }
+                                   }
+            if 'AzimutAngle' in eds_metadata.esma_metadata:
+                acq_inst['Detector']['EDS']['azimuth_angle'] = eds_metadata.esma_metadata['AzimutAngle']
+        return acq_inst
 
     def _set_image(self, root):
         """Wrap objectified xml part with image to class attributes
@@ -653,8 +673,8 @@ class HyperHeader(object):
 
     def _set_sum_edx(self, root):
         for i in range(self.mapping_count):
-            self.channel_factors[i] = int(root.xpath("ChannelFactor" +
-                                                     str(i))[0])
+            #self.channel_factors[i] = int(root.xpath("ChannelFactor" +
+            #                                         str(i))[0])
             self.spectra_data[i] = EDXSpectrum(root.xpath("SpectrumData" +
                                                           str(i))[0].ClassInstance)
 
@@ -735,6 +755,18 @@ class HyperHeader(object):
         index -- index of hypermap/spectra (default 0)
         """
         return self.spectra_data[index]
+    
+    def calc_real_time(self):
+        """calculate and return real time for whole hypermap
+        in seconds
+        """
+        line_cnt_sum = np.sum(self.line_counter)
+        line_avg = self.image.dsp_metadata['LineAverage']
+        pix_avg = self.image.dsp_metadata['PixelAverage']
+        pix_time = self.image.dsp_metadata['PixelTime']
+        width = self.image.width
+        real_time = line_cnt_sum * line_avg * pix_avg * pix_time * width / 1000000.0
+        return float(real_time)
 
 
 class BCF_reader(SFS_reader):
@@ -1034,7 +1066,7 @@ def file_reader(filename, select_type=None, index=0, downsample=1,
       or just hyper spectral mapping data. (default None)
     index -- index of dataset in bcf v2 (delaut 0)
     downsample -- the downsample ratio of hyperspectral array (downsampling
-      hight and width only), can be integer from 1 to inf, where '1' means
+      height and width only), can be integer from 1 to inf, where '1' means
       no downsampling will be applied (default 1).
     cutoff_at_kV -- if set (can be int of float >= 0) can be used either, to
        crop or enlarge energy range at max values. (default None)
@@ -1072,32 +1104,28 @@ def bcf_imagery(obj_bcf, instrument=None):
                        'size': obj_bcf.header.image.height,
                        'offset': 0,
                        'scale': obj_bcf.header.image.y_res,
-                       'units': 'µm'},
+                       'units': obj_bcf.header.units},
                       {'name': 'width',
                        'size': obj_bcf.header.image.width,
                        'offset': 0,
                        'scale': obj_bcf.header.image.x_res,
-                       'units': 'µm'}],
+                       'units': obj_bcf.header.units}],
              'metadata':
              # where is no way to determine what kind of instrument was used:
-             # TEM or SEM
+             # TEM or SEM (mode variable)
              {'Acquisition_instrument': {
-                 mode: {
-                     #'beam_current': 0.0,  # There is no technical
-                     # possibilities to get such parameter from bruker
-                     # or some SEM's'
-                     'beam_energy': obj_bcf.header.sem.hv,
-                     'tilt_stage': obj_bcf.header.stage.tilt_angle,
-                     'stage_x': obj_bcf.header.stage.x,
-                     'stage_y': obj_bcf.header.stage.y
-                 }
-             },
-                 'General': {'original_filename': obj_bcf.filename.split('/')[-1],
+                 mode: obj_bcf.header.get_acq_instrument_dict()
+                 },
+              'General': {'original_filename': obj_bcf.filename.split('/')[-1],
                              'title': img.detector_name},
-                 'Sample': {'name': obj_bcf.header.name},
-                 'Signal': {'signal_type': img.detector_name,
+              'Sample': {'name': obj_bcf.header.name},
+              'Signal': {'signal_type': img.detector_name,
                             'record_by': 'image'},
-             }
+             },
+              'original_metadata': {
+                        'DSP Configuration': obj_bcf.header.image.dsp_metadata,
+                        'Stage': obj_bcf.header.stage_metadata
+                                                 }
              })
     return imagery_list
 
@@ -1116,12 +1144,12 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
                                'size': obj_bcf.hypermap[index].hypermap.shape[0],
                                'offset': 0,
                                'scale': obj_bcf.hypermap[index].ycalib,
-                               'units': 'µm'},
+                               'units': obj_bcf.header.units},
                               {'name': 'width',
                                'size': obj_bcf.hypermap[index].hypermap.shape[1],
                                'offset': 0,
                                'scale': obj_bcf.hypermap[index].xcalib,
-                               'units': 'µm'},
+                               'units': obj_bcf.header.units},
                               {'name': 'Energy',
                                'size': obj_bcf.hypermap[index].hypermap.shape[2],
                                'offset': obj_bcf.hypermap[index].calib_abs,
@@ -1130,25 +1158,10 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
                      'metadata':
                      # where is no way to determine what kind of instrument was used:
                      # TEM or SEM
-                     {'Acquisition_instrument': {
-                         mode: {
-                             #'beam_current': 0.0,  # There is no technical
-                             # possibilities to get such parameter from bruker
-                             # or some SEM's'
-                             'beam_energy': obj_bcf.header.sem.hv,
-                             'tilt_stage': obj_bcf.header.stage.tilt_angle,
-                             'stage_x': obj_bcf.header.stage.x,
-                             'stage_y': obj_bcf.header.stage.y,
-                             'magnification': obj_bcf.header.sem.mag,
-                             'Detector': {
-                                 'EDS': {
-                                     'azimuth_angle': eds_metadata.azimutAngle,
-                                     'elevation_angle': eds_metadata.elevationAngle,
-                                     'detector_type': eds_metadata.detector_type
-                                 }
-                             }
-                         }
-                     },
+        {'Acquisition_instrument': {
+                         mode: obj_bcf.header.get_acq_instrument_dict(detector=True,
+                                                                      index=index)
+                         },
         'General': {'original_filename': obj_bcf.filename.split('/')[-1],
                          'title': 'EDX',
                          'date': obj_bcf.header.date,
@@ -1158,13 +1171,16 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
                          'xray_lines': sorted(gen_elem_list(obj_bcf.header.elements))},
         'Signal': {'signal_type': 'EDS_%s' % mode,
                          'record_by': 'spectrum',
-                         'quantity': 'X-rays (Counts)'},
-    },
-        'original_metadata': {'hardware': eds_metadata.hardware_metadata,
-                              'detector': eds_metadata.detector_metadata,
-                              'analysis': eds_metadata.esma_metadata,
-                              'spectrum': eds_metadata.spectrum_metadata}
-    }]
+                         'quantity': 'X-rays (Counts)'}
+        },
+        'original_metadata': {'Hardware': eds_metadata.hardware_metadata,
+                              'Detector': eds_metadata.detector_metadata,
+                              'Analysis': eds_metadata.esma_metadata,
+                              'Spectrum': eds_metadata.spectrum_metadata,
+                              'DSP Configuration': obj_bcf.header.image.dsp_metadata,
+                              'Line counter': obj_bcf.header.line_counter,
+                              'Stage': obj_bcf.header.stage_metadata}
+        }]
     return hyperspectra
 
 

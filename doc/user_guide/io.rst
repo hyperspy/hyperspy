@@ -505,6 +505,11 @@ hybrid (virtual file system/container with xml and binary data, optionally compr
 Most bcf import functionality is implemented. Both high-resolution 16-bit SEM images
 and hyperspectral EDX data can be retrieved simultaneously.
 
+BCF can look as all inclusive format, however it does not save some key EDX parameters:
+any of dead/live/real times, FWHM at Mn_Ka line.
+However, real time for whole map is calculated from pixelAverage, lineAverage, pixelTime, lineCounter
+and map height parameters.
+
 Note that Bruker Esprit uses a similar format for EBSD data, but it is not currently
 supported by HyperSpy.
 
