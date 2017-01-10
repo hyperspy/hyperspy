@@ -194,11 +194,14 @@ def find_post_checkout_cleanup_line():
 # after changing branches:
 if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
     exec_str = sys.executable
-    if os.name == 'nt':
-        exec_str = exec_str.replace('\\', '/')  # Won't work otherwise
     recythonize_str = ' '.join([exec_str,
                                 os.path.join(setup_path, 'setup.py'),
-                                'clean --all build_ext --inplace \n'])
+                                'clean --all build_ext --inplace\n'])
+    if os.name == 'nt':
+        exec_str = exec_str.replace('\\', '/')
+        recythonize_str = recythonize_str.replace('\\', '/')
+        for i in range(len(cleanup_list)):
+            cleanup_list[i] = cleanup_list[i].replace('\\', '/')
     if (not os.path.exists(post_checout_hook_file)):
         with open(post_checout_hook_file, 'w') as pchook:
             pchook.write('#!/bin/sh\n')
@@ -217,9 +220,9 @@ if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
                     ' '.join([i for i in cleanup_list]) + '\n'
                 hook_lines[line_n + 1] = recythonize_str
             else:
-                hook_lines.append('\n#cleanup_cythonized_and_compiled:')
+                hook_lines.append('\n#cleanup_cythonized_and_compiled:\n')
                 hook_lines.append(
-                    '\nrm ' + ' '.join([i for i in cleanup_list]) + '\n')
+                    'rm ' + ' '.join([i for i in cleanup_list]) + '\n')
                 hook_lines.append(recythonize_str)
             with open(post_checout_hook_file, 'w') as pchook:
                 pchook.writelines(hook_lines)
