@@ -60,11 +60,9 @@ def get_date_time_from_metadata(metadata, formatting='ISO'):
         >>> s = get_date_time_from_metadata(s.metadata, format='datetime64')
 
     """
-    time = date = time_zone = None
-    if metadata.has_item('General.date'):
-        date = metadata['General']['date']
-    if metadata.has_item('General.time'):
-        time = metadata['General']['time']
+    time_zone = None
+    date = metadata.get_item('General.date')
+    time = metadata.get_item('General.time')
     if date and time:
         dt = parser.parse('%sT%s' % (date, time))
         if 'time_zone' in metadata['General']:
@@ -121,20 +119,18 @@ def update_date_time_in_metadata(dt, metadata):
     """
     time_zone = None
     if isinstance(dt, str):
-        sp = dt.split('T')
-        date = sp[0]
-        time = sp[1]
-        if '+' in sp[1]:
-            time = "%s" % sp[1].split('+')[0]
-            time_zone = "+%s" % sp[1].split('+')[1]
-        elif '-' in sp[1]:
-            time = "%s" % sp[1].split('-')[0]
-            time_zone = "-%s" % sp[1].split('-')[1]
+        dt = parser.parse(dt)
+    if isinstance(dt, np.datetime64):
+        dt_split = np.datetime_as_string(dt).split('T')
+        date = dt_split[0]
+        time = dt_split[1]
     if isinstance(dt, datetime.datetime):
         date = dt.date().isoformat()
         time = dt.time().isoformat()
         if dt.tzname():
             time_zone = dt.tzname()
+        elif dt.tzinfo:  
+            time_zone = dt.isoformat()[-6:]
 
     metadata.set_item('General.date', date)
     metadata.set_item('General.time', time)
@@ -153,7 +149,7 @@ def serial_date_to_ISO_format(serial):
     # Excel date&time format
     origin = datetime.datetime(1899, 12, 30, tzinfo=tz.tzutc())
     secs = round(serial % 1.0 * 86400)
-    delta = datetime.timedelta(int(serial), secs, secs / 1E6)
+    delta = datetime.timedelta(int(serial), secs)
     dt_utc = origin + delta
     dt_local = dt_utc.astimezone(tz.tzlocal())
     return dt_local.date().isoformat(), dt_local.time().isoformat(), dt_local.tzname()

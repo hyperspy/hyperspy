@@ -63,7 +63,7 @@ def test_get_date_time_from_metadata():
     nt.assert_equal(dtt.get_date_time_from_metadata(md2, formatting='datetime'),
                     dt2)
     nt.assert_equal(dtt.get_date_time_from_metadata(md2, formatting='datetime64'),
-                    np.datetime64('2124-03-25T10:04:48.000000'))
+                    np.datetime64('2124-03-25T10:04:48'))
 
     nt.assert_equal(dtt.get_date_time_from_metadata(md3),
                     '2016-07-12T22:57:32')
@@ -96,7 +96,7 @@ def test_update_date_time_in_metadata():
     md11 = dtt.update_date_time_in_metadata(iso1, md.deepcopy())
     assert_deep_almost_equal(md11.General.date, md1.General.date)
     assert_deep_almost_equal(md11.General.time, md1.General.time)
-    assert_deep_almost_equal(md11.General.time_zone, '+00:00')
+    assert_deep_almost_equal(md11.General.time_zone, 'UTC')
     assert_deep_almost_equal(dtt.update_date_time_in_metadata(dt1, md.deepcopy()).as_dictionary(),
                              md1.as_dictionary())
 
