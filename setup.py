@@ -60,7 +60,8 @@ install_req = ['scipy',
                'dill',
                'h5py',
                'python-dateutil',
-               'ipyparallel']
+               'ipyparallel',
+               'scikit-image']
 
 # the hack to deal with setuptools + installing the package in ReadTheDoc:
 if 'readthedocs.org' in sys.executable:
