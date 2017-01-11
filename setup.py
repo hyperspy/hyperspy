@@ -81,9 +81,7 @@ def update_version(version):
 
 
 # Extensions. Add your extension here:
-raw_extensions = [Extension("hyperspy.tests.misc.cython.test_cython_integration",
-                            ['hyperspy/tests/misc/cython/test_cython_integration.pyx']),
-                  Extension("hyperspy.io_plugins.unbcf_fast",
+raw_extensions = [Extension("hyperspy.io_plugins.unbcf_fast",
                             ['hyperspy/io_plugins/unbcf_fast.pyx']),
                   ]
 
