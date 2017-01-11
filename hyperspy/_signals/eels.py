@@ -945,12 +945,13 @@ class EELSSpectrum_mixin:
             right_shape = list(self.data.shape)
             right_shape[axis.index_in_array] = extrapolation_size
             right_chunks = list(self.data.chunks)
-            right_chunks[axis.index_in_array] = (extrapolation_size,)
-            right_data = da.zeros(shape=tuple(right_shape),
-                                  chunks=tuple(right_chunks),
-                                  dtype=self.data.dtype)
-            s.data = da.concatenate([left_data, right_data],
-                                    axis=axis.index_in_array)
+            right_chunks[axis.index_in_array] = (extrapolation_size, )
+            right_data = da.zeros(
+                shape=tuple(right_shape),
+                chunks=tuple(right_chunks),
+                dtype=self.data.dtype)
+            s.data = da.concatenate(
+                [left_data, right_data], axis=axis.index_in_array)
         else:
             # just old code
             s.data = np.zeros(new_shape)
@@ -958,15 +959,17 @@ class EELSSpectrum_mixin:
         s.get_dimensions_from_data()
         pl = PowerLaw()
         pl._axes_manager = self.axes_manager
-        # TODO: make work lazily
-        pl.estimate_parameters(
-            s, axis.index2value(axis.size - window_size),
-            axis.index2value(axis.size - 1))
+        A, r = pl.estimate_parameters(
+            s,
+            axis.index2value(axis.size - window_size),
+            axis.index2value(axis.size - 1),
+            out=True)
         if fix_neg_r is True:
-            _r = pl.r.map['values']
-            _A = pl.A.map['values']
-            _A[_r <= 0] = 0
-            pl.A.map['values'] = _A
+            if s._lazy:
+                _where = da.where
+            else:
+                _where = np.where
+            A = _where(r <= 0, 0, A)
         # If the signal is binned we need to bin the extrapolated power law
         # what, in a first approximation, can be done by multiplying by the
         # axis step size.
@@ -980,23 +983,22 @@ class EELSSpectrum_mixin:
                 rightslice = (..., None)
                 axisslice = (None, slice(axis.size, None))
             else:
-                rightslice = (...,)
-                axisslice = (slice(axis.size, None),)
+                rightslice = (..., )
+                axisslice = (slice(axis.size, None), )
             right_chunks[axis.index_in_array] = 1
-            A = da.from_array(pl.A.map['values'][rightslice],
-                              chunks=right_chunks)
-            x = da.from_array(s.axes_manager.signal_axes[0].axis[axisslice],
-                              chunks=(extrapolation_size,))
-            r = da.from_array(pl.r.map['values'][rightslice],
-                              chunks=right_chunks)
+            x = da.from_array(
+                s.axes_manager.signal_axes[0].axis[axisslice],
+                chunks=(extrapolation_size, ))
+            A = A[rightslice]
+            r = r[rightslice]
             right_data = factor * A * x**(-r)
-            s.data = da.concatenate([left_data, right_data],
-                                    axis=axis.index_in_array)
+            s.data = da.concatenate(
+                [left_data, right_data], axis=axis.index_in_array)
         else:
             s.data[..., axis.size:] = (
-                factor * pl.A.map['values'][..., np.newaxis] *
-                s.axes_manager.signal_axes[0].axis[np.newaxis, axis.size:] ** (
-                    -pl.r.map['values'][..., np.newaxis]))
+                factor * A[..., np.newaxis] *
+                s.axes_manager.signal_axes[0].axis[np.newaxis, axis.size:]**(
+                    -r[..., np.newaxis]))
         return s
 
     def kramers_kronig_analysis(self,
