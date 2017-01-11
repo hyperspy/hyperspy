@@ -17,14 +17,15 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from datetime import datetime, timedelta
-from dateutil import tz
 from traits.api import Undefined
 import numpy as np
 import logging
 import warnings
+import datetime
+import dateutil
 
 from hyperspy.misc.array_tools import sarray2dict, dict2sarray
+from hyperspy.misc.date_time_tools import serial_date_to_ISO_format, datetime_to_serial_date
 
 _logger = logging.getLogger(__name__)
 
@@ -41,23 +42,6 @@ default_extension = 0
 # Writing capabilities:
 writes = [(2, 2), (2, 1), (2, 0)]
 magics = [0x0102]
-
-
-def _from_serial_date(serial):
-    # Excel date&time format
-    origin = datetime(1899, 12, 30, tzinfo=tz.tzutc())
-    secs = (serial % 1.0) * 86400.0
-    dt = timedelta(int(serial), secs, secs / 1000)
-    utc = origin + dt
-    date = "%s" % utc.astimezone(tz.tzlocal()).date()
-    time = "%s" % utc.astimezone(tz.tzlocal()).time()
-    return date, time
-
-
-def _to_serial_date(dt):
-    origin = datetime(1899, 12, 30, tzinfo=tz.tzutc())
-    delta = dt - origin
-    return float(delta.days) + (float(delta.seconds) / 86400)
 
 
 mapping = {
@@ -108,8 +92,8 @@ def get_default_header(endianess='<'):
     header['MAGIC'][0] = magics[0]
     header['Data_offset_1'][0] = 0x1000     # Always this value observed
     header['UNKNOWN1'][0] = 131141          # Very typical value (always?)
-    header['Acquisition_time'][0] = _to_serial_date(
-        datetime.fromtimestamp(86400, tz.tzutc()))
+    header['Acquisition_time'][0] = datetime_to_serial_date(
+        datetime.datetime.fromtimestamp(86400, dateutil.tz.tzutc()))
     # Default to UNIX epoch + 1 day
     # Have to add 1 day, as dateutil's timezones dont work before epoch
     return header
@@ -221,10 +205,11 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
     units = ['nm', 'nm', 'cm', 'cm']
     names = ['y', 'x', 'dy', 'dx']
     scales = [header['SY'], header['SX'], SDP, SDP]
-    date, time = _from_serial_date(header['Acquisition_time'])
+    date, time, time_zone = serial_date_to_ISO_format(header['Acquisition_time'])
     metadata = {'General': {'original_filename': os.path.split(filename)[1],
                             'date': date,
                             'time': time,
+                            'time_zone': time_zone,
                             'notes': header['Note']},
                 "Signal": {'signal_type': "diffraction",
                            'record_by': 'image', },
