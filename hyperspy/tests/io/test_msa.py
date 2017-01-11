@@ -321,7 +321,7 @@ class TestExample2:
             assert_deep_almost_equal(self.s.metadata.as_dictionary(),
                                      s2.metadata.as_dictionary())
 
-def test_minimum_metadata_example():
-    s = load(os.path.join(my_path,"msa_files", "minimum_metadata.msa"))
-    assert_equal(minimum_md_om, s.original_metadata.as_dictionary())
 
+def test_minimum_metadata_example():
+    s = load(os.path.join(my_path, "msa_files", "minimum_metadata.msa"))
+    assert_equal(minimum_md_om, s.original_metadata.as_dictionary())

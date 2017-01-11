@@ -358,13 +358,13 @@ def file_writer(filename, signal, format=None, separator=', ',
         # Signal1D characteristics
 
         'XLABEL': signal.axes_manager._axes[0].name
-                  if signal.axes_manager._axes[0].name is not Undefined
-                  else "",
+        if signal.axes_manager._axes[0].name is not Undefined
+        else "",
 
         #        'YLABEL' : '',
         'XUNITS': signal.axes_manager._axes[0].units
-                  if signal.axes_manager._axes[0].units is not Undefined
-                  else "",
+        if signal.axes_manager._axes[0].units is not Undefined
+        else "",
         #        'YUNITS' : '',
         'COMMENT': 'File created by HyperSpy version %s' % Release.version,
         # Microscope
