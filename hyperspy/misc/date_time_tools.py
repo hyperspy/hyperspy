@@ -63,8 +63,12 @@ def get_date_time_from_metadata(metadata, formatting='ISO'):
     time = metadata.get_item('General.time')
     if date and time:
         dt = parser.parse('%sT%s' % (date, time))
-        if metadata.has_item('General.time_zone'):
-            dt = dt.replace(tzinfo=tz.gettz(metadata.get_item('General.time_zone')))
+        time_zone = metadata.get_item('General.time_zone')
+        if time_zone:
+            dt = dt.replace(tzinfo=tz.gettz(time_zone))
+            if dt.tzinfo is None:
+                # time_zone metadata must be offset string
+                dt = parser.parse('%sT%s%s' % (date, time, time_zone))
 
     elif not date and time:
         dt = parser.parse('%s' % time).time()
