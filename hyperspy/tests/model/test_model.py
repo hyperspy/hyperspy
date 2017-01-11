@@ -318,6 +318,10 @@ class TestModel1D:
         if LooseVersion(ipywidgets.__version__) < LooseVersion("5.0"):
             raise SkipTest("ipywigets > 5.0 required but %s installed" %
                            ipywidgets.__version__)
+        from IPython import get_ipython
+        ip = get_ipython()
+        if ip is None or not getattr(ip, 'kernel', None):
+            raise SkipTest("Not attached to notebook")
         m = self.model
         m.notebook_interaction()
         m.append(hs.model.components1D.Offset())
