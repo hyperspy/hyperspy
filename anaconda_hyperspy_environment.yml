@@ -25,6 +25,5 @@ dependencies:
 - traitsui
 - pip:
   - python-dateutil
-  - pytz
   - tqdm
   - hyperspy

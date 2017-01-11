@@ -19,7 +19,6 @@
 import numpy as np
 import datetime
 from dateutil import tz, parser
-import pytz
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -33,7 +32,7 @@ def get_date_time_from_metadata(metadata, formatting='ISO'):
             metadata : metadata object
             formatting : string, ('ISO', 'datetime', 'datetime64')
                 Default: 'ISO'. This parameter set the formatting of the date,
-                and the time, it can be ISO 8601 string, datetime.datetime  
+                and the time, it can be ISO 8601 string, datetime.datetime
                 or a numpy.datetime64 object. In the later case, the time zone
                 is not supported.
 
@@ -60,19 +59,13 @@ def get_date_time_from_metadata(metadata, formatting='ISO'):
         >>> s = get_date_time_from_metadata(s.metadata, format='datetime64')
 
     """
-    time_zone = None
     date = metadata.get_item('General.date')
     time = metadata.get_item('General.time')
     if date and time:
         dt = parser.parse('%sT%s' % (date, time))
-        if 'time_zone' in metadata['General']:
-            try:
-                time_zone = pytz.timezone(metadata['General']['time_zone'])
-                dt = time_zone.localize(dt)
-            except pytz.UnknownTimeZoneError:
-                time_zone_offset = pytz.FixedOffset(
-                    metadata['General']['time_zone'])
-                dt = parser.parse('%sT%s%s' % (date, time, time_zone_offset))
+        if metadata.has_item('General.time_zone'):
+            dt = dt.replace(tzinfo=tz.gettz(metadata.get_item('General.time_zone')))
+
     elif not date and time:
         dt = parser.parse('%s' % time).time()
     elif date and not time:
@@ -129,28 +122,24 @@ def update_date_time_in_metadata(dt, metadata):
         time = dt.time().isoformat()
         if dt.tzname():
             time_zone = dt.tzname()
-        elif dt.tzinfo:  
+        elif dt.tzinfo:
             time_zone = dt.isoformat()[-6:]
 
     metadata.set_item('General.date', date)
     metadata.set_item('General.time', time)
     if time_zone:
         metadata.set_item('General.time_zone', time_zone)
-    if metadata.has_item('General.time_zone') and not time_zone:
+    elif metadata.has_item('General.time_zone'):
         del metadata.General.time_zone
     return metadata
 
 
 def serial_date_to_ISO_format(serial):
     """
-    Convert serial_date to a tuple of string (date, time, time_zone) in ISO 
+    Convert serial_date to a tuple of string (date, time, time_zone) in ISO
     format. By default, the serial date is converted in local time zone.
     """
-    # Excel date&time format
-    origin = datetime.datetime(1899, 12, 30, tzinfo=tz.tzutc())
-    secs = round(serial % 1.0 * 86400)
-    delta = datetime.timedelta(int(serial), secs)
-    dt_utc = origin + delta
+    dt_utc = serial_date_to_datetime(serial)
     dt_local = dt_utc.astimezone(tz.tzlocal())
     return dt_local.date().isoformat(), dt_local.time().isoformat(), dt_local.tzname()
 
@@ -159,7 +148,7 @@ def ISO_format_to_serial_date(date, time, timezone='UTC'):
     """ Convert ISO format to a serial date. """
     if timezone is None or timezone == 'Coordinated Universal Time':
         timezone = 'UTC'
-    dt = parser.parse('%sT%s%s' % (date, time, timezone))
+    dt = parser.parse('%sT%s' % (date, time)).replace(tzinfo=tz.gettz(timezone))
     return datetime_to_serial_date(dt)
 
 
@@ -170,3 +159,12 @@ def datetime_to_serial_date(dt):
     origin = datetime.datetime(1899, 12, 30, tzinfo=tz.tzutc())
     delta = dt - origin
     return float(delta.days) + (float(delta.seconds) / 86400.0)
+
+
+def serial_date_to_datetime(serial):
+    """ Convert serial date to a datetime.datetime object. """
+    # Excel date&time format
+    origin = datetime.datetime(1899, 12, 30, tzinfo=tz.tzutc())
+    secs = round(serial % 1.0 * 86400)
+    delta = datetime.timedelta(int(serial), secs)
+    return origin + delta
