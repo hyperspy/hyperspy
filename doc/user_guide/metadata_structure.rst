@@ -100,7 +100,7 @@ original_filename
 time_zone
     type: Str
 
-    The time zone as defined in 'pytz.all_timezones' of the pytz library, e. g. "UTC", "Europe/London", etc. It can also be a time offset, e. g. "+03:00" or "-05:00".
+    The time zone as supported by the python-dateutil library, e.g. "UTC", "Europe/London", etc. It can also be a time offset, e.g. "+03:00" or "-05:00".
 
 time
     type: Str
@@ -350,13 +350,13 @@ signal_origin
 record_by
     type: Str
     .. deprecated:: 2.1 (HyperSpy v1.0)
-    
+
     One of 'spectrum' or 'image'. It describes how the data is stored in memory.
     If 'spectrum' the spectral data is stored in the faster index.
 
 quantity
     type: Str
-    
+
     The name of the quantity of the "intensity axis" with the units in round brackets if required, for example Temperature (K).
 
 Noise_properties
