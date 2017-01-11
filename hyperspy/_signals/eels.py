@@ -753,7 +753,8 @@ class EELSSpectrum_mixin:
         return cl
 
     def richardson_lucy_deconvolution(self, psf, iterations=15, mask=None,
-                                      show_progressbar=None):
+                                      show_progressbar=None,
+                                      parallel=None):
         """1D Richardson-Lucy Poissonian deconvolution of
         the spectrum by the given kernel.
 
@@ -769,6 +770,9 @@ class EELSSpectrum_mixin:
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        parallel : {None,bool,int}
+            if True, the deconvolution will be performed in a threaded (parallel)
+            manner.
 
         Notes:
         -----
@@ -781,21 +785,12 @@ class EELSSpectrum_mixin:
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
-        ds = self.deepcopy()
-        ds.data = ds.data.copy()
-        ds.metadata.General.title += (
-            ' after Richardson-Lucy deconvolution %i iterations' %
-            iterations)
-        if ds.tmp_parameters.has_item('filename'):
-            ds.tmp_parameters.filename += (
-                '_after_R-L_deconvolution_%iiter' % iterations)
         psf_size = psf.axes_manager.signal_axes[0].size
         kernel = psf()
         imax = kernel.argmax()
         maxval = self.axes_manager.navigation_size
         show_progressbar = show_progressbar and (maxval > 0)
-
-        def deconv_function(current_result, signal=None, kernel=None,
+        def deconv_function(signal, kernel=None,
                             iterations=15, psf_size=None):
             imax = kernel.argmax()
             result = np.array(signal).copy()
@@ -805,34 +800,16 @@ class EELSSpectrum_mixin:
                 result *= np.convolve(kernel[::-1], signal /
                                       first)[mimax:mimax + psf_size]
             return result
-        iterating_kw = (('signal', self),)
-        if psf.axes_manager.navigation_dimension != 0:
-            iterating_kw += (('kernel', psf),)
-        ds._map_iterate(deconv_function,
-                        iterating_kwargs=iterating_kw,
-                        kernel=psf,
-                        iterations=interations,
-                        psf_size=psf_size,
-                        show_progressbar=show_progressbar)
-        # Old code.
-        # for D in progressbar(self, total=maxval,
-        #                      disable=not show_progressbar,
-        #                      leave=True):
-        #     D = D.data.copy()
-        #     if psf.axes_manager.navigation_dimension != 0:
-        #         kernel = psf(axes_manager=self.axes_manager)
-        #         imax = kernel.argmax()
+        ds = self.map(deconv_function, kernel=psf, iterations=iterations,
+                      psf_size=psf_size, show_progressbar=show_progressbar,
+                      parallel=parallel, ragged=False, inplace=False)
 
-        #     s = ds(axes_manager=self.axes_manager)
-        #     mimax = psf_size - 1 - imax
-        #     O = D.copy()
-        #     for i in range(iterations):
-        #         first = np.convolve(kernel, O)[imax: imax + psf_size]
-        #         O = O * (np.convolve(kernel[::-1],
-        #                              D / first)[mimax: mimax + psf_size])
-        #     s[:] = O
-        #     j += 1
-
+        ds.metadata.General.title += (
+            ' after Richardson-Lucy deconvolution %i iterations' %
+            iterations)
+        if ds.tmp_parameters.has_item('filename'):
+            ds.tmp_parameters.filename += (
+                '_after_R-L_deconvolution_%iiter' % iterations)
         return ds
 
     def _are_microscope_parameters_missing(self):
