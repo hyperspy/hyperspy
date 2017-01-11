@@ -165,6 +165,6 @@ def serial_date_to_datetime(serial):
     """ Convert serial date to a datetime.datetime object. """
     # Excel date&time format
     origin = datetime.datetime(1899, 12, 30, tzinfo=tz.tzutc())
-    secs = round(serial % 1.0 * 86400)
+    secs = (serial % 1.0) * 86400
     delta = datetime.timedelta(int(serial), secs)
     return origin + delta

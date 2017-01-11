@@ -42,10 +42,10 @@ md1, dt1, iso1 = _get_example('2014-12-27', '00:00:00', 'UTC')
 serial1 = 42000.00
 
 md2, dt2, iso2 = _get_example('2124-03-25', '10:04:48', 'EST')
-serial2 = 81900.62833
+serial2 = 81900.62833333334
 
 md3, dt3, iso3 = _get_example('2016-07-12', '22:57:32')
-serial3 = 42563.95662
+serial3 = 42563.95662037037
 
 
 def test_get_date_time_from_metadata():
@@ -126,7 +126,9 @@ def test_serial_date_to_ISO_format():
     iso_2 = dtt.serial_date_to_ISO_format(serial2)
     dt2_local = dt2.astimezone(tz.tzlocal())
     nt.assert_equal(iso_2[0], dt2_local.date().isoformat())
-    nt.assert_equal(iso_2[1], dt2_local.time().isoformat())
+    # The below line will/can fail due to accuracy loss when converting to serial date:
+    # We therefore truncate milli/micro seconds
+    nt.assert_equal(iso_2[1][:8], dt2_local.time().isoformat())
     nt.assert_equal(iso_2[2], dt2_local.tzname())
 
     iso_3 = dtt.serial_date_to_ISO_format(serial3)
