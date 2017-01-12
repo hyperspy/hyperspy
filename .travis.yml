@@ -3,42 +3,67 @@ language: python
 matrix:
   include:
   - python: 3.5
-    env: export FAIL_ON_EXTERNAL_DEPRECATION='False'
+    env: export FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
   - python: 3.5
-    env: export FAIL_ON_EXTERNAL_DEPRECATION='True'
+    env: export FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
+  - python: 3.5
+    env: export FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='True'
   - os: osx
     language: generic
     python: 3.5
-    env: export FAIL_ON_EXTERNAL_DEPRECATION='False'
+    env: export FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
   allow_failures:
-  - env: export FAIL_ON_EXTERNAL_DEPRECATION='True'
+  - env: export FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
 
 before_install:
-- if [[ $TRAVIS_OS_NAME == 'osx' ]] ; then curl "https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh" -o miniconda.sh; else wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh; fi
-- chmod +x miniconda.sh
-- "./miniconda.sh -b -p $HOME/miniconda"
-- export PATH="$HOME/miniconda/bin:$PATH"
-- hash -r
-- conda update --yes conda
-
+  - if [[ $TRAVIS_OS_NAME == 'osx' ]] ; then
+      curl "https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh" -o miniconda.sh;
+    else wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - if [[ $MINIMAL_ENV == 'False' ]] ; then
+      chmod +x miniconda.sh;
+      ./miniconda.sh -b -p $HOME/miniconda;
+      export "PATH=$HOME/miniconda/bin:$PATH";
+      hash -r;
+      conda update --yes conda;
+    fi
 install:
-  - DEPS="nose numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython lxml ipyparallel"
-  - conda create -n testenv --yes $DEPS
-  - source activate testenv
-  - conda install pip
-  - pip install coverage coveralls traits traitsui requests tqdm
-  - python setup.py install
+
+  - if [[ $MINIMAL_ENV == 'False' ]] ; then
+      DEPS="nose numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython lxml ipyparallel";
+      conda create -n testenv --yes $DEPS;
+      source activate testenv;
+      conda install pip;
+      python setup.py install;
+    else pip3 install .;
+    fi
 
 script:
-  - python setup.py build_ext --inplace
-  - python continuous_integration/nosetest.py --with-coverage hyperspy.tests
+  - if [[ $MINIMAL_ENV == 'False' ]]; then
+      python setup.py build_ext --inplace;
+      pip install coverage coveralls;
+      python continuous_integration/nosetest.py --with-coverage hyperspy.tests;
+    else python3 setup.py build_ext --inplace;
+      echo "available installed python libraries (pip3 list):"
+      pip3 list;
+      pip3 install coverage coveralls;
+      python3 continuous_integration/nosetest.py --with-coverage hyperspy.tests;
+    fi
 
 after_success:
 - coveralls
-- if [[ $TRAVIS_OS_NAME == 'osx' ]]; then python setup.py bdist_wheel; else python setup.py sdist; fi
+- if [[ $MINIMAL_ENV == 'False' ]]; then
+    if [[ $TRAVIS_OS_NAME == 'osx' ]]; then 
+      python setup.py bdist_wheel;
+    else python setup.py sdist;
+    fi;
+  fi
 
 before_deploy:
-- if [[ $TRAVIS_OS_NAME == 'osx' ]]; then export DISTRIB=$(ls ./dist/*.whl); else export DISTRIB=$(ls ./dist/*.tar.gz); fi
+- if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
+    export DISTRIB=$(ls ./dist/*.whl);
+  else export DISTRIB=$(ls ./dist/*.tar.gz);
+  fi
 
 deploy:
   provider: releases
@@ -49,3 +74,4 @@ deploy:
   skip_cleanup: true
   on:
     tags: true
+    condition: $MINIMAL_ENV = 'False'
