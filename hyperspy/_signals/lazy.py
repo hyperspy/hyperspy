@@ -19,7 +19,7 @@
 import logging
 
 import numpy as np
-from toolz import partial
+from toolz import partial, curry
 import dask.array as da
 import dask.delayed as dd
 from dask import threaded
@@ -38,17 +38,42 @@ _logger = logging.getLogger(__name__)
 lazyerror = NotImplementedError('This method is not available in lazy signals')
 
 
-def _transform(model, x):
-    return model.transform(x)
+def to_array(thing, chunks=None):
+    """Accepts BaseSignal, dask or numpy arrays and always produces either
+    numpy or dask array.
 
+    Parameters
+    ----------
+    thing : {BaseSignal, dask.array.Array, numpy.ndarray}
+        the thing to be converted
+    chunks : {None, tuple of tuples}
+        If None, the returned value is a numpy array. Otherwise returns dask
+        array with the chunks as specified.
 
-def transform(model, x):
-    func = partial(_transform, model)
-    return x.map_blocks(
-        func,
-        chunks=(x.chunks[0], (model.n_components, )),
-        drop_axis=1,
-        new_axis=1)
+    Returns
+    -------
+    res : {numpy.ndarray, dask.array.Array}
+    """
+    if thing is None:
+        return None
+    if isinstance(thing, BaseSignal):
+        thing = thing.data
+    if chunks is None:
+        if isinstance(thing, da.Array):
+            thing = thing.compute()
+        if isinstance(thing, np.ndarray):
+            return thing
+        else:
+            raise ValueError
+    else:
+        if isinstance(thing, np.ndarray):
+            thing = da.from_array(thing, chunks=chunks)
+        if isinstance(thing, da.Array):
+            if thing.chunks != chunks:
+                thing = thing.rechunk(chunks)
+            return thing
+        else:
+            raise ValueError
 
 
 class LazySignal(BaseSignal):
@@ -252,27 +277,14 @@ class LazySignal(BaseSignal):
 
     def integrate_simpson(self, axis, out=None):
         axis = self.axes_manager[axis]
-        from dask.delayed import do as del_do
-        from dask.array.core import slices_from_chunks
         from scipy import integrate
         axis = self.axes_manager[axis]
         data = self._lazy_data(axis=axis)
-        chunks = data.chunks
-        d_chunks = [data[_slice] for _slice in slices_from_chunks(chunks)]
-        integs = [
-            del_do(
-                integrate.simps, pure=True)(dc,
-                                            x=axis.axis,
-                                            axis=axis.index_in_array)
-            for dc in d_chunks
-        ]
-        shapes = product(*chunks)
-        result_list = [
-            da.from_delayed(
-                integ, shape, dtype=data.dtype)
-            for integ, shape in zip(integs, shapes)
-        ]
-        new_data = da.concatenate(result_list, axis=axis.index_in_array)
+        new_data = data.map_blocks(
+            integrate.simps,
+            x=axis.axis,
+            axis=axis.index_in_array,
+            drop_axis=axis.index_in_array)
         s = out or self._deepcopy_with_new_data(new_data)
         if out:
             if out.data.shape == new_data.shape:
@@ -441,62 +453,72 @@ class LazySignal(BaseSignal):
                 getitem[ind] = res
             yield self.data[tuple(getitem)]
 
-    def _block_iterator(self, flat_signal=True, get=threaded.get):
-        nav_chunks = self.data.chunks[:self.axes_manager.navigation_dimension]
-        data = self.data.reshape((self.axes_manager.navigation_shape[::-1] +
-                                  (self.axes_manager.signal_size, )))
+    def _block_iterator(self,
+                        flat_signal=True,
+                        get=threaded.get,
+                        navigation_mask=None,
+                        signal_mask=None):
+        """A function that allows iterating lazy signal data by blocks,
+        defining the dask.Array.
 
+        Parameters
+        ----------
+        flat_signal: bool
+            returns each block flattened, such that the shape (for the
+            particular block) is (navigation_size, signal_size), with
+            optionally masked elements missing. If false, returns
+            the equivalent of s.inav[{blocks}].data, where masked elements are
+            set to np.nan or 0.
+        get : dask scheduler
+            the dask scheduler to use for computations;
+            default `dask.threaded.get`
+        navigation_mask : {BaseSignal, numpy array, dask array}
+            The navigation locations marked as True are not returned (flat) or
+            set to NaN or 0.
+        signal_mask : {BaseSignal, numpy array, dask array} 
+            The signal locations marked as True are not returned (flat) or set
+            to NaN or 0.
+
+        """
+        data = self._data_aligned_with_axes
+        nav_chunks = data.chunks[:self.axes_manager.navigation_dimension]
         indices = product(*[range(len(c)) for c in nav_chunks])
         data = data.reshape((self.axes_manager.navigation_shape[::-1] +
-                                  (self.axes_manager.signal_size, )))
+                             (self.axes_manager.signal_size, )))
 
-        if signal_mask is not None:
-            if isinstance(signal_mask, BaseSignal):
-                signal_mask = signal_mask.data
-            if isinstance(signal_mask, da.Array):
-                signal_mask = signal_mask.compute()
-            if isinstance(signal_mask, np.ndarray):
-                signal_mask = signal_mask.ravel()
-            else:
+        if signal_mask is None:
+            signal_mask = slice(None) if flat_signal else \
+                    np.zeros(self.axes_manager.signal_size, dtype='bool')
+        else:
+            try:
+                signal_mask = to_array(signal_mask).ravel()
+            except ValueError:
+                # re-raise with a message
                 raise ValueError("signal_mask has to be a signal, numpy or"
                                  " dask array, but "
-                                 "{} ".format(type(signal_mask))
-                                 "was given")
+                                 "{} was given".format(type(signal_mask)))
             if not flat_signal:
                 signal_mask = ~signal_mask
-        elif flat_signal:
-            signal_mask = slice(None)
-        else:
-            signal_mask = np.zeros(self.axes_manager.signal_size,
-                                   dtype='bool')
 
-        if navigation_mask is not None:
-            if isinstance(navigation_mask, BaseSignal):
-                navigation_mask = navigation_mask.data
-            if isinstance(navigation_mask, np.ndarray):
-                navigation_mask = da.from_array(navigation_mask,
-                                                chunks=nav_chunks)
-            if isinstance(navigation_mask, da.Array):
-                if navigation_mask.chunks != nav_chunks:
-                    navigation_mask = navigation_mask.rechunk(nav_chunks)
-            else:
+        if navigation_mask is None:
+            method = da.ones if flat_signal else da.zeros
+            nav_mask = method(
+                self.axes_manager.navigation_shape[::-1],
+                chunks=nav_chunks,
+                dtype='bool')
+        else:
+            try:
+                nav_mask = to_array(navigation_mask, chunks=nav_chunks)
+            except ValueError:
+                # re-raise with a message
                 raise ValueError("navigation_mask has to be a signal, numpy or"
                                  " dask array, but "
-                                 "{} ".format(type(signal_mask))
-                                 "was given")
-        elif flat_signal:
-            nav_mask = da.ones(self.axes_manager.navigation_shape[::-1],
-                               chunks=nav_chunks,
-                               dtype='bool')
-        else:
-            nav_mask = da.zeros(self.axes_manager.navigation_shape[::-1],
-                               chunks=nav_chunks,
-                               dtype='bool')
+                                 "{} was given".format(type(navigation_mask)))
         for ind in indices:
             chunk = get(data.dask, (data.name, ) + ind + (0, ))
-            n_mask = get(nav_mask.dask, (nav_mask.name,) + ind)
+            n_mask = get(nav_mask.dask, (nav_mask.name, ) + ind)
             if flat_signal:
-                yield chunk[n_mask,...][..., signal_mask]
+                yield chunk[n_mask, ...][..., signal_mask]
             else:
                 # TODO: check if need to reverse the signal_shape
                 try:
@@ -508,43 +530,61 @@ class LazySignal(BaseSignal):
                 yield chunk.reshape(chunk.shape[:-1] +
                                     self.axes_manager.signal_shape)
 
-
     def decomposition(self,
                       output_dimension,
+                      normalize_poissonian_noise=False,
                       algorithm='PCA',
                       signal_mask=None,
                       navigation_mask=None,
                       get=threaded.get,
                       num_chunks=None,
-                      refine=True,
+                      reproject=True,
+                      bounds=True,
                       **kwargs):
         """Perform Incremental (Batch) decomposition on the data, keeping n
         significant components.
 
         Parameters
         ----------
-            output_dimension : int
-                the number of significant components to keep
-            kind : str
-                One of ('PCA', 'ORPCA', 'ONMF'). By default batch PCA from
-                scikit-learn.
-            get : dask scheduler
-                the dask scheduler to use for computations
-            num_chunks : int
-                the number of dask chunks to pass to the decomposition model.
-                More chunks require more memory, but should run faster. Will be
-                increased to contain atleast output_dimension signals.
-            refine : bool
-                for ONMF, if to reproject loadings after learning factors.
-            **kwargs
-                passed to the partial_fit/fit functions.
+        output_dimension : int
+            the number of significant components to keep
+        normalize_poissonian_noise : bool
+            If True, scale the SI to normalize Poissonian noise
+        algorithm : str
+            One of ('PCA', 'ORPCA', 'ONMF'). By default batch PCA from
+            scikit-learn.
+        get : dask scheduler
+            the dask scheduler to use for computations;
+            default `dask.threaded.get`
+        num_chunks : int
+            the number of dask chunks to pass to the decomposition model.
+            More chunks require more memory, but should run faster. Will be
+            increased to contain atleast output_dimension signals.
+        navigation_mask : {BaseSignal, numpy array, dask array}
+            The navigation locations marked as True are not used in the
+            decompostion.
+        signal_mask : {BaseSignal, numpy array, dask array}
+            The signal locations marked as True are not used in the
+            decomposition.
+        reproject : bool
+            Reproject data on the learnt components (factors) after learning.
+        bounds : {tuple, bool}
+            The (min, max) values of the data to normalize before learning.
+            If tuple (min, max), those values will be used for normalization.
+            If True, extremes will be looked up (expensive), default.
+            If False, no normalization is done (learning may be very slow).
+            If normalize_poissonian_noise is True, this cannot be True.
+        **kwargs
+            passed to the partial_fit/fit functions.
 
         """
+        # TODO: document with papers
+        # TODO: document parameters for various algorithms
         explained_variance = None
         explained_variance_ratio = None
-        nav_chunks = self._data_aligned_with_axes.chunks[
-            :self.axes_manager.navigation_dimension]
-        from toolz import curry
+        _al_data = self._data_aligned_with_axes
+        nav_chunks = _al_data.chunks[:self.axes_manager.navigation_dimension]
+        sig_chunks = _al_data.chunks[self.axes_manager.navigation_dimension:]
 
         num_chunks = 1 if num_chunks is None else num_chunks
         blocksize = np.min([multiply(ar) for ar in product(*nav_chunks)])
@@ -554,135 +594,185 @@ class LazySignal(BaseSignal):
         blocksize *= num_chunks
 
         ## LEARN
-        if kind == 'PCA':
+        if algorithm == 'PCA':
             from sklearn.decomposition import IncrementalPCA
-            ipca = IncrementalPCA(n_components=output_dimension)
-            method = curry(ipca.partial_fit, **kwargs)
+            obj = IncrementalPCA(n_components=output_dimension)
+            method = curry(obj.partial_fit, **kwargs)
+            reproject = True
 
-        elif kind == 'ORPCA':
+        elif algorithm == 'ORPCA':
             from hyperspy.learn.rpca import ORPCA
             kwargs['fast'] = True
-            _orpca = ORPCA(output_dimension, **kwargs)
-            method = _orpca.fit
+            obj = ORPCA(output_dimension, **kwargs)
+            method = curry(obj.fit, iterating=True)
 
-        elif kind == 'ONMF':
+        elif algorithm == 'ONMF':
             from hyperspy.learn.onmf import ONMF
             batch_size = kwargs.pop('batch_size', None)
-            _onmf = ONMF(output_dimension, **kwargs)
-            method = curry(_onmf.fit, batch_size=batch_size)
+            obj = ONMF(output_dimension, **kwargs)
+            method = curry(obj.fit, batch_size=batch_size)
 
         else:
             raise ValueError('algorithm not known')
 
-        this_data = []
+        original_data = self.data
         try:
-            for chunk in progressbar(
-                    self._block_iterator(
-                        flat_signal=True, get=get,
-                        signal_mask=signal_mask,
-                        navigation_mask=navigation_mask),
-                    total=nblocks,
-                    leave=True,
-                    desc='Learn'):
-                chunk = chunk.reshape(-1, self.axes_manager.signal_size)
-                this_data.append(chunk)
-                if len(this_data) == num_chunks:
-                    thedata = np.concatenate(this_data, axis=0)
-                    method(thedata)
-                    this_data = []
-            if len(this_data):
-                thedata = np.concatenate(this_data, axis=0)
-                method(thedata)
-        except KeyboardInterrupt:
-            pass
+            if normalize_poissonian_noise:
+                if bounds is True:
+                    bounds = False
+                    # warnings.warn?
+                data = self._data_aligned_with_axes
+                ndim = self.axes_manager.navigation_dimension
+                sdim = self.axes_manager.signal_dimension
+                nm = da.logical_not(
+                    da.zeros(
+                        self.axes_manager.navigation_shape[::-1],
+                        chunks=nav_chunks)
+                    if navigation_mask is None else to_array(
+                        navigation_mask, chunks=nav_chunks))
+                sm = da.logical_not(
+                    da.zeros(
+                        self.axes_manager.signal_shape[::-1],
+                        chunks=sig_chunks)
+                    if signal_mask is None else to_array(
+                        signal_mask, chunks=sig_chunks))
+                ndim = self.axes_manager.navigation_dimension
+                sdim = self.axes_manager.signal_dimension
+                bH, aG = da.compute(
+                    data.sum(axis=range(ndim)),
+                    data.sum(axis=range(ndim, ndim + sdim)))
+                bH = da.where(sm, bH, 1)
+                aG = da.where(nm, aG, 1)
 
-        # GET RESULTS (recalc loadings if required)
+                raG = da.sqrt(aG)
+                rbH = da.sqrt(bH)
 
-        if kind == 'PCA':
-            explained_variance = ipca.explained_variance_
-            explained_variance_ratio = ipca.explained_variance_ratio_
-            factors = ipca.components_.T
-            loadings = transform(ipca, data).compute()
+                coeff = raG[(..., ) + (None, )*rbH.ndim] *\
+                        rbH[(None, )*raG.ndim + (...,)]
+                coeff.map_blocks(np.nan_to_num)
+                coeff = da.where(coeff == 0, 1, coeff)
+                data = data / coeff
+                self.data = data
 
-        elif kind == 'ORPCA':
-            _, _, U, S, V = _orpca.finish()
-            factors = U * S
-            loadings = V
-            if refine:
-                _orpca.R = []
+            # normalize the data for learning algs:
+            if bounds:
+                if bounds is True:
+                    _min, _max = da.compute(self.data.min(), self.data.max())
+                else:
+                    _min, _max = bounds
+                self.data = (self.data - _min) / (_max - _min)
+
+            # LEARN
+            this_data = []
+            try:
                 for chunk in progressbar(
                         self._block_iterator(
-                            flat_signal=True, get=get),
+                            flat_signal=True,
+                            get=get,
+                            signal_mask=signal_mask,
+                            navigation_mask=navigation_mask),
                         total=nblocks,
-                        leave=False,
-                        desc='Project'):
-                    chunk = chunk.reshape(-1, self.axes_manager.signal_size)
-                    _orpca.project(chunk)
-                _, _, _, _, loadings = _orpca.finish()
-
-            explained_variance = S**2 / len(factors)
-
-        elif kind == 'ONMF':
-            factors, loadings = _onmf.finish()
-            # if explicitly want to refine 
-            # OR
-            # did not finish the learning of the full dataset, but want to
-            # project it.
-            try:
-                if refine or not isinstance(loadings, np.ndarray) or \
-                    loadings.shape[1] != self.axes_manager.navigation_size:
-
-                    _map = map(
-                        lambda thing: _onmf.project(
-                            thing.reshape(-1,
-                                          self.axes_manager.signal_size)),
-                        self._block_iterator(flat_signal=True, get=get)
-                    )
-
-                    H = [_ for _ in progressbar(_map, total=nblocks,
-                                                desc='Project')]
-                    loadings = np.concatenate(H, axis=1)
+                        leave=True,
+                        desc='Learn'):
+                    this_data.append(chunk)
+                    if len(this_data) == num_chunks:
+                        thedata = np.concatenate(this_data, axis=0)
+                        method(thedata)
+                        this_data = []
+                if len(this_data):
+                    thedata = np.concatenate(this_data, axis=0)
+                    method(thedata)
             except KeyboardInterrupt:
                 pass
-            loadings = loadings.T
 
-        if explained_variance is not None and \
-                explained_variance_ratio is None:
-            explained_variance_ratio = \
-                explained_variance / explained_variance.sum()
+            # GET ALREADY CALCULATED RESULTS
+            if algorithm == 'PCA':
+                explained_variance = obj.explained_variance_
+                explained_variance_ratio = obj.explained_variance_ratio_
+                factors = obj.components_.T
 
-        # RESHUFFLE
+            elif algorithm == 'ORPCA':
+                _, _, U, S, V = obj.finish()
+                factors = U * S
+                loadings = V
+                explained_variance = S**2 / len(factors)
 
-        if kind in ['ORNMF', 'ONMF', 'ORPCA']:
-            # Fix the block-scrambled loadings
+            elif algorithm == 'ONMF':
+                factors, loadings = obj.finish()
+                loadings = loadings.T
+
+            # REPROJECT
+            if reproject:
+                if algorithm == 'PCA':
+                    method = obj.transform
+                    post = lambda a: np.concatenate(a, axis=0)
+                elif algorithm == 'ORPCA':
+                    method = obj.project
+                    obj.R = []
+                    post = lambda a: obj.finish()[4]
+                elif algorithm == 'ONMF':
+                    method = obj.project
+                    post = lambda a: np.concatenate(a, axis=1).T
+
+                _map = map(lambda thing: method(thing),
+                           self._block_iterator(
+                               flat_signal=True,
+                               get=get,
+                               signal_mask=signal_mask,
+                               navigation_mask=navigation_mask))
+                H = []
+                try:
+                    for thing in progressbar(
+                            _map, total=nblocks, desc='Project'):
+                        H.append(thing)
+                except KeyboardInterrupt:
+                    pass
+                loadings = post(H)
+
+            if explained_variance is not None and \
+                    explained_variance_ratio is None:
+                explained_variance_ratio = \
+                    explained_variance / explained_variance.sum()
+
+            # RESHUFFLE "blocked" LOADINGS
             ndim = self.axes_manager.navigation_dimension
             splits = np.cumsum([multiply(ar)
                                 for ar in product(*nav_chunks)][:-1]).tolist()
             if splits:
-                all_chunks = [
-                    ar.T.reshape((output_dimension, ) + shape)
-                    for shape, ar in zip(
-                        product(*nav_chunks), np.split(loadings, splits))
-                ]
+                try:
+                    all_chunks = [
+                        ar.T.reshape((output_dimension, ) + shape)
+                        for shape, ar in zip(
+                            product(*nav_chunks), np.split(loadings, splits))
+                    ]
 
-                def split_stack_list(what, step, axis):
-                    total = len(what)
-                    if total != step:
-                        return [
-                            np.concatenate(
-                                what[i:i + step], axis=axis)
-                            for i in range(0, total, step)
-                        ]
-                    else:
-                        return np.concatenate(what, axis=axis)
+                    def split_stack_list(what, step, axis):
+                        total = len(what)
+                        if total != step:
+                            return [
+                                np.concatenate(
+                                    what[i:i + step], axis=axis)
+                                for i in range(0, total, step)
+                            ]
+                        else:
+                            return np.concatenate(what, axis=axis)
 
-                for chunks, axis in zip(nav_chunks[::-1], range(ndim, 0, -1)):
-                    step = len(chunks)
-                    all_chunks = split_stack_list(all_chunks, step, axis)
+                    for chunks, axis in zip(nav_chunks[::-1], range(ndim, 0, -1)):
+                        step = len(chunks)
+                        all_chunks = split_stack_list(all_chunks, step, axis)
 
-                loadings = all_chunks.reshape((output_dimension, -1)).T
+                    loadings = all_chunks.reshape((output_dimension, -1)).T
+                except ValueError:
+                    # In case the projection step was not finished, it's left
+                    # as scrambled
+                    pass
+        finally:
+            self.data = original_data
 
         target = self.learning_results
+        target.decomposition_algorithm = algorithm
+        target.output_dimension = output_dimension
+        target._object = obj
         target.factors = factors
         target.loadings = loadings
         target.explained_variance = explained_variance
