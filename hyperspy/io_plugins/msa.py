@@ -24,6 +24,7 @@ import os
 import logging
 
 import numpy as np
+from traits.api import Undefined
 
 from hyperspy.misc.config_dir import os_name
 from hyperspy import Release
@@ -273,12 +274,17 @@ def parse_msa_string(string, filename=None):
     else:
         if mapped.Signal.signal_type == 'EELS':
             quantity = 'Electrons'
+            if not yunits:
+                yunits = "(Counts)"
         elif 'EDS' in mapped.Signal.signal_type:
             quantity = 'X-rays'
-        if yunits == "":
-            yunits = '(Counts)'
-    quantity_units = "%s %s" % (quantity, yunits)
-    mapped.set_item('Signal.quantity', quantity_units.strip())
+            if not yunits:
+                yunits = "(Counts)"
+        else:
+            quantity = ""
+    if quantity or yunits:
+        quantity_units = "%s %s" % (quantity, yunits)
+        mapped.set_item('Signal.quantity', quantity_units.strip())
 
     dictionary = {
         'data': np.array(y),
@@ -335,7 +341,6 @@ def file_writer(filename, signal, format=None, separator=', ',
                     "an unexpected error. Please report this error to "
                     "the developers")
             locale.setlocale(locale.LC_TIME, loc)  # restore saved locale
-
     keys_from_signal = {
         # Required parameters
         'FORMAT': FORMAT,
@@ -352,9 +357,14 @@ def file_writer(filename, signal, format=None, separator=', ',
         'OFFSET': signal.axes_manager._axes[0].offset,
         # Signal1D characteristics
 
-        'XLABEL': signal.axes_manager._axes[0].name,
+        'XLABEL': signal.axes_manager._axes[0].name
+        if signal.axes_manager._axes[0].name is not Undefined
+        else "",
+
         #        'YLABEL' : '',
-        'XUNITS': signal.axes_manager._axes[0].units,
+        'XUNITS': signal.axes_manager._axes[0].units
+        if signal.axes_manager._axes[0].units is not Undefined
+        else "",
         #        'YUNITS' : '',
         'COMMENT': 'File created by HyperSpy version %s' % Release.version,
         # Microscope
