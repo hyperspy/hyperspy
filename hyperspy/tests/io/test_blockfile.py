@@ -27,6 +27,7 @@ from hyperspy.misc.array_tools import sarray2dict
 import warnings
 
 from hyperspy.misc.test_utils import assert_deep_almost_equal
+from hyperspy.misc.date_time_tools import serial_date_to_ISO_format
 
 
 try:
@@ -132,9 +133,12 @@ def test_load2():
 def test_save_load_cycle():
     sig_reload = None
     signal = hs.load(file2)
+    serial = signal.original_metadata['blockfile_header']['Acquisition_time']
+    date, time, timezone = serial_date_to_ISO_format(serial)
     nt.assert_equal(signal.metadata.General.original_filename, 'test2.blo')
-    nt.assert_equal(signal.metadata.General.date, "2015-12-01")
-    nt.assert_equal(signal.metadata.General.time, "15:43:09.828057")
+    nt.assert_equal(signal.metadata.General.date, date)
+    nt.assert_equal(signal.metadata.General.time, time)
+    nt.assert_equal(signal.metadata.General.time_zone, timezone)
     nt.assert_equal(
         signal.metadata.General.notes,
         "Precession angle : \r\nPrecession Frequency : \r\nCamera gamma : on")

@@ -60,7 +60,8 @@ install_req = ['scipy',
                'dill',
                'h5py',
                'python-dateutil',
-               'ipyparallel']
+               'ipyparallel',
+               'scikit-image']
 
 # the hack to deal with setuptools + installing the package in ReadTheDoc:
 if 'readthedocs.org' in sys.executable:
@@ -80,9 +81,7 @@ def update_version(version):
 
 
 # Extensions. Add your extension here:
-raw_extensions = [Extension("hyperspy.tests.misc.cython.test_cython_integration",
-                            ['hyperspy/tests/misc/cython/test_cython_integration.pyx']),
-                  Extension("hyperspy.io_plugins.unbcf_fast",
+raw_extensions = [Extension("hyperspy.io_plugins.unbcf_fast",
                             ['hyperspy/io_plugins/unbcf_fast.pyx']),
                   ]
 
@@ -344,6 +343,7 @@ with update_version_when_dev() as version:
                 'tests/io/dm4_1D_data/*.dm4',
                 'tests/io/dm4_2D_data/*.dm4',
                 'tests/io/dm4_3D_data/*.dm4',
+                'tests/io/dm3_locale/*.dm3',
                 'tests/io/FEI_new/*.emi',
                 'tests/io/FEI_new/*.ser',
                 'tests/io/FEI_new/*.npy',
@@ -357,6 +357,7 @@ with update_version_when_dev() as version:
                 'tests/io/npy_files/*.npy',
                 'tests/io/unf_files/*.unf',
                 'tests/io/bcf_data/*.bcf',
+                'tests/io/bcf_data/*.json',
                 'tests/io/bcf_data/*.npy',
                 'tests/io/ripple_files/*.rpl',
                 'tests/io/ripple_files/*.raw',
