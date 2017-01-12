@@ -57,7 +57,8 @@ class MPL_HyperExplorer(object):
                        vmax=None,
                        no_nans=False,
                        centre_colormap="auto",
-                       title=None):
+                       title=None,
+                       **kwds):
         if self.axes_manager.navigation_dimension == 0:
             return
         if self.navigator_data_function is None:
@@ -132,7 +133,7 @@ class MPL_HyperExplorer(object):
                                     imf.update), [])
 
             imf.title = title
-            imf.plot()
+            imf.plot(**kwds)
             self.pointer.set_mpl_ax(imf.ax)
             self.navigator_plot = imf
 

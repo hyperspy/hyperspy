@@ -127,9 +127,11 @@ Customising image plot
 
 .. versionadded:: 0.8
 
-The image plot can be customised by passing additional arguments when plotting. Colorbar, scalebar and
-contrast controls are HyperSpy-specific, however `matplotlib.imshow
-<http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.imshow>`_ arguments are supported as well:
+The image plot can be customised by passing additional arguments when plotting.
+Colorbar, scalebar and contrast controls are HyperSpy-specific, however
+`matplotlib.imshow
+<http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.imshow>`_
+arguments are supported as well:
 
 .. code-block:: python
 
@@ -145,6 +147,33 @@ contrast controls are HyperSpy-specific, however `matplotlib.imshow
 
    Custom colormap and switched off scalebar in an image.
 
+.. versionadded:: 1.1.2
+
+Same options can be passed to the navigator, albeit separatelly, by specifying
+them as a dictionary in ``navigator_kwds`` argument when plotting:
+
+.. code-block:: python
+
+    >>> import numpy as np
+    >>> import scipy
+    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+    >>> ims = hs.signals.BaseSignal(np.random.rand(15,13)).T * im
+    >>> ims.metadata.General.title = 'My Images'
+    >>> ims.plot(colorbar=False,
+    >>>          scalebar=False,
+    >>>          axes_ticks=False,
+    >>>          cmap='viridis',
+    >>>          navigator_kwds=dict(colorbar=True,
+    >>>                              scalebar_color='red',
+    >>>                              cmap='Blues',
+    >>>                              axes_ticks=False)
+    >>>         )
+
+.. figure::  images/custom_nav_opts.png
+   :align:   center
+   :height:   250
+
+   Custom different options for both signal and navigator image plots
 
 .. _plot.divergent_colormaps-label:
 
