@@ -413,6 +413,9 @@ class LazySignal(BaseSignal):
                                              **kwargs)
         iterators = (self._iterate_signal(), ) + iterators
         res_shape = self.axes_manager._navigation_shape_in_array
+        # no navigation
+        if not len(res_shape) and ragged:
+            res_shape = (1,)
 
         all_delayed = [dd(func)(data) for data in zip(*iterators)]
 

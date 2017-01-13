@@ -145,35 +145,47 @@ class TestFindPeaks1D:
         self.signal = s
 
     def test_single_spectrum(self):
-        peaks = self.signal.inav[0].find_peaks1D_ohaver()
+        peaks = self.signal.inav[0].find_peaks1D_ohaver()[0]
+        if self.signal._lazy:
+            peaks = peaks.compute()
         nt.assert_true(np.allclose(
-            peaks[0]['position'], self.peak_positions0, rtol=1e-5, atol=1e-4))
+            peaks['position'], self.peak_positions0, rtol=1e-5, atol=1e-4))
 
     def test_two_spectra(self):
-        peaks = self.signal.find_peaks1D_ohaver()
+        peaks = self.signal.find_peaks1D_ohaver()[1]
+        if self.signal._lazy:
+            peaks = peaks.compute()
         nt.assert_true(np.allclose(
-            peaks[1]['position'], self.peak_positions1, rtol=1e-5, atol=1e-4))
+            peaks['position'], self.peak_positions1, rtol=1e-5, atol=1e-4))
 
     def test_height(self):
-        peaks = self.signal.find_peaks1D_ohaver()
+        peaks = self.signal.find_peaks1D_ohaver()[1]
+        if self.signal._lazy:
+            peaks = peaks.compute()
         nt.assert_true(np.allclose(
-            peaks[1]['height'], 1.0, rtol=1e-5, atol=1e-4))
+            peaks['height'], 1.0, rtol=1e-5, atol=1e-4))
 
     def test_width(self):
-        peaks = self.signal.find_peaks1D_ohaver()
+        peaks = self.signal.find_peaks1D_ohaver()[1]
+        if self.signal._lazy:
+            peaks = peaks.compute()
         nt.assert_true(np.allclose(
-            peaks[1]['width'], 3.5758, rtol=1e-4, atol=1e-4),
+            peaks['width'], 3.5758, rtol=1e-4, atol=1e-4),
             msg="One or several widths are not close enough to expected " +
             "value (3.5758): " + str(peaks[1]['width']))
 
     def test_n_peaks(self):
-        peaks = self.signal.find_peaks1D_ohaver()
-        nt.assert_equal(len(peaks[1]), 8)
+        peaks = self.signal.find_peaks1D_ohaver()[1]
+        if self.signal._lazy:
+            peaks = peaks.compute()
+        nt.assert_equal(len(peaks), 8)
 
     def test_maxpeaksn(self):
         for n in range(1, 10):
-            peaks = self.signal.find_peaks1D_ohaver(maxpeakn=n)
-            nt.assert_equal(len(peaks[1]), min((8, n)))
+            peaks = self.signal.find_peaks1D_ohaver(maxpeakn=n)[1]
+            if self.signal._lazy:
+                peaks = peaks.compute()
+            nt.assert_equal(len(peaks), min((8, n)))
 
 
 @lazifyTestClass
