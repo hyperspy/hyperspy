@@ -62,6 +62,7 @@ install_req = ['scipy',
                'python-dateutil',
                'ipyparallel',
                'dask',
+               'toolz',
                'scikit-image']
 
 # the hack to deal with setuptools + installing the package in ReadTheDoc:
