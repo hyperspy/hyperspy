@@ -812,7 +812,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
     def smooth_savitzky_golay(self,
                               polynomial_order=None,
                               window_length=None,
-                              differential_order=0):
+                              differential_order=0,
+                              parallel=None):
         """Apply a Savitzky-Golay filter to the data in place.
         If `polynomial_order` or `window_length` or `differential_order` are
         None the method is run in interactive mode.
@@ -828,6 +829,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
             The order of the derivative to compute.  This must be a
             nonnegative integer.  The default is 0, which means to filter
             the data without differentiating.
+        parallel : {bool, None}
+            Perform the operation in a threaded manner (parallely).
         Notes
         -----
         More information about the filter in `scipy.signal.savgol_filter`.
@@ -841,7 +844,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             axis = self.axes_manager.signal_axes[0]
             self.map(savgol_filter, window_length=window_length,
                      polyorder=polynomial_order, deriv=differential_order,
-                     delta=axis.scale, ragged=False)
+                     delta=axis.scale, ragged=False, parallel=parallel)
         else:
             # Interactive mode
             smoother = SmoothingSavitzkyGolay(self)
@@ -1129,7 +1132,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
     def find_peaks1D_ohaver(self, xdim=None, slope_thresh=0, amp_thresh=None,
                             subchannel=True, medfilt_radius=5, maxpeakn=30000,
-                            peakgroup=10):
+                            peakgroup=10, parallel=None):
         """Find peaks along a 1D line (peaks in spectrum/spectra).
 
         Function to locate the positive peaks in a noisy x-y data set.
@@ -1179,6 +1182,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
         subpix : bool (optional)
                  default is set to True
 
+        parallel : {None, bool}
+            Perform the operation in a threaded (parallel) manner.
+
         Returns
         -------
         peaks : structured array of shape _navigation_shape_in_array in which
@@ -1192,26 +1198,20 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         """
         # TODO: add scipy.signal.find_peaks_cwt
-        # TODO: make work with lazy signals. Currently does not due to funny
-        # output dtype
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0].axis
-        arr_shape = (self.axes_manager._navigation_shape_in_array
-                     if self.axes_manager.navigation_size > 0
-                     else [1, ])
-        peaks = np.zeros(arr_shape, dtype=object)
-        for y, indices in zip(self._iterate_signal(),
-                              self.axes_manager._array_indices_generator()):
-            peaks[indices] = find_peaks_ohaver(
-                y,
-                axis,
-                slope_thresh=slope_thresh,
-                amp_thresh=amp_thresh,
-                medfilt_radius=medfilt_radius,
-                maxpeakn=maxpeakn,
-                peakgroup=peakgroup,
-                subchannel=subchannel)
-        return peaks
+        peaks = self.map(find_peaks_ohaver,
+                         x=axis,
+                         slope_thresh=slope_thresh,
+                         amp_thresh=amp_thresh,
+                         medfilt_radius=medfilt_radius,
+                         maxpeakn=maxpeakn,
+                         peakgroup=peakgroup,
+                         subchannel=subchannel,
+                         ragged=True,
+                         parallel=parallel,
+                         inplace=False)
+        return peaks.data
 
     def estimate_peak_width(self,
                             factor=0.5,
