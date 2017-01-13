@@ -601,9 +601,7 @@ class EELSSpectrum_mixin:
 
             z = da.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)
             j = da.fft.rfft(s.data, n=size, axis=axis.index_in_array)
-            _tmp = da.log(j / z)
-            j1 = z * da.from_delayed(dd(np.nan_to_num, pure=True)(_tmp),
-                                     shape=_tmp.shape)
+            j1 = z * da.log(j/z).map_blocks(np.nan_to_num)
             sdata = da.fft.irfft(j1, axis=axis.index_in_array)
         else:
             z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)

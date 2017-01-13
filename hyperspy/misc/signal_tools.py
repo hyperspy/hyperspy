@@ -38,6 +38,22 @@ def are_signals_aligned(*args):
     return True
 
 def broadcast_signals(*args, ignore_axis=None):
+    """Broadcasts all passed signals according to the HyperSpy broadcasting
+    rules: signal and navigation spaces are each separately broadcasted
+    according to the numpy broadcasting rules. One axis can be ignored and
+    left untouched (or set to be size 1) across all signals.
+
+    Parameters
+    ----------
+    *args : BaseSignal
+        Signals to broadcast together
+    ignore_axis : {None, str, int, Axis}
+        The axis to be ignored when broadcasting
+
+    Returns
+    -------
+    list of signals
+    """
     if len(args) < 2:
         raise ValueError(
             "This function requires at least two signal instances")
