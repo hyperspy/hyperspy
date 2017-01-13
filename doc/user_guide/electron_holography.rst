@@ -46,8 +46,8 @@ The parameters can be found automatically by calling following methods:
     >>> sb_position = im.estimate_sideband_position(ap_cb_radius=None, sb='lower')
     >>> sb_size = im.estimate_sideband_size(sb_position)
 
-:meth:`~._signals.hologram_image.HologramImage.estimate_sideband_position` method searches for maximum of intensity in upper or lower part of FFT pattern (parameter `sb`)
-excluding the middle area defined by `ap_cb_radius`. :meth:`~._signals.hologram_image.HologramImage.estimate_sideband_size` method calculates the radius of the sideband
+:meth:`~._signals.hologram_image.HologramImage.estimate_sideband_position` method searches for maximum of intensity in upper or lower part of FFT pattern (parameter ``sb``)
+excluding the middle area defined by ``ap_cb_radius``. :meth:`~._signals.hologram_image.HologramImage.estimate_sideband_size` method calculates the radius of the sideband
 filter as half of the distance to the central band which is commonly used for strong phase objects. Alternatively,
 the sideband filter radius can be recalculate as 1/3 of the distance (often used for weak phase objects) for example:
 
@@ -67,8 +67,8 @@ To reconstruct the hologram with a vacuum reference wave, the reference hologram
 Additionally, it is possible to change the smoothness of the sideband filter edge (which is by default set to 5% of the
 filter radius) using parameter `sb_smoothness`.
 
-Both `sb_size` and `sb_smoothness` can be provided in desired units rather than pixels (by default) by setting `sb_unit`
-value either to `mrad` or `nm` for milliradians or inverse nanometers respectively. For example:
+Both ``sb_size`` and ``sb_smoothness`` can be provided in desired units rather than pixels (by default) by setting ``sb_unit``
+value either to ``mrad`` or ``nm`` for milliradians or inverse nanometers respectively. For example:
 
 .. code-block:: python
 
