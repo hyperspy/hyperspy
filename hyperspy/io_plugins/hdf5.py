@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from distutils.version import StrictVersion
+from distutils.version import LooseVersion
 import warnings
 import logging
 import datetime
@@ -91,7 +91,7 @@ version = "2.2"
 not_valid_format = 'The file is not a valid HyperSpy hdf5 file'
 
 current_file_version = None  # Format version of the file being read
-default_version = StrictVersion(version)
+default_version = LooseVersion(version)
 
 
 def get_hspy_format_version(f):
@@ -109,14 +109,14 @@ def get_hspy_format_version(f):
         version = "2.0"
     else:
         raise IOError(not_valid_format)
-    return StrictVersion(version)
+    return LooseVersion(version)
 
 
-def file_reader(filename, backing_store=False, load_to_memory=True,
+def file_reader(filename, backing_store=False,
                 lazy=False, **kwds):
-    # TODO: check if have to cast as dask arrays as well
-    if lazy:
-        load_to_memory = False
+    if 'load_to_memory' in kwds:
+        del kwds['load_to_memory']
+    load_to_memory = not lazy
     mode = kwds.pop('mode', 'r+')
     f = h5py.File(filename, mode=mode, **kwds)
     # Getting the format version here also checks if it is a valid HSpy
@@ -191,7 +191,7 @@ def file_reader(filename, backing_store=False, load_to_memory=True,
 def hdfgroup2signaldict(group, load_to_memory=True):
     global current_file_version
     global default_version
-    if current_file_version < StrictVersion("1.2"):
+    if current_file_version < LooseVersion("1.2"):
         metadata = "mapped_parameters"
         original_metadata = "original_parameters"
     else:
@@ -247,7 +247,7 @@ def hdfgroup2signaldict(group, load_to_memory=True):
         if '__unnamed__' == exp['metadata']['General']['title']:
             exp['metadata']["General"]['title'] = ''
 
-    if current_file_version < StrictVersion("1.1"):
+    if current_file_version < LooseVersion("1.1"):
         # Load the decomposition results written with the old name,
         # mva_results
         if 'mva_results' in group.keys():
@@ -271,7 +271,7 @@ def hdfgroup2signaldict(group, load_to_memory=True):
                 exp['metadata']['name']
             del exp['metadata']['name']
 
-    if current_file_version < StrictVersion("1.2"):
+    if current_file_version < LooseVersion("1.2"):
         if '_internal_parameters' in exp['metadata']:
             exp['metadata']['_HyperSpy'] = \
                 exp['metadata']['_internal_parameters']
@@ -624,7 +624,7 @@ def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
 
 
 def write_signal(signal, group, **kwds):
-    if default_version < StrictVersion("1.2"):
+    if default_version < LooseVersion("1.2"):
         metadata = "mapped_parameters"
         original_metadata = "original_parameters"
     else:
@@ -640,12 +640,10 @@ def write_signal(signal, group, **kwds):
         dict2hdfgroup(axis_dict, coord_group, **kwds)
     mapped_par = group.create_group(metadata)
     metadata_dict = signal.metadata.as_dictionary()
-
     overwrite_dataset(group, signal.data, 'data',
                       signal_axes=signal.axes_manager.signal_indices_in_array,
                       **kwds)
-
-    if default_version < StrictVersion("1.2"):
+    if default_version < LooseVersion("1.2"):
         metadata_dict["_internal_parameters"] = \
             metadata_dict.pop("_HyperSpy")
     dict2hdfgroup(metadata_dict, mapped_par, **kwds)

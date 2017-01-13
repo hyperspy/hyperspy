@@ -810,7 +810,8 @@ class ImageObject(object):
             if ImageTags.Session_Info.Microscope != "[]":
                 return ImageTags.Session_Info.Microscope
         except AttributeError:
-            return ImageTags.Microscope_Info.Name
+            if 'Name' in ImageTags['Microscope_Info'].keys():
+                return ImageTags.Microscope_Info.Name
 
     def _parse_string(self, tag):
         if len(tag) == 0:
@@ -848,10 +849,13 @@ class ImageObject(object):
         }
 
         if "Microscope_Info" in self.imdict.ImageTags.keys():
-            is_TEM = (
-                'TEM' == self.imdict.ImageTags.Microscope_Info.Illumination_Mode)
-            is_diffraction = (
-                'DIFFRACTION' == self.imdict.ImageTags.Microscope_Info.Imaging_Mode)
+            is_TEM = is_diffraction = None
+            if "Illumination_Mode" in self.imdict.ImageTags['Microscope_Info'].keys():
+                is_TEM = (
+                    'TEM' == self.imdict.ImageTags.Microscope_Info.Illumination_Mode)
+            if "Imaging_Mode" in self.imdict.ImageTags['Microscope_Info'].keys():
+                is_diffraction = (
+                    'DIFFRACTION' == self.imdict.ImageTags.Microscope_Info.Imaging_Mode)
 
             if is_TEM:
                 if is_diffraction:

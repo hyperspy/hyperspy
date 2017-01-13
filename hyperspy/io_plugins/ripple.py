@@ -624,14 +624,15 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
             keys_dictionary['%s-name' % key] = eval(
                 '%s_axis.name' % key)
     if signal.metadata.Signal.signal_type == "EELS":
-        mp = signal.metadata.Acquisition_instrument.TEM
-        if mp.has_item('beam_energy'):
-            keys_dictionary['beam-energy'] = mp.beam_energy
-        if mp.has_item('convergence_angle'):
-            keys_dictionary['convergence-angle'] = mp.convergence_angle
-        if mp.has_item('Detector.EELS.collection_angle'):
-            keys_dictionary[
-                'collection-angle'] = mp.Detector.EELS.collection_angle
+        if "Acquisition_instrument.TEM" in signal.metadata:
+            mp = signal.metadata.Acquisition_instrument.TEM
+            if mp.has_item('beam_energy'):
+                keys_dictionary['beam-energy'] = mp.beam_energy
+            if mp.has_item('convergence_angle'):
+                keys_dictionary['convergence-angle'] = mp.convergence_angle
+            if mp.has_item('Detector.EELS.collection_angle'):
+                keys_dictionary[
+                    'collection-angle'] = mp.Detector.EELS.collection_angle
     if "EDS" in signal.metadata.Signal.signal_type:
         if signal.metadata.Signal.signal_type == "EDS_SEM":
             mp = signal.metadata.Acquisition_instrument.SEM

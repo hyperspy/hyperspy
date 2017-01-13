@@ -674,6 +674,7 @@ class MVA():
         self._unmix_components()
         self._auto_reverse_bss_component(lr)
         lr.bss_algorithm = algorithm
+        lr.bss_node = str(lr.bss_node)
 
     def normalize_decomposition_components(self, target='factors',
                                            function=np.sum):

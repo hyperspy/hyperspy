@@ -21,7 +21,7 @@ import os
 import tempfile
 import numbers
 import logging
-from distutils.version import StrictVersion
+from distutils.version import LooseVersion
 
 import numpy as np
 import scipy
@@ -1044,8 +1044,8 @@ class BaseModel(list):
             if fitter == "leastsq":
                 if bounded:
                     # leastsq with bounds requires scipy >= 0.17
-                    if StrictVersion(
-                            scipy.__version__) < StrictVersion("0.17"):
+                    if LooseVersion(
+                            scipy.__version__) < LooseVersion("0.17"):
                         raise ImportError(
                             "leastsq with bounds requires SciPy >= 0.17")
 

@@ -57,8 +57,8 @@ class MPL_HyperExplorer(object):
                        vmax=None,
                        no_nans=False,
                        centre_colormap="auto",
-                       title=None):
-        # TODO: document in header, user guide
+                       title=None,
+                       **kwds):
         if self.axes_manager.navigation_dimension == 0:
             return
         if self.navigator_data_function is None:
@@ -106,15 +106,15 @@ class MPL_HyperExplorer(object):
         elif len(self.navigator_data_function().shape) >= 2:
             imf = image.ImagePlot()
             imf.data_function = self.navigator_data_function
-            imf.colorbar = colorbar 
-            imf.scalebar = scalebar 
-            imf.scalebar_color = scalebar_color 
-            imf.axes_ticks = axes_ticks 
-            imf.saturated_pixels = saturated_pixels 
-            imf.vmin = vmin 
-            imf.vmax = vmax 
-            imf.no_nans = no_nans 
-            imf.centre_colormap = centre_colormap 
+            imf.colorbar = colorbar
+            imf.scalebar = scalebar
+            imf.scalebar_color = scalebar_color
+            imf.axes_ticks = axes_ticks
+            imf.saturated_pixels = saturated_pixels
+            imf.vmin = vmin
+            imf.vmax = vmax
+            imf.no_nans = no_nans
+            imf.centre_colormap = centre_colormap
             # Navigator labels
             if self.axes_manager.navigation_dimension == 1:
                 imf.yaxis = self.axes_manager.navigation_axes[0]
@@ -133,7 +133,7 @@ class MPL_HyperExplorer(object):
                                     imf.update), [])
 
             imf.title = title
-            imf.plot()
+            imf.plot(**kwds)
             self.pointer.set_mpl_ax(imf.ax)
             self.navigator_plot = imf
 
