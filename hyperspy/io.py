@@ -24,7 +24,8 @@ import logging
 import numpy as np
 from natsort import natsorted
 
-from .misc.io.tools import ensure_directory, overwrite
+from .misc.io.tools import ensure_directory
+from .misc.io.tools import overwrite as overwrite_method
 from .misc.utils import (strlist2enumeration, find_subclasses)
 from .misc.utils import stack as stack_method
 from .io_plugins import io_plugins, default_write_ext
@@ -460,7 +461,7 @@ def save(filename, signal, overwrite=None, **kwds):
                           strlist2enumeration(yes_we_can))
         ensure_directory(filename)
         if overwrite is None:
-            overwrite = overwrite(filename)
+            overwrite = overwrite_method(filename)
         if overwrite is True:
             writer.file_writer(filename, signal, **kwds)
             _logger.info('The %s file was created' % filename)
