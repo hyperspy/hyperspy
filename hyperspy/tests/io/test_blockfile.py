@@ -204,37 +204,10 @@ def test_load_memmap():
 
 
 def test_load_to_memory():
-    s = hs.load(file2, load_to_memory=True)
+    s = hs.load(file2, lazy=False)
     nt.assert_is_instance(s.data, np.ndarray)
     nt.assert_true(not isinstance(s.data, np.memmap))
 
-
-def test_load_readonly():
-    s = hs.load(file2, load_to_memory=False, mmap_mode='r')
-    with nt.assert_raises(ValueError):
-        s.data[:] = 23
-
-
-def test_load_inplace():
-    sig_reload = None
-    signal = hs.signals.Signal2D((255 * np.random.rand(2, 3, 2, 2)
-                                  ).astype(np.uint8))
-    try:
-        signal.save(save_path, overwrite=True)
-        del signal
-        sig_reload = hs.load(save_path, load_to_memory=False, mmap_mode='r+')
-        sig_reload.data[:] = 23
-        # Flush and close memmap:
-        del sig_reload
-        gc.collect()
-        # Check if values were written to disk
-        sig_reload = hs.load(save_path, load_to_memory=False, mmap_mode='r')
-        nt.assert_true(np.all(sig_reload.data == 23))
-    finally:
-        # Delete reference to close memmap file!
-        del sig_reload
-        gc.collect()
-        _remove_file(save_path)
 
 
 def test_write_fresh():
