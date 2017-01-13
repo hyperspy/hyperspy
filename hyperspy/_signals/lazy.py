@@ -288,7 +288,8 @@ class LazySignal(BaseSignal):
             integrate.simps,
             x=axis.axis,
             axis=axis.index_in_array,
-            drop_axis=axis.index_in_array)
+            drop_axis=axis.index_in_array,
+            dtype=data.dtype)
         s = out or self._deepcopy_with_new_data(new_data)
         if out:
             if out.data.shape == new_data.shape:
@@ -389,7 +390,8 @@ class LazySignal(BaseSignal):
     def _map_all(self, function, inplace=True, **kwargs):
         calc_result = dd(function)(self.data, **kwargs)
         if inplace:
-            self.data = da.from_delayed(calc_result, shape=self.data.shape)
+            self.data = da.from_delayed(calc_result, shape=self.data.shape,
+                                        dtype=self.data.dtype)
             return None
         return self._deepcopy_with_new_data(calc_result)
 
