@@ -17,9 +17,9 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+from functools import partial
 
 import numpy as np
-from toolz import partial, curry
 import dask.array as da
 import dask.delayed as dd
 from dask import threaded
@@ -606,20 +606,20 @@ class LazySignal(BaseSignal):
         if algorithm == 'PCA':
             from sklearn.decomposition import IncrementalPCA
             obj = IncrementalPCA(n_components=output_dimension)
-            method = curry(obj.partial_fit, **kwargs)
+            method = partial(obj.partial_fit, **kwargs)
             reproject = True
 
         elif algorithm == 'ORPCA':
             from hyperspy.learn.rpca import ORPCA
             kwargs['fast'] = True
             obj = ORPCA(output_dimension, **kwargs)
-            method = curry(obj.fit, iterating=True)
+            method = partial(obj.fit, iterating=True)
 
         elif algorithm == 'ONMF':
             from hyperspy.learn.onmf import ONMF
             batch_size = kwargs.pop('batch_size', None)
             obj = ONMF(output_dimension, **kwargs)
-            method = curry(obj.fit, batch_size=batch_size)
+            method = partial(obj.fit, batch_size=batch_size)
 
         else:
             raise ValueError('algorithm not known')
