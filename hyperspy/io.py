@@ -18,18 +18,18 @@
 
 import os
 import glob
+import warnings
 import logging
 
 import numpy as np
-
-import hyperspy.defaults_parser
-
-import hyperspy.misc.utils
-from hyperspy.misc.io.tools import ensure_directory
-from hyperspy.misc.utils import strlist2enumeration
 from natsort import natsorted
-import hyperspy.misc.io.tools
-from hyperspy.io_plugins import io_plugins, default_write_ext
+
+from .misc.io.tools import ensure_directory, overwrite
+from .misc.utils import (strlist2enumeration, find_subclasses)
+from .misc.utils import stack as stack_method
+from .io_plugins import io_plugins, default_write_ext
+from .exceptions import VisibleDeprecationWarning
+from .defaults_parser import preferences
 
 _logger = logging.getLogger(__name__)
 
@@ -46,8 +46,7 @@ def load(filenames=None,
          stack=False,
          stack_axis=None,
          new_axis_name="stack_element",
-         mmap=False,
-         mmap_dir=None,
+         lazy=None,
          **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure
@@ -88,11 +87,9 @@ def load(filenames=None,
     stack : bool
         If True and multiple filenames are passed in, stacking all
         the data into a single object is attempted. All files must match
-        in shape. It is possible to store the data in a memory mapped
-        temporary file instead of in memory setting mmap_mode. The title is set
-        to the name of the folder containing the files. If each file contains
-        multiple (N) signals, N stacks will be created, with the requirement
-        that each file contains the same number of signals.
+        in shape. If each file contains multiple (N) signals, N stacks will be
+        created, with the requirement that each file contains the same number
+        of signals.
     stack_axis : {None, int, str}
         If None, the signals are stacked over a new axis. The data must
         have the same dimensions. Otherwise the
@@ -104,30 +101,15 @@ def load(filenames=None,
         If an axis with this name already
         exists it automatically append '-i', where `i` are integers,
         until it finds a name that is not yet in use.
-
-    mmap: bool
-        If True and stack is True, then the data is stored
-        in a memory-mapped temporary file.The memory-mapped data is
-        stored on disk, and not directly loaded into memory.
-        Memory mapping is especially useful for accessing small
-        fragments of large files without reading the entire file into
-        memory.
-    mmap_dir : string
-        If mmap_dir is not None, and stack and mmap are True, the memory
-        mapped file will be created in the given directory,
-        otherwise the default directory is used.
-
-    load_to_memory: bool
-        for HDF5 files, blockfiles and EMD files, if True (default) loads all
-        data to memory. If False, enables only loading the data upon request
-    mmap_mode: {'r', 'r+', 'c'}
-        Used when loading blockfiles to determine which mode to use for when
-        loading as memmap (i.e. when load_to_memory=False)
+    lazy : {None, bool}
+        Open the data lazily - i.e. without actually reading the data from the
+        disk until required. Allows opening arbitrary-sized datasets.
+        If None, default from preferences is used.
 
     print_info: bool
         For SEMPER unf- and EMD (Berkley)-files, if True (default is False)
-        additional information read during loading is printed for a quick overview.
-
+        additional information read during loading is printed for a quick
+        overview.
 
     Returns
     -------
@@ -146,11 +128,25 @@ def load(filenames=None,
 
     >>> d = hs.load('file*.dm3')
 
+    Loading (potentially larger than the available memory) files lazily and
+    stacking:
+
+    >>> s = hs.load('file*.blo', lazy=True, stack=True)
+
     """
+    deprecated = ['load_to_memory', 'mmap', 'mmap_dir', 'mmap_mode']
+    warn_str = "'{}' argument is deprecated, please use 'lazy' instead"
+    for k in deprecated:
+        if k in kwds:
+            lazy=True
+            warnings.warn(warn_str.format(k), VisibleDeprecationWarning)
+            del kwds[k]
+    if lazy is None:
+        lazy = preferences.General.lazy
     kwds['signal_type'] = signal_type
-    lazy = kwds.get('lazy', None)
+
     if filenames is None:
-        if hyperspy.defaults_parser.preferences.General.interactive is True:
+        if preferences.General.interactive is True:
             from hyperspy.gui.tools import Load
             load_ui = Load()
             load_ui.edit_traits()
@@ -181,7 +177,7 @@ def load(filenames=None,
             # files are required to contain the same number of signals. We
             # therefore use the first file to determine the number of signals.
             for i, filename in enumerate(filenames):
-                obj = load_single_file(filename,
+                obj = load_single_file(filename, lazy=lazy,
                                        **kwds)
                 if i == 0:
                     # First iteration, determine number of signals, if several:
@@ -218,9 +214,9 @@ def load(filenames=None,
             objects = []
             for i in range(n):
                 signal = signals[i]   # Sublist, with len = len(filenames)
-                signal = hyperspy.misc.utils.stack(
+                signal = stack_method(
                     signal, axis=stack_axis, new_axis_name=new_axis_name,
-                    mmap=mmap, mmap_dir=mmap_dir, lazy=lazy)
+                    lazy=lazy)
                 signal.metadata.General.title = os.path.split(
                     os.path.split(os.path.abspath(filenames[0]))[0])[1]
                 _logger.info('Individual files loaded correctly')
@@ -228,11 +224,11 @@ def load(filenames=None,
                 objects.append(signal)
         else:
             # No stack, so simply we load all signals in all files separately
-            objects = [load_single_file(filename,
+            objects = [load_single_file(filename, lazy=lazy,
                                         **kwds)
                        for filename in filenames]
 
-        if hyperspy.defaults_parser.preferences.Plot.plot_on_load:
+        if preferences.Plot.plot_on_load:
             for obj in objects:
                 obj.plot()
         if len(objects) == 1:
@@ -340,10 +336,9 @@ def assign_signal_subclass(dtype,
         raise ValueError('Data type "{}" not understood!'.format(dtype.name))
     if not isinstance(signal_dimension, int) or signal_dimension < 0:
         raise ValueError("signal_dimension must be a positive interger")
-    base_signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals,
-                                                       BaseSignal)
-    lazy_signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals,
-                                                       hyperspy.signals.LazySignal)
+    base_signals = find_subclasses(hyperspy.signals, BaseSignal)
+    lazy_signals = find_subclasses(hyperspy.signals,
+                                   hyperspy.signals.LazySignal)
     if lazy:
         signals = lazy_signals
     else:
@@ -433,9 +428,9 @@ def save(filename, signal, overwrite=None, **kwds):
     extension = os.path.splitext(filename)[1][1:]
     if extension == '':
         extension = \
-            hyperspy.defaults_parser.preferences.General.default_file_format
+            preferences.General.default_file_format
         filename = filename + '.' + \
-            hyperspy.defaults_parser.preferences.General.default_file_format
+            preferences.General.default_file_format
     writer = None
     for plugin in io_plugins:
         if extension.lower() in plugin.file_extensions:
@@ -465,7 +460,7 @@ def save(filename, signal, overwrite=None, **kwds):
                           strlist2enumeration(yes_we_can))
         ensure_directory(filename)
         if overwrite is None:
-            overwrite = hyperspy.misc.io.tools.overwrite(filename)
+            overwrite = overwrite(filename)
         if overwrite is True:
             writer.file_writer(filename, signal, **kwds)
             _logger.info('The %s file was created' % filename)

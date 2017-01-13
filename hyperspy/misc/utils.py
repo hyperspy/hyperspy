@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from operator import attrgetter
+import warnings
 import inspect
 import copy
 import types
@@ -27,6 +28,7 @@ import tempfile
 import unicodedata
 from contextlib import contextmanager
 from ..misc.signal_tools import broadcast_signals
+from ..exceptions import VisibleDeprecationWarning
 
 import numpy as np
 
@@ -751,7 +753,7 @@ def without_nans(data):
 
 
 def stack(signal_list, axis=None, new_axis_name='stack_element',
-          mmap=False, mmap_dir=None, lazy=None):
+          lazy=None, **kwargs):
     """Concatenate the signals in the list over a given axis or a new axis.
 
     The title is set to that of the first signal in the list.
@@ -770,17 +772,6 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         If an axis with this name already
         exists it automatically append '-i', where `i` are integers,
         until it finds a name that is not yet in use.
-    mmap: bool
-        If True and stack is True, then the data is stored
-        in a memory-mapped temporary file.The memory-mapped data is
-        stored on disk, and not directly loaded into memory.
-        Memory mapping is especially useful for accessing small
-        fragments of large files without reading the entire file into
-        memory.
-    mmap_dir : string
-        If mmap_dir is not None, and stack and mmap are True, the memory
-        mapped file will be created in the given directory,
-        otherwise the default directory is used.
     lazy: {bool, None}
         Returns a LazySignal if True. If None, only returns lazy rezult if at
         least one is lazy.
@@ -806,6 +797,13 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     from hyperspy.signals import BaseSignal
     import dask.array as da
     from numbers import Number
+    # TODO: remove next time
+    deprecated = ['mmap', 'mmap_dir']
+    warn_str = "'{}' argument is deprecated, please use 'lazy' instead"
+    for k in deprecated:
+        if k in kwargs:
+            lazy=True
+            warnings.warn(warn_str.format(k), VisibleDeprecationWarning)
 
     axis_input = copy.deepcopy(axis)
     signal_list = list(signal_list)
@@ -829,8 +827,6 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         lazy = any(_s._lazy for _s in signal_list)
     if not isinstance(lazy, bool):
         raise ValueError("'lazy' argument has to be None, True or False")
-    if lazy and mmap:
-        raise ValueError("Can't be lazy and memory-mapped")
 
     # Cast all as lazy if required
     for i, _s in enumerate(signal_list):
@@ -846,6 +842,8 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
             da.concatenate(datalist, axis=axis.index_in_array)
         if axis_input is None:
             signal = first.__class__(newdata)
+            signal._lazy = True
+            signal._assign_subclass()
             signal.axes_manager._axes[1:] = copy.deepcopy(newlist[0].axes_manager._axes)
             axis_name = new_axis_name
             axis_names = [axis_.name for axis_ in signal.axes_manager._axes[1:]]
@@ -863,7 +861,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
             signal.original_metadata = DictionaryTreeBrowser({})
         else:
             signal = newlist[0]._deepcopy_with_new_data(newdata)
-            signal._lazy = False
+            signal._lazy = True
             signal._assign_subclass()
         signal.get_dimensions_from_data()
         signal.original_metadata.add_node('stack_elements')
@@ -894,20 +892,11 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     else:
         signal = signal_list[0]
 
-    # Leave as lazy, compute or store as required
+    # Leave as lazy or compute
     if lazy:
         signal = signal.as_lazy()
-    elif mmap:
-        tempf = tempfile.NamedTemporaryFile(dir=mmap_dir)
-        data = np.memmap(
-            tempf,
-            dtype=signal.data.dtype,
-            mode='w+',
-            shape=signal.data.shape, )
-        signal.data.store(data)
-        signal.data = data
     else:
-        signal.data = signal.data.compute()
+        signal.compute(False)
 
     return signal
 

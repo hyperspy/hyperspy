@@ -26,12 +26,12 @@ from dask import threaded
 from dask.diagnostics import ProgressBar
 from itertools import product
 
-from hyperspy.signal import BaseSignal
-from hyperspy.misc.utils import underline, multiply
-from hyperspy.external.progressbar import progressbar
-from hyperspy.external.astroML.histtools import dasky_histogram
-from hyperspy.defaults_parser import preferences
-from hyperspy.docstrings.signal import (ONE_AXIS_PARAMETER, OUT_ARG)
+from ..signal import BaseSignal
+from ..misc.utils import underline, multiply, dummy_context_manager
+from ..external.progressbar import progressbar
+from ..external.astroML.histtools import dasky_histogram
+from ..defaults_parser import preferences
+from ..docstrings.signal import (ONE_AXIS_PARAMETER, OUT_ARG)
 
 _logger = logging.getLogger(__name__)
 
@@ -82,9 +82,13 @@ class LazySignal(BaseSignal):
     """
     _lazy = True
 
-    def compute(self):
-        """Only for testing, when able to store the result in memory.."""
-        with ProgressBar():
+    def compute(self, progressbar=True):
+        """Attempt to store the full signal in memory.."""
+        if progressbar:
+            cm = ProgressBar
+        else:
+            cm = dummy_context_manager
+        with cm():
             self.data = self.data.compute()
         self._lazy = False
         self._assign_subclass()

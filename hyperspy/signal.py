@@ -1705,7 +1705,6 @@ class BaseSignal(FancySlicing,
 
         """
 
-        old_lazy = self._lazy
         self.data = file_data_dict['data']
         if 'models' in file_data_dict:
             self.models._add_dictionary(file_data_dict['models'])
@@ -1736,9 +1735,14 @@ class BaseSignal(FancySlicing,
         if "learning_results" in file_data_dict:
             self.learning_results.__dict__.update(
                 file_data_dict["learning_results"])
-        if old_lazy is not self._lazy:
-            self._assign_subclass()
-
+        if 'lazy' in file_data_dict:
+            lazy = file_data_dict['lazy']
+            if self._lazy is not lazy:
+                self._lazy = lazy
+                self._assign_subclass()
+    
+# TODO: try to find a way to use dask ufuncs when called with lazy data (e.g.
+# np.log(s) -> da.log(s.data) wrapped.
     def __array__(self, dtype=None):
         if dtype:
             return self.data.astype(dtype)
@@ -3421,7 +3425,7 @@ class BaseSignal(FancySlicing,
         """
         if parallel is None:
             parallel = preferences.General.parallel
-        if parallel:
+        if parallel is True:
             from os import cpu_count
             parallel = cpu_count()
         # Because by default it's assumed to be I/O bound, and cpu_count*5 is
@@ -3711,7 +3715,8 @@ class BaseSignal(FancySlicing,
         cs = self.__class__(
             self(),
             axes=self.axes_manager._get_signal_axes_dicts(),
-            metadata=self.metadata.as_dictionary(),)
+            metadata=self.metadata.as_dictionary(),
+            lazy=False)
 
         if auto_filename is True and self.tmp_parameters.has_item('filename'):
             cs.tmp_parameters.filename = (self.tmp_parameters.filename +
