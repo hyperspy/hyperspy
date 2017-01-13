@@ -23,6 +23,7 @@ import gc
 
 import nose.tools as nt
 import numpy as np
+import dask.array as da
 
 from hyperspy.io import load
 from hyperspy.io_plugins.hdf5 import get_signal_chunks
@@ -305,9 +306,10 @@ class TestLoadingOOMReadOnly:
         f.close()
 
     def test_oom_loading(self):
-        s = load('tmp.hdf5', load_to_memory=False)
+        s = load('tmp.hdf5', lazy=True)
         nt.assert_equal(self.shape, s.data.shape)
-        nt.assert_is_instance(s.data, h5py.Dataset)
+        nt.assert_is_instance(s.data, da.Array)
+        assert s._lazy
 
     def tearDown(self):
         gc.collect()        # Make sure any memmaps are closed first!
@@ -376,4 +378,3 @@ def test_signal_chunking():
                     (100, 7, 10, 13))
     nt.assert_equal(get_signal_chunks(shape, 'float32', signal_axes=(0,)),
                     (100, 7, 10, 25))
-

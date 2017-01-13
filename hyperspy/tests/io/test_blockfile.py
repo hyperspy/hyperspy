@@ -198,9 +198,10 @@ def test_non_square():
         _remove_file(save_path)
 
 
-def test_load_memmap():
-    s = hs.load(file2, load_to_memory=False)
-    nt.assert_is_instance(s.data, np.memmap)
+def test_load_lazy():
+    from dask.array import Array
+    s = hs.load(file2, lazy=True)
+    nt.assert_is_instance(s.data, Array)
 
 
 def test_load_to_memory():
