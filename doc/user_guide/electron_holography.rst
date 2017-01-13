@@ -26,16 +26,16 @@ To transform a :py:class:`~._signals.signal2d.Signal2D` (or subclass) into a
 Reconstruction of holograms
 ---------------------------
 The detailed description of electron holography and reconstruction of holograms can be found in literature
-`[Gabor1948] <http://www.nature.com/doifinder/10.1038/161777a0>`_,
-`[Tonomura1999] <http://www.springer.com/us/book/9783540645559>`_,
-`[McCartney2007] <http://dx.doi.org/10.1146/annurev.matsci.37.052506.084219>`_,
-`[Joy1993] <http://dx.doi.org/10.1016/0304-3991(93)90130-P>`_. Fourier based reconstruction of off-axis holograms
-(includes finding a side band in FFT, isolating and filtering it, recenter and calculate inverse Fourier transform)
-can be performed using :py:func:`~._signals.hologram_image.HologramImage.reconstruct_phase` method
-which returns a :py:class:`~._signals.electron_wave_image.ComplexImage2D` class and in future releases
-:py:class:`~._signals.electron_wave_image.ElectronWaveImage` class, containing the reconstructed
-electron wave. The `reconstruct_phase` method
-takes sideband position and size as parameters:
+[Gabor1948]_, [Tonomura1999]_, [McCartney2007]_ and [Joy1993]_. Fourier based
+reconstruction of off-axis holograms (includes finding a side band in FFT,
+isolating and filtering it, recenter and calculate inverse Fourier transform)
+can be performed using
+:py:func:`~._signals.hologram_image.HologramImage.reconstruct_phase` method
+which returns a :py:class:`~._signals.electron_wave_image.ComplexImage2D` class
+and in future releases
+:py:class:`~._signals.electron_wave_image.ElectronWaveImage` class, containing
+the reconstructed electron wave. The `reconstruct_phase` method takes sideband
+position and size as parameters:
 
 .. code-block:: python
 
