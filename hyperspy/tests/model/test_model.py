@@ -1,4 +1,4 @@
-from distutils.version import StrictVersion
+from distutils.version import LooseVersion
 
 import numpy as np
 import scipy
@@ -316,9 +316,13 @@ class TestModel1D:
             import ipywidgets
         except:
             raise SkipTest("ipywidgets not installed")
-        if StrictVersion(ipywidgets.__version__) < StrictVersion("5.0"):
+        if LooseVersion(ipywidgets.__version__) < LooseVersion("5.0"):
             raise SkipTest("ipywigets > 5.0 required but %s installed" %
                            ipywidgets.__version__)
+        from IPython import get_ipython
+        ip = get_ipython()
+        if ip is None or not getattr(ip, 'kernel', None):
+            raise SkipTest("Not attached to notebook")
         m = self.model
         m.notebook_interaction()
         m.append(hs.model.components1D.Offset())
@@ -675,7 +679,7 @@ class TestModelFitBinned:
         np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
 
     def test_fit_bounded_leastsq(self):
-        if StrictVersion(scipy.__version__) < StrictVersion("0.17"):
+        if LooseVersion(scipy.__version__) < LooseVersion("0.17"):
             raise SkipTest("least bounds only available in scipy >= 0.17")
         self.m[0].centre.bmin = 0.5
         # self.m[0].bounded = True

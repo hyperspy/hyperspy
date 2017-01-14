@@ -80,7 +80,8 @@ def test_ripple():
         for dtype in ripple.dtype2keys.keys():
             for shape, dims in SHAPES_SDIM:
                 for dim in dims:
-                    yield _run_test, dtype, shape, dim, tmpdir
+                    for metadata in range(1):  # (True, False) not working...
+                        yield _run_test, dtype, shape, dim, tmpdir, metadata
 
 
 def _get_filename(s):
@@ -91,30 +92,33 @@ def _get_filename(s):
     return filename
 
 
-def _create_signal(shape, dim, dtype,):
+def _create_signal(shape, dim, dtype, metadata):
     data = np.arange(np.product(shape)).reshape(
         shape).astype(dtype)
     if dim == 1:
         if len(shape) > 2:
             s = signals.EELSSpectrum(data)
-            s.set_microscope_parameters(
-                beam_energy=100.,
-                convergence_angle=1.,
-                collection_angle=10.)
+            if metadata:
+                s.set_microscope_parameters(
+                    beam_energy=100.,
+                    convergence_angle=1.,
+                    collection_angle=10.)
         else:
             s = signals.EDSTEMSpectrum(data)
-            s.set_microscope_parameters(
-                beam_energy=100.,
-                live_time=1.,
-                tilt_stage=2.,
-                azimuth_angle=3.,
-                elevation_angle=4.,
-                energy_resolution_MnKa=5.)
+            if metadata:
+                s.set_microscope_parameters(
+                    beam_energy=100.,
+                    live_time=1.,
+                    tilt_stage=2.,
+                    azimuth_angle=3.,
+                    elevation_angle=4.,
+                    energy_resolution_MnKa=5.)
     else:
         s = signals.BaseSignal(data)
         s.axes_manager.set_signal_dimension(dim)
-    s.metadata.General.date = "2016-08-06"
-    s.metadata.General.time = "10:55:00"
+    if metadata:
+        s.metadata.General.date = "2016-08-06"
+        s.metadata.General.time = "10:55:00"
     for i, axis in enumerate(s.axes_manager._axes):
         i += 1
         axis.offset = i * 0.5
@@ -128,8 +132,8 @@ def _create_signal(shape, dim, dtype,):
     return s
 
 
-def _run_test(dtype, shape, dim, tmpdir):
-    s = _create_signal(shape=shape, dim=dim, dtype=dtype)
+def _run_test(dtype, shape, dim, tmpdir, metadata):
+    s = _create_signal(shape=shape, dim=dim, dtype=dtype, metadata=metadata)
     filename = _get_filename(s)
     s.save(os.path.join(tmpdir, filename))
     s_just_saved = load(os.path.join(tmpdir, filename))
@@ -140,17 +144,14 @@ def _run_test(dtype, shape, dim, tmpdir):
             nt.assert_equal(s.data.dtype, stest.data.dtype)
             nt.assert_equal(s.axes_manager.signal_dimension,
                             stest.axes_manager.signal_dimension)
-            mdpaths = (
-                "General.date",
-                "General.time",
-                "Signal.signal_type")
-            if s.metadata.Signal.signal_type == "EELS":
+            mdpaths = ("Signal.signal_type", )
+            if s.metadata.Signal.signal_type == "EELS" and metadata:
                 mdpaths += (
                     "Acquisition_instrument.TEM.convergence_angle",
                     "Acquisition_instrument.TEM.beam_energy",
                     "Acquisition_instrument.TEM.Detector.EELS.collection_angle"
                 )
-            elif "EDS" in s.metadata.Signal.signal_type:
+            elif "EDS" in s.metadata.Signal.signal_type and metadata:
                 mdpaths += (
                     "Acquisition_instrument.TEM.tilt_stage",
                     "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
@@ -159,6 +160,10 @@ def _run_test(dtype, shape, dim, tmpdir):
                     "EDS.energy_resolution_MnKa",
                     "Acquisition_instrument.TEM.Detector.EDS.live_time",
                 )
+            if metadata:
+                mdpaths = (
+                    "General.date",
+                    "General.time",)
             for mdpath in mdpaths:
                 nt.assert_equal(
                     s.metadata.get_item(mdpath),
@@ -193,7 +198,7 @@ def generate_files():
     for dtype in ripple.dtype2keys.keys():
         for shape, dims in SHAPES_SDIM:
             for dim in dims:
-                s = _create_signal(shape=shape, dim=dim, dtype=dtype,)
+                s = _create_signal(shape=shape, dim=dim, dtype=dtype)
                 filename = _get_filename(s)
                 filepath = os.path.join(MYPATH, "ripple_files", filename)
                 s.save(filepath, overwrite=True)

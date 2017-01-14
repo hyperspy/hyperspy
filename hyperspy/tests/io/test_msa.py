@@ -33,6 +33,23 @@ example1_metadata = {'Acquisition_instrument': {'TEM': example1_TEM},
                                                'unfolded': False,
                                                'original_shape': None,
                                                'signal_unfolded': False}}}
+minimum_md_om = {
+    'COMMENT': 'File created by HyperSpy version 1.1.2+dev',
+    'DATATYPE': 'Y',
+    'DATE': '',
+    'FORMAT': 'EMSA/MAS Spectral Data File',
+    'NCOLUMNS': 1.0,
+    'NPOINTS': 1.0,
+    'OFFSET': 0.0,
+    'OWNER': '',
+    'SIGNALTYPE': '',
+    'TIME': '',
+    'TITLE': '',
+    'VERSION': '1.0',
+    'XLABEL': '',
+    'XPERCHAN': 1.0,
+    'XUNITS': ''}
+
 
 example1_parameters = {
     'BEAMDIAM -nm': 100.0,
@@ -303,3 +320,8 @@ class TestExample2:
             s2.metadata.General.original_filename = "example2.msa"
             assert_deep_almost_equal(self.s.metadata.as_dictionary(),
                                      s2.metadata.as_dictionary())
+
+
+def test_minimum_metadata_example():
+    s = load(os.path.join(my_path, "msa_files", "minimum_metadata.msa"))
+    assert_equal(minimum_md_om, s.original_metadata.as_dictionary())
