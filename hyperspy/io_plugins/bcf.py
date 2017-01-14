@@ -1164,7 +1164,7 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
     hyperspectra and metadata.
     """
     obj_bcf.persistent_parse_hypermap(index=index, downsample=downsample,
-                                      cutoff_at_kV=cutoff_at_kV)
+                                      cutoff_at_kV=cutoff_at_kV, lazy=lazy)
     eds_metadata = obj_bcf.header.get_spectra_metadata(index=index)
     mode = _get_mode(obj_bcf, instrument=instrument)
     hyperspectra = [{'data': obj_bcf.hypermap[index].hypermap,
