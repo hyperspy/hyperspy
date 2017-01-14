@@ -227,9 +227,8 @@ def interpolate1D(number_of_interpolation_points, data):
     return interpolator(new_ax)
 
 
-def _estimate_shift1D(current_guess, **kwargs):
+def _estimate_shift1D(data, **kwargs):
     mask = kwargs.get('mask', None)
-    data = kwargs.get('data', None)
     ref = kwargs.get('ref', None)
     interpolate = kwargs.get('interpolate', True)
     ip = kwargs.get('ip', 5)
@@ -603,34 +602,34 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if isinstance(end, da.Array):
             end = end.compute()
         i1, i2 = axis._get_index(start), axis._get_index(end)
-        shift_signal = self._get_navigation_signal(dtype=float)
-        shift_signal.axes_manager.set_signal_dimension(0)
         if reference_indices is None:
             reference_indices = self.axes_manager.indices
         ref = self.inav[reference_indices].data[i1:i2]
 
         if interpolate is True:
             ref = interpolate1D(ip, ref)
-        iterating_kwargs = (('data', self),)
+        iterating_kwargs = ()
         if mask is not None:
             iterating_kwargs += (('mask', mask),)
-        shift_signal._map_iterate(_estimate_shift1D,
-                                  iterating_kwargs=iterating_kwargs,
-                                  data_slice=slice(i1, i2),
-                                  mask=None,
-                                  ref=ref,
-                                  ip=ip,
-                                  interpolate=interpolate,
-                                  ragged=False,
-                                  parallel=parallel,
-                                  show_progressbar=show_progressbar,)
+        shift_signal = self._map_iterate(
+            _estimate_shift1D,
+            iterating_kwargs=iterating_kwargs,
+            data_slice=slice(i1, i2),
+            mask=None,
+            ref=ref,
+            ip=ip,
+            interpolate=interpolate,
+            ragged=False,
+            parallel=parallel,
+            inplace=False,
+            show_progressbar=show_progressbar,)
         shift_array = shift_signal.data
         if max_shift is not None:
             if interpolate is True:
                 max_shift *= ip
             shift_array.clip(-max_shift, max_shift)
         if interpolate is True:
-            shift_array /= ip
+            shift_array = shift_array / ip
         shift_array *= axis.scale
         return shift_array
 

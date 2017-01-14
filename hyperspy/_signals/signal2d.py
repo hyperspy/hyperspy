@@ -153,10 +153,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         The maximum value of the correlation
 
     """
-    if isinstance(ref, da.Array):
-        ref = np.array(ref)
-    if isinstance(image, da.Array):
-        image = np.array(image)
+    ref, image = da.compute(ref, image)
     # Make a copy of the images to avoid modifying them
     ref = ref.copy().astype(dtype)
     image = image.copy().astype(dtype)
