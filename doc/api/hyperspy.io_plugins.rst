@@ -36,18 +36,18 @@ hyperspy.io_plugins.digital_micrograph module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.io_plugins.emd module
-------------------------------
-
-.. automodule:: hyperspy.io_plugins.emd
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 hyperspy.io_plugins.edax module
 -------------------------------
 
 .. automodule:: hyperspy.io_plugins.edax
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.io_plugins.emd module
+------------------------------
+
+.. automodule:: hyperspy.io_plugins.emd
     :members:
     :undoc-members:
     :show-inheritance:
