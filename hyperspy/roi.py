@@ -1083,7 +1083,7 @@ class Line2DROI(BaseInteractiveROI):
             orig_shape = img.shape
             img = np.reshape(img, orig_shape[0:2] +
                              (np.product(orig_shape[2:]),))
-            pixels = [nd.map_coordinates(img[..., i], perp_lines,
+            pixels = [nd.map_coordinates(img[..., i].T, perp_lines,
                                          order=order, mode=mode, cval=cval)
                       for i in range(img.shape[2])]
             i0 = min(axes[0].index_in_array, axes[1].index_in_array)

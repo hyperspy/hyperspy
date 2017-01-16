@@ -20,19 +20,22 @@ import logging
 
 import numpy as np
 import warnings
+import matplotlib
 from matplotlib import pyplot as plt
+from distutils.version import LooseVersion
 
 from hyperspy import utils
-from hyperspy.signals import Signal1D
+from hyperspy._signals.signal1d import Signal1D
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
-from hyperspy.utils import markers
+from hyperspy.utils.plot import markers
 
 _logger = logging.getLogger(__name__)
 
 
 class EDSSpectrum(Signal1D):
+
     _signal_type = "EDS"
 
     def __init__(self, *args, **kwards):
@@ -69,10 +72,10 @@ class EDSSpectrum(Signal1D):
         units_name = self.axes_manager.signal_axes[0].units
 
         if FWHM_MnKa == 'auto':
-            if self.metadata.Signal.signal_type == 'EDS_SEM':
+            if self.metadata.Signal.signal_type == "EDS_SEM":
                 FWHM_MnKa = self.metadata.Acquisition_instrument.SEM.\
                     Detector.EDS.energy_resolution_MnKa
-            elif self.metadata.Signal.signal_type == 'EDS_TEM':
+            elif self.metadata.Signal.signal_type == "EDS_TEM":
                 FWHM_MnKa = self.metadata.Acquisition_instrument.TEM.\
                     Detector.EDS.energy_resolution_MnKa
             else:
@@ -644,6 +647,10 @@ class EDSSpectrum(Signal1D):
                                                            FWHM_MnKa='auto')
             element, line = utils_eds._get_element_and_line(Xray_line)
             img = self.isig[window[0]:window[1]].integrate1D(-1)
+            if np.issubdtype(img.data.dtype, np.integer):
+                # The operations below require a float dtype with the default
+                # numpy casting rule ('same_kind')
+                img.change_dtype("float")
             if background_windows is not None:
                 bw = background_windows[i]
                 # TODO: test to prevent slicing bug. To be reomved when fixed
@@ -667,11 +674,8 @@ class EDSSpectrum(Signal1D):
                  line_energy,
                  self.axes_manager.signal_axes[0].units,
                  ))
-            if img.axes_manager.navigation_dimension >= 2:
-                img = img.as_signal2D([0, 1])
-            elif img.axes_manager.navigation_dimension == 1:
-                img.axes_manager.set_signal_dimension(1)
-            if plot_result and img.axes_manager.signal_size == 1:
+            img.axes_manager.set_signal_dimension(0)
+            if plot_result and img.axes_manager.navigation_size == 1:
                 print("%s at %s %s : Intensity = %.2f"
                       % (Xray_line,
                          line_energy,
@@ -680,7 +684,7 @@ class EDSSpectrum(Signal1D):
             img.metadata.set_item("Sample.elements", ([element]))
             img.metadata.set_item("Sample.xray_lines", ([Xray_line]))
             intensities.append(img)
-        if plot_result and img.axes_manager.signal_size != 1:
+        if plot_result and img.axes_manager.navigation_size != 1:
             utils.plot.plot_signals(intensities, **kwargs)
         return intensities
 
@@ -715,9 +719,9 @@ class EDSSpectrum(Signal1D):
         Defined by M. Schaffer et al., Ultramicroscopy 107(8), pp 587-597
         (2007)
         """
-        if self.metadata.Signal.signal_type == 'EDS_SEM':
+        if self.metadata.Signal.signal_type == "EDS_SEM":
             mp = self.metadata.Acquisition_instrument.SEM
-        elif self.metadata.Signal.signal_type == 'EDS_TEM':
+        elif self.metadata.Signal.signal_type == "EDS_TEM":
             mp = self.metadata.Acquisition_instrument.TEM
 
         tilt_stage = mp.tilt_stage
@@ -977,8 +981,12 @@ class EDSSpectrum(Signal1D):
             keywords argument for markers.vertical_line
         """
         per_xray = len(position[0])
-        colors = itertools.cycle(np.sort(
-            plt.rcParams['axes.color_cycle'] * per_xray))
+        if LooseVersion(matplotlib.__version__) >= "1.5.3":
+            colors = itertools.cycle(np.sort(
+                plt.rcParams['axes.prop_cycle'].by_key()["color"] * per_xray))
+        else:
+            colors = itertools.cycle(np.sort(
+                plt.rcParams['axes.color_cycle'] * per_xray))
         for x, color in zip(np.ravel(position), colors):
             line = markers.vertical_line(x=x, color=color, **kwargs)
             self.add_marker(line)
@@ -1007,8 +1015,10 @@ class EDSSpectrum(Signal1D):
             line = markers.vertical_line_segment(
                 x=line_energy[i], y1=None, y2=intensity[i] * 0.8)
             self.add_marker(line)
+            string = (r'$\mathrm{%s}_{\mathrm{%s}}$' %
+                      utils_eds._get_element_and_line(xray_lines[i]))
             text = markers.text(
-                x=line_energy[i], y=intensity[i] * 1.1, text=xray_lines[i],
+                x=line_energy[i], y=intensity[i] * 1.1, text=string,
                 rotation=90)
             self.add_marker(text)
             self._xray_markers[xray_lines[i]] = [line, text]

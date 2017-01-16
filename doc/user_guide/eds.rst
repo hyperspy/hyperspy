@@ -351,6 +351,10 @@ database:
 The lines are returned in order of distance from the specified energy, and can
 be limited by additional, optional arguments.
 
+
+
+.. _eds_absorption_db-label
+
 Mass absorption coefficient database
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -368,7 +372,7 @@ A mass absorption coefficient database [Chantler2005]_ is available:
     >>>     elements=['Al','Zn'], weight_percent=[50,50], energies='Al_Ka')
     2587.4161643905127
 
-.. _eds_plot-label: 
+.. _eds_plot-label:
 
 Plotting
 --------
@@ -519,7 +523,9 @@ can be plotted using :py:meth:`~._signals.eds.EDSSpectrum.plot`:
 EDS Quantification
 ------------------
 
-.. versionadded:: 0.8
+.. versionadded:: 0.8 EDS Quantification
+
+.. versionadded:: 1.0 zeta-factors and ionization cross sections
 
 HyperSpy now includes three methods for EDS quantification:
 
@@ -612,7 +618,7 @@ the illumination area becomes the pixel area of the spectrum image. This is a mu
 more accurate approach for quantitative EDS and should be used where possible.
 The pixel width could either be added to the metadata by putting the pixel area
 in as the 'probe_area' (above) or by calibrating the spectrum image
-(see :ref:`Setting axis properties').
+(see :ref:`Setting axis properties`).
 
 Either approach will provide an illumination area for the cross_section
 quantification. If the pixel width is not set, the code will still run with the
@@ -628,7 +634,10 @@ number of atoms per pixel for each element.
     dimensions must be set. For quantification of line scans, rather than spectrum images,
     the pixel area should be added to the metadata as above.
 
-EDS curve-fitting
+
+.. _eds_fitting-label:
+
+EDS curve fitting
 -----------------
 
 The intensity of X-ray lines can be extracted using curve-fitting in HyperSpy.

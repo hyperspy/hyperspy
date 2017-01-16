@@ -55,11 +55,17 @@ install_req = ['scipy',
                'traitsui>=5.0',
                'natsort',
                'requests',
-               'setuptools',
                'tqdm',
                'sympy',
                'dill',
-               'h5py']
+               'h5py',
+               'python-dateutil',
+               'ipyparallel',
+               'scikit-image']
+
+# the hack to deal with setuptools + installing the package in ReadTheDoc:
+if 'readthedocs.org' in sys.executable:
+    install_req = []
 
 
 def update_version(version):
@@ -75,9 +81,7 @@ def update_version(version):
 
 
 # Extensions. Add your extension here:
-raw_extensions = [Extension("hyperspy.tests.misc.cython.test_cython_integration",
-                            ['hyperspy/tests/misc/cython/test_cython_integration.pyx']),
-                  Extension("hyperspy.io_plugins.unbcf_fast",
+raw_extensions = [Extension("hyperspy.io_plugins.unbcf_fast",
                             ['hyperspy/io_plugins/unbcf_fast.pyx']),
                   ]
 
@@ -188,9 +192,15 @@ def find_post_checkout_cleanup_line():
 # generate some git hook to clean up and re-build_ext --inplace
 # after changing branches:
 if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
-    recythonize_str = ' '.join([sys.executable,
+    exec_str = sys.executable
+    recythonize_str = ' '.join([exec_str,
                                 os.path.join(setup_path, 'setup.py'),
-                                'clean --all build_ext --inplace \n'])
+                                'clean --all build_ext --inplace\n'])
+    if os.name == 'nt':
+        exec_str = exec_str.replace('\\', '/')
+        recythonize_str = recythonize_str.replace('\\', '/')
+        for i in range(len(cleanup_list)):
+            cleanup_list[i] = cleanup_list[i].replace('\\', '/')
     if (not os.path.exists(post_checout_hook_file)):
         with open(post_checout_hook_file, 'w') as pchook:
             pchook.write('#!/bin/sh\n')
@@ -209,9 +219,9 @@ if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
                     ' '.join([i for i in cleanup_list]) + '\n'
                 hook_lines[line_n + 1] = recythonize_str
             else:
-                hook_lines.append('\n#cleanup_cythonized_and_compiled:')
+                hook_lines.append('\n#cleanup_cythonized_and_compiled:\n')
                 hook_lines.append(
-                    '\nrm ' + ' '.join([i for i in cleanup_list]) + '\n')
+                    'rm ' + ' '.join([i for i in cleanup_list]) + '\n')
                 hook_lines.append(recythonize_str)
             with open(post_checout_hook_file, 'w') as pchook:
                 pchook.writelines(hook_lines)
@@ -301,6 +311,7 @@ with update_version_when_dev() as version:
                   'hyperspy.tests.io',
                   'hyperspy.tests.model',
                   'hyperspy.tests.mva',
+                  'hyperspy.tests.samfire',
                   'hyperspy.tests.signal',
                   'hyperspy.tests.utils',
                   'hyperspy.tests.misc',
@@ -319,9 +330,6 @@ with update_version_when_dev() as version:
                   'hyperspy.samfire_utils.goodness_of_fit_tests',
                   ],
         install_requires=install_req,
-        setup_requires=[
-            'setuptools'
-        ],
         package_data={
             'hyperspy':
             [
@@ -335,6 +343,7 @@ with update_version_when_dev() as version:
                 'tests/io/dm4_1D_data/*.dm4',
                 'tests/io/dm4_2D_data/*.dm4',
                 'tests/io/dm4_3D_data/*.dm4',
+                'tests/io/dm3_locale/*.dm3',
                 'tests/io/FEI_new/*.emi',
                 'tests/io/FEI_new/*.ser',
                 'tests/io/FEI_new/*.npy',
@@ -348,6 +357,13 @@ with update_version_when_dev() as version:
                 'tests/io/npy_files/*.npy',
                 'tests/io/unf_files/*.unf',
                 'tests/io/bcf_data/*.bcf',
+                'tests/io/bcf_data/*.json',
+                'tests/io/bcf_data/*.npy',
+                'tests/io/ripple_files/*.rpl',
+                'tests/io/ripple_files/*.raw',
+                'tests/io/emd_files/*.emd',
+                'tests/io/protochips_data/*.npy',
+                'tests/io/protochips_data/*.csv',
                 'tests/drawing/*.ipynb',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
             ],

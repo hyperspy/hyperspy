@@ -1,6 +1,7 @@
-from distutils.version import StrictVersion
+from distutils.version import LooseVersion
 
 import numpy as np
+import scipy
 import nose.tools as nt
 from unittest import mock
 from nose.plugins.skip import SkipTest
@@ -314,9 +315,13 @@ class TestModel1D:
             import ipywidgets
         except:
             raise SkipTest("ipywidgets not installed")
-        if StrictVersion(ipywidgets.__version__) < StrictVersion("5.0"):
+        if LooseVersion(ipywidgets.__version__) < LooseVersion("5.0"):
             raise SkipTest("ipywigets > 5.0 required but %s installed" %
                            ipywidgets.__version__)
+        from IPython import get_ipython
+        ip = get_ipython()
+        if ip is None or not getattr(ip, 'kernel', None):
+            raise SkipTest("Not attached to notebook")
         m = self.model
         m.notebook_interaction()
         m.append(hs.model.components1D.Offset())
@@ -614,14 +619,14 @@ class TestModelFitBinned:
         g.A.value = 1e3
         self.m = m
 
-    def test_fit_fmin_leastsq(self):
-        self.m.fit(fitter="fmin", method="ls")
+    def test_fit_neldermead_leastsq(self):
+        self.m.fit(fitter="Nelder-Mead", method="ls")
         np.testing.assert_almost_equal(self.m[0].A.value, 9976.14519369)
         np.testing.assert_almost_equal(self.m[0].centre.value, -0.110610743285)
         np.testing.assert_almost_equal(self.m[0].sigma.value, 1.98380705455)
 
-    def test_fit_fmin_ml(self):
-        self.m.fit(fitter="fmin", method="ml")
+    def test_fit_neldermead_ml(self):
+        self.m.fit(fitter="Nelder-Mead", method="ml")
         np.testing.assert_almost_equal(self.m[0].A.value, 10001.39613936,
                                        decimal=3)
         np.testing.assert_almost_equal(self.m[0].centre.value, -0.104151206314,
@@ -664,7 +669,7 @@ class TestModelFitBinned:
         np.testing.assert_almost_equal(self.m[0].centre.value, -0.110610724054)
         np.testing.assert_almost_equal(self.m[0].sigma.value, 1.98380709939)
 
-    def test_fit_bounded(self):
+    def test_fit_bounded_mpfit(self):
         self.m[0].centre.bmin = 0.5
         # self.m[0].bounded = True
         self.m.fit(fitter="mpfit", bounded=True)
@@ -672,11 +677,47 @@ class TestModelFitBinned:
         np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
         np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
 
-    def test_fit_bounded_bad_starting_values(self):
+    def test_fit_bounded_leastsq(self):
+        if LooseVersion(scipy.__version__) < LooseVersion("0.17"):
+            raise SkipTest("least bounds only available in scipy >= 0.17")
+        self.m[0].centre.bmin = 0.5
+        # self.m[0].bounded = True
+        self.m.fit(fitter="leastsq", bounded=True)
+        np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 3)
+        np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
+        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
+
+    def test_fit_bounded_lbfgs(self):
+        self.m[0].centre.bmin = 0.5
+        # self.m[0].bounded = True
+        self.m.fit(fitter="L-BFGS-B", bounded=True, grad=True)
+        np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
+        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
+
+    def test_fit_bounded_bad_starting_values_mpfit(self):
         self.m[0].centre.bmin = 0.5
         self.m[0].centre.value = -1
         # self.m[0].bounded = True
         self.m.fit(fitter="mpfit", bounded=True)
+        np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
+        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
+
+    def test_fit_bounded_bad_starting_values_leastsq(self):
+        self.m[0].centre.bmin = 0.5
+        self.m[0].centre.value = -1
+        # self.m[0].bounded = True
+        self.m.fit(fitter="leastsq", bounded=True)
+        np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 3)
+        np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
+        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
+
+    def test_fit_bounded_bad_starting_values_lbfgs(self):
+        self.m[0].centre.bmin = 0.5
+        self.m[0].centre.value = -1
+        # self.m[0].bounded = True
+        self.m.fit(fitter="L-BFGS-B", bounded=True, grad=True)
         np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 4)
         np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
         np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
@@ -721,10 +762,10 @@ class TestModelWeighted:
                                     (9.9165596607108739, 1.6628243846485873)):
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
-    def test_fit_fmin_binned(self):
+    def test_fit_neldermead_binned(self):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(
-            fitter="fmin",
+            fitter="Nelder-Mead",
             method="ls",
         )
         for result, expected in zip(self.m[0].coefficients.value,
@@ -755,10 +796,10 @@ class TestModelWeighted:
                 (0.99165596295068958, 0.16628257462820528)):
             np.testing.assert_almost_equal(result, expected, decimal=5)
 
-    def test_fit_fmin_unbinned(self):
+    def test_fit_neldermead_unbinned(self):
         self.m.signal.metadata.Signal.binned = False
         self.m.fit(
-            fitter="fmin",
+            fitter="Nelder-Mead",
             method="ls",
         )
         for result, expected in zip(
@@ -897,13 +938,25 @@ class TestMultifit:
         nt.assert_is_instance(rs.metadata.Signal.Noise_properties.variance,
                               hs.signals.Signal1D)
 
-    def test_bounded_snapping(self):
+    def test_bounded_snapping_mpfit(self):
         m = self.m
         m[0].A.free = True
         m.signal.data *= 2.
         m[0].A.value = 2.
         m[0].A.bmin = 3.
         m.multifit(fitter='mpfit', bounded=True, show_progressbar=None)
+        np.testing.assert_array_almost_equal(self.m[0].r.map['values'],
+                                             [3., 3.])
+        np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
+                                             [4., 4.])
+
+    def test_bounded_snapping_leastsq(self):
+        m = self.m
+        m[0].A.free = True
+        m.signal.data *= 2.
+        m[0].A.value = 2.
+        m[0].A.bmin = 3.
+        m.multifit(fitter='leastsq', bounded=True, show_progressbar=None)
         np.testing.assert_array_almost_equal(self.m[0].r.map['values'],
                                              [3., 3.])
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
@@ -960,7 +1013,7 @@ class TestAsSignal:
 
     def setUp(self):
         self.m = hs.signals.Signal1D(
-            np.arange(10).reshape(2, 5)).create_model()
+            np.arange(20).reshape(2, 2, 5)).create_model()
         self.comps = [
             hs.model.components1D.Offset(),
             hs.model.components1D.Offset()]
@@ -969,46 +1022,73 @@ class TestAsSignal:
             c.offset.value = 2
         self.m.assign_current_values_to_all()
 
+    def test_threaded_identical(self):
+        # all components
+        s = self.m.as_signal(show_progressbar=False, parallel=True)
+        s1 = self.m.as_signal(show_progressbar=False, parallel=False)
+        np.testing.assert_allclose(s1.data, s.data)
+
+        # more complicated
+        self.m[0].active_is_multidimensional = True
+        self.m[0]._active_array[0] = False
+        for component in [0, 1]:
+            s = self.m.as_signal(component_list=[component],
+                                 show_progressbar=False, parallel=True)
+            s1 = self.m.as_signal(component_list=[component],
+                                  show_progressbar=False, parallel=False)
+            np.testing.assert_allclose(s1.data, s.data)
+
     def test_all_components_simple(self):
-        s = self.m.as_signal(show_progressbar=None)
-        nt.assert_true(np.all(s.data == 4.))
+        for th in [True, False]:
+            s = self.m.as_signal(show_progressbar=False, parallel=th)
+            nt.assert_true(np.all(s.data == 4.))
 
     def test_one_component_simple(self):
-        s = self.m.as_signal(component_list=[0], show_progressbar=None)
-        nt.assert_true(np.all(s.data == 2.))
-        nt.assert_true(self.m[1].active)
+        for th in [True, False]:
+            s = self.m.as_signal(component_list=[0], show_progressbar=False,
+                                 parallel=th)
+            nt.assert_true(np.all(s.data == 2.))
+            nt.assert_true(self.m[1].active)
 
     def test_all_components_multidim(self):
         self.m[0].active_is_multidimensional = True
 
-        s = self.m.as_signal(show_progressbar=None)
-        nt.assert_true(np.all(s.data == 4.))
+        for th in [True, False]:
+            s = self.m.as_signal(show_progressbar=False, parallel=th)
+            nt.assert_true(np.all(s.data == 4.))
 
         self.m[0]._active_array[0] = False
-        s = self.m.as_signal(show_progressbar=None)
-        np.testing.assert_array_equal(
-            s.data, np.array([np.ones(5) * 2, np.ones(5) * 4]))
-        nt.assert_true(self.m[0].active_is_multidimensional)
+        for th in [True, False]:
+            s = self.m.as_signal(show_progressbar=False, parallel=th)
+            np.testing.assert_array_equal(
+                s.data, np.array([np.ones((2, 5)) * 2, np.ones((2, 5)) * 4]))
+            nt.assert_true(self.m[0].active_is_multidimensional)
 
     def test_one_component_multidim(self):
         self.m[0].active_is_multidimensional = True
 
-        s = self.m.as_signal(component_list=[0], show_progressbar=None)
-        nt.assert_true(np.all(s.data == 2.))
-        nt.assert_true(self.m[1].active)
-        nt.assert_false(self.m[1].active_is_multidimensional)
+        for th in [True, False]:
+            s = self.m.as_signal(component_list=[0], show_progressbar=False,
+                                 parallel=th)
+            nt.assert_true(np.all(s.data == 2.))
+            nt.assert_true(self.m[1].active)
+            nt.assert_false(self.m[1].active_is_multidimensional)
 
-        s = self.m.as_signal(component_list=[1], show_progressbar=None)
-        np.testing.assert_equal(s.data, 2.)
-        nt.assert_true(self.m[0].active_is_multidimensional)
+            s = self.m.as_signal(component_list=[1], show_progressbar=False,
+                                 parallel=th)
+            np.testing.assert_equal(s.data, 2.)
+            nt.assert_true(self.m[0].active_is_multidimensional)
 
         self.m[0]._active_array[0] = False
-        s = self.m.as_signal(component_list=[1], show_progressbar=None)
-        nt.assert_true(np.all(s.data == 2.))
+        for th in [True, False]:
+            s = self.m.as_signal(component_list=[1], show_progressbar=False,
+                                 parallel=th)
+            nt.assert_true(np.all(s.data == 2.))
 
-        s = self.m.as_signal(component_list=[0], show_progressbar=None)
-        np.testing.assert_array_equal(s.data,
-                                      np.array([np.zeros(5), np.ones(5) * 2]))
+            s = self.m.as_signal(component_list=[0], show_progressbar=False,
+                                 parallel=th)
+            np.testing.assert_array_equal(s.data, np.array([np.zeros((2, 5)),
+                                                            np.ones((2, 5)) * 2]))
 
 
 class TestCreateModel:

@@ -84,6 +84,14 @@ hyperspy._signals.eels module
     :undoc-members:
     :show-inheritance:
 
+hyperspy._signals.hologram_image module
+---------------------------------------
+
+.. automodule:: hyperspy._signals.hologram_image
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy._signals.signal1d module
 ---------------------------------
 

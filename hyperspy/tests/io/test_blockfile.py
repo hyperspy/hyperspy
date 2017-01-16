@@ -26,6 +26,9 @@ from hyperspy.io_plugins.blockfile import get_default_header
 from hyperspy.misc.array_tools import sarray2dict
 import warnings
 
+from hyperspy.misc.test_utils import assert_deep_almost_equal
+from hyperspy.misc.date_time_tools import serial_date_to_ISO_format
+
 
 try:
     WindowsError
@@ -130,15 +133,52 @@ def test_load2():
 def test_save_load_cycle():
     sig_reload = None
     signal = hs.load(file2)
+    serial = signal.original_metadata['blockfile_header']['Acquisition_time']
+    date, time, timezone = serial_date_to_ISO_format(serial)
+    nt.assert_equal(signal.metadata.General.original_filename, 'test2.blo')
+    nt.assert_equal(signal.metadata.General.date, date)
+    nt.assert_equal(signal.metadata.General.time, time)
+    nt.assert_equal(signal.metadata.General.time_zone, timezone)
+    nt.assert_equal(
+        signal.metadata.General.notes,
+        "Precession angle : \r\nPrecession Frequency : \r\nCamera gamma : on")
+    signal.save(save_path, overwrite=True)
+    sig_reload = hs.load(save_path)
+    np.testing.assert_equal(signal.data, sig_reload.data)
+    nt.assert_equal(signal.axes_manager.as_dictionary(),
+                    sig_reload.axes_manager.as_dictionary())
+    nt.assert_equal(signal.original_metadata.as_dictionary(),
+                    sig_reload.original_metadata.as_dictionary())
+    # change original_filename to make the metadata of both signals equals
+    sig_reload.metadata.General.original_filename = signal.metadata.General.original_filename
+    assert_deep_almost_equal(signal.metadata.as_dictionary(),
+                             sig_reload.metadata.as_dictionary())
+    nt.assert_equal(
+        signal.metadata.General.date,
+        sig_reload.metadata.General.date)
+    nt.assert_equal(
+        signal.metadata.General.time,
+        sig_reload.metadata.General.time)
+    nt.assert_is_instance(signal, hs.signals.Signal2D)
+    # Delete reference to close memmap file!
+    del sig_reload
+    gc.collect()
+    _remove_file(save_path)
+
+
+def test_different_x_y_scale_units():
+    # perform load and save cycle with changing the scale on y
+    signal = hs.load(file2)
+    signal.axes_manager[0].scale = 50.0
     try:
         signal.save(save_path, overwrite=True)
         sig_reload = hs.load(save_path)
-        np.testing.assert_equal(signal.data, sig_reload.data)
-        nt.assert_equal(signal.axes_manager.as_dictionary(),
-                        sig_reload.axes_manager.as_dictionary())
-        nt.assert_equal(signal.original_metadata.as_dictionary(),
-                        sig_reload.original_metadata.as_dictionary())
-        nt.assert_is_instance(signal, hs.signals.Signal2D)
+        nt.assert_almost_equal(sig_reload.axes_manager[0].scale, 50.0,
+                               places=2)
+        nt.assert_almost_equal(sig_reload.axes_manager[1].scale, 64.0,
+                               places=2)
+        nt.assert_almost_equal(sig_reload.axes_manager[2].scale, 0.0160616,
+                               places=5)
     finally:
         # Delete reference to close memmap file!
         del sig_reload
@@ -262,14 +302,19 @@ def test_write_cutoff():
     signal = hs.signals.Signal2D((255 * np.random.rand(10, 3, 5, 5)
                                   ).astype(np.uint8))
     signal.axes_manager.navigation_axes[0].size = 20
+    # Test that it raises a warning
     try:
         signal.save(save_path, overwrite=True)
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             sig_reload = hs.load(save_path)
-            assert len(w) == 1
-            assert issubclass(w[-1].category, UserWarning)
-            assert "Blockfile header" in str(w[-1].message)
+            # There can be other warnings so >=
+            assert len(w) >= 1
+            warning_blockfile = ["Blockfile header" in str(warning.message)
+                                 for warning in w]
+            assert True in warning_blockfile
+            assert issubclass(w[warning_blockfile.index(True)].category,
+                              UserWarning)
         cut_data = signal.data.flatten()
         pw = [(0, 17 * 10 * 5 * 5)]
         cut_data = np.pad(cut_data, pw, mode='constant')

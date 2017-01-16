@@ -431,8 +431,9 @@ class DictionaryTreeBrowser(object):
         else:
             return False
 
-    def get_item(self, item_path):
-        """Given a path, return True if it exists.
+    def get_item(self, item_path, default=None):
+        """Given a path, return it's value if it exists, or default
+        value if missing.
 
         The nodes of the path are separated using periods.
 
@@ -441,6 +442,9 @@ class DictionaryTreeBrowser(object):
         item_path : Str
             A string describing the path with each item separated by
             full stops (periods)
+        default :
+            The value to return if the path does not exist.
+
 
         Examples
         --------
@@ -466,11 +470,11 @@ class DictionaryTreeBrowser(object):
             else:
                 item = self[attrib]
                 if isinstance(item, type(self)):
-                    return item.get_item(item_path)
+                    return item.get_item(item_path, default)
                 else:
-                    raise AttributeError("Item not in dictionary browser")
+                    return default
         else:
-            raise AttributeError("Item not in dictionary browser")
+            return default
 
     def __contains__(self, item):
         return self.has_item(item_path=item)
@@ -895,3 +899,31 @@ def shorten_name(name, req_l):
         return name[:req_l - 2] + '..'
     else:
         return name
+
+
+def transpose(*args, signal_axes=None, navigation_axes=None, optimize=False):
+    """Transposes all passed signals according to the specified options.
+
+    For parameters see ``BaseSignal.transpose``.
+
+    Examples
+    --------
+
+    >>> signal_iterable = [hs.signals.BaseSignal(np.random.random((2,)*(i+1)))
+                           for i in range(3)]
+    >>> signal_iterable
+    [<BaseSignal, title: , dimensions: (|2)>,
+     <BaseSignal, title: , dimensions: (|2, 2)>,
+     <BaseSignal, title: , dimensions: (|2, 2, 2)>]
+    >>> hs.transpose(*signal_iterable, signal_axes=1)
+    [<BaseSignal, title: , dimensions: (|2)>,
+     <BaseSignal, title: , dimensions: (2|2)>,
+     <BaseSignal, title: , dimensions: (2, 2|2)>]
+    >>> hs.transpose(signal1, signal2, signal3, signal_axes=["Energy"])
+    """
+    from hyperspy.signal import BaseSignal
+    if not all(map(isinstance, args, (BaseSignal for _ in args))):
+        raise ValueError("Not all pased objects are signals")
+    return [sig.transpose(signal_axes=signal_axes,
+                          navigation_axes=navigation_axes,
+                          optimize=optimize) for sig in args]

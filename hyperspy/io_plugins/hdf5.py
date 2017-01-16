@@ -16,10 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from distutils.version import StrictVersion
+from distutils.version import LooseVersion
 import warnings
-import datetime
 import logging
+import datetime
+import ast
 
 import h5py
 import numpy as np
@@ -43,7 +44,7 @@ default_extension = 4
 
 # Writing capabilities
 writes = True
-version = "2.1"
+version = "2.2"
 
 # -----------------------
 # File format description
@@ -74,6 +75,10 @@ version = "2.1"
 #
 # CHANGES
 #
+# v2.2
+# - store more metadata as string: date, time, notes, authors and doi
+# - store quantity for intensity axis
+#
 # v2.1
 # - Store the navigate attribute.
 # - record_by is stored only for backward compatibility but the axes navigate
@@ -85,7 +90,7 @@ version = "2.1"
 not_valid_format = 'The file is not a valid HyperSpy hdf5 file'
 
 current_file_version = None  # Format version of the file being read
-default_version = StrictVersion(version)
+default_version = LooseVersion(version)
 
 
 def get_hspy_format_version(f):
@@ -103,7 +108,7 @@ def get_hspy_format_version(f):
         version = "2.0"
     else:
         raise IOError(not_valid_format)
-    return StrictVersion(version)
+    return LooseVersion(version)
 
 
 def file_reader(filename, mode='r', driver='core',
@@ -181,7 +186,7 @@ def file_reader(filename, mode='r', driver='core',
 def hdfgroup2signaldict(group, load_to_memory=True):
     global current_file_version
     global default_version
-    if current_file_version < StrictVersion("1.2"):
+    if current_file_version < LooseVersion("1.2"):
         metadata = "mapped_parameters"
         original_metadata = "original_parameters"
     else:
@@ -237,7 +242,7 @@ def hdfgroup2signaldict(group, load_to_memory=True):
         if '__unnamed__' == exp['metadata']['General']['title']:
             exp['metadata']["General"]['title'] = ''
 
-    if current_file_version < StrictVersion("1.1"):
+    if current_file_version < LooseVersion("1.1"):
         # Load the decomposition results written with the old name,
         # mva_results
         if 'mva_results' in group.keys():
@@ -261,7 +266,7 @@ def hdfgroup2signaldict(group, load_to_memory=True):
                 exp['metadata']['name']
             del exp['metadata']['name']
 
-    if current_file_version < StrictVersion("1.2"):
+    if current_file_version < LooseVersion("1.2"):
         if '_internal_parameters' in exp['metadata']:
             exp['metadata']['_HyperSpy'] = \
                 exp['metadata']['_internal_parameters']
@@ -416,8 +421,6 @@ def dict2hdfgroup(dictionary, group, **kwds):
             dict2hdfgroup(value.as_dictionary(),
                           group.create_group('_hspy_AxesManager_' + key),
                           **kwds)
-        elif isinstance(value, (datetime.date, datetime.time)):
-            group.attrs["_datetime_" + key] = repr(value)
         elif isinstance(value, list):
             if len(value):
                 parse_structure(key, group, value, '_list_', **kwds)
@@ -465,11 +468,16 @@ def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
             dictionary[key[len('_tuple_empty_'):]] = ()
         elif key.startswith('_bs_'):
             dictionary[key[len('_bs_'):]] = value.tostring()
-# The following is commented out as it could be used to evaluate
-# arbitrary code i.e. it was a security flaw. We should instead
-# use a standard string for date and time.
-#        elif key.startswith('_datetime_'):
-#            dictionary[key.replace("_datetime_", "")] = eval(value)
+        # The following two elif stataments enable reading date and time from
+        # v < 2 of HyperSpy's metadata specifications
+        elif key.startswith('_datetime_date'):
+            date_iso = datetime.date(
+                *ast.literal_eval(value[value.index("("):])).isoformat()
+            dictionary[key.replace("_datetime_", "")] = date_iso
+        elif key.startswith('_datetime_time'):
+            date_iso = datetime.time(
+                *ast.literal_eval(value[value.index("("):])).isoformat()
+            dictionary[key.replace("_datetime_", "")] = date_iso
         else:
             dictionary[key] = value
     if not isinstance(group, h5py.Dataset):
@@ -531,7 +539,7 @@ def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
 
 
 def write_signal(signal, group, **kwds):
-    if default_version < StrictVersion("1.2"):
+    if default_version < LooseVersion("1.2"):
         metadata = "mapped_parameters"
         original_metadata = "original_parameters"
     else:
@@ -550,7 +558,7 @@ def write_signal(signal, group, **kwds):
         dict2hdfgroup(axis_dict, coord_group, **kwds)
     mapped_par = group.create_group(metadata)
     metadata_dict = signal.metadata.as_dictionary()
-    if default_version < StrictVersion("1.2"):
+    if default_version < LooseVersion("1.2"):
         metadata_dict["_internal_parameters"] = \
             metadata_dict.pop("_HyperSpy")
     dict2hdfgroup(metadata_dict, mapped_par, **kwds)
