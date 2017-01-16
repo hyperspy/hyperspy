@@ -30,6 +30,14 @@ hyperspy.misc.config_dir module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.misc.date_time_tools module
+------------------------------------
+
+.. automodule:: hyperspy.misc.date_time_tools
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.misc.elements module
 -----------------------------
 

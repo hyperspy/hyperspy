@@ -45,7 +45,7 @@ class Expression(Component):
         expression: str
             Component function in SymPy text expression format. See the SymPy
             documentation for details. The only additional constraint is that
-            the variable(s) must be `x` (for 1D components) or `x` and `y` for
+            the variable(s) must be `x` (for 1D components); or `x` and `y` for
             2D components. Also, if `module` is "numexpr" the
             functions are limited to those that numexpr support. See its
             documentation for details.
@@ -53,12 +53,12 @@ class Expression(Component):
             Name of the component.
         position: str, optional
             The parameter name that defines the position of the component if
-            applicable. It enables adjusting the position of the component
-            interactively in a model. 2D components require passing a tuple
+            applicable. It enables interative adjustment of the position of the
+            component in the model. For 2D components, a tuple must be passed
             with the name of the two parameters e.g. `("x0", "y0")`.
         module: {"numpy", "numexpr"}, default "numpy"
             Module used to evaluate the function. numexpr is often faster but
-            it supports less functions and requires installing numexpr.
+            it supports fewer functions and requires installing numexpr.
         add_rotation: bool, default False
             This is only relevant for 2D components. If `True` it automatically
             adds `rotation_angle` parameter.
