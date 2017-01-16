@@ -37,6 +37,8 @@ position and size as parameters:
 
 .. code-block:: python
 
+    >>> import hyperspy.api as hs
+    >>> im =  hs.datasets.example_signals.object_hologram()
     >>> wave_image = im.reconstruct_phase(sb_position=(<y>, <x>), sb_size=sb_radius)
 
 The parameters can be found automatically by calling following methods:
@@ -61,6 +63,7 @@ To reconstruct the hologram with a vacuum reference wave, the reference hologram
 
 .. code-block:: python
 
+    >>> reference_hologram = hs.datasets.example_signals.reference_hologram()
     >>> wave_image = im.reconstruct_phase(reference_hologram, sb_position=sb_position, sb_size=sb_sb_size)
 
 
