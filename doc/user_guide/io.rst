@@ -191,6 +191,8 @@ HyperSpy.
     +--------------------+-----------+----------+
     | Protochips log     |    Yes    |    No    |
     +--------------------+-----------+----------+
+    | EDAX .spc and .spd |    Yes    |    No    |
+    +--------------------+-----------+----------+
 
 .. _hdf5-format:
 
@@ -406,6 +408,33 @@ loading a particular Digital Micrograph file fails for you, please report it as
 an issue in the `issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make
 us aware of the problem.
 
+.. _edax-format:
+
+EDAX TEAM SPD and SPC
+---------------------
+
+HyperSpy can read both ``.spd`` (spectrum image) and ``.spc`` (single spectra)
+files from the EDAX TEAM software.
+If reading an ``.spd`` file, the calibration of the
+spectrum image is loaded from the corresponding ``.ipr`` and ``.spc`` files
+stored in the same directory, or from specific files indicated by the user.
+If these calibration files are not available, the data from the ``.spd``
+file will still be loaded, but with no spatial or energy calibration.
+If elemental information has been defined in the spectrum image, those
+elements will automatically be added to the signal loaded by HyperSpy.
+
+Currently, loading an EDAX TEAM spectrum or spectrum image will load an
+``EDSSEMSpectrum`` Signal. If support for TEM EDS data is needed, please
+open an issue in the `issues tracker <github.com/hyperspy/hyperspy/issues>`_ to
+alert the developers of the need.
+
+For further reference, file specifications for the formats are
+available publicly available from EDAX and are on Github
+(`.spc <https://github.com/hyperspy/hyperspy/files/29506/SPECTRUM-V70.pdf>`_,
+`.spd <https://github.com/hyperspy/hyperspy/files/29505/
+SpcMap-spd.file.format.pdf>`_, and
+`.ipr <https://github.com/hyperspy/hyperspy/files/29507/ImageIPR.pdf>`_).
+
 .. _fei-format:
 
 FEI TIA ser and emi
@@ -506,6 +535,11 @@ HyperSpy can read "hypermaps" saved with Bruker's Esprit v1.x or v2.x in bcf
 hybrid (virtual file system/container with xml and binary data, optionally compressed) format.
 Most bcf import functionality is implemented. Both high-resolution 16-bit SEM images
 and hyperspectral EDX data can be retrieved simultaneously.
+
+BCF can look as all inclusive format, however it does not save some key EDX parameters:
+any of dead/live/real times, FWHM at Mn_Ka line.
+However, real time for whole map is calculated from pixelAverage, lineAverage, pixelTime, lineCounter
+and map height parameters.
 
 Note that Bruker Esprit uses a similar format for EBSD data, but it is not currently
 supported by HyperSpy.

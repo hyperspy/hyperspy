@@ -8,6 +8,7 @@ Subpackages
 
     hyperspy.misc.eds
     hyperspy.misc.eels
+    hyperspy.misc.holography
     hyperspy.misc.io
     hyperspy.misc.machine_learning
 
@@ -26,6 +27,14 @@ hyperspy.misc.config_dir module
 -------------------------------
 
 .. automodule:: hyperspy.misc.config_dir
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.misc.date_time_tools module
+------------------------------------
+
+.. automodule:: hyperspy.misc.date_time_tools
     :members:
     :undoc-members:
     :show-inheritance:

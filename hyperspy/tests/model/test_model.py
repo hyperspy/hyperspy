@@ -1,4 +1,4 @@
-from distutils.version import StrictVersion
+from distutils.version import LooseVersion
 
 import numpy as np
 import scipy
@@ -315,9 +315,13 @@ class TestModel1D:
             import ipywidgets
         except:
             raise SkipTest("ipywidgets not installed")
-        if StrictVersion(ipywidgets.__version__) < StrictVersion("5.0"):
+        if LooseVersion(ipywidgets.__version__) < LooseVersion("5.0"):
             raise SkipTest("ipywigets > 5.0 required but %s installed" %
                            ipywidgets.__version__)
+        from IPython import get_ipython
+        ip = get_ipython()
+        if ip is None or not getattr(ip, 'kernel', None):
+            raise SkipTest("Not attached to notebook")
         m = self.model
         m.notebook_interaction()
         m.append(hs.model.components1D.Offset())
@@ -674,7 +678,7 @@ class TestModelFitBinned:
         np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
 
     def test_fit_bounded_leastsq(self):
-        if StrictVersion(scipy.__version__) < StrictVersion("0.17"):
+        if LooseVersion(scipy.__version__) < LooseVersion("0.17"):
             raise SkipTest("least bounds only available in scipy >= 0.17")
         self.m[0].centre.bmin = 0.5
         # self.m[0].bounded = True
@@ -1009,7 +1013,7 @@ class TestAsSignal:
 
     def setUp(self):
         self.m = hs.signals.Signal1D(
-            np.arange(10).reshape(2, 5)).create_model()
+            np.arange(20).reshape(2, 2, 5)).create_model()
         self.comps = [
             hs.model.components1D.Offset(),
             hs.model.components1D.Offset()]
@@ -1018,46 +1022,73 @@ class TestAsSignal:
             c.offset.value = 2
         self.m.assign_current_values_to_all()
 
+    def test_threaded_identical(self):
+        # all components
+        s = self.m.as_signal(show_progressbar=False, parallel=True)
+        s1 = self.m.as_signal(show_progressbar=False, parallel=False)
+        np.testing.assert_allclose(s1.data, s.data)
+
+        # more complicated
+        self.m[0].active_is_multidimensional = True
+        self.m[0]._active_array[0] = False
+        for component in [0, 1]:
+            s = self.m.as_signal(component_list=[component],
+                                 show_progressbar=False, parallel=True)
+            s1 = self.m.as_signal(component_list=[component],
+                                  show_progressbar=False, parallel=False)
+            np.testing.assert_allclose(s1.data, s.data)
+
     def test_all_components_simple(self):
-        s = self.m.as_signal(show_progressbar=None)
-        nt.assert_true(np.all(s.data == 4.))
+        for th in [True, False]:
+            s = self.m.as_signal(show_progressbar=False, parallel=th)
+            nt.assert_true(np.all(s.data == 4.))
 
     def test_one_component_simple(self):
-        s = self.m.as_signal(component_list=[0], show_progressbar=None)
-        nt.assert_true(np.all(s.data == 2.))
-        nt.assert_true(self.m[1].active)
+        for th in [True, False]:
+            s = self.m.as_signal(component_list=[0], show_progressbar=False,
+                                 parallel=th)
+            nt.assert_true(np.all(s.data == 2.))
+            nt.assert_true(self.m[1].active)
 
     def test_all_components_multidim(self):
         self.m[0].active_is_multidimensional = True
 
-        s = self.m.as_signal(show_progressbar=None)
-        nt.assert_true(np.all(s.data == 4.))
+        for th in [True, False]:
+            s = self.m.as_signal(show_progressbar=False, parallel=th)
+            nt.assert_true(np.all(s.data == 4.))
 
         self.m[0]._active_array[0] = False
-        s = self.m.as_signal(show_progressbar=None)
-        np.testing.assert_array_equal(
-            s.data, np.array([np.ones(5) * 2, np.ones(5) * 4]))
-        nt.assert_true(self.m[0].active_is_multidimensional)
+        for th in [True, False]:
+            s = self.m.as_signal(show_progressbar=False, parallel=th)
+            np.testing.assert_array_equal(
+                s.data, np.array([np.ones((2, 5)) * 2, np.ones((2, 5)) * 4]))
+            nt.assert_true(self.m[0].active_is_multidimensional)
 
     def test_one_component_multidim(self):
         self.m[0].active_is_multidimensional = True
 
-        s = self.m.as_signal(component_list=[0], show_progressbar=None)
-        nt.assert_true(np.all(s.data == 2.))
-        nt.assert_true(self.m[1].active)
-        nt.assert_false(self.m[1].active_is_multidimensional)
+        for th in [True, False]:
+            s = self.m.as_signal(component_list=[0], show_progressbar=False,
+                                 parallel=th)
+            nt.assert_true(np.all(s.data == 2.))
+            nt.assert_true(self.m[1].active)
+            nt.assert_false(self.m[1].active_is_multidimensional)
 
-        s = self.m.as_signal(component_list=[1], show_progressbar=None)
-        np.testing.assert_equal(s.data, 2.)
-        nt.assert_true(self.m[0].active_is_multidimensional)
+            s = self.m.as_signal(component_list=[1], show_progressbar=False,
+                                 parallel=th)
+            np.testing.assert_equal(s.data, 2.)
+            nt.assert_true(self.m[0].active_is_multidimensional)
 
         self.m[0]._active_array[0] = False
-        s = self.m.as_signal(component_list=[1], show_progressbar=None)
-        nt.assert_true(np.all(s.data == 2.))
+        for th in [True, False]:
+            s = self.m.as_signal(component_list=[1], show_progressbar=False,
+                                 parallel=th)
+            nt.assert_true(np.all(s.data == 2.))
 
-        s = self.m.as_signal(component_list=[0], show_progressbar=None)
-        np.testing.assert_array_equal(s.data,
-                                      np.array([np.zeros(5), np.ones(5) * 2]))
+            s = self.m.as_signal(component_list=[0], show_progressbar=False,
+                                 parallel=th)
+            np.testing.assert_array_equal(s.data, np.array([np.zeros((2, 5)),
+                                                            np.ones((2, 5)) * 2]))
 
 
 class TestCreateModel:
