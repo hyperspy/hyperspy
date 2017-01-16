@@ -335,7 +335,7 @@ HyperSpy includes an elemental database, which contains the energy of the X-ray 
 .. _eds_plot-label:
 
 Finding elements from energy
-^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To find the nearest X-ray line for a given energy, use the utility function
 :py:meth:`~.utils.eds.get_xray_lines_near_energy` to search the elemental

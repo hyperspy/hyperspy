@@ -42,6 +42,7 @@ platforms = ['Linux', 'Mac OSX', 'Windows XP/2000/NT', 'Windows 95/98/ME']
 
 keywords = ['EDX',
             'EELS',
+            'SED'
             'EFTEM',
             'EMSA',
             'FEI',
@@ -55,6 +56,8 @@ keywords = ['EDX',
             'dm3',
             'electron energy loss spectroscopy',
             'electron microscopy',
+            'scanning electron diffraction',
+            'crystal cartography'
             'emi',
             'energy dispersive x-rays',
             'hyperspectral',
@@ -71,6 +74,7 @@ keywords = ['EDX',
             'scipy',
             'ser',
             'spectroscopy',
+            'diffraction',
             'spectrum image']
 
 info = """

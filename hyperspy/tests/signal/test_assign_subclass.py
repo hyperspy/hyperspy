@@ -44,6 +44,12 @@ class TestSignalAssignSubclass:
             signal_dimension=1,
             signal_type="EDS_TEM"), hs.signals.EDSTEMSpectrum)
 
+    def test_sed_pattern(self):
+        assert_is(assign_signal_subclass(
+            dtype=np.dtype('float'),
+            signal_dimension=2,
+            signal_type="electron_diffraction"), hs.signals.ElectronDiffraction)
+
     def test_dielectric_function(self):
         assert_is(assign_signal_subclass(
             dtype=complex,
@@ -141,6 +147,17 @@ class TestConvertSignal1D:
         self.s.set_signal_type("")
         assert_true(isinstance(self.s, hs.signals.Signal1D))
 
+
+class TestConvertSignal2D:
+
+    def setUp(self):
+        self.s = hs.signals.Signal2D(np.ones((2,2)))
+
+    def test_signal2d_to_sed_pattern(self):
+        self.s.set_signal_type("electron_diffraction")
+        assert_true(isinstance(self.s, hs.signals.ElectronDiffraction))
+        self.s.set_signal_type("")
+        assert_true(isinstance(self.s, hs.signals.Signal2D))
 
 class TestConvertComplexSignal:
 

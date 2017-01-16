@@ -6,15 +6,17 @@ Metadata structure
 
 The :class:`~.signal.BaseSignal` class stores metadata in the
 :attr:`~.signal.BaseSignal.metadata` attribute that has a tree structure. By
-convention, the nodes labels are capitalized and the leaves are not
+convention, the node labels are capitalized and the leaves are not
 capitalized.
 
-When a leaf contains a quantity that is not dimensionless, the units can be
-given in an extra leaf with the same label followed by the "_units" suffix.
+When a leaf contains a quantity that has physical dimensions, the units can be
+given in an extra leaf with the same label followed by the "_units" suffix. If
+no units are specified the default values given in parentheses below are
+assumed.
 
-The metadata structure is represented in the following tree diagram. The
-default units are given in parentheses. Details about the leaves can be found
-in the following sections of this chapter.
+The metadata structure is represented in the following tree diagram. More
+detailed descriptions of the contents of the leaves can be found in the
+following sections of this chapter.
 
 ::
 
@@ -27,6 +29,7 @@ in the following sections of this chapter.
     │   │   │       ├── energy_resolution_MnKa (eV)
     │   │   │       ├── live_time (s)
     │   │   │       └── real_time (s)
+    │   │   ├── microscope
     │   │   ├── beam_current (nA)
     │   │   ├── beam_energy (keV)
     │   │   ├── convergence_angle (mrad)
@@ -48,13 +51,16 @@ in the following sections of this chapter.
     │       │       ├── exposure (s)
     │       │       ├── frame_number
     │       │       └── spectrometer
+    │       ├── microscope
     │       ├── acquisition_mode
     │       ├── beam_current (nA)
     │       ├── beam_energy (keV)
     │       ├── camera_length (mm)
     │       ├── convergence_angle (mrad)
     │       ├── magnification
-    │       ├── microscope
+    │       ├── rocking_angle (mrad)
+    │       ├── rocking_frequency (Hz)
+    │       ├── scan_rotation (º)
     │       └── tilt_stage (º)
     ├── General
     │   ├── authors
@@ -87,12 +93,12 @@ General
 =======
 
 title
-    type: Str
+    type: str
 
     A title for the signal, e.g. "Sample overview"
 
 original_filename
-    type: Str
+    type: str
 
     If the signal was loaded from a file this key stores the name of the
     original file.
@@ -103,12 +109,12 @@ time_zone
     The time zone as supported by the python-dateutil library, e.g. "UTC", "Europe/London", etc. It can also be a time offset, e.g. "+03:00" or "-05:00".
 
 time
-    type: Str
+    type: str
 
     The acquisition or creation time in ISO 8601 time format.
 
 date
-    type: Str
+    type: str
 
     The acquisition or creation date in ISO 8601 date format
 
@@ -134,15 +140,15 @@ Acquisition_instrument
 TEM
 ---
 
-Contain information relevant to transmission electron microscope signals.
+Contains information relevant to transmission electron microscope signals.
 
 microscope
-    type: Str
+    type: str
 
     The microscope model, e.g. VG 501
 
 acquisition_mode
-    type: Str
+    type: str
 
     Either 'TEM' or 'STEM'
 
@@ -151,21 +157,15 @@ camera_length
 
     The camera length in mm.
 
-convergence_angle
-    type: Float
-
-    The beam convergence semi-angle in mrad.
-
-beam_energy
-    type: Float
-
-    The energy of the electron beam in keV
-
 beam_current
-    type: Float
+    type: float
 
     The beam current in nA.
 
+beam_energy
+    type: float
+
+    The energy of the electron beam in keV
 dwell_time
     type: Float
 
@@ -180,34 +180,54 @@ magnification
     type: Float
 
     The magnification.
+convergence_angle
+    type: float
+
+    The beam convergence semi-angle in mrad.
+
+rocking_angle
+    type: float
+
+    The beam rocking semi-angle in mrad.
+
+rocking_frequency
+        type: float
+
+        The beam rocking frequency in Hz.
+
+scan_rotation
+    type: float
+
+    The rotation of the scan in degrees.
 
 tilt_stage
-    type: Float
+    type: float
 
-    The tilt of the stage in degree.
+    The tilt of the stage in degrees.
+
 
 SEM
 ---
 
-Contain information relevant to scanning electron microscope signals.
+Contains information relevant to scanning electron microscope signals.
 
 microscope
-    type: Str
+    type: str
 
     The microscope model, e.g. VG 501
 
 convergence_angle
-    type: Float
+    type: float
 
     The beam convergence semi-angle in mrad.
 
 beam_energy
-    type: Float
+    type: float
 
     The energy of the electron beam in keV
 
 beam_current
-    type: Float
+    type: float
 
     The beam current in nA.
 
@@ -217,9 +237,10 @@ magnification
     The magnification.
 
 tilt_stage
-    type: Float
+    type: float
 
     The tilt of the stage in degree.
+
 
 Detector
 --------
@@ -234,23 +255,27 @@ EELS
 This node stores parameters relevant to electron energy loss spectroscopy
 signals.
 
+spectrometer
+    type: str
+
+    The spectrometer model, e.g. Gatan 666
+
 aperture_size
     type: Float
 
     The entrance aperture size of the spectrometer in mm.
-
 collection_angle
-    type: Float
+    type: float
 
     The collection semi-angle in mrad.
 
 dwell_time
-    type: Float
+    type: float
 
     The dwell time in seconds. This is relevant for STEM acquisition
 
 exposure
-    type: Float
+    type: float
 
     The exposure time in seconds. This is relevant for TEM acquisition.
 
@@ -273,40 +298,57 @@ spectroscopy data.
 
 
 azimuth_angle
-    type: Float
+    type: float
 
     The azimuth angle of the detector in degree. If the azimuth is zero,
     the detector is perpendicular to the tilt axis.
 
 elevation_angle
-    type: Float
+    type: float
 
     The elevation angle of the detector in degree. The detector is perpendicular
     to the surface with an angle of 90.
 
 energy_resolution_MnKa
-    type: Float
+    type: float
 
     The full width at half maximum (FWHM) of the manganese K alpha
     (Mn Ka) peak in eV. This value is used as a first approximation
     of the energy resolution of the detector.
 
 real_time
-    type: Float
+    type: float
 
     The time spent to record the spectrum in second.
 
 live_time
-    type: Float
+    type: float
 
     The time spent to record the spectrum in second, compensated for the
     dead time of the detector.
+
+
+Diffraction
+^^^^^^^^^^^
+This node stores parameters relevant to electron diffraction data.
+
+
+camera_length
+    type: float
+
+    The camera length for the acquisition in metres.
+
+exposure_time
+    type: float
+
+    The exposure time for the diffraction camera in milliseconds.
+
 
 Sample
 ======
 
 description
-    type: Str
+    type: str
 
     A brief description of the sample
 
@@ -324,7 +366,7 @@ xray_lines
     and the L beta line of Nickel.
 
 thickness
-    type: Float
+    type: float
 
     The thickness of the sample in m.
 
@@ -333,7 +375,7 @@ Signal
 ======
 
 signal_type
-    type: Str
+    type: str
 
     A term that describes the signal type, e.g. EDS, PES... This information
     can be used by HyperSpy to load the file as a specific signal class and
@@ -343,12 +385,12 @@ signal_type
     PES, EELS and EDS_TEM (EDS_SEM).
 
 signal_origin
-    type: Str
+    type: str
 
     Describes the origin of the signal e.g. 'simulation' or 'experiment'.
 
 record_by
-    type: Str
+    type: str
     .. deprecated:: 2.1 (HyperSpy v1.0)
 
     One of 'spectrum' or 'image'. It describes how the data is stored in memory.
@@ -369,6 +411,7 @@ variance
     :class:`~.signal.BaseSignal` instance if the noise is heteroscedastic, in which
     case it must have the same dimensions as :attr:`~.signal.BaseSignal.data`.
 
+
 Variance_linear_model
 ^^^^^^^^^^^^^^^^^^^^^
 
@@ -376,16 +419,17 @@ In some cases the variance can be calculated from the data using a simple linear
 model: ``variance = (gain_factor * data + gain_offset) * correlation_factor``.
 
 gain_factor
-    type: Float
+    type: float
 
 gain_offset
-    type: Float
+    type: float
 
 correlation_factor
-    type: Float
+    type: float
 
 parameters_estimation_method
-    type: Str
+    type: str
+
 
 _Internal_parameters
 ====================
@@ -393,6 +437,7 @@ _Internal_parameters
 This node is "private" and therefore is not displayed when printing the
 :attr:`~.signal.BaseSignal.metadata` attribute. For example, an "energy" leaf
 should be accompanied by an "energy_units" leaf.
+
 
 Stacking_history
 ----------------
@@ -409,6 +454,7 @@ axis
     type: int
 
    The axis index in axes manager on which the dataset were stacked.
+
 
 Folding
 -------
