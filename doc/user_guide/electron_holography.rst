@@ -66,6 +66,17 @@ To reconstruct the hologram with a vacuum reference wave, the reference hologram
     >>> reference_hologram = hs.datasets.example_signals.reference_hologram()
     >>> wave_image = im.reconstruct_phase(reference_hologram, sb_position=sb_position, sb_size=sb_sb_size)
 
+Using reconstructed wave one can access its amplitude and phase (also unwrapped phase) using :meth:`~._signals.complex_signal2d.ComplexSignal2D.amplitude` and
+ :meth:`~._signals.complex_signal2d.ComplexSignal2D.phase` properties (also :meth:`~._signals.complex_signal2d.ComplexSignal2D.unwrapped_phase` method):
+
+ .. code-block:: python
+
+    >>> wave_image.unwrapped_phase().plot()
+
+ .. figure::  images/holography_unwrapped_phase.png
+    :align:   center
+
+   Preferences user interface.
 
 Additionally, it is possible to change the smoothness of the sideband filter edge (which is by default set to 5% of the
 filter radius) using parameter `sb_smoothness`.

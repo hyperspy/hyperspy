@@ -23,6 +23,8 @@ def load_1D_EDS_SEM_spectrum():
     """
     Load an EDS-SEM spectrum
 
+    Notes
+    -----
     - Sample: EDS-TM002 provided by BAM (www.webshop.bam.de)
     - SEM Microscope: Nvision40 Carl Zeiss
     - EDS Detector: X-max 80 from Oxford Instrument
@@ -37,6 +39,8 @@ def load_1D_EDS_TEM_spectrum():
     """
     Load an EDS-TEM spectrum
 
+    Notes
+    -----
     - Sample: FePt bimetallic nanoparticles
     - SEM Microscope: Tecnai Osiris 200 kV D658 AnalyticalTwin
     - EDS Detector: Super-X 4 detectors Brucker
@@ -51,6 +55,8 @@ def load_object_hologram():
     """
     Load an object hologram image
 
+    Notes
+    -----
     - Sample: Fe needle with YOx nanoparticle inclusions [Migunov, V. et al.
     Model-independent measurement of the charge density distribution along an Fe atom probe needle using
     off-axis electron holography without mean inner potential effects. Journal of Applied Physics 117, 134301 (2015).
@@ -69,6 +75,8 @@ def load_reference_hologram():
     """
     Load a reference hologram image
 
+    Notes
+    -----
     - Sample: Fe needle with YOx nanoparticle inclusions [Migunov, V. et al.
     Model-independent measurement of the charge density distribution along an Fe atom probe needle using
     off-axis electron holography without mean inner potential effects. Journal of Applied Physics 117, 134301 (2015).
