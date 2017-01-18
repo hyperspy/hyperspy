@@ -116,7 +116,7 @@ before_deploy:
   - "%CMD_IN_ENV% python.exe -c \"import sys; print(sys.version)\""
   - "%CMD_IN_ENV% python.exe setup.py recythonize"
   - "%CMD_IN_ENV% python.exe setup.py install"
-  - "%CMD_IN_ENV% pip install --upgrade hyperspyui"
+  - "%CMD_IN_ENV% pip install hyperspyui"
   # setting back the config:
   - "ren %WP_INSTDIR%\\settings\\pydistutils_bak.cfg pydistutils.cfg"
   # Custom installer step
