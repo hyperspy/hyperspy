@@ -101,7 +101,7 @@ before_deploy:
   - ps: Add-AppveyorMessage "Setting up WinPython environment..."
   - ps: Start-FileDownload ('http://freefr.dl.sourceforge.net/project/nsis/NSIS%202/2.46/nsis-2.46-strlen_8192.zip') ../nsis_patch.zip
   - ps: if ((Get-FileHash '../nsis_patch.zip').Hash -ne '3BA22DDC0F14DBD75A9487EB6C9BD85F535E7038927D251103B97E0AAD94EEAD') { exit(1) }
-  - "7z x ../nsis_patch.zip -o%NSIS_DIR -aoa"
+  - "7z x ../nsis_patch.zip -o%NSIS_DIR% -aoa"
   - ps: Start-FileDownload ('http://nsis.sourceforge.net/mediawiki/images/e/eb/Textreplace.zip') ../Textreplace.zip
   - ps: if ((Get-FileHash '../Textreplace.zip').Hash -ne '6462C0C22E87E7C81DD9076D40ACC74C515243A56F10F4F8FE720F7099DB3BA2') { exit(1) }
   - "7z x ../Textreplace.zip -o%NSIS_DIR% -aoa"
