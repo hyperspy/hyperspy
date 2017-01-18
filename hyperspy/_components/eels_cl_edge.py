@@ -150,6 +150,8 @@ class EELSCLEdge(Component):
         self.onset_energy.events.value_changed.connect(self._integrate_GOS, [])
         self.onset_energy.events.value_changed.connect(
             self._calculate_knots, [])
+        self.ext_fine_structure = []
+        self._fine_structure_onset = 0
 
     # Automatically fix the fine structure when the fine structure is
     # disable.
@@ -240,12 +242,22 @@ class EELSCLEdge(Component):
     def _onset_energy(self):
         return self.onset_energy.value
 
+    @property
+    def fine_structure_onset(self):
+        return self._fine_structure_onset
+
+    @fine_structure_onset.setter
+    def fine_structure_onset(self, value):
+        if not np.allclose(value, self._fine_structure_onset):
+            self._fine_structure_onset = value
+            self._set_fine_structure_coeff()
+
     def _set_fine_structure_coeff(self):
         if self.energy_scale is None:
             return
         self.fine_structure_coeff._number_of_elements = int(
             round(self.fine_structure_smoothing *
-                  self.fine_structure_width /
+                  (self.fine_structure_width - self.fine_structure_onset) /
                   self.energy_scale)) + 4
         self.fine_structure_coeff.bmin = None
         self.fine_structure_coeff.bmax = None
@@ -321,6 +333,9 @@ class EELSCLEdge(Component):
         if self.fine_structure_active is True:
             bfs = bsignal * (
                 E < (self.onset_energy.value + self.fine_structure_width))
+            if self.fine_structure_onset:
+                bfs = bfs * E <= (
+                    self.onset_energy.value + self.fine_structure_width)
             cts[bfs] = splev(
                 E[bfs], (
                     self.__knots,
