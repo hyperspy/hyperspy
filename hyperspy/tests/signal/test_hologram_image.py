@@ -76,12 +76,10 @@ class TestCaseHologramImage(object):
         self.holo_image3 = hs.signals.HologramImage(holo3.reshape(2, 3, self.img_size3x, self.img_size3y))
 
     def test_set_microscope_parameters(self):
-        self.holo_image.set_microscope_parameters(beam_energy=300., biprism_voltage=80.5, tilt_alpha=2.2,
-                                                  tilt_beta=0.)
+        self.holo_image.set_microscope_parameters(beam_energy=300., biprism_voltage=80.5, tilt_stage=2.2)
         nt.assert_equal(self.holo_image.metadata.Acquisition_instrument.TEM.beam_energy, 300.)
-        nt.assert_equal(self.holo_image.metadata.Acquisition_instrument.TEM.Holography.Biprism_voltage, 80.5)
-        nt.assert_equal(self.holo_image.metadata.Acquisition_instrument.TEM.Tilt_alpha, 2.2)
-        nt.assert_equal(self.holo_image.metadata.Acquisition_instrument.TEM.Tilt_beta, 0.)
+        nt.assert_equal(self.holo_image.metadata.Acquisition_instrument.TEM.Biprism.voltage, 80.5)
+        nt.assert_equal(self.holo_image.metadata.Acquisition_instrument.TEM.tilt_stage, 2.2)
 
     def test_reconstruct_phase(self):
 

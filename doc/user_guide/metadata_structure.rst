@@ -30,7 +30,7 @@ in the following sections of this chapter.
     │   │   ├── beam_current (nA)
     │   │   ├── beam_energy (keV)
     │   │   ├── convergence_angle (mrad)
-    │       ├── magnification
+    │   │   ├── magnification
     │   │   ├── microscope
     │   │   └── tilt_stage (º)
     │   └── TEM
@@ -41,13 +41,23 @@ in the following sections of this chapter.
     │       │   │   ├── energy_resolution_MnKa (eV)
     │       │   │   ├── live_time (s)
     │       │   │   └── real_time (s)
-    │       │   └── EELS
-    │       │       ├── aperture (mm)
-    │       │       ├── collection_angle (mrad)
-    │       │       ├── dwell_time (s)
+    │       │   ├── EELS
+    │       │   │   ├── aperture (mm)
+    │       │   │   ├── collection_angle (mrad)
+    │       │   │   ├── dwell_time (s)
+    │       │   │   ├── exposure (s)
+    │       │   │   ├── frame_number
+    │       │   │   └── spectrometer
+    │       │   └── TEM_camera
+    │       │       ├── detection_method
     │       │       ├── exposure (s)
-    │       │       ├── frame_number
-    │       │       └── spectrometer
+    │       │       ├── model
+    │       │       ├── pixel_size (um)
+    │       │       └── position
+    │       ├── Biprism
+    │       │   ├── azimuth_angle (º)
+    │       │   ├── position
+    │       │   └── voltage (V)
     │       ├── acquisition_mode
     │       ├── beam_current (nA)
     │       ├── beam_energy (keV)
@@ -66,6 +76,7 @@ in the following sections of this chapter.
     │   ├── time_zone
     │   └── title
     ├── Sample
+    │   ├── credits
     │   ├── description
     │   ├── elements
     │   ├── thickness
@@ -264,7 +275,6 @@ spectrometer
 
     The spectrometer model, e.g. Gatan Enfinium ER (Model 977).
 
-
 EDS
 ^^^
 
@@ -302,8 +312,63 @@ live_time
     The time spent to record the spectrum in second, compensated for the
     dead time of the detector.
 
+TEM_camera
+^^^^^^^^^^
+
+This node stores parameters of TEM camera used for the data acquisition.
+
+detection_method
+    type: Str
+
+    Camera method either 'Direct electron detector' or 'Scintillated'
+
+exposure
+    type: Float
+
+    Camera exposure time in second
+
+model
+    type: Str
+
+    Camera model e.g Gatan K2 IS (Model 1010)
+
+pixel_size
+    type: Float
+
+    Physical size of camera pixels in micron
+
+position
+    type: Str
+
+    Position of the camera in column is either 'Top', or 'GIF' or 'FluCam', or '35mm port'
+
+Biprism
+-------
+
+This node stores parameters of biprism used in off-axis electron holography
+
+azimuth_angle (º)
+    type: Float
+
+    Rotation angle of the biprism in degree
+
+position
+    type: Str
+
+    Position of the biprism in microscope column, e.g. Selected area aperture plane
+
+voltage
+    type: Float
+
+    Voltage of electrostatic biprism in volts
+
 Sample
 ======
+
+credits
+    type: Str
+
+    Acknowledgment of sample supplier, e.g. Prepared by Putin, Vladimir V.
 
 description
     type: Str

@@ -42,8 +42,7 @@ class HologramImage(Signal2D):
     def set_microscope_parameters(self,
                                   beam_energy=None,
                                   biprism_voltage=None,
-                                  tilt_alpha=None,
-                                  tilt_beta=None):
+                                  tilt_stage=None):
         """Set the microscope parameters.
 
         If no arguments are given, raises an interactive mode to fill
@@ -55,10 +54,8 @@ class HologramImage(Signal2D):
             The energy of the electron beam in keV
         biprism_voltage : float
             In volts
-        tilt_alpha : float
-            In degree
-        tilt_beta : float
-            In degree
+        tilt_stage : float
+            In degrees
 
         Examples
         --------
@@ -77,14 +74,10 @@ class HologramImage(Signal2D):
             md.set_item("Acquisition_instrument.TEM.beam_energy", beam_energy)
         if biprism_voltage is not None:
             md.set_item(
-                "Acquisition_instrument.TEM.Holography.Biprism_voltage",
+                "Acquisition_instrument.TEM.Biprism.voltage",
                 biprism_voltage)
-        if tilt_alpha is not None:
-            md.set_item("Acquisition_instrument.TEM.Tilt_alpha", tilt_alpha)
-        if tilt_beta is not None:
-            md.set_item(
-                "Acquisition_instrument.TEM.Tilt_beta",
-                tilt_beta)
+        if tilt_stage is not None:
+            md.set_item("Acquisition_instrument.TEM.tilt_stage", tilt_stage)
 
         # if {beam_energy, biprism_voltage, tilt_alpha, tilt_beta} == {None}:
         #     self._are_microscope_parameters_missing()
