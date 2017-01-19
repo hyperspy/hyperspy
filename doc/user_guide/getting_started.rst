@@ -221,8 +221,61 @@ in the Signal2D subclass.
     >>> im
     <Signal2D, title: , dimensions: (30|20, 10)>
 
-Note the HyperSpy rearranges the axes position to match the following pattern:
-(navigatons axis 0,..., navigation axis n|signal axis 0,..., signal axis n).
+Note the HyperSpy rearranges the axes when compared to the array order. It does
+so due to a couple of things that all contribute:
+
+
+- Depending how the array is arranged, some axes are faster to iterate than
+  others. Consider an example of a book as the dataset in question. It is
+  trivially simple to look at letters in a line, and then lines down the page,
+  and finally pages in the whole book.  However if your words are written
+  vertically, it's slightly inconvenient to read top-down (the lines are still
+  horizontal, it's just the meaning that's vertical!). It's just awful if
+  every letter is on a different page, and for every word you have to turn 5-6
+  pages. Exactly the same idea applies here - in order to iterate through the
+  data (most often for plotting, but applies for any other operation too), you
+  want to keep it ordered for "fast access".
+
+- In python (more explicitly `numpy`) the "fast axes order" is the C-order.
+  This means that the **last** axis of a numpy array is fastest to iterate over
+  (i.e. the lines in the book). There are alternatives in other languages,
+  namely the F (for Fortran)-order, where it's the reverse - the first axis of
+  an array is the fastest to iterate over. Usually in all implementations
+  iterating over some axis in the middle is slow, as you have to "pick the same
+  line from all pages", or something similar.
+
+- Most datasets are recorded in the C-order. Taking EDS / EELS map as an
+  example, the dataset has three dimensions/axes - the fast, and slow
+  real-space, and the energy channels. Thinking how the microscope works,
+  it's obvious that the energy axis is the fastest, then the x, and finally
+  the y is the slow axis. To record it in C-order, it is stored in an array
+  (y, x, E). If this was a SPED dataset, it would be recorded in (y_real,
+  x_real, y_recip, x_recip) with real and reciprocal spaces respectively.
+
+- In HyperSpy we want to order these things for humans. **Which means x axis
+  goes before y**. For EDS/EELS we go from (y, x, E) to `<x, y | E>` in
+  HyperSpy, and for SPED from (y2, x2, y1, x1) to `<x2, y2 | x1, y1>`. So
+  actually the axes that are "close" in last example are not y2 and x1,
+  but x2 and y1, even though in HyperSpy these look to be on the opposite
+  ends.
+
+- Extending this to arbitrary dimensions, we essentially reverse the numpy
+  axes, chop it into two chunks (signal and navigation), and then swap those
+  chunks, at least when printing. In example, this happens:
+
+.. code-block:: bash
+    (a1, a2, a3, a4, a5, a6) # original (numpy)
+    (a6, a5, a4, a3, a2, a1) # reverse
+    (a6, a5) (a4, a3, a2, a1) # chop
+    (a4, a3, a2, a1) (a6, a5) # swap (HyperSpy)
+
+- When `as_signal*D` is called, it really just calls `transpose` with
+  `optimize=True`. The `optimize` argument means that if the user happened to
+  request to read the book in the way where one word with 5 letters requires to
+  look at 5 different pages, then HyperSpy (`numpy`) **rewrites** the book so
+  that they are actually in lines now.  This obviously creates a new book (copy
+  of data, more memory, etc.), but it's fast to read!
+
 This is the order used for :ref:`indexing the BaseSignal class <signal.indexing>`.
 
 .. _Setting_axis_properties:
