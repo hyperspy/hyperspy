@@ -41,19 +41,13 @@ in the following sections of this chapter.
     │       │   │   ├── energy_resolution_MnKa (eV)
     │       │   │   ├── live_time (s)
     │       │   │   └── real_time (s)
-    │       │   ├── EELS
-    │       │   │   ├── aperture (mm)
-    │       │   │   ├── collection_angle (mrad)
-    │       │   │   ├── dwell_time (s)
-    │       │   │   ├── exposure (s)
-    │       │   │   ├── frame_number
-    │       │   │   └── spectrometer
-    │       │   └── TEM_camera
-    │       │       ├── detection_method
+    │       │   └── EELS
+    │       │       ├── aperture (mm)
+    │       │       ├── collection_angle (mrad)
+    │       │       ├── dwell_time (s)
     │       │       ├── exposure (s)
-    │       │       ├── model
-    │       │       ├── pixel_size (um)
-    │       │       └── position
+    │       │       ├── frame_number
+    │       │       └── spectrometer
     │       ├── Biprism
     │       │   ├── azimuth_angle (º)
     │       │   ├── position
@@ -311,36 +305,6 @@ live_time
 
     The time spent to record the spectrum in second, compensated for the
     dead time of the detector.
-
-TEM_camera
-^^^^^^^^^^
-
-This node stores parameters of TEM camera used for the data acquisition.
-
-detection_method
-    type: Str
-
-    Camera method either 'Direct electron detector' or 'Scintillated'
-
-exposure
-    type: Float
-
-    Camera exposure time in second
-
-model
-    type: Str
-
-    Camera model e.g Gatan K2 IS (Model 1010)
-
-pixel_size
-    type: Float
-
-    Physical size of camera pixels in micron
-
-position
-    type: Str
-
-    Position of the camera in column is either 'Top', or 'GIF' or 'FluCam', or '35mm port'
 
 Biprism
 -------
