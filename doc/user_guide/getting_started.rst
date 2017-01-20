@@ -269,17 +269,10 @@ chunks, at least when printing. As an example:
     (a6, a5) (a4, a3, a2, a1) # chop
     (a4, a3, a2, a1) (a6, a5) # swap (HyperSpy)
 
+In the background, HyperSpy also takes care of storing the data in memory in
+a "machine-friendly" way, so that iterating over the navigation axes is always
+fast.
 
-
-- When `as_signal*D` is called, it really just calls `transpose` with
-  `optimize=True`. The `optimize` argument means that if the user happens to
-  request to read the book such that one word with 5 letters requires looking
-  at 5 different pages, then HyperSpy (`numpy`) will **rewrite** the book so
-  that they are actually in lines now.  This will obviously create a new book
-  (i.e.. a copy of the data requiring more memory), but it will be faster to
-  read!
-
-This is the order used for :ref:`indexing the BaseSignal class <signal.indexing>`.
 
 .. _Setting_axis_properties:
 
