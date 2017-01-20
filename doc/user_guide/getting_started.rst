@@ -245,21 +245,26 @@ does this for several reasons:
   slow, as you have to "pick the same line from all pages", or something
   similar.
 
-- Most datasets are recorded in C order. Taking an EDS / EELS map as an
-  example, the dataset has three dimensions/axes - the fast, and slow
-  real-space, and the energy channels. Thinking how the microscope works,
-  it's obvious that the energy axis is the fastest, then the x, and finally
-  the y is the slow axis. To record it in C-order, it is stored in an array
-  (y, x, E). If this was a SPED dataset, it would be recorded in (y_real,
-  x_real, y_recip, x_recip) with real and reciprocal spaces respectively.
+- When a dataset is loaded, HyperSpy generally stores the data in a `numpy`
+  array in C order. Consider the book example again. We have three dimensions
+  in this "dataset" - horizontal lines (X), vertical columns (Y) and pages in
+  the book (P). These dimensions also clearly can be
+  arranged in order by how quickly one can read one full dimension - X being the
+  fastest (reading a line of text is nearly effortless), Y taking some getting
+  used to, and finally P being slowest and the least comfortable. To record
+  such dataset in C order (last is fastest), we arrange the axes in (P, Y,
+  X) order. If we had a full library of books (another axis, B), this would
+  extend to (B, P, Y, X).
 
 - In HyperSpy we want to order these things for humans, namely **the x axis
-  goes before y**. For EDS/EELS we go from (y, x, E) to `<x, y | E>` in
-  HyperSpy, and for SPED from (y2, x2, y1, x1) to `<x2, y2 | x1, y1>`. So
-  actually the axes that are "close" in the last example are not y2 and x1,
-  but x2 and y1, even though in HyperSpy these appear to be at opposite ends.
+  goes before y**. Let's say the library had all pages of all books taken
+  pictures of to create the (B, P, Y, X) dataset. To look at those pictures in
+  HyperSpy, we move the axes to be in the order (P, B | X, Y), where X is, in
+  fact, before Y, and pages are before books. This can be confusing,
+  because in this example B and X axes seem to be "close", but in the
+  underlying array it is the opposite.
 
-- Extending this to arbitrary dimensions, we essentially reverse the numpy
+- Extending this to arbitrary dimensions, by default, we reverse the numpy
   axes, chop it into two chunks (signal and navigation), and then swap those
   chunks, at least when printing. As an example:
 
