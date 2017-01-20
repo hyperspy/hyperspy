@@ -174,7 +174,7 @@ signals:
     >>> hs.datasets.example_signals.EDS_TEM_Spectrum().plot()
 
 .. _eelsdb-label:
-    
+
 .. versionadded:: 1.0
     :py:func:`~.misc.eels.eelsdb.eelsdb` function.
 
@@ -221,58 +221,55 @@ in the Signal2D subclass.
     >>> im
     <Signal2D, title: , dimensions: (30|20, 10)>
 
-Note that HyperSpy rearranges the axes when compared to the array order. It
-does this for several reasons:
+Note that HyperSpy rearranges the axes when compared to the array order. The
+following few paragraphs explain how and why it does it.
 
+Depending how the array is arranged, some axes are faster to iterate than
+others. Consider an example of a book as the dataset in question. It is
+trivially simple to look at letters in a line, and then lines down the page,
+and finally pages in the whole book.  However if your words are written
+vertically, it's slightly inconvenient to read top-down (the lines are still
+horizontal, it's just the meaning that's vertical!). It's just awful if
+every letter is on a different page, and for every word you have to turn 5-6
+pages. Exactly the same idea applies here - in order to iterate through the
+data (most often for plotting, but applies for any other operation too), you
+want to keep it ordered for "fast access".
 
-- Depending how the array is arranged, some axes are faster to iterate than
-  others. Consider an example of a book as the dataset in question. It is
-  trivially simple to look at letters in a line, and then lines down the page,
-  and finally pages in the whole book.  However if your words are written
-  vertically, it's slightly inconvenient to read top-down (the lines are still
-  horizontal, it's just the meaning that's vertical!). It's just awful if
-  every letter is on a different page, and for every word you have to turn 5-6
-  pages. Exactly the same idea applies here - in order to iterate through the
-  data (most often for plotting, but applies for any other operation too), you
-  want to keep it ordered for "fast access".
+In Python (more explicitly `numpy`) the "fast axes order" is C order (also
+called row-major order). This means that the **last** axis of a numpy array is
+fastest to iterate over (i.e. the lines in the book). An alternative ordering
+convention is the F order (column-major), where it is the reverse - the first
+axis of an array is the fastest to iterate over. In both cases, the further an
+axis is from the `fast axis` the slower it  is to iterate over it. In the book
+analogy you could think, for example, on reading the first lines of all pages,
+then the second and so on.
 
-- In Python (more explicitly `numpy`) the "fast axes order" is C order (also
-  called row-major order). This means that the **last** axis of a numpy array
-  is fastest to iterate over (i.e. the lines in the book). There are
-  alternatives in other languages, namely F order (column-major), where it is
-  the reverse - the first axis of an array is the fastest to iterate over.
-  Usually in all implementations iterating over some axis in the middle is
-  slow, as you have to "pick the same line from all pages", or something
-  similar.
+When data is acquired sequentially it is usually stored in acquisition
+order.When a dataset is loaded, HyperSpy generally stores in memory in the same
+order, which is good for the computer. However, HyperSpy aims at making things
+easy for humans, so it reorders and classify the axes for them.
+Let's imagine a single numpy array that contains
+pictures of a scene acquired with different exposure times on different days. In
+numpy the array dimensions are  ``(D, E, Y, X)``. This order makes it fast to
+iterate over the images in the order in which they were acquired. From a human
+point of view, this dataset is just a collection of images, so HyperSpy first
+classifies the image axes (X and Y) as `signal axes` and the remaining axes the
+`navigation axes`. The it reverses the order of each sets of axes because many
+humans are used to get the `X` axis first and, more generally the axes in
+acquisition order from left to right. So, the same axes in HyperSpy are
+displayed like this: (E, D | X, Y).
 
-- When a dataset is loaded, HyperSpy generally stores the data in a `numpy`
-  array in C order. Consider the book example again. We have three dimensions
-  in this "dataset" - horizontal lines (X), vertical columns (Y) and pages in
-  the book (P). These dimensions also clearly can be
-  arranged in order by how quickly one can read one full dimension - X being the
-  fastest (reading a line of text is nearly effortless), Y taking some getting
-  used to, and finally P being slowest and the least comfortable. To record
-  such dataset in C order (last is fastest), we arrange the axes in (P, Y,
-  X) order. If we had a full library of books (another axis, B), this would
-  extend to (B, P, Y, X).
-
-- In HyperSpy we want to order these things for humans, namely **the x axis
-  goes before y**. Let's say the library had all pages of all books taken
-  pictures of to create the (B, P, Y, X) dataset. To look at those pictures in
-  HyperSpy, we move the axes to be in the order (P, B | X, Y), where X is, in
-  fact, before Y, and pages are before books. This can be confusing,
-  because in this example B and X axes seem to be "close", but in the
-  underlying array it is the opposite.
-
-- Extending this to arbitrary dimensions, by default, we reverse the numpy
-  axes, chop it into two chunks (signal and navigation), and then swap those
-  chunks, at least when printing. As an example:
+Extending this to arbitrary dimensions, by default, we reverse the numpy
+axes, chop it into two chunks (signal and navigation), and then swap those
+chunks, at least when printing. As an example:
 
 .. code-block:: bash
     (a1, a2, a3, a4, a5, a6) # original (numpy)
     (a6, a5, a4, a3, a2, a1) # reverse
     (a6, a5) (a4, a3, a2, a1) # chop
     (a4, a3, a2, a1) (a6, a5) # swap (HyperSpy)
+
+
 
 - When `as_signal*D` is called, it really just calls `transpose` with
   `optimize=True`. The `optimize` argument means that if the user happens to
