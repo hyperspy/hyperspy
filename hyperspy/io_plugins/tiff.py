@@ -267,7 +267,8 @@ def _parse_scale_unit(tiff, op, dc, force_read_resolution):
     if '65008' in op.keys():
         offsets['z'] = op['65008']   # z offset
     if '65022' in op.keys():
-        intensity_axis['units'] = _decode_string(op['65022'])   # intensity units
+        intensity_axis['units'] = _decode_string(
+            op['65022'])   # intensity units
     if '65024' in op.keys():
         intensity_axis['offset'] = op['65024']   # intensity offset
     if '65025' in op.keys():
