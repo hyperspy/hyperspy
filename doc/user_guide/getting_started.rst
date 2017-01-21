@@ -252,11 +252,11 @@ array that contains pictures of a scene acquired with different exposure times
 on different days. In numpy the array dimensions are  ``(D, E, Y, X)``. This
 order makes it fast to iterate over the images in the order in which they were
 acquired. From a human point of view, this dataset is just a collection of
-images, so HyperSpy first classifies the image axes (X and Y) as `signal axes`
-and the remaining axes the `navigation axes`. The it reverses the order of each
-sets of axes because many humans are used to get the `X` axis first and, more
-generally the axes in acquisition order from left to right. So, the same axes
-in HyperSpy are displayed like this: (E, D | X, Y).
+images, so HyperSpy first classifies the image axes (``X`` and ``Y``) as
+`signal axes` and the remaining axes the `navigation axes`. Then it reverses the
+order of each sets of axes because many humans are used to get the ``X`` axis
+first and, more generally the axes in acquisition order from left to right. So,
+the same axes in HyperSpy are displayed like this: ``(E, D | X, Y)``.
 
 Extending this to arbitrary dimensions, by default, we reverse the numpy axes,
 chop it into two chunks (signal and navigation), and then swap those chunks, at
