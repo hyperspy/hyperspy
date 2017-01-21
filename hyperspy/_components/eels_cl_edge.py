@@ -90,6 +90,8 @@ class EELSCLEdge(Component):
 
     def __init__(self, element_subshell, GOS=None):
         # Declare the parameters
+        self.int_fine_structure = True
+        self.ext_fine_structure = []
         Component.__init__(self,
                            ['intensity',
                             'fine_structure_coeff',
@@ -150,8 +152,9 @@ class EELSCLEdge(Component):
         self.onset_energy.events.value_changed.connect(self._integrate_GOS, [])
         self.onset_energy.events.value_changed.connect(
             self._calculate_knots, [])
-        self.ext_fine_structure = []
         self._fine_structure_onset = 0
+        self.where_ext_fine_structure_zero = True
+        self.events.active_changed.connect(self._set_active_ext_fine_structure)
 
     # Automatically fix the fine structure when the fine structure is
     # disable.
@@ -162,11 +165,14 @@ class EELSCLEdge(Component):
         return self.__fine_structure_active
 
     def _set_fine_structure_active(self, arg):
-        if arg is False:
+        if self.int_fine_structure and arg is False:
             self.fine_structure_coeff.free = False
+        for comp in self.ext_fine_structure:
+            comp.active = arg
         self.__fine_structure_active = arg
         # Force replot
-        self.intensity.value = self.intensity.value
+        if self.int_fine_structure:
+            self.intensity.value = self.intensity.value
     fine_structure_active = property(_get_fine_structure_active,
                                      _set_fine_structure_active)
 
@@ -219,6 +225,10 @@ class EELSCLEdge(Component):
             # All the parameters may not be defined yet...
             pass
 
+    def _set_active_ext_fine_structure(self, active, **kwargs):
+        for comp in self.ext_fine_structure:
+            comp.active = active
+
     @property
     def fine_structure_smoothing(self):
         """Controls the level of the smoothing of the fine structure.
@@ -253,7 +263,7 @@ class EELSCLEdge(Component):
             self._set_fine_structure_coeff()
 
     def _set_fine_structure_coeff(self):
-        if self.energy_scale is None:
+        if self.energy_scale is None or not self.int_fine_structure:
             return
         self.fine_structure_coeff._number_of_elements = int(
             round(self.fine_structure_smoothing *
@@ -328,24 +338,28 @@ class EELSCLEdge(Component):
             # unnecessarily.
             self._integrate_GOS()
         Emax = self.GOS.energy_axis[-1] + self.GOS.energy_shift
-        cts = np.zeros((len(E)))
-        bsignal = (E >= self.onset_energy.value)
-        if self.fine_structure_active is True:
-            bfs = bsignal * (
-                E < (self.onset_energy.value + self.fine_structure_width))
-            if self.fine_structure_onset:
-                bfs = bfs * E <= (
-                    self.onset_energy.value + self.fine_structure_width)
-            cts[bfs] = splev(
-                E[bfs], (
-                    self.__knots,
-                    self.fine_structure_coeff.value + (0,) * 4,
-                    3))
-            bsignal[bfs] = False
-        itab = bsignal * (E <= Emax)
-        cts[itab] = self.tab_xsection(E[itab])
-        bsignal[itab] = False
-        cts[bsignal] = self.A * E[bsignal] ** -self.r
+        cts = np.zeros_like(E, dtype="float")
+        if self.fine_structure_active:
+            ifsx1 = self.onset_energy.value + self.fine_structure_onset
+            ifsx2 = self.onset_energy.value + self.fine_structure_width
+            if self.int_fine_structure:
+                bifs = (E >= ifsx1) & (E < ifsx2)
+                cts[bifs] = splev(
+                    E[bifs],
+                    (self.__knots, self.fine_structure_coeff.value + (0,) * 4, 3))
+            if self.where_ext_fine_structure_zero:
+                itab = (E < Emax) & (E >= ifsx2)
+            else:
+                itab = E < Emax & E >= self.onset_energy.value
+                if self.int_fine_structure:
+                    itab[bifs] = False
+        else:
+            itab = (E < Emax) & (E >= self.onset_energy.value)
+        if itab.any():
+            cts[itab] = self.tab_xsection(E[itab])
+        bext = E >= Emax
+        if bext.any():
+            cts[bext] = self.A * E[bext] ** -self.r
         return cts * self.intensity.value
 
     def grad_intensity(self, E):
