@@ -4174,8 +4174,8 @@ class BaseSignal(FancySlicing,
                 signal_axes = tuple(ax for ax in ax_list if ax not in
                                     navigation_axes)
             elif navigation_axes is None:
-                signal_axes = am.navigation_axes
-                navigation_axes = am.signal_axes
+                signal_axes = list(reversed(am.navigation_axes))
+                navigation_axes = list(reversed(am.signal_axes))
             else:
                 raise ValueError(
                     "The passed navigation_axes argument is not valid")
