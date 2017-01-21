@@ -521,7 +521,8 @@ class EELSModel(Model1D):
         to_activate_fs = []
         for edge_ in [edge, ] + twins:
             if (edge_.fine_structure_active is True and
-                    edge_.fine_structure_coeff.free is True):
+                    edge_.fine_structure_coeff.free is True or
+                    edge_.ext_fine_structure):
                 to_activate_fs.append(edge_)
         self.disable_fine_structure(to_activate_fs)
 
@@ -718,7 +719,8 @@ class EELSModel(Model1D):
         for edge in edges_list:
             if edge.isbackground is False:
                 edge.fine_structure_active = True
-                edge.fine_structure_coeff.free = True
+                if edge.int_fine_structure:
+                    edge.fine_structure_coeff.free = True
         self.resolve_fine_structure()
 
     def disable_fine_structure(self, edges_list=None):
