@@ -99,7 +99,8 @@ class ProtochipsCSV(object):
         d['Time units'] = self.time_units
         for quantity in self.logged_quantity_name_list:
             d['%s_units' % quantity] = self._parse_quantity_units(quantity)
-        d['User'] = self.user
+        if self.user:
+            d['User'] = self.user
         d['Calibration file name'] = self._parse_calibration_file()
         d['Time axis'] = self._get_metadata_time_axis()
         # Add the notes here, because there are not well formatted enough to
@@ -112,10 +113,9 @@ class ProtochipsCSV(object):
         return {'General': {'original_filename': os.path.split(self.filename)[1],
                             'title': '%s (%s)' % (quantity,
                                                   self._parse_quantity_units(quantity)),
-                            'authors': self.user,
                             'date': date,
                             'time': time,
-                            'notes': ''},
+                            'authors': self.user if self.user else ""},
                 "Signal": {'signal_type': '',
                            'quantity': self._parse_quantity(quantity)}}
 
@@ -206,9 +206,16 @@ class ProtochipsCSV(object):
                 attr_name = param.replace(' ', '_').lower()
                 self.__dict__[attr_name] = value
             i += 1
-            param, value = self._parse_metadata_header(self.raw_header[i])
-
-        self.user = self._parse_metadata_header(self.raw_header[i])[1]
+            try:
+                param, value = self._parse_metadata_header(self.raw_header[i])
+            except ValueError:  # when the last line of header does not contain 'User'
+                self.user = None
+                break
+            except IndexError:
+                _logger.warning("The metadata may not be parsed properly.")
+                break
+        else:
+            self.user = value
         self.start_datetime = np.datetime64(dt.strptime(date + time,
                                                         "%Y.%m.%d%H:%M:%S.%f"))
 

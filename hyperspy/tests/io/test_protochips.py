@@ -62,11 +62,15 @@ def test_read_protochips_gas_cell():
     nt.assert_equal(s[4].metadata.Signal.quantity, 'Pressure (Torr)')
 
 
-def datetime_gas_cell():
-    dt_np = np.datetime64('2014-12-15T19:07:04.165000')
+def get_datetime(dt):
+    dt_np = np.datetime64(dt)
     dt_str = np.datetime_as_string(dt_np)
     date, time = dt_str.split('T')
     return date, time, dt_np
+
+
+datetime_gas_cell = get_datetime('2014-12-15T19:07:04.165000')
+datetime_gas_cell_no_user = get_datetime('2016-10-17T16:59:20.391000')
 
 
 def test_loading_random_csv_file():
@@ -90,7 +94,7 @@ class test_ProtochipsGasCellCSV():
         self.s_list = hs.load(filename)
 
     def test_read_metadata(self):
-        date, time, dt_np = datetime_gas_cell()
+        date, time, dt_np = datetime_gas_cell
         for s in self.s_list:
             nt.assert_equal(s.metadata.General.date, date)
             nt.assert_equal(s.metadata.General.time, time)
@@ -104,13 +108,42 @@ class test_ProtochipsGasCellCSV():
                         ' are saved in metadata.General.notes')
         nt.assert_equal(om.Holder_Pressure_units, 'Torr')
         nt.assert_equal(om.Holder_Temperature_units, 'Degrees C')
-        nt.assert_equal(om.Start_time, datetime_gas_cell()[2])
+        nt.assert_equal(om.Start_time, datetime_gas_cell[2])
         nt.assert_equal(om.Holder_Pressure_units, 'Torr')
         nt.assert_equal(om.Tank1_Pressure_units, 'Torr')
         nt.assert_equal(om.Tank2_Pressure_units, 'Torr')
         nt.assert_equal(om.Vacuum_Tank_Pressure_units, 'Torr')
         nt.assert_equal(om.Time_units, 'Milliseconds')
         nt.assert_equal(om.User, 'eric')
+
+
+class test_ProtochipsGasCellCSVNoUser():
+
+    def setUp(self):
+        filename = os.path.join(dirpath, 'protochips_gas_cell_no_user.csv')
+        self.s_list = hs.load(filename)
+
+    def test_read_metadata(self):
+        date, time, dt_np = datetime_gas_cell_no_user
+        for s in self.s_list:
+            nt.assert_equal(s.metadata.General.date, date)
+            nt.assert_equal(s.metadata.General.time, time)
+            nt.assert_equal(s.axes_manager[0].units, 's')
+            nt.assert_almost_equal(s.axes_manager[0].scale, 0.26029, places=5)
+            nt.assert_equal(s.axes_manager[0].offset, 0)
+
+    def test_read_original_metadata(self):
+        om = self.s_list[0].original_metadata.Protochips_header
+        nt.assert_equal(om.Calibration_file_name, 'The calibration files names'
+                        ' are saved in metadata.General.notes')
+        nt.assert_equal(om.Holder_Pressure_units, 'Torr')
+        nt.assert_equal(om.Holder_Temperature_units, 'Degrees C')
+        nt.assert_equal(om.Start_time, datetime_gas_cell_no_user[2])
+        nt.assert_equal(om.Holder_Pressure_units, 'Torr')
+        nt.assert_equal(om.Tank1_Pressure_units, 'Torr')
+        nt.assert_equal(om.Tank2_Pressure_units, 'Torr')
+        nt.assert_equal(om.Vacuum_Tank_Pressure_units, 'Torr')
+        nt.assert_equal(om.Time_units, 'Milliseconds')
 
 
 class test_ProtochipsGasCellCSVReader():
@@ -130,7 +163,7 @@ class test_ProtochipsGasCellCSVReader():
                                                'Vacuum Tank Pressure'])
 
     def test_read_start_datetime(self):
-        nt.assert_equal(self.pgc.start_datetime, datetime_gas_cell()[2])
+        nt.assert_equal(self.pgc.start_datetime, datetime_gas_cell[2])
 
     def test_read_data(self):
         gen = (self.pgc._data_dictionary[key]
