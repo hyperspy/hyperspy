@@ -104,8 +104,9 @@ class test_ProtochipsGasCellCSV():
 
     def test_read_original_metadata(self):
         om = self.s_list[0].original_metadata.Protochips_header
-        nt.assert_equal(om.Calibration_file_name, 'The calibration files names'
-                        ' are saved in metadata.General.notes')
+        nt.assert_equal(om.Calibration_file_path, "The calibration files names"
+                        " are saved in the 'Original notes' array of the "
+                        "original metadata.")
         nt.assert_equal(om.Holder_Pressure_units, 'Torr')
         nt.assert_equal(om.Holder_Temperature_units, 'Degrees C')
         nt.assert_equal(om.Start_time, datetime_gas_cell[2])
@@ -134,8 +135,9 @@ class test_ProtochipsGasCellCSVNoUser():
 
     def test_read_original_metadata(self):
         om = self.s_list[0].original_metadata.Protochips_header
-        nt.assert_equal(om.Calibration_file_name, 'The calibration files names'
-                        ' are saved in metadata.General.notes')
+        nt.assert_equal(om.Calibration_file_path, "The calibration files names"
+                        " are saved in the 'Original notes' array of the "
+                        "original metadata.")
         nt.assert_equal(om.Holder_Pressure_units, 'Torr')
         nt.assert_equal(om.Holder_Temperature_units, 'Degrees C')
         nt.assert_equal(om.Start_time, datetime_gas_cell_no_user[2])
@@ -253,6 +255,8 @@ def test_read_protochips_thermal():
                     'Channel A Temperature (Degrees C)')
     nt.assert_equal(s.metadata.Signal.signal_type, '')
     nt.assert_equal(s.metadata.Signal.quantity, 'Temperature (Degrees C)')
+    nt.assert_equal(s.metadata.General.notes,
+                    'Calibration file name: AD21013_8.cal')
 
 
 class test_ProtochipsThermallCSVReader():
@@ -291,6 +295,8 @@ def test_read_protochips_electrothermal():
     nt.assert_equal(s[0].metadata.General.title,
                     'Channel A Temperature (Degrees C)')
     nt.assert_equal(s[0].metadata.Signal.signal_type, '')
+    nt.assert_equal(s[0].metadata.General.notes,
+                    'Calibration file name: AD21018_4.cal')
     nt.assert_equal(s[0].metadata.Signal.quantity, 'Temperature (Degrees C)')
     nt.assert_equal(s[1].metadata.General.title, 'Channel B Current (Amps)')
     nt.assert_equal(s[1].metadata.Signal.signal_type, '')
