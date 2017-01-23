@@ -114,8 +114,7 @@ class ProtochipsCSV(object):
                             'title': '%s (%s)' % (quantity,
                                                   self._parse_quantity_units(quantity)),
                             'date': date,
-                            'time': time,
-                            'authors': self.user if self.user else ""},
+                            'time': time},
                 "Signal": {'signal_type': '',
                            'quantity': self._parse_quantity(quantity)}}
 
@@ -124,6 +123,9 @@ class ProtochipsCSV(object):
                 "Protochips_header.Calibration file path": (
                     "General.notes",
                     self._parse_calibration_file_name),
+                "Protochips_header.User": (
+                    "General.authors",
+                    None),
                 }
         return mapping
 
