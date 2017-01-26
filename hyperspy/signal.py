@@ -1865,7 +1865,8 @@ class BaseSignal(FancySlicing,
         return np.atleast_1d(
             self.data.__getitem__(axes_manager._getitem_tuple))
 
-    def plot(self, navigator="auto", axes_manager=None, **kwargs):
+    def plot(self, navigator="auto", axes_manager=None, 
+            plot_markers=True, **kwargs):
         """%s
         %s
 
@@ -1997,6 +1998,12 @@ class BaseSignal(FancySlicing,
             self._plot.signal_plot.events.closed.connect(
                 lambda: self.events.data_changed.disconnect(self.update_plot),
                 [])
+
+        if plot_markers:
+            if self.metadata.has_item('Markers'):
+                for marker in self.metadata.Markers:
+                    self.add_marker(marker)
+
     plot.__doc__ %= BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 
     def save(self, filename=None, overwrite=None, extension=None,
