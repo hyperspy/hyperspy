@@ -44,6 +44,7 @@ class MarkerBase(object):
         # Properties
         self.marker = None
         self._marker_properties = {}
+        self._matplotlib_collection_type = None
 
         # Events
         self.events = Events()

@@ -29,7 +29,7 @@ import logging
 import numpy as np
 import scipy as sp
 from matplotlib import pyplot as plt
-from matplotlib.collections import LineCollection
+from matplotlib.collections import LineCollection, PatchCollection
 
 from hyperspy.axes import AxesManager
 from hyperspy import io
@@ -1998,18 +1998,9 @@ class BaseSignal(FancySlicing,
             self._plot.signal_plot.events.closed.connect(
                 lambda: self.events.data_changed.disconnect(self.update_plot),
                 [])
-
         if plot_markers:
             if self.metadata.has_item('Markers'):
-                segment_list = []
-                color_list = []
-                for marker in self.metadata.Markers:
-                    color_list.append(marker.marker_properties['color'])
-                    segment_list.append(marker._get_segment())
-                line_collection = LineCollection(segment_list, colors=color_list, animated=True)
-                self._plot.signal_plot.ax.add_collection(line_collection)
-                self._plot.signal_plot.update()
-
+                self._add_all_markers_to_plot()
     plot.__doc__ %= BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 
     def save(self, filename=None, overwrite=None, extension=None,
@@ -4051,6 +4042,54 @@ class BaseSignal(FancySlicing,
             self._plot.navigator_plot.add_marker(marker)
         if plot_marker:
             marker.plot()
+
+    def _add_all_markers_to_plot(self):
+        line_segment_list = []
+        line_color_list = []
+        line_linewidth_list = []
+        line_linestyle_list = []
+
+        patch_list = []
+
+        point_x_coordinate_list = []
+        point_y_coordinate_list = []
+        point_color_list = []
+
+        for marker in self.metadata.Markers:
+            if marker._matplotlib_collection_type == 'line':
+                line_color_list.append(marker.marker_properties['color'])
+                line_linewidth_list.append(marker.marker_properties['linewidth'])
+                line_linestyle_list.append(marker.marker_properties['linestyle'])
+                line_segment_list.append(marker._get_segment())
+            if marker._matplotlib_collection_type == 'patch':
+                patch = marker._get_patch()
+                patch_list.append(patch)
+            if marker._matplotlib_collection_type == 'point':
+                point_x_coordinate_list.append(marker.get_data_position('x1'))
+                point_y_coordinate_list.append(marker.get_data_position('y1'))
+                point_color_list.append(marker.marker_properties['color'])
+
+        line_collection = LineCollection(
+                line_segment_list,
+                colors=line_color_list,
+                linestyles=line_linestyle_list,
+                linewidths=line_linewidth_list,
+                animated=True)
+        patch_collection = PatchCollection(
+                patch_list,
+                animated=True)
+
+        point_x_coordinate_list = np.array(point_x_coordinate_list).flatten()
+        point_y_coordinate_list = np.array(point_y_coordinate_list).flatten()
+
+
+        self._plot.signal_plot.ax.add_collection(line_collection)
+        self._plot.signal_plot.ax.add_collection(patch_collection)
+        self._plot.signal_plot.ax.scatter(
+                point_x_coordinate_list,
+                point_y_coordinate_list,
+                color=point_color_list,
+                animated=True)
 
     def add_poissonian_noise(self, **kwargs):
         """Add Poissonian noise to the data"""
