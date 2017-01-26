@@ -29,6 +29,7 @@ import logging
 import numpy as np
 import scipy as sp
 from matplotlib import pyplot as plt
+from matplotlib.collections import LineCollection
 
 from hyperspy.axes import AxesManager
 from hyperspy import io
@@ -2000,8 +2001,14 @@ class BaseSignal(FancySlicing,
 
         if plot_markers:
             if self.metadata.has_item('Markers'):
+                segment_list = []
+                color_list = []
                 for marker in self.metadata.Markers:
-                    self.add_marker(marker)
+                    color_list.append(marker.marker_properties['color'])
+                    segment_list.append(marker._get_segment())
+                line_collection = LineCollection(segment_list, colors=color_list, animated=True)
+                self._plot.signal_plot.ax.add_collection(line_collection)
+                self._plot.signal_plot.update()
 
     plot.__doc__ %= BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 

@@ -89,3 +89,11 @@ class LineSegment(MarkerBase):
         y1 = self.get_data_position('y1')
         y2 = self.get_data_position('y2')
         self.marker.set_data((x1, x2), (y1, y2))
+
+    def _get_segment(self):
+        """Getting data for use with matplotlib Collections"""
+        x1 = self.get_data_position('x1')
+        x2 = self.get_data_position('x2')
+        y1 = self.get_data_position('y1')
+        y2 = self.get_data_position('y2')
+        return(((x1, y1), (x2, y2)))
