@@ -488,8 +488,8 @@ def ser_reader(filename, objects=None, *args, **kwds):
             if (record_by == "spectrum" or
                     header['Dim-%i_DimensionSize' % (i + 1)][0] != 1):
                 units = (header['Dim-%i_Units' % (idim)][0].decode('utf-8')
-                        if header['Dim-%i_UnitsLength' % (idim)] > 0
-                        else t.Undefined)
+                         if header['Dim-%i_UnitsLength' % (idim)] > 0
+                         else t.Undefined)
                 if units == "meters":
                     name = (spatial_axes.pop() if order == "F"
                             else spatial_axes.pop(-1))
