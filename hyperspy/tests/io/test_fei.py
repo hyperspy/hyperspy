@@ -17,8 +17,10 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+
 import nose.tools as nt
 import numpy as np
+import traits.api as t
 
 from hyperspy.io import load
 from hyperspy.io_plugins.fei import load_ser_file
@@ -123,7 +125,7 @@ class TestFEIReader():
         nt.assert_equal(s0[1].axes_manager.signal_dimension, 2)
         nt.assert_equal(
             s0[1].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
-        nt.assert_almost_equal(s0[1].axes_manager[0].scale, -1.87390, places=5)
+        nt.assert_almost_equal(s0[1].axes_manager[0].scale, 1.87390, places=5)
         nt.assert_equal(s0[1].axes_manager[0].units, 'nm')
         nt.assert_almost_equal(s0[1].axes_manager[2].scale, 0.17435, places=5)
         nt.assert_equal(s0[1].axes_manager[2].units, '1/nm')
@@ -242,7 +244,7 @@ class TestFEIReader():
         nt.assert_equal(
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'TEM')
         nt.assert_almost_equal(s0.axes_manager[0].scale, 1.0, places=5)
-        nt.assert_equal(s0.axes_manager[0].units, 'Unknown')
+        nt.assert_is(s0.axes_manager[0].units, t.Undefined)
         nt.assert_almost_equal(s0.axes_manager[1].scale, 6.281833, places=5)
         nt.assert_equal(s0.axes_manager[1].units, 'nm')
         nt.assert_almost_equal(s0.axes_manager[2].scale, 6.281833, places=5)
@@ -253,7 +255,7 @@ class TestFEIReader():
         s2 = load(fname2)
         nt.assert_equal(s2.data.shape, (5, 128, 128))
         nt.assert_almost_equal(s2.axes_manager[1].scale, 0.042464, places=5)
-        nt.assert_equal(s0.axes_manager[0].units, 'Unknown')
+        nt.assert_is(s0.axes_manager[0].units, t.Undefined)
         nt.assert_equal(s2.axes_manager[1].units, '1/nm')
         nt.assert_almost_equal(s2.axes_manager[2].scale, 0.042464, places=5)
         nt.assert_equal(s2.axes_manager[2].units, '1/nm')
@@ -390,4 +392,4 @@ class TestFEIReader():
         nt.assert_equal(s.metadata.Acquisition_instrument.TEM.camera_length, 490.0)
         nt.assert_equal(s.metadata.Acquisition_instrument.TEM.microscope, "Tecnai 200 kV D2267 SuperTwin")
         nt.assert_almost_equal(s.metadata.Acquisition_instrument.TEM.tilt_stage, 0.00, places=2)
-        
+

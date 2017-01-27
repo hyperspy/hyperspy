@@ -467,43 +467,45 @@ def ser_reader(filename, objects=None, *args, **kwds):
     record_by = guess_record_by(header['DataTypeID'])
     ndim = int(header['NumberDimensions'])
     date, time = "", ""
-    if record_by == 'spectrum':
-        if ndim == 0 and header["ValidNumberElements"] != 0:
-            # The calibration of the axes are not stored in the header.
-            # We try to guess from the position coordinates.
-            array_shape, axes = get_axes_from_position(header=header,
-                                                       data=data)
-        else:
-            axes = []
-            array_shape = [None, ] * int(ndim)
-            if len(data['PositionY']) > 1 and \
-                    (data['PositionY'][0] == data['PositionY'][1]):
-                # The spatial dimensions are stored in F order i.e. X, Y, ...
-                order = "F"
-            else:
-                # The spatial dimensions are stored in C order i.e. ..., Y, X
-                order = "C"
-            # Extra dimensions
-            for i in range(ndim):
-                if i == ndim - 1:
-                    name = 'x'
-                elif i == ndim - 2:
-                    name = 'y'
+    if "PositionY" in data.dtype.names and len(data['PositionY']) > 1 and \
+            (data['PositionY'][0] == data['PositionY'][1]):
+        # The spatial dimensions are stored in F order i.e. X, Y, ...
+        order = "F"
+    else:
+        # The spatial dimensions are stored in C order i.e. ..., Y, X
+        order = "C"
+    if ndim == 0 and header["ValidNumberElements"] != 0:
+        # The calibration of the axes are not stored in the header.
+        # We try to guess from the position coordinates.
+        array_shape, axes = get_axes_from_position(header=header,
+                                                   data=data)
+    else:
+        axes = []
+        array_shape = [None, ] * int(ndim)
+        spatial_axes = ["x", "y"]
+        for i in range(ndim):
+            idim = 1 + i if order == "C" else ndim - i
+            if (record_by == "spectrum" or
+                    header['Dim-%i_DimensionSize' % (i + 1)][0] != 1):
+                units = (header['Dim-%i_Units' % (idim)][0].decode('utf-8')
+                        if header['Dim-%i_UnitsLength' % (idim)] > 0
+                        else t.Undefined)
+                if units == "meters":
+                    name = (spatial_axes.pop() if order == "F"
+                            else spatial_axes.pop(-1))
                 else:
                     name = t.Undefined
-                idim = 1 + i if order == "C" else ndim - i
                 axes.append({
-                    'name': name,
                     'offset': header['Dim-%i_CalibrationOffset' % idim][0],
                     'scale': header['Dim-%i_CalibrationDelta' % idim][0],
-                    'units': header['Dim-%i_Units' % idim][0].decode('utf-8'),
+                    'units': units,
                     'size': header['Dim-%i_DimensionSize' % idim][0],
-                    'index_in_array': i
+                    'name': name,
                 })
                 array_shape[i] = \
                     header['Dim-%i_DimensionSize' % idim][0]
-
-        # Spectral dimension
+    # Spectral dimension
+    if record_by == "spectrum":
         axes.append({
             'offset': data['CalibrationOffset'][0],
             'scale': data['CalibrationDelta'][0],
@@ -519,30 +521,6 @@ def ser_reader(filename, objects=None, *args, **kwds):
         array_shape.append(data['ArrayLength'][0])
 
     elif record_by == 'image':
-        # Extra dimensions
-        if ndim == 0 and header["ValidNumberElements"] != 0:
-            # The calibration of the axes are not stored in the header.
-            # We try to guess from the position coordinates.
-            array_shape, axes = get_axes_from_position(header=header,
-                                                       data=data)
-        else:
-            axes = []
-            array_shape = []
-            for i in range(ndim):
-                if header['Dim-%i_DimensionSize' % (i + 1)][0] != 1:
-                    axes.append({
-                        'offset': header[
-                            'Dim-%i_CalibrationOffset' % (i + 1)][0],
-                        'scale': header[
-                            'Dim-%i_CalibrationDelta' % (i + 1)][0],
-                        # for image stack, the UnitsLength is 0 (no units)
-                        'units': header['Dim-%i_Units' % (i + 1)][0].decode(
-                            'utf-8')
-                        if header['Dim-%i_UnitsLength' % (i + 1)] > 0
-                        else 'Unknown',
-                        'size': header['Dim-%i_DimensionSize' % (i + 1)][0],
-                    })
-                array_shape.append(header['Dim-%i_DimensionSize' % (i + 1)][0])
         if objects is not None:
             objects_dict = convert_xml_to_dict(objects[0])
             units = _guess_units_from_mode(objects_dict, header)
@@ -579,13 +557,15 @@ def ser_reader(filename, objects=None, *args, **kwds):
         elif axis['units'] == '1/meters':
             axis['units'] = '1/nm'
             axis['scale'] /= 10 ** 9
+    # Remove Nones from array_shape caused by squeezing size 1 dimensions
+    array_shape = [dim for dim in array_shape if dim is not None]
     # If the acquisition stops before finishing the job, the stored file will
     # report the requested size even though no values are recorded. Therefore
     # if the shapes of the retrieved array does not match that of the data
     # dimensions we must fill the rest with zeros or (better) nans if the
     # dtype is float
-    if np.cumprod(array_shape)[-1] != np.cumprod(data['Array'].shape)[-1]:
-        dc = np.zeros(np.cumprod(array_shape)[-1],
+    if np.prod(array_shape) != np.prod(data['Array'].shape):
+        dc = np.zeros(np.prod(array_shape),
                       dtype=data['Array'].dtype)
         if dc.dtype is np.dtype('f') or dc.dtype is np.dtype('f8'):
             dc[:] = np.nan
