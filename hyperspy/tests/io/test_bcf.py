@@ -37,13 +37,13 @@ def test_load_16bit():
     s = load(filename)
     bse, sei, hype = s
     # Bruker saves all images in true 16bit:
-    assert_true(bse.data.dtype == np.uint16)
-    assert_true(sei.data.dtype == np.uint16)
-    assert_true(bse.data.shape == (75, 100))
+    assert bse.data.dtype == np.uint16
+    assert sei.data.dtype == np.uint16
+    assert bse.data.shape == (75, 100)
     np_filename = os.path.join(my_path, 'bcf_data', np_file[0])
     np.testing.assert_array_equal(hype.data[:22, :22, 222],
                                   np.load(np_filename))
-    assert_true(hype.data.shape == (75, 100, 2048))
+    assert hype.data.shape == (75, 100, 2048)
 
 
 def test_load_16bit_reduced():
@@ -54,16 +54,16 @@ def test_load_16bit_reduced():
     s = load(filename, downsample=4, cutoff_at_kV=10)
     bse, sei, hype = s
     # sem images never are downsampled
-    assert_true(bse.data.shape == (75, 100))
+    assert bse.data.shape == (75, 100)
     np_filename = os.path.join(my_path, 'bcf_data', np_file[1])
     np.testing.assert_array_equal(hype.data[:2, :2, 222],
                                   np.load(np_filename))
-    assert_true(hype.data.shape == (19, 25, 1047))
+    assert hype.data.shape == (19, 25, 1047)
     # Bruker saves all images in true 16bit:
-    assert_true(bse.data.dtype == np.uint16)
-    assert_true(sei.data.dtype == np.uint16)
+    assert bse.data.dtype == np.uint16
+    assert sei.data.dtype == np.uint16
     # hypermaps should always return unsigned integers:
-    assert_true(str(hype.data.dtype)[0] == 'u')
+    assert str(hype.data.dtype)[0] == 'u'
 
 
 def test_load_8bit():
@@ -75,10 +75,10 @@ def test_load_8bit():
         s = load(filename)
         bse, sei, hype = s
         # Bruker saves all images in true 16bit:
-        assert_true(bse.data.dtype == np.uint16)
-        assert_true(sei.data.dtype == np.uint16)
+        assert bse.data.dtype == np.uint16
+        assert sei.data.dtype == np.uint16
         # hypermaps should always return unsigned integers:
-        assert_true(str(hype.data.dtype)[0] == 'u')
+        assert str(hype.data.dtype)[0] == 'u'
 
 
 def test_hyperspy_wrap():
@@ -95,10 +95,10 @@ def test_hyperspy_wrap():
         hype.axes_manager[1].scale,
         8.7367850619778,
         places=12)
-    assert_equal(hype.axes_manager[1].units, 'µm')
+    assert hype.axes_manager[1].units == 'µm'
     assert_almost_equal(hype.axes_manager[2].scale, 0.010001)
     assert_almost_equal(hype.axes_manager[2].offset, -0.472397235)
-    assert_equal(hype.axes_manager[2].units, 'keV')
+    assert hype.axes_manager[2].units == 'keV'
 
     md_ref = {'_HyperSpy': {'Folding': {'original_shape': None,
                                         'unfolded': False,
@@ -132,9 +132,9 @@ def test_hyperspy_wrap():
         omd_ref = json.load(fn)
     assert_deep_almost_equal(hype.metadata.as_dictionary(), md_ref)
     assert_deep_almost_equal(hype.original_metadata.as_dictionary(), omd_ref)
-    assert_equal(hype.metadata.General.date, "2016-04-01")
-    assert_equal(hype.metadata.General.time, "17:05:03")
-    assert_equal(hype.metadata.Signal.quantity, "X-rays (Counts)")
+    assert hype.metadata.General.date == "2016-04-01"
+    assert hype.metadata.General.time == "17:05:03"
+    assert hype.metadata.Signal.quantity == "X-rays (Counts)"
 
 
 def test_hyperspy_wrap_downsampled():
@@ -151,7 +151,7 @@ def test_hyperspy_wrap_downsampled():
         hype.axes_manager[1].scale,
         43.683925309889,
         places=12)
-    assert_true(hype.axes_manager[1].units == 'µm')
+    assert hype.axes_manager[1].units == 'µm'
 
 
 def test_fast_bcf():
@@ -176,23 +176,23 @@ def test_get_mode():
         raise SkipTest
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     s = load(filename, select_type='spectrum', instrument='SEM')
-    assert_equal(s.metadata.Signal.signal_type, "EDS_SEM")
-    assert_true(isinstance(s, signals.EDSSEMSpectrum))
+    assert s.metadata.Signal.signal_type == "EDS_SEM"
+    assert isinstance(s, signals.EDSSEMSpectrum)
 
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     s = load(filename, select_type='spectrum', instrument='TEM')
-    assert_equal(s.metadata.Signal.signal_type, "EDS_TEM")
-    assert_true(isinstance(s, signals.EDSTEMSpectrum))
+    assert s.metadata.Signal.signal_type == "EDS_TEM"
+    assert isinstance(s, signals.EDSTEMSpectrum)
 
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     s = load(filename, select_type='spectrum')
-    assert_equal(s.metadata.Signal.signal_type, "EDS_SEM")
-    assert_true(isinstance(s, signals.EDSSEMSpectrum))
+    assert s.metadata.Signal.signal_type == "EDS_SEM"
+    assert isinstance(s, signals.EDSSEMSpectrum)
 
     filename = os.path.join(my_path, 'bcf_data', test_files[3])
     s = load(filename, select_type='spectrum')
-    assert_equal(s.metadata.Signal.signal_type, "EDS_TEM")
-    assert_true(isinstance(s, signals.EDSTEMSpectrum))
+    assert s.metadata.Signal.signal_type == "EDS_TEM"
+    assert isinstance(s, signals.EDSTEMSpectrum)
 
 
 def test_wrong_file():

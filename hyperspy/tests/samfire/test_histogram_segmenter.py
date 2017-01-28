@@ -32,10 +32,10 @@ def compare_two_value_dicts(ans_r, ans):
                 test = test and p in ans[k]
                 if test:
                     if isinstance(pv, tuple):
-                        assert_true(np.all(pv[0] == ans[k][p][0]))
-                        assert_true(np.all(pv[1] == ans[k][p][1]))
+                        assert np.all(pv[0] == ans[k][p][0])
+                        assert np.all(pv[1] == ans[k][p][1])
                     else:
-                        assert_true(np.all(pv == ans[k][p]))
+                        assert np.all(pv == ans[k][p])
     return test
 
 
@@ -65,9 +65,9 @@ class TestHistogramSegmenter:
 
     def test_init(self):
         s = self.s
-        assert_is_none(s.database)
-        assert_equal(s._min_points, 4)
-        assert_equal(s.bins, 'freedman')
+        assert s.database is None
+        assert s._min_points == 4
+        assert s.bins == 'freedman'
 
     def test_most_frequent(self):
         s = self.s
@@ -75,7 +75,7 @@ class TestHistogramSegmenter:
         freq = s.most_frequent()
         res = {'one': {'A': np.array([10.05])},
                'two': {'centre': np.array([0.05, 0.95]), 'sigma': np.array([0.75])}}
-        assert_true(compare_two_value_dicts(res, freq))
+        assert compare_two_value_dicts(res, freq)
 
     def test_update(self):
         s = self.s
@@ -85,4 +85,4 @@ class TestHistogramSegmenter:
         print(self.test_database)
         print('--------------------------------------\n calculated:')
         print(s.database)
-        assert_true(compare_two_value_dicts(s.database, self.test_database))
+        assert compare_two_value_dicts(s.database, self.test_database)

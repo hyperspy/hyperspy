@@ -33,27 +33,27 @@ class TestStrategyList:
         self.sl = StrategyList(self.samf)
 
     def test_append(self):
-        assert_false(self.w1.samf is self.samf)
-        assert_false(self.w1 in self.sl)
+        assert not self.w1.samf is self.samf
+        assert not self.w1 in self.sl
         self.sl.append(self.w1)
-        assert_true(self.w1.samf is self.samf)
-        assert_true(self.w1 in self.sl)
+        assert self.w1.samf is self.samf
+        assert self.w1 in self.sl
 
     def test_extend(self):
         self.sl.extend([self.w1, self.w2])
-        assert_true(self.w1 in self.sl)
-        assert_true(self.w1.samf is self.samf)
-        assert_true(self.w2 in self.sl)
-        assert_true(self.w2.samf is self.samf)
+        assert self.w1 in self.sl
+        assert self.w1.samf is self.samf
+        assert self.w2 in self.sl
+        assert self.w2.samf is self.samf
 
     def test_remove_int(self):
         self.sl.append(self.w1)
         self.sl.remove(0)
-        assert_false(self.w1.samf is self.samf)
-        assert_false(self.w1 in self.sl)
+        assert not self.w1.samf is self.samf
+        assert not self.w1 in self.sl
 
     def test_remove_object(self):
         self.sl.append(self.w1)
         self.sl.remove(self.w1)
-        assert_false(self.w1.samf is self.samf)
-        assert_false(self.w1 in self.sl)
+        assert not self.w1.samf is self.samf
+        assert not self.w1 in self.sl

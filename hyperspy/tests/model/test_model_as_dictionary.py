@@ -75,19 +75,19 @@ class TestParameterDictionary:
     def test_to_dictionary(self):
         d = self.par.as_dictionary()
 
-        assert_equal(d['name'], self.par.name)
-        assert_equal(d['_id_name'], self.par._id_name)
+        assert d['name'] == self.par.name
+        assert d['_id_name'] == self.par._id_name
         np.testing.assert_equal(d['map']['values'][0], 1)
         np.testing.assert_equal(d['map']['std'][0], 0.1)
-        assert_true(d['map']['is_set'][0])
+        assert d['map']['is_set'][0]
         np.testing.assert_equal(d['value'], self.par.value)
         np.testing.assert_equal(d['std'], self.par.std)
-        assert_is(d['free'], self.par.free)
-        assert_equal(d['self'], id(self.par))
+        assert d['free'] is self.par.free
+        assert d['self'] == id(self.par)
         np.testing.assert_equal(d['_bounds'], self.par._bounds)
-        assert_is(d['ext_bounded'], self.par.ext_bounded)
-        assert_is(
-            d['ext_force_positive'], self.par.ext_force_positive)
+        assert d['ext_bounded'] is self.par.ext_bounded
+        assert (
+            d['ext_force_positive'] is self.par.ext_force_positive)
 
     def test_load_dictionary(self):
         d = self.par.as_dictionary()
@@ -95,12 +95,12 @@ class TestParameterDictionary:
         p._id_name = 'newone'
         _id = p._load_dictionary(d)
 
-        assert_equal(_id, id(self.par))
-        assert_equal(p.name, self.par.name)
-        assert_equal(p._id_name, self.par._id_name)
+        assert _id == id(self.par)
+        assert p.name == self.par.name
+        assert p._id_name == self.par._id_name
         np.testing.assert_equal(p.map['values'][0], 1)
         np.testing.assert_equal(p.map['std'][0], 0.1)
-        assert_true(p.map['is_set'][0])
+        assert p.map['is_set'][0]
         np.testing.assert_equal(p.value, self.par.value)
         np.testing.assert_equal(p.std, self.par.std)
         np.testing.assert_equal(p.free, self.par.free)
@@ -142,17 +142,17 @@ class TestComponentDictionary:
         d = self.comp.as_dictionary()
         c = self.comp
 
-        assert_equal(c.name, d['name'])
-        assert_equal(c._id_name, d['_id_name'])
-        assert_false(d['active_is_multidimensional'])
-        assert_true(d['active'])
-        assert_is_none(d['_active_array'])
+        assert c.name == d['name']
+        assert c._id_name == d['_id_name']
+        assert not d['active_is_multidimensional']
+        assert d['active']
+        assert d['_active_array'] is None
         for ip, p in enumerate(c.parameters):
-            assert_dict_equal(p.as_dictionary(), d['parameters'][ip])
+            assert p.as_dictionary() == d['parameters'][ip]
 
         c.active_is_multidimensional = True
         d1 = c.as_dictionary()
-        assert_true(d1['active_is_multidimensional'])
+        assert d1['active_is_multidimensional']
         np.testing.assert_array_equal(d1['_active_array'], c._active_array)
 
     def test_load_dictionary(self):
@@ -162,17 +162,17 @@ class TestComponentDictionary:
 
         n._id_name = 'dummy names yay!'
         _ = n._load_dictionary(d)
-        assert_equal(c.name, n.name)
-        assert_equal(c.active, n.active)
-        assert_equal(
-            c.active_is_multidimensional,
+        assert c.name == n.name
+        assert c.active == n.active
+        assert (
+            c.active_is_multidimensional ==
             n.active_is_multidimensional)
 
         for pn, pc in zip(n.parameters, c.parameters):
             rn = np.random.random()
-            assert_equal(pn.twin_function(rn), pc.twin_function(rn))
-            assert_equal(
-                pn.twin_inverse_function(rn),
+            assert pn.twin_function(rn) == pc.twin_function(rn)
+            assert (
+                pn.twin_inverse_function(rn) ==
                 pc.twin_inverse_function(rn))
             dn = pn.as_dictionary()
             del dn['self']
@@ -184,7 +184,7 @@ class TestComponentDictionary:
             del dc['twin_inverse_function']
             print(list(dn.keys()))
             print(list(dc.keys()))
-            assert_dict_equal(dn, dc)
+            assert dn == dc
 
     def test_invalid_component_name(self):
         c = self.comp
@@ -228,13 +228,13 @@ class TestModelDictionary:
         np.testing.assert_equal(
             d['free_parameters_boundaries'],
             m.free_parameters_boundaries)
-        assert_is(d['convolved'], m.convolved)
+        assert d['convolved'] is m.convolved
 
         for num, c in enumerate(m):
             tmp = c.as_dictionary()
             remove_empty_numpy_strings(tmp)
-            assert_equal(d['components'][num]['name'], tmp['name'])
-            assert_equal(d['components'][num]['_id_name'], tmp['_id_name'])
+            assert d['components'][num]['name'] == tmp['name']
+            assert d['components'][num]['_id_name'] == tmp['_id_name']
         np.testing.assert_equal(d['components'][-1]['signal1D'],
                                 (m.signal * 0.3)._to_dictionary())
 
@@ -254,11 +254,11 @@ class TestModelDictionary:
         np.testing.assert_equal(
             mn.free_parameters_boundaries,
             mo.free_parameters_boundaries)
-        assert_is(mn.convolved, mo.convolved)
+        assert mn.convolved is mo.convolved
         for i in range(len(mn)):
-            assert_equal(mn[i]._id_name, mo[i]._id_name)
+            assert mn[i]._id_name == mo[i]._id_name
             for po, pn in zip(mo[i].parameters, mn[i].parameters):
                 np.testing.assert_allclose(po.map['values'], pn.map['values'])
                 np.testing.assert_allclose(po.map['is_set'], pn.map['is_set'])
 
-        assert_is(mn[0].A.twin, mn[1].A)
+        assert mn[0].A.twin is mn[1].A

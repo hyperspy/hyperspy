@@ -34,12 +34,12 @@ class Test_Red_chisq_weight:
     def test_function(self):
         w = self.w
         ind = (2, 3)
-        assert_equal(w.function(ind), 16)
+        assert w.function(ind) == 16
 
     def test_map_noslice(self):
         w = self.w
         mask = np.ones((5, 7), dtype=bool)
         mask[0, 0] = False
         ans = w.map(mask)
-        assert_true(np.all(w.model.red_chisq.data[mask] - 1 == ans[mask]))
-        assert_true(np.isnan(ans[0, 0]))
+        assert np.all(w.model.red_chisq.data[mask] - 1 == ans[mask])
+        assert np.isnan(ans[0, 0])

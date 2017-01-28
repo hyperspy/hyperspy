@@ -313,12 +313,12 @@ class TestGeneralMethods:
         # testing
         s = par.as_signal('std')
         np.testing.assert_array_equal(s.data, np.array([2, np.nan, 6]))
-        assert_equal(s.axes_manager[-1].name, 'one')
-        assert_true(par._axes_manager._get_navigation_axes_dicts.called)
-        assert_equal(len(s.axes_manager._axes), 2)
-        assert_false(s.axes_manager[-1].navigate)
-        assert_true(s.axes_manager[0].navigate)
-        assert_equal(s.axes_manager[0].size, 2)
+        assert s.axes_manager[-1].name == 'one'
+        assert par._axes_manager._get_navigation_axes_dicts.called
+        assert len(s.axes_manager._axes) == 2
+        assert not s.axes_manager[-1].navigate
+        assert s.axes_manager[0].navigate
+        assert s.axes_manager[0].size == 2
 
     def test_store_current_values_normal_indices(self):
         par = self.par
@@ -326,9 +326,9 @@ class TestGeneralMethods:
         par.value = 3.5
         par.std = 4.5
         par.store_current_value_in_array()
-        assert_true(par.map['is_set'][1])
-        assert_equal(par.map['std'][1], 4.5)
-        assert_equal(par.map['values'][1], 3.5)
+        assert par.map['is_set'][1]
+        assert par.map['std'][1] == 4.5
+        assert par.map['values'][1] == 3.5
 
     def test_store_current_values_no_indices(self):
         par = self.par
@@ -336,6 +336,6 @@ class TestGeneralMethods:
         par.value = 3.5
         par.std = 4.5
         par.store_current_value_in_array()
-        assert_true(par.map['is_set'][0])
-        assert_equal(par.map['std'][0], 4.5)
-        assert_equal(par.map['values'][0], 3.5)
+        assert par.map['is_set'][0]
+        assert par.map['std'][0] == 4.5
+        assert par.map['values'][0] == 3.5

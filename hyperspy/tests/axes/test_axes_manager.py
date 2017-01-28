@@ -65,15 +65,15 @@ class TestAxesManager:
         m = mock.Mock()
         am.events.any_axis_changed.connect(m.changed)
         am.update_axes_attributes_from(am2._axes)
-        assert_false(m.changed.called)
+        assert not m.changed.called
         am2[0].scale = 0.5
         am2[1].units = "km"
         am2[2].offset = 50
         am2[3].size = 1
         am.update_axes_attributes_from(am2._axes,
                                        attributes=["units", "scale"])
-        assert_true(m.changed.called)
-        assert_equal(am2[0].scale, am[0].scale)
-        assert_equal(am2[1].units, am[1].units)
-        assert_not_equal(am2[2].offset, am[2].offset)
-        assert_not_equal(am2[3].size, am[3].size)
+        assert m.changed.called
+        assert am2[0].scale == am[0].scale
+        assert am2[1].units == am[1].units
+        assert am2[2].offset != am[2].offset
+        assert am2[3].size != am[3].size

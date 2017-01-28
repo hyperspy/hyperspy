@@ -42,10 +42,10 @@ def test_read1():
     assert_almost_equal(s.axes_manager[0].scale, 0.33)
     assert_almost_equal(s.axes_manager[0].offset, 50077.68)
     ref_date, ref_time = "2015-04-16", "13:53:00"
-    assert_equal(s.metadata.General.date, ref_date)
-    assert_equal(s.metadata.General.time, ref_time)
-    assert_equal(s.metadata.Signal.signal_type, "")
-    assert_equal(s.metadata.Signal.quantity, "Temperature (Celsius)")
+    assert s.metadata.General.date == ref_date
+    assert s.metadata.General.time == ref_time
+    assert s.metadata.Signal.signal_type == ""
+    assert s.metadata.Signal.quantity == "Temperature (Celsius)"
 
 
 def test_read2():

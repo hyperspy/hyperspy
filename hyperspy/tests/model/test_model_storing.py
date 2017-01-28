@@ -51,7 +51,7 @@ class TestModelStoring:
         m = self.m
         s = m.signal
         m.store()
-        assert_is(s.models.a, s.models['a'])
+        assert s.models.a is s.models['a']
 
     def test_models_stub_methods(self):
         m = self.m
@@ -64,13 +64,13 @@ class TestModelStoring:
         s.models.a.remove()
         s.models.a.pop()
 
-        assert_equal(s.models.pop.call_count, 1)
-        assert_equal(s.models.remove.call_count, 1)
-        assert_equal(s.models.restore.call_count, 1)
+        assert s.models.pop.call_count == 1
+        assert s.models.remove.call_count == 1
+        assert s.models.restore.call_count == 1
 
-        assert_equal(s.models.pop.call_args[0], ('a',))
-        assert_equal(s.models.remove.call_args[0], ('a',))
-        assert_equal(s.models.restore.call_args[0], ('a',))
+        assert s.models.pop.call_args[0] == ('a',)
+        assert s.models.remove.call_args[0] == ('a',)
+        assert s.models.restore.call_args[0] == ('a',)
 
     def test_models_pop(self):
         m = self.m
@@ -79,10 +79,10 @@ class TestModelStoring:
         s.models.remove = mock.MagicMock()
         s.models.restore = mock.MagicMock()
         s.models.pop('a')
-        assert_equal(s.models.remove.call_count, 1)
-        assert_equal(s.models.restore.call_count, 1)
-        assert_equal(s.models.remove.call_args[0], ('a',))
-        assert_equal(s.models.restore.call_args[0], ('a',))
+        assert s.models.remove.call_count == 1
+        assert s.models.restore.call_count == 1
+        assert s.models.remove.call_args[0] == ('a',)
+        assert s.models.restore.call_args[0] == ('a',)
 
     def test_model_store(self):
         m = self.m
@@ -97,7 +97,7 @@ class TestModelStoring:
         m.store()
         m[0].A.map['values'][0] += 13.33
         m1 = m.signal.models.a.restore()
-        assert_not_equal(m[0].A.map['values'], m1[0].A.map['values'])
+        assert m[0].A.map['values'] != m1[0].A.map['values']
 
     def test_models_restore_remove(self):
         m = self.m
@@ -110,9 +110,9 @@ class TestModelStoring:
         d_2 = clean_model_dictionary(m2.as_dictionary())
         np.testing.assert_equal(d_o, d_1)
         np.testing.assert_equal(d_o, d_2)
-        assert_equal(1, len(s.models))
+        assert 1 == len(s.models)
         s.models.a.remove()
-        assert_equal(0, len(s.models))
+        assert 0 == len(s.models)
 
     def test_store_name_error1(self):
         s = self.m.signal
@@ -155,9 +155,9 @@ class TestModelSaving:
         m = self.m
         m.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
-        assert_true(hasattr(l.models, 'a'))
+        assert hasattr(l.models, 'a')
         n = l.models.restore('a')
-        assert_equal(n.components.something.A.value, 13)
+        assert n.components.something.A.value == 13
 
     def teardown_method(self, method):
         gc.collect()        # Make sure any memmaps are closed first!

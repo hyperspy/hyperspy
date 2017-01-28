@@ -27,11 +27,11 @@ class TestSpcSpectrum:
             test_files[1]))
 
     def test_data(self):
-        assert_equal(np.uint32, self.spc.data.dtype)     # test datatype
-        assert_equal((4096,), self.spc.data.shape)       # test data shape
-        assert_equal(
+        assert np.uint32 == self.spc.data.dtype     # test datatype
+        assert (4096,) == self.spc.data.shape       # test data shape
+        assert (
             [0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 10, 4, 10, 10, 45, 87, 146, 236,
-             312, 342], self.spc.data[:20].tolist())   # test 1st 20 datapoints
+             312, 342] == self.spc.data[:20].tolist())   # test 1st 20 datapoints
 
     def test_parameters(self):
         elements = self.spc.metadata.as_dictionary()['Sample']['elements']
@@ -52,13 +52,13 @@ class TestSpcSpectrum:
         assert_almost_equal(50.000004, eds_dict['live_time'], places=6)
 
         # Testing elements
-        assert_set_equal({'Al', 'C', 'Ce', 'Cu', 'F', 'Ho', 'Mg', 'O'},
+        assert ({'Al', 'C', 'Ce', 'Cu', 'F', 'Ho', 'Mg', 'O'} ==
                          set(elements))
 
         # Testing HyperSpy parameters
-        assert_equal(True, signal_dict['binned'])
-        assert_equal('EDS_SEM', signal_dict['signal_type'])
-        assert_is_instance(self.spc, signals.EDSSEMSpectrum)
+        assert True == signal_dict['binned']
+        assert 'EDS_SEM' == signal_dict['signal_type']
+        assert isinstance(self.spc, signals.EDSSEMSpectrum)
 
     def test_axes(self):
         spc_ax_manager = {'axis-0': {'name': 'Energy',
@@ -67,7 +67,7 @@ class TestSpcSpectrum:
                                      'scale': 0.01,
                                      'size': 4096,
                                      'units': 'keV'}}
-        assert_dict_equal(spc_ax_manager,
+        assert (spc_ax_manager ==
                           self.spc.axes_manager.as_dictionary())
 
 
@@ -108,9 +108,9 @@ class TestSpdMap:
         os.remove(spd_fname)
 
     def test_data(self):
-        assert_equal(np.uint16, self.spd.data.dtype)     # test d_type
-        assert_equal((200, 256, 2500), self.spd.data.shape)  # test d_shape
-        assert_equal([[[0, 0, 0, 0, 0],              # test random data
+        assert np.uint16 == self.spd.data.dtype     # test d_type
+        assert (200, 256, 2500) == self.spd.data.shape  # test d_shape
+        assert ([[[0, 0, 0, 0, 0],              # test random data
                        [0, 0, 1, 0, 1],
                        [0, 0, 0, 0, 0],
                        [0, 0, 0, 0, 0],
@@ -134,7 +134,7 @@ class TestSpdMap:
                           [0, 0, 0, 0, 0],
                           [0, 0, 1, 0, 1],
                           [0, 0, 0, 1, 0],
-                          [0, 0, 0, 0, 0]]],
+                          [0, 0, 0, 0, 0]]] ==
                      self.spd.data[15:20, 15:20, 15:20].tolist())
 
     def test_parameters(self):
@@ -156,13 +156,13 @@ class TestSpdMap:
         assert_almost_equal(2621.4399, eds_dict['live_time'], places=4)
 
         # Testing elements
-        assert_set_equal({'Ce', 'Co', 'Cr', 'Fe', 'Gd', 'La', 'Mg', 'O',
-                          'Sr'}, set(elements))
+        assert {'Ce', 'Co', 'Cr', 'Fe', 'Gd', 'La', 'Mg', 'O',
+                          'Sr'} == set(elements)
 
         # Testing HyperSpy parameters
-        assert_equal(True, signal_dict['binned'])
-        assert_equal('EDS_SEM', signal_dict['signal_type'])
-        assert_is_instance(self.spd, signals.EDSSEMSpectrum)
+        assert True == signal_dict['binned']
+        assert 'EDS_SEM' == signal_dict['signal_type']
+        assert isinstance(self.spd, signals.EDSSEMSpectrum)
 
     def test_axes(self):
         spd_ax_manager = {'axis-0': {'name': 'y',
@@ -183,7 +183,7 @@ class TestSpdMap:
                                      'scale': 0.0050000000000000001,
                                      'size': 2500,
                                      'units': 'keV'}}
-        assert_dict_equal(spd_ax_manager,
+        assert (spd_ax_manager ==
                           self.spd.axes_manager.as_dictionary())
 
     def test_ipr_reading(self):

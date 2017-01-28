@@ -30,44 +30,44 @@ class TestSamfireUtils:
     def test_nearest_indices_ind1(self):
         par, _ = nearest_indices(self.shape, (0, 0), self.radii)
         par_ans = (slice(0, 2, None), slice(0, 3, None))
-        assert_equal(par, par_ans)
+        assert par == par_ans
 
     def test_nearest_indices_ind2(self):
         par, _ = nearest_indices(self.shape, (0, 1), self.radii)
         par_ans = (slice(0, 2, None), slice(0, 4, None))
-        assert_equal(par, par_ans)
+        assert par == par_ans
 
     def test_nearest_indices_ind3(self):
         par, _ = nearest_indices(self.shape, (0, 2), self.radii)
         par_ans = (slice(0, 2, None), slice(0, 5, None))
-        assert_equal(par, par_ans)
+        assert par == par_ans
 
     def test_nearest_indices_ind4(self):
         par, _ = nearest_indices(self.shape, (1, 2), self.radii)
         par_ans = (slice(0, 3, None), slice(0, 5, None))
-        assert_equal(par, par_ans)
+        assert par == par_ans
 
     def test_nearest_indices_ind5(self):
         par, _ = nearest_indices(self.shape, (2, 3), self.radii)
         par_ans = (slice(1, 4, None), slice(1, 6, None))
-        assert_equal(par, par_ans)
+        assert par == par_ans
 
     def test_nearest_indices_cent1(self):
         _, c = nearest_indices(self.shape, (0, 0), self.radii)
         c_ans = (0, 0)
-        assert_true(c == c_ans)
+        assert c == c_ans
 
     def test_nearest_indices_cent2(self):
         _, c = nearest_indices(self.shape, (0, 1), self.radii)
         c_ans = (0, 1)
-        assert_true(c == c_ans)
+        assert c == c_ans
 
     def test_nearest_indices_cent3(self):
         _, c = nearest_indices(self.shape, (0, 2), self.radii)
         c_ans = (0, 2)
-        assert_true(c == c_ans)
+        assert c == c_ans
 
     def test_nearest_indices_cent4(self):
         _, c = nearest_indices(self.shape, (3, 2), self.radii)
         c_ans = (1, 2)
-        assert_true(c == c_ans)
+        assert c == c_ans

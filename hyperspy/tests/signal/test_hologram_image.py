@@ -87,12 +87,12 @@ class TestCaseHologramImage(object):
     def test_set_microscope_parameters(self):
         self.holo_image.set_microscope_parameters(
             beam_energy=300., biprism_voltage=80.5, tilt_stage=2.2)
-        assert_equal(
-            self.holo_image.metadata.Acquisition_instrument.TEM.beam_energy, 300.)
-        assert_equal(
-            self.holo_image.metadata.Acquisition_instrument.TEM.Biprism.voltage, 80.5)
-        assert_equal(
-            self.holo_image.metadata.Acquisition_instrument.TEM.tilt_stage, 2.2)
+        assert (
+            self.holo_image.metadata.Acquisition_instrument.TEM.beam_energy == 300.)
+        assert (
+            self.holo_image.metadata.Acquisition_instrument.TEM.Biprism.voltage == 80.5)
+        assert (
+            self.holo_image.metadata.Acquisition_instrument.TEM.tilt_stage == 2.2)
 
     def test_reconstruct_phase(self):
 
@@ -147,7 +147,7 @@ class TestCaseHologramImage(object):
         wave_image2a = self.holo_image2.reconstruct_phase(reference=self.ref_image2.data, sb_position=sb_position2.data,
                                                           sb_size=sb_size2.data, sb_smoothness=sb_size2.data * 0.05,
                                                           output_shape=output_shape)
-        assert_equal(wave_image2, wave_image2a)
+        assert wave_image2 == wave_image2a
 
         # interpolate reconstructed phase to compare with the input (reference
         # phase):

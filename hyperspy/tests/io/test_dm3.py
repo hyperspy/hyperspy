@@ -82,26 +82,26 @@ def test_missing_tag():
     md = s.metadata
     assert_almost_equal(md.Acquisition_instrument.TEM.beam_energy, 200.0)
     assert_almost_equal(md.Acquisition_instrument.TEM.exposure_time, 0.2)
-    assert_equal(md.General.date, "2014-07-09")
-    assert_equal(md.General.time, "18:56:37")
-    assert_equal(md.General.title, "test_diffraction_pattern_tags_removed")
+    assert md.General.date == "2014-07-09"
+    assert md.General.time == "18:56:37"
+    assert md.General.title == "test_diffraction_pattern_tags_removed"
 
 
 def test_read_TEM_metadata():
     fname = os.path.join(my_path, "tiff_files", "test_dm_image_um_unit.dm3")
     s = load(fname)
     md = s.metadata
-    assert_equal(md.Acquisition_instrument.TEM.acquisition_mode, "TEM")
+    assert md.Acquisition_instrument.TEM.acquisition_mode == "TEM"
     assert_almost_equal(md.Acquisition_instrument.TEM.beam_energy, 200.0)
     assert_almost_equal(md.Acquisition_instrument.TEM.exposure_time, 0.5)
     assert_almost_equal(md.Acquisition_instrument.TEM.magnification, 51.0)
-    assert_equal(md.Acquisition_instrument.TEM.microscope, "FEI Tecnai")
-    assert_equal(md.General.date, "2015-07-20")
-    assert_equal(md.General.original_filename, "test_dm_image_um_unit.dm3")
-    assert_equal(md.General.title, "test_dm_image_um_unit")
-    assert_equal(md.General.time, "18:48:25")
-    assert_equal(md.Signal.quantity, "Intensity")
-    assert_equal(md.Signal.signal_type, "")
+    assert md.Acquisition_instrument.TEM.microscope == "FEI Tecnai"
+    assert md.General.date == "2015-07-20"
+    assert md.General.original_filename == "test_dm_image_um_unit.dm3"
+    assert md.General.title == "test_dm_image_um_unit"
+    assert md.General.time == "18:48:25"
+    assert md.Signal.quantity == "Intensity"
+    assert md.Signal.signal_type == ""
 
 
 def test_read_Diffraction_metadata():
@@ -111,48 +111,48 @@ def test_read_Diffraction_metadata():
         "test_diffraction_pattern.dm3")
     s = load(fname)
     md = s.metadata
-    assert_equal(md.Acquisition_instrument.TEM.acquisition_mode, "TEM")
+    assert md.Acquisition_instrument.TEM.acquisition_mode == "TEM"
     assert_almost_equal(md.Acquisition_instrument.TEM.beam_energy, 200.0)
     assert_almost_equal(md.Acquisition_instrument.TEM.exposure_time, 0.2)
     assert_almost_equal(md.Acquisition_instrument.TEM.camera_length, 320.0)
-    assert_equal(md.Acquisition_instrument.TEM.microscope, "FEI Tecnai")
-    assert_equal(md.General.date, "2014-07-09")
-    assert_equal(
-        md.General.original_filename,
+    assert md.Acquisition_instrument.TEM.microscope == "FEI Tecnai"
+    assert md.General.date == "2014-07-09"
+    assert (
+        md.General.original_filename ==
         "test_diffraction_pattern.dm3")
-    assert_equal(md.General.title, "test_diffraction_pattern")
-    assert_equal(md.General.time, "18:56:37")
-    assert_equal(md.Signal.quantity, "Intensity")
-    assert_equal(md.Signal.signal_type, "")
+    assert md.General.title == "test_diffraction_pattern"
+    assert md.General.time == "18:56:37"
+    assert md.Signal.quantity == "Intensity"
+    assert md.Signal.signal_type == ""
 
 
 def test_read_STEM_metadata():
     fname = os.path.join(my_path, "dm3_2D_data", "test_STEM_image.dm3")
     s = load(fname)
     md = s.metadata
-    assert_equal(md.Acquisition_instrument.TEM.acquisition_mode, "STEM")
+    assert md.Acquisition_instrument.TEM.acquisition_mode == "STEM"
     assert_almost_equal(md.Acquisition_instrument.TEM.beam_energy, 200.0)
     assert_almost_equal(md.Acquisition_instrument.TEM.dwell_time, 3.5E-6)
     assert_almost_equal(md.Acquisition_instrument.TEM.camera_length, 135.0)
     assert_almost_equal(
         md.Acquisition_instrument.TEM.magnification,
         225000.0)
-    assert_equal(md.Acquisition_instrument.TEM.microscope, "FEI Titan")
-    assert_equal(md.General.date, "2016-08-08")
-    assert_equal(md.General.original_filename, "test_STEM_image.dm3")
-    assert_equal(md.General.title, "test_STEM_image")
-    assert_equal(md.General.time, "16:26:37")
-    assert_equal(md.Signal.quantity, "Intensity")
-    assert_equal(md.Signal.signal_type, "")
+    assert md.Acquisition_instrument.TEM.microscope == "FEI Titan"
+    assert md.General.date == "2016-08-08"
+    assert md.General.original_filename == "test_STEM_image.dm3"
+    assert md.General.title == "test_STEM_image"
+    assert md.General.time == "16:26:37"
+    assert md.Signal.quantity == "Intensity"
+    assert md.Signal.signal_type == ""
 
 
 def test_read_EELS_metadata():
     fname = os.path.join(my_path, "dm3_1D_data", "test-EELS_spectrum.dm3")
     s = load(fname)
     md = s.metadata
-    assert_equal(md.Acquisition_instrument.TEM.acquisition_mode, "STEM")
+    assert md.Acquisition_instrument.TEM.acquisition_mode == "STEM"
     assert_almost_equal(md.Acquisition_instrument.TEM.beam_energy, 200.0)
-    assert_equal(md.Acquisition_instrument.TEM.microscope, "FEI Titan")
+    assert md.Acquisition_instrument.TEM.microscope == "FEI Titan"
     assert_almost_equal(md.Acquisition_instrument.TEM.camera_length, 135.0)
     assert_almost_equal(
         md.Acquisition_instrument.TEM.magnification,
@@ -168,18 +168,18 @@ def test_read_EELS_metadata():
         0.00349999)
     assert_almost_equal(
         md.Acquisition_instrument.TEM.Detector.EELS.frame_number, 50)
-    assert_equal(
-        md.Acquisition_instrument.TEM.Detector.EELS.spectrometer,
+    assert (
+        md.Acquisition_instrument.TEM.Detector.EELS.spectrometer ==
         'GIF Quantum ER')
-    assert_equal(
-        md.Acquisition_instrument.TEM.Detector.EELS.aperture_size,
+    assert (
+        md.Acquisition_instrument.TEM.Detector.EELS.aperture_size ==
         5.0)
-    assert_equal(md.General.date, "2016-08-08")
-    assert_equal(md.General.original_filename, "test-EELS_spectrum.dm3")
-    assert_equal(md.General.title, "EELS Acquire")
-    assert_equal(md.General.time, "19:35:17")
-    assert_equal(md.Signal.quantity, "Electrons (Counts)")
-    assert_equal(md.Signal.signal_type, "EELS")
+    assert md.General.date == "2016-08-08"
+    assert md.General.original_filename == "test-EELS_spectrum.dm3"
+    assert md.General.title == "EELS Acquire"
+    assert md.General.time == "19:35:17"
+    assert md.Signal.quantity == "Electrons (Counts)"
+    assert md.Signal.signal_type == "EELS"
     assert_almost_equal(
         md.Signal.Noise_properties.Variance_linear_model.gain_factor,
         0.1285347)
@@ -192,7 +192,7 @@ def test_read_EDS_metadata():
     fname = os.path.join(my_path, "dm3_1D_data", "test-EDS_spectrum.dm3")
     s = load(fname)
     md = s.metadata
-    assert_equal(md.Acquisition_instrument.TEM.acquisition_mode, "STEM")
+    assert md.Acquisition_instrument.TEM.acquisition_mode == "STEM"
     assert_almost_equal(
         md.Acquisition_instrument.TEM.Detector.EDS.azimuth_angle, 45.0)
     assert_almost_equal(
@@ -206,17 +206,17 @@ def test_read_EDS_metadata():
     assert_almost_equal(md.Acquisition_instrument.TEM.tilt_stage, 24.95,
                         places=2)
     assert_almost_equal(md.Acquisition_instrument.TEM.beam_energy, 200.0)
-    assert_equal(md.Acquisition_instrument.TEM.microscope, "FEI Titan")
+    assert md.Acquisition_instrument.TEM.microscope == "FEI Titan"
     assert_almost_equal(md.Acquisition_instrument.TEM.camera_length, 135.0)
     assert_almost_equal(
         md.Acquisition_instrument.TEM.magnification,
         320000.0)
-    assert_equal(md.General.date, "2016-08-08")
-    assert_equal(md.General.original_filename, "test-EDS_spectrum.dm3")
-    assert_equal(md.General.title, "EDS Spectrum")
-    assert_equal(md.General.time, "21:46:19")
-    assert_equal(md.Signal.quantity, "X-rays (Counts)")
-    assert_equal(md.Signal.signal_type, "EDS_TEM")
+    assert md.General.date == "2016-08-08"
+    assert md.General.original_filename == "test-EDS_spectrum.dm3"
+    assert md.General.title == "EDS Spectrum"
+    assert md.General.time == "21:46:19"
+    assert md.Signal.quantity == "X-rays (Counts)"
+    assert md.Signal.signal_type == "EDS_TEM"
     assert_almost_equal(
         md.Signal.Noise_properties.Variance_linear_model.gain_factor,
         1.0)
@@ -229,17 +229,17 @@ def test_location():
     fname_list = ['Fei HAADF-DE_location.dm3', 'Fei HAADF-FR_location.dm3',
                   'Fei HAADF-MX_location.dm3', 'Fei HAADF-UK_location.dm3']
     s = load(os.path.join(my_path, "dm3_locale", fname_list[0]))
-    assert_equal(s.metadata.General.date, "2016-08-27")
-    assert_equal(s.metadata.General.time, "20:54:33")
+    assert s.metadata.General.date == "2016-08-27"
+    assert s.metadata.General.time == "20:54:33"
     s = load(os.path.join(my_path, "dm3_locale", fname_list[1]))
-    assert_equal(s.metadata.General.date, "2016-08-27")
-    assert_equal(s.metadata.General.time, "20:55:20")
+    assert s.metadata.General.date == "2016-08-27"
+    assert s.metadata.General.time == "20:55:20"
     s = load(os.path.join(my_path, "dm3_locale", fname_list[2]))
-    assert_equal(s.metadata.General.date, "2016-08-27")
+    assert s.metadata.General.date == "2016-08-27"
 #    assert_equal(s.metadata.General.time, "20:55:20") # MX not working
     s = load(os.path.join(my_path, "dm3_locale", fname_list[3]))
-    assert_equal(s.metadata.General.date, "2016-08-27")
-    assert_equal(s.metadata.General.time, "20:52:30")
+    assert s.metadata.General.date == "2016-08-27"
+    assert s.metadata.General.time == "20:52:30"
 
 
 def test_loading():
@@ -284,7 +284,7 @@ def check_load(filename, subfolder, key):
 
 
 def check_dtype(d1, d2, i):
-    assert_equal(d1, d2, msg='test_dtype-%i' % i)
+    assert d1 == d2, 'test_dtype-%i' % i
 
 
 def check_content(dat1, dat2, subfolder, key):

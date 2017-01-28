@@ -52,8 +52,8 @@ class TestBSS1D:
         s2.decomposition()
         s2.blind_source_separation(
             3, diff_order=0, fun="exp", on_loadings=True)
-        assert_true(are_bss_components_equivalent(
-            self.s.get_bss_factors(), s2.get_bss_loadings()))
+        assert are_bss_components_equivalent(
+            self.s.get_bss_factors(), s2.get_bss_loadings())
 
     def test_mask_diff_order_0(self):
         if not sklearn_installed:
@@ -136,9 +136,8 @@ class TestBSS2D:
             3, diff_order=1, fun="exp", on_loadings=False,
             diff_axes=["x"], mask=mask
         )
-        assert_true(
-            np.allclose(matrix, self.s.learning_results.unmixing_matrix,
-                        atol=1e-6))
+        assert np.allclose(matrix, self.s.learning_results.unmixing_matrix,
+                        atol=1e-6)
 
     def test_diff_axes_string_without_mask(self):
         if not sklearn_installed:
@@ -152,9 +151,8 @@ class TestBSS2D:
             3, diff_order=1, fun="exp", on_loadings=False,
             diff_axes=["x"],
         )
-        assert_true(
-            np.allclose(matrix, self.s.learning_results.unmixing_matrix,
-                        atol=1e-3))
+        assert np.allclose(matrix, self.s.learning_results.unmixing_matrix,
+                        atol=1e-3)
 
     def test_diff_axes_without_mask(self):
         if not sklearn_installed:
@@ -166,9 +164,8 @@ class TestBSS2D:
         matrix = self.s.learning_results.unmixing_matrix.copy()
         self.s.blind_source_separation(
             3, diff_order=1, fun="exp", on_loadings=False, diff_axes=[2],)
-        assert_true(
-            np.allclose(matrix, self.s.learning_results.unmixing_matrix,
-                        atol=1e-3))
+        assert np.allclose(matrix, self.s.learning_results.unmixing_matrix,
+                        atol=1e-3)
 
     def test_on_loadings(self):
         if not sklearn_installed:
@@ -179,8 +176,8 @@ class TestBSS2D:
         s2.decomposition()
         s2.blind_source_separation(
             3, diff_order=0, fun="exp", on_loadings=True)
-        assert_true(are_bss_components_equivalent(
-            self.s.get_bss_factors(), s2.get_bss_loadings()))
+        assert are_bss_components_equivalent(
+            self.s.get_bss_factors(), s2.get_bss_loadings())
 
     def test_mask_diff_order_0(self):
         if not sklearn_installed:

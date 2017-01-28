@@ -80,9 +80,9 @@ class TestImage:
             s.map(rotate, angle=angles.T, reshape=True, show_progressbar=None,
                   parallel=t)
             # the dtype
-            assert_is(s.data.dtype, np.dtype('O'))
+            assert s.data.dtype is np.dtype('O')
             # the special slicing
-            assert_is(s.inav[0].data.base, s.data[0])
+            assert s.inav[0].data.base is s.data[0]
             # actual values
             np.testing.assert_allclose(s.data[0],
                                        np.arange(9.).reshape((3, 3)),
@@ -111,7 +111,7 @@ class TestSignal1D:
             np.testing.assert_allclose(s.data, np.array(
                 ([[0.42207377, 1., 1.57792623],
                   [3.42207377, 4., 4.57792623]])))
-            assert_true(m.data_changed.called)
+            assert m.data_changed.called
 
     def test_dtype(self):
         ss = self.s.deepcopy()
@@ -119,7 +119,7 @@ class TestSignal1D:
             s.map(lambda data: np.sqrt(np.complex128(data)),
                   show_progressbar=None,
                   parallel=t)
-            assert_is(s.data.dtype, np.dtype('complex128'))
+            assert s.data.dtype is np.dtype('complex128')
 
 
 class TestSignal0D:
@@ -137,7 +137,7 @@ class TestSignal0D:
                   parallel=t)
             np.testing.assert_allclose(
                 s.data, (np.arange(0., 6) ** 2).reshape((2, 3)))
-            assert_true(m.data_changed.called)
+            assert m.data_changed.called
 
     def test_nav_dim_1(self):
         s1 = self.s.inav[1, 1]
@@ -148,7 +148,7 @@ class TestSignal0D:
             s.map(lambda x, e: x ** e, e=2, show_progressbar=None,
                   parallel=t)
             np.testing.assert_allclose(s.data, self.s.inav[1, 1].data ** 2)
-            assert_true(m.data_changed.called)
+            assert m.data_changed.called
 
 
 _alphabet = 'abcdefghijklmnopqrstuvwxyz'
@@ -164,45 +164,45 @@ class TestChangingAxes:
     def test_one_nav_reducing(self):
         s = self.base.transpose(signal_axes=4).inav[0, 0]
         s.map(np.mean, axis=1)
-        assert_equal(list('def'), [ax.name for ax in
-                                   s.axes_manager._axes])
-        assert_equal(0, len(s.axes_manager.navigation_axes))
+        assert list('def') == [ax.name for ax in
+                                   s.axes_manager._axes]
+        assert 0 == len(s.axes_manager.navigation_axes)
         s.map(np.mean, axis=(1, 2))
-        assert_equal(['f'], [ax.name for ax in s.axes_manager._axes])
-        assert_equal(0, len(s.axes_manager.navigation_axes))
+        assert ['f'] == [ax.name for ax in s.axes_manager._axes]
+        assert 0 == len(s.axes_manager.navigation_axes)
 
     def test_one_nav_increasing(self):
         s = self.base.transpose(signal_axes=4).inav[0, 0]
         s.map(np.tile, reps=(2, 1, 1, 1, 1))
-        assert_equal(len(s.axes_manager.signal_axes), 5)
-        assert_true(set('cdef') <= {ax.name for ax in
-                                    s.axes_manager._axes})
-        assert_equal(0, len(s.axes_manager.navigation_axes))
-        assert_equal(s.data.shape, (2, 4, 5, 6, 7))
+        assert len(s.axes_manager.signal_axes) == 5
+        assert set('cdef') <= {ax.name for ax in
+                                    s.axes_manager._axes}
+        assert 0 == len(s.axes_manager.navigation_axes)
+        assert s.data.shape == (2, 4, 5, 6, 7)
 
     def test_reducing(self):
         s = self.base.transpose(signal_axes=4)
         s.map(np.mean, axis=1)
-        assert_equal(list('abdef'), [ax.name for ax in
-                                     s.axes_manager._axes])
-        assert_equal(2, len(s.axes_manager.navigation_axes))
+        assert list('abdef') == [ax.name for ax in
+                                     s.axes_manager._axes]
+        assert 2 == len(s.axes_manager.navigation_axes)
         s.map(np.mean, axis=(1, 2))
-        assert_equal(['f'], [ax.name for ax in
-                             s.axes_manager.signal_axes])
-        assert_equal(list('ba'), [ax.name for ax in
-                                  s.axes_manager.navigation_axes])
-        assert_equal(2, len(s.axes_manager.navigation_axes))
+        assert ['f'] == [ax.name for ax in
+                             s.axes_manager.signal_axes]
+        assert list('ba') == [ax.name for ax in
+                                  s.axes_manager.navigation_axes]
+        assert 2 == len(s.axes_manager.navigation_axes)
 
     def test_increasing(self):
         s = self.base.transpose(signal_axes=4)
         s.map(np.tile, reps=(2, 1, 1, 1, 1))
-        assert_equal(len(s.axes_manager.signal_axes), 5)
-        assert_true(set('cdef') <= {ax.name for ax in
-                                    s.axes_manager.signal_axes})
-        assert_equal(list('ba'), [ax.name for ax in
-                                  s.axes_manager.navigation_axes])
-        assert_equal(2, len(s.axes_manager.navigation_axes))
-        assert_equal(s.data.shape, (2, 3, 2, 4, 5, 6, 7))
+        assert len(s.axes_manager.signal_axes) == 5
+        assert set('cdef') <= {ax.name for ax in
+                                    s.axes_manager.signal_axes}
+        assert list('ba') == [ax.name for ax in
+                                  s.axes_manager.navigation_axes]
+        assert 2 == len(s.axes_manager.navigation_axes)
+        assert s.data.shape == (2, 3, 2, 4, 5, 6, 7)
 
 
 def test_new_axes():
@@ -215,13 +215,13 @@ def test_new_axes():
         return d[_slice]
     res = s.map(test_func, inplace=False,
                 i=hs.signals.BaseSignal(np.arange(10)).T)
-    assert_is_not_none(res)
+    assert res is not None
     sl = res.inav[:2]
-    assert_equal(sl.axes_manager._axes[-1].name, 'a')
+    assert sl.axes_manager._axes[-1].name == 'a'
     sl = res.inav[-1]
-    assert_is_instance(sl, hs.signals.BaseSignal)
+    assert isinstance(sl, hs.signals.BaseSignal)
     ax_names = {ax.name for ax in sl.axes_manager._axes}
-    assert_equal(len(ax_names), 1)
-    assert_false('a' in ax_names)
-    assert_false('b' in ax_names)
-    assert_equal(0, sl.axes_manager.navigation_dimension)
+    assert len(ax_names) == 1
+    assert not 'a' in ax_names
+    assert not 'b' in ax_names
+    assert 0 == sl.axes_manager.navigation_dimension

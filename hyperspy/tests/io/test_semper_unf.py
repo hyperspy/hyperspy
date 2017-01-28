@@ -64,22 +64,22 @@ def test_writing_loading_metadata():
         s.save(fname)
         s2 = load(fname)
         np.testing.assert_allclose(s.data, s2.data)
-        assert_equal(s.metadata.General.date, s2.metadata.General.date)
-        assert_equal(s.metadata.General.time, s2.metadata.General.time)
+        assert s.metadata.General.date == s2.metadata.General.date
+        assert s.metadata.General.time == s2.metadata.General.time
 
 
 def test_signal_3d_loading():
     signal = load(os.path.join(my_path, 'unf_files', 'example_signal_3d.unf'))
     np.testing.assert_equal(signal.data, data_signal)
     np.testing.assert_equal(signal.original_metadata.IFORM, 2)  # float
-    assert_is_instance(signal, BaseSignal)
+    assert isinstance(signal, BaseSignal)
 
 
 def test_image_2d_loading():
     signal = load(os.path.join(my_path, 'unf_files', 'example_image_2d.unf'))
     np.testing.assert_equal(signal.data, data_image)
     np.testing.assert_equal(signal.original_metadata.IFORM, 2)  # float
-    assert_is_instance(signal, Signal2D)
+    assert isinstance(signal, Signal2D)
 
 
 def test_spectrum_1d_loading():
@@ -90,14 +90,14 @@ def test_spectrum_1d_loading():
             'example_spectrum_1d.unf'))
     np.testing.assert_equal(signal.data, data_spectrum)
     np.testing.assert_equal(signal.original_metadata.IFORM, 2)  # float
-    assert_is_instance(signal, Signal1D)
+    assert isinstance(signal, Signal1D)
 
 
 def test_image_byte_loading():
     signal = load(os.path.join(my_path, 'unf_files', 'example_image_byte.unf'))
     np.testing.assert_equal(signal.data, data_image_byte)
     np.testing.assert_equal(signal.original_metadata.IFORM, 0)  # byte
-    assert_is_instance(signal, Signal2D)
+    assert isinstance(signal, Signal2D)
 
 
 def test_image_int16_loading():
@@ -108,7 +108,7 @@ def test_image_int16_loading():
             'example_image_int16.unf'))
     np.testing.assert_equal(signal.data, data_image_int16)
     np.testing.assert_equal(signal.original_metadata.IFORM, 1)  # int16
-    assert_is_instance(signal, Signal2D)
+    assert isinstance(signal, Signal2D)
 
 
 def test_image_int32_loading():
@@ -119,7 +119,7 @@ def test_image_int32_loading():
             'example_image_int32.unf'))
     np.testing.assert_equal(signal.data, data_image_int32)
     np.testing.assert_equal(signal.original_metadata.IFORM, 4)  # int32
-    assert_is_instance(signal, Signal2D)
+    assert isinstance(signal, Signal2D)
 
 
 def test_image_complex_loading():
@@ -130,7 +130,7 @@ def test_image_complex_loading():
             'example_image_complex.unf'))
     np.testing.assert_equal(signal.data, data_image_complex)
     np.testing.assert_equal(signal.original_metadata.IFORM, 3)  # complex
-    assert_is_instance(signal, ComplexSignal)
+    assert isinstance(signal, ComplexSignal)
 
 
 def test_with_title_loading():
@@ -138,14 +138,14 @@ def test_with_title_loading():
     np.testing.assert_equal(signal.data, data_image)
     np.testing.assert_equal(signal.original_metadata.IFORM, 2)  # float
     np.testing.assert_equal(signal.metadata.General.title, test_title)
-    assert_is_instance(signal, Signal2D)
+    assert isinstance(signal, Signal2D)
 
 
 def test_no_label_loading():
     signal = load(os.path.join(my_path, 'unf_files', 'example_no_label.unf'))
     np.testing.assert_equal(signal.data, data_image)
     np.testing.assert_equal(signal.original_metadata.ILABEL, 0)
-    assert_is_instance(signal, Signal2D)
+    assert isinstance(signal, Signal2D)
 
 
 class TestCaseSaveAndReadImage():
@@ -162,7 +162,7 @@ class TestCaseSaveAndReadImage():
         signal = load(os.path.join(my_path, 'unf_files', 'example_temp.unf'))
         np.testing.assert_equal(signal.data, signal_ref.data)
         np.testing.assert_equal(signal.metadata.General.title, test_title)
-        assert_is_instance(signal, Signal2D)
+        assert isinstance(signal, Signal2D)
 
     def teardown_method(self, method):
         remove(os.path.join(my_path, 'unf_files', 'example_temp.unf'))
@@ -178,7 +178,7 @@ class TestCaseSaveAndReadByte():
         signal = load(os.path.join(my_path, 'unf_files', 'example_temp.unf'))
         np.testing.assert_equal(signal.data, signal_ref.data)
         np.testing.assert_equal(signal.metadata.General.title, test_title)
-        assert_is_instance(signal, Signal2D)
+        assert isinstance(signal, Signal2D)
 
     def teardown_method(self, method):
         remove(os.path.join(my_path, 'unf_files', 'example_temp.unf'))

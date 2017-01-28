@@ -72,7 +72,7 @@ def test_ignore_message_fails():
             try:
                 warnsC()
             except UserWarning as e:
-                assert_equal(str(e), "Warning C!")
+                assert str(e) == "Warning C!"
             else:
                 raise ValueError("Expected warning to give error!")
     with all_warnings():
@@ -81,7 +81,7 @@ def test_ignore_message_fails():
             try:
                 warnsA()
             except UserWarning as e:
-                assert_equal(str(e), "Warning A!")
+                assert str(e) == "Warning A!"
             else:
                 raise ValueError("Expected warning to give error!")
 
@@ -103,7 +103,7 @@ def test_ignore_type_fails():
             try:
                 warnsB()
             except DeprecationWarning as e:
-                assert_equal(str(e), "Warning B!")
+                assert str(e) == "Warning B!"
             else:
                 raise ValueError("Expected warning to give error!")
 

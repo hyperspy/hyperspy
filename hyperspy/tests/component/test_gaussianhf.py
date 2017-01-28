@@ -31,8 +31,8 @@ def test_function():
     g.centre.value = 1
     g.fwhm.value = 2
     g.height.value = 3
-    assert_equal(g.function(2), 1.5)
-    assert_equal(g.function(1), 3)
+    assert g.function(2) == 1.5
+    assert g.function(1) == 3
 
 
 def test_integral_as_signal():
@@ -66,8 +66,8 @@ def test_estimate_parameters_binned():
     assert_almost_equal(
         g1.height.value / axis.scale,
         g2.height.value)
-    assert_almost_equal(g2.centre.value, g1.centre.value, delta=1e-3)
-    assert_almost_equal(g2.fwhm.value, g1.fwhm.value, delta=0.1)
+    assert abs(g2.centre.value - g1.centre.value) <= 1e-3
+    assert abs(g2.fwhm.value - g1.fwhm.value) <= 0.1
 
 
 def test_util_sigma_set():

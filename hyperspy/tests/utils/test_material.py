@@ -33,10 +33,10 @@ class TestWeightToFromAtomic:
         elements = ("Cu", "Sn")
         wt = np.array([[[88] * 2] * 3, [[12] * 2] * 3])
         at = hs.material.weight_to_atomic(wt, elements)
-        assert_true(np.allclose(
-            at[:, 0, 0], np.array([93.196986, 6.803013]), atol=1e-3))
+        assert np.allclose(
+            at[:, 0, 0], np.array([93.196986, 6.803013]), atol=1e-3)
         wt2 = hs.material.atomic_to_weight(at, elements)
-        assert_true(np.allclose(wt, wt2))
+        assert np.allclose(wt, wt2)
 
 
 def test_density_of_mixture():
@@ -65,16 +65,16 @@ def test_density_of_mixture():
 def test_mac():
     assert_almost_equal(
         hs.material.mass_absorption_coefficient('Al', 3.5), 506.0153356472)
-    assert_true(np.allclose(
+    assert np.allclose(
         hs.material.mass_absorption_coefficient('Ta', [1, 3.2, 2.3]),
-        [3343.7083701143229, 1540.0819991890, 3011.264941118]))
+        [3343.7083701143229, 1540.0819991890, 3011.264941118])
     assert_almost_equal(
         hs.material.mass_absorption_coefficient('Zn', 'Zn_La'),
         1413.291119134)
-    assert_true(np.allclose(
+    assert np.allclose(
         hs.material.mass_absorption_coefficient(
             'Zn', ['Cu_La', 'Nb_La']), [1704.7912903000029,
-                                        1881.2081950943339]))
+                                        1881.2081950943339])
 
 
 def test_mixture_mac():

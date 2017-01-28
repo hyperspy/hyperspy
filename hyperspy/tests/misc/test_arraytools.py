@@ -38,7 +38,7 @@ def test_d2s_dtype():
     ref['y'] = 10
     ref['text'] = 'abcdef'
 
-    assert_equal(ref, dict2sarray(d, dtype=dt))
+    assert ref == dict2sarray(d, dtype=dt)
 
 
 def test_d2s_extra_dict_ok():
@@ -48,7 +48,7 @@ def test_d2s_extra_dict_ok():
     ref['y'] = 10
     ref['text'] = 'abcdef'
 
-    assert_equal(ref, dict2sarray(d, dtype=dt))
+    assert ref == dict2sarray(d, dtype=dt)
 
 
 def test_d2s_sarray():
@@ -63,7 +63,7 @@ def test_d2s_sarray():
     ref['y'] = 10
     ref['text'] = 'abcdef'
 
-    assert_equal(ref, dict2sarray(d, sarray=base))
+    assert ref == dict2sarray(d, sarray=base)
 
 
 def test_d2s_partial_sarray():
@@ -78,7 +78,7 @@ def test_d2s_partial_sarray():
     ref['y'] = 0
     ref['text'] = 'abcdef'
 
-    assert_equal(ref, dict2sarray(d, sarray=base))
+    assert ref == dict2sarray(d, sarray=base)
 
 
 def test_d2s_type_cast_ok():
@@ -89,7 +89,7 @@ def test_d2s_type_cast_ok():
     ref['y'] = 0
     ref['text'] = '55'
 
-    assert_equal(ref, dict2sarray(d, dtype=dt))
+    assert ref == dict2sarray(d, dtype=dt)
 
 
 def test_d2s_type_cast_invalid():
@@ -101,7 +101,7 @@ def test_d2s_type_cast_invalid():
 def test_d2s_string_cut():
     d = dict(text='Testerstring')
     sa = dict2sarray(d, dtype=dt)
-    assert_equal(sa['text'][0], b'Tester')
+    assert sa['text'][0] == b'Tester'
 
 
 def test_d2s_array1():

@@ -133,7 +133,7 @@ class TestPolynomial:
         c = self.m[0]
         np.testing.assert_array_almost_equal(c.grad_coefficients(1),
                                              np.array([[6, ], [4.5], [3.5]]))
-        assert_equal(c.grad_coefficients(np.arange(10)).shape, (3, 10))
+        assert c.grad_coefficients(np.arange(10)).shape == (3, 10)
 
     def test_estimate_parameters_binned(self):
         self.m.signal.metadata.Signal.binned = True
@@ -235,13 +235,13 @@ class TestExpression:
             module="numpy")
 
     def test_name(self):
-        assert_equal(self.g.name, "Gaussian")
+        assert self.g.name == "Gaussian"
 
     def test_position(self):
-        assert_is(self.g._position, self.g.x0)
+        assert self.g._position is self.g.x0
 
     def test_f(self):
-        assert_equal(self.g.function(0), 1)
+        assert self.g.function(0) == 1
 
     def test_grad_height(self):
         assert_almost_equal(
@@ -280,7 +280,7 @@ class TestScalableFixedPattern:
         with ignore_warning(message="invalid value encountered in sqrt",
                             category=RuntimeWarning):
             m.fit()
-        assert_almost_equal(fp.yscale.value, 100, delta=0.1)
+        assert abs(fp.yscale.value - 100) <= 0.1
 
     def test_both_binned(self):
         s = self.s
@@ -293,7 +293,7 @@ class TestScalableFixedPattern:
         with ignore_warning(message="invalid value encountered in sqrt",
                             category=RuntimeWarning):
             m.fit()
-        assert_almost_equal(fp.yscale.value, 100, delta=0.1)
+        assert abs(fp.yscale.value - 100) <= 0.1
 
     def test_pattern_unbinned_signal_binned(self):
         s = self.s
@@ -306,7 +306,7 @@ class TestScalableFixedPattern:
         with ignore_warning(message="invalid value encountered in sqrt",
                             category=RuntimeWarning):
             m.fit()
-        assert_almost_equal(fp.yscale.value, 1000, delta=1)
+        assert abs(fp.yscale.value - 1000) <= 1
 
     def test_pattern_binned_signal_unbinned(self):
         s = self.s
@@ -319,7 +319,7 @@ class TestScalableFixedPattern:
         with ignore_warning(message="invalid value encountered in sqrt",
                             category=RuntimeWarning):
             m.fit()
-        assert_almost_equal(fp.yscale.value, 10, delta=.1)
+        assert abs(fp.yscale.value - 10) <= .1
 
 
 class TestHeavisideStep:

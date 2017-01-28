@@ -24,18 +24,18 @@ def test_eelsdb_eels():
         order="spectrumMin",
         order_direction='DESC',
         monochromated=False, )
-    assert_equal(len(ss), 2)
+    assert len(ss) == 2
     md = ss[0].metadata
-    assert_equal(md.General.author, "Odile Stephan")
-    assert_equal(
-        md.Acquisition_instrument.TEM.Detector.EELS.collection_angle, 24)
-    assert_equal(md.Acquisition_instrument.TEM.convergence_angle, 15)
-    assert_equal(md.Acquisition_instrument.TEM.beam_energy, 100)
-    assert_equal(md.Signal.signal_type, "EELS")
-    assert_true("perpendicular" in md.Sample.description)
-    assert_true("parallel" in ss[1].metadata.Sample.description)
-    assert_equal(md.Sample.chemical_formula, "BN")
-    assert_equal(md.Acquisition_instrument.TEM.microscope, "STEM-VG")
+    assert md.General.author == "Odile Stephan"
+    assert (
+        md.Acquisition_instrument.TEM.Detector.EELS.collection_angle == 24)
+    assert md.Acquisition_instrument.TEM.convergence_angle == 15
+    assert md.Acquisition_instrument.TEM.beam_energy == 100
+    assert md.Signal.signal_type == "EELS"
+    assert "perpendicular" in md.Sample.description
+    assert "parallel" in ss[1].metadata.Sample.description
+    assert md.Sample.chemical_formula == "BN"
+    assert md.Acquisition_instrument.TEM.microscope == "STEM-VG"
 
 
 def test_eelsdb_xas():
@@ -45,6 +45,6 @@ def test_eelsdb_xas():
         raise SkipTest
     ss = eelsdb(
         spectrum_type="xrayabs", max_n=1,)
-    assert_equal(len(ss), 1)
+    assert len(ss) == 1
     md = ss[0].metadata
-    assert_equal(md.Signal.signal_type, "XAS")
+    assert md.Signal.signal_type == "XAS"

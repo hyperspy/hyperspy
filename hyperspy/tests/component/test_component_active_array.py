@@ -43,8 +43,7 @@ class TestParametersAsSignals:
         g._create_arrays()
         g._active_array[2, 0] = False
         g._active_array[0, 0] = False
-        assert_true(
-            np.isnan(g.A.as_signal('values').data[[0, 2], [0]]).all())
+        assert np.isnan(g.A.as_signal('values').data[[0, 2], [0]]).all()
 
     def test_stash_array(self):
         g = self.gaussian
@@ -54,13 +53,12 @@ class TestParametersAsSignals:
         g._active_array[0, 0] = False
         with stash_active_state([g]):
             g.active_is_multidimensional = False
-            assert_false(g._active_is_multidimensional)
+            assert not g._active_is_multidimensional
             np.testing.assert_array_equal(g.A.as_signal('values').data,
                                           np.zeros((3, 3)))
-            assert_is_none(g._active_array)
-        assert_true(g._active_is_multidimensional)
+            assert g._active_array is None
+        assert g._active_is_multidimensional
         np.testing.assert_almost_equal(
             g._active_array, np.array([[0, 1, 1], [1, 1, 1], [0, 1, 1]],
                                       dtype=bool))
-        assert_true(
-            np.isnan(g.A.as_signal('values').data[[0, 2], [0]]).all())
+        assert np.isnan(g.A.as_signal('values').data[[0, 2], [0]]).all()

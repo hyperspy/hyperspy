@@ -54,7 +54,7 @@ class TestModelIndexing:
         m = self.model.isig[:300]
         m1 = self.model.isig[300:]
         m2 = self.model.isig[:0.]
-        assert_is(m1[0].A.ext_bounded, m[0].A.ext_bounded)
+        assert m1[0].A.ext_bounded is m[0].A.ext_bounded
         np.testing.assert_array_almost_equal(s.data, m.signal.data)
         np.testing.assert_array_almost_equal(s.data, m2.signal.data)
         np.testing.assert_array_equal(m.dof.data, self.model.dof.data)
@@ -66,8 +66,8 @@ class TestModelIndexing:
 
         self.model.channel_switches[0] = False
         m = self.model.isig[:-100.]
-        assert_false(m.channel_switches[0])
-        assert_true(np.all(m.channel_switches[1:]))
+        assert not m.channel_switches[0]
+        assert np.all(m.channel_switches[1:])
 
     def test_model_navigation_indexer_slice(self):
         self.model.axes_manager.indices = (0, 0)
@@ -77,16 +77,16 @@ class TestModelIndexing:
         np.testing.assert_array_equal(
             m.chisq.data, self.model.chisq.data[:, 0::2])
         np.testing.assert_array_equal(m.dof.data, self.model.dof.data[:, 0::2])
-        assert_is(m.inav[:2][0].A.ext_force_positive,
+        assert (m.inav[:2][0].A.ext_force_positive is
                   m[0].A.ext_force_positive)
-        assert_equal(m.chisq.data.shape, (4, 2))
-        assert_false(m[0]._active_array[0, 0])
+        assert m.chisq.data.shape == (4, 2)
+        assert not m[0]._active_array[0, 0]
         for ic, c in enumerate(m):
             np.testing.assert_equal(
                 c._active_array,
                 self.model[ic]._active_array[:, 0::2])
             for p_new, p_old in zip(c.parameters, self.model[ic].parameters):
-                assert_true((p_old.map[:, 0::2] == p_new.map).all())
+                assert (p_old.map[:, 0::2] == p_new.map).all()
 
     # test that explicitly does the wrong thing by mixing up the order
     def test_component_copying_order(self):
@@ -95,9 +95,9 @@ class TestModelIndexing:
         g = self.model[0]
         g._slicing_order = ('_active_array', 'active_is_multidimensional',
                             'active')
-        assert_false(g._active_array[0, 0])
+        assert not g._active_array[0, 0]
         m = self.model.inav[0:2, 0:2]
-        assert_true(m[0]._active_array[0, 0])
+        assert m[0]._active_array[0, 0]
 
 
 class TestModelIndexingClass:
@@ -115,8 +115,8 @@ class TestModelIndexingClass:
 
     def test_model_class(self):
         m_eels = self.eels_m
-        assert_true(isinstance(m_eels, type(m_eels.isig[1:])))
-        assert_true(isinstance(m_eels, type(m_eels.inav[1:])))
+        assert isinstance(m_eels, type(m_eels.isig[1:]))
+        assert isinstance(m_eels, type(m_eels.inav[1:]))
 
 
 class TestEELSModelSlicing:
@@ -144,9 +144,9 @@ class TestEELSModelSlicing:
     def test_slicing_low_loss_inav(self):
         m = self.model
         m1 = m.inav[::2]
-        assert_equal(m1.signal.data.shape, m1.low_loss.data.shape)
+        assert m1.signal.data.shape == m1.low_loss.data.shape
 
     def test_slicing_low_loss_isig(self):
         m = self.model
         m1 = m.isig[::2]
-        assert_equal(m.signal.data.shape, m1.low_loss.data.shape)
+        assert m.signal.data.shape == m1.low_loss.data.shape

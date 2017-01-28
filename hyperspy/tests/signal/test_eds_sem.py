@@ -46,28 +46,26 @@ class Test_metadata:
         s = self.signal
         old_metadata = s.metadata.deepcopy()
         sSum = s.sum(0)
-        assert_equal(
-            sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time,
+        assert (
+            sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time ==
             3.1 * 2)
         # Check that metadata is unchanged
         print(old_metadata, s.metadata)      # Capture for comparison on error
-        assert_dict_equal(old_metadata.as_dictionary(),
-                          s.metadata.as_dictionary(),
-                          "Source metadata changed")
+        assert (old_metadata.as_dictionary() ==
+                          s.metadata.as_dictionary()), "Source metadata changed"
 
     def test_sum_live_time2(self):
         s = self.signal
         old_metadata = s.metadata.deepcopy()
         sSum = s.sum((0, 1))
-        assert_equal(
-            sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time,
+        assert (
+            sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time ==
             3.1 *
             2 * 4)
         # Check that metadata is unchanged
         print(old_metadata, s.metadata)      # Capture for comparison on error
-        assert_dict_equal(old_metadata.as_dictionary(),
-                          s.metadata.as_dictionary(),
-                          "Source metadata changed")
+        assert (old_metadata.as_dictionary() ==
+                          s.metadata.as_dictionary()), "Source metadata changed"
 
     def test_sum_live_time_out_arg(self):
         s = self.signal
@@ -75,9 +73,9 @@ class Test_metadata:
         s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time = 4.2
         s_resum = s.sum(0)
         r = s.sum(0, out=sSum)
-        assert_is_none(r)
-        assert_equal(
-            s_resum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time,
+        assert r is None
+        assert (
+            s_resum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time ==
             sSum.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time)
         np.testing.assert_allclose(s_resum.data, sSum.data)
 
@@ -86,76 +84,75 @@ class Test_metadata:
         old_metadata = s.metadata.deepcopy()
         dim = s.axes_manager.shape
         s = s.rebin([dim[0] / 2, dim[1] / 2, dim[2]])
-        assert_equal(
-            s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time,
+        assert (
+            s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time ==
             3.1 *
             2 *
             2)
         # Check that metadata is unchanged
         print(old_metadata, self.signal.metadata)    # Captured on error
-        assert_dict_equal(old_metadata.as_dictionary(),
-                          self.signal.metadata.as_dictionary(),
-                          "Source metadata changed")
+        assert (old_metadata.as_dictionary() ==
+                          self.signal.metadata.as_dictionary()), "Source metadata changed"
 
     def test_add_elements(self):
         s = self.signal
         s.add_elements(['Al', 'Ni'])
-        assert_equal(s.metadata.Sample.elements, ['Al', 'Ni'])
+        assert s.metadata.Sample.elements == ['Al', 'Ni']
         s.add_elements(['Al', 'Ni'])
-        assert_equal(s.metadata.Sample.elements, ['Al', 'Ni'])
+        assert s.metadata.Sample.elements == ['Al', 'Ni']
         s.add_elements(["Fe", ])
-        assert_equal(s.metadata.Sample.elements, ['Al', "Fe", 'Ni'])
+        assert s.metadata.Sample.elements == ['Al', "Fe", 'Ni']
         s.set_elements(['Al', 'Ni'])
-        assert_equal(s.metadata.Sample.elements, ['Al', 'Ni'])
+        assert s.metadata.Sample.elements == ['Al', 'Ni']
 
     def test_add_lines(self):
         s = self.signal
         s.add_lines(lines=())
-        assert_equal(s.metadata.Sample.xray_lines, [])
+        assert s.metadata.Sample.xray_lines == []
         s.add_lines(("Fe_Ln",))
-        assert_equal(s.metadata.Sample.xray_lines, ["Fe_Ln"])
+        assert s.metadata.Sample.xray_lines == ["Fe_Ln"]
         s.add_lines(("Fe_Ln",))
-        assert_equal(s.metadata.Sample.xray_lines, ["Fe_Ln"])
+        assert s.metadata.Sample.xray_lines == ["Fe_Ln"]
         s.add_elements(["Ti", ])
         s.add_lines(())
-        assert_equal(
-            s.metadata.Sample.xray_lines, ['Fe_Ln', 'Ti_La'])
+        assert (
+            s.metadata.Sample.xray_lines == ['Fe_Ln', 'Ti_La'])
         s.set_lines((), only_one=False, only_lines=False)
-        assert_equal(s.metadata.Sample.xray_lines,
+        assert (s.metadata.Sample.xray_lines ==
                      ['Fe_La', 'Fe_Lb3', 'Fe_Ll', 'Fe_Ln', 'Ti_La',
                          'Ti_Lb3', 'Ti_Ll', 'Ti_Ln'])
         s.metadata.Acquisition_instrument.SEM.beam_energy = 0.4
         s.set_lines((), only_one=False, only_lines=False)
-        assert_equal(s.metadata.Sample.xray_lines, ['Ti_Ll'])
+        assert s.metadata.Sample.xray_lines == ['Ti_Ll']
 
     def test_add_lines_auto(self):
         s = self.signal
         s.axes_manager.signal_axes[0].scale = 1e-2
         s.set_elements(["Ti", "Al"])
         s.set_lines(['Al_Ka'])
-        assert_equal(
-            s.metadata.Sample.xray_lines, ['Al_Ka', 'Ti_Ka'])
+        assert (
+            s.metadata.Sample.xray_lines == ['Al_Ka', 'Ti_Ka'])
 
         del s.metadata.Sample.xray_lines
         s.set_elements(['Al', 'Ni'])
         s.add_lines()
-        assert_equal(
-            s.metadata.Sample.xray_lines, ['Al_Ka', 'Ni_Ka'])
+        assert (
+            s.metadata.Sample.xray_lines == ['Al_Ka', 'Ni_Ka'])
         s.metadata.Acquisition_instrument.SEM.beam_energy = 10.0
         s.set_lines([])
-        assert_equal(
-            s.metadata.Sample.xray_lines, ['Al_Ka', 'Ni_La'])
+        assert (
+            s.metadata.Sample.xray_lines == ['Al_Ka', 'Ni_La'])
         s.metadata.Acquisition_instrument.SEM.beam_energy = 200
         s.set_elements(['Au', 'Ni'])
         s.set_lines([])
-        assert_equal(s.metadata.Sample.xray_lines,
+        assert (s.metadata.Sample.xray_lines ==
                      ['Au_La', 'Ni_Ka'])
 
     def test_default_param(self):
         s = self.signal
         mp = s.metadata
-        assert_equal(
-            mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa,
+        assert (
+            mp.Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa ==
             preferences.EDS.eds_mn_ka)
 
     def test_SEM_to_TEM(self):
@@ -174,7 +171,7 @@ class Test_metadata:
             (mpTEM.Acquisition_instrument.TEM.Detector.EDS.
              energy_resolution_MnKa),
             mpTEM.Signal.signal_type]
-        assert_equal(results, resultsTEM)
+        assert results == resultsTEM
 
     def test_get_calibration_from(self):
         s = self.signal
@@ -183,7 +180,7 @@ class Test_metadata:
         energy_axis.scale = 0.01
         energy_axis.offset = -0.10
         s.get_calibration_from(scalib)
-        assert_equal(s.axes_manager.signal_axes[0].scale, energy_axis.scale)
+        assert s.axes_manager.signal_axes[0].scale == energy_axis.scale
 
     def test_take_off_angle(self):
         s = self.signal
@@ -213,7 +210,7 @@ class Test_get_lines_intentisity:
         sAl = s.get_lines_intensity(["Al_Ka"],
                                     plot_result=False,
                                     integration_windows=5)[0]
-        assert_equal(sAl.axes_manager.signal_dimension, 0)
+        assert sAl.axes_manager.signal_dimension == 0
         np.testing.assert_allclose(24.99516, sAl.data[0, 0, 0], atol=1e-3)
         sAl = s.inav[0].get_lines_intensity(
             ["Al_Ka"], plot_result=False, integration_windows=5)[0]
@@ -227,9 +224,9 @@ class Test_get_lines_intentisity:
         s.axes_manager[-1].offset = 1.0
         with assert_warns(message="C_Ka is not in the data energy range."):
             sC = s.get_lines_intensity(["C_Ka"], plot_result=False)
-        assert_equal(len(sC), 0)
-        assert_equal(sAl.metadata.Sample.elements, ["Al"])
-        assert_equal(sAl.metadata.Sample.xray_lines, ["Al_Ka"])
+        assert len(sC) == 0
+        assert sAl.metadata.Sample.elements == ["Al"]
+        assert sAl.metadata.Sample.xray_lines == ["Al_Ka"]
 
     def test_eV(self):
         s = self.signal
@@ -314,16 +311,16 @@ class Test_energy_units:
 
     def test_beam_energy(self):
         s = self.signal
-        assert_equal(s._get_beam_energy(), 5.0)
+        assert s._get_beam_energy() == 5.0
         s.axes_manager.signal_axes[0].units = 'eV'
-        assert_equal(s._get_beam_energy(), 5000.0)
+        assert s._get_beam_energy() == 5000.0
         s.axes_manager.signal_axes[0].units = 'keV'
 
     def test_line_energy(self):
         s = self.signal
-        assert_equal(s._get_line_energy('Al_Ka'), 1.4865)
+        assert s._get_line_energy('Al_Ka') == 1.4865
         s.axes_manager.signal_axes[0].units = 'eV'
-        assert_equal(s._get_line_energy('Al_Ka'), 1486.5)
+        assert s._get_line_energy('Al_Ka') == 1486.5
         s.axes_manager.signal_axes[0].units = 'keV'
 
         np.testing.assert_allclose(s._get_line_energy('Al_Ka', FWHM_MnKa='auto'),
