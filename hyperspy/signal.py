@@ -4056,6 +4056,8 @@ class BaseSignal(FancySlicing,
         point_color_list = []
 
         for marker in self.markers:
+            if marker.axes_manager is None:
+                marker.axes_manager = self.axes_manager
             if marker._matplotlib_collection_type == 'line':
                 line_color_list.append(marker.marker_properties['color'])
                 line_linewidth_list.append(marker.marker_properties['linewidth'])
