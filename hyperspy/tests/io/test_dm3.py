@@ -74,6 +74,7 @@ class test_ImageObject():
         assert self.imageobject._parse_string("") is None
         assert self.imageobject._parse_string("string") is "string"
 
+
 def test_missing_tag():
     fname = os.path.join(my_path, "dm3_2D_data",
                          "test_diffraction_pattern_tags_removed.dm3")
@@ -223,6 +224,7 @@ def test_read_EDS_metadata():
         md.Signal.Noise_properties.Variance_linear_model.gain_offset,
         0.0)
 
+
 def test_location():
     fname_list = ['Fei HAADF-DE_location.dm3', 'Fei HAADF-FR_location.dm3',
                   'Fei HAADF-MX_location.dm3', 'Fei HAADF-UK_location.dm3']
@@ -238,7 +240,8 @@ def test_location():
     s = load(os.path.join(my_path, "dm3_locale", fname_list[3]))
     nt.assert_equal(s.metadata.General.date, "2016-08-27")
     nt.assert_equal(s.metadata.General.time, "20:52:30")
-    
+
+
 def test_loading():
     dims = range(1, 4)
     for dim in dims:

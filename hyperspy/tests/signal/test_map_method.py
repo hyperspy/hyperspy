@@ -30,8 +30,8 @@ class TestImage:
         im = self.im.inav[0]
         imt = im.deepcopy()
         for s, t in zip([im, imt], [False, True]):
-            s.map(gaussian_filter, sigma=1, show_progressbar=None, 
-                   parallel=t)
+            s.map(gaussian_filter, sigma=1, show_progressbar=None,
+                  parallel=t)
             np.testing.assert_allclose(s.data, np.array(
                 [[1.68829507, 2.2662213, 2.84414753],
                  [3.42207377, 4., 4.57792623],
@@ -46,8 +46,8 @@ class TestImage:
 
         for s, t in zip([im, imt], [False, True]):
             s.map(gaussian_filter,
-                   sigma=sigmas, show_progressbar=None,
-                   parallel=t)
+                  sigma=sigmas, show_progressbar=None,
+                  parallel=t)
             np.testing.assert_allclose(s.data, np.array(
                 [[[0., 1., 2.],
                     [3., 4., 5.],
@@ -88,12 +88,12 @@ class TestImage:
                                        np.arange(9.).reshape((3, 3)),
                                        atol=1e-7)
             np.testing.assert_allclose(s.data[1],
-                                       np.array([[0.,   0.,   0.,   0.],
-                                                 [0.,  10.34834957,
-                                                     13.88388348,   0.],
-                                                 [0.,  12.11611652,
-                                                     15.65165043,   0.],
-                                                 [0.,   0.,   0.,   0.]]))
+                                       np.array([[0., 0., 0., 0.],
+                                                 [0., 10.34834957,
+                                                     13.88388348, 0.],
+                                                 [0., 12.11611652,
+                                                     15.65165043, 0.],
+                                                 [0., 0., 0., 0.]]))
 
 
 class TestSignal1D:
@@ -106,7 +106,7 @@ class TestSignal1D:
         for s, t in zip([self.s, ss], [False, True]):
             m = mock.Mock()
             s.events.data_changed.connect(m.data_changed)
-            s.map(gaussian_filter1d, sigma=1, show_progressbar=None, 
+            s.map(gaussian_filter1d, sigma=1, show_progressbar=None,
                   parallel=t)
             np.testing.assert_allclose(s.data, np.array(
                 ([[0.42207377, 1., 1.57792623],
@@ -121,6 +121,7 @@ class TestSignal1D:
                   parallel=t)
             nt.assert_is(s.data.dtype, np.dtype('complex128'))
 
+
 class TestSignal0D:
 
     def setup_method(self, method):
@@ -134,7 +135,8 @@ class TestSignal0D:
             s.events.data_changed.connect(m.data_changed)
             s.map(lambda x, e: x ** e, e=2, show_progressbar=None,
                   parallel=t)
-            np.testing.assert_allclose(s.data, (np.arange(0., 6) ** 2).reshape((2, 3)))
+            np.testing.assert_allclose(
+                s.data, (np.arange(0., 6) ** 2).reshape((2, 3)))
             nt.assert_true(m.data_changed.called)
 
     def test_nav_dim_1(self):
@@ -202,12 +204,14 @@ class TestChangingAxes:
         nt.assert_equal(2, len(s.axes_manager.navigation_axes))
         nt.assert_equal(s.data.shape, (2, 3, 2, 4, 5, 6, 7))
 
+
 def test_new_axes():
-    s = hs.signals.Signal1D(np.empty((10,10)))
+    s = hs.signals.Signal1D(np.empty((10, 10)))
     s.axes_manager.navigation_axes[0].name = 'a'
     s.axes_manager.signal_axes[0].name = 'b'
+
     def test_func(d, i):
-        _slice = () + (None,)*i + (slice(None),)
+        _slice = () + (None,) * i + (slice(None),)
         return d[_slice]
     res = s.map(test_func, inplace=False,
                 i=hs.signals.BaseSignal(np.arange(10)).T)

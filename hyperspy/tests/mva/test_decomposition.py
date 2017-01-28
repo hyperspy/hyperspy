@@ -210,7 +210,8 @@ class TestReturnInfo:
                 self.s.decomposition(algorithm=algorithm, return_info=True, output_dimension=1))
         if not sklearn_installed:
             raise SkipTest
-        for algorithm in ["sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", ]:
+        for algorithm in ["sklearn_pca", "nmf",
+                          "sparse_pca", "mini_batch_sparse_pca", ]:
             nose.tools.assert_is_not_none(
                 self.s.decomposition(algorithm=algorithm, return_info=True, output_dimension=1))
 
@@ -220,6 +221,7 @@ class TestReturnInfo:
                 self.s.decomposition(algorithm=algorithm, return_info=False, output_dimension=1))
         if not sklearn_installed:
             raise SkipTest
-        for algorithm in ["sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", ]:
+        for algorithm in ["sklearn_pca", "nmf",
+                          "sparse_pca", "mini_batch_sparse_pca", ]:
             nose.tools.assert_is_none(
                 self.s.decomposition(algorithm=algorithm, return_info=False, output_dimension=1))

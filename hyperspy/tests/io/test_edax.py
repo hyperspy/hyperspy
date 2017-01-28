@@ -214,4 +214,3 @@ class TestSpdMap:
                                sem_dict['beam_energy'])
         nt.assert_almost_equal(spc_header.numElem,
                                len(elements))
-
