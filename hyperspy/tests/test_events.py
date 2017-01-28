@@ -1,6 +1,7 @@
 import copy
 
 import nose.tools as nt
+import pytest
 
 import hyperspy.events as he
 
@@ -110,79 +111,79 @@ class TestEventsSuppression(EventsBase):
             self.trigger_check(self.events.b.trigger, True)
             self.trigger_check(self.events.c.trigger, True)
 
-    @nt.raises(ValueError)
     def test_exception_event(self):
-        try:
-            with self.events.a.suppress():
-                self.trigger_check(self.events.a.trigger, False)
+        with pytest.raises(ValueError):
+            try:
+                with self.events.a.suppress():
+                    self.trigger_check(self.events.a.trigger, False)
+                    self.trigger_check(self.events.b.trigger, True)
+                    self.trigger_check(self.events.c.trigger, True)
+                    raise ValueError()
+            finally:
+                self.trigger_check(self.events.a.trigger, True)
                 self.trigger_check(self.events.b.trigger, True)
                 self.trigger_check(self.events.c.trigger, True)
-                raise ValueError()
-        finally:
-            self.trigger_check(self.events.a.trigger, True)
-            self.trigger_check(self.events.b.trigger, True)
-            self.trigger_check(self.events.c.trigger, True)
 
-    @nt.raises(ValueError)
     def test_exception_events(self):
-        try:
-            with self.events.suppress():
-                self.trigger_check(self.events.a.trigger, False)
-                self.trigger_check(self.events.b.trigger, False)
-                self.trigger_check(self.events.c.trigger, False)
-                raise ValueError()
-        finally:
-            self.trigger_check(self.events.a.trigger, True)
-            self.trigger_check(self.events.b.trigger, True)
-            self.trigger_check(self.events.c.trigger, True)
-
-    @nt.raises(ValueError)
-    def test_exception_single(self):
-        try:
-            with self.events.a.suppress_callback(self.on_trigger):
-                self.trigger_check(self.events.a.trigger, False)
-                self.trigger_check2(self.events.a.trigger, True)
+        with pytest.raises(ValueError):
+            try:
+                with self.events.suppress():
+                    self.trigger_check(self.events.a.trigger, False)
+                    self.trigger_check(self.events.b.trigger, False)
+                    self.trigger_check(self.events.c.trigger, False)
+                    raise ValueError()
+            finally:
+                self.trigger_check(self.events.a.trigger, True)
                 self.trigger_check(self.events.b.trigger, True)
                 self.trigger_check(self.events.c.trigger, True)
-                raise ValueError()
-        finally:
-            self.trigger_check(self.events.a.trigger, True)
-            self.trigger_check2(self.events.a.trigger, True)
-            self.trigger_check(self.events.b.trigger, True)
-            self.trigger_check(self.events.c.trigger, True)
 
-    @nt.raises(ValueError)
-    def test_exception_nested(self):
-        try:
-            with self.events.a.suppress_callback(self.on_trigger):
-                try:
-                    with self.events.a.suppress():
-                        try:
-                            with self.events.suppress():
-                                self.trigger_check(self.events.a.trigger,
-                                                   False)
-                                self.trigger_check2(self.events.a.trigger,
-                                                    False)
-                                self.trigger_check(self.events.b.trigger,
-                                                   False)
-                                self.trigger_check(self.events.c.trigger,
-                                                   False)
-                                raise ValueError()
-                        finally:
-                            self.trigger_check(self.events.a.trigger, False)
-                            self.trigger_check2(self.events.a.trigger, False)
-                            self.trigger_check(self.events.b.trigger, True)
-                            self.trigger_check(self.events.c.trigger, True)
-                finally:
+    def test_exception_single(self):
+        with pytest.raises(ValueError):
+            try:
+                with self.events.a.suppress_callback(self.on_trigger):
                     self.trigger_check(self.events.a.trigger, False)
                     self.trigger_check2(self.events.a.trigger, True)
                     self.trigger_check(self.events.b.trigger, True)
                     self.trigger_check(self.events.c.trigger, True)
-        finally:
-            self.trigger_check(self.events.a.trigger, True)
-            self.trigger_check2(self.events.a.trigger, True)
-            self.trigger_check(self.events.b.trigger, True)
-            self.trigger_check(self.events.c.trigger, True)
+                    raise ValueError()
+            finally:
+                self.trigger_check(self.events.a.trigger, True)
+                self.trigger_check2(self.events.a.trigger, True)
+                self.trigger_check(self.events.b.trigger, True)
+                self.trigger_check(self.events.c.trigger, True)
+
+    def test_exception_nested(self):
+        with pytest.raises(ValueError):
+            try:
+                with self.events.a.suppress_callback(self.on_trigger):
+                    try:
+                        with self.events.a.suppress():
+                            try:
+                                with self.events.suppress():
+                                    self.trigger_check(self.events.a.trigger,
+                                                       False)
+                                    self.trigger_check2(self.events.a.trigger,
+                                                        False)
+                                    self.trigger_check(self.events.b.trigger,
+                                                       False)
+                                    self.trigger_check(self.events.c.trigger,
+                                                       False)
+                                    raise ValueError()
+                            finally:
+                                self.trigger_check(self.events.a.trigger, False)
+                                self.trigger_check2(self.events.a.trigger, False)
+                                self.trigger_check(self.events.b.trigger, True)
+                                self.trigger_check(self.events.c.trigger, True)
+                    finally:
+                        self.trigger_check(self.events.a.trigger, False)
+                        self.trigger_check2(self.events.a.trigger, True)
+                        self.trigger_check(self.events.b.trigger, True)
+                        self.trigger_check(self.events.c.trigger, True)
+            finally:
+                self.trigger_check(self.events.a.trigger, True)
+                self.trigger_check2(self.events.a.trigger, True)
+                self.trigger_check(self.events.b.trigger, True)
+                self.trigger_check(self.events.c.trigger, True)
 
     def test_suppress_wrong(self):
         with self.events.a.suppress_callback(f_a):
@@ -292,8 +293,10 @@ class TestEventsSignatures(EventsBase):
         self.events.a.trigger(one=2, two=5)
         self.events.a.trigger(one=2, two=5, three=8)
         self.events.a.connect(lambda one, two: 0, )
-        nt.assert_raises(TypeError, self.events.a.trigger, three=None)
-        nt.assert_raises(TypeError, self.events.a.trigger, one=2)
+        with pytest.raises(TypeError):
+            self.events.a.trigger(three=None)
+        with pytest.raises(TypeError):
+            self.events.a.trigger(one=2)
 
     def test_connected_and_disconnect(self):
         self.events.a.connect(f_a)
@@ -307,9 +310,9 @@ class TestEventsSignatures(EventsBase):
         self.events.a.disconnect(f_d)
         nt.assert_equal(self.events.a.connected, set([]))
 
-    @nt.raises(TypeError)
     def test_type(self):
-        self.events.a.connect('f_a')
+        with pytest.raises(TypeError):
+            self.events.a.connect('f_a')
 
 
 def test_events_container_magic_attributes():
@@ -336,13 +339,13 @@ class TestTriggerArgResolution(EventsBase):
         self.events.b = he.Event(arguments=['A', 'B', ('C', "vC")])
         self.events.c = he.Event()
 
-    @nt.raises(SyntaxError)
     def test_wrong_default_order(self):
-        self.events.d = he.Event(arguments=['A', ('C', "vC"), "B"])
+        with pytest.raises(SyntaxError):
+            self.events.d = he.Event(arguments=['A', ('C', "vC"), "B"])
 
-    @nt.raises(ValueError)
     def test_wrong_kwarg_name(self):
-        self.events.d = he.Event(arguments=['A', "B+"])
+        with pytest.raises(ValueError):
+            self.events.d = he.Event(arguments=['A', "B+"])
 
     def test_arguments(self):
         nt.assert_equal(self.events.a.arguments, ("A", "B"))
@@ -357,9 +360,8 @@ class TestTriggerArgResolution(EventsBase):
                               ["A", "B"])
         self.events.a.connect(lambda A, B:
                               nt.assert_equal((A, B), ('vA', 'vB')), "auto")
-        nt.assert_raises(NotImplementedError,
-                         self.events.a.connect, function=lambda *args: 0,
-                         kwargs="auto")
+        with pytest.raises(NotImplementedError):
+             self.events.a.connect(function=lambda *args: 0, kwargs="auto")
 
         self.events.a.connect(lambda **kwargs:
                               nt.assert_equal((kwargs["A"], kwargs["B"]),
@@ -373,22 +375,22 @@ class TestTriggerArgResolution(EventsBase):
                                               ('vA', 'vB', "vC")))
         self.events.a.trigger(A='vA', B='vB')
         self.events.b.trigger(A='vA', B='vB')
-        nt.assert_raises(TypeError, self.events.a.trigger, A='vA', B='vB',
-                         C='vC')
+        with pytest.raises(TypeError):
+            self.events.a.trigger(A='vA', B='vB', C='vC')
         self.events.a.trigger(A='vA', B='vB')
         self.events.a.trigger(B='vB', A='vA')
-        nt.assert_raises(TypeError, self.events.a.trigger,
-                         A='vA', C='vC', B='vB', D='vD')
+        with pytest.raises(TypeError):
+            self.events.a.trigger(A='vA', C='vC', B='vB', D='vD')
 
-    @nt.raises(ValueError)
     def test_not_connected(self):
-        self.events.a.disconnect(lambda: 0)
+        with pytest.raises(ValueError):
+            self.events.a.disconnect(lambda: 0)
 
-    @nt.raises(ValueError)
     def test_already_connected(self):
         def f(): pass
         self.events.a.connect(f)
-        self.events.a.connect(f)
+        with pytest.raises(ValueError):
+            self.events.a.connect(f)
 
     def test_deepcopy(self):
         def f(): pass

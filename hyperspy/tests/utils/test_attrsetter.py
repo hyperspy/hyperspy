@@ -18,6 +18,7 @@
 
 
 import nose.tools as nt
+import pytest
 
 from hyperspy.misc.utils import attrsetter
 from hyperspy.misc.utils import DictionaryTreeBrowser
@@ -56,10 +57,10 @@ class TestAttrSetter:
         attrsetter(t, 'Leaf3', 39)
         nt.assert_equal(t.Leaf3, 39)
 
-    @nt.raises(AttributeError)
     def test_wrong_item(self):
         t = self.tree
-        attrsetter(t, 'random.name.with.more.than.one', 13)
+        with pytest.raises(AttributeError):
+            attrsetter(t, 'random.name.with.more.than.one', 13)
 
     def test_dummy(self):
         d = self.dummy
