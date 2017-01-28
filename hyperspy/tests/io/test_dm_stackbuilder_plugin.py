@@ -34,4 +34,4 @@ class TestStackBuilder:
         data_dimensions = image_stack.data.ndim
         am = image_stack.axes_manager
         axes_dimensions = am.signal_dimension + am.navigation_dimension
-        assert_equal(data_dimensions, axes_dimensions)
+        assert data_dimensions == axes_dimensions

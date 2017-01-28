@@ -112,9 +112,9 @@ class TestFitSeveralComponent:
                                    g1.function(axis),
                                    rtol=self.rtol,
                                    atol=10e-3)
-        assert_true(g1.active)
-        assert_true(g2.active)
-        assert_true(not g3.active)
+        assert g1.active
+        assert g2.active
+        assert not g3.active
 
     def test_fit_component_free_state(self):
         m = self.model
@@ -130,17 +130,17 @@ class TestFitSeveralComponent:
                                    rtol=self.rtol,
                                    atol=10e-3)
 
-        assert_true(g1.A.free)
-        assert_true(g1.sigma.free)
-        assert_true(g1.centre.free)
+        assert g1.A.free
+        assert g1.sigma.free
+        assert g1.centre.free
 
-        assert_true(not g2.A.free)
-        assert_true(not g2.sigma.free)
-        assert_true(g2.centre.free)
+        assert not g2.A.free
+        assert not g2.sigma.free
+        assert g2.centre.free
 
-        assert_true(g3.A.free)
-        assert_true(g3.sigma.free)
-        assert_true(g3.centre.free)
+        assert g3.A.free
+        assert g3.sigma.free
+        assert g3.centre.free
 
     def test_fit_multiple_component(self):
         m = self.model
