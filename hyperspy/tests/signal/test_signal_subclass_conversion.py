@@ -14,7 +14,9 @@ class Test1d:
 
     def test_as_signal2D(self):
         with pytest.raises(DataDimensionError):
-            nt.assert_true((self.s.data == self.s.as_signal2D((0, 1)).data).all())
+            nt.assert_true(
+                (self.s.data == self.s.as_signal2D(
+                    (0, 1)).data).all())
 
     def test_as_signal1D(self):
         nt.assert_true((self.s.data == self.s.as_signal1D(0).data).all())

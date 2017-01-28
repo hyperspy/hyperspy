@@ -128,7 +128,7 @@ def test_hyperspy_wrap():
                                 'bcf_data',
                                 'test_original_metadata.json')
     with open(filename_omd) as fn:
-        #original_metadata:
+        # original_metadata:
         omd_ref = json.load(fn)
     assert_deep_almost_equal(hype.metadata.as_dictionary(), md_ref)
     assert_deep_almost_equal(hype.original_metadata.as_dictionary(), omd_ref)

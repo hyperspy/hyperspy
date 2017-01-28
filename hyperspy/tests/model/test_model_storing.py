@@ -16,7 +16,6 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
-
 from os import remove
 from unittest import mock
 import gc

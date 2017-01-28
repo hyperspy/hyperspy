@@ -206,18 +206,30 @@ class TestReturnInfo:
 
     def test_decomposition_supported_return_true(self):
         for algorithm in ["RPCA_GoDec", "ORPCA"]:
-            assert self.s.decomposition(algorithm=algorithm, return_info=True, output_dimension=1) is not None
+            assert self.s.decomposition(
+                algorithm=algorithm,
+                return_info=True,
+                output_dimension=1) is not None
         if not sklearn_installed:
             raise SkipTest
         for algorithm in ["sklearn_pca", "nmf",
                           "sparse_pca", "mini_batch_sparse_pca", ]:
-            assert self.s.decomposition(algorithm=algorithm, return_info=True, output_dimension=1) is not None
+            assert self.s.decomposition(
+                algorithm=algorithm,
+                return_info=True,
+                output_dimension=1) is not None
 
     def test_decomposition_supported_return_false(self):
         for algorithm in ["RPCA_GoDec", "ORPCA"]:
-            assert self.s.decomposition(algorithm=algorithm, return_info=False, output_dimension=1) is None
+            assert self.s.decomposition(
+                algorithm=algorithm,
+                return_info=False,
+                output_dimension=1) is None
         if not sklearn_installed:
             raise SkipTest
         for algorithm in ["sklearn_pca", "nmf",
                           "sparse_pca", "mini_batch_sparse_pca", ]:
-            assert self.s.decomposition(algorithm=algorithm, return_info=False, output_dimension=1) is None
+            assert self.s.decomposition(
+                algorithm=algorithm,
+                return_info=False,
+                output_dimension=1) is None

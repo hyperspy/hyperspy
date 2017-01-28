@@ -29,6 +29,7 @@ def test_write_unsupported_data_shape():
     with pytest.raises(IOError):
         s.save('test_write_unsupported_data_shape.rpl')
 
+
 def test_write_unsupported_data_type():
     data = np.arange(5 * 10 * 15).reshape((5, 10, 15)).astype(np.float16)
     s = signals.Signal1D(data)

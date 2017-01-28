@@ -87,7 +87,7 @@ class Test_markers:
         m = markers.text(x=1, y=2, text='a')
         m.set_marker_properties(fontsize=30, color='red')
         assert (m.marker_properties ==
-                                     {'color': 'red', 'fontsize': 30})
+                {'color': 'red', 'fontsize': 30})
 
     def test_auto_update(self):
         m = markers.text(y=1, x=2, text='a')
