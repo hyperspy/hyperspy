@@ -204,7 +204,7 @@ class TestExample1:
             self.s.save(fname2)
             s2 = load(fname2)
             assert (s2.metadata.General.original_filename ==
-                         "example1-export.msa")
+                    "example1-export.msa")
             s2.metadata.General.original_filename = "example1.msa"
             assert_deep_almost_equal(self.s.metadata.as_dictionary(),
                                      s2.metadata.as_dictionary())
@@ -316,7 +316,7 @@ class TestExample2:
             self.s.save(fname2)
             s2 = load(fname2)
             assert (s2.metadata.General.original_filename ==
-                         "example2-export.msa")
+                    "example2-export.msa")
             s2.metadata.General.original_filename = "example2.msa"
             assert_deep_almost_equal(self.s.metadata.as_dictionary(),
                                      s2.metadata.as_dictionary())

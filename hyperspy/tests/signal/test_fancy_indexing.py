@@ -37,9 +37,9 @@ class Test1D:
         d = self.data
         np.testing.assert_array_equal(s.data, d)
         assert (s.axes_manager._axes[0].offset ==
-                     self.signal.axes_manager._axes[0].offset)
+                self.signal.axes_manager._axes[0].offset)
         assert (s.axes_manager._axes[0].scale ==
-                     self.signal.axes_manager._axes[0].scale)
+                self.signal.axes_manager._axes[0].scale)
 
     @raises(IndexError)
     def test_slice_out_of_range_interval_not_in_axis(self):
@@ -48,9 +48,9 @@ class Test1D:
     def test_slice_out_of_range_interval_in_axis(self):
         s = self.signal.isig[-20.:100.]
         assert (s.axes_manager[0].low_value ==
-                     self.signal.axes_manager[0].low_value)
+                self.signal.axes_manager[0].low_value)
         assert (s.axes_manager[0].high_value ==
-                     self.signal.axes_manager[0].high_value)
+                self.signal.axes_manager[0].high_value)
         np.testing.assert_array_equal(s.data, self.signal.data)
 
     def test_reverse_slice(self):
@@ -59,7 +59,7 @@ class Test1D:
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager._axes[0].offset == 9
         assert (s.axes_manager._axes[0].scale ==
-                     self.signal.axes_manager._axes[0].scale * -1)
+                self.signal.axes_manager._axes[0].scale * -1)
 
     def test_slice_out_of_axis(self):
         np.testing.assert_array_equal(
@@ -90,7 +90,7 @@ class Test1D:
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager._axes[0].offset == 1
         assert (s.axes_manager._axes[0].scale ==
-                     self.signal.axes_manager._axes[0].scale)
+                self.signal.axes_manager._axes[0].scale)
 
     def test_signal_indexer_reverse_slice(self):
         s = self.signal.isig[-1:1:-1]
@@ -98,7 +98,7 @@ class Test1D:
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager._axes[0].offset == 9
         assert (s.axes_manager._axes[0].scale ==
-                     self.signal.axes_manager._axes[0].scale * -1)
+                self.signal.axes_manager._axes[0].scale * -1)
 
     def test_signal_indexer_step2_slice(self):
         s = self.signal.isig[1:-1:2]
@@ -106,9 +106,9 @@ class Test1D:
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager._axes[0].offset == 1
         assert (np.sign(s.axes_manager._axes[0].scale) ==
-                     np.sign(self.signal.axes_manager._axes[0].scale))
+                np.sign(self.signal.axes_manager._axes[0].scale))
         assert (s.axes_manager._axes[0].scale ==
-                     self.signal.axes_manager._axes[0].scale * 2.)
+                self.signal.axes_manager._axes[0].scale * 2.)
 
     def test_signal_indexer_index(self):
         s = self.signal.isig[3]
@@ -184,7 +184,7 @@ class Test3D_Navigate_0_and_1:
         assert s.axes_manager._axes[1].offset == 1
         assert s.axes_manager._axes[1].size == 1
         assert (s.axes_manager._axes[1].scale ==
-                     self.signal.axes_manager._axes[1].scale)
+                self.signal.axes_manager._axes[1].scale)
 
     def test_1px_signal_indexer_slice(self):
         s = self.signal.isig[1:2]
@@ -193,7 +193,7 @@ class Test3D_Navigate_0_and_1:
         assert s.axes_manager.signal_axes[0].offset == 1
         assert s.axes_manager.signal_axes[0].size == 1
         assert (s.axes_manager.signal_axes[0].scale ==
-                     self.signal.axes_manager.signal_axes[0].scale)
+                self.signal.axes_manager.signal_axes[0].scale)
 
     def test_signal_indexer_slice_variance_signal(self):
         s1 = self.signal
@@ -252,7 +252,7 @@ class Test3D_Navigate_1:
         assert s.axes_manager._axes[1].offset == 1
         assert s.axes_manager._axes[1].size == 1
         assert (s.axes_manager._axes[1].scale ==
-                     self.signal.axes_manager._axes[1].scale)
+                self.signal.axes_manager._axes[1].scale)
 
     def test_1px_signal_indexer_slice(self):
         s = self.signal.isig[1:2]
@@ -261,7 +261,7 @@ class Test3D_Navigate_1:
         assert s.axes_manager.signal_axes[0].offset == 1
         assert s.axes_manager.signal_axes[0].size == 1
         assert (s.axes_manager.signal_axes[0].scale ==
-                     self.signal.axes_manager.signal_axes[0].scale)
+                self.signal.axes_manager.signal_axes[0].scale)
 
     def test_subclass_assignment(self):
         im = self.signal.as_signal2D((-2, -1))
@@ -283,7 +283,7 @@ class TestFloatArguments:
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager._axes[0].offset == 0.75
         assert (s.axes_manager._axes[0].scale ==
-                     self.signal.axes_manager._axes[0].scale)
+                self.signal.axes_manager._axes[0].scale)
 
     def test_float_end(self):
         s = self.signal.isig[1:4.75]
@@ -291,7 +291,7 @@ class TestFloatArguments:
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager._axes[0].offset == 0.75
         assert (s.axes_manager._axes[0].scale ==
-                     self.signal.axes_manager._axes[0].scale)
+                self.signal.axes_manager._axes[0].scale)
 
     def test_float_both(self):
         s = self.signal.isig[0.75:4.75]
@@ -299,7 +299,7 @@ class TestFloatArguments:
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager._axes[0].offset == 0.75
         assert (s.axes_manager._axes[0].scale ==
-                     self.signal.axes_manager._axes[0].scale)
+                self.signal.axes_manager._axes[0].scale)
 
     def test_float_step(self):
         s = self.signal.isig[::1.1]
@@ -307,7 +307,7 @@ class TestFloatArguments:
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager._axes[0].offset == 0.25
         assert (s.axes_manager._axes[0].scale ==
-                     self.signal.axes_manager._axes[0].scale * 2)
+                self.signal.axes_manager._axes[0].scale * 2)
 
     def test_negative_float_step(self):
         s = self.signal.isig[::-1.1]
@@ -315,7 +315,7 @@ class TestFloatArguments:
         np.testing.assert_array_equal(s.data, d)
         assert s.axes_manager._axes[0].offset == 4.75
         assert (s.axes_manager._axes[0].scale ==
-                     self.signal.axes_manager._axes[0].scale * -2)
+                self.signal.axes_manager._axes[0].scale * -2)
 
 
 class TestEllipsis:
