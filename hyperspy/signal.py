@@ -1999,7 +1999,7 @@ class BaseSignal(FancySlicing,
                 lambda: self.events.data_changed.disconnect(self.update_plot),
                 [])
         if plot_markers:
-            if self.metadata.has_item('Markers'):
+            if hasattr(self, 'markers'):
                 self._add_all_markers_to_plot()
     plot.__doc__ %= BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 
@@ -4055,7 +4055,7 @@ class BaseSignal(FancySlicing,
         point_y_coordinate_list = []
         point_color_list = []
 
-        for marker in self.metadata.Markers:
+        for marker in self.markers:
             if marker._matplotlib_collection_type == 'line':
                 line_color_list.append(marker.marker_properties['color'])
                 line_linewidth_list.append(marker.marker_properties['linewidth'])
