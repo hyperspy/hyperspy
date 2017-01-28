@@ -164,7 +164,7 @@ class TestCaseSaveAndReadImage():
         np.testing.assert_equal(signal.metadata.General.title, test_title)
         nt.assert_is_instance(signal, Signal2D)
 
-    def tearDown(self):
+    def teardown_method(self, method):
         remove(os.path.join(my_path, 'unf_files', 'example_temp.unf'))
 
 
@@ -180,7 +180,7 @@ class TestCaseSaveAndReadByte():
         np.testing.assert_equal(signal.metadata.General.title, test_title)
         nt.assert_is_instance(signal, Signal2D)
 
-    def tearDown(self):
+    def teardown_method(self, method):
         remove(os.path.join(my_path, 'unf_files', 'example_temp.unf'))
 
 

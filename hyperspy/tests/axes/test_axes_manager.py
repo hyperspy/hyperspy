@@ -26,7 +26,7 @@ from hyperspy.axes import DataAxis, AxesManager
 
 class TestAxesManager:
 
-    def setup(self):
+    def setup_method(self, method):
         axes_list = [
             {'name': 'a',
              'navigate': True,

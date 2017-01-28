@@ -9,7 +9,7 @@ from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
 class TestNdAxes:
 
-    def setUp(self):
+    def setup_method(self, method):
         # Create three signals with dimensions:
         # s1 : <BaseSignal, title: , dimensions: (4, 3, 2|2, 3)>
         # s2 : <BaseSignal, title: , dimensions: (2, 3|4, 3, 2)>
@@ -77,7 +77,7 @@ class TestNdAxes:
 
 class TestGetExplainedVarinaceRatio:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = signals.BaseSignal(np.empty(1))
         self.s = s
 
@@ -94,7 +94,7 @@ class TestGetExplainedVarinaceRatio:
 
 class TestReverseDecompositionComponent:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = signals.BaseSignal(np.zeros(1))
         self.factors = np.ones([2, 3])
         self.loadings = np.ones([2, 3])
@@ -145,7 +145,7 @@ class TestReverseDecompositionComponent:
 
 class TestNormalizeComponents():
 
-    def setUp(self):
+    def setup_method(self, method):
         s = signals.BaseSignal(np.zeros(1))
         self.factors = np.ones([2, 3])
         self.loadings = np.ones([2, 3])
@@ -194,7 +194,7 @@ class TestNormalizeComponents():
 
 class TestReturnInfo:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = signals.Signal1D(np.random.random((20, 100)))
 
     def test_decomposition_not_supported(self):

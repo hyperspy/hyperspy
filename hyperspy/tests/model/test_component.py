@@ -7,7 +7,7 @@ from unittest import mock
 
 class TestMultidimensionalActive:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.c = Component(["parameter"])
         self.c._axes_manager = AxesManager([{"size": 3,
                                              "navigate": True},
@@ -69,7 +69,7 @@ def test_update_number_free_parameters():
 
 class TestGeneralMethods:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.c = Component(["one", "two"])
         self.c.one.free = False
         self.c.two.free = True
@@ -196,7 +196,7 @@ class TestGeneralMethods:
 
 class TestCallMethods:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.c = Component(["one", "two"])
         c = self.c
         c.model = mock.MagicMock()

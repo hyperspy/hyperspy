@@ -7,7 +7,7 @@ from hyperspy.signal import BaseSignal
 
 class TestDictionaryBrowser:
 
-    def setUp(self):
+    def setup_method(self, method):
         tree = DictionaryTreeBrowser(
             {
                 "Node1": {"leaf11": 11,

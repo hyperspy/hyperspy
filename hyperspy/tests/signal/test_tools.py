@@ -16,7 +16,7 @@ def _verify_test_sum_x_E(self, s):
 
 class Test2D:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.signal = signals.Signal1D(np.arange(5 * 10).reshape(5, 10))
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "E"
@@ -171,7 +171,7 @@ def _test_default_navigation_signal_operations_over_many_axes(self, op):
 
 class Test3D:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.signal = signals.Signal1D(np.arange(2 * 4 * 6).reshape(2, 4, 6))
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "y"
@@ -376,7 +376,7 @@ class Test3D:
 
 class Test4D:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = signals.Signal1D(np.ones((5, 4, 3, 6)))
         for axis, name in zip(
                 s.axes_manager._get_axes_in_natural_order(),
@@ -453,7 +453,7 @@ def test_signal_iterator():
 
 class TestDerivative:
 
-    def setup(self):
+    def setup_method(self, method):
         offset = 3
         scale = 0.1
         x = np.arange(-offset, offset, scale)
@@ -471,7 +471,7 @@ class TestDerivative:
 
 class TestOutArg:
 
-    def setup(self):
+    def setup_method(self, method):
         # Some test require consistent random data for reference to be correct
         np.random.seed(0)
         s = signals.Signal1D(np.random.rand(5, 4, 3, 6))
@@ -641,7 +641,7 @@ class TestOutArg:
 
 class TestTranspose:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = signals.BaseSignal(np.random.rand(1, 2, 3, 4, 5, 6))
         for ax, name in zip(self.s.axes_manager._axes, 'abcdef'):
             ax.name = name

@@ -30,7 +30,7 @@ import hyperspy.api as hs
 
 class TestSubPixelAlign:
 
-    def setUp(self):
+    def setup_method(self, method):
         ref_image = ascent()
         center = np.array((256, 256))
         shifts = np.array([(0.0, 0.0), (4.3, 2.13), (1.65, 3.58),
@@ -61,7 +61,7 @@ class TestSubPixelAlign:
 
 class TestAlignTools:
 
-    def setUp(self):
+    def setup_method(self, method):
         im = face(gray=True)
         self.ascent_offset = np.array((256, 256))
         s = hs.signals.Signal2D(np.zeros((10, 100, 100)))

@@ -29,7 +29,7 @@ MY_PATH = os.path.dirname(__file__)
 
 class TestFEIReader():
 
-    def setUp(self):
+    def setup_method(self, method):
         self.dirpathold = os.path.join(MY_PATH, 'FEI_old')
         self.dirpathnew = os.path.join(MY_PATH, 'FEI_new')
 

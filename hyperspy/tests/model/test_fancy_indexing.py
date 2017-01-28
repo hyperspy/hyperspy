@@ -26,7 +26,7 @@ from hyperspy.components1d import Gaussian
 
 class TestModelIndexing:
 
-    def setUp(self):
+    def setup_method(self, method):
         np.random.seed(1)
         axes = np.array([[100 * np.random.random() + np.arange(0., 600, 1)
                           for i in range(3)] for j in range(4)])
@@ -102,7 +102,7 @@ class TestModelIndexing:
 
 class TestModelIndexingClass:
 
-    def setUp(self):
+    def setup_method(self, method):
         s_eels = EELSSpectrum([list(range(10))] * 3)
         s_eels.metadata.set_item(
             'Acquisition_instrument.TEM.Detector.EELS.collection_angle',
@@ -121,7 +121,7 @@ class TestModelIndexingClass:
 
 class TestEELSModelSlicing:
 
-    def setUp(self):
+    def setup_method(self, method):
         data = np.random.random((10, 10, 600))
         s = EELSSpectrum(data)
         s.axes_manager[-1].offset = -150.

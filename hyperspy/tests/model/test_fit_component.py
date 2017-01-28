@@ -26,7 +26,7 @@ from hyperspy.components1d import Gaussian
 
 class TestFitOneComponent:
 
-    def setUp(self):
+    def setup_method(self, method):
         g = Gaussian()
         g.A.value = 10000.0
         g.centre.value = 5000.0
@@ -58,7 +58,7 @@ class TestFitOneComponent:
 
 class TestFitSeveralComponent:
 
-    def setUp(self):
+    def setup_method(self, method):
         gs1 = Gaussian()
         gs1.A.value = 10000.0
         gs1.centre.value = 5000.0

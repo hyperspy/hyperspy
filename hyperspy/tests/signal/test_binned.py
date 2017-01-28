@@ -41,7 +41,7 @@ def test_eds_sem_binned_default():
 
 class TestModelBinned:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D([1])
         s.axes_manager[0].scale = 0.1
         m = s.create_model()

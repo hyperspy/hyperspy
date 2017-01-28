@@ -24,7 +24,7 @@ from hyperspy.components1d import Lorentzian
 
 class TestRedChisq:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.shape = (7, 15)
         art_model = DictionaryTreeBrowser()
         art_model.set_item('red_chisq.data', np.ones(self.shape))
@@ -67,7 +67,7 @@ class TestRedChisq:
 
 class TestInformationCriteria:
 
-    def setUp(self):
+    def setup_method(self, method):
         m = Signal1D(np.arange(30).reshape((3, 10))).create_model()
         m.append(Lorentzian())
         m.multifit(show_progressbar=False)

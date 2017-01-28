@@ -100,7 +100,7 @@ class Example1:
 
 class TestExample1_12(Example1):
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = load(os.path.join(
             my_path,
             "hdf5_files",
@@ -116,7 +116,7 @@ class TestExample1_12(Example1):
 
 class TestExample1_10(Example1):
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = load(os.path.join(
             my_path,
             "hdf5_files",
@@ -125,7 +125,7 @@ class TestExample1_10(Example1):
 
 class TestExample1_11(Example1):
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = load(os.path.join(
             my_path,
             "hdf5_files",
@@ -134,7 +134,7 @@ class TestExample1_11(Example1):
 
 class TestLoadingNewSavedMetadata:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = load(os.path.join(
             my_path,
             "hdf5_files",
@@ -174,7 +174,7 @@ class TestLoadingNewSavedMetadata:
 
 class TestSavingMetadataContainers:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = BaseSignal([0.1])
 
     def test_save_unicode(self):
@@ -261,7 +261,7 @@ class TestSavingMetadataContainers:
         l = load('tmp.hdf5')
         nt.assert_equal(l.metadata.Signal.quantity, quantity)
 
-    def tearDown(self):
+    def teardown_method(self, method):
         gc.collect()        # Make sure any memmaps are closed first!
         remove('tmp.hdf5')
 
@@ -288,7 +288,7 @@ def test_rgba16():
 
 class TestLoadingOOMReadOnly:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = BaseSignal(np.empty((5, 5, 5)))
         s.save('tmp.hdf5', overwrite=True)
         self.shape = (10000, 10000, 100)
@@ -308,7 +308,7 @@ class TestLoadingOOMReadOnly:
         nt.assert_equal(self.shape, s.data.shape)
         nt.assert_is_instance(s.data, h5py.Dataset)
 
-    def tearDown(self):
+    def teardown_method(self, method):
         gc.collect()        # Make sure any memmaps are closed first!
         try:
             remove('tmp.hdf5')
@@ -319,7 +319,7 @@ class TestLoadingOOMReadOnly:
 
 class TestPassingArgs:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.filename = 'testfile.hdf5'
         BaseSignal([1, 2, 3]).save(self.filename, compression_opts=8)
 
@@ -330,13 +330,13 @@ class TestPassingArgs:
         nt.assert_equal(d.compression, 'gzip')
         f.close()
 
-    def tearDown(self):
+    def teardown_method(self, method):
         remove(self.filename)
 
 
 class TestAxesConfiguration:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.filename = 'testfile.hdf5'
         s = BaseSignal(np.zeros((2, 2, 2, 2, 2)))
         s.axes_manager.signal_axes[0].navigate = True
@@ -349,7 +349,7 @@ class TestAxesConfiguration:
         nt.assert_equal(s.axes_manager.navigation_axes[1].index_in_array, 3)
         nt.assert_equal(s.axes_manager.signal_dimension, 3)
 
-    def tearDown(self):
+    def teardown_method(self, method):
         remove(self.filename)
 
 

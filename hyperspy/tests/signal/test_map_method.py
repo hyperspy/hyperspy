@@ -9,7 +9,7 @@ import hyperspy.api as hs
 
 class TestImage:
 
-    def setup(self):
+    def setup_method(self, method):
         self.im = hs.signals.Signal2D(np.arange(0., 18).reshape((2, 3, 3)))
 
     def test_constant_sigma(self):
@@ -98,7 +98,7 @@ class TestImage:
 
 class TestSignal1D:
 
-    def setup(self):
+    def setup_method(self, method):
         self.s = hs.signals.Signal1D(np.arange(0., 6).reshape((2, 3)))
 
     def test_constant_sigma(self):
@@ -123,7 +123,7 @@ class TestSignal1D:
 
 class TestSignal0D:
 
-    def setup(self):
+    def setup_method(self, method):
         self.s = hs.signals.BaseSignal(np.arange(0., 6).reshape((2, 3)))
         self.s.axes_manager.set_signal_dimension(0)
 
@@ -154,7 +154,7 @@ _alphabet = 'abcdefghijklmnopqrstuvwxyz'
 
 class TestChangingAxes:
 
-    def setup(self):
+    def setup_method(self, method):
         self.base = hs.signals.BaseSignal(np.empty((2, 3, 4, 5, 6, 7)))
         for ax, name in zip(self.base.axes_manager._axes, _alphabet):
             ax.name = name

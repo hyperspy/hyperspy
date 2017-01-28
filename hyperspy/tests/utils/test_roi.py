@@ -9,7 +9,7 @@ from hyperspy.roi import (Point1DROI, Point2DROI, SpanROI, RectangularROI,
 
 class TestROIs():
 
-    def setUp(self):
+    def setup_method(self, method):
         np.random.seed(0)  # Same random every time, Line2DROi test requires it
         self.s_s = Signal1D(np.random.rand(50, 60, 4))
         self.s_s.axes_manager[0].scale = 5
@@ -298,7 +298,7 @@ class TestROIs():
 
 class TestInteractive:
 
-    def setup(self):
+    def setup_method(self, method):
         self.s = Signal1D(np.arange(2000).reshape((20, 10, 10)))
 
     def test_out(self):

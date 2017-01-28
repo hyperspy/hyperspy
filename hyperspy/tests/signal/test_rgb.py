@@ -7,7 +7,7 @@ import hyperspy.api as hs
 
 class TestRGBA8:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = hs.signals.Signal1D(np.array(
             [[[1, 1, 1, 0],
               [2, 2, 2, 0]],
@@ -40,7 +40,7 @@ class TestRGBA8:
 
 class TestRGBA16:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = hs.signals.Signal1D(np.array(
             [[[1, 1, 1, 0],
               [2, 2, 2, 0]],

@@ -5,7 +5,7 @@ from hyperspy.drawing.utils import contrast_stretching
 
 class TestImageStretching:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.data = np.arange(11).astype("float")
         self.data[-1] = np.nan
 

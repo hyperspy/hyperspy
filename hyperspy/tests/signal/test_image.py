@@ -7,7 +7,7 @@ from hyperspy._signals.signal2d import Signal2D
 
 class Test2D:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.im = Signal2D(np.random.random((2, 3)))
 
     def test_to_signal1D(self):
@@ -19,7 +19,7 @@ class Test2D:
 
 class Test3D:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.im = Signal2D(np.random.random((2, 3, 4)))
 
     def test_to_signal1D(self):
@@ -31,7 +31,7 @@ class Test3D:
 
 class Test4D:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = Signal2D(np.random.random((2, 3, 4, 5)))
 
     def test_to_image(self):

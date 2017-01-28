@@ -51,7 +51,7 @@ class DummyAxesManager:
 
 class TestParameterDictionary:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.par = Parameter()
         self.par.name = 'asd'
         self.par._id_name = 'newone'
@@ -124,7 +124,7 @@ class TestParameterDictionary:
 
 class TestComponentDictionary:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.parameter_names = ['par1', 'par2']
         self.comp = Component(self.parameter_names)
         self.comp.name = 'newname!'
@@ -203,7 +203,7 @@ class TestComponentDictionary:
 
 class TestModelDictionary:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = Signal1D(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
         m = s.create_model()
         m.low_loss = (s + 3.0).deepcopy()

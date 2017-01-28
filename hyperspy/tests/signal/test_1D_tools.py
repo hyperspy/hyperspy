@@ -33,7 +33,7 @@ import hyperspy.api as hs
 
 class TestAlignTools:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros((10, 100)))
         self.scale = 0.1
         self.offset = -2
@@ -107,7 +107,7 @@ class TestAlignTools:
 
 class TestShift1D:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = hs.signals.Signal1D(np.arange(10))
         self.s.axes_manager[0].scale = 0.2
 
@@ -132,7 +132,7 @@ class TestShift1D:
 
 class TestFindPeaks1D:
 
-    def setUp(self):
+    def setup_method(self, method):
         x = np.arange(0, 50, 0.01)
         s = hs.signals.Signal1D(np.vstack((np.cos(x), np.sin(x))))
         s.axes_manager.signal_axes[0].scale = 0.01
@@ -174,7 +174,7 @@ class TestFindPeaks1D:
 
 class TestInterpolateInBetween:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.arange(40).reshape((2, 20)))
         s.axes_manager.signal_axes[0].scale = 0.1
         s.isig[8:12] = 0
@@ -220,7 +220,7 @@ class TestInterpolateInBetween:
 
 class TestEstimatePeakWidth:
 
-    def setUp(self):
+    def setup_method(self, method):
         scale = 0.1
         window = 2
         x = np.arange(-window, window, scale)
@@ -265,7 +265,7 @@ class TestEstimatePeakWidth:
 
 class TestSmoothing:
 
-    def setUp(self):
+    def setup_method(self, method):
         n, m = 2, 100
         self.s = hs.signals.Signal1D(np.arange(n * m).reshape(n, m))
         np.random.seed(1)

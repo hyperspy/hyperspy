@@ -70,7 +70,7 @@ def compare_two_value_dicts(ans_r, ans):
 
 class TestLocalSimple:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.shape = (5, 7)
         self.s = LocalStrategy('test diffusion strategy')
         self.samf = create_artificial_samfire(self.shape)
@@ -340,7 +340,7 @@ class TestLocalSimple:
 
 class TestLocalWithModel:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.shape = (5, 7)
         self.s = LocalStrategy('test diffusion strategy')
         self.samf = create_artificial_samfire(self.shape)
@@ -403,7 +403,7 @@ class TestLocalWithModel:
 
 class TestGlobalStrategy:
 
-    def setUp(self):
+    def setup_method(self, method):
         # TODO: actually finish setup+ tests
         self.shape = (5, 7)
         self.s = GlobalStrategy('test segmenter strategy')

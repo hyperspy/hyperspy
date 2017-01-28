@@ -10,7 +10,7 @@ from hyperspy.events import Event
 
 class TestInteractive():
 
-    def setUp(self):
+    def setup_method(self, method):
         d = np.linspace(3, 10.5)
         d = np.tile(d, (3, 3, 1))
         # data shape (3, 3, 50)

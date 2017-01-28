@@ -26,7 +26,7 @@ class EventsBase():
 
 class TestEventsSuppression(EventsBase):
 
-    def setUp(self):
+    def setup_method(self, method):
         self.events = he.Events()
 
         self.events.a = he.Event()
@@ -273,7 +273,7 @@ def f_d(a, b, c): pass
 
 class TestEventsSignatures(EventsBase):
 
-    def setUp(self):
+    def setup_method(self, method):
         self.events = he.Events()
         self.events.a = he.Event()
 
@@ -330,7 +330,7 @@ def test_events_container_magic_attributes():
 
 class TestTriggerArgResolution(EventsBase):
 
-    def setup(self):
+    def setup_method(self, method):
         self.events = he.Events()
         self.events.a = he.Event(arguments=['A', 'B'])
         self.events.b = he.Event(arguments=['A', 'B', ('C', "vC")])

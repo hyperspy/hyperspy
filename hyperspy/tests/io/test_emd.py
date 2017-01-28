@@ -116,7 +116,7 @@ class TestCaseSaveAndRead():
                 signal.metadata.Signal.as_dictionary().get(key), ref_value)
         nt.assert_is_instance(signal, BaseSignal)
 
-    def tearDown(self):
+    def teardown_method(self, method):
         remove(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
 
 

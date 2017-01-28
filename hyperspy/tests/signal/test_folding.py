@@ -6,7 +6,7 @@ from hyperspy.signal import BaseSignal
 
 class TestSignalFolding:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = BaseSignal(np.zeros((2, 3, 4, 5)))
         self.s = self.s.transpose(signal_axes=2)
 
@@ -128,7 +128,7 @@ class TestSignalFolding:
 
 class TestSignalVarianceFolding:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = BaseSignal(np.zeros((2, 3, 4, 5)))
         self.s = self.s.transpose(signal_axes=2)
         self.s.estimate_poissonian_noise_variance()

@@ -36,7 +36,7 @@ def are_bss_components_equivalent(c1_list, c2_list, atol=1e-4):
 
 class TestBSS1D:
 
-    def setUp(self):
+    def setup_method(self, method):
         ics = np.random.laplace(size=(3, 1000))
         np.random.seed(1)
         mixing_matrix = np.random.random((100, 3))
@@ -108,7 +108,7 @@ class TestBSS1D:
 
 class TestBSS2D:
 
-    def setUp(self):
+    def setup_method(self, method):
         ics = np.random.laplace(size=(3, 1024))
         np.random.seed(1)
         mixing_matrix = np.random.random((100, 3))

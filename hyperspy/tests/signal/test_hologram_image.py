@@ -26,7 +26,7 @@ from scipy.interpolate import interp2d
 
 class TestCaseHologramImage(object):
 
-    def setUp(self):
+    def setup_method(self, method):
         self.img_size = 1024
         self.img_size3x = 768
         self.img_size3y = 512

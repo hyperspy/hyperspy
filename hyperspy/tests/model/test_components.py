@@ -8,7 +8,7 @@ from hyperspy.misc.test_utils import ignore_warning
 
 class TestPowerLaw:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros(1024))
         s.axes_manager[0].offset = 100
         s.axes_manager[0].scale = 0.01
@@ -77,7 +77,7 @@ class TestPowerLaw:
 
 class TestOffset:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros(10))
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
@@ -110,7 +110,7 @@ class TestOffset:
 
 class TestPolynomial:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros(1024))
         s.axes_manager[0].offset = -5
         s.axes_manager[0].scale = 0.01
@@ -184,7 +184,7 @@ class TestPolynomial:
 
 class TestGaussian:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros(1024))
         s.axes_manager[0].offset = -5
         s.axes_manager[0].scale = 0.01
@@ -224,7 +224,7 @@ class TestGaussian:
 
 class TestExpression:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.g = hs.model.components1D.Expression(
             expression="height * exp(-(x - x0) ** 2 * 4 * log(2)/ fwhm ** 2)",
             name="Gaussian",
@@ -261,7 +261,7 @@ class TestExpression:
 
 class TestScalableFixedPattern:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.linspace(0., 100., 10))
         s1 = hs.signals.Signal1D(np.linspace(0., 1., 10))
         s.axes_manager[0].scale = 0.1
@@ -324,7 +324,7 @@ class TestScalableFixedPattern:
 
 class TestHeavisideStep:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.c = hs.model.components1D.HeavisideStep()
 
     def test_integer_values(self):

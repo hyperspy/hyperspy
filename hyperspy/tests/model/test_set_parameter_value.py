@@ -25,7 +25,7 @@ from hyperspy.components1d import Gaussian
 
 class TestSetParameterInModel:
 
-    def setUp(self):
+    def setup_method(self, method):
         g1 = Gaussian()
         g2 = Gaussian()
         g3 = Gaussian()

@@ -23,7 +23,7 @@ from hyperspy.misc.utils import DictionaryTreeBrowser
 
 class TestStrategyList:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.w1 = DictionaryTreeBrowser()
         self.w2 = DictionaryTreeBrowser()
 

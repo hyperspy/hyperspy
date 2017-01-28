@@ -25,7 +25,7 @@ from hyperspy.components1d import Gaussian
 
 class TestChiSquared:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = Signal1D(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
         m = s.create_model()
         self.model = m

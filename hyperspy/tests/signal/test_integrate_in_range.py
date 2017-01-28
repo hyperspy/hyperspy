@@ -7,7 +7,7 @@ from hyperspy.components1d import Gaussian
 
 class Test1D:
 
-    def setUp(self):
+    def setup_method(self, method):
         gaussian = Gaussian()
         gaussian.A.value = 20
         gaussian.sigma.value = 10

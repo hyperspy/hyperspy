@@ -8,7 +8,7 @@ from hyperspy import components1d
 
 class TestRemoveBackground1DGaussian:
 
-    def setUp(self):
+    def setup_method(self, method):
         gaussian = components1d.Gaussian()
         gaussian.A.value = 10
         gaussian.centre.value = 10
@@ -35,7 +35,7 @@ class TestRemoveBackground1DGaussian:
 
 class TestRemoveBackground1DPowerLaw:
 
-    def setUp(self):
+    def setup_method(self, method):
         pl = components1d.PowerLaw()
         pl.A.value = 1e10
         pl.r.value = 3

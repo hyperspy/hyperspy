@@ -25,7 +25,7 @@ from hyperspy import signals
 
 class TestBinaryOperators:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s1 = signals.Signal1D(np.ones((2, 3)))
         self.s2 = signals.Signal1D(np.ones((2, 3)))
         self.s2.data *= 2
@@ -124,7 +124,7 @@ class TestBinaryOperators:
 
 class TestUnaryOperators:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s1 = signals.Signal1D(np.array((1, -1, 4, -3)))
 
     def test_minus(self):

@@ -159,7 +159,7 @@ example2_parameters = {
 
 class TestExample1:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = load(os.path.join(
             my_path,
             "msa_files",
@@ -212,7 +212,7 @@ class TestExample1:
 
 class TestExample2:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = load(os.path.join(
             my_path,
             "msa_files",

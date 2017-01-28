@@ -12,7 +12,7 @@ from hyperspy.misc.utils import slugify
 
 class TestModelJacobians:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros(1))
         m = s.create_model()
         self.low_loss = 7.
@@ -68,7 +68,7 @@ class TestModelJacobians:
 
 class TestModelCallMethod:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.empty(1))
         m = s.create_model()
         m.append(hs.model.components1D.Gaussian())
@@ -121,7 +121,7 @@ class TestModelCallMethod:
 
 class TestModelPlotCall:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.empty(1))
         m = s.create_model()
         m.__call__ = mock.MagicMock()
@@ -156,7 +156,7 @@ class TestModelPlotCall:
 
 class TestModelSettingPZero:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.empty(1))
         m = s.create_model()
         m.append(hs.model.components1D.Gaussian())
@@ -227,7 +227,7 @@ class TestModelSettingPZero:
 
 class TestModel1D:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.empty(1))
         m = s.create_model()
         self.model = m
@@ -571,7 +571,7 @@ class TestModel1D:
 
 class TestModel2D:
 
-    def setUp(self):
+    def setup_method(self, method):
         g = hs.model.components2D.Gaussian2D(
             centre_x=-5.,
             centre_y=-5.,
@@ -604,7 +604,7 @@ class TestModel2D:
 
 class TestModelFitBinned:
 
-    def setUp(self):
+    def setup_method(self, method):
         np.random.seed(1)
         s = hs.signals.Signal1D(
             np.random.normal(
@@ -729,7 +729,7 @@ class TestModelFitBinned:
 
 class TestModelWeighted:
 
-    def setUp(self):
+    def setup_method(self, method):
         np.random.seed(1)
         s = hs.signals.Signal1D(np.arange(10, 100, 0.1))
         s.metadata.set_item("Signal.Noise_properties.variance",
@@ -819,7 +819,7 @@ class TestModelWeighted:
 
 class TestModelScalarVariance:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.ones(100))
         m = s.create_model()
         m.append(hs.model.components1D.Offset())
@@ -870,7 +870,7 @@ class TestModelScalarVariance:
 
 class TestModelSignalVariance:
 
-    def setUp(self):
+    def setup_method(self, method):
         variance = hs.signals.Signal1D(np.arange(100, 300).reshape(
             (2, 100)))
         s = variance.deepcopy()
@@ -895,7 +895,7 @@ class TestModelSignalVariance:
 
 class TestMultifit:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros((2, 200)))
         s.axes_manager[-1].offset = 1
         s.data[:] = 2 * s.axes_manager[-1].axis ** (-3)
@@ -965,7 +965,7 @@ class TestMultifit:
 
 class TestStoreCurrentValues:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.m = hs.signals.Signal1D(np.arange(10)).create_model()
         self.o = hs.model.components1D.Offset()
         self.m.append(self.o)
@@ -987,7 +987,7 @@ class TestStoreCurrentValues:
 
 class TestSetCurrentValuesTo:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.m = hs.signals.Signal1D(
             np.arange(10).reshape(2, 5)).create_model()
         self.comps = [
@@ -1011,7 +1011,7 @@ class TestSetCurrentValuesTo:
 
 class TestAsSignal:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.m = hs.signals.Signal1D(
             np.arange(20).reshape(2, 2, 5)).create_model()
         self.comps = [
@@ -1093,7 +1093,7 @@ class TestAsSignal:
 
 class TestCreateModel:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = hs.signals.Signal1D(np.asarray([0, ]))
         self.im = hs.signals.Signal2D(np.ones([1, 1, ]))
 
@@ -1108,7 +1108,7 @@ class TestCreateModel:
 
 class TestAdjustPosition:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = hs.signals.Signal1D(np.random.rand(10, 10, 20))
         self.m = self.s.create_model()
 

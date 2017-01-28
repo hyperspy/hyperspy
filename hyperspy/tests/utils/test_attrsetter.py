@@ -35,7 +35,7 @@ class DummyThing(object):
 
 class TestAttrSetter:
 
-    def setUp(self):
+    def setup_method(self, method):
         tree = DictionaryTreeBrowser(
             {
                 "Node1": {"leaf11": 11,

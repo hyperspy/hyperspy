@@ -95,7 +95,7 @@ class TestSignalAssignSubclass:
 
 class TestConvertBaseSignal:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = hs.signals.BaseSignal(np.zeros((3, 3)))
 
     def test_base_to_1d(self):
@@ -120,7 +120,7 @@ class TestConvertBaseSignal:
 
 class TestConvertSignal1D:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = hs.signals.Signal1D([0])
 
     def test_signal1d_to_eels(self):
@@ -144,7 +144,7 @@ class TestConvertSignal1D:
 
 class TestConvertComplexSignal:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = hs.signals.ComplexSignal(np.zeros((3, 3)))
 
     def test_complex_to_complex1d(self):
@@ -160,7 +160,7 @@ class TestConvertComplexSignal:
 
 class TestConvertComplexSignal1D:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = hs.signals.ComplexSignal1D([0])
 
     def test_complex_to_dielectric_function(self):

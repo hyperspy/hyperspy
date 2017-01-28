@@ -39,7 +39,7 @@ data_dict = {'dm3_1D_data': {},
 
 class test_ImageObject():
 
-    def setUp(self):
+    def setup_method(self, method):
         self.imageobject = ImageObject({}, "")
 
     def _load_file(self, fname):

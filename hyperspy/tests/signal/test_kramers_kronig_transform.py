@@ -26,7 +26,7 @@ import hyperspy.api as hs
 
 class Test2D:
 
-    def setUp(self):
+    def setup_method(self, method):
         """To test the kramers_kronig_analysis we will generate 3
         EELSSpectrum instances. First a model energy loss function(ELF),
         in our case following the Drude bulk plasmon peak. Second, we

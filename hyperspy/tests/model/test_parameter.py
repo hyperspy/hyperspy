@@ -47,7 +47,7 @@ class DummyAxesManager:
 
 class TestParameterLen1:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.par = Parameter()
 
     def test_set_value(self):
@@ -141,7 +141,7 @@ class TestParameterLen1:
 
 class TestParameterLen2:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.par = Parameter()
         self.par._number_of_elements = 2
 
@@ -237,7 +237,7 @@ class TestParameterLen2:
 
 class TestParameterTwin:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.p1 = Parameter()
         self.p2 = Parameter()
 
@@ -289,7 +289,7 @@ class TestParameterTwin:
 
 class TestGeneralMethods:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.par = Parameter()
         self.par._axes_manager = mock.MagicMock()
         self.par.map = np.array(

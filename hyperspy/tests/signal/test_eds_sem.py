@@ -29,7 +29,7 @@ from hyperspy.misc.test_utils import assert_warns
 
 class Test_metadata:
 
-    def setUp(self):
+    def setup_method(self, method):
         # Create an empty spectrum
         s = EDSSEMSpectrum(np.ones((4, 2, 1024)))
         s.axes_manager.signal_axes[0].scale = 1e-3
@@ -193,7 +193,7 @@ class Test_metadata:
 
 class Test_get_lines_intentisity:
 
-    def setUp(self):
+    def setup_method(self, method):
         # Create an empty spectrum
         s = EDSSEMSpectrum(np.zeros((2, 2, 3, 100)))
         energy_axis = s.axes_manager.signal_axes[0]
@@ -273,7 +273,7 @@ class Test_get_lines_intentisity:
 
 class Test_tools_bulk:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = EDSSEMSpectrum(np.ones(1024))
         s.metadata.Acquisition_instrument.SEM.beam_energy = 5.0
         energy_axis = s.axes_manager.signal_axes[0]
@@ -305,7 +305,7 @@ class Test_tools_bulk:
 
 class Test_energy_units:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = EDSSEMSpectrum(np.ones(1024))
         s.metadata.Acquisition_instrument.SEM.beam_energy = 5.0
         s.axes_manager.signal_axes[0].units = 'keV'

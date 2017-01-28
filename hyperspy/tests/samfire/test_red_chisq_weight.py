@@ -24,7 +24,7 @@ from hyperspy.misc.utils import DictionaryTreeBrowser
 
 class Test_Red_chisq_weight:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.w = ReducedChiSquaredWeight()
         artificial_model = DictionaryTreeBrowser()
         artificial_model.add_node('red_chisq.data')

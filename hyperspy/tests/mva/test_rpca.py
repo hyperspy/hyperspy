@@ -9,7 +9,7 @@ from hyperspy.learn.rpca import rpca_godec, orpca
 
 class TestRPCA:
 
-    def setUp(self):
+    def setup_method(self, method):
         # Define shape etc.
         m = 256  # Dimensionality
         n = 256  # Number of samples
@@ -74,7 +74,7 @@ class TestRPCA:
 
 class TestORPCA:
 
-    def setUp(self):
+    def setup_method(self, method):
         # Define shape etc.
         m = 256  # Dimensionality
         n = 1024  # Number of samples

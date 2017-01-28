@@ -7,7 +7,7 @@ from hyperspy import utils
 
 class TestUtilsStack:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = BaseSignal(np.random.random((3, 2, 5)))
         s.axes_manager.set_signal_dimension(1)
         s.axes_manager[0].name = "x"

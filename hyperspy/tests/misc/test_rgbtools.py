@@ -23,7 +23,7 @@ import hyperspy.misc.rgb_tools as rt
 
 class TestRGBTools:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.data_c = np.ones((2, 2, 3), dtype=np.uint8, order='C')
         self.data_f = np.ones((2, 2, 3), dtype=np.uint8, order='F')
         mask = [[[0, 1, 1], [1, 0, 1]], [[1, 1, 0], [0, 0, 1]]]

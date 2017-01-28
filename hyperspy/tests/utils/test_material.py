@@ -8,7 +8,7 @@ from hyperspy.misc.elements import elements_db
 
 class TestWeightToFromAtomic:
 
-    def setUp(self):
+    def setup_method(self, method):
         # TiO2
         self.elements = ("Ti", "O")
         natoms = (1, 2)

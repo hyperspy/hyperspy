@@ -38,7 +38,7 @@ def clean_model_dictionary(d):
 
 class TestModelStoring:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = Signal1D(range(100))
         m = s.create_model()
         m.append(Gaussian())
@@ -141,7 +141,7 @@ class TestModelStoring:
 
 class TestModelSaving:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = Signal1D(range(100))
         m = s.create_model()
         m.append(Gaussian())
@@ -157,6 +157,6 @@ class TestModelSaving:
         n = l.models.restore('a')
         nt.assert_equal(n.components.something.A.value, 13)
 
-    def tearDown(self):
+    def teardown_method(self, method):
         gc.collect()        # Make sure any memmaps are closed first!
         remove('tmp.hdf5')

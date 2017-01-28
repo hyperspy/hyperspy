@@ -28,7 +28,7 @@ from hyperspy import signals
 
 class Test1D:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.signal = signals.Signal1D(np.arange(10))
         self.data = self.signal.data.copy()
 
@@ -127,7 +127,7 @@ class Test1D:
 
 class Test2D:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.signal = signals.Signal2D(np.arange(24).reshape(6, 4))
         self.data = self.signal.data.copy()
 
@@ -146,7 +146,7 @@ class Test2D:
 
 class Test3D_SignalDim0:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.signal = signals.BaseSignal(np.arange(24).reshape((2, 3, 4)))
         self.data = self.signal.data.copy()
         self.signal.axes_manager.set_signal_dimension(0)
@@ -173,7 +173,7 @@ class Test3D_SignalDim0:
 
 class Test3D_Navigate_0_and_1:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.signal = signals.Signal1D(np.arange(24).reshape((2, 3, 4)))
         self.data = self.signal.data.copy()
 
@@ -238,7 +238,7 @@ class Test3D_Navigate_0_and_1:
 
 class Test3D_Navigate_1:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.signal = signals.BaseSignal(np.arange(24).reshape((2, 3, 4)))
         self.data = self.signal.data.copy()
         self.signal.axes_manager._axes[0].navigate = False
@@ -270,7 +270,7 @@ class Test3D_Navigate_1:
 
 class TestFloatArguments:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.signal = signals.BaseSignal(np.arange(10))
         self.signal.axes_manager.set_signal_dimension(1)
         self.signal.axes_manager[0].scale = 0.5
@@ -320,7 +320,7 @@ class TestFloatArguments:
 
 class TestEllipsis:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.signal = signals.BaseSignal(np.arange(2 ** 5).reshape(
             (2, 2, 2, 2, 2)))
         self.signal.axes_manager.set_signal_dimension(1)

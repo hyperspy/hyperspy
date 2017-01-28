@@ -25,7 +25,7 @@ from hyperspy.misc.utils import stash_active_state
 
 class TestParametersAsSignals:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.gaussian = Gaussian()
         self.gaussian._axes_manager = Signal1D(
             np.zeros((3, 3, 1))).axes_manager

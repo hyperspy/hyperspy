@@ -23,7 +23,7 @@ from hyperspy.samfire_utils.strategy import nearest_indices
 
 class TestSamfireUtils:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.shape = (10, 10)
         self.radii = (1, 2)
 

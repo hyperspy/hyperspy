@@ -7,7 +7,7 @@ my_path = os.path.dirname(__file__)
 
 class TestFindPeaks1DOhaver():
 
-    def setUp(self):
+    def setup_method(self, method):
         self.signal = load(
             my_path +
             "/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5")

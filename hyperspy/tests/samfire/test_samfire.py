@@ -143,7 +143,7 @@ def generate_test_model():
 
 class TestSamfireEmpty:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.shape = (7, 15)
         s = hs.signals.Signal1D(np.empty(self.shape + (1024,)))
         s.estimate_poissonian_noise_variance()
@@ -306,7 +306,7 @@ class TestSamfireEmpty:
 
 class TestSamfireMain:
 
-    def setUp(self):
+    def setup_method(self, method):
         np.random.seed(1)
         self.model, self.lor1, self.g, self.lor2 = generate_test_model()
         self.shape = (7, 15)
@@ -355,7 +355,7 @@ def test_create_worker_defaults():
 
 class TestSamfireWorker:
 
-    def setUp(self):
+    def setup_method(self, method):
         np.random.seed(17)
         ax = np.arange(250)
 

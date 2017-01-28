@@ -41,7 +41,7 @@ def compare_two_value_dicts(ans_r, ans):
 
 class TestHistogramSegmenter:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.test_dict = {'one': {'A': np.array([10.])},
                           'two': {'centre': np.array([0., 1.]),
                                   'sigma': np.array([-3., 0., 3., 1., 1.5, 2.,

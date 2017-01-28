@@ -25,7 +25,7 @@ import hyperspy.api as hs
 
 class Test_Estimate_Elastic_Scattering_Threshold:
 
-    def setUp(self):
+    def setup_method(self, method):
         # Create an empty spectrum
         s = hs.signals.EELSSpectrum(np.zeros((3, 2, 1024)))
         energy_axis = s.axes_manager.signal_axes[0]
@@ -103,7 +103,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
 
 class TestEstimateZLPCentre:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.EELSSpectrum(np.diag(np.arange(1, 11)))
         s.axes_manager[-1].scale = 0.1
         s.axes_manager[-1].offset = 100
@@ -122,7 +122,7 @@ class TestEstimateZLPCentre:
 
 class TestAlignZLP:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.EELSSpectrum(np.zeros((10, 100)))
         self.scale = 0.1
         self.offset = -2
@@ -185,7 +185,7 @@ class TestAlignZLP:
 
 class TestPowerLawExtrapolation:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.EELSSpectrum(0.1 * np.arange(50, 250, 0.5) ** -3.)
         s.metadata.Signal.binned = False
         s.axes_manager[-1].offset = 50

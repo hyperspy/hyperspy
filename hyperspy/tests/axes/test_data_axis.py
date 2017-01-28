@@ -10,7 +10,7 @@ from hyperspy.axes import DataAxis
 
 class TestDataAxis:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.axis = DataAxis(size=10, scale=0.1, offset=10)
 
     def test_value_range_to_indices_in_range(self):

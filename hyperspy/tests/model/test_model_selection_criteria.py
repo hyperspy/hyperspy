@@ -25,7 +25,7 @@ from hyperspy.components1d import Gaussian, Lorentzian
 
 class TestModelSelection:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = Signal1D(range(10))
         m1 = s.create_model()
         m2 = s.create_model()

@@ -85,7 +85,7 @@ def test_loading_invalid_protochips_file():
 
 class test_ProtochipsGasCellCSV():
 
-    def setUp(self):
+    def setup_method(self, method):
         filename = os.path.join(dirpath, 'protochips_gas_cell.csv')
         self.s_list = hs.load(filename)
 
@@ -115,7 +115,7 @@ class test_ProtochipsGasCellCSV():
 
 class test_ProtochipsGasCellCSVReader():
 
-    def setUp(self):
+    def setup_method(self, method):
         self.filename = os.path.join(dirpath, 'protochips_gas_cell.csv')
         self.pgc = ProtochipsCSV(self.filename)
         if generate_numpy_file:
@@ -181,7 +181,7 @@ def test_read_protochips_electrical():
 
 class test_ProtochipsElectricalCSVReader():
 
-    def setUp(self):
+    def setup_method(self, method):
         self.filename = os.path.join(dirpath, 'protochips_electrical.csv')
         self.pa = ProtochipsCSV(self.filename)
         if generate_numpy_file:
@@ -224,7 +224,7 @@ def test_read_protochips_thermal():
 
 class test_ProtochipsThermallCSVReader():
 
-    def setUp(self):
+    def setup_method(self, method):
         self.filename = os.path.join(dirpath, 'protochips_thermal.csv')
         self.pt = ProtochipsCSV(self.filename)
         if generate_numpy_file:
@@ -272,7 +272,7 @@ def test_read_protochips_electrothermal():
 
 class test_ProtochipsElectrothermalCSVReader():
 
-    def setUp(self):
+    def setup_method(self, method):
         self.filename = os.path.join(dirpath, 'protochips_electrothermal.csv')
         self.pet = ProtochipsCSV(self.filename)
         if generate_numpy_file:

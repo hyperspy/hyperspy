@@ -19,7 +19,7 @@ my_path = os.path.dirname(__file__)
 
 class TestSpcSpectrum:
 
-    def setUp(self):
+    def setup_method(self, method):
         print('testing single spc spectrum...')
         self.spc = load(os.path.join(
             my_path,

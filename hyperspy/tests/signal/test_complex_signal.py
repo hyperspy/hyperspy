@@ -31,7 +31,7 @@ class TestComplexProperties:
     phase_ref = np.angle(comp_ref)
     amplitude_ref = np.abs(comp_ref)
 
-    def setUp(self):
+    def setup_method(self, method):
         test = self.real_ref + 1j * self.imag_ref
         self.s = hs.signals.ComplexSignal(test)
         self.s.axes_manager.set_signal_dimension(1)

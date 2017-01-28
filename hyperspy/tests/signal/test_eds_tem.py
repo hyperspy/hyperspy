@@ -28,7 +28,7 @@ from hyperspy.misc.test_utils import ignore_warning
 
 class Test_metadata:
 
-    def setUp(self):
+    def setup_method(self, method):
         # Create an empty spectrum
         s = EDSTEMSpectrum(np.ones((4, 2, 1024)))
         s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time = 3.1
@@ -134,7 +134,7 @@ class Test_metadata:
 
 class Test_quantification:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = EDSTEMSpectrum(np.ones([2, 2, 1024]))
         energy_axis = s.axes_manager.signal_axes[0]
         energy_axis.scale = 1e-2
@@ -239,7 +239,7 @@ class Test_quantification:
 
 class Test_vacum_mask:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = EDSTEMSpectrum(np.array([np.linspace(0.001, 0.5, 20)] * 100).T)
         s.add_poissonian_noise()
         self.signal = s
@@ -252,7 +252,7 @@ class Test_vacum_mask:
 
 class Test_simple_model:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = utils_eds.xray_lines_model(elements=['Al', 'Zn'],
                                        weight_percents=[50, 50])
         self.signal = s
@@ -289,7 +289,7 @@ class Test_get_lines_intentisity:
 
 class Test_eds_markers:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = utils_eds.xray_lines_model(elements=['Al', 'Zn'],
                                        weight_percents=[50, 50])
         self.signal = s

@@ -8,7 +8,7 @@ from hyperspy.exceptions import DataDimensionError
 
 class Test1d:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = BaseSignal(np.arange(2))
 
     @nt.raises(DataDimensionError)
@@ -27,7 +27,7 @@ class Test1d:
 
 class Test2d:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = BaseSignal(np.random.random((2, 3)))  # (|3, 2)
 
     def test_as_signal2D_T(self):
@@ -58,7 +58,7 @@ class Test2d:
 
 class Test3d:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = BaseSignal(np.random.random((2, 3, 4)))  # (|4, 3, 2)
 
     def test_as_signal2D_contigous(self):

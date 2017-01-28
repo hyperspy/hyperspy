@@ -8,7 +8,7 @@ from hyperspy.misc.elements import elements as elements_db
 
 class TestlineFit:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = utils_eds.xray_lines_model(elements=['Fe', 'Cr', 'Zn'],
                                        beam_energy=200,
                                        weight_percents=[20, 50, 30],
@@ -169,7 +169,7 @@ class TestlineFit:
 
 class TestMaps:
 
-    def setUp(self):
+    def setup_method(self, method):
         beam_energy = 200
         energy_resolution_MnKa = 130
         energy_axis = {'units': 'keV', 'size': 1200, 'scale': 0.01,
