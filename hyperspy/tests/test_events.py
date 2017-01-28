@@ -170,8 +170,10 @@ class TestEventsSuppression(EventsBase):
                                                        False)
                                     raise ValueError()
                             finally:
-                                self.trigger_check(self.events.a.trigger, False)
-                                self.trigger_check2(self.events.a.trigger, False)
+                                self.trigger_check(
+                                    self.events.a.trigger, False)
+                                self.trigger_check2(
+                                    self.events.a.trigger, False)
                                 self.trigger_check(self.events.b.trigger, True)
                                 self.trigger_check(self.events.c.trigger, True)
                     finally:
@@ -361,7 +363,7 @@ class TestTriggerArgResolution(EventsBase):
         self.events.a.connect(lambda A, B:
                               nt.assert_equal((A, B), ('vA', 'vB')), "auto")
         with pytest.raises(NotImplementedError):
-             self.events.a.connect(function=lambda *args: 0, kwargs="auto")
+            self.events.a.connect(function=lambda *args: 0, kwargs="auto")
 
         self.events.a.connect(lambda **kwargs:
                               nt.assert_equal((kwargs["A"], kwargs["B"]),
