@@ -1137,6 +1137,7 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
     """ Return hyperspy required list of dict with eds
     hyperspectra and metadata.
     """
+    global warn_once
     if (fast_unbcf == False) and warn_once:
         _logger.warning("""unbcf_fast library is not present...
 Parsing with slow python only backend.
