@@ -29,6 +29,7 @@ import logging
 import numpy as np
 import scipy as sp
 from matplotlib import pyplot as plt
+import numbers
 
 from hyperspy.axes import AxesManager
 from hyperspy import io
@@ -2359,7 +2360,7 @@ class BaseSignal(FancySlicing,
                 step_sizes = ([shape[axis] // number_of_parts, ] *
                               number_of_parts)
 
-        if isinstance(step_sizes, int):
+        if isinstance(step_sizes, numbers.Integral):
             step_sizes = [step_sizes] * int(len_axis / step_sizes)
 
         splitted = []
@@ -3997,8 +3998,8 @@ class BaseSignal(FancySlicing,
                 signal_axes = tuple(ax for ax in ax_list if ax not in
                                     navigation_axes)
             elif navigation_axes is None:
-                signal_axes = am.navigation_axes
-                navigation_axes = am.signal_axes
+                signal_axes = list(reversed(am.navigation_axes))
+                navigation_axes = list(reversed(am.signal_axes))
             else:
                 raise ValueError(
                     "The passed navigation_axes argument is not valid")
