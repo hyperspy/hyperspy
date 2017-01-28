@@ -1140,10 +1140,9 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
     global warn_once
     if (fast_unbcf == False) and warn_once:
         _logger.warning("""unbcf_fast library is not present...
-Parsing with slow python only backend.
-If parsing is unconfortably slow, try to install cython,
-then reinstall hyperspy.
-For more info check the 'Installing HyperSpy' section in the documentation.""")
+Parsing BCF with Python-only backend.
+If parsing is uncomfortably slow, first install cython, then reinstall hyperspy.
+For more information, check the 'Installing HyperSpy' section in the documentation.""")
         warn_once = False
     obj_bcf.persistent_parse_hypermap(index=index, downsample=downsample,
                                       cutoff_at_kV=cutoff_at_kV)
