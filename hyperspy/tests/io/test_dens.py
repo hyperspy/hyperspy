@@ -18,9 +18,12 @@
 
 
 import os
-import nose.tools as nt
-import hyperspy.api as hs
+
 import numpy as np
+import pytest
+import nose.tools as nt
+
+import hyperspy.api as hs
 
 
 dirpath = os.path.dirname(__file__)
@@ -45,11 +48,11 @@ def test_read1():
     nt.assert_equal(s.metadata.Signal.quantity, "Temperature (Celsius)")
 
 
-@nt.raises(AssertionError)
 def test_read2():
-    hs.load(file2)
+    with pytest.raises(AssertionError):
+        hs.load(file2)
 
 
-@nt.raises(AssertionError)
 def test_read3():
-    hs.load(file3)
+    with pytest.raises(AssertionError):
+        hs.load(file3)

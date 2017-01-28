@@ -19,6 +19,7 @@
 
 import os
 import nose.tools as nt
+import pytest
 import hyperspy.api as hs
 import numpy as np
 import gc
@@ -196,7 +197,7 @@ def test_non_square():
     signal = hs.signals.Signal2D((255 * np.random.rand(10, 3, 5, 6)
                                   ).astype(np.uint8))
     try:
-        with nt.assert_raises(ValueError):
+        with pytest.raises(ValueError):
             signal.save(save_path, overwrite=True)
     finally:
         _remove_file(save_path)
@@ -215,7 +216,7 @@ def test_load_to_memory():
 
 def test_load_readonly():
     s = hs.load(file2, load_to_memory=False, mmap_mode='r')
-    with nt.assert_raises(ValueError):
+    with pytest.raises(ValueError):
         s.data[:] = 23
 
 
@@ -292,7 +293,7 @@ def test_write_data_am_mismatch():
                                   ).astype(np.uint8))
     signal.axes_manager.navigation_axes[1].size = 4
     try:
-        with nt.assert_raises(ValueError):
+        with pytest.raises(ValueError):
             signal.save(save_path, overwrite=True)
     finally:
         _remove_file(save_path)

@@ -22,6 +22,7 @@ import tempfile
 
 import nose.tools as nt
 import numpy as np
+import pytest
 
 from hyperspy.io import load
 from hyperspy.signals import BaseSignal, Signal2D, Signal1D, ComplexSignal
@@ -46,12 +47,11 @@ def test_writing_unsupported_data_type():
     data = np.arange(5 * 10).reshape((5, 10))
     s = BaseSignal(data.astype('int64'))
     with tempfile.TemporaryDirectory() as tmpdir:
-        with nt.assert_raises(IOError) as cm:
+        with pytest.raises(IOError) as cm:
             fname = os.path.join(tmpdir,
                                  'test_writing_unsupported_data_type.unf')
             s.save(fname)
-    nt.assert_in("The SEMPER file format does not support int64 data type",
-                 cm.exception.args[0])
+            cm.match("The SEMPER file format does not support int64 data type",)
 
 
 def test_writing_loading_metadata():

@@ -4,6 +4,7 @@ from unittest import mock
 
 import nose.tools as nt
 import numpy as np
+import pytest
 
 from hyperspy.axes import DataAxis
 
@@ -33,9 +34,9 @@ class TestDataAxis:
             self.axis.value_range_to_indices(
                 None, None), (0, 9))
 
-    @nt.raises(ValueError)
     def test_value_range_to_indices_v1_greater_than_v2(self):
-        self.axis.value_range_to_indices(2, 1)
+        with pytest.raises(ValueError):
+            self.axis.value_range_to_indices(2, 1)
 
     def test_deepcopy(self):
         ac = copy.deepcopy(self.axis)
@@ -56,9 +57,9 @@ class TestDataAxis:
     def test_value2index_float_end_point_right(self):
         nt.assert_equal(self.axis.value2index(10.9), 9)
 
-    @nt.raises(ValueError)
     def test_value2index_float_out(self):
-        self.axis.value2index(11)
+        with pytest.raises(ValueError):
+            self.axis.value2index(11)
 
     def test_value2index_array_in(self):
         nt.assert_equal(
@@ -77,9 +78,9 @@ class TestDataAxis:
                                   rounding=math.floor).tolist(),
             [1, 1])
 
-    @nt.raises(ValueError)
     def test_value2index_array_out(self):
-        self.axis.value2index(np.array([10, 11]))
+        with pytest.raises(ValueError):
+            self.axis.value2index(np.array([10, 11]))
 
     def test_slice_me(self):
         nt.assert_equal(

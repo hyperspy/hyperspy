@@ -87,7 +87,7 @@ class TestGetExplainedVarinaceRatio:
             self.s.get_explained_variance_ratio().data,
             np.asarray([2, 4]))
 
-    @nose.tools.raises(AttributeError)
+    @raises(AttributeError)
     def test_no_evr(self):
         self.s.get_explained_variance_ratio()
 
@@ -201,27 +201,23 @@ class TestReturnInfo:
         # Not testing MLPCA, takes too long
         for algorithm in ["svd", "fast_svd"]:
             print(algorithm)
-            nose.tools.assert_is_none(self.s.decomposition(
-                algorithm=algorithm, return_info=True, output_dimension=1))
+            assert self.s.decomposition(
+                algorithm=algorithm, return_info=True, output_dimension=1) is None
 
     def test_decomposition_supported_return_true(self):
         for algorithm in ["RPCA_GoDec", "ORPCA"]:
-            nose.tools.assert_is_not_none(
-                self.s.decomposition(algorithm=algorithm, return_info=True, output_dimension=1))
+            assert self.s.decomposition(algorithm=algorithm, return_info=True, output_dimension=1) is not None
         if not sklearn_installed:
             raise SkipTest
         for algorithm in ["sklearn_pca", "nmf",
                           "sparse_pca", "mini_batch_sparse_pca", ]:
-            nose.tools.assert_is_not_none(
-                self.s.decomposition(algorithm=algorithm, return_info=True, output_dimension=1))
+            assert self.s.decomposition(algorithm=algorithm, return_info=True, output_dimension=1) is not None
 
     def test_decomposition_supported_return_false(self):
         for algorithm in ["RPCA_GoDec", "ORPCA"]:
-            nose.tools.assert_is_none(
-                self.s.decomposition(algorithm=algorithm, return_info=False, output_dimension=1))
+            assert self.s.decomposition(algorithm=algorithm, return_info=False, output_dimension=1) is None
         if not sklearn_installed:
             raise SkipTest
         for algorithm in ["sklearn_pca", "nmf",
                           "sparse_pca", "mini_batch_sparse_pca", ]:
-            nose.tools.assert_is_none(
-                self.s.decomposition(algorithm=algorithm, return_info=False, output_dimension=1))
+            assert self.s.decomposition(algorithm=algorithm, return_info=False, output_dimension=1) is None

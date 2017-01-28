@@ -1,5 +1,7 @@
 import nose.tools
+import pytest
 import numpy as np
+
 from hyperspy.drawing.utils import contrast_stretching
 
 
@@ -12,17 +14,17 @@ class TestImageStretching:
     def test_no_nans(self):
         data = self.data[:-1]
         bounds = contrast_stretching(data, 1)
-        nose.tools.assert_tuple_equal(bounds, (
+        assert bounds == (
             np.percentile(data, 0.5),
-            np.percentile(data, 99.5)))
+            np.percentile(data, 99.5))
 
     def test_nans(self):
         data = self.data[:-1]
         bounds = contrast_stretching(self.data, 1)
-        nose.tools.assert_tuple_equal(bounds, (
+        assert bounds == (
             np.percentile(data, 0.5),
-            np.percentile(data, 99.5)))
+            np.percentile(data, 99.5))
 
-    @nose.tools.raises(ValueError)
     def test_out_of_range(self):
-        contrast_stretching(self.data, -1)
+        with pytest.raises(ValueError):
+            contrast_stretching(self.data, -1)

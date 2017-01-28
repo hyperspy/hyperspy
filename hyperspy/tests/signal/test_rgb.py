@@ -1,5 +1,6 @@
 import numpy as np
 import nose.tools as nt
+import pytest
 
 from hyperspy.misc import rgb_tools
 import hyperspy.api as hs
@@ -29,13 +30,13 @@ class TestRGBA8:
         nt.assert_equal(len(self.im.axes_manager._axes), 3)
         nt.assert_equal(self.im.axes_manager.signal_axes[0].name, "RGB index")
 
-    @nt.raises(AttributeError)
     def test_wrong_bs(self):
-        self.s.change_dtype("rgba16")
+        with pytest.raises(AttributeError):
+            self.s.change_dtype("rgba16")
 
-    @nt.raises(AttributeError)
     def test_wrong_rgb(self):
-        self.im.change_dtype("rgb8")
+        with pytest.raises(AttributeError):
+            self.im.change_dtype("rgb8")
 
 
 class TestRGBA16:
@@ -60,10 +61,10 @@ class TestRGBA16:
         self.im.change_dtype("uint16")
         np.testing.assert_array_equal(self.s.data, self.im.data)
 
-    @nt.raises(AttributeError)
     def test_wrong_bs(self):
-        self.s.change_dtype("rgba8")
+        with pytest.raises(AttributeError):
+            self.s.change_dtype("rgba8")
 
-    @nt.raises(AttributeError)
     def test_wrong_rgb(self):
-        self.im.change_dtype("rgb16")
+        with pytest.raises(AttributeError):
+            self.im.change_dtype("rgb16")

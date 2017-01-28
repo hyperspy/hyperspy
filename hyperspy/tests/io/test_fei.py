@@ -17,6 +17,8 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+
+import pytest
 import nose.tools as nt
 import numpy as np
 
@@ -373,10 +375,9 @@ class TestFEIReader():
         fname1 = os.path.join(
             self.dirpathnew,
             '16x16-diffraction_imagel_5x5x256x256_EDS_copy.emi')
-        with nt.assert_raises(ValueError) as cm:
+        with pytest.raises(ValueError) as cm:
             load([fname0, fname1], stack=True)
-        nt.assert_true(str(cm.exception).startswith(
-            "The number of sub-signals per file does not match"))
+            cm.match("The number of sub-signals per file does not match*")
 
     def test_date_time(self):
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')

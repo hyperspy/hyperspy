@@ -1,5 +1,6 @@
 import nose.tools as nt
 import numpy as np
+import pytest
 
 from hyperspy.signals import BaseSignal
 from hyperspy import signals
@@ -11,9 +12,9 @@ class Test1d:
     def setup_method(self, method):
         self.s = BaseSignal(np.arange(2))
 
-    @nt.raises(DataDimensionError)
     def test_as_signal2D(self):
-        nt.assert_true((self.s.data == self.s.as_signal2D((0, 1)).data).all())
+        with pytest.raises(DataDimensionError):
+            nt.assert_true((self.s.data == self.s.as_signal2D((0, 1)).data).all())
 
     def test_as_signal1D(self):
         nt.assert_true((self.s.data == self.s.as_signal1D(0).data).all())

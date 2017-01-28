@@ -5,6 +5,7 @@ import json
 from nose.plugins.skip import SkipTest
 
 import nose.tools as nt
+import pytest
 from hyperspy.io import load
 from hyperspy import signals
 from hyperspy.misc.test_utils import assert_deep_almost_equal
@@ -192,11 +193,11 @@ def test_get_mode():
     s = load(filename, select_type='spectrum')
     nt.assert_equal(s.metadata.Signal.signal_type, "EDS_TEM")
     nt.assert_true(isinstance(s, signals.EDSTEMSpectrum))
-    
+
 
 def test_wrong_file():
     if skip_test:
         raise SkipTest
     filename = os.path.join(my_path, 'bcf_data', 'Nope.bcf')
-    with nt.assert_raises(TypeError):
+    with pytest.raises(TypeError):
         load(filename)

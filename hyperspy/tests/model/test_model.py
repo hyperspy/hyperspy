@@ -1,10 +1,10 @@
 from distutils.version import LooseVersion
+from unittest import mock
 
 import numpy as np
 import scipy
 import nose.tools as nt
-from unittest import mock
-from nose.plugins.skip import SkipTest
+import pytest
 
 import hyperspy.api as hs
 from hyperspy.misc.utils import slugify
@@ -276,12 +276,12 @@ class TestModel1D:
         nt.assert_equal(m[0].centre.value, 0.1)
         nt.assert_equal(m[0].sigma.value, 0.2)
 
-    @nt.raises(ValueError)
     def test_append_existing_component(self):
         g = hs.model.components1D.Gaussian()
         m = self.model
         m.append(g)
-        m.append(g)
+        with pytest.raises(ValueError):
+            m.append(g)
 
     def test_append_component(self):
         g = hs.model.components1D.Gaussian()
@@ -311,17 +311,12 @@ class TestModel1D:
         np.testing.assert_equal(ll_axis.value2index.call_args[0][0], 0)
 
     def test_notebook_interactions(self):
-        try:
-            import ipywidgets
-        except:
-            raise SkipTest("ipywidgets not installed")
-        if LooseVersion(ipywidgets.__version__) < LooseVersion("5.0"):
-            raise SkipTest("ipywigets > 5.0 required but %s installed" %
-                           ipywidgets.__version__)
+        ipywidgets = pytest.importorskip("ipywidgets", minversion="5.0")
+        ipython = pytest.importorskip("IPython")
         from IPython import get_ipython
         ip = get_ipython()
         if ip is None or not getattr(ip, 'kernel', None):
-            raise SkipTest("Not attached to notebook")
+            pytest.xfail("Not attached to notebook")
         m = self.model
         m.notebook_interaction()
         m.append(hs.model.components1D.Offset())
@@ -355,7 +350,6 @@ class TestModel1D:
         nt.assert_is(m['Gaussian_0'], gs[1])
         nt.assert_is(m['Gaussian_1'], gs[2])
 
-    @nt.raises(ValueError)
     def test_several_component_with_same_name(self):
         m = self.model
         gs = [
@@ -366,18 +360,19 @@ class TestModel1D:
         m[0]._name = "hs.model.components1D.Gaussian"
         m[1]._name = "hs.model.components1D.Gaussian"
         m[2]._name = "hs.model.components1D.Gaussian"
-        m['Gaussian']
+        with pytest.raises(ValueError):
+            m['Gaussian']
 
-    @nt.raises(ValueError)
     def test_no_component_with_that_name(self):
         m = self.model
-        m['Voigt']
+        with pytest.raises(ValueError):
+            m['Voigt']
 
-    @nt.raises(ValueError)
     def test_component_already_in_model(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
-        m.extend((g1, g1))
+        with pytest.raises(ValueError):
+            m.extend((g1, g1))
 
     def test_remove_component(self):
         m = self.model
@@ -449,14 +444,14 @@ class TestModel1D:
         m.extend((g1, g2))
         nt.assert_is(m._get_component(g2), g2)
 
-    @nt.raises(ValueError)
     def test_get_component_wrong(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
         g2 = hs.model.components1D.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
-        m._get_component(1.2)
+        with pytest.raises(ValueError):
+            m._get_component(1.2)
 
     def test_components_class_default(self):
         m = self.model
@@ -471,13 +466,13 @@ class TestModel1D:
         g1.name = "test"
         nt.assert_is(getattr(m.components, g1.name), g1)
 
-    @nt.raises(AttributeError)
     def test_components_class_change_name_del_default(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
         m.append(g1)
         g1.name = "test"
-        getattr(m.components, "Gaussian")
+        with pytest.raises(AttributeError):
+            getattr(m.components, "Gaussian")
 
     def test_components_class_change_invalid_name(self):
         m = self.model
@@ -488,7 +483,6 @@ class TestModel1D:
             getattr(m.components,
                     slugify(g1.name, valid_variable_name=True)), g1)
 
-    @nt.raises(AttributeError)
     def test_components_class_change_name_del_default(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
@@ -496,7 +490,8 @@ class TestModel1D:
         invalid_name = "1, Test This!"
         g1.name = invalid_name
         g1.name = "test"
-        getattr(m.components, slugify(invalid_name))
+        with pytest.raises(AttributeError):
+            getattr(m.components, slugify(invalid_name))
 
     def test_snap_parameter_bounds(self):
         m = self.model
@@ -678,8 +673,7 @@ class TestModelFitBinned:
         np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
 
     def test_fit_bounded_leastsq(self):
-        if LooseVersion(scipy.__version__) < LooseVersion("0.17"):
-            raise SkipTest("least bounds only available in scipy >= 0.17")
+        pytest.importorskip("scipy", minversion="0.17")
         self.m[0].centre.bmin = 0.5
         # self.m[0].bounded = True
         self.m.fit(fitter="leastsq", bounded=True)
@@ -722,9 +716,9 @@ class TestModelFitBinned:
         np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
         np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
 
-    @nt.raises(ValueError)
     def test_wrong_method(self):
-        self.m.fit(method="dummy")
+        with pytest.raises(ValueError):
+            self.m.fit(method="dummy")
 
 
 class TestModelWeighted:

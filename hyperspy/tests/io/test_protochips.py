@@ -17,7 +17,9 @@
 # along with HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+
 import numpy as np
+import pytest
 import nose.tools as nt
 
 import hyperspy.api as hs
@@ -71,16 +73,16 @@ def datetime_gas_cell():
 
 def test_loading_random_csv_file():
     filename = os.path.join(dirpath, 'random_csv_file.csv')
-    with nt.assert_raises(IOError) as cm:
+    with pytest.raises(IOError) as cm:
         ProtochipsCSV(filename)
-    nt.assert_equal(cm.exception.args[0], invalid_file_error)
+        cm.match(invalid_file_error)
 
 
 def test_loading_invalid_protochips_file():
     filename = os.path.join(dirpath, 'invalid_protochips_file.csv')
-    with nt.assert_raises(IOError) as cm:
+    with pytest.raises(IOError) as cm:
         hs.load(filename)
-    nt.assert_equal(cm.exception.args[0], invalid_file_error)
+        cm.match(invalid_file_error)
 
 
 class test_ProtochipsGasCellCSV():

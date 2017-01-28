@@ -167,8 +167,8 @@ def assert_warns(message=None, category=None):
 def assert_deep_almost_equal(actual, expected, *args, **kwargs):
     """ Assert that two complex structures have almost equal contents.
     Compares lists, dicts and tuples recursively. Checks numeric values
-    using :py:meth:`nose.tools.assert_almost_equal` and
-    checks all other values with :py:meth:`nose.tools.assert_equal`.
+    using :py:meth:`assert_almost_equal` and
+    checks all other values with :py:meth:`assert_equal`.
     Accepts additional positional and keyword arguments and pass those
     intact to assert_almost_equal() (that's how you specify comparison
     precision).

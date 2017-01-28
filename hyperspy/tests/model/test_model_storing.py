@@ -16,15 +16,18 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
-import numpy as np
 
 from os import remove
+from unittest import mock
+import gc
+
+import numpy as np
 import nose.tools as nt
+import pytest
+
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.io import load
 from hyperspy.components1d import Gaussian
-from unittest import mock
-import gc
 
 
 def clean_model_dictionary(d):
@@ -112,31 +115,31 @@ class TestModelStoring:
         s.models.a.remove()
         nt.assert_equal(0, len(s.models))
 
-    @nt.raises(KeyError)
     def test_store_name_error1(self):
         s = self.m.signal
-        s.models.restore('a')
+        with pytest.raises(KeyError):
+            s.models.restore('a')
 
-    @nt.raises(KeyError)
     def test_store_name_error2(self):
         s = self.m.signal
-        s.models.restore(3)
+        with pytest.raises(KeyError):
+            s.models.restore(3)
 
-    @nt.raises(KeyError)
     def test_store_name_error3(self):
         s = self.m.signal
-        s.models.restore('_a')
+        with pytest.raises(KeyError):
+            s.models.restore('_a')
 
-    @nt.raises(KeyError)
     def test_store_name_error4(self):
         s = self.m.signal
-        s.models.restore('a._dict')
+        with pytest.raises(KeyError):
+            s.models.restore('a._dict')
 
-    @nt.raises(KeyError)
     def test_store_name_error5(self):
         s = self.m.signal
         self.m.store('b')
-        s.models.restore('a')
+        with pytest.raises(KeyError):
+            s.models.restore('a')
 
 
 class TestModelSaving:

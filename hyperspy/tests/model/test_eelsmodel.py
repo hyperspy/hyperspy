@@ -1,5 +1,6 @@
 import numpy as np
 import nose.tools as nt
+import pytest
 
 import hyperspy.api as hs
 
@@ -51,12 +52,12 @@ class TestCreateEELSModel:
         nt.assert_is(m.low_loss, ll)
         nt.assert_true(m.convolved)
 
-    @nt.raises(ValueError)
     def test_low_loss_bad_shape(self):
         ll = self.s.deepcopy()
         ll.axes_manager[-1].offset = -20
         ll.axes_manager.navigation_shape = (123,)
-        m = self.s.create_model(ll=ll)
+        with pytest.raises(ValueError):
+            m = self.s.create_model(ll=ll)
 
 
 class TestEELSModel:

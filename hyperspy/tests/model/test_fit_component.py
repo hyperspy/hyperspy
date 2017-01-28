@@ -17,9 +17,10 @@
 
 
 import numpy as np
-
+import pytest
 import nose.tools
 from nose.tools import assert_true
+
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.components1d import Gaussian
 
@@ -51,9 +52,9 @@ class TestFitOneComponent:
                                    rtol=self.rtol,
                                    atol=10e-3)
 
-    @nose.tools.raises(ValueError)
     def test_component_not_in_model(self):
-        self.model.fit_component(self.g)
+        with pytest.raises(ValueError):
+            self.model.fit_component(self.g)
 
 
 class TestFitSeveralComponent:

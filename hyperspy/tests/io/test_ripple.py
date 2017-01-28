@@ -4,6 +4,7 @@ import gc
 
 import numpy as np
 import nose.tools as nt
+import pytest
 import numpy.testing as npt
 
 from hyperspy.io import load
@@ -22,18 +23,17 @@ MYPATH = os.path.dirname(__file__)
 nt.assert_equal.__self__.maxDiff = None
 
 
-@nt.raises(IOError)
 def test_write_unsupported_data_shape():
     data = np.arange(5 * 10 * 15 * 20).reshape((5, 10, 15, 20))
     s = signals.Signal1D(data)
-    s.save('test_write_unsupported_data_shape.rpl')
+    with pytest.raises(IOError):
+        s.save('test_write_unsupported_data_shape.rpl')
 
-
-@nt.raises(IOError)
 def test_write_unsupported_data_type():
     data = np.arange(5 * 10 * 15).reshape((5, 10, 15)).astype(np.float16)
     s = signals.Signal1D(data)
-    s.save('test_write_unsupported_data_type.rpl')
+    with pytest.raises(IOError):
+        s.save('test_write_unsupported_data_type.rpl')
 
 
 # Test failing

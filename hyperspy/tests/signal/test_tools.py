@@ -3,6 +3,7 @@ from unittest import mock
 import numpy as np
 from numpy.testing import assert_array_equal
 import nose.tools as nt
+import pytest
 
 from hyperspy import signals
 
@@ -225,10 +226,10 @@ class Test3D:
         np.testing.assert_array_equal(rebin(self.signal.data, (1, 2, 6)),
                                       new_s.data)
 
-    @nt.raises(AttributeError)
     def test_rebin_no_variance(self):
         new_s = self.signal.rebin((2, 1, 6))
-        _ = new_s.metadata.Signal.Noise_properties
+        with pytest.raises(AttributeError):
+            _ = new_s.metadata.Signal.Noise_properties
 
     def test_rebin_const_variance(self):
         self.signal.metadata.set_item(
@@ -281,17 +282,17 @@ class Test3D:
                         s.axes_manager.navigation_shape)
         nt.assert_equal(ns.axes_manager.navigation_dimension, 0)
 
-    @nt.raises(ValueError)
     def test_get_navigation_signal_wrong_data_shape(self):
         s = self.signal
         s = s.transpose(signal_axes=1)
-        s._get_navigation_signal(data=np.zeros((3, 2)))
+        with pytest.raises(ValueError):
+            s._get_navigation_signal(data=np.zeros((3, 2)))
 
-    @nt.raises(ValueError)
     def test_get_navigation_signal_wrong_data_shape_dim0(self):
         s = self.signal
         s = s.transpose(signal_axes=3)
-        s._get_navigation_signal(data=np.asarray(0))
+        with pytest.raises(ValueError):
+            s._get_navigation_signal(data=np.asarray(0))
 
     def test_get_navigation_signal_given_data(self):
         s = self.signal
@@ -334,17 +335,17 @@ class Test3D:
                         s.axes_manager.signal_shape)
         nt.assert_equal(ns.axes_manager.navigation_dimension, 0)
 
-    @nt.raises(ValueError)
     def test_get_signal_signal_wrong_data_shape(self):
         s = self.signal
         s = s.transpose(signal_axes=1)
-        s._get_signal_signal(data=np.zeros((3, 2)))
+        with pytest.raises(ValueError):
+            s._get_signal_signal(data=np.zeros((3, 2)))
 
-    @nt.raises(ValueError)
     def test_get_signal_signal_wrong_data_shape_dim0(self):
         s = self.signal
         s = s.transpose(signal_axes=0)
-        s._get_signal_signal(data=np.asarray(0))
+        with pytest.raises(ValueError):
+            s._get_signal_signal(data=np.asarray(0))
 
     def test_get_signal_signal_given_data(self):
         s = self.signal
@@ -625,18 +626,18 @@ class TestOutArg:
         s.data = np.ma.masked_array(s.data, mask=mask)
         self._run_single(s.sum, s, dict(axis=('x', 'z')))
 
-    @nt.raises(ValueError)
     def test_wrong_out_shape(self):
         s = self.s
         ss = s.sum()  # Sum over navigation, data shape (6,)
-        s.sum(axis=s.axes_manager._axes, out=ss)
+        with pytest.raises(ValueError):
+            s.sum(axis=s.axes_manager._axes, out=ss)
 
-    @nt.raises(ValueError)
     def test_wrong_out_shape_masked(self):
         s = self.s
         s.data = np.ma.array(s.data)
         ss = s.sum()  # Sum over navigation, data shape (6,)
-        s.sum(axis=s.axes_manager._axes, out=ss)
+        with pytest.raises(ValueError):
+            s.sum(axis=s.axes_manager._axes, out=ss)
 
 
 class TestTranspose:
@@ -676,13 +677,13 @@ class TestTranspose:
         nt.assert_equal([ax.name for ax in t.axes_manager.signal_axes],
                         ['f', 'e'])
 
-    @nt.raises(ValueError)
     def test_signal_one_name(self):
-        self.s.transpose(signal_axes='a')
+        with pytest.raises(ValueError):
+            self.s.transpose(signal_axes='a')
 
-    @nt.raises(ValueError)
     def test_too_many_signal_axes(self):
-        self.s.transpose(signal_axes=10)
+        with pytest.raises(ValueError):
+            self.s.transpose(signal_axes=10)
 
     def test_navigation_int_transpose(self):
         t = self.s.transpose(navigation_axes=2)
@@ -710,13 +711,13 @@ class TestTranspose:
         nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
                         ['f', 'e'])
 
-    @nt.raises(ValueError)
     def test_navigation_one_name(self):
-        self.s.transpose(navigation_axes='a')
+        with pytest.raises(ValueError):
+            self.s.transpose(navigation_axes='a')
 
-    @nt.raises(ValueError)
     def test_too_many_navigation_axes(self):
-        self.s.transpose(navigation_axes=10)
+        with pytest.raises(ValueError):
+            self.s.transpose(navigation_axes=10)
 
     def test_transpose_shortcut(self):
         s = self.s.transpose(signal_axes=2)

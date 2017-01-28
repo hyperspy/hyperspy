@@ -19,6 +19,7 @@
 import numpy as np
 from numpy.testing import assert_array_equal
 import nose.tools as nt
+import pytest
 
 from hyperspy import signals
 
@@ -68,11 +69,11 @@ class TestBinaryOperators:
         nt.assert_is(s1, s1c)
         nt.assert_is(s2, s2c)
 
-    @nt.raises(ValueError)
     def test_sum_wrong_shape(self):
         s1 = self.s1
         s2 = signals.Signal1D(np.ones((3, 3)))
-        s1 + s2
+        with pytest.raises(ValueError):
+            s1 + s2
 
     def test_broadcast_missing_sig_and_nav(self):
         s1 = self.s1
@@ -93,14 +94,14 @@ class TestBinaryOperators:
         assert_array_equal(s12.data, 3 * np.ones((2, 3, 2)))
         assert_array_equal(s21.data, 3 * np.ones((2, 3, 2)))
 
-    @nt.raises(ValueError)
     def test_broadcast_in_place_missing_sig_wrong(self):
         s1 = self.s1
         s2 = self.s2
         s1 = s1.transpose(signal_axes=0)
         s2.axes_manager._axes[1].navigate = True
         s2.axes_manager._axes[0].navigate = False  # (3| 2)
-        s1 += s2
+        with pytest.raises(ValueError):
+            s1 += s2
 
     def test_broadcast_in_place(self):
         s1 = self.s1

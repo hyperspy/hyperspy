@@ -17,8 +17,9 @@
 
 
 import numpy as np
-
 import nose.tools as nt
+import pytest
+
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.component import Parameter, Component
 from hyperspy.components1d import Gaussian, Lorentzian, ScalableFixedPattern
@@ -113,13 +114,13 @@ class TestParameterDictionary:
             p.twin_inverse_function(rn),
             self.par.twin_inverse_function(rn))
 
-    @nt.raises(ValueError)
     def test_invalid_name(self):
         d = self.par.as_dictionary()
         d['_id_name'] = 'otherone'
         p = Parameter()
         p._id_name = 'newone'
-        _id = p._load_dictionary(d)
+        with pytest.raises(ValueError):
+            _id = p._load_dictionary(d)
 
 
 class TestComponentDictionary:
@@ -185,20 +186,20 @@ class TestComponentDictionary:
             print(list(dc.keys()))
             nt.assert_dict_equal(dn, dc)
 
-    @nt.raises(ValueError)
     def test_invalid_component_name(self):
         c = self.comp
         d = c.as_dictionary()
         n = Component(self.parameter_names)
-        id_dict = n._load_dictionary(d)
+        with pytest.raises(ValueError):
+            id_dict = n._load_dictionary(d)
 
-    @nt.raises(ValueError)
     def test_invalid_parameter_name(self):
         c = self.comp
         d = c.as_dictionary()
         n = Component([a + 's' for a in self.parameter_names])
         n._id_name = 'dummy names yay!'
-        id_dict = n._load_dictionary(d)
+        with pytest.raises(ValueError):
+            id_dict = n._load_dictionary(d)
 
 
 class TestModelDictionary:
