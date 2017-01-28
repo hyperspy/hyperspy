@@ -158,7 +158,7 @@ def test_read_EELS_metadata():
         md.Acquisition_instrument.TEM.magnification,
         640000.0)
     assert_almost_equal(md.Acquisition_instrument.TEM.tilt_stage, 24.95,
-                           places=2)
+                        places=2)
     assert_almost_equal(
         md.Acquisition_instrument.TEM.convergence_angle, 21.0)
     assert_almost_equal(
@@ -204,7 +204,7 @@ def test_read_EDS_metadata():
     assert_almost_equal(
         md.Acquisition_instrument.TEM.Detector.EDS.real_time, 4.233)
     assert_almost_equal(md.Acquisition_instrument.TEM.tilt_stage, 24.95,
-                           places=2)
+                        places=2)
     assert_almost_equal(md.Acquisition_instrument.TEM.beam_energy, 200.0)
     assert_equal(md.Acquisition_instrument.TEM.microscope, "FEI Titan")
     assert_almost_equal(md.Acquisition_instrument.TEM.camera_length, 135.0)

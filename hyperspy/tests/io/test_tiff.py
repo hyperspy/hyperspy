@@ -217,7 +217,7 @@ def test_saving_with_custom_tag():
         s.save(fname, extratags=extratag, overwrite=True)
         s2 = hs.load(fname)
         assert_equal(s2.original_metadata['Number_65000'],
-                        b"Random metadata")
+                     b"Random metadata")
 
 
 def test_read_unit_from_dm():
@@ -247,13 +247,13 @@ def _test_read_unit_from_dm(import_local_tifffile=False):
         assert_equal(s2.axes_manager[0].units, 'micron')
         assert_equal(s2.axes_manager[1].units, 'micron')
         assert_almost_equal(s2.axes_manager[0].scale, s.axes_manager[0].scale,
-                               places=5)
+                            places=5)
         assert_almost_equal(s2.axes_manager[1].scale, s.axes_manager[1].scale,
-                               places=5)
+                            places=5)
         assert_almost_equal(s2.axes_manager[0].offset, s.axes_manager[0].offset,
-                               places=5)
+                            places=5)
         assert_almost_equal(s2.axes_manager[1].offset, s.axes_manager[1].offset,
-                               places=5)
+                            places=5)
 
 
 def test_write_scale_unit():

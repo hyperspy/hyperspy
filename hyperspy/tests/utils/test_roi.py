@@ -26,7 +26,7 @@ class TestROIs():
         sr = r(s)
         scale = s.axes_manager[0].scale
         assert_equal(sr.axes_manager.navigation_shape,
-                        s.axes_manager.navigation_shape[1:])
+                     s.axes_manager.navigation_shape[1:])
         np.testing.assert_equal(
             sr.data, s.data[:, int(35 / scale), ...])
 
@@ -48,7 +48,7 @@ class TestROIs():
         sr = r(s)
         scale = s.axes_manager[0].scale
         assert_equal(sr.axes_manager.navigation_shape,
-                        s.axes_manager.navigation_shape[1:])
+                     s.axes_manager.navigation_shape[1:])
         np.testing.assert_equal(
             sr.data, s.data[:, int(35 / scale), ...])
 
@@ -58,7 +58,7 @@ class TestROIs():
         sr = r(s)
         scale = s.axes_manager[0].scale
         assert_equal(sr.axes_manager.navigation_shape,
-                        s.axes_manager.navigation_shape[2:])
+                     s.axes_manager.navigation_shape[2:])
         np.testing.assert_equal(
             sr.data, s.data[int(40 / scale), int(35 / scale), ...])
 
@@ -68,7 +68,7 @@ class TestROIs():
         sr = r(s, axes=s.axes_manager.signal_axes)
         scale = s.axes_manager.signal_axes[0].scale
         assert_equal(sr.axes_manager.signal_shape,
-                        s.axes_manager.signal_shape[2:])
+                     s.axes_manager.signal_shape[2:])
         np.testing.assert_equal(
             sr.data, s.data[..., int(2 / scale), int(1 / scale)])
 
@@ -79,7 +79,7 @@ class TestROIs():
         scale = s.axes_manager[0].scale
         n = (30 - 15) / scale
         assert_equal(sr.axes_manager.navigation_shape,
-                        (n, ) + s.axes_manager.navigation_shape[1:])
+                     (n, ) + s.axes_manager.navigation_shape[1:])
         np.testing.assert_equal(
             sr.data, s.data[:, int(15 / scale):int(30 // scale), ...])
 
@@ -104,7 +104,7 @@ class TestROIs():
         n = ((int(round(2.3 / scale0)), int(round(3.5 / scale0)),),
              (int(round(5.6 / scale1)), int(round(12.2 / scale1)),))
         assert_equal(sr.axes_manager.navigation_shape,
-                        (n[0][1] - n[0][0], n[1][1] - n[1][0]))
+                     (n[0][1] - n[0][0], n[1][1] - n[1][0]))
         np.testing.assert_equal(
             sr.data, s.data[n[1][0]:n[1][1], n[0][0]:n[0][1], ...])
 
@@ -123,9 +123,9 @@ class TestROIs():
         for i in range(n):
             for j in range(n):
                 assert_true(np.all(sr.data.mask[j, i, :] == True) or
-                               np.all(sr.data.mask[j, i, :] == False))
+                            np.all(sr.data.mask[j, i, :] == False))
                 assert_true(np.all(sr_ann.data.mask[j, i, :] == True) or
-                               np.all(sr_ann.data.mask[j, i, :] == False))
+                            np.all(sr_ann.data.mask[j, i, :] == False))
         # Check that the correct elements has been masked out:
         mask = sr.data.mask[:, :, 0]
         print(mask)   # To help debugging, this shows the shape of the mask

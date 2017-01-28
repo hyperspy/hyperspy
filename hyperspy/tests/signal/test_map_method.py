@@ -165,7 +165,7 @@ class TestChangingAxes:
         s = self.base.transpose(signal_axes=4).inav[0, 0]
         s.map(np.mean, axis=1)
         assert_equal(list('def'), [ax.name for ax in
-                                      s.axes_manager._axes])
+                                   s.axes_manager._axes])
         assert_equal(0, len(s.axes_manager.navigation_axes))
         s.map(np.mean, axis=(1, 2))
         assert_equal(['f'], [ax.name for ax in s.axes_manager._axes])
@@ -176,7 +176,7 @@ class TestChangingAxes:
         s.map(np.tile, reps=(2, 1, 1, 1, 1))
         assert_equal(len(s.axes_manager.signal_axes), 5)
         assert_true(set('cdef') <= {ax.name for ax in
-                                       s.axes_manager._axes})
+                                    s.axes_manager._axes})
         assert_equal(0, len(s.axes_manager.navigation_axes))
         assert_equal(s.data.shape, (2, 4, 5, 6, 7))
 
@@ -184,13 +184,13 @@ class TestChangingAxes:
         s = self.base.transpose(signal_axes=4)
         s.map(np.mean, axis=1)
         assert_equal(list('abdef'), [ax.name for ax in
-                                        s.axes_manager._axes])
+                                     s.axes_manager._axes])
         assert_equal(2, len(s.axes_manager.navigation_axes))
         s.map(np.mean, axis=(1, 2))
         assert_equal(['f'], [ax.name for ax in
-                                s.axes_manager.signal_axes])
+                             s.axes_manager.signal_axes])
         assert_equal(list('ba'), [ax.name for ax in
-                                     s.axes_manager.navigation_axes])
+                                  s.axes_manager.navigation_axes])
         assert_equal(2, len(s.axes_manager.navigation_axes))
 
     def test_increasing(self):
@@ -198,9 +198,9 @@ class TestChangingAxes:
         s.map(np.tile, reps=(2, 1, 1, 1, 1))
         assert_equal(len(s.axes_manager.signal_axes), 5)
         assert_true(set('cdef') <= {ax.name for ax in
-                                       s.axes_manager.signal_axes})
+                                    s.axes_manager.signal_axes})
         assert_equal(list('ba'), [ax.name for ax in
-                                     s.axes_manager.navigation_axes])
+                                  s.axes_manager.navigation_axes])
         assert_equal(2, len(s.axes_manager.navigation_axes))
         assert_equal(s.data.shape, (2, 3, 2, 4, 5, 6, 7))
 

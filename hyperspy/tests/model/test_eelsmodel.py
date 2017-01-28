@@ -91,12 +91,12 @@ class TestEELSModel:
 
     def test_get_first_ionization_edge_energy_C_B(self):
         assert_equal(self.m._get_first_ionization_edge_energy(),
-                        self.m["B_K"].onset_energy.value)
+                     self.m["B_K"].onset_energy.value)
 
     def test_get_first_ionization_edge_energy_C(self):
         self.m["B_K"].active = False
         assert_equal(self.m._get_first_ionization_edge_energy(),
-                        self.m["C_K"].onset_energy.value)
+                     self.m["C_K"].onset_energy.value)
 
     def test_get_first_ionization_edge_energy_None(self):
         self.m["B_K"].active = False
@@ -141,15 +141,15 @@ class TestEELSModel:
 
     def test_get_start_energy_none(self):
         assert_equal(self.m._get_start_energy(),
-                        150)
+                     150)
 
     def test_get_start_energy_above(self):
         assert_equal(self.m._get_start_energy(170),
-                        170)
+                     170)
 
     def test_get_start_energy_below(self):
         assert_equal(self.m._get_start_energy(100),
-                        150)
+                     150)
 
 
 class TestFitBackground:
@@ -169,7 +169,7 @@ class TestFitBackground:
     def test_fit_background_B_C(self):
         self.m.fit_background()
         assert_almost_equal(self.m["Offset"].offset.value,
-                               1)
+                            1)
         assert_true(self.m["B_K"].active)
         assert_true(self.m["C_K"].active)
 
@@ -177,7 +177,7 @@ class TestFitBackground:
         self.m["B_K"].active = False
         self.m.fit_background()
         assert_almost_equal(self.m["Offset"].offset.value,
-                               1.71212121212)
+                            1.71212121212)
         assert_false(self.m["B_K"].active)
         assert_true(self.m["C_K"].active)
 
@@ -186,6 +186,6 @@ class TestFitBackground:
         self.m["C_K"].active = False
         self.m.fit_background()
         assert_almost_equal(self.m["Offset"].offset.value,
-                               2.13567839196)
+                            2.13567839196)
         assert_false(self.m["B_K"].active)
         assert_false(self.m["C_K"].active)

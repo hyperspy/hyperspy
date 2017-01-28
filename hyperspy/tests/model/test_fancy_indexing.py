@@ -78,7 +78,7 @@ class TestModelIndexing:
             m.chisq.data, self.model.chisq.data[:, 0::2])
         np.testing.assert_array_equal(m.dof.data, self.model.dof.data[:, 0::2])
         assert_is(m.inav[:2][0].A.ext_force_positive,
-                     m[0].A.ext_force_positive)
+                  m[0].A.ext_force_positive)
         assert_equal(m.chisq.data.shape, (4, 2))
         assert_false(m[0]._active_array[0, 0])
         for ic, c in enumerate(m):

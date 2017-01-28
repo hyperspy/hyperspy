@@ -232,7 +232,7 @@ class TestCaseHologramImage(object):
             reference=reference4a)
         #   b. Mismatch of signal shapes of object and reference holograms
         assert_raises(ValueError, self.holo_image3.reconstruct_phase,
-                         self.ref_image3.inav[:, :].isig[y_start:y_stop, x_start:x_stop])
+                      self.ref_image3.inav[:, :].isig[y_start:y_stop, x_start:x_stop])
 
         #   c. Mismatch of signal shape of sb_position
         sb_position_mismatched = hs.signals.Signal2D(

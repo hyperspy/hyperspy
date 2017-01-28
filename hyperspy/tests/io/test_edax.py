@@ -48,12 +48,12 @@ class TestSpcSpectrum:
         assert_almost_equal(0, eds_dict['azimuth_angle'])
         assert_almost_equal(34, eds_dict['elevation_angle'])
         assert_almost_equal(129.31299, eds_dict['energy_resolution_MnKa'],
-                               places=5)
+                            places=5)
         assert_almost_equal(50.000004, eds_dict['live_time'], places=6)
 
         # Testing elements
         assert_set_equal({'Al', 'C', 'Ce', 'Cu', 'F', 'Ho', 'Mg', 'O'},
-                            set(elements))
+                         set(elements))
 
         # Testing HyperSpy parameters
         assert_equal(True, signal_dict['binned'])
@@ -68,7 +68,7 @@ class TestSpcSpectrum:
                                      'size': 4096,
                                      'units': 'keV'}}
         assert_dict_equal(spc_ax_manager,
-                             self.spc.axes_manager.as_dictionary())
+                          self.spc.axes_manager.as_dictionary())
 
 
 class TestSpdMap:
@@ -111,31 +111,31 @@ class TestSpdMap:
         assert_equal(np.uint16, self.spd.data.dtype)     # test d_type
         assert_equal((200, 256, 2500), self.spd.data.shape)  # test d_shape
         assert_equal([[[0, 0, 0, 0, 0],              # test random data
-                          [0, 0, 1, 0, 1],
-                          [0, 0, 0, 0, 0],
-                          [0, 0, 0, 0, 0],
-                          [0, 0, 0, 0, 0]],
-                         [[0, 0, 0, 0, 0],
+                       [0, 0, 1, 0, 1],
+                       [0, 0, 0, 0, 0],
+                       [0, 0, 0, 0, 0],
+                       [0, 0, 0, 0, 0]],
+                      [[0, 0, 0, 0, 0],
                           [0, 0, 0, 0, 0],
                           [0, 0, 0, 1, 0],
                           [0, 0, 0, 0, 0],
                           [0, 0, 0, 0, 0]],
-                         [[0, 0, 0, 0, 0],
+                      [[0, 0, 0, 0, 0],
                           [0, 0, 0, 0, 0],
                           [0, 0, 0, 0, 1],
                           [0, 1, 1, 0, 0],
                           [0, 0, 0, 0, 0]],
-                         [[0, 1, 0, 0, 0],
+                      [[0, 1, 0, 0, 0],
                           [0, 0, 0, 1, 0],
                           [0, 0, 0, 0, 0],
                           [0, 0, 1, 0, 0],
                           [0, 0, 0, 1, 0]],
-                         [[0, 0, 0, 0, 0],
+                      [[0, 0, 0, 0, 0],
                           [0, 0, 0, 0, 0],
                           [0, 0, 1, 0, 1],
                           [0, 0, 0, 1, 0],
                           [0, 0, 0, 0, 0]]],
-                        self.spd.data[15:20, 15:20, 15:20].tolist())
+                     self.spd.data[15:20, 15:20, 15:20].tolist())
 
     def test_parameters(self):
         elements = self.spd.metadata.as_dictionary()['Sample']['elements']
@@ -152,12 +152,12 @@ class TestSpdMap:
         assert_almost_equal(0, eds_dict['azimuth_angle'])
         assert_almost_equal(34, eds_dict['elevation_angle'])
         assert_almost_equal(126.60252, eds_dict['energy_resolution_MnKa'],
-                               places=5)
+                            places=5)
         assert_almost_equal(2621.4399, eds_dict['live_time'], places=4)
 
         # Testing elements
         assert_set_equal({'Ce', 'Co', 'Cr', 'Fe', 'Gd', 'La', 'Mg', 'O',
-                             'Sr'}, set(elements))
+                          'Sr'}, set(elements))
 
         # Testing HyperSpy parameters
         assert_equal(True, signal_dict['binned'])
@@ -184,7 +184,7 @@ class TestSpdMap:
                                      'size': 2500,
                                      'units': 'keV'}}
         assert_dict_equal(spd_ax_manager,
-                             self.spd.axes_manager.as_dictionary())
+                          self.spd.axes_manager.as_dictionary())
 
     def test_ipr_reading(self):
         ipr_header = self.spd.original_metadata['ipr_header']
@@ -201,16 +201,16 @@ class TestSpdMap:
         eds_dict = sem_dict['Detector']['EDS']
 
         assert_almost_equal(spc_header.azimuth,
-                               eds_dict['azimuth_angle'])
+                            eds_dict['azimuth_angle'])
         assert_almost_equal(spc_header.detReso,
-                               eds_dict['energy_resolution_MnKa'])
+                            eds_dict['energy_resolution_MnKa'])
         assert_almost_equal(spc_header.elevation,
-                               eds_dict['elevation_angle'])
+                            eds_dict['elevation_angle'])
         assert_almost_equal(spc_header.liveTime,
-                               eds_dict['live_time'])
+                            eds_dict['live_time'])
         assert_almost_equal(spc_header.evPerChan,
-                               self.spd.axes_manager[2].scale * 1000)
+                            self.spd.axes_manager[2].scale * 1000)
         assert_almost_equal(spc_header.kV,
-                               sem_dict['beam_energy'])
+                            sem_dict['beam_energy'])
         assert_almost_equal(spc_header.numElem,
-                               len(elements))
+                            len(elements))

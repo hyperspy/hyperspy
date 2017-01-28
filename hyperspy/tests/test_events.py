@@ -325,8 +325,8 @@ def test_events_container_magic_attributes():
     assert_in("event", events.__dir__())
     assert_in("a", events.__dir__())
     assert_equal(repr(events),
-                    "<hyperspy.events.Events: "
-                    "{'event': <hyperspy.events.Event: set()>}>")
+                 "<hyperspy.events.Events: "
+                 "{'event': <hyperspy.events.Event: set()>}>")
     del events.event
     del events.a
     assert_not_in("event", events.__dir__())
@@ -358,7 +358,7 @@ class TestTriggerArgResolution(EventsBase):
         self.events.a.connect(lambda x=None: assert_equal(x, None), [])
         self.events.a.connect(lambda A: assert_equal(A, 'vA'), ["A"])
         self.events.a.connect(lambda A, B: assert_equal((A, B),
-                                                           ('vA', 'vB')),
+                                                        ('vA', 'vB')),
                               ["A", "B"])
         self.events.a.connect(lambda A, B:
                               assert_equal((A, B), ('vA', 'vB')), "auto")
@@ -367,14 +367,14 @@ class TestTriggerArgResolution(EventsBase):
 
         self.events.a.connect(lambda **kwargs:
                               assert_equal((kwargs["A"], kwargs["B"]),
-                                              ('vA', 'vB')), "auto")
+                                           ('vA', 'vB')), "auto")
         self.events.a.connect(lambda A, B=None, C=None:
                               assert_equal((A, B, C),
-                                              ('vA', 'vB', None)), ["A", "B"])
+                                           ('vA', 'vB', None)), ["A", "B"])
         # Test default argument
         self.events.b.connect(lambda A, B=None, C=None:
                               assert_equal((A, B, C),
-                                              ('vA', 'vB', "vC")))
+                                           ('vA', 'vB', "vC")))
         self.events.a.trigger(A='vA', B='vB')
         self.events.b.trigger(A='vA', B='vB')
         with pytest.raises(TypeError):
@@ -404,6 +404,6 @@ class TestTriggerArgResolution(EventsBase):
                               assert_equal((A, B), ('vA', 'vB')), )
         self.events.a.connect(lambda x=None, y=None, A=None, B=None:
                               assert_equal((x, y, A, B),
-                                              (None, None, 'vA', 'vB')))
+                                           (None, None, 'vA', 'vB')))
 
         self.events.a.trigger(A='vA', B='vB')

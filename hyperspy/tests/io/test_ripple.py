@@ -144,7 +144,7 @@ def _run_test(dtype, shape, dim, tmpdir, metadata):
             npt.assert_array_equal(s.data, stest.data)
             assert_equal(s.data.dtype, stest.data.dtype)
             assert_equal(s.axes_manager.signal_dimension,
-                            stest.axes_manager.signal_dimension)
+                         stest.axes_manager.signal_dimension)
             mdpaths = ("Signal.signal_type", )
             if s.metadata.Signal.signal_type == "EELS" and metadata:
                 mdpaths += (

@@ -205,7 +205,7 @@ class TestModelSettingPZero:
         m[-1].active = False
         m.set_boundaries()
         assert_equal(m.free_parameters_boundaries,
-                        [(0.1, 0.11), (0.2, 0.21), (0.3, 0.31)])
+                     [(0.1, 0.11), (0.2, 0.21), (0.3, 0.31)])
 
     def test_setting_mpfit_parameters_info(self):
         m = self.model
@@ -216,13 +216,13 @@ class TestModelSettingPZero:
         m[-1].active = False
         m.set_mpfit_parameters_info()
         assert_equal(m.mpfit_parinfo,
-                        [{'limited': [True, False],
-                          'limits': [0.1, 0]},
+                     [{'limited': [True, False],
+                       'limits': [0.1, 0]},
                          {'limited': [False, True],
                           'limits': [0, 0.31]},
                          {'limited': [False, True],
                           'limits': [0, 0.31]},
-                         ])
+                      ])
 
 
 class TestModel1D:
@@ -930,7 +930,7 @@ class TestMultifit:
         rs = self.m[0].r.as_signal(field="values")
         assert_true("Signal.Noise_properties.variance" in rs.metadata)
         assert_is_instance(rs.metadata.Signal.Noise_properties.variance,
-                              hs.signals.Signal1D)
+                           hs.signals.Signal1D)
 
     def test_bounded_snapping_mpfit(self):
         m = self.m

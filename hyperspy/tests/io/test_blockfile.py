@@ -147,9 +147,9 @@ def test_save_load_cycle():
     sig_reload = hs.load(save_path)
     np.testing.assert_equal(signal.data, sig_reload.data)
     assert_equal(signal.axes_manager.as_dictionary(),
-                    sig_reload.axes_manager.as_dictionary())
+                 sig_reload.axes_manager.as_dictionary())
     assert_equal(signal.original_metadata.as_dictionary(),
-                    sig_reload.original_metadata.as_dictionary())
+                 sig_reload.original_metadata.as_dictionary())
     # change original_filename to make the metadata of both signals equals
     sig_reload.metadata.General.original_filename = signal.metadata.General.original_filename
     assert_deep_almost_equal(signal.metadata.as_dictionary(),
@@ -175,11 +175,11 @@ def test_different_x_y_scale_units():
         signal.save(save_path, overwrite=True)
         sig_reload = hs.load(save_path)
         assert_almost_equal(sig_reload.axes_manager[0].scale, 50.0,
-                               places=2)
+                            places=2)
         assert_almost_equal(sig_reload.axes_manager[1].scale, 64.0,
-                               places=2)
+                            places=2)
         assert_almost_equal(sig_reload.axes_manager[2].scale, 0.0160616,
-                               places=5)
+                            places=5)
     finally:
         # Delete reference to close memmap file!
         del sig_reload
@@ -336,6 +336,6 @@ def test_crop_notes():
         signal.save(save_path, overwrite=True)
         sig_reload = hs.load(save_path)
         assert_equal(sig_reload.original_metadata.blockfile_header.Note,
-                        note[:note_len])
+                     note[:note_len])
     finally:
         _remove_file(save_path)

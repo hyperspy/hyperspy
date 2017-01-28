@@ -47,7 +47,7 @@ def test_read_protochips_gas_cell():
     s = hs.load(filename)
     assert_equal(len(s), 5)
     assert_equal(s[0].metadata.General.title,
-                    'Holder Temperature (Degrees C)')
+                 'Holder Temperature (Degrees C)')
     assert_equal(s[0].metadata.Signal.signal_type, '')
     assert_equal(s[0].metadata.Signal.quantity, 'Temperature (Degrees C)')
     assert_equal(s[1].metadata.General.title, 'Holder Pressure (Torr)')
@@ -103,7 +103,7 @@ class test_ProtochipsGasCellCSV():
     def test_read_original_metadata(self):
         om = self.s_list[0].original_metadata.Protochips_header
         assert_equal(om.Calibration_file_name, 'The calibration files names'
-                        ' are saved in metadata.General.notes')
+                     ' are saved in metadata.General.notes')
         assert_equal(om.Holder_Pressure_units, 'Torr')
         assert_equal(om.Holder_Temperature_units, 'Degrees C')
         assert_equal(om.Start_time, datetime_gas_cell()[2])
@@ -125,11 +125,11 @@ class test_ProtochipsGasCellCSVReader():
 
     def test_read_column_name(self):
         assert_equal(self.pgc.column_name, ['Time', 'Notes',
-                                               'Holder Temperature',
-                                               'Holder Pressure',
-                                               'Tank1 Pressure',
-                                               'Tank2 Pressure',
-                                               'Vacuum Tank Pressure'])
+                                            'Holder Temperature',
+                                            'Holder Pressure',
+                                            'Tank1 Pressure',
+                                            'Tank2 Pressure',
+                                            'Vacuum Tank Pressure'])
 
     def test_read_start_datetime(self):
         assert_equal(self.pgc.start_datetime, datetime_gas_cell()[2])
@@ -191,12 +191,12 @@ class test_ProtochipsElectricalCSVReader():
 
     def test_read_column_name(self):
         assert_equal(self.pa.column_name, ['Time', 'Notes',
-                                              'Channel A Current',
-                                              'Channel A Voltage',
-                                              'Channel A Resistance',
-                                              'Channel B Current',
-                                              'Channel B Voltage',
-                                              'Channel B Resistance'])
+                                           'Channel A Current',
+                                           'Channel A Voltage',
+                                           'Channel A Resistance',
+                                           'Channel B Current',
+                                           'Channel B Voltage',
+                                           'Channel B Resistance'])
 
     def test_read_start_datetime(self):
         dt = np.datetime64('2014-10-08T16:26:51.738000')
@@ -219,7 +219,7 @@ def test_read_protochips_thermal():
     filename = os.path.join(dirpath, 'protochips_thermal.csv')
     s = hs.load(filename)
     assert_equal(s.metadata.General.title,
-                    'Channel A Temperature (Degrees C)')
+                 'Channel A Temperature (Degrees C)')
     assert_equal(s.metadata.Signal.signal_type, '')
     assert_equal(s.metadata.Signal.quantity, 'Temperature (Degrees C)')
 
@@ -258,7 +258,7 @@ def test_read_protochips_electrothermal():
     s = hs.load(filename)
     assert_equal(len(s), 4)
     assert_equal(s[0].metadata.General.title,
-                    'Channel A Temperature (Degrees C)')
+                 'Channel A Temperature (Degrees C)')
     assert_equal(s[0].metadata.Signal.signal_type, '')
     assert_equal(s[0].metadata.Signal.quantity, 'Temperature (Degrees C)')
     assert_equal(s[1].metadata.General.title, 'Channel B Current (Amps)')
@@ -282,10 +282,10 @@ class test_ProtochipsElectrothermalCSVReader():
 
     def test_read_column_name(self):
         assert_equal(self.pet.column_name, ['Time', 'Notes',
-                                               'Channel A Temperature',
-                                               'Channel B Current',
-                                               'Channel B Voltage',
-                                               'Channel B Resistance'])
+                                            'Channel A Temperature',
+                                            'Channel B Current',
+                                            'Channel B Voltage',
+                                            'Channel B Resistance'])
 
     def test_read_start_datetime(self):
         dt = np.datetime64('2014-11-05T14:42:51.369000')

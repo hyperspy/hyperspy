@@ -50,37 +50,37 @@ serial3 = 42563.95662037037
 
 def test_get_date_time_from_metadata():
     assert_equal(dtt.get_date_time_from_metadata(md1),
-                    '2014-12-27T00:00:00+00:00')
+                 '2014-12-27T00:00:00+00:00')
     assert_equal(dtt.get_date_time_from_metadata(md1, formatting='ISO'),
-                    '2014-12-27T00:00:00+00:00')
+                 '2014-12-27T00:00:00+00:00')
     assert_equal(dtt.get_date_time_from_metadata(md1, formatting='datetime64'),
-                    np.datetime64('2014-12-27T00:00:00.000000'))
+                 np.datetime64('2014-12-27T00:00:00.000000'))
     assert_equal(dtt.get_date_time_from_metadata(md1, formatting='datetime'),
-                    dt1)
+                 dt1)
 
     assert_equal(dtt.get_date_time_from_metadata(md2),
-                    '2124-03-25T10:04:48-05:00')
+                 '2124-03-25T10:04:48-05:00')
     assert_equal(dtt.get_date_time_from_metadata(md2, formatting='datetime'),
-                    dt2)
+                 dt2)
     assert_equal(dtt.get_date_time_from_metadata(md2, formatting='datetime64'),
-                    np.datetime64('2124-03-25T10:04:48'))
+                 np.datetime64('2124-03-25T10:04:48'))
 
     assert_equal(dtt.get_date_time_from_metadata(md3),
-                    '2016-07-12T22:57:32')
+                 '2016-07-12T22:57:32')
     assert_equal(dtt.get_date_time_from_metadata(md3, formatting='datetime'),
-                    dt3)
+                 dt3)
     assert_equal(dtt.get_date_time_from_metadata(md3, formatting='datetime64'),
-                    np.datetime64('2016-07-12T22:57:32.000000'))
+                 np.datetime64('2016-07-12T22:57:32.000000'))
 
     assert_equal(dtt.get_date_time_from_metadata(DictionaryTreeBrowser({'General': {}})),
-                    None)
+                 None)
     assert_equal(dtt.get_date_time_from_metadata(DictionaryTreeBrowser({'General': {'date': '2016-07-12'}})),
-                    '2016-07-12')
+                 '2016-07-12')
     assert_equal(dtt.get_date_time_from_metadata(DictionaryTreeBrowser({'General': {'time': '12:00'}})),
-                    '12:00:00')
+                 '12:00:00')
     assert_equal(dtt.get_date_time_from_metadata(DictionaryTreeBrowser({'General': {'time': '12:00',
-                                                                                       'time_zone': 'CET'}})),
-                    '12:00:00')
+                                                                                    'time_zone': 'CET'}})),
+                 '12:00:00')
 
 
 def _defaut_metadata():
