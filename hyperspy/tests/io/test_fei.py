@@ -77,8 +77,10 @@ class TestFEIReader():
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'TEM')
         nt.assert_almost_equal(s0.axes_manager[0].scale, 0.10157, places=5)
         nt.assert_equal(s0.axes_manager[0].units, '1/nm')
+        nt.assert_equal(s0.axes_manager[0].name, 'x')
         nt.assert_almost_equal(s0.axes_manager[1].scale, 0.10157, places=5)
         nt.assert_equal(s0.axes_manager[1].units, '1/nm')
+        nt.assert_equal(s0.axes_manager[1].name, 'y')
 
     def test_load_diffraction_line_scan(self):
         fname0 = os.path.join(
@@ -91,8 +93,10 @@ class TestFEIReader():
             s0[0].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s0[0].axes_manager[0].scale, 3.68864, places=5)
         nt.assert_equal(s0[0].axes_manager[0].units, 'nm')
+        nt.assert_equal(s0[0].axes_manager[0].name, 'y') # Should this name be y?
         nt.assert_almost_equal(s0[0].axes_manager[1].scale, 5.0, places=5)
         nt.assert_equal(s0[0].axes_manager[1].units, 'eV')
+        nt.assert_equal(s0[0].axes_manager[1].name, 'Energy')
         # s0[1] contains diffraction patterns
         nt.assert_equal(s0[1].data.shape, (5, 128, 128))
         nt.assert_equal(s0[1].axes_manager.signal_dimension, 2)
@@ -100,10 +104,13 @@ class TestFEIReader():
             s0[1].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s0[1].axes_manager[0].scale, 3.68864, places=5)
         nt.assert_equal(s0[1].axes_manager[0].units, 'nm')
-        nt.assert_equal(s0[1].axes_manager[1].units, '1/nm')
+        nt.assert_equal(s0[1].axes_manager[0].name, 'y') # Should this name be y?
         nt.assert_almost_equal(s0[1].axes_manager[1].scale, 0.17435, places=5)
+        nt.assert_equal(s0[1].axes_manager[1].units, '1/nm')
+        nt.assert_equal(s0[1].axes_manager[1].name, 'x')
         nt.assert_almost_equal(s0[1].axes_manager[2].scale, 0.17435, places=5)
         nt.assert_equal(s0[1].axes_manager[2].units, '1/nm')
+        nt.assert_equal(s0[1].axes_manager[2].name, 'y')
 
     def test_load_diffraction_area_scan(self):
         fname0 = os.path.join(
@@ -116,10 +123,13 @@ class TestFEIReader():
             s0[0].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s0[0].axes_manager[0].scale, 1.87390, places=5)
         nt.assert_equal(s0[0].axes_manager[0].units, 'nm')
+        nt.assert_equal(s0[0].axes_manager[0].name, 'x')
         nt.assert_almost_equal(s0[0].axes_manager[1].scale, -1.87390, places=5)
         nt.assert_equal(s0[0].axes_manager[1].units, 'nm')
+        nt.assert_equal(s0[0].axes_manager[1].name, 'y')
         nt.assert_almost_equal(s0[0].axes_manager[2].scale, 5.0, places=5)
         nt.assert_equal(s0[0].axes_manager[2].units, 'eV')
+        nt.assert_equal(s0[0].axes_manager[2].name, 'Energy')
         # s0[1] contains diffraction patterns
         nt.assert_equal(s0[1].data.shape, (5, 5, 256, 256))
         nt.assert_equal(s0[1].axes_manager.signal_dimension, 2)
@@ -127,8 +137,16 @@ class TestFEIReader():
             s0[1].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         nt.assert_almost_equal(s0[1].axes_manager[0].scale, 1.87390, places=5)
         nt.assert_equal(s0[1].axes_manager[0].units, 'nm')
+        nt.assert_equal(s0[1].axes_manager[0].name, 'x')
+        nt.assert_almost_equal(s0[1].axes_manager[1].scale, -1.87390, places=5)
+        nt.assert_equal(s0[1].axes_manager[1].units, 'nm')
+        nt.assert_equal(s0[1].axes_manager[1].name, 'y')
         nt.assert_almost_equal(s0[1].axes_manager[2].scale, 0.17435, places=5)
         nt.assert_equal(s0[1].axes_manager[2].units, '1/nm')
+        nt.assert_equal(s0[1].axes_manager[2].name, 'x')
+        nt.assert_almost_equal(s0[1].axes_manager[3].scale, 0.17435, places=5)
+        nt.assert_equal(s0[1].axes_manager[3].units, '1/nm')
+        nt.assert_equal(s0[1].axes_manager[3].name, 'y')
 
     def test_load_spectrum_point(self):
         fname0 = os.path.join(
