@@ -14,13 +14,13 @@ class TestSignalFolding:
         s = self.s.deepcopy()
         s.unfold_navigation_space()
         assert (s.axes_manager.navigation_shape ==
-                     (self.s.axes_manager.navigation_size,))
+                (self.s.axes_manager.navigation_size,))
 
     def test_unfold_signal(self):
         s = self.s.deepcopy()
         s.unfold_signal_space()
         assert (s.axes_manager.signal_shape ==
-                     (self.s.axes_manager.signal_size,))
+                (self.s.axes_manager.signal_size,))
 
     def test_unfolded_repr(self):
         self.s.unfold()
@@ -30,13 +30,13 @@ class TestSignalFolding:
         s = self.s.deepcopy()
         s.unfold(unfold_navigation=True, unfold_signal=False)
         assert (s.axes_manager.navigation_shape ==
-                     (self.s.axes_manager.navigation_size,))
+                (self.s.axes_manager.navigation_size,))
 
     def test_unfold_signal_by_keyword(self):
         s = self.s.deepcopy()
         s.unfold(unfold_navigation=False, unfold_signal=True)
         assert (s.axes_manager.signal_shape ==
-                     (self.s.axes_manager.signal_size,))
+                (self.s.axes_manager.signal_size,))
 
     def test_unfold_nothing_by_keyword(self):
         s = self.s.deepcopy()
@@ -47,23 +47,23 @@ class TestSignalFolding:
         s = self.s.deepcopy()
         s.unfold(unfold_navigation=True, unfold_signal=True)
         assert (s.axes_manager.signal_shape ==
-                     (self.s.axes_manager.signal_size,))
+                (self.s.axes_manager.signal_size,))
         assert (s.axes_manager.navigation_shape ==
-                     (self.s.axes_manager.navigation_size,))
+                (self.s.axes_manager.navigation_size,))
 
     def test_unfolded_context_manager(self):
         s = self.s.deepcopy()
         with s.unfolded():
             # Check that both spaces unfold as expected
             assert (s.axes_manager.navigation_shape ==
-                         (self.s.axes_manager.navigation_size,))
+                    (self.s.axes_manager.navigation_size,))
             assert (s.axes_manager.signal_shape ==
-                         (self.s.axes_manager.signal_size,))
+                    (self.s.axes_manager.signal_size,))
         # Check that it folds back as expected
         assert (s.axes_manager.navigation_shape ==
-                     self.s.axes_manager.navigation_shape)
+                self.s.axes_manager.navigation_shape)
         assert (s.axes_manager.signal_shape ==
-                     self.s.axes_manager.signal_shape)
+                self.s.axes_manager.signal_shape)
 
     def test_unfolded_full_by_keywords(self):
         s = self.s.deepcopy()
@@ -71,14 +71,14 @@ class TestSignalFolding:
             assert folded
             # Check that both spaces unfold as expected
             assert (s.axes_manager.navigation_shape ==
-                         (self.s.axes_manager.navigation_size,))
+                    (self.s.axes_manager.navigation_size,))
             assert (s.axes_manager.signal_shape ==
-                         (self.s.axes_manager.signal_size,))
+                    (self.s.axes_manager.signal_size,))
         # Check that it folds back as expected
         assert (s.axes_manager.navigation_shape ==
-                     self.s.axes_manager.navigation_shape)
+                self.s.axes_manager.navigation_shape)
         assert (s.axes_manager.signal_shape ==
-                     self.s.axes_manager.signal_shape)
+                self.s.axes_manager.signal_shape)
 
     def test_unfolded_navigation_by_keyword(self):
         s = self.s.deepcopy()
@@ -86,14 +86,14 @@ class TestSignalFolding:
             assert folded
             # Check that only navigation space unfolded
             assert (s.axes_manager.navigation_shape ==
-                         (self.s.axes_manager.navigation_size,))
+                    (self.s.axes_manager.navigation_size,))
             assert (s.axes_manager.signal_shape ==
-                         self.s.axes_manager.signal_shape)
+                    self.s.axes_manager.signal_shape)
         # Check that it folds back as expected
         assert (s.axes_manager.navigation_shape ==
-                     self.s.axes_manager.navigation_shape)
+                self.s.axes_manager.navigation_shape)
         assert (s.axes_manager.signal_shape ==
-                     self.s.axes_manager.signal_shape)
+                self.s.axes_manager.signal_shape)
 
     def test_unfolded_signal_by_keyword(self):
         s = self.s.deepcopy()
@@ -101,14 +101,14 @@ class TestSignalFolding:
             assert folded
             # Check that only signal space unfolded
             assert (s.axes_manager.navigation_shape ==
-                         self.s.axes_manager.navigation_shape)
+                    self.s.axes_manager.navigation_shape)
             assert (s.axes_manager.signal_shape ==
-                         (self.s.axes_manager.signal_size,))
+                    (self.s.axes_manager.signal_size,))
         # Check that it folds back as expected
         assert (s.axes_manager.navigation_shape ==
-                     self.s.axes_manager.navigation_shape)
+                self.s.axes_manager.navigation_shape)
         assert (s.axes_manager.signal_shape ==
-                     self.s.axes_manager.signal_shape)
+                self.s.axes_manager.signal_shape)
 
     def test_unfolded_nothin_by_keyword(self):
         s = self.s.deepcopy()
@@ -116,14 +116,14 @@ class TestSignalFolding:
             assert not folded
             # Check that nothing folded
             assert (s.axes_manager.navigation_shape ==
-                         self.s.axes_manager.navigation_shape)
+                    self.s.axes_manager.navigation_shape)
             assert (s.axes_manager.signal_shape ==
-                         self.s.axes_manager.signal_shape)
+                    self.s.axes_manager.signal_shape)
         # Check that it "folds back" as expected
         assert (s.axes_manager.navigation_shape ==
-                     self.s.axes_manager.navigation_shape)
+                self.s.axes_manager.navigation_shape)
         assert (s.axes_manager.signal_shape ==
-                     self.s.axes_manager.signal_shape)
+                self.s.axes_manager.signal_shape)
 
 
 class TestSignalVarianceFolding:

@@ -189,7 +189,7 @@ class TestSamfireEmpty:
         from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
         from hyperspy.samfire_utils.global_strategies import HistogramStrategy
         assert isinstance(samf.strategies[0],
-            ReducedChiSquaredStrategy)
+                          ReducedChiSquaredStrategy)
         assert isinstance(samf.strategies[1], HistogramStrategy)
 
     def test_samfire_init_fig(self):
@@ -214,7 +214,7 @@ class TestSamfireEmpty:
         assert m[0].active_is_multidimensional
         assert m[1].active_is_multidimensional
         assert np.all([isinstance(a, int)
-                            for a in samf.optional_components])
+                       for a in samf.optional_components])
         np.testing.assert_equal(samf.optional_components, [0, 1])
 
     def test_swap_dict_and_model(self):
@@ -501,9 +501,9 @@ class TestSamfireWorker:
         possible_values2 = (self.areas[2], self.widths[2], self.centres[2])
 
         assert (np.allclose(lor1_values, possible_values1, rtol=0.05)
-                     or
-                     np.allclose(lor1_values, possible_values2, rtol=0.05))
+                or
+                np.allclose(lor1_values, possible_values2, rtol=0.05))
 
         assert (np.allclose(lor2_values, possible_values1, rtol=0.05)
-                     or
-                     np.allclose(lor2_values, possible_values2, rtol=0.05))
+                or
+                np.allclose(lor2_values, possible_values2, rtol=0.05))

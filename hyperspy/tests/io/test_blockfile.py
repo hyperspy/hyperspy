@@ -147,9 +147,9 @@ def test_save_load_cycle():
     sig_reload = hs.load(save_path)
     np.testing.assert_equal(signal.data, sig_reload.data)
     assert (signal.axes_manager.as_dictionary() ==
-                 sig_reload.axes_manager.as_dictionary())
+            sig_reload.axes_manager.as_dictionary())
     assert (signal.original_metadata.as_dictionary() ==
-                 sig_reload.original_metadata.as_dictionary())
+            sig_reload.original_metadata.as_dictionary())
     # change original_filename to make the metadata of both signals equals
     sig_reload.metadata.General.original_filename = signal.metadata.General.original_filename
     assert_deep_almost_equal(signal.metadata.as_dictionary(),
@@ -336,6 +336,6 @@ def test_crop_notes():
         signal.save(save_path, overwrite=True)
         sig_reload = hs.load(save_path)
         assert (sig_reload.original_metadata.blockfile_header.Note ==
-                     note[:note_len])
+                note[:note_len])
     finally:
         _remove_file(save_path)

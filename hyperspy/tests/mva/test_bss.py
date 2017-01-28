@@ -137,7 +137,7 @@ class TestBSS2D:
             diff_axes=["x"], mask=mask
         )
         assert np.allclose(matrix, self.s.learning_results.unmixing_matrix,
-                        atol=1e-6)
+                           atol=1e-6)
 
     def test_diff_axes_string_without_mask(self):
         if not sklearn_installed:
@@ -152,7 +152,7 @@ class TestBSS2D:
             diff_axes=["x"],
         )
         assert np.allclose(matrix, self.s.learning_results.unmixing_matrix,
-                        atol=1e-3)
+                           atol=1e-3)
 
     def test_diff_axes_without_mask(self):
         if not sklearn_installed:
@@ -165,7 +165,7 @@ class TestBSS2D:
         self.s.blind_source_separation(
             3, diff_order=1, fun="exp", on_loadings=False, diff_axes=[2],)
         assert np.allclose(matrix, self.s.learning_results.unmixing_matrix,
-                        atol=1e-3)
+                           atol=1e-3)
 
     def test_on_loadings(self):
         if not sklearn_installed:

@@ -45,7 +45,7 @@ class Test_metadata:
         # Check that metadata is unchanged
         print(old_metadata, s.metadata)      # Capture for comparison on error
         assert (old_metadata.as_dictionary() ==
-                          s.metadata.as_dictionary()), "Source metadata changed"
+                s.metadata.as_dictionary()), "Source metadata changed"
 
     def test_sum_live_time2(self):
         s = self.signal
@@ -57,7 +57,7 @@ class Test_metadata:
         # Check that metadata is unchanged
         print(old_metadata, s.metadata)      # Capture for comparison on error
         assert (old_metadata.as_dictionary() ==
-                          s.metadata.as_dictionary()), "Source metadata changed"
+                s.metadata.as_dictionary()), "Source metadata changed"
 
     def test_sum_live_time_out_arg(self):
         s = self.signal
@@ -82,7 +82,7 @@ class Test_metadata:
         # Check that metadata is unchanged
         print(old_metadata, self.signal.metadata)    # Captured on error
         assert (old_metadata.as_dictionary() ==
-                          self.signal.metadata.as_dictionary()), "Source metadata changed"
+                self.signal.metadata.as_dictionary()), "Source metadata changed"
 
     def test_add_elements(self):
         s = self.signal
@@ -126,7 +126,7 @@ class Test_metadata:
         energy_axis.offset = -0.10
         s.get_calibration_from(scalib)
         assert (s.axes_manager.signal_axes[0].scale ==
-                     energy_axis.scale)
+                energy_axis.scale)
 
 
 class Test_quantification:

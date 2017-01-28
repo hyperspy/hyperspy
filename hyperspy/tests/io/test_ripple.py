@@ -21,7 +21,6 @@ SHAPES_SDIM = (((3,), (1, )),
 MYPATH = os.path.dirname(__file__)
 
 
-
 def test_write_unsupported_data_shape():
     data = np.arange(5 * 10 * 15 * 20).reshape((5, 10, 15, 20))
     s = signals.Signal1D(data)
@@ -143,7 +142,7 @@ def _run_test(dtype, shape, dim, tmpdir, metadata):
             npt.assert_array_equal(s.data, stest.data)
             assert s.data.dtype == stest.data.dtype
             assert (s.axes_manager.signal_dimension ==
-                         stest.axes_manager.signal_dimension)
+                    stest.axes_manager.signal_dimension)
             mdpaths = ("Signal.signal_type", )
             if s.metadata.Signal.signal_type == "EELS" and metadata:
                 mdpaths += (

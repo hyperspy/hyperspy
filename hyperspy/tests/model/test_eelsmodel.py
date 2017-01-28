@@ -90,12 +90,12 @@ class TestEELSModel:
 
     def test_get_first_ionization_edge_energy_C_B(self):
         assert (self.m._get_first_ionization_edge_energy() ==
-                     self.m["B_K"].onset_energy.value)
+                self.m["B_K"].onset_energy.value)
 
     def test_get_first_ionization_edge_energy_C(self):
         self.m["B_K"].active = False
         assert (self.m._get_first_ionization_edge_energy() ==
-                     self.m["C_K"].onset_energy.value)
+                self.m["C_K"].onset_energy.value)
 
     def test_get_first_ionization_edge_energy_None(self):
         self.m["B_K"].active = False
@@ -140,15 +140,15 @@ class TestEELSModel:
 
     def test_get_start_energy_none(self):
         assert (self.m._get_start_energy() ==
-                     150)
+                150)
 
     def test_get_start_energy_above(self):
         assert (self.m._get_start_energy(170) ==
-                     170)
+                170)
 
     def test_get_start_energy_below(self):
         assert (self.m._get_start_energy(100) ==
-                     150)
+                150)
 
 
 class TestFitBackground:

@@ -285,10 +285,13 @@ class TestEventsSignatures(EventsBase):
         self.events.a.connect(lambda: 0, [])
         self.events.a.connect(lambda one: 0, ["one"])
         self.events.a.connect(lambda one, two: 0, ["one", "two"])
+
         def lambda1(one, two=988):
             assert two == 988
+
         def lambda2(one, two=988):
             assert two != 988
+
         def lambda3(A, B=988):
             assert A != 988
         self.events.a.connect(lambda1, ["one"])
@@ -327,8 +330,8 @@ def test_events_container_magic_attributes():
     assert "event" in events.__dir__()
     assert "a" in events.__dir__()
     assert (repr(events) ==
-                 "<hyperspy.events.Events: "
-                 "{'event': <hyperspy.events.Event: set()>}>")
+            "<hyperspy.events.Events: "
+            "{'event': <hyperspy.events.Event: set()>}>")
     del events.event
     del events.a
     assert "event" not in events.__dir__()
@@ -354,21 +357,27 @@ class TestTriggerArgResolution(EventsBase):
     def test_arguments(self):
         assert self.events.a.arguments == ("A", "B")
         assert self.events.b.arguments == ("A", "B", ("C", "vC"))
-        assert self.events.c.arguments == None
+        assert self.events.c.arguments is None
 
     def test_some_kwargs_resolution(self):
         def lambda1(x=None):
-            assert x == None
+            assert x is None
+
         def lambda2(A):
             assert A == 'vA'
+
         def lambda3(A, B):
             assert ((A, B) == ('vA', 'vB'))
+
         def lambda4(A, B):
             assert (A, B) == ('vA', 'vB')
+
         def lambda5(**kwargs):
             assert ((kwargs["A"], kwargs["B"]) == ('vA', 'vB'))
+
         def lambda6(A, B=None, C=None):
             assert ((A, B, C) == ('vA', 'vB', None))
+
         def lambda7(A, B=None, C=None):
             assert ((A, B, C) == ('vA', 'vB', "vC"))
         self.events.a.connect(lambda1, [])
@@ -409,6 +418,7 @@ class TestTriggerArgResolution(EventsBase):
     def test_all_kwargs_resolution(self):
         def lambda1(A, B):
             assert (A, B) == ('vA', 'vB')
+
         def lambda2(x=None, y=None, A=None, B=None):
             assert ((x, y, A, B) == (None, None, 'vA', 'vB'))
         self.events.a.connect(lambda1)

@@ -53,7 +53,7 @@ class TestSpcSpectrum:
 
         # Testing elements
         assert ({'Al', 'C', 'Ce', 'Cu', 'F', 'Ho', 'Mg', 'O'} ==
-                         set(elements))
+                set(elements))
 
         # Testing HyperSpy parameters
         assert True == signal_dict['binned']
@@ -68,7 +68,7 @@ class TestSpcSpectrum:
                                      'size': 4096,
                                      'units': 'keV'}}
         assert (spc_ax_manager ==
-                          self.spc.axes_manager.as_dictionary())
+                self.spc.axes_manager.as_dictionary())
 
 
 class TestSpdMap:
@@ -111,31 +111,31 @@ class TestSpdMap:
         assert np.uint16 == self.spd.data.dtype     # test d_type
         assert (200, 256, 2500) == self.spd.data.shape  # test d_shape
         assert ([[[0, 0, 0, 0, 0],              # test random data
-                       [0, 0, 1, 0, 1],
-                       [0, 0, 0, 0, 0],
-                       [0, 0, 0, 0, 0],
-                       [0, 0, 0, 0, 0]],
-                      [[0, 0, 0, 0, 0],
-                          [0, 0, 0, 0, 0],
-                          [0, 0, 0, 1, 0],
-                          [0, 0, 0, 0, 0],
-                          [0, 0, 0, 0, 0]],
-                      [[0, 0, 0, 0, 0],
-                          [0, 0, 0, 0, 0],
-                          [0, 0, 0, 0, 1],
-                          [0, 1, 1, 0, 0],
-                          [0, 0, 0, 0, 0]],
-                      [[0, 1, 0, 0, 0],
-                          [0, 0, 0, 1, 0],
-                          [0, 0, 0, 0, 0],
-                          [0, 0, 1, 0, 0],
-                          [0, 0, 0, 1, 0]],
-                      [[0, 0, 0, 0, 0],
-                          [0, 0, 0, 0, 0],
-                          [0, 0, 1, 0, 1],
-                          [0, 0, 0, 1, 0],
-                          [0, 0, 0, 0, 0]]] ==
-                     self.spd.data[15:20, 15:20, 15:20].tolist())
+                  [0, 0, 1, 0, 1],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0]],
+                 [[0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 1, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0]],
+                 [[0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 1],
+                  [0, 1, 1, 0, 0],
+                  [0, 0, 0, 0, 0]],
+                 [[0, 1, 0, 0, 0],
+                  [0, 0, 0, 1, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 1, 0, 0],
+                  [0, 0, 0, 1, 0]],
+                 [[0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 1, 0, 1],
+                  [0, 0, 0, 1, 0],
+                  [0, 0, 0, 0, 0]]] ==
+                self.spd.data[15:20, 15:20, 15:20].tolist())
 
     def test_parameters(self):
         elements = self.spd.metadata.as_dictionary()['Sample']['elements']
@@ -157,7 +157,7 @@ class TestSpdMap:
 
         # Testing elements
         assert {'Ce', 'Co', 'Cr', 'Fe', 'Gd', 'La', 'Mg', 'O',
-                          'Sr'} == set(elements)
+                'Sr'} == set(elements)
 
         # Testing HyperSpy parameters
         assert True == signal_dict['binned']
@@ -184,7 +184,7 @@ class TestSpdMap:
                                      'size': 2500,
                                      'units': 'keV'}}
         assert (spd_ax_manager ==
-                          self.spd.axes_manager.as_dictionary())
+                self.spd.axes_manager.as_dictionary())
 
     def test_ipr_reading(self):
         ipr_header = self.spd.original_metadata['ipr_header']

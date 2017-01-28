@@ -63,7 +63,7 @@ class TestlineFit:
         assert (
             [c.name for c in m] == [c.name for c in m1])
         assert ([c.name for c in m.xray_lines] ==
-                     [c.name for c in m1.xray_lines])
+                [c.name for c in m1.xray_lines])
 
     def test_edsmodel_store(self):
         self._check_model_store()

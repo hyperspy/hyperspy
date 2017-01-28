@@ -61,9 +61,9 @@ def compare_two_value_dicts(ans_r, ans):
                 test = test and p in ans[k]
                 if test:
                     assert np.allclose(
-                            np.array(pv),
-                            np.array(
-                                ans[k][p]))
+                        np.array(pv),
+                        np.array(
+                            ans[k][p]))
     return test
 
 

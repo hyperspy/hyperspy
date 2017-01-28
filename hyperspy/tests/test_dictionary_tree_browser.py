@@ -51,9 +51,9 @@ class TestDictionaryBrowser:
         assert isinstance(tree.signal_name, BaseSignal)
         np.testing.assert_array_equal(tree.signal_name.data, s.data)
         assert (tree.signal_name.metadata.as_dictionary() ==
-                          s.metadata.as_dictionary())
+                s.metadata.as_dictionary())
         assert (tree.signal_name.axes_manager._get_axes_dicts() ==
-                     s.axes_manager._get_axes_dicts())
+                s.axes_manager._get_axes_dicts())
 
     def test_signal_to_dictionary(self):
         tree = self.tree

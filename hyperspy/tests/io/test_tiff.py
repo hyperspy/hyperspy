@@ -217,7 +217,7 @@ def test_saving_with_custom_tag():
         s.save(fname, extratags=extratag, overwrite=True)
         s2 = hs.load(fname)
         assert (s2.original_metadata['Number_65000'] ==
-                     b"Random metadata")
+                b"Random metadata")
 
 
 def test_read_unit_from_dm():

@@ -52,7 +52,7 @@ class Test_metadata:
         # Check that metadata is unchanged
         print(old_metadata, s.metadata)      # Capture for comparison on error
         assert (old_metadata.as_dictionary() ==
-                          s.metadata.as_dictionary()), "Source metadata changed"
+                s.metadata.as_dictionary()), "Source metadata changed"
 
     def test_sum_live_time2(self):
         s = self.signal
@@ -65,7 +65,7 @@ class Test_metadata:
         # Check that metadata is unchanged
         print(old_metadata, s.metadata)      # Capture for comparison on error
         assert (old_metadata.as_dictionary() ==
-                          s.metadata.as_dictionary()), "Source metadata changed"
+                s.metadata.as_dictionary()), "Source metadata changed"
 
     def test_sum_live_time_out_arg(self):
         s = self.signal
@@ -92,7 +92,7 @@ class Test_metadata:
         # Check that metadata is unchanged
         print(old_metadata, self.signal.metadata)    # Captured on error
         assert (old_metadata.as_dictionary() ==
-                          self.signal.metadata.as_dictionary()), "Source metadata changed"
+                self.signal.metadata.as_dictionary()), "Source metadata changed"
 
     def test_add_elements(self):
         s = self.signal
@@ -119,8 +119,8 @@ class Test_metadata:
             s.metadata.Sample.xray_lines == ['Fe_Ln', 'Ti_La'])
         s.set_lines((), only_one=False, only_lines=False)
         assert (s.metadata.Sample.xray_lines ==
-                     ['Fe_La', 'Fe_Lb3', 'Fe_Ll', 'Fe_Ln', 'Ti_La',
-                         'Ti_Lb3', 'Ti_Ll', 'Ti_Ln'])
+                ['Fe_La', 'Fe_Lb3', 'Fe_Ll', 'Fe_Ln', 'Ti_La',
+                 'Ti_Lb3', 'Ti_Ll', 'Ti_Ln'])
         s.metadata.Acquisition_instrument.SEM.beam_energy = 0.4
         s.set_lines((), only_one=False, only_lines=False)
         assert s.metadata.Sample.xray_lines == ['Ti_Ll']
@@ -146,7 +146,7 @@ class Test_metadata:
         s.set_elements(['Au', 'Ni'])
         s.set_lines([])
         assert (s.metadata.Sample.xray_lines ==
-                     ['Au_La', 'Ni_Ka'])
+                ['Au_La', 'Ni_Ka'])
 
     def test_default_param(self):
         s = self.signal
