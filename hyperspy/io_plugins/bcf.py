@@ -62,13 +62,15 @@ import logging
 
 _logger = logging.getLogger(__name__)
 
+warn_once = True
+
 try:
     from hyperspy.io_plugins import unbcf_fast
     fast_unbcf = True
     _logger.info("The fast cython based bcf unpacking library were found")
 except ImportError:  # pragma: no cover
     fast_unbcf = False
-    _logger.warning("""unbcf_fast library is not present...
+    _logger.info("""unbcf_fast library is not present...
 Falling back to slow python only backend.""")
 
 
@@ -1135,6 +1137,13 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
     """ Return hyperspy required list of dict with eds
     hyperspectra and metadata.
     """
+    if (fast_unbcf == False) and warn_once:
+        _logger.warning("""unbcf_fast library is not present...
+Parsing with slow python only backend.
+If parsing is unconfortably slow, try to install cython,
+then reinstall hyperspy.
+For more info check the 'Installing HyperSpy' section in the documentation.""")
+        warn_once = False
     obj_bcf.persistent_parse_hypermap(index=index, downsample=downsample,
                                       cutoff_at_kV=cutoff_at_kV)
     eds_metadata = obj_bcf.header.get_spectra_metadata(index=index)
