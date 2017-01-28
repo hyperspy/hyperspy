@@ -17,12 +17,12 @@ class EventsBase():
     def trigger_check(self, trigger, should_trigger, **kwargs):
         self.triggered = False
         trigger(**kwargs)
-        nt.assert_equal(self.triggered, should_trigger)
+        assert_equal(self.triggered, should_trigger)
 
     def trigger_check2(self, trigger, should_trigger, **kwargs):
         self.triggered2 = False
         trigger(**kwargs)
-        nt.assert_equal(self.triggered2, should_trigger)
+        assert_equal(self.triggered2, should_trigger)
 
 
 class TestEventsSuppression(EventsBase):
@@ -286,11 +286,11 @@ class TestEventsSignatures(EventsBase):
         self.events.a.connect(lambda one: 0, ["one"])
         self.events.a.connect(lambda one, two: 0, ["one", "two"])
         self.events.a.connect(lambda one, two=988:
-                              nt.assert_equal(two, 988), ["one"])
+                              assert_equal(two, 988), ["one"])
         self.events.a.connect(lambda one, two=988:
-                              nt.assert_not_equal(two, 988), ["one", "two"])
+                              assert_not_equal(two, 988), ["one", "two"])
         self.events.a.connect(lambda A, B=988:
-                              nt.assert_not_equal(A, 988),
+                              assert_not_equal(A, 988),
                               {"one": "A", "two": "B"})
         self.events.a.trigger(one=2, two=5)
         self.events.a.trigger(one=2, two=5, three=8)
@@ -305,12 +305,12 @@ class TestEventsSignatures(EventsBase):
         self.events.a.connect(f_b, ["A", "B"])
         self.events.a.connect(f_c, {"a": "A", "b": "B"})
         self.events.a.connect(f_d, 'auto')
-        nt.assert_equal(self.events.a.connected, set([f_a, f_b, f_c, f_d]))
+        assert_equal(self.events.a.connected, set([f_a, f_b, f_c, f_d]))
         self.events.a.disconnect(f_a)
         self.events.a.disconnect(f_b)
         self.events.a.disconnect(f_c)
         self.events.a.disconnect(f_d)
-        nt.assert_equal(self.events.a.connected, set([]))
+        assert_equal(self.events.a.connected, set([]))
 
     def test_type(self):
         with pytest.raises(TypeError):
@@ -322,15 +322,15 @@ def test_events_container_magic_attributes():
     event = he.Event()
     events.event = event
     events.a = 3
-    nt.assert_in("event", events.__dir__())
-    nt.assert_in("a", events.__dir__())
-    nt.assert_equal(repr(events),
+    assert_in("event", events.__dir__())
+    assert_in("a", events.__dir__())
+    assert_equal(repr(events),
                     "<hyperspy.events.Events: "
                     "{'event': <hyperspy.events.Event: set()>}>")
     del events.event
     del events.a
-    nt.assert_not_in("event", events.__dir__())
-    nt.assert_not_in("a", events.__dir__())
+    assert_not_in("event", events.__dir__())
+    assert_not_in("a", events.__dir__())
 
 
 class TestTriggerArgResolution(EventsBase):
@@ -350,30 +350,30 @@ class TestTriggerArgResolution(EventsBase):
             self.events.d = he.Event(arguments=['A', "B+"])
 
     def test_arguments(self):
-        nt.assert_equal(self.events.a.arguments, ("A", "B"))
-        nt.assert_equal(self.events.b.arguments, ("A", "B", ("C", "vC")))
-        nt.assert_equal(self.events.c.arguments, None)
+        assert_equal(self.events.a.arguments, ("A", "B"))
+        assert_equal(self.events.b.arguments, ("A", "B", ("C", "vC")))
+        assert_equal(self.events.c.arguments, None)
 
     def test_some_kwargs_resolution(self):
-        self.events.a.connect(lambda x=None: nt.assert_equal(x, None), [])
-        self.events.a.connect(lambda A: nt.assert_equal(A, 'vA'), ["A"])
-        self.events.a.connect(lambda A, B: nt.assert_equal((A, B),
+        self.events.a.connect(lambda x=None: assert_equal(x, None), [])
+        self.events.a.connect(lambda A: assert_equal(A, 'vA'), ["A"])
+        self.events.a.connect(lambda A, B: assert_equal((A, B),
                                                            ('vA', 'vB')),
                               ["A", "B"])
         self.events.a.connect(lambda A, B:
-                              nt.assert_equal((A, B), ('vA', 'vB')), "auto")
+                              assert_equal((A, B), ('vA', 'vB')), "auto")
         with pytest.raises(NotImplementedError):
             self.events.a.connect(function=lambda *args: 0, kwargs="auto")
 
         self.events.a.connect(lambda **kwargs:
-                              nt.assert_equal((kwargs["A"], kwargs["B"]),
+                              assert_equal((kwargs["A"], kwargs["B"]),
                                               ('vA', 'vB')), "auto")
         self.events.a.connect(lambda A, B=None, C=None:
-                              nt.assert_equal((A, B, C),
+                              assert_equal((A, B, C),
                                               ('vA', 'vB', None)), ["A", "B"])
         # Test default argument
         self.events.b.connect(lambda A, B=None, C=None:
-                              nt.assert_equal((A, B, C),
+                              assert_equal((A, B, C),
                                               ('vA', 'vB', "vC")))
         self.events.a.trigger(A='vA', B='vB')
         self.events.b.trigger(A='vA', B='vB')
@@ -397,13 +397,13 @@ class TestTriggerArgResolution(EventsBase):
     def test_deepcopy(self):
         def f(): pass
         self.events.a.connect(f)
-        nt.assert_not_in(f, copy.deepcopy(self.events.a).connected)
+        assert_not_in(f, copy.deepcopy(self.events.a).connected)
 
     def test_all_kwargs_resolution(self):
         self.events.a.connect(lambda A, B:
-                              nt.assert_equal((A, B), ('vA', 'vB')), )
+                              assert_equal((A, B), ('vA', 'vB')), )
         self.events.a.connect(lambda x=None, y=None, A=None, B=None:
-                              nt.assert_equal((x, y, A, B),
+                              assert_equal((x, y, A, B),
                                               (None, None, 'vA', 'vB')))
 
         self.events.a.trigger(A='vA', B='vB')

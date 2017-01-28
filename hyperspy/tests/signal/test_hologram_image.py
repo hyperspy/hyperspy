@@ -87,11 +87,11 @@ class TestCaseHologramImage(object):
     def test_set_microscope_parameters(self):
         self.holo_image.set_microscope_parameters(
             beam_energy=300., biprism_voltage=80.5, tilt_stage=2.2)
-        nt.assert_equal(
+        assert_equal(
             self.holo_image.metadata.Acquisition_instrument.TEM.beam_energy, 300.)
-        nt.assert_equal(
+        assert_equal(
             self.holo_image.metadata.Acquisition_instrument.TEM.Biprism.voltage, 80.5)
-        nt.assert_equal(
+        assert_equal(
             self.holo_image.metadata.Acquisition_instrument.TEM.tilt_stage, 2.2)
 
     def test_reconstruct_phase(self):
@@ -115,7 +115,7 @@ class TestCaseHologramImage(object):
         wave_cc_crop = wave_image_cc.data[x_start:x_stop, x_start:x_stop]
 
         # asserts that waves from different
-        nt.assert_allclose(wave_crop, np.conj(wave_cc_crop), rtol=1e-3)
+        assert_allclose(wave_crop, np.conj(wave_cc_crop), rtol=1e-3)
         # sidebands are complex conjugate; this also tests possibility of
         # reconstruction with given sideband parameters
 
@@ -125,7 +125,7 @@ class TestCaseHologramImage(object):
         phase_new_crop = wave_image.unwrapped_phase(
         ).data[x_start:x_stop, x_start:x_stop]
         phase_ref_crop = self.phase_ref[x_start:x_stop, x_start:x_stop]
-        nt.assert_almost_equal(phase_new_crop, phase_ref_crop, decimal=2)
+        assert_almost_equal(phase_new_crop, phase_ref_crop, decimal=2)
 
         # 2. Testing reconstruction with non-standard output size for stacked
         # images:
@@ -147,7 +147,7 @@ class TestCaseHologramImage(object):
         wave_image2a = self.holo_image2.reconstruct_phase(reference=self.ref_image2.data, sb_position=sb_position2.data,
                                                           sb_size=sb_size2.data, sb_smoothness=sb_size2.data * 0.05,
                                                           output_shape=output_shape)
-        nt.assert_equal(wave_image2, wave_image2a)
+        assert_equal(wave_image2, wave_image2a)
 
         # interpolate reconstructed phase to compare with the input (reference
         # phase):
@@ -168,8 +168,8 @@ class TestCaseHologramImage(object):
         phase_new_crop1 = phase_new1[x_start:x_stop, x_start:x_stop]
         phase_ref_crop0 = self.phase_ref2[0, x_start:x_stop, x_start:x_stop]
         phase_ref_crop1 = self.phase_ref2[1, x_start:x_stop, x_start:x_stop]
-        nt.assert_almost_equal(phase_new_crop0, phase_ref_crop0, decimal=2)
-        nt.assert_almost_equal(phase_new_crop1, phase_ref_crop1, decimal=2)
+        assert_almost_equal(phase_new_crop0, phase_ref_crop0, decimal=2)
+        assert_almost_equal(phase_new_crop1, phase_ref_crop1, decimal=2)
 
         # 3. Testing reconstruction with multidimensional images (3, 2| 512,
         # 768) using 1d image as a reference:
@@ -187,7 +187,7 @@ class TestCaseHologramImage(object):
         phase3_new_crop.crop(3, x_start, x_stop)
         phase3_ref_crop = self.phase_ref3.reshape(2, 3, self.img_size3x, self.img_size3y)[:, :, x_start:x_stop,
                                                                                           y_start:y_stop]
-        nt.assert_almost_equal(
+        assert_almost_equal(
             phase3_new_crop.data,
             phase3_ref_crop,
             decimal=2)
@@ -210,7 +210,7 @@ class TestCaseHologramImage(object):
         phase3a_new_crop = wave_image3a.unwrapped_phase()
         phase3a_new_crop.crop(2, y_start, y_stop)
         phase3a_new_crop.crop(3, x_start, x_stop)
-        nt.assert_almost_equal(
+        assert_almost_equal(
             phase3a_new_crop.data,
             phase3_ref_crop,
             decimal=2)
@@ -218,7 +218,7 @@ class TestCaseHologramImage(object):
         # 4. Testing raises:
         # a. Mismatch of navigation dimensions of object and reference
         # holograms, except if reference hologram ndim=0
-        nt.assert_raises(
+        assert_raises(
             ValueError,
             self.holo_image3.reconstruct_phase,
             self.ref_image3.inav[
@@ -226,18 +226,18 @@ class TestCaseHologramImage(object):
                 :])
         reference4a = self.ref_image3.inav[0, :]
         reference4a.set_signal_type('signal2d')
-        nt.assert_raises(
+        assert_raises(
             ValueError,
             self.holo_image3.reconstruct_phase,
             reference=reference4a)
         #   b. Mismatch of signal shapes of object and reference holograms
-        nt.assert_raises(ValueError, self.holo_image3.reconstruct_phase,
+        assert_raises(ValueError, self.holo_image3.reconstruct_phase,
                          self.ref_image3.inav[:, :].isig[y_start:y_stop, x_start:x_stop])
 
         #   c. Mismatch of signal shape of sb_position
         sb_position_mismatched = hs.signals.Signal2D(
             np.arange(9).reshape((3, 3)))
-        nt.assert_raises(
+        assert_raises(
             ValueError,
             self.holo_image3.reconstruct_phase,
             sb_position=sb_position_mismatched)
@@ -247,21 +247,21 @@ class TestCaseHologramImage(object):
             np.arange(16).reshape((8, 2)))
         sb_size_mismatched = hs.signals.BaseSignal(np.arange(9)).T
         sb_smoothness_mismatched = hs.signals.BaseSignal(np.arange(9)).T
-        nt.assert_raises(
+        assert_raises(
             ValueError,
             self.holo_image3.reconstruct_phase,
             sb_position=sb_position_mismatched)
-        nt.assert_raises(
+        assert_raises(
             ValueError,
             self.holo_image3.reconstruct_phase,
             sb_size=sb_size_mismatched)
-        nt.assert_raises(
+        assert_raises(
             ValueError,
             self.holo_image3.reconstruct_phase,
             sb_smoothness=sb_smoothness_mismatched)
 
         #   e. Beam energy is not assigned, while 'mrad' units selected
-        nt.assert_raises(
+        assert_raises(
             AttributeError,
             self.holo_image3.reconstruct_phase,
             sb_size=40,

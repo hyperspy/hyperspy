@@ -61,283 +61,283 @@ class TestFEIReader():
         fname0 = os.path.join(
             self.dirpathold, '64x64_TEM_images_acquire_1.ser')
         header0, data0 = load_ser_file(fname0)
-        nt.assert_equal(header0['SeriesVersion'], 528)
+        assert_equal(header0['SeriesVersion'], 528)
         # test TIA new format
         fname1 = os.path.join(
             self.dirpathnew, '128x128_TEM_acquire-sum1_1.ser')
         header1, data1 = load_ser_file(fname1)
-        nt.assert_equal(header1['SeriesVersion'], 544)
+        assert_equal(header1['SeriesVersion'], 544)
 
     def test_load_diffraction_point(self):
         fname0 = os.path.join(self.dirpathold, '64x64_diffraction_acquire.emi')
         s0 = load(fname0)
-        nt.assert_equal(s0.data.shape, (64, 64))
-        nt.assert_equal(s0.axes_manager.signal_dimension, 2)
-        nt.assert_equal(
+        assert_equal(s0.data.shape, (64, 64))
+        assert_equal(s0.axes_manager.signal_dimension, 2)
+        assert_equal(
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'TEM')
-        nt.assert_almost_equal(s0.axes_manager[0].scale, 0.10157, places=5)
-        nt.assert_equal(s0.axes_manager[0].units, '1/nm')
-        nt.assert_almost_equal(s0.axes_manager[1].scale, 0.10157, places=5)
-        nt.assert_equal(s0.axes_manager[1].units, '1/nm')
+        assert_almost_equal(s0.axes_manager[0].scale, 0.10157, places=5)
+        assert_equal(s0.axes_manager[0].units, '1/nm')
+        assert_almost_equal(s0.axes_manager[1].scale, 0.10157, places=5)
+        assert_equal(s0.axes_manager[1].units, '1/nm')
 
     def test_load_diffraction_line_scan(self):
         fname0 = os.path.join(
             self.dirpathnew, '16x16-line_profile_horizontal_5x128x128_EDS.emi')
         s0 = load(fname0)
         # s0[0] contains EDS
-        nt.assert_equal(s0[0].data.shape, (5, 4000))
-        nt.assert_equal(s0[0].axes_manager.signal_dimension, 1)
-        nt.assert_equal(
+        assert_equal(s0[0].data.shape, (5, 4000))
+        assert_equal(s0[0].axes_manager.signal_dimension, 1)
+        assert_equal(
             s0[0].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
-        nt.assert_almost_equal(s0[0].axes_manager[0].scale, 3.68864, places=5)
-        nt.assert_equal(s0[0].axes_manager[0].units, 'nm')
-        nt.assert_almost_equal(s0[0].axes_manager[1].scale, 5.0, places=5)
-        nt.assert_equal(s0[0].axes_manager[1].units, 'eV')
+        assert_almost_equal(s0[0].axes_manager[0].scale, 3.68864, places=5)
+        assert_equal(s0[0].axes_manager[0].units, 'nm')
+        assert_almost_equal(s0[0].axes_manager[1].scale, 5.0, places=5)
+        assert_equal(s0[0].axes_manager[1].units, 'eV')
         # s0[1] contains diffraction patterns
-        nt.assert_equal(s0[1].data.shape, (5, 128, 128))
-        nt.assert_equal(s0[1].axes_manager.signal_dimension, 2)
-        nt.assert_equal(
+        assert_equal(s0[1].data.shape, (5, 128, 128))
+        assert_equal(s0[1].axes_manager.signal_dimension, 2)
+        assert_equal(
             s0[1].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
-        nt.assert_almost_equal(s0[1].axes_manager[0].scale, 3.68864, places=5)
-        nt.assert_equal(s0[1].axes_manager[0].units, 'nm')
-        nt.assert_equal(s0[1].axes_manager[1].units, '1/nm')
-        nt.assert_almost_equal(s0[1].axes_manager[1].scale, 0.17435, places=5)
-        nt.assert_almost_equal(s0[1].axes_manager[2].scale, 0.17435, places=5)
-        nt.assert_equal(s0[1].axes_manager[2].units, '1/nm')
+        assert_almost_equal(s0[1].axes_manager[0].scale, 3.68864, places=5)
+        assert_equal(s0[1].axes_manager[0].units, 'nm')
+        assert_equal(s0[1].axes_manager[1].units, '1/nm')
+        assert_almost_equal(s0[1].axes_manager[1].scale, 0.17435, places=5)
+        assert_almost_equal(s0[1].axes_manager[2].scale, 0.17435, places=5)
+        assert_equal(s0[1].axes_manager[2].units, '1/nm')
 
     def test_load_diffraction_area_scan(self):
         fname0 = os.path.join(
             self.dirpathnew, '16x16-diffraction_imagel_5x5x256x256_EDS.emi')
         s0 = load(fname0)
         # s0[0] contains EDS
-        nt.assert_equal(s0[0].data.shape, (5, 5, 4000))
-        nt.assert_equal(s0[0].axes_manager.signal_dimension, 1)
-        nt.assert_equal(
+        assert_equal(s0[0].data.shape, (5, 5, 4000))
+        assert_equal(s0[0].axes_manager.signal_dimension, 1)
+        assert_equal(
             s0[0].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
-        nt.assert_almost_equal(s0[0].axes_manager[0].scale, 1.87390, places=5)
-        nt.assert_equal(s0[0].axes_manager[0].units, 'nm')
-        nt.assert_almost_equal(s0[0].axes_manager[1].scale, -1.87390, places=5)
-        nt.assert_equal(s0[0].axes_manager[1].units, 'nm')
-        nt.assert_almost_equal(s0[0].axes_manager[2].scale, 5.0, places=5)
-        nt.assert_equal(s0[0].axes_manager[2].units, 'eV')
+        assert_almost_equal(s0[0].axes_manager[0].scale, 1.87390, places=5)
+        assert_equal(s0[0].axes_manager[0].units, 'nm')
+        assert_almost_equal(s0[0].axes_manager[1].scale, -1.87390, places=5)
+        assert_equal(s0[0].axes_manager[1].units, 'nm')
+        assert_almost_equal(s0[0].axes_manager[2].scale, 5.0, places=5)
+        assert_equal(s0[0].axes_manager[2].units, 'eV')
         # s0[1] contains diffraction patterns
-        nt.assert_equal(s0[1].data.shape, (5, 5, 256, 256))
-        nt.assert_equal(s0[1].axes_manager.signal_dimension, 2)
-        nt.assert_equal(
+        assert_equal(s0[1].data.shape, (5, 5, 256, 256))
+        assert_equal(s0[1].axes_manager.signal_dimension, 2)
+        assert_equal(
             s0[1].metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
-        nt.assert_almost_equal(s0[1].axes_manager[0].scale, -1.87390, places=5)
-        nt.assert_equal(s0[1].axes_manager[0].units, 'nm')
-        nt.assert_almost_equal(s0[1].axes_manager[2].scale, 0.17435, places=5)
-        nt.assert_equal(s0[1].axes_manager[2].units, '1/nm')
+        assert_almost_equal(s0[1].axes_manager[0].scale, -1.87390, places=5)
+        assert_equal(s0[1].axes_manager[0].units, 'nm')
+        assert_almost_equal(s0[1].axes_manager[2].scale, 0.17435, places=5)
+        assert_equal(s0[1].axes_manager[2].units, '1/nm')
 
     def test_load_spectrum_point(self):
         fname0 = os.path.join(
             self.dirpathold, '16x16-point_spectrum-1x1024.emi')
         s0 = load(fname0)
-        nt.assert_equal(s0.data.shape, (1, 1024))
-        nt.assert_equal(s0.axes_manager.signal_dimension, 1)
-        nt.assert_equal(
+        assert_equal(s0.data.shape, (1, 1024))
+        assert_equal(s0.axes_manager.signal_dimension, 1)
+        assert_equal(
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
         # single spectrum should be imported as 1D data, not 2D
-        nt.assert_almost_equal(
+        assert_almost_equal(
             s0.axes_manager[0].scale, 1000000000.0, places=5)
-        nt.assert_equal(s0.axes_manager[0].units, 'nm')
-        nt.assert_almost_equal(s0.axes_manager[1].scale, 0.2, places=5)
-        nt.assert_equal(s0.axes_manager[1].units, 'eV')
+        assert_equal(s0.axes_manager[0].units, 'nm')
+        assert_almost_equal(s0.axes_manager[1].scale, 0.2, places=5)
+        assert_equal(s0.axes_manager[1].units, 'eV')
 
         fname1 = os.path.join(
             self.dirpathold, '16x16-2_point-spectra-2x1024.emi')
         s1 = load(fname1)
-        nt.assert_equal(s1.data.shape, (2, 1024))
-        nt.assert_equal(s1.axes_manager.signal_dimension, 1)
-        nt.assert_equal(
+        assert_equal(s1.data.shape, (2, 1024))
+        assert_equal(s1.axes_manager.signal_dimension, 1)
+        assert_equal(
             s1.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
-        nt.assert_almost_equal(
+        assert_almost_equal(
             s0.axes_manager[0].scale, 1000000000.0, places=5)
-        nt.assert_equal(s0.axes_manager[0].units, 'nm')
-        nt.assert_almost_equal(s0.axes_manager[1].scale, 0.2, places=5)
-        nt.assert_equal(s0.axes_manager[1].units, 'eV')
+        assert_equal(s0.axes_manager[0].units, 'nm')
+        assert_almost_equal(s0.axes_manager[1].scale, 0.2, places=5)
+        assert_equal(s0.axes_manager[1].units, 'eV')
 
     def test_load_spectrum_line_scan(self):
         fname0 = os.path.join(
             self.dirpathold, '16x16-line_profile_horizontal_10x1024.emi')
         s0 = load(fname0)
-        nt.assert_equal(s0.data.shape, (10, 1024))
-        nt.assert_equal(s0.axes_manager.signal_dimension, 1)
-        nt.assert_equal(
+        assert_equal(s0.data.shape, (10, 1024))
+        assert_equal(s0.axes_manager.signal_dimension, 1)
+        assert_equal(
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
-        nt.assert_almost_equal(s0.axes_manager[0].scale, 0.12303, places=5)
-        nt.assert_equal(s0.axes_manager[0].units, 'nm')
-        nt.assert_almost_equal(s0.axes_manager[1].scale, 0.2, places=5)
-        nt.assert_equal(s0.axes_manager[1].units, 'eV')
+        assert_almost_equal(s0.axes_manager[0].scale, 0.12303, places=5)
+        assert_equal(s0.axes_manager[0].units, 'nm')
+        assert_almost_equal(s0.axes_manager[1].scale, 0.2, places=5)
+        assert_equal(s0.axes_manager[1].units, 'eV')
 
         fname1 = os.path.join(
             self.dirpathold, '16x16-line_profile_diagonal_10x1024.emi')
         s1 = load(fname1)
-        nt.assert_equal(s1.data.shape, (10, 1024))
-        nt.assert_equal(s1.axes_manager.signal_dimension, 1)
-        nt.assert_equal(
+        assert_equal(s1.data.shape, (10, 1024))
+        assert_equal(s1.axes_manager.signal_dimension, 1)
+        assert_equal(
             s1.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
-        nt.assert_almost_equal(s1.axes_manager[0].scale, 0.166318, places=5)
-        nt.assert_equal(s1.axes_manager[0].units, 'nm')
-        nt.assert_almost_equal(s1.axes_manager[1].scale, 0.2, places=5)
-        nt.assert_equal(s1.axes_manager[1].units, 'eV')
+        assert_almost_equal(s1.axes_manager[0].scale, 0.166318, places=5)
+        assert_equal(s1.axes_manager[0].units, 'nm')
+        assert_almost_equal(s1.axes_manager[1].scale, 0.2, places=5)
+        assert_equal(s1.axes_manager[1].units, 'eV')
 
     def test_load_spectrum_area_scan(self):
         fname0 = os.path.join(
             self.dirpathold, '16x16-spectrum_image-5x5x1024.emi')
         s0 = load(fname0)
-        nt.assert_equal(s0.data.shape, (5, 5, 1024))
-        nt.assert_equal(s0.axes_manager.signal_dimension, 1)
-        nt.assert_equal(
+        assert_equal(s0.data.shape, (5, 5, 1024))
+        assert_equal(s0.axes_manager.signal_dimension, 1)
+        assert_equal(
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
-        nt.assert_almost_equal(s0.axes_manager[0].scale, 0.120539, places=5)
-        nt.assert_equal(s0.axes_manager[0].units, 'nm')
-        nt.assert_almost_equal(s0.axes_manager[1].scale, -0.120539, places=5)
-        nt.assert_equal(s0.axes_manager[1].units, 'nm')
-        nt.assert_almost_equal(s0.axes_manager[2].scale, 0.2, places=5)
-        nt.assert_equal(s0.axes_manager[2].units, 'eV')
+        assert_almost_equal(s0.axes_manager[0].scale, 0.120539, places=5)
+        assert_equal(s0.axes_manager[0].units, 'nm')
+        assert_almost_equal(s0.axes_manager[1].scale, -0.120539, places=5)
+        assert_equal(s0.axes_manager[1].units, 'nm')
+        assert_almost_equal(s0.axes_manager[2].scale, 0.2, places=5)
+        assert_equal(s0.axes_manager[2].units, 'eV')
 
     def test_load_spectrum_area_scan_not_square(self):
         fname0 = os.path.join(
             self.dirpathnew, '16x16-spectrum_image_5x5x4000-not_square.emi')
         s0 = load(fname0)
-        nt.assert_equal(s0.data.shape, (5, 5, 4000))
-        nt.assert_equal(s0.axes_manager.signal_dimension, 1)
-        nt.assert_equal(
+        assert_equal(s0.data.shape, (5, 5, 4000))
+        assert_equal(s0.axes_manager.signal_dimension, 1)
+        assert_equal(
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
-        nt.assert_almost_equal(s0.axes_manager[0].scale, 1.98591, places=5)
-        nt.assert_equal(s0.axes_manager[0].units, 'nm')
-        nt.assert_almost_equal(s0.axes_manager[1].scale, -4.25819, places=5)
-        nt.assert_equal(s0.axes_manager[1].units, 'nm')
-        nt.assert_almost_equal(s0.axes_manager[2].scale, 5.0, places=5)
-        nt.assert_equal(s0.axes_manager[2].units, 'eV')
+        assert_almost_equal(s0.axes_manager[0].scale, 1.98591, places=5)
+        assert_equal(s0.axes_manager[0].units, 'nm')
+        assert_almost_equal(s0.axes_manager[1].scale, -4.25819, places=5)
+        assert_equal(s0.axes_manager[1].units, 'nm')
+        assert_almost_equal(s0.axes_manager[2].scale, 5.0, places=5)
+        assert_equal(s0.axes_manager[2].units, 'eV')
 
     def test_load_search(self):
         fname0 = os.path.join(self.dirpathnew, '128x128-TEM_search.emi')
         s0 = load(fname0)
-        nt.assert_equal(s0.data.shape, (128, 128))
-        nt.assert_almost_equal(s0.axes_manager[0].scale, 5.26121, places=5)
-        nt.assert_equal(s0.axes_manager[0].units, 'nm')
-        nt.assert_almost_equal(s0.axes_manager[1].scale, 5.26121, places=5)
-        nt.assert_equal(s0.axes_manager[1].units, 'nm')
+        assert_equal(s0.data.shape, (128, 128))
+        assert_almost_equal(s0.axes_manager[0].scale, 5.26121, places=5)
+        assert_equal(s0.axes_manager[0].units, 'nm')
+        assert_almost_equal(s0.axes_manager[1].scale, 5.26121, places=5)
+        assert_equal(s0.axes_manager[1].units, 'nm')
 
         fname1 = os.path.join(self.dirpathold, '16x16_STEM_BF_DF_search.emi')
         s1 = load(fname1)
-        nt.assert_equal(len(s1), 2)
+        assert_equal(len(s1), 2)
         for s in s1:
-            nt.assert_equal(s.data.shape, (16, 16))
-            nt.assert_equal(
+            assert_equal(s.data.shape, (16, 16))
+            assert_equal(
                 s.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
-            nt.assert_almost_equal(
+            assert_almost_equal(
                 s.axes_manager[0].scale, 22.026285, places=5)
-            nt.assert_equal(s.axes_manager[0].units, 'nm')
-            nt.assert_almost_equal(
+            assert_equal(s.axes_manager[0].units, 'nm')
+            assert_almost_equal(
                 s.axes_manager[1].scale, 22.026285, places=5)
-            nt.assert_equal(s.axes_manager[1].units, 'nm')
+            assert_equal(s.axes_manager[1].units, 'nm')
 
     def test_load_stack_image_preview(self):
         fname0 = os.path.join(self.dirpathold, '64x64x5_TEM_preview.emi')
         s0 = load(fname0)
-        nt.assert_equal(s0.data.shape, (5, 64, 64))
-        nt.assert_equal(s0.axes_manager.signal_dimension, 2)
-        nt.assert_equal(
+        assert_equal(s0.data.shape, (5, 64, 64))
+        assert_equal(s0.axes_manager.signal_dimension, 2)
+        assert_equal(
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'TEM')
-        nt.assert_almost_equal(s0.axes_manager[0].scale, 1.0, places=5)
-        nt.assert_equal(s0.axes_manager[0].units, 'Unknown')
-        nt.assert_almost_equal(s0.axes_manager[1].scale, 6.281833, places=5)
-        nt.assert_equal(s0.axes_manager[1].units, 'nm')
-        nt.assert_almost_equal(s0.axes_manager[2].scale, 6.281833, places=5)
-        nt.assert_equal(s0.axes_manager[2].units, 'nm')
+        assert_almost_equal(s0.axes_manager[0].scale, 1.0, places=5)
+        assert_equal(s0.axes_manager[0].units, 'Unknown')
+        assert_almost_equal(s0.axes_manager[1].scale, 6.281833, places=5)
+        assert_equal(s0.axes_manager[1].units, 'nm')
+        assert_almost_equal(s0.axes_manager[2].scale, 6.281833, places=5)
+        assert_equal(s0.axes_manager[2].units, 'nm')
 
         fname2 = os.path.join(
             self.dirpathnew, '128x128x5-diffraction_preview.emi')
         s2 = load(fname2)
-        nt.assert_equal(s2.data.shape, (5, 128, 128))
-        nt.assert_almost_equal(s2.axes_manager[1].scale, 0.042464, places=5)
-        nt.assert_equal(s0.axes_manager[0].units, 'Unknown')
-        nt.assert_equal(s2.axes_manager[1].units, '1/nm')
-        nt.assert_almost_equal(s2.axes_manager[2].scale, 0.042464, places=5)
-        nt.assert_equal(s2.axes_manager[2].units, '1/nm')
+        assert_equal(s2.data.shape, (5, 128, 128))
+        assert_almost_equal(s2.axes_manager[1].scale, 0.042464, places=5)
+        assert_equal(s0.axes_manager[0].units, 'Unknown')
+        assert_equal(s2.axes_manager[1].units, '1/nm')
+        assert_almost_equal(s2.axes_manager[2].scale, 0.042464, places=5)
+        assert_equal(s2.axes_manager[2].units, '1/nm')
 
         fname1 = os.path.join(
             self.dirpathold, '16x16x5_STEM_BF_DF_preview.emi')
         s1 = load(fname1)
-        nt.assert_equal(len(s1), 2)
+        assert_equal(len(s1), 2)
         for s in s1:
-            nt.assert_equal(s.data.shape, (5, 16, 16))
-            nt.assert_equal(
+            assert_equal(s.data.shape, (5, 16, 16))
+            assert_equal(
                 s.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
-            nt.assert_almost_equal(s.axes_manager[0].scale, 1.0, places=5)
-            nt.assert_equal(s.axes_manager[1].units, 'nm')
-            nt.assert_almost_equal(
+            assert_almost_equal(s.axes_manager[0].scale, 1.0, places=5)
+            assert_equal(s.axes_manager[1].units, 'nm')
+            assert_almost_equal(
                 s.axes_manager[1].scale, 21.510044, places=5)
 
     def test_load_acquire(self):
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
         s0 = load(fname0)
-        nt.assert_equal(s0.axes_manager.signal_dimension, 2)
-        nt.assert_equal(
+        assert_equal(s0.axes_manager.signal_dimension, 2)
+        assert_equal(
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode, 'TEM')
-        nt.assert_almost_equal(s0.axes_manager[0].scale, 6.281833, places=5)
-        nt.assert_equal(s0.axes_manager[0].units, 'nm')
-        nt.assert_almost_equal(s0.axes_manager[1].scale, 6.281833, places=5)
-        nt.assert_equal(s0.axes_manager[1].units, 'nm')
+        assert_almost_equal(s0.axes_manager[0].scale, 6.281833, places=5)
+        assert_equal(s0.axes_manager[0].units, 'nm')
+        assert_almost_equal(s0.axes_manager[1].scale, 6.281833, places=5)
+        assert_equal(s0.axes_manager[1].units, 'nm')
 
         fname1 = os.path.join(self.dirpathold, '16x16_STEM_BF_DF_acquire.emi')
         s1 = load(fname1)
-        nt.assert_equal(len(s1), 2)
+        assert_equal(len(s1), 2)
         for s in s1:
-            nt.assert_equal(s.data.shape, (16, 16))
-            nt.assert_equal(
+            assert_equal(s.data.shape, (16, 16))
+            assert_equal(
                 s.metadata.Acquisition_instrument.TEM.acquisition_mode, 'STEM')
-            nt.assert_almost_equal(
+            assert_almost_equal(
                 s.axes_manager[0].scale, 21.510044, places=5)
-            nt.assert_equal(s.axes_manager[0].units, 'nm')
-            nt.assert_almost_equal(
+            assert_equal(s.axes_manager[0].units, 'nm')
+            assert_almost_equal(
                 s.axes_manager[1].scale, 21.510044, places=5)
-            nt.assert_equal(s.axes_manager[1].units, 'nm')
+            assert_equal(s.axes_manager[1].units, 'nm')
 
     def test_read_STEM_TEM_mode(self):
         # TEM image
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
         s0 = load(fname0)
-        nt.assert_equal(
+        assert_equal(
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode, "TEM")
         # TEM diffraction
         fname1 = os.path.join(self.dirpathold, '64x64_diffraction_acquire.emi')
         s1 = load(fname1)
-        nt.assert_equal(
+        assert_equal(
             s1.metadata.Acquisition_instrument.TEM.acquisition_mode, "TEM")
         fname2 = os.path.join(self.dirpathold, '16x16_STEM_BF_DF_acquire.emi')
         # STEM diffraction
         s2 = load(fname2)
-        nt.assert_equal(
+        assert_equal(
             s2[0].metadata.Acquisition_instrument.TEM.acquisition_mode, "STEM")
-        nt.assert_equal(
+        assert_equal(
             s2[1].metadata.Acquisition_instrument.TEM.acquisition_mode, "STEM")
 
     def test_load_units_scale(self):
         # TEM image
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
         s0 = load(fname0)
-        nt.assert_almost_equal(s0.axes_manager[0].scale, 6.28183, places=5)
-        nt.assert_equal(s0.axes_manager[0].units, 'nm')
-        nt.assert_almost_equal(s0.metadata.Acquisition_instrument.TEM.magnification,
+        assert_almost_equal(s0.axes_manager[0].scale, 6.28183, places=5)
+        assert_equal(s0.axes_manager[0].units, 'nm')
+        assert_almost_equal(s0.metadata.Acquisition_instrument.TEM.magnification,
                                19500.0, places=4)
         # TEM diffraction
         fname1 = os.path.join(self.dirpathold, '64x64_diffraction_acquire.emi')
         s1 = load(fname1)
-        nt.assert_almost_equal(s1.axes_manager[0].scale, 0.10157, places=4)
-        nt.assert_equal(s1.axes_manager[0].units, '1/nm')
-        nt.assert_almost_equal(s1.metadata.Acquisition_instrument.TEM.camera_length,
+        assert_almost_equal(s1.axes_manager[0].scale, 0.10157, places=4)
+        assert_equal(s1.axes_manager[0].units, '1/nm')
+        assert_almost_equal(s1.metadata.Acquisition_instrument.TEM.camera_length,
                                490.0, places=4)
         # STEM diffraction
         fname2 = os.path.join(self.dirpathold, '16x16_STEM_BF_DF_acquire.emi')
         s2 = load(fname2)
-        nt.assert_equal(s2[0].axes_manager[0].units, 'nm')
-        nt.assert_almost_equal(s2[0].axes_manager[0].scale, 21.5100, places=4)
-        nt.assert_almost_equal(s2[0].metadata.Acquisition_instrument.TEM.magnification,
+        assert_equal(s2[0].axes_manager[0].units, 'nm')
+        assert_almost_equal(s2[0].axes_manager[0].scale, 21.5100, places=4)
+        assert_almost_equal(s2[0].metadata.Acquisition_instrument.TEM.magnification,
                                10000.0, places=4)
 
     def test_guess_units_from_mode(self):
@@ -352,14 +352,14 @@ class TestFEIReader():
         objects_dict = convert_xml_to_dict(objects[0])
 
         unit = _guess_units_from_mode(objects_dict, header0)
-        nt.assert_equal(unit, 'meters')
+        assert_equal(unit, 'meters')
 
         # objects is empty dictionary
         with assert_warns(
                 message="The navigation axes units could not be determined.",
                 category=UserWarning):
             unit = _guess_units_from_mode({}, header0)
-        nt.assert_equal(unit, 'meters')
+        assert_equal(unit, 'meters')
 
     def test_load_multisignal_stack(self):
         fname0 = os.path.join(
@@ -382,22 +382,22 @@ class TestFEIReader():
     def test_date_time(self):
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
         s = load(fname0)
-        nt.assert_equal(s.metadata.General.date, "2016-02-21")
-        nt.assert_equal(s.metadata.General.time, "17:50:18")
-        nt.assert_equal(s.metadata.General.authors, "ERIC")
+        assert_equal(s.metadata.General.date, "2016-02-21")
+        assert_equal(s.metadata.General.time, "17:50:18")
+        assert_equal(s.metadata.General.authors, "ERIC")
 
     def test_metadata_TEM(self):
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
         s = load(fname0)
-        nt.assert_equal(
+        assert_equal(
             s.metadata.Acquisition_instrument.TEM.beam_energy, 200.0)
-        nt.assert_equal(
+        assert_equal(
             s.metadata.Acquisition_instrument.TEM.magnification,
             19500.0)
-        nt.assert_equal(
+        assert_equal(
             s.metadata.Acquisition_instrument.TEM.microscope,
             "Tecnai 200 kV D2267 SuperTwin")
-        nt.assert_almost_equal(
+        assert_almost_equal(
             s.metadata.Acquisition_instrument.TEM.tilt_stage,
             0.00,
             places=2)
@@ -405,17 +405,17 @@ class TestFEIReader():
     def test_metadata_STEM(self):
         fname0 = os.path.join(self.dirpathold, '16x16_STEM_BF_DF_acquire.emi')
         s = load(fname0)[0]
-        nt.assert_equal(
+        assert_equal(
             s.metadata.Acquisition_instrument.TEM.beam_energy, 200.0)
-        nt.assert_equal(
+        assert_equal(
             s.metadata.Acquisition_instrument.TEM.camera_length, 40.0)
-        nt.assert_equal(
+        assert_equal(
             s.metadata.Acquisition_instrument.TEM.magnification,
             10000.0)
-        nt.assert_equal(
+        assert_equal(
             s.metadata.Acquisition_instrument.TEM.microscope,
             "Tecnai 200 kV D2267 SuperTwin")
-        nt.assert_almost_equal(
+        assert_almost_equal(
             s.metadata.Acquisition_instrument.TEM.tilt_stage,
             0.00,
             places=2)
@@ -423,15 +423,15 @@ class TestFEIReader():
     def test_metadata_diffraction(self):
         fname0 = os.path.join(self.dirpathold, '64x64_diffraction_acquire.emi')
         s = load(fname0)
-        nt.assert_equal(
+        assert_equal(
             s.metadata.Acquisition_instrument.TEM.beam_energy, 200.0)
-        nt.assert_equal(
+        assert_equal(
             s.metadata.Acquisition_instrument.TEM.camera_length,
             490.0)
-        nt.assert_equal(
+        assert_equal(
             s.metadata.Acquisition_instrument.TEM.microscope,
             "Tecnai 200 kV D2267 SuperTwin")
-        nt.assert_almost_equal(
+        assert_almost_equal(
             s.metadata.Acquisition_instrument.TEM.tilt_stage,
             0.00,
             places=2)

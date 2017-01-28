@@ -182,20 +182,20 @@ def assert_deep_almost_equal(actual, expected, *args, **kwargs):
     trace = kwargs.pop('__trace', 'ROOT')
     try:
         if isinstance(expected, (int, float, complex)):
-            nt.assert_almost_equal(expected, actual, *args, **kwargs)
+            assert_almost_equal(expected, actual, *args, **kwargs)
         elif isinstance(expected, (list, tuple, np.ndarray)):
-            nt.assert_equal(len(expected), len(actual))
+            assert_equal(len(expected), len(actual))
             for index in range(len(expected)):
                 v1, v2 = expected[index], actual[index]
                 assert_deep_almost_equal(v1, v2,
                                          __trace=repr(index), *args, **kwargs)
         elif isinstance(expected, dict):
-            nt.assert_equal(set(expected), set(actual))
+            assert_equal(set(expected), set(actual))
             for key in expected:
                 assert_deep_almost_equal(expected[key], actual[key],
                                          __trace=repr(key), *args, **kwargs)
         else:
-            nt.assert_equal(expected, actual)
+            assert_equal(expected, actual)
     except AssertionError as exc:
         exc.__dict__.setdefault('traces', []).append(trace)
         if is_root:

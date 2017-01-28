@@ -120,13 +120,13 @@ axes2 = {
 
 def test_load1():
     s = hs.load(file1)
-    nt.assert_equal(s.data.shape, (3, 2, 144, 144))
-    nt.assert_equal(s.axes_manager.as_dictionary(), axes1)
+    assert_equal(s.data.shape, (3, 2, 144, 144))
+    assert_equal(s.axes_manager.as_dictionary(), axes1)
 
 
 def test_load2():
     s = hs.load(file2)
-    nt.assert_equal(s.data.shape, (2, 3, 5, 5))
+    assert_equal(s.data.shape, (2, 3, 5, 5))
     np.testing.assert_equal(s.axes_manager.as_dictionary(), axes2)
     np.testing.assert_allclose(s.data, ref_data2)
 
@@ -136,31 +136,31 @@ def test_save_load_cycle():
     signal = hs.load(file2)
     serial = signal.original_metadata['blockfile_header']['Acquisition_time']
     date, time, timezone = serial_date_to_ISO_format(serial)
-    nt.assert_equal(signal.metadata.General.original_filename, 'test2.blo')
-    nt.assert_equal(signal.metadata.General.date, date)
-    nt.assert_equal(signal.metadata.General.time, time)
-    nt.assert_equal(signal.metadata.General.time_zone, timezone)
-    nt.assert_equal(
+    assert_equal(signal.metadata.General.original_filename, 'test2.blo')
+    assert_equal(signal.metadata.General.date, date)
+    assert_equal(signal.metadata.General.time, time)
+    assert_equal(signal.metadata.General.time_zone, timezone)
+    assert_equal(
         signal.metadata.General.notes,
         "Precession angle : \r\nPrecession Frequency : \r\nCamera gamma : on")
     signal.save(save_path, overwrite=True)
     sig_reload = hs.load(save_path)
     np.testing.assert_equal(signal.data, sig_reload.data)
-    nt.assert_equal(signal.axes_manager.as_dictionary(),
+    assert_equal(signal.axes_manager.as_dictionary(),
                     sig_reload.axes_manager.as_dictionary())
-    nt.assert_equal(signal.original_metadata.as_dictionary(),
+    assert_equal(signal.original_metadata.as_dictionary(),
                     sig_reload.original_metadata.as_dictionary())
     # change original_filename to make the metadata of both signals equals
     sig_reload.metadata.General.original_filename = signal.metadata.General.original_filename
     assert_deep_almost_equal(signal.metadata.as_dictionary(),
                              sig_reload.metadata.as_dictionary())
-    nt.assert_equal(
+    assert_equal(
         signal.metadata.General.date,
         sig_reload.metadata.General.date)
-    nt.assert_equal(
+    assert_equal(
         signal.metadata.General.time,
         sig_reload.metadata.General.time)
-    nt.assert_is_instance(signal, hs.signals.Signal2D)
+    assert_is_instance(signal, hs.signals.Signal2D)
     # Delete reference to close memmap file!
     del sig_reload
     gc.collect()
@@ -174,11 +174,11 @@ def test_different_x_y_scale_units():
     try:
         signal.save(save_path, overwrite=True)
         sig_reload = hs.load(save_path)
-        nt.assert_almost_equal(sig_reload.axes_manager[0].scale, 50.0,
+        assert_almost_equal(sig_reload.axes_manager[0].scale, 50.0,
                                places=2)
-        nt.assert_almost_equal(sig_reload.axes_manager[1].scale, 64.0,
+        assert_almost_equal(sig_reload.axes_manager[1].scale, 64.0,
                                places=2)
-        nt.assert_almost_equal(sig_reload.axes_manager[2].scale, 0.0160616,
+        assert_almost_equal(sig_reload.axes_manager[2].scale, 0.0160616,
                                places=5)
     finally:
         # Delete reference to close memmap file!
@@ -190,7 +190,7 @@ def test_different_x_y_scale_units():
 def test_default_header():
     # Simply check that no exceptions are raised
     header = get_default_header()
-    nt.assert_is_not_none(header)
+    assert_is_not_none(header)
 
 
 def test_non_square():
@@ -205,13 +205,13 @@ def test_non_square():
 
 def test_load_memmap():
     s = hs.load(file2, load_to_memory=False)
-    nt.assert_is_instance(s.data, np.memmap)
+    assert_is_instance(s.data, np.memmap)
 
 
 def test_load_to_memory():
     s = hs.load(file2, load_to_memory=True)
-    nt.assert_is_instance(s.data, np.ndarray)
-    nt.assert_true(not isinstance(s.data, np.memmap))
+    assert_is_instance(s.data, np.ndarray)
+    assert_true(not isinstance(s.data, np.memmap))
 
 
 def test_load_readonly():
@@ -234,7 +234,7 @@ def test_load_inplace():
         gc.collect()
         # Check if values were written to disk
         sig_reload = hs.load(save_path, load_to_memory=False, mmap_mode='r')
-        nt.assert_true(np.all(sig_reload.data == 23))
+        assert_true(np.all(sig_reload.data == 23))
     finally:
         # Delete reference to close memmap file!
         del sig_reload
@@ -259,7 +259,7 @@ def test_write_fresh():
             'Note': '',
         })
         header['Data_offset_2'] += header['Data_offset_2'] % 16
-        nt.assert_equal(
+        assert_equal(
             sig_reload.original_metadata.blockfile_header.as_dictionary(),
             header)
     finally:
@@ -335,7 +335,7 @@ def test_crop_notes():
     try:
         signal.save(save_path, overwrite=True)
         sig_reload = hs.load(save_path)
-        nt.assert_equal(sig_reload.original_metadata.blockfile_header.Note,
+        assert_equal(sig_reload.original_metadata.blockfile_header.Note,
                         note[:note_len])
     finally:
         _remove_file(save_path)

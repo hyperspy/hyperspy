@@ -62,32 +62,32 @@ class TestAlignTools:
                   1 *
                   self.ishifts[:, np.newaxis] *
                   self.scale, show_progressbar=None)
-        nt.assert_true(m.data_changed.called)
+        assert_true(m.data_changed.called)
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        nt.assert_true(np.allclose(s.data[:, i_zlp], 12))
+        assert_true(np.allclose(s.data[:, i_zlp], 12))
         # Check that at the edges of the spectrum the value == to the
         # background value. If it wasn't it'll mean that the cropping
         # code is buggy
-        nt.assert_true((s.data[:, -1] == 2).all())
-        nt.assert_true((s.data[:, 0] == 2).all())
+        assert_true((s.data[:, -1] == 2).all())
+        assert_true((s.data[:, 0] == 2).all())
         # Check that the calibration is correct
-        nt.assert_equal(s.axes_manager._axes[1].offset, self.new_offset)
-        nt.assert_equal(s.axes_manager._axes[1].scale, self.scale)
+        assert_equal(s.axes_manager._axes[1].offset, self.new_offset)
+        assert_equal(s.axes_manager._axes[1].scale, self.scale)
 
     def test_align(self):
         s = self.signal
         s.align1D(show_progressbar=None)
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        nt.assert_true(np.allclose(s.data[:, i_zlp], 12))
+        assert_true(np.allclose(s.data[:, i_zlp], 12))
         # Check that at the edges of the spectrum the value == to the
         # background value. If it wasn't it'll mean that the cropping
         # code is buggy
-        nt.assert_true((s.data[:, -1] == 2).all())
-        nt.assert_true((s.data[:, 0] == 2).all())
+        assert_true((s.data[:, -1] == 2).all())
+        assert_true((s.data[:, 0] == 2).all())
         # Check that the calibration is correct
-        nt.assert_equal(
+        assert_equal(
             s.axes_manager._axes[1].offset, self.new_offset)
-        nt.assert_equal(s.axes_manager._axes[1].scale, self.scale)
+        assert_equal(s.axes_manager._axes[1].scale, self.scale)
 
     def test_align_expand(self):
         s = self.signal
@@ -98,11 +98,11 @@ class TestAlignTools:
         Nnan_data = np.sum(np.isnan(s.data), axis=1)
         # Due to interpolation, the number of NaNs in the data might
         # be 2 higher (left and right side) than expected
-        nt.assert_true(np.all(Nnan_data - Nnan <= 2))
+        assert_true(np.all(Nnan_data - Nnan <= 2))
 
         # Check actual alignment of zlp
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        nt.assert_true(np.allclose(s.data[:, i_zlp], 12))
+        assert_true(np.allclose(s.data[:, i_zlp], 12))
 
 
 class TestShift1D:
@@ -114,7 +114,7 @@ class TestShift1D:
     def test_crop_left(self):
         s = self.s
         s.shift1D(np.array((0.01)), crop=True, show_progressbar=None)
-        nt.assert_equal(
+        assert_equal(
             tuple(
                 s.axes_manager[0].axis), tuple(
                 np.arange(
@@ -123,7 +123,7 @@ class TestShift1D:
     def test_crop_right(self):
         s = self.s
         s.shift1D(np.array((-0.01)), crop=True, show_progressbar=None)
-        nt.assert_equal(
+        assert_equal(
             tuple(
                 s.axes_manager[0].axis), tuple(
                 np.arange(
@@ -142,34 +142,34 @@ class TestFindPeaks1D:
 
     def test_single_spectrum(self):
         peaks = self.signal.inav[0].find_peaks1D_ohaver()
-        nt.assert_true(np.allclose(
+        assert_true(np.allclose(
             peaks[0]['position'], self.peak_positions0, rtol=1e-5, atol=1e-4))
 
     def test_two_spectra(self):
         peaks = self.signal.find_peaks1D_ohaver()
-        nt.assert_true(np.allclose(
+        assert_true(np.allclose(
             peaks[1]['position'], self.peak_positions1, rtol=1e-5, atol=1e-4))
 
     def test_height(self):
         peaks = self.signal.find_peaks1D_ohaver()
-        nt.assert_true(np.allclose(
+        assert_true(np.allclose(
             peaks[1]['height'], 1.0, rtol=1e-5, atol=1e-4))
 
     def test_width(self):
         peaks = self.signal.find_peaks1D_ohaver()
-        nt.assert_true(np.allclose(
+        assert_true(np.allclose(
             peaks[1]['width'], 3.5758, rtol=1e-4, atol=1e-4),
             msg="One or several widths are not close enough to expected " +
             "value (3.5758): " + str(peaks[1]['width']))
 
     def test_n_peaks(self):
         peaks = self.signal.find_peaks1D_ohaver()
-        nt.assert_equal(len(peaks[1]), 8)
+        assert_equal(len(peaks[1]), 8)
 
     def test_maxpeaksn(self):
         for n in range(1, 10):
             peaks = self.signal.find_peaks1D_ohaver(maxpeakn=n)
-            nt.assert_equal(len(peaks[1]), min((8, n)))
+            assert_equal(len(peaks[1]), min((8, n)))
 
 
 class TestInterpolateInBetween:
@@ -186,7 +186,7 @@ class TestInterpolateInBetween:
         s.events.data_changed.connect(m.data_changed)
         s.interpolate_in_between(8, 12, show_progressbar=None)
         np.testing.assert_array_equal(s.data, np.arange(20))
-        nt.assert_true(m.data_changed.called)
+        assert_true(m.data_changed.called)
 
     def test_single_spectrum_in_units(self):
         s = self.s.inav[0]
@@ -234,21 +234,21 @@ class TestEstimatePeakWidth:
             window=None,
             return_interval=True,
             show_progressbar=None)
-        nt.assert_equal(width, 2.35482074)
-        nt.assert_equal(left, 0.82258963)
-        nt.assert_equal(right, 3.17741037)
+        assert_equal(width, 2.35482074)
+        assert_equal(left, 0.82258963)
+        assert_equal(right, 3.17741037)
         for t in (width, left, right):
-            nt.assert_equal(t.metadata.Signal.signal_type, "")
-            nt.assert_equal(t.axes_manager.signal_dimension, 0)
+            assert_equal(t.metadata.Signal.signal_type, "")
+            assert_equal(t.axes_manager.signal_dimension, 0)
 
     def test_too_narrow_range(self):
         width, left, right = self.s.estimate_peak_width(
             window=2.2,
             return_interval=True,
             show_progressbar=None)
-        nt.assert_equal(width, np.nan)
-        nt.assert_equal(left, np.nan)
-        nt.assert_equal(right, np.nan)
+        assert_equal(width, np.nan)
+        assert_equal(left, np.nan)
+        assert_equal(right, np.nan)
 
     def test_two_peaks(self):
         s = self.s.deepcopy()
@@ -258,9 +258,9 @@ class TestEstimatePeakWidth:
             window=None,
             return_interval=True,
             show_progressbar=None)
-        nt.assert_equal(width, np.nan)
-        nt.assert_equal(left, np.nan)
-        nt.assert_equal(right, np.nan)
+        assert_equal(width, np.nan)
+        assert_equal(left, np.nan)
+        assert_equal(right, np.nan)
 
 
 class TestSmoothing:
@@ -288,7 +288,7 @@ class TestSmoothing:
         self.s.smooth_lowess(smoothing_parameter=frac,
                              number_of_iterations=it,
                              show_progressbar=None)
-        nt.assert_true(np.allclose(data, self.s.data))
+        assert_true(np.allclose(data, self.s.data))
 
     def test_tv(self):
         weight = 1
@@ -299,7 +299,7 @@ class TestSmoothing:
                 weight=weight,)
         self.s.smooth_tv(smoothing_parameter=weight,
                          show_progressbar=None)
-        nt.assert_true(np.allclose(data, self.s.data))
+        assert_true(np.allclose(data, self.s.data))
 
     def test_savgol(self):
         window_length = 13
@@ -316,4 +316,4 @@ class TestSmoothing:
             window_length=window_length,
             polynomial_order=polyorder,
             differential_order=deriv,)
-        nt.assert_true(np.allclose(data, self.s.data))
+        assert_true(np.allclose(data, self.s.data))

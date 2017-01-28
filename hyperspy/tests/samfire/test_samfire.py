@@ -156,11 +156,11 @@ class TestSamfireEmpty:
     def test_setup(self):
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
-        nt.assert_is_none(samf.metadata._gt_dump)
-        nt.assert_is_none(samf.pool)
+        assert_is_none(samf.metadata._gt_dump)
+        assert_is_none(samf.pool)
         samf._setup(ipyparallel=False)
-        nt.assert_is_not_none(samf.metadata._gt_dump)
-        nt.assert_is_not_none(samf.pool)
+        assert_is_not_none(samf.metadata._gt_dump)
+        assert_is_not_none(samf.pool)
 
     def test_samfire_init_marker(self):
         m = self.model
@@ -171,39 +171,39 @@ class TestSamfireEmpty:
     def test_samfire_init_model(self):
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
-        nt.assert_true(samf.model is m)
+        assert_true(samf.model is m)
 
     def test_samfire_init_metadata(self):
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
-        nt.assert_true(isinstance(samf.metadata, DictionaryTreeBrowser))
+        assert_true(isinstance(samf.metadata, DictionaryTreeBrowser))
 
     def test_samfire_init_strategy_list(self):
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
-        nt.assert_is_instance(samf.strategies, StrategyList)
+        assert_is_instance(samf.strategies, StrategyList)
 
     def test_samfire_init_strategies(self):
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
         from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
         from hyperspy.samfire_utils.global_strategies import HistogramStrategy
-        nt.assert_is_instance(
+        assert_is_instance(
             samf.strategies[0],
             ReducedChiSquaredStrategy)
-        nt.assert_is_instance(samf.strategies[1], HistogramStrategy)
+        assert_is_instance(samf.strategies[1], HistogramStrategy)
 
     def test_samfire_init_fig(self):
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
-        nt.assert_true(samf._figure is None)
+        assert_true(samf._figure is None)
 
     def test_samfire_init_default(self):
         m = self.model
         from multiprocessing import cpu_count
         samf = m.create_samfire(setup=False)
-        nt.assert_equal(samf._workers, cpu_count() - 1)
-        nt.assert_true(np.allclose(samf.metadata.marker, np.zeros(self.shape)))
+        assert_equal(samf._workers, cpu_count() - 1)
+        assert_true(np.allclose(samf.metadata.marker, np.zeros(self.shape)))
 
     def test_optional_components(self):
         m = self.model
@@ -212,9 +212,9 @@ class TestSamfireEmpty:
         samf = m.create_samfire(setup=False)
         samf.optional_components = [m[0], 1]
         samf._enable_optional_components()
-        nt.assert_true(m[0].active_is_multidimensional)
-        nt.assert_true(m[1].active_is_multidimensional)
-        nt.assert_true(np.all([isinstance(a, int)
+        assert_true(m[0].active_is_multidimensional)
+        assert_true(m[1].active_is_multidimensional)
+        assert_true(np.all([isinstance(a, int)
                                for a in samf.optional_components]))
         np.testing.assert_equal(samf.optional_components, [0, 1])
 
@@ -227,7 +227,7 @@ class TestSamfireEmpty:
                 p.map['is_set'][0, 0] = True
         m[1].active_is_multidimensional = True
         m[1]._active_array[0, 0] = False
-        nt.assert_true(m[1]._active_array[1, 0])
+        assert_true(m[1]._active_array[1, 0])
         m.chisq.data[0, 0] = 1200.
         m.dof.data[0, 0] = 1.
 
@@ -242,22 +242,22 @@ class TestSamfireEmpty:
         d = copy.deepcopy(d)
         samf = m.create_samfire(setup=False)
         samf._swap_dict_and_model((1, 0), d)
-        nt.assert_equal(m.chisq.data[1, 0], 1200.)
-        nt.assert_equal(m.dof.data[1, 0], 1.)
+        assert_equal(m.chisq.data[1, 0], 1200.)
+        assert_equal(m.dof.data[1, 0], 1.)
 
-        nt.assert_equal(d['dof.data'], 0.)
-        nt.assert_true(np.isnan(d['chisq.data']))
+        assert_equal(d['dof.data'], 0.)
+        assert_true(np.isnan(d['chisq.data']))
 
-        nt.assert_true(np.all(~m[1]._active_array[:2, 0]))
+        assert_true(np.all(~m[1]._active_array[:2, 0]))
         for c in m:
             if c.active:
                 for p in c.parameters:
-                    nt.assert_equal(
+                    assert_equal(
                         p.map['values'][
                             0, 0], p.map['values'][
                             1, 0])
-                    nt.assert_equal(p.map['std'][0, 0], p.map['std'][1, 0])
-                    nt.assert_equal(
+                    assert_equal(p.map['std'][0, 0], p.map['std'][1, 0])
+                    assert_equal(
                         p.map['is_set'][
                             0, 0], p.map['is_set'][
                             1, 0])
@@ -266,18 +266,18 @@ class TestSamfireEmpty:
         m = self.model
         samf = m.create_samfire(setup=False)
         ans = samf._next_pixels(3)
-        nt.assert_equal(len(ans), 0)
+        assert_equal(len(ans), 0)
         ind_list = [(1, 2), (0, 1), (3, 3), (4, 6)]
         for ind in ind_list:
             samf.metadata.marker[ind] += 2.
         ans = samf._next_pixels(10)
-        nt.assert_equal(len(ans), 4)
+        assert_equal(len(ans), 4)
         for ind in ans:
-            nt.assert_in(ind, ind_list)
+            assert_in(ind, ind_list)
         for n, ind in enumerate(ind_list):
             samf.metadata.marker[ind] += n
         ans = samf._next_pixels(10)
-        nt.assert_equal(ans, [(4, 6), ])
+        assert_equal(ans, [(4, 6), ])
 
     def test_change_strategy(self):
         m = self.model
@@ -289,19 +289,19 @@ class TestSamfireEmpty:
         samf.metadata.marker[ind] = -2
         samf.strategies.append(ReducedChiSquaredStrategy())
         samf.change_strategy(2)
-        nt.assert_equal(samf.metadata.marker[ind], -1)
-        nt.assert_equal(samf._active_strategy_ind, 2)
+        assert_equal(samf.metadata.marker[ind], -1)
+        assert_equal(samf._active_strategy_ind, 2)
 
         samf.change_strategy(samf.strategies[1])
-        nt.assert_equal(samf._active_strategy_ind, 1)
-        nt.assert_equal(samf.metadata.marker[ind], -2)
+        assert_equal(samf._active_strategy_ind, 1)
+        assert_equal(samf.metadata.marker[ind], -2)
 
         new_strat = HistogramStrategy()
         samf.strategies.append(new_strat)
         samf.change_strategy(3)
-        nt.assert_equal(samf._active_strategy_ind, 3)
-        nt.assert_is(samf.active_strategy, new_strat)
-        nt.assert_equal(samf.metadata.marker[ind], -2)
+        assert_equal(samf._active_strategy_ind, 3)
+        assert_is(samf.active_strategy, new_strat)
+        assert_equal(samf.metadata.marker[ind], -2)
 
 
 class TestSamfireMain:
@@ -323,7 +323,7 @@ class TestSamfireMain:
         fitmask = samf.metadata.marker == -np.ones(self.shape)
         print('number of pixels failed: {}'.format(np.sum(fitmask) -
                                                    np.prod(self.shape)))
-        nt.assert_true(np.sum(fitmask) >= np.prod(self.shape) - 3)
+        assert_true(np.sum(fitmask) >= np.prod(self.shape) - 3)
         for o_c, n_c in zip([self.g, self.lor1, self.lor2], self.model):
             for p, p1 in zip(o_c.parameters, n_c.parameters):
                 if n_c._active_array is not None:
@@ -343,10 +343,10 @@ class TestSamfireMain:
 
 def test_create_worker_defaults():
     worker = create_worker('worker')
-    nt.assert_equal(worker.identity, 'worker')
-    nt.assert_is_none(worker.shared_queue)
-    nt.assert_is_none(worker.result_queue)
-    nt.assert_is_none(worker.individual_queue)
+    assert_equal(worker.identity, 'worker')
+    assert_is_none(worker.shared_queue)
+    assert_is_none(worker.result_queue)
+    assert_is_none(worker.individual_queue)
     np.testing.assert_equal(worker.best_AICc, np.inf)
     np.testing.assert_equal(worker.best_values, [])
     np.testing.assert_equal(worker.best_dof, np.inf)
@@ -450,10 +450,10 @@ class TestSamfireWorker:
         worker = create_worker('worker')
         worker.create_model(self.model_dictionary, self.model_letter)
         from hyperspy.model import BaseModel
-        nt.assert_is_instance(worker.model, BaseModel)
+        assert_is_instance(worker.model, BaseModel)
         for component in worker.model:
-            nt.assert_false(component.active_is_multidimensional)
-            nt.assert_true(component.active)
+            assert_false(component.active_is_multidimensional)
+            assert_true(component.active)
 
     def test_main_result(self):
         worker = create_worker('worker')
@@ -469,16 +469,16 @@ class TestSamfireWorker:
         })
         keyword, (_id, _ind, result, found_solution) = \
             worker.run_pixel(self.ind, self.vals)
-        nt.assert_equal(_id, 'worker')
-        nt.assert_equal(_ind, self.ind)
-        nt.assert_true(found_solution)
+        assert_equal(_id, 'worker')
+        assert_equal(_ind, self.ind)
+        assert_true(found_solution)
 
-        nt.assert_equal(result['dof.data'][()], 9)
+        assert_equal(result['dof.data'][()], 9)
 
         lor_components = [key for key in result['components'].keys() if
                           key.find('l') == 0]
-        nt.assert_equal(len(result['components']), 3)
-        nt.assert_equal(len(lor_components), 2)
+        assert_equal(len(result['components']), 3)
+        assert_equal(len(lor_components), 2)
 
         gauss_name = list(set(result['components'].keys()) -
                           set(lor_components))[0]
@@ -501,10 +501,10 @@ class TestSamfireWorker:
         possible_values1 = (self.areas[1], self.widths[1], self.centres[1])
         possible_values2 = (self.areas[2], self.widths[2], self.centres[2])
 
-        nt.assert_true((np.allclose(lor1_values, possible_values1, rtol=0.05)
+        assert_true((np.allclose(lor1_values, possible_values1, rtol=0.05)
                         or
                         np.allclose(lor1_values, possible_values2, rtol=0.05)))
 
-        nt.assert_true((np.allclose(lor2_values, possible_values1, rtol=0.05)
+        assert_true((np.allclose(lor2_values, possible_values1, rtol=0.05)
                         or
                         np.allclose(lor2_values, possible_values2, rtol=0.05)))

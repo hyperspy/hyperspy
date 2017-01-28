@@ -37,13 +37,13 @@ def test_load_16bit():
     s = load(filename)
     bse, sei, hype = s
     # Bruker saves all images in true 16bit:
-    nt.assert_true(bse.data.dtype == np.uint16)
-    nt.assert_true(sei.data.dtype == np.uint16)
-    nt.assert_true(bse.data.shape == (75, 100))
+    assert_true(bse.data.dtype == np.uint16)
+    assert_true(sei.data.dtype == np.uint16)
+    assert_true(bse.data.shape == (75, 100))
     np_filename = os.path.join(my_path, 'bcf_data', np_file[0])
     np.testing.assert_array_equal(hype.data[:22, :22, 222],
                                   np.load(np_filename))
-    nt.assert_true(hype.data.shape == (75, 100, 2048))
+    assert_true(hype.data.shape == (75, 100, 2048))
 
 
 def test_load_16bit_reduced():
@@ -54,16 +54,16 @@ def test_load_16bit_reduced():
     s = load(filename, downsample=4, cutoff_at_kV=10)
     bse, sei, hype = s
     # sem images never are downsampled
-    nt.assert_true(bse.data.shape == (75, 100))
+    assert_true(bse.data.shape == (75, 100))
     np_filename = os.path.join(my_path, 'bcf_data', np_file[1])
     np.testing.assert_array_equal(hype.data[:2, :2, 222],
                                   np.load(np_filename))
-    nt.assert_true(hype.data.shape == (19, 25, 1047))
+    assert_true(hype.data.shape == (19, 25, 1047))
     # Bruker saves all images in true 16bit:
-    nt.assert_true(bse.data.dtype == np.uint16)
-    nt.assert_true(sei.data.dtype == np.uint16)
+    assert_true(bse.data.dtype == np.uint16)
+    assert_true(sei.data.dtype == np.uint16)
     # hypermaps should always return unsigned integers:
-    nt.assert_true(str(hype.data.dtype)[0] == 'u')
+    assert_true(str(hype.data.dtype)[0] == 'u')
 
 
 def test_load_8bit():
@@ -75,10 +75,10 @@ def test_load_8bit():
         s = load(filename)
         bse, sei, hype = s
         # Bruker saves all images in true 16bit:
-        nt.assert_true(bse.data.dtype == np.uint16)
-        nt.assert_true(sei.data.dtype == np.uint16)
+        assert_true(bse.data.dtype == np.uint16)
+        assert_true(sei.data.dtype == np.uint16)
         # hypermaps should always return unsigned integers:
-        nt.assert_true(str(hype.data.dtype)[0] == 'u')
+        assert_true(str(hype.data.dtype)[0] == 'u')
 
 
 def test_hyperspy_wrap():
@@ -87,18 +87,18 @@ def test_hyperspy_wrap():
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     print('testing bcf wrap to hyperspy signal...')
     hype = load(filename, select_type='spectrum')
-    nt.assert_almost_equal(
+    assert_almost_equal(
         hype.axes_manager[0].scale,
         8.7367850619778,
         places=12)
-    nt.assert_almost_equal(
+    assert_almost_equal(
         hype.axes_manager[1].scale,
         8.7367850619778,
         places=12)
-    nt.assert_equal(hype.axes_manager[1].units, 'µm')
-    nt.assert_almost_equal(hype.axes_manager[2].scale, 0.010001)
-    nt.assert_almost_equal(hype.axes_manager[2].offset, -0.472397235)
-    nt.assert_equal(hype.axes_manager[2].units, 'keV')
+    assert_equal(hype.axes_manager[1].units, 'µm')
+    assert_almost_equal(hype.axes_manager[2].scale, 0.010001)
+    assert_almost_equal(hype.axes_manager[2].offset, -0.472397235)
+    assert_equal(hype.axes_manager[2].units, 'keV')
 
     md_ref = {'_HyperSpy': {'Folding': {'original_shape': None,
                                         'unfolded': False,
@@ -132,9 +132,9 @@ def test_hyperspy_wrap():
         omd_ref = json.load(fn)
     assert_deep_almost_equal(hype.metadata.as_dictionary(), md_ref)
     assert_deep_almost_equal(hype.original_metadata.as_dictionary(), omd_ref)
-    nt.assert_equal(hype.metadata.General.date, "2016-04-01")
-    nt.assert_equal(hype.metadata.General.time, "17:05:03")
-    nt.assert_equal(hype.metadata.Signal.quantity, "X-rays (Counts)")
+    assert_equal(hype.metadata.General.date, "2016-04-01")
+    assert_equal(hype.metadata.General.time, "17:05:03")
+    assert_equal(hype.metadata.Signal.quantity, "X-rays (Counts)")
 
 
 def test_hyperspy_wrap_downsampled():
@@ -143,15 +143,15 @@ def test_hyperspy_wrap_downsampled():
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     print('testing bcf wrap to hyperspy signal...')
     hype = load(filename, select_type='spectrum', downsample=5)
-    nt.assert_almost_equal(
+    assert_almost_equal(
         hype.axes_manager[0].scale,
         43.683925309889,
         places=12)
-    nt.assert_almost_equal(
+    assert_almost_equal(
         hype.axes_manager[1].scale,
         43.683925309889,
         places=12)
-    nt.assert_true(hype.axes_manager[1].units == 'µm')
+    assert_true(hype.axes_manager[1].units == 'µm')
 
 
 def test_fast_bcf():
@@ -176,23 +176,23 @@ def test_get_mode():
         raise SkipTest
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     s = load(filename, select_type='spectrum', instrument='SEM')
-    nt.assert_equal(s.metadata.Signal.signal_type, "EDS_SEM")
-    nt.assert_true(isinstance(s, signals.EDSSEMSpectrum))
+    assert_equal(s.metadata.Signal.signal_type, "EDS_SEM")
+    assert_true(isinstance(s, signals.EDSSEMSpectrum))
 
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     s = load(filename, select_type='spectrum', instrument='TEM')
-    nt.assert_equal(s.metadata.Signal.signal_type, "EDS_TEM")
-    nt.assert_true(isinstance(s, signals.EDSTEMSpectrum))
+    assert_equal(s.metadata.Signal.signal_type, "EDS_TEM")
+    assert_true(isinstance(s, signals.EDSTEMSpectrum))
 
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     s = load(filename, select_type='spectrum')
-    nt.assert_equal(s.metadata.Signal.signal_type, "EDS_SEM")
-    nt.assert_true(isinstance(s, signals.EDSSEMSpectrum))
+    assert_equal(s.metadata.Signal.signal_type, "EDS_SEM")
+    assert_true(isinstance(s, signals.EDSSEMSpectrum))
 
     filename = os.path.join(my_path, 'bcf_data', test_files[3])
     s = load(filename, select_type='spectrum')
-    nt.assert_equal(s.metadata.Signal.signal_type, "EDS_TEM")
-    nt.assert_true(isinstance(s, signals.EDSTEMSpectrum))
+    assert_equal(s.metadata.Signal.signal_type, "EDS_TEM")
+    assert_true(isinstance(s, signals.EDSTEMSpectrum))
 
 
 def test_wrong_file():

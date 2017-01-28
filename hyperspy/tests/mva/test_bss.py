@@ -52,7 +52,7 @@ class TestBSS1D:
         s2.decomposition()
         s2.blind_source_separation(
             3, diff_order=0, fun="exp", on_loadings=True)
-        nt.assert_true(are_bss_components_equivalent(
+        assert_true(are_bss_components_equivalent(
             self.s.get_bss_factors(), s2.get_bss_loadings()))
 
     def test_mask_diff_order_0(self):
@@ -136,7 +136,7 @@ class TestBSS2D:
             3, diff_order=1, fun="exp", on_loadings=False,
             diff_axes=["x"], mask=mask
         )
-        nt.assert_true(
+        assert_true(
             np.allclose(matrix, self.s.learning_results.unmixing_matrix,
                         atol=1e-6))
 
@@ -152,7 +152,7 @@ class TestBSS2D:
             3, diff_order=1, fun="exp", on_loadings=False,
             diff_axes=["x"],
         )
-        nt.assert_true(
+        assert_true(
             np.allclose(matrix, self.s.learning_results.unmixing_matrix,
                         atol=1e-3))
 
@@ -166,7 +166,7 @@ class TestBSS2D:
         matrix = self.s.learning_results.unmixing_matrix.copy()
         self.s.blind_source_separation(
             3, diff_order=1, fun="exp", on_loadings=False, diff_axes=[2],)
-        nt.assert_true(
+        assert_true(
             np.allclose(matrix, self.s.learning_results.unmixing_matrix,
                         atol=1e-3))
 
@@ -179,7 +179,7 @@ class TestBSS2D:
         s2.decomposition()
         s2.blind_source_separation(
             3, diff_order=0, fun="exp", on_loadings=True)
-        nt.assert_true(are_bss_components_equivalent(
+        assert_true(are_bss_components_equivalent(
             self.s.get_bss_factors(), s2.get_bss_loadings()))
 
     def test_mask_diff_order_0(self):

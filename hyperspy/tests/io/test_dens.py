@@ -39,13 +39,13 @@ ref_t = np.array([15.091, 16.828, 13.232, 50.117, 49.927, 49.986, 49.981])
 def test_read1():
     s = hs.load(file1)
     np.testing.assert_allclose(s.data, ref_T)
-    nt.assert_almost_equal(s.axes_manager[0].scale, 0.33)
-    nt.assert_almost_equal(s.axes_manager[0].offset, 50077.68)
+    assert_almost_equal(s.axes_manager[0].scale, 0.33)
+    assert_almost_equal(s.axes_manager[0].offset, 50077.68)
     ref_date, ref_time = "2015-04-16", "13:53:00"
-    nt.assert_equal(s.metadata.General.date, ref_date)
-    nt.assert_equal(s.metadata.General.time, ref_time)
-    nt.assert_equal(s.metadata.Signal.signal_type, "")
-    nt.assert_equal(s.metadata.Signal.quantity, "Temperature (Celsius)")
+    assert_equal(s.metadata.General.date, ref_date)
+    assert_equal(s.metadata.General.time, ref_time)
+    assert_equal(s.metadata.Signal.signal_type, "")
+    assert_equal(s.metadata.Signal.quantity, "Temperature (Celsius)")
 
 
 def test_read2():

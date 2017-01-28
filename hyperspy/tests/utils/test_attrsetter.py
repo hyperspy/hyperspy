@@ -53,9 +53,9 @@ class TestAttrSetter:
     def test_dtb_settattr(self):
         t = self.tree
         attrsetter(t, 'Node1.leaf11', 119)
-        nt.assert_equal(t.Node1.leaf11, 119)
+        assert_equal(t.Node1.leaf11, 119)
         attrsetter(t, 'Leaf3', 39)
-        nt.assert_equal(t.Leaf3, 39)
+        assert_equal(t.Leaf3, 39)
 
     def test_wrong_item(self):
         t = self.tree
@@ -66,7 +66,7 @@ class TestAttrSetter:
         d = self.dummy
         d.multiply()
         attrsetter(d, 'another.name', 'New dummy')
-        nt.assert_equal(d.another.name, 'New dummy')
+        assert_equal(d.another.name, 'New dummy')
         d.another.multiply()
         attrsetter(d, 'another.another.name', 'super New dummy')
-        nt.assert_equal(d.another.another.name, 'super New dummy')
+        assert_equal(d.another.another.name, 'super New dummy')

@@ -27,7 +27,7 @@ def test_add_phase_ramp():
     s = hs.signals.ComplexSignal2D(
         np.exp(1j * (np.indices((3, 3)).sum(axis=0) + 4)))
     s.add_phase_ramp(-1, -1, -4)
-    nt.assert_almost_equal(s.phase.data, 0)
+    assert_almost_equal(s.phase.data, 0)
 
 
 if __name__ == '__main__':

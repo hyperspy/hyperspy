@@ -39,7 +39,7 @@ class TestBinaryOperators:
         s1 = self.s1
         self.s1 += self.s2
         assert_array_equal(self.s1.data, np.ones((2, 3)) * 3)
-        nt.assert_is(s1, self.s1)
+        assert_is(s1, self.s1)
 
     def test_sum_same_shape_signals_not_aligned(self):
         s1 = self.s1
@@ -66,8 +66,8 @@ class TestBinaryOperators:
         assert_array_equal(s1.data, np.ones((3, 2)) * 3)
         s2 += s2
         assert_array_equal(s2.data, np.ones((3, 2)) * 4)
-        nt.assert_is(s1, s1c)
-        nt.assert_is(s2, s2c)
+        assert_is(s1, s1c)
+        assert_is(s2, s2c)
 
     def test_sum_wrong_shape(self):
         s1 = self.s1
@@ -81,7 +81,7 @@ class TestBinaryOperators:
         s1 = s1.transpose(signal_axes=0)
         s = s1 + s2
         assert_array_equal(s.data, 3 * np.ones((2, 3, 2, 3)))
-        nt.assert_equal(s.axes_manager.signal_dimension, 2)
+        assert_equal(s.axes_manager.signal_dimension, 2)
 
     def test_broadcast_missing_sig(self):
         s1 = self.s1
@@ -113,7 +113,7 @@ class TestBinaryOperators:
         print(s1)
         s2 += s1
         assert_array_equal(s2.data, 2 * np.ones((4, 2, 4, 3)))
-        nt.assert_is(s2, s2c)
+        assert_is(s2, s2c)
 
     def test_equal_naxes_diff_shape(self):
         s32 = self.s1  # (3| 2)

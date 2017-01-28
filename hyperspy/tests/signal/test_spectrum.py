@@ -12,9 +12,9 @@ class Test2D:
 
     def test_to_signal2D(self):
         im = self.s.to_signal2D()
-        nt.assert_true(isinstance(im, Signal2D))
-        nt.assert_equal(im.data.shape, self.s.data.T.shape)
-        nt.assert_true(im.data.flags["C_CONTIGUOUS"])
+        assert_true(isinstance(im, Signal2D))
+        assert_equal(im.data.shape, self.s.data.T.shape)
+        assert_true(im.data.flags["C_CONTIGUOUS"])
 
 
 class Test3D:
@@ -24,9 +24,9 @@ class Test3D:
 
     def test_to_signal2D(self):
         im = self.s.to_signal2D()
-        nt.assert_true(isinstance(im, Signal2D))
-        nt.assert_equal(im.data.shape, (4, 2, 3))
-        nt.assert_true(im.data.flags["C_CONTIGUOUS"])
+        assert_true(isinstance(im, Signal2D))
+        assert_equal(im.data.shape, (4, 2, 3))
+        assert_true(im.data.flags["C_CONTIGUOUS"])
 
 
 class Test4D:
@@ -36,6 +36,6 @@ class Test4D:
 
     def test_to_signal2D(self):
         im = self.s.to_signal2D()
-        nt.assert_true(isinstance(im, Signal2D))
-        nt.assert_equal(im.data.shape, (5, 2, 3, 4))
-        nt.assert_true(im.data.flags["C_CONTIGUOUS"])
+        assert_true(isinstance(im, Signal2D))
+        assert_equal(im.data.shape, (5, 2, 3, 4))
+        assert_true(im.data.flags["C_CONTIGUOUS"])

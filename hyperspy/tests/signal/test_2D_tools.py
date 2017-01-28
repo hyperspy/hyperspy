@@ -97,7 +97,7 @@ class TestAlignTools:
         shifts = s.estimate_shift2D()
         print(shifts)
         print(self.ishifts)
-        nt.assert_true(np.allclose(shifts, self.ishifts))
+        assert_true(np.allclose(shifts, self.ishifts))
 
     def test_align(self):
         # Align signal
@@ -106,8 +106,8 @@ class TestAlignTools:
         s.events.data_changed.connect(m.data_changed)
         s.align2D()
         # Compare by broadcasting
-        nt.assert_true(np.all(s.data == self.aligned))
-        nt.assert_true(m.data_changed.called)
+        assert_true(np.all(s.data == self.aligned))
+        assert_true(m.data_changed.called)
 
     def test_align_expand(self):
         s = self.signal
@@ -119,11 +119,11 @@ class TestAlignTools:
         Nnan_data = np.sum(1 * np.isnan(s.data), axis=(1, 2))
         # Due to interpolation, the number of NaNs in the data might
         # be 2 higher (left and right side) than expected
-        nt.assert_true(np.all(Nnan_data - Nnan <= 2))
+        assert_true(np.all(Nnan_data - Nnan <= 2))
 
         # Check alignment is correct
         d_al = s.data[:, ds[0]:-ds[0], ds[1]:-ds[1]]
-        nt.assert_true(np.all(d_al == self.aligned))
+        assert_true(np.all(d_al == self.aligned))
 
 
 def test_add_ramp():

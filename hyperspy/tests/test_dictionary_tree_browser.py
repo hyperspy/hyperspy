@@ -28,7 +28,7 @@ class TestDictionaryBrowser:
             "Node3": {
                 "leaf31": 31},
         })
-        nt.assert_equal(
+        assert_equal(
             {"Node1": {"leaf11": 11,
                        "leaf12": 12,
                        "Node11": {"leaf111": 222,
@@ -48,11 +48,11 @@ class TestDictionaryBrowser:
         s.axes_manager[0].name = 'x'
         s.axes_manager[0].units = 'ly'
         tree.add_dictionary({"_sig_signal name": s._to_dictionary()})
-        nt.assert_is_instance(tree.signal_name, BaseSignal)
+        assert_is_instance(tree.signal_name, BaseSignal)
         np.testing.assert_array_equal(tree.signal_name.data, s.data)
-        nt.assert_dict_equal(tree.signal_name.metadata.as_dictionary(),
+        assert_dict_equal(tree.signal_name.metadata.as_dictionary(),
                              s.metadata.as_dictionary())
-        nt.assert_equal(tree.signal_name.axes_manager._get_axes_dicts(),
+        assert_equal(tree.signal_name.axes_manager._get_axes_dicts(),
                         s.axes_manager._get_axes_dicts())
 
     def test_signal_to_dictionary(self):
@@ -64,7 +64,7 @@ class TestDictionaryBrowser:
         d = tree.as_dictionary()
         np.testing.assert_array_equal(d['_sig_Some name']['data'], s.data)
         d['_sig_Some name']['data'] = 0
-        nt.assert_dict_equal(
+        assert_dict_equal(
             {
                 "Node1": {
                     "leaf11": 11,
@@ -148,20 +148,20 @@ class TestDictionaryBrowser:
 
     def test_get_item(self):
         # Check that it gets all leaf nodes:
-        nt.assert_equal(self.tree.get_item('Node1.leaf11'), 11)
-        nt.assert_equal(self.tree.get_item('Node1.Node11.leaf111'), 111)
-        nt.assert_equal(self.tree.get_item('Node2.leaf21'), 21)
-        nt.assert_equal(self.tree.get_item('Node2.Node21.leaf211'), 211)
+        assert_equal(self.tree.get_item('Node1.leaf11'), 11)
+        assert_equal(self.tree.get_item('Node1.Node11.leaf111'), 111)
+        assert_equal(self.tree.get_item('Node2.leaf21'), 21)
+        assert_equal(self.tree.get_item('Node2.Node21.leaf211'), 211)
 
         # Check that it gets all leaf nodes, also with given default:
-        nt.assert_equal(self.tree.get_item('Node1.leaf11', 44), 11)
-        nt.assert_equal(self.tree.get_item('Node1.Node11.leaf111', 44), 111)
-        nt.assert_equal(self.tree.get_item('Node2.leaf21', 44), 21)
-        nt.assert_equal(self.tree.get_item('Node2.Node21.leaf211', 44), 211)
+        assert_equal(self.tree.get_item('Node1.leaf11', 44), 11)
+        assert_equal(self.tree.get_item('Node1.Node11.leaf111', 44), 111)
+        assert_equal(self.tree.get_item('Node2.leaf21', 44), 21)
+        assert_equal(self.tree.get_item('Node2.Node21.leaf211', 44), 211)
 
         # Check that it returns the default value for various incorrect paths:
-        nt.assert_equal(self.tree.get_item('Node1.leaf33', 44), 44)
-        nt.assert_equal(self.tree.get_item('Node1.leaf11.leaf111', 44), 44)
-        nt.assert_equal(self.tree.get_item('Node1.Node31.leaf311', 44), 44)
-        nt.assert_equal(self.tree.get_item('Node1.Node21.leaf311', 44), 44)
-        nt.assert_equal(self.tree.get_item('.Node1.Node21.leaf311', 44), 44)
+        assert_equal(self.tree.get_item('Node1.leaf33', 44), 44)
+        assert_equal(self.tree.get_item('Node1.leaf11.leaf111', 44), 44)
+        assert_equal(self.tree.get_item('Node1.Node31.leaf311', 44), 44)
+        assert_equal(self.tree.get_item('Node1.Node21.leaf311', 44), 44)
+        assert_equal(self.tree.get_item('.Node1.Node21.leaf311', 44), 44)

@@ -27,8 +27,8 @@ class TestRGBA8:
     def test_touint(self):
         self.im.change_dtype("uint8")
         np.testing.assert_array_equal(self.s.data, self.im.data)
-        nt.assert_equal(len(self.im.axes_manager._axes), 3)
-        nt.assert_equal(self.im.axes_manager.signal_axes[0].name, "RGB index")
+        assert_equal(len(self.im.axes_manager._axes), 3)
+        assert_equal(self.im.axes_manager.signal_axes[0].name, "RGB index")
 
     def test_wrong_bs(self):
         with pytest.raises(AttributeError):
