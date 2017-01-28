@@ -93,7 +93,9 @@ or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_
 
 By default HyperSpy will return a list of all the files loaded. Alternatively,
 HyperSpy can stack the data of the files contain data with exactly the same
-dimensions. If this is not the case an error is raised.
+dimensions. If this is not the case an error is raised. If each file contains
+multiple (N) signals, N stacks will be created. Here, the numbers of signals
+per file must also match, or an error will be raised.
 
 It is also possible to load multiple files with a single command without
 stacking them by passing the `stack=False` argument to the load function, in
@@ -386,7 +388,7 @@ library. See `the library webpage
     >>> # Saving the string 'Random metadata' in a custom tag (ID 65000)
     >>> extratag = [(65000, 's', 1, "Random metadata", False)]
     >>> s.save('file.tif', extratags=extratag)
-    
+ 
     >>> # Saving the string 'Random metadata' from a custom tag (ID 65000)
     >>> s2 = hs.load('file.tif')
     >>> s2.original_metadata['Number_65000']
