@@ -467,6 +467,9 @@ def ser_reader(filename, objects=None, *args, **kwds):
     record_by = guess_record_by(header['DataTypeID'])
     ndim = int(header['NumberDimensions'])
     date, time = None, None
+    if objects is not None:
+        objects_dict = convert_xml_to_dict(objects[0])
+        date, time = _get_date_time(objects_dict.ObjectInfo.AcquireDate)
     if "PositionY" in data.dtype.names and len(data['PositionY']) > 1 and \
             (data['PositionY'][0] == data['PositionY'][1]):
         # The spatial dimensions are stored in F order i.e. X, Y, ...
@@ -522,9 +525,7 @@ def ser_reader(filename, objects=None, *args, **kwds):
 
     elif record_by == 'image':
         if objects is not None:
-            objects_dict = convert_xml_to_dict(objects[0])
             units = _guess_units_from_mode(objects_dict, header)
-            date, time = _get_date_time(objects_dict.ObjectInfo.AcquireDate)
         else:
             units = "meters"
         # Y axis

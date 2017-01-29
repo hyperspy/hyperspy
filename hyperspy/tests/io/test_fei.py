@@ -398,13 +398,12 @@ class TestFEIReader():
         s = load(fname0)
         nt.assert_equal(s.metadata.General.date, "2016-02-21")
         nt.assert_equal(s.metadata.General.time, "17:50:18")
-        nt.assert_equal(s.metadata.General.authors, "ERIC")
 
         fname1 = os.path.join(self.dirpathold,
                               '16x16-line_profile_horizontal_10x1024.emi')
         s = load(fname1)
-        nt.assert_false(s.metadata.has_item('General.date'))
-        nt.assert_false(s.metadata.has_item('General.time'))
+        nt.assert_equal(s.metadata.General.date, "2016-02-22")
+        nt.assert_equal(s.metadata.General.time, "11:50:36")
 
     def test_metadata_TEM(self):
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
