@@ -20,7 +20,7 @@ import struct
 import warnings
 from glob import glob
 import os
-from datetime import datetime
+from dateutil import parser
 import logging
 import xml.etree.ElementTree as ET
 try:
@@ -466,7 +466,7 @@ def ser_reader(filename, objects=None, *args, **kwds):
     header, data = load_ser_file(filename)
     record_by = guess_record_by(header['DataTypeID'])
     ndim = int(header['NumberDimensions'])
-    date, time = "", ""
+    date, time = None, None
     if "PositionY" in data.dtype.names and len(data['PositionY']) > 1 and \
             (data['PositionY'][0] == data['PositionY'][1]):
         # The spatial dimensions are stored in F order i.e. X, Y, ...
@@ -589,19 +589,20 @@ def ser_reader(filename, objects=None, *args, **kwds):
     # We remove the Array key to save memory avoiding duplication
     del header_parameters['Array']
     original_metadata['ser_header_parameters'] = header_parameters
+    metadata = {'General': {
+        'original_filename': os.path.split(filename)[1],
+    },
+        "Signal": {
+        'signal_type': "",
+        'record_by': record_by,
+    },
+    }
+    if date is not None and time is not None:
+        metadata['General']['date'] = date
+        metadata['General']['time'] = time
     dictionary = {
         'data': dc,
-        'metadata': {
-            'General': {
-                'original_filename': os.path.split(filename)[1],
-                'date': date,
-                'time': time,
-            },
-            "Signal": {
-                'signal_type': "",
-                'record_by': record_by,
-            },
-        },
+        'metadata': metadata,
         'axes': axes,
         'original_metadata': original_metadata,
         'mapping': mapping}
@@ -663,7 +664,7 @@ def _get_degree(value):
 
 
 def _get_date_time(value):
-    dt = datetime.strptime(value, "%a %b %d %H:%M:%S %Y")
+    dt = parser.parse(value)
     return dt.date().isoformat(), dt.time().isoformat()
 
 
@@ -689,5 +690,7 @@ mapping = {
     "ObjectInfo.ExperimentalConditions.MicroscopeConditions.Tilt1": (
         "Acquisition_instrument.TEM.tilt_stage",
         _get_degree),
-    "ObjectInfo.ExperimentalDescription.User": ("General.authors", None),
+    "ObjectInfo.ExperimentalDescription.User": (
+        "General.authors",
+        None),
 }
