@@ -1492,6 +1492,9 @@ class BaseSignal(FancySlicing,
         kwds['data'] = data
         self._load_dictionary(kwds)
         self._plot = None
+        self._marker_lines = None
+        self._marker_patches = None
+        self._marker_scatter = None
         self.inav = SpecialSlicersSignal(self, True)
         self.isig = SpecialSlicersSignal(self, False)
         self.events = Events()
@@ -2000,7 +2003,8 @@ class BaseSignal(FancySlicing,
                 [])
         if plot_markers:
             if hasattr(self, 'markers'):
-                self._add_all_markers_to_plot()
+                if len(self.markers) != 0:
+                    self._add_all_markers_to_plot()
     plot.__doc__ %= BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 
     def save(self, filename=None, overwrite=None, extension=None,
@@ -4044,6 +4048,13 @@ class BaseSignal(FancySlicing,
             marker.plot()
 
     def _add_all_markers_to_plot(self):
+        if self._marker_lines is not None:
+            self._marker_lines.remove()
+        if self._marker_patches is not None:
+            self._marker_patches.remove()
+        if self._marker_scatter is not None:
+            self._marker_scatter.remove()
+
         line_segment_list = []
         line_color_list = []
         line_linewidth_list = []
@@ -4085,9 +4096,9 @@ class BaseSignal(FancySlicing,
         point_y_coordinate_list = np.array(point_y_coordinate_list).flatten()
 
 
-        self._plot.signal_plot.ax.add_collection(line_collection)
-        self._plot.signal_plot.ax.add_collection(patch_collection)
-        self._plot.signal_plot.ax.scatter(
+        self._marker_lines = self._plot.signal_plot.ax.add_collection(line_collection)
+        self._marker_patches = self._plot.signal_plot.ax.add_collection(patch_collection)
+        self._marker_scatter = self._plot.signal_plot.ax.scatter(
                 point_x_coordinate_list,
                 point_y_coordinate_list,
                 color=point_color_list,
