@@ -60,6 +60,14 @@ hyperspy.tests.io.test_dm_stackbuilder_plugin module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.io.test_edax module
+----------------------------------
+
+.. automodule:: hyperspy.tests.io.test_edax
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.io.test_emd module
 ---------------------------------
 

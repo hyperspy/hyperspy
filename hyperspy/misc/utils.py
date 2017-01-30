@@ -431,8 +431,9 @@ class DictionaryTreeBrowser(object):
         else:
             return False
 
-    def get_item(self, item_path):
-        """Given a path, return True if it exists.
+    def get_item(self, item_path, default=None):
+        """Given a path, return it's value if it exists, or default
+        value if missing.
 
         The nodes of the path are separated using periods.
 
@@ -441,6 +442,9 @@ class DictionaryTreeBrowser(object):
         item_path : Str
             A string describing the path with each item separated by
             full stops (periods)
+        default :
+            The value to return if the path does not exist.
+
 
         Examples
         --------
@@ -466,11 +470,11 @@ class DictionaryTreeBrowser(object):
             else:
                 item = self[attrib]
                 if isinstance(item, type(self)):
-                    return item.get_item(item_path)
+                    return item.get_item(item_path, default)
                 else:
-                    raise AttributeError("Item not in dictionary browser")
+                    return default
         else:
-            raise AttributeError("Item not in dictionary browser")
+            return default
 
     def __contains__(self, item):
         return self.has_item(item_path=item)

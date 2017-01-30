@@ -1,1 +1,1 @@
-To build the documentation you need to install python-sphinx and numpydoc.
+To build the documentation you need to install python-sphinx and numpydoc and to run the make command in this folder, for example 'make html' to build the whole documentation in html format. See the make command documentation for more details.

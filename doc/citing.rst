@@ -8,7 +8,7 @@ entry
 
 .. code-block:: bibtex
 
-    @misc{francisco_de_la_pena_2016_59293,
+    @misc{francisco_de_la_pena_2017_240660,
       author       = {Francisco de la Peña and
                       Tomas Ostasevicius and
                       Vidar Tonaas Fauske and
@@ -17,29 +17,32 @@ entry
                       Mike Sarahan and
                       Duncan Johnstone and
                       Magnus Nord and
-                      Josh Taillon and
+                      Joshua Taillon and
                       Jan Caron and
+                      Eric Prestat and
+                      Tom Furnival and
                       Katherine E. MacArthur and
                       Alberto Eljarrat and
                       Stefano Mazzucco and
-                      Tom Furnival and
-                      Eric Prestat and
+                      Vadim Migunov and
+                      Thomas Aarholt and
                       Michael Walls and
-                      Gaël Donval and
+                      FWin22 and
                       Ben Martineau and
+                      Gaël Donval and
                       Luiz Fernando Zagonel and
                       Andreas Garmannslund and
-                      Thomas Aarholt and
                       Christoph Gohlke and
-                      iygr},
-      title        = {hyperspy: HyperSpy 1.1},
-      month        = aug,
-      year         = 2016,
-      doi          = {10.5281/zenodo.60697},
-      url          = {http://dx.doi.org/10.5281/zenodo.60697}
-    }
-    
+                      iygr and
+                      Huang-Wei Chang},
+      title        = {hyperspy/hyperspy: HyperSpy 1.1.2},
+      month        = jan,
+      year         = 2017,
+      doi          = {10.5281/zenodo.240660},
+      url          = {https://doi.org/10.5281/zenodo.240660}
+}
+
 or click on the DOI badge below for more citation formats.
 
-.. image:: https://zenodo.org/badge/doi/10.5281/zenodo.60697.svg
-   :target: http://dx.doi.org/10.5281/zenodo.60697
+.. image:: https://zenodo.org/badge/doi/10.5281/zenodo.240660.svg
+   :target: http://dx.doi.org/10.5281/zenodo.240660

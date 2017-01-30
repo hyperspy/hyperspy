@@ -113,6 +113,13 @@ class TestSignal1D:
                   [3.42207377, 4., 4.57792623]])))
             nt.assert_true(m.data_changed.called)
 
+    def test_dtype(self):
+        ss = self.s.deepcopy()
+        for s, t in zip([self.s, ss], [False, True]):
+            s.map(lambda data: np.sqrt(np.complex128(data)),
+                  show_progressbar=None,
+                  parallel=t)
+            nt.assert_is(s.data.dtype, np.dtype('complex128'))
 
 class TestSignal0D:
 
