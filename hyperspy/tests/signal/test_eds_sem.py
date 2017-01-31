@@ -186,7 +186,7 @@ class Test_metadata:
     def test_take_off_angle(self):
         s = self.signal
         assert_allclose(s.get_take_off_angle(), 12.886929785732487,
-                            atol=10**-(sys.float_info.dig - 2))
+                        atol=10**-(sys.float_info.dig - 2))
 
 
 class Test_get_lines_intentisity:

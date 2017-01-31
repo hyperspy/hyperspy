@@ -49,7 +49,7 @@ class TestSpcSpectrum:
         assert_allclose(0, eds_dict['azimuth_angle'])
         assert_allclose(34, eds_dict['elevation_angle'])
         assert_allclose(129.31299, eds_dict['energy_resolution_MnKa'],
-                            atol=1E-5)
+                        atol=1E-5)
         assert_allclose(50.000004, eds_dict['live_time'], atol=1E-6)
 
         # Testing elements
@@ -153,7 +153,7 @@ class TestSpdMap:
         assert_allclose(0, eds_dict['azimuth_angle'])
         assert_allclose(34, eds_dict['elevation_angle'])
         assert_allclose(126.60252, eds_dict['energy_resolution_MnKa'],
-                            atol=1E-5)
+                        atol=1E-5)
         assert_allclose(2621.4399, eds_dict['live_time'], atol=1E-4)
 
         # Testing elements
@@ -202,16 +202,16 @@ class TestSpdMap:
         eds_dict = sem_dict['Detector']['EDS']
 
         assert_allclose(spc_header.azimuth,
-                            eds_dict['azimuth_angle'])
+                        eds_dict['azimuth_angle'])
         assert_allclose(spc_header.detReso,
-                            eds_dict['energy_resolution_MnKa'])
+                        eds_dict['energy_resolution_MnKa'])
         assert_allclose(spc_header.elevation,
-                            eds_dict['elevation_angle'])
+                        eds_dict['elevation_angle'])
         assert_allclose(spc_header.liveTime,
-                            eds_dict['live_time'])
+                        eds_dict['live_time'])
         assert_allclose(spc_header.evPerChan,
-                            self.spd.axes_manager[2].scale * 1000)
+                        self.spd.axes_manager[2].scale * 1000)
         assert_allclose(spc_header.kV,
-                            sem_dict['beam_energy'])
+                        sem_dict['beam_energy'])
         assert_allclose(spc_header.numElem,
-                            len(elements))
+                        len(elements))

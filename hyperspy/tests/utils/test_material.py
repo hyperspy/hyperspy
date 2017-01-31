@@ -80,9 +80,9 @@ def test_mac():
 
 def test_mixture_mac():
     assert_allclose(hs.material.mass_absorption_mixture([50, 50],
-                                                            ['Al', 'Zn'],
-                                                            'Al_Ka'),
-                        2587.4161643905127)
+                                                        ['Al', 'Zn'],
+                                                        'Al_Ka'),
+                    2587.4161643905127)
     elements = ("Cu", "Sn")
     lines = [0.5, 'Al_Ka']
     wt = np.array([[[88.] * 2] * 3, [[12.] * 2] * 3])

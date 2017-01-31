@@ -169,7 +169,7 @@ class TestFitBackground:
     def test_fit_background_B_C(self):
         self.m.fit_background()
         assert_allclose(self.m["Offset"].offset.value,
-                            1)
+                        1)
         assert self.m["B_K"].active
         assert self.m["C_K"].active
 
@@ -177,7 +177,7 @@ class TestFitBackground:
         self.m["B_K"].active = False
         self.m.fit_background()
         assert_allclose(self.m["Offset"].offset.value,
-                            1.71212121212)
+                        1.71212121212)
         assert not self.m["B_K"].active
         assert self.m["C_K"].active
 
@@ -186,6 +186,6 @@ class TestFitBackground:
         self.m["C_K"].active = False
         self.m.fit_background()
         assert_allclose(self.m["Offset"].offset.value,
-                            2.13567839196)
+                        2.13567839196)
         assert not self.m["B_K"].active
         assert not self.m["C_K"].active

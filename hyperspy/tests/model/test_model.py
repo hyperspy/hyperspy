@@ -624,9 +624,9 @@ class TestModelFitBinned:
     def test_fit_neldermead_ml(self):
         self.m.fit(fitter="Nelder-Mead", method="ml")
         np.testing.assert_allclose(self.m[0].A.value, 10001.39613936,
-                                       atol=1E-3)
+                                   atol=1E-3)
         np.testing.assert_allclose(self.m[0].centre.value, -0.104151206314,
-                                       atol=1E-6)
+                                   atol=1E-6)
         np.testing.assert_allclose(self.m[0].sigma.value, 2.00053642434)
 
     def test_fit_leastsq(self):
@@ -883,9 +883,9 @@ class TestModelSignalVariance:
     def test_std1_red_chisq(self):
         self.m.multifit(fitter="leastsq", method="ls", show_progressbar=None)
         np.testing.assert_allclose(self.m.red_chisq.data[0],
-                                       0.79693355673230915)
+                                   0.79693355673230915)
         np.testing.assert_allclose(self.m.red_chisq.data[1],
-                                       0.91453032901427167)
+                                   0.91453032901427167)
 
 
 class TestMultifit:

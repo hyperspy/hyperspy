@@ -248,13 +248,13 @@ def _test_read_unit_from_dm(import_local_tifffile=False):
         assert s2.axes_manager[0].units == 'micron'
         assert s2.axes_manager[1].units == 'micron'
         assert_allclose(s2.axes_manager[0].scale, s.axes_manager[0].scale,
-                            atol=1E-5)
+                        atol=1E-5)
         assert_allclose(s2.axes_manager[1].scale, s.axes_manager[1].scale,
-                            atol=1E-5)
+                        atol=1E-5)
         assert_allclose(s2.axes_manager[0].offset, s.axes_manager[0].offset,
-                            atol=1E-5)
+                        atol=1E-5)
         assert_allclose(s2.axes_manager[1].offset, s.axes_manager[1].offset,
-                            atol=1E-5)
+                        atol=1E-5)
 
 
 def test_write_scale_unit():

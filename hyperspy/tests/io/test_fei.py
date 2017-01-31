@@ -325,21 +325,21 @@ class TestFEIReader():
         assert_allclose(s0.axes_manager[0].scale, 6.28183, atol=1E-5)
         assert s0.axes_manager[0].units == 'nm'
         assert_allclose(s0.metadata.Acquisition_instrument.TEM.magnification,
-                            19500.0, atol=1E-4)
+                        19500.0, atol=1E-4)
         # TEM diffraction
         fname1 = os.path.join(self.dirpathold, '64x64_diffraction_acquire.emi')
         s1 = load(fname1)
         assert_allclose(s1.axes_manager[0].scale, 0.10157, atol=1E-4)
         assert s1.axes_manager[0].units == '1/nm'
         assert_allclose(s1.metadata.Acquisition_instrument.TEM.camera_length,
-                            490.0, atol=1E-4)
+                        490.0, atol=1E-4)
         # STEM diffraction
         fname2 = os.path.join(self.dirpathold, '16x16_STEM_BF_DF_acquire.emi')
         s2 = load(fname2)
         assert s2[0].axes_manager[0].units == 'nm'
         assert_allclose(s2[0].axes_manager[0].scale, 21.5100, atol=1E-4)
         assert_allclose(s2[0].metadata.Acquisition_instrument.TEM.magnification,
-                            10000.0, atol=1E-4)
+                        10000.0, atol=1E-4)
 
     def test_guess_units_from_mode(self):
         from hyperspy.io_plugins.fei import _guess_units_from_mode, \

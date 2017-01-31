@@ -177,11 +177,11 @@ def test_different_x_y_scale_units():
         signal.save(save_path, overwrite=True)
         sig_reload = hs.load(save_path)
         assert_allclose(sig_reload.axes_manager[0].scale, 50.0,
-                            atol=1E-2)
+                        atol=1E-2)
         assert_allclose(sig_reload.axes_manager[1].scale, 64.0,
-                            atol=1E-2)
+                        atol=1E-2)
         assert_allclose(sig_reload.axes_manager[2].scale, 0.0160616,
-                            atol=1E-5)
+                        atol=1E-5)
     finally:
         # Delete reference to close memmap file!
         del sig_reload
