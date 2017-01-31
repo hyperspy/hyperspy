@@ -221,7 +221,7 @@ class TestCaseHologramImage(object):
         # a. Mismatch of navigation dimensions of object and reference
         # holograms, except if reference hologram ndim=0
         with pytest.raises(ValueError):
-            self.holo_image3.reconstruct_phase(self.ref_image3.inav[ 0, :])
+            self.holo_image3.reconstruct_phase(self.ref_image3.inav[0, :])
         reference4a = self.ref_image3.inav[0, :]
         reference4a.set_signal_type('signal2d')
         with pytest.raises(ValueError):
