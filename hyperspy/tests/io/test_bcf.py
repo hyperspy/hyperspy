@@ -21,7 +21,6 @@ np_file = ['P45_16bit.npy', 'P45_16bit_ds.npy']
 my_path = os.path.dirname(__file__)
 
 
-
 def test_load_16bit():
     lxml = pytest.importorskip("lxml")
     # test bcf from hyperspy load function level

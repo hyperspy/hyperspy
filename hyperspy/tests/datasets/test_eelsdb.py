@@ -2,12 +2,14 @@ import pytest
 import requests
 from hyperspy.misc.eels.eelsdb import eelsdb
 
+
 def eelsdb_down():
     try:
         request = requests.get('http://api.eelsdb.eu',)
         return False
     except requests.exceptions.ConnectionError:
         return True
+
 
 @pytest.mark.skipif(eelsdb_down(), reason="Unable to connect to EELSdb")
 def test_eelsdb_eels():

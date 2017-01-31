@@ -41,6 +41,7 @@ class TestBSS1D:
         mixing_matrix = np.random.random((100, 3))
         self.s = Signal1D(np.dot(mixing_matrix, ics))
         self.s.decomposition()
+
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_on_loadings(self):
         self.s.blind_source_separation(
