@@ -1,13 +1,16 @@
-from nose.plugins.skip import SkipTest
+import pytest
 import requests
 from hyperspy.misc.eels.eelsdb import eelsdb
 
-
-def test_eelsdb_eels():
+def eelsdb_down():
     try:
         request = requests.get('http://api.eelsdb.eu',)
+        return False
     except requests.exceptions.ConnectionError:
-        raise SkipTest
+        return True
+
+@pytest.mark.skipif(eelsdb_down(), reason="Unable to connect to EELSdb")
+def test_eelsdb_eels():
     ss = eelsdb(
         title="Boron Nitride Multiwall Nanotube",
         formula="BN",
@@ -37,11 +40,8 @@ def test_eelsdb_eels():
     assert md.Acquisition_instrument.TEM.microscope == "STEM-VG"
 
 
+@pytest.mark.skipif(eelsdb_down(), reason="Unable to connect to EELSdb")
 def test_eelsdb_xas():
-    try:
-        request = requests.get('http://api.eelsdb.eu',)
-    except requests.exceptions.ConnectionError:
-        raise SkipTest
     ss = eelsdb(
         spectrum_type="xrayabs", max_n=1,)
     assert len(ss) == 1

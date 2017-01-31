@@ -1,4 +1,3 @@
-from numpy.testing import *
 import numpy as N
 import copy
 

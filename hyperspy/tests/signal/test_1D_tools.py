@@ -18,14 +18,8 @@
 from unittest import mock
 
 import numpy as np
-
-from nose.plugins.skip import SkipTest
 from scipy.signal import savgol_filter
-try:
-    from statsmodels.nonparametric.smoothers_lowess import lowess
-    skip_lowess = False
-except:
-    skip_lowess = True
+import pytest
 
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 import hyperspy.api as hs
@@ -269,8 +263,8 @@ class TestSmoothing:
         self.s.add_gaussian_noise(0.1)
 
     def test_lowess(self):
-        if skip_lowess:
-            raise SkipTest
+        pytest.importorskip("statsmodels")
+        from statsmodels.nonparametric.smoothers_lowess import lowess
         frac = 0.5
         it = 1
         data = self.s.data.astype('float')

@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from nose.plugins.skip import SkipTest
 
 from hyperspy import signals
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
@@ -203,14 +202,13 @@ class TestReturnInfo:
             assert self.s.decomposition(
                 algorithm=algorithm, return_info=True, output_dimension=1) is None
 
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_decomposition_supported_return_true(self):
         for algorithm in ["RPCA_GoDec", "ORPCA"]:
             assert self.s.decomposition(
                 algorithm=algorithm,
                 return_info=True,
                 output_dimension=1) is not None
-        if not sklearn_installed:
-            raise SkipTest
         for algorithm in ["sklearn_pca", "nmf",
                           "sparse_pca", "mini_batch_sparse_pca", ]:
             assert self.s.decomposition(
@@ -218,14 +216,13 @@ class TestReturnInfo:
                 return_info=True,
                 output_dimension=1) is not None
 
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_decomposition_supported_return_false(self):
         for algorithm in ["RPCA_GoDec", "ORPCA"]:
             assert self.s.decomposition(
                 algorithm=algorithm,
                 return_info=False,
                 output_dimension=1) is None
-        if not sklearn_installed:
-            raise SkipTest
         for algorithm in ["sklearn_pca", "nmf",
                           "sparse_pca", "mini_batch_sparse_pca", ]:
             assert self.s.decomposition(
