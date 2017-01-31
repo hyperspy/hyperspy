@@ -166,7 +166,7 @@ def test_read_EELS_metadata():
         md.Acquisition_instrument.TEM.Detector.EELS.collection_angle, 0.0)
     assert_allclose(
         md.Acquisition_instrument.TEM.Detector.EELS.exposure,
-        0.00349999)
+        0.0035)
     assert_allclose(
         md.Acquisition_instrument.TEM.Detector.EELS.frame_number, 50)
     assert (

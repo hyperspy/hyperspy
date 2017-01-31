@@ -3,6 +3,7 @@ from unittest import mock
 
 import nose.tools as nt
 import numpy as np
+import pytest
 
 import hyperspy.api as hs
 from hyperspy.events import Event
@@ -75,7 +76,8 @@ class TestInteractive():
         # Check that data is no longer comparable
         assert ss.data.shape != np.sum(s.data, axis=1).shape
         # Check that normal event raises an exception due to the invalid shape
-        assert_raises(ValueError, e1.trigger)
+        with pytest.raises(ValueError):
+            e1.trigger()
         # Check that recompute event fixes issue
         e2.trigger()
         np.testing.assert_equal(ss.data, np.sum(s.data, axis=1))

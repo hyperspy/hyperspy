@@ -644,7 +644,8 @@ class TestModelFitBinned:
     def test_fit_odr(self):
         self.m.fit(fitter="odr")
         np.testing.assert_allclose(self.m[0].A.value, 9976.14531979, 3)
-        np.testing.assert_allclose(self.m[0].centre.value, -0.110610724054)
+        np.testing.assert_allclose(self.m[0].centre.value, -0.110610724054,
+                                   atol=1e-7)
         np.testing.assert_allclose(self.m[0].sigma.value, 1.98380709939)
 
     def test_fit_leastsq_grad(self):
@@ -662,7 +663,8 @@ class TestModelFitBinned:
     def test_fit_odr_grad(self):
         self.m.fit(fitter="odr", grad=True)
         np.testing.assert_allclose(self.m[0].A.value, 9976.14531979, 3)
-        np.testing.assert_allclose(self.m[0].centre.value, -0.110610724054)
+        np.testing.assert_allclose(self.m[0].centre.value, -0.110610724054,
+                                   atol=1e-7)
         np.testing.assert_allclose(self.m[0].sigma.value, 1.98380709939)
 
     def test_fit_bounded_mpfit(self):

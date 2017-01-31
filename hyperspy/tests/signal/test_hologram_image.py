@@ -20,6 +20,7 @@ import numpy as np
 
 import numpy.testing as nt
 from numpy.testing import assert_allclose
+import pytest
 
 import hyperspy.api as hs
 from scipy.interpolate import interp2d
@@ -169,8 +170,8 @@ class TestCaseHologramImage(object):
         phase_new_crop1 = phase_new1[x_start:x_stop, x_start:x_stop]
         phase_ref_crop0 = self.phase_ref2[0, x_start:x_stop, x_start:x_stop]
         phase_ref_crop1 = self.phase_ref2[1, x_start:x_stop, x_start:x_stop]
-        assert_allclose(phase_new_crop0, phase_ref_crop0, atol=1E-2)
-        assert_allclose(phase_new_crop1, phase_ref_crop1, atol=1E-2)
+        assert_allclose(phase_new_crop0, phase_ref_crop0, atol=0.05)
+        assert_allclose(phase_new_crop1, phase_ref_crop1, atol=0.01)
 
         # 3. Testing reconstruction with multidimensional images (3, 2| 512,
         # 768) using 1d image as a reference:
@@ -191,7 +192,7 @@ class TestCaseHologramImage(object):
         assert_allclose(
             phase3_new_crop.data,
             phase3_ref_crop,
-            atol=1E-2)
+            atol=2E-2)
 
         # 3a. Testing reconstruction with input parameters in 'nm' and with multiple parameter input,
         # but reference ndim=0:
@@ -214,59 +215,45 @@ class TestCaseHologramImage(object):
         assert_allclose(
             phase3a_new_crop.data,
             phase3_ref_crop,
-            atol=1E-2)
+            atol=2E-2)
 
         # 4. Testing raises:
         # a. Mismatch of navigation dimensions of object and reference
         # holograms, except if reference hologram ndim=0
-        assert_raises(
-            ValueError,
-            self.holo_image3.reconstruct_phase,
-            self.ref_image3.inav[
-                0,
-                :])
+        with pytest.raises(ValueError):
+            self.holo_image3.reconstruct_phase(self.ref_image3.inav[ 0, :])
         reference4a = self.ref_image3.inav[0, :]
         reference4a.set_signal_type('signal2d')
-        assert_raises(
-            ValueError,
-            self.holo_image3.reconstruct_phase,
-            reference=reference4a)
+        with pytest.raises(ValueError):
+            self.holo_image3.reconstruct_phase(reference=reference4a)
         #   b. Mismatch of signal shapes of object and reference holograms
-        assert_raises(ValueError, self.holo_image3.reconstruct_phase,
-                      self.ref_image3.inav[:, :].isig[y_start:y_stop, x_start:x_stop])
+        with pytest.raises(ValueError):
+            self.holo_image3.reconstruct_phase(
+                self.ref_image3.inav[:, :].isig[y_start:y_stop, x_start:x_stop])
 
         #   c. Mismatch of signal shape of sb_position
         sb_position_mismatched = hs.signals.Signal2D(
             np.arange(9).reshape((3, 3)))
-        assert_raises(
-            ValueError,
-            self.holo_image3.reconstruct_phase,
-            sb_position=sb_position_mismatched)
-
+        with pytest.raises(ValueError):
+            self.holo_image3.reconstruct_phase(
+                sb_position=sb_position_mismatched)
         #   d. Mismatch of navigation dimensions of reconstruction parameters
         sb_position_mismatched = hs.signals.Signal1D(
             np.arange(16).reshape((8, 2)))
         sb_size_mismatched = hs.signals.BaseSignal(np.arange(9)).T
         sb_smoothness_mismatched = hs.signals.BaseSignal(np.arange(9)).T
-        assert_raises(
-            ValueError,
-            self.holo_image3.reconstruct_phase,
-            sb_position=sb_position_mismatched)
-        assert_raises(
-            ValueError,
-            self.holo_image3.reconstruct_phase,
-            sb_size=sb_size_mismatched)
-        assert_raises(
-            ValueError,
-            self.holo_image3.reconstruct_phase,
-            sb_smoothness=sb_smoothness_mismatched)
+        with pytest.raises(ValueError):
+            self.holo_image3.reconstruct_phase(
+                sb_position=sb_position_mismatched)
+        with pytest.raises(ValueError):
+            self.holo_image3.reconstruct_phase(sb_size=sb_size_mismatched)
+        with pytest.raises(ValueError):
+            self.holo_image3.reconstruct_phase(
+                sb_smoothness=sb_smoothness_mismatched)
 
         #   e. Beam energy is not assigned, while 'mrad' units selected
-        assert_raises(
-            AttributeError,
-            self.holo_image3.reconstruct_phase,
-            sb_size=40,
-            sb_unit='mrad')
+        with pytest.raises(AttributeError):
+            self.holo_image3.reconstruct_phase(sb_size=40, sb_unit='mrad')
 
 if __name__ == '__main__':
     import nose
