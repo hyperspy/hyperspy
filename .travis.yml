@@ -41,19 +41,19 @@ install:
 script:
   - if [[ $MINIMAL_ENV == 'False' ]]; then
       python setup.py build_ext --inplace;
-      pip install coverage coveralls;
-      python continuous_integration/nosetest.py --with-coverage hyperspy.tests;
+      pip install coverage coveralls pytest-cov;
+      python continuous_integration/nosetest.py --cov-report= --cov=hyperspy hyperspy.tests;
     else python3 setup.py build_ext --inplace;
       echo "available installed python libraries (pip3 list):"
       pip3 list;
-      pip3 install coverage coveralls;
-      python3 continuous_integration/nosetest.py --with-coverage hyperspy.tests;
+      pip3 install coverage coveralls pytest-cov;
+      python3 continuous_integration/nosetest.py --cov-report= --cov=hyperspy hyperspy.tests;
     fi
 
 after_success:
 - coveralls
 - if [[ $MINIMAL_ENV == 'False' ]]; then
-    if [[ $TRAVIS_OS_NAME == 'osx' ]]; then 
+    if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
       python setup.py bdist_wheel;
     else python setup.py sdist;
     fi;
