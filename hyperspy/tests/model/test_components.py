@@ -1,5 +1,6 @@
 import numpy as np
 import nose.tools as nt
+from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 from hyperspy.models.model1d import Model1D
@@ -27,8 +28,8 @@ class TestPowerLaw:
                               None,
                               None,
                               only_current=True)
-        assert_almost_equal(g.A.value, 10.084913947965161)
-        assert_almost_equal(g.r.value, 4.0017676988807409)
+        assert_allclose(g.A.value, 10.084913947965161)
+        assert_allclose(g.r.value, 4.0017676988807409)
 
     def test_estimate_parameters_unbinned_only_current(self):
         self.m.signal.metadata.Signal.binned = False
@@ -39,8 +40,8 @@ class TestPowerLaw:
                               None,
                               None,
                               only_current=True)
-        assert_almost_equal(g.A.value, 10.064378823244837)
-        assert_almost_equal(g.r.value, 4.0017522876514304)
+        assert_allclose(g.A.value, 10.064378823244837)
+        assert_allclose(g.r.value, 4.0017522876514304)
 
     def test_estimate_parameters_binned(self):
         self.m.signal.metadata.Signal.binned = True
@@ -51,8 +52,8 @@ class TestPowerLaw:
                               None,
                               None,
                               only_current=False)
-        assert_almost_equal(g.A.value, 10.084913947965161)
-        assert_almost_equal(g.r.value, 4.0017676988807409)
+        assert_allclose(g.A.value, 10.084913947965161)
+        assert_allclose(g.r.value, 4.0017676988807409)
 
     def test_estimate_parameters_unbinned(self):
         self.m.signal.metadata.Signal.binned = False
@@ -63,16 +64,16 @@ class TestPowerLaw:
                               None,
                               None,
                               only_current=False)
-        assert_almost_equal(g.A.value, 10.064378823244837)
-        assert_almost_equal(g.r.value, 4.0017522876514304)
+        assert_allclose(g.A.value, 10.064378823244837)
+        assert_allclose(g.r.value, 4.0017522876514304)
         # Test that it all works when calling it with a different signal
         s2 = hs.stack((s, s))
         g.estimate_parameters(s2,
                               None,
                               None,
                               only_current=False)
-        assert_almost_equal(g.A.map["values"][1], 10.064378823244837)
-        assert_almost_equal(g.r.map["values"][0], 4.0017522876514304)
+        assert_allclose(g.A.map["values"][1], 10.064378823244837)
+        assert_allclose(g.r.map["values"][0], 4.0017522876514304)
 
 
 class TestOffset:
@@ -94,7 +95,7 @@ class TestOffset:
                               None,
                               None,
                               only_current=True)
-        assert_almost_equal(g.offset.value, 10)
+        assert_allclose(g.offset.value, 10)
 
     def test_estimate_parameters_unbinned(self):
         self.m.signal.metadata.Signal.binned = False
@@ -105,7 +106,7 @@ class TestOffset:
                               None,
                               None,
                               only_current=True)
-        assert_almost_equal(g.offset.value, 10)
+        assert_allclose(g.offset.value, 10)
 
 
 class TestPolynomial:
@@ -144,9 +145,9 @@ class TestPolynomial:
                               None,
                               None,
                               only_current=True)
-        assert_almost_equal(g.coefficients.value[0], 0.5)
-        assert_almost_equal(g.coefficients.value[1], 2)
-        assert_almost_equal(g.coefficients.value[2], 3)
+        assert_allclose(g.coefficients.value[0], 0.5)
+        assert_allclose(g.coefficients.value[1], 2)
+        assert_allclose(g.coefficients.value[2], 3)
 
     def test_estimate_parameters_unbinned(self):
         self.m.signal.metadata.Signal.binned = False
@@ -157,9 +158,9 @@ class TestPolynomial:
                               None,
                               None,
                               only_current=True)
-        assert_almost_equal(g.coefficients.value[0], 0.5)
-        assert_almost_equal(g.coefficients.value[1], 2)
-        assert_almost_equal(g.coefficients.value[2], 3)
+        assert_allclose(g.coefficients.value[0], 0.5)
+        assert_allclose(g.coefficients.value[1], 2)
+        assert_allclose(g.coefficients.value[2], 3)
 
     def test_2d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
@@ -204,9 +205,9 @@ class TestGaussian:
                               None,
                               None,
                               only_current=True)
-        assert_almost_equal(g.sigma.value, 0.5)
-        assert_almost_equal(g.A.value, 2)
-        assert_almost_equal(g.centre.value, 1)
+        assert_allclose(g.sigma.value, 0.5)
+        assert_allclose(g.A.value, 2)
+        assert_allclose(g.centre.value, 1)
 
     def test_estimate_parameters_unbinned(self):
         self.m.signal.metadata.Signal.binned = False
@@ -217,9 +218,9 @@ class TestGaussian:
                               None,
                               None,
                               only_current=True)
-        assert_almost_equal(g.sigma.value, 0.5)
-        assert_almost_equal(g.A.value, 2)
-        assert_almost_equal(g.centre.value, 1)
+        assert_allclose(g.sigma.value, 0.5)
+        assert_allclose(g.A.value, 2)
+        assert_allclose(g.centre.value, 1)
 
 
 class TestExpression:
@@ -244,17 +245,17 @@ class TestExpression:
         assert self.g.function(0) == 1
 
     def test_grad_height(self):
-        assert_almost_equal(
+        assert_allclose(
             self.g.grad_height(2),
             1.5258789062500007e-05)
 
     def test_grad_x0(self):
-        assert_almost_equal(
+        assert_allclose(
             self.g.grad_x0(2),
             0.00016922538587889289)
 
     def test_grad_fwhm(self):
-        assert_almost_equal(
+        assert_allclose(
             self.g.grad_fwhm(2),
             0.00033845077175778578)
 

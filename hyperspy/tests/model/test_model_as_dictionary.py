@@ -19,6 +19,7 @@
 import numpy as np
 import nose.tools as nt
 import pytest
+from numpy.testing import assert_allclose
 
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.component import Parameter, Component
@@ -222,9 +223,9 @@ class TestModelDictionary:
         d = m.as_dictionary()
 
         print(d['low_loss'])
-        np.testing.assert_almost_equal(m.low_loss.data, d['low_loss']['data'])
-        np.testing.assert_almost_equal(m.chisq.data, d['chisq.data'])
-        np.testing.assert_almost_equal(m.dof.data, d['dof.data'])
+        np.testing.assert_allclose(m.low_loss.data, d['low_loss']['data'])
+        np.testing.assert_allclose(m.chisq.data, d['chisq.data'])
+        np.testing.assert_allclose(m.dof.data, d['dof.data'])
         np.testing.assert_equal(
             d['free_parameters_boundaries'],
             m.free_parameters_boundaries)

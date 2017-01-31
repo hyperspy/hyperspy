@@ -5,6 +5,7 @@ import numpy as np
 import scipy
 import nose.tools as nt
 import pytest
+from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 from hyperspy.misc.utils import slugify
@@ -82,14 +83,14 @@ class TestModelCallMethod:
         m[1].active = False
         r1 = m()
         r2 = m(onlyactive=True)
-        np.testing.assert_almost_equal(m[0].function(0) * 2, r1)
-        np.testing.assert_almost_equal(m[0].function(0), r2)
+        np.testing.assert_allclose(m[0].function(0) * 2, r1)
+        np.testing.assert_allclose(m[0].function(0), r2)
 
         m.convolved = True
         r1 = m(non_convolved=True)
         r2 = m(non_convolved=True, onlyactive=True)
-        np.testing.assert_almost_equal(m[0].function(0) * 2, r1)
-        np.testing.assert_almost_equal(m[0].function(0), r2)
+        np.testing.assert_allclose(m[0].function(0) * 2, r1)
+        np.testing.assert_allclose(m[0].function(0), r2)
 
     def test_call_method_with_convolutions(self):
         m = self.model
@@ -106,8 +107,8 @@ class TestModelCallMethod:
 
         r1 = m()
         r2 = m(onlyactive=True)
-        np.testing.assert_almost_equal(m[0].function(0) * 2.3, r1)
-        np.testing.assert_almost_equal(m[0].function(0) * 1.3, r2)
+        np.testing.assert_allclose(m[0].function(0) * 2.3, r1)
+        np.testing.assert_allclose(m[0].function(0) * 1.3, r2)
 
     def test_call_method_binned(self):
         m = self.model
@@ -116,7 +117,7 @@ class TestModelCallMethod:
         m.signal.metadata.Signal.binned = True
         m.signal.axes_manager[-1].scale = 0.3
         r1 = m()
-        np.testing.assert_almost_equal(m[0].function(0) * 0.3, r1)
+        np.testing.assert_allclose(m[0].function(0) * 0.3, r1)
 
 
 class TestModelPlotCall:
@@ -546,22 +547,22 @@ class TestModel1D:
         p.coefficients.bmin = 2
         p.coefficients.bmax = 3
         m.ensure_parameters_in_bounds()
-        np.testing.assert_almost_equal(g1.A.value, 3.)
-        np.testing.assert_almost_equal(g2.A.value, 1.)
-        np.testing.assert_almost_equal(g3.A.value, -3.)
-        np.testing.assert_almost_equal(g4.A.value, 300.)
+        np.testing.assert_allclose(g1.A.value, 3.)
+        np.testing.assert_allclose(g2.A.value, 1.)
+        np.testing.assert_allclose(g3.A.value, -3.)
+        np.testing.assert_allclose(g4.A.value, 300.)
 
-        np.testing.assert_almost_equal(g1.centre.value, 300.)
-        np.testing.assert_almost_equal(g2.centre.value, 1.)
-        np.testing.assert_almost_equal(g3.centre.value, 15.)
-        np.testing.assert_almost_equal(g4.centre.value, 0)
+        np.testing.assert_allclose(g1.centre.value, 300.)
+        np.testing.assert_allclose(g2.centre.value, 1.)
+        np.testing.assert_allclose(g3.centre.value, 15.)
+        np.testing.assert_allclose(g4.centre.value, 0)
 
-        np.testing.assert_almost_equal(g1.sigma.value, 15.)
-        np.testing.assert_almost_equal(g2.sigma.value, 3.)
-        np.testing.assert_almost_equal(g3.sigma.value, 0.)
-        np.testing.assert_almost_equal(g4.sigma.value, 1)
+        np.testing.assert_allclose(g1.sigma.value, 15.)
+        np.testing.assert_allclose(g2.sigma.value, 3.)
+        np.testing.assert_allclose(g3.sigma.value, 0.)
+        np.testing.assert_allclose(g4.sigma.value, 1)
 
-        np.testing.assert_almost_equal(p.coefficients.value, (2, 2, 3, 3))
+        np.testing.assert_allclose(p.coefficients.value, (2, 2, 3, 3))
 
 
 class TestModel2D:
@@ -591,10 +592,10 @@ class TestModel2D:
                                               sigma_y=1.5)
         m.append(gt)
         m.fit()
-        np.testing.assert_almost_equal(gt.centre_x.value, -5.)
-        np.testing.assert_almost_equal(gt.centre_y.value, -5.)
-        np.testing.assert_almost_equal(gt.sigma_x.value, 1.)
-        np.testing.assert_almost_equal(gt.sigma_y.value, 2.)
+        np.testing.assert_allclose(gt.centre_x.value, -5.)
+        np.testing.assert_allclose(gt.centre_y.value, -5.)
+        np.testing.assert_allclose(gt.sigma_x.value, 1.)
+        np.testing.assert_allclose(gt.sigma_y.value, 2.)
 
 
 class TestModelFitBinned:
@@ -616,105 +617,105 @@ class TestModelFitBinned:
 
     def test_fit_neldermead_leastsq(self):
         self.m.fit(fitter="Nelder-Mead", method="ls")
-        np.testing.assert_almost_equal(self.m[0].A.value, 9976.14519369)
-        np.testing.assert_almost_equal(self.m[0].centre.value, -0.110610743285)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 1.98380705455)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14519369)
+        np.testing.assert_allclose(self.m[0].centre.value, -0.110610743285)
+        np.testing.assert_allclose(self.m[0].sigma.value, 1.98380705455)
 
     def test_fit_neldermead_ml(self):
         self.m.fit(fitter="Nelder-Mead", method="ml")
-        np.testing.assert_almost_equal(self.m[0].A.value, 10001.39613936,
-                                       decimal=3)
-        np.testing.assert_almost_equal(self.m[0].centre.value, -0.104151206314,
-                                       decimal=6)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.00053642434)
+        np.testing.assert_allclose(self.m[0].A.value, 10001.39613936,
+                                       atol=1E-3)
+        np.testing.assert_allclose(self.m[0].centre.value, -0.104151206314,
+                                       atol=1E-6)
+        np.testing.assert_allclose(self.m[0].sigma.value, 2.00053642434)
 
     def test_fit_leastsq(self):
         self.m.fit(fitter="leastsq")
-        np.testing.assert_almost_equal(self.m[0].A.value, 9976.14526082, 1)
-        np.testing.assert_almost_equal(self.m[0].centre.value, -0.110610727064)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 1.98380707571, 5)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14526082, 1)
+        np.testing.assert_allclose(self.m[0].centre.value, -0.110610727064)
+        np.testing.assert_allclose(self.m[0].sigma.value, 1.98380707571, 5)
 
     def test_fit_mpfit(self):
         self.m.fit(fitter="mpfit")
-        np.testing.assert_almost_equal(self.m[0].A.value, 9976.14526286, 5)
-        np.testing.assert_almost_equal(self.m[0].centre.value, -0.110610718444)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 1.98380707614)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14526286, 5)
+        np.testing.assert_allclose(self.m[0].centre.value, -0.110610718444)
+        np.testing.assert_allclose(self.m[0].sigma.value, 1.98380707614)
 
     def test_fit_odr(self):
         self.m.fit(fitter="odr")
-        np.testing.assert_almost_equal(self.m[0].A.value, 9976.14531979, 3)
-        np.testing.assert_almost_equal(self.m[0].centre.value, -0.110610724054)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 1.98380709939)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14531979, 3)
+        np.testing.assert_allclose(self.m[0].centre.value, -0.110610724054)
+        np.testing.assert_allclose(self.m[0].sigma.value, 1.98380709939)
 
     def test_fit_leastsq_grad(self):
         self.m.fit(fitter="leastsq", grad=True)
-        np.testing.assert_almost_equal(self.m[0].A.value, 9976.14526084)
-        np.testing.assert_almost_equal(self.m[0].centre.value, -0.11061073306)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 1.98380707552)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14526084)
+        np.testing.assert_allclose(self.m[0].centre.value, -0.11061073306)
+        np.testing.assert_allclose(self.m[0].sigma.value, 1.98380707552)
 
     def test_fit_mpfit_grad(self):
         self.m.fit(fitter="mpfit", grad=True)
-        np.testing.assert_almost_equal(self.m[0].A.value, 9976.14526084)
-        np.testing.assert_almost_equal(self.m[0].centre.value, -0.11061073306)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 1.98380707552)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14526084)
+        np.testing.assert_allclose(self.m[0].centre.value, -0.11061073306)
+        np.testing.assert_allclose(self.m[0].sigma.value, 1.98380707552)
 
     def test_fit_odr_grad(self):
         self.m.fit(fitter="odr", grad=True)
-        np.testing.assert_almost_equal(self.m[0].A.value, 9976.14531979, 3)
-        np.testing.assert_almost_equal(self.m[0].centre.value, -0.110610724054)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 1.98380709939)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14531979, 3)
+        np.testing.assert_allclose(self.m[0].centre.value, -0.110610724054)
+        np.testing.assert_allclose(self.m[0].sigma.value, 1.98380709939)
 
     def test_fit_bounded_mpfit(self):
         self.m[0].centre.bmin = 0.5
         # self.m[0].bounded = True
         self.m.fit(fitter="mpfit", bounded=True)
-        np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 4)
-        np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_allclose(self.m[0].centre.value, 0.5)
+        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
     def test_fit_bounded_leastsq(self):
         pytest.importorskip("scipy", minversion="0.17")
         self.m[0].centre.bmin = 0.5
         # self.m[0].bounded = True
         self.m.fit(fitter="leastsq", bounded=True)
-        np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 3)
-        np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 3)
+        np.testing.assert_allclose(self.m[0].centre.value, 0.5)
+        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
     def test_fit_bounded_lbfgs(self):
         self.m[0].centre.bmin = 0.5
         # self.m[0].bounded = True
         self.m.fit(fitter="L-BFGS-B", bounded=True, grad=True)
-        np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 4)
-        np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_allclose(self.m[0].centre.value, 0.5)
+        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
     def test_fit_bounded_bad_starting_values_mpfit(self):
         self.m[0].centre.bmin = 0.5
         self.m[0].centre.value = -1
         # self.m[0].bounded = True
         self.m.fit(fitter="mpfit", bounded=True)
-        np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 4)
-        np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_allclose(self.m[0].centre.value, 0.5)
+        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
     def test_fit_bounded_bad_starting_values_leastsq(self):
         self.m[0].centre.bmin = 0.5
         self.m[0].centre.value = -1
         # self.m[0].bounded = True
         self.m.fit(fitter="leastsq", bounded=True)
-        np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 3)
-        np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 3)
+        np.testing.assert_allclose(self.m[0].centre.value, 0.5)
+        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
     def test_fit_bounded_bad_starting_values_lbfgs(self):
         self.m[0].centre.bmin = 0.5
         self.m[0].centre.value = -1
         # self.m[0].bounded = True
         self.m.fit(fitter="L-BFGS-B", bounded=True, grad=True)
-        np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 4)
-        np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_allclose(self.m[0].centre.value, 0.5)
+        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
     def test_wrong_method(self):
         with pytest.raises(ValueError):
@@ -740,21 +741,21 @@ class TestModelWeighted:
         self.m.fit(fitter="leastsq", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9165596693502778, 1.6628238107916631)):
-            np.testing.assert_almost_equal(result, expected, decimal=5)
+            np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_odr_binned(self):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="odr", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9165596548961972, 1.6628247412317521)):
-            np.testing.assert_almost_equal(result, expected, decimal=5)
+            np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_mpfit_binned(self):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="mpfit", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9165596607108739, 1.6628243846485873)):
-            np.testing.assert_almost_equal(result, expected, decimal=5)
+            np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_neldermead_binned(self):
         self.m.signal.metadata.Signal.binned = True
@@ -764,7 +765,7 @@ class TestModelWeighted:
         )
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9137288425667442, 1.8446013472266145)):
-            np.testing.assert_almost_equal(result, expected, decimal=5)
+            np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_leastsq_unbinned(self):
         self.m.signal.metadata.Signal.binned = False
@@ -772,7 +773,7 @@ class TestModelWeighted:
         for result, expected in zip(
                 self.m[0].coefficients.value,
                 (0.99165596391487121, 0.16628254242532492)):
-            np.testing.assert_almost_equal(result, expected, decimal=5)
+            np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_odr_unbinned(self):
         self.m.signal.metadata.Signal.binned = False
@@ -780,7 +781,7 @@ class TestModelWeighted:
         for result, expected in zip(
                 self.m[0].coefficients.value,
                 (0.99165596548961943, 0.16628247412317315)):
-            np.testing.assert_almost_equal(result, expected, decimal=5)
+            np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_mpfit_unbinned(self):
         self.m.signal.metadata.Signal.binned = False
@@ -788,7 +789,7 @@ class TestModelWeighted:
         for result, expected in zip(
                 self.m[0].coefficients.value,
                 (0.99165596295068958, 0.16628257462820528)):
-            np.testing.assert_almost_equal(result, expected, decimal=5)
+            np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_neldermead_unbinned(self):
         self.m.signal.metadata.Signal.binned = False
@@ -799,16 +800,16 @@ class TestModelWeighted:
         for result, expected in zip(
                 self.m[0].coefficients.value,
                 (0.99136169230026261, 0.18483060534056939)):
-            np.testing.assert_almost_equal(result, expected, decimal=5)
+            np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_chisq(self):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="leastsq", method="ls")
-        np.testing.assert_almost_equal(self.m.chisq.data, 3029.16949561)
+        np.testing.assert_allclose(self.m.chisq.data, 3029.16949561)
 
     def test_red_chisq(self):
         self.m.fit(fitter="leastsq", method="ls")
-        np.testing.assert_almost_equal(self.m.red_chisq.data, 3.37700055)
+        np.testing.assert_allclose(self.m.red_chisq.data, 3.37700055)
 
 
 class TestModelScalarVariance:
@@ -826,7 +827,7 @@ class TestModelScalarVariance:
         self.s.add_gaussian_noise(std)
         self.s.metadata.set_item("Signal.Noise_properties.variance", std ** 2)
         self.m.fit(fitter="leastsq", method="ls")
-        np.testing.assert_almost_equal(self.m.chisq.data, 78.35015229)
+        np.testing.assert_allclose(self.m.chisq.data, 78.35015229)
 
     def test_std10_chisq(self):
         std = 10
@@ -834,7 +835,7 @@ class TestModelScalarVariance:
         self.s.add_gaussian_noise(std)
         self.s.metadata.set_item("Signal.Noise_properties.variance", std ** 2)
         self.m.fit(fitter="leastsq", method="ls")
-        np.testing.assert_almost_equal(self.m.chisq.data, 78.35015229)
+        np.testing.assert_allclose(self.m.chisq.data, 78.35015229)
 
     def test_std1_red_chisq(self):
         std = 1
@@ -842,7 +843,7 @@ class TestModelScalarVariance:
         self.s.add_gaussian_noise(std)
         self.s.metadata.set_item("Signal.Noise_properties.variance", std ** 2)
         self.m.fit(fitter="leastsq", method="ls")
-        np.testing.assert_almost_equal(self.m.red_chisq.data, 0.79949135)
+        np.testing.assert_allclose(self.m.red_chisq.data, 0.79949135)
 
     def test_std10_red_chisq(self):
         std = 10
@@ -850,7 +851,7 @@ class TestModelScalarVariance:
         self.s.add_gaussian_noise(std)
         self.s.metadata.set_item("Signal.Noise_properties.variance", std ** 2)
         self.m.fit(fitter="leastsq", method="ls")
-        np.testing.assert_almost_equal(self.m.red_chisq.data, 0.79949135)
+        np.testing.assert_allclose(self.m.red_chisq.data, 0.79949135)
 
     def test_std1_red_chisq_in_range(self):
         std = 1
@@ -859,7 +860,7 @@ class TestModelScalarVariance:
         self.s.add_gaussian_noise(std)
         self.s.metadata.set_item("Signal.Noise_properties.variance", std ** 2)
         self.m.fit(fitter="leastsq", method="ls")
-        np.testing.assert_almost_equal(self.m.red_chisq.data, 0.86206965)
+        np.testing.assert_allclose(self.m.red_chisq.data, 0.86206965)
 
 
 class TestModelSignalVariance:
@@ -881,9 +882,9 @@ class TestModelSignalVariance:
 
     def test_std1_red_chisq(self):
         self.m.multifit(fitter="leastsq", method="ls", show_progressbar=None)
-        np.testing.assert_almost_equal(self.m.red_chisq.data[0],
+        np.testing.assert_allclose(self.m.red_chisq.data[0],
                                        0.79693355673230915)
-        np.testing.assert_almost_equal(self.m.red_chisq.data[1],
+        np.testing.assert_allclose(self.m.red_chisq.data[1],
                                        0.91453032901427167)
 
 
@@ -924,7 +925,7 @@ class TestMultifit:
     def test_parameter_as_signal_values(self):
         # There are more as_signal tests in test_parameters.py
         rs = self.m[0].r.as_signal(field="values")
-        np.testing.assert_almost_equal(rs.data, np.array([2., 100.]))
+        np.testing.assert_allclose(rs.data, np.array([2., 100.]))
         assert not "Signal.Noise_properties.variance" in rs.metadata
         self.m.multifit(fetch_only_fixed=True, show_progressbar=None)
         rs = self.m[0].r.as_signal(field="values")

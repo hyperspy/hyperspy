@@ -1,11 +1,12 @@
-import nose.tools as nt
-
 import gzip
 import hashlib
 import os.path
 import os
 import shutil
+
+import nose.tools as nt
 import numpy as np
+from numpy.testing import assert_allclose
 
 from hyperspy.io import load
 from hyperspy import signals
@@ -41,15 +42,15 @@ class TestSpcSpectrum:
         signal_dict = self.spc.metadata.as_dictionary()['Signal']
 
         # Testing SEM parameters
-        assert_almost_equal(22, sem_dict['beam_energy'])
-        assert_almost_equal(0, sem_dict['tilt_stage'])
+        assert_allclose(22, sem_dict['beam_energy'])
+        assert_allclose(0, sem_dict['tilt_stage'])
 
         # Testing EDS parameters
-        assert_almost_equal(0, eds_dict['azimuth_angle'])
-        assert_almost_equal(34, eds_dict['elevation_angle'])
-        assert_almost_equal(129.31299, eds_dict['energy_resolution_MnKa'],
-                            places=5)
-        assert_almost_equal(50.000004, eds_dict['live_time'], places=6)
+        assert_allclose(0, eds_dict['azimuth_angle'])
+        assert_allclose(34, eds_dict['elevation_angle'])
+        assert_allclose(129.31299, eds_dict['energy_resolution_MnKa'],
+                            atol=1E-5)
+        assert_allclose(50.000004, eds_dict['live_time'], atol=1E-6)
 
         # Testing elements
         assert ({'Al', 'C', 'Ce', 'Cu', 'F', 'Ho', 'Mg', 'O'} ==
@@ -145,15 +146,15 @@ class TestSpdMap:
         signal_dict = self.spd.metadata.as_dictionary()['Signal']
 
         # Testing SEM parameters
-        assert_almost_equal(22, sem_dict['beam_energy'])
-        assert_almost_equal(0, sem_dict['tilt_stage'])
+        assert_allclose(22, sem_dict['beam_energy'])
+        assert_allclose(0, sem_dict['tilt_stage'])
 
         # Testing EDS parameters
-        assert_almost_equal(0, eds_dict['azimuth_angle'])
-        assert_almost_equal(34, eds_dict['elevation_angle'])
-        assert_almost_equal(126.60252, eds_dict['energy_resolution_MnKa'],
-                            places=5)
-        assert_almost_equal(2621.4399, eds_dict['live_time'], places=4)
+        assert_allclose(0, eds_dict['azimuth_angle'])
+        assert_allclose(34, eds_dict['elevation_angle'])
+        assert_allclose(126.60252, eds_dict['energy_resolution_MnKa'],
+                            atol=1E-5)
+        assert_allclose(2621.4399, eds_dict['live_time'], atol=1E-4)
 
         # Testing elements
         assert {'Ce', 'Co', 'Cr', 'Fe', 'Gd', 'La', 'Mg', 'O',
@@ -188,8 +189,8 @@ class TestSpdMap:
 
     def test_ipr_reading(self):
         ipr_header = self.spd.original_metadata['ipr_header']
-        assert_almost_equal(0.014235896, ipr_header['mppX'])
-        assert_almost_equal(0.014227346, ipr_header['mppY'])
+        assert_allclose(0.014235896, ipr_header['mppX'])
+        assert_allclose(0.014227346, ipr_header['mppY'])
 
     def test_spc_reading(self):
         # Test to make sure that spc metadata matches spd metadata
@@ -200,17 +201,17 @@ class TestSpdMap:
             'Acquisition_instrument']['SEM']
         eds_dict = sem_dict['Detector']['EDS']
 
-        assert_almost_equal(spc_header.azimuth,
+        assert_allclose(spc_header.azimuth,
                             eds_dict['azimuth_angle'])
-        assert_almost_equal(spc_header.detReso,
+        assert_allclose(spc_header.detReso,
                             eds_dict['energy_resolution_MnKa'])
-        assert_almost_equal(spc_header.elevation,
+        assert_allclose(spc_header.elevation,
                             eds_dict['elevation_angle'])
-        assert_almost_equal(spc_header.liveTime,
+        assert_allclose(spc_header.liveTime,
                             eds_dict['live_time'])
-        assert_almost_equal(spc_header.evPerChan,
+        assert_allclose(spc_header.evPerChan,
                             self.spd.axes_manager[2].scale * 1000)
-        assert_almost_equal(spc_header.kV,
+        assert_allclose(spc_header.kV,
                             sem_dict['beam_energy'])
-        assert_almost_equal(spc_header.numElem,
+        assert_allclose(spc_header.numElem,
                             len(elements))

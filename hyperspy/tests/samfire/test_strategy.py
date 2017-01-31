@@ -17,6 +17,8 @@
 
 import nose.tools as nt
 import numpy as np
+
+from numpy.testing import assert_allclose
 from hyperspy.samfire_utils.strategy import (LocalStrategy,
                                              GlobalStrategy)
 from hyperspy.misc.utils import DictionaryTreeBrowser
@@ -147,7 +149,7 @@ class TestLocalSimple:
         given = np.ones(self.shape, dtype=bool)
         given[0, 1] = False
         s.refresh(True, given_pixels=given)
-        assert_almost_equal(
+        assert_allclose(
             s.samf.metadata.marker[
                 ~given][0],
             0.011624353837970535)

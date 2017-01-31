@@ -1,5 +1,4 @@
 import numpy as np
-from nose.tools import assert_equal
 
 from hyperspy import signals
 

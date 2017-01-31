@@ -19,6 +19,7 @@ import sys
 
 import numpy as np
 import nose.tools as nt
+from numpy.testing import assert_allclose
 
 from hyperspy.signals import EDSSEMSpectrum
 from hyperspy.defaults_parser import preferences
@@ -184,8 +185,8 @@ class Test_metadata:
 
     def test_take_off_angle(self):
         s = self.signal
-        assert_almost_equal(s.get_take_off_angle(), 12.886929785732487,
-                            places=sys.float_info.dig - 2)
+        assert_allclose(s.get_take_off_angle(), 12.886929785732487,
+                            atol=10**-(sys.float_info.dig - 2))
 
 
 class Test_get_lines_intentisity:

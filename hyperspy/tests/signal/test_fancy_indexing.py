@@ -20,7 +20,6 @@ import numpy as np
 import numpy.testing
 from nose.tools import (
     assert_true,
-    assert_equal,
     raises)
 
 from hyperspy import signals

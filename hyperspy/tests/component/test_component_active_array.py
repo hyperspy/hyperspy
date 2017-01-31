@@ -58,7 +58,7 @@ class TestParametersAsSignals:
                                           np.zeros((3, 3)))
             assert g._active_array is None
         assert g._active_is_multidimensional
-        np.testing.assert_almost_equal(
+        np.testing.assert_allclose(
             g._active_array, np.array([[0, 1, 1], [1, 1, 1], [0, 1, 1]],
                                       dtype=bool))
         assert np.isnan(g.A.as_signal('values').data[[0, 2], [0]]).all()

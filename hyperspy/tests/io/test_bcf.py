@@ -1,11 +1,13 @@
 import os
 
-import numpy as np
 import json
-from nose.plugins.skip import SkipTest
 
+import numpy as np
 import nose.tools as nt
 import pytest
+from nose.plugins.skip import SkipTest
+from numpy.testing import assert_almost_equal
+
 from hyperspy.io import load
 from hyperspy import signals
 from hyperspy.misc.test_utils import assert_deep_almost_equal
@@ -90,11 +92,11 @@ def test_hyperspy_wrap():
     assert_almost_equal(
         hype.axes_manager[0].scale,
         8.7367850619778,
-        places=12)
+        atol=E-12)
     assert_almost_equal(
         hype.axes_manager[1].scale,
         8.7367850619778,
-        places=12)
+        atol=E-12)
     assert hype.axes_manager[1].units == 'µm'
     assert_almost_equal(hype.axes_manager[2].scale, 0.010001)
     assert_almost_equal(hype.axes_manager[2].offset, -0.472397235)
@@ -146,7 +148,7 @@ def test_hyperspy_wrap_downsampled():
     assert_almost_equal(
         hype.axes_manager[0].scale,
         43.683925309889,
-        places=12)
+        atol=E-12)
     assert_almost_equal(
         hype.axes_manager[1].scale,
         43.683925309889,

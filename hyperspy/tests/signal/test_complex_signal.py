@@ -19,6 +19,7 @@
 
 import numpy as np
 import numpy.testing as nt
+from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 
@@ -37,40 +38,40 @@ class TestComplexProperties:
         self.s.axes_manager.set_signal_dimension(1)
 
     def test_get_real(self):
-        assert_almost_equal(self.s.real.data, self.real_ref)
+        assert_allclose(self.s.real.data, self.real_ref)
 
     def test_set_real(self):
         real = np.random.random((3, 3))
         self.s.real = real
-        assert_almost_equal(self.s.real.data, real)
+        assert_allclose(self.s.real.data, real)
 
     def test_get_imag(self):
-        assert_almost_equal(self.s.imag.data, self.imag_ref)
+        assert_allclose(self.s.imag.data, self.imag_ref)
 
     def test_set_imag(self):
         imag = np.random.random((3, 3))
         self.s.imag = imag
-        assert_almost_equal(self.s.imag.data, imag)
+        assert_allclose(self.s.imag.data, imag)
 
     def test_get_amplitude(self):
-        assert_almost_equal(self.s.amplitude.data, self.amplitude_ref)
+        assert_allclose(self.s.amplitude.data, self.amplitude_ref)
 
     def test_set_amplitude(self):
         amplitude = np.random.random((3, 3))
         self.s.amplitude = amplitude
-        assert_almost_equal(self.s.amplitude, amplitude)
+        assert_allclose(self.s.amplitude, amplitude)
 
     def test_get_phase(self):
-        assert_almost_equal(self.s.phase.data, self.phase_ref)
+        assert_allclose(self.s.phase.data, self.phase_ref)
 
     def test_set_phase(self):
         phase = np.random.random((3, 3))
         self.s.phase = phase
-        assert_almost_equal(self.s.phase, phase)
+        assert_allclose(self.s.phase, phase)
 
     def test_angle(self):
-        assert_almost_equal(self.s.angle(deg=False), self.phase_ref)
-        assert_almost_equal(
+        assert_allclose(self.s.angle(deg=False), self.phase_ref)
+        assert_allclose(
             self.s.angle(
                 deg=True),
             self.phase_ref *
@@ -86,7 +87,7 @@ def test_get_unwrapped_phase_1D():
     assert (
         phase_unwrapped.metadata.General.title ==
         'unwrapped phase(Untitled Signal)')
-    assert_almost_equal(phase_unwrapped.data, phase)
+    assert_allclose(phase_unwrapped.data, phase)
 
 
 def test_get_unwrapped_phase_2D():
@@ -96,7 +97,7 @@ def test_get_unwrapped_phase_2D():
     assert (
         phase_unwrapped.metadata.General.title ==
         'unwrapped phase(Untitled Signal)')
-    assert_almost_equal(phase_unwrapped.data, phase)
+    assert_allclose(phase_unwrapped.data, phase)
 
 
 def test_get_unwrapped_phase_3D():
@@ -106,7 +107,7 @@ def test_get_unwrapped_phase_3D():
     assert (
         phase_unwrapped.metadata.General.title ==
         'unwrapped phase(Untitled Signal)')
-    assert_almost_equal(phase_unwrapped.data, phase)
+    assert_allclose(phase_unwrapped.data, phase)
 
 
 if __name__ == '__main__':

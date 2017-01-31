@@ -1,7 +1,7 @@
 from unittest import mock
 
 import numpy as np
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_allclose
 import nose.tools as nt
 import pytest
 
@@ -88,7 +88,7 @@ class Test2D:
     def test_histogram(self):
         result = self.signal.get_histogram(3)
         assert isinstance(result, signals.Signal1D)
-        np.testing.assert_equal(result.data, [17, 16, 17])
+        assert_array_equal(result.data, np.array([17, 16, 17]))
         assert result.metadata.Signal.binned
 
     def test_estimate_poissonian_noise_copy_data(self):
@@ -464,9 +464,7 @@ class TestDerivative:
 
     def test_derivative_data(self):
         der = self.s.derivative(axis=0, order=4)
-        assert_true(np.allclose(der.data,
-                                np.sin(der.axes_manager[0].axis),
-                                atol=1e-2),)
+        assert_allclose(der.data, np.sin(der.axes_manager[0].axis), atol=1e-2)
 
 
 class TestOutArg:

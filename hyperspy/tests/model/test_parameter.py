@@ -19,7 +19,6 @@
 import numpy as np
 from nose.tools import (assert_true,
                         assert_false,
-                        assert_equal,
                         raises)
 import nose.tools as nt
 from hyperspy.component import Parameter

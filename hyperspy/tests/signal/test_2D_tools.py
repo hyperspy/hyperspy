@@ -129,7 +129,7 @@ class TestAlignTools:
 def test_add_ramp():
     s = hs.signals.Signal2D(np.indices((3, 3)).sum(axis=0) + 4)
     s.add_ramp(-1, -1, -4)
-    npt.assert_almost_equal(s.data, 0)
+    npt.assert_allclose(s.data, 0)
 
 
 if __name__ == '__main__':

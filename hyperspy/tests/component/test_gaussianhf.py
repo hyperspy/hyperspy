@@ -19,6 +19,8 @@
 
 import nose.tools as nt
 import numpy as np
+from numpy.testing import assert_allclose
+
 from hyperspy.components1d import GaussianHF
 from hyperspy.signals import Signal1D
 
@@ -49,8 +51,7 @@ def test_integral_as_signal():
     m.multifit()
     s_out = g2.integral_as_signal()
     ref = (h_ref * 3.33 * sqrt2pi / sigma2fwhm).reshape(s_out.data.shape)
-    np.testing.assert_almost_equal(
-        s_out.data, ref)
+    assert_allclose(s_out.data, ref)
 
 
 def test_estimate_parameters_binned():
@@ -63,7 +64,7 @@ def test_estimate_parameters_binned():
     s.metadata.Signal.binned = True
     g2 = GaussianHF()
     g2.estimate_parameters(s, axis.low_value, axis.high_value, True)
-    assert_almost_equal(
+    assert_allclose(
         g1.height.value / axis.scale,
         g2.height.value)
     assert abs(g2.centre.value - g1.centre.value) <= 1e-3
@@ -73,35 +74,35 @@ def test_estimate_parameters_binned():
 def test_util_sigma_set():
     g1 = GaussianHF()
     g1.sigma = 1.0
-    assert_almost_equal(g1.fwhm.value, 1.0 * sigma2fwhm)
+    assert_allclose(g1.fwhm.value, 1.0 * sigma2fwhm)
 
 
 def test_util_sigma_get():
     g1 = GaussianHF()
     g1.fwhm.value = 1.0
-    assert_almost_equal(g1.sigma, 1.0 / sigma2fwhm)
+    assert_allclose(g1.sigma, 1.0 / sigma2fwhm)
 
 
 def test_util_sigma_getset():
     g1 = GaussianHF()
     g1.sigma = 1.0
-    assert_almost_equal(g1.sigma, 1.0)
+    assert_allclose(g1.sigma, 1.0)
 
 
 def test_util_fwhm_set():
     g1 = GaussianHF(fwhm=0.33)
     g1.A = 1.0
-    assert_almost_equal(g1.height.value, 1.0 * sigma2fwhm / (
+    assert_allclose(g1.height.value, 1.0 * sigma2fwhm / (
         0.33 * sqrt2pi))
 
 
 def test_util_fwhm_get():
     g1 = GaussianHF(fwhm=0.33)
     g1.height.value = 1.0
-    assert_almost_equal(g1.A, 1.0 * sqrt2pi * 0.33 / sigma2fwhm)
+    assert_allclose(g1.A, 1.0 * sqrt2pi * 0.33 / sigma2fwhm)
 
 
 def test_util_fwhm_getset():
     g1 = GaussianHF(fwhm=0.33)
     g1.A = 1.0
-    assert_almost_equal(g1.A, 1.0)
+    assert_allclose(g1.A, 1.0)

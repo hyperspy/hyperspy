@@ -19,6 +19,7 @@
 import numpy as np
 
 import numpy.testing as nt
+from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 from scipy.interpolate import interp2d
@@ -125,7 +126,7 @@ class TestCaseHologramImage(object):
         phase_new_crop = wave_image.unwrapped_phase(
         ).data[x_start:x_stop, x_start:x_stop]
         phase_ref_crop = self.phase_ref[x_start:x_stop, x_start:x_stop]
-        assert_almost_equal(phase_new_crop, phase_ref_crop, decimal=2)
+        assert_allclose(phase_new_crop, phase_ref_crop, atol=1E-2)
 
         # 2. Testing reconstruction with non-standard output size for stacked
         # images:
@@ -168,8 +169,8 @@ class TestCaseHologramImage(object):
         phase_new_crop1 = phase_new1[x_start:x_stop, x_start:x_stop]
         phase_ref_crop0 = self.phase_ref2[0, x_start:x_stop, x_start:x_stop]
         phase_ref_crop1 = self.phase_ref2[1, x_start:x_stop, x_start:x_stop]
-        assert_almost_equal(phase_new_crop0, phase_ref_crop0, decimal=2)
-        assert_almost_equal(phase_new_crop1, phase_ref_crop1, decimal=2)
+        assert_allclose(phase_new_crop0, phase_ref_crop0, atol=1E-2)
+        assert_allclose(phase_new_crop1, phase_ref_crop1, atol=1E-2)
 
         # 3. Testing reconstruction with multidimensional images (3, 2| 512,
         # 768) using 1d image as a reference:
@@ -187,10 +188,10 @@ class TestCaseHologramImage(object):
         phase3_new_crop.crop(3, x_start, x_stop)
         phase3_ref_crop = self.phase_ref3.reshape(2, 3, self.img_size3x, self.img_size3y)[:, :, x_start:x_stop,
                                                                                           y_start:y_stop]
-        assert_almost_equal(
+        assert_allclose(
             phase3_new_crop.data,
             phase3_ref_crop,
-            decimal=2)
+            atol=1E-2)
 
         # 3a. Testing reconstruction with input parameters in 'nm' and with multiple parameter input,
         # but reference ndim=0:
@@ -210,10 +211,10 @@ class TestCaseHologramImage(object):
         phase3a_new_crop = wave_image3a.unwrapped_phase()
         phase3a_new_crop.crop(2, y_start, y_stop)
         phase3a_new_crop.crop(3, x_start, x_stop)
-        assert_almost_equal(
+        assert_allclose(
             phase3a_new_crop.data,
             phase3_ref_crop,
-            decimal=2)
+            atol=1E-2)
 
         # 4. Testing raises:
         # a. Mismatch of navigation dimensions of object and reference

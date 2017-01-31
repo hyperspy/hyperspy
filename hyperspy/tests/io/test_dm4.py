@@ -22,7 +22,6 @@ import os
 import numpy as np
 from .generate_dm_testing_files import dm4_data_types
 
-from nose.tools import assert_equal
 from hyperspy.io import load
 
 my_path = os.path.dirname(__file__)

@@ -21,6 +21,7 @@ import os
 import numpy as np
 import pytest
 import nose.tools as nt
+from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 from hyperspy.io_plugins.protochips import ProtochipsCSV, invalid_file_error
@@ -97,7 +98,7 @@ class test_ProtochipsGasCellCSV():
             assert s.metadata.General.date == date
             assert s.metadata.General.time == time
             assert s.axes_manager[0].units == 's'
-            assert_almost_equal(s.axes_manager[0].scale, 0.25995, places=5)
+            assert_allclose(s.axes_manager[0].scale, 0.25995, atol=1E-5)
             assert s.axes_manager[0].offset == 0
 
     def test_read_original_metadata(self):

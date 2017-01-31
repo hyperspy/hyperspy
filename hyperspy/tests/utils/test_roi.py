@@ -147,7 +147,7 @@ class TestROIs():
         r = Line2DROI(10, 10, 150, 50, 5)
         s = self.s_s
         s2 = r(s)
-        np.testing.assert_almost_equal(s2.data, np.array(
+        np.testing.assert_allclose(s2.data, np.array(
             [[0.96779467, 0.5468849, 0.27482357, 0.59223042],
              [0.89676116, 0.40673335, 0.55207828, 0.27165277],
                 [0.27734027, 0.52437981, 0.11738029, 0.15984529],
@@ -182,7 +182,7 @@ class TestROIs():
         ))
         r.linewidth = 50
         s3 = r(s)
-        np.testing.assert_almost_equal(s3.data, np.array(
+        np.testing.assert_allclose(s3.data, np.array(
             [[0.40999384, 0.27111487, 0.3345655, 0.47553854],
              [0.44475117, 0.40330205, 0.48113292, 0.26780132],
                 [0.57911599, 0.38999298, 0.38509116, 0.37418655],

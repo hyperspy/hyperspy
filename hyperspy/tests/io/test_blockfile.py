@@ -17,16 +17,18 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import warnings
 import os
-import nose.tools as nt
-import pytest
-import hyperspy.api as hs
-import numpy as np
 import gc
+
+import numpy as np
+from numpy.testing import assert_allclose
+import pytest
+import nose.tools as nt
+
 from hyperspy.io_plugins.blockfile import get_default_header
 from hyperspy.misc.array_tools import sarray2dict
-import warnings
-
+import hyperspy.api as hs
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.misc.date_time_tools import serial_date_to_ISO_format
 
@@ -174,12 +176,12 @@ def test_different_x_y_scale_units():
     try:
         signal.save(save_path, overwrite=True)
         sig_reload = hs.load(save_path)
-        assert_almost_equal(sig_reload.axes_manager[0].scale, 50.0,
-                            places=2)
-        assert_almost_equal(sig_reload.axes_manager[1].scale, 64.0,
-                            places=2)
-        assert_almost_equal(sig_reload.axes_manager[2].scale, 0.0160616,
-                            places=5)
+        assert_allclose(sig_reload.axes_manager[0].scale, 50.0,
+                            atol=1E-2)
+        assert_allclose(sig_reload.axes_manager[1].scale, 64.0,
+                            atol=1E-2)
+        assert_allclose(sig_reload.axes_manager[2].scale, 0.0160616,
+                            atol=1E-5)
     finally:
         # Delete reference to close memmap file!
         del sig_reload

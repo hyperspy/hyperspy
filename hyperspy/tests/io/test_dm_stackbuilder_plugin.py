@@ -19,7 +19,6 @@
 
 import os
 
-from nose.tools import assert_equal
 from hyperspy.io import load
 
 my_path = os.path.dirname(__file__)
