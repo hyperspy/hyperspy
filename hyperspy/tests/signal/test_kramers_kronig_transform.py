@@ -17,7 +17,7 @@
 
 
 import numpy as np
-import nose.tools
+
 import pytest
 
 from hyperspy.components1d import VolumePlasmonDrude, Lorentzian

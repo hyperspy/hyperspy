@@ -1,4 +1,4 @@
-import nose.tools as nt
+
 import numpy as np
 
 from hyperspy.signal import BaseSignal

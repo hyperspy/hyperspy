@@ -17,7 +17,7 @@
 
 
 import numpy as np
-import nose.tools as nt
+
 import dill
 import copy
 import hyperspy.api as hs

@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import nose.tools as nt
+
 from numpy.testing import assert_allclose
 
 from hyperspy.utils.model_selection import AIC, AICc, BIC

@@ -1,5 +1,5 @@
 import numpy as np
-import nose.tools as nt
+
 import pytest
 
 from hyperspy.misc import rgb_tools

@@ -1,5 +1,3 @@
-import nose.tools
-
 from hyperspy.drawing.figure import BlittedFigure
 
 

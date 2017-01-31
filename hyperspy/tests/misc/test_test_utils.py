@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import nose.tools as nt
+
 import warnings
 
 from hyperspy.misc.test_utils import ignore_warning, assert_warns, all_warnings

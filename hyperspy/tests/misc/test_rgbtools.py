@@ -16,7 +16,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import nose.tools as nt
+
 import numpy as np
 import hyperspy.misc.rgb_tools as rt
 

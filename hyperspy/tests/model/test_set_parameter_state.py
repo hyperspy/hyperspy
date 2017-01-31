@@ -17,7 +17,6 @@
 
 
 import numpy as np
-from nose.tools import assert_true, assert_equal
 
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.components1d import Gaussian

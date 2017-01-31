@@ -2,7 +2,7 @@ from unittest import mock
 
 import numpy as np
 from scipy.ndimage import rotate, gaussian_filter, gaussian_filter1d
-import nose.tools as nt
+
 
 import hyperspy.api as hs
 

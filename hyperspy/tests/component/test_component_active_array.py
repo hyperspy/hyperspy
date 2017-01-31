@@ -16,7 +16,6 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
-import nose.tools as nt
 import numpy as np
 from hyperspy.components1d import Gaussian
 from hyperspy.signals import Signal1D

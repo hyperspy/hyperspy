@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.linalg
 
-import nose.tools as nt
+
 from nose.plugins.skip import SkipTest
 
 from hyperspy.learn.rpca import rpca_godec, orpca

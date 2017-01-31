@@ -1,7 +1,7 @@
 from __future__ import print_function
 from unittest import mock
 
-import nose.tools as nt
+
 import numpy as np
 import pytest
 

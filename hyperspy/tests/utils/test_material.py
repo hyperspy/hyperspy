@@ -1,6 +1,6 @@
 
 import numpy as np
-import nose.tools as nt
+
 from numpy.testing import assert_allclose
 
 import hyperspy.api as hs

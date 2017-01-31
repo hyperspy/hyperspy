@@ -16,7 +16,7 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import nose.tools as nt
+
 
 from hyperspy.samfire_utils.weights.red_chisq import ReducedChiSquaredWeight
 from hyperspy.misc.utils import DictionaryTreeBrowser

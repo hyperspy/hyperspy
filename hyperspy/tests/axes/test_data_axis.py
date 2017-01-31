@@ -2,7 +2,6 @@ import copy
 import math
 from unittest import mock
 
-import nose.tools as nt
 import numpy as np
 import pytest
 

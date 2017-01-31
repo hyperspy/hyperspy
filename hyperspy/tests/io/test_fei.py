@@ -19,7 +19,7 @@
 import os
 
 import pytest
-import nose.tools as nt
+
 import numpy as np
 from numpy.testing import assert_allclose
 

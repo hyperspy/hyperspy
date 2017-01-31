@@ -1,6 +1,6 @@
 import copy
 
-import nose.tools as nt
+
 import pytest
 
 import hyperspy.events as he

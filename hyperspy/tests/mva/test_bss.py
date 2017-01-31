@@ -1,4 +1,4 @@
-import nose.tools as nt
+
 from nose.plugins.skip import SkipTest
 import numpy as np
 

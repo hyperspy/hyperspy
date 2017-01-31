@@ -256,5 +256,5 @@ class TestCaseHologramImage(object):
             self.holo_image3.reconstruct_phase(sb_size=40, sb_unit='mrad')
 
 if __name__ == '__main__':
-    import nose
+    
     nose.run(defaultTest=__name__)

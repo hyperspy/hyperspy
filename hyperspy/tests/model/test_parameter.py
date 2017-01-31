@@ -16,14 +16,13 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
+from unittest import mock
+
 import numpy as np
-from nose.tools import (assert_true,
-                        assert_false,
-                        raises)
-import nose.tools as nt
+import pytest
+
 from hyperspy.component import Parameter
 from hyperspy.exceptions import NavigationDimensionError
-from unittest import mock
 
 
 class Dummy:
@@ -53,9 +52,9 @@ class TestParameterLen1:
         self.par.value = 2
         assert self.par.value == 2
 
-    @raises(ValueError)
     def test_set_value_wrong_length(self):
-        self.par.value = (2, 2)
+        with pytest.raises(ValueError):
+            self.par.value = (2, 2)
 
     def test_set_value_bounded(self):
         self.par.bmin = 1
@@ -148,13 +147,13 @@ class TestParameterLen2:
         self.par.value = (2, 2)
         assert self.par.value == (2, 2)
 
-    @raises(ValueError)
     def test_set_value_wrong_length(self):
-        self.par.value = 2
+        with pytest.raises(ValueError):
+            self.par.value = 2
 
-    @raises(ValueError)
     def test_set_value_wrong_length2(self):
-        self.par.value = (2, 2, 2)
+        with pytest.raises(ValueError):
+            self.par.value = (2, 2, 2)
 
     def test_set_value_bounded(self):
         self.par.bmin = 1

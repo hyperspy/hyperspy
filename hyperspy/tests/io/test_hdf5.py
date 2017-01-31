@@ -18,10 +18,10 @@
 
 import os.path
 from os import remove
-import h5py
 import gc
+import time
 
-import nose.tools as nt
+import h5py
 import numpy as np
 
 from hyperspy.io import load
@@ -187,11 +187,13 @@ class TestSavingMetadataContainers:
         assert isinstance(l.metadata.test[2], str)
         assert l.metadata.test[2] == '\u6f22\u5b57'
 
-    @nt.timed(1.0)
     def test_save_long_list(self):
         s = self.s
         s.metadata.set_item('long_list', list(range(10000)))
+        start = time.time()
         s.save('tmp.hdf5', overwrite=True)
+        end = time.time()
+        assert end - start < 1.0 # It should finish in less that 1 s.
 
     def test_numpy_only_inner_lists(self):
         s = self.s

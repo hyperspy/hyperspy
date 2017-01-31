@@ -1,4 +1,4 @@
-import nose.tools
+
 
 from hyperspy.misc.utils import slugify
 

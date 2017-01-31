@@ -16,7 +16,7 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import nose.tools as nt
+
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.signals import Signal1D
 from hyperspy.components1d import Lorentzian

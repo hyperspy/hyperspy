@@ -1,4 +1,4 @@
-import nose.tools
+
 import pytest
 import numpy as np
 

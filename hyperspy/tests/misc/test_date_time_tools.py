@@ -18,7 +18,7 @@
 
 import numpy as np
 from dateutil import tz, parser
-import nose.tools as nt
+
 from numpy.testing import assert_allclose
 
 import hyperspy.misc.date_time_tools as dtt

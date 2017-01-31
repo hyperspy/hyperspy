@@ -3,7 +3,7 @@ import os.path
 import gc
 
 import numpy as np
-import nose.tools as nt
+
 import pytest
 import numpy.testing as npt
 

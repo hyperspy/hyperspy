@@ -16,7 +16,7 @@
 # along with  Hyperspy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import nose.tools as nt
+
 import time
 
 from hyperspy._signals.signal1d import Signal1D

@@ -20,7 +20,7 @@ import os.path
 from os import remove
 import tempfile
 
-import nose.tools as nt
+
 import numpy as np
 import pytest
 
@@ -185,5 +185,5 @@ class TestCaseSaveAndReadByte():
 
 
 if __name__ == '__main__':
-    import nose
+    
     nose.run(defaultTest=__name__)

@@ -18,7 +18,7 @@
 
 import numpy as np
 import numpy.testing
-import nose.tools as nt
+
 
 import hyperspy.api as hs
 

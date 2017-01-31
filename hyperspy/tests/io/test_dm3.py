@@ -23,7 +23,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 from .generate_dm_testing_files import dm3_data_types
 
-import nose.tools as nt
+
 from hyperspy.io import load
 
 from hyperspy.io_plugins.digital_micrograph import DigitalMicrographReader, ImageObject

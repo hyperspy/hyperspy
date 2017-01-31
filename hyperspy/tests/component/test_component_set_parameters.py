@@ -16,7 +16,6 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
-import nose.tools
 from hyperspy.components1d import Gaussian
 
 

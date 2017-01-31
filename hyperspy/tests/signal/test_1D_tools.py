@@ -18,7 +18,7 @@
 from unittest import mock
 
 import numpy as np
-import nose.tools as nt
+
 from nose.plugins.skip import SkipTest
 from scipy.signal import savgol_filter
 try:

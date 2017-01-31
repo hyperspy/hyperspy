@@ -2,7 +2,7 @@ import os
 import tempfile
 
 import numpy as np
-import nose.tools as nt
+
 import traits.api as t
 from numpy.testing import assert_allclose
 

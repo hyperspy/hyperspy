@@ -1,5 +1,3 @@
-from nose.tools import assert_is, assert_true
-
 import numpy as np
 
 import hyperspy.api as hs
@@ -171,5 +169,5 @@ class TestConvertComplexSignal1D:
 
 
 if __name__ == '__main__':
-    import nose
+
     nose.run(defaultTest=__name__)

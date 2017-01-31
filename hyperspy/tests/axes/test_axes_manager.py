@@ -19,8 +19,6 @@
 
 from unittest import mock
 
-import nose.tools as nt
-
 from hyperspy.axes import DataAxis, AxesManager
 
 

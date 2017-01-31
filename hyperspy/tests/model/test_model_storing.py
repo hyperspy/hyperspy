@@ -21,7 +21,7 @@ from unittest import mock
 import gc
 
 import numpy as np
-import nose.tools as nt
+
 import pytest
 
 from hyperspy._signals.signal1d import Signal1D

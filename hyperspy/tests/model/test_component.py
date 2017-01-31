@@ -1,5 +1,5 @@
 import numpy as np
-import nose.tools as nt
+
 from hyperspy.component import Component
 from hyperspy.axes import AxesManager
 from unittest import mock

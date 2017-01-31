@@ -24,7 +24,6 @@ import gc
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
-import nose.tools as nt
 
 from hyperspy.io_plugins.blockfile import get_default_header
 from hyperspy.misc.array_tools import sarray2dict

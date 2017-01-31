@@ -20,7 +20,7 @@ import os
 
 import numpy as np
 import pytest
-import nose.tools as nt
+
 from numpy.testing import assert_allclose
 
 import hyperspy.api as hs

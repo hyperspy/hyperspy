@@ -3,7 +3,7 @@ from unittest import mock
 
 import numpy as np
 import scipy
-import nose.tools as nt
+
 import pytest
 from numpy.testing import assert_allclose
 

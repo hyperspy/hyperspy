@@ -17,7 +17,7 @@
 
 
 import numpy as np
-import nose.tools as nt
+
 
 from hyperspy.signals import EDSTEMSpectrum
 from hyperspy.defaults_parser import preferences

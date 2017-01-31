@@ -1,4 +1,3 @@
-import nose.tools as nt
 from nose.plugins.skip import SkipTest
 import requests
 from hyperspy.misc.eels.eelsdb import eelsdb

@@ -1,7 +1,6 @@
 import numpy as np
-import nose.tools
+import pytest
 from nose.plugins.skip import SkipTest
-from nose.tools import raises
 
 from hyperspy import signals
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
@@ -87,9 +86,9 @@ class TestGetExplainedVarinaceRatio:
             self.s.get_explained_variance_ratio().data,
             np.asarray([2, 4]))
 
-    @raises(AttributeError)
     def test_no_evr(self):
-        self.s.get_explained_variance_ratio()
+        with pytest.raises(AttributeError):
+            self.s.get_explained_variance_ratio()
 
 
 class TestReverseDecompositionComponent:

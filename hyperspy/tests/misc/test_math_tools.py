@@ -1,4 +1,4 @@
-import nose.tools
+
 import numpy as np
 
 from hyperspy.misc import math_tools

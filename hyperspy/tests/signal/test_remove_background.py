@@ -1,6 +1,4 @@
 import numpy as np
-from nose.tools import (
-    assert_true,)
 
 from hyperspy import signals
 from hyperspy import components1d

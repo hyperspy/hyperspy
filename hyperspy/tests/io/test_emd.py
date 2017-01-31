@@ -7,7 +7,7 @@
 import os.path
 from os import remove
 
-import nose.tools as nt
+
 import numpy as np
 
 from hyperspy.io import load
@@ -121,5 +121,5 @@ class TestCaseSaveAndRead():
 
 
 if __name__ == '__main__':
-    import nose
+    
     nose.run(defaultTest=__name__)

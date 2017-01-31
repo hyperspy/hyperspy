@@ -1,5 +1,4 @@
 import os
-from nose.tools import assert_not_equal, assert_equal
 from hyperspy.api import load
 
 my_path = os.path.dirname(__file__)

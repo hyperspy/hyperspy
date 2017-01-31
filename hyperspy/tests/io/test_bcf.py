@@ -3,7 +3,6 @@ import os
 import json
 
 import numpy as np
-import nose.tools as nt
 import pytest
 from nose.plugins.skip import SkipTest
 from numpy.testing import assert_allclose

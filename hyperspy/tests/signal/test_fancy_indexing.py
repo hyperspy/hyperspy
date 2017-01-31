@@ -18,9 +18,7 @@
 
 import numpy as np
 import numpy.testing
-from nose.tools import (
-    assert_true,
-    raises)
+import pytest
 
 from hyperspy import signals
 
@@ -40,9 +38,9 @@ class Test1D:
         assert (s.axes_manager._axes[0].scale ==
                 self.signal.axes_manager._axes[0].scale)
 
-    @raises(IndexError)
     def test_slice_out_of_range_interval_not_in_axis(self):
-        self.signal.isig[20.:30.]
+        with pytest.raises(IndexError):
+            self.signal.isig[20.:30.]
 
     def test_slice_out_of_range_interval_in_axis(self):
         s = self.signal.isig[-20.:100.]
@@ -67,9 +65,9 @@ class Test1D:
             self.signal.isig[
                 :11.].data, self.signal.data)
 
-    @raises(ValueError)
     def test_step0_slice(self):
-        self.signal.isig[::0]
+        with pytest.raises(ValueError):
+            self.signal.isig[::0]
 
     def test_index(self):
         s = self.signal.isig[3]
@@ -115,9 +113,9 @@ class Test1D:
         assert len(s.axes_manager._axes) == 1
         assert s.data.shape == (1,)
 
-    @raises(IndexError)
     def test_navigation_indexer_navdim0(self):
-        self.signal.inav[3]
+        with pytest.raises(IndexError):
+            self.signal.inav[3]
 
     def test_minus_one_index(self):
         s = self.signal.isig[-1]
@@ -150,20 +148,20 @@ class Test3D_SignalDim0:
         self.data = self.signal.data.copy()
         self.signal.axes_manager.set_signal_dimension(0)
 
-    @raises(IndexError)
     def test_signal_indexer_signal_dim0_idx_error1(self):
         s = self.signal
-        s.isig[:].data
+        with pytest.raises(IndexError):
+            s.isig[:].data
 
-    @raises(IndexError)
     def test_signal_indexer_signal_dim0_idx_error2(self):
         s = self.signal
-        s.isig[:, :].data
+        with pytest.raises(IndexError):
+            s.isig[:, :].data
 
-    @raises(IndexError)
     def test_signal_indexer_signal_dim0_idx_error3(self):
         s = self.signal
-        s.isig[0]
+        with pytest.raises(IndexError):
+            s.isig[0]
 
     def test_navigation_indexer_signal_dim0(self):
         s = self.signal

@@ -18,8 +18,8 @@
 
 import sys
 from unittest import mock
-import nose
-import nose.tools as nt
+
+
 import numpy.testing as npt
 import numpy as np
 from scipy.misc import face, ascent
@@ -133,5 +133,5 @@ def test_add_ramp():
 
 
 if __name__ == '__main__':
-    import nose
+    
     nose.run(defaultTest=__name__)
