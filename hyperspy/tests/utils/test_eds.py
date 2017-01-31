@@ -1,8 +1,5 @@
 
 
-
-
-
 from hyperspy.misc.eds.utils import get_xray_lines_near_energy
 
 

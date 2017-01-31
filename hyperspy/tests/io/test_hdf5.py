@@ -193,7 +193,7 @@ class TestSavingMetadataContainers:
         start = time.time()
         s.save('tmp.hdf5', overwrite=True)
         end = time.time()
-        assert end - start < 1.0 # It should finish in less that 1 s.
+        assert end - start < 1.0  # It should finish in less that 1 s.
 
     def test_numpy_only_inner_lists(self):
         s = self.s

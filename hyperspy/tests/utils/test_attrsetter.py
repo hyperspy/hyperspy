@@ -17,7 +17,6 @@
 # nose.tools
 
 
-
 import pytest
 
 from hyperspy.misc.utils import attrsetter

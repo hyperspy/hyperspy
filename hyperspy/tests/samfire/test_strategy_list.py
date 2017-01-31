@@ -16,7 +16,6 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
-
 from hyperspy.samfire import (Samfire, StrategyList)
 from hyperspy.misc.utils import DictionaryTreeBrowser
 

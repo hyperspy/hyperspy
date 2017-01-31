@@ -185,5 +185,5 @@ class TestCaseSaveAndReadByte():
 
 
 if __name__ == '__main__':
-    
+
     nose.run(defaultTest=__name__)
