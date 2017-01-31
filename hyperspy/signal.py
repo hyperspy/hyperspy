@@ -2005,6 +2005,8 @@ class BaseSignal(FancySlicing,
             if hasattr(self, 'markers'):
                 if len(self.markers) != 0:
                     self._add_all_markers_to_plot()
+                    self.axes_manager.events.indices_changed.connect(
+                            self._add_all_markers_to_plot, [])
     plot.__doc__ %= BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 
     def save(self, filename=None, overwrite=None, extension=None,
