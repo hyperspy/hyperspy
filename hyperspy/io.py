@@ -390,6 +390,8 @@ def dict2signal(signal_dict, lazy=False):
             del mp["Signal"]['record_by']
         if "Signal" in mp and "signal_type" in mp["Signal"]:
             signal_type = mp["Signal"]['signal_type']
+    if "attributes" in signal_dict and "_lazy" in signal_dict["attributes"]:
+        lazy = signal_dict["attributes"]["_lazy"]
     # "Estimate" signal_dimension from axes. It takes precedence over record_by
     if ("axes" in signal_dict and
         len(signal_dict["axes"]) == len(

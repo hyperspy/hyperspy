@@ -1669,9 +1669,8 @@ class BaseSignal(FancySlicing,
     @data.setter
     def data(self, value):
         from dask.array import Array
-        from h5py import Dataset
-        if isinstance(value, (Dataset, Array)):
-            if isinstance(value, Array) and not value.ndim:
+        if isinstance(value, Array):
+            if not value.ndim:
                 value = value.reshape((1,))
             self._data = value
         else:
@@ -1706,6 +1705,7 @@ class BaseSignal(FancySlicing,
         """
 
         self.data = file_data_dict['data']
+        oldlazy = self._lazy
         if 'models' in file_data_dict:
             self.models._add_dictionary(file_data_dict['models'])
         if 'axes' not in file_data_dict:
@@ -1735,11 +1735,8 @@ class BaseSignal(FancySlicing,
         if "learning_results" in file_data_dict:
             self.learning_results.__dict__.update(
                 file_data_dict["learning_results"])
-        if 'lazy' in file_data_dict:
-            lazy = file_data_dict['lazy']
-            if self._lazy is not lazy:
-                self._lazy = lazy
-                self._assign_subclass()
+        if self._lazy is not oldlazy:
+            self._assign_subclass()
     
 # TODO: try to find a way to use dask ufuncs when called with lazy data (e.g.
 # np.log(s) -> da.log(s.data) wrapped.
@@ -3631,7 +3628,7 @@ class BaseSignal(FancySlicing,
         """
         if expected_value is None:
             expected_value = self
-        dc = expected_value.data.copy()
+        dc = expected_value.data if expected_value._lazy else expected_value.data.copy()
         if self.metadata.has_item(
                 "Signal.Noise_properties.Variance_linear_model"):
             vlm = self.metadata.Signal.Noise_properties.Variance_linear_model
@@ -3664,10 +3661,7 @@ class BaseSignal(FancySlicing,
         variance = self._estimate_poissonian_noise_variance(dc, gain_factor,
                                                             gain_offset,
                                                             correlation_factor)
-# Why the same type? Does not make sense, as it's just variance - probably
-# should be just a generic signal
-        #variance = type(self)(variance)
-        variance = BaseSignal(variance)
+        variance = BaseSignal(variance, attributes={'_lazy': self._lazy})
         variance.axes_manager = self.axes_manager
         variance.metadata.General.title = ("Variance of " +
                                            self.metadata.General.title)
@@ -3716,7 +3710,7 @@ class BaseSignal(FancySlicing,
             self(),
             axes=self.axes_manager._get_signal_axes_dicts(),
             metadata=self.metadata.as_dictionary(),
-            lazy=False)
+            attributes={'_lazy': False})
 
         if auto_filename is True and self.tmp_parameters.has_item('filename'):
             cs.tmp_parameters.filename = (self.tmp_parameters.filename +

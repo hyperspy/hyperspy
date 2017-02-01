@@ -201,12 +201,16 @@ def hdfgroup2signaldict(group, load_to_memory=True):
     exp = {'metadata': hdfgroup2dict(
         group[metadata], load_to_memory=load_to_memory),
         'original_metadata': hdfgroup2dict(
-            group[original_metadata], load_to_memory=load_to_memory)
+            group[original_metadata], load_to_memory=load_to_memory),
+        'attributes': {}
     }
 
     data = group['data']
     if load_to_memory:
         data = np.asanyarray(data)
+    else:
+        data = da.from_array(data, chunks=data.chunks)
+        exp['attributes']['_lazy'] = True
     exp['data'] = data
     axes = []
     for i in range(len(exp['data'].shape)):
@@ -228,7 +232,6 @@ def hdfgroup2signaldict(group, load_to_memory=True):
         except KeyError:
             raise IOError(not_valid_format)
     exp['axes'] = axes
-    exp['attributes'] = {}
     if 'learning_results' in group.keys():
         exp['attributes']['learning_results'] = \
             hdfgroup2dict(
@@ -350,7 +353,7 @@ def hdfgroup2signaldict(group, load_to_memory=True):
                     exp["metadata"]["General"] = {}
                 exp["metadata"]["General"][key] = exp["metadata"][key]
                 del exp["metadata"][key]
-        for key in ["record_by", "signal_origin", "signal_type", "lazy"]:
+        for key in ["record_by", "signal_origin", "signal_type"]:
             if key in exp["metadata"]:
                 if "Signal" not in exp["metadata"]:
                     exp["metadata"]["Signal"] = {}

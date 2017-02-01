@@ -161,16 +161,18 @@ class LazySignal(BaseSignal):
         return tuple(chunks)
 
     def _make_lazy(self, axis=None, rechunk=False):
+        self.data = self._lazy_data(axis=axis, rechunk=rechunk)
+
+    def _lazy_data(self, axis=None, rechunk=True):
         new_chunks = self._get_dask_chunks(axis=axis)
         if isinstance(self.data, da.Array):
+            res = self.data
             if self.data.chunks != new_chunks and rechunk:
-                self.data = self.data.rechunk(new_chunks)
+                res = self.data.rechunk(new_chunks)
         else:
-            self.data = da.from_array(self.data, chunks=new_chunks)
-
-    def _lazy_data(self, axis=None):
-        self._make_lazy(axis=axis)
-        return self.data
+            res = da.from_array(self.data, chunks=new_chunks)
+        assert isinstance(res, da.Array)
+        return res
 
     def _apply_function_on_data_and_remove_axis(self, function, axes,
                                                 out=None):
