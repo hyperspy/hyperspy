@@ -4084,27 +4084,27 @@ class BaseSignal(FancySlicing,
                 point_y_coordinate_list.append(marker.get_data_position('y1'))
                 point_color_list.append(marker.marker_properties['color'])
 
-        line_collection = LineCollection(
-                line_segment_list,
-                colors=line_color_list,
-                linestyles=line_linestyle_list,
-                linewidths=line_linewidth_list,
-                animated=True)
-        patch_collection = PatchCollection(
-                patch_list,
-                animated=True)
-
-        point_x_coordinate_list = np.array(point_x_coordinate_list).flatten()
-        point_y_coordinate_list = np.array(point_y_coordinate_list).flatten()
-
-
-        self._marker_lines = self._plot.signal_plot.ax.add_collection(line_collection)
-        self._marker_patches = self._plot.signal_plot.ax.add_collection(patch_collection)
-        self._marker_scatter = self._plot.signal_plot.ax.scatter(
-                point_x_coordinate_list,
-                point_y_coordinate_list,
-                color=point_color_list,
-                animated=True)
+        if line_segment_list:
+            line_collection = LineCollection(
+                    line_segment_list,
+                    colors=line_color_list,
+                    linestyles=line_linestyle_list,
+                    linewidths=line_linewidth_list,
+                    animated=True)
+            self._marker_lines = self._plot.signal_plot.ax.add_collection(line_collection)
+        if patch_list:
+            patch_collection = PatchCollection(
+                    patch_list,
+                    animated=True)
+            self._marker_patches = self._plot.signal_plot.ax.add_collection(patch_collection)
+        if point_x_coordinate_list:
+            point_x_coordinate_list = np.array(point_x_coordinate_list).flatten()
+            point_y_coordinate_list = np.array(point_y_coordinate_list).flatten()
+            self._marker_scatter = self._plot.signal_plot.ax.scatter(
+                    point_x_coordinate_list,
+                    point_y_coordinate_list,
+                    color=point_color_list,
+                    animated=True)
 
     def add_poissonian_noise(self, **kwargs):
         """Add Poissonian noise to the data"""
