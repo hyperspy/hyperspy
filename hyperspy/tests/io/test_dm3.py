@@ -21,7 +21,7 @@ import os
 
 import numpy as np
 from numpy.testing import assert_allclose
-from .generate_dm_testing_files import dm3_data_types
+from hyperspy.tests.io.generate_dm_testing_files import dm3_data_types
 
 
 from hyperspy.io import load

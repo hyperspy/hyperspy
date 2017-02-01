@@ -1,7 +1,7 @@
 import numpy as N
 import copy
 
-from .mpfit import mpfit
+from hyperspy.external.mpfit.mpfit import mpfit
 
 
 def Flin(x, p):

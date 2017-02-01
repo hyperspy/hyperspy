@@ -20,7 +20,7 @@
 import os
 
 import numpy as np
-from .generate_dm_testing_files import dm4_data_types
+from hyperspy.tests.io.generate_dm_testing_files import dm4_data_types
 
 from hyperspy.io import load
 
