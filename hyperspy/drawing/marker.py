@@ -135,6 +135,10 @@ class MarkerBase(object):
         else:
             return data[ind].item()[()]
 
+    def _get_navigation_shape(self):
+        position_array = np.array(self.data['x1'].item())
+        return position_array.shape
+
     def close(self):
         if self._closing:
             return

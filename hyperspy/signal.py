@@ -4049,6 +4049,19 @@ class BaseSignal(FancySlicing,
         if plot_marker:
             marker.plot()
 
+    def add_permanent_marker(self, marker):
+        if not hasattr(self, "markers"):
+            self.markers = []
+        nav_shape = marker._get_navigation_shape()
+        if len(nav_shape) == 0:
+            self.markers.append(marker)
+        elif nav_shape == self.axes_manager.navigation_shape:
+            self.markers.append(marker)
+        else:
+            raise ValueError(
+                "Navigation shape of the marker must be 0 or the "
+                "same navigation shape as this signal.")
+
     def _add_all_markers_to_plot(self):
         if self._marker_lines is not None:
             self._marker_lines.remove()
