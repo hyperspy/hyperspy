@@ -213,4 +213,3 @@ def generate_files():
                     filename = _get_filename(s, metadata)
                     filepath = os.path.join(MYPATH, "ripple_files", filename)
                     s.save(filepath, overwrite=True)
-
