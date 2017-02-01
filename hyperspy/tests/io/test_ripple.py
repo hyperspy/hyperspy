@@ -149,7 +149,7 @@ def _run_test(dtype, shape, dim, tmpdir, metadata):
             assert (s.axes_manager.signal_dimension ==
                     stest.axes_manager.signal_dimension)
             assert (s.metadata.General.title ==
-                            stest.metadata.General.title)
+                    stest.metadata.General.title)
             mdpaths = ("Signal.signal_type", )
             if s.metadata.Signal.signal_type == "EELS" and metadata:
                 mdpaths += (
@@ -211,4 +211,3 @@ def generate_files():
                     filename = _get_filename(s, metadata)
                     filepath = os.path.join(MYPATH, "ripple_files", filename)
                     s.save(filepath, overwrite=True)
-

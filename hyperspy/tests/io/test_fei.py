@@ -427,7 +427,6 @@ class TestFEIReader():
         assert (s.metadata.General.date == "2016-02-22")
         assert (s.metadata.General.time == "11:50:36")
 
-
     def test_metadata_TEM(self):
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
         s = load(fname0)

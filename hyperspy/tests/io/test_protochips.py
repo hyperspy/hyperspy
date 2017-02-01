@@ -108,8 +108,8 @@ class test_ProtochipsGasCellCSV():
     def test_read_original_metadata(self):
         om = self.s_list[0].original_metadata.Protochips_header
         assert (om.Calibration_file_name == "The calibration files names"
-                        " are saved in the 'Original notes' array of the "
-                        "original metadata.")
+                " are saved in the 'Original notes' array of the "
+                "original metadata.")
         assert om.Holder_Pressure_units == 'Torr'
         assert om.Holder_Temperature_units == 'Degrees C'
         assert om.Start_time == datetime_gas_cell[2]
@@ -259,7 +259,7 @@ def test_read_protochips_thermal():
     assert s.metadata.Signal.signal_type == ''
     assert s.metadata.Signal.quantity == 'Temperature (Degrees C)'
     assert (s.metadata.General.notes ==
-                    'Calibration file name: AD21013_8.cal')
+            'Calibration file name: AD21013_8.cal')
 
 
 class test_ProtochipsThermallCSVReader():
@@ -302,7 +302,7 @@ def test_read_protochips_electrothermal():
     assert s[1].metadata.General.title == 'Channel B Current (Amps)'
     assert s[1].metadata.Signal.signal_type == ''
     assert (s[0].metadata.General.notes ==
-                    'Calibration file name: AD21018_4.cal')
+            'Calibration file name: AD21018_4.cal')
     assert s[1].metadata.Signal.quantity == 'Current (Amps)'
     assert s[2].metadata.General.title == 'Channel B Voltage (Volts)'
     assert s[2].metadata.Signal.signal_type == ''
