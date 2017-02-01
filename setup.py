@@ -345,6 +345,7 @@ with update_version_when_dev() as version:
                 'tests/io/dm4_2D_data/*.dm4',
                 'tests/io/dm4_3D_data/*.dm4',
                 'tests/io/dm3_locale/*.dm3',
+                'tests/io/edax_files/*',
                 'tests/io/FEI_new/*.emi',
                 'tests/io/FEI_new/*.ser',
                 'tests/io/FEI_new/*.npy',
