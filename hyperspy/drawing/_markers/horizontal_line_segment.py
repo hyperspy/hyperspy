@@ -57,6 +57,7 @@ class HorizontalLineSegment(MarkerBase):
         self.marker_properties = lp
         self.set_data(x1=x1, x2=x2, y1=y)
         self.set_marker_properties(**kwargs)
+        self._matplotlib_collection_type = 'line'
 
     def update(self):
         if self.auto_update is False:
@@ -90,3 +91,11 @@ class HorizontalLineSegment(MarkerBase):
         else:
             segments[0][1, 0] = self.get_data_position('x2')
         self.marker.set_segments(segments)
+
+    def _get_segment(self):
+        """Getting data for use with matplotlib Collections"""
+        x1 = self.get_data_position('x1')
+        x2 = self.get_data_position('x2')
+        y1 = self.get_data_position('y1')
+        y2 = self.get_data_position('y1')
+        return(((x1, y1), (x2, y2)))
