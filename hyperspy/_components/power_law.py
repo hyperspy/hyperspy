@@ -95,9 +95,9 @@ class PowerLaw(Component):
             estimation.
 
         only_current : bool
-            If False estimates the parameters for the full dataset.
+            If False, estimates the parameters for the full dataset.
         out : bool
-            If True, returns the result arrays diretly without storing in the
+            If True, returns the result arrays directly without storing in the
             parameter maps/values. The returned order is (A, r).
 
         Returns

@@ -56,7 +56,7 @@ def load(filenames=None,
     FEI ser and emi, hdf5, SEMPER unf, EMD, EDAX spd/spc, tif, and a number
     of image formats.
 
-    Any extra keyword is passed to the corresponsing reader. For
+    Any extra keyword is passed to the corresponding reader. For
     available options see their individual documentation.
 
     Parameters

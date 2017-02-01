@@ -315,7 +315,7 @@ def dasky_histogram(a, bins=10, **kwargs):
     bins : int or list or str (optional)
         If bins is a string, then it must be one of:
         'scotts' : use Scott's rule to determine bins
-        'freedman' : use the Freedman-diaconis rule to determine bins
+        'freedman' : use the Freedman-Diaconis rule to determine bins
     other keyword arguments are described in numpy.hist().
 
     Returns
