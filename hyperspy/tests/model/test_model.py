@@ -317,7 +317,7 @@ class TestModel1D:
         from IPython import get_ipython
         ip = get_ipython()
         if ip is None or not getattr(ip, 'kernel', None):
-            pytest.xfail("Not attached to notebook")
+            pytest.skip("Not attached to notebook")
         m = self.model
         m.notebook_interaction()
         m.append(hs.model.components1D.Offset())
