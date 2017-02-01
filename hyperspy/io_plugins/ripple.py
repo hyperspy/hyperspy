@@ -109,6 +109,7 @@ rpl_keys = {
     'tilt-stage': float,
     'date': str,
     'time': str,
+    'title': str,
 }
 
 
@@ -151,7 +152,6 @@ def parse_ripple(fp):
 
     rpl_info = {}
     for line in fp.readlines():
-        line = line.replace(' ', '')
         # correct_brucker_format
         line = line.replace('data-Length', 'data-length')
         if line[:2] not in newline and line[0] != comment:
@@ -324,7 +324,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
       height-scale          float    # row scaling (units per pixel)
       height-units          str      # row units, usually nm
       height-name      str           # Name of the magnitude stored as height
-      signal            str        # Name of the signal stored, e.g. HAADF
+      signal            str        # Type of the signal stored, e.g. EDS_SEM
       convergence-angle float   # TEM convergence angle in mrad
       collection-angle  float   # EELS spectrometer collection semi-angle in mrad
       beam-energy       float   # TEM beam energy in keV
@@ -335,6 +335,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
       tilt-stage        float   # The tilt of the stage
       date              str     # date in ISO 8601
       time              str     # time in ISO 8601
+      title              str    # title of the signal to be stored
 
     NOTES
 
@@ -423,6 +424,9 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     if 'signal' not in rpl_info:
         rpl_info['signal'] = ""
 
+    if 'title' not in rpl_info:
+        rpl_info['title'] = ""
+
     if 'depth-scale' in rpl_info:
         scales[idepth] = rpl_info['depth-scale']
     # ev-per-chan is the only calibration supported by the original ripple
@@ -466,7 +470,9 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     mp = DictionaryTreeBrowser({
         'General': {'original_filename': os.path.split(filename)[1],
                     'date': rpl_info['date'],
-                    'time': rpl_info['time']},
+                    'time': rpl_info['time'],
+                    'title': rpl_info['title']
+                    },
         "Signal": {'signal_type': rpl_info['signal'],
                    'record_by': record_by},
     })
@@ -559,6 +565,10 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
         time = signal.metadata.General.time
     else:
         time = ""
+    if signal.metadata.has_item("General.title"):
+        title = signal.metadata.General.title
+    else:
+        title = ""
     if signal.axes_manager.signal_dimension == 1:
         record_by = 'vector'
         depth_axis = signal.axes_manager.signal_axes[0]
@@ -605,7 +615,8 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
         'record-by': record_by,
         'signal': signal_type,
         'date': date,
-        'time': time
+        'time': time,
+        'title': title
     }
     if ev_per_chan is not None:
         keys_dictionary['ev-per-chan'] = ev_per_chan

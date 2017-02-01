@@ -29,6 +29,7 @@ import logging
 import numpy as np
 import scipy as sp
 from matplotlib import pyplot as plt
+import numbers
 
 from hyperspy.axes import AxesManager
 from hyperspy import io
@@ -2359,7 +2360,7 @@ class BaseSignal(FancySlicing,
                 step_sizes = ([shape[axis] // number_of_parts, ] *
                               number_of_parts)
 
-        if isinstance(step_sizes, int):
+        if isinstance(step_sizes, numbers.Integral):
             step_sizes = [step_sizes] * int(len_axis / step_sizes)
 
         splitted = []
@@ -3443,14 +3444,14 @@ class BaseSignal(FancySlicing,
         # Combine data if required
         shapes = list(shapes)
         nav_shape = self.axes_manager._navigation_shape_in_array
-        res = None # the returned thing
+        res = None  # the returned thing
         if len(shapes) == 1 and shapes[0] is not None:
             sig_shape = shapes[0]
             if sig_shape == (1,):
                 sig_shape = ()
             res_data = np.stack(res_data.flat).reshape(nav_shape + sig_shape)
             if inplace:
-                sig = self # the modified thing
+                sig = self  # the modified thing
                 if (self.data.shape == res_data.shape and
                         np.can_cast(res_data.dtype, self.data.dtype)):
                     self.data[:] = res_data
@@ -3759,7 +3760,7 @@ class BaseSignal(FancySlicing,
             s = BaseSignal(
                 np.zeros(self.axes_manager._navigation_shape_in_array,
                          dtype=self.data.dtype),
-                           axes=self.axes_manager._get_navigation_axes_dicts())
+                axes=self.axes_manager._get_navigation_axes_dicts())
             s.axes_manager.set_signal_dimension(
                 self.axes_manager.navigation_dimension)
         return s
