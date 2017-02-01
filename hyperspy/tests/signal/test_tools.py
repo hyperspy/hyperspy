@@ -362,10 +362,10 @@ class Test3D:
         s = s.transpose(signal_axes=2)
         data = np.zeros(s.axes_manager._signal_shape_in_array)
         ns = s._get_signal_signal(data=data)
-        if s._lazy:
-            nt.assert_in(data, [v for v in ns.data.dask.values()])
-        else:
-            nt.assert_is(ns.data, data)
+        # if s._lazy:
+        #     nt.assert_in(data, [v for v in ns.data.dask.values()])
+        # else:
+        nt.assert_is(ns.data, data)
 
     def test_get_navigation_signal_dtype(self):
         s = self.signal
