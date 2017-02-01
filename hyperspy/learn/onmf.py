@@ -80,8 +80,6 @@ def _solveproj(v, W, lambda1, kappa=1, h=None, r=None, vmax=None):
 
     while True:
         iters += 1
-        if iters % 10 == 0:
-            _logger.debug('solveproj iter #{}'.format(iters))
         # Solve for h
         htmp = h
         h = h - eta * np.dot(W.T, np.dot(W, h) + r - v)
@@ -230,12 +228,22 @@ class ONMF:
             return self.W, 0
 
 
-def onmf(X, rank, lambda1=1, kappa=1, store_r=False, refine=False):
-    _onmf = ONMF(rank, lambda1=lambda1, kappa=kappa, store_r=store_r)
+def onmf(X, rank,
+         lambda1=1,
+         kappa=1,
+         store_r=False,
+         project=False,
+         robust=False):
+
+    _onmf = ONMF(rank,
+                 lambda1=lambda1,
+                 kappa=kappa,
+                 store_r=store_r,
+                 robust=robust)
     _onmf.fit(X)
-    if refine:
+    if project:
         W = _onmf.W
         H = _onmf.project(X)
     else:
-        W, H = _nmf.finish()
+        W, H = _onmf.finish()
     return W, H
