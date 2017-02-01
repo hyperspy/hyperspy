@@ -4,7 +4,6 @@ import json
 
 import numpy as np
 import pytest
-from nose.plugins.skip import SkipTest
 from numpy.testing import assert_allclose
 
 from hyperspy.io import load

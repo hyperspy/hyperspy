@@ -112,4 +112,5 @@ def test_get_unwrapped_phase_3D():
 
 if __name__ == '__main__':
 
-    nose.run(defaultTest=__name__)
+    import pytest
+    pytest.main(__name__)

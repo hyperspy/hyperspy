@@ -170,4 +170,5 @@ class TestConvertComplexSignal1D:
 
 if __name__ == '__main__':
 
-    nose.run(defaultTest=__name__)
+    import pytest
+    pytest.main(__name__)
