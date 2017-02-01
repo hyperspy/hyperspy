@@ -1,5 +1,5 @@
 #!/usr/bin/python
-"""Run nosetests after setting ETS toolkit to "null"."""
+"""Run pytests after setting ETS toolkit to "null"."""
 
 if __name__ == '__main__':
     import sys
