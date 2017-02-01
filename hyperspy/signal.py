@@ -3747,6 +3747,7 @@ class BaseSignal(FancySlicing,
 
 
         """
+        from dask.array import Array
         if data is not None:
             ref_shape = (self.axes_manager._navigation_shape_in_array
                          if self.axes_manager.navigation_dimension != 0
@@ -3762,15 +3763,9 @@ class BaseSignal(FancySlicing,
             if self.axes_manager.navigation_dimension == 0:
                 data = np.array([0, ], dtype=dtype)
             else:
-                try:
-                    data = np.zeros(
-                        self.axes_manager._navigation_shape_in_array,
-                        dtype=dtype)
-                except MemoryError:
-                    from dask.array import zeros
-                    data = zeros(self.axes_manager._navigation_shape_in_array,
-                                 chunks=1000,  # just a random guess
-                                 dtype=dtype)
+                data = np.zeros(
+                    self.axes_manager._navigation_shape_in_array,
+                    dtype=dtype)
         if self.axes_manager.navigation_dimension == 0:
             s = BaseSignal(data)
         elif self.axes_manager.navigation_dimension == 1:
@@ -3782,12 +3777,12 @@ class BaseSignal(FancySlicing,
             s = Signal2D(data,
                          axes=self.axes_manager._get_navigation_axes_dicts())
         else:
-            s = BaseSignal(
-                np.zeros(self.axes_manager._navigation_shape_in_array,
-                         dtype=self.data.dtype),
+            s = BaseSignal(data,
                            axes=self.axes_manager._get_navigation_axes_dicts())
             s.axes_manager.set_signal_dimension(
                 self.axes_manager.navigation_dimension)
+        if isinstance(data, Array):
+            s = s.as_lazy()
         return s
 
     def _get_signal_signal(self, data=None, dtype=None):
@@ -3805,7 +3800,7 @@ class BaseSignal(FancySlicing,
             data.
 
         """
-
+        from dask.array import Array
         if data is not None:
             ref_shape = (self.axes_manager._signal_shape_in_array
                          if self.axes_manager.signal_dimension != 0
@@ -3820,15 +3815,9 @@ class BaseSignal(FancySlicing,
             if self.axes_manager.signal_dimension == 0:
                 data = np.array([0, ], dtype=dtype)
             else:
-                try:
-                    data = np.zeros(
-                        self.axes_manager._signal_shape_in_array,
-                        dtype=dtype)
-                except MemoryError:
-                    from dask.array import zeros
-                    data = zeros(self.axes_manager._signal_shape_in_array,
-                                 chunks=1000,  # just a random guess
-                                 dtype=dtype)
+                data = np.zeros(
+                    self.axes_manager._signal_shape_in_array,
+                    dtype=dtype)
 
         if self.axes_manager.signal_dimension == 0:
             s = BaseSignal(data)
@@ -3836,6 +3825,8 @@ class BaseSignal(FancySlicing,
         else:
             s = self.__class__(data,
                                axes=self.axes_manager._get_signal_axes_dicts())
+        if isinstance(data, Array):
+            s = s.as_lazy()
         return s
 
     def __iter__(self):

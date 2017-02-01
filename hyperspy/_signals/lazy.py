@@ -358,21 +358,15 @@ class LazySignal(BaseSignal):
         variance = da.clip(variance, gain_offset * correlation_factor, np.inf)
         return variance
 
-    def _get_navigation_signal(self, data=None, dtype=None):
-        res = super()._get_navigation_signal(data=data, dtype=dtype)
-        if isinstance(res.data, da.Array):
-            res = res.as_lazy()
-        return res
+    # def _get_navigation_signal(self, data=None, dtype=None):
+    #     return super()._get_navigation_signal(data=data, dtype=dtype).as_lazy()
 
-    _get_navigation_signal.__doc__ = BaseSignal._get_navigation_signal.__doc__
+    # _get_navigation_signal.__doc__ = BaseSignal._get_navigation_signal.__doc__
 
-    def _get_signal_signal(self, data=None, dtype=None):
-        res = super()._get_signal_signal(data=data, dtype=dtype).as_lazy()
-        if isinstance(res.data, da.Array):
-            res = res.as_lazy()
-        return res
+    # def _get_signal_signal(self, data=None, dtype=None):
+    #     return super()._get_signal_signal(data=data, dtype=dtype).as_lazy()
 
-    _get_signal_signal.__doc__ = BaseSignal._get_signal_signal.__doc__
+    # _get_signal_signal.__doc__ = BaseSignal._get_signal_signal.__doc__
 
     def _calculate_summary_statistics(self):
         data = self._lazy_data()
