@@ -63,13 +63,16 @@ def test_write_with_metadata():
     data = np.arange(5 * 10).reshape((5, 10))
     s = signals.Signal1D(data)
     s.metadata.set_item('General.date', "2016-08-06")
+    s.metadata.set_item('General.time', "10:55:00")
+    s.metadata.set_item('General.title', "Test title")
     with tempfile.TemporaryDirectory() as tmpdir:
         fname = os.path.join(tmpdir, 'test_write_with_metadata.rpl')
         s.save(fname)
         s2 = load(fname)
         np.testing.assert_allclose(s.data, s2.data)
         assert s.metadata.General.date == s2.metadata.General.date
-        # for windows
+        assert (s.metadata.General.title == s2.metadata.General.title)
+        assert (s.metadata.General.time == s2.metadata.General.time)
         del s2
         gc.collect()
 
@@ -79,15 +82,16 @@ def test_ripple():
         for dtype in ripple.dtype2keys.keys():
             for shape, dims in SHAPES_SDIM:
                 for dim in dims:
-                    for metadata in range(1):  # (True, False) not working...
+                    for metadata in [True, False]:
                         yield _run_test, dtype, shape, dim, tmpdir, metadata
 
 
-def _get_filename(s):
-    filename = "test_ripple_sdim-%i_ndim-%i_%s.rpl" % (
+def _get_filename(s, metadata):
+    filename = "test_ripple_sdim-%i_ndim-%i_%s%s.rpl" % (
         s.axes_manager.signal_dimension,
         s.axes_manager.navigation_dimension,
-        s.data.dtype.name)
+        s.data.dtype.name,
+        "_meta" if metadata else "")
     return filename
 
 
@@ -118,6 +122,7 @@ def _create_signal(shape, dim, dtype, metadata):
     if metadata:
         s.metadata.General.date = "2016-08-06"
         s.metadata.General.time = "10:55:00"
+        s.metadata.General.title = "Test title"
     for i, axis in enumerate(s.axes_manager._axes):
         i += 1
         axis.offset = i * 0.5
@@ -133,7 +138,7 @@ def _create_signal(shape, dim, dtype, metadata):
 
 def _run_test(dtype, shape, dim, tmpdir, metadata):
     s = _create_signal(shape=shape, dim=dim, dtype=dtype, metadata=metadata)
-    filename = _get_filename(s)
+    filename = _get_filename(s, metadata)
     s.save(os.path.join(tmpdir, filename))
     s_just_saved = load(os.path.join(tmpdir, filename))
     s_ref = load(os.path.join(MYPATH, "ripple_files", filename))
@@ -143,6 +148,8 @@ def _run_test(dtype, shape, dim, tmpdir, metadata):
             assert s.data.dtype == stest.data.dtype
             assert (s.axes_manager.signal_dimension ==
                     stest.axes_manager.signal_dimension)
+            assert (s.metadata.General.title ==
+                            stest.metadata.General.title)
             mdpaths = ("Signal.signal_type", )
             if s.metadata.Signal.signal_type == "EELS" and metadata:
                 mdpaths += (
@@ -162,7 +169,8 @@ def _run_test(dtype, shape, dim, tmpdir, metadata):
             if metadata:
                 mdpaths = (
                     "General.date",
-                    "General.time",)
+                    "General.time",
+                    "General.title",)
             for mdpath in mdpaths:
                 assert (
                     s.metadata.get_item(mdpath) ==
@@ -197,7 +205,10 @@ def generate_files():
     for dtype in ripple.dtype2keys.keys():
         for shape, dims in SHAPES_SDIM:
             for dim in dims:
-                s = _create_signal(shape=shape, dim=dim, dtype=dtype)
-                filename = _get_filename(s)
-                filepath = os.path.join(MYPATH, "ripple_files", filename)
-                s.save(filepath, overwrite=True)
+                for metadata in [True, False]:
+                    s = _create_signal(shape=shape, dim=dim, dtype=dtype,
+                                       metadata=metadata)
+                    filename = _get_filename(s, metadata)
+                    filepath = os.path.join(MYPATH, "ripple_files", filename)
+                    s.save(filepath, overwrite=True)
+

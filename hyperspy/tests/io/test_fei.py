@@ -19,9 +19,10 @@
 import os
 
 import pytest
-
 import numpy as np
 from numpy.testing import assert_allclose
+import traits.api as t
+
 
 from hyperspy.io import load
 from hyperspy.io_plugins.fei import load_ser_file
@@ -43,12 +44,6 @@ class TestFEIReader():
         # TIA new format
         fname1 = os.path.join(self.dirpathnew, '128x128_TEM_acquire-sum1.emi')
         load(fname1)
-        # TIA new format 1Go file
-#        fname2= os.path.join('/mnt/data/test/64bits', 'CCD Preview-250-beam_damaged.emi')
-#        load(fname2)
-        # TIA new format 4Go file
-#        fname2= os.path.join('/mnt/data/test/64bits', '11.22.31 CCD Preview-250-bean_damaged-bin2-0.2s.emi')
-#        load(fname2)
 
     def test_load_image_content(self):
         # TEM image of the beam stop
@@ -78,8 +73,10 @@ class TestFEIReader():
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode == 'TEM')
         assert_allclose(s0.axes_manager[0].scale, 0.10157, atol=1E-5)
         assert s0.axes_manager[0].units == '1/nm'
+        assert (s0.axes_manager[0].name == 'x')
         assert_allclose(s0.axes_manager[1].scale, 0.10157, atol=1E-5)
         assert s0.axes_manager[1].units == '1/nm'
+        assert (s0.axes_manager[1].name == 'y')
 
     def test_load_diffraction_line_scan(self):
         fname0 = os.path.join(
@@ -94,6 +91,8 @@ class TestFEIReader():
         assert s0[0].axes_manager[0].units == 'nm'
         assert_allclose(s0[0].axes_manager[1].scale, 5.0, atol=1E-5)
         assert s0[0].axes_manager[1].units == 'eV'
+        assert (s0[0].axes_manager[0].name == 'x')
+        assert (s0[0].axes_manager[1].name == 'Energy')
         # s0[1] contains diffraction patterns
         assert s0[1].data.shape == (5, 128, 128)
         assert s0[1].axes_manager.signal_dimension == 2
@@ -102,9 +101,13 @@ class TestFEIReader():
         assert_allclose(s0[1].axes_manager[0].scale, 3.68864, atol=1E-5)
         assert s0[1].axes_manager[0].units == 'nm'
         assert s0[1].axes_manager[1].units == '1/nm'
+        assert (s0[1].axes_manager[0].name == 'x')
         assert_allclose(s0[1].axes_manager[1].scale, 0.17435, atol=1E-5)
         assert_allclose(s0[1].axes_manager[2].scale, 0.17435, atol=1E-5)
         assert s0[1].axes_manager[2].units == '1/nm'
+        assert (s0[1].axes_manager[1].units == '1/nm')
+        assert (s0[1].axes_manager[1].name == 'x')
+        assert (s0[1].axes_manager[2].name == 'y')
 
     def test_load_diffraction_area_scan(self):
         fname0 = os.path.join(
@@ -126,10 +129,22 @@ class TestFEIReader():
         assert s0[1].axes_manager.signal_dimension == 2
         assert (
             s0[1].metadata.Acquisition_instrument.TEM.acquisition_mode == 'STEM')
-        assert_allclose(s0[1].axes_manager[0].scale, -1.87390, atol=1E-5)
+        assert_allclose(s0[1].axes_manager[0].scale, 1.87390, atol=1E-4)
         assert s0[1].axes_manager[0].units == 'nm'
         assert_allclose(s0[1].axes_manager[2].scale, 0.17435, atol=1E-5)
         assert s0[1].axes_manager[2].units == '1/nm'
+        assert (s0[0].axes_manager[0].name == 'x')
+        assert (s0[0].axes_manager[1].name == 'y')
+        assert (s0[0].axes_manager[2].name == 'Energy')
+        assert_allclose(s0[1].axes_manager[0].scale, 1.87390, atol=1E-5)
+        assert (s0[1].axes_manager[0].name == 'x')
+        assert_allclose(s0[1].axes_manager[1].scale, -1.87390, atol=1E-4)
+        assert (s0[1].axes_manager[1].units == 'nm')
+        assert (s0[1].axes_manager[1].name == 'y')
+        assert (s0[1].axes_manager[2].name == 'x')
+        assert_allclose(s0[1].axes_manager[3].scale, 0.17435, atol=1E-5)
+        assert (s0[1].axes_manager[3].units == '1/nm')
+        assert (s0[1].axes_manager[3].name == 'y')
 
     def test_load_spectrum_point(self):
         fname0 = os.path.join(
@@ -140,11 +155,18 @@ class TestFEIReader():
         assert (
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode == 'STEM')
         # single spectrum should be imported as 1D data, not 2D
-        assert_allclose(
-            s0.axes_manager[0].scale, 1000000000.0, atol=1E-5)
-        assert s0.axes_manager[0].units == 'nm'
+        # TODO: the following calibration is wrong because it parse the
+        # 'Dim-1_CalibrationDelta' from the ser header, which is not correct in
+        # case of point spectra. However, the position seems to be saved in
+        # 'PositionX' and 'PositionY' arrays of the ser header, so it should
+        # be possible to workaround using the position arrays.
+#        nt.assert_almost_equal(
+#            s0.axes_manager[0].scale, 1.0, places=5)
+#        nt.assert_equal(s0.axes_manager[0].units, '')
+#        nt.assert_is(s0.axes_manager[0].name, 'Position index')
         assert_allclose(s0.axes_manager[1].scale, 0.2, atol=1E-5)
         assert s0.axes_manager[1].units == 'eV'
+        assert (s0.axes_manager[1].name == 'Energy')
 
         fname1 = os.path.join(
             self.dirpathold, '16x16-2_point-spectra-2x1024.emi')
@@ -153,11 +175,9 @@ class TestFEIReader():
         assert s1.axes_manager.signal_dimension == 1
         assert (
             s1.metadata.Acquisition_instrument.TEM.acquisition_mode == 'STEM')
-        assert_allclose(
-            s0.axes_manager[0].scale, 1000000000.0, atol=1E-5)
-        assert s0.axes_manager[0].units == 'nm'
         assert_allclose(s0.axes_manager[1].scale, 0.2, atol=1E-5)
         assert s0.axes_manager[1].units == 'eV'
+        assert (s0.axes_manager[1].name == 'Energy')
 
     def test_load_spectrum_line_scan(self):
         fname0 = os.path.join(
@@ -171,6 +191,9 @@ class TestFEIReader():
         assert s0.axes_manager[0].units == 'nm'
         assert_allclose(s0.axes_manager[1].scale, 0.2, atol=1E-5)
         assert s0.axes_manager[1].units == 'eV'
+        assert (s0.axes_manager[0].name == 'x')
+        assert (s0.axes_manager[1].name == 'y')
+        assert (s0.axes_manager[2].name == 'Energy')
 
         fname1 = os.path.join(
             self.dirpathold, '16x16-line_profile_diagonal_10x1024.emi')
@@ -183,6 +206,7 @@ class TestFEIReader():
         assert s1.axes_manager[0].units == 'nm'
         assert_allclose(s1.axes_manager[1].scale, 0.2, atol=1E-5)
         assert s1.axes_manager[1].units == 'eV'
+        assert (s0.axes_manager[0].name == 'y')
 
     def test_load_spectrum_area_scan(self):
         fname0 = os.path.join(
@@ -198,6 +222,9 @@ class TestFEIReader():
         assert s0.axes_manager[1].units == 'nm'
         assert_allclose(s0.axes_manager[2].scale, 0.2, atol=1E-5)
         assert s0.axes_manager[2].units == 'eV'
+        assert (s0.axes_manager[2].name == 'Energy')
+        assert (s0.axes_manager[1].name == 'y')
+        assert (s0.axes_manager[2].name == 'Energy')
 
     def test_load_spectrum_area_scan_not_square(self):
         fname0 = os.path.join(
@@ -245,18 +272,23 @@ class TestFEIReader():
         assert (
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode == 'TEM')
         assert_allclose(s0.axes_manager[0].scale, 1.0, atol=1E-5)
-        assert s0.axes_manager[0].units == 'Unknown'
+        assert s0.axes_manager[0].units is t.Undefined
         assert_allclose(s0.axes_manager[1].scale, 6.281833, atol=1E-5)
         assert s0.axes_manager[1].units == 'nm'
         assert_allclose(s0.axes_manager[2].scale, 6.281833, atol=1E-5)
         assert s0.axes_manager[2].units == 'nm'
+        assert s0.axes_manager[0].units is t.Undefined
+        assert (s0.axes_manager[0].scale == 1.0)
+        assert (s0.axes_manager[0].name is t.Undefined)
+        assert (s0.axes_manager[1].name == 'x')
+        assert (s0.axes_manager[2].name == 'y')
 
         fname2 = os.path.join(
             self.dirpathnew, '128x128x5-diffraction_preview.emi')
         s2 = load(fname2)
         assert s2.data.shape == (5, 128, 128)
         assert_allclose(s2.axes_manager[1].scale, 0.042464, atol=1E-5)
-        assert s0.axes_manager[0].units == 'Unknown'
+        assert s0.axes_manager[0].units is t.Undefined
         assert s2.axes_manager[1].units == '1/nm'
         assert_allclose(s2.axes_manager[2].scale, 0.042464, atol=1E-5)
         assert s2.axes_manager[2].units == '1/nm'
@@ -284,6 +316,8 @@ class TestFEIReader():
         assert s0.axes_manager[0].units == 'nm'
         assert_allclose(s0.axes_manager[1].scale, 6.281833, atol=1E-5)
         assert s0.axes_manager[1].units == 'nm'
+        assert (s0.axes_manager[0].name == 'x')
+        assert (s0.axes_manager[1].name == 'y')
 
         fname1 = os.path.join(self.dirpathold, '16x16_STEM_BF_DF_acquire.emi')
         s1 = load(fname1)
@@ -298,6 +332,8 @@ class TestFEIReader():
             assert_allclose(
                 s.axes_manager[1].scale, 21.510044, atol=1E-5)
             assert s.axes_manager[1].units == 'nm'
+            assert (s.axes_manager[0].name == 'x')
+            assert (s.axes_manager[1].name == 'y')
 
     def test_read_STEM_TEM_mode(self):
         # TEM image
@@ -385,7 +421,12 @@ class TestFEIReader():
         s = load(fname0)
         assert s.metadata.General.date == "2016-02-21"
         assert s.metadata.General.time == "17:50:18"
-        assert s.metadata.General.authors == "ERIC"
+        fname1 = os.path.join(self.dirpathold,
+                              '16x16-line_profile_horizontal_10x1024.emi')
+        s = load(fname1)
+        assert (s.metadata.General.date == "2016-02-22")
+        assert (s.metadata.General.time == "11:50:36")
+
 
     def test_metadata_TEM(self):
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
