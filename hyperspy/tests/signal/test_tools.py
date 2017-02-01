@@ -762,9 +762,9 @@ class TestTranspose:
     def test_transpose_shortcut(self):
         s = self.s.transpose(signal_axes=2)
         t = s.T
-        nt.assert_equal(t.axes_manager.navigation_shape, (5, 6))
+        nt.assert_equal(t.axes_manager.navigation_shape, (6, 5))
         nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
-                        ['e', 'f'])
+                        ['f', 'e'])
 
     def test_optimize(self):
         if self.s._lazy:
