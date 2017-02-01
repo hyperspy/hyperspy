@@ -42,12 +42,12 @@ script:
   - if [[ $MINIMAL_ENV == 'False' ]]; then
       python setup.py build_ext --inplace;
       pip install coverage coveralls pytest-cov;
-      python continuous_integration/nosetest.py --cov-report= --cov=hyperspy hyperspy.tests;
+      python continuous_integration/nosetest.py --cov-report= --cov=hyperspy --pyargs hyperspy;
     else python3 setup.py build_ext --inplace;
       echo "available installed python libraries (pip3 list):"
       pip3 list;
       pip3 install coverage coveralls pytest-cov;
-      python3 continuous_integration/nosetest.py --cov-report= --cov=hyperspy hyperspy.tests;
+      python3 continuous_integration/nosetest.py --cov-report= --cov=hyperspy --pyargs hyperspy.tests;
     fi
 
 after_success:
