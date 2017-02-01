@@ -20,16 +20,25 @@ Y = X + E
 
 def test_default():
     W, H = onmf(X, r)
-    assert compare(np.dot(W, H), X.T) < 0.05
+    res = compare(np.dot(W, H), X.T)
+    print(res)
+    assert res < 0.05
+
 
 def test_corrupted_default():
     W, H = onmf(Y, r)
-    assert compare(np.dot(W, H), X.T) < 0.1
+    res =  compare(np.dot(W, H), X.T)
+    print(res)
+    assert res < 0.1
 
 def test_robust():
     W, H = onmf(X, r, robust=True)
-    assert compare(np.dot(W, H), X.T) < 0.04
+    res = compare(np.dot(W, H), X.T)
+    print(res)
+    assert res < 0.04
 
 def test_corrupted_robust():
     W, H = onmf(Y, r, robust=True)
-    assert compare(np.dot(W, H), X.T) < 0.095
+    res =  compare(np.dot(W, H), X.T)
+    print(res)
+    assert res < 0.095
