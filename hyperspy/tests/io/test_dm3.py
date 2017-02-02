@@ -38,7 +38,7 @@ data_dict = {'dm3_1D_data': {},
              'dm3_3D_data': {}, }
 
 
-class test_ImageObject():
+class TestImageObject():
 
     def setup_method(self, method):
         self.imageobject = ImageObject({}, "")
