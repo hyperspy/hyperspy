@@ -384,24 +384,11 @@ def file_reader(filename, load_to_memory=True, log_info=False, **kwds):
 
 def file_writer(filename, signal, signal_metadata=None, user=None,
                 microscope=None, sample=None, comments=None, **kwds):
-    if user is None:  # If not provided, look in metadata:
-        user = signal.metadata.General.as_dictionary().get('user')
-    if user is None:  # If not found, check original_metadata:
-        user = signal.original_metadata.General.as_dictionary().get('user')
-    if microscope is None:  # If not provided, look in metadata:
-        microscope = signal.metadata.General.as_dictionary().get('microscope')
-    if microscope is None:  # If not found, check original_metadata:
-        microscope = signal.original_metadata.General.as_dictionary().get(
-            'microscope')
-    if sample is None:  # If not provided, look in metadata:
-        sample = signal.metadata.General.as_dictionary().get('sample')
-    if sample is None:  # If not found, check original_metadata:
-        sample = signal.original_metadata.General.as_dictionary().get('sample')
-    if comments is None:  # If not provided, look in metadata:
-        comments = signal.metadata.General.as_dictionary().get('comments')
-    if comments is None:  # If not found, check original_metadata:
-        comments = signal.original_metadata.General.as_dictionary().get(
-            'comments')
+    metadata = signal.metadata.General.as_dictionary()
+    user = user or metadata.get('user', None)
+    microscope = microscope or metadata.get('microscope', None)
+    sample = sample or metadata.get('sample', None)
+    comments = comments or metadata.get('comments', None)
     emd = EMD(
         user=user,
         microscope=microscope,
