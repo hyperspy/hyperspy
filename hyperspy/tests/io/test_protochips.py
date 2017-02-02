@@ -90,7 +90,7 @@ def test_loading_invalid_protochips_file():
         cm.match(invalid_file_error)
 
 
-class test_ProtochipsGasCellCSV():
+class TestProtochipsGasCellCSV():
 
     def setup_method(self, method):
         filename = os.path.join(dirpath, 'protochips_gas_cell.csv')
@@ -107,7 +107,7 @@ class test_ProtochipsGasCellCSV():
 
     def test_read_original_metadata(self):
         om = self.s_list[0].original_metadata.Protochips_header
-        assert (om.Calibration_file_name == "The calibration files names"
+        assert (om.Calibration_file_path == "The calibration files names"
                 " are saved in the 'Original notes' array of the "
                 "original metadata.")
         assert om.Holder_Pressure_units == 'Torr'
@@ -121,37 +121,37 @@ class test_ProtochipsGasCellCSV():
         assert om.User == 'eric'
 
 
-class test_ProtochipsGasCellCSVNoUser():
+class TestProtochipsGasCellCSVNoUser():
 
-    def setUp(self):
+    def setup_method(self, method):
         filename = os.path.join(dirpath, 'protochips_gas_cell_no_user.csv')
         self.s_list = hs.load(filename)
 
     def test_read_metadata(self):
         date, time, dt_np = datetime_gas_cell_no_user
         for s in self.s_list:
-            nt.assert_equal(s.metadata.General.date, date)
-            nt.assert_equal(s.metadata.General.time, time)
-            nt.assert_equal(s.axes_manager[0].units, 's')
-            nt.assert_almost_equal(s.axes_manager[0].scale, 0.26029, places=5)
-            nt.assert_equal(s.axes_manager[0].offset, 0)
+            assert s.metadata.General.date == date
+            assert s.metadata.General.time == time
+            assert s.axes_manager[0].units == 's'
+            assert_allclose(s.axes_manager[0].scale, 0.26029, atol=1E-5)
+            assert s.axes_manager[0].offset == 0
 
     def test_read_original_metadata(self):
         om = self.s_list[0].original_metadata.Protochips_header
-        nt.assert_equal(om.Calibration_file_path, "The calibration files names"
+        assert (om.Calibration_file_path == "The calibration files names"
                         " are saved in the 'Original notes' array of the "
                         "original metadata.")
-        nt.assert_equal(om.Holder_Pressure_units, 'Torr')
-        nt.assert_equal(om.Holder_Temperature_units, 'Degrees C')
-        nt.assert_equal(om.Start_time, datetime_gas_cell_no_user[2])
-        nt.assert_equal(om.Holder_Pressure_units, 'Torr')
-        nt.assert_equal(om.Tank1_Pressure_units, 'Torr')
-        nt.assert_equal(om.Tank2_Pressure_units, 'Torr')
-        nt.assert_equal(om.Vacuum_Tank_Pressure_units, 'Torr')
-        nt.assert_equal(om.Time_units, 'Milliseconds')
+        assert om.Holder_Pressure_units == 'Torr'
+        assert om.Holder_Temperature_units == 'Degrees C'
+        assert om.Start_time == datetime_gas_cell_no_user[2]
+        assert om.Holder_Pressure_units == 'Torr'
+        assert om.Tank1_Pressure_units == 'Torr'
+        assert om.Tank2_Pressure_units == 'Torr'
+        assert om.Vacuum_Tank_Pressure_units == 'Torr'
+        assert om.Time_units == 'Milliseconds'
 
 
-class test_ProtochipsGasCellCSVReader():
+class TestProtochipsGasCellCSVReader():
 
     def setup_method(self, method):
         self.filename = os.path.join(dirpath, 'protochips_gas_cell.csv')
@@ -217,7 +217,7 @@ def test_read_protochips_electrical():
     assert s[5].metadata.Signal.quantity == 'Resistance (Ohms)'
 
 
-class test_ProtochipsElectricalCSVReader():
+class TestProtochipsElectricalCSVReader():
 
     def setup_method(self, method):
         self.filename = os.path.join(dirpath, 'protochips_electrical.csv')
@@ -262,7 +262,7 @@ def test_read_protochips_thermal():
             'Calibration file name: AD21013_8.cal')
 
 
-class test_ProtochipsThermallCSVReader():
+class TestProtochipsThermallCSVReader():
 
     def setup_method(self, method):
         self.filename = os.path.join(dirpath, 'protochips_thermal.csv')
@@ -312,7 +312,7 @@ def test_read_protochips_electrothermal():
     assert s[3].metadata.Signal.quantity == 'Resistance (Ohms)'
 
 
-class test_ProtochipsElectrothermalCSVReader():
+class TestProtochipsElectrothermalCSVReader():
 
     def setup_method(self, method):
         self.filename = os.path.join(dirpath, 'protochips_electrothermal.csv')
