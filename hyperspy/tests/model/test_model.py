@@ -638,7 +638,8 @@ class TestModelFitBinned:
     def test_fit_mpfit(self):
         self.m.fit(fitter="mpfit")
         np.testing.assert_allclose(self.m[0].A.value, 9976.14526286, 5)
-        np.testing.assert_allclose(self.m[0].centre.value, -0.110610718444)
+        np.testing.assert_allclose(self.m[0].centre.value, -0.110610718444,
+                                   rtol=1e-6)
         np.testing.assert_allclose(self.m[0].sigma.value, 1.98380707614)
 
     def test_fit_odr(self):
