@@ -84,10 +84,10 @@ def generate_parameters():
             for dim in dims:
                 for metadata in [True, False]:
                     parameters.append({
-                        "dtype" : dtype,
-                        "shape" : shape,
-                        "dim" : dim,
-                        "metadata" : metadata,})
+                        "dtype": dtype,
+                        "shape": shape,
+                        "dim": dim,
+                        "metadata": metadata, })
     return parameters
 
 
@@ -146,7 +146,11 @@ def test_data(pdict):
     dtype, shape, dim, metadata = (
         pdict["dtype"], pdict["shape"], pdict["dim"], pdict["metadata"])
     with tempfile.TemporaryDirectory() as tmpdir:
-        s = _create_signal(shape=shape, dim=dim, dtype=dtype, metadata=metadata)
+        s = _create_signal(
+            shape=shape,
+            dim=dim,
+            dtype=dtype,
+            metadata=metadata)
         filename = _get_filename(s, metadata)
         s.save(os.path.join(tmpdir, filename))
         s_just_saved = load(os.path.join(tmpdir, filename))
