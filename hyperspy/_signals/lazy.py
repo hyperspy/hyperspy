@@ -556,8 +556,8 @@ class LazySignal(BaseSignal):
         normalize_poissonian_noise : bool
             If True, scale the SI to normalize Poissonian noise
         algorithm : str
-            One of ('PCA', 'ORPCA', 'ONMF'). By default batch PCA from
-            scikit-learn.
+            One of ('PCA', 'ORPCA', 'ONMF'). By default ('PCA') IncrementalPCA
+            from scikit-learn is run.
         get : dask scheduler
             the dask scheduler to use for computations;
             default `dask.threaded.get`
@@ -582,9 +582,31 @@ class LazySignal(BaseSignal):
         **kwargs
             passed to the partial_fit/fit functions.
 
+        Notes
+        -----
+        Various algorithm parameters and their default values:
+            ONMF:
+                lambda1=1,
+                kappa=1,
+                robust=False,
+                store_r=False
+                batch_size=None
+            ORPCA:
+                fast=True,
+                lambda1=None,
+                lambda2=None,
+                method=None,
+                learning_rate=None,
+                init=None,
+                training_samples=None,
+                momentum=None
+            PCA:
+                batch_size=None,
+                copy=True,
+                white=False
+
+
         """
-        # TODO: document with papers
-        # TODO: document parameters for various algorithms
         explained_variance = None
         explained_variance_ratio = None
         _al_data = self._data_aligned_with_axes
@@ -607,8 +629,8 @@ class LazySignal(BaseSignal):
 
         elif algorithm == 'ORPCA':
             from hyperspy.learn.rpca import ORPCA
-            kwargs['fast'] = True
-            obj = ORPCA(output_dimension, **kwargs)
+            kwg = {'fast': True}.update(kwargs)
+            obj = ORPCA(output_dimension, **kwg)
             method = partial(obj.fit, iterating=True)
 
         elif algorithm == 'ONMF':

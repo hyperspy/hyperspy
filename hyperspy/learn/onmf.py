@@ -100,8 +100,52 @@ def _solveproj(v, W, lambda1, kappa=1, h=None, r=None, vmax=None):
 
 
 class ONMF:
+    """This class perfroms Online Robust NMF
+    with missing or corrupted data.
+
+    Methods
+    -------
+    fit
+        learn factors from the given data
+    project
+        project the learnt factors on the given data
+    finish
+        return the learnt factors and loadings
+
+    Notes
+    -----
+    The ONMF code is based on a transcroption of the OPGD algorithm MATLAB code
+    obtained from the authors of the following research paper:
+        Zhao, Renbo, and Vincent YF Tan. "Online nonnegative matrix
+        factorization with outliers." Acoustics, Speech and Signal Processing
+        (ICASSP), 2016 IEEE International Conference on. IEEE, 2016.
+
+    It has been updated to also include L2-normalization cost function that is
+    able to deal with sparse corruptions and/or outliers slightly faster
+    (please see ORPCA implementation for details).
+
+    """
+
     def __init__(self, rank, lambda1=1., kappa=1., store_r=False,
                  robust=False):
+        """Creates Online Robust NMF instance that can learn a representation
+
+        Parameters
+        ----------
+        rank : int
+            The rank of the rapresentation (number of components/factors)
+        lambda1 : float
+            Nuclear norm regularization parameter.
+        kappa : float
+            Sparse error regularization parameter.
+        store_r : bool
+            If True, stores the sparse error matrix, False by default.
+        robust : bool
+            If True, the original OPGD implmentation is used for
+            corruption/outlier regularization, otherwise L2-norm. False by
+            default.
+
+        """
         self.robust = robust
         self.nfeatures = None
         self.rank = rank
@@ -145,16 +189,30 @@ class ONMF:
         return X
 
     def fit(self, X, batch_size=None):
+        """Learn NMF components from the data.
+
+        Parameters
+        ----------
+        X : {numpy.ndarray, iterator}
+            [nsamplex x nfeatures] matrix of observations
+            or an iterator that yields samples, each with nfeatures elements.
+        batch_size : {None, int}
+            If not None, learn the data in batches, each of batch_size samples
+            or less.
+        """
         if self.nfeatures is None:
             X = self._setup(X)
 
         num = None
         prod = np.outer
         if batch_size is not None:
-            prod = np.dot
-            length = X.shape[0]
-            num = max(length // batch_size, 1)
-            X = np.array_split(X, num, axis=0)
+            if isinstance(X, np.ndarray):
+                raise ValueError("can't batch iterating data")
+            else:
+                prod = np.dot
+                length = X.shape[0]
+                num = max(length // batch_size, 1)
+                X = np.array_split(X, num, axis=0)
         if isinstance(X, np.ndarray):
             num = X.shape[0]
             X = iter(X)
@@ -192,6 +250,17 @@ class ONMF:
             self.W /= max(np.linalg.norm(self.W, 'fro'), 1.0)
 
     def project(self, X, return_R=False):
+        """Project the learnt components on the data.
+
+        Parameters
+        ----------
+        X : {numpy.ndarray, iterator}
+            [nsamplex x nfeatures] matrix of observations
+            or an iterator that yields samples, each with nfeatures elements.
+        return_R : bool
+            If True, returns the sparse error matrix as well. Otherwise only
+            the weights (loadings)
+        """
         H = []
         if return_R:
             R = []
@@ -218,6 +287,7 @@ class ONMF:
             return H
 
     def finish(self):
+        """Return the learnt factors and loadings."""
         if len(self.H) > 0:
             if len(self.H[0].shape) == 1:
                 H = np.stack(self.H, axis=-1)
