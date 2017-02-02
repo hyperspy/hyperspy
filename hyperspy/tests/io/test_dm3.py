@@ -21,11 +21,10 @@ import os
 
 import numpy as np
 from numpy.testing import assert_allclose
+import pytest
+
 from hyperspy.tests.io.generate_dm_testing_files import dm3_data_types
-
-
 from hyperspy.io import load
-
 from hyperspy.io_plugins.digital_micrograph import DigitalMicrographReader, ImageObject
 
 my_path = os.path.dirname(__file__)
@@ -243,54 +242,36 @@ def test_location():
     assert s.metadata.General.time == "20:52:30"
 
 
-def test_loading():
+def generate_parameters():
+    parameters = []
     dims = range(1, 4)
     for dim in dims:
         subfolder = 'dm3_%iD_data' % dim
         for key in dm3_data_types.keys():
             fname = "test-%s.dm3" % key
             filename = os.path.join(my_path, subfolder, fname)
-            yield check_load, filename, subfolder, key
+            parameters.append({
+                "filename": filename,
+                "subfolder": subfolder,
+                "key": key,})
+    return parameters
 
-
-def test_dtypes():
-    subfolder = 'dm3_1D_data'
-    for key, data in data_dict[subfolder].items():
-        yield check_dtype, data.dtype, np.dtype(dm3_data_types[key]), key
-
-# TODO: the RGB data generated is not correct
-
-
-# noinspection PyArgumentList
-def test_content():
-    for subfolder in data_dict:
-        for key, data in data_dict[subfolder].items():
-            if subfolder == 'dm3_1D_data':
-                dat = np.arange(1, 3)
-            elif subfolder == 'dm3_2D_data':
-                dat = np.arange(1, 5).reshape(2, 2)
-            elif subfolder == 'dm3_3D_data':
-                dat = np.arange(1, 9).reshape(2, 2, 2)
-            dat = dat.astype(dm3_data_types[key])
-            if key in (8, 23):  # RGBA
-                dat["A"][:] = 0
-            yield check_content, data, dat, subfolder, key
-
-
-def check_load(filename, subfolder, key):
-    print('loading %s\\test-%i' % (subfolder, key))
-    s = load(filename)
-    # Store the data for the next tests
-    data_dict[subfolder][key] = s.data
-
-
-def check_dtype(d1, d2, i):
-    assert d1 == d2, 'test_dtype-%i' % i
-
-
-def check_content(dat1, dat2, subfolder, key):
-    np.testing.assert_array_equal(dat1, dat2,
+@pytest.mark.parametrize("pdict", generate_parameters())
+def test_data(pdict):
+    s = load(pdict["filename"])
+    key = pdict["key"]
+    assert s.data.dtype == np.dtype(dm3_data_types[key])
+    subfolder = pdict["subfolder"]
+    if subfolder == 'dm3_1D_data':
+        dat = np.arange(1, 3)
+    elif subfolder == 'dm3_2D_data':
+        dat = np.arange(1, 5).reshape(2, 2)
+    elif subfolder == 'dm3_3D_data':
+        dat = np.arange(1, 9).reshape(2, 2, 2)
+    dat = dat.astype(dm3_data_types[key])
+    if key in (8, 23):  # RGBA
+        dat["A"][:] = 0
+    np.testing.assert_array_equal(s.data, dat,
                                   err_msg='content %s type % i: '
-                                  '\n%s not equal to \n%s' % (subfolder, key,
-                                                              str(dat1),
-                                                              str(dat2)))
+                                  '\n%s not equal to \n%s' %
+                                  (subfolder, key, str(s.data), str(dat)))
