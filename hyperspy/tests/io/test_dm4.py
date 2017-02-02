@@ -20,9 +20,8 @@
 import os
 
 import numpy as np
-from .generate_dm_testing_files import dm4_data_types
+from hyperspy.tests.io.generate_dm_testing_files import dm4_data_types
 
-from nose.tools import assert_equal
 from hyperspy.io import load
 
 my_path = os.path.dirname(__file__)
@@ -76,7 +75,7 @@ def check_load(filename, subfolder, key):
 
 
 def check_dtype(d1, d2, i):
-    assert_equal(d1, d2, msg='test_dtype-%i' % i)
+    assert d1 == d2, 'test_dtype-%i' % i
 
 
 def check_content(dat1, dat2, subfolder, key):

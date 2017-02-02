@@ -1,9 +1,9 @@
 #!/usr/bin/python
-"""Run nosetests after setting ETS toolkit to "null"."""
+"""Run pytests after setting ETS toolkit to "null"."""
 
 if __name__ == '__main__':
     import sys
-    from nose import run_exit
+    import pytest
     from traits.etsconfig.api import ETSConfig
     import os
     import warnings
@@ -37,4 +37,4 @@ if __name__ == '__main__':
         warnings.filterwarnings('default',
                                 module="(?!hyperspy)")
 
-    sys.exit(run_exit())
+    sys.exit(pytest.main())

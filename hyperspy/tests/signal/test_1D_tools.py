@@ -18,14 +18,8 @@
 from unittest import mock
 
 import numpy as np
-import nose.tools as nt
-from nose.plugins.skip import SkipTest
 from scipy.signal import savgol_filter
-try:
-    from statsmodels.nonparametric.smoothers_lowess import lowess
-    skip_lowess = False
-except:
-    skip_lowess = True
+import pytest
 
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.decorators import lazifyTestClass
@@ -35,7 +29,7 @@ import hyperspy.api as hs
 @lazifyTestClass
 class TestAlignTools:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros((10, 100)))
         self.scale = 0.1
         self.offset = -2
@@ -64,32 +58,32 @@ class TestAlignTools:
                   1 *
                   self.ishifts[:, np.newaxis] *
                   self.scale, show_progressbar=None)
-        nt.assert_true(m.data_changed.called)
+        assert m.data_changed.called
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        nt.assert_true(np.allclose(s.data[:, i_zlp], 12))
+        assert np.allclose(s.data[:, i_zlp], 12)
         # Check that at the edges of the spectrum the value == to the
         # background value. If it wasn't it'll mean that the cropping
         # code is buggy
-        nt.assert_true((s.data[:, -1] == 2).all())
-        nt.assert_true((s.data[:, 0] == 2).all())
+        assert (s.data[:, -1] == 2).all()
+        assert (s.data[:, 0] == 2).all()
         # Check that the calibration is correct
-        nt.assert_equal(s.axes_manager._axes[1].offset, self.new_offset)
-        nt.assert_equal(s.axes_manager._axes[1].scale, self.scale)
+        assert s.axes_manager._axes[1].offset == self.new_offset
+        assert s.axes_manager._axes[1].scale == self.scale
 
     def test_align(self):
         s = self.signal
         s.align1D(show_progressbar=None)
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        nt.assert_true(np.allclose(s.data[:, i_zlp], 12))
+        assert np.allclose(s.data[:, i_zlp], 12)
         # Check that at the edges of the spectrum the value == to the
         # background value. If it wasn't it'll mean that the cropping
         # code is buggy
-        nt.assert_true((s.data[:, -1] == 2).all())
-        nt.assert_true((s.data[:, 0] == 2).all())
+        assert (s.data[:, -1] == 2).all()
+        assert (s.data[:, 0] == 2).all()
         # Check that the calibration is correct
-        nt.assert_equal(
-            s.axes_manager._axes[1].offset, self.new_offset)
-        nt.assert_equal(s.axes_manager._axes[1].scale, self.scale)
+        assert (
+            s.axes_manager._axes[1].offset == self.new_offset)
+        assert s.axes_manager._axes[1].scale == self.scale
 
     def test_align_expand(self):
         s = self.signal
@@ -100,35 +94,35 @@ class TestAlignTools:
         Nnan_data = np.sum(np.isnan(s.data), axis=1)
         # Due to interpolation, the number of NaNs in the data might
         # be 2 higher (left and right side) than expected
-        nt.assert_true(np.all(Nnan_data - Nnan <= 2))
+        assert np.all(Nnan_data - Nnan <= 2)
 
         # Check actual alignment of zlp
         i_zlp = s.axes_manager.signal_axes[0].value2index(0)
-        nt.assert_true(np.allclose(s.data[:, i_zlp], 12))
+        assert np.allclose(s.data[:, i_zlp], 12)
 
 
 @lazifyTestClass
 class TestShift1D:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = hs.signals.Signal1D(np.arange(10))
         self.s.axes_manager[0].scale = 0.2
 
     def test_crop_left(self):
         s = self.s
         s.shift1D(np.array((0.01)), crop=True, show_progressbar=None)
-        nt.assert_equal(
+        assert (
             tuple(
-                s.axes_manager[0].axis), tuple(
+                s.axes_manager[0].axis) == tuple(
                 np.arange(
                     0.2, 2., 0.2)))
 
     def test_crop_right(self):
         s = self.s
         s.shift1D(np.array((-0.01)), crop=True, show_progressbar=None)
-        nt.assert_equal(
+        assert (
             tuple(
-                s.axes_manager[0].axis), tuple(
+                s.axes_manager[0].axis) == tuple(
                 np.arange(
                     0., 1.8, 0.2)))
 
@@ -136,7 +130,7 @@ class TestShift1D:
 @lazifyTestClass
 class TestFindPeaks1D:
 
-    def setUp(self):
+    def setup_method(self, method):
         x = np.arange(0, 50, 0.01)
         s = hs.signals.Signal1D(np.vstack((np.cos(x), np.sin(x))))
         s.axes_manager.signal_axes[0].scale = 0.01
@@ -148,50 +142,47 @@ class TestFindPeaks1D:
         peaks = self.signal.inav[0].find_peaks1D_ohaver()[0]
         if self.signal._lazy:
             peaks = peaks.compute()
-        nt.assert_true(np.allclose(
-            peaks['position'], self.peak_positions0, rtol=1e-5, atol=1e-4))
+        assert np.allclose(
+            peaks['position'], self.peak_positions0, rtol=1e-5, atol=1e-4)
 
     def test_two_spectra(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
         if self.signal._lazy:
             peaks = peaks.compute()
-        nt.assert_true(np.allclose(
-            peaks['position'], self.peak_positions1, rtol=1e-5, atol=1e-4))
+        assert np.allclose(
+            peaks['position'], self.peak_positions1, rtol=1e-5, atol=1e-4)
 
     def test_height(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
         if self.signal._lazy:
             peaks = peaks.compute()
-        nt.assert_true(np.allclose(
-            peaks['height'], 1.0, rtol=1e-5, atol=1e-4))
+        assert np.allclose(
+            peaks['height'], 1.0, rtol=1e-5, atol=1e-4)
 
     def test_width(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
         if self.signal._lazy:
             peaks = peaks.compute()
-        nt.assert_true(np.allclose(
-            peaks['width'], 3.5758, rtol=1e-4, atol=1e-4),
-            msg="One or several widths are not close enough to expected " +
-            "value (3.5758): " + str(peaks[1]['width']))
+        assert np.allclose(peaks['width'], 3.5758, rtol=1e-4, atol=1e-4)
 
     def test_n_peaks(self):
         peaks = self.signal.find_peaks1D_ohaver()[1]
         if self.signal._lazy:
             peaks = peaks.compute()
-        nt.assert_equal(len(peaks), 8)
+        assert len(peaks) == 8
 
     def test_maxpeaksn(self):
         for n in range(1, 10):
             peaks = self.signal.find_peaks1D_ohaver(maxpeakn=n)[1]
             if self.signal._lazy:
                 peaks = peaks.compute()
-            nt.assert_equal(len(peaks), min((8, n)))
+            assert len(peaks) == min((8, n))
 
 
 @lazifyTestClass
 class TestInterpolateInBetween:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.arange(40).reshape((2, 20)))
         s.axes_manager.signal_axes[0].scale = 0.1
         s.isig[8:12] = 0
@@ -203,7 +194,7 @@ class TestInterpolateInBetween:
         s.events.data_changed.connect(m.data_changed)
         s.interpolate_in_between(8, 12, show_progressbar=None)
         np.testing.assert_array_equal(s.data, np.arange(20))
-        nt.assert_true(m.data_changed.called)
+        assert m.data_changed.called
 
     def test_single_spectrum_in_units(self):
         s = self.s.inav[0]
@@ -242,7 +233,7 @@ class TestInterpolateInBetween:
 @lazifyTestClass
 class TestEstimatePeakWidth:
 
-    def setUp(self):
+    def setup_method(self, method):
         scale = 0.1
         window = 2
         x = np.arange(-window, window, scale)
@@ -264,15 +255,18 @@ class TestEstimatePeakWidth:
                                    rtol=self.rtol, atol=self.atol)
         np.testing.assert_allclose(right.data, 2.353255,
                                    rtol=self.rtol, atol=self.atol)
+        for t in (width, left, right):
+            assert t.metadata.Signal.signal_type == ""
+            assert t.axes_manager.signal_dimension == 0
 
     def test_too_narrow_range(self):
         width, left, right = self.s.estimate_peak_width(
             window=0.5,
             return_interval=True,
             show_progressbar=None)
-        nt.assert_true(np.isnan(width.data).all())
-        nt.assert_true(np.isnan(left.data).all())
-        nt.assert_true(np.isnan(right.data).all())
+        assert np.isnan(width.data).all()
+        assert np.isnan(left.data).all()
+        assert np.isnan(right.data).all()
 
     def test_two_peaks(self):
         s = self.s.deepcopy()
@@ -282,15 +276,15 @@ class TestEstimatePeakWidth:
             window=None,
             return_interval=True,
             show_progressbar=None)
-        nt.assert_true(np.isnan(width.data).all())
-        nt.assert_true(np.isnan(left.data).all())
-        nt.assert_true(np.isnan(right.data).all())
+        assert np.isnan(width.data).all()
+        assert np.isnan(left.data).all()
+        assert np.isnan(right.data).all()
 
 
 @lazifyTestClass(rtol=1e-4, atol=0.4)
 class TestSmoothing:
 
-    def setUp(self):
+    def setup_method(self, method):
         n, m = 2, 100
         self.s = hs.signals.Signal1D(
             np.arange(
@@ -304,8 +298,8 @@ class TestSmoothing:
         self.atol = 0
 
     def test_lowess(self):
-        if skip_lowess:
-            raise SkipTest
+        pytest.importorskip("statsmodels")
+        from statsmodels.nonparametric.smoothers_lowess import lowess
         frac = 0.5
         it = 1
         data = np.asanyarray(self.s.data, dtype='float')

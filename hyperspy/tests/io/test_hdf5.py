@@ -18,10 +18,10 @@
 
 import os.path
 from os import remove
-import h5py
 import gc
+import time
 
-import nose.tools as nt
+import h5py
 import numpy as np
 import dask.array as da
 
@@ -71,7 +71,7 @@ example1_original_metadata = {
 class Example1:
 
     def test_data(self):
-        nt.assert_equal(
+        assert (
             [4066.0,
              3996.0,
              3932.0,
@@ -92,33 +92,33 @@ class Example1:
              4613.0,
              4637.0,
              4429.0,
-             4217.0], self.s.data.tolist())
+             4217.0] == self.s.data.tolist())
 
     def test_original_metadata(self):
-        nt.assert_equal(
-            example1_original_metadata,
+        assert (
+            example1_original_metadata ==
             self.s.original_metadata.as_dictionary())
 
 
 class TestExample1_12(Example1):
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = load(os.path.join(
             my_path,
             "hdf5_files",
             "example1_v1.2.hdf5"))
 
     def test_date(self):
-        nt.assert_equal(
-            self.s.metadata.General.date, "1991-10-01")
+        assert (
+            self.s.metadata.General.date == "1991-10-01")
 
     def test_time(self):
-        nt.assert_equal(self.s.metadata.General.time, "12:00:00")
+        assert self.s.metadata.General.time == "12:00:00"
 
 
 class TestExample1_10(Example1):
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = load(os.path.join(
             my_path,
             "hdf5_files",
@@ -127,7 +127,7 @@ class TestExample1_10(Example1):
 
 class TestExample1_11(Example1):
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = load(os.path.join(
             my_path,
             "hdf5_files",
@@ -136,7 +136,7 @@ class TestExample1_11(Example1):
 
 class TestLoadingNewSavedMetadata:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = load(os.path.join(
             my_path,
             "hdf5_files",
@@ -147,23 +147,23 @@ class TestLoadingNewSavedMetadata:
                                              self.s.metadata.Signal.Noise_properties.variance.data)
 
     def test_empty_things(self):
-        nt.assert_equal(self.s.metadata.test.empty_list, [])
-        nt.assert_equal(self.s.metadata.test.empty_tuple, ())
+        assert self.s.metadata.test.empty_list == []
+        assert self.s.metadata.test.empty_tuple == ()
 
     def test_simple_things(self):
-        nt.assert_equal(self.s.metadata.test.list, [42])
-        nt.assert_equal(self.s.metadata.test.tuple, (1, 2))
+        assert self.s.metadata.test.list == [42]
+        assert self.s.metadata.test.tuple == (1, 2)
 
     def test_inside_things(self):
-        nt.assert_equal(
-            self.s.metadata.test.list_inside_list, [
+        assert (
+            self.s.metadata.test.list_inside_list == [
                 42, 137, [
                     0, 1]])
-        nt.assert_equal(self.s.metadata.test.list_inside_tuple, (137, [42, 0]))
-        nt.assert_equal(
-            self.s.metadata.test.tuple_inside_tuple, (137, (123, 44)))
-        nt.assert_equal(
-            self.s.metadata.test.tuple_inside_list, [
+        assert self.s.metadata.test.list_inside_tuple == (137, [42, 0])
+        assert (
+            self.s.metadata.test.tuple_inside_tuple == (137, (123, 44)))
+        assert (
+            self.s.metadata.test.tuple_inside_list == [
                 137, (123, 44)])
 
     def test_binary_string(self):
@@ -171,12 +171,12 @@ class TestLoadingNewSavedMetadata:
         # apparently pickle is not "full" and marshal is not
         # backwards-compatible
         f = dill.loads(self.s.metadata.test.binary_string)
-        nt.assert_equal(f(3.5), 4.5)
+        assert f(3.5) == 4.5
 
 
 class TestSavingMetadataContainers:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = BaseSignal([0.1])
 
     def test_save_unicode(self):
@@ -184,52 +184,54 @@ class TestSavingMetadataContainers:
         s.metadata.set_item('test', ['a', 'b', '\u6f22\u5b57'])
         s.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
-        nt.assert_is_instance(l.metadata.test[0], str)
-        nt.assert_is_instance(l.metadata.test[1], str)
-        nt.assert_is_instance(l.metadata.test[2], str)
-        nt.assert_equal(l.metadata.test[2], '\u6f22\u5b57')
+        assert isinstance(l.metadata.test[0], str)
+        assert isinstance(l.metadata.test[1], str)
+        assert isinstance(l.metadata.test[2], str)
+        assert l.metadata.test[2] == '\u6f22\u5b57'
 
-    @nt.timed(1.0)
     def test_save_long_list(self):
         s = self.s
         s.metadata.set_item('long_list', list(range(10000)))
+        start = time.time()
         s.save('tmp.hdf5', overwrite=True)
+        end = time.time()
+        assert end - start < 1.0  # It should finish in less that 1 s.
 
     def test_numpy_only_inner_lists(self):
         s = self.s
         s.metadata.set_item('test', [[1., 2], ('3', 4)])
         s.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
-        nt.assert_is_instance(l.metadata.test, list)
-        nt.assert_is_instance(l.metadata.test[0], list)
-        nt.assert_is_instance(l.metadata.test[1], tuple)
+        assert isinstance(l.metadata.test, list)
+        assert isinstance(l.metadata.test[0], list)
+        assert isinstance(l.metadata.test[1], tuple)
 
     def test_numpy_general_type(self):
         s = self.s
         s.metadata.set_item('test', [[1., 2], ['3', 4]])
         s.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
-        nt.assert_is_instance(l.metadata.test[0][0], float)
-        nt.assert_is_instance(l.metadata.test[0][1], float)
-        nt.assert_is_instance(l.metadata.test[1][0], str)
-        nt.assert_is_instance(l.metadata.test[1][1], str)
+        assert isinstance(l.metadata.test[0][0], float)
+        assert isinstance(l.metadata.test[0][1], float)
+        assert isinstance(l.metadata.test[1][0], str)
+        assert isinstance(l.metadata.test[1][1], str)
 
     def test_general_type_not_working(self):
         s = self.s
         s.metadata.set_item('test', (BaseSignal([1]), 0.1, 'test_string'))
         s.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
-        nt.assert_is_instance(l.metadata.test, tuple)
-        nt.assert_is_instance(l.metadata.test[0], Signal1D)
-        nt.assert_is_instance(l.metadata.test[1], float)
-        nt.assert_is_instance(l.metadata.test[2], str)
+        assert isinstance(l.metadata.test, tuple)
+        assert isinstance(l.metadata.test[0], Signal1D)
+        assert isinstance(l.metadata.test[1], float)
+        assert isinstance(l.metadata.test[2], str)
 
     def test_unsupported_type(self):
         s = self.s
         s.metadata.set_item('test', Point2DROI(1, 2))
         s.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
-        nt.assert_not_in('test', l.metadata)
+        assert 'test' not in l.metadata
 
     def test_date_time(self):
         s = self.s
@@ -238,8 +240,8 @@ class TestSavingMetadataContainers:
         s.metadata.General.time = time
         s.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
-        nt.assert_equal(l.metadata.General.date, date)
-        nt.assert_equal(l.metadata.General.time, time)
+        assert l.metadata.General.date == date
+        assert l.metadata.General.time == time
 
     def test_general_metadata(self):
         s = self.s
@@ -251,9 +253,9 @@ class TestSavingMetadataContainers:
         s.metadata.General.doi = doi
         s.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
-        nt.assert_equal(l.metadata.General.notes, notes)
-        nt.assert_equal(l.metadata.General.authors, authors)
-        nt.assert_equal(l.metadata.General.doi, doi)
+        assert l.metadata.General.notes == notes
+        assert l.metadata.General.authors == authors
+        assert l.metadata.General.doi == doi
 
     def test_quantity(self):
         s = self.s
@@ -261,9 +263,9 @@ class TestSavingMetadataContainers:
         s.metadata.Signal.quantity = quantity
         s.save('tmp.hdf5', overwrite=True)
         l = load('tmp.hdf5')
-        nt.assert_equal(l.metadata.Signal.quantity, quantity)
+        assert l.metadata.Signal.quantity == quantity
 
-    def tearDown(self):
+    def teardown_method(self, method):
         gc.collect()        # Make sure any memmaps are closed first!
         remove('tmp.hdf5')
 
@@ -273,7 +275,7 @@ def test_none_metadata():
         my_path,
         "hdf5_files",
         "none_metadata.hdf5"))
-    nt.assert_is(s.metadata.should_be_None, None)
+    assert s.metadata.should_be_None is None
 
 
 def test_rgba16():
@@ -285,12 +287,12 @@ def test_rgba16():
         my_path,
         "npy_files",
         "test_rgba16.npy"))
-    nt.assert_true((s.data == data).all())
+    assert (s.data == data).all()
 
 
 class TestLoadingOOMReadOnly:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = BaseSignal(np.empty((5, 5, 5)))
         s.save('tmp.hdf5', overwrite=True)
         self.shape = (10000, 10000, 100)
@@ -307,11 +309,11 @@ class TestLoadingOOMReadOnly:
 
     def test_oom_loading(self):
         s = load('tmp.hdf5', lazy=True)
-        nt.assert_equal(self.shape, s.data.shape)
-        nt.assert_is_instance(s.data, da.Array)
+        assert self.shape == s.data.shape
+        assert isinstance(s.data, da.Array)
         assert s._lazy
 
-    def tearDown(self):
+    def teardown_method(self, method):
         gc.collect()        # Make sure any memmaps are closed first!
         try:
             remove('tmp.hdf5')
@@ -322,24 +324,24 @@ class TestLoadingOOMReadOnly:
 
 class TestPassingArgs:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.filename = 'testfile.hdf5'
         BaseSignal([1, 2, 3]).save(self.filename, compression_opts=8)
 
     def test_compression_opts(self):
         f = h5py.File(self.filename)
         d = f['Experiments/__unnamed__/data']
-        nt.assert_equal(d.compression_opts, 8)
-        nt.assert_equal(d.compression, 'gzip')
+        assert d.compression_opts == 8
+        assert d.compression == 'gzip'
         f.close()
 
-    def tearDown(self):
+    def teardown_method(self, method):
         remove(self.filename)
 
 
 class TestAxesConfiguration:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.filename = 'testfile.hdf5'
         s = BaseSignal(np.zeros((2, 2, 2, 2, 2)))
         s.axes_manager.signal_axes[0].navigate = True
@@ -348,33 +350,14 @@ class TestAxesConfiguration:
 
     def test_axes_configuration(self):
         s = load(self.filename)
-        nt.assert_equal(s.axes_manager.navigation_axes[0].index_in_array, 4)
-        nt.assert_equal(s.axes_manager.navigation_axes[1].index_in_array, 3)
-        nt.assert_equal(s.axes_manager.signal_dimension, 3)
+        assert s.axes_manager.navigation_axes[0].index_in_array == 4
+        assert s.axes_manager.navigation_axes[1].index_in_array == 3
+        assert s.axes_manager.signal_dimension == 3
 
-    def tearDown(self):
+    def teardown_method(self, method):
         remove(self.filename)
 
 
 def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
-    nt.assert_equal(s.metadata.Sample.elements.dtype.char, "U")
-
-def test_signal_chunking():
-    shape = (100, 200, 300, 400)
-    # cannot guarantee anything about the h5py routine to chunk, but test to
-    # detect when it changes
-    nt.assert_equal(get_signal_chunks(shape, 'double'),
-                    (7, 13, 19, 25))
-    nt.assert_equal(get_signal_chunks(shape, 'float32'),
-                    (7, 13, 19, 50))
-
-    # ours we can test safely
-    nt.assert_equal(get_signal_chunks(shape, 'double', signal_axes=(1,3)),
-                    (1, 200, 1, 400))
-    nt.assert_equal(get_signal_chunks(shape, 'float32', signal_axes=(1,3)),
-                    (1, 200, 3, 400))
-    nt.assert_equal(get_signal_chunks(shape, 'double', signal_axes=(0,)),
-                    (100, 7, 10, 13))
-    nt.assert_equal(get_signal_chunks(shape, 'float32', signal_axes=(0,)),
-                    (100, 7, 10, 25))
+    assert s.metadata.Sample.elements.dtype.char == "U"
