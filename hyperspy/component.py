@@ -162,7 +162,7 @@ class Parameter(t.HasTraits):
                            'ext_bounded': None,
                            'name': None,
                            'ext_force_positive': None,
-                        #    'twin_function_expr': "",
+                           #    'twin_function_expr': "",
                            'self': ('id', None),
                            }
         self._slicing_whitelist = {'map': 'inav'}
