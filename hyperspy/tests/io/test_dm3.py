@@ -253,8 +253,9 @@ def generate_parameters():
             parameters.append({
                 "filename": filename,
                 "subfolder": subfolder,
-                "key": key,})
+                "key": key, })
     return parameters
+
 
 @pytest.mark.parametrize("pdict", generate_parameters())
 def test_data(pdict):
