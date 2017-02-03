@@ -18,29 +18,45 @@ TEST_FILES = ('Live Map 2_Img.ipr',
               'spd_map.spd')
 MY_PATH = os.path.dirname(__file__)
 
+@pytest.fixture(scope="module")
+def tmpdir():
+    import zipfile
+    zipf = os.path.join(MY_PATH, "edax_files.zip")
+    with zipfile.ZipFile(zipf, 'r') as zipped:
+        with tempfile.TemporaryDirectory() as tmp:
+            zipped.extractall(tmp)
+            # spd_fname = os.path.join(tmp, TEST_FILES[3])
+            # print(os.listdir(tmpdir))
+            # print(spd_fname)
+            yield tmp
+
+@pytest.fixture(scope="module")
+def spd(tmpdir):
+    signal = load(os.path.join(tmpdir, 'spd_map.spd'))
+    yield signal
+    signal.data._mmap.close()
+
+@pytest.fixture(scope="module")
+def spc(tmpdir):
+    os.listdir(tmpdir)
+    return load(os.path.join(tmpdir, "single_spect.spc"))
+
 
 class TestSpcSpectrum:
 
-    def setup_method(self, method):
-        print('testing single spc spectrum...')
-        self.spc = load(os.path.join(
-            MY_PATH,
-            "edax_files",
-            TEST_FILES[1]))
-
-    def test_data(self):
-        assert np.uint32 == self.spc.data.dtype     # test datatype
-        assert (4096,) == self.spc.data.shape       # test data shape
+    def test_data(self, spc):
+        assert np.uint32 == spc.data.dtype     # test datatype
+        assert (4096,) == spc.data.shape       # test data shape
         assert (
             [0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 10, 4, 10, 10, 45, 87, 146, 236,
-             312, 342] == self.spc.data[:20].tolist())   # test 1st 20 datapoints
+             312, 342] == spc.data[:20].tolist())   # test 1st 20 datapoints
 
-    def test_parameters(self):
-        elements = self.spc.metadata.as_dictionary()['Sample']['elements']
-        sem_dict = self.spc.metadata.as_dictionary()[
+    def test_parameters(self, spc):
+        elements = spc.metadata.as_dictionary()['Sample']['elements']
+        sem_dict = spc.metadata.as_dictionary()[
             'Acquisition_instrument']['SEM']
         eds_dict = sem_dict['Detector']['EDS']
-        signal_dict = self.spc.metadata.as_dictionary()['Signal']
+        signal_dict = spc.metadata.as_dictionary()['Signal']
 
         # Testing SEM parameters
         assert_allclose(22, sem_dict['beam_energy'])
@@ -60,9 +76,9 @@ class TestSpcSpectrum:
         # Testing HyperSpy parameters
         assert True == signal_dict['binned']
         assert 'EDS_SEM' == signal_dict['signal_type']
-        assert isinstance(self.spc, signals.EDSSEMSpectrum)
+        assert isinstance(spc, signals.EDSSEMSpectrum)
 
-    def test_axes(self):
+    def test_axes(self, spc):
         spc_ax_manager = {'axis-0': {'name': 'Energy',
                                      'navigate': False,
                                      'offset': 0.0,
@@ -70,132 +86,114 @@ class TestSpcSpectrum:
                                      'size': 4096,
                                      'units': 'keV'}}
         assert (spc_ax_manager ==
-                self.spc.axes_manager.as_dictionary())
+                spc.axes_manager.as_dictionary())
 
+class TestSpdMap:
 
-@pytest.fixture(scope="module")
-def spd():
-    import zipfile
-    zipf = os.path.join(MY_PATH, "edax_files.zip")
-    with zipfile.ZipFile(zipf, 'r') as zipped:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            zipped.extractall(tmpdir)
-            spd_fname = os.path.join(tmpdir, TEST_FILES[3])
-            # print(os.listdir(tmpdir))
-            # print(spd_fname)
-            spds = load(spd_fname)
-            yield spds
-            spds.data._mmap.close()
+    def test_data(self, spd):
+        assert np.uint16 == spd.data.dtype     # test d_type
+        assert (200, 256, 2500) == spd.data.shape  # test d_shape
+        assert ([[[0, 0, 0, 0, 0],              # test random data
+                  [0, 0, 1, 0, 1],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0]],
+                 [[0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 1, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0]],
+                 [[0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 1],
+                  [0, 1, 1, 0, 0],
+                  [0, 0, 0, 0, 0]],
+                 [[0, 1, 0, 0, 0],
+                  [0, 0, 0, 1, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 1, 0, 0],
+                  [0, 0, 0, 1, 0]],
+                 [[0, 0, 0, 0, 0],
+                  [0, 0, 0, 0, 0],
+                  [0, 0, 1, 0, 1],
+                  [0, 0, 0, 1, 0],
+                  [0, 0, 0, 0, 0]]] ==
+                spd.data[15:20, 15:20, 15:20].tolist())
 
+    def test_parameters(self, spd):
+        elements = spd.metadata.as_dictionary()['Sample']['elements']
+        sem_dict = spd.metadata.as_dictionary()[
+            'Acquisition_instrument']['SEM']
+        eds_dict = sem_dict['Detector']['EDS']
+        signal_dict = spd.metadata.as_dictionary()['Signal']
 
-def test_spd_data(spd):
-    assert np.uint16 == spd.data.dtype     # test d_type
-    assert (200, 256, 2500) == spd.data.shape  # test d_shape
-    assert ([[[0, 0, 0, 0, 0],              # test random data
-              [0, 0, 1, 0, 1],
-              [0, 0, 0, 0, 0],
-              [0, 0, 0, 0, 0],
-              [0, 0, 0, 0, 0]],
-             [[0, 0, 0, 0, 0],
-              [0, 0, 0, 0, 0],
-              [0, 0, 0, 1, 0],
-              [0, 0, 0, 0, 0],
-              [0, 0, 0, 0, 0]],
-             [[0, 0, 0, 0, 0],
-              [0, 0, 0, 0, 0],
-              [0, 0, 0, 0, 1],
-              [0, 1, 1, 0, 0],
-              [0, 0, 0, 0, 0]],
-             [[0, 1, 0, 0, 0],
-              [0, 0, 0, 1, 0],
-              [0, 0, 0, 0, 0],
-              [0, 0, 1, 0, 0],
-              [0, 0, 0, 1, 0]],
-             [[0, 0, 0, 0, 0],
-              [0, 0, 0, 0, 0],
-              [0, 0, 1, 0, 1],
-              [0, 0, 0, 1, 0],
-              [0, 0, 0, 0, 0]]] ==
-            spd.data[15:20, 15:20, 15:20].tolist())
+        # Testing SEM parameters
+        assert_allclose(22, sem_dict['beam_energy'])
+        assert_allclose(0, sem_dict['tilt_stage'])
 
+        # Testing EDS parameters
+        assert_allclose(0, eds_dict['azimuth_angle'])
+        assert_allclose(34, eds_dict['elevation_angle'])
+        assert_allclose(126.60252, eds_dict['energy_resolution_MnKa'],
+                        atol=1E-5)
+        assert_allclose(2621.4399, eds_dict['live_time'], atol=1E-4)
 
-def test_spd_parameters(spd):
-    elements = spd.metadata.as_dictionary()['Sample']['elements']
-    sem_dict = spd.metadata.as_dictionary()[
-        'Acquisition_instrument']['SEM']
-    eds_dict = sem_dict['Detector']['EDS']
-    signal_dict = spd.metadata.as_dictionary()['Signal']
+        # Testing elements
+        assert {'Ce', 'Co', 'Cr', 'Fe', 'Gd', 'La', 'Mg', 'O',
+                'Sr'} == set(elements)
 
-    # Testing SEM parameters
-    assert_allclose(22, sem_dict['beam_energy'])
-    assert_allclose(0, sem_dict['tilt_stage'])
+        # Testing HyperSpy parameters
+        assert True == signal_dict['binned']
+        assert 'EDS_SEM' == signal_dict['signal_type']
+        assert isinstance(spd, signals.EDSSEMSpectrum)
 
-    # Testing EDS parameters
-    assert_allclose(0, eds_dict['azimuth_angle'])
-    assert_allclose(34, eds_dict['elevation_angle'])
-    assert_allclose(126.60252, eds_dict['energy_resolution_MnKa'],
-                    atol=1E-5)
-    assert_allclose(2621.4399, eds_dict['live_time'], atol=1E-4)
+    def test_axes(self, spd):
+        spd_ax_manager = {'axis-0': {'name': 'y',
+                                     'navigate': True,
+                                     'offset': 0.0,
+                                     'scale': 0.014227345585823059,
+                                     'size': 200,
+                                     'units': '$\\mu m$'},
+                          'axis-1': {'name': 'x',
+                                     'navigate': True,
+                                     'offset': 0.0,
+                                     'scale': 0.014235896058380604,
+                                     'size': 256,
+                                     'units': '$\\mu m$'},
+                          'axis-2': {'name': 'Energy',
+                                     'navigate': False,
+                                     'offset': 0.0,
+                                     'scale': 0.0050000000000000001,
+                                     'size': 2500,
+                                     'units': 'keV'}}
+        assert (spd_ax_manager ==
+                spd.axes_manager.as_dictionary())
 
-    # Testing elements
-    assert {'Ce', 'Co', 'Cr', 'Fe', 'Gd', 'La', 'Mg', 'O',
-            'Sr'} == set(elements)
+    def test_ipr_reading(self, spd):
+        ipr_header = spd.original_metadata['ipr_header']
+        assert_allclose(0.014235896, ipr_header['mppX'])
+        assert_allclose(0.014227346, ipr_header['mppY'])
 
-    # Testing HyperSpy parameters
-    assert True == signal_dict['binned']
-    assert 'EDS_SEM' == signal_dict['signal_type']
-    assert isinstance(spd, signals.EDSSEMSpectrum)
+    def test_spc_reading(self, spd):
+        # Test to make sure that spc metadata matches spd metadata
+        spc_header = spd.original_metadata['spc_header']
 
+        elements = spd.metadata.as_dictionary()['Sample']['elements']
+        sem_dict = spd.metadata.as_dictionary()[
+            'Acquisition_instrument']['SEM']
+        eds_dict = sem_dict['Detector']['EDS']
 
-def test_spd_axes(spd):
-    spd_ax_manager = {'axis-0': {'name': 'y',
-                                 'navigate': True,
-                                 'offset': 0.0,
-                                 'scale': 0.014227345585823059,
-                                 'size': 200,
-                                 'units': '$\\mu m$'},
-                      'axis-1': {'name': 'x',
-                                 'navigate': True,
-                                 'offset': 0.0,
-                                 'scale': 0.014235896058380604,
-                                 'size': 256,
-                                 'units': '$\\mu m$'},
-                      'axis-2': {'name': 'Energy',
-                                 'navigate': False,
-                                 'offset': 0.0,
-                                 'scale': 0.0050000000000000001,
-                                 'size': 2500,
-                                 'units': 'keV'}}
-    assert (spd_ax_manager ==
-            spd.axes_manager.as_dictionary())
-
-
-def test_spd_ipr_reading(spd):
-    ipr_header = spd.original_metadata['ipr_header']
-    assert_allclose(0.014235896, ipr_header['mppX'])
-    assert_allclose(0.014227346, ipr_header['mppY'])
-
-
-def test_spd_spc_reading(spd):
-    # Test to make sure that spc metadata matches spd metadata
-    spc_header = spd.original_metadata['spc_header']
-
-    elements = spd.metadata.as_dictionary()['Sample']['elements']
-    sem_dict = spd.metadata.as_dictionary()[
-        'Acquisition_instrument']['SEM']
-    eds_dict = sem_dict['Detector']['EDS']
-
-    assert_allclose(spc_header.azimuth,
-                    eds_dict['azimuth_angle'])
-    assert_allclose(spc_header.detReso,
-                    eds_dict['energy_resolution_MnKa'])
-    assert_allclose(spc_header.elevation,
-                    eds_dict['elevation_angle'])
-    assert_allclose(spc_header.liveTime,
-                    eds_dict['live_time'])
-    assert_allclose(spc_header.evPerChan,
-                    spd.axes_manager[2].scale * 1000)
-    assert_allclose(spc_header.kV,
-                    sem_dict['beam_energy'])
-    assert_allclose(spc_header.numElem,
-                    len(elements))
+        assert_allclose(spc_header.azimuth,
+                        eds_dict['azimuth_angle'])
+        assert_allclose(spc_header.detReso,
+                        eds_dict['energy_resolution_MnKa'])
+        assert_allclose(spc_header.elevation,
+                        eds_dict['elevation_angle'])
+        assert_allclose(spc_header.liveTime,
+                        eds_dict['live_time'])
+        assert_allclose(spc_header.evPerChan,
+                        spd.axes_manager[2].scale * 1000)
+        assert_allclose(spc_header.kV,
+                        sem_dict['beam_energy'])
+        assert_allclose(spc_header.numElem,
+                        len(elements))
