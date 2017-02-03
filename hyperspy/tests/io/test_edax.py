@@ -18,6 +18,7 @@ TEST_FILES = ('Live Map 2_Img.ipr',
               'spd_map.spd')
 MY_PATH = os.path.dirname(__file__)
 
+
 @pytest.fixture(scope="module")
 def tmpdir():
     import zipfile
@@ -30,11 +31,13 @@ def tmpdir():
             # print(spd_fname)
             yield tmp
 
+
 @pytest.fixture(scope="module")
 def spd(tmpdir):
     signal = load(os.path.join(tmpdir, 'spd_map.spd'))
     yield signal
     signal.data._mmap.close()
+
 
 @pytest.fixture(scope="module")
 def spc(tmpdir):
@@ -87,6 +90,7 @@ class TestSpcSpectrum:
                                      'units': 'keV'}}
         assert (spc_ax_manager ==
                 spc.axes_manager.as_dictionary())
+
 
 class TestSpdMap:
 
