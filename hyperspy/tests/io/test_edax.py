@@ -72,6 +72,7 @@ class TestSpcSpectrum:
         assert (spc_ax_manager ==
                 self.spc.axes_manager.as_dictionary())
 
+
 @pytest.fixture(scope="module")
 def spd():
     import zipfile
@@ -85,6 +86,7 @@ def spd():
             spds = load(spd_fname)
             yield spds
             spds.data._mmap.close()
+
 
 def test_spd_data(spd):
     assert np.uint16 == spd.data.dtype     # test d_type
@@ -116,6 +118,7 @@ def test_spd_data(spd):
               [0, 0, 0, 0, 0]]] ==
             spd.data[15:20, 15:20, 15:20].tolist())
 
+
 def test_spd_parameters(spd):
     elements = spd.metadata.as_dictionary()['Sample']['elements']
     sem_dict = spd.metadata.as_dictionary()[
@@ -143,6 +146,7 @@ def test_spd_parameters(spd):
     assert 'EDS_SEM' == signal_dict['signal_type']
     assert isinstance(spd, signals.EDSSEMSpectrum)
 
+
 def test_spd_axes(spd):
     spd_ax_manager = {'axis-0': {'name': 'y',
                                  'navigate': True,
@@ -165,10 +169,12 @@ def test_spd_axes(spd):
     assert (spd_ax_manager ==
             spd.axes_manager.as_dictionary())
 
+
 def test_spd_ipr_reading(spd):
     ipr_header = spd.original_metadata['ipr_header']
     assert_allclose(0.014235896, ipr_header['mppX'])
     assert_allclose(0.014227346, ipr_header['mppY'])
+
 
 def test_spd_spc_reading(spd):
     # Test to make sure that spc metadata matches spd metadata
