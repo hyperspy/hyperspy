@@ -36,7 +36,7 @@ install:
       conda install pip;
       python setup.py install;
     else conda install pytest pytest-xdist;
-    pip3 install .
+    pip3 install .;
     fi
 
 script:
