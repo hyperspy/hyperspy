@@ -180,6 +180,7 @@ def tmpfilepath():
         yield os.path.join(tmp, "test.hdf5")
     gc.collect()        # Make sure any memmaps are closed first!
 
+
 class TestSavingMetadataContainers:
 
     def setup_method(self, method):
@@ -270,6 +271,7 @@ class TestSavingMetadataContainers:
         s.save(tmpfilepath)
         l = load(tmpfilepath)
         assert l.metadata.Signal.quantity == quantity
+
 
 def test_none_metadata():
     s = load(os.path.join(
