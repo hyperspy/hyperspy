@@ -30,12 +30,13 @@ before_install:
 install:
 
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      DEPS="pytest pytest-cov pytest-xdist numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython lxml ipyparallel";
+      DEPS="numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython lxml ipyparallel";
       conda create -n testenv --yes $DEPS;
       source activate testenv;
       conda install pip;
       python setup.py install;
-    else conda install pytest pytest-xdist;
+      pip install pytest pytest-xdist;
+    else pip install pytest pytest-xdist;
     pip3 install .;
     fi
 
