@@ -21,21 +21,14 @@ import os
 
 import numpy as np
 from numpy.testing import assert_allclose
-from hyperspy.tests.io.generate_dm_testing_files import dm3_data_types
+import pytest
 
-
+from hyperspy.tests.io.generate_dm_testing_files import (dm3_data_types,
+                                                         dm4_data_types)
 from hyperspy.io import load
-
 from hyperspy.io_plugins.digital_micrograph import DigitalMicrographReader, ImageObject
 
-my_path = os.path.dirname(__file__)
-
-# When running the loading test the data of the files that passes it are
-# stored in the following dict.
-# TODO: fixtures should be used instead...
-data_dict = {'dm3_1D_data': {},
-             'dm3_2D_data': {},
-             'dm3_3D_data': {}, }
+MY_PATH = os.path.dirname(__file__)
 
 
 class TestImageObject():
@@ -51,14 +44,14 @@ class TestImageObject():
         return [ImageObject(imdict, fname) for imdict in self.imdict]
 
     def test_get_microscope_name(self):
-        fname = os.path.join(my_path, "dm3_2D_data",
+        fname = os.path.join(MY_PATH, "dm3_2D_data",
                              "test_diffraction_pattern_tags_removed.dm3")
         images = self._load_file(fname)
         image = images[0]
         # Should return None because the tags are missing
         assert image._get_microscope_name(image.imdict.ImageTags) is None
 
-        fname = os.path.join(my_path, "dm3_2D_data",
+        fname = os.path.join(MY_PATH, "dm3_2D_data",
                              "test_diffraction_pattern.dm3")
         images = self._load_file(fname)
         image = images[0]
@@ -77,7 +70,7 @@ class TestImageObject():
 
 
 def test_missing_tag():
-    fname = os.path.join(my_path, "dm3_2D_data",
+    fname = os.path.join(MY_PATH, "dm3_2D_data",
                          "test_diffraction_pattern_tags_removed.dm3")
     s = load(fname)
     md = s.metadata
@@ -89,7 +82,7 @@ def test_missing_tag():
 
 
 def test_read_TEM_metadata():
-    fname = os.path.join(my_path, "tiff_files", "test_dm_image_um_unit.dm3")
+    fname = os.path.join(MY_PATH, "tiff_files", "test_dm_image_um_unit.dm3")
     s = load(fname)
     md = s.metadata
     assert md.Acquisition_instrument.TEM.acquisition_mode == "TEM"
@@ -107,7 +100,7 @@ def test_read_TEM_metadata():
 
 def test_read_Diffraction_metadata():
     fname = os.path.join(
-        my_path,
+        MY_PATH,
         "dm3_2D_data",
         "test_diffraction_pattern.dm3")
     s = load(fname)
@@ -128,7 +121,7 @@ def test_read_Diffraction_metadata():
 
 
 def test_read_STEM_metadata():
-    fname = os.path.join(my_path, "dm3_2D_data", "test_STEM_image.dm3")
+    fname = os.path.join(MY_PATH, "dm3_2D_data", "test_STEM_image.dm3")
     s = load(fname)
     md = s.metadata
     assert md.Acquisition_instrument.TEM.acquisition_mode == "STEM"
@@ -148,7 +141,7 @@ def test_read_STEM_metadata():
 
 
 def test_read_EELS_metadata():
-    fname = os.path.join(my_path, "dm3_1D_data", "test-EELS_spectrum.dm3")
+    fname = os.path.join(MY_PATH, "dm3_1D_data", "test-EELS_spectrum.dm3")
     s = load(fname)
     md = s.metadata
     assert md.Acquisition_instrument.TEM.acquisition_mode == "STEM"
@@ -190,7 +183,7 @@ def test_read_EELS_metadata():
 
 
 def test_read_EDS_metadata():
-    fname = os.path.join(my_path, "dm3_1D_data", "test-EDS_spectrum.dm3")
+    fname = os.path.join(MY_PATH, "dm3_1D_data", "test-EDS_spectrum.dm3")
     s = load(fname)
     md = s.metadata
     assert md.Acquisition_instrument.TEM.acquisition_mode == "STEM"
@@ -229,68 +222,61 @@ def test_read_EDS_metadata():
 def test_location():
     fname_list = ['Fei HAADF-DE_location.dm3', 'Fei HAADF-FR_location.dm3',
                   'Fei HAADF-MX_location.dm3', 'Fei HAADF-UK_location.dm3']
-    s = load(os.path.join(my_path, "dm3_locale", fname_list[0]))
+    s = load(os.path.join(MY_PATH, "dm3_locale", fname_list[0]))
     assert s.metadata.General.date == "2016-08-27"
     assert s.metadata.General.time == "20:54:33"
-    s = load(os.path.join(my_path, "dm3_locale", fname_list[1]))
+    s = load(os.path.join(MY_PATH, "dm3_locale", fname_list[1]))
     assert s.metadata.General.date == "2016-08-27"
     assert s.metadata.General.time == "20:55:20"
-    s = load(os.path.join(my_path, "dm3_locale", fname_list[2]))
+    s = load(os.path.join(MY_PATH, "dm3_locale", fname_list[2]))
     assert s.metadata.General.date == "2016-08-27"
 #    assert_equal(s.metadata.General.time, "20:55:20") # MX not working
-    s = load(os.path.join(my_path, "dm3_locale", fname_list[3]))
+    s = load(os.path.join(MY_PATH, "dm3_locale", fname_list[3]))
     assert s.metadata.General.date == "2016-08-27"
     assert s.metadata.General.time == "20:52:30"
 
 
-def test_loading():
-    dims = range(1, 4)
-    for dim in dims:
-        subfolder = 'dm3_%iD_data' % dim
+def generate_parameters():
+    parameters = []
+    for dim in range(1, 4):
         for key in dm3_data_types.keys():
+            subfolder = 'dm3_%iD_data' % dim
             fname = "test-%s.dm3" % key
-            filename = os.path.join(my_path, subfolder, fname)
-            yield check_load, filename, subfolder, key
+            filename = os.path.join(MY_PATH, subfolder, fname)
+            parameters.append({
+                "filename": filename,
+                "subfolder": subfolder,
+                "key": key, })
+        for key in dm4_data_types.keys():
+            subfolder = 'dm4_%iD_data' % dim
+            fname = "test-%s.dm4" % key
+            filename = os.path.join(MY_PATH, subfolder, fname)
+            parameters.append({
+                "filename": filename,
+                "subfolder": subfolder,
+                "key": key, })
+    return parameters
 
 
-def test_dtypes():
-    subfolder = 'dm3_1D_data'
-    for key, data in data_dict[subfolder].items():
-        yield check_dtype, data.dtype, np.dtype(dm3_data_types[key]), key
-
-# TODO: the RGB data generated is not correct
-
-
-# noinspection PyArgumentList
-def test_content():
-    for subfolder in data_dict:
-        for key, data in data_dict[subfolder].items():
-            if subfolder == 'dm3_1D_data':
-                dat = np.arange(1, 3)
-            elif subfolder == 'dm3_2D_data':
-                dat = np.arange(1, 5).reshape(2, 2)
-            elif subfolder == 'dm3_3D_data':
-                dat = np.arange(1, 9).reshape(2, 2, 2)
-            dat = dat.astype(dm3_data_types[key])
-            if key in (8, 23):  # RGBA
-                dat["A"][:] = 0
-            yield check_content, data, dat, subfolder, key
-
-
-def check_load(filename, subfolder, key):
-    print('loading %s\\test-%i' % (subfolder, key))
-    s = load(filename)
-    # Store the data for the next tests
-    data_dict[subfolder][key] = s.data
-
-
-def check_dtype(d1, d2, i):
-    assert d1 == d2, 'test_dtype-%i' % i
-
-
-def check_content(dat1, dat2, subfolder, key):
-    np.testing.assert_array_equal(dat1, dat2,
+@pytest.mark.parametrize("pdict", generate_parameters())
+def test_data(pdict):
+    s = load(pdict["filename"])
+    key = pdict["key"]
+    assert s.data.dtype == np.dtype(dm4_data_types[key])
+    subfolder = pdict["subfolder"]
+    print(pdict["subfolder"])
+    if subfolder in ('dm3_1D_data', 'dm4_1D_data'):
+        dat = np.arange(1, 3)
+    elif subfolder in ('dm3_2D_data', 'dm4_2D_data'):
+        dat = np.arange(1, 5).reshape(2, 2)
+    elif subfolder in ('dm3_3D_data', 'dm4_3D_data'):
+        dat = np.arange(1, 9).reshape(2, 2, 2)
+    else:
+        raise ValueError
+    dat = dat.astype(dm4_data_types[key])
+    if key in (8, 23):  # RGBA
+        dat["A"][:] = 0
+    np.testing.assert_array_equal(s.data, dat,
                                   err_msg='content %s type % i: '
-                                  '\n%s not equal to \n%s' % (subfolder, key,
-                                                              str(dat1),
-                                                              str(dat2)))
+                                  '\n%s not equal to \n%s' %
+                                  (subfolder, key, str(s.data), str(dat)))

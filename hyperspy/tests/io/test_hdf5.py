@@ -20,10 +20,12 @@ import os.path
 from os import remove
 import gc
 import time
+import tempfile
 
 import h5py
 import numpy as np
 import dask.array as da
+import pytest
 
 from hyperspy.io import load
 from hyperspy.io_plugins.hdf5 import get_signal_chunks
@@ -174,76 +176,83 @@ class TestLoadingNewSavedMetadata:
         assert f(3.5) == 4.5
 
 
+@pytest.fixture()
+def tmpfilepath():
+    with tempfile.TemporaryDirectory() as tmp:
+        yield os.path.join(tmp, "test.hdf5")
+    gc.collect()        # Make sure any memmaps are closed first!
+
+
 class TestSavingMetadataContainers:
 
     def setup_method(self, method):
         self.s = BaseSignal([0.1])
 
-    def test_save_unicode(self):
+    def test_save_unicode(self, tmpfilepath):
         s = self.s
         s.metadata.set_item('test', ['a', 'b', '\u6f22\u5b57'])
-        s.save('tmp.hdf5', overwrite=True)
-        l = load('tmp.hdf5')
+        s.save(tmpfilepath)
+        l = load(tmpfilepath)
         assert isinstance(l.metadata.test[0], str)
         assert isinstance(l.metadata.test[1], str)
         assert isinstance(l.metadata.test[2], str)
         assert l.metadata.test[2] == '\u6f22\u5b57'
 
-    def test_save_long_list(self):
+    def test_save_long_list(self, tmpfilepath):
         s = self.s
         s.metadata.set_item('long_list', list(range(10000)))
         start = time.time()
-        s.save('tmp.hdf5', overwrite=True)
+        s.save(tmpfilepath)
         end = time.time()
         assert end - start < 1.0  # It should finish in less that 1 s.
 
-    def test_numpy_only_inner_lists(self):
+    def test_numpy_only_inner_lists(self, tmpfilepath):
         s = self.s
         s.metadata.set_item('test', [[1., 2], ('3', 4)])
-        s.save('tmp.hdf5', overwrite=True)
-        l = load('tmp.hdf5')
+        s.save(tmpfilepath)
+        l = load(tmpfilepath)
         assert isinstance(l.metadata.test, list)
         assert isinstance(l.metadata.test[0], list)
         assert isinstance(l.metadata.test[1], tuple)
 
-    def test_numpy_general_type(self):
+    def test_numpy_general_type(self, tmpfilepath):
         s = self.s
         s.metadata.set_item('test', [[1., 2], ['3', 4]])
-        s.save('tmp.hdf5', overwrite=True)
-        l = load('tmp.hdf5')
+        s.save(tmpfilepath)
+        l = load(tmpfilepath)
         assert isinstance(l.metadata.test[0][0], float)
         assert isinstance(l.metadata.test[0][1], float)
         assert isinstance(l.metadata.test[1][0], str)
         assert isinstance(l.metadata.test[1][1], str)
 
-    def test_general_type_not_working(self):
+    def test_general_type_not_working(self, tmpfilepath):
         s = self.s
         s.metadata.set_item('test', (BaseSignal([1]), 0.1, 'test_string'))
-        s.save('tmp.hdf5', overwrite=True)
-        l = load('tmp.hdf5')
+        s.save(tmpfilepath)
+        l = load(tmpfilepath)
         assert isinstance(l.metadata.test, tuple)
         assert isinstance(l.metadata.test[0], Signal1D)
         assert isinstance(l.metadata.test[1], float)
         assert isinstance(l.metadata.test[2], str)
 
-    def test_unsupported_type(self):
+    def test_unsupported_type(self, tmpfilepath):
         s = self.s
         s.metadata.set_item('test', Point2DROI(1, 2))
-        s.save('tmp.hdf5', overwrite=True)
-        l = load('tmp.hdf5')
+        s.save(tmpfilepath)
+        l = load(tmpfilepath)
         assert 'test' not in l.metadata
 
-    def test_date_time(self):
+    def test_date_time(self, tmpfilepath):
         s = self.s
         date, time = "2016-08-05", "15:00:00.450"
         s.metadata.General.date = date
         s.metadata.General.time = time
-        s.save('tmp.hdf5', overwrite=True)
-        l = load('tmp.hdf5')
+        s.save(tmpfilepath)
+        l = load(tmpfilepath)
         assert l.metadata.General.date == date
         assert l.metadata.General.time == time
 
-    def test_general_metadata(self):
+    def test_general_metadata(self, tmpfilepath):
         s = self.s
         notes = "Dummy notes"
         authors = "Author 1, Author 2"
@@ -251,23 +260,19 @@ class TestSavingMetadataContainers:
         s.metadata.General.notes = notes
         s.metadata.General.authors = authors
         s.metadata.General.doi = doi
-        s.save('tmp.hdf5', overwrite=True)
-        l = load('tmp.hdf5')
+        s.save(tmpfilepath)
+        l = load(tmpfilepath)
         assert l.metadata.General.notes == notes
         assert l.metadata.General.authors == authors
         assert l.metadata.General.doi == doi
 
-    def test_quantity(self):
+    def test_quantity(self, tmpfilepath):
         s = self.s
         quantity = "Intensity (electron)"
         s.metadata.Signal.quantity = quantity
-        s.save('tmp.hdf5', overwrite=True)
-        l = load('tmp.hdf5')
+        s.save(tmpfilepath)
+        l = load(tmpfilepath)
         assert l.metadata.Signal.quantity == quantity
-
-    def teardown_method(self, method):
-        gc.collect()        # Make sure any memmaps are closed first!
-        remove('tmp.hdf5')
 
 
 def test_none_metadata():

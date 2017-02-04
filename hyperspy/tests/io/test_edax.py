@@ -3,43 +3,63 @@ import hashlib
 import os.path
 import os
 import shutil
-
+import tempfile
 
 import numpy as np
 from numpy.testing import assert_allclose
+import pytest
 
 from hyperspy.io import load
 from hyperspy import signals
 
-test_files = ['Live Map 2_Img.ipr',
+TEST_FILES = ('Live Map 2_Img.ipr',
               'single_spect.spc',
               'spd_map.spc',
-              'spd_map.spd']
-my_path = os.path.dirname(__file__)
+              'spd_map.spd')
+MY_PATH = os.path.dirname(__file__)
+
+
+@pytest.fixture(scope="module")
+def tmpdir():
+    import zipfile
+    zipf = os.path.join(MY_PATH, "edax_files.zip")
+    with zipfile.ZipFile(zipf, 'r') as zipped:
+        with tempfile.TemporaryDirectory() as tmp:
+            zipped.extractall(tmp)
+            # spd_fname = os.path.join(tmp, TEST_FILES[3])
+            # print(os.listdir(tmpdir))
+            # print(spd_fname)
+            yield tmp
+
+
+@pytest.fixture(scope="module")
+def spd(tmpdir):
+    signal = load(os.path.join(tmpdir, 'spd_map.spd'))
+    yield signal
+    signal.data._mmap.close()
+
+
+@pytest.fixture(scope="module")
+def spc(tmpdir):
+    os.listdir(tmpdir)
+    return load(os.path.join(tmpdir, "single_spect.spc"))
 
 
 class TestSpcSpectrum:
 
-    def setup_method(self, method):
-        print('testing single spc spectrum...')
-        self.spc = load(os.path.join(
-            my_path,
-            "edax_files",
-            test_files[1]))
-
-    def test_data(self):
-        assert np.uint32 == self.spc.data.dtype     # test datatype
-        assert (4096,) == self.spc.data.shape       # test data shape
+    def test_data(self, spc):
+        assert np.uint32 == spc.data.dtype     # test datatype
+        assert (4096,) == spc.data.shape       # test data shape
         assert (
             [0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 10, 4, 10, 10, 45, 87, 146, 236,
-             312, 342] == self.spc.data[:20].tolist())   # test 1st 20 datapoints
+             312, 342] == spc.data[:20].tolist())   # test 1st 20 datapoints
 
-    def test_parameters(self):
-        elements = self.spc.metadata.as_dictionary()['Sample']['elements']
-        sem_dict = self.spc.metadata.as_dictionary()[
+    def test_parameters(self, spc):
+        elements = spc.metadata.as_dictionary()['Sample']['elements']
+        sem_dict = spc.metadata.as_dictionary()[
             'Acquisition_instrument']['SEM']
         eds_dict = sem_dict['Detector']['EDS']
-        signal_dict = self.spc.metadata.as_dictionary()['Signal']
+        signal_dict = spc.metadata.as_dictionary()['Signal']
 
         # Testing SEM parameters
         assert_allclose(22, sem_dict['beam_energy'])
@@ -59,9 +79,9 @@ class TestSpcSpectrum:
         # Testing HyperSpy parameters
         assert True == signal_dict['binned']
         assert 'EDS_SEM' == signal_dict['signal_type']
-        assert isinstance(self.spc, signals.EDSSEMSpectrum)
+        assert isinstance(spc, signals.EDSSEMSpectrum)
 
-    def test_axes(self):
+    def test_axes(self, spc):
         spc_ax_manager = {'axis-0': {'name': 'Energy',
                                      'navigate': False,
                                      'offset': 0.0,
@@ -69,48 +89,14 @@ class TestSpcSpectrum:
                                      'size': 4096,
                                      'units': 'keV'}}
         assert (spc_ax_manager ==
-                self.spc.axes_manager.as_dictionary())
+                spc.axes_manager.as_dictionary())
 
 
 class TestSpdMap:
 
-    @classmethod
-    def setup_class(self):
-        print('testing spd map...')
-        spd_fname = os.path.join(my_path,
-                                 "edax_files",
-                                 test_files[3])
-
-        if not os.path.isfile(spd_fname):
-            with gzip.open(os.path.join(my_path,
-                                        "edax_files",
-                                        test_files[3] + ".gz")) as f_in:
-                with open(spd_fname, 'wb') as f_out:
-                    f_out.write(f_in.read())
-                print('Successfully decompressed test map data!')
-
-        if hashlib.md5(open(spd_fname, 'rb').read()).hexdigest() != \
-                'a0c29793146c9e7438fa9b2e1ca05046':
-            raise ValueError('Something went wrong with decompressing the test'
-                             ' file. Please try again.')
-        self.spd = load(os.path.join(my_path,
-                                     "edax_files",
-                                     test_files[3]))
-
-    @classmethod
-    def teardown_class(self):
-        spd_fname = os.path.join(my_path,
-                                 "edax_files",
-                                 test_files[3])
-
-        # hack to release memmap object to allow deleting uncompressed spd map
-        self.spd.data._mmap.close()
-
-        os.remove(spd_fname)
-
-    def test_data(self):
-        assert np.uint16 == self.spd.data.dtype     # test d_type
-        assert (200, 256, 2500) == self.spd.data.shape  # test d_shape
+    def test_data(self, spd):
+        assert np.uint16 == spd.data.dtype     # test d_type
+        assert (200, 256, 2500) == spd.data.shape  # test d_shape
         assert ([[[0, 0, 0, 0, 0],              # test random data
                   [0, 0, 1, 0, 1],
                   [0, 0, 0, 0, 0],
@@ -136,14 +122,14 @@ class TestSpdMap:
                   [0, 0, 1, 0, 1],
                   [0, 0, 0, 1, 0],
                   [0, 0, 0, 0, 0]]] ==
-                self.spd.data[15:20, 15:20, 15:20].tolist())
+                spd.data[15:20, 15:20, 15:20].tolist())
 
-    def test_parameters(self):
-        elements = self.spd.metadata.as_dictionary()['Sample']['elements']
-        sem_dict = self.spd.metadata.as_dictionary()[
+    def test_parameters(self, spd):
+        elements = spd.metadata.as_dictionary()['Sample']['elements']
+        sem_dict = spd.metadata.as_dictionary()[
             'Acquisition_instrument']['SEM']
         eds_dict = sem_dict['Detector']['EDS']
-        signal_dict = self.spd.metadata.as_dictionary()['Signal']
+        signal_dict = spd.metadata.as_dictionary()['Signal']
 
         # Testing SEM parameters
         assert_allclose(22, sem_dict['beam_energy'])
@@ -163,9 +149,9 @@ class TestSpdMap:
         # Testing HyperSpy parameters
         assert True == signal_dict['binned']
         assert 'EDS_SEM' == signal_dict['signal_type']
-        assert isinstance(self.spd, signals.EDSSEMSpectrum)
+        assert isinstance(spd, signals.EDSSEMSpectrum)
 
-    def test_axes(self):
+    def test_axes(self, spd):
         spd_ax_manager = {'axis-0': {'name': 'y',
                                      'navigate': True,
                                      'offset': 0.0,
@@ -185,19 +171,19 @@ class TestSpdMap:
                                      'size': 2500,
                                      'units': 'keV'}}
         assert (spd_ax_manager ==
-                self.spd.axes_manager.as_dictionary())
+                spd.axes_manager.as_dictionary())
 
-    def test_ipr_reading(self):
-        ipr_header = self.spd.original_metadata['ipr_header']
+    def test_ipr_reading(self, spd):
+        ipr_header = spd.original_metadata['ipr_header']
         assert_allclose(0.014235896, ipr_header['mppX'])
         assert_allclose(0.014227346, ipr_header['mppY'])
 
-    def test_spc_reading(self):
+    def test_spc_reading(self, spd):
         # Test to make sure that spc metadata matches spd metadata
-        spc_header = self.spd.original_metadata['spc_header']
+        spc_header = spd.original_metadata['spc_header']
 
-        elements = self.spd.metadata.as_dictionary()['Sample']['elements']
-        sem_dict = self.spd.metadata.as_dictionary()[
+        elements = spd.metadata.as_dictionary()['Sample']['elements']
+        sem_dict = spd.metadata.as_dictionary()[
             'Acquisition_instrument']['SEM']
         eds_dict = sem_dict['Detector']['EDS']
 
@@ -210,7 +196,7 @@ class TestSpdMap:
         assert_allclose(spc_header.liveTime,
                         eds_dict['live_time'])
         assert_allclose(spc_header.evPerChan,
-                        self.spd.axes_manager[2].scale * 1000)
+                        spd.axes_manager[2].scale * 1000)
         assert_allclose(spc_header.kV,
                         sem_dict['beam_energy'])
         assert_allclose(spc_header.numElem,
