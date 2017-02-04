@@ -149,7 +149,7 @@ algorithms are only approximations to the original implementations, some
 
 To facilitate the usual HyperSpy workflows as well as possible,
 :py:meth:`~._signals.lazy.LazySignal.decomposition` method of the
-``LazySignal`` offers alternative implementations of:
+``LazySignal`` offers implementations of:
 
 * **PCA** (``algorithm='PCA'``): performs the
   `IncrementalPCA <http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.IncrementalPCA.html#sklearn.decomposition.IncrementalPCA>`_
@@ -157,9 +157,8 @@ To facilitate the usual HyperSpy workflows as well as possible,
 * **NMF** (``algorithm='ONMF'``): runs Online Robust NMF, as per "OPGD"
   algorithm in `this paper by Zhao et. al
   <http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7472160&isnumber=7471614>`_.
-
-Finally, Online Robust PCA (``algorithm='ORPCA'``) is available to both lazy and
-conventional signals.
+* **ORPCA** (``algorithm='ORPCA'``): runs Online Robust PCA, is also available
+  for regular signals
 
 Minor changes
 ^^^^^^^^^^^^^
