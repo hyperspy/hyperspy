@@ -17,18 +17,20 @@
 
 
 import numpy as np
-import nose.tools
-from matplotlib.testing.decorators import image_comparison, cleanup
+import pytest
+from matplotlib.testing.decorators import cleanup
 
 from hyperspy.signals import Signal2D, Signal1D
 from hyperspy.utils import markers
 from hyperspy.misc.test_utils import get_matplotlib_version_label, update_close_figure
 
+
 mplv = get_matplotlib_version_label()
 default_tol = 0.05
+path = 'test_plot_markers-%s' % mplv
 
 
-class Test_markers:
+class TestMarkers:
 
     def test_get_data(self):
         s = Signal2D(np.zeros([3, 2, 2]))
@@ -37,11 +39,11 @@ class Test_markers:
                                  y1=1.3,
                                  y2=1.5)
         m.axes_manager = s.axes_manager
-        nose.tools.assert_equal(m.get_data_position('x1'), 0)
-        nose.tools.assert_equal(m.get_data_position('y1'), 1.3)
+        assert m.get_data_position('x1') == 0
+        assert m.get_data_position('y1') == 1.3
         s.axes_manager[0].index = 2
-        nose.tools.assert_equal(m.get_data_position('x1'), 2)
-        nose.tools.assert_equal(m.get_data_position('y1'), 1.3)
+        assert m.get_data_position('x1') == 2
+        assert m.get_data_position('y1') == 1.3
 
     def test_iterate_strings(self):
         s = Signal2D(np.zeros([3, 2, 2]))
@@ -49,9 +51,9 @@ class Test_markers:
                          y=list(range(3)),
                          text=['one', 'two', 'three'])
         m.axes_manager = s.axes_manager
-        nose.tools.assert_equal(m.get_data_position('text'), 'one')
+        assert m.get_data_position('text') == 'one'
         s.axes_manager[0].index = 2
-        nose.tools.assert_equal(m.get_data_position('text'), 'three')
+        assert m.get_data_position('text') == 'three'
 
     def test_get_one_string(self):
         s = Signal2D(np.zeros([3, 2, 2]))
@@ -59,55 +61,54 @@ class Test_markers:
                          y=list(range(3)),
                          text='one')
         m.axes_manager = s.axes_manager
-        nose.tools.assert_equal(m.get_data_position('text'), 'one')
+        assert m.get_data_position('text') == 'one'
         s.axes_manager[0].index = 2
-        nose.tools.assert_equal(m.get_data_position('text'), 'one')
+        assert m.get_data_position('text') == 'one'
 
     def test_get_data_array(self):
         s = Signal2D(np.zeros([2, 2, 2, 2]))
         m = markers.line_segment(x1=[[1.1, 1.2], [1.3, 1.4]], x2=1.1, y1=1.3,
                                  y2=1.5)
         m.axes_manager = s.axes_manager
-        nose.tools.assert_equal(m.get_data_position('x1'), 1.1)
+        assert m.get_data_position('x1') == 1.1
         s.axes_manager[0].index = 1
-        nose.tools.assert_equal(m.get_data_position('x1'), 1.2)
+        assert m.get_data_position('x1') == 1.2
         s.axes_manager[1].index = 1
-        nose.tools.assert_equal(m.get_data_position('x1'), 1.4)
+        assert m.get_data_position('x1') == 1.4
 
     def test_set_get_data(self):
         m = markers.point(x=0, y=1.3)
-        nose.tools.assert_equal(m.data['x1'], 0)
-        nose.tools.assert_equal(m.data['y1'], 1.3)
+        assert m.data['x1'] == 0
+        assert m.data['y1'] == 1.3
         m.add_data(y1=0.3)
-        nose.tools.assert_equal(m.data['x1'], 0)
-        nose.tools.assert_equal(m.data['y1'], 0.3)
+        assert m.data['x1'] == 0
+        assert m.data['y1'] == 0.3
         m.set_data(y1=1.3)
-        nose.tools.assert_is_none(m.data['x1'][()][()])
-        nose.tools.assert_equal(m.data['y1'], 1.3)
-        nose.tools.assert_equal(m.data['x1'].dtype, np.dtype('O'))
+        assert m.data['x1'][()][()] is None
+        assert m.data['y1'] == 1.3
+        assert m.data['x1'].dtype == np.dtype('O')
         m.add_data(y1=[1, 2])
-        nose.tools.assert_equal(m.data['y1'][()].shape, (2,))
+        assert m.data['y1'][()].shape == (2,)
 
     def test_markers_properties(self):
         m = markers.text(x=1, y=2, text='a')
         m.set_marker_properties(fontsize=30, color='red')
-        nose.tools.assert_dict_equal(m.marker_properties,
-                                     {'color': 'red', 'fontsize': 30})
+        assert m.marker_properties == {'color': 'red', 'fontsize': 30}
 
     def test_auto_update(self):
         m = markers.text(y=1, x=2, text='a')
-        nose.tools.assert_true(m.auto_update is False)
+        assert m.auto_update is False
         m = markers.text(y=[1, 2], x=2, text='a')
-        nose.tools.assert_true(m.auto_update is True)
+        assert m.auto_update is True
         m.add_data(y1=1)
-        nose.tools.assert_true(m.auto_update is False)
+        assert m.auto_update is False
         m.add_data(y1=[1, 2])
-        nose.tools.assert_true(m.auto_update is True)
+        assert m.auto_update is True
 
 
 def _test_plot_rectange_markers():
     # Create test image 100x100 pixels:
-    img = Signal2D(np.zeros((100, 100)))
+    im = Signal2D(np.zeros((100, 100)))
 
     # Add four line markers:
     m1 = markers.line_segment(
@@ -124,19 +125,19 @@ def _test_plot_rectange_markers():
                           linewidth=4, color='blue', ls='dotted')
 
     # Plot image and add markers to img:
-    img.plot()
-    img.add_marker(m)
-    img.add_marker(m1)
-    img.add_marker(m2)
-    img.add_marker(m3)
-    img.add_marker(m4)
-    return img
+    im.plot()
+    im.add_marker(m)
+    im.add_marker(m1)
+    im.add_marker(m2)
+    im.add_marker(m3)
+    im.add_marker(m4)
+    return im
 
 
-@image_comparison(baseline_images=['%s_plot_rectangle_markers' % mplv],
-                  extensions=['png'], tol=default_tol)
+@pytest.mark.mpl_image_compare(baseline_dir=path, tol=default_tol)
 def test_plot_rectange_markers():
-    _test_plot_rectange_markers()
+    im = _test_plot_rectange_markers()
+    return im._plot.signal_plot.figure
 
 
 @cleanup
@@ -158,10 +159,10 @@ def _test_plot_point_markers():
     return s
 
 
-@image_comparison(baseline_images=['%s_plot_point_markers' % mplv],
-                  extensions=['png'], tol=default_tol)
+@pytest.mark.mpl_image_compare(baseline_dir=path, tol=default_tol)
 def test_plot_point_markers():
-    _test_plot_point_markers()
+    s = _test_plot_point_markers()
+    return s._plot.signal_plot.figure
 
 
 @cleanup
@@ -182,11 +183,16 @@ def _test_plot_text_markers():
     return s
 
 
-@image_comparison(baseline_images=['%s_plot_text_markers_nav' % mplv,
-                                   '%s_plot_text_markers_sig' % mplv],
-                  extensions=['png'], tol=default_tol)
-def test_plot_text_markers():
-    _test_plot_text_markers()
+@pytest.mark.mpl_image_compare(baseline_dir=path, tol=default_tol)
+def test_plot_text_markers_nav():
+    s = _test_plot_text_markers()
+    return s._plot.navigator_plot.figure
+
+
+@pytest.mark.mpl_image_compare(baseline_dir=path, tol=default_tol)
+def test_plot_text_markers_sig():
+    s = _test_plot_text_markers()
+    return s._plot.signal_plot.figure
 
 
 @cleanup
@@ -210,10 +216,10 @@ def _test_plot_line_markers():
     return im
 
 
-@image_comparison(baseline_images=['%s_plot_line_markers' % mplv],
-                  extensions=['png'], tol=default_tol)
+@pytest.mark.mpl_image_compare(baseline_dir=path, tol=default_tol)
 def test_plot_line_markers():
-    _test_plot_line_markers()
+    im = _test_plot_line_markers()
+    return im._plot.signal_plot.figure
 
 
 @cleanup
