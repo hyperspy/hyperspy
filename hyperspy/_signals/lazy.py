@@ -488,8 +488,10 @@ class LazySignal(BaseSignal):
         data = self._data_aligned_with_axes
         nav_chunks = data.chunks[:self.axes_manager.navigation_dimension]
         indices = product(*[range(len(c)) for c in nav_chunks])
+        signalsize = self.axes_manager.signal_size
+        sig_reshape = (signalsize,) if signalsize else ()
         data = data.reshape((self.axes_manager.navigation_shape[::-1] +
-                             (self.axes_manager.signal_size, )))
+                             sig_reshape))
 
         if signal_mask is None:
             signal_mask = slice(None) if flat_signal else \
@@ -502,12 +504,11 @@ class LazySignal(BaseSignal):
                 raise ValueError("signal_mask has to be a signal, numpy or"
                                  " dask array, but "
                                  "{} was given".format(type(signal_mask)))
-            if not flat_signal:
+            if flat_signal:
                 signal_mask = ~signal_mask
 
         if navigation_mask is None:
-            method = da.ones if flat_signal else da.zeros
-            nav_mask = method(
+            nav_mask = da.zeros(
                 self.axes_manager.navigation_shape[::-1],
                 chunks=nav_chunks,
                 dtype='bool')
@@ -519,21 +520,21 @@ class LazySignal(BaseSignal):
                 raise ValueError("navigation_mask has to be a signal, numpy or"
                                  " dask array, but "
                                  "{} was given".format(type(navigation_mask)))
+        if flat_signal:
+            nav_mask = ~nav_mask
         for ind in indices:
-            chunk = get(data.dask, (data.name, ) + ind + (0, ))
+            chunk = get(data.dask,
+                        (data.name, ) + ind + (0,)*bool(signalsize))
             n_mask = get(nav_mask.dask, (nav_mask.name, ) + ind)
             if flat_signal:
                 yield chunk[n_mask, ...][..., signal_mask]
             else:
-                # TODO: check if need to reverse the signal_shape
-                try:
-                    chunk[n_mask, ...] = np.nan
-                    chunk[..., signal_mask] = np.nan
-                except ValueError:
-                    chunk[n_mask, ...] = 0
-                    chunk[..., signal_mask] = 0
+                chunk = chunk.copy()
+                value = np.nan if np.can_cast('float', chunk.dtype) else 0
+                chunk[n_mask, ...] = value
+                chunk[..., signal_mask] = value
                 yield chunk.reshape(chunk.shape[:-1] +
-                                    self.axes_manager.signal_shape)
+                                    self.axes_manager.signal_shape[::-1])
 
     def decomposition(self,
                       output_dimension,
@@ -629,7 +630,8 @@ class LazySignal(BaseSignal):
 
         elif algorithm == 'ORPCA':
             from hyperspy.learn.rpca import ORPCA
-            kwg = {'fast': True}.update(kwargs)
+            kwg = {'fast': True}
+            kwg.update(kwargs)
             obj = ORPCA(output_dimension, **kwg)
             method = partial(obj.fit, iterating=True)
 
@@ -763,36 +765,16 @@ class LazySignal(BaseSignal):
 
             # RESHUFFLE "blocked" LOADINGS
             ndim = self.axes_manager.navigation_dimension
-            splits = np.cumsum([multiply(ar)
-                                for ar in product(*nav_chunks)][:-1]).tolist()
-            if splits:
-                try:
-                    all_chunks = [
-                        ar.T.reshape((output_dimension, ) + shape)
-                        for shape, ar in zip(
-                            product(*nav_chunks), np.split(loadings, splits))
-                    ]
-
-                    def split_stack_list(what, step, axis):
-                        total = len(what)
-                        if total != step:
-                            return [
-                                np.concatenate(
-                                    what[i:i + step], axis=axis)
-                                for i in range(0, total, step)
-                            ]
-                        else:
-                            return np.concatenate(what, axis=axis)
-
-                    for chunks, axis in zip(nav_chunks[::-1], range(ndim, 0, -1)):
-                        step = len(chunks)
-                        all_chunks = split_stack_list(all_chunks, step, axis)
-
-                    loadings = all_chunks.reshape((output_dimension, -1)).T
-                except ValueError:
-                    # In case the projection step was not finished, it's left
-                    # as scrambled
-                    pass
+            try:
+                loadings = _reshuffle_mixed_blocks(
+                    loadings,
+                    ndim,
+                    (output_dimension,),
+                    nav_chunks).reshape((-1, output_dimension))
+            except ValueError:
+                # In case the projection step was not finished, it's left
+                # as scrambled
+                pass
         finally:
             self.data = original_data
 
@@ -804,3 +786,43 @@ class LazySignal(BaseSignal):
         target.loadings = loadings
         target.explained_variance = explained_variance
         target.explained_variance_ratio = explained_variance_ratio
+
+
+def _reshuffle_mixed_blocks(array, ndim, sshape, nav_chunks):
+    """Reshuffles dask block-shuffled array
+
+    Parameters
+    ----------
+    array : np.ndarray
+        the array to reshuffle
+    ndim : int
+        the number of navigation (shuffled) dimensions
+    sshape : tuple of ints
+        The shape 
+    """
+    splits = np.cumsum([multiply(ar)
+                        for ar in product(*nav_chunks)][:-1]).tolist()
+    if splits:
+        all_chunks = [
+            ar.reshape(shape + sshape)
+            for shape, ar in zip(
+                product(*nav_chunks), np.split(array, splits))
+        ]
+
+        def split_stack_list(what, step, axis):
+            total = len(what)
+            if total != step:
+                return [
+                    np.concatenate(
+                        what[i:i + step], axis=axis)
+                    for i in range(0, total, step)
+                ]
+            else:
+                return np.concatenate(what, axis=axis)
+
+        for chunks, axis in zip(nav_chunks[::-1], range(ndim-1, -1, -1)):
+            step = len(chunks)
+            all_chunks = split_stack_list(all_chunks, step, axis)
+        return all_chunks
+    else:
+        return array
