@@ -20,6 +20,7 @@
 import warnings
 import os
 import gc
+import tempfile
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -38,19 +39,23 @@ except NameError:
     WindowsError = None
 
 
-def _remove_file(filename):
+
+
+DIRPATH = os.path.dirname(__file__)
+FILE1 = os.path.join(DIRPATH, 'blockfile_data', 'test1.blo')
+FILE2 = os.path.join(DIRPATH, 'blockfile_data', 'test2.blo')
+
+@pytest.fixture()
+def save_path():
+    with tempfile.TemporaryDirectory() as tmp:
+        filepath = os.path.join(tmp, 'blockfile_data', 'save_temp.blo')
+        yield filepath
+    gc.collect()
     try:
-        if os.path.exists(filename):
-            os.remove(filename)
+        if os.path.exists(filepath):
+            os.remove(filepath)
     except WindowsError:
         pass    # If we don't do this, we might mask real exceptions
-
-
-dirpath = os.path.dirname(__file__)
-
-file1 = os.path.join(dirpath, 'blockfile_data', 'test1.blo')
-file2 = os.path.join(dirpath, 'blockfile_data', 'test2.blo')
-save_path = os.path.join(dirpath, 'blockfile_data', 'save_temp.blo')
 
 ref_data2 = np.array(
     [[[[20, 23, 25, 25, 27],
@@ -120,21 +125,21 @@ axes2 = {
 
 
 def test_load1():
-    s = hs.load(file1)
+    s = hs.load(FILE1)
     assert s.data.shape == (3, 2, 144, 144)
     assert s.axes_manager.as_dictionary() == axes1
 
 
 def test_load2():
-    s = hs.load(file2)
+    s = hs.load(FILE2)
     assert s.data.shape == (2, 3, 5, 5)
     np.testing.assert_equal(s.axes_manager.as_dictionary(), axes2)
     np.testing.assert_allclose(s.data, ref_data2)
 
 
-def test_save_load_cycle():
+def test_save_load_cycle(save_path):
     sig_reload = None
-    signal = hs.load(file2)
+    signal = hs.load(FILE2)
     serial = signal.original_metadata['blockfile_header']['Acquisition_time']
     date, time, timezone = serial_date_to_ISO_format(serial)
     assert signal.metadata.General.original_filename == 'test2.blo'
@@ -164,28 +169,20 @@ def test_save_load_cycle():
     assert isinstance(signal, hs.signals.Signal2D)
     # Delete reference to close memmap file!
     del sig_reload
-    gc.collect()
-    _remove_file(save_path)
 
 
-def test_different_x_y_scale_units():
+def test_different_x_y_scale_units(save_path):
     # perform load and save cycle with changing the scale on y
-    signal = hs.load(file2)
+    signal = hs.load(FILE2)
     signal.axes_manager[0].scale = 50.0
-    try:
-        signal.save(save_path, overwrite=True)
-        sig_reload = hs.load(save_path)
-        assert_allclose(sig_reload.axes_manager[0].scale, 50.0,
-                        atol=1E-2)
-        assert_allclose(sig_reload.axes_manager[1].scale, 64.0,
-                        atol=1E-2)
-        assert_allclose(sig_reload.axes_manager[2].scale, 0.0160616,
-                        atol=1E-5)
-    finally:
-        # Delete reference to close memmap file!
-        del sig_reload
-        gc.collect()
-        _remove_file(save_path)
+    signal.save(save_path, overwrite=True)
+    sig_reload = hs.load(save_path)
+    assert_allclose(sig_reload.axes_manager[0].scale, 50.0,
+                    atol=1E-2)
+    assert_allclose(sig_reload.axes_manager[1].scale, 64.0,
+                    atol=1E-2)
+    assert_allclose(sig_reload.axes_manager[2].scale, 0.0160616,
+                    atol=1E-5)
 
 
 def test_default_header():
@@ -194,149 +191,122 @@ def test_default_header():
     assert header is not None
 
 
-def test_non_square():
+def test_non_square(save_path):
     signal = hs.signals.Signal2D((255 * np.random.rand(10, 3, 5, 6)
                                   ).astype(np.uint8))
-    try:
-        with pytest.raises(ValueError):
-            signal.save(save_path, overwrite=True)
-    finally:
-        _remove_file(save_path)
+    with pytest.raises(ValueError):
+        signal.save(save_path, overwrite=True)
 
 
 def test_load_memmap():
-    s = hs.load(file2, load_to_memory=False)
+    s = hs.load(FILE2, load_to_memory=False)
     assert isinstance(s.data, np.memmap)
 
 
 def test_load_to_memory():
-    s = hs.load(file2, load_to_memory=True)
+    s = hs.load(FILE2, load_to_memory=True)
     assert isinstance(s.data, np.ndarray)
     assert not isinstance(s.data, np.memmap)
 
 
 def test_load_readonly():
-    s = hs.load(file2, load_to_memory=False, mmap_mode='r')
+    s = hs.load(FILE2, load_to_memory=False, mmap_mode='r')
     with pytest.raises(ValueError):
         s.data[:] = 23
 
 
-def test_load_inplace():
+def test_load_inplace(save_path):
     sig_reload = None
     signal = hs.signals.Signal2D((255 * np.random.rand(2, 3, 2, 2)
                                   ).astype(np.uint8))
-    try:
-        signal.save(save_path, overwrite=True)
-        del signal
-        sig_reload = hs.load(save_path, load_to_memory=False, mmap_mode='r+')
-        sig_reload.data[:] = 23
-        # Flush and close memmap:
-        del sig_reload
-        gc.collect()
-        # Check if values were written to disk
-        sig_reload = hs.load(save_path, load_to_memory=False, mmap_mode='r')
-        assert np.all(sig_reload.data == 23)
-    finally:
-        # Delete reference to close memmap file!
-        del sig_reload
-        gc.collect()
-        _remove_file(save_path)
+    signal.save(save_path, overwrite=True)
+    del signal
+    sig_reload = hs.load(save_path, load_to_memory=False, mmap_mode='r+')
+    sig_reload.data[:] = 23
+    # Flush and close memmap:
+    del sig_reload
+    gc.collect()
+    # Check if values were written to disk
+    sig_reload = hs.load(save_path, load_to_memory=False, mmap_mode='r')
+    assert np.all(sig_reload.data == 23)
 
 
-def test_write_fresh():
+def test_write_fresh(save_path):
     signal = hs.signals.Signal2D((255 * np.random.rand(10, 3, 5, 5)
                                   ).astype(np.uint8))
-    try:
-        signal.save(save_path, overwrite=True)
-        sig_reload = hs.load(save_path)
-        np.testing.assert_equal(signal.data, sig_reload.data)
-        header = sarray2dict(get_default_header())
-        header.update({
-            'NX': 3, 'NY': 10,
-            'DP_SZ': 5,
-            'SX': 1, 'SY': 1,
-            'SDP': 100,
-            'Data_offset_2': 10 * 3 + header['Data_offset_1'],
-            'Note': '',
-        })
-        header['Data_offset_2'] += header['Data_offset_2'] % 16
-        assert (
-            sig_reload.original_metadata.blockfile_header.as_dictionary() ==
-            header)
-    finally:
-        _remove_file(save_path)
+    signal.save(save_path, overwrite=True)
+    sig_reload = hs.load(save_path)
+    np.testing.assert_equal(signal.data, sig_reload.data)
+    header = sarray2dict(get_default_header())
+    header.update({
+        'NX': 3, 'NY': 10,
+        'DP_SZ': 5,
+        'SX': 1, 'SY': 1,
+        'SDP': 100,
+        'Data_offset_2': 10 * 3 + header['Data_offset_1'],
+        'Note': '',
+    })
+    header['Data_offset_2'] += header['Data_offset_2'] % 16
+    assert (
+        sig_reload.original_metadata.blockfile_header.as_dictionary() ==
+        header)
 
 
-def test_write_data_line():
+def test_write_data_line(save_path):
     signal = hs.signals.Signal2D((255 * np.random.rand(3, 5, 5)
                                   ).astype(np.uint8))
-    try:
-        signal.save(save_path, overwrite=True)
-        sig_reload = hs.load(save_path)
-        np.testing.assert_equal(signal.data, sig_reload.data)
-    finally:
-        _remove_file(save_path)
+    signal.save(save_path, overwrite=True)
+    sig_reload = hs.load(save_path)
+    np.testing.assert_equal(signal.data, sig_reload.data)
 
 
-def test_write_data_single():
+def test_write_data_single(save_path):
     signal = hs.signals.Signal2D((255 * np.random.rand(5, 5)
                                   ).astype(np.uint8))
-    try:
-        signal.save(save_path, overwrite=True)
-        sig_reload = hs.load(save_path)
-        np.testing.assert_equal(signal.data, sig_reload.data)
-    finally:
-        _remove_file(save_path)
+    signal.save(save_path, overwrite=True)
+    sig_reload = hs.load(save_path)
+    np.testing.assert_equal(signal.data, sig_reload.data)
 
 
-def test_write_data_am_mismatch():
+def test_write_data_am_mismatch(save_path):
     signal = hs.signals.Signal2D((255 * np.random.rand(10, 3, 5, 5)
                                   ).astype(np.uint8))
     signal.axes_manager.navigation_axes[1].size = 4
-    try:
-        with pytest.raises(ValueError):
-            signal.save(save_path, overwrite=True)
-    finally:
-        _remove_file(save_path)
+    with pytest.raises(ValueError):
+        signal.save(save_path, overwrite=True)
 
 
-def test_write_cutoff():
+def test_write_cutoff(save_path):
     signal = hs.signals.Signal2D((255 * np.random.rand(10, 3, 5, 5)
                                   ).astype(np.uint8))
     signal.axes_manager.navigation_axes[0].size = 20
     # Test that it raises a warning
-    try:
-        signal.save(save_path, overwrite=True)
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            sig_reload = hs.load(save_path)
-            # There can be other warnings so >=
-            assert len(w) >= 1
-            warning_blockfile = ["Blockfile header" in str(warning.message)
-                                 for warning in w]
-            assert True in warning_blockfile
-            assert issubclass(w[warning_blockfile.index(True)].category,
-                              UserWarning)
-        cut_data = signal.data.flatten()
-        pw = [(0, 17 * 10 * 5 * 5)]
-        cut_data = np.pad(cut_data, pw, mode='constant')
-        cut_data = cut_data.reshape((10, 20, 5, 5))
-        np.testing.assert_equal(cut_data, sig_reload.data)
-    finally:
-        _remove_file(save_path)
+    signal.save(save_path, overwrite=True)
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        sig_reload = hs.load(save_path)
+        # There can be other warnings so >=
+        assert len(w) >= 1
+        warning_blockfile = ["Blockfile header" in str(warning.message)
+                             for warning in w]
+        assert True in warning_blockfile
+        assert issubclass(w[warning_blockfile.index(True)].category,
+                          UserWarning)
+    cut_data = signal.data.flatten()
+    pw = [(0, 17 * 10 * 5 * 5)]
+    cut_data = np.pad(cut_data, pw, mode='constant')
+    cut_data = cut_data.reshape((10, 20, 5, 5))
+    np.testing.assert_equal(cut_data, sig_reload.data)
 
 
-def test_crop_notes():
+def test_crop_notes(save_path):
     note_len = 0x1000 - 0xF0
     note = 'test123' * 1000     # > note_len
     signal = hs.signals.Signal2D((255 * np.random.rand(2, 3, 2, 2)
                                   ).astype(np.uint8))
     signal.original_metadata.add_node('blockfile_header.Note')
     signal.original_metadata.blockfile_header.Note = note
-    try:
-        signal.save(save_path, overwrite=True)
-        sig_reload = hs.load(save_path)
-        assert (sig_reload.original_metadata.blockfile_header.Note ==
-                note[:note_len])
-    finally:
-        _remove_file(save_path)
+    signal.save(save_path, overwrite=True)
+    sig_reload = hs.load(save_path)
+    assert (sig_reload.original_metadata.blockfile_header.Note ==
+            note[:note_len])
