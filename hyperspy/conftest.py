@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import hyperspy.api as hs
 
+
 @pytest.fixture(autouse=True)
 def add_np(doctest_namespace):
     doctest_namespace['np'] = np
