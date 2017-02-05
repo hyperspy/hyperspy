@@ -15,3 +15,12 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+import pytest
+from traits.etsconfig.api import ETSConfig
+import os
+import warnings
+ETSConfig.toolkit = "null"
+import matplotlib
+matplotlib.use("Agg")

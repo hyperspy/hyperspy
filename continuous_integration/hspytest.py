@@ -2,14 +2,6 @@
 """Run pytests after setting ETS toolkit to "null"."""
 
 if __name__ == '__main__':
-    import sys
-    import pytest
-    from traits.etsconfig.api import ETSConfig
-    import os
-    import warnings
-    ETSConfig.toolkit = "null"
-    import matplotlib
-    matplotlib.use("Agg")
 
     # Check if we should fail on external deprecation messages
     fail_on_external = os.environ.pop('FAIL_ON_EXTERNAL_DEPRECATION', False)
