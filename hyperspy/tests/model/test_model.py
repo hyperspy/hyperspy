@@ -310,7 +310,8 @@ class TestModel1D:
         # tests
         np.testing.assert_array_equal(m.convolution_axis, np.arange(7, 23))
         np.testing.assert_equal(ll_axis.value2index.call_args[0][0], 0)
-
+    
+    @pytest.mark.parallel
     def test_notebook_interactions(self):
         ipywidgets = pytest.importorskip("ipywidgets", minversion="5.0")
         ipython = pytest.importorskip("IPython")
@@ -1019,6 +1020,7 @@ class TestAsSignal:
             c.offset.value = 2
         self.m.assign_current_values_to_all()
 
+    @pytest.mark.parallel
     def test_threaded_identical(self):
         # all components
         s = self.m.as_signal(show_progressbar=False, parallel=True)
@@ -1035,19 +1037,19 @@ class TestAsSignal:
                                   show_progressbar=False, parallel=False)
             np.testing.assert_allclose(s1.data, s.data)
 
-    @pytest.mark.parametrize('parallel', [True, False])
+    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
     def test_all_components_simple(self, parallel):
         s = self.m.as_signal(show_progressbar=False, parallel=parallel)
         assert np.all(s.data == 4.)
 
-    @pytest.mark.parametrize('parallel', [True, False])
+    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
     def test_one_component_simple(self, parallel):
         s = self.m.as_signal(component_list=[0], show_progressbar=False,
                              parallel=parallel)
         assert np.all(s.data == 2.)
         assert self.m[1].active
 
-    @pytest.mark.parametrize('parallel', [True, False])
+    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
     def test_all_components_multidim(self, parallel):
         self.m[0].active_is_multidimensional = True
 
@@ -1060,7 +1062,7 @@ class TestAsSignal:
             s.data, np.array([np.ones((2, 5)) * 2, np.ones((2, 5)) * 4]))
         assert self.m[0].active_is_multidimensional
 
-    @pytest.mark.parametrize('parallel', [True, False])
+    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
     def test_one_component_multidim(self, parallel):
         self.m[0].active_is_multidimensional = True
 

@@ -262,7 +262,8 @@ class TestSmoothing:
         np.random.seed(1)
         self.s.add_gaussian_noise(0.1)
 
-    def test_lowess(self):
+    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    def test_lowess(self, parallel):
         pytest.importorskip("statsmodels")
         from statsmodels.nonparametric.smoothers_lowess import lowess
         frac = 0.5
@@ -278,10 +279,12 @@ class TestSmoothing:
                 return_sorted=False,)
         self.s.smooth_lowess(smoothing_parameter=frac,
                              number_of_iterations=it,
-                             show_progressbar=None)
+                             show_progressbar=None,
+                             parallel=parallel)
         assert np.allclose(data, self.s.data)
 
-    def test_tv(self):
+    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    def test_tv(self, parallel):
         weight = 1
         data = self.s.data.astype('float')
         for i in range(data.shape[0]):
@@ -289,7 +292,8 @@ class TestSmoothing:
                 im=data[i, :],
                 weight=weight,)
         self.s.smooth_tv(smoothing_parameter=weight,
-                         show_progressbar=None)
+                         show_progressbar=None,
+                         parallel=parallel)
         assert np.allclose(data, self.s.data)
 
     def test_savgol(self):
