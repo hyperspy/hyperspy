@@ -44,12 +44,14 @@ script:
   - if [[ $MINIMAL_ENV == 'False' ]]; then
       python setup.py build_ext --inplace;
       pip install coverage coveralls pytest-cov;
-      py.test -n 8 --cov=hyperspy --pyargs hyperspy;
+      py.test -n 8 -m "not parallel" --cov=hyperspy --pyargs hyperspy;
+      py.test -m "parallel" --pyargs hyperspy;
     else python3 setup.py build_ext --inplace;
       echo "available installed python libraries (pip3 list):"
       pip3 list;
       pip3 install coverage coveralls pytest-cov;
-      py.test -n 8 --cov=hyperspy --pyargs hyperspy.tests;
+      py.test -n 8 -m "not parallel" --cov=hyperspy --pyargs hyperspy.tests;
+      py.test -m "parallel" --pyargs hyperspy.tests;
     fi
 
 after_success:
