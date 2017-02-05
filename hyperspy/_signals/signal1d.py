@@ -921,11 +921,11 @@ class Signal1D(BaseSignal, CommonSignal1D):
         Examples
         --------
         Using gui, replaces spectrum s
-        >>>> s.remove_background()
+        >>> s.remove_background()
         Using command line, returns a spectrum
-        >>>> s = s.remove_background(signal_range=(400,450), background_type='PowerLaw')
+        >>> s = s.remove_background(signal_range=(400,450), background_type='PowerLaw')
         Using a full model to fit the background
-        >>>> s = s.remove_background(signal_range=(400,450), fast=False)
+        >>> s = s.remove_background(signal_range=(400,450), fast=False)
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
