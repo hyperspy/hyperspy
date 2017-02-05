@@ -69,8 +69,8 @@ test_script:
   # Run the project tests
   - ps: Add-AppveyorMessage "Running tests..."
   - "python setup.py build_ext --inplace"
-  - "py.test -n auto -m 'not parallel' hyperspy/tests"
-  - "py.test -m 'parallel' hyperspy/tests"
+  - "py.test -m 'parallel'"
+  - "py.test -n auto -m 'not parallel'"
   - "python setup.py clean"
   - ps: Add-AppveyorMessage "Testing completed."
 
