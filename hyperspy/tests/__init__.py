@@ -23,6 +23,8 @@ import warnings
 ETSConfig.toolkit = "null"
 import matplotlib
 matplotlib.use("Agg")
+from hyperspy.defaults_parser import preferences
+preferences.General.show_progressbar = False
 
 # Check if we should fail on external deprecation messages
 fail_on_external = os.environ.pop('FAIL_ON_EXTERNAL_DEPRECATION', False)
