@@ -226,10 +226,18 @@ class Parameter(t.HasTraits):
             raise ValueError("The expression must contain only one variable.")
         x = tuple(expr.free_symbols)[0]
         self.twin_function = lambdify(x, expr.evalf())
-        y = sympy.Symbol(x.name + "2")
-        inv = sympy.solveset(sympy.Eq(y, expr), x)
-        self._twin_inverse_sympy = lambdify(y, inv)
         self._twin_function_expr = value
+        y = sympy.Symbol(x.name + "2")
+        try:
+            inv = sympy.solveset(sympy.Eq(y, expr), x)
+            self._twin_inverse_sympy = lambdify(y, inv)
+        except:
+            # Not all may have a suitable solution.
+            self._twin_inverse_function = None
+            _logger.warning(
+                "Couldn't invert {}, setting the value of {} will raise an "
+                "AttributeError. Set its twin value instead.".format(value,
+                                                                     self))
 
     @property
     def twin_inverse_function(self):
