@@ -44,6 +44,7 @@ def _get_weight(element, line, weight_line=None):
             element]['Atomic_properties']['Xray_lines'][line]['weight']
     return "x * {}".format(weight_line)
 
+
 def _get_sigma(E, E_ref, units_factor, return_f=False):
     """
     Calculates an approximate sigma value, accounting for peak broadening due
@@ -467,7 +468,8 @@ class EDSModel(Model1D):
                 component.centre.free = True
                 E = component.centre.value
                 fact = float(ax.value2index(E)) / ax.value2index(E_ref)
-                component.centre.twin_function_expr = _get_scale(E, E_ref, fact)
+                component.centre.twin_function_expr = _get_scale(
+                    E, E_ref, fact)
                 component.centre.twin = component_ref.centre
                 ref.append(E)
         return ref
