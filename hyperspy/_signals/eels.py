@@ -348,6 +348,7 @@ class EELSSpectrum_mixin:
             # I0.axes_manager.set_signal_dimension(0)
             threshold.axes_manager.set_signal_dimension(0)
             binned = self.metadata.Signal.binned
+
             def estimating_function(data, threshold=None):
                 if np.isnan(threshold):
                     return np.nan
@@ -359,7 +360,7 @@ class EELSSpectrum_mixin:
                     ind = ax.value2index(threshold)
                     data = data[:ind]
                     if binned:
-                        return data.sum()        
+                        return data.sum()
                     else:
                         from scipy.integrate import simps
                         axis = ax.axis[:ind]
@@ -601,7 +602,7 @@ class EELSSpectrum_mixin:
 
             z = da.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)
             j = da.fft.rfft(s.data, n=size, axis=axis.index_in_array)
-            j1 = z * da.log(j/z).map_blocks(np.nan_to_num)
+            j1 = z * da.log(j / z).map_blocks(np.nan_to_num)
             sdata = da.fft.irfft(j1, axis=axis.index_in_array)
         else:
             z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)
@@ -788,6 +789,7 @@ class EELSSpectrum_mixin:
         imax = kernel.argmax()
         maxval = self.axes_manager.navigation_size
         show_progressbar = show_progressbar and (maxval > 0)
+
         def deconv_function(signal, kernel=None,
                             iterations=15, psf_size=None):
             imax = kernel.argmax()

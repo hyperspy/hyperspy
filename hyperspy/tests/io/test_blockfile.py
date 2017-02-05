@@ -204,10 +204,9 @@ def test_load_lazy():
 
 
 def test_load_to_memory():
-    s = hs.load(FILE2, lazy =False)
+    s = hs.load(FILE2, lazy=False)
     assert isinstance(s.data, np.ndarray)
     assert not isinstance(s.data, np.memmap)
-
 
 
 def test_write_fresh(save_path):
