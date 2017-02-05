@@ -497,7 +497,6 @@ class AxesManager(t.HasTraits):
 
     >>> s = hs.signals.Signal1D(np.random.random((2,3,4,5)))
     >>> s.axes_manager
-
     <Axes manager, axes: (4, 3, 2|5)>
                 Name |   size |  index |  offset |   scale |  units
     ================ | ====== | ====== | ======= | ======= | ======
