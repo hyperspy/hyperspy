@@ -1,6 +1,7 @@
 from unittest import mock
 
 import numpy as np
+import pytest
 from scipy.ndimage import rotate, gaussian_filter, gaussian_filter1d
 
 
@@ -12,88 +13,84 @@ class TestImage:
     def setup_method(self, method):
         self.im = hs.signals.Signal2D(np.arange(0., 18).reshape((2, 3, 3)))
 
-    def test_constant_sigma(self):
-        im = self.im
-        imt = im.deepcopy()
-        for s, t in zip([im, imt], [False, True]):
-            s.map(gaussian_filter, sigma=1, show_progressbar=None, parallel=t)
-            np.testing.assert_allclose(s.data, np.array(
-                [[[1.68829507, 2.2662213, 2.84414753],
-                  [3.42207377, 4., 4.57792623],
-                  [5.15585247, 5.7337787, 6.31170493]],
+    @pytest.mark.parametrize('parallel', [True, False])
+    def test_constant_sigma(self, parallel):
+        s = self.im
+        s.map(gaussian_filter, sigma=1, show_progressbar=None,
+              parallel=parallel)
+        np.testing.assert_allclose(s.data, np.array(
+            [[[1.68829507, 2.2662213, 2.84414753],
+              [3.42207377, 4., 4.57792623],
+              [5.15585247, 5.7337787, 6.31170493]],
 
-                 [[10.68829507, 11.2662213, 11.84414753],
-                  [12.42207377, 13., 13.57792623],
-                  [14.15585247, 14.7337787, 15.31170493]]]))
+             [[10.68829507, 11.2662213, 11.84414753],
+              [12.42207377, 13., 13.57792623],
+              [14.15585247, 14.7337787, 15.31170493]]]))
 
-    def test_constant_sigma_navdim0(self):
-        im = self.im.inav[0]
-        imt = im.deepcopy()
-        for s, t in zip([im, imt], [False, True]):
-            s.map(gaussian_filter, sigma=1, show_progressbar=None,
-                  parallel=t)
-            np.testing.assert_allclose(s.data, np.array(
-                [[1.68829507, 2.2662213, 2.84414753],
-                 [3.42207377, 4., 4.57792623],
-                 [5.15585247, 5.7337787, 6.31170493]]))
+    @pytest.mark.parametrize('parallel', [True, False])
+    def test_constant_sigma_navdim0(self, parallel):
+        s = self.im.inav[0]
+        s.map(gaussian_filter, sigma=1, show_progressbar=None,
+              parallel=parallel)
+        np.testing.assert_allclose(s.data, np.array(
+            [[1.68829507, 2.2662213, 2.84414753],
+             [3.42207377, 4., 4.57792623],
+             [5.15585247, 5.7337787, 6.31170493]]))
 
-    def test_variable_sigma(self):
-        im = self.im
-        imt = im.deepcopy()
+    @pytest.mark.parametrize('parallel', [True, False])
+    def test_variable_sigma(self, parallel):
+        s = self.im
 
         sigmas = hs.signals.BaseSignal(np.array([0, 1]))
         sigmas.axes_manager.set_signal_dimension(0)
 
-        for s, t in zip([im, imt], [False, True]):
-            s.map(gaussian_filter,
-                  sigma=sigmas, show_progressbar=None,
-                  parallel=t)
-            np.testing.assert_allclose(s.data, np.array(
-                [[[0., 1., 2.],
-                    [3., 4., 5.],
-                    [6., 7., 8.]],
+        s.map(gaussian_filter,
+              sigma=sigmas, show_progressbar=None,
+              parallel=parallel)
+        np.testing.assert_allclose(s.data, np.array(
+            [[[0., 1., 2.],
+                [3., 4., 5.],
+                [6., 7., 8.]],
 
-                 [[10.68829507, 11.2662213, 11.84414753],
-                  [12.42207377, 13., 13.57792623],
-                  [14.15585247, 14.7337787, 15.31170493]]]))
+             [[10.68829507, 11.2662213, 11.84414753],
+              [12.42207377, 13., 13.57792623],
+              [14.15585247, 14.7337787, 15.31170493]]]))
 
-    def test_axes_argument(self):
-        im = self.im
-        imt = im.deepcopy()
-        for s, t in zip([im, imt], [False, True]):
-            s.map(rotate, angle=45, reshape=False, show_progressbar=None,
-                  parallel=t)
-            np.testing.assert_allclose(s.data, np.array(
-                [[[0., 2.23223305, 0.],
-                  [0.46446609, 4., 7.53553391],
-                  [0., 5.76776695, 0.]],
+    @pytest.mark.parametrize('parallel', [True, False])
+    def test_axes_argument(self, parallel):
+        s = self.im
+        s.map(rotate, angle=45, reshape=False, show_progressbar=None,
+              parallel=parallel)
+        np.testing.assert_allclose(s.data, np.array(
+            [[[0., 2.23223305, 0.],
+              [0.46446609, 4., 7.53553391],
+              [0., 5.76776695, 0.]],
 
-                 [[0., 11.23223305, 0.],
-                  [9.46446609, 13., 16.53553391],
-                  [0., 14.76776695, 0.]]]))
+             [[0., 11.23223305, 0.],
+              [9.46446609, 13., 16.53553391],
+              [0., 14.76776695, 0.]]]))
 
-    def test_different_shapes(self):
-        im = self.im
-        imt = im.deepcopy()
+    @pytest.mark.parametrize('parallel', [True, False])
+    def test_different_shapes(self, parallel):
+        s = self.im
         angles = hs.signals.BaseSignal([0, 45])
-        for s, t in zip([im, imt], [False, True]):
-            s.map(rotate, angle=angles.T, reshape=True, show_progressbar=None,
-                  parallel=t)
-            # the dtype
-            assert s.data.dtype is np.dtype('O')
-            # the special slicing
-            assert s.inav[0].data.base is s.data[0]
-            # actual values
-            np.testing.assert_allclose(s.data[0],
-                                       np.arange(9.).reshape((3, 3)),
-                                       atol=1e-7)
-            np.testing.assert_allclose(s.data[1],
-                                       np.array([[0., 0., 0., 0.],
-                                                 [0., 10.34834957,
-                                                     13.88388348, 0.],
-                                                 [0., 12.11611652,
-                                                     15.65165043, 0.],
-                                                 [0., 0., 0., 0.]]))
+        s.map(rotate, angle=angles.T, reshape=True, show_progressbar=None,
+              parallel=parallel)
+        # the dtype
+        assert s.data.dtype is np.dtype('O')
+        # the special slicing
+        assert s.inav[0].data.base is s.data[0]
+        # actual values
+        np.testing.assert_allclose(s.data[0],
+                                   np.arange(9.).reshape((3, 3)),
+                                   atol=1e-7)
+        np.testing.assert_allclose(s.data[1],
+                                   np.array([[0., 0., 0., 0.],
+                                             [0., 10.34834957,
+                                                 13.88388348, 0.],
+                                             [0., 12.11611652,
+                                                 15.65165043, 0.],
+                                             [0., 0., 0., 0.]]))
 
 
 class TestSignal1D:
@@ -101,25 +98,25 @@ class TestSignal1D:
     def setup_method(self, method):
         self.s = hs.signals.Signal1D(np.arange(0., 6).reshape((2, 3)))
 
-    def test_constant_sigma(self):
-        ss = self.s.deepcopy()
-        for s, t in zip([self.s, ss], [False, True]):
-            m = mock.Mock()
-            s.events.data_changed.connect(m.data_changed)
-            s.map(gaussian_filter1d, sigma=1, show_progressbar=None,
-                  parallel=t)
-            np.testing.assert_allclose(s.data, np.array(
-                ([[0.42207377, 1., 1.57792623],
-                  [3.42207377, 4., 4.57792623]])))
-            assert m.data_changed.called
+    @pytest.mark.parametrize('parallel', [True, False])
+    def test_constant_sigma(self, parallel):
+        s = self.s
+        m = mock.Mock()
+        s.events.data_changed.connect(m.data_changed)
+        s.map(gaussian_filter1d, sigma=1, show_progressbar=None,
+              parallel=parallel)
+        np.testing.assert_allclose(s.data, np.array(
+            ([[0.42207377, 1., 1.57792623],
+              [3.42207377, 4., 4.57792623]])))
+        assert m.data_changed.called
 
-    def test_dtype(self):
-        ss = self.s.deepcopy()
-        for s, t in zip([self.s, ss], [False, True]):
-            s.map(lambda data: np.sqrt(np.complex128(data)),
-                  show_progressbar=None,
-                  parallel=t)
-            assert s.data.dtype is np.dtype('complex128')
+    @pytest.mark.parametrize('parallel', [True, False])
+    def test_dtype(self, parallel):
+        s = self.s
+        s.map(lambda data: np.sqrt(np.complex128(data)),
+              show_progressbar=None,
+              parallel=parallel)
+        assert s.data.dtype is np.dtype('complex128')
 
 
 class TestSignal0D:
@@ -128,27 +125,26 @@ class TestSignal0D:
         self.s = hs.signals.BaseSignal(np.arange(0., 6).reshape((2, 3)))
         self.s.axes_manager.set_signal_dimension(0)
 
-    def test(self):
-        ss = self.s.deepcopy()
-        for s, t in zip([self.s, ss], [False, True]):
-            m = mock.Mock()
-            s.events.data_changed.connect(m.data_changed)
-            s.map(lambda x, e: x ** e, e=2, show_progressbar=None,
-                  parallel=t)
-            np.testing.assert_allclose(
-                s.data, (np.arange(0., 6) ** 2).reshape((2, 3)))
-            assert m.data_changed.called
+    @pytest.mark.parametrize('parallel', [True, False])
+    def test(self, parallel):
+        s = self.s
+        m = mock.Mock()
+        s.events.data_changed.connect(m.data_changed)
+        s.map(lambda x, e: x ** e, e=2, show_progressbar=None,
+              parallel=parallel)
+        np.testing.assert_allclose(
+            s.data, (np.arange(0., 6) ** 2).reshape((2, 3)))
+        assert m.data_changed.called
 
-    def test_nav_dim_1(self):
-        s1 = self.s.inav[1, 1]
-        ss = s1.deepcopy()
-        for s, t in zip([s1, ss], [False, True]):
-            m = mock.Mock()
-            s.events.data_changed.connect(m.data_changed)
-            s.map(lambda x, e: x ** e, e=2, show_progressbar=None,
-                  parallel=t)
-            np.testing.assert_allclose(s.data, self.s.inav[1, 1].data ** 2)
-            assert m.data_changed.called
+    @pytest.mark.parametrize('parallel', [True, False])
+    def test_nav_dim_1(self, parallel):
+        s = self.s.inav[1, 1]
+        m = mock.Mock()
+        s.events.data_changed.connect(m.data_changed)
+        s.map(lambda x, e: x ** e, e=2, show_progressbar=None,
+              parallel=parallel)
+        np.testing.assert_allclose(s.data, self.s.inav[1, 1].data ** 2)
+        assert m.data_changed.called
 
 
 _alphabet = 'abcdefghijklmnopqrstuvwxyz'

@@ -1035,57 +1035,55 @@ class TestAsSignal:
                                   show_progressbar=False, parallel=False)
             np.testing.assert_allclose(s1.data, s.data)
 
-    def test_all_components_simple(self):
-        for th in [True, False]:
-            s = self.m.as_signal(show_progressbar=False, parallel=th)
-            assert np.all(s.data == 4.)
+    @pytest.mark.parametrize('parallel', [True, False])
+    def test_all_components_simple(self, parallel):
+        s = self.m.as_signal(show_progressbar=False, parallel=parallel)
+        assert np.all(s.data == 4.)
 
-    def test_one_component_simple(self):
-        for th in [True, False]:
-            s = self.m.as_signal(component_list=[0], show_progressbar=False,
-                                 parallel=th)
-            assert np.all(s.data == 2.)
-            assert self.m[1].active
+    @pytest.mark.parametrize('parallel', [True, False])
+    def test_one_component_simple(self, parallel):
+        s = self.m.as_signal(component_list=[0], show_progressbar=False,
+                             parallel=parallel)
+        assert np.all(s.data == 2.)
+        assert self.m[1].active
 
-    def test_all_components_multidim(self):
+    @pytest.mark.parametrize('parallel', [True, False])
+    def test_all_components_multidim(self, parallel):
         self.m[0].active_is_multidimensional = True
 
-        for th in [True, False]:
-            s = self.m.as_signal(show_progressbar=False, parallel=th)
-            assert np.all(s.data == 4.)
+        s = self.m.as_signal(show_progressbar=False, parallel=parallel)
+        assert np.all(s.data == 4.)
 
         self.m[0]._active_array[0] = False
-        for th in [True, False]:
-            s = self.m.as_signal(show_progressbar=False, parallel=th)
-            np.testing.assert_array_equal(
-                s.data, np.array([np.ones((2, 5)) * 2, np.ones((2, 5)) * 4]))
-            assert self.m[0].active_is_multidimensional
+        s = self.m.as_signal(show_progressbar=False, parallel=parallel)
+        np.testing.assert_array_equal(
+            s.data, np.array([np.ones((2, 5)) * 2, np.ones((2, 5)) * 4]))
+        assert self.m[0].active_is_multidimensional
 
-    def test_one_component_multidim(self):
+    @pytest.mark.parametrize('parallel', [True, False])
+    def test_one_component_multidim(self, parallel):
         self.m[0].active_is_multidimensional = True
 
-        for th in [True, False]:
-            s = self.m.as_signal(component_list=[0], show_progressbar=False,
-                                 parallel=th)
-            assert np.all(s.data == 2.)
-            assert self.m[1].active
-            assert not self.m[1].active_is_multidimensional
+        s = self.m.as_signal(component_list=[0], show_progressbar=False,
+                             parallel=parallel)
+        assert np.all(s.data == 2.)
+        assert self.m[1].active
+        assert not self.m[1].active_is_multidimensional
 
-            s = self.m.as_signal(component_list=[1], show_progressbar=False,
-                                 parallel=th)
-            np.testing.assert_equal(s.data, 2.)
-            assert self.m[0].active_is_multidimensional
+        s = self.m.as_signal(component_list=[1], show_progressbar=False,
+                             parallel=parallel)
+        np.testing.assert_equal(s.data, 2.)
+        assert self.m[0].active_is_multidimensional
 
         self.m[0]._active_array[0] = False
-        for th in [True, False]:
-            s = self.m.as_signal(component_list=[1], show_progressbar=False,
-                                 parallel=th)
-            assert np.all(s.data == 2.)
+        s = self.m.as_signal(component_list=[1], show_progressbar=False,
+                             parallel=parallel)
+        assert np.all(s.data == 2.)
 
-            s = self.m.as_signal(component_list=[0], show_progressbar=False,
-                                 parallel=th)
-            np.testing.assert_array_equal(s.data, np.array([np.zeros((2, 5)),
-                                                            np.ones((2, 5)) * 2]))
+        s = self.m.as_signal(component_list=[0], show_progressbar=False,
+                             parallel=parallel)
+        np.testing.assert_array_equal(s.data, np.array([np.zeros((2, 5)),
+                                                        np.ones((2, 5)) * 2]))
 
 
 class TestCreateModel:
