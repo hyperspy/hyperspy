@@ -39,11 +39,10 @@ except NameError:
     WindowsError = None
 
 
-
-
 DIRPATH = os.path.dirname(__file__)
 FILE1 = os.path.join(DIRPATH, 'blockfile_data', 'test1.blo')
 FILE2 = os.path.join(DIRPATH, 'blockfile_data', 'test2.blo')
+
 
 @pytest.fixture()
 def save_path():
