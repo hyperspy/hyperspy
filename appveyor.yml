@@ -4,7 +4,7 @@ shallow_clone: true
 environment:
 
   global:
-    TEST_DEPS: "pytest pytest-cov pytest-mpl wheel pip"
+    TEST_DEPS: "pytest pytest-cov wheel pip"
     NSIS_DIR: "%PROGRAMFILES(x86)%/NSIS"
 
 
@@ -56,6 +56,7 @@ install:
   - "%CMD_IN_ENV% conda install -yq %DEPS%"
     # Having 'sip' folder on path confuses import of `sip`.
   - "%CMD_IN_ENV% conda install pip"
+  - "pip install pytest-mpl"
   # TODO: Remove once anaconda taitsui package is at v5:
   - "IF \"%PYTHON_MAJOR%\" EQU \"3\" pip install --upgrade traitsui tqdm"
   - ps: Add-AppveyorMessage "Installing hyperspy..."
