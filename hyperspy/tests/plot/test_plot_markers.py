@@ -27,7 +27,7 @@ from hyperspy.misc.test_utils import get_matplotlib_version_label, update_close_
 
 mplv = get_matplotlib_version_label()
 default_tol = 0.05
-path = 'test_plot_markers-%s' % mplv
+path = 'plot_markers-%s' % mplv
 
 
 class TestMarkers:
