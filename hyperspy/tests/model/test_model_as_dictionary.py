@@ -55,14 +55,8 @@ class TestParameterDictionary:
         self.par = Parameter()
         self.par.name = 'asd'
         self.par._id_name = 'newone'
-
-        def ft(x):
-            return x * x
-
-        def fit(x):
-            return x * x + 1
-        self.par.twin_function = ft
-        self.par.twin_inverse_function = fit
+        self.par.twin_function_expr = "x * x"
+        self.par.twin_inverse_function_expr = "x * x + 1"
         self.par._axes_manager = DummyAxesManager()
         self.par._create_array()
         self.par.value = 1
@@ -156,6 +150,8 @@ class TestComponentDictionary:
 
     def test_load_dictionary(self):
         c = self.comp
+        c.par1.twin_function_expr = "x + 2"
+        c.par2.twin_function_expr = "x - 2"
         d = c.as_dictionary(True)
         n = Component(self.parameter_names)
 
@@ -175,12 +171,8 @@ class TestComponentDictionary:
                 pc.twin_inverse_function(rn))
             dn = pn.as_dictionary()
             del dn['self']
-            del dn['twin_function']
-            del dn['twin_inverse_function']
             dc = pc.as_dictionary()
             del dc['self']
-            del dc['twin_function']
-            del dc['twin_inverse_function']
             print(list(dn.keys()))
             print(list(dc.keys()))
             nt.assert_dict_equal(dn, dc)
