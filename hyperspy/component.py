@@ -82,11 +82,6 @@ class Parameter(t.HasTraits):
         twin inverse function with the value provided. The string is
         parsed using sympy, so permitted values are any valid sympy expressions
         of one variable.
-        The inverse of twin_function. If it is None then it is not
-        possible to set the value of the parameter twin by setting
-        the value of the current parameter.**Setting this attribute manually
-        is deprecated in HyperSpy 1.1.3. It will become private in
-        HyperSpy 2.0. Please use ``twin_function_expr`` instead.**
     twin_function : function
         **Setting this attribute manually
         is deprecated in HyperSpy newer than 1.1.2. It will become private in
