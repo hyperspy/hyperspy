@@ -1,11 +1,7 @@
-from distutils.version import LooseVersion
 from unittest import mock
 
 import numpy as np
-import scipy
-
 import pytest
-from numpy.testing import assert_allclose
 from matplotlib.testing.decorators import cleanup
 
 import hyperspy.api as hs

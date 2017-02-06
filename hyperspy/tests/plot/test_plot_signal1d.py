@@ -27,7 +27,7 @@ from hyperspy.misc.test_utils import get_matplotlib_version_label, update_close_
 
 mplv = get_matplotlib_version_label()
 scalebar_color = 'blue'
-default_tol = 0.05
+default_tol = 2.0
 path = os.path.join('plot_signal1d-%s' % mplv)
 
 
@@ -38,7 +38,7 @@ class TestPlotSpectra():
 
     @pytest.mark.parametrize("style", ['default', 'overlap', 'cascade', 'mosaic',
                                        'heatmap'])
-    @pytest.mark.mpl_image_compare(baseline_dir=path, tol=default_tol)
+    @pytest.mark.mpl_image_compare(baseline_dir=path, tolerance=default_tol)
     def test_plot_spectra(self, style):
         ax = hs.plot.plot_spectra(self._test_plot_spectra(), style=style,
                                   legend='auto')
@@ -47,7 +47,7 @@ class TestPlotSpectra():
         return ax.figure
 
     @pytest.mark.parametrize("figure", ['1nav', '1sig', '2nav', '2sig'])
-    @pytest.mark.mpl_image_compare(baseline_dir=path, tol=default_tol)
+    @pytest.mark.mpl_image_compare(baseline_dir=path, tolerance=default_tol)
     def test_plot_spectra_sync(self, figure):
         s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0).inav[:, :3]
         s2 = s1.deepcopy() * -1
@@ -117,7 +117,7 @@ def _generate_parameter():
 
 @pytest.mark.parametrize(("ndim", "plot_type", "data_type"),
                          _generate_parameter())
-@pytest.mark.mpl_image_compare(baseline_dir=path, tol=default_tol)
+@pytest.mark.mpl_image_compare(baseline_dir=path, tolerance=default_tol)
 def test_plot_sig1_nav(ndim, plot_type, data_type):
     test_plot = _TestPlot(ndim, data_type)
     if plot_type == "sig":
@@ -161,7 +161,7 @@ def _test_plot_nav2_sig1_two_cursors():
 
 
 @pytest.mark.parametrize("plot_type", ['nav', 'sig'])
-@pytest.mark.mpl_image_compare(baseline_dir=path, tol=default_tol)
+@pytest.mark.mpl_image_compare(baseline_dir=path, tolerance=default_tol)
 def test_plot_nav2_sig1_two_cursors(plot_type):
     s = _test_plot_nav2_sig1_two_cursors()
     if plot_type == "sig":
