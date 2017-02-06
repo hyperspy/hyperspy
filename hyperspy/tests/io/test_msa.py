@@ -1,4 +1,3 @@
-from nose.tools import assert_equal
 import os.path
 import tempfile
 
@@ -159,14 +158,14 @@ example2_parameters = {
 
 class TestExample1:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = load(os.path.join(
             my_path,
             "msa_files",
             "example1.msa"))
 
     def test_data(self):
-        assert_equal(
+        assert (
             [4066.0,
              3996.0,
              3932.0,
@@ -187,11 +186,11 @@ class TestExample1:
              4613.0,
              4637.0,
              4429.0,
-             4217.0], self.s.data.tolist())
+             4217.0] == self.s.data.tolist())
 
     def test_parameters(self):
-        assert_equal(
-            example1_parameters,
+        assert (
+            example1_parameters ==
             self.s.original_metadata.as_dictionary())
 
     def test_metadata(self):
@@ -203,8 +202,8 @@ class TestExample1:
             fname2 = os.path.join(tmpdir, "example1-export.msa")
             self.s.save(fname2)
             s2 = load(fname2)
-            assert_equal(s2.metadata.General.original_filename,
-                         "example1-export.msa")
+            assert (s2.metadata.General.original_filename ==
+                    "example1-export.msa")
             s2.metadata.General.original_filename = "example1.msa"
             assert_deep_almost_equal(self.s.metadata.as_dictionary(),
                                      s2.metadata.as_dictionary())
@@ -212,14 +211,14 @@ class TestExample1:
 
 class TestExample2:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = load(os.path.join(
             my_path,
             "msa_files",
             "example2.msa"))
 
     def test_data(self):
-        assert_equal(
+        assert (
             [65.82,
              67.872,
              65.626,
@@ -299,11 +298,11 @@ class TestExample2:
              101.59,
              80.107,
              58.657,
-             49.442], self.s.data.tolist())
+             49.442] == self.s.data.tolist())
 
     def test_parameters(self):
-        assert_equal(
-            example2_parameters,
+        assert (
+            example2_parameters ==
             self.s.original_metadata.as_dictionary())
 
     def test_metadata(self):
@@ -315,8 +314,8 @@ class TestExample2:
             fname2 = os.path.join(tmpdir, "example2-export.msa")
             self.s.save(fname2)
             s2 = load(fname2)
-            assert_equal(s2.metadata.General.original_filename,
-                         "example2-export.msa")
+            assert (s2.metadata.General.original_filename ==
+                    "example2-export.msa")
             s2.metadata.General.original_filename = "example2.msa"
             assert_deep_almost_equal(self.s.metadata.as_dictionary(),
                                      s2.metadata.as_dictionary())
@@ -324,4 +323,4 @@ class TestExample2:
 
 def test_minimum_metadata_example():
     s = load(os.path.join(my_path, "msa_files", "minimum_metadata.msa"))
-    assert_equal(minimum_md_om, s.original_metadata.as_dictionary())
+    assert minimum_md_om == s.original_metadata.as_dictionary()

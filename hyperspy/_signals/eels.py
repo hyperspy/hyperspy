@@ -226,13 +226,13 @@ class EELSSpectrum(Signal1D):
 
         Examples
         --------
-        >>>> s_ll.align_zero_loss_peak()
+        >>> s_ll.align_zero_loss_peak()
 
         Aligning both the lowloss signal and another signal
-        >>>> s_ll.align_zero_loss_peak(also_align=[s])
+        >>> s_ll.align_zero_loss_peak(also_align=[s])
 
         Aligning within a narrow range of the lowloss signal
-        >>>> s_ll.align_zero_loss_peak(signal_range=(-10.,10.))
+        >>> s_ll.align_zero_loss_peak(signal_range=(-10.,10.))
 
 
         See Also

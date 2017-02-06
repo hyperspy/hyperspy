@@ -18,14 +18,15 @@
 
 import numpy as np
 from numpy.testing import assert_array_equal
-import nose.tools as nt
+
+import pytest
 
 from hyperspy import signals
 
 
 class TestBinaryOperators:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s1 = signals.Signal1D(np.ones((2, 3)))
         self.s2 = signals.Signal1D(np.ones((2, 3)))
         self.s2.data *= 2
@@ -38,7 +39,7 @@ class TestBinaryOperators:
         s1 = self.s1
         self.s1 += self.s2
         assert_array_equal(self.s1.data, np.ones((2, 3)) * 3)
-        nt.assert_is(s1, self.s1)
+        assert s1 is self.s1
 
     def test_sum_same_shape_signals_not_aligned(self):
         s1 = self.s1
@@ -65,14 +66,14 @@ class TestBinaryOperators:
         assert_array_equal(s1.data, np.ones((3, 2)) * 3)
         s2 += s2
         assert_array_equal(s2.data, np.ones((3, 2)) * 4)
-        nt.assert_is(s1, s1c)
-        nt.assert_is(s2, s2c)
+        assert s1 is s1c
+        assert s2 is s2c
 
-    @nt.raises(ValueError)
     def test_sum_wrong_shape(self):
         s1 = self.s1
         s2 = signals.Signal1D(np.ones((3, 3)))
-        s1 + s2
+        with pytest.raises(ValueError):
+            s1 + s2
 
     def test_broadcast_missing_sig_and_nav(self):
         s1 = self.s1
@@ -80,7 +81,7 @@ class TestBinaryOperators:
         s1 = s1.transpose(signal_axes=0)
         s = s1 + s2
         assert_array_equal(s.data, 3 * np.ones((2, 3, 2, 3)))
-        nt.assert_equal(s.axes_manager.signal_dimension, 2)
+        assert s.axes_manager.signal_dimension == 2
 
     def test_broadcast_missing_sig(self):
         s1 = self.s1
@@ -93,14 +94,14 @@ class TestBinaryOperators:
         assert_array_equal(s12.data, 3 * np.ones((2, 3, 2)))
         assert_array_equal(s21.data, 3 * np.ones((2, 3, 2)))
 
-    @nt.raises(ValueError)
     def test_broadcast_in_place_missing_sig_wrong(self):
         s1 = self.s1
         s2 = self.s2
         s1 = s1.transpose(signal_axes=0)
         s2.axes_manager._axes[1].navigate = True
         s2.axes_manager._axes[0].navigate = False  # (3| 2)
-        s1 += s2
+        with pytest.raises(ValueError):
+            s1 += s2
 
     def test_broadcast_in_place(self):
         s1 = self.s1
@@ -112,7 +113,7 @@ class TestBinaryOperators:
         print(s1)
         s2 += s1
         assert_array_equal(s2.data, 2 * np.ones((4, 2, 4, 3)))
-        nt.assert_is(s2, s2c)
+        assert s2 is s2c
 
     def test_equal_naxes_diff_shape(self):
         s32 = self.s1  # (3| 2)
@@ -124,7 +125,7 @@ class TestBinaryOperators:
 
 class TestUnaryOperators:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s1 = signals.Signal1D(np.array((1, -1, 4, -3)))
 
     def test_minus(self):
