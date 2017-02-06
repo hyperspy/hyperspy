@@ -439,8 +439,8 @@ class EDSModel(Model1D):
             self.signal.set_microscope_parameters(
                 energy_resolution_MnKa=FWHM_MnKa)
             _logger.info("Energy resolution (FWHM at Mn Ka) changed from " +
-                          "{:.2f} to {:.2f} eV".format(
-                              FWHM_MnKa_old, FWHM_MnKa))
+                         "{:.2f} to {:.2f} eV".format(
+                             FWHM_MnKa_old, FWHM_MnKa))
             for component in self:
                 if component.isbackground is False:
                     line_FWHM = self.signal._get_line_energy(

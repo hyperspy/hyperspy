@@ -74,7 +74,7 @@ class Parameter(t.HasTraits):
         twin function with the value of the twin parameter. The string is
         parsed using sympy, so permitted values are any valid sympy expressions
         of one variable. If the function is invertible the twin inverse function
-        is set automatically. 
+        is set automatically.
     twin_inverse_function : str
         Expression of the ``twin_inverse_function`` that enables setting the
         value of the twin parameter. If ``twin`` is not
@@ -256,6 +256,7 @@ class Parameter(t.HasTraits):
                 "will raise an AttributeError unless you set manually "
                 "``twin_inverse_function_expr``. Otherwise, set the value of "
                 "its twin parameter instead.".format(value, self))
+
     @property
     def twin_inverse_function_expr(self):
         if self.twin:
@@ -282,10 +283,11 @@ class Parameter(t.HasTraits):
     @property
     def twin_inverse_function(self):
         if (not self.twin_inverse_function_expr and
-            self.twin_function_expr and self._twin_inverse_function_expr):
+                self.twin_function_expr and self._twin_inverse_function_expr):
             return lambda x: self._twin_inverse_sympy(x).pop()
         else:
             return self._twin_inverse_function
+
     @twin_inverse_function.setter
     def twin_inverse_function(self, value):
         self._twin_inverse_function = value
