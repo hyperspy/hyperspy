@@ -36,7 +36,7 @@ install:
       conda install pip;
       python setup.py install;
       pip install pytest pytest-xdist;
-    else pip install pytest pytest-xdist;
+    else pip install pytest;
     pip3 install .;
     fi
 
@@ -44,12 +44,12 @@ script:
   - if [[ $MINIMAL_ENV == 'False' ]]; then
       python setup.py build_ext --inplace;
       pip install coverage coveralls pytest-cov;
-      py.test -n 8 --cov=hyperspy --pyargs hyperspy;
+      py.test --cov=hyperspy --pyargs hyperspy;
     else python3 setup.py build_ext --inplace;
       echo "available installed python libraries (pip3 list):"
       pip3 list;
       pip3 install coverage coveralls pytest-cov;
-      py.test -n 8 --cov=hyperspy --pyargs hyperspy.tests;
+      py.test --cov=hyperspy --pyargs hyperspy.tests;
     fi
 
 after_success:

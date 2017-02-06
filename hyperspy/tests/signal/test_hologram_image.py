@@ -96,13 +96,14 @@ class TestCaseHologramImage(object):
         assert (
             self.holo_image.metadata.Acquisition_instrument.TEM.tilt_stage == 2.2)
 
-    def test_reconstruct_phase(self):
+    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    def test_reconstruct_phase(self, parallel):
 
         # 1. Testing reconstruction of a single hologram with a reference (as a np array and as HologramImage) with
         # default output size with an without input sideband parameters:
 
         wave_image = self.holo_image.reconstruct_phase(
-            self.ref, store_parameters=True)
+            self.ref, store_parameters=True, parallel=parallel)
         sb_pos_cc = wave_image.metadata.Signal.Holography.Reconstruction_parameters.sb_position * (-1) + \
             [self.img_size, self.img_size]
 
@@ -110,7 +111,9 @@ class TestCaseHologramImage(object):
         sb_smoothness_cc = wave_image.metadata.Signal.Holography.Reconstruction_parameters.sb_smoothness
         sb_units_cc = wave_image.metadata.Signal.Holography.Reconstruction_parameters.sb_units
         wave_image_cc = self.holo_image.reconstruct_phase(self.ref_image, sb_position=sb_pos_cc, sb_size=sb_size_cc,
-                                                          sb_smoothness=sb_smoothness_cc, sb_unit=sb_units_cc)
+                                                          sb_smoothness=sb_smoothness_cc,
+                                                          sb_unit=sb_units_cc,
+                                                         parallel=parallel)
         x_start = int(wave_image.axes_manager.signal_shape[0] / 10)
         x_stop = int(wave_image.axes_manager.signal_shape[0] * 9 / 10)
         wave_crop = wave_image.data[x_start:x_stop, x_start:x_stop]
@@ -125,14 +128,17 @@ class TestCaseHologramImage(object):
         x_start = int(self.img_size / 10)
         x_stop = self.img_size - 1 - int(self.img_size / 10)
         phase_new_crop = wave_image.unwrapped_phase(
+            parallel=parallel
         ).data[x_start:x_stop, x_start:x_stop]
         phase_ref_crop = self.phase_ref[x_start:x_stop, x_start:x_stop]
         assert_allclose(phase_new_crop, phase_ref_crop, atol=1E-2)
 
         # 2. Testing reconstruction with non-standard output size for stacked
         # images:
-        sb_position2 = self.ref_image2.estimate_sideband_position(sb='upper')
-        sb_size2 = self.ref_image2.estimate_sideband_size(sb_position2)
+        sb_position2 = self.ref_image2.estimate_sideband_position(sb='upper',
+                                                                  parallel=parallel)
+        sb_size2 = self.ref_image2.estimate_sideband_size(sb_position2,
+                                                          parallel=parallel)
         output_shape = (
             np.int(
                 sb_size2.inav[0].data *
@@ -143,24 +149,26 @@ class TestCaseHologramImage(object):
 
         wave_image2 = self.holo_image2.reconstruct_phase(reference=self.ref_image2, sb_position=sb_position2,
                                                          sb_size=sb_size2, sb_smoothness=sb_size2 * 0.05,
-                                                         output_shape=output_shape)
+                                                         output_shape=output_shape,
+                                                        parallel=parallel)
         # a. Reconstruction with parameters provided as ndarrays should be
         # identical to above:
         wave_image2a = self.holo_image2.reconstruct_phase(reference=self.ref_image2.data, sb_position=sb_position2.data,
                                                           sb_size=sb_size2.data, sb_smoothness=sb_size2.data * 0.05,
-                                                          output_shape=output_shape)
+                                                          output_shape=output_shape,
+                                                         parallel=parallel)
         assert wave_image2 == wave_image2a
 
         # interpolate reconstructed phase to compare with the input (reference
         # phase):
         interp_x = np.arange(output_shape[0])
         phase_interp0 = interp2d(interp_x, interp_x, wave_image2.inav[
-                                 0].unwrapped_phase().data, kind='cubic')
+                                 0].unwrapped_phase(parallel=parallel).data, kind='cubic')
         phase_new0 = phase_interp0(np.linspace(0, output_shape[0], self.img_size),
                                    np.linspace(0, output_shape[0], self.img_size))
 
         phase_interp1 = interp2d(interp_x, interp_x, wave_image2.inav[
-                                 1].unwrapped_phase().data, kind='cubic')
+                                 1].unwrapped_phase(parallel=parallel).data, kind='cubic')
         phase_new1 = phase_interp1(np.linspace(0, output_shape[0], self.img_size),
                                    np.linspace(0, output_shape[0], self.img_size))
 
@@ -176,7 +184,7 @@ class TestCaseHologramImage(object):
         # 3. Testing reconstruction with multidimensional images (3, 2| 512,
         # 768) using 1d image as a reference:
         wave_image3 = self.holo_image3.reconstruct_phase(
-            self.ref_image3.inav[0, 0], sb='upper')
+            self.ref_image3.inav[0, 0], sb='upper', parallel=parallel)
 
         # Cropping the reconstructed and original phase images and comparing:
         x_start = int(self.img_size3x / 9)
@@ -184,7 +192,7 @@ class TestCaseHologramImage(object):
         x_stop = self.img_size3x - 1 - int(self.img_size3x / 9)
         y_start = int(self.img_size3y / 9)
         y_stop = self.img_size3y - 1 - int(self.img_size3y / 9)
-        phase3_new_crop = wave_image3.unwrapped_phase()
+        phase3_new_crop = wave_image3.unwrapped_phase(parallel=parallel)
         phase3_new_crop.crop(2, y_start, y_stop)
         phase3_new_crop.crop(3, x_start, x_stop)
         phase3_ref_crop = self.phase_ref3.reshape(2, 3, self.img_size3x, self.img_size3y)[:, :, x_start:x_stop,
@@ -197,19 +205,21 @@ class TestCaseHologramImage(object):
         # 3a. Testing reconstruction with input parameters in 'nm' and with multiple parameter input,
         # but reference ndim=0:
 
-        sb_position3 = self.ref_image3.estimate_sideband_position(sb='upper')
+        sb_position3 = self.ref_image3.estimate_sideband_position(sb='upper',
+                                                                  parallel=parallel)
         f_sampling = np.divide(1, [a * b for a, b in zip(self.ref_image3.axes_manager.signal_shape,
                                                          (self.ref_image3.axes_manager.signal_axes[0].scale,
                                                           self.ref_image3.axes_manager.signal_axes[1].scale))])
         sb_size3 = self.ref_image3.estimate_sideband_size(
-            sb_position3) * np.mean(f_sampling)
+            sb_position3, parallel=parallel) * np.mean(f_sampling)
         sb_smoothness3 = sb_size3 * 0.05
         sb_units3 = 'nm'
 
         wave_image3a = self.holo_image3.reconstruct_phase(self.ref_image3.inav[0, 0], sb_position=sb_position3,
                                                           sb_size=sb_size3, sb_smoothness=sb_smoothness3,
-                                                          sb_unit=sb_units3)
-        phase3a_new_crop = wave_image3a.unwrapped_phase()
+                                                          sb_unit=sb_units3,
+                                                          parallel=parallel)
+        phase3a_new_crop = wave_image3a.unwrapped_phase(parallel=parallel)
         phase3a_new_crop.crop(2, y_start, y_stop)
         phase3a_new_crop.crop(3, x_start, x_stop)
         assert_allclose(
@@ -221,22 +231,26 @@ class TestCaseHologramImage(object):
         # a. Mismatch of navigation dimensions of object and reference
         # holograms, except if reference hologram ndim=0
         with pytest.raises(ValueError):
-            self.holo_image3.reconstruct_phase(self.ref_image3.inav[0, :])
+            self.holo_image3.reconstruct_phase(self.ref_image3.inav[0, :],
+                                               parallel=parallel)
         reference4a = self.ref_image3.inav[0, :]
         reference4a.set_signal_type('signal2d')
         with pytest.raises(ValueError):
-            self.holo_image3.reconstruct_phase(reference=reference4a)
+            self.holo_image3.reconstruct_phase(reference=reference4a,
+                                               parallel=parallel)
         #   b. Mismatch of signal shapes of object and reference holograms
         with pytest.raises(ValueError):
             self.holo_image3.reconstruct_phase(
-                self.ref_image3.inav[:, :].isig[y_start:y_stop, x_start:x_stop])
+                self.ref_image3.inav[:, :].isig[y_start:y_stop,
+                                                x_start:x_stop],
+                parallel=parallel)
 
         #   c. Mismatch of signal shape of sb_position
         sb_position_mismatched = hs.signals.Signal2D(
             np.arange(9).reshape((3, 3)))
         with pytest.raises(ValueError):
             self.holo_image3.reconstruct_phase(
-                sb_position=sb_position_mismatched)
+                sb_position=sb_position_mismatched, parallel=parallel)
         #   d. Mismatch of navigation dimensions of reconstruction parameters
         sb_position_mismatched = hs.signals.Signal1D(
             np.arange(16).reshape((8, 2)))
@@ -244,16 +258,18 @@ class TestCaseHologramImage(object):
         sb_smoothness_mismatched = hs.signals.BaseSignal(np.arange(9)).T
         with pytest.raises(ValueError):
             self.holo_image3.reconstruct_phase(
-                sb_position=sb_position_mismatched)
+                sb_position=sb_position_mismatched, parallel=parallel)
         with pytest.raises(ValueError):
-            self.holo_image3.reconstruct_phase(sb_size=sb_size_mismatched)
+            self.holo_image3.reconstruct_phase(sb_size=sb_size_mismatched,
+                                               parallel=parallel)
         with pytest.raises(ValueError):
             self.holo_image3.reconstruct_phase(
-                sb_smoothness=sb_smoothness_mismatched)
+                sb_smoothness=sb_smoothness_mismatched, parallel=parallel)
 
         #   e. Beam energy is not assigned, while 'mrad' units selected
         with pytest.raises(AttributeError):
-            self.holo_image3.reconstruct_phase(sb_size=40, sb_unit='mrad')
+            self.holo_image3.reconstruct_phase(sb_size=40, sb_unit='mrad',
+                                               parallel=parallel)
 
 if __name__ == '__main__':
 

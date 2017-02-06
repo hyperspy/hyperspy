@@ -49,12 +49,8 @@ def save_path():
     with tempfile.TemporaryDirectory() as tmp:
         filepath = os.path.join(tmp, 'blockfile_data', 'save_temp.blo')
         yield filepath
-    gc.collect()
-    try:
-        if os.path.exists(filepath):
-            os.remove(filepath)
-    except WindowsError:
-        pass    # If we don't do this, we might mask real exceptions
+        # Force files release (required in Windows)
+        gc.collect()
 
 ref_data2 = np.array(
     [[[[20, 23, 25, 25, 27],
