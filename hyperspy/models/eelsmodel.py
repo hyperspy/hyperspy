@@ -199,6 +199,7 @@ class EELSModel(Model1D):
                 edge = EELSCLEdge(e_shells.pop(), GOS=self.GOS)
 
                 edge.intensity.twin = master_edge.intensity
+                edge.onset_energy.twin = master_edge.onset_energy
                 edge.onset_energy.twin_function_expr = "x + {}".format(
                     (edge.GOS.onset_energy - master_edge.GOS.onset_energy))
                 edge.free_onset_energy = False
