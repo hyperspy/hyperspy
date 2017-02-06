@@ -485,7 +485,7 @@ def ser_reader(filename, objects=None, *args, **kwds):
     else:
         axes = []
         array_shape = [None, ] * int(ndim)
-        spatial_axes = ["x", "y"]
+        spatial_axes = ["x", "y"][:ndim]
         for i in range(ndim):
             idim = 1 + i if order == "C" else ndim - i
             if (record_by == "spectrum" or
