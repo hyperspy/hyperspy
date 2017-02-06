@@ -56,8 +56,6 @@ install:
   - "%CMD_IN_ENV% conda install -yq %DEPS%"
     # Having 'sip' folder on path confuses import of `sip`.
   - "%CMD_IN_ENV% conda install pip"
-    # Install pytest-xdist, has to be done in pip
-  - "%CMD_IN_ENV% pip install pytest-xdist"
   # TODO: Remove once anaconda taitsui package is at v5:
   - "IF \"%PYTHON_MAJOR%\" EQU \"3\" pip install --upgrade traitsui tqdm"
   - ps: Add-AppveyorMessage "Installing hyperspy..."
@@ -69,8 +67,7 @@ test_script:
   # Run the project tests
   - ps: Add-AppveyorMessage "Running tests..."
   - "python setup.py build_ext --inplace"
-  - "py.test -m 'parallel'"
-  - "py.test -n auto -m 'not parallel'"
+  - "py.test"
   - "python setup.py clean"
   - ps: Add-AppveyorMessage "Testing completed."
 
