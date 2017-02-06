@@ -31,8 +31,6 @@ def clean_model_dictionary(d):
     for c in d['components']:
         for p in c['parameters']:
             del p['self']
-            del p['twin_function']
-            del p['twin_inverse_function']
     return d
 
 
