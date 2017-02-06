@@ -67,6 +67,19 @@ def test_metadata():
     assert isinstance(signal, Signal2D)
 
 
+class TestMinimalSave():
+
+    def setup_method(self, method):
+        self.filename = 'testfile.emd'
+        self.signal = Signal1D([0, 1])
+
+    def test_minimal_save(self):
+        self.signal.save(self.filename)
+
+    def teardown_method(self, method):
+        remove(self.filename)
+
+
 class TestCaseSaveAndRead():
 
     def test_save_and_read(self):
