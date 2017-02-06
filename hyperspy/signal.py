@@ -3425,7 +3425,7 @@ class BaseSignal(FancySlicing,
             parallel = preferences.General.parallel
         if parallel is True:
             from os import cpu_count
-            parallel = cpu_count()
+            parallel = cpu_count() or 1
         # Because by default it's assumed to be I/O bound, and cpu_count*5 is
         # used. For us this is not the case.
 

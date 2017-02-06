@@ -297,7 +297,8 @@ class TestSmoothing:
         self.rtol = 1e-7
         self.atol = 0
 
-    def test_lowess(self):
+    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    def test_lowess(self, parallel):
         pytest.importorskip("statsmodels")
         from statsmodels.nonparametric.smoothers_lowess import lowess
         frac = 0.5
@@ -313,11 +314,13 @@ class TestSmoothing:
                 return_sorted=False,)
         self.s.smooth_lowess(smoothing_parameter=frac,
                              number_of_iterations=it,
-                             show_progressbar=None)
+                             show_progressbar=None,
+                             parallel=parallel)
         np.testing.assert_allclose(self.s.data, data,
                                    rtol=self.rtol, atol=self.atol)
 
-    def test_tv(self):
+    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    def test_tv(self, parallel):
         weight = 1
         data = np.asanyarray(self.s.data, dtype='float')
         for i in range(data.shape[0]):
@@ -325,7 +328,8 @@ class TestSmoothing:
                 im=data[i, :],
                 weight=weight,)
         self.s.smooth_tv(smoothing_parameter=weight,
-                         show_progressbar=None)
+                         show_progressbar=None,
+                         parallel=parallel)
         np.testing.assert_allclose(data, self.s.data,
                                    rtol=self.rtol, atol=self.atol)
 

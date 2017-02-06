@@ -82,7 +82,8 @@ class HologramImage(Signal2D):
         # if {beam_energy, biprism_voltage, tilt_alpha, tilt_beta} == {None}:
         #     self._are_microscope_parameters_missing()
 
-    def estimate_sideband_position(self, ap_cb_radius=None, sb='lower', show_progressbar=False):
+    def estimate_sideband_position(self, ap_cb_radius=None, sb='lower',
+                                   show_progressbar=False, parallel=None):
         """
         Estimates the position of the sideband and returns its position.
 
@@ -94,6 +95,8 @@ class HologramImage(Signal2D):
             Chooses which sideband is taken. 'lower' or 'upper'
         show_progressbar : boolean
             Shows progressbar while iterating over different slices of the signal (passes the parameter to map method).
+        parallel : bool
+            Estimate the positions in parallel
 
         Returns
         -------
@@ -114,14 +117,16 @@ class HologramImage(Signal2D):
         sb_position = self.map(estimate_sideband_position, holo_sampling=(self.axes_manager.signal_axes[0].scale,
                                                                           self.axes_manager.signal_axes[1].scale),
                                central_band_mask_radius=ap_cb_radius, sb=sb, show_progressbar=show_progressbar,
-                               inplace=False)
+                               inplace=False,
+                               parallel=parallel)
 
         # Workaround to a map disfunctionality:
         sb_position.set_signal_type('signal1d')
 
         return sb_position
 
-    def estimate_sideband_size(self, sb_position, show_progressbar=False):
+    def estimate_sideband_size(self, sb_position, show_progressbar=False,
+                               parallel=None):
         """
         Estimates the size of the sideband and returns its size.
 
@@ -131,6 +136,8 @@ class HologramImage(Signal2D):
             The sideband position (y, x), referred to the non-shifted FFT.
         show_progressbar: boolean
             Shows progressbar while iterating over different slices of the signal (passes the parameter to map method).
+        parallel : bool
+            Estimate the sizes in parallel
 
         Returns
         -------
@@ -148,13 +155,14 @@ class HologramImage(Signal2D):
         """
 
         sb_size = sb_position.map(estimate_sideband_size, holo_shape=self.axes_manager.signal_shape[::-1],
-                                  show_progressbar=show_progressbar, inplace=False)
+                                  show_progressbar=show_progressbar,
+                                  inplace=False, parallel=parallel)
 
         return sb_size
 
     def reconstruct_phase(self, reference=None, sb_size=None, sb_smoothness=None, sb_unit=None,
                           sb='lower', sb_position=None, output_shape=None, plotting=False, show_progressbar=False,
-                          store_parameters=True):
+                          store_parameters=True, parallel=None):
         """Reconstruct electron holograms. Operates on multidimensional hyperspy signals. There are
         several usage schemes:
          1. Reconstruct 1d or Nd hologram without reference
@@ -191,6 +199,8 @@ class HologramImage(Signal2D):
             Shows details of the reconstruction (i.e. SB selection).
         show_progressbar : boolean
             Shows progressbar while iterating over different slices of the signal (passes the parameter to map method).
+        parallel : bool
+            Run the reconstruction in parallel
         store_parameters : boolean
             Store reconstruction parameters in metadata
 
@@ -242,9 +252,11 @@ class HologramImage(Signal2D):
             _logger.warning('Sideband position is not specified. The sideband will be found automatically which may '
                             'cause wrong results.')
             if reference is None:
-                sb_position = self.estimate_sideband_position(sb=sb)
+                sb_position = self.estimate_sideband_position(sb=sb,
+                                                              parallel=parallel)
             else:
-                sb_position = reference.estimate_sideband_position(sb=sb)
+                sb_position = reference.estimate_sideband_position(sb=sb,
+                                                                   parallel=parallel)
 
         else:
             if isinstance(sb_position, BaseSignal) and not sb_position._signal_dimension == 1:
@@ -271,9 +283,11 @@ class HologramImage(Signal2D):
         # Parsing sideband size
         if sb_size is None:  # Default value is 1/2 distance between sideband and central band
             if reference is None:
-                sb_size = self.estimate_sideband_size(sb_position)
+                sb_size = self.estimate_sideband_size(sb_position,
+                                                      parallel=parallel)
             else:
-                sb_size = reference.estimate_sideband_size(sb_position)
+                sb_size = reference.estimate_sideband_size(sb_position,
+                                                           parallel=parallel)
         else:
             if not isinstance(sb_size, BaseSignal):
                 if isinstance(sb_size, np.ndarray) and sb_size.size > 1:  # transpose if np.array of multiple instances
@@ -359,7 +373,7 @@ class HologramImage(Signal2D):
                                sb_size=sb_size_temp,
                                sb_position=sb_position_temp, sb_smoothness=sb_smoothness_temp,
                                output_shape=output_shape, plotting=plotting, show_progressbar=show_progressbar,
-                               inplace=False)
+                               inplace=False, parallel=parallel)
 
         # Reconstructing reference wave and applying it (division):
         if reference is None:
@@ -395,7 +409,8 @@ class HologramImage(Signal2D):
                                            sb_size=sb_size_ref,
                                            sb_position=sb_position_ref, sb_smoothness=sb_smoothness_ref,
                                            output_shape=output_shape, plotting=plotting,
-                                           show_progressbar=show_progressbar, inplace=False)
+                                           show_progressbar=show_progressbar,
+                                           inplace=False, parallel=parallel)
 
         else:
             wave_reference = reference.map(reconstruct, holo_sampling=(self.axes_manager.signal_axes[0].scale,
@@ -403,7 +418,8 @@ class HologramImage(Signal2D):
                                            sb_size=sb_size_temp,
                                            sb_position=sb_position_temp, sb_smoothness=sb_smoothness_temp,
                                            output_shape=output_shape, plotting=plotting,
-                                           show_progressbar=show_progressbar, inplace=False)
+                                           show_progressbar=show_progressbar,
+                                           inplace=False, parallel=parallel)
 
         wave_image = wave_object / wave_reference
 
