@@ -100,7 +100,7 @@ def _solveproj(v, W, lambda1, kappa=1, h=None, r=None, vmax=None):
 
 
 class ONMF:
-    """This class perfroms Online Robust NMF
+    """This class performs Online Robust NMF
     with missing or corrupted data.
 
     Methods
@@ -114,7 +114,7 @@ class ONMF:
 
     Notes
     -----
-    The ONMF code is based on a transcroption of the OPGD algorithm MATLAB code
+    The ONMF code is based on a transcription of the OPGD algorithm MATLAB code
     obtained from the authors of the following research paper:
         Zhao, Renbo, and Vincent YF Tan. "Online nonnegative matrix
         factorization with outliers." Acoustics, Speech and Signal Processing
@@ -133,7 +133,7 @@ class ONMF:
         Parameters
         ----------
         rank : int
-            The rank of the rapresentation (number of components/factors)
+            The rank of the representation (number of components/factors)
         lambda1 : float
             Nuclear norm regularization parameter.
         kappa : float
@@ -141,7 +141,7 @@ class ONMF:
         store_r : bool
             If True, stores the sparse error matrix, False by default.
         robust : bool
-            If True, the original OPGD implmentation is used for
+            If True, the original OPGD implementation is used for
             corruption/outlier regularization, otherwise L2-norm. False by
             default.
 
