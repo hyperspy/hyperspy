@@ -17,7 +17,9 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import nose.tools as nt
+
+from numpy.testing import assert_allclose
+
 from hyperspy.utils.model_selection import AIC, AICc, BIC
 from hyperspy.signals import Signal1D
 from hyperspy.components1d import Gaussian, Lorentzian
@@ -25,7 +27,7 @@ from hyperspy.components1d import Gaussian, Lorentzian
 
 class TestModelSelection:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = Signal1D(range(10))
         m1 = s.create_model()
         m2 = s.create_model()
@@ -39,17 +41,17 @@ class TestModelSelection:
     def test_AIC(self):
         _aic1 = AIC(self.m1)
         _aic2 = AIC(self.m2)
-        nt.assert_almost_equal(_aic1, 74.477061729373233)
-        nt.assert_almost_equal(_aic2, 72.749265802224159)
+        assert_allclose(_aic1, 74.477061729373233)
+        assert_allclose(_aic2, 72.749265802224159)
 
     def test_AICc(self):
         _aicc1 = AICc(self.m1)
         _aicc2 = AICc(self.m2)
-        nt.assert_almost_equal(_aicc1, 82.477061729373233)
-        nt.assert_almost_equal(_aicc2, 80.749265802224159)
+        assert_allclose(_aicc1, 82.477061729373233)
+        assert_allclose(_aicc2, 80.749265802224159)
 
     def test_BIC(self):
         _bic1 = BIC(self.m1)
         _bic2 = BIC(self.m2)
-        nt.assert_almost_equal(_bic1, 75.68740210134942)
-        nt.assert_almost_equal(_bic2, 73.959606174200346)
+        assert_allclose(_bic1, 75.68740210134942)
+        assert_allclose(_bic2, 73.959606174200346)

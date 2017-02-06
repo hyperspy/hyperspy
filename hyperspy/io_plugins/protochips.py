@@ -69,7 +69,6 @@ class ProtochipsCSV(object):
         self.filename = filename
         self._parse_header(header_line_number)
         self._read_data(header_line_number)
-        self.calibration_file = None
 
     def _parse_header(self, header_line_number):
         self.raw_header = self._read_header(header_line_number)
@@ -91,6 +90,7 @@ class ProtochipsCSV(object):
         return {'data': self._data_dictionary[quantity],
                 'axes': self._get_axes(),
                 'metadata': self._get_metadata(quantity),
+                'mapping': self._get_mapping(),
                 'original_metadata': {'Protochips_header':
                                       self._get_original_metadata()}}
 
@@ -99,8 +99,9 @@ class ProtochipsCSV(object):
         d['Time units'] = self.time_units
         for quantity in self.logged_quantity_name_list:
             d['%s_units' % quantity] = self._parse_quantity_units(quantity)
-        d['User'] = self.user
-        d['Calibration file name'] = self._parse_calibration_file()
+        if self.user:
+            d['User'] = self.user
+        d['Calibration file path'] = self._parse_calibration_filepath()
         d['Time axis'] = self._get_metadata_time_axis()
         # Add the notes here, because there are not well formatted enough to
         # go in metadata
@@ -112,12 +113,21 @@ class ProtochipsCSV(object):
         return {'General': {'original_filename': os.path.split(self.filename)[1],
                             'title': '%s (%s)' % (quantity,
                                                   self._parse_quantity_units(quantity)),
-                            'authors': self.user,
                             'date': date,
-                            'time': time,
-                            'notes': ''},
+                            'time': time},
                 "Signal": {'signal_type': '',
                            'quantity': self._parse_quantity(quantity)}}
+
+    def _get_mapping(self):
+        mapping = {
+            "Protochips_header.Calibration file path": (
+                "General.notes",
+                self._parse_calibration_file_name),
+            "Protochips_header.User": (
+                "General.authors",
+                None),
+        }
+        return mapping
 
     def _get_metadata_time_axis(self):
         return {'value': self.time_axis,
@@ -144,14 +154,18 @@ class ProtochipsCSV(object):
         arr = np.vstack((self.time_axis, self.notes))
         return np.compress(arr[1] != '', arr, axis=1)
 
-    def _parse_calibration_file(self):
+    def _parse_calibration_filepath(self):
          # for the gas cell, the calibration is saved in the notes colunm
-        if self.calibration_file is None:
-            calibration_file = "The calibration files names are saved in "\
-                "metadata.General.notes"
-        else:
+        if hasattr(self, "calibration_file"):
             calibration_file = self.calibration_file
+        else:
+            calibration_file = "The calibration files names are saved in the"\
+                " 'Original notes' array of the original metadata."
         return calibration_file
+
+    def _parse_calibration_file_name(self, path):
+        basename = os.path.basename(path)
+        return "Calibration file name: %s" % basename.split('\\')[-1]
 
     def _get_axes(self):
         scale = np.diff(self.time_axis[1:-2]).mean()
@@ -196,7 +210,7 @@ class ProtochipsCSV(object):
         i = 1
         param, value = self._parse_metadata_header(self.raw_header[i])
         while 'User' not in param:  # user should be the last of the header
-            if 'Calibration file name' in param:
+            if 'Calibration file' in param:
                 self.calibration_file = value
             elif 'Date (yyyy.mm.dd)' in param:
                 date = value
@@ -206,9 +220,16 @@ class ProtochipsCSV(object):
                 attr_name = param.replace(' ', '_').lower()
                 self.__dict__[attr_name] = value
             i += 1
-            param, value = self._parse_metadata_header(self.raw_header[i])
-
-        self.user = self._parse_metadata_header(self.raw_header[i])[1]
+            try:
+                param, value = self._parse_metadata_header(self.raw_header[i])
+            except ValueError:  # when the last line of header does not contain 'User'
+                self.user = None
+                break
+            except IndexError:
+                _logger.warning("The metadata may not be parsed properly.")
+                break
+        else:
+            self.user = value
         self.start_datetime = np.datetime64(dt.strptime(date + time,
                                                         "%Y.%m.%d%H:%M:%S.%f"))
 

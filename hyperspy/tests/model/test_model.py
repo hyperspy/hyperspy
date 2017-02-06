@@ -1,10 +1,11 @@
 from distutils.version import LooseVersion
+from unittest import mock
 
 import numpy as np
 import scipy
-import nose.tools as nt
-from unittest import mock
-from nose.plugins.skip import SkipTest
+
+import pytest
+from numpy.testing import assert_allclose
 from matplotlib.testing.decorators import cleanup
 
 import hyperspy.api as hs
@@ -13,7 +14,7 @@ from hyperspy.misc.utils import slugify
 
 class TestModelJacobians:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros(1))
         m = s.create_model()
         self.low_loss = 7.
@@ -37,9 +38,9 @@ class TestModelJacobians:
                                              np.array([m[0].A.grad(0),
                                                        m[0].sigma.grad(0) +
                                                        m[0].centre.grad(0)]))
-        nt.assert_equal(m[0].A.value, 1)
-        nt.assert_equal(m[0].centre.value, 2)
-        nt.assert_equal(m[0].sigma.value, 2)
+        assert m[0].A.value == 1
+        assert m[0].centre.value == 2
+        assert m[0].sigma.value == 2
 
     def test_jacobian_convolved(self):
         m = self.model
@@ -59,17 +60,17 @@ class TestModelJacobians:
                                                        m[1].sigma.grad(0) *
                                                        self.low_loss,
                                                        ]))
-        nt.assert_equal(m[0].A.value, 1)
-        nt.assert_equal(m[0].centre.value, 2)
-        nt.assert_equal(m[0].sigma.value, 2)
-        nt.assert_equal(m[1].A.value, 3)
-        nt.assert_equal(m[1].centre.value, 4)
-        nt.assert_equal(m[1].sigma.value, 5)
+        assert m[0].A.value == 1
+        assert m[0].centre.value == 2
+        assert m[0].sigma.value == 2
+        assert m[1].A.value == 3
+        assert m[1].centre.value == 4
+        assert m[1].sigma.value == 5
 
 
 class TestModelCallMethod:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.empty(1))
         m = s.create_model()
         m.append(hs.model.components1D.Gaussian())
@@ -83,14 +84,14 @@ class TestModelCallMethod:
         m[1].active = False
         r1 = m()
         r2 = m(onlyactive=True)
-        np.testing.assert_almost_equal(m[0].function(0) * 2, r1)
-        np.testing.assert_almost_equal(m[0].function(0), r2)
+        np.testing.assert_allclose(m[0].function(0) * 2, r1)
+        np.testing.assert_allclose(m[0].function(0), r2)
 
         m.convolved = True
         r1 = m(non_convolved=True)
         r2 = m(non_convolved=True, onlyactive=True)
-        np.testing.assert_almost_equal(m[0].function(0) * 2, r1)
-        np.testing.assert_almost_equal(m[0].function(0), r2)
+        np.testing.assert_allclose(m[0].function(0) * 2, r1)
+        np.testing.assert_allclose(m[0].function(0), r2)
 
     def test_call_method_with_convolutions(self):
         m = self.model
@@ -107,8 +108,8 @@ class TestModelCallMethod:
 
         r1 = m()
         r2 = m(onlyactive=True)
-        np.testing.assert_almost_equal(m[0].function(0) * 2.3, r1)
-        np.testing.assert_almost_equal(m[0].function(0) * 1.3, r2)
+        np.testing.assert_allclose(m[0].function(0) * 2.3, r1)
+        np.testing.assert_allclose(m[0].function(0) * 1.3, r2)
 
     def test_call_method_binned(self):
         m = self.model
@@ -117,12 +118,12 @@ class TestModelCallMethod:
         m.signal.metadata.Signal.binned = True
         m.signal.axes_manager[-1].scale = 0.3
         r1 = m()
-        np.testing.assert_almost_equal(m[0].function(0) * 0.3, r1)
+        np.testing.assert_allclose(m[0].function(0) * 0.3, r1)
 
 
 class TestModelPlotCall:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.empty(1))
         m = s.create_model()
         m.__call__ = mock.MagicMock()
@@ -138,26 +139,26 @@ class TestModelPlotCall:
         res = m._model2plot(m.axes_manager)
         np.testing.assert_array_equal(
             res, np.array([np.nan, 0.5, 0.25, np.nan, np.nan]))
-        nt.assert_true(m.__call__.called)
-        nt.assert_dict_equal(
-            m.__call__.call_args[1], {
+        assert m.__call__.called
+        assert (
+            m.__call__.call_args[1] == {
                 'non_convolved': False, 'onlyactive': True})
-        nt.assert_false(m.fetch_stored_values.called)
+        assert not m.fetch_stored_values.called
 
     def test_model2plot_other_am(self):
         m = self.model
         res = m._model2plot(m.axes_manager.deepcopy(), out_of_range2nans=False)
         np.testing.assert_array_equal(res, np.array([0.5, 0.25]))
-        nt.assert_true(m.__call__.called)
-        nt.assert_dict_equal(
-            m.__call__.call_args[1], {
+        assert m.__call__.called
+        assert (
+            m.__call__.call_args[1] == {
                 'non_convolved': False, 'onlyactive': True})
-        nt.assert_equal(2, m.fetch_stored_values.call_count)
+        assert 2 == m.fetch_stored_values.call_count
 
 
 class TestModelSettingPZero:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.empty(1))
         m = s.create_model()
         m.append(hs.model.components1D.Gaussian())
@@ -180,7 +181,7 @@ class TestModelSettingPZero:
         m[-1].active = False
         m.p0 = None
         m._set_p0()
-        nt.assert_equal(m.p0, (1.1, 2.2, 3.3))
+        assert m.p0 == (1.1, 2.2, 3.3)
 
     def test_fetching_from_p0(self):
         m = self.model
@@ -193,20 +194,20 @@ class TestModelSettingPZero:
 
         m.p0 = (1.2, 2.3, 3.4, 5.6, 6.7, 7.8)
         m._fetch_values_from_p0()
-        nt.assert_equal(m[0].A.value, 1.2)
-        nt.assert_equal(m[0].centre.value, (2.3, 3.4))
-        nt.assert_equal(m[0].sigma.value, 4.4)
-        nt.assert_equal(m[1].A.value, 100)
-        nt.assert_equal(m[1].sigma.value, 200)
-        nt.assert_equal(m[1].centre.value, 300)
+        assert m[0].A.value == 1.2
+        assert m[0].centre.value == (2.3, 3.4)
+        assert m[0].sigma.value == 4.4
+        assert m[1].A.value == 100
+        assert m[1].sigma.value == 200
+        assert m[1].centre.value == 300
 
     def test_setting_boundaries(self):
         m = self.model
         m.append(hs.model.components1D.Gaussian())
         m[-1].active = False
         m.set_boundaries()
-        nt.assert_equal(m.free_parameters_boundaries,
-                        [(0.1, 0.11), (0.2, 0.21), (0.3, 0.31)])
+        assert (m.free_parameters_boundaries ==
+                [(0.1, 0.11), (0.2, 0.21), (0.3, 0.31)])
 
     def test_setting_mpfit_parameters_info(self):
         m = self.model
@@ -216,19 +217,19 @@ class TestModelSettingPZero:
         m.append(hs.model.components1D.Gaussian())
         m[-1].active = False
         m.set_mpfit_parameters_info()
-        nt.assert_equal(m.mpfit_parinfo,
-                        [{'limited': [True, False],
-                          'limits': [0.1, 0]},
-                         {'limited': [False, True],
-                          'limits': [0, 0.31]},
-                         {'limited': [False, True],
-                          'limits': [0, 0.31]},
-                         ])
+        assert (m.mpfit_parinfo ==
+                [{'limited': [True, False],
+                  'limits': [0.1, 0]},
+                 {'limited': [False, True],
+                  'limits': [0, 0.31]},
+                 {'limited': [False, True],
+                  'limits': [0, 0.31]},
+                 ])
 
 
 class TestModel1D:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.empty(1))
         m = s.create_model()
         self.model = m
@@ -273,25 +274,25 @@ class TestModel1D:
         param = (100, 0.1, 0.2)
         np.testing.assert_array_almost_equal(176.03266338,
                                              m._model_function(param))
-        nt.assert_equal(m[0].A.value, 100)
-        nt.assert_equal(m[0].centre.value, 0.1)
-        nt.assert_equal(m[0].sigma.value, 0.2)
+        assert m[0].A.value == 100
+        assert m[0].centre.value == 0.1
+        assert m[0].sigma.value == 0.2
 
-    @nt.raises(ValueError)
     def test_append_existing_component(self):
         g = hs.model.components1D.Gaussian()
         m = self.model
         m.append(g)
-        m.append(g)
+        with pytest.raises(ValueError):
+            m.append(g)
 
     def test_append_component(self):
         g = hs.model.components1D.Gaussian()
         m = self.model
         m.append(g)
-        nt.assert_in(g, m)
-        nt.assert_is(g.model, m)
-        nt.assert_is(g._axes_manager, m.axes_manager)
-        nt.assert_true(all([hasattr(p, 'map') for p in g.parameters]))
+        assert g in m
+        assert g.model is m
+        assert g._axes_manager is m.axes_manager
+        assert all([hasattr(p, 'map') for p in g.parameters])
 
     def test_calculating_convolution_axis(self):
         m = self.model
@@ -312,17 +313,12 @@ class TestModel1D:
         np.testing.assert_equal(ll_axis.value2index.call_args[0][0], 0)
 
     def test_notebook_interactions(self):
-        try:
-            import ipywidgets
-        except:
-            raise SkipTest("ipywidgets not installed")
-        if LooseVersion(ipywidgets.__version__) < LooseVersion("5.0"):
-            raise SkipTest("ipywigets > 5.0 required but %s installed" %
-                           ipywidgets.__version__)
+        ipywidgets = pytest.importorskip("ipywidgets", minversion="5.0")
+        ipython = pytest.importorskip("IPython")
         from IPython import get_ipython
         ip = get_ipython()
         if ip is None or not getattr(ip, 'kernel', None):
-            raise SkipTest("Not attached to notebook")
+            pytest.skip("Not attached to notebook")
         m = self.model
         m.notebook_interaction()
         m.append(hs.model.components1D.Offset())
@@ -335,7 +331,7 @@ class TestModel1D:
         g2 = hs.model.components1D.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
-        nt.assert_is(m["test"], g2)
+        assert m["test"] is g2
 
     def test_access_component_by_index(self):
         m = self.model
@@ -343,7 +339,7 @@ class TestModel1D:
         g2 = hs.model.components1D.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
-        nt.assert_is(m[1], g2)
+        assert m[1] is g2
 
     def test_component_name_when_append(self):
         m = self.model
@@ -352,11 +348,10 @@ class TestModel1D:
             hs.model.components1D.Gaussian(),
             hs.model.components1D.Gaussian()]
         m.extend(gs)
-        nt.assert_is(m['Gaussian'], gs[0])
-        nt.assert_is(m['Gaussian_0'], gs[1])
-        nt.assert_is(m['Gaussian_1'], gs[2])
+        assert m['Gaussian'] is gs[0]
+        assert m['Gaussian_0'] is gs[1]
+        assert m['Gaussian_1'] is gs[2]
 
-    @nt.raises(ValueError)
     def test_several_component_with_same_name(self):
         m = self.model
         gs = [
@@ -367,53 +362,54 @@ class TestModel1D:
         m[0]._name = "hs.model.components1D.Gaussian"
         m[1]._name = "hs.model.components1D.Gaussian"
         m[2]._name = "hs.model.components1D.Gaussian"
-        m['Gaussian']
+        with pytest.raises(ValueError):
+            m['Gaussian']
 
-    @nt.raises(ValueError)
     def test_no_component_with_that_name(self):
         m = self.model
-        m['Voigt']
+        with pytest.raises(ValueError):
+            m['Voigt']
 
-    @nt.raises(ValueError)
     def test_component_already_in_model(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
-        m.extend((g1, g1))
+        with pytest.raises(ValueError):
+            m.extend((g1, g1))
 
     def test_remove_component(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
         m.append(g1)
         m.remove(g1)
-        nt.assert_equal(len(m), 0)
+        assert len(m) == 0
 
     def test_remove_component_by_index(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
         m.append(g1)
         m.remove(0)
-        nt.assert_equal(len(m), 0)
+        assert len(m) == 0
 
     def test_remove_component_by_name(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
         m.append(g1)
         m.remove(g1.name)
-        nt.assert_equal(len(m), 0)
+        assert len(m) == 0
 
     def test_delete_component_by_index(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
         m.append(g1)
         del m[0]
-        nt.assert_not_in(g1, m)
+        assert g1 not in m
 
     def test_delete_component_by_name(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
         m.append(g1)
         del m[g1.name]
-        nt.assert_not_in(g1, m)
+        assert g1 not in m
 
     def test_delete_slice(self):
         m = self.model
@@ -422,9 +418,9 @@ class TestModel1D:
         g3 = hs.model.components1D.Gaussian()
         m.extend([g1, g2, g3])
         del m[:2]
-        nt.assert_not_in(g1, m)
-        nt.assert_not_in(g2, m)
-        nt.assert_in(g3, m)
+        assert g1 not in m
+        assert g2 not in m
+        assert g3 in m
 
     def test_get_component_by_name(self):
         m = self.model
@@ -432,7 +428,7 @@ class TestModel1D:
         g2 = hs.model.components1D.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
-        nt.assert_is(m._get_component("test"), g2)
+        assert m._get_component("test") is g2
 
     def test_get_component_by_index(self):
         m = self.model
@@ -440,7 +436,7 @@ class TestModel1D:
         g2 = hs.model.components1D.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
-        nt.assert_is(m._get_component(1), g2)
+        assert m._get_component(1) is g2
 
     def test_get_component_by_component(self):
         m = self.model
@@ -448,48 +444,47 @@ class TestModel1D:
         g2 = hs.model.components1D.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
-        nt.assert_is(m._get_component(g2), g2)
+        assert m._get_component(g2) is g2
 
-    @nt.raises(ValueError)
     def test_get_component_wrong(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
         g2 = hs.model.components1D.Gaussian()
         g2.name = "test"
         m.extend((g1, g2))
-        m._get_component(1.2)
+        with pytest.raises(ValueError):
+            m._get_component(1.2)
 
     def test_components_class_default(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
         m.append(g1)
-        nt.assert_is(getattr(m.components, g1.name), g1)
+        assert getattr(m.components, g1.name) is g1
 
     def test_components_class_change_name(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
         m.append(g1)
         g1.name = "test"
-        nt.assert_is(getattr(m.components, g1.name), g1)
+        assert getattr(m.components, g1.name) is g1
 
-    @nt.raises(AttributeError)
     def test_components_class_change_name_del_default(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
         m.append(g1)
         g1.name = "test"
-        getattr(m.components, "Gaussian")
+        with pytest.raises(AttributeError):
+            getattr(m.components, "Gaussian")
 
     def test_components_class_change_invalid_name(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
         m.append(g1)
         g1.name = "1, Test This!"
-        nt.assert_is(
+        assert (
             getattr(m.components,
-                    slugify(g1.name, valid_variable_name=True)), g1)
+                    slugify(g1.name, valid_variable_name=True)) is g1)
 
-    @nt.raises(AttributeError)
     def test_components_class_change_name_del_default(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
@@ -497,7 +492,8 @@ class TestModel1D:
         invalid_name = "1, Test This!"
         g1.name = invalid_name
         g1.name = "test"
-        getattr(m.components, slugify(invalid_name))
+        with pytest.raises(AttributeError):
+            getattr(m.components, slugify(invalid_name))
 
     def test_snap_parameter_bounds(self):
         m = self.model
@@ -552,27 +548,27 @@ class TestModel1D:
         p.coefficients.bmin = 2
         p.coefficients.bmax = 3
         m.ensure_parameters_in_bounds()
-        np.testing.assert_almost_equal(g1.A.value, 3.)
-        np.testing.assert_almost_equal(g2.A.value, 1.)
-        np.testing.assert_almost_equal(g3.A.value, -3.)
-        np.testing.assert_almost_equal(g4.A.value, 300.)
+        np.testing.assert_allclose(g1.A.value, 3.)
+        np.testing.assert_allclose(g2.A.value, 1.)
+        np.testing.assert_allclose(g3.A.value, -3.)
+        np.testing.assert_allclose(g4.A.value, 300.)
 
-        np.testing.assert_almost_equal(g1.centre.value, 300.)
-        np.testing.assert_almost_equal(g2.centre.value, 1.)
-        np.testing.assert_almost_equal(g3.centre.value, 15.)
-        np.testing.assert_almost_equal(g4.centre.value, 0)
+        np.testing.assert_allclose(g1.centre.value, 300.)
+        np.testing.assert_allclose(g2.centre.value, 1.)
+        np.testing.assert_allclose(g3.centre.value, 15.)
+        np.testing.assert_allclose(g4.centre.value, 0)
 
-        np.testing.assert_almost_equal(g1.sigma.value, 15.)
-        np.testing.assert_almost_equal(g2.sigma.value, 3.)
-        np.testing.assert_almost_equal(g3.sigma.value, 0.)
-        np.testing.assert_almost_equal(g4.sigma.value, 1)
+        np.testing.assert_allclose(g1.sigma.value, 15.)
+        np.testing.assert_allclose(g2.sigma.value, 3.)
+        np.testing.assert_allclose(g3.sigma.value, 0.)
+        np.testing.assert_allclose(g4.sigma.value, 1)
 
-        np.testing.assert_almost_equal(p.coefficients.value, (2, 2, 3, 3))
+        np.testing.assert_allclose(p.coefficients.value, (2, 2, 3, 3))
 
 
 class TestModel2D:
 
-    def setUp(self):
+    def setup_method(self, method):
         g = hs.model.components2D.Gaussian2D(
             centre_x=-5.,
             centre_y=-5.,
@@ -597,15 +593,15 @@ class TestModel2D:
                                               sigma_y=1.5)
         m.append(gt)
         m.fit()
-        np.testing.assert_almost_equal(gt.centre_x.value, -5.)
-        np.testing.assert_almost_equal(gt.centre_y.value, -5.)
-        np.testing.assert_almost_equal(gt.sigma_x.value, 1.)
-        np.testing.assert_almost_equal(gt.sigma_y.value, 2.)
+        np.testing.assert_allclose(gt.centre_x.value, -5.)
+        np.testing.assert_allclose(gt.centre_y.value, -5.)
+        np.testing.assert_allclose(gt.sigma_x.value, 1.)
+        np.testing.assert_allclose(gt.sigma_y.value, 2.)
 
 
 class TestModelFitBinned:
 
-    def setUp(self):
+    def setup_method(self, method):
         np.random.seed(1)
         s = hs.signals.Signal1D(
             np.random.normal(
@@ -622,115 +618,118 @@ class TestModelFitBinned:
 
     def test_fit_neldermead_leastsq(self):
         self.m.fit(fitter="Nelder-Mead", method="ls")
-        np.testing.assert_almost_equal(self.m[0].A.value, 9976.14519369)
-        np.testing.assert_almost_equal(self.m[0].centre.value, -0.110610743285)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 1.98380705455)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14519369)
+        np.testing.assert_allclose(self.m[0].centre.value, -0.110610743285)
+        np.testing.assert_allclose(self.m[0].sigma.value, 1.98380705455)
 
     def test_fit_neldermead_ml(self):
         self.m.fit(fitter="Nelder-Mead", method="ml")
-        np.testing.assert_almost_equal(self.m[0].A.value, 10001.39613936,
-                                       decimal=3)
-        np.testing.assert_almost_equal(self.m[0].centre.value, -0.104151206314,
-                                       decimal=6)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.00053642434)
+        np.testing.assert_allclose(self.m[0].A.value, 10001.39613936,
+                                   atol=1E-3)
+        np.testing.assert_allclose(self.m[0].centre.value, -0.104151206314,
+                                   atol=1E-6)
+        np.testing.assert_allclose(self.m[0].sigma.value, 2.00053642434)
 
     def test_fit_leastsq(self):
         self.m.fit(fitter="leastsq")
-        np.testing.assert_almost_equal(self.m[0].A.value, 9976.14526082, 1)
-        np.testing.assert_almost_equal(self.m[0].centre.value, -0.110610727064)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 1.98380707571, 5)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14526082, 1)
+        np.testing.assert_allclose(self.m[0].centre.value, -0.110610727064)
+        np.testing.assert_allclose(self.m[0].sigma.value, 1.98380707571, 5)
 
     def test_fit_mpfit(self):
         self.m.fit(fitter="mpfit")
-        np.testing.assert_almost_equal(self.m[0].A.value, 9976.14526286, 5)
-        np.testing.assert_almost_equal(self.m[0].centre.value, -0.110610718444)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 1.98380707614)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14526286, 5)
+        np.testing.assert_allclose(self.m[0].centre.value, -0.110610718444,
+                                   atol=1E-6)
+        np.testing.assert_allclose(self.m[0].sigma.value, 1.98380707614,
+                                   atol=1E-6)
 
     def test_fit_odr(self):
         self.m.fit(fitter="odr")
-        np.testing.assert_almost_equal(self.m[0].A.value, 9976.14531979, 3)
-        np.testing.assert_almost_equal(self.m[0].centre.value, -0.110610724054)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 1.98380709939)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14531979, 3)
+        np.testing.assert_allclose(self.m[0].centre.value, -0.110610724054,
+                                   atol=1e-7)
+        np.testing.assert_allclose(self.m[0].sigma.value, 1.98380709939)
 
     def test_fit_leastsq_grad(self):
         self.m.fit(fitter="leastsq", grad=True)
-        np.testing.assert_almost_equal(self.m[0].A.value, 9976.14526084)
-        np.testing.assert_almost_equal(self.m[0].centre.value, -0.11061073306)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 1.98380707552)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14526084)
+        np.testing.assert_allclose(self.m[0].centre.value, -0.11061073306)
+        np.testing.assert_allclose(self.m[0].sigma.value, 1.98380707552)
 
     def test_fit_mpfit_grad(self):
         self.m.fit(fitter="mpfit", grad=True)
-        np.testing.assert_almost_equal(self.m[0].A.value, 9976.14526084)
-        np.testing.assert_almost_equal(self.m[0].centre.value, -0.11061073306)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 1.98380707552)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14526084)
+        np.testing.assert_allclose(self.m[0].centre.value, -0.11061073306)
+        np.testing.assert_allclose(self.m[0].sigma.value, 1.98380707552)
 
     def test_fit_odr_grad(self):
         self.m.fit(fitter="odr", grad=True)
-        np.testing.assert_almost_equal(self.m[0].A.value, 9976.14531979, 3)
-        np.testing.assert_almost_equal(self.m[0].centre.value, -0.110610724054)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 1.98380709939)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14531979, 3)
+        np.testing.assert_allclose(self.m[0].centre.value, -0.110610724054,
+                                   atol=1e-7)
+        np.testing.assert_allclose(self.m[0].sigma.value, 1.98380709939)
 
     def test_fit_bounded_mpfit(self):
         self.m[0].centre.bmin = 0.5
         # self.m[0].bounded = True
         self.m.fit(fitter="mpfit", bounded=True)
-        np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 4)
-        np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_allclose(self.m[0].centre.value, 0.5)
+        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
     def test_fit_bounded_leastsq(self):
-        if LooseVersion(scipy.__version__) < LooseVersion("0.17"):
-            raise SkipTest("least bounds only available in scipy >= 0.17")
+        pytest.importorskip("scipy", minversion="0.17")
         self.m[0].centre.bmin = 0.5
         # self.m[0].bounded = True
         self.m.fit(fitter="leastsq", bounded=True)
-        np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 3)
-        np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 3)
+        np.testing.assert_allclose(self.m[0].centre.value, 0.5)
+        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
     def test_fit_bounded_lbfgs(self):
         self.m[0].centre.bmin = 0.5
         # self.m[0].bounded = True
         self.m.fit(fitter="L-BFGS-B", bounded=True, grad=True)
-        np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 4)
-        np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_allclose(self.m[0].centre.value, 0.5)
+        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
     def test_fit_bounded_bad_starting_values_mpfit(self):
         self.m[0].centre.bmin = 0.5
         self.m[0].centre.value = -1
         # self.m[0].bounded = True
         self.m.fit(fitter="mpfit", bounded=True)
-        np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 4)
-        np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_allclose(self.m[0].centre.value, 0.5)
+        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
     def test_fit_bounded_bad_starting_values_leastsq(self):
         self.m[0].centre.bmin = 0.5
         self.m[0].centre.value = -1
         # self.m[0].bounded = True
         self.m.fit(fitter="leastsq", bounded=True)
-        np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 3)
-        np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 3)
+        np.testing.assert_allclose(self.m[0].centre.value, 0.5)
+        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
     def test_fit_bounded_bad_starting_values_lbfgs(self):
         self.m[0].centre.bmin = 0.5
         self.m[0].centre.value = -1
         # self.m[0].bounded = True
         self.m.fit(fitter="L-BFGS-B", bounded=True, grad=True)
-        np.testing.assert_almost_equal(self.m[0].A.value, 9991.65422046, 4)
-        np.testing.assert_almost_equal(self.m[0].centre.value, 0.5)
-        np.testing.assert_almost_equal(self.m[0].sigma.value, 2.08398236966)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_allclose(self.m[0].centre.value, 0.5)
+        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
-    @nt.raises(ValueError)
     def test_wrong_method(self):
-        self.m.fit(method="dummy")
+        with pytest.raises(ValueError):
+            self.m.fit(method="dummy")
 
 
 class TestModelWeighted:
 
-    def setUp(self):
+    def setup_method(self, method):
         np.random.seed(1)
         s = hs.signals.Signal1D(np.arange(10, 100, 0.1))
         s.metadata.set_item("Signal.Noise_properties.variance",
@@ -747,21 +746,21 @@ class TestModelWeighted:
         self.m.fit(fitter="leastsq", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9165596693502778, 1.6628238107916631)):
-            np.testing.assert_almost_equal(result, expected, decimal=5)
+            np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_odr_binned(self):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="odr", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9165596548961972, 1.6628247412317521)):
-            np.testing.assert_almost_equal(result, expected, decimal=5)
+            np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_mpfit_binned(self):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="mpfit", method="ls")
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9165596607108739, 1.6628243846485873)):
-            np.testing.assert_almost_equal(result, expected, decimal=5)
+            np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_neldermead_binned(self):
         self.m.signal.metadata.Signal.binned = True
@@ -771,7 +770,7 @@ class TestModelWeighted:
         )
         for result, expected in zip(self.m[0].coefficients.value,
                                     (9.9137288425667442, 1.8446013472266145)):
-            np.testing.assert_almost_equal(result, expected, decimal=5)
+            np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_leastsq_unbinned(self):
         self.m.signal.metadata.Signal.binned = False
@@ -779,7 +778,7 @@ class TestModelWeighted:
         for result, expected in zip(
                 self.m[0].coefficients.value,
                 (0.99165596391487121, 0.16628254242532492)):
-            np.testing.assert_almost_equal(result, expected, decimal=5)
+            np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_odr_unbinned(self):
         self.m.signal.metadata.Signal.binned = False
@@ -787,7 +786,7 @@ class TestModelWeighted:
         for result, expected in zip(
                 self.m[0].coefficients.value,
                 (0.99165596548961943, 0.16628247412317315)):
-            np.testing.assert_almost_equal(result, expected, decimal=5)
+            np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_mpfit_unbinned(self):
         self.m.signal.metadata.Signal.binned = False
@@ -795,7 +794,7 @@ class TestModelWeighted:
         for result, expected in zip(
                 self.m[0].coefficients.value,
                 (0.99165596295068958, 0.16628257462820528)):
-            np.testing.assert_almost_equal(result, expected, decimal=5)
+            np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_neldermead_unbinned(self):
         self.m.signal.metadata.Signal.binned = False
@@ -806,21 +805,21 @@ class TestModelWeighted:
         for result, expected in zip(
                 self.m[0].coefficients.value,
                 (0.99136169230026261, 0.18483060534056939)):
-            np.testing.assert_almost_equal(result, expected, decimal=5)
+            np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_chisq(self):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="leastsq", method="ls")
-        np.testing.assert_almost_equal(self.m.chisq.data, 3029.16949561)
+        np.testing.assert_allclose(self.m.chisq.data, 3029.16949561)
 
     def test_red_chisq(self):
         self.m.fit(fitter="leastsq", method="ls")
-        np.testing.assert_almost_equal(self.m.red_chisq.data, 3.37700055)
+        np.testing.assert_allclose(self.m.red_chisq.data, 3.37700055)
 
 
 class TestModelScalarVariance:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.ones(100))
         m = s.create_model()
         m.append(hs.model.components1D.Offset())
@@ -833,7 +832,7 @@ class TestModelScalarVariance:
         self.s.add_gaussian_noise(std)
         self.s.metadata.set_item("Signal.Noise_properties.variance", std ** 2)
         self.m.fit(fitter="leastsq", method="ls")
-        np.testing.assert_almost_equal(self.m.chisq.data, 78.35015229)
+        np.testing.assert_allclose(self.m.chisq.data, 78.35015229)
 
     def test_std10_chisq(self):
         std = 10
@@ -841,7 +840,7 @@ class TestModelScalarVariance:
         self.s.add_gaussian_noise(std)
         self.s.metadata.set_item("Signal.Noise_properties.variance", std ** 2)
         self.m.fit(fitter="leastsq", method="ls")
-        np.testing.assert_almost_equal(self.m.chisq.data, 78.35015229)
+        np.testing.assert_allclose(self.m.chisq.data, 78.35015229)
 
     def test_std1_red_chisq(self):
         std = 1
@@ -849,7 +848,7 @@ class TestModelScalarVariance:
         self.s.add_gaussian_noise(std)
         self.s.metadata.set_item("Signal.Noise_properties.variance", std ** 2)
         self.m.fit(fitter="leastsq", method="ls")
-        np.testing.assert_almost_equal(self.m.red_chisq.data, 0.79949135)
+        np.testing.assert_allclose(self.m.red_chisq.data, 0.79949135)
 
     def test_std10_red_chisq(self):
         std = 10
@@ -857,7 +856,7 @@ class TestModelScalarVariance:
         self.s.add_gaussian_noise(std)
         self.s.metadata.set_item("Signal.Noise_properties.variance", std ** 2)
         self.m.fit(fitter="leastsq", method="ls")
-        np.testing.assert_almost_equal(self.m.red_chisq.data, 0.79949135)
+        np.testing.assert_allclose(self.m.red_chisq.data, 0.79949135)
 
     def test_std1_red_chisq_in_range(self):
         std = 1
@@ -866,12 +865,12 @@ class TestModelScalarVariance:
         self.s.add_gaussian_noise(std)
         self.s.metadata.set_item("Signal.Noise_properties.variance", std ** 2)
         self.m.fit(fitter="leastsq", method="ls")
-        np.testing.assert_almost_equal(self.m.red_chisq.data, 0.86206965)
+        np.testing.assert_allclose(self.m.red_chisq.data, 0.86206965)
 
 
 class TestModelSignalVariance:
 
-    def setUp(self):
+    def setup_method(self, method):
         variance = hs.signals.Signal1D(np.arange(100, 300).reshape(
             (2, 100)))
         s = variance.deepcopy()
@@ -888,15 +887,15 @@ class TestModelSignalVariance:
 
     def test_std1_red_chisq(self):
         self.m.multifit(fitter="leastsq", method="ls", show_progressbar=None)
-        np.testing.assert_almost_equal(self.m.red_chisq.data[0],
-                                       0.79693355673230915)
-        np.testing.assert_almost_equal(self.m.red_chisq.data[1],
-                                       0.91453032901427167)
+        np.testing.assert_allclose(self.m.red_chisq.data[0],
+                                   0.79693355673230915)
+        np.testing.assert_allclose(self.m.red_chisq.data[1],
+                                   0.91453032901427167)
 
 
 class TestMultifit:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.Signal1D(np.zeros((2, 200)))
         s.axes_manager[-1].offset = 1
         s.data[:] = 2 * s.axes_manager[-1].axis ** (-3)
@@ -931,13 +930,13 @@ class TestMultifit:
     def test_parameter_as_signal_values(self):
         # There are more as_signal tests in test_parameters.py
         rs = self.m[0].r.as_signal(field="values")
-        np.testing.assert_almost_equal(rs.data, np.array([2., 100.]))
-        nt.assert_false("Signal.Noise_properties.variance" in rs.metadata)
+        np.testing.assert_allclose(rs.data, np.array([2., 100.]))
+        assert not "Signal.Noise_properties.variance" in rs.metadata
         self.m.multifit(fetch_only_fixed=True, show_progressbar=None)
         rs = self.m[0].r.as_signal(field="values")
-        nt.assert_true("Signal.Noise_properties.variance" in rs.metadata)
-        nt.assert_is_instance(rs.metadata.Signal.Noise_properties.variance,
-                              hs.signals.Signal1D)
+        assert "Signal.Noise_properties.variance" in rs.metadata
+        assert isinstance(rs.metadata.Signal.Noise_properties.variance,
+                          hs.signals.Signal1D)
 
     def test_bounded_snapping_mpfit(self):
         m = self.m
@@ -966,7 +965,7 @@ class TestMultifit:
 
 class TestStoreCurrentValues:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.m = hs.signals.Signal1D(np.arange(10)).create_model()
         self.o = hs.model.components1D.Offset()
         self.m.append(self.o)
@@ -975,20 +974,20 @@ class TestStoreCurrentValues:
         self.o.offset.value = 2
         self.o.offset.std = 3
         self.m.store_current_values()
-        nt.assert_equal(self.o.offset.map["values"][0], 2)
-        nt.assert_equal(self.o.offset.map["is_set"][0], True)
+        assert self.o.offset.map["values"][0] == 2
+        assert self.o.offset.map["is_set"][0] == True
 
     def test_not_active(self):
         self.o.active = False
         self.o.offset.value = 2
         self.o.offset.std = 3
         self.m.store_current_values()
-        nt.assert_not_equal(self.o.offset.map["values"][0], 2)
+        assert self.o.offset.map["values"][0] != 2
 
 
 class TestSetCurrentValuesTo:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.m = hs.signals.Signal1D(
             np.arange(10).reshape(2, 5)).create_model()
         self.comps = [
@@ -1000,21 +999,21 @@ class TestSetCurrentValuesTo:
         for c in self.comps:
             c.offset.value = 2
         self.m.assign_current_values_to_all()
-        nt.assert_true((self.comps[0].offset.map["values"] == 2).all())
-        nt.assert_true((self.comps[1].offset.map["values"] == 2).all())
+        assert (self.comps[0].offset.map["values"] == 2).all()
+        assert (self.comps[1].offset.map["values"] == 2).all()
 
     def test_set_1(self):
         self.comps[1].offset.value = 2
         self.m.assign_current_values_to_all([self.comps[1]])
-        nt.assert_true((self.comps[0].offset.map["values"] != 2).all())
-        nt.assert_true((self.comps[1].offset.map["values"] == 2).all())
+        assert (self.comps[0].offset.map["values"] != 2).all()
+        assert (self.comps[1].offset.map["values"] == 2).all()
 
 
 class TestAsSignal:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.m = hs.signals.Signal1D(
-            np.arange(10).reshape(2, 5)).create_model()
+            np.arange(20).reshape(2, 2, 5)).create_model()
         self.comps = [
             hs.model.components1D.Offset(),
             hs.model.components1D.Offset()]
@@ -1023,66 +1022,91 @@ class TestAsSignal:
             c.offset.value = 2
         self.m.assign_current_values_to_all()
 
+    def test_threaded_identical(self):
+        # all components
+        s = self.m.as_signal(show_progressbar=False, parallel=True)
+        s1 = self.m.as_signal(show_progressbar=False, parallel=False)
+        np.testing.assert_allclose(s1.data, s.data)
+
+        # more complicated
+        self.m[0].active_is_multidimensional = True
+        self.m[0]._active_array[0] = False
+        for component in [0, 1]:
+            s = self.m.as_signal(component_list=[component],
+                                 show_progressbar=False, parallel=True)
+            s1 = self.m.as_signal(component_list=[component],
+                                  show_progressbar=False, parallel=False)
+            np.testing.assert_allclose(s1.data, s.data)
+
     def test_all_components_simple(self):
-        s = self.m.as_signal(show_progressbar=None)
-        nt.assert_true(np.all(s.data == 4.))
+        for th in [True, False]:
+            s = self.m.as_signal(show_progressbar=False, parallel=th)
+            assert np.all(s.data == 4.)
 
     def test_one_component_simple(self):
-        s = self.m.as_signal(component_list=[0], show_progressbar=None)
-        nt.assert_true(np.all(s.data == 2.))
-        nt.assert_true(self.m[1].active)
+        for th in [True, False]:
+            s = self.m.as_signal(component_list=[0], show_progressbar=False,
+                                 parallel=th)
+            assert np.all(s.data == 2.)
+            assert self.m[1].active
 
     def test_all_components_multidim(self):
         self.m[0].active_is_multidimensional = True
 
-        s = self.m.as_signal(show_progressbar=None)
-        nt.assert_true(np.all(s.data == 4.))
+        for th in [True, False]:
+            s = self.m.as_signal(show_progressbar=False, parallel=th)
+            assert np.all(s.data == 4.)
 
         self.m[0]._active_array[0] = False
-        s = self.m.as_signal(show_progressbar=None)
-        np.testing.assert_array_equal(
-            s.data, np.array([np.ones(5) * 2, np.ones(5) * 4]))
-        nt.assert_true(self.m[0].active_is_multidimensional)
+        for th in [True, False]:
+            s = self.m.as_signal(show_progressbar=False, parallel=th)
+            np.testing.assert_array_equal(
+                s.data, np.array([np.ones((2, 5)) * 2, np.ones((2, 5)) * 4]))
+            assert self.m[0].active_is_multidimensional
 
     def test_one_component_multidim(self):
         self.m[0].active_is_multidimensional = True
 
-        s = self.m.as_signal(component_list=[0], show_progressbar=None)
-        nt.assert_true(np.all(s.data == 2.))
-        nt.assert_true(self.m[1].active)
-        nt.assert_false(self.m[1].active_is_multidimensional)
+        for th in [True, False]:
+            s = self.m.as_signal(component_list=[0], show_progressbar=False,
+                                 parallel=th)
+            assert np.all(s.data == 2.)
+            assert self.m[1].active
+            assert not self.m[1].active_is_multidimensional
 
-        s = self.m.as_signal(component_list=[1], show_progressbar=None)
-        np.testing.assert_equal(s.data, 2.)
-        nt.assert_true(self.m[0].active_is_multidimensional)
+            s = self.m.as_signal(component_list=[1], show_progressbar=False,
+                                 parallel=th)
+            np.testing.assert_equal(s.data, 2.)
+            assert self.m[0].active_is_multidimensional
 
         self.m[0]._active_array[0] = False
-        s = self.m.as_signal(component_list=[1], show_progressbar=None)
-        nt.assert_true(np.all(s.data == 2.))
+        for th in [True, False]:
+            s = self.m.as_signal(component_list=[1], show_progressbar=False,
+                                 parallel=th)
+            assert np.all(s.data == 2.)
 
-        s = self.m.as_signal(component_list=[0], show_progressbar=None)
-        np.testing.assert_array_equal(s.data,
-                                      np.array([np.zeros(5), np.ones(5) * 2]))
+            s = self.m.as_signal(component_list=[0], show_progressbar=False,
+                                 parallel=th)
+            np.testing.assert_array_equal(s.data, np.array([np.zeros((2, 5)),
+                                                            np.ones((2, 5)) * 2]))
 
 
 class TestCreateModel:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = hs.signals.Signal1D(np.asarray([0, ]))
         self.im = hs.signals.Signal2D(np.ones([1, 1, ]))
 
     def test_create_model(self):
         from hyperspy.models.model1d import Model1D
         from hyperspy.models.model2d import Model2D
-        nt.assert_is_instance(
-            self.s.create_model(), Model1D)
-        nt.assert_is_instance(
-            self.im.create_model(), Model2D)
+        assert isinstance(self.s.create_model(), Model1D)
+        assert isinstance(self.im.create_model(), Model2D)
 
 
 class TestAdjustPosition:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = hs.signals.Signal1D(np.random.rand(10, 10, 20))
         self.m = self.s.create_model()
 
@@ -1090,29 +1114,29 @@ class TestAdjustPosition:
     def test_enable_adjust_position(self):
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()
-        nt.assert_equal(len(self.m._position_widgets), 1)
+        assert len(self.m._position_widgets) == 1
         # Check that both line and label was added
-        nt.assert_equal(len(list(self.m._position_widgets.values())[0]), 2)
+        assert len(list(self.m._position_widgets.values())[0]) == 2
 
     @cleanup
     def test_disable_adjust_position(self):
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()
         self.m.disable_adjust_position()
-        nt.assert_equal(len(self.m._position_widgets), 0)
+        assert len(self.m._position_widgets) == 0
 
     @cleanup
     def test_enable_all(self):
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()
         self.m.append(hs.model.components1D.Gaussian())
-        nt.assert_equal(len(self.m._position_widgets), 2)
+        assert len(self.m._position_widgets) == 2
 
     @cleanup
     def test_enable_all_zero_start(self):
         self.m.enable_adjust_position()
         self.m.append(hs.model.components1D.Gaussian())
-        nt.assert_equal(len(self.m._position_widgets), 1)
+        assert len(self.m._position_widgets) == 1
 
     @cleanup
     def test_manual_close(self):
@@ -1120,10 +1144,10 @@ class TestAdjustPosition:
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()
         list(self.m._position_widgets.values())[0][0].close()
-        nt.assert_equal(len(self.m._position_widgets), 2)
-        nt.assert_equal(len(list(self.m._position_widgets.values())[0]), 1)
+        assert len(self.m._position_widgets) == 2
+        assert len(list(self.m._position_widgets.values())[0]) == 1
         list(self.m._position_widgets.values())[0][0].close()
-        nt.assert_equal(len(self.m._position_widgets), 1)
-        nt.assert_equal(len(list(self.m._position_widgets.values())[0]), 2)
+        assert len(self.m._position_widgets) == 1
+        assert len(list(self.m._position_widgets.values())[0]) == 2
         self.m.disable_adjust_position()
-        nt.assert_equal(len(self.m._position_widgets), 0)
+        assert len(self.m._position_widgets) == 0

@@ -93,7 +93,9 @@ or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_
 
 By default HyperSpy will return a list of all the files loaded. Alternatively,
 HyperSpy can stack the data of the files contain data with exactly the same
-dimensions. If this is not the case an error is raised.
+dimensions. If this is not the case an error is raised. If each file contains
+multiple (N) signals, N stacks will be created. Here, the numbers of signals
+per file must also match, or an error will be raised.
 
 It is also possible to load multiple files with a single command without
 stacking them by passing the `stack=False` argument to the load function, in
@@ -188,6 +190,8 @@ HyperSpy.
     | EMD (Berkley Labs) |    Yes    |    Yes   |
     +--------------------+-----------+----------+
     | Protochips log     |    Yes    |    No    |
+    +--------------------+-----------+----------+
+    | EDAX .spc and .spd |    Yes    |    No    |
     +--------------------+-----------+----------+
 
 .. _hdf5-format:
@@ -386,7 +390,7 @@ library. See `the library webpage
     >>> # Saving the string 'Random metadata' in a custom tag (ID 65000)
     >>> extratag = [(65000, 's', 1, "Random metadata", False)]
     >>> s.save('file.tif', extratags=extratag)
-    
+ 
     >>> # Saving the string 'Random metadata' from a custom tag (ID 65000)
     >>> s2 = hs.load('file.tif')
     >>> s2.original_metadata['Number_65000']
@@ -403,6 +407,33 @@ the format). That said, we understand that this is an important feature and if
 loading a particular Digital Micrograph file fails for you, please report it as
 an issue in the `issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make
 us aware of the problem.
+
+.. _edax-format:
+
+EDAX TEAM SPD and SPC
+---------------------
+
+HyperSpy can read both ``.spd`` (spectrum image) and ``.spc`` (single spectra)
+files from the EDAX TEAM software.
+If reading an ``.spd`` file, the calibration of the
+spectrum image is loaded from the corresponding ``.ipr`` and ``.spc`` files
+stored in the same directory, or from specific files indicated by the user.
+If these calibration files are not available, the data from the ``.spd``
+file will still be loaded, but with no spatial or energy calibration.
+If elemental information has been defined in the spectrum image, those
+elements will automatically be added to the signal loaded by HyperSpy.
+
+Currently, loading an EDAX TEAM spectrum or spectrum image will load an
+``EDSSEMSpectrum`` Signal. If support for TEM EDS data is needed, please
+open an issue in the `issues tracker <github.com/hyperspy/hyperspy/issues>`_ to
+alert the developers of the need.
+
+For further reference, file specifications for the formats are
+available publicly available from EDAX and are on Github
+(`.spc <https://github.com/hyperspy/hyperspy/files/29506/SPECTRUM-V70.pdf>`_,
+`.spd <https://github.com/hyperspy/hyperspy/files/29505/
+SpcMap-spd.file.format.pdf>`_, and
+`.ipr <https://github.com/hyperspy/hyperspy/files/29507/ImageIPR.pdf>`_).
 
 .. _fei-format:
 

@@ -221,7 +221,8 @@ def orpca(X, rank, fast=False,
           method=None,
           learning_rate=None,
           init=None,
-          training_samples=None):
+          training_samples=None,
+          momentum=None):
     """
     This function performs Online Robust PCA
     with missing or corrupted data.
@@ -232,29 +233,34 @@ def orpca(X, rank, fast=False,
         is the [nfeatures x nsamples] matrix of observations.
     rank : int
         The model dimensionality.
-    lambda1 : None | float
+    lambda1 : {None, float}
         Nuclear norm regularization parameter.
         If None, set to 1 / sqrt(nsamples)
-    lambda2 : None | float
+    lambda2 : {None, float}
         Sparse error regularization parameter.
         If None, set to 1 / sqrt(nsamples)
-    method : None | 'CF' | 'BCD' | 'SGD'
+    method : {None, 'CF', 'BCD', 'SGD', 'MomentumSGD'}
         'CF'  - Closed-form solver
         'BCD' - Block-coordinate descent
         'SGD' - Stochastic gradient descent
+        'MomentumSGD' - Stochastic gradient descent with momentum
         If None, set to 'CF'
-    learning_rate : None | float
+    learning_rate : {None, float}
         Learning rate for the stochastic gradient
         descent algorithm
         If None, set to 1
-    init : None | 'qr' | 'rand'
+    init : {None, 'qr', 'rand'}
         'qr'   - QR-based initialization
         'rand' - Random initialization
         If None, set to 'qr'
-    training_samples : integer
+    training_samples : {None, integer}
         Specifies the number of training samples to use in
         the 'qr' initialization
         If None, set to 10
+    momentum : {None, float}
+        Momentum parameter for 'MomentumSGD' method, should be
+        a float between 0 and 1.
+        If None, set to 0.5
 
     Returns
     -------
@@ -275,7 +281,12 @@ def orpca(X, rank, fast=False,
 
     It has been updated to include a new initialization method based
     on a QR decomposition of the first n "training" samples of the data.
-    A stochastic gradient descent solver is also implemented.
+    A stochastic gradient descent (SGD) solver is also implemented,
+    along with a MomentumSGD solver for improved convergence and robustness
+    with respect to local minima. More information about the gradient descent
+    methods and choosing appropriate parameters can be found here:
+       Sebastian Ruder, "An overview of gradient descent optimization
+       algorithms", arXiv:1609.04747, (2016), http://arxiv.org/abs/1609.04747.
 
     """
     if fast is True and sklearn_installed is True:
@@ -316,18 +327,25 @@ def orpca(X, rank, fast=False,
                                 "not specified. Defaulting to 10 samples")
                 training_samples = 10
     if learning_rate is None:
-        if method == 'SGD':
+        if method in ('SGD', 'MomentumSGD'):
             _logger.warning("Learning rate for SGD algorithm is "
                             "set to default: 1.0")
             learning_rate = 1.0
+    if momentum is None:
+        if method == 'MomentumSGD':
+            _logger.warning("Momentum parameter for SGD algorithm is "
+                            "set to default: 0.5")
+            momentum = 0.5
 
     # Check options are valid
-    if method not in ('CF', 'BCD', 'SGD'):
+    if method not in ('CF', 'BCD', 'SGD', 'MomentumSGD'):
         raise ValueError("'method' not recognised")
     if init not in ('qr', 'rand'):
-        raise ValueError("'method' not recognised")
+        raise ValueError("'init' not recognised")
     if init == 'qr' and training_samples < rank:
         raise ValueError("'training_samples' must be >= 'output_dimension'")
+    if method == 'MomentumSGD' and (momentum > 1. or momentum < 0.):
+        raise ValueError("'momentum' must be a float between 0 and 1")
 
     # Get min & max of data matrix for scaling
     X_max = np.max(X)
@@ -337,11 +355,11 @@ def orpca(X, rank, fast=False,
     # Initialize the subspace estimate
     if init == 'qr':
         Y2 = X[:, :training_samples]
-        L, tmp = scipy.linalg.qr(Y2, mode='economic')
+        L, _ = scipy.linalg.qr(Y2, mode='economic')
         L = L[:, :rank]
     elif init == 'rand':
         Y2 = np.random.randn(m, rank)
-        L, tmp = scipy.linalg.qr(Y2, mode='economic')
+        L, _ = scipy.linalg.qr(Y2, mode='economic')
 
     R = np.zeros((rank, n))
     I = lambda1 * np.eye(rank)
@@ -351,6 +369,11 @@ def orpca(X, rank, fast=False,
     if method in ('CF', 'BCD'):
         A = np.zeros((rank, rank))
         B = np.zeros((m, rank))
+
+    # Extra variables for MomentumSGD method
+    if method == 'MomentumSGD':
+        vold = np.zeros(L.shape)
+        vnew = vold
 
     for t in range(n):
         if t == 0 or np.mod(t + 1, np.round(n / 10)) == 0:
@@ -378,12 +401,21 @@ def orpca(X, rank, fast=False,
             L = L - (np.dot(L, np.outer(r, r.T))
                      - np.outer((z - e), r.T)
                      + lambda1 * L) / learn
+        elif method == 'MomentumSGD':
+            # Stochastic gradient descent with momentum
+            learn = learning_rate * (1 + learning_rate * lambda1 * t)
+            vold = momentum * vnew
+            vnew = (np.dot(L, np.outer(r, r.T))
+                     - np.outer((z - e), r.T)
+                     + lambda1 * L) / learn
+            L = L - (vold + vnew)
 
     # Rescale
     Xhat = (np.dot(L, R) * X_max) + X_min
     Ehat = (E * X_max) + X_min
 
-    # Do final SVD
+    # Do final SVD to return loadings and
+    # components for the decomposition model
     U, S, Vh = svd(Xhat)
     V = Vh.T
 

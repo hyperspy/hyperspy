@@ -34,6 +34,13 @@ from hyperspy.io_plugins import io_plugins, default_write_ext
 _logger = logging.getLogger(__name__)
 
 
+# Utility string:
+f_error_fmt = (
+    "\tFile %d:\n"
+    "\t\t%d signals\n"
+    "\t\tPath: %s")
+
+
 def load(filenames=None,
          signal_type=None,
          stack=False,
@@ -44,8 +51,11 @@ def load(filenames=None,
          **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure
+
     Supported formats: HDF5, msa, Gatan dm3, Ripple (rpl+raw), Bruker bcf,
-    FEI ser and emi, hdf5, SEMPER unf, EMD, tif and a number of image formats.
+    FEI ser and emi, hdf5, SEMPER unf, EMD, EDAX spd/spc, tif, and a number
+    of image formats.
+
     Any extra keyword is passed to the corresponsing reader. For
     available options see their individual documentation.
     Parameters
@@ -79,7 +89,9 @@ def load(filenames=None,
         the data into a single object is attempted. All files must match
         in shape. It is possible to store the data in a memory mapped
         temporary file instead of in memory setting mmap_mode. The title is set
-        to the name of the folder containing the files.
+        to the name of the folder containing the files. If each file contains
+        multiple (N) signals, N stacks will be created, with the requirement
+        that each file contains the same number of signals.
     stack_axis : {None, int, str}
         If None, the signals are stacked over a new axis. The data must
         have the same dimensions. Otherwise the
@@ -155,25 +167,58 @@ def load(filenames=None,
         if len(filenames) > 1:
             _logger.info('Loading individual files')
         if stack is True:
-            signal = []
+            # We are loading a stack!
+            # Note that while each file might contain several signals, all
+            # files are required to contain the same number of signals. We
+            # therefore use the first file to determine the number of signals.
             for i, filename in enumerate(filenames):
                 obj = load_single_file(filename,
                                        **kwds)
-                signal.append(obj)
-            signal = hyperspy.misc.utils.stack(signal,
-                                               axis=stack_axis,
-                                               new_axis_name=new_axis_name,
-                                               mmap=mmap, mmap_dir=mmap_dir)
-            signal.metadata.General.title = \
-                os.path.split(
-                    os.path.split(
-                        os.path.abspath(filenames[0])
-                    )[0]
-                )[1]
-            _logger.info('Individual files loaded correctly')
-            _logger.info(signal._summary())
-            objects = [signal, ]
+                if i == 0:
+                    # First iteration, determine number of signals, if several:
+                    if isinstance(obj, (list, tuple)):
+                        n = len(obj)
+                    else:
+                        n = 1
+                    # Initialize signal 2D list:
+                    signals = [[] for j in range(n)]
+                else:
+                    # Check that number of signals per file doesn't change
+                    # for other files:
+                    if isinstance(obj, (list, tuple)):
+                        if n != len(obj):
+                            raise ValueError(
+                                "The number of sub-signals per file does not "
+                                "match:\n" +
+                                (f_error_fmt % (1, n, filenames[0])) +
+                                (f_error_fmt % (i, len(obj), filename)))
+                    elif n != 1:
+                        raise ValueError(
+                            "The number of sub-signals per file does not "
+                            "match:\n" +
+                            (f_error_fmt % (1, n, filenames[0])) +
+                            (f_error_fmt % (i, len(obj), filename)))
+                # Append loaded signals to 2D list:
+                if n == 1:
+                    signals[0].append(obj)
+                elif n > 1:
+                    for j in range(n):
+                        signals[j].append(obj[j])
+            # Next, merge the signals in the `stack_axis` direction:
+            # When each file had N signals, we create N stacks!
+            objects = []
+            for i in range(n):
+                signal = signals[i]   # Sublist, with len = len(filenames)
+                signal = hyperspy.misc.utils.stack(
+                    signal, axis=stack_axis, new_axis_name=new_axis_name,
+                    mmap=mmap, mmap_dir=mmap_dir)
+                signal.metadata.General.title = os.path.split(
+                    os.path.split(os.path.abspath(filenames[0]))[0])[1]
+                _logger.info('Individual files loaded correctly')
+                _logger.info(signal._summary())
+                objects.append(signal)
         else:
+            # No stack, so simply we load all signals in all files separately
             objects = [load_single_file(filename,
                                         **kwds)
                        for filename in filenames]
@@ -192,7 +237,8 @@ def load_single_file(filename,
     """
     Load any supported file into an HyperSpy structure
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw),
-    Bruker bcf, FEI ser and emi, hdf5 and SEMPER unf.
+    Bruker bcf, FEI ser and emi, EDAX spc and spd, hdf5, and SEMPER unf.
+
     Parameters
     ----------
     filename : string

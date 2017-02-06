@@ -515,11 +515,11 @@ class Parameter(t.HasTraits):
 
         Example
         -------
-        >>> parameter.plot()
+        >>> parameter.plot() #doctest: +SKIP
 
         Set the minimum and maximum displayed values
 
-        >>> parameter.plot(vmin=0, vmax=1)
+        >>> parameter.plot(vmin=0, vmax=1) #doctest: +SKIP
         """
         self.as_signal().plot(**kwargs)
 

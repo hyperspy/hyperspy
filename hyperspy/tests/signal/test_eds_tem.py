@@ -17,7 +17,6 @@
 
 
 import numpy as np
-import nose.tools as nt
 from matplotlib.testing.decorators import cleanup
 
 from hyperspy.signals import EDSTEMSpectrum
@@ -29,7 +28,7 @@ from hyperspy.misc.test_utils import ignore_warning
 
 class Test_metadata:
 
-    def setUp(self):
+    def setup_method(self, method):
         # Create an empty spectrum
         s = EDSTEMSpectrum(np.ones((4, 2, 1024)))
         s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time = 3.1
@@ -40,27 +39,25 @@ class Test_metadata:
         s = self.signal
         old_metadata = s.metadata.deepcopy()
         sSum = s.sum(0)
-        nt.assert_equal(
-            sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
+        assert (
+            sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time ==
             3.1 * 2)
         # Check that metadata is unchanged
         print(old_metadata, s.metadata)      # Capture for comparison on error
-        nt.assert_dict_equal(old_metadata.as_dictionary(),
-                             s.metadata.as_dictionary(),
-                             "Source metadata changed")
+        assert (old_metadata.as_dictionary() ==
+                s.metadata.as_dictionary()), "Source metadata changed"
 
     def test_sum_live_time2(self):
         s = self.signal
         old_metadata = s.metadata.deepcopy()
         sSum = s.sum((0, 1))
-        nt.assert_equal(
-            sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
+        assert (
+            sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time ==
             3.1 * 2 * 4)
         # Check that metadata is unchanged
         print(old_metadata, s.metadata)      # Capture for comparison on error
-        nt.assert_dict_equal(old_metadata.as_dictionary(),
-                             s.metadata.as_dictionary(),
-                             "Source metadata changed")
+        assert (old_metadata.as_dictionary() ==
+                s.metadata.as_dictionary()), "Source metadata changed"
 
     def test_sum_live_time_out_arg(self):
         s = self.signal
@@ -68,9 +65,9 @@ class Test_metadata:
         s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time = 4.2
         s_resum = s.sum(0)
         r = s.sum(0, out=sSum)
-        nt.assert_is_none(r)
-        nt.assert_equal(
-            s_resum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
+        assert r is None
+        assert (
+            s_resum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time ==
             sSum.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time)
         np.testing.assert_allclose(s_resum.data, sSum.data)
 
@@ -79,31 +76,30 @@ class Test_metadata:
         old_metadata = s.metadata.deepcopy()
         dim = s.axes_manager.shape
         s = s.rebin([dim[0] / 2, dim[1] / 2, dim[2]])
-        nt.assert_equal(
-            s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time,
+        assert (
+            s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time ==
             3.1 * 2 * 2)
         # Check that metadata is unchanged
         print(old_metadata, self.signal.metadata)    # Captured on error
-        nt.assert_dict_equal(old_metadata.as_dictionary(),
-                             self.signal.metadata.as_dictionary(),
-                             "Source metadata changed")
+        assert (old_metadata.as_dictionary() ==
+                self.signal.metadata.as_dictionary()), "Source metadata changed"
 
     def test_add_elements(self):
         s = self.signal
         s.add_elements(['Al', 'Ni'])
-        nt.assert_equal(s.metadata.Sample.elements, ['Al', 'Ni'])
+        assert s.metadata.Sample.elements == ['Al', 'Ni']
         s.add_elements(['Al', 'Ni'])
-        nt.assert_equal(s.metadata.Sample.elements, ['Al', 'Ni'])
+        assert s.metadata.Sample.elements == ['Al', 'Ni']
         s.add_elements(["Fe", ])
-        nt.assert_equal(s.metadata.Sample.elements, ['Al', "Fe", 'Ni'])
+        assert s.metadata.Sample.elements == ['Al', "Fe", 'Ni']
         s.set_elements(['Al', 'Ni'])
-        nt.assert_equal(s.metadata.Sample.elements, ['Al', 'Ni'])
+        assert s.metadata.Sample.elements == ['Al', 'Ni']
 
     def test_default_param(self):
         s = self.signal
         mp = s.metadata
-        nt.assert_equal(
-            mp.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa,
+        assert (
+            mp.Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa ==
             preferences.EDS.eds_mn_ka)
 
     def test_TEM_to_SEM(self):
@@ -120,7 +116,7 @@ class Test_metadata:
         resultsSEM = [
             mpSEM.energy_resolution_MnKa,
             sSEM.metadata.Signal.signal_type]
-        nt.assert_equal(results, resultsSEM)
+        assert results == resultsSEM
 
     def test_get_calibration_from(self):
         s = self.signal
@@ -129,13 +125,13 @@ class Test_metadata:
         energy_axis.scale = 0.01
         energy_axis.offset = -0.10
         s.get_calibration_from(scalib)
-        nt.assert_equal(s.axes_manager.signal_axes[0].scale,
-                        energy_axis.scale)
+        assert (s.axes_manager.signal_axes[0].scale ==
+                energy_axis.scale)
 
 
 class Test_quantification:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = EDSTEMSpectrum(np.ones([2, 2, 1024]))
         energy_axis = s.axes_manager.signal_axes[0]
         energy_axis.scale = 1e-2
@@ -240,20 +236,20 @@ class Test_quantification:
 
 class Test_vacum_mask:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = EDSTEMSpectrum(np.array([np.linspace(0.001, 0.5, 20)] * 100).T)
         s.add_poissonian_noise()
         self.signal = s
 
     def test_vacuum_mask(self):
         s = self.signal
-        nt.assert_true(s.vacuum_mask().data[0])
-        nt.assert_false(s.vacuum_mask().data[-1])
+        assert s.vacuum_mask().data[0]
+        assert not s.vacuum_mask().data[-1]
 
 
 class Test_simple_model:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = utils_eds.xray_lines_model(elements=['Al', 'Zn'],
                                        weight_percents=[50, 50])
         self.signal = s
@@ -290,7 +286,7 @@ class Test_get_lines_intentisity:
 
 class Test_eds_markers:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = utils_eds.xray_lines_model(elements=['Al', 'Zn'],
                                        weight_percents=[50, 50])
         self.signal = s
@@ -300,26 +296,26 @@ class Test_eds_markers:
         s = self.signal
         s.plot(xray_lines=True)
         # Should contain 6 lines
-        nt.assert_sequence_equal(
-            sorted(s._xray_markers.keys()),
+        assert (
+            sorted(s._xray_markers.keys()) ==
             ['Al_Ka', 'Al_Kb', 'Zn_Ka', 'Zn_Kb', 'Zn_La', 'Zn_Lb1'])
 
     @cleanup
     def test_manual_add_line(self):
         s = self.signal
         s.add_xray_lines_markers(['Zn_La'])
-        nt.assert_sequence_equal(
-            list(s._xray_markers.keys()),
+        assert (
+            list(s._xray_markers.keys()) ==
             ['Zn_La'])
-        nt.assert_equal(len(s._xray_markers), 1)
+        assert len(s._xray_markers) == 1
         # Check that the line has both a vertical line marker and text marker:
-        nt.assert_equal(len(s._xray_markers['Zn_La']), 2)
+        assert len(s._xray_markers['Zn_La']) == 2
 
     @cleanup
     def test_manual_remove_element(self):
         s = self.signal
         s.add_xray_lines_markers(['Zn_Ka', 'Zn_Kb', 'Zn_La'])
         s.remove_xray_lines_markers(['Zn_Kb'])
-        nt.assert_sequence_equal(
-            sorted(s._xray_markers.keys()),
+        assert (
+            sorted(s._xray_markers.keys()) ==
             ['Zn_Ka', 'Zn_La'])

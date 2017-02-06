@@ -216,6 +216,8 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |              :py:class:`~._signals.signal2d.Signal2D`                   |        2         |       -               |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |      :py:class:`~._signals.hologram_image.HologramImage`                |        2         |      hologram         |  real    |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |           :py:class:`~._signals.dielectric_function.DielectricFunction` |        1         |    DielectricFunction |  complex |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |      :py:class:`~._signals.complex_signal.ComplexSignal`                |        -         |       -               | complex  |
@@ -224,7 +226,6 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`              |        2         |       -               | complex  |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
-
 
 The following example shows how to transform between different subclasses.
 
@@ -817,6 +818,64 @@ arguments as in the following example.
 
   Rotation of images using :py:meth:`~.signal.BaseSignal.map` with different
   arguments for each image in the stack.
+
+.. versionadded:: 1.2.0
+    ``inplace`` keyword and non-preserved output shapes
+
+If all function calls do not return identically-shaped results, only navigation
+information is preserved, and the final result is an array where
+each element corresponds to the result of the function (or arbitrary object
+type). As such, most HyperSpy functions cannot operate on such Signal, and the
+data should be accessed directly.
+
+``inplace`` keyword (by default ``True``) of the
+:py:meth:`~.signal.BaseSignal.map` method allows either overwriting the current
+data (default, ``True``) or storing it to a new signal (``False``).
+
+.. code-block:: python
+
+    >>> import scipy.ndimage
+    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.ascent()]*4))
+    >>> angles = hs.signals.BaseSignal(np.array([0, 45, 90, 135]))
+    >>> result = image_stack.map(scipy.ndimage.rotate,
+    ...                            angle=angles.T,
+    ...                            inplace=False,
+    ...                            reshape=True)
+    100%|████████████████████████████████████████████| 4/4 [00:00<00:00, 18.42it/s]
+
+    >>> result
+    <BaseSignal, title: , dimensions: (4|)>
+    >>> image_stack.data.dtype
+    dtype('O')
+    >>> for d in result.data.flat:
+    ...     print(d.shape)
+    (512, 512)
+    (724, 724)
+    (512, 512)
+    (724, 724)
+
+
+.. versionadded:: 1.2.0
+    ``parallel`` keyword.
+
+The execution can be sped up by passing ``parallel`` keyword to the
+:py:meth:`~.signal.BaseSignal.map` method:
+
+.. code-block:: python
+
+    >>> import time
+    >>> def slow_func(data):
+    ...     time.sleep(1.)
+    ...     return data+1
+    >>> s = hs.signals.Signal1D(np.arange(20).reshape((20,1)))
+    >>> s
+    <Signal1D, title: , dimensions: (20|1)>
+    >>> s.map(slow_func, parallel=False)
+    100%|██████████████████████████████████████| 20/20 [00:20<00:00,  1.00s/it]
+    >>> # some operations will be done in parallel:
+    >>> s.map(slow_func, parallel=True)
+    100%|██████████████████████████████████████| 20/20 [00:02<00:00,  6.73it/s]
+
 
 Cropping
 ^^^^^^^^

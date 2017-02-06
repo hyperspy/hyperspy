@@ -57,7 +57,14 @@ Bibliography
 .. [Zhou2011] T. Zhou and D. Tao, "GoDec: Randomized Low-rank & Sparse Matrix
    Decomposition in Noisy Case", ICML-11 (2011) 33–40.
 
-.. _articles-about-hyperspy:
+.. [Gabor1948] Gabor, Dennis. "A new microscopic principle." Nature 161.4098 (1948): 777-778.
+
+.. [Tonomura1999] Tonomura, Akira. "Electron Holography." Springer Berlin Heidelberg, 1999. 78-132.
+
+.. [McCartney2007] McCartney, Martha R., and David J. Smith. "Electron holography: phase imaging with nanometer resolution." Annu. Rev. Mater. Res. 37 (2007): 729-767.
+
+.. [Joy1993] Joy, David C., et al. "Practical aspects of electron holography." Ultramicroscopy 51.1-4 (1993): 1-14.
+
 
 .. _articles-using-hyperspy:
 

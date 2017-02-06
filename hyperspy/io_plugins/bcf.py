@@ -62,13 +62,15 @@ import logging
 
 _logger = logging.getLogger(__name__)
 
+warn_once = True
+
 try:
     from hyperspy.io_plugins import unbcf_fast
     fast_unbcf = True
     _logger.info("The fast cython based bcf unpacking library were found")
 except ImportError:  # pragma: no cover
     fast_unbcf = False
-    _logger.warning("""unbcf_fast library is not present...
+    _logger.info("""unbcf_fast library is not present...
 Falling back to slow python only backend.""")
 
 
@@ -426,13 +428,14 @@ def interpret(string):
         return literal_eval(string)
     except (ValueError, SyntaxError):
         # SyntaxError due to:
-        # literal_eval have problems with strings like this '8842_80' 
+        # literal_eval have problems with strings like this '8842_80'
         return string
 
 
 class ObjectifyJSONEncoder(json.JSONEncoder):
     """ JSON encoder that can handle simple lxml objectify types,
         Handles xml attributes, also returns all data types"""
+
     def default(self, o):
         dictionary = {}
         if hasattr(o, '__dict__') and len(o.__dict__) > 0:
@@ -477,36 +480,36 @@ class EDXSpectrum(object):
         detector_header = TRTHeader.ClassInstance[1]
         #<ClassInstance Type="TRTESMAHeader">:
         esma_header = TRTHeader.ClassInstance[2]
-        #what TRT means?
-        #ESMA could stand for Electron Scanning Microscope Analysis
+        # what TRT means?
+        # ESMA could stand for Electron Scanning Microscope Analysis
         spectrum_header = spectrum.ClassInstance[0]
-        
+
         # map stuff from harware xml branch:
         self.hardware_metadata = json.loads(json.dumps(hardware_header,
                                                        cls=ObjectifyJSONEncoder))
         self.amplification = self.hardware_metadata['Amplification']  # USED
-        
+
         # map stuff from detector xml branch
         self.detector_metadata = json.loads(json.dumps(detector_header,
                                                        cls=ObjectifyJSONEncoder))
-        self.detector_type = self.detector_metadata['Type']  # USED 
-        
-        #decode silly hidden detector layer info:
+        self.detector_type = self.detector_metadata['Type']  # USED
+
+        # decode silly hidden detector layer info:
         det_l_str = self.detector_metadata['DetLayers']
         dec_det_l_str = codecs.decode(det_l_str.encode('ascii'), 'base64')
         mini_xml = objectify.fromstring(unzip_block(dec_det_l_str))
         self.detector_metadata['DetLayers'] = {}  # Overwrite with dict
         for i in mini_xml.getchildren():
-            self.detector_metadata['DetLayers'][i.tag] = dict(i.attrib)        
-        
+            self.detector_metadata['DetLayers'][i.tag] = dict(i.attrib)
+
         # map stuff from esma xml branch:
         self.esma_metadata = json.loads(json.dumps(esma_header,
                                                    cls=ObjectifyJSONEncoder))
-        #USED:
+        # USED:
         self.hv = self.esma_metadata['PrimaryEnergy']
         self.elevationAngle = self.esma_metadata['ElevationAngle']
         #self.azimutAngle = self.esma_metadata['AzimutAngle']
-        
+
         # map stuff from spectra xml branch:
         self.spectrum_metadata = json.loads(json.dumps(spectrum_header,
                                                        cls=ObjectifyJSONEncoder))
@@ -515,8 +518,8 @@ class EDXSpectrum(object):
         self.chnlCnt = self.spectrum_metadata['ChannelCount']
         self.date = self.spectrum_metadata['Date']  # Not Used?
         self.time = self.spectrum_metadata['Time']  # Not Used?
-        
-        #main data:
+
+        # main data:
         self.data = np.fromstring(str(spectrum.Channels), dtype='Q', sep=",")
         self.energy = np.arange(self.calibAbs,
                                 self.calibLin * self.chnlCnt + self.calibAbs,
@@ -604,32 +607,33 @@ class HyperHeader(object):
         semStageData = root.xpath("ClassInstance[@Type='TRTSEMStageData']")[0]
         # stage position:
         self.stage_metadata = json.loads(json.dumps(semStageData,
-            cls=ObjectifyJSONEncoder))
+                                                    cls=ObjectifyJSONEncoder))
         DSPConf = root.xpath("ClassInstance[@Type='TRTDSPConfiguration']")[0]
         self.image.dsp_metadata = json.loads(json.dumps(DSPConf,
-            cls=ObjectifyJSONEncoder))
-        
+                                                        cls=ObjectifyJSONEncoder))
+
     def get_acq_instrument_dict(self, detector=False, **kwargs):
         """return python dictionary with aquisition instrument
         mandatory data
         """
         acq_inst = {
-                    'beam_energy': self.sem.hv,
-                    'magnification': self.sem.mag,
-                    }
+            'beam_energy': self.sem.hv,
+            'magnification': self.sem.mag,
+        }
         if 'Tilt' in self.stage_metadata:
             acq_inst['tilt_stage'] = self.stage_metadata['Tilt']
         if detector:
             eds_metadata = self.get_spectra_metadata(**kwargs)
             acq_inst['Detector'] = {'EDS': {
-                                     #'azimuth_angle': eds_metadata.azimutAngle,
-                                     'elevation_angle': eds_metadata.elevationAngle,
-                                     'detector_type': eds_metadata.detector_type,
-                                     'real_time': self.calc_real_time()
-                                           }
-                                   }
+                #'azimuth_angle': eds_metadata.azimutAngle,
+                'elevation_angle': eds_metadata.elevationAngle,
+                'detector_type': eds_metadata.detector_type,
+                'real_time': self.calc_real_time()
+            }
+            }
             if 'AzimutAngle' in eds_metadata.esma_metadata:
-                acq_inst['Detector']['EDS']['azimuth_angle'] = eds_metadata.esma_metadata['AzimutAngle']
+                acq_inst['Detector']['EDS'][
+                    'azimuth_angle'] = eds_metadata.esma_metadata['AzimutAngle']
         return acq_inst
 
     def _set_image(self, root):
@@ -673,7 +677,7 @@ class HyperHeader(object):
 
     def _set_sum_edx(self, root):
         for i in range(self.mapping_count):
-            #self.channel_factors[i] = int(root.xpath("ChannelFactor" +
+            # self.channel_factors[i] = int(root.xpath("ChannelFactor" +
             #                                         str(i))[0])
             self.spectra_data[i] = EDXSpectrum(root.xpath("SpectrumData" +
                                                           str(i))[0].ClassInstance)
@@ -755,7 +759,7 @@ class HyperHeader(object):
         index -- index of hypermap/spectra (default 0)
         """
         return self.spectra_data[index]
-    
+
     def calc_real_time(self):
         """calculate and return real time for whole hypermap
         in seconds
@@ -1072,7 +1076,7 @@ def file_reader(filename, select_type=None, index=0, downsample=1,
        crop or enlarge energy range at max values. (default None)
     instrument -- str, either 'TEM' or 'SEM'. Default is None.
       """
-    
+
     # objectified bcf file:
     obj_bcf = BCF_reader(filename)
     if select_type == 'image':
@@ -1115,17 +1119,17 @@ def bcf_imagery(obj_bcf, instrument=None):
              # TEM or SEM (mode variable)
              {'Acquisition_instrument': {
                  mode: obj_bcf.header.get_acq_instrument_dict()
-                 },
-              'General': {'original_filename': obj_bcf.filename.split('/')[-1],
+             },
+                 'General': {'original_filename': obj_bcf.filename.split('/')[-1],
                              'title': img.detector_name},
-              'Sample': {'name': obj_bcf.header.name},
-              'Signal': {'signal_type': img.detector_name,
+                 'Sample': {'name': obj_bcf.header.name},
+                 'Signal': {'signal_type': img.detector_name,
                             'record_by': 'image'},
              },
-              'original_metadata': {
-                        'DSP Configuration': obj_bcf.header.image.dsp_metadata,
-                        'Stage': obj_bcf.header.stage_metadata
-                                                 }
+             'original_metadata': {
+                 'DSP Configuration': obj_bcf.header.image.dsp_metadata,
+                 'Stage': obj_bcf.header.stage_metadata
+             }
              })
     return imagery_list
 
@@ -1135,6 +1139,13 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
     """ Return hyperspy required list of dict with eds
     hyperspectra and metadata.
     """
+    global warn_once
+    if (fast_unbcf == False) and warn_once:
+        _logger.warning("""unbcf_fast library is not present...
+Parsing BCF with Python-only backend.
+If parsing is uncomfortably slow, first install cython, then reinstall hyperspy.
+For more information, check the 'Installing HyperSpy' section in the documentation.""")
+        warn_once = False
     obj_bcf.persistent_parse_hypermap(index=index, downsample=downsample,
                                       cutoff_at_kV=cutoff_at_kV)
     eds_metadata = obj_bcf.header.get_spectra_metadata(index=index)
@@ -1158,21 +1169,21 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
                      'metadata':
                      # where is no way to determine what kind of instrument was used:
                      # TEM or SEM
-        {'Acquisition_instrument': {
+                     {'Acquisition_instrument': {
                          mode: obj_bcf.header.get_acq_instrument_dict(detector=True,
                                                                       index=index)
-                         },
+                     },
         'General': {'original_filename': obj_bcf.filename.split('/')[-1],
                          'title': 'EDX',
                          'date': obj_bcf.header.date,
-                         'time': obj_bcf.header.time},
+                                  'time': obj_bcf.header.time},
         'Sample': {'name': obj_bcf.header.name,
                          'elements': sorted(list(obj_bcf.header.elements)),
                          'xray_lines': sorted(gen_elem_list(obj_bcf.header.elements))},
         'Signal': {'signal_type': 'EDS_%s' % mode,
                          'record_by': 'spectrum',
                          'quantity': 'X-rays (Counts)'}
-        },
+    },
         'original_metadata': {'Hardware': eds_metadata.hardware_metadata,
                               'Detector': eds_metadata.detector_metadata,
                               'Analysis': eds_metadata.esma_metadata,
@@ -1180,7 +1191,7 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
                               'DSP Configuration': obj_bcf.header.image.dsp_metadata,
                               'Line counter': obj_bcf.header.line_counter,
                               'Stage': obj_bcf.header.stage_metadata}
-        }]
+    }]
     return hyperspectra
 
 
