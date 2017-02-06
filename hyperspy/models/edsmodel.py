@@ -409,6 +409,8 @@ class EDSModel(Model1D):
                 E = component.centre.value
                 component.sigma.twin_function_expr = _get_sigma(
                     E, E_ref, self.units_factor)
+                component.sigma.twin_inverse_function_expr = _get_sigma(
+                    E_ref, E, self.units_factor)
 
     def _set_energy_resolution(self, xray_lines, *args, **kwargs):
         """
@@ -436,8 +438,9 @@ class EDSModel(Model1D):
         else:
             self.signal.set_microscope_parameters(
                 energy_resolution_MnKa=FWHM_MnKa)
-            warnings.warn("Energy resolution (FWHM at Mn Ka) changed from " +
-                          "%lf to %lf eV" % (FWHM_MnKa_old, FWHM_MnKa))
+            _logger.info("Energy resolution (FWHM at Mn Ka) changed from " +
+                          "{:.2f} to {:.2f} eV".format(
+                              FWHM_MnKa_old, FWHM_MnKa))
             for component in self:
                 if component.isbackground is False:
                     line_FWHM = self.signal._get_line_energy(
