@@ -17,6 +17,7 @@
 
 
 import numpy as np
+import pytest
 
 import dill
 import copy
@@ -25,7 +26,6 @@ from matplotlib.testing.decorators import cleanup
 import hyperspy.api as hs
 from hyperspy.samfire_utils.samfire_kernel import multi_kernel
 from hyperspy.misc.utils import DictionaryTreeBrowser
-from hyperspy.samfire import StrategyList
 from hyperspy.samfire_utils.samfire_worker import create_worker
 
 
@@ -104,7 +104,7 @@ def generate_test_model():
         gs03.A.map['values'][mask] *= 0.
         gs03.A.map['is_set'][:] = True
 
-        s11 = m0.as_signal(show_progressbar=False)
+        s11 = m0.as_signal(show_progressbar=False, parallel=False)
         if total is None:
             total = s11.data.copy()
             lor_map = gs01.centre.map['values'].copy()
@@ -142,12 +142,11 @@ def generate_test_model():
     l2.active_is_multidimensional = True
     return m, gs01, gs02, gs03
 
-
 class TestSamfireEmpty:
 
     def setup_method(self, method):
         self.shape = (7, 15)
-        s = hs.signals.Signal1D(np.empty(self.shape + (1024,)))
+        s = hs.signals.Signal1D(np.ones(self.shape + (1024,))+3.)
         s.estimate_poissonian_noise_variance()
         m = s.create_model()
         m.append(hs.model.components1D.Gaussian())
@@ -155,6 +154,7 @@ class TestSamfireEmpty:
         m.append(hs.model.components1D.Lorentzian())
         self.model = m
 
+    @pytest.mark.parallel
     def test_setup(self):
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
@@ -181,6 +181,7 @@ class TestSamfireEmpty:
         assert isinstance(samf.metadata, DictionaryTreeBrowser)
 
     def test_samfire_init_strategy_list(self):
+        from hyperspy.samfire import StrategyList
         m = self.model
         samf = m.create_samfire(workers=1, setup=False)
         assert isinstance(samf.strategies, StrategyList)
