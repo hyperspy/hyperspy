@@ -172,7 +172,7 @@ def get_matplotlib_version_label():
     """ Return a string describing the matplotlib version installed. The string
     is used to label the references images for plot testing. """
     version = LooseVersion(matplotlib.__version__)
-    if version >= LooseVersion('2.0.0b1'):
+    if version >= LooseVersion('2.0.0'):
         return 'mpl2'
     else:
         return 'mpl1'

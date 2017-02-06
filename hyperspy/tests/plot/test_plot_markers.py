@@ -27,7 +27,7 @@ from hyperspy.misc.test_utils import get_matplotlib_version_label, update_close_
 
 mplv = get_matplotlib_version_label()
 default_tol = 2.0
-path = 'plot_markers-%s' % mplv
+baseline_dir = 'plot_markers-%s' % mplv
 
 
 class TestMarkers:
@@ -134,7 +134,7 @@ def _test_plot_rectange_markers():
     return im
 
 
-@pytest.mark.mpl_image_compare(baseline_dir=path, tolerance=default_tol)
+@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_rectange_markers():
     im = _test_plot_rectange_markers()
     return im._plot.signal_plot.figure
@@ -159,7 +159,7 @@ def _test_plot_point_markers():
     return s
 
 
-@pytest.mark.mpl_image_compare(baseline_dir=path, tolerance=default_tol)
+@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_point_markers():
     s = _test_plot_point_markers()
     return s._plot.signal_plot.figure
@@ -183,13 +183,13 @@ def _test_plot_text_markers():
     return s
 
 
-@pytest.mark.mpl_image_compare(baseline_dir=path, tolerance=default_tol)
+@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_text_markers_nav():
     s = _test_plot_text_markers()
     return s._plot.navigator_plot.figure
 
 
-@pytest.mark.mpl_image_compare(baseline_dir=path, tolerance=default_tol)
+@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_text_markers_sig():
     s = _test_plot_text_markers()
     return s._plot.signal_plot.figure
@@ -216,7 +216,7 @@ def _test_plot_line_markers():
     return im
 
 
-@pytest.mark.mpl_image_compare(baseline_dir=path, tolerance=default_tol)
+@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_line_markers():
     im = _test_plot_line_markers()
     return im._plot.signal_plot.figure
