@@ -53,7 +53,7 @@ class HorizontalLineSegment(MarkerBase):
 
     def __init__(self, x1, x2, y, **kwargs):
         MarkerBase.__init__(self)
-        lp = {'color': 'black', 'linewidth': 1}
+        lp = {'color': 'black', 'linewidth': 1, 'linestyle': 'solid'}
         self.marker_properties = lp
         self.set_data(x1=x1, x2=x2, y1=y)
         self.set_marker_properties(**kwargs)
