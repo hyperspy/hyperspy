@@ -124,6 +124,19 @@ parameters for spectroscopy than the one that ships with HyperSpy:
     ... centre=0,
     ... module="numpy")
 
+If the expression is inconvenient to write out in full (e.g. it's long and/or
+complicated), multiple substitutions can be given, separated by semicolumns.
+Both symbolic and numerical substitutions are allowed:
+
+.. code-block:: python
+
+    >>> expression = "h / sqrt(p2) ; p2 = 2 * m0 * e1 * x * brackets;"
+    >>> expression += "brackets = 1 + (e1 * x) / (2 * m0 * c * c) ;"
+    >>> expression += "m0 = 9.1e-31 ; c = 3e8; e1 = 1.6e-19 ; h = 6.6e-34"
+    >>> wavelength = hs.model.components1D.Expression(
+    ... expression=expression,
+    ... name="Electron wavelength with voltage")
+
 :py:class:`~._components.expression.Expression` uses `Sympy
 <http://www.sympy.org>`_ internally to turn the string into
 a funtion. By default it "translates" the expression using
