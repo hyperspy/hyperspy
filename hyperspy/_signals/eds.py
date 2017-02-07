@@ -19,6 +19,7 @@ import itertools
 import logging
 
 import numpy as np
+import math as math
 import warnings
 import matplotlib
 from matplotlib import pyplot as plt
@@ -30,6 +31,7 @@ from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
 from hyperspy.utils.plot import markers
+from hyperspy.misc.array_tools import _linear_bin
 
 _logger = logging.getLogger(__name__)
 
@@ -224,15 +226,97 @@ class EDSSpectrum(Signal1D):
                    np.array(new_shape_in_array))
         s = super(EDSSpectrum, self).rebin(new_shape)
         # modify time per spectrum
+        if "Acquisition_instrument.SEM.Detector.EDS.real_time" in s.metadata:
+            for i, t in enumerate(s.axes_manager.navigation_axes):
+                s.metadata.Acquisition_instrument.SEM.Detector.EDS.real_time\
+                    *= factors[i]
         if "Acquisition_instrument.SEM.Detector.EDS.live_time" in s.metadata:
-            for factor in factors:
+            for i, t in enumerate(s.axes_manager.navigation_axes):
                 s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time\
-                    *= factor
+                    *= factors[i]
+        if "Acquisition_instrument.TEM.Detector.EDS.real_time" in s.metadata:
+            for i, t in enumerate(s.axes_manager.navigation_axes):
+                s.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time\
+                    *= factors[i]
         if "Acquisition_instrument.TEM.Detector.EDS.live_time" in s.metadata:
-            for factor in factors:
+            for i, t in enumerate(m.axes_manager.navigation_axes):
                 s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time\
-                    *= factor
+                    *= factors[i]
         return s
+
+    def linear_bin(self, scale):
+
+        """
+        Binning of the spectrum image by a non-integer pixel value.
+
+        Parameters
+        ----------
+        self: numpy.array
+            the original spectrum
+        scale: a list of floats for each dimension specify the new:old pixel
+        ratio
+        e.g. [1, 1, 2]
+            a ratio of 1 is no binning in the x and y directions.
+             a ratio of 2 means that each pixel in the new spectrum is
+             twice the width of the pixels in the old spectrum, in the energy,
+             dimension.
+
+        Return
+        ------
+        A new spectrum image with new dimensions width/scale for each
+        dimension in the data. The axes scales and real_time/live_time are also
+        corrected accordingly.
+        *Please note that the final row in each dimension may appear black, if
+        a fractional number of pixels are left over. It can be removed but has
+        been left to preserve total counts before and after binning.*
+
+
+        Examples
+        --------
+        Input:
+        spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
+        spectrum.data[1, 2, 9] = 5
+        print(spectrum)
+        print ('Sum = ', sum(sum(sum(spectrum.data))))
+        scale = [2, 2, 5]
+        test = spectrum.linear_bin(scale)
+        print(test)
+        print('Sum = ', sum(sum(sum(test.data))))
+
+        Output:
+        <EDSTEMSpectrum, title: , dimensions: (4, 4|10)>
+        Sum =  164.0
+        <EDSTEMSpectrum, title: , dimensions: (2, 2|2)>
+        Sum =  164.0
+
+        """
+
+        spectrum = self.data
+        newSpectrum = _linear_bin(spectrum, scale)
+
+        m = self._deepcopy_with_new_data(newSpectrum)
+
+        m.get_dimensions_from_data()
+        for s, step in zip(m.axes_manager._axes, scale):
+            s.scale *= step
+        if "Acquisition_instrument.SEM.Detector.EDS.real_time" in m.metadata:
+            for i, t in enumerate(m.axes_manager.navigation_axes):
+                m.metadata.Acquisition_instrument.SEM.Detector.EDS.real_time\
+                    *= scale[i]
+        if "Acquisition_instrument.SEM.Detector.EDS.live_time" in m.metadata:
+            for i, t in enumerate(m.axes_manager.navigation_axes):
+                m.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time\
+                    *= scale[i]
+        if "Acquisition_instrument.TEM.Detector.EDS.real_time" in m.metadata:
+            for i, t in enumerate(m.axes_manager.navigation_axes):
+                m.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time\
+                    *= scale[i]
+        if "Acquisition_instrument.TEM.Detector.EDS.live_time" in m.metadata:
+            for i, t in enumerate(m.axes_manager.navigation_axes):
+                m.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time\
+                    *= scale[i]
+
+        return m
 
     def set_elements(self, elements):
         """Erase all elements and set them.

@@ -34,6 +34,7 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
+from hyperspy.misc.array_tools import _linear_bin
 
 _logger = logging.getLogger(__name__)
 
@@ -343,8 +344,8 @@ class EELSSpectrum(Signal1D):
                              disable=not show_progressbar,
                              leave=True) as pbar:
                 for i, (i0, th, s) in enumerate(zip(I0._iterate_signal(),
-                                                    threshold._iterate_signal(),
-                                                    self)):
+                                                threshold._iterate_signal(),
+                                                self)):
                     if np.isnan(th[0]):
                         i0[:] = np.nan
                     else:
@@ -973,9 +974,9 @@ class EELSSpectrum(Signal1D):
             The sample thickness in nm. Used for normalization of the
             SSD to obtain the energy loss function. It is only required when
             `n` is None. If the thickness is the same for all spectra it can be
-            given by a number. Otherwise, it can be provided as a BaseSignal with
-            signal dimension 0 and navigation_dimension equal to the current
-            signal.
+            given by a number. Otherwise, it can be provided as a BaseSignal
+            with signal dimension 0 and navigation_dimension equal to the
+            current signal.
         delta : float
             A small number (0.1-0.5 eV) added to the energy axis in
             specific steps of the calculation the surface loss correction to
@@ -1253,3 +1254,70 @@ class EELSSpectrum(Signal1D):
                           GOS=GOS,
                           dictionary=dictionary)
         return model
+
+    def linear_bin(self, scale):
+
+        """
+        Binning of the spectrum image by a non-integer pixel value.
+
+        Parameters
+        ----------
+        self: numpy.array
+            the original spectrum
+        scale: a list of floats for each dimension specify the new:old pixel
+        ratio
+        e.g. [1, 1, 2]
+            a ratio of 1 is no binning in the x and y directions.
+             a ratio of 2 means that each pixel in the new spectrum is
+             twice the width of the pixels in the old spectrum, in the energy,
+             dimension.
+
+        Return
+        ------
+        A new spectrum image with new dimensions width/scale for each
+        dimension in the data. The axes scales and dwell_time/exposure are also
+        corrected accordinly.
+        *Please note that the final row in each dimension may appear black, if
+        a fractional number of pixels are left over. It can be removed but has
+        been left to preserve total counts before and after binning.*
+
+
+        Examples
+        --------
+        Input:
+        spectrum = hs.signals.EELSSpectrum(np.ones([4, 4, 10]))
+        spectrum.data[1, 2, 9] = 5
+        print(spectrum)
+        print ('Sum = ', sum(sum(sum(spectrum.data))))
+        scale = [2, 2, 5]
+        test = spectrum.linear_bin(scale)
+        print(test)
+        print('Sum = ', sum(sum(sum(test.data))))
+
+        Output:
+        <EELSSpectrum, title: , dimensions: (4, 4|10)>
+        Sum =  164.0
+        <EELSSpectrum, title: , dimensions: (2, 2|2)>
+        Sum =  164.0
+
+        """
+
+        spectrum = self.data
+        newSpectrum = _linear_bin(spectrum, scale)
+
+        m = self._deepcopy_with_new_data(newSpectrum)
+
+        m.get_dimensions_from_data()
+        for s, step in zip(m.axes_manager._axes, scale):
+            s.scale *= step
+        if "Acquisition_instrument.TEM.Detector.EELS.dwell_time" in m.metadata:
+            for i, t in enumerate(m.axes_manager.navigation_axes):
+                m.metadata.Acquisition_instrument.TEM.Detector.EELS.dwell_time\
+                    *= scale[i]
+
+        if "Acquisition_instrument.TEM.Detector.EELS.exposure" in m.metadata:
+            for i, t in enumerate(m.axes_manager.navigation_axes):
+                m.metadata.Acquisition_instrument.TEM.Detector.EELS.dwell_time\
+                    *= scale[i]
+
+        return m

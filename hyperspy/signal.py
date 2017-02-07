@@ -56,6 +56,7 @@ from hyperspy.docstrings.plot import (
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import are_signals_aligned
+from hyperspy.misc.array_tools import _linear_bin
 
 import warnings
 
@@ -2270,6 +2271,67 @@ class BaseSignal(FancySlicing,
             out.events.data_changed.trigger(obj=out)
 
     rebin.__doc__ %= OUT_ARG
+
+    def linear_bin(self, scale):
+
+        """
+        Binning of the spectrum image by a non-integer pixel value.
+
+        Parameters
+        ----------
+        self: numpy.array
+            the original spectrum
+        scale: a list of floats for each dimension specify the new:old pixel
+        ratio
+        e.g. [1, 1, 2]
+            a ratio of 1 is no binning in the x and y directions.
+             a ratio of 2 means that each pixel in the new spectrum is
+             twice the width of the pixels in the old spectrum, in the energy,
+             dimension.
+
+        Return
+        ------
+        A new spectrum image with new dimensions width/scale for each
+        dimension in the data. The axes scales but not the dwell_time/exposure
+        have been corrected accordingly.
+        *Please note that the final row in each dimension may appear black, if
+        a fractional number of pixels are left over. It can be removed but has
+        been left to preserve total counts before and after binning.*
+
+
+        Examples
+        --------
+        Input:
+        spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
+        spectrum.data[1, 2, 9] = 5
+        print(spectrum)
+        print ('Sum = ', sum(sum(sum(spectrum.data))))
+        scale = [2, 2, 5]
+        test = spectrum.linear_bin(scale)
+        print(test)
+        print('Sum = ', sum(sum(sum(test.data))))
+
+        Output:
+        <EDSTEMSpectrum, title: , dimensions: (4, 4|10)>
+        Sum =  164.0
+        <EDSTEMSpectrum, title: , dimensions: (2, 2|2)>
+        Sum =  164.0
+
+        """
+        spectrum = self.data
+        signal_dimension = self.axes_manager.signal_dimension
+        # The following reverses the order of binning factors for the signal dimensions, as is necessary for signal2Ds
+        scale = scale[0:-signal_dimension] + scale[::-1][0:signal_dimension]
+
+        newSpectrum = _linear_bin(spectrum, scale)
+
+        m = self._deepcopy_with_new_data(newSpectrum)
+
+        m.get_dimensions_from_data()
+        for s, step in zip(m.axes_manager._axes, scale):
+            s.scale *= step
+
+        return m
 
     def split(self,
               axis='auto',

@@ -889,8 +889,39 @@ method that operates *in place*.
 Rebinning
 ^^^^^^^^^
 
-The :py:meth:`~.signal.BaseSignal.rebin` method rebins data in place down to a size
-determined by the user.
+There are two options to rebin data:
+The first uses the :py:meth:`~.signal.BaseSignal.rebin` method to rebin data,
+to a new dimensional size specified by the user. Please note the new shape must
+be a divisor of the original shape.
+
+.. code-block:: python
+
+    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+    >>> print(s)
+    >>> print(s.rebin([512]))
+    <EDSSEMSpectrum, title: EDS SEM Signal1D, dimensions: (|1024)>
+    <EDSSEMSpectrum, title: EDS SEM Signal1D, dimensions: (|512)>
+
+.. versionadded:: 1.1
+The second, uses the :py:meth:`~.signals.eds.linear_bin` to rebin the data,
+by a given ratio., or list of ratios. These can also be non-integers and less
+than one in order to 'up-sample'. e.g:
+
+.. code-block:: python
+
+    >>> spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
+    >>> spectrum.data[1, 2, 9] = 5
+    >>> print(spectrum)
+    >>> print ('Sum = ', sum(sum(sum(spectrum.data))))
+    >>> scale = [0.5, 0.5, 5]
+    >>> test = spectrum.linear_bin(step)
+    >>> print(test)
+    >>> print('Sum =', sum(sum(sum(test.data))))
+    <EDSTEMSpectrum, title: , dimensions: (4, 4|10)>
+    Sum =  164.0
+    <EDSTEMSpectrum, title: , dimensions: (8, 8|2)>
+    Sum =  164.0
+
 
 Folding and unfolding
 ^^^^^^^^^^^^^^^^^^^^^
