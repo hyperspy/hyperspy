@@ -1496,6 +1496,9 @@ class BaseSignal(FancySlicing,
         self._marker_lines = None
         self._marker_patches = None
         self._marker_scatter = None
+        self._marker_lines_nav = None
+        self._marker_patches_nav = None
+        self._marker_scatter_nav = None
         self.inav = SpecialSlicersSignal(self, True)
         self.isig = SpecialSlicersSignal(self, False)
         self.events = Events()
@@ -4016,7 +4019,9 @@ class BaseSignal(FancySlicing,
     def is_rgbx(self):
         return rgb_tools.is_rgbx(self.data)
 
-    def add_marker(self, marker, plot_on_signal=True, plot_marker=True):
+    def add_marker(
+            self, marker, plot_on_signal=None, plot_marker=True,
+            permanent=False):
         """
         Add a marker to the signal or navigator plot.
 
@@ -4041,27 +4046,40 @@ class BaseSignal(FancySlicing,
         >>> im.add_marker(m)
 
         """
-        if self._plot is None:
-            self.plot()
-        if plot_on_signal:
-            self._plot.signal_plot.add_marker(marker)
+        if plot_on_signal is None:
+            if marker._plot_on_signal is None:
+                marker._plot_on_signal = True
         else:
-            self._plot.navigator_plot.add_marker(marker)
+            marker._plot_on_signal = plot_on_signal
+        if permanent:
+            self._add_permanent_marker(marker)
         if plot_marker:
+            if self._plot is None:
+                self.plot()
+            if marker._plot_on_signal:
+                self._plot.signal_plot.add_marker(marker)
+            else:
+                self._plot.navigator_plot.add_marker(marker)
             marker.plot()
 
-    def add_permanent_marker(self, marker):
+    def _add_permanent_marker(self, marker):
         if not hasattr(self, "markers"):
             self.markers = []
         nav_shape = marker._get_navigation_shape()
-        if len(nav_shape) == 0:
-            self.markers.append(marker)
-        elif nav_shape == self.axes_manager.navigation_shape:
-            self.markers.append(marker)
+        if marker._plot_on_signal:
+            if len(nav_shape) == 0:
+                self.markers.append(marker)
+            elif nav_shape == self.axes_manager.navigation_shape:
+                self.markers.append(marker)
+            else:
+                raise ValueError(
+                    "Navigation shape of the marker must be 0 or the "
+                    "same navigation shape as this signal.")
         else:
-            raise ValueError(
-                "Navigation shape of the marker must be 0 or the "
-                "same navigation shape as this signal.")
+            if len(nav_shape) == 0:
+                self.markers.append(marker)
+            else:
+                raise ValueError("Navigation shape of the marker must be 0")
 
     def _add_all_markers_to_plot(self):
         if self._marker_lines is not None:
@@ -4071,32 +4089,63 @@ class BaseSignal(FancySlicing,
         if self._marker_scatter is not None:
             self._marker_scatter.remove()
 
+        if self._marker_lines_nav is not None:
+            self._marker_lines_nav.remove()
+        if self._marker_patches_nav is not None:
+            self._marker_patches_nav.remove()
+        if self._marker_scatter_nav is not None:
+            self._marker_scatter_nav.remove()
+
         line_segment_list = []
         line_color_list = []
         line_linewidth_list = []
         line_linestyle_list = []
-
         patch_list = []
-
         point_x_coordinate_list = []
         point_y_coordinate_list = []
         point_color_list = []
 
+        line_segment_list_nav = []
+        line_color_list_nav = []
+        line_linewidth_list_nav = []
+        line_linestyle_list_nav = []
+        patch_list_nav = []
+        point_x_coordinate_list_nav = []
+        point_y_coordinate_list_nav = []
+        point_color_list_nav = []
+
         for marker in self.markers:
-            if marker.axes_manager is None:
-                marker.axes_manager = self.axes_manager
-            if marker._matplotlib_collection_type == 'line':
-                line_color_list.append(marker.marker_properties['color'])
-                line_linewidth_list.append(marker.marker_properties['linewidth'])
-                line_linestyle_list.append(marker.marker_properties['linestyle'])
-                line_segment_list.append(marker._get_segment())
-            if marker._matplotlib_collection_type == 'patch':
-                patch = marker._get_patch()
-                patch_list.append(patch)
-            if marker._matplotlib_collection_type == 'point':
-                point_x_coordinate_list.append(marker.get_data_position('x1'))
-                point_y_coordinate_list.append(marker.get_data_position('y1'))
-                point_color_list.append(marker.marker_properties['color'])
+            if marker._plot_on_signal:
+                if marker.axes_manager is None:
+                    marker.axes_manager = self.axes_manager
+                if marker._matplotlib_collection_type == 'line':
+                    line_color_list.append(marker.marker_properties['color'])
+                    line_linewidth_list.append(marker.marker_properties['linewidth'])
+                    line_linestyle_list.append(marker.marker_properties['linestyle'])
+                    line_segment_list.append(marker._get_segment())
+                if marker._matplotlib_collection_type == 'patch':
+                    patch = marker._get_patch()
+                    patch_list.append(patch)
+                if marker._matplotlib_collection_type == 'point':
+                    point_x_coordinate_list.append(marker.get_data_position('x1'))
+                    point_y_coordinate_list.append(marker.get_data_position('y1'))
+                    point_color_list.append(marker.marker_properties['color'])
+
+            else:
+                if marker.axes_manager is None:
+                    marker.axes_manager = self.axes_manager
+                if marker._matplotlib_collection_type == 'line':
+                    line_color_list_nav.append(marker.marker_properties['color'])
+                    line_linewidth_list_nav.append(marker.marker_properties['linewidth'])
+                    line_linestyle_list_nav.append(marker.marker_properties['linestyle'])
+                    line_segment_list_nav.append(marker._get_segment())
+                if marker._matplotlib_collection_type == 'patch':
+                    patch = marker._get_patch()
+                    patch_list_nav.append(patch)
+                if marker._matplotlib_collection_type == 'point':
+                    point_x_coordinate_list_nav.append(marker.get_data_position('x1'))
+                    point_y_coordinate_list_nav.append(marker.get_data_position('y1'))
+                    point_color_list_nav.append(marker.marker_properties['color'])
 
         if line_segment_list:
             line_collection = LineCollection(
@@ -4112,12 +4161,32 @@ class BaseSignal(FancySlicing,
                     animated=True)
             self._marker_patches = self._plot.signal_plot.ax.add_collection(patch_collection)
         if point_x_coordinate_list:
-            point_x_coordinate_list = np.array(point_x_coordinate_list).flatten()
-            point_y_coordinate_list = np.array(point_y_coordinate_list).flatten()
             self._marker_scatter = self._plot.signal_plot.ax.scatter(
                     point_x_coordinate_list,
                     point_y_coordinate_list,
                     color=point_color_list,
+                    animated=True)
+
+        if line_segment_list_nav:
+            line_collection_nav = LineCollection(
+                    line_segment_list_nav,
+                    colors=line_color_list_nav,
+                    linestyles=line_linestyle_list_nav,
+                    linewidths=line_linewidth_list_nav,
+                    animated=True)
+            self._marker_lines_nav = self._plot.navigator_plot.ax.add_collection(
+                    line_collection_nav)
+        if patch_list_nav:
+            patch_collection_nav = PatchCollection(
+                    patch_list_nav,
+                    animated=True)
+            self._marker_patches_nav = self._plot.navigator_plot.ax.add_collection(
+                    patch_collection_nav)
+        if point_x_coordinate_list_nav:
+            self._marker_scatter_nav = self._plot.navigator_plot.ax.scatter(
+                    point_x_coordinate_list_nav,
+                    point_y_coordinate_list_nav,
+                    color=point_color_list_nav,
                     animated=True)
 
     def add_poissonian_noise(self, **kwargs):
