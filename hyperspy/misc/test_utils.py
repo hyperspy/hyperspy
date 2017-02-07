@@ -178,6 +178,12 @@ def get_matplotlib_version_label():
         return 'mpl1'
 
 
+def reset_rcParams_default():
+    import matplotlib.pyplot as plt
+    plt.rcParams.clear()
+    plt.rcParams.update(plt.rcParamsDefault)
+
+
 @simple_decorator
 def switch_backend_mpl(function):
     def wrapper(*args, **kwargs):

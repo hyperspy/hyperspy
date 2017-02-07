@@ -15,15 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import numpy as np
 import scipy.misc
 import traits.api as t
 import pytest
 from matplotlib.testing.decorators import cleanup
 
+from hyperspy.misc.test_utils import (get_matplotlib_version_label,
+                                      update_close_figure)
 import hyperspy.api as hs
-from hyperspy.misc.test_utils import get_matplotlib_version_label, update_close_figure
 
 mplv = get_matplotlib_version_label()
 scalebar_color = 'blue'

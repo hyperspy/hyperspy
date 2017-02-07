@@ -20,15 +20,18 @@ import numpy as np
 import pytest
 from matplotlib.testing.decorators import cleanup
 
+from hyperspy.misc.test_utils import (get_matplotlib_version_label,
+                                      update_close_figure)
 from hyperspy.signals import Signal2D, Signal1D
 from hyperspy.utils import markers
-from hyperspy.misc.test_utils import get_matplotlib_version_label, update_close_figure
-
 
 mplv = get_matplotlib_version_label()
 default_tol = 2.0
 baseline_dir = 'plot_markers-%s' % mplv
 
+def test_fail_mlp_agg():
+    import matplotlib
+    assert matplotlib.get_backend() == 'agg'
 
 class TestMarkers:
 
@@ -108,20 +111,20 @@ class TestMarkers:
 
 def _test_plot_rectange_markers():
     # Create test image 100x100 pixels:
-    im = Signal2D(np.zeros((100, 100)))
+    im = Signal2D(np.arange(100).reshape([10, 10]))
 
     # Add four line markers:
     m1 = markers.line_segment(
-        x1=20, y1=20, x2=70, y2=20, color='red', linewidth=3)
+        x1=2, y1=2, x2=7, y2=2, color='red', linewidth=3)
     m2 = markers.line_segment(
-        x1=20, y1=20, x2=20, y2=70, color='red', linewidth=3)
+        x1=2, y1=2, x2=2, y2=7, color='red', linewidth=3)
     m3 = markers.line_segment(
-        x1=20, y1=70, x2=70, y2=70, color='red', linewidth=3)
+        x1=2, y1=7, x2=7, y2=7, color='red', linewidth=3)
     m4 = markers.line_segment(
-        x1=70, y1=20, x2=70, y2=70, color='red', linewidth=3)
+        x1=7, y1=2, x2=7, y2=7, color='red', linewidth=3)
 
     # Add rectangle marker at same position:
-    m = markers.rectangle(x1=20, x2=70, y1=20, y2=70,
+    m = markers.rectangle(x1=2, x2=7, y1=2, y2=7,
                           linewidth=4, color='blue', ls='dotted')
 
     # Plot image and add markers to img:
@@ -202,7 +205,7 @@ def test_plot_text_markers_close():
 
 
 def _test_plot_line_markers():
-    im = Signal2D(np.zeros((100, 100)))
+    im = Signal2D(np.arange(100*100).reshape((100, 100)))
     m0 = markers.vertical_line_segment(x=20, y1=30, y2=70, linewidth=4,
                                        color='red', linestyle='dotted')
     im.add_marker(m0)
