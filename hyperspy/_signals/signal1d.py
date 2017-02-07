@@ -98,9 +98,10 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
         contains position, height, and width of each peak
     Examples
     --------
-    >>> x = arange(0,50,0.01)
-    >>> y = cos(x)
-    >>> one_dim_findpeaks(y, x,0,0)
+    >>> import numpy as np
+    >>> x = np.arange(0,50,0.01)
+    >>> y = np.cos(x)
+    >>> one_dim_findpeaks(y, x, 0, 0)
     array([[  1.68144859e-05,   9.99999943e-01,   3.57487961e+00],
            [  6.28318614e+00,   1.00000003e+00,   3.57589018e+00],
            [  1.25663708e+01,   1.00000002e+00,   3.57600673e+00],
@@ -683,6 +684,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         Examples
         --------
         Using the GUI
+        >>> s = hs.signals.Signal1D(range(1000))
         >>> s.integrate_in_range()
         Using the CLI
         >>> s_int = s.integrate_in_range(signal_range=(560,None))
@@ -921,11 +923,12 @@ class Signal1D(BaseSignal, CommonSignal1D):
         Examples
         --------
         Using gui, replaces spectrum s
+        >>> s = hs.signals.Signal1D(range(1000))
         >>> s.remove_background()
         Using command line, returns a spectrum
-        >>> s = s.remove_background(signal_range=(400,450), background_type='PowerLaw')
+        >>> s1 = s.remove_background(signal_range=(400,450), background_type='PowerLaw')
         Using a full model to fit the background
-        >>> s = s.remove_background(signal_range=(400,450), fast=False)
+        >>> s1 = s.remove_background(signal_range=(400,450), fast=False)
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
