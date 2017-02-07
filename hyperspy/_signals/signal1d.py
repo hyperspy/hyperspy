@@ -922,11 +922,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
         >>> s.remove_background() #doctest: +SKIP
 
         Using command line, returns a spectrum
-
         >>> s1 = s.remove_background(signal_range=(400,450), background_type='PowerLaw')
 
         Using a full model to fit the background
-
         >>> s1 = s.remove_background(signal_range=(400,450), fast=False)
 
         Raises
