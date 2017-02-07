@@ -1,22 +1,217 @@
 .. _big-data-label:
 
-Big data
-********
+Working with big data
+*********************
 
 .. versionadded:: 1.2
 
-This chapter describes the behaviour of :py:class:`~._signals.lazy.LazySignal`
-class and its derivatives.
+HyperSpy makes it possible to analyse data larger than the available memory by
+providing "lazy" versions of most of its signals and functions. In most cases
+the syntax remains the same. This chapter describes how to work with data larger
+than memory using the :py:class:`~._signals.lazy.LazySignal` class and its
+derivatives.
 
-The LazySignal idea
--------------------
 
-Standard HyperSpy signals load the data (accessed via the field ``s.data``)
-into memory for fast access and processing. While this behaviour gives good
-performance in terms of speed, it obviously requires at least as much computer
-memory as the dataset, and often twice that to store the results of subsequent
-computation. This can become a significant problem when processing very large
-datasets on consumer-oriented hardware.
+Creating Lazy Signals
+---------------------
+
+Loading lazily
+^^^^^^^^^^^^^^
+
+To load the data lazily, pass the keyword ``lazy=True``.  As an example, loading
+a 34.9 GB ``.blo`` file on a regular laptop might look like:
+
+.. code-block:: python
+
+    >>> s = hs.load("shish26.02-6.blo", lazy=True)
+    >>> s
+    <LazySignal2D, title: , dimensions: (400, 333|512, 512)>
+    >>> s.data
+    dask.array<array-e..., shape=(333, 400, 512, 512), dtype=uint8, chunksize=(20, 12, 512, 512)>
+    >>> print(s.data.dtype, s.data.nbytes / 1e9)
+    uint8 34.9175808
+    >>> s.change_dtype("float") # To be able to perform decomposition, etc.
+    >>> print(s.data.dtype, s.data.nbytes / 1e9)
+    float64 279.3406464
+
+Loading the dataset in the original unsigned integer format would require
+around 35GB of memory. To store it in a floating-point format one would need
+almost 280GB of memory. However, with the lazy processing both of these steps
+are near-instantaneous and require very little computational resources.
+
+Lazy stacking
+^^^^^^^^^^^^^
+
+Occasionally the full dataset consists of many smaller files. To combine them
+into a one large ``LazySignal``, we can :ref:`stack<signal.stack_split>` them
+lazily (both when loading or afterwards):
+
+.. code-block:: python
+
+    >>> siglist = hs.load("*.hdf5")
+    >>> s = hs.stack(siglist, lazy=True)
+    >>> # Or do that when loading
+    >>> s = hs.load("*.hdf5", lazy=True, stack=True)
+
+Casting signals as lazy
+^^^^^^^^^^^^^^^^^^^^^^^
+
+To convert a regular HyperSpy signal to a lazy one such that any future
+operations are only performed lazily, use the
+:py:meth:`~.signal.BaseSignal.as_lazy` method:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.arange(150.).reshape((3, 50)))
+    >>> s
+    <Signal1D, title: , dimensions: (3|50)>
+    >>> sl = s.as_lazy()
+    >>> sl
+    <LazySignal1D, title: , dimensions: (3|50)>
+
+Practical tips
+--------------
+
+Despite some few limitations detailed below, most HyperSpy operations can be
+performed lazily. Importand points of note are:
+
+Computing lazy signals
+^^^^^^^^^^^^^^^^^^^^^^
+
+In order to store the lazy signal in memory (i.e. make it a normal HyperSpy
+signal) it has a :py:meth:`~._signals.lazy.LazySignal.compute` method:
+
+.. code-block:: python
+
+    >>> s
+    <LazySignal2D, title: , dimensions: (|512, 512)>
+    >>> s.compute()
+    [########################################] | 100% Completed |  0.1s
+    >>> s
+    <Signal2D, title: , dimensions: (|512, 512)>
+
+
+Navigator plot
+^^^^^^^^^^^^^^
+
+The default signal navigator is the sum of the signal across all signal
+dimensions and all but 1 or 2 navigation dimensions. If the dataset is large,
+this can take a significant amount of time to perform with every plot. A more
+convenient alternative is to calculate the summed navigation signal manually
+once, and only pass it for all other plots. Pay attention to the transpose
+(``.T``):
+
+.. code-block:: python
+
+    >>> s
+    <LazySignal2D, title: , dimensions: (200, 200|512, 512)>
+    >>> # for fastest results, just pick one signal space pixel
+    >>> nav = s.isig[256, 256].T
+    >>> # Alternatively, sum as per default behaviour
+    >>> nav = s.sum(s.axes_manager.signal_axes).T
+    >>> nav
+    <LazySignal2D, title: , dimensions: (|200, 200)>
+    >>> # Compute the result
+    >>> nav.compute()
+    [########################################] | 100% Completed | 13.1s
+    >>> s.plot(navigator=nav)
+
+Alternatively, it is possible to not have a navigator, and use sliders
+instead:
+
+.. code-block:: python
+
+    >>> s
+    <LazySignal2D, title: , dimensions: (200, 200|512, 512)>
+    >>> s.plot(navigator='slider')
+
+
+
+Limitations
+-----------
+
+Most operations can be performed lazily. However, lazy operations come with
+some few limitations and constraints that we detail below.
+
+Immutable signals
+^^^^^^^^^^^^^^^^^
+
+An important limitation when using ``LazySignal`` is the inability to modify
+existing data (immutability). This is a logical consequence of the DAG (tree
+structure), where a complete history of the processing has to be stored to
+traverse later.
+
+In fact, lazy evaluation removes the need for such operation, since only
+additional tree branches are added, requiring very little resources. In
+practical terms the following fails with lazy signals:
+
+.. code-block:: python
+
+    >>> s = hs.signals.BaseSignal([0]).as_lazy()
+    >>> s += 1
+    Traceback (most recent call last):
+      File "<ipython-input-6-1bd1db4187be>", line 1, in <module>
+        s += 1
+      File "<string>", line 2, in __iadd__
+      File "/home/fjd29/Python/hyperspy3/hyperspy/signal.py", line 1591, in _binary_operator_ruler
+        getattr(self.data, op_name)(other)
+    AttributeError: 'Array' object has no attribute '__iadd__'
+
+However, when operating lazily there is not clear benefit of using in-place
+operations. So, the operation above could be rewritten as follows:
+
+.. code-block:: python
+
+    >>> s = hs.signals.BaseSignal([0]).as_lazy()
+    >>> s = s + 1
+
+Or even better:
+
+.. code-block:: python
+
+    >>> s = hs.signals.BaseSignal([0]).as_lazy()
+    >>> s1 = s + 1
+
+Machine learning (decomposition)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:ref:`decomposition` algorithms often performs large matrix manipulations,
+requiring significantly more memory than the data size. To perform decomposition
+operation lazily HyperSpy provides several "online" algorithms. These algorithms
+perform the decomposition by operation serially in chunks of data, enabling
+the lazy decomposition of large datasets.
+
+In line with the standard HyperSpy signals,
+:py:meth:`~._signals.lazy.LazySignal.decomposition` offers  the following
+implementations:
+
+* **PCA** (``algorithm='PCA'``): performs `IncrementalPCA <http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.IncrementalPCA.html#sklearn.decomposition.IncrementalPCA>`_
+  from ``scikit-learn``.
+* **ORPCA** (``algorithm='ORPCA'``): performs Online Robust PCA. (It is also available
+  for regular signals.)
+* **NMF** (``algorithm='ONMF'``): performs Online Robust NMF, as per "OPGD"
+  algorithm in [Zhao2016]_.
+
+Other minor differences
+^^^^^^^^^^^^^^^^^^^^^^^
+
+* **Histograms** for a ``LazySignal`` do not support ``knuth`` and ``blocks``
+  binning algorithms.
+* **CircleROI** sets the elements outside the ROI to ``np.nan`` instead of
+  using a masked array, because ``dask`` does not support masking. As a
+  convenience, ``nansum``, ``nanmean`` and other ``nan*`` signal methods were
+  added to mimic the workflow as closely as possible.
+
+
+Behind the scenes --technical details
+-------------------------------------
+
+Standard HyperSpy signals load the data ( into memory for fast access and
+processing. While this behaviour gives good performance in terms of speed, it
+obviously requires at least as much computer memory as the dataset, and often
+twice that to store the results of subsequent computation. This can become a
+significant problem when processing very large datasets on consumer-oriented
+hardware.
 
 HyperSpy offers a solution for this problem by including
 :py:class:`~._signals.lazy.LazySignal` and its derivatives. The main idea of
@@ -49,179 +244,3 @@ advantages:
   way to expand the effective memory for computations to that of a cluster,
   which allows performing the operations significantly faster than on a single
   machine.
-
-
-Creating Lazy Signals
----------------------
-
-Loading lazily
-^^^^^^^^^^^^^^
-
-To load the data lazily, pass the keyword ``lazy=True``. Note that this
-deprecates and replaces all ``memmap`` and ``load_to_memory=False`` and similar
-options. As an example, loading a 34.9 GB ``.blo`` file on a regular laptop
-might look like:
-
-.. code-block:: python
-
-    >>> s = hs.load("shish26.02-6.blo", lazy=True)
-    >>> s
-    <LazySignal2D, title: , dimensions: (400, 333|512, 512)>
-    >>> s.data
-    dask.array<array-e..., shape=(333, 400, 512, 512), dtype=uint8, chunksize=(20, 12, 512, 512)>
-    >>> print(s.data.dtype, s.data.nbytes / 1e9)
-    uint8 34.9175808
-    >>> s.change_dtype("float") # To be able to perform decomposition, etc.
-    >>> print(s.data.dtype, s.data.nbytes / 1e9)
-    float64 279.3406464
-
-Loading the dataset in the original unsigned integer format would require
-around 35GB of memory. To store it in a floating-point format one would need
-almost 280GB of memory. However, with the lazy processing both of these steps
-are near-instantaneous and require very little computational resources.
-
-Lazy stacking
-^^^^^^^^^^^^^
-
-Occasionally the full dataset consists of many smaller files. To combine them
-into a one large ``LazySignal``, we can :ref:`stack<signal.stack_split>` them
-lazily (both when loading of afterwards):
-
-.. code-block:: python
-
-    >>> siglist = hs.load("*.hdf5")
-    >>> s = hs.stack(siglist, lazy=True)
-    >>> # Or do that when loading
-    >>> s = hs.load("*.hdf5", lazy=True, stack=True)
-
-Casting signals as lazy
-^^^^^^^^^^^^^^^^^^^^^^^
-
-To convert a regular HyperSpy signal to a lazy one such that any future
-operations are only performed lazily, use the
-:py:meth:`~.signal.BaseSignal.as_lazy` method:
-
-.. code-block:: python
-
-    >>> s = hs.signals.Signal1D(np.arange(150.).reshape((3, 50)))
-    >>> s
-    <Signal1D, title: , dimensions: (3|50)>
-    >>> sl = s.as_lazy()
-    >>> sl
-    <LazySignal1D, title: , dimensions: (3|50)>
-
-
-
-Constraints
------------
-
-There are anumber of constraints when using ``LazySignal`` in contrast to
-standard HyperSpy signals.
-
-Immutable signals
-^^^^^^^^^^^^^^^^^
-
-An important constraint when using ``LazySignal`` is the inability to modify
-existing data (immutability). This is a logical consequence of the DAG (tree
-structure), where a complete history of the processing has to be stored to
-traverse later.
-
-In fact, ``LazySignal`` removes the need for such operation, since only
-additional tree branches are added, requiring very little resources. In
-practical terms:
-
-.. code-block:: python
-
-    >>> s = s + 1 # instead of s += 1
-    >>> # or, even better
-    >>> s1 = s + 1
-
-Machine learning (decomposition)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-:ref:`Machine learning<ml>` often performs large matrix manipulations,
-requiring significantly more memory than just storing the data. Lazy HyperSpy
-signals attempt to provide similar alternatives. These algorithms read the
-data in an "online" manner (i.e. only loading each element once or twice),
-meaning the decompositions can be performed on large datasets.
-
-In line with the standard HyperSpy workflows,
-:py:meth:`~._signals.lazy.LazySignal.decomposition` offers  the following
-implementations:
-
-* **PCA** (``algorithm='PCA'``): performs the
-  `IncrementalPCA <http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.IncrementalPCA.html#sklearn.decomposition.IncrementalPCA>`_
-  from ``scikit-learn``.
-* **ORPCA** (``algorithm='ORPCA'``): runs Online Robust PCA, is also available
-  for regular signals.
-* **NMF** (``algorithm='ONMF'``): runs Online Robust NMF, as per "OPGD"
-  algorithm in `this paper by Zhao et. al
-  <http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7472160&isnumber=7471614>`_.
-  Very sparsely tested and should be regarded as experimental.
-
-Minor changes
-^^^^^^^^^^^^^
-
-* **Histograms** for a ``LazySignal`` do not support ``knuth`` and ``blocks``
-  binning algorithms.
-* **CircleROI** sets the elements outside the ROI to ``np.nan`` instead of
-  using a masked array, because ``dask`` does not support masking. As a
-  convenience, ``nansum``, ``nanmean`` and other ``nan*`` signal methods were
-  added to mimic the workflow as closely as possible.
-
-
-Data processing with LazySignal
--------------------------------
-
-Despite the constraints, most HyperSpy operations can be performed lazily.
-Importand points of note are:
-
-Computing lazy signals
-^^^^^^^^^^^^^^^^^^^^^^
-
-In order to store the lazy signal in memory (i.e. make it a normal HyperSpy
-signal) it has a :py:meth:`~._signals.lazy.LazySignal.compute` method:
-
-.. code-block:: python
-
-    >>> s
-    <LazySignal2D, title: , dimensions: (|512, 512)>
-    >>> s.compute()
-    [########################################] | 100% Completed |  0.1s
-    >>> s
-    <Signal2D, title: , dimensions: (|512, 512)>
-
-
-Navigator plot
-^^^^^^^^^^^^^^
-
-The default HyperSpy behaviour when plotting a navigator calculates the
-spectrum/image by summing all signal dimensions. If the dataset is large, this
-can take a significant amount of time to perform with every plot. Instead, we
-calculate the summed navigation signal manually once, and only pass it for all
-other plots. Pay attention to the transpose (``.T``):
-
-.. code-block:: python
-
-    >>> s
-    <LazySignal2D, title: , dimensions: (200, 200|512, 512)>
-    >>> # for fastest results, just pick one signal space pixel
-    >>> nav = s.isig[256, 256].T
-    >>> # Alternatively, sum as per default behaviour
-    >>> nav = s.sum(s.axes_manager.signal_axes).T
-    >>> nav
-    <LazySignal2D, title: , dimensions: (|200, 200)>
-    >>> # Compute the result
-    >>> nav.compute()
-    [########################################] | 100% Completed | 13.1s
-    >>> s.plot(navigator=nav)
-
-Alternatively, it is possible to not have any navigation plots, and use sliders
-instead:
-
-.. code-block:: python
-
-    >>> s
-    <LazySignal2D, title: , dimensions: (200, 200|512, 512)>
-    >>> s.plot(navigator='slider')
-
