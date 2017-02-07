@@ -224,12 +224,12 @@ class EELSSpectrum(Signal1D):
 
         Examples
         --------
-        >>> s_ll = hs.signals.EELSSpectrum([0]*1000)
+        >>> s_ll = hs.signals.EELSSpectrum(np.zeros(1000))
         >>> s_ll.data[100] = 100
         >>> s_ll.align_zero_loss_peak()
 
         Aligning both the lowloss signal and another signal
-        >>> s = hs.signals.EELSSpectrum(range(1000))
+        >>> s = hs.signals.EELSSpectrum(np.range(1000))
         >>> s_ll.align_zero_loss_peak(also_align=[s])
 
         Aligning within a narrow range of the lowloss signal
