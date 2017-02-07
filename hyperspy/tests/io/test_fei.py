@@ -192,8 +192,7 @@ class TestFEIReader():
         assert_allclose(s0.axes_manager[1].scale, 0.2, atol=1E-5)
         assert s0.axes_manager[1].units == 'eV'
         assert (s0.axes_manager[0].name == 'x')
-        assert (s0.axes_manager[1].name == 'y')
-        assert (s0.axes_manager[2].name == 'Energy')
+        assert (s0.axes_manager[1].name == 'Energy')
 
         fname1 = os.path.join(
             self.dirpathold, '16x16-line_profile_diagonal_10x1024.emi')
@@ -206,7 +205,7 @@ class TestFEIReader():
         assert s1.axes_manager[0].units == 'nm'
         assert_allclose(s1.axes_manager[1].scale, 0.2, atol=1E-5)
         assert s1.axes_manager[1].units == 'eV'
-        assert (s0.axes_manager[0].name == 'y')
+        assert (s0.axes_manager[0].name == 'x')
 
     def test_load_spectrum_area_scan(self):
         fname0 = os.path.join(

@@ -167,7 +167,7 @@ class TestLoadingNewSavedMetadata:
         assert (
             self.s.metadata.test.tuple_inside_list == [
                 137, (123, 44)])
-
+    @pytest.mark.xfail(reason="dill is not guaranteed to load across Python versions")
     def test_binary_string(self):
         import dill
         # apparently pickle is not "full" and marshal is not
