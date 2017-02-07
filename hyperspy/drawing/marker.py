@@ -77,6 +77,23 @@ class MarkerBase(object):
             except:
                 pass
 
+    def _to_dictionary(self):
+        self_dict = self.__dict__
+        marker_dict = {}
+        marker_dict['_marker_properties'] = self_dict['_marker_properties']
+        marker_dict['marker_type'] = self.__class__
+        marker_dict['_plot_on_signal'] = self._plot_on_signal
+
+        data_dict = {}
+        data_dict['x1'] = self.data['x1'].item().tolist()
+        data_dict['x2'] = self.data['x2'].item().tolist()
+        data_dict['y1'] = self.data['y1'].item().tolist()
+        data_dict['y2'] = self.data['y2'].item().tolist()
+        data_dict['text'] = self.data['text'].item().tolist()
+        data_dict['size'] = self.data['size'].item().tolist()
+        marker_dict['data'] = data_dict
+        return(marker_dict)
+
     def set_marker_properties(self, **kwargs):
         """
         Set the line_properties attribute using keyword
