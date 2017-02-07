@@ -29,7 +29,7 @@ def lazify(func, **kwargs):
     from hyperspy.signal import BaseSignal
 
     @wraps(func)
-    def lazified_func(self):
+    def lazified_func(self, *args, **kwds):
         for k in self.__dict__.keys():
             if not k.startswith('__'):
                 v = getattr(self, k)
@@ -37,7 +37,7 @@ def lazify(func, **kwargs):
                     v = v.as_lazy()
                     setattr(self, k, v)
         self.__dict__.update(kwargs)
-        return func(self)
+        return func(self, *args, **kwds)
     return lazified_func
 
 

@@ -20,7 +20,6 @@
 import time
 import logging
 from multiprocessing import Manager
-from ipyparallel import Reference as ipp_Reference
 import numpy as np
 from dask.array import Array as dar
 
@@ -160,6 +159,7 @@ class SamfirePool(ParallelPool):
         optional_names = {mall[c].name for c in samfire.optional_components}
 
         if self.is_ipyparallel:
+            from ipyparallel import Reference as ipp_Reference
             _logger.debug('preparing ipyparallel workers')
             direct_view = self.pool.client[:self.num_workers]
             direct_view.block = True

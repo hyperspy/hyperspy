@@ -30,7 +30,6 @@ from hyperspy.samfire_utils.strategy import (LocalStrategy,
                                              GlobalStrategy)
 from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
 from hyperspy.samfire_utils.global_strategies import HistogramStrategy
-from hyperspy.samfire_utils.samfire_pool import SamfirePool
 
 
 _logger = logging.getLogger(__name__)
@@ -205,6 +204,7 @@ class Samfire:
 
     def _setup(self, **kwargs):
         """Set up SAMFire - configure models, set up pool if necessary"""
+        from hyperspy.samfire_utils.samfire_pool import SamfirePool
         self._figure = None
         self.metadata._gt_dump = dill.dumps(self.metadata.goodness_test)
         self._enable_optional_components()

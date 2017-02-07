@@ -11,12 +11,12 @@ class and its derivatives.
 The LazySignal idea
 -------------------
 
-In usual (non-lazy) HyperSpy signals the actual data (accessed via the field
-``s.data``) is most often loaded into the computer memory for fast access and
-processing. While such behaviour indeed results in best performance, it
-obviously requires at least as much computer memory as the data, often twice
-that to store the results of any computation. This becomes a significant
-problem if processing large amounts of data on consumer-oriented hardware.
+Standard HyperSpy signals load the data (accessed via the field ``s.data``)
+into memory for fast access and processing. While this behaviour gives good
+performance in terms of speed, it obviously requires at least as much computer
+memory as the dataset, and often twice that to store the results of subsequent
+computation. This can become a significant problem when processing very large
+datasets on consumer-oriented hardware.
 
 HyperSpy offers a solution for this problem by including
 :py:class:`~._signals.lazy.LazySignal` and its derivatives. The main idea of
@@ -35,16 +35,16 @@ as ``numpy.ndarray``, but ``dask.array.Array`` (more information `here
 <https://dask.readthedocs.io/en/latest/>`_). ``dask`` offers a couple of
 advantages:
 
-* **Teoretically, arbitrary-sized data processing is possible**. By only
-  loading a couple of chunks at a time, theoretically any signal can be
-  processed, albeit slower. In practice, this may be limited: (i) some
-  operations may require certain chunking pattern, which may still saturate
-  memory; (ii) a couple of tens of chunks should fit into the computer memory
-  comfortably.
+* **Arbitrary-sized data processing is possible**. By only loading a couple of
+  chunks at a time, theoretically any signal can be processed, albeit slower.
+  In practice, this may be limited: (i) some operations may require certain
+  chunking pattern, which may still saturate memory; (ii) many chunks should
+  fit into the computer memory comfortably at the same time.
 * **Loading only the required data**. If a certain part (chunk) of the data is
   not required for the final result, it will not be loaded at all, saving time
   and resources.
-* **Able to extend to clusters**. ``dask.distributed`` (documentation `here
+* **Able to extend to a distributed computing environment (clusters)**.
+  ``dask.distributed`` (documentation `here
   <https://distributed.readthedocs.io/en/latest/>`_) offers a straightforward
   way to expand the effective memory for computations to that of a cluster,
   which allows performing the operations significantly faster than on a single
@@ -75,10 +75,10 @@ might look like:
     >>> print(s.data.dtype, s.data.nbytes / 1e9)
     float64 279.3406464
 
-Only to load the data in the original unsigned integer format it would require
+Loading the dataset in the original unsigned integer format would require
 around 35GB of memory. To store it in a floating-point format one would need
-almost 280GB of memory. Nevertheless, with the lazy processing both of these
-steps are near instantaneous and require very little resources.
+almost 280GB of memory. However, with the lazy processing both of these steps
+are near-instantaneous and require very little computational resources.
 
 Lazy stacking
 ^^^^^^^^^^^^^
@@ -97,8 +97,8 @@ lazily (both when loading of afterwards):
 Casting signals as lazy
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-To convert a regular HyperSpy signal to a lazy one (so that any future
-operations are only performed lazily) we added
+To convert a regular HyperSpy signal to a lazy one such that any future
+operations are only performed lazily, use the
 :py:meth:`~.signal.BaseSignal.as_lazy` method:
 
 .. code-block:: python
@@ -115,16 +115,16 @@ operations are only performed lazily) we added
 Constraints
 -----------
 
-A couple of constraints to ``LazySignal`` when compared to normal HyperSpy
-signals.
+There are anumber of constraints when using ``LazySignal`` in contrast to
+standard HyperSpy signals.
 
 Immutable signals
 ^^^^^^^^^^^^^^^^^
 
-One of the most often encountered constraint when using ``LazySignal`` is the
-inability to modify an existing signal data (immutability). It is a logical
-consequence of the DAG (tree structure), where a complete history of the
-processing has to be stored to traverse later. 
+An important constraint when using ``LazySignal`` is the inability to modify
+existing data (immutability). This is a logical consequence of the DAG (tree
+structure), where a complete history of the processing has to be stored to
+traverse later.
 
 In fact, ``LazySignal`` removes the need for such operation, since only
 additional tree branches are added, requiring very little resources. In
@@ -141,24 +141,23 @@ Machine learning (decomposition)
 
 :ref:`Machine learning<ml>` often performs large matrix manipulations,
 requiring significantly more memory than just storing the data. Lazy HyperSpy
-signals attempted to provide similar alternatives. These algorithms read the
+signals attempt to provide similar alternatives. These algorithms read the
 data in an "online" manner (i.e. only loading each element once or twice),
-enabling performing the decompositions on very large datasets. All of the
-algorithms are only approximations to the original implementations, some
-(ONMF in particular) sparsely tested.
+meaning the decompositions can be performed on large datasets.
 
-To facilitate the usual HyperSpy workflows as well as possible,
-:py:meth:`~._signals.lazy.LazySignal.decomposition` method of the
-``LazySignal`` offers implementations of:
+In line with the standard HyperSpy workflows,
+:py:meth:`~._signals.lazy.LazySignal.decomposition` offers  the following
+implementations:
 
 * **PCA** (``algorithm='PCA'``): performs the
   `IncrementalPCA <http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.IncrementalPCA.html#sklearn.decomposition.IncrementalPCA>`_
   from ``scikit-learn``.
+* **ORPCA** (``algorithm='ORPCA'``): runs Online Robust PCA, is also available
+  for regular signals.
 * **NMF** (``algorithm='ONMF'``): runs Online Robust NMF, as per "OPGD"
   algorithm in `this paper by Zhao et. al
   <http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7472160&isnumber=7471614>`_.
-* **ORPCA** (``algorithm='ORPCA'``): runs Online Robust PCA, is also available
-  for regular signals
+  Very sparsely tested and should be regarded as experimental.
 
 Minor changes
 ^^^^^^^^^^^^^
@@ -174,8 +173,8 @@ Minor changes
 Data processing with LazySignal
 -------------------------------
 
-Despite the aforementioned constraints, most of the usual HyperSpy operations
-can be performed lazily. Nevertheless, certain "quality of life" tricks follow:
+Despite the constraints, most HyperSpy operations can be performed lazily.
+Importand points of note are:
 
 Computing lazy signals
 ^^^^^^^^^^^^^^^^^^^^^^

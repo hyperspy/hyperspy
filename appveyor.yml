@@ -4,7 +4,7 @@ shallow_clone: true
 environment:
 
   global:
-    TEST_DEPS: "pytest pytest-cov pytest-xdist wheel pip"
+    TEST_DEPS: "pytest pytest-cov wheel pip"
     NSIS_DIR: "%PROGRAMFILES(x86)%/NSIS"
 
 
@@ -67,7 +67,7 @@ test_script:
   # Run the project tests
   - ps: Add-AppveyorMessage "Running tests..."
   - "python setup.py build_ext --inplace"
-  - "py.test -n 8 --pyargs hyperspy"
+  - "py.test"
   - "python setup.py clean"
   - ps: Add-AppveyorMessage "Testing completed."
 

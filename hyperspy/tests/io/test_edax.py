@@ -4,6 +4,7 @@ import os.path
 import os
 import shutil
 import tempfile
+import gc
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -30,6 +31,8 @@ def tmpdir():
             # print(os.listdir(tmpdir))
             # print(spd_fname)
             yield tmp
+            # Force files release (required in Windows)
+            gc.collect()
 
 
 @pytest.fixture(scope="module")
