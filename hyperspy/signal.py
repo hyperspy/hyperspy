@@ -2011,7 +2011,13 @@ class BaseSignal(FancySlicing,
                     self._add_all_markers_to_plot()
                     self.axes_manager.events.indices_changed.connect(
                             self._add_all_markers_to_plot, [])
+                    self._plot.signal_plot.events.closed.connect(
+                        self._disconnect_permanent_marker, [])
     plot.__doc__ %= BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
+
+    def _disconnect_permanent_marker(self):
+        self.axes_manager.events.indices_changed.disconnect(
+                self._add_all_markers_to_plot)
 
     def save(self, filename=None, overwrite=None, extension=None,
              **kwds):
