@@ -60,12 +60,6 @@ using the :py:meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 
     >>> s.original_metadata.export('parameters')
 
-.. _load_to_memory-label:
-
-.. deprecated:: 1.2
-   ``memmap`` and ``load_to_memory`` :py:func:`~.io.load` keyword arguments.
-   Use ``lazy`` instead.
-
 All file readers support accessing the data without reading it to memory. This
 feature can be useful when analysing large files. To load a file without loading
 it to memory simply set ``lazy`` to ``True`` e.g.:
