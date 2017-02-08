@@ -23,6 +23,7 @@ from distutils.version import LooseVersion
 
 import traits.api as t
 from hyperspy.misc import rgb_tools
+from skimage.external.tifffile import imsave, TiffFile
 
 _logger = logging.getLogger(__name__)
 # Plugin characteristics
@@ -59,33 +60,6 @@ axes_label_codes = {
     '_': t.Undefined}
 
 
-def _import_tifffile_library(import_local_tifffile_if_necessary=False,
-                             loading=False):
-    def import_local_tifffile(loading=False):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            from hyperspy.external.tifffile import imsave, TiffFile
-            if loading:
-                # when we don't use skimage tifffile
-                warnings.warn(
-                    "Loading of some compressed images will be slow.\n")
-        return imsave, TiffFile
-
-    try:  # in case skimage is not available, import local tifffile.py
-        import skimage
-    except ImportError:
-        return import_local_tifffile(loading=loading)
-
-    # import local tifffile.py only if the skimage version too old
-    skimage_version = LooseVersion(skimage.__version__)
-    if import_local_tifffile_if_necessary and skimage_version <= LooseVersion(
-            '0.12.3'):
-        return import_local_tifffile(loading=loading)
-    else:
-        from skimage.external.tifffile import imsave, TiffFile
-        return imsave, TiffFile
-
-
 def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
     """Writes data to tif using Christoph Gohlke's tifffile library
 
@@ -101,7 +75,6 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
         tifffile library to allow exporting the scale and the unit.
     """
     _logger.debug('************* Saving *************')
-    imsave, TiffFile = _import_tifffile_library(export_scale)
     data = signal.data
     if signal.is_rgbx is True:
         data = rgb_tools.rgbx2regular_array(data)
@@ -152,7 +125,6 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
     if 'import_local_tifffile' in kwds.keys():
         import_local_tifffile = kwds.pop('import_local_tifffile')
 
-    imsave, TiffFile = _import_tifffile_library(import_local_tifffile)
     with TiffFile(filename, **kwds) as tiff:
         dc = tiff.asarray()
         # change in the Tifffiles API
