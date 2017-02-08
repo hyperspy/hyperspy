@@ -41,7 +41,6 @@ if "WX" in backend:
 elif "Qt" in backend:
     set_ets_toolkit("qt4")
 else:
-    print("here")
     set_ets_toolkit("null")
     from hyperspy.defaults_parser import preferences
     preferences.General.interactive = False
