@@ -260,6 +260,14 @@ class TestExpression:
             0.00033845077175778578)
 
 
+def test_expression_substitution():
+    expr = 'A / B; A = x+2; B= x-c'
+    comp = hs.model.components1D.Expression(expr, name='testcomp',
+                                            autodoc=True,
+                                            c=2)
+    assert ''.join(p.name for p in comp.parameters) == 'c'
+    assert comp.function(1) == -3
+
 class TestScalableFixedPattern:
 
     def setup_method(self, method):
