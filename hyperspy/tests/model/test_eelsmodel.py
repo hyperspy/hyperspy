@@ -19,7 +19,7 @@ class TestCreateEELSModel:
             self.s.create_model(), EELSModel)
 
     def test_create_eelsmodel_no_md(self):
-        s =  self.s
+        s = self.s
         del s.metadata.Acquisition_instrument
         nt.assert_raises(ValueError, s.create_model)
 
