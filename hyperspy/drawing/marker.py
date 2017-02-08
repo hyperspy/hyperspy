@@ -78,9 +78,8 @@ class MarkerBase(object):
                 pass
 
     def _to_dictionary(self):
-        self_dict = self.__dict__
         marker_dict = {}
-        marker_dict['_marker_properties'] = self_dict['_marker_properties']
+        marker_dict['_marker_properties'] = self.__dict__['_marker_properties']
         marker_dict['marker_type'] = self.__class__
         marker_dict['_plot_on_signal'] = self._plot_on_signal
 
