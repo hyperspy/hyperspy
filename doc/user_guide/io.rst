@@ -62,20 +62,20 @@ using the :py:meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 
 .. _load_to_memory-label:
 
-.. versionadded:: 1.0
-    `load_to_memory` argument.
+.. deprecated:: 1.2
+   ``memmap`` and ``load_to_memory`` :py:func:`~.io.load` keyword arguments.
+   Use ``lazy`` instead.
 
-Some file readers support accessing the data without reading it to memory. This
+All file readers support accessing the data without reading it to memory. This
 feature can be useful when analysing large files. To load a file without loading
-it to memory simply set `load_to_memory` to `False` e.g.
+it to memory simply set ``lazy`` to ``True`` e.g.:
 
 .. code-block:: python
 
-    >>> s = hs.load("filename.hdf5", load_to_memory=False)
+    >>> s = hs.load("filename.hdf5", lazy=True)
 
-However, note that as of v1.0 HyperSpy cannot efficiently use this feature to
-operate on big data files. Only hdf5, blockfile and EMD currently support not
-reading to memory.
+More details on lazy operation in :ref:`big-data-label`.
+
 
 Loading multiple files
 ----------------------
@@ -366,7 +366,7 @@ bio-scientific imaging. See `the library webpage
 
 .. versionadded: 1.0
    Add support for writing/reading scale and unit to tif files to be read with
-   ImageJ or DigitalMicrograph 
+   ImageJ or DigitalMicrograph
 
 Currently HyperSpy has limited support for reading and saving the TIFF tags.
 However, the way that HyperSpy reads and saves the scale and the units of tiff
@@ -381,7 +381,7 @@ FEI and Zeiss SEM softwares.
     >>> # software doesn't (properly) use these tags when saving tiff files.
     >>> s = hs.load('file.tif', force_read_resolution=True)
 
-HyperSpy can also read and save custom tags through Christoph Gohlke's tifffile 
+HyperSpy can also read and save custom tags through Christoph Gohlke's tifffile
 library. See `the library webpage
 <http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`_ for more details.
 
@@ -390,12 +390,12 @@ library. See `the library webpage
     >>> # Saving the string 'Random metadata' in a custom tag (ID 65000)
     >>> extratag = [(65000, 's', 1, "Random metadata", False)]
     >>> s.save('file.tif', extratags=extratag)
- 
+
     >>> # Saving the string 'Random metadata' from a custom tag (ID 65000)
     >>> s2 = hs.load('file.tif')
     >>> s2.original_metadata['Number_65000']
     b'Random metadata'
-    
+
 .. _dm3-format:
 
 Gatan Digital Micrograph
@@ -490,7 +490,7 @@ in range 0-255).
 Blockfiles are by default loaded into memory, but can instead be loaded in a
 "copy-on-write" manner using
 `numpy.memmap <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.html>`_
-. This behavior can be controlled by the arguments `load_to_memory` and
+. This behavior can be controlled by the arguments `lazy` and
 `mmap_mode`. For valid values for `mmap_mode`, see the documentation for
 `numpy.memmap <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.html>`_.
 
@@ -499,18 +499,19 @@ Examples of ways of loading:
 .. code-block:: python
 
     >>> hs.load('file.blo')     # Default loading, equivalent to the next line
-    >>> hs.load('file.blo', load_to_memory=True)    # Load directly to memory
+    >>> hs.load('file.blo', lazy=False)    # Load directly to memory
     >>> # Default memmap loading:
-    >>> hs.load('file.blo', load_to_memory=False, mmap_mode='c')
+    >>> hs.load('file.blo', lazy=True, mmap_mode='c')
 
     >>> # Loads data read only:
-    >>> hs.load('file.blo', load_to_memory=False, mmap_mode='r')
+    >>> hs.load('file.blo', lazy=True, mmap_mode='r')
     >>> # Loads data read/write:
-    >>> hs.load('file.blo', load_to_memory=False, mmap_mode='r+')
+    >>> hs.load('file.blo', lazy=True, mmap_mode='r+')
 
 By loading the data read/write, any changes to the original data array will be
-written to disk. The data is written when the original data array is deleted,
-or when :py:meth:`BaseSignal.data.flush` (`numpy.memmap.flush <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.flush.html>`_)
+written to disk. The data is written when the original data array is deleted, or
+when :py:meth:`BaseSignal.data.flush` (`numpy.memmap.flush
+<http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.flush.html>`_)
 is called.
 
 
@@ -555,7 +556,7 @@ downsample: the downsample ratio of hyperspectral array (hight and width only),
 can be integer >=1, where '1' results in no downsampling (default 1). The underlying
 method of downsampling is unchangable: sum. Differently than block_reduce from skimage.measure
 it is memory efficient (does not creates intermediate arrays, works inplace).
-  
+
 cutoff_at_kV: if set (can be int of float >= 0) can be used either to
 crop or enlarge energy (or channels) range at max values. (default None)
 

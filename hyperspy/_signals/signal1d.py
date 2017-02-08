@@ -1286,13 +1286,13 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 return np.full((2,), np.nan)
 
         both = self._map_iterate(estimating_function,
-                          window=window,
-                          factor=factor,
-                          axis=axis,
-                          ragged=False,
-                          inplace=False,
-                          parallel=parallel,
-                          show_progressbar=show_progressbar)
+                                 window=window,
+                                 factor=factor,
+                                 axis=axis,
+                                 ragged=False,
+                                 inplace=False,
+                                 parallel=parallel,
+                                 show_progressbar=show_progressbar)
         left, right = both.T.split()
         width = right - left
         if factor == 0.5:
