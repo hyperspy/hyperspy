@@ -57,6 +57,8 @@ install:
     # Having 'sip' folder on path confuses import of `sip`.
   - "%CMD_IN_ENV% conda install pip"
   - "pip install pytest-mpl"
+    # Force to have the same freetype font in matplotlib for plot testing
+  - "pip install --upgrade matplotlib"
   # TODO: Remove once anaconda taitsui package is at v5:
   - "IF \"%PYTHON_MAJOR%\" EQU \"3\" pip install --upgrade traitsui tqdm"
   - ps: Add-AppveyorMessage "Installing hyperspy..."

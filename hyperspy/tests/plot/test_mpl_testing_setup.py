@@ -17,5 +17,5 @@
 
 import matplotlib
 
-def test_fail_mlp_agg():
+def test_mlp_agg_for_testing():
     assert matplotlib.get_backend() == 'agg'
