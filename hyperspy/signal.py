@@ -4044,7 +4044,7 @@ class BaseSignal(FancySlicing,
         Add permanent marker
         >>> s = hs.signals.Signal2D(np.random.random(100, 100))
         >>> marker = hs.markers.point(50, 60)
-        >>> s.add_marker(marker, permanent=True, plot_marker=False)
+        >>> s.add_marker(marker, permanent=True)
         >>> s.plot(plot_markers=True) #doctest: +SKIP
 
         Add permanent marker which changes with navigation position
