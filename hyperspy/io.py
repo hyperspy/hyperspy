@@ -135,7 +135,7 @@ def load(filenames=None,
     >>> s = hs.load('file*.blo', lazy=True, stack=True)
 
     """
-    deprecated = ['load_to_memory', 'mmap', 'mmap_dir', 'mmap_mode']
+    deprecated = ['mmap_dir']
     warn_str = "'{}' argument is deprecated, please use 'lazy' instead"
     for k in deprecated:
         if k in kwds:
