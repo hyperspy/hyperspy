@@ -7,9 +7,9 @@ Working with big data
 
 HyperSpy makes it possible to analyse data larger than the available memory by
 providing "lazy" versions of most of its signals and functions. In most cases
-the syntax remains the same. This chapter describes how to work with data larger
-than memory using the :py:class:`~._signals.lazy.LazySignal` class and its
-derivatives.
+the syntax remains the same. This chapter describes how to work with data
+larger than memory using the :py:class:`~._signals.lazy.LazySignal` class and
+its derivatives.
 
 
 Creating Lazy Signals
@@ -18,8 +18,8 @@ Creating Lazy Signals
 Loading lazily
 ^^^^^^^^^^^^^^
 
-To load the data lazily, pass the keyword ``lazy=True``.  As an example, loading
-a 34.9 GB ``.blo`` file on a regular laptop might look like:
+To load the data lazily, pass the keyword ``lazy=True``.  As an example,
+loading a 34.9 GB ``.blo`` file on a regular laptop might look like:
 
 .. code-block:: python
 
@@ -50,7 +50,10 @@ lazily (both when loading or afterwards):
 
     >>> siglist = hs.load("*.hdf5")
     >>> s = hs.stack(siglist, lazy=True)
-    >>> # Or do that when loading
+    >>> # Or load lazily and stack afterwards:
+    >>> siglist = hs.load("*.hdf5", lazy=True)
+    >>> s = hs.stack(siglist) # no need to pass 'lazy', as signals already lazy
+    >>> # Or do everything in one go:
     >>> s = hs.load("*.hdf5", lazy=True, stack=True)
 
 Casting signals as lazy
@@ -72,11 +75,13 @@ operations are only performed lazily, use the
 Practical tips
 --------------
 
-Despite some few limitations detailed below, most HyperSpy operations can be
+Despite the limitations detailed below, most HyperSpy operations can be
 performed lazily. Importand points of note are:
 
 Computing lazy signals
 ^^^^^^^^^^^^^^^^^^^^^^
+
+Upon saving lazy signals, the result of computations is stored on disk.
 
 In order to store the lazy signal in memory (i.e. make it a normal HyperSpy
 signal) it has a :py:meth:`~._signals.lazy.LazySignal.compute` method:
@@ -131,15 +136,15 @@ Limitations
 -----------
 
 Most operations can be performed lazily. However, lazy operations come with
-some few limitations and constraints that we detail below.
+a few limitations and constraints that we detail below.
 
 Immutable signals
 ^^^^^^^^^^^^^^^^^
 
 An important limitation when using ``LazySignal`` is the inability to modify
 existing data (immutability). This is a logical consequence of the DAG (tree
-structure), where a complete history of the processing has to be stored to
-traverse later.
+structure, explained in :ref:`lazy_details`), where a complete history of the
+processing has to be stored to traverse later.
 
 In fact, lazy evaluation removes the need for such operation, since only
 additional tree branches are added, requiring very little resources. In
@@ -157,7 +162,7 @@ practical terms the following fails with lazy signals:
         getattr(self.data, op_name)(other)
     AttributeError: 'Array' object has no attribute '__iadd__'
 
-However, when operating lazily there is not clear benefit of using in-place
+However, when operating lazily there is no clear benefit to using in-place
 operations. So, the operation above could be rewritten as follows:
 
 .. code-block:: python
@@ -176,10 +181,10 @@ Machine learning (decomposition)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 :ref:`decomposition` algorithms often performs large matrix manipulations,
-requiring significantly more memory than the data size. To perform decomposition
-operation lazily HyperSpy provides several "online" algorithms. These algorithms
-perform the decomposition by operation serially in chunks of data, enabling
-the lazy decomposition of large datasets.
+requiring significantly more memory than the data size. To perform
+decomposition operation lazily HyperSpy provides several "online" algorithms.
+These algorithms perform the decomposition by operating serially on chunks of
+data, enabling the lazy decomposition of large datasets.
 
 In line with the standard HyperSpy signals,
 :py:meth:`~._signals.lazy.LazySignal.decomposition` offers  the following
@@ -203,13 +208,15 @@ Other minor differences
   added to mimic the workflow as closely as possible.
 
 
+.. _lazy_details:
+
 Behind the scenes --technical details
 -------------------------------------
 
-Standard HyperSpy signals load the data ( into memory for fast access and
+Standard HyperSpy signals load the data into memory for fast access and
 processing. While this behaviour gives good performance in terms of speed, it
 obviously requires at least as much computer memory as the dataset, and often
-twice that to store the results of subsequent computation. This can become a
+twice that to store the results of subsequent computations. This can become a
 significant problem when processing very large datasets on consumer-oriented
 hardware.
 
