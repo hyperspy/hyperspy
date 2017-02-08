@@ -210,6 +210,7 @@ def test_saving_with_custom_tag():
         nt.assert_equal(s2.original_metadata['Number_65000'],
                         b"Random metadata")
 
+
 def _test_read_unit_from_dm():
     fname = os.path.join(MY_PATH2, 'test_loading_image_saved_with_DM.tif')
     s = hs.load(fname)
