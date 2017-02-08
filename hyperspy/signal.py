@@ -4053,6 +4053,8 @@ class BaseSignal(FancySlicing,
         >>> s.add_marker(marker, permanent=True, plot_marker=False)
         >>> s.plot(plot_markers=True) #doctest: +SKIP
         """
+        if (not marker.signal is None) and (not marker.signal is self):
+            raise Exception("Markers can not be added to several signals")
         marker._plot_on_signal = plot_on_signal
         if plot_marker:
             if self._plot is None:
@@ -4065,7 +4067,10 @@ class BaseSignal(FancySlicing,
         if permanent:
             if not hasattr(self, "markers"):
                 self.markers = []
+            if marker in self.markers:
+                raise Exception("Marker already added to signal")
             self.markers.append(marker)
+            marker.signal = self
 
     def _plot_permanent_markers(self):
         for marker in self.markers:
