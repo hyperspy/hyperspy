@@ -34,7 +34,7 @@ install:
       conda create -n testenv --yes $DEPS;
       source activate testenv;
       conda install pip;
-      pip uninstall matplotlib;
+      pip uninstall -y matplotlib;
       pip install matplotlib;
       python setup.py install;
       pip install pytest pytest-xdist;
