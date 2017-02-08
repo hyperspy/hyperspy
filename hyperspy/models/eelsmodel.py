@@ -30,14 +30,6 @@ from hyperspy._signals.eels import EELSSpectrum
 _logger = logging.getLogger(__name__)
 
 
-def _give_me_delta(master, slave):
-    return lambda x: x + slave - master
-
-
-def _give_me_idelta(master, slave):
-    return lambda x: x - slave + master
-
-
 class EELSModel(Model1D):
 
     """Build an EELS model
@@ -207,13 +199,9 @@ class EELSModel(Model1D):
                 edge = EELSCLEdge(e_shells.pop(), GOS=self.GOS)
 
                 edge.intensity.twin = master_edge.intensity
-                delta = _give_me_delta(master_edge.GOS.onset_energy,
-                                       edge.GOS.onset_energy)
-                idelta = _give_me_idelta(master_edge.GOS.onset_energy,
-                                         edge.GOS.onset_energy)
-                edge.onset_energy.twin_function = delta
-                edge.onset_energy.twin_inverse_function = idelta
                 edge.onset_energy.twin = master_edge.onset_energy
+                edge.onset_energy.twin_function_expr = "x + {}".format(
+                    (edge.GOS.onset_energy - master_edge.GOS.onset_energy))
                 edge.free_onset_energy = False
                 self.append(edge)
 
