@@ -14,17 +14,11 @@ MY_PATH2 = os.path.join(MY_PATH, "tiff_files")
 
 def test_rgba16():
     """ Use skimage tifffile.py library """
-    _test_rgba16(import_local_tifffile=False)
+    _test_rgba16()
 
 
-def test_rgba16_local_tifffile():
-    """ Use local tifffile.py library """
-    _test_rgba16(import_local_tifffile=True)
-
-
-def _test_rgba16(import_local_tifffile=False):
-    s = hs.load(os.path.join(MY_PATH2, "test_rgba16.tif"),
-                import_local_tifffile=import_local_tifffile)
+def _test_rgba16():
+    s = hs.load(os.path.join(MY_PATH2, "test_rgba16.tif"))
     data = np.load(os.path.join(MY_PATH, "npy_files", "test_rgba16.npy"))
     nt.assert_true((s.data == data).all())
     nt.assert_equal(s.axes_manager[0].units, t.Undefined)
@@ -51,7 +45,7 @@ def test_read_unit_um():
         fname = os.path.join(tmpdir, 'tiff_files', 'test_export_um_unit.tif')
         s.save(fname, overwrite=True, export_scale=True)
         # load tif file
-        s2 = hs.load(fname, import_local_tifffile=True)
+        s2 = hs.load(fname, )
         nt.assert_equal(s.axes_manager[0].units, 'µm')
         nt.assert_equal(s.axes_manager[1].units, 'µm')
         nt.assert_almost_equal(s2.axes_manager[0].scale, 0.16867, places=5)
@@ -67,35 +61,32 @@ def test_write_read_intensity_axes_DM():
     with tempfile.TemporaryDirectory() as tmpdir:
         fname = os.path.join(tmpdir, 'tiff_files', 'test_export_um_unit2.tif')
         s.save(fname, overwrite=True, export_scale=True)
-        s2 = hs.load(fname, import_local_tifffile=True)
+        s2 = hs.load(fname, )
+        print(s.metadata)
+        print(s2.metadata)
         assert_deep_almost_equal(s.metadata.Signal.as_dictionary(),
                                  s2.metadata.Signal.as_dictionary())
 
 
 def test_read_unit_from_imagej():
     """ Use skimage tifffile.py library """
-    _test_read_unit_from_imagej(import_local_tifffile=False)
+    _test_read_unit_from_imagej()
 
 
-def test_read_unit_from_imagej_local_tifffile():
-    """ Use local tifffile.py library """
-    _test_read_unit_from_imagej(import_local_tifffile=True)
-
-
-def _test_read_unit_from_imagej(import_local_tifffile=False):
+def _test_read_unit_from_imagej():
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ.tif')
-    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    s = hs.load(fname)
     nt.assert_equal(s.axes_manager[0].units, 'micron')
     nt.assert_equal(s.axes_manager[1].units, 'micron')
     nt.assert_almost_equal(s.axes_manager[0].scale, 0.16867, places=5)
     nt.assert_almost_equal(s.axes_manager[1].scale, 0.16867, places=5)
 
 
-def test_read_unit_from_imagej_stack(import_local_tifffile=False):
+def test_read_unit_from_imagej_stack():
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ_stack.tif')
-    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    s = hs.load(fname)
     nt.assert_equal(s.data.shape, (2, 68, 68))
     nt.assert_equal(s.axes_manager[0].units, t.Undefined)
     nt.assert_equal(s.axes_manager[1].units, 'micron')
@@ -105,10 +96,10 @@ def test_read_unit_from_imagej_stack(import_local_tifffile=False):
     nt.assert_almost_equal(s.axes_manager[2].scale, 0.16867, places=5)
 
 
-def test_read_unit_from_DM_stack(import_local_tifffile=False):
+def test_read_unit_from_DM_stack():
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_DM_stack.tif')
-    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    s = hs.load(fname)
     nt.assert_equal(s.data.shape, (2, 68, 68))
     nt.assert_equal(s.axes_manager[0].units, 's')
     nt.assert_equal(s.axes_manager[1].units, 'µm')
@@ -139,10 +130,10 @@ def test_read_unit_from_DM_stack(import_local_tifffile=False):
             s2.axes_manager[2].offset, s.axes_manager[2].offset, places=5)
 
 
-def test_read_unit_from_imagej_stack_no_scale(import_local_tifffile=False):
+def test_read_unit_from_imagej_stack_no_scale():
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ_stack_no_scale.tif')
-    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    s = hs.load(fname)
     nt.assert_equal(s.data.shape, (2, 68, 68))
     nt.assert_equal(s.axes_manager[0].units, t.Undefined)
     nt.assert_equal(s.axes_manager[1].units, t.Undefined)
@@ -152,36 +143,36 @@ def test_read_unit_from_imagej_stack_no_scale(import_local_tifffile=False):
     nt.assert_almost_equal(s.axes_manager[2].scale, 1.0, places=5)
 
 
-def test_read_unit_from_imagej_no_scale(import_local_tifffile=False):
+def test_read_unit_from_imagej_no_scale():
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ_no_scale.tif')
-    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    s = hs.load(fname)
     nt.assert_equal(s.axes_manager[0].units, t.Undefined)
     nt.assert_equal(s.axes_manager[1].units, t.Undefined)
     nt.assert_almost_equal(s.axes_manager[0].scale, 1.0, places=5)
     nt.assert_almost_equal(s.axes_manager[1].scale, 1.0, places=5)
 
 
-def test_write_read_unit_imagej(import_local_tifffile=True):
+def test_write_read_unit_imagej():
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ.tif')
-    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    s = hs.load(fname)
     s.axes_manager[0].units = 'µm'
     s.axes_manager[1].units = 'µm'
     with tempfile.TemporaryDirectory() as tmpdir:
         fname2 = os.path.join(
             tmpdir, 'test_loading_image_saved_with_imageJ2.tif')
         s.save(fname2, export_scale=True, overwrite=True)
-        s2 = hs.load(fname2, import_local_tifffile=import_local_tifffile)
+        s2 = hs.load(fname2)
         nt.assert_equal(s2.axes_manager[0].units, 'micron')
         nt.assert_equal(s2.axes_manager[1].units, 'micron')
         nt.assert_equal(s.data.shape, s.data.shape)
 
 
-def test_write_read_unit_imagej_with_description(import_local_tifffile=True):
+def test_write_read_unit_imagej_with_description():
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ.tif')
-    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    s = hs.load(fname)
     s.axes_manager[0].units = 'µm'
     s.axes_manager[1].units = 'µm'
     nt.assert_almost_equal(s.axes_manager[0].scale, 0.16867, places=5)
@@ -189,7 +180,7 @@ def test_write_read_unit_imagej_with_description(import_local_tifffile=True):
     with tempfile.TemporaryDirectory() as tmpdir:
         fname2 = os.path.join(tmpdir, 'description.tif')
         s.save(fname2, export_scale=False, overwrite=True, description='test')
-        s2 = hs.load(fname2, import_local_tifffile=import_local_tifffile)
+        s2 = hs.load(fname2)
         nt.assert_equal(s2.axes_manager[0].units, t.Undefined)
         nt.assert_equal(s2.axes_manager[1].units, t.Undefined)
         nt.assert_almost_equal(s2.axes_manager[0].scale, 1.0, places=5)
@@ -197,7 +188,7 @@ def test_write_read_unit_imagej_with_description(import_local_tifffile=True):
 
         fname3 = os.path.join(tmpdir, 'description2.tif')
         s.save(fname3, export_scale=True, overwrite=True, description='test')
-        s3 = hs.load(fname3, import_local_tifffile=import_local_tifffile)
+        s3 = hs.load(fname3)
         nt.assert_equal(s3.axes_manager[0].units, 'micron')
         nt.assert_equal(s3.axes_manager[1].units, 'micron')
         nt.assert_almost_equal(s3.axes_manager[0].scale, 0.16867, places=5)
@@ -219,20 +210,9 @@ def test_saving_with_custom_tag():
         nt.assert_equal(s2.original_metadata['Number_65000'],
                         b"Random metadata")
 
-
-def test_read_unit_from_dm():
-    """ Use skimage tifffile.py library """
-    _test_read_unit_from_dm(import_local_tifffile=False)
-
-
-def test_read_unit_from_dm_local_tifffile():
-    """ Use local tifffile.py library """
-    _test_read_unit_from_dm(import_local_tifffile=True)
-
-
-def _test_read_unit_from_dm(import_local_tifffile=False):
+def _test_read_unit_from_dm():
     fname = os.path.join(MY_PATH2, 'test_loading_image_saved_with_DM.tif')
-    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    s = hs.load(fname)
     nt.assert_equal(s.axes_manager[0].units, 'µm')
     nt.assert_equal(s.axes_manager[1].units, 'µm')
     nt.assert_almost_equal(s.axes_manager[0].scale, 0.16867, places=5)
@@ -439,7 +419,7 @@ def test_read_Zeiss_SEM_scale_metadata_512_image():
 
 def test_read_RGB_Zeiss_optical_scale_metadata():
     fname = os.path.join(MY_PATH2, 'optical_Zeiss_AxioVision_RGB.tif')
-    s = hs.load(fname, import_local_tifffile=True)
+    s = hs.load(fname, )
     dtype = np.dtype([('R', 'u1'), ('G', 'u1'), ('B', 'u1')])
     nt.assert_equal(s.data.dtype, dtype)
     nt.assert_equal(s.data.shape, (10, 13))
@@ -451,7 +431,7 @@ def test_read_RGB_Zeiss_optical_scale_metadata():
 
 def test_read_BW_Zeiss_optical_scale_metadata():
     fname = os.path.join(MY_PATH2, 'optical_Zeiss_AxioVision_BW.tif')
-    s = hs.load(fname, force_read_resolution=True, import_local_tifffile=True)
+    s = hs.load(fname, force_read_resolution=True, )
     nt.assert_equal(s.data.dtype, np.uint16)
     nt.assert_equal(s.data.shape, (10, 13))
     nt.assert_equal(s.axes_manager[0].units, 'µm')

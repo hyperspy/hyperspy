@@ -121,9 +121,6 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
 
     _logger.debug('************* Loading *************')
     # For testing the use of local and skimage tifffile library
-    import_local_tifffile = False
-    if 'import_local_tifffile' in kwds.keys():
-        import_local_tifffile = kwds.pop('import_local_tifffile')
 
     with TiffFile(filename, **kwds) as tiff:
         dc = tiff.asarray()
