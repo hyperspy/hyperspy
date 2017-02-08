@@ -15,10 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import pytest
 import numpy as np
 
-from hyperspy.signals import Signal2D
+from hyperspy.signals import Signal1D, Signal2D
 from hyperspy.utils import markers
 
 
@@ -97,3 +97,54 @@ class Test_markers:
         assert m.auto_update is False
         m.add_data(y1=[1, 2])
         assert m.auto_update is True
+
+
+class Test_permanent_markers:
+
+    def test_add_permanent_marker(self):
+        s = Signal1D(np.arange(10))
+        m = markers.point(x=5, y=5)
+        s.add_marker(m, permanent=True)
+        assert s.markers[0] == m
+    
+    def test_add_permanent_marker_twice(self):
+        with pytest.raises(Exception):
+            s = Signal1D(np.arange(10))
+            m = markers.point(x=5, y=5)
+            s.add_marker(m, permanent=True)
+            s.add_marker(m, permanent=True)
+
+    def test_add_permanent_marker_twice_different_signal(self):
+        with pytest.raises(Exception):
+            s0 = Signal1D(np.arange(10))
+            s1 = Signal1D(np.arange(10))
+            m = markers.point(x=5, y=5)
+            s0.add_marker(m, permanent=True)
+            s1.add_marker(m, permanent=True)
+
+    def test_add_several_permanent_markers(self):
+        s = Signal1D(np.arange(10))
+        m_point = markers.point(x=5, y=5)
+        m_line = markers.line_segment(x1=5, x2=10, y1=5, y2=10)
+        m_vline = markers.vertical_line(x=5)
+        m_vline_segment = markers.vertical_line_segment(x=4, y1=3, y2=6)
+        m_hline = markers.horizontal_line(y=5)
+        m_hline_segment = markers.horizontal_line_segment(x1=1, x2=9, y=5)
+        m_rect = markers.rectangle(x1=1, x2=3, y1=5, y2=10)
+        s.add_marker(m_point, permanent=True)
+        s.add_marker(m_line, permanent=True)
+        s.add_marker(m_vline, permanent=True)
+        s.add_marker(m_vline_segment, permanent=True)
+        s.add_marker(m_hline, permanent=True)
+        s.add_marker(m_hline_segment, permanent=True)
+        s.add_marker(m_rect, permanent=True)
+        assert len(s.markers) == 7
+        with pytest.raises(Exception):
+            s.add_marker(m_rect, permanent=True)
+
+    def test_add_permanent_marker_signal2d(self):
+        s = Signal2D(np.arange(100).reshape(10,10))
+        m = markers.point(x=5, y=5)
+        s.add_marker(m, permanent=True)
+        assert s.markers[0] == m
+
