@@ -34,6 +34,8 @@ install:
       conda create -n testenv --yes $DEPS;
       source activate testenv;
       conda install pip;
+      pip uninstall matplotlib;
+      pip install matplotlib;
       python setup.py install;
       pip install pytest pytest-xdist;
     else pip install pytest;
@@ -54,7 +56,6 @@ script:
       echo "available installed python libraries (pip3 list):"
       pip3 list;
       pip3 install coverage coveralls pytest-cov pytest-mpl;
-      pip3 install --upgrade matplotlib; # force to have the same freetype in matplotlib for plot testing
       py.test --mpl --cov=hyperspy --pyargs hyperspy.tests;
     fi
 
