@@ -9,7 +9,6 @@ matrix:
   - python: 3.5
     env: export FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='True'
   - os: osx
-    language: generic
     python: 3.5
     env: export FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
   allow_failures:
@@ -52,7 +51,7 @@ script:
       python setup.py build_ext --inplace;
       pip install coverage coveralls pytest-cov pytest-mpl;
       if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
-	py.test --mpl --cov=hyperspy --pyargs hyperspy;
+        py.test --mpl --cov=hyperspy --pyargs hyperspy;
       else py.test --cov=hyperspy --pyargs hyperspy;
       fi
     else python3 setup.py build_ext --inplace;
