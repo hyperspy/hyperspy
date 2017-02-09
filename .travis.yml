@@ -51,7 +51,10 @@ script:
   - if [[ $MINIMAL_ENV == 'False' ]]; then
       python setup.py build_ext --inplace;
       pip install coverage coveralls pytest-cov pytest-mpl;
-      py.test --mpl --cov=hyperspy --pyargs hyperspy;
+      if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
+	py.test --mpl --cov=hyperspy --pyargs hyperspy;
+      else py.test --cov=hyperspy --pyargs hyperspy;
+      fi
     else python3 setup.py build_ext --inplace;
       echo "available installed python libraries (pip3 list):"
       pip3 list;
