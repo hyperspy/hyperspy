@@ -66,6 +66,7 @@ class EELSModel(Model1D):
                  auto_add_edges=True, ll=None,
                  GOS=None, dictionary=None):
         Model1D.__init__(self, signal1D)
+        self.signal1D = signal1D
         self._suspend_auto_fine_structure_width = False
         self.convolved = False
         self.low_loss = ll
@@ -92,7 +93,12 @@ class EELSModel(Model1D):
     def signal1D(self, value):
         if isinstance(value, EELSSpectrum):
             self._signal = value
-            self.signal._are_microscope_parameters_missing()
+            if self.signal._are_microscope_parameters_missing():
+                raise ValueError(
+                    "The required microscope parameters are not defined in "
+                    "the EELS spectrum signal metadata. Use "
+                    "``set_microscope_parameters`` to set them."
+                )
         else:
             raise ValueError(
                 "This attribute can only contain an EELSSpectrum "
