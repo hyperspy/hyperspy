@@ -536,15 +536,25 @@ For example:
             A	5.000000
             centre	0.000000
 
+.. deprecated:: 1.1.3
+    Setting the :py:attr:`~.component.Parameter.twin_function` and
+    :py:attr:`~.component.Parameter.twin_inverse_function` attributes. Set the
+    :py:attr:`~.component.Parameter.twin_function_expr` and
+    :py:attr:`~.component.Parameter.twin_inverse_function_expr` attributes
+    instead.
+
+.. versionadded:: 1.1.3
+    :py:attr:`~.component.Parameter.twin_function_expr` and
+    :py:attr:`~.component.Parameter.twin_inverse_function_expr`.
 
 By default the coupling function is the identity function. However it is
 possible to set a different coupling function by setting the
-:py:attr:`~.component.Parameter.twin_function` and
-:py:attr:`~.component.Parameter.twin_inverse_function` attributes.  For
+:py:attr:`~.component.Parameter.twin_function_expr` and
+:py:attr:`~.component.Parameter.twin_inverse_function_expr` attributes.  For
 example:
 
-    >>> gaussian2.A.twin_function = lambda x: x**2
-    >>> gaussian2.A.twin_inverse_function = lambda x: np.sqrt(np.abs(x))
+    >>> gaussian2.A.twin_function_expr = "x**2"
+    >>> gaussian2.A.twin_inverse_function_expr = "sqrt(abs(x))"
     >>> gaussian2.A.value = 4
     >>> m.print_current_values()
     Components	Parameter	Value
