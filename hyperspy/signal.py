@@ -4060,7 +4060,7 @@ class BaseSignal(FancySlicing,
                     "Navigation shape of the marker must be 0 or the "
                     "same navigation shape as this signal.")
         if (not marker.signal is None) and (not marker.signal is self):
-            raise Exception("Markers can not be added to several signals")
+            raise ValueError("Markers can not be added to several signals")
         marker._plot_on_signal = plot_on_signal
         if plot_marker:
             if self._plot is None:
@@ -4074,7 +4074,7 @@ class BaseSignal(FancySlicing,
             if not hasattr(self, "markers"):
                 self.markers = []
             if marker in self.markers:
-                raise Exception("Marker already added to signal")
+                raise ValueError("Marker already added to signal")
             self.markers.append(marker)
             marker.signal = self
 

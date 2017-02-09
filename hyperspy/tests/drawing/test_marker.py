@@ -138,18 +138,18 @@ class Test_permanent_markers:
         assert s.markers[0] == m
     
     def test_add_permanent_marker_twice(self):
-        with pytest.raises(Exception):
-            s = Signal1D(np.arange(10))
-            m = markers.point(x=5, y=5)
-            s.add_marker(m, permanent=True)
+        s = Signal1D(np.arange(10))
+        m = markers.point(x=5, y=5)
+        s.add_marker(m, permanent=True)
+        with pytest.raises(ValueError):
             s.add_marker(m, permanent=True)
 
     def test_add_permanent_marker_twice_different_signal(self):
-        with pytest.raises(Exception):
-            s0 = Signal1D(np.arange(10))
-            s1 = Signal1D(np.arange(10))
-            m = markers.point(x=5, y=5)
-            s0.add_marker(m, permanent=True)
+        s0 = Signal1D(np.arange(10))
+        s1 = Signal1D(np.arange(10))
+        m = markers.point(x=5, y=5)
+        s0.add_marker(m, permanent=True)
+        with pytest.raises(ValueError):
             s1.add_marker(m, permanent=True)
 
     def test_add_several_permanent_markers(self):
@@ -169,7 +169,7 @@ class Test_permanent_markers:
         s.add_marker(m_hline_segment, permanent=True)
         s.add_marker(m_rect, permanent=True)
         assert len(s.markers) == 7
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             s.add_marker(m_rect, permanent=True)
 
     def test_add_permanent_marker_signal2d(self):
