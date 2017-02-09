@@ -108,8 +108,28 @@ Install using `pip`:
 
 
 pip installs automatically the strictly required libraries. However, for full
-functionality you may need to install some other dependencies,
-see :ref:`install-dependencies`. Also, be aware that HyperSpy depends on a
+functionality you may need to install some other dependencies. To install with
+full functionality:
+
+
+.. code-block:: bash
+
+    $ pip install hyperspy[all]
+
+Alternatively you can select that extra functionality required:
+
+* ``bcf`` to install required libraries to read Brucker files.
+* ``learning`` to install required libraries for some machine learning features.
+
+For example:
+
+.. code-block:: bash
+
+    $ pip install hyperspy[bcf]
+
+See also :ref:`install-dependencies`.
+
+Finally, be aware that HyperSpy depends on a
 number of libraries that usually need to be compiled and therefore installing
 HyperSpy may require development tools. If the above does not work for you
 remember that the easiest way to install HyperSpy is
