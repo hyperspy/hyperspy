@@ -575,7 +575,15 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
             elif isinstance(group[key], h5py.Dataset):
                 dat = group[key]
                 kn = key
-                if dat.dtype.char == "S":
+                if key.startswith("_list_"):
+                    ans = np.array(dat)
+                    ans = ans.tolist()
+                    kn = key[6:]
+                elif key.startswith("_tuple_"):
+                    ans = np.array(dat)
+                    ans = tuple(ans.tolist())
+                    kn = key[7:]
+                elif dat.dtype.char == "S":
                     ans = np.array(dat)
                     try:
                         ans = ans.astype("U")
@@ -584,14 +592,6 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
                         # for example dill pickles. This will obviously also
                         # let "wrong" binary string fail somewhere else...
                         pass
-                elif key.startswith("_list_"):
-                    ans = np.array(dat)
-                    ans = ans.tolist()
-                    kn = key[6:]
-                elif key.startswith("_tuple_"):
-                    ans = np.array(dat)
-                    ans = tuple(ans.tolist())
-                    kn = key[7:]
                 elif lazy:
                     ans = da.from_array(dat, chunks=dat.chunks)
                 else:
