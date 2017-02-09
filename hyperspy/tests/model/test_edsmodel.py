@@ -1,4 +1,4 @@
-import nose.tools as nt
+
 import numpy as np
 from hyperspy.misc.test_utils import assert_warns
 
@@ -8,7 +8,7 @@ from hyperspy.misc.elements import elements as elements_db
 
 class TestlineFit:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = utils_eds.xray_lines_model(elements=['Fe', 'Cr', 'Zn'],
                                        beam_energy=200,
                                        weight_percents=[20, 50, 30],
@@ -33,13 +33,13 @@ class TestlineFit:
         s = self.s
         # Default:
         m = s.create_model()
-        nt.assert_equal(
-            [c.name for c in m],
+        assert (
+            [c.name for c in m] ==
             ['background_order_6', 'Cr_Ka', 'Cr_Kb',
              'Fe_Ka', 'Fe_Kb', 'Zn_Ka'])
         # No auto componentes:
         m = s.create_model(False, False)
-        nt.assert_equal([c.name for c in m], [])
+        assert [c.name for c in m] == []
 
     def test_model_creation(self):
         self._check_model_creation()
@@ -60,10 +60,10 @@ class TestlineFit:
         m = s.create_model()
         m.store()
         m1 = s.models.a.restore()
-        nt.assert_equal(
-            [c.name for c in m], [c.name for c in m1])
-        nt.assert_equal([c.name for c in m.xray_lines],
-                        [c.name for c in m1.xray_lines])
+        assert (
+            [c.name for c in m] == [c.name for c in m1])
+        assert ([c.name for c in m.xray_lines] ==
+                [c.name for c in m1.xray_lines])
 
     def test_edsmodel_store(self):
         self._check_model_store()
@@ -84,9 +84,7 @@ class TestlineFit:
         reso = s.metadata.Acquisition_instrument.TEM.Detector.EDS.\
             energy_resolution_MnKa,
         s.set_microscope_parameters(energy_resolution_MnKa=150)
-        with assert_warns(message=r"Energy resolution \(FWHM at Mn Ka\) "
-                          "changed from"):
-            m.calibrate_energy_axis(calibrate='resolution')
+        m.calibrate_energy_axis(calibrate='resolution')
         np.testing.assert_allclose(
             s.metadata.Acquisition_instrument.TEM.Detector.EDS.
             energy_resolution_MnKa, reso, atol=1)
@@ -155,21 +153,21 @@ class TestlineFit:
     def test_enable_adjust_position(self):
         m = self.s.create_model()
         m.enable_adjust_position()
-        nt.assert_equal(len(m._position_widgets), 5)
+        assert len(m._position_widgets) == 5
         # Check that both line and label was added
-        nt.assert_equal(len(list(m._position_widgets.values())[0]), 2)
+        assert len(list(m._position_widgets.values())[0]) == 2
         lbls = [p[1].string for p in m._position_widgets.values()]
-        nt.assert_equal(sorted(lbls), [
+        assert sorted(lbls) == [
             '$\\mathrm{Cr}_{\\mathrm{Ka}}$',
             '$\\mathrm{Cr}_{\\mathrm{Kb}}$',
             '$\\mathrm{Fe}_{\\mathrm{Ka}}$',
             '$\\mathrm{Fe}_{\\mathrm{Kb}}$',
-            '$\\mathrm{Zn}_{\\mathrm{Ka}}$'])
+            '$\\mathrm{Zn}_{\\mathrm{Ka}}$']
 
 
 class TestMaps:
 
-    def setUp(self):
+    def setup_method(self, method):
         beam_energy = 200
         energy_resolution_MnKa = 130
         energy_axis = {'units': 'keV', 'size': 1200, 'scale': 0.01,

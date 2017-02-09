@@ -1,4 +1,4 @@
-import nose.tools as nt
+
 
 import numpy as np
 
@@ -9,7 +9,7 @@ from hyperspy.roi import (Point1DROI, Point2DROI, SpanROI, RectangularROI,
 
 class TestROIs():
 
-    def setUp(self):
+    def setup_method(self, method):
         np.random.seed(0)  # Same random every time, Line2DROi test requires it
         self.s_s = Signal1D(np.random.rand(50, 60, 4))
         self.s_s.axes_manager[0].scale = 5
@@ -25,8 +25,8 @@ class TestROIs():
         r = Point1DROI(35)
         sr = r(s)
         scale = s.axes_manager[0].scale
-        nt.assert_equal(sr.axes_manager.navigation_shape,
-                        s.axes_manager.navigation_shape[1:])
+        assert (sr.axes_manager.navigation_shape ==
+                s.axes_manager.navigation_shape[1:])
         np.testing.assert_equal(
             sr.data, s.data[:, int(35 / scale), ...])
 
@@ -47,8 +47,8 @@ class TestROIs():
         r = Point1DROI(35)
         sr = r(s)
         scale = s.axes_manager[0].scale
-        nt.assert_equal(sr.axes_manager.navigation_shape,
-                        s.axes_manager.navigation_shape[1:])
+        assert (sr.axes_manager.navigation_shape ==
+                s.axes_manager.navigation_shape[1:])
         np.testing.assert_equal(
             sr.data, s.data[:, int(35 / scale), ...])
 
@@ -57,8 +57,8 @@ class TestROIs():
         r = Point2DROI(35, 40)
         sr = r(s)
         scale = s.axes_manager[0].scale
-        nt.assert_equal(sr.axes_manager.navigation_shape,
-                        s.axes_manager.navigation_shape[2:])
+        assert (sr.axes_manager.navigation_shape ==
+                s.axes_manager.navigation_shape[2:])
         np.testing.assert_equal(
             sr.data, s.data[int(40 / scale), int(35 / scale), ...])
 
@@ -67,8 +67,8 @@ class TestROIs():
         r = Point2DROI(1, 2)
         sr = r(s, axes=s.axes_manager.signal_axes)
         scale = s.axes_manager.signal_axes[0].scale
-        nt.assert_equal(sr.axes_manager.signal_shape,
-                        s.axes_manager.signal_shape[2:])
+        assert (sr.axes_manager.signal_shape ==
+                s.axes_manager.signal_shape[2:])
         np.testing.assert_equal(
             sr.data, s.data[..., int(2 / scale), int(1 / scale)])
 
@@ -78,8 +78,8 @@ class TestROIs():
         sr = r(s)
         scale = s.axes_manager[0].scale
         n = (30 - 15) / scale
-        nt.assert_equal(sr.axes_manager.navigation_shape,
-                        (n, ) + s.axes_manager.navigation_shape[1:])
+        assert (sr.axes_manager.navigation_shape ==
+                (n, ) + s.axes_manager.navigation_shape[1:])
         np.testing.assert_equal(
             sr.data, s.data[:, int(15 / scale):int(30 // scale), ...])
 
@@ -89,7 +89,7 @@ class TestROIs():
         sr = r(s, axes=s.axes_manager.signal_axes)
         scale = s.axes_manager.signal_axes[0].scale
         n = (3 - 1) / scale
-        nt.assert_equal(sr.axes_manager.signal_shape, (n, ))
+        assert sr.axes_manager.signal_shape == (n, )
         np.testing.assert_equal(sr.data, s.data[...,
                                                 int(1 / scale):int(3 / scale)])
 
@@ -103,8 +103,8 @@ class TestROIs():
         scale1 = s.axes_manager[1].scale
         n = ((int(round(2.3 / scale0)), int(round(3.5 / scale0)),),
              (int(round(5.6 / scale1)), int(round(12.2 / scale1)),))
-        nt.assert_equal(sr.axes_manager.navigation_shape,
-                        (n[0][1] - n[0][0], n[1][1] - n[1][0]))
+        assert (sr.axes_manager.navigation_shape ==
+                (n[0][1] - n[0][0], n[1][1] - n[1][0]))
         np.testing.assert_equal(
             sr.data, s.data[n[1][0]:n[1][1], n[0][0]:n[0][1], ...])
 
@@ -117,15 +117,15 @@ class TestROIs():
         sr_ann = r_ann(s)
         scale = s.axes_manager[0].scale
         n = int(round(40 / scale))
-        nt.assert_equal(sr.axes_manager.navigation_shape, (n, n))
-        nt.assert_equal(sr_ann.axes_manager.navigation_shape, (n, n))
+        assert sr.axes_manager.navigation_shape == (n, n)
+        assert sr_ann.axes_manager.navigation_shape == (n, n)
         # Check that mask is same for all images:
         for i in range(n):
             for j in range(n):
-                nt.assert_true(np.all(sr.data.mask[j, i, :] == True) or
-                               np.all(sr.data.mask[j, i, :] == False))
-                nt.assert_true(np.all(sr_ann.data.mask[j, i, :] == True) or
-                               np.all(sr_ann.data.mask[j, i, :] == False))
+                assert (np.all(sr.data.mask[j, i, :] == True) or
+                        np.all(sr.data.mask[j, i, :] == False))
+                assert (np.all(sr_ann.data.mask[j, i, :] == True) or
+                        np.all(sr_ann.data.mask[j, i, :] == False))
         # Check that the correct elements has been masked out:
         mask = sr.data.mask[:, :, 0]
         print(mask)   # To help debugging, this shows the shape of the mask
@@ -140,14 +140,14 @@ class TestROIs():
              26, 27, 28, 29, 30, 33, 34, 35, 36, 37, 38, 41, 42, 43, 44, 45, 46,
              48, 50, 51, 52, 53, 55, 56, 57, 62, 63])
         # Check that mask works for sum
-        nt.assert_equal(np.sum(sr.data), (n**2 - 3 * 4) * 4)
-        nt.assert_equal(np.sum(sr_ann.data), 4 * 5 * 4)
+        assert np.sum(sr.data) == (n**2 - 3 * 4) * 4
+        assert np.sum(sr_ann.data) == 4 * 5 * 4
 
     def test_2d_line_spec_plot(self):
         r = Line2DROI(10, 10, 150, 50, 5)
         s = self.s_s
         s2 = r(s)
-        np.testing.assert_almost_equal(s2.data, np.array(
+        np.testing.assert_allclose(s2.data, np.array(
             [[0.96779467, 0.5468849, 0.27482357, 0.59223042],
              [0.89676116, 0.40673335, 0.55207828, 0.27165277],
                 [0.27734027, 0.52437981, 0.11738029, 0.15984529],
@@ -179,10 +179,10 @@ class TestROIs():
                 [0.89486974, 0.17628164, 0.2796788, 0.58167984],
                 [0.64937273, 0.5006921, 0.28355772, 0.2861476],
                 [0.31342052, 0.19085, 0.90192363, 0.85839813]]
-        ))
+        ), rtol=0.05)
         r.linewidth = 50
         s3 = r(s)
-        np.testing.assert_almost_equal(s3.data, np.array(
+        np.testing.assert_allclose(s3.data, np.array(
             [[0.40999384, 0.27111487, 0.3345655, 0.47553854],
              [0.44475117, 0.40330205, 0.48113292, 0.26780132],
                 [0.57911599, 0.38999298, 0.38509116, 0.37418655],
@@ -220,7 +220,7 @@ class TestROIs():
         s = self.s_i
         r = Line2DROI(0, 0, 4, 4, 1)
         s2 = r(s)
-        nt.assert_true(np.allclose(s2.data, np.array(
+        assert np.allclose(s2.data, np.array(
             [[[0.5646904, 0.83974605, 0.37688365, 0.499676],
               [0.08130241, 0.3241552, 0.91565131, 0.85345237],
               [0.5941565, 0.90536555, 0.42692772, 0.93761072],
@@ -255,10 +255,10 @@ class TestROIs():
               [0.13656701, 0.40578067, 0.64221493, 0.46036815],
               [0.30466093, 0.88706533, 0.30914269, 0.01833664],
               [0.56143007, 0.09026307, 0.81898535, 0.4518825]]]
-        )))
+        ))
         r.linewidth = 10
         s3 = r(s)
-        nt.assert_true(np.allclose(s3.data, np.array(
+        assert np.allclose(s3.data, np.array(
             [[[0., 0., 0., 0.],
               [0., 0., 0., 0.],
               [0., 0., 0., 0.],
@@ -293,12 +293,12 @@ class TestROIs():
               [0.49091568, 0.54173188, 0.51292652, 0.53813843],
               [0.56463766, 0.73848284, 0.41183566, 0.37515417],
               [0.48426503, 0.23582684, 0.45947953, 0.49322732]]]
-        )))
+        ))
 
 
 class TestInteractive:
 
-    def setup(self):
+    def setup_method(self, method):
         self.s = Signal1D(np.arange(2000).reshape((20, 10, 10)))
 
     def test_out(self):
@@ -307,7 +307,7 @@ class TestInteractive:
         sr = r(s)
         d = s.data.sum()
         sr.data += 2
-        nt.assert_equal(d + sr.data.size * 2, s.data.sum())
+        assert d + sr.data.size * 2 == s.data.sum()
         r.x += 2
         sr2 = r(s)
         r(s, out=sr)

@@ -18,14 +18,14 @@
 
 import numpy as np
 import numpy.testing
-import nose.tools as nt
+
 
 import hyperspy.api as hs
 
 
 class Test_Estimate_Elastic_Scattering_Threshold:
 
-    def setUp(self):
+    def setup_method(self, method):
         # Create an empty spectrum
         s = hs.signals.EELSSpectrum(np.zeros((3, 2, 1024)))
         energy_axis = s.axes_manager.signal_axes[0]
@@ -53,8 +53,8 @@ class Test_Estimate_Elastic_Scattering_Threshold:
             tol=0.00001,
         )
         np.testing.assert_allclose(thr.data, 2.5, atol=10e-3)
-        nt.assert_equal(thr.metadata.Signal.signal_type, "")
-        nt.assert_equal(thr.axes_manager.signal_dimension, 0)
+        assert thr.metadata.Signal.signal_type == ""
+        assert thr.axes_manager.signal_dimension == 0
 
     def test_min_in_window_without_smoothing_single_spectrum(self):
         s = self.signal.inav[0, 0]
@@ -81,15 +81,15 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         data = s.estimate_elastic_scattering_threshold(window=1.5,
                                                        tol=0.001,
                                                        ).data
-        nt.assert_true(np.all(np.isnan(data)))
+        assert np.all(np.isnan(data))
 
     def test_estimate_elastic_scattering_intensity(self):
         s = self.signal
         threshold = s.estimate_elastic_scattering_threshold(window=4.)
         # Threshold is nd signal
         t = s.estimate_elastic_scattering_intensity(threshold=threshold)
-        nt.assert_equal(t.metadata.Signal.signal_type, "")
-        nt.assert_equal(t.axes_manager.signal_dimension, 0)
+        assert t.metadata.Signal.signal_type == ""
+        assert t.axes_manager.signal_dimension == 0
         np.testing.assert_array_almost_equal(t.data, 249999.985133)
         # Threshold is signal, 1 spectrum
         s0 = s.inav[0]
@@ -103,7 +103,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
 
 class TestEstimateZLPCentre:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.EELSSpectrum(np.diag(np.arange(1, 11)))
         s.axes_manager[-1].scale = 0.1
         s.axes_manager[-1].offset = 100
@@ -116,13 +116,13 @@ class TestEstimateZLPCentre:
                                    np.arange(100,
                                              101,
                                              0.1))
-        nt.assert_equal(zlpc.metadata.Signal.signal_type, "")
-        nt.assert_equal(zlpc.axes_manager.signal_dimension, 0)
+        assert zlpc.metadata.Signal.signal_type == ""
+        assert zlpc.axes_manager.signal_dimension == 0
 
 
 class TestAlignZLP:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.EELSSpectrum(np.zeros((10, 100)))
         self.scale = 0.1
         self.offset = -2
@@ -165,8 +165,8 @@ class TestAlignZLP:
                                also_align=[s2],
                                show_progressbar=None)
         zlpc = s2.estimate_zero_loss_peak_centre()
-        nt.assert_equal(zlpc.data.mean(), 0)
-        nt.assert_equal(zlpc.data.std(), 0)
+        assert zlpc.data.mean() == 0
+        assert zlpc.data.std() == 0
 
     def test_align_zero_loss_peak_with_spike_signal_range(self):
         s = self.signal
@@ -180,12 +180,12 @@ class TestAlignZLP:
         # Max value in the original spectrum is 12, but due to the aligning
         # the peak is split between two different channels. So 8 is the
         # maximum value for the aligned spectrum
-        nt.assert_true(np.allclose(zlp_max, 8))
+        assert np.allclose(zlp_max, 8)
 
 
 class TestPowerLawExtrapolation:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = hs.signals.EELSSpectrum(0.1 * np.arange(50, 250, 0.5) ** -3.)
         s.metadata.Signal.binned = False
         s.axes_manager[-1].offset = 50

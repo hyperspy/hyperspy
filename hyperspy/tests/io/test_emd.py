@@ -6,8 +6,8 @@
 
 import os.path
 from os import remove
+import tempfile
 
-import nose.tools as nt
 import numpy as np
 
 from hyperspy.io import load
@@ -33,19 +33,19 @@ test_title = 'This is a test!'
 def test_signal_3d_loading():
     signal = load(os.path.join(my_path, 'emd_files', 'example_signal.emd'))
     np.testing.assert_equal(signal.data, data_signal)
-    nt.assert_is_instance(signal, BaseSignal)
+    assert isinstance(signal, BaseSignal)
 
 
 def test_image_2d_loading():
     signal = load(os.path.join(my_path, 'emd_files', 'example_image.emd'))
     np.testing.assert_equal(signal.data, data_image)
-    nt.assert_is_instance(signal, Signal2D)
+    assert isinstance(signal, Signal2D)
 
 
 def test_spectrum_1d_loading():
     signal = load(os.path.join(my_path, 'emd_files', 'example_spectrum.emd'))
     np.testing.assert_equal(signal.data, data_spectrum)
-    nt.assert_is_instance(signal, Signal1D)
+    assert isinstance(signal, Signal1D)
 
 
 def test_metadata():
@@ -64,7 +64,18 @@ def test_metadata():
     for key, ref_value in sig_metadata.items():
         np.testing.assert_equal(
             signal.metadata.Signal.as_dictionary().get(key), ref_value)
-    nt.assert_is_instance(signal, Signal2D)
+    assert isinstance(signal, Signal2D)
+
+
+class TestMinimalSave():
+
+    def setup_method(self, method):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.filename = tmp + '/testfile.emd'
+        self.signal = Signal1D([0, 1])
+
+    def test_minimal_save(self):
+        self.signal.save(self.filename)
 
 
 class TestCaseSaveAndRead():
@@ -114,12 +125,13 @@ class TestCaseSaveAndRead():
         for key, ref_value in sig_metadata.items():
             np.testing.assert_equal(
                 signal.metadata.Signal.as_dictionary().get(key), ref_value)
-        nt.assert_is_instance(signal, BaseSignal)
+        assert isinstance(signal, BaseSignal)
 
-    def tearDown(self):
+    def teardown_method(self, method):
         remove(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
 
 
 if __name__ == '__main__':
-    import nose
-    nose.run(defaultTest=__name__)
+
+    import pytest
+    pytest.main(__name__)

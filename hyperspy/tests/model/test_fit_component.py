@@ -17,16 +17,15 @@
 
 
 import numpy as np
+import pytest
 
-import nose.tools
-from nose.tools import assert_true
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.components1d import Gaussian
 
 
 class TestFitOneComponent:
 
-    def setUp(self):
+    def setup_method(self, method):
         g = Gaussian()
         g.A.value = 10000.0
         g.centre.value = 5000.0
@@ -51,14 +50,14 @@ class TestFitOneComponent:
                                    rtol=self.rtol,
                                    atol=10e-3)
 
-    @nose.tools.raises(ValueError)
     def test_component_not_in_model(self):
-        self.model.fit_component(self.g)
+        with pytest.raises(ValueError):
+            self.model.fit_component(self.g)
 
 
 class TestFitSeveralComponent:
 
-    def setUp(self):
+    def setup_method(self, method):
         gs1 = Gaussian()
         gs1.A.value = 10000.0
         gs1.centre.value = 5000.0
@@ -112,9 +111,9 @@ class TestFitSeveralComponent:
                                    g1.function(axis),
                                    rtol=self.rtol,
                                    atol=10e-3)
-        assert_true(g1.active)
-        assert_true(g2.active)
-        assert_true(not g3.active)
+        assert g1.active
+        assert g2.active
+        assert not g3.active
 
     def test_fit_component_free_state(self):
         m = self.model
@@ -130,17 +129,17 @@ class TestFitSeveralComponent:
                                    rtol=self.rtol,
                                    atol=10e-3)
 
-        assert_true(g1.A.free)
-        assert_true(g1.sigma.free)
-        assert_true(g1.centre.free)
+        assert g1.A.free
+        assert g1.sigma.free
+        assert g1.centre.free
 
-        assert_true(not g2.A.free)
-        assert_true(not g2.sigma.free)
-        assert_true(g2.centre.free)
+        assert not g2.A.free
+        assert not g2.sigma.free
+        assert g2.centre.free
 
-        assert_true(g3.A.free)
-        assert_true(g3.sigma.free)
-        assert_true(g3.centre.free)
+        assert g3.A.free
+        assert g3.sigma.free
+        assert g3.centre.free
 
     def test_fit_multiple_component(self):
         m = self.model
