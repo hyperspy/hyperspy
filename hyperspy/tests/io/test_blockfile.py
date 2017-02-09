@@ -198,35 +198,19 @@ def test_load_lazy():
     s = hs.load(FILE2, lazy=True)
     assert isinstance(s.data, Array)
 
-def test_load_memmap():
-    s = hs.load(FILE2, load_to_memory=False)
-    assert isinstance(s.data, np.memmap)
-
-@pytest.mark.parametrize('kwd', ['load_to_memory', 'lazy'])
-def test_load_to_memory(kwd):
-    s = hs.load(FILE2, **dict(kwd=False))
+def test_load_to_memory():
+    s = hs.load(FILE2, lazy=False)
     assert isinstance(s.data, np.ndarray)
     assert not isinstance(s.data, np.memmap)
 
 def test_load_readonly():
-    s = hs.load(FILE2, load_to_memory=False, mmap_mode='r')
-    with pytest.raises(ValueError):
+    s = hs.load(FILE2, lazy=True)
+    with pytest.raises(NotImplementedError):
         s.data[:] = 23
 
-def test_load_inplace(save_path):
-    sig_reload = None
-    signal = hs.signals.Signal2D((255 * np.random.rand(2, 3, 2, 2)
-                                  ).astype(np.uint8))
-    signal.save(save_path, overwrite=True)
-    del signal
-    sig_reload = hs.load(save_path, load_to_memory=False, mmap_mode='r+')
-    sig_reload.data[:] = 23
-    # Flush and close memmap:
-    del sig_reload
-    gc.collect()
-    # Check if values were written to disk
-    sig_reload = hs.load(save_path, load_to_memory=False, mmap_mode='r')
-    assert np.all(sig_reload.data == 23)
+def test_load_inplace():
+    with pytest.raises(ValueError):
+        hs.load(FILE2, lazy=True, mmap_mode='r+')
 
 
 def test_write_fresh(save_path):

@@ -167,6 +167,7 @@ class TestLoadingNewSavedMetadata:
         assert (
             self.s.metadata.test.tuple_inside_list == [
                 137, (123, 44)])
+
     @pytest.mark.xfail(reason="dill is not guaranteed to load across Python versions")
     def test_binary_string(self):
         import dill
@@ -366,3 +367,12 @@ class TestAxesConfiguration:
 def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
     assert s.metadata.Sample.elements.dtype.char == "U"
+
+def test_lazy_metadata_arrays(tmpfilepath):
+    s = BaseSignal([1,2,3])
+    s.metadata.array = np.arange(10.)
+    s.save(tmpfilepath)
+    l = load(tmpfilepath, lazy=True)
+    # Can't deepcopy open hdf5 file handles
+    with pytest.raises(TypeError):
+        l.deepcopy()

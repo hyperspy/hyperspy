@@ -24,6 +24,7 @@
 import re
 import h5py
 import numpy as np
+from dask.array import from_array
 
 import logging
 
@@ -148,12 +149,14 @@ class EMD(object):
                 self._log.exception('The hdf5 writer could not write the following '
                                     'information in the file: %s : %s', key, value)
 
-    def _read_signal_from_group(self, name, group, load_to_memory=True):
+    def _read_signal_from_group(self, name, group, lazy=False):
         self._log.debug('Calling _read_signal_from_group')
         from hyperspy import signals
         # Extract essential data:
         data = group.get('data')
-        if load_to_memory:
+        if lazy:
+            data = from_array(data, chunks=data.chunks)
+        else:
             data = np.asanyarray(data)
         # EMD does not have a standard way to describe the signal axis.
         # Therefore we return a BaseSignal
@@ -241,15 +244,15 @@ class EMD(object):
         self.signals[name] = signal
 
     @classmethod
-    def load_from_emd(cls, filename, load_to_memory=True):
+    def load_from_emd(cls, filename, lazy=False):
         """Construct :class:`~.EMD` object from an emd-file.
 
         Parameters
         ----------
         filename : string
             The name of the emd-file from which to load the signals. Standard format is '*.emd'.
-        load_to_memory: bool, optional
-            If True (default) loads data to memory. If False, enables loading only if requested.
+        False: bool, optional
+            If False (default) loads data to memory. If True, enables loading only if requested.
 
         Returns
         -------
@@ -297,9 +300,9 @@ class EMD(object):
                 if isinstance(group, h5py.Group):
                     if group.attrs.get('emd_group_type') == 1:
                         emd._read_signal_from_group(
-                            name, group, load_to_memory)
+                            name, group, lazy)
         # Close file and return EMD object:
-        if load_to_memory:
+        if not lazy:
             emd_file.close()
         return emd
 
@@ -372,11 +375,9 @@ class EMD(object):
         self._log.info(info_str)
 
 
-def file_reader(filename, load_to_memory=True, log_info=False,
+def file_reader(filename, log_info=False,
                 lazy=False, **kwds):
-    if lazy:
-        load_to_memory = False
-    emd = EMD.load_from_emd(filename, load_to_memory)
+    emd = EMD.load_from_emd(filename, lazy)
     if log_info:
         emd.log_info()
     dictionaries = []

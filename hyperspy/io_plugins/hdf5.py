@@ -114,9 +114,6 @@ def get_hspy_format_version(f):
 
 def file_reader(filename, backing_store=False,
                 lazy=False, **kwds):
-    if 'load_to_memory' in kwds:
-        del kwds['load_to_memory']
-    load_to_memory = not lazy
     mode = kwds.pop('mode', 'r+')
     f = h5py.File(filename, mode=mode, **kwds)
     # Getting the format version here also checks if it is a valid HSpy
@@ -143,13 +140,13 @@ def file_reader(filename, backing_store=False,
                     # del m_gr[model_name].attrs['_signal']
                     res = hdfgroup2dict(
                         m_gr[model_name],
-                        load_to_memory=load_to_memory)
+                        lazy=lazy)
                     del res['_signal']
                     models_with_signals.append((key, {model_name: res}))
                 else:
                     standalone_models.append(
                         {model_name: hdfgroup2dict(
-                            m_gr[model_name], load_to_memory=load_to_memory)})
+                            m_gr[model_name], lazy=lazy)})
         except TypeError:
             raise IOError(not_valid_format)
 
@@ -163,7 +160,7 @@ def file_reader(filename, backing_store=False,
         # Parse the file
         for experiment in experiments:
             exg = f['Experiments'][experiment]
-            exp = hdfgroup2signaldict(exg, load_to_memory)
+            exp = hdfgroup2signaldict(exg, lazy)
             # assign correct models, if found:
             _tmp = {}
             for (key, _dict) in reversed(models_with_signals):
@@ -183,12 +180,12 @@ def file_reader(filename, backing_store=False,
                       'You can still load the data using a hdf5 reader, '
                       'e.g. h5py, and manually create a Signal. '
                       'Please, refer to the User Guide for details')
-    if load_to_memory:
+    if not lazy:
         f.close()
     return exp_dict_list
 
 
-def hdfgroup2signaldict(group, load_to_memory=True):
+def hdfgroup2signaldict(group, lazy=False):
     global current_file_version
     global default_version
     if current_file_version < LooseVersion("1.2"):
@@ -199,18 +196,18 @@ def hdfgroup2signaldict(group, load_to_memory=True):
         original_metadata = "original_metadata"
 
     exp = {'metadata': hdfgroup2dict(
-        group[metadata], load_to_memory=load_to_memory),
+        group[metadata], lazy=lazy),
         'original_metadata': hdfgroup2dict(
-            group[original_metadata], load_to_memory=load_to_memory),
+            group[original_metadata], lazy=lazy),
         'attributes': {}
     }
 
     data = group['data']
-    if load_to_memory:
-        data = np.asanyarray(data)
-    else:
+    if lazy:
         data = da.from_array(data, chunks=data.chunks)
         exp['attributes']['_lazy'] = True
+    else:
+        data = np.asanyarray(data)
     exp['data'] = data
     axes = []
     for i in range(len(exp['data'].shape)):
@@ -228,7 +225,7 @@ def hdfgroup2signaldict(group, load_to_memory=True):
         try:
             axes = [i for k, i in sorted(iter(hdfgroup2dict(
                 group['_list_' + str(len(exp['data'].shape)) + '_axes'],
-                load_to_memory=load_to_memory).items()))]
+                lazy=lazy).items()))]
         except KeyError:
             raise IOError(not_valid_format)
     exp['axes'] = axes
@@ -236,12 +233,12 @@ def hdfgroup2signaldict(group, load_to_memory=True):
         exp['attributes']['learning_results'] = \
             hdfgroup2dict(
                 group['learning_results'],
-                load_to_memory=load_to_memory)
+                lazy=lazy)
     if 'peak_learning_results' in group.keys():
         exp['attributes']['peak_learning_results'] = \
             hdfgroup2dict(
                 group['peak_learning_results'],
-                load_to_memory=load_to_memory)
+                lazy=lazy)
 
     # If the title was not defined on writing the Experiment is
     # then called __unnamed__. The next "if" simply sets the title
@@ -255,10 +252,10 @@ def hdfgroup2signaldict(group, load_to_memory=True):
         # mva_results
         if 'mva_results' in group.keys():
             exp['attributes']['learning_results'] = hdfgroup2dict(
-                group['mva_results'], load_to_memory=load_to_memory)
+                group['mva_results'], lazy=lazy)
         if 'peak_mva_results' in group.keys():
             exp['attributes']['peak_learning_results'] = hdfgroup2dict(
-                group['peak_mva_results'], load_to_memory=load_to_memory)
+                group['peak_mva_results'], lazy=lazy)
         # Replace the old signal and name keys with their current names
         if 'signal' in exp['metadata']:
             if "Signal" not in exp["metadata"]:
@@ -531,7 +528,7 @@ def overwrite_dataset(group, data, key, signal_axes=None, **kwds):
             da.store(da.from_array(data, chunks=dset.chunks), dset)
 
 
-def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
+def hdfgroup2dict(group, dictionary=None, lazy=False):
     if dictionary is None:
         dictionary = {}
     for key, value in group.attrs.items():
@@ -574,10 +571,11 @@ def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
                 from hyperspy.io import dict2signal
                 dictionary[key[len('_sig_'):]] = (
                     dict2signal(hdfgroup2signaldict(
-                        group[key], load_to_memory=load_to_memory)))
+                        group[key], lazy=lazy)))
             elif isinstance(group[key], h5py.Dataset):
-                ans = np.array(group[key])
-                if ans.dtype.char == "S":
+                # Load as numpy array if : list / tuple / string, or to memory.
+                if group[key].dtype.char == "S":
+                    ans = np.array(group[key])
                     try:
                         ans = ans.astype("U")
                     except UnicodeDecodeError:
@@ -587,42 +585,46 @@ def hdfgroup2dict(group, dictionary=None, load_to_memory=True):
                         pass
                 kn = key
                 if key.startswith("_list_"):
+                    ans = np.array(group[key])
                     ans = ans.tolist()
                     kn = key[6:]
                 elif key.startswith("_tuple_"):
+                    ans = np.array(group[key])
                     ans = tuple(ans.tolist())
                     kn = key[7:]
-                elif load_to_memory:
+                elif lazy:
                     kn = key
+                    dat = group[key]
+                    ans = da.from_array(dat, chunks=dat.chunks)
                 else:
                     # leave as h5py dataset
-                    ans = group[key]
+                    ans = np.array(group[key])
                     kn = key
                 dictionary[kn] = ans
             elif key.startswith('_hspy_AxesManager_'):
                 dictionary[key[len('_hspy_AxesManager_'):]] = AxesManager(
                     [i for k, i in sorted(iter(
                         hdfgroup2dict(
-                            group[key], load_to_memory=load_to_memory).items()
+                            group[key], lazy=lazy).items()
                     ))])
             elif key.startswith('_list_'):
                 dictionary[key[7 + key[6:].find('_'):]] = \
                     [i for k, i in sorted(iter(
                         hdfgroup2dict(
-                            group[key], load_to_memory=load_to_memory).items()
+                            group[key], lazy=lazy).items()
                     ))]
             elif key.startswith('_tuple_'):
                 dictionary[key[8 + key[7:].find('_'):]] = tuple(
                     [i for k, i in sorted(iter(
                         hdfgroup2dict(
-                            group[key], load_to_memory=load_to_memory).items()
+                            group[key], lazy=lazy).items()
                     ))])
             else:
                 dictionary[key] = {}
                 hdfgroup2dict(
                     group[key],
                     dictionary[key],
-                    load_to_memory=load_to_memory)
+                    lazy=lazy)
     return dictionary
 
 

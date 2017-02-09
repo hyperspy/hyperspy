@@ -481,33 +481,9 @@ in range 0-255).
    versions of the format might therefore not be readable. Complete
    interoperability with the official software can neither be guaranteed.
 
-Blockfiles are by default loaded into memory, but can instead be loaded in a
-"copy-on-write" manner using
-`numpy.memmap <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.html>`_
-. This behavior can be controlled by the arguments `lazy` and
-`mmap_mode`. For valid values for `mmap_mode`, see the documentation for
-`numpy.memmap <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.html>`_.
-
-Examples of ways of loading:
-
-.. code-block:: python
-
-    >>> hs.load('file.blo')     # Default loading, equivalent to the next line
-    >>> hs.load('file.blo', lazy=False)    # Load directly to memory
-    >>> # Default memmap loading:
-    >>> hs.load('file.blo', lazy=True, mmap_mode='c')
-
-    >>> # Loads data read only:
-    >>> hs.load('file.blo', lazy=True, mmap_mode='r')
-    >>> # Loads data read/write:
-    >>> hs.load('file.blo', lazy=True, mmap_mode='r+')
-
-By loading the data read/write, any changes to the original data array will be
-written to disk. The data is written when the original data array is deleted, or
-when :py:meth:`BaseSignal.data.flush` (`numpy.memmap.flush
-<http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.flush.html>`_)
-is called.
-
+Blockfiles are by default loaded in a "copy-on-write" manner using
+`numpy.memmap
+<http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.html>`_ .
 
 .. _dens-format:
 
