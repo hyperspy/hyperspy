@@ -60,15 +60,26 @@ using the :py:meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 
     >>> s.original_metadata.export('parameters')
 
-All file readers support accessing the data without reading it to memory. This
-feature can be useful when analysing large files. To load a file without loading
-it to memory simply set ``lazy`` to ``True`` e.g.:
+.. _load_to_memory-label:
+
+.. deprecated:: 1.2
+   ``memmap_dir`` and ``load_to_memory`` :py:func:`~.io.load` keyword arguments.
+   Use ``lazy`` instead of ``load_to_memory``. ``lazy`` makes ``memmap_dir``
+   unnecessary.
+
+.. versionadd: 1.2
+   ``lazy`` keyword argument.
+
+Almost all file readers support accessing the data without reading it to memory
+(see :ref:`supported-formats` for a list). This feature can be useful when
+analysing large files. To load a file without loading it to memory simply set
+``lazy`` to ``True`` e.g.:
 
 .. code-block:: python
 
     >>> s = hs.load("filename.hdf5", lazy=True)
 
-More details on lazy operation in :ref:`big-data-label`.
+More details on lazy evaluation support in :ref:`big-data-label`.
 
 
 Loading multiple files
@@ -145,48 +156,48 @@ Supported formats
 =================
 
 Here is a summary of the different formats that are currently supported by
-HyperSpy.
+HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
 
 
 .. table:: Supported file formats
 
-    +--------------------+-----------+----------+
-    | Format             | Read      | Write    |
-    +====================+===========+==========+
-    | Gatan's dm3        |    Yes    |    No    |
-    +--------------------+-----------+----------+
-    | Gatan's dm4        |    Yes    |    No    |
-    +--------------------+-----------+----------+
-    | FEI's emi and ser  |    Yes    |    No    |
-    +--------------------+-----------+----------+
-    | HDF5               |    Yes    |    Yes   |
-    +--------------------+-----------+----------+
-    | Image: jpg..       |    Yes    |    Yes   |
-    +--------------------+-----------+----------+
-    | TIFF               |    Yes    |    Yes   |
-    +--------------------+-----------+----------+
-    | MRC                |    Yes    |    No    |
-    +--------------------+-----------+----------+
-    | EMSA/MSA           |    Yes    |    Yes   |
-    +--------------------+-----------+----------+
-    | NetCDF             |    Yes    |    No    |
-    +--------------------+-----------+----------+
-    | Ripple             |    Yes    |    Yes   |
-    +--------------------+-----------+----------+
-    | SEMPER unf         |    Yes    |    Yes   |
-    +--------------------+-----------+----------+
-    | Blockfile          |    Yes    |    Yes   |
-    +--------------------+-----------+----------+
-    | DENS heater log    |    Yes    |    No    |
-    +--------------------+-----------+----------+
-    | Bruker's bcf       |    Yes    |    No    |
-    +--------------------+-----------+----------+
-    | EMD (Berkley Labs) |    Yes    |    Yes   |
-    +--------------------+-----------+----------+
-    | Protochips log     |    Yes    |    No    |
-    +--------------------+-----------+----------+
-    | EDAX .spc and .spd |    Yes    |    No    |
-    +--------------------+-----------+----------+
+    +--------------------+--------+--------+--------+
+    | Format             | Read   | Write  | lazy   |
+    +====================+========+========+========+
+    | Gatan's dm3        |    Yes |    No  |    Yes |
+    +--------------------+--------+--------+--------+
+    | Gatan's dm4        |    Yes |    No  |    Yes |
+    +--------------------+--------+--------+--------+
+    | FEI's emi and ser  |    Yes |    No  |    Yes |
+    +--------------------+--------+--------+--------+
+    | HDF5               |    Yes |    Yes |    Yes |
+    +--------------------+--------+--------+--------+
+    | Image: jpg..       |    Yes |    Yes |    Yes |
+    +--------------------+--------+--------+--------+
+    | TIFF               |    Yes |    Yes |    Yes |
+    +--------------------+--------+--------+--------+
+    | MRC                |    Yes |    No  |    Yes |
+    +--------------------+--------+--------+--------+
+    | EMSA/MSA           |    Yes |    Yes |    No  |
+    +--------------------+--------+--------+--------+
+    | NetCDF             |    Yes |    No  |    No  |
+    +--------------------+--------+--------+--------+
+    | Ripple             |    Yes |    Yes |    Yes |
+    +--------------------+--------+--------+--------+
+    | SEMPER unf         |    Yes |    Yes |    Yes |
+    +--------------------+--------+--------+--------+
+    | Blockfile          |    Yes |    Yes |    Yes |
+    +--------------------+--------+--------+--------+
+    | DENS heater log    |    Yes |    No  |    No  |
+    +--------------------+--------+--------+--------+
+    | Bruker's bcf       |    Yes |    No  |    Yes |
+    +--------------------+--------+--------+--------+
+    | EMD (Berkley Labs) |    Yes |    Yes |    Yes |
+    +--------------------+--------+--------+--------+
+    | Protochips log     |    Yes |    No  |    No  |
+    +--------------------+--------+--------+--------+
+    | EDAX .spc and .spd |    Yes |    No  |    Yes |
+    +--------------------+--------+--------+--------+
 
 .. _hdf5-format:
 
@@ -276,6 +287,11 @@ partly support FEI's custom header. We do not provide writing features for this
 format, but, as it is an an open format, we may implement this feature in the
 future on demand.
 
+For mrc files ``load`` takes the ``mmap_mode`` keyword argument enabling
+loading the file using a different mode (default is copy-on-write) . However,
+note that lazy loading does not support in-place writring (i.e lazy loading and
+the "r+" mode are incompatible).
+
 .. _msa-format:
 
 EMSA/MSA
@@ -329,6 +345,12 @@ using the encoding argument, e.g.:
 .. code-block:: python
 
     >>> s.save('file.rpl', encoding = 'utf8')
+
+
+For mrc files ``load`` takes the ``mmap_mode`` keyword argument enabling
+loading the file using a different mode (default is copy-on-write) . However,
+note that lazy loading does not support in-place writring (i.e lazy loading and
+the "r+" mode are incompatible).
 
 .. _image-format:
 
@@ -483,7 +505,11 @@ in range 0-255).
 
 Blockfiles are by default loaded in a "copy-on-write" manner using
 `numpy.memmap
-<http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.html>`_ .
+<http://docs.scipy.org/doc/numpy/referen-ce/generated/numpy.memmap.html>`_ .
+For blockfiles ``load`` takes the ``mmap_mode`` keyword argument enabling
+loading the file using a different mode. However, note that lazy loading
+does not support in-place writring (i.e lazy loading and the "r+" mode
+are incompatible).
 
 .. _dens-format:
 
