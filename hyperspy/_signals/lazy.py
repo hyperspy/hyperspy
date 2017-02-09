@@ -176,8 +176,6 @@ class LazySignal(BaseSignal):
 
     def _apply_function_on_data_and_remove_axis(self, function, axes,
                                                 out=None):
-        self._make_lazy()
-
         def get_dask_function(numpy_name):
             # Translate from the default numpy to dask functions
             translations = {'amax': 'max', 'amin': 'min'}
@@ -402,7 +400,6 @@ class LazySignal(BaseSignal):
         if ragged not in (True, False):
             raise ValueError('"ragged" kwarg has to be bool for lazy signals')
         _logger.debug("Entering '_map_iterate'")
-        self._make_sure_data_is_contiguous()
 
         size = max(1, self.axes_manager.navigation_size)
         from hyperspy.misc.utils import (create_map_objects,
@@ -446,17 +443,17 @@ class LazySignal(BaseSignal):
         if self.axes_manager.navigation_size < 2:
             yield self()
             return
-        self._make_sure_data_is_contiguous()
         nav_dim = self.axes_manager.navigation_dimension
         sig_dim = self.axes_manager.signal_dimension
         nav_indices = self.axes_manager.navigation_indices_in_array[::-1]
         nav_lengths = np.atleast_1d(
             np.array(self.data.shape)[list(nav_indices)])
         getitem = [slice(None)] * (nav_dim + sig_dim)
+        data = self._lazy_data()
         for indices in product(*[range(l) for l in nav_lengths]):
             for res, ind in zip(indices, nav_indices):
                 getitem[ind] = res
-            yield self.data[tuple(getitem)]
+            yield data[tuple(getitem)]
 
     def _block_iterator(self,
                         flat_signal=True,
@@ -485,6 +482,7 @@ class LazySignal(BaseSignal):
             to NaN or 0.
 
         """
+        self._make_lazy()
         data = self._data_aligned_with_axes
         nav_chunks = data.chunks[:self.axes_manager.navigation_dimension]
         indices = product(*[range(len(c)) for c in nav_chunks])
