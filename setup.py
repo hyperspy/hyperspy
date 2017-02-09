@@ -65,7 +65,9 @@ install_req = ['scipy',
 
 extras_require = {
     "learning": ['scikit-learn'],
-    "bcf": ['lxml'], }
+    "bcf": ['lxml'],
+    "gui-jupyter": "ipywidgets",
+}
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
 # the hack to deal with setuptools + installing the package in ReadTheDoc:
