@@ -64,8 +64,8 @@ install_req = ['scipy',
                'scikit-image']
 
 extras_require = {
-    "learning" : ['scikit-learn'],
-    "bcf" : ['lxml'],}
+    "learning": ['scikit-learn'],
+    "bcf": ['lxml'], }
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
 # the hack to deal with setuptools + installing the package in ReadTheDoc:
