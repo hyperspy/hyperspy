@@ -6,7 +6,7 @@
 
 import os.path
 from os import remove
-
+import tempfile
 
 import numpy as np
 
@@ -65,6 +65,17 @@ def test_metadata():
         np.testing.assert_equal(
             signal.metadata.Signal.as_dictionary().get(key), ref_value)
     assert isinstance(signal, Signal2D)
+
+
+class TestMinimalSave():
+
+    def setup_method(self, method):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.filename = tmp + '/testfile.emd'
+        self.signal = Signal1D([0, 1])
+
+    def test_minimal_save(self):
+        self.signal.save(self.filename)
 
 
 class TestCaseSaveAndRead():
