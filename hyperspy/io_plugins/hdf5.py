@@ -573,9 +573,10 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
                     dict2signal(hdfgroup2signaldict(
                         group[key], lazy=lazy)))
             elif isinstance(group[key], h5py.Dataset):
-                # Load as numpy array if : list / tuple / string, or to memory.
-                if group[key].dtype.char == "S":
-                    ans = np.array(group[key])
+                dat = group[key]
+                kn = key
+                if dat.dtype.char == "S":
+                    ans = np.array(dat)
                     try:
                         ans = ans.astype("U")
                     except UnicodeDecodeError:
@@ -583,23 +584,18 @@ def hdfgroup2dict(group, dictionary=None, lazy=False):
                         # for example dill pickles. This will obviously also
                         # let "wrong" binary string fail somewhere else...
                         pass
-                kn = key
-                if key.startswith("_list_"):
-                    ans = np.array(group[key])
+                elif key.startswith("_list_"):
+                    ans = np.array(dat)
                     ans = ans.tolist()
                     kn = key[6:]
                 elif key.startswith("_tuple_"):
-                    ans = np.array(group[key])
+                    ans = np.array(dat)
                     ans = tuple(ans.tolist())
                     kn = key[7:]
                 elif lazy:
-                    kn = key
-                    dat = group[key]
                     ans = da.from_array(dat, chunks=dat.chunks)
                 else:
-                    # leave as h5py dataset
-                    ans = np.array(group[key])
-                    kn = key
+                    ans = np.array(dat)
                 dictionary[kn] = ans
             elif key.startswith('_hspy_AxesManager_'):
                 dictionary[key[len('_hspy_AxesManager_'):]] = AxesManager(
