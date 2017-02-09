@@ -1152,9 +1152,9 @@ class Line2DROI(BaseInteractiveROI):
             from hyperspy.signals import BaseSignal
             roi = BaseSignal(profile, axes=axm._get_axes_dicts(),
                              metadata=signal.metadata.deepcopy(
-                             ).as_dictionary(),
-                             original_metadata=signal.original_metadata.
-                             deepcopy().as_dictionary())
+            ).as_dictionary(),
+                original_metadata=signal.original_metadata.
+                deepcopy().as_dictionary())
             return roi
         else:
             out.data = profile
