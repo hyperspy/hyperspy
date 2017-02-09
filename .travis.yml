@@ -37,7 +37,7 @@ install:
       if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
         pip uninstall -y matplotlib;
         pip install matplotlib;
-      fi
+      fi;
       python setup.py install;
       pip install pytest pytest-xdist;
     else pip install pytest;
