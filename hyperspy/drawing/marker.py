@@ -94,6 +94,19 @@ class MarkerBase(object):
         marker_dict['data'] = data_dict
         return(marker_dict)
 
+    def _get_data_shape(self):
+        if self.data['x1'].flatten()[0].flatten()[0] is not None:
+            data_shape = np.array(self.data['x1'].item()).shape
+        elif self.data['x2'].flatten()[0].flatten()[0] is not None:
+            data_shape = np.array(self.data['x2'].item()).shape
+        elif self.data['y1'].flatten()[0].flatten()[0] is not None:
+            data_shape = np.array(self.data['y1'].item()).shape
+        elif self.data['y2'].flatten()[0].flatten()[0] is not None:
+            data_shape = np.array(self.data['y2'].item()).shape
+        else:
+            raise ValueError("None of the coordinates has values")
+        return data_shape
+
     def set_marker_properties(self, **kwargs):
         """
         Set the line_properties attribute using keyword

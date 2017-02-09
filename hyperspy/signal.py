@@ -4053,6 +4053,12 @@ class BaseSignal(FancySlicing,
         >>> s.add_marker(marker, permanent=True, plot_marker=False)
         >>> s.plot(plot_markers=True) #doctest: +SKIP
         """
+        marker_data_shape = marker._get_data_shape()
+        if (not (len(marker_data_shape) == 0)) and (
+                marker_data_shape != self.axes_manager.navigation_shape):
+            raise ValueError(
+                    "Navigation shape of the marker must be 0 or the "
+                    "same navigation shape as this signal.")
         if (not marker.signal is None) and (not marker.signal is self):
             raise Exception("Markers can not be added to several signals")
         marker._plot_on_signal = plot_on_signal

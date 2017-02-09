@@ -98,6 +98,36 @@ class Test_markers:
         m.add_data(y1=[1, 2])
         assert m.auto_update is True
 
+    def test_get_data_shape_point(self):
+        m0 = markers.point(5, 5)
+        m1 = markers.point((5, 10), (5, 10))
+        m2 = markers.point(((12, 2, 9), (1, 2, 3)), ((2, 5, 1), (3, 9, 2)))
+        m3 = markers.vertical_line(((12, 2), (2, 5), (9, 2)))
+        assert m0._get_data_shape() == ()
+        assert m1._get_data_shape() == (2,)
+        assert m2._get_data_shape() == (2, 3)
+        assert m3._get_data_shape() == (3, 2)
+
+    def test_add_marker_signal1d_navigation_dim(self):
+        s = Signal1D(np.zeros((3, 50, 50)))
+        m0 = markers.point(5, 5)
+        m1 = markers.point((5, 10), (10, 15))
+        m2 = markers.point(np.zeros((50, 3)), np.zeros((50, 3)))
+        s.add_marker(m0)
+        with pytest.raises(ValueError):
+            s.add_marker(m1)
+        s.add_marker(m2)
+
+    def test_add_marker_signal2d_navigation_dim(self):
+        s = Signal2D(np.zeros((3, 50, 50)))
+        m0 = markers.point(5, 5)
+        m1 = markers.point((5, 10), (10, 15))
+        m2 = markers.point(np.zeros((3, )), np.zeros((3, )))
+        s.add_marker(m0)
+        with pytest.raises(ValueError):
+            s.add_marker(m1)
+        s.add_marker(m2)
+
 
 class Test_permanent_markers:
 
