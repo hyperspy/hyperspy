@@ -9,6 +9,7 @@ from os import remove
 import tempfile
 
 import numpy as np
+import h5py
 
 from hyperspy.io import load
 from hyperspy.signals import BaseSignal, Signal2D, Signal1D
@@ -65,6 +66,19 @@ def test_metadata():
         np.testing.assert_equal(
             signal.metadata.Signal.as_dictionary().get(key), ref_value)
     assert isinstance(signal, Signal2D)
+
+
+def test_metadata_with_bytes_string():
+    filename = os.path.join(
+            my_path, 'emd_files', 'example_bytes_string_metadata.emd')
+    f = h5py.File(filename, 'r')
+    dim1 = f['test_group']['data_group']['dim1']
+    dim1_name = dim1.attrs['name']
+    dim1_units = dim1.attrs['units']
+    f.close()
+    assert type(dim1_name) is np.bytes_
+    assert type(dim1_units) is np.bytes_
+    signal = load(os.path.join(my_path, 'emd_files', filename))
 
 
 class TestMinimalSave():
