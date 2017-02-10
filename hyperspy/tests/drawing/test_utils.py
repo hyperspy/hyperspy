@@ -19,11 +19,15 @@ import matplotlib
 from matplotlib.testing.decorators import cleanup
 import nose.tools as nt
 import warnings
+import sys
+import pytest
 
 import hyperspy.drawing.utils as utils
 from hyperspy.misc.test_utils import assert_warns, switch_backend_mpl
 
 
+@pytest.mark.skipif(sys.platform == 'darwin',
+                    reason="Plot testing not supported on osx by travis-ci")
 @cleanup
 @switch_backend_mpl
 def test_create_figure():
