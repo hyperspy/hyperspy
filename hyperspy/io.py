@@ -325,6 +325,7 @@ def assign_signal_subclass(dtype,
 
     """
     import hyperspy.signals
+    import hyperspy._lazy_signals
     from hyperspy.signal import BaseSignal
     # Check if parameter values are allowed:
     if np.issubdtype(dtype, complex):
@@ -338,8 +339,8 @@ def assign_signal_subclass(dtype,
     if not isinstance(signal_dimension, int) or signal_dimension < 0:
         raise ValueError("signal_dimension must be a positive interger")
     base_signals = find_subclasses(hyperspy.signals, BaseSignal)
-    lazy_signals = find_subclasses(hyperspy.signals,
-                                   hyperspy.signals.LazySignal)
+    lazy_signals = find_subclasses(hyperspy._lazy_signals,
+                                   hyperspy._lazy_signals.LazySignal)
     if lazy:
         signals = lazy_signals
     else:

@@ -1823,8 +1823,8 @@ class BaseSignal(FancySlicing,
 
     def _get_undefined_axes_list(self):
         axes = []
-        for i in range(len(self.data.shape)):
-            axes.append({'size': int(self.data.shape[i]), })
+        for s in self.data.shape:
+            axes.append({'size': int(s), })
         return axes
 
     def __call__(self, axes_manager=None):
@@ -3496,7 +3496,7 @@ class BaseSignal(FancySlicing,
 
     def __deepcopy__(self, memo):
         dc = type(self)(**self._to_dictionary())
-        if dc.data is not None:
+        if isinstance(dc.data, np.ndarray):
             dc.data = dc.data.copy()
 
         # uncomment if we want to deepcopy models as well:
