@@ -4022,12 +4022,12 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         marker : `hyperspy.drawing._markers`
-            the marker to add. See `plot.markers`
+            The marker to add. See `plot.markers`
         plot_on_signal : bool
             If True, add the marker to the signal
             If False, add the marker to the navigator
         plot_marker : bool
-            if True, plot the marker
+            If True, plot the marker
         permanent : bool, default False
             If False, the marker will only appear in the current
             plot. If True, the marker will be added to the
@@ -4044,7 +4044,7 @@ class BaseSignal(FancySlicing,
         Add permanent marker
         >>> s = hs.signals.Signal2D(np.random.random(100, 100))
         >>> marker = hs.markers.point(50, 60)
-        >>> s.add_marker(marker, permanent=True)
+        >>> s.add_marker(marker, permanent=True, plot_marker=True)
         >>> s.plot(plot_markers=True) #doctest: +SKIP
 
         Add permanent marker which changes with navigation position
