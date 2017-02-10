@@ -90,7 +90,7 @@ def fft_correlation(in1, in2, normalize=False):
     s2 = np.array(in2.shape)
     size = s1 + s2 - 1
     # Use 2**n-sized FFT
-    fsize = 2 ** np.ceil(np.log2(size))
+    fsize = (2 ** np.ceil(np.log2(size))).astype("int")
     IN1 = fftn(in1, fsize)
     IN1 *= fftn(in2, fsize).conjugate()
     if normalize is True:
