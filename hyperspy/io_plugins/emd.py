@@ -165,8 +165,15 @@ class EMD(object):
         for i in range(len(data.shape)):
             dim = group.get('dim{}'.format(i + 1))
             axis = signal.axes_manager._axes[i]
-            axis.name = dim.attrs.get('name', '')
-            units = re.findall('[^_\W]+', dim.attrs.get('units', ''))
+            axis_name = dim.attrs.get('name', '')
+            if isinstance(axis_name, bytes):
+                axis_name = axis_name.decode('utf-8')
+            axis.name = axis_name
+
+            axis_units = dim.attrs.get('units', '')
+            if isinstance(axis_units, bytes):
+                axis_units = axis_units.decode('utf-8')
+            units = re.findall('[^_\W]+', axis_units)
             axis.units = ''.join(units)
             try:
                 axis.scale = dim[1] - dim[0]
