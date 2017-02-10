@@ -4032,6 +4032,11 @@ class BaseSignal(FancySlicing,
             If False, the marker will only appear in the current
             plot. If True, the marker will be added to the
             markers list, and be plotted with plot(plot_markers=True).
+        plot_signal : bool, default True
+            If True, and if the plotting window for this signal is not
+            open: will open the plotting window.
+            If False, and if no plotting is open: will not open a 
+            plotting window.
 
         Examples
         -------
@@ -4047,11 +4052,20 @@ class BaseSignal(FancySlicing,
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
         >>> s.plot(plot_markers=True) #doctest: +SKIP
 
-        Add permanent marker which changes with navigation position
+        Add permanent marker which changes with navigation position, and
+        do not add it to a current plot
         >>> s = hs.signals.Signal2D(np.random.randint(10, size=(3, 100, 100)))
         >>> marker = hs.markers.point((10, 30, 50), (30, 50, 60), color='red')
         >>> s.add_marker(marker, permanent=True, plot_marker=False)
         >>> s.plot(plot_markers=True) #doctest: +SKIP
+
+        Add permanent marker without adding it a current plot, and not opening
+        a new plot if none is currently open
+        >>> s = hs.signals.Signal2D(np.random.randint(10, size=(3, 100, 100)))
+        >>> marker = hs.markers.point((10, 30, 50), (30, 50, 60), color='red')
+        >>> s.add_marker(marker, permanent=True, plot_marker=False, plot_signal=False)
+        >>> s.plot(plot_markers=True) #doctest: +SKIP
+
         """
         marker_data_shape = marker._get_data_shape()
         if (not (len(marker_data_shape) == 0)) and (
@@ -4062,6 +4076,8 @@ class BaseSignal(FancySlicing,
         if (not marker.signal is None) and (not marker.signal is self):
             raise ValueError("Markers can not be added to several signals")
         marker._plot_on_signal = plot_on_signal
+        if plot_signal:
+            self.plot()
         if plot_marker:
             if self._plot is None:
                 self.plot()
