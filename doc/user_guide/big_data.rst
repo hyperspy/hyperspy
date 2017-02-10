@@ -15,6 +15,25 @@ its derivatives.
 Creating Lazy Signals
 ---------------------
 
+Lazy Signals from external data
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If the data is large not loaded by HyperSpy (e.g. it's an ``hdf5.Dataset`` or
+similar), first wrap it in ``dask.array.Array`` as shown `here
+<https://dask.readthedocs.io/en/latest/array-creation.html>`_ and then pass it
+as normal and call ``as_lazy()``:
+
+.. code-block:: python
+
+    >>> import h5py
+    >>> f = h5py.File("myfile.hdf5") # Load the file
+    >>> data = f['/data/path']       # Get the data
+    >>> import dask.array as da      # Import dask to wrap
+    >>> chunks = (1000,100)          # Chunk as appropriate
+    >>> x = da.from_array(data, chunks=chunks)
+    >>> s = hs.signals.BaseSignal(x).as_lazy()
+
+
 Loading lazily
 ^^^^^^^^^^^^^^
 
