@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-
 import numpy as np
 import pytest
 from matplotlib.testing.decorators import cleanup
@@ -29,10 +28,8 @@ mplv = get_matplotlib_version_label()
 default_tol = 2.0
 baseline_dir = 'plot_markers-%s' % mplv
 
-def test_fail_mlp_agg():
-    import matplotlib
-    assert matplotlib.get_backend() == 'agg'
 
+@pytest.mark.skipif("sys.platform == 'darwin'")
 class TestMarkers:
 
     def test_get_data(self):
@@ -137,12 +134,14 @@ def _test_plot_rectange_markers():
     return im
 
 
+@pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_rectange_markers():
     im = _test_plot_rectange_markers()
     return im._plot.signal_plot.figure
 
 
+@pytest.mark.skipif("sys.platform == 'darwin'")
 @cleanup
 @update_close_figure
 def test_plot_rectange_markers_close():
@@ -162,12 +161,14 @@ def _test_plot_point_markers():
     return s
 
 
+@pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_point_markers():
     s = _test_plot_point_markers()
     return s._plot.signal_plot.figure
 
 
+@pytest.mark.skipif("sys.platform == 'darwin'")
 @cleanup
 @update_close_figure
 def test_plot_point_markers_close():
@@ -186,18 +187,21 @@ def _test_plot_text_markers():
     return s
 
 
+@pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_text_markers_nav():
     s = _test_plot_text_markers()
     return s._plot.navigator_plot.figure
 
 
+@pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_text_markers_sig():
     s = _test_plot_text_markers()
     return s._plot.signal_plot.figure
 
 
+@pytest.mark.skipif("sys.platform == 'darwin'")
 @cleanup
 @update_close_figure
 def test_plot_text_markers_close():
@@ -205,7 +209,7 @@ def test_plot_text_markers_close():
 
 
 def _test_plot_line_markers():
-    im = Signal2D(np.arange(100*100).reshape((100, 100)))
+    im = Signal2D(np.arange(100 * 100).reshape((100, 100)))
     m0 = markers.vertical_line_segment(x=20, y1=30, y2=70, linewidth=4,
                                        color='red', linestyle='dotted')
     im.add_marker(m0)
@@ -219,12 +223,14 @@ def _test_plot_line_markers():
     return im
 
 
+@pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_line_markers():
     im = _test_plot_line_markers()
     return im._plot.signal_plot.figure
 
 
+@pytest.mark.skipif("sys.platform == 'darwin'")
 @cleanup
 @update_close_figure
 def test_plot_line_markers_close():

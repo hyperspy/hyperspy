@@ -16,6 +16,9 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import matplotlib
+import pytest
 
+
+@pytest.mark.skipif("sys.platform == 'darwin'")
 def test_mlp_agg_for_testing():
     assert matplotlib.get_backend() == 'agg'
