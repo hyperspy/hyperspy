@@ -186,8 +186,12 @@ class EMD(object):
         metadata = {}
         for key, value in group.attrs.items():
             metadata[key] = value
-        # Add signal:
-        self.add_signal(signal, name, metadata)
+        if signal.data.dtype == np.object:
+            self._log.warning('HyperSpy could not load the data in {}, '\
+                    'skipping it'.format(name))
+        else:
+            # Add signal:
+            self.add_signal(signal, name, metadata)
 
     def add_signal(self, signal, name=None, metadata=None):
         """Add a hyperspy signal to the EMD instance and make sure all metadata is present.
