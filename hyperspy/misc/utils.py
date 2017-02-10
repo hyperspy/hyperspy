@@ -960,7 +960,9 @@ def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
     def figure_out_kwargs(data):
         _kwargs = {k: v for k, v in zip(iterating, data[1:])}
         for k, v in iterating_kwargs:
-            if isinstance(v, BaseSignal) and len(_kwargs[k]) == 1:
+            if (isinstance(v, BaseSignal) and
+                isinstance(_kwargs[k], np.ndarray) and
+                    len(_kwargs[k]) == 1):
                 _kwargs[k] = _kwargs[k][0]
         return data[0], _kwargs
 

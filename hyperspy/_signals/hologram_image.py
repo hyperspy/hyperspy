@@ -18,9 +18,9 @@
 
 import logging
 from collections import OrderedDict
-from contextlib import contextmanager
 import scipy.constants as constants
 import numpy as np
+from dask.array import Array as daArray
 
 from hyperspy.signals import (Signal2D, BaseSignal, Signal1D, LazySignal)
 from hyperspy.misc.holography.reconstruct import (
@@ -29,13 +29,9 @@ from hyperspy.misc.holography.reconstruct import (
 _logger = logging.getLogger(__name__)
 
 
-@contextmanager
-def unfold(s):
-    try:
-        s.unfold_navigation_space()
-        yield s
-    finally:
-        s.fold()
+def _first_nav_pixel_data(s):
+    return s._data_aligned_with_axes[(0, ) *
+                                     s.axes_manager.navigation_dimension]
 
 
 class HologramImage(Signal2D):
@@ -82,9 +78,6 @@ class HologramImage(Signal2D):
         if tilt_stage is not None:
             md.set_item("Acquisition_instrument.TEM.tilt_stage", tilt_stage)
 
-        # if {beam_energy, biprism_voltage, tilt_alpha, tilt_beta} == {None}:
-        #     self._are_microscope_parameters_missing()
-
     def estimate_sideband_position(self,
                                    ap_cb_radius=None,
                                    sb='lower',
@@ -119,7 +112,6 @@ class HologramImage(Signal2D):
         array([124, 452])
         """
 
-        # sb_position = self.deepcopy()
         sb_position = self.map(
             estimate_sideband_position,
             holo_sampling=(self.axes_manager.signal_axes[0].scale,
@@ -270,6 +262,8 @@ class HologramImage(Signal2D):
                 reference.set_signal_type('hologram')
             elif reference is not None:
                 reference = HologramImage(reference)
+                if isinstance(reference.data, daArray):
+                    reference = reference.as_lazy()
 
         # Testing match of navigation axes of reference and self 
         # (exception: reference nav_dim=1):
@@ -304,6 +298,8 @@ class HologramImage(Signal2D):
 
             if not isinstance(sb_position, Signal1D):
                 sb_position = Signal1D(sb_position)
+                if isinstance(sb_position.data, daArray):
+                    sb_position = sb_position.as_lazy()
 
             if not sb_position.axes_manager.signal_size == 2:
                 raise ValueError('sb_position should to have signal size of 2')
@@ -330,11 +326,14 @@ class HologramImage(Signal2D):
                     sb_position, parallel=parallel)
         else:
             if not isinstance(sb_size, BaseSignal):
-                if isinstance(sb_size, np.ndarray) and sb_size.size > 1:
+                if isinstance(sb_size,
+                              (np.ndarray, daArray)) and sb_size.size > 1:
                     # transpose if np.array of multiple instances
                     sb_size = BaseSignal(sb_size).T
                 else:
                     sb_size = BaseSignal(sb_size)
+                if isinstance(sb_size.data, daArray):
+                    sb_size = sb_size.as_lazy()
 
         if sb_size.axes_manager.navigation_size != self.axes_manager.navigation_size:
             if sb_size.axes_manager.navigation_size:
@@ -351,11 +350,14 @@ class HologramImage(Signal2D):
             sb_smoothness = sb_size * 0.05
         else:
             if not isinstance(sb_smoothness, BaseSignal):
-                if isinstance(sb_smoothness,
-                              np.ndarray) and sb_smoothness.size > 1:
+                if isinstance(
+                        sb_smoothness,
+                    (np.ndarray, daArray)) and sb_smoothness.size > 1:
                     sb_smoothness = BaseSignal(sb_smoothness).T
                 else:
                     sb_smoothness = BaseSignal(sb_smoothness)
+                if isinstance(sb_smoothness.data, daArray):
+                    sb_smoothness = sb_smoothness.as_lazy()
 
         if sb_smoothness.axes_manager.navigation_size != self.axes_manager.navigation_size:
             if sb_smoothness.axes_manager.navigation_size:
@@ -448,26 +450,22 @@ class HologramImage(Signal2D):
             if reference.axes_manager.navigation_size == 0 and \
                sb_position.axes_manager.navigation_size > 0:
                 # 1d reference, but parameters are multidimensional
-                with unfold(sb_position_temp) as sb_position_temp_unfolded:
-                    sb_position_ref = sb_position_temp_unfolded.inav[0].data
+                sb_position_ref = _first_nav_pixel_data(sb_position_temp)
             else:
                 sb_position_ref = sb_position_temp
 
             if reference.axes_manager.navigation_size == 0 and \
                sb_size.axes_manager.navigation_size > 0:
                 # 1d reference, but parameters are multidimensional
-                with unfold(sb_size_temp) as sb_size_temp_unfolded:
-                    sb_size_ref = np.float64(sb_size_temp_unfolded.inav[0]
-                                             .data)
+                sb_size_ref = _first_nav_pixel_data(sb_size_temp)
             else:
                 sb_size_ref = sb_size_temp
 
             if reference.axes_manager.navigation_size == 0 and \
                sb_smoothness.axes_manager.navigation_size > 0:
                 # 1d reference, but parameters are multidimensional
-                with unfold(sb_smoothness_temp) as sb_smoothness_temp_unfolded:
-                    sb_smoothness_ref = np.float64(
-                        sb_smoothness_temp_unfolded.inav[0].data)
+                sb_smoothness_ref = np.float64(
+                    _first_nav_pixel_data(sb_smoothness_temp))
             else:
                 sb_smoothness_ref = sb_smoothness_temp
             #

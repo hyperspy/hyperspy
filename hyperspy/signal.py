@@ -3453,11 +3453,10 @@ class BaseSignal(FancySlicing,
             thismap = executor.map
         else:
             from builtins import map as thismap
-
-        for ind, res in progressbar(zip(range(res_data.size),
-                                        thismap(func, zip(*iterators))),
-                                    disable=not show_progressbar,
-                                    total=size, leave=True):
+        pbar = progressbar(total=size, leave=True, disable=not
+                           show_progressbar)
+        for ind, res in zip(range(res_data.size),
+                            thismap(func, zip(*iterators))):
             res_data.flat[ind] = res
             if ragged is False:
                 # to be able to break quickly and not waste time / resources
@@ -3470,6 +3469,7 @@ class BaseSignal(FancySlicing,
                     shapes.add(res.shape)
                 except AttributeError:
                     shapes.add(None)
+            pbar.update(1)
         if parallel:
             executor.shutdown()
 
