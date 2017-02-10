@@ -17,7 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import dask
 
 import numpy.testing as nt
 from numpy.testing import assert_allclose
