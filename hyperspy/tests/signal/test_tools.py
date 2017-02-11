@@ -225,7 +225,7 @@ class Test3D:
         var = new_s.metadata.Signal.Noise_properties.variance
         assert new_s.data.shape == (1, 2, 6)
         assert var.data.shape == (1, 2, 6)
-        from hyperspy.misc.array_tools import reb
+        from hyperspy.misc.array_tools import rebin
 
         if self.signal._lazy:
             from distutils.version import LooseVersion
