@@ -376,3 +376,4 @@ def test_lazy_metadata_arrays(tmpfilepath):
     # Can't deepcopy open hdf5 file handles
     with pytest.raises(TypeError):
         l.deepcopy()
+    del l
