@@ -666,10 +666,7 @@ class ImageObject(object):
             return self.unpack_packed_complex(data)
         elif self.imdict.ImageData.DataType in (8, 23):  # ABGR
             # Reorder the fields
-            data = np.hstack((data[["B", "G", "R"]].view(("u1", 3))[..., ::-1],
-                              data["A"].reshape(-1, 1))).view(
-                {"names": ("R", "G", "B", "A"),
-                 "formats": ("u1",) * 4}).copy()
+            data = data[['R', 'G', 'B', 'A']].copy()
         return data.reshape(self.shape, order=self.order)
 
     def unpack_new_packed_complex(self, data):

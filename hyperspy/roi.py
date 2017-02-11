@@ -1005,10 +1005,10 @@ class Line2DROI(BaseInteractiveROI):
         # (in contrast to standard numpy indexing)
         line_col = np.linspace(src_col, dst_col, length)
         line_row = np.linspace(src_row, dst_row, length)
-
-        data = np.zeros((2, length, int(linewidth)))
-        data[0, :, :] = np.tile(line_col, [int(linewidth), 1]).T
-        data[1, :, :] = np.tile(line_row, [int(linewidth), 1]).T
+        linewidth = int(linewidth)
+        data = np.zeros((2, length, linewidth))
+        data[0, :, :] = np.tile(line_col, [linewidth, 1]).T
+        data[1, :, :] = np.tile(line_row, [linewidth, 1]).T
 
         if linewidth != 1:
             # we subtract 1 from linewidth to change from pixel-counting
