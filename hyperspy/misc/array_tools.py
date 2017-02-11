@@ -106,7 +106,7 @@ def rebin(a, new_shape):
     else:
         import dask.array as da
         try:
-            return da.coarsen(np.sum, a, {i: f for i, f in enumerate(factor)})
+            return da.coarsen(np.sum, a, {i: int(f) for i, f in enumerate(factor)})
         # we provide slightly better error message in hypersy context
         except ValueError:
             raise ValueError("Rebinning does not allign with data dask chunks."
