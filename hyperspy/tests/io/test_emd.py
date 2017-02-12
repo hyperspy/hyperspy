@@ -81,7 +81,7 @@ def test_metadata_with_bytes_string():
     signal = load(os.path.join(my_path, 'emd_files', filename))
 
 
-def test_metadata_with_bytes_string():
+def test_data_numpy_object_dtype():
     filename = os.path.join(
             my_path, 'emd_files', 'example_object_dtype_data.emd')
     signal = load(filename)
