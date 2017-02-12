@@ -81,6 +81,13 @@ def test_metadata_with_bytes_string():
     signal = load(os.path.join(my_path, 'emd_files', filename))
 
 
+def test_metadata_with_bytes_string():
+    filename = os.path.join(
+            my_path, 'emd_files', 'example_object_dtype_data.emd')
+    signal = load(filename)
+    assert len(signal) == 0
+
+
 class TestMinimalSave():
 
     def setup_method(self, method):
