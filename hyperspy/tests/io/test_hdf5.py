@@ -24,9 +24,11 @@ import tempfile
 
 import h5py
 import numpy as np
+import dask.array as da
 import pytest
 
 from hyperspy.io import load
+from hyperspy.io_plugins.hdf5 import get_signal_chunks
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.roi import Point2DROI
@@ -165,6 +167,7 @@ class TestLoadingNewSavedMetadata:
         assert (
             self.s.metadata.test.tuple_inside_list == [
                 137, (123, 44)])
+
     @pytest.mark.xfail(reason="dill is not guaranteed to load across Python versions")
     def test_binary_string(self):
         import dill
@@ -311,9 +314,10 @@ class TestLoadingOOMReadOnly:
         f.close()
 
     def test_oom_loading(self):
-        s = load('tmp.hdf5', load_to_memory=False)
+        s = load('tmp.hdf5', lazy=True)
         assert self.shape == s.data.shape
-        assert isinstance(s.data, h5py.Dataset)
+        assert isinstance(s.data, da.Array)
+        assert s._lazy
 
     def teardown_method(self, method):
         gc.collect()        # Make sure any memmaps are closed first!
@@ -363,3 +367,13 @@ class TestAxesConfiguration:
 def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
     assert s.metadata.Sample.elements.dtype.char == "U"
+
+def test_lazy_metadata_arrays(tmpfilepath):
+    s = BaseSignal([1,2,3])
+    s.metadata.array = np.arange(10.)
+    s.save(tmpfilepath)
+    l = load(tmpfilepath, lazy=True)
+    # Can't deepcopy open hdf5 file handles
+    with pytest.raises(TypeError):
+        l.deepcopy()
+    del l

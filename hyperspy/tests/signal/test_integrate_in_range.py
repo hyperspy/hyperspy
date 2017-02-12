@@ -3,8 +3,10 @@ import numpy as np
 
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.components1d import Gaussian
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class Test1D:
 
     def setup_method(self, method):

@@ -5,8 +5,10 @@ import pytest
 from hyperspy.signals import BaseSignal
 from hyperspy import signals
 from hyperspy.exceptions import DataDimensionError
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class Test1d:
 
     def setup_method(self, method):
@@ -24,9 +26,14 @@ class Test1d:
         s = self.s.as_signal1D(0)
         s.set_signal_type("EELS")
         assert s.metadata.Signal.signal_type == "EELS"
-        assert isinstance(s, signals.EELSSpectrum)
+        if s._lazy:
+            _class = signals.LazyEELSSpectrum
+        else:
+            _class = signals.EELSSpectrum
+        assert isinstance(s, _class)
 
 
+@lazifyTestClass
 class Test2d:
 
     def setup_method(self, method):
@@ -55,15 +62,22 @@ class Test2d:
         assert im.metadata.Signal.signal_type == "EELS"
         s = im.as_signal1D(0)
         assert s.metadata.Signal.signal_type == "EELS"
-        assert isinstance(s, signals.EELSSpectrum)
+        if s._lazy:
+            _class = signals.LazyEELSSpectrum
+        else:
+            _class = signals.EELSSpectrum
+        assert isinstance(s, _class)
 
 
+@lazifyTestClass
 class Test3d:
 
     def setup_method(self, method):
         self.s = BaseSignal(np.random.random((2, 3, 4)))  # (|4, 3, 2)
 
     def test_as_signal2D_contigous(self):
+        if self.s._lazy:
+            pytest.skip("Dask array flags not supported")
         assert self.s.as_signal2D((0, 1)).data.flags['C_CONTIGUOUS']
 
     def test_as_signal2D_1(self):
@@ -79,6 +93,8 @@ class Test3d:
             self.s.as_signal2D((1, 2)).data.shape == (4, 2, 3))  # (4| 3, 2)
 
     def test_as_signal1D_contigous(self):
+        if self.s._lazy:
+            pytest.skip("Dask array flags not supported")
         assert self.s.as_signal1D(0).data.flags['C_CONTIGUOUS']
 
     def test_as_signal1D_0(self):

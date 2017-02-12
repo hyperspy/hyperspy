@@ -65,6 +65,8 @@ Bibliography
 
 .. [Joy1993] Joy, David C., et al. "Practical aspects of electron holography." Ultramicroscopy 51.1-4 (1993): 1-14.
 
+.. [Zhao2016] Zhao, Renbo, and Vincent YF Tan. "Online nonnegative matrix factorization with outliers." Acoustics, Speech and Signal Processing (ICASSP), 2016 IEEE International Conference on. IEEE, 2016.
+
 
 .. _articles-using-hyperspy:
 

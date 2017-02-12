@@ -1,100 +1,63 @@
+from collections import namedtuple
+
 import numpy as np
 
 import hyperspy.api as hs
 from hyperspy.io import assign_signal_subclass
 
 
-class TestSignalAssignSubclass:
+testcase = namedtuple('testcase', ['dtype', 'sig_dim', 'sig_type', 'cls'])
 
-    def test_signal(self):
-        assert assign_signal_subclass(
-            dtype=np.dtype('float'),
-            signal_dimension=1000,
-            signal_type="") is hs.signals.BaseSignal
+subclass_cases = (testcase('float', 1000, '', 'BaseSignal'),
+                  testcase('float', 1, '', 'Signal1D'),
+                  testcase('float', 2, '', 'Signal2D'),
+                  testcase('float', 1, 'EELS', 'EELSSpectrum'),
+                  testcase('float', 1, 'EDS_SEM', 'EDSSEMSpectrum'),
+                  testcase('float', 1, 'EDS_TEM', 'EDSTEMSpectrum'),
+                  testcase('complex', 1, 'DielectricFunction',
+                           'DielectricFunction'),
+                  testcase('complex', 1, 'dielectric function',
+                           'DielectricFunction'),
+                  testcase('complex', 1000, '', 'ComplexSignal'),
+                  testcase('complex', 1, '', 'ComplexSignal1D'),
+                  testcase('complex', 2, '', 'ComplexSignal2D'),
+                  testcase('float', 1000, 'weird', 'BaseSignal'),
+                  testcase('float', 1, 'weird', 'Signal1D'),
+                  testcase('complex', 1000, 'weird', 'ComplexSignal'),
+                  )
 
-    def test_signal1d(self):
-        assert assign_signal_subclass(
-            dtype=np.dtype('float'),
-            signal_dimension=1,
-            signal_type="") is hs.signals.Signal1D
 
-    def test_signal2d(self):
-        assert assign_signal_subclass(
-            dtype=np.dtype('float'),
-            signal_dimension=2,
-            signal_type="") is hs.signals.Signal2D
-
-    def test_eels_spectrum(self):
-        assert assign_signal_subclass(
-            dtype=np.dtype('float'),
-            signal_dimension=1,
-            signal_type="EELS") is hs.signals.EELSSpectrum
-
-    def test_eds_sem_spectrum(self):
-        assert assign_signal_subclass(
-            dtype=np.dtype('float'),
-            signal_dimension=1,
-            signal_type="EDS_SEM") is hs.signals.EDSSEMSpectrum
-
-    def test_eds_tem_spectrum(self):
-        assert assign_signal_subclass(
-            dtype=np.dtype('float'),
-            signal_dimension=1,
-            signal_type="EDS_TEM") is hs.signals.EDSTEMSpectrum
-
-    def test_dielectric_function(self):
-        assert assign_signal_subclass(
-            dtype=complex,
-            signal_dimension=1,
-            signal_type="DielectricFunction") is hs.signals.DielectricFunction
-
-    def test_dielectric_function_alias(self):
-        assert assign_signal_subclass(
-            dtype=complex,
-            signal_dimension=1,
-            signal_type="dielectric function") is hs.signals.DielectricFunction
-
-    def test_complex(self):
-        assert assign_signal_subclass(
-            dtype=complex,
-            signal_dimension=1000,
-            signal_type="") is hs.signals.ComplexSignal
-
-    def test_complex_spectrum(self):
-        assert assign_signal_subclass(
-            dtype=complex,
-            signal_dimension=1,
-            signal_type="") is hs.signals.ComplexSignal1D
-
-    def test_complex_image(self):
-        assert assign_signal_subclass(
-            dtype=complex,
-            signal_dimension=2,
-            signal_type="") is hs.signals.ComplexSignal2D
-
-    def test_weird_real(self):
-        assert assign_signal_subclass(
-            dtype=np.dtype('float'),
-            signal_dimension=1000,
-            signal_type="weird") is hs.signals.BaseSignal
-
-    def test_weird_spectrum(self):
-        assert assign_signal_subclass(
-            dtype=np.dtype('float'),
-            signal_dimension=1,
-            signal_type="weird") is hs.signals.Signal1D
-
-    def test_weird_complex(self):
-        assert assign_signal_subclass(
-            dtype=complex,
-            signal_dimension=1000,
-            signal_type="weird") is hs.signals.ComplexSignal
+def test_assignment_class():
+    for case in subclass_cases:
+        assert (
+            assign_signal_subclass(
+                dtype=np.dtype(case.dtype),
+                signal_dimension=case.sig_dim,
+                signal_type=case.sig_type,
+                lazy=False) is
+            getattr(hs.signals, case.cls))
+        lazyclass = 'Lazy' + case.cls if case.cls is not 'BaseSignal' \
+            else 'LazySignal'
+        assert (
+            assign_signal_subclass(
+                dtype=np.dtype(case.dtype),
+                signal_dimension=case.sig_dim,
+                signal_type=case.sig_type,
+                lazy=True) is
+            getattr(hs.signals, lazyclass))
 
 
 class TestConvertBaseSignal:
 
     def setup_method(self, method):
         self.s = hs.signals.BaseSignal(np.zeros((3, 3)))
+
+    def test_base_to_lazy(self):
+        assert not self.s._lazy
+        self.s._lazy = True
+        self.s._assign_subclass()
+        assert isinstance(self.s, hs.signals.LazySignal)
+        assert self.s._lazy
 
     def test_base_to_1d(self):
         self.s.axes_manager.set_signal_dimension(1)
@@ -120,6 +83,13 @@ class TestConvertSignal1D:
 
     def setup_method(self, method):
         self.s = hs.signals.Signal1D([0])
+
+    def test_lazy_to_eels_and_back(self):
+        self.s = self.s.as_lazy()
+        self.s.set_signal_type("EELS")
+        assert isinstance(self.s, hs.signals.LazyEELSSpectrum)
+        self.s.set_signal_type("")
+        assert isinstance(self.s, hs.signals.LazySignal1D)
 
     def test_signal1d_to_eels(self):
         self.s.set_signal_type("EELS")

@@ -336,6 +336,12 @@ time are:
 * :py:meth:`~.signal.BaseSignal.mean`
 * :py:meth:`~.signal.BaseSignal.std`
 * :py:meth:`~.signal.BaseSignal.var`
+* :py:meth:`~.signal.BaseSignal.nansum`
+* :py:meth:`~.signal.BaseSignal.nanmax`
+* :py:meth:`~.signal.BaseSignal.nanmin`
+* :py:meth:`~.signal.BaseSignal.nanmean`
+* :py:meth:`~.signal.BaseSignal.nanstd`
+* :py:meth:`~.signal.BaseSignal.nanvar`
 
 Note that by default all this methods perform the operation over *all*
 navigation axes.
