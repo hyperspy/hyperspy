@@ -179,7 +179,13 @@ class EMD(object):
             units = re.findall('[^_\W]+', axis_units)
             axis.units = ''.join(units)
             try:
-                axis.scale = dim[1] - dim[0]
+                if len(dim) == 1:
+                    axis.scale = 1.
+                    self._log.warning(
+                        'Could not calculate scale of axis {}. '\
+                        'Setting scale to 1'.format(i))
+                else:
+                    axis.scale = dim[1] - dim[0]
                 axis.offset = dim[0]
             # Hyperspy then uses defaults (1.0 and 0.0)!
             except (IndexError, TypeError) as e:
