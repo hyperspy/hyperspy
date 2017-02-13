@@ -88,6 +88,13 @@ def test_data_numpy_object_dtype():
     assert len(signal) == 0
 
 
+def test_data_axis_length_1():
+    filename = os.path.join(
+            my_path, 'emd_files', 'example_axis_len_1.emd')
+    signal = load(filename)
+    assert signal.data.shape == (5, 1, 5)
+
+
 class TestMinimalSave():
 
     def setup_method(self, method):
