@@ -310,7 +310,7 @@ class TestModel1D:
         # tests
         np.testing.assert_array_equal(m.convolution_axis, np.arange(7, 23))
         np.testing.assert_equal(ll_axis.value2index.call_args[0][0], 0)
-    
+
     @pytest.mark.parallel
     def test_notebook_interactions(self):
         ipywidgets = pytest.importorskip("ipywidgets", minversion="5.0")

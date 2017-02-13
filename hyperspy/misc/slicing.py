@@ -1,5 +1,6 @@
 from operator import attrgetter
 import numpy as np
+from dask.array import Array as dArray
 from hyperspy.misc.utils import attrsetter
 from hyperspy.misc.export_dictionary import parse_flag_string
 
@@ -209,7 +210,7 @@ class FancySlicing(object):
         array_slices = self._get_array_slices(slices, isNavigation)
         new_data = self.data[array_slices]
         if new_data.size == 1 and new_data.dtype is np.dtype('O'):
-            if isinstance(new_data[0], np.ndarray):
+            if isinstance(new_data[0], (np.ndarray, dArray)):
                 return self.__class__(new_data[0]).transpose(navigation_axes=0)
             else:
                 return new_data[0]

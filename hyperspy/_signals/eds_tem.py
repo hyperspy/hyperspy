@@ -21,7 +21,7 @@ import traits.api as t
 import numpy as np
 from scipy import constants
 from hyperspy import utils
-from hyperspy._signals.eds import EDSSpectrum
+from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
 from hyperspy.decorators import only_interactive
 from hyperspy.gui.eds import TEMParametersUI
 from hyperspy.defaults_parser import preferences
@@ -30,12 +30,12 @@ from hyperspy.misc.eds import utils as utils_eds
 import warnings
 
 
-class EDSTEMSpectrum(EDSSpectrum):
+class EDSTEM_mixin:
 
     _signal_type = "EDS_TEM"
 
     def __init__(self, *args, **kwards):
-        EDSSpectrum.__init__(self, *args, **kwards)
+        super().__init__(*args, **kwards)
         # Attributes defaults
         if 'Acquisition_instrument.TEM.Detector.EDS' not in self.metadata:
             if 'Acquisition_instrument.SEM.Detector.EDS' in self.metadata:
@@ -368,7 +368,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         elif navigation_mask is not None:
             navigation_mask = navigation_mask.data
         xray_lines = self.metadata.Sample.xray_lines
-        composition = utils.stack(intensities)
+        composition = utils.stack(intensities, lazy=False)
         if method == 'CL':
             composition.data = utils_eds.quantification_cliff_lorimer(
                 composition.data, kfactors=factors,
@@ -387,8 +387,7 @@ class EDSTEMSpectrum(EDSSpectrum):
                 cross_sections=factors,
                 dose=self._get_dose(method))
             composition.data = results[0] * 100
-            number_of_atoms = utils.stack(intensities)
-            number_of_atoms.data = results[1]
+            number_of_atoms = composition._deepcopy_with_new_data(results[1])
             number_of_atoms = number_of_atoms.split()
         else:
             raise ValueError('Please specify method for quantification,'
@@ -535,7 +534,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         """
         if isinstance(navigation_mask, float):
             navigation_mask = self.vacuum_mask(navigation_mask, closing).data
-        super(EDSSpectrum, self).decomposition(
+        super().decomposition(
             normalize_poissonian_noise=normalize_poissonian_noise,
             navigation_mask=navigation_mask, *args, **kwargs)
         self.learning_results.loadings = np.nan_to_num(
@@ -654,3 +653,11 @@ class EDSTEMSpectrum(EDSSpectrum):
             return real_time * beam_current * 1e-9 / constants.e
         else:
             raise Exception('Method need to be \'zeta\' or \'cross_section\'.')
+
+
+class EDSTEMSpectrum(EDSTEM_mixin, EDSSpectrum):
+    pass
+
+
+class LazyEDSTEMSpectrum(EDSTEM_mixin, LazyEDSSpectrum):
+    pass

@@ -463,14 +463,18 @@ class Samfire:
                 value_dict['fitting_kwargs'] = self._args
                 value_dict['signal.data'] = \
                     self.model.signal.data[ind + (...,)]
+                if self.model.signal._lazy:
+                    value_dict['signal.data'] = value_dict[
+                        'signal.data'].compute()
                 if self.model.signal.metadata.has_item(
                         'Signal.Noise_properties.variance'):
                     var = self.model.signal.metadata.Signal.Noise_properties.variance
                     if isinstance(var, BaseSignal):
-                        value_dict['variance.data'] = var.data[ind + (...,)]
+                        dat = var.data[ind + (...,)]
+                        value_dict['variance.data'] = dat.compute() if var._lazy else dat
                 if hasattr(self.model, 'low_loss') and self.model.low_loss is not None:
-                    value_dict['low_loss.data'] = \
-                        self.model.low_loss.data[ind + (...,)]
+                    dat = self.model.low_loss.data[ind + (...,)]
+                    value_dict['low_loss.data'] = dat.compute() if self.model.low_loss._lazy else dat
 
                 self.running_pixels.append(ind)
                 self.metadata.marker[ind] = 0.

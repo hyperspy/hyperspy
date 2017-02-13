@@ -21,8 +21,10 @@ import numpy.testing
 
 
 import hyperspy.api as hs
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class Test_Estimate_Elastic_Scattering_Threshold:
 
     def setup_method(self, method):
@@ -100,7 +102,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         t = s.estimate_elastic_scattering_intensity(threshold=2.5)
         np.testing.assert_array_almost_equal(t.data, 249999.985133)
 
-
+@lazifyTestClass
 class TestEstimateZLPCentre:
 
     def setup_method(self, method):
@@ -120,6 +122,7 @@ class TestEstimateZLPCentre:
         assert zlpc.axes_manager.signal_dimension == 0
 
 
+@lazifyTestClass
 class TestAlignZLP:
 
     def setup_method(self, method):
@@ -183,6 +186,7 @@ class TestAlignZLP:
         assert np.allclose(zlp_max, 8)
 
 
+@lazifyTestClass
 class TestPowerLawExtrapolation:
 
     def setup_method(self, method):

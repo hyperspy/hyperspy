@@ -21,11 +21,31 @@ import time
 import logging
 from multiprocessing import Manager
 import numpy as np
+from dask.array import Array as dar
 
 from hyperspy.utils.parallel_pool import ParallelPool
 from hyperspy.samfire_utils.samfire_worker import create_worker
 
 _logger = logging.getLogger(__name__)
+
+def _walk_compute(athing):
+    if isinstance(athing, dict):
+        this = {}
+        for key, val in athing.items():
+            if isinstance(key, dar):
+                raise ValueError('Dask arrays should not be used as keys')
+            value = _walk_compute(val)
+            this[key] = value
+        return this
+    elif isinstance(athing, list):
+        return [_walk_compute(val) for val in athing]
+    elif isinstance(athing, tuple):
+        return tuple(_walk_compute(val) for val in athing)
+    elif isinstance(athing, dar):
+        _logger.debug('found a dask array!')
+        return athing.compute()
+    else:
+        return athing
 
 
 class SamfirePool(ParallelPool):
@@ -133,6 +153,8 @@ class SamfirePool(ParallelPool):
         model.store('z')
         m_dict = model.signal._to_dictionary(False)
         m_dict['models'] = model.signal.models._models.as_dictionary()
+
+        m_dict = _walk_compute(m_dict)
 
         optional_names = {mall[c].name for c in samfire.optional_components}
 
