@@ -1,6 +1,6 @@
 .. -*- mode: rst -*-
 
-|Travis|_ |AppVeyor|_ |Coveralls|_ |pypi_version|_ |pypi_downloads|_ |rtd|_ |gitter|_
+|Travis|_ |AppVeyor|_ |Coveralls|_ |pypi_version|_  |rtd|_ |gitter|_ |saythanks|_
 
 .. |Travis| image:: https://api.travis-ci.org/hyperspy/hyperspy.png?branch=RELEASE_next_patch
 .. _Travis: https://travis-ci.org/hyperspy/hyperspy
