@@ -26,6 +26,7 @@ def _fill_function_args_2d(fn):
 
     return fn_wrapped
 
+
 def _parse_substitutions(string, simultaneous=True):
     import sympy
     splits = map(str.strip, string.split(';'))
@@ -35,6 +36,7 @@ def _parse_substitutions(string, simultaneous=True):
     for sub in splits:
         expr = expr.subs(*tuple(map(str.strip, sub.split('='))))
     return expr
+
 
 class Expression(Component):
 

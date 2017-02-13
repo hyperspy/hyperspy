@@ -182,7 +182,7 @@ class EMD(object):
                 if len(dim) == 1:
                     axis.scale = 1.
                     self._log.warning(
-                        'Could not calculate scale of axis {}. '\
+                        'Could not calculate scale of axis {}. '
                         'Setting scale to 1'.format(i))
                 else:
                     axis.scale = dim[1] - dim[0]
@@ -196,8 +196,8 @@ class EMD(object):
         for key, value in group.attrs.items():
             metadata[key] = value
         if signal.data.dtype == np.object:
-            self._log.warning('HyperSpy could not load the data in {}, '\
-                    'skipping it'.format(name))
+            self._log.warning('HyperSpy could not load the data in {}, '
+                              'skipping it'.format(name))
         else:
             # Add signal:
             self.add_signal(signal, name, metadata)

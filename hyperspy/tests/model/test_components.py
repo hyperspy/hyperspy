@@ -268,6 +268,7 @@ def test_expression_substitution():
     assert ''.join(p.name for p in comp.parameters) == 'c'
     assert comp.function(1) == -3
 
+
 class TestScalableFixedPattern:
 
     def setup_method(self, method):

@@ -55,6 +55,7 @@ def _project(W):
     np.maximum(sumsq, 1, out=sumsq)
     return _mrdivide(newW, np.diag(sumsq))
 
+
 def _solveproj(v, W, lambda1, kappa=1, h=None, r=None, vmax=None):
     m, n = W.shape
     v = v.T
@@ -236,13 +237,13 @@ class ONMF:
             n = 0
             lasttwo = np.zeros(2)
             while n <= 2 or (np.abs(
-                (lasttwo[1] - lasttwo[0]) / lasttwo[0]) > 1e-5 and n < 1e9):
+                    (lasttwo[1] - lasttwo[0]) / lasttwo[0]) > 1e-5 and n < 1e9):
                 self.W -= eta * (np.dot(self.W, self.A) - self.B)
                 self.W = _project(self.W)
                 n += 1
                 lasttwo[0] = lasttwo[1]
                 lasttwo[1] = 0.5 * np.trace(self.W.T.dot(self.W).dot(self.A)) - \
-                        np.trace(self.W.T.dot(self.B))
+                    np.trace(self.W.T.dot(self.B))
         else:
             # Tom's approach
             self.W -= eta * (np.dot(self.W, self.A) - self.B)

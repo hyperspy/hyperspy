@@ -280,7 +280,6 @@ class ORPCA:
                                 "set to default: 0.5")
                 momentum = 0.5
 
-
         self.rank = rank
         self.lambda1 = lambda1
         self.lambda2 = lambda2
@@ -288,7 +287,7 @@ class ORPCA:
         self.init = init
         self.training_samples = training_samples
         self.learning_rate = learning_rate
-        self.momentum=momentum
+        self.momentum = momentum
 
         # Check options are valid
         if method not in ('CF', 'BCD', 'SGD', 'MomentumSGD'):
@@ -429,8 +428,8 @@ class ORPCA:
                                               thislambda1 * self.t)
                 vold = self.momentum * self.vnew
                 self.vnew = (np.dot(self.L, np.outer(r, r.T))
-                         - np.outer((z - e), r.T)
-                         + thislambda1 * self.L) / learn
+                             - np.outer((z - e), r.T)
+                             + thislambda1 * self.L) / learn
                 self.L -= (vold + self.vnew)
             self.t += 1
 
@@ -442,7 +441,6 @@ class ORPCA:
         for v in progressbar(X, leave=False, total=num):
             r, _ = _solveproj(v, self.L, self.I, self.lambda2)
             self.R.append(r.copy())
-
 
     def finish(self):
 

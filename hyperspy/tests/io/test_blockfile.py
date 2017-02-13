@@ -198,15 +198,18 @@ def test_load_lazy():
     s = hs.load(FILE2, lazy=True)
     assert isinstance(s.data, Array)
 
+
 def test_load_to_memory():
     s = hs.load(FILE2, lazy=False)
     assert isinstance(s.data, np.ndarray)
     assert not isinstance(s.data, np.memmap)
 
+
 def test_load_readonly():
     s = hs.load(FILE2, lazy=True)
     with pytest.raises(NotImplementedError):
         s.data[:] = 23
+
 
 def test_load_inplace():
     with pytest.raises(ValueError):

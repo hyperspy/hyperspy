@@ -16,6 +16,7 @@ def add_np(doctest_namespace):
     doctest_namespace['plt'] = plt
     doctest_namespace['hs'] = hs
 
+
 def setup_module(mod):
     if pytest.config.getoption("--pdb"):
         import dask

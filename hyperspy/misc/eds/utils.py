@@ -520,7 +520,7 @@ def quantification_cross_section(intensities,
     numpy.array of the number of atoms counts for each element, with the same
     shape as the intensity input.
     """
-    shp = len(intensities.shape)-1
+    shp = len(intensities.shape) - 1
     slices = (slice(None),) + (None,) * shp
     x_sections = np.array(cross_sections, dtype='float')[slices]
     number_of_atoms = intensities / (x_sections * dose * 1e-10)
