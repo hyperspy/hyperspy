@@ -181,7 +181,7 @@ class TestLoadingNewSavedMetadata:
 def tmpfilepath():
     with tempfile.TemporaryDirectory() as tmp:
         yield os.path.join(tmp, "test.hdf5")
-    gc.collect()        # Make sure any memmaps are closed first!
+        gc.collect()        # Make sure any memmaps are closed first!
 
 
 class TestSavingMetadataContainers:
