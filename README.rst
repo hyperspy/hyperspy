@@ -11,9 +11,6 @@
 .. |Coveralls| image:: https://coveralls.io/repos/hyperspy/hyperspy/badge.svg
 .. _Coveralls: https://coveralls.io/r/hyperspy/hyperspy
 
-.. |pypi_downloads| image:: http://img.shields.io/pypi/dm/hyperspy.svg?style=flat
-.. _pypi_downloads: https://pypi.python.org/pypi/hyperspy
-
 .. |pypi_version| image:: http://img.shields.io/pypi/v/hyperspy.svg?style=flat
 .. _pypi_version: https://pypi.python.org/pypi/hyperspy
 
@@ -22,6 +19,10 @@
 
 .. |gitter| image:: https://badges.gitter.im/Join%20Chat.svg
 .. _gitter: https://gitter.im/hyperspy/hyperspy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
+.. |saythanks| image: https://img.shields.io/badge/Say%20Thanks!-%F0%9F%A6%89-1EAEDB.svg
+.. _saythanks: https://saythanks.io/to/hyperspy 
+
 
 HyperSpy is an open source Python library which provides tools to facilitate
 the interactive data analysis of multidimensional datasets that can be
