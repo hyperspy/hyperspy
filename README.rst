@@ -20,7 +20,7 @@
 .. |gitter| image:: https://badges.gitter.im/Join%20Chat.svg
 .. _gitter: https://gitter.im/hyperspy/hyperspy?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
-.. |saythanks| image:: https://img.shields.io/badge/Say%20Thanks!-%F0%9F%A6%89-1EAEDB.svg
+.. |saythanks| image:: https://img.shields.io/badge/say%20-thanks!-orange.svg
 .. _saythanks: https://saythanks.io/to/hyperspy 
 
 
