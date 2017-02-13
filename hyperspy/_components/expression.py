@@ -26,6 +26,15 @@ def _fill_function_args_2d(fn):
 
     return fn_wrapped
 
+def _parse_substitutions(string, simultaneous=True):
+    import sympy
+    splits = map(str.strip, string.split(';'))
+    expr = sympy.sympify(next(splits))
+    # We substitute one by one manually, as passing all at the same time does
+    # not work as we want (subsitutions inside other substitutions do not work)
+    for sub in splits:
+        expr = expr.subs(*tuple(map(str.strip, sub.split('='))))
+    return expr
 
 class Expression(Component):
 
@@ -43,7 +52,8 @@ class Expression(Component):
         Parameters
         ----------
         expression: str
-            Component function in SymPy text expression format. See the SymPy
+            Component function in SymPy text expression format with
+            substitutions separated by `;`. See examples and the SymPy
             documentation for details. The only additional constraint is that
             the variable(s) must be `x` (for 1D components); or `x` and `y` for
             2D components. Also, if `module` is "numexpr" the
@@ -89,6 +99,17 @@ class Expression(Component):
         ... x0=0,
         ... position="x0",)
 
+        Substitutions for long or complicated expressions are separated by
+        semicolumns:
+
+        >>> expr = 'A*B/(A+B) ; A = sin(x)+one; B = cos(y) - two; y = tan(x)'
+        >>> comp = hs.model.components1D.Expression(
+        ... expression=expr,
+        ... name='my function')
+        >>> comp.parameters
+        (<Parameter one of my function component>,
+         <Parameter two of my function component>)
+
         """
 
         import sympy
@@ -122,12 +143,12 @@ class Expression(Component):
 
         if autodoc:
             self.__doc__ = _CLASS_DOC % (
-                name, sympy.latex(sympy.sympify(expression)))
+                name, sympy.latex(_parse_substitutions(expression)))
 
     def compile_function(self, module="numpy", position=False):
         import sympy
         from sympy.utilities.lambdify import lambdify
-        expr = sympy.sympify(self._str_expression)
+        expr = _parse_substitutions(self._str_expression)
         # Extract x
         x, = [symbol for symbol in expr.free_symbols if symbol.name == "x"]
         # Extract y

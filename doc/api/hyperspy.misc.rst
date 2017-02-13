@@ -8,6 +8,7 @@ Subpackages
 
     hyperspy.misc.eds
     hyperspy.misc.eels
+    hyperspy.misc.holography
     hyperspy.misc.io
     hyperspy.misc.machine_learning
 

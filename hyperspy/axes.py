@@ -493,33 +493,32 @@ class AxesManager(t.HasTraits):
     Examples
     --------
 
-    >>> %hyperspy
-    HyperSpy imported!
-    The following commands were just executed:
-    ---------------
-    import numpy as np
-    import hyperspy.api as hs
-    %matplotlib qt
-    import matplotlib.pyplot as plt
-
-    >>> # Create a spectrum with random data
+    Create a spectrum with random data
 
     >>> s = hs.signals.Signal1D(np.random.random((2,3,4,5)))
     >>> s.axes_manager
-    <Axes manager, axes: (<axis2 axis, size: 4, index: 0>, <axis1 axis, size: 3, index: 0>, <axis0 axis, size: 2, index: 0>, <axis3 axis, size: 5>)>
+    <Axes manager, axes: (4, 3, 2|5)>
+                Name |   size |  index |  offset |   scale |  units
+    ================ | ====== | ====== | ======= | ======= | ======
+         <undefined> |      4 |      0 |       0 |       1 | <undefined>
+         <undefined> |      3 |      0 |       0 |       1 | <undefined>
+         <undefined> |      2 |      0 |       0 |       1 | <undefined>
+    ---------------- | ------ | ------ | ------- | ------- | ------
+         <undefined> |      5 |        |       0 |       1 | <undefined>
     >>> s.axes_manager[0]
-    <axis2 axis, size: 4, index: 0>
+    <Unnamed 0th axis, size: 4, index: 0>
     >>> s.axes_manager[3j]
-    <axis0 axis, size: 2, index: 0>
+    <Unnamed 2nd axis, size: 2, index: 0>
     >>> s.axes_manager[1j]
-    <axis2 axis, size: 4, index: 0>
+    <Unnamed 0th axis, size: 4, index: 0>
     >>> s.axes_manager[2j]
-    <axis3 axis, size: 5>
-    >>> s.axes_manager[1].name="y"
-    >>> s.axes_manager['y']
-    <y axis, size: 3 index: 0>
+    <Unnamed 3rd axis, size: 5>
+    >>> s.axes_manager[1].name = "y"
+    >>> s.axes_manager["y"]
+    <y axis, size: 3, index: 0>
     >>> for i in s.axes_manager:
-    >>>     print(i, s.axes_manager.indices)
+    ...     print(i, s.axes_manager.indices)
+    ...
     (0, 0, 0) (0, 0, 0)
     (1, 0, 0) (1, 0, 0)
     (2, 0, 0) (2, 0, 0)

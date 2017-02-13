@@ -216,6 +216,8 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |              :py:class:`~._signals.signal2d.Signal2D`                   |        2         |       -               |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |      :py:class:`~._signals.hologram_image.HologramImage`                |        2         |      hologram         |  real    |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |           :py:class:`~._signals.dielectric_function.DielectricFunction` |        1         |    DielectricFunction |  complex |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |      :py:class:`~._signals.complex_signal.ComplexSignal`                |        -         |       -               | complex  |
@@ -224,7 +226,6 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`              |        2         |       -               | complex  |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
-
 
 The following example shows how to transform between different subclasses.
 
@@ -335,6 +336,12 @@ time are:
 * :py:meth:`~.signal.BaseSignal.mean`
 * :py:meth:`~.signal.BaseSignal.std`
 * :py:meth:`~.signal.BaseSignal.var`
+* :py:meth:`~.signal.BaseSignal.nansum`
+* :py:meth:`~.signal.BaseSignal.nanmax`
+* :py:meth:`~.signal.BaseSignal.nanmin`
+* :py:meth:`~.signal.BaseSignal.nanmean`
+* :py:meth:`~.signal.BaseSignal.nanstd`
+* :py:meth:`~.signal.BaseSignal.nanvar`
 
 Note that by default all this methods perform the operation over *all*
 navigation axes.

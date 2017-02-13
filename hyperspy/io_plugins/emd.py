@@ -24,6 +24,7 @@
 import re
 import h5py
 import numpy as np
+from dask.array import from_array
 
 import logging
 
@@ -148,12 +149,14 @@ class EMD(object):
                 self._log.exception('The hdf5 writer could not write the following '
                                     'information in the file: %s : %s', key, value)
 
-    def _read_signal_from_group(self, name, group, load_to_memory=True):
+    def _read_signal_from_group(self, name, group, lazy=False):
         self._log.debug('Calling _read_signal_from_group')
         from hyperspy import signals
         # Extract essential data:
         data = group.get('data')
-        if load_to_memory:
+        if lazy:
+            data = from_array(data, chunks=data.chunks)
+        else:
             data = np.asanyarray(data)
         # EMD does not have a standard way to describe the signal axis.
         # Therefore we return a BaseSignal
@@ -165,11 +168,24 @@ class EMD(object):
         for i in range(len(data.shape)):
             dim = group.get('dim{}'.format(i + 1))
             axis = signal.axes_manager._axes[i]
-            axis.name = dim.attrs.get('name', '')
-            units = re.findall('[^_\W]+', dim.attrs.get('units', ''))
+            axis_name = dim.attrs.get('name', '')
+            if isinstance(axis_name, bytes):
+                axis_name = axis_name.decode('utf-8')
+            axis.name = axis_name
+
+            axis_units = dim.attrs.get('units', '')
+            if isinstance(axis_units, bytes):
+                axis_units = axis_units.decode('utf-8')
+            units = re.findall('[^_\W]+', axis_units)
             axis.units = ''.join(units)
             try:
-                axis.scale = dim[1] - dim[0]
+                if len(dim) == 1:
+                    axis.scale = 1.
+                    self._log.warning(
+                        'Could not calculate scale of axis {}. '\
+                        'Setting scale to 1'.format(i))
+                else:
+                    axis.scale = dim[1] - dim[0]
                 axis.offset = dim[0]
             # Hyperspy then uses defaults (1.0 and 0.0)!
             except (IndexError, TypeError) as e:
@@ -179,8 +195,12 @@ class EMD(object):
         metadata = {}
         for key, value in group.attrs.items():
             metadata[key] = value
-        # Add signal:
-        self.add_signal(signal, name, metadata)
+        if signal.data.dtype == np.object:
+            self._log.warning('HyperSpy could not load the data in {}, '\
+                    'skipping it'.format(name))
+        else:
+            # Add signal:
+            self.add_signal(signal, name, metadata)
 
     def add_signal(self, signal, name=None, metadata=None):
         """Add a hyperspy signal to the EMD instance and make sure all metadata is present.
@@ -241,15 +261,15 @@ class EMD(object):
         self.signals[name] = signal
 
     @classmethod
-    def load_from_emd(cls, filename, load_to_memory=True):
+    def load_from_emd(cls, filename, lazy=False):
         """Construct :class:`~.EMD` object from an emd-file.
 
         Parameters
         ----------
         filename : string
             The name of the emd-file from which to load the signals. Standard format is '*.emd'.
-        load_to_memory: bool, optional
-            If True (default) loads data to memory. If False, enables loading only if requested.
+        False: bool, optional
+            If False (default) loads data to memory. If True, enables loading only if requested.
 
         Returns
         -------
@@ -297,9 +317,9 @@ class EMD(object):
                 if isinstance(group, h5py.Group):
                     if group.attrs.get('emd_group_type') == 1:
                         emd._read_signal_from_group(
-                            name, group, load_to_memory)
+                            name, group, lazy)
         # Close file and return EMD object:
-        if load_to_memory:
+        if not lazy:
             emd_file.close()
         return emd
 
@@ -372,8 +392,9 @@ class EMD(object):
         self._log.info(info_str)
 
 
-def file_reader(filename, load_to_memory=True, log_info=False, **kwds):
-    emd = EMD.load_from_emd(filename, load_to_memory)
+def file_reader(filename, log_info=False,
+                lazy=False, **kwds):
+    emd = EMD.load_from_emd(filename, lazy)
     if log_info:
         emd.log_info()
     dictionaries = []
@@ -384,24 +405,11 @@ def file_reader(filename, load_to_memory=True, log_info=False, **kwds):
 
 def file_writer(filename, signal, signal_metadata=None, user=None,
                 microscope=None, sample=None, comments=None, **kwds):
-    if user is None:  # If not provided, look in metadata:
-        user = signal.metadata.General.as_dictionary().get('user')
-    if user is None:  # If not found, check original_metadata:
-        user = signal.original_metadata.General.as_dictionary().get('user')
-    if microscope is None:  # If not provided, look in metadata:
-        microscope = signal.metadata.General.as_dictionary().get('microscope')
-    if microscope is None:  # If not found, check original_metadata:
-        microscope = signal.original_metadata.General.as_dictionary().get(
-            'microscope')
-    if sample is None:  # If not provided, look in metadata:
-        sample = signal.metadata.General.as_dictionary().get('sample')
-    if sample is None:  # If not found, check original_metadata:
-        sample = signal.original_metadata.General.as_dictionary().get('sample')
-    if comments is None:  # If not provided, look in metadata:
-        comments = signal.metadata.General.as_dictionary().get('comments')
-    if comments is None:  # If not found, check original_metadata:
-        comments = signal.original_metadata.General.as_dictionary().get(
-            'comments')
+    metadata = signal.metadata.General.as_dictionary()
+    user = user or metadata.get('user', None)
+    microscope = microscope or metadata.get('microscope', None)
+    sample = sample or metadata.get('sample', None)
+    comments = comments or metadata.get('comments', None)
     emd = EMD(
         user=user,
         microscope=microscope,

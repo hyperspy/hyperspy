@@ -20,10 +20,11 @@ import numbers
 import logging
 
 import numpy as np
+import dask.array as da
 import traits.api as t
 from scipy import constants
 
-from hyperspy._signals.signal1d import Signal1D
+from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
 from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.decorators import only_interactive
@@ -38,7 +39,7 @@ from hyperspy.misc.utils import without_nans
 _logger = logging.getLogger(__name__)
 
 
-class EELSSpectrum(Signal1D):
+class EELSSpectrum_mixin:
 
     _signal_type = "EELS"
     _alias_signal_types = ["TEM EELS"]
@@ -75,8 +76,6 @@ class EELSSpectrum(Signal1D):
 
         >>> s = hs.signals.EELSSpectrum(np.arange(1024))
         >>> s.add_elements(('C', 'O'))
-        Adding C_K subshell
-        Adding O_K subshell
 
         Raises
         ------
@@ -171,7 +170,10 @@ class EELSSpectrum(Signal1D):
         self._check_navigation_mask(mask)
         zlpc = self.valuemax(-1)
         if mask is not None:
-            zlpc.data[mask.data] = np.nan
+            if zlpc._lazy:
+                zlpc.data = da.where(mask.data, np.nan, zlpc.data)
+            else:
+                zlpc.data[mask.data] = np.nan
         zlpc.set_signal_type("")
         title = self.metadata.General.title
         zlpc.metadata.General.title = "ZLP(%s)" % title
@@ -226,13 +228,16 @@ class EELSSpectrum(Signal1D):
 
         Examples
         --------
-        >>>> s_ll.align_zero_loss_peak()
+        >>> s_ll = hs.signals.EELSSpectrum(np.zeros(1000))
+        >>> s_ll.data[100] = 100
+        >>> s_ll.align_zero_loss_peak()
 
         Aligning both the lowloss signal and another signal
-        >>>> s_ll.align_zero_loss_peak(also_align=[s])
+        >>> s = hs.signals.EELSSpectrum(np.range(1000))
+        >>> s_ll.align_zero_loss_peak(also_align=[s])
 
         Aligning within a narrow range of the lowloss signal
-        >>>> s_ll.align_zero_loss_peak(signal_range=(-10.,10.))
+        >>> s_ll.align_zero_loss_peak(signal_range=(-10.,10.))
 
 
         See Also
@@ -246,6 +251,8 @@ class EELSSpectrum(Signal1D):
 
         """
         def substract_from_offset(value, signals):
+            if isinstance(value, da.Array):
+                value = value.compute()
             for signal in signals:
                 signal.axes_manager[-1].offset -= value
 
@@ -337,19 +344,32 @@ class EELSSpectrum(Signal1D):
         if isinstance(threshold, numbers.Number):
             I0 = self.isig[:threshold].integrate1D(-1)
         else:
-            I0 = self._get_navigation_signal()
-            I0.axes_manager.set_signal_dimension(0)
-            with progressbar(total=self.axes_manager.navigation_size,
-                             disable=not show_progressbar,
-                             leave=True) as pbar:
-                for i, (i0, th, s) in enumerate(zip(I0._iterate_signal(),
-                                                    threshold._iterate_signal(),
-                                                    self)):
-                    if np.isnan(th[0]):
-                        i0[:] = np.nan
+            ax = self.axes_manager.signal_axes[0]
+            # I0 = self._get_navigation_signal()
+            # I0.axes_manager.set_signal_dimension(0)
+            threshold.axes_manager.set_signal_dimension(0)
+            binned = self.metadata.Signal.binned
+
+            def estimating_function(data, threshold=None):
+                if np.isnan(threshold):
+                    return np.nan
+                else:
+                    # the object is just an array, so have to reimplement
+                    # integrate1D. However can make certain assumptions, for
+                    # example 1D signal and pretty much always binned. Should
+                    # probably at some point be joint
+                    ind = ax.value2index(threshold)
+                    data = data[:ind]
+                    if binned:
+                        return data.sum()
                     else:
-                        i0[:] = s.isig[:th[0]].integrate1D(-1).data
-                    pbar.update(1)
+                        from scipy.integrate import simps
+                        axis = ax.axis[:ind]
+                        return simps(y=data, x=axis)
+
+            I0 = self.map(estimating_function, threshold=threshold,
+                          ragged=False, show_progressbar=show_progressbar,
+                          inplace=False)
         I0.metadata.General.title = (
             self.metadata.General.title + ' elastic intensity')
         I0.set_signal_type("")
@@ -521,8 +541,10 @@ class EELSSpectrum(Signal1D):
         else:
             I0 = self.estimate_elastic_scattering_intensity(
                 threshold=threshold,).data
-
-        t_over_lambda = np.log(total_intensity / I0)
+        if self._lazy:
+            t_over_lambda = da.log(total_intensity / I0)
+        else:
+            t_over_lambda = np.log(total_intensity / I0)
         s = self._get_navigation_signal(data=t_over_lambda)
         s.metadata.General.title = (self.metadata.General.title +
                                     ' $\\frac{t}{\\lambda}$')
@@ -577,18 +599,34 @@ class EELSSpectrum(Signal1D):
         size = closest_power_of_two(size)
 
         axis = self.axes_manager.signal_axes[0]
-        z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)
-        j = np.fft.rfft(s.data, n=size, axis=axis.index_in_array)
-        j1 = z * np.nan_to_num(np.log(j / z))
-        sdata = np.fft.irfft(j1, axis=axis.index_in_array)
+        if self._lazy or zlp._lazy:
+
+            z = da.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)
+            j = da.fft.rfft(s.data, n=size, axis=axis.index_in_array)
+            j1 = z * da.log(j / z).map_blocks(np.nan_to_num)
+            sdata = da.fft.irfft(j1, axis=axis.index_in_array)
+        else:
+            z = np.fft.rfft(zlp.data, n=size, axis=axis.index_in_array)
+            j = np.fft.rfft(s.data, n=size, axis=axis.index_in_array)
+            j1 = z * np.nan_to_num(np.log(j / z))
+            sdata = np.fft.irfft(j1, axis=axis.index_in_array)
 
         s.data = sdata[s.axes_manager._get_data_slice(
             [(axis.index_in_array, slice(None, self_size)), ])]
         if add_zlp is True:
             if self_size >= zlp_size:
-                s.data[s.axes_manager._get_data_slice(
-                    [(axis.index_in_array, slice(None, zlp_size)), ])
-                ] += zlp.data
+                if self._lazy:
+                    _slices_before = s.axes_manager._get_data_slice(
+                        [(axis.index_in_array, slice(None, zlp_size)), ])
+                    _slices_after = s.axes_manager._get_data_slice(
+                        [(axis.index_in_array, slice(zlp_size, None)), ])
+                    s.data = da.stack((s.data[_slices_before] + zlp.data,
+                                       s.data[_slices_after]),
+                                      axis=axis.index_in_array)
+                else:
+                    s.data[s.axes_manager._get_data_slice(
+                        [(axis.index_in_array, slice(None, zlp_size)), ])
+                    ] += zlp.data
             else:
                 s.data += zlp.data[s.axes_manager._get_data_slice(
                     [(axis.index_in_array, slice(None, self_size)), ])]
@@ -661,6 +699,12 @@ class EELSSpectrum(Signal1D):
 
         ll.hanning_taper()
         cl.hanning_taper()
+        if self._lazy or zlp._lazy:
+            rfft = da.fft.rfft
+            irfft = da.fft.irfft
+        else:
+            rfft = np.fft.rfft
+            irfft = np.fft.irfft
 
         ll_size = ll.axes_manager.signal_axes[0].size
         cl_size = self.axes_manager.signal_axes[0].size
@@ -692,12 +736,12 @@ class EELSSpectrum(Signal1D):
                         axis.offset + axis.scale * (size - 1),
                         size))
         z = np.fft.rfft(zl)
-        jk = np.fft.rfft(cl.data, n=size, axis=axis.index_in_array)
-        jl = np.fft.rfft(ll.data, n=size, axis=axis.index_in_array)
+        jk = rfft(cl.data, n=size, axis=axis.index_in_array)
+        jl = rfft(ll.data, n=size, axis=axis.index_in_array)
         zshape = [1, ] * len(cl.data.shape)
         zshape[axis.index_in_array] = jk.shape[axis.index_in_array]
-        cl.data = np.fft.irfft(z.reshape(zshape) * jk / jl,
-                               axis=axis.index_in_array)
+        cl.data = irfft(z.reshape(zshape) * jk / jl,
+                        axis=axis.index_in_array)
         cl.data *= I0
         cl.crop(-1, None, int(orig_cl_size))
         cl.metadata.General.title = (self.metadata.General.title +
@@ -709,7 +753,8 @@ class EELSSpectrum(Signal1D):
         return cl
 
     def richardson_lucy_deconvolution(self, psf, iterations=15, mask=None,
-                                      show_progressbar=None):
+                                      show_progressbar=None,
+                                      parallel=None):
         """1D Richardson-Lucy Poissonian deconvolution of
         the spectrum by the given kernel.
 
@@ -725,6 +770,9 @@ class EELSSpectrum(Signal1D):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        parallel : {None,bool,int}
+            if True, the deconvolution will be performed in a threaded (parallel)
+            manner.
 
         Notes:
         -----
@@ -737,38 +785,32 @@ class EELSSpectrum(Signal1D):
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
-        ds = self.deepcopy()
-        ds.data = ds.data.copy()
+        psf_size = psf.axes_manager.signal_axes[0].size
+        kernel = psf()
+        imax = kernel.argmax()
+        maxval = self.axes_manager.navigation_size
+        show_progressbar = show_progressbar and (maxval > 0)
+
+        def deconv_function(signal, kernel=None,
+                            iterations=15, psf_size=None):
+            imax = kernel.argmax()
+            result = np.array(signal).copy()
+            mimax = psf_size - 1 - imax
+            for _ in range(iterations):
+                first = np.convolve(kernel, result)[imax: imax + psf_size]
+                result *= np.convolve(kernel[::-1], signal /
+                                      first)[mimax:mimax + psf_size]
+            return result
+        ds = self.map(deconv_function, kernel=psf, iterations=iterations,
+                      psf_size=psf_size, show_progressbar=show_progressbar,
+                      parallel=parallel, ragged=False, inplace=False)
+
         ds.metadata.General.title += (
             ' after Richardson-Lucy deconvolution %i iterations' %
             iterations)
         if ds.tmp_parameters.has_item('filename'):
             ds.tmp_parameters.filename += (
                 '_after_R-L_deconvolution_%iiter' % iterations)
-        psf_size = psf.axes_manager.signal_axes[0].size
-        kernel = psf()
-        imax = kernel.argmax()
-        j = 0
-        maxval = self.axes_manager.navigation_size
-        show_progressbar = show_progressbar and (maxval > 0)
-        for D in progressbar(self, total=maxval,
-                             disable=not show_progressbar,
-                             leave=True):
-            D = D.data.copy()
-            if psf.axes_manager.navigation_dimension != 0:
-                kernel = psf(axes_manager=self.axes_manager)
-                imax = kernel.argmax()
-
-            s = ds(axes_manager=self.axes_manager)
-            mimax = psf_size - 1 - imax
-            O = D.copy()
-            for i in range(iterations):
-                first = np.convolve(kernel, O)[imax: imax + psf_size]
-                O = O * (np.convolve(kernel[::-1],
-                                     D / first)[mimax: mimax + psf_size])
-            s[:] = O
-            j += 1
-
         return ds
 
     def _are_microscope_parameters_missing(self):
@@ -899,19 +941,36 @@ class EELSSpectrum(Signal1D):
                 '_%i_channels_extrapolated' % extrapolation_size)
         new_shape = list(self.data.shape)
         new_shape[axis.index_in_array] += extrapolation_size
-        s.data = np.zeros(new_shape)
+        if self._lazy:
+            left_data = s.data
+            right_shape = list(self.data.shape)
+            right_shape[axis.index_in_array] = extrapolation_size
+            right_chunks = list(self.data.chunks)
+            right_chunks[axis.index_in_array] = (extrapolation_size, )
+            right_data = da.zeros(
+                shape=tuple(right_shape),
+                chunks=tuple(right_chunks),
+                dtype=self.data.dtype)
+            s.data = da.concatenate(
+                [left_data, right_data], axis=axis.index_in_array)
+        else:
+            # just old code
+            s.data = np.zeros(new_shape)
+            s.data[..., :axis.size] = self.data
         s.get_dimensions_from_data()
-        s.data[..., :axis.size] = self.data
         pl = PowerLaw()
         pl._axes_manager = self.axes_manager
-        pl.estimate_parameters(
-            s, axis.index2value(axis.size - window_size),
-            axis.index2value(axis.size - 1))
+        A, r = pl.estimate_parameters(
+            s,
+            axis.index2value(axis.size - window_size),
+            axis.index2value(axis.size - 1),
+            out=True)
         if fix_neg_r is True:
-            _r = pl.r.map['values']
-            _A = pl.A.map['values']
-            _A[_r <= 0] = 0
-            pl.A.map['values'] = _A
+            if s._lazy:
+                _where = da.where
+            else:
+                _where = np.where
+            A = _where(r <= 0, 0, A)
         # If the signal is binned we need to bin the extrapolated power law
         # what, in a first approximation, can be done by multiplying by the
         # axis step size.
@@ -919,10 +978,28 @@ class EELSSpectrum(Signal1D):
             factor = s.axes_manager[-1].scale
         else:
             factor = 1
-        s.data[..., axis.size:] = (
-            factor * pl.A.map['values'][..., np.newaxis] *
-            s.axes_manager.signal_axes[0].axis[np.newaxis, axis.size:] ** (
-                -pl.r.map['values'][..., np.newaxis]))
+        if self._lazy:
+            # only need new axes if the navigation dimension is not 0
+            if s.axes_manager.navigation_dimension:
+                rightslice = (..., None)
+                axisslice = (None, slice(axis.size, None))
+            else:
+                rightslice = (..., )
+                axisslice = (slice(axis.size, None), )
+            right_chunks[axis.index_in_array] = 1
+            x = da.from_array(
+                s.axes_manager.signal_axes[0].axis[axisslice],
+                chunks=(extrapolation_size, ))
+            A = A[rightslice]
+            r = r[rightslice]
+            right_data = factor * A * x**(-r)
+            s.data = da.concatenate(
+                [left_data, right_data], axis=axis.index_in_array)
+        else:
+            s.data[..., axis.size:] = (
+                factor * A[..., np.newaxis] *
+                s.axes_manager.signal_axes[0].axis[np.newaxis, axis.size:]**(
+                    -r[..., np.newaxis]))
         return s
 
     def kramers_kronig_analysis(self,
@@ -1253,3 +1330,13 @@ class EELSSpectrum(Signal1D):
                           GOS=GOS,
                           dictionary=dictionary)
         return model
+
+
+class LazyEELSSpectrum(EELSSpectrum_mixin, LazySignal1D):
+
+    pass
+
+
+class EELSSpectrum(EELSSpectrum_mixin, Signal1D):
+
+    pass

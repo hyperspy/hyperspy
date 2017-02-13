@@ -1,12 +1,13 @@
 import numpy as np
-import nose.tools as nt
+
+from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 
 
 class TestGaussian2D:
 
-    def setUp(self):
+    def setup_method(self, method):
         g = hs.model.components2D.Gaussian2D(
             centre_x=-5.,
             centre_y=-5.,
@@ -22,11 +23,11 @@ class TestGaussian2D:
     def test_values(self):
         gt = self.gt
         g = self.g
-        nt.assert_almost_equal(g.fwhm_x, 2.35482004503)
-        nt.assert_almost_equal(g.fwhm_y, 4.70964009006)
-        nt.assert_almost_equal(gt.max(), 0.0795774715459)
-        nt.assert_almost_equal(gt.argmax(axis=0)[0], 500)
-        nt.assert_almost_equal(gt.argmax(axis=1)[0], 500)
+        assert_allclose(g.fwhm_x, 2.35482004503)
+        assert_allclose(g.fwhm_y, 4.70964009006)
+        assert_allclose(gt.max(), 0.0795774715459)
+        assert_allclose(gt.argmax(axis=0)[0], 500)
+        assert_allclose(gt.argmax(axis=1)[0], 500)
 
 
 class TestExpression2D:
@@ -43,7 +44,7 @@ class TestExpression2D:
         g.y0.value = 1
         l = np.linspace(-2, 2, 5)
         x, y = np.meshgrid(l, l)
-        np.testing.assert_allclose(
+        assert_allclose(
             g.function(x, y),
             np.array([[6.68025544e-06, 8.55249949e-04, 6.49777231e-03,
                        2.92959352e-03, 7.83829650e-05],
@@ -56,7 +57,7 @@ class TestExpression2D:
                       [1.73553850e-07, 4.22437802e-04, 6.10186705e-02,
                        5.23039095e-01, 2.66058420e-01]])
         )
-        np.testing.assert_allclose(
+        assert_allclose(
             g.grad_sx(x, y),
             np.array([[1.20880828e-04, 3.17536657e-03, 1.04030848e-03,
                        2.17878745e-02, 2.00221335e-03],
@@ -83,7 +84,7 @@ class TestExpression2D:
         g.y0.value = 0
         l = np.linspace(-2, 2, 5)
         x, y = np.meshgrid(l, l)
-        np.testing.assert_allclose(
+        assert_allclose(
             g.function(x, y),
             np.array([[1.77220718e-208, 1.97005871e-181, 1.00498099e-181,
                        2.35261319e-209, 2.52730239e-264],
@@ -108,7 +109,7 @@ class TestExpression2D:
         g.y0.value = 0
         l = np.linspace(-2, 2, 5)
         x, y = np.meshgrid(l, l)
-        np.testing.assert_allclose(
+        assert_allclose(
             g.function(x, y),
             np.array([[9.64172248e-175, 5.46609733e-099, 5.03457536e-045,
                        7.53374790e-013, 1.83156389e-002],
@@ -133,7 +134,7 @@ class TestExpression2D:
         g.y0.value = 1
         l = np.linspace(-2, 2, 5)
         x, y = np.meshgrid(l, l)
-        np.testing.assert_allclose(
+        assert_allclose(
             g.function(x, y),
             np.array([[1.69189792e-10, 3.72665317e-06, 1.50343919e-03,
                        1.11089965e-02, 1.50343919e-03],
@@ -146,7 +147,7 @@ class TestExpression2D:
                       [9.23744966e-09, 2.03468369e-04, 8.20849986e-02,
                        6.06530660e-01, 8.20849986e-02]])
         )
-        np.testing.assert_allclose(
+        assert_allclose(
             g.grad_sx(x, y),
             np.array([[1.21816650e-08, 1.19252902e-04, 1.20275135e-02,
                        0.00000000e+00, 1.20275135e-02],

@@ -30,7 +30,7 @@ in the following sections of this chapter.
     │   │   ├── beam_current (nA)
     │   │   ├── beam_energy (keV)
     │   │   ├── convergence_angle (mrad)
-    │       ├── magnification
+    │   │   ├── magnification
     │   │   ├── microscope
     │   │   └── tilt_stage (º)
     │   └── TEM
@@ -48,6 +48,10 @@ in the following sections of this chapter.
     │       │       ├── exposure (s)
     │       │       ├── frame_number
     │       │       └── spectrometer
+    │       ├── Biprism
+    │       │   ├── azimuth_angle (º)
+    │       │   ├── position
+    │       │   └── voltage (V)
     │       ├── acquisition_mode
     │       ├── beam_current (nA)
     │       ├── beam_energy (keV)
@@ -63,8 +67,10 @@ in the following sections of this chapter.
     │   ├── original_filename
     │   ├── notes
     │   ├── time
+    │   ├── time_zone
     │   └── title
     ├── Sample
+    │   ├── credits
     │   ├── description
     │   ├── elements
     │   ├── thickness
@@ -95,6 +101,11 @@ original_filename
 
     If the signal was loaded from a file this key stores the name of the
     original file.
+
+time_zone
+    type: Str
+
+    The time zone as supported by the python-dateutil library, e.g. "UTC", "Europe/London", etc. It can also be a time offset, e.g. "+03:00" or "-05:00".
 
 time
     type: Str
@@ -258,7 +269,6 @@ spectrometer
 
     The spectrometer model, e.g. Gatan Enfinium ER (Model 977).
 
-
 EDS
 ^^^
 
@@ -296,8 +306,33 @@ live_time
     The time spent to record the spectrum in second, compensated for the
     dead time of the detector.
 
+Biprism
+-------
+
+This node stores parameters of biprism used in off-axis electron holography
+
+azimuth_angle (º)
+    type: Float
+
+    Rotation angle of the biprism in degree
+
+position
+    type: Str
+
+    Position of the biprism in microscope column, e.g. Selected area aperture plane
+
+voltage
+    type: Float
+
+    Voltage of electrostatic biprism in volts
+
 Sample
 ======
+
+credits
+    type: Str
+
+    Acknowledgment of sample supplier, e.g. Prepared by Putin, Vladimir V.
 
 description
     type: Str
@@ -344,13 +379,13 @@ signal_origin
 record_by
     type: Str
     .. deprecated:: 2.1 (HyperSpy v1.0)
-    
+
     One of 'spectrum' or 'image'. It describes how the data is stored in memory.
     If 'spectrum' the spectral data is stored in the faster index.
 
 quantity
     type: Str
-    
+
     The name of the quantity of the "intensity axis" with the units in round brackets if required, for example Temperature (K).
 
 Noise_properties

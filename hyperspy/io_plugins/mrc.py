@@ -154,7 +154,11 @@ def file_reader(filename, endianess='<', **kwds):
         f.seek(1024 + std_header['NEXT'])
         fei_header = None
     NX, NY, NZ = std_header['NX'], std_header['NY'], std_header['NZ']
-    data = np.memmap(f, mode='c', offset=f.tell(),
+    mmap_mode = kwds.pop('mmap_mode', 'c')
+    lazy = kwds.pop('lazy', False)
+    if lazy:
+        mmap_mode = 'r'
+    data = np.memmap(f, mode=mmap_mode, offset=f.tell(),
                      dtype=get_data_type(std_header['MODE'], endianess)
                      ).squeeze().reshape((NX, NY, NZ), order='F').T
 
