@@ -168,7 +168,8 @@ class TestLoadingNewSavedMetadata:
             self.s.metadata.test.tuple_inside_list == [
                 137, (123, 44)])
 
-    @pytest.mark.xfail(reason="dill is not guaranteed to load across Python versions")
+    @pytest.mark.xfail(
+        reason="dill is not guaranteed to load across Python versions")
     def test_binary_string(self):
         import dill
         # apparently pickle is not "full" and marshal is not
@@ -368,8 +369,9 @@ def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
     assert s.metadata.Sample.elements.dtype.char == "U"
 
+
 def test_lazy_metadata_arrays(tmpfilepath):
-    s = BaseSignal([1,2,3])
+    s = BaseSignal([1, 2, 3])
     s.metadata.array = np.arange(10.)
     s.save(tmpfilepath)
     l = load(tmpfilepath, lazy=True)
