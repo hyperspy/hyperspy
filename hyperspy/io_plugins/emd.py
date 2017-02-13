@@ -32,7 +32,7 @@ import logging
 # Plugin characteristics
 # ----------------------
 format_name = 'Electron Microscopy Data (EMD)'
-description = 'Read data from Berkleys EMD files.'
+description = 'Read data from Berkeleys EMD files.'
 full_support = True  # Hopefully?
 # Recognised file extension
 file_extensions = ('emd', 'EMD')
@@ -47,24 +47,27 @@ class EMD(object):
 
     """Class for storing electron microscopy datasets.
 
-    The :class:`~.EMD` class can hold an arbitrary amount of datasets in the `signals` dictionary.
-    These are saved as HyperSpy :class:`~hyperspy.signal.Signal` instances. Global metadata
-    are saved in four dictionaries (`user`, `microscope`, `sample`, `comments`). To print
-    relevant information about the EMD instance use the :func:`~.log_info` function. EMD
-    instances can be loaded from and saved to emd-files, an hdf5 standard developed at Lawrence
-    Berkeley National Lab (http://emdatasets.lbl.gov/).
+    The :class:`~.EMD` class can hold an arbitrary amount of datasets in the
+    `signals` dictionary. These are saved as HyperSpy
+    :class:`~hyperspy.signal.Signal` instances. Global metadata are saved in
+    four dictionaries (`user`, `microscope`, `sample`, `comments`). To print
+    relevant information about the EMD instance use the :func:`~.log_info`
+    function. EMD instances can be loaded from and saved to emd-files, an
+    hdf5 standard developed at Lawrence
+    Berkeley National Lab (https://emdatasets.com/).
 
     Attributes
     ----------
     signals: dictionary
-        Dictionary which contains all datasets as :class:`~hyperspy.signal.Signal` instances.
-    user: dictionary
+        Dictionary which contains all datasets as
+        :class:`~hyperspy.signal.Signal` instances.
+    user : dictionary
         Dictionary which contains user related metadata.
-    microscope: dictionary
+    microscope : dictionary
         Dictionary which contains microscope related metadata.
-    sample: dictionary
+    sample : dictionary
         Dictionary which contains sample related metadata.
-    comments: dictionary
+    comments : dictionary
         Dictionary which contains additional commentary metadata.
 
     """
@@ -146,8 +149,9 @@ class EMD(object):
             try:  # If something h5py can't handle is saved in the metadata...
                 dataset.attrs[key] = value
             except Exception:  # ...let the user know what could not be added!
-                self._log.exception('The hdf5 writer could not write the following '
-                                    'information in the file: %s : %s', key, value)
+                self._log.exception(
+                        'The hdf5 writer could not write the following '
+                        'information in the file: %s : %s', key, value)
 
     def _read_signal_from_group(self, name, group, lazy=False):
         self._log.debug('Calling _read_signal_from_group')
@@ -182,40 +186,45 @@ class EMD(object):
                 if len(dim) == 1:
                     axis.scale = 1.
                     self._log.warning(
-                        'Could not calculate scale of axis {}. '\
+                        'Could not calculate scale of axis {}. '
                         'Setting scale to 1'.format(i))
                 else:
                     axis.scale = dim[1] - dim[0]
                 axis.offset = dim[0]
-            # Hyperspy then uses defaults (1.0 and 0.0)!
+            # HyperSpy then uses defaults (1.0 and 0.0)!
             except (IndexError, TypeError) as e:
                 self._log.warning(
-                    'Could not calculate scale/offset of axis {}: {}'.format(i, e))
+                    'Could not calculate scale/offset of '
+                    'axis {}: {}'.format(i, e))
         # Extract metadata:
         metadata = {}
         for key, value in group.attrs.items():
             metadata[key] = value
         if signal.data.dtype == np.object:
-            self._log.warning('HyperSpy could not load the data in {}, '\
+            self._log.warning(
+                    'HyperSpy could not load the data in {}, '
                     'skipping it'.format(name))
         else:
             # Add signal:
             self.add_signal(signal, name, metadata)
 
     def add_signal(self, signal, name=None, metadata=None):
-        """Add a hyperspy signal to the EMD instance and make sure all metadata is present.
+        """Add a HyperSpy signal to the EMD instance and make sure all
+        metadata is present.
 
         Parameters
         ----------
-        signal: :class:`~hyperspy.signal.Signal`
+        signal : :class:`~hyperspy.signal.Signal`
             HyperSpy signal which should be added to the EMD instance.
-        name: string, optional
-            Name of the (used as a key for the `signals` dictionary). If not specified,
-            `signal.metadata.General.title` will be used. If this is an empty string, both name
-            and signal title are set to 'dataset' per default. If specified, `name` overwrites the
+        name : string, optional
+            Name of the (used as a key for the `signals` dictionary). If not
+            specified, `signal.metadata.General.title` will be used. If this
+            is an empty string, both name and signal title are set to 'dataset'
+            per default. If specified, `name` overwrites the
             signal title.
-        metadata: dictionary
-            Dictionary which holds signal specific metadata which will be added to the signal.
+        metadata : dictionary
+            Dictionary which holds signal specific metadata which will
+            be added to the signal.
 
         Returns
         -------
@@ -223,10 +232,10 @@ class EMD(object):
 
         Notes
         -----
-        This is the preferred way to add signals to the EMD instance. Directly adding to the
-        `signals` dictionary is possible but does not make sure all metadata are correct. This
-        method is also called in the standard constructor on all entries in the `signals`
-        dictionary!
+        This is the preferred way to add signals to the EMD instance.
+        Directly adding to the `signals` dictionary is possible but does not
+        make sure all metadata are correct. This method is also called in
+        the standard constructor on all entries in the `signals` dictionary!
 
         """
         self._log.debug('Calling add_signal')
@@ -267,13 +276,15 @@ class EMD(object):
         Parameters
         ----------
         filename : string
-            The name of the emd-file from which to load the signals. Standard format is '*.emd'.
-        False: bool, optional
-            If False (default) loads data to memory. If True, enables loading only if requested.
+            The name of the emd-file from which to load the signals. Standard
+            format is '*.emd'.
+        False : bool, optional
+            If False (default) loads data to memory. If True, enables loading
+            only if requested.
 
         Returns
         -------
-        emd: :class:`~.EMD`
+        emd : :class:`~.EMD`
             A :class:`~.EMD` object containing the loaded signals.
 
         """
@@ -370,25 +381,27 @@ class EMD(object):
     def log_info(self):
         """Print all relevant information about the EMD instance."""
         self._log.debug('Calling log_info')
-        info_str = '\nUser:\n-------------------------\n'
+        pad_string0 = '-------------------------\n'
+        pad_string1 = '\n-------------------------\n'
+        info_str = '\nUser:' + pad_string1
         for key, value in self.user.items():
             info_str += '{:<15}: {}\n'.format(key, value)
-        info_str += '-------------------------\n\nMicroscope:\n-------------------------\n'
+        info_str += pad_string0 + '\nMicroscope:' + pad_string1
         for key, value in self.microscope.items():
             info_str += '{:<15}: {}\n'.format(key, value)
-        info_str += '-------------------------\n\nSample:\n-------------------------\n'
+        info_str += pad_string0 + '\nSample:' + pad_string1
         for key, value in self.sample.items():
             info_str += '{:<15}: {}\n'.format(key, value)
-        info_str += '-------------------------\n\nComments:\n-------------------------\n'
+        info_str += pad_string0 + '\nComments:' + pad_string1
         for key, value in self.comments.items():
             info_str += '{:<15}: {}\n'.format(key, value)
-        info_str += '-------------------------\n\nData:\n-------------------------\n'
+        info_str += pad_string0 + '\nData:' + pad_string1
         for key, value in self.signals.items():
             info_str += '{:<15}: {}\n'.format(key, value)
             sig_dict = value.metadata.Signal
             for k in sig_dict.keys():
                 info_str += '  |-- {}: {}\n'.format(k, sig_dict[k])
-        info_str += '-------------------------\n'
+        info_str += pad_string0
         self._log.info(info_str)
 
 
