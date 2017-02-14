@@ -82,7 +82,7 @@ class MarkerBase(object):
     def _to_dictionary(self):
         marker_dict = {}
         marker_dict['_marker_properties'] = self.marker_properties
-        marker_dict['marker_type'] = self.__class__
+        marker_dict['marker_type'] = str(self.__class__)
         marker_dict['_plot_on_signal'] = self._plot_on_signal
 
         data_dict = {}
@@ -93,7 +93,7 @@ class MarkerBase(object):
         data_dict['text'] = self.data['text'].item().tolist()
         data_dict['size'] = self.data['size'].item().tolist()
         marker_dict['data'] = data_dict
-        return(marker_dict)
+        return marker_dict
 
     def _get_data_shape(self):
         if self.data['x1'].flatten()[0].flatten()[0] is not None:
