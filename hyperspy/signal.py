@@ -4013,7 +4013,7 @@ class BaseSignal(FancySlicing,
 
     def add_marker(
             self, marker, plot_on_signal=True, plot_marker=True,
-            permanent=False):
+            permanent=False, plot_signal=True):
         """
         Add a marker to the signal or navigator plot.
 
