@@ -45,6 +45,7 @@ class MarkerBase(object):
         self.marker = None
         self._marker_properties = {}
         self.signal = None
+        self._plot_on_signal = True
 
         # Events
         self.events = Events()
