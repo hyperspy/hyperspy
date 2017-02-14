@@ -62,6 +62,7 @@ class Point(MarkerBase):
         self.marker_properties = lp
         self.set_data(x1=x, y1=y, size=size)
         self.set_marker_properties(**kwargs)
+        self.name = 'point'
 
     def update(self):
         if self.auto_update is False:

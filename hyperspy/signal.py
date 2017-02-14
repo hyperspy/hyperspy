@@ -4087,15 +4087,26 @@ class BaseSignal(FancySlicing,
                 self._plot.navigator_plot.add_marker(marker)
             marker.plot()
         if permanent:
-            if not hasattr(self, "markers"):
-                self.markers = []
-            if marker in self.markers:
+            if not self.metadata.has_item('Markers'):
+                self.metadata.add_node('Markers')
+            if marker in self.metadata.Markers.as_dictionary().values():
                 raise ValueError("Marker already added to signal")
-            self.markers.append(marker)
+            name_list = list(self.metadata.Markers.as_dictionary().keys())
+            name = marker.name
+            temp_name = name
+            for i in range(100000):
+                if temp_name in name_list:
+                    temp_name = name + str(i)
+                else:
+                    name = temp_name
+                    break
+            self.metadata.Markers[name] = marker
             marker.signal = self
 
     def _plot_permanent_markers(self):
-        for marker in self.markers:
+        marker_key_list = list(self.metadata.Markers.as_dictionary().keys())
+        for marker_key in marker_key_list:
+            marker = self.metadata.Markers[marker_key]
             if marker._plot_on_signal:
                 self._plot.signal_plot.add_marker(marker)
             else:
