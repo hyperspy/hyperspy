@@ -2000,7 +2000,7 @@ class BaseSignal(FancySlicing,
                 [])
 
         if plot_markers:
-            if hasattr(self, 'markers'):
+            if self.metadata.has_item('Markers'):
                 self._plot_permanent_markers()
 
     plot.__doc__ %= BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
