@@ -47,6 +47,10 @@ class HeavisideStep(Component):
         self.A.grad = self.grad_A
         self.n.grad = self.grad_n
 
+        # Linearity
+        self.A.is_linear = False # Should this be False or True?
+        self.n.is_linear = False
+
     def function(self, x):
         x = np.asanyarray(x)
         return np.where(x < self.n.value,

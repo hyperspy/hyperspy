@@ -82,6 +82,11 @@ class GaussianHF(Expression):
         self.isbackground = False
         self.convolved = True
 
+        # Linearity
+        self.height.is_linear = True
+        self.fwhm.is_linear = False
+        self.centre.is_linear = False
+
     def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the gaussian by calculating the momenta.
 

@@ -44,6 +44,10 @@ class Exponential(Component):
         self.A.grad = self.grad_A
         self.tau.grad = self.grad_tau
 
+        # Linearity
+        self.A.is_linear = True
+        self.tau.is_linear = False
+
     def function(self, x):
         """
         """

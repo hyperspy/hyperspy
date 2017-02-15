@@ -215,3 +215,6 @@ class Expression(Component):
                         self,
                         Expression)
                     )
+
+            # Linearity
+            self.parameter.is_linear = False # Change it later

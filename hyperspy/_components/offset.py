@@ -48,6 +48,10 @@ class Offset(Component):
         # Gradients
         self.offset.grad = self.grad_offset
 
+
+        # Linearity
+        self.k.is_linear = False
+
     def function(self, x):
         return np.ones((len(x))) * self.offset.value
 

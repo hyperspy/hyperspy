@@ -40,6 +40,11 @@ class Bleasdale(Component):
         Component.__init__(self, ('a', 'b', 'c'))
         # Define the name of the component
 
+        # Linearity
+        self.a.is_linear = False
+        self.b.is_linear = False
+        self.c.is_linear = False
+
     def function(self, x):
         """
         """

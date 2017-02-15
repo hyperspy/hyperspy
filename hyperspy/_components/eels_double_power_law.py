@@ -46,6 +46,13 @@ class DoublePowerLaw(Component):
         self.isbackground = True
         self.convolved = False
 
+        # Linearity
+        self.A.is_linear = True
+        self.r.is_linear = False
+        self.origin.is_linear = False
+        self.shift.is_linear = False
+        self.ratio.is_linear = False # Uncertain whether True/False
+
     def function(self, x):
         """
         Given an one dimensional array x containing the energies at which

@@ -49,6 +49,16 @@ class Vignetting(Component):
         self.extension_nch = 100
         self._position = self.optical_center
 
+        # Linearity
+        self.height.is_linear = False # Unsure about "side_vignetting" below
+        self.period.is_linear = False
+        self.left_slope.is_linear = False
+        self.right_slope.is_linear = False
+        self.left.is_linear = False
+        self.right.is_linear = False
+        self.sigma.is_linear = False
+        self.optical_center.is_linear = False
+        
     def function(self, x):
         sigma = self.sigma.value
         x0 = self.optical_center.value
@@ -59,8 +69,8 @@ class Vignetting(Component):
         l = self.left.value
         r = self.right.value
         ex = self.extension_nch
-        if self.side_vignetting is True:
 
+        if self.side_vignetting is True:
             x = x.tolist()
             x = list(range(-ex, 0)) + x + \
                 list(range(int(x[-1]) + 1, int(x[-1]) + ex + 1))
