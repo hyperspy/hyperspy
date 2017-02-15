@@ -4027,7 +4027,7 @@ class BaseSignal(FancySlicing,
             If True, add the marker to the signal
             If False, add the marker to the navigator
         plot_marker : bool
-            If True, plot the marker
+            If True, plot the marker.
         permanent : bool, default False
             If False, the marker will only appear in the current
             plot. If True, the marker will be added to the
@@ -4076,9 +4076,10 @@ class BaseSignal(FancySlicing,
         if (not marker.signal is None) and (not marker.signal is self):
             raise ValueError("Markers can not be added to several signals")
         marker._plot_on_signal = plot_on_signal
+        marker._plot_marker = plot_marker
         if plot_signal:
             self.plot()
-        if plot_marker:
+        if marker._plot_marker:
             if self._plot is None:
                 self.plot()
             if marker._plot_on_signal:
@@ -4104,14 +4105,16 @@ class BaseSignal(FancySlicing,
             marker.signal = self
 
     def _plot_permanent_markers(self):
-        marker_key_list = list(self.metadata.Markers.as_dictionary().keys())
-        for marker_key in marker_key_list:
-            marker = self.metadata.Markers[marker_key]
-            if marker._plot_on_signal:
-                self._plot.signal_plot.add_marker(marker)
-            else:
-                self._plot.navigator_plot.add_marker(marker)
-            marker.plot()
+        marker_dict_list = list(self.metadata.Markers.__dict__.values())
+        for marker_dict in marker_dict_list:
+            if marker_dict['_dtb_value_'] is not False:
+                marker = marker_dict['_dtb_value_']
+                if marker.plot_marker:
+                    if marker._plot_on_signal:
+                        self._plot.signal_plot.add_marker(marker)
+                    else:
+                        self._plot.navigator_plot.add_marker(marker)
+                    marker.plot()
 
     def add_poissonian_noise(self, **kwargs):
         """Add Poissonian noise to the data"""

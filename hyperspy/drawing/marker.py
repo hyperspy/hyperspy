@@ -47,6 +47,7 @@ class MarkerBase(object):
         self.signal = None
         self._plot_on_signal = True
         self.name = ''
+        self.plot_marker = True
 
         # Events
         self.events = Events()
