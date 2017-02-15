@@ -108,7 +108,7 @@ def _linear_bin_loop(result, data, scale):
     for j in range(result.shape[0]):
         x1 = j * scale
         x2 = min((1 + j) * scale, data.shape[0])
-        value = result[j:j+1]
+        value = result[j:j + 1]
         if (x2 - x1) >= 1:
             cx1 = math.ceil(x1)
             rem = cx1 - x1
@@ -120,8 +120,8 @@ def _linear_bin_loop(result, data, scale):
         if x2 != x1:
             value += data[math.floor(x1)] * (x2 - x1)
 
-def _linear_bin(dat, scale, crop=True):
 
+def _linear_bin(dat, scale, crop=True):
     """
     Binning of the spectrum image by a non-integer pixel value.
 
