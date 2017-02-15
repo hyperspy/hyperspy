@@ -116,6 +116,9 @@ class Gaussian(Component):
         self.sigma.grad = self.grad_sigma
         self.centre.grad = self.grad_centre
 
+        # Linearity
+        self.A._is_linear = True
+
     def function(self, x):
         A = self.A.value
         s = self.sigma.value

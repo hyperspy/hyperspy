@@ -16,24 +16,23 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
+from hyperspy.components1d import Expression, Gaussian
 
-from hyperspy.component import Component
+def test_sympy_linear_expression():
+    expression = "height * exp(-(x - centre) ** 2 * 4 * log(2)/ fwhm ** 2)"
+    g = Expression(expression, name="Test_function")
+    assert g.height._is_linear
+    assert not g.centre._is_linear
+    assert not g.fwhm._is_linear
 
+def test_sympy_linear_expression2():
+    expression = "a * x + b"
+    g = Expression(expression, name="Test_function2")
+    assert g.a._is_linear
+    assert g.b._is_linear
 
-class RC(Component):
-
-    """
-    """
-
-    def __init__(self, V=1, V0=0, tau=1.):
-        Component.__init__(self, ('Vmax', 'V0', 'tau'))
-        self.Vmax.value, self.V0.value, self.tau.value = V, V0, tau
-        
-    def function(self, x):
-        """
-        """
-        Vmax = self.Vmax.value
-        V0 = self.V0.value
-        tau = self.tau.value
-        return V0 + Vmax * (1 - np.exp(-x / tau))
+def test_gaussian_linear():
+    g = Gaussian()
+    assert g.A._is_linear
+    assert not g.centre._is_linear
+    assert not g.sigma._is_linear

@@ -16,24 +16,27 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
+from hyperspy.components1d import Expression, Gaussian
 
-from hyperspy.component import Component
+def test_constant_from_expression():
+    expression = "a * x + b"
+    g = Expression(
+        expression, 
+        name="test_constant",
+        a = 20.0,
+        b = 4.0)
+    g.b.free = False
+    assert g.constant_term == 4.0
 
-
-class RC(Component):
-
-    """
-    """
-
-    def __init__(self, V=1, V0=0, tau=1.):
-        Component.__init__(self, ('Vmax', 'V0', 'tau'))
-        self.Vmax.value, self.V0.value, self.tau.value = V, V0, tau
-        
-    def function(self, x):
-        """
-        """
-        Vmax = self.Vmax.value
-        V0 = self.V0.value
-        tau = self.tau.value
-        return V0 + Vmax * (1 - np.exp(-x / tau))
+def test_constant_from_expression2():
+    expression = "A * exp(-(x-centre)**2/(2*sigma**2))"
+    g = Expression(
+        expression, 
+        name="test_constant2",
+        A = 20.0,
+        centre = 4.0,
+        sigma = 1.0)
+    assert g.constant_term == 0
+    g.centre.free = False
+    g.sigma.free = False
+    assert g.constant_term == 0

@@ -1,5 +1,6 @@
 from functools import wraps
 from hyperspy.component import Component
+import sympy
 
 _CLASS_DOC = \
     """%s component (created with Expression).
@@ -153,8 +154,10 @@ class Expression(Component):
             self.__doc__ = _CLASS_DOC % (
                 name, sympy.latex(_parse_substitutions(expression)))
 
+        for para in self.parameters:
+            para._is_linear = check_parameter_linearity(expression, para.name)
+
     def compile_function(self, module="numpy", position=False):
-        import sympy
         from sympy.utilities.lambdify import lambdify
         expr = _parse_substitutions(self._str_expression)
         # Extract x
@@ -222,3 +225,39 @@ class Expression(Component):
                         self,
                         Expression)
                     )
+   
+    @property
+    def constant_term(self):
+        "Get value of constant term of component"
+        # First get currently constant parameters
+        linear_parameters = []
+        for para in self.free_parameters:
+            if para._is_linear:
+                linear_parameters.append(para.name)
+        constant_expr, not_constant_expr = extract_constant_part_of_expression(
+            self._str_expression, *linear_parameters)
+
+        # Then replace symbols with value of each parameter
+        free_symbols = [str(free) for free in constant_expr.free_symbols]
+        for para in self.parameters:
+            if para.name in free_symbols:
+                constant_expr = constant_expr.subs(para.name, para.value)
+        return constant_expr
+
+def check_parameter_linearity(expr, name):
+    "Check whether expression is linear for a given parameter"
+    try:
+        if not sympy.Eq(sympy.diff(expr, name, 2), 0):
+            return False
+    except TypeError:
+        return False
+    return True
+
+def extract_constant_part_of_expression(expr, *args):
+    """
+    Extract constant part of expression given independent variables *args.
+    Given no arguments, only x is assumed to change.
+    """
+    expr = sympy.sympify(expr)
+    constant, not_constant = expr.as_independent(*args, as_Add=True)
+    return constant, not_constant

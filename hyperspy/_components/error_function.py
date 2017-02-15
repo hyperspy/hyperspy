@@ -56,6 +56,9 @@ class Erf(Component):
         self.origin.grad = self.grad_origin
         self._position = self.origin
 
+        # Linearity
+        self.A._is_linear = True
+
     def function(self, x):
         A = self.A.value
         sigma = self.sigma.value

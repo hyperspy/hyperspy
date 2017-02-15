@@ -836,6 +836,82 @@ class BaseModel(list):
         to_return = self.__call__(non_convolved=False, onlyactive=True)
         return to_return
 
+    def get_raw_signal_for_linear_fitting(self):
+        """Gets the current signal, for linear fitting"""
+        to_return = self.signal()[np.where(self.channel_switches)]
+        if self.signal.metadata.Signal.binned is True:
+            to_return = to_return / self.signal.axes_manager[-1].scale
+        return to_return
+
+    def get_signal_for_linear_fitting(self):
+        """
+        Gets the current signal minus fixed model components, for linear fitting
+        -This could use the previous function to reduce typing-
+        """
+        self._set_p0()
+        deactivated_components = []
+        for component in self:
+            if component.active:
+                if not component.free_parameters:
+                    for parameter in component.parameters:
+                        if parameter.twin:
+                            deactivated_components.append(component)
+                            break
+                else:
+                    deactivated_components.append(component)
+        for comp in deactivated_components:
+            comp.active = False
+
+        fixed_model = self._model_function(self.p0)
+
+        for comp in deactivated_components:
+            comp.active = True
+        signal = self.signal()[np.where(self.channel_switches)]
+        signal_to_fit_to = signal - fixed_model
+        if self.signal.metadata.Signal.binned is True:
+            signal_to_fit_to = signal_to_fit_to / self.signal.axes_manager[-1].scale
+        return signal_to_fit_to
+
+    def check_all_active_components_are_linear(self):
+        """Loops through active components checking all parameters are linear"""
+        for comp in self:
+            if comp.active:
+                for parameter in comp.parameters:
+                    if parameter.free:
+                        if not parameter._is_linear:
+                            return False
+        return True
+
+    def get_nonlinear_components(self):
+        """Loops through active components checking all parameters are linear"""
+        nonlinear = []
+        for comp in self:
+            if comp.active:
+                for parameter in comp.parameters:
+                    if parameter.free:
+                        if not parameter._is_linear:
+                            nonlinear.append(comp)
+                            break
+        return nonlinear
+
+    def check_and_set_linear_parameters_not_zero(self):
+        for comp in self:
+            if comp.active:
+                for parameter in comp.free_parameters:
+                    print(parameter.value)
+                    if parameter.value == 0:
+                        parameter._set_value(1)
+                        warnings.warn("Value of linear parameter " + parameter.name + " of component " + comp.name + " was set to zero. Changed to value=1 for fitting.")
+        #old, doesn't work bc p0 not used: self.p0 = [value if value != 0 else 1 for value in self.p0]
+
+    def get_constant_term(self):
+        constant_term = 0
+        for comp in self:
+            if comp.active:
+                constant_term += comp.constant_term
+        return constant_term
+
+
     def _errfunc2(self, param, y, weights=None):
         if weights is None:
             weights = 1.
@@ -1044,6 +1120,11 @@ class BaseModel(list):
             args = (self.signal()[np.where(self.channel_switches)],
                     weights)
 
+            not_linear_error = "Not all components are linear. Fit with a " + \
+                               "different fitter or set non-linear " + \
+                               "`parameters.free = False`. These " + \
+                               "components are nonlinear:"
+
             # Least squares "dedicated" fitters
             if fitter == "leastsq":
                 if bounded:
@@ -1127,6 +1208,68 @@ class BaseModel(list):
                         (self._errfunc(self.p0, *args) ** 2).sum() /
                         (len(args[0]) - len(self.p0)))
                 self.fit_output = m
+
+            elif fitter == "linear":
+                print("Fitting using linear fit")
+                nonlinear = self.get_nonlinear_components()
+                if nonlinear:
+                    raise AttributeError(not_linear_error + str(nonlinear))
+                # INCLUDE CHECK that there is at least 1 COMPONENT - if none, raise error
+                print(self.p0)
+                self.check_and_set_linear_parameters_not_zero()
+                print(self._set_p0())
+                signal_axis = self.axis.axis[np.where(self.channel_switches)]
+                component_data = np.array([component.function(signal_axis)
+                                           for component in self if len(component.free_parameters) > 0 and component.active])
+                constant_term = self.get_constant_term()
+                y = self.signal()[np.where(self.channel_switches)] / self.signal.axes_manager[-1].scale - constant_term
+                if bounded:
+                    self.set_boundaries()
+                    bounds = self.free_parameters_boundaries
+                    current_values = self.p0
+                    bounds = ([bmin/value if bmin is not None else -np.inf
+                                for (bmin, bmax), value in zip(bounds, current_values)],
+                              [bmax/value if bmax is not None else np.inf
+                                for (bmin, bmax), value in zip(bounds, current_values)])
+
+                    output = linear(component_data.T, y, bounds = bounds)
+                else:
+                    output = linear(component_data.T, y)
+                fit_coefficients = output["x"]
+                self.p0 = tuple([oldp0*fit_coefficient for oldp0, fit_coefficient in zip(self.p0, fit_coefficients)])
+                self.fit_output = output
+
+            elif fitter == "linear_lstsq":
+                print("Fitting using linear_lstsq fit")
+                nonlinear = self.get_nonlinear_components()
+                if nonlinear:
+                    raise AttributeError(not_linear_error + str(nonlinear))
+                self.check_and_set_linear_parameters_not_zero()
+
+                signal_axis = self.axis.axis[np.where(self.channel_switches)]
+                component_data = np.array([component.function(signal_axis)
+                                           for component in self if len(component.free_parameters) > 0 and component.active])
+                y = self.get_signal_for_linear_fitting()
+                params, residuals, rank, singular = linear_lstsq(component_data.T, y)
+                fit_coefficients = params
+                self.fit_output = [params, residuals, rank, singular]
+                self.p0 = tuple([oldp0*fit_coefficient for oldp0, fit_coefficient in zip(self.p0, fit_coefficients)])
+
+            elif fitter == "non_negative_linear":
+                nonlinear = self.get_nonlinear_components()
+                if nonlinear:
+                    raise AttributeError(not_linear_error + str(nonlinear))
+                self.check_and_set_linear_parameters_not_zero()
+
+                signal_axis = self.axis.axis[np.where(self.channel_switches)]
+                component_data = np.array([component.function(signal_axis)
+                                           for component in self if len(component.free_parameters) > 0 and component.active])
+                y = self.get_signal_for_linear_fitting()
+                output = nnls(component_data.T, y)
+                fit_coefficients = output[0]
+                self.p0 = tuple([oldp0*fit_coefficient for oldp0, fit_coefficient in zip(self.p0, fit_coefficients)])
+                self.fit_output = output
+
             else:
                 # General optimizers
                 # Least squares or maximum likelihood

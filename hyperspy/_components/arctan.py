@@ -62,6 +62,9 @@ class Arctan(Component):
         self.convolved = False
         self._position = self.x0
 
+        # Linearity
+        self.A._is_linear = True
+
     def function(self, x):
         A = self.A.value
         k = self.k.value

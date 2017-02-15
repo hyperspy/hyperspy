@@ -28,17 +28,19 @@ class VolumePlasmonDrude(Component):
 
     .. math::
 
-       f(E) = \frac{E(\Delta E_p)E_p^2}{(E^2-E_p^2)^2+(E\Delta E_p)^2}
+       Energy loss function defined as:
 
-    +------------------+-----------------+
-    | Parameter        |    Attribute    |
-    +------------------+-----------------+
-    |:math:`E_p`       |  plasmon_energy |
-    +------------------+-----------------+
-    |:math:`\Delta E_p`|      fwhm       |
-    +------------------+-----------------+
-    | intensity        |   intensity     |
-    +------------------+-----------------+
+       f(E) = \\frac{E(\Delta E_p)E_p^2}{(E^2-E_p^2)^2+(E\Delta E_p)^2}
+
+    +------------+-----------------+
+    | Parameter  |    Attribute    |
+    +------------+-----------------+
+    |    E_p     |  plasmon_energy |
+    +------------+-----------------+
+    | delta_E_p  |      fwhm       |
+    +------------+-----------------+
+    | intensity  |    intensity    |
+    +------------+-----------------+
 
     Notes
     -----
@@ -59,6 +61,9 @@ class VolumePlasmonDrude(Component):
         self.plasmon_energy.grad = self.grad_plasmon_energy
         self.fwhm.grad = self.grad_fwhm
         self.intensity.grad = self.grad_intensity
+
+        # Linearity
+        self.intensity._is_linear = True
 
     def function(self, x):
         plasmon_energy = self.plasmon_energy.value

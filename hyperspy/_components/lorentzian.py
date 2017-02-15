@@ -63,6 +63,9 @@ class Lorentzian(Component):
         self.gamma.grad = self.grad_gamma
         self.centre.grad = self.grad_centre
 
+        # Linearity
+        self.A._is_linear = True
+
     def function(self, x):
         """
         """

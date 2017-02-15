@@ -64,6 +64,9 @@ class Gaussian2D(Component):
         self.centre_x.value = centre_x
         self.centre_y.value = centre_y
 
+        # Linearity
+        self.A._is_linear = True
+
 # TODO: add boundaries and gradients for enhancement
 
     def function(self, x, y):

@@ -54,6 +54,9 @@ class PESCoreLineShape(Component):
         self.origin.grad = self.grad_origin
         self.ab.grad = self.grad_ab
 
+        # Linearity
+        self.A._is_linear = False # This is probably linear, but unsure
+
         # Options
         self.factor = 1.
         self.Shirley = False
