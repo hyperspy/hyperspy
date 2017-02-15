@@ -6,9 +6,10 @@ except ImportError:
     ordict = False
 
 import warnings
+import math as math
 
 import numpy as np
-import math as math
+import numba
 
 
 def get_array_memory_size_in_GiB(shape, dtype):
@@ -102,8 +103,24 @@ def rebin(a, new_shape):
     return eval(''.join(evList))
 
 
-def _linear_bin(s, scale,
-                crop=True):
+@numba.jit
+def _linear_bin_loop(result, data, scale):
+    for j in range(result.shape[0]):
+        x1 = j * scale
+        x2 = min((1 + j) * scale, data.shape[0])
+        value = result[j:j+1]
+        if (x2 - x1) >= 1:
+            cx1 = math.ceil(x1)
+            rem = cx1 - x1
+            value += data[math.floor(x1)] * rem
+            x1 = cx1
+            while (x2 - x1) >= 1:
+                value += data[cx1]
+                x1 += 1
+        if x2 != x1:
+            value += data[math.floor(x1)] * (x2 - x1)
+
+def _linear_bin(dat, scale, crop=True):
 
     """
     Binning of the spectrum image by a non-integer pixel value.
@@ -136,60 +153,24 @@ def _linear_bin(s, scale,
     dimension in the data.
 
     """
-    if len(s.shape) != len(scale):
+    if len(dat.shape) != len(scale):
         raise ValueError(
-           'The list of bins must match the number of dimensions, including the\
+            'The list of bins must match the number of dimensions, including the\
             energy dimension.\
             In order to not bin in any of these dimensions specifically, \
             simply set the value in shape to 1')
 
-    newSpectrum = s[:]
-    for dimension_number, step in enumerate(scale):
+    for axis, s in enumerate(scale):
+        try:
+            dat = np.swapaxes(dat, 0, axis)
+            dim = (math.floor(dat.shape[0] / s) if crop
+                   else math.ceil(dat.shape[0] / s))
+            result = np.zeros((dim,) + dat.shape[1:], dtype="float")
+            _linear_bin_loop(result=result, data=dat, scale=s)
+        finally:
+            dat = np.swapaxes(result, axis, 0)
 
-        latestSpectrum = np.copy(newSpectrum)
-
-        if dimension_number != 0:
-            latestSpectrum = np.swapaxes(latestSpectrum, 0, dimension_number)
-
-        size = latestSpectrum.shape
-
-        def get_dimension(i, size):
-            if i != 0:
-                new_size = size
-            elif crop:
-                new_size = math.floor(size / step)
-            else:
-                new_size = math.ceil(size / step)
-            return new_size
-
-        newSpectrum = np.zeros([get_dimension(i, dimension_size)
-                                for i, dimension_size in
-                                enumerate(size)],
-                               dtype="float")
-
-        k = newSpectrum.shape[0]
-        for j in range(k):
-            bottomPos = j*step
-            topPos = min((1+j)*step, size[0])
-            updatedValue = newSpectrum[j]
-            while (topPos - bottomPos) >= 1:
-                if math.ceil(bottomPos) - bottomPos != 0:
-                    updatedValue += latestSpectrum[math.floor(bottomPos)] * \
-                               (math.ceil(bottomPos) - bottomPos)
-                    bottomPos = math.ceil(bottomPos)
-                else:
-                    updatedValue += latestSpectrum[int(bottomPos)]
-                    bottomPos += 1
-            if topPos != bottomPos:
-                updatedValue += latestSpectrum[
-                                math.floor(bottomPos)]*(topPos-bottomPos)
-            # Update new_spectrum
-            newSpectrum[j] = updatedValue
-
-        if dimension_number != 0:
-            newSpectrum = np.swapaxes(newSpectrum, 0, dimension_number)
-
-    return newSpectrum
+    return result
 
 
 def sarray2dict(sarray, dictionary=None):
