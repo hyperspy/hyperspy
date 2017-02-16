@@ -169,14 +169,13 @@ def _linear_bin(dat, scale, crop=True):
             simply set the value in shape to 1')
 
     for axis, s in enumerate(scale):
-        try:
-            dat = np.swapaxes(dat, 0, axis)
-            dim = (math.floor(dat.shape[0] / s) if crop
-                   else math.ceil(dat.shape[0] / s))
-            result = np.zeros((dim,) + dat.shape[1:], dtype="float")
-            _linear_bin_loop(result=result, data=dat, scale=s)
-        finally:
-            dat = np.swapaxes(result, axis, 0)
+        dat = np.swapaxes(dat, 0, axis)
+        dim = (math.floor(dat.shape[0] / s) if crop
+               else math.ceil(dat.shape[0] / s))
+        result = np.zeros((dim,) + dat.shape[1:], dtype="float")
+        _linear_bin_loop(result=result, data=dat, scale=s)
+        result = result.swapaxes(0, axis)
+        dat =  result
 
     return result
 
