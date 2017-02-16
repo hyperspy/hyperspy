@@ -4078,7 +4078,8 @@ class BaseSignal(FancySlicing,
         marker._plot_on_signal = plot_on_signal
         marker._plot_marker = plot_marker
         if plot_signal:
-            self.plot()
+            if self._plot is None:
+                self.plot()
         if marker._plot_marker:
             if self._plot is None:
                 self.plot()
