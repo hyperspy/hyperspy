@@ -20,7 +20,9 @@ import numpy as np
 
 from hyperspy.signals import Signal1D, Signal2D
 from hyperspy.utils import markers
+from hyperspy.io import load
 
+import tempfile
 
 class Test_markers:
 
@@ -200,3 +202,56 @@ class Test_permanent_markers:
         s.add_marker(m, permanent=True)
         assert list(s.metadata.Markers)[0][1] == m
 
+    def test_save_permanent_marker(self):
+        s = Signal2D(np.arange(100).reshape(10,10))
+        m = markers.point(x=5, y=5)
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/testsavefile.hdf5'
+        s.save(filename)
+
+    def test_load_permanent_marker(self):
+        x, y = 5, 2
+        color = 'red'
+        size = 10
+        name = 'testname'
+        s = Signal2D(np.arange(100).reshape(10,10))
+        m = markers.point(x=x, y=y, color=color, size=size)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/testloadfile.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        assert s1.metadata.Markers.has_item(name)
+        m1 = s1.metadata.Markers.get_item(name)
+        assert m1.get_data_position('x1') == x
+        assert m1.get_data_position('y1') == y
+        assert m1.get_data_position('size') == size
+        assert m1.marker_properties['color'] == color
+        assert m1.name == name
+
+    def test_load_permanent_marker_all_types(self):
+        x1, y1, x2, y2 = 5, 2, 1, 8
+        s = Signal2D(np.arange(100).reshape(10,10))
+        m0 = markers.point(x=x1, y=y1)
+        m1 = markers.horizontal_line(y=y1)
+        m2 = markers.horizontal_line_segment(x1=x1, x2=x2, y=y1)
+        m3 = markers.line_segment(x1=x1, x2=x2, y1=y1, y2=y2)
+        m4 = markers.rectangle(x1=x1, x2=x2, y1=y1, y2=y2)
+        m5 = markers.text(x=x1, y=y1, text="test")
+        m6 = markers.vertical_line(x=x1)
+        m7 = markers.vertical_line_segment(x=x1, y1=y1, y2=y2)
+        s.add_marker(m0, permanent=True)
+        s.add_marker(m1, permanent=True)
+        s.add_marker(m2, permanent=True)
+        s.add_marker(m3, permanent=True)
+        s.add_marker(m4, permanent=True)
+        s.add_marker(m5, permanent=True)
+        s.add_marker(m6, permanent=True)
+        s.add_marker(m7, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/testallmarkersfile.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        assert len(list(s1.metadata.Markers)) == 8
