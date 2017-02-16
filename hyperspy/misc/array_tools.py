@@ -92,15 +92,28 @@ def rebin(a, new_shape):
     Adapted from scipy cookbook
 
     """
-    shape = a.shape
-    lenShape = len(shape)
+    lenShape = len(a.shape)
     # ensure the new shape is integers
     new_shape = tuple(int(ns) for ns in new_shape)
-    factor = np.asarray(shape) // np.asarray(new_shape)
-    evList = ['a.reshape('] + \
-             ['new_shape[%d],factor[%d],' % (i, i) for i in range(lenShape)] +\
-             [')'] + ['.sum(%d)' % (i + 1) for i in range(lenShape)]
-    return eval(''.join(evList))
+    factor = np.asarray(a.shape) // np.asarray(new_shape)
+    if factor.max() < 2:
+        return a.copy()
+    if isinstance(a, np.ndarray):
+        # most of the operations will fall here and dask is not imported
+        rshape = ()
+        for athing in zip(new_shape, factor):
+            rshape += athing
+        return a.reshape(rshape).sum(axis=tuple(
+            2 * i + 1 for i in range(lenShape)))
+    else:
+        import dask.array as da
+        try:
+            return da.coarsen(np.sum, a, {i: int(f) for i, f in enumerate(factor)})
+        # we provide slightly better error message in hypersy context
+        except ValueError:
+            raise ValueError("Rebinning does not allign with data dask chunks."
+                             " Rebin fewer dimensions at a time to avoid this"
+                             " error")
 
 
 @numba.jit
@@ -124,16 +137,13 @@ def _linear_bin_loop(result, data, scale):
 def _linear_bin(dat, scale, crop=True):
     """
     Binning of the spectrum image by a non-integer pixel value.
-
     Parameters
     ----------
     originalSpectrum: numpy.array, or the s.data, where s is a signal array.
-
     scale: a list of floats for each dimension specify the new:old pixel ratio
         e.g. a ratio of 1 is no binning
              a ratio of 2 means that each pixel in the new spectrum is
              twice the size of the pixels in the old spectrum.
-
     crop_str: when binning by a non-integer number of pixels it is likely that
          the final row in each dimension contains less than the full quota to
          fill one pixel.
@@ -141,17 +151,14 @@ def _linear_bin(dat, scale, crop=True):
          pixels and one row containing only 0.8 pixels worth. Selection of
          crop_str = 'True' or crop = 'False' determines whether or not this
          'black' line is cropped from the final binned array or not.
-
         *Please note that if crop=False is used, the final row in each
     dimension may appear black, if a fractional number of pixels are left
     over. It can be removed but has been left to preserve total counts
     before and after binning.*
-
     Return
     ------
     An np.array with new dimensions width/scale for each
     dimension in the data.
-
     """
     if len(dat.shape) != len(scale):
         raise ValueError(

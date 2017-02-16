@@ -61,6 +61,7 @@ install_req = ['scipy',
                'h5py',
                'python-dateutil',
                'ipyparallel',
+               'dask[array]',
                'scikit-image']
 
 # the hack to deal with setuptools + installing the package in ReadTheDoc:
@@ -320,6 +321,7 @@ with update_version_when_dev() as version:
                   'hyperspy.misc.eels',
                   'hyperspy.misc.eds',
                   'hyperspy.misc.io',
+                  'hyperspy.misc.holography',
                   'hyperspy.misc.machine_learning',
                   'hyperspy.external',
                   'hyperspy.external.mpfit',
@@ -330,6 +332,7 @@ with update_version_when_dev() as version:
                   'hyperspy.samfire_utils.goodness_of_fit_tests',
                   ],
         install_requires=install_req,
+        test_require=["pytest>=3.0.2"],
         package_data={
             'hyperspy':
             [
@@ -344,6 +347,7 @@ with update_version_when_dev() as version:
                 'tests/io/dm4_2D_data/*.dm4',
                 'tests/io/dm4_3D_data/*.dm4',
                 'tests/io/dm3_locale/*.dm3',
+                'tests/io/edax_files.zip',
                 'tests/io/FEI_new/*.emi',
                 'tests/io/FEI_new/*.ser',
                 'tests/io/FEI_new/*.npy',
