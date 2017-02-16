@@ -4096,12 +4096,13 @@ class BaseSignal(FancySlicing,
             name_list = list(self.metadata.Markers.as_dictionary().keys())
             name = marker.name
             temp_name = name
-            for i in range(100000):
+            for i in range(1, 100000):
                 if temp_name in name_list:
                     temp_name = name + str(i)
                 else:
                     name = temp_name
                     break
+            marker.name = temp_name
             self.metadata.Markers[name] = marker
             marker.signal = self
 
