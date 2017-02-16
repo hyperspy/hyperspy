@@ -30,6 +30,7 @@ from hyperspy.misc.utils import strlist2enumeration
 from natsort import natsorted
 import hyperspy.misc.io.tools
 from hyperspy.io_plugins import io_plugins, default_write_ext
+from hyperspy.drawing.marker import dict2marker
 
 _logger = logging.getLogger(__name__)
 
@@ -367,6 +368,13 @@ def dict2signal(signal_dict):
             del mp["Signal"]['record_by']
         if "Signal" in mp and "signal_type" in mp["Signal"]:
             signal_type = mp["Signal"]['signal_type']
+        if "Markers" in mp:
+            markers_dict = {}
+            for marker_name in mp['Markers'].keys():
+                marker = dict2marker(mp['Markers'][marker_name], marker_name)
+                if marker is not False:
+                    markers_dict[marker_name] = marker
+            mp['Markers'] = markers_dict
     # "Estimate" signal_dimension from axes. It takes precedence over record_by
     if ("axes" in signal_dict and
         len(signal_dict["axes"]) == len(
@@ -377,7 +385,6 @@ def dict2signal(signal_dict):
     elif signal_dimension == -1:
         # If not defined, all dimension are categorised as signal
         signal_dimension = signal_dict["data"].ndim
-
     signal = assign_signal_subclass(signal_dimension=signal_dimension,
                                     signal_type=signal_type,
                                     dtype=signal_dict['data'].dtype,)(**signal_dict)

@@ -19,6 +19,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from hyperspy.events import Event, Events
+import hyperspy.drawing._markers as markers
+import logging
 
 
 class MarkerBase(object):
@@ -84,7 +86,7 @@ class MarkerBase(object):
     def _to_dictionary(self):
         marker_dict = {}
         marker_dict['_marker_properties'] = self.marker_properties
-        marker_dict['marker_type'] = str(self.__class__)
+        marker_dict['marker_type'] = self.__class__.__name__
         marker_dict['_plot_on_signal'] = self._plot_on_signal
 
         data_dict = {}
@@ -180,3 +182,34 @@ class MarkerBase(object):
             self.ax.hspy_fig._draw_animated()
         except:
             pass
+
+
+def dict2marker(marker_dict, marker_name):
+    marker_type = marker_dict['marker_type']
+    if marker_type == 'Point':
+        marker = markers.point.Point(0, 0)
+    elif marker_type == 'HorizontalLine':
+        marker = markers.horizontal_line.HorizontalLine(0)
+    elif marker_type == 'HorizontalLineSegment':
+        marker = markers.horizontal_line_segment.HorizontalLineSegment(0, 0, 0)
+    elif marker_type == 'LineSegment':
+        marker = markers.line_segment.LineSegment(0, 0, 0, 0)
+    elif marker_type == 'Rectangle':
+        marker = markers.rectangle.Rectangle(0, 0, 0, 0)
+    elif marker_type == 'Text':
+        marker = markers.text.Text(0, 0, "")
+    elif marker_type == 'VerticalLine':
+        marker = markers.vertical_line.VerticalLine(0)
+    elif marker_type == 'VerticalLineSegment':
+        marker = markers.vertical_line_segment.VerticalLineSegment(0, 0, 0)
+    else:
+        _log = logging.getLogger(__name__)
+        _log.warning(
+                "Marker {} with marker type {} "
+                "not recognized".format(marker_name, marker_type))
+        return(False)
+    marker.set_data(**marker_dict['data'])
+    marker.set_marker_properties(**marker_dict['_marker_properties'])
+    marker._plot_on_signal = marker_dict['_plot_on_signal']
+    marker.name = marker_name
+    return(marker)
