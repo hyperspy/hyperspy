@@ -144,7 +144,7 @@ class TestSamfireEmpty:
 
     def setup_method(self, method):
         self.shape = (7, 15)
-        s = hs.signals.Signal1D(np.ones(self.shape + (1024,))+3.)
+        s = hs.signals.Signal1D(np.ones(self.shape + (1024,)) + 3.)
         s.estimate_poissonian_noise_variance()
         m = s.create_model()
         m.append(hs.model.components1D.Gaussian())

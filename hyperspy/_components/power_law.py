@@ -80,7 +80,8 @@ class PowerLaw(Component):
                         (x - self.origin.value) ** (-self.r.value - 1) *
                         self.A.value, 0)
 
-    def estimate_parameters(self, signal, x1, x2, only_current=False):
+    def estimate_parameters(self, signal, x1, x2, only_current=False,
+                            out=False):
         """Estimate the parameters by the two area method
 
         Parameters
@@ -94,11 +95,14 @@ class PowerLaw(Component):
             estimation.
 
         only_current : bool
-            If False estimates the parameters for the full dataset.
+            If False, estimates the parameters for the full dataset.
+        out : bool
+            If True, returns the result arrays directly without storing in the
+            parameter maps/values. The returned order is (A, r).
 
         Returns
         -------
-        bool
+        {bool, tuple of values}
 
         """
         super(PowerLaw, self)._estimate_parameters(signal)
@@ -118,18 +122,29 @@ class PowerLaw(Component):
             s = signal
         I1 = s.isig[i1:i3].integrate1D(2j).data.astype("float")
         I2 = s.isig[i3:i2].integrate1D(2j).data.astype("float")
+        if s._lazy:
+            import dask.array as da
+            log = da.log
+        else:
+            log = np.log
         try:
-            r = 2 * np.log(I1 / I2) / math.log(x2 / x1)
+            r = 2 * log(I1 / I2) / log(x2 / x1)
             k = 1 - r
             A = k * I2 / (x2 ** k - x3 ** k)
-            r = np.nan_to_num(r)
-            A = np.nan_to_num(A)
+            if s._lazy:
+                r = r.map_blocks(np.nan_to_num)
+                A = A.map_blocks(np.nan_to_num)
+            else:
+                r = np.nan_to_num(r)
+                A = np.nan_to_num(A)
         except:
             return False
         if only_current is True:
             self.r.value = r
             self.A.value = A
             return True
+        if out:
+            return A, r
         else:
             if self.A.map is None:
                 self._create_arrays()

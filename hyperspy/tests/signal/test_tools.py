@@ -6,6 +6,7 @@ from numpy.testing import assert_array_equal, assert_allclose
 import pytest
 
 from hyperspy import signals
+from hyperspy.decorators import lazifyTestClass
 
 
 def _verify_test_sum_x_E(self, s):
@@ -15,6 +16,7 @@ def _verify_test_sum_x_E(self, s):
     assert s.axes_manager.signal_dimension == 1
 
 
+@lazifyTestClass
 class Test2D:
 
     def setup_method(self, method):
@@ -100,7 +102,6 @@ class Test2D:
         self.signal.estimate_poissonian_noise_variance()
         variance = self.signal.metadata.Signal.Noise_properties.variance
         np.testing.assert_array_equal(variance.data, self.signal.data)
-        np.testing.assert_array_equal(variance.data, self.signal.data)
 
     def test_estimate_poissonian_noise_with_args(self):
         self.signal.estimate_poissonian_noise_variance(
@@ -114,12 +115,16 @@ class Test2D:
 
     def test_unfold_image(self):
         s = self.signal
+        if s._lazy:
+            pytest.skip("LazyS do not support folding")
         s = s.transpose(signal_axes=2)
         s.unfold()
         assert s.data.shape == (50,)
 
     def test_unfold_image_returns_true(self):
         s = self.signal
+        if s._lazy:
+            pytest.skip("LazyS do not support folding")
         s = s.transpose(signal_axes=2)
         assert s.unfold()
 
@@ -169,6 +174,7 @@ def _test_default_navigation_signal_operations_over_many_axes(self, op):
     assert s.axes_manager.navigation_dimension == 0
 
 
+@lazifyTestClass
 class Test3D:
 
     def setup_method(self, method):
@@ -220,6 +226,14 @@ class Test3D:
         assert new_s.data.shape == (1, 2, 6)
         assert var.data.shape == (1, 2, 6)
         from hyperspy.misc.array_tools import rebin
+
+        if self.signal._lazy:
+            from distutils.version import LooseVersion
+            import dask
+            if LooseVersion(np.__version__) >= "1.12.0" and \
+               LooseVersion(dask.__version__) <= "0.13.0":
+                pytest.skip("Dask not up to date with new numpy")
+
         np.testing.assert_array_equal(rebin(self.signal.data, (1, 2, 6)),
                                       var.data)
         np.testing.assert_array_equal(rebin(self.signal.data, (1, 2, 6)),
@@ -238,12 +252,16 @@ class Test3D:
 
     def test_swap_axes_simple(self):
         s = self.signal
+        if s._lazy:
+            pytest.skip("LazyS do not support axes swapping")
         assert s.swap_axes(0, 1).data.shape == (4, 2, 6)
         assert s.swap_axes(0, 2).axes_manager.shape == (6, 2, 4)
         assert s.swap_axes(0, 2).data.flags['C_CONTIGUOUS']
 
     def test_swap_axes_iteration(self):
         s = self.signal
+        if s._lazy:
+            pytest.skip("LazyS do not support axes swapping")
         s = s.swap_axes(0, 2)
         assert s.axes_manager._getitem_tuple[:2] == (0, 0)
         s.axes_manager.indices = (2, 1)
@@ -374,6 +392,7 @@ class Test3D:
             s._get_signal_signal(dtype="bool").data.dtype.name == "bool")
 
 
+@lazifyTestClass
 class Test4D:
 
     def setup_method(self, method):
@@ -404,21 +423,31 @@ class Test4D:
         assert self.s.rollaxis("z", "x").data.shape == (4, 3, 5, 6)
 
     def test_unfold_spectrum(self):
+        if self.s._lazy:
+            pytest.skip("LazyS do not support folding")
         self.s.unfold()
         assert self.s.data.shape == (60, 6)
 
     def test_unfold_spectrum_returns_true(self):
+        if self.s._lazy:
+            pytest.skip("LazyS do not support folding")
         assert self.s.unfold()
 
     def test_unfold_spectrum_signal_returns_false(self):
+        if self.s._lazy:
+            pytest.skip("LazyS do not support folding")
         assert not self.s.unfold_signal_space()
 
     def test_unfold_image(self):
+        if self.s._lazy:
+            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         im.unfold()
         assert im.data.shape == (30, 12)
 
     def test_image_signal_unfolded_deepcopy(self):
+        if self.s._lazy:
+            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         im.unfold()
         # The following could fail if the constructor was not taking the fact
@@ -427,15 +456,21 @@ class Test4D:
         im.deepcopy()
 
     def test_image_signal_unfolded_false(self):
+        if self.s._lazy:
+            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         assert not im.metadata._HyperSpy.Folding.signal_unfolded
 
     def test_image_signal_unfolded_true(self):
+        if self.s._lazy:
+            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         im.unfold()
         assert im.metadata._HyperSpy.Folding.signal_unfolded
 
     def test_image_signal_unfolded_back_to_false(self):
+        if self.s._lazy:
+            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         im.unfold()
         im.fold()
@@ -443,14 +478,16 @@ class Test4D:
 
 
 def test_signal_iterator():
-    s = signals.Signal1D(np.arange(3).reshape((3, 1)))
-    assert next(s).data[0] == 0
-    # If the following fails it can be because the iteration index was not
-    # restarted
-    for i, signal in enumerate(s):
-        assert i == signal.data[0]
+    sig = signals.Signal1D(np.arange(3).reshape((3, 1)))
+    for s in (sig, sig.as_lazy()):
+        assert next(s).data[0] == 0
+        # If the following fails it can be because the iteration index was not
+        # restarted
+        for i, signal in enumerate(s):
+            assert i == signal.data[0]
 
 
+@lazifyTestClass
 class TestDerivative:
 
     def setup_method(self, method):
@@ -467,6 +504,7 @@ class TestDerivative:
         assert_allclose(der.data, np.sin(der.axes_manager[0].axis), atol=1e-2)
 
 
+@lazifyTestClass
 class TestOutArg:
 
     def setup_method(self, method):
@@ -540,6 +578,12 @@ class TestOutArg:
     def test_rebin(self):
         s = self.s
         new_shape = (3, 2, 1, 3)
+        if self.s._lazy:
+            from distutils.version import LooseVersion
+            import dask
+            if LooseVersion(np.__version__) >= "1.12.0" and \
+               LooseVersion(dask.__version__) <= "0.13.0":
+                pytest.skip("Dask not up to date with new numpy")
         self._run_single(s.rebin, s, dict(new_shape=new_shape))
 
     def test_as_spectrum(self):
@@ -593,6 +637,8 @@ class TestOutArg:
 
     def test_masked_array_mean(self):
         s = self.s
+        if s._lazy:
+            pytest.skip("LazyS do not support masked arrays")
         mask = (s.data > 0.5)
         s.data = np.arange(s.data.size).reshape(s.data.shape)
         s.data = np.ma.masked_array(s.data, mask=mask)
@@ -611,6 +657,8 @@ class TestOutArg:
 
     def test_masked_array_sum(self):
         s = self.s
+        if s._lazy:
+            pytest.skip("LazyS do not support masked arrays")
         mask = (s.data > 0.5)
         s.data = np.ma.masked_array(np.ones_like(s.data), mask=mask)
         sr = s.sum(axis=('x', 'z',))
@@ -618,6 +666,8 @@ class TestOutArg:
 
     def test_masked_arrays_out(self):
         s = self.s
+        if s._lazy:
+            pytest.skip("LazyS do not support masked arrays")
         mask = (s.data > 0.5)
         s.data = np.ones_like(s.data)
         s.data = np.ma.masked_array(s.data, mask=mask)
@@ -637,6 +687,7 @@ class TestOutArg:
             s.sum(axis=s.axes_manager._axes, out=ss)
 
 
+@lazifyTestClass
 class TestTranspose:
 
     def setup_method(self, method):
@@ -724,6 +775,8 @@ class TestTranspose:
                 ['f', 'e'])
 
     def test_optimize(self):
+        if self.s._lazy:
+            pytest.skip("LazyS do not support optimizations")
         t = self.s.transpose(signal_axes=['f', 'a', 'b'], optimize=False)
         assert t.data.base is self.s.data
 
