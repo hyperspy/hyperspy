@@ -61,6 +61,7 @@ class Rectangle(MarkerBase):
         self.marker_properties = lp
         self.set_data(x1=x1, y1=y1, x2=x2, y2=y2)
         self.set_marker_properties(**kwargs)
+        self.name = 'rectangle'
 
     def update(self):
         if self.auto_update is False:
