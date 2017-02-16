@@ -4090,8 +4090,9 @@ class BaseSignal(FancySlicing,
         if permanent:
             if not self.metadata.has_item('Markers'):
                 self.metadata.add_node('Markers')
-            if marker in self.metadata.Markers.as_dictionary().values():
-                raise ValueError("Marker already added to signal")
+            for marker_tuple in list(self.metadata.Markers):
+                if marker is marker_tuple[1]:
+                    raise ValueError("Marker already added to signal")
             name_list = list(self.metadata.Markers.as_dictionary().keys())
             name = marker.name
             temp_name = name
