@@ -8,6 +8,7 @@ except ImportError:
 import warnings
 import math as math
 import logging
+import numbers
 
 import numpy as np
 
@@ -181,11 +182,15 @@ def _linear_bin(dat, scale, crop=True):
     if not hasattr(_linear_bin_loop, "__numba__"):
         _logger.warning("Install numba to speed up the computation of `rebin`")
 
+    all_integer = np.all([isinstance(n, numbers.Integral) for n in scale])
+    dtype = (dat.dtype if (all_integer or "complex" in dat.dtype.name)
+             else "float")
+
     for axis, s in enumerate(scale):
         dat = np.swapaxes(dat, 0, axis)
         dim = (math.floor(dat.shape[0] / s) if crop
                else math.ceil(dat.shape[0] / s))
-        result = np.zeros((dim,) + dat.shape[1:], dtype="float")
+        result = np.zeros((dim,) + dat.shape[1:], dtype=dtype)
         _linear_bin_loop(result=result, data=dat, scale=s)
         result = result.swapaxes(0, axis)
         dat = result
