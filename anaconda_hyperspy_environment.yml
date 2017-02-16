@@ -7,7 +7,7 @@ dependencies:
 - ipyparallel
 - jupyter
 - matplotlib
-- nose
+- pytest
 - numpy
 - qt
 - scikit-image

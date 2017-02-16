@@ -140,13 +140,15 @@ def get_header_from_signal(signal, endianess='<'):
     return header, note
 
 
-def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
-                **kwds):
+def file_reader(filename, endianess='<', mmap_mode='c',
+                lazy=False, **kwds):
     _logger.debug("Reading blockfile: %s" % filename)
     metadata = {}
     # Makes sure we open in right mode:
     if '+' in mmap_mode or ('write' in mmap_mode and
                             'copyonwrite' != mmap_mode):
+        if lazy:
+            raise ValueError("Lazy loading does not support in-place writing")
         f = open(filename, 'r+b')
     else:
         f = open(filename, 'rb')
@@ -180,7 +182,7 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
 
     # Then comes actual blockfile
     offset2 = header['Data_offset_2']
-    if load_to_memory:
+    if not lazy:
         f.seek(offset2)
         data = np.fromfile(f, dtype=endianess + 'u1')
     else:
@@ -205,7 +207,8 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
     units = ['nm', 'nm', 'cm', 'cm']
     names = ['y', 'x', 'dy', 'dx']
     scales = [header['SY'], header['SX'], SDP, SDP]
-    date, time, time_zone = serial_date_to_ISO_format(header['Acquisition_time'])
+    date, time, time_zone = serial_date_to_ISO_format(
+        header['Acquisition_time'])
     metadata = {'General': {'original_filename': os.path.split(filename)[1],
                             'date': date,
                             'time': time,

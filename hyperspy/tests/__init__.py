@@ -16,24 +16,38 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import sys
+from traits.etsconfig.api import ETSConfig
 import os
-import nose
+import warnings
+ETSConfig.toolkit = "null"
+import matplotlib
+matplotlib.use("Agg")
+from hyperspy.defaults_parser import preferences
+preferences.General.show_progressbar = False
 
+# Check if we should fail on external deprecation messages
+fail_on_external = os.environ.pop('FAIL_ON_EXTERNAL_DEPRECATION', False)
+if isinstance(fail_on_external, str):
+    fail_on_external = (fail_on_external.lower() in
+                        ['true', 't', '1', 'yes', 'y', 'set'])
 
-@nose.tools.nottest
-def test(args=[], no_path_adjustment=False):
-    """Run tests.
-
-       args : list of strings
-           a list of options that will be passed to nosetests
-       no_path_adjustment : bool
-           If True it the --no-path-adjustment option wil be passed to nosetests
-    """
-    mod_loc = os.path.dirname(__file__)
-    totest = os.path.join(mod_loc, 'io', 'test_dm3.py')
-
-    if no_path_adjustment is not None:
-        args.append('--no-path-adjustment')
-    args.insert(0, totest)
-    return nose.run(argv=args)
+if fail_on_external:
+    warnings.filterwarnings(
+        'error', category=DeprecationWarning)
+    # Travis setup has these warnings, so ignore:
+    warnings.filterwarnings(
+        'ignore',
+        "BaseException\.message has been deprecated as of Python 2\.6",
+        DeprecationWarning)
+    # Don't care about warnings in hyperspy in this mode!
+    warnings.filterwarnings('default', module="hyperspy")
+else:
+    # Fall-back filter: Error
+    warnings.simplefilter('error')
+    warnings.filterwarnings(
+        'ignore', "Failed to import the optional scikit image package",
+        UserWarning)
+    # We allow extrernal warnings:
+    warnings.filterwarnings('default',
+                            module="(?!hyperspy)")

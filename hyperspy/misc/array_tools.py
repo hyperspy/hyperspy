@@ -6,9 +6,13 @@ except ImportError:
     ordict = False
 
 import warnings
+import math as math
+import logging
+import numbers
 
 import numpy as np
-import math as math
+
+_logger = logging.getLogger(__name__)
 
 
 def get_array_memory_size_in_GiB(shape, dtype):
@@ -91,32 +95,67 @@ def rebin(a, new_shape):
     Adapted from scipy cookbook
 
     """
-    shape = a.shape
-    lenShape = len(shape)
+    lenShape = len(a.shape)
     # ensure the new shape is integers
     new_shape = tuple(int(ns) for ns in new_shape)
-    factor = np.asarray(shape) // np.asarray(new_shape)
-    evList = ['a.reshape('] + \
-             ['new_shape[%d],factor[%d],' % (i, i) for i in range(lenShape)] +\
-             [')'] + ['.sum(%d)' % (i + 1) for i in range(lenShape)]
-    return eval(''.join(evList))
+    factor = np.asarray(a.shape) // np.asarray(new_shape)
+    if factor.max() < 2:
+        return a.copy()
+    if isinstance(a, np.ndarray):
+        # most of the operations will fall here and dask is not imported
+        rshape = ()
+        for athing in zip(new_shape, factor):
+            rshape += athing
+        return a.reshape(rshape).sum(axis=tuple(
+            2 * i + 1 for i in range(lenShape)))
+    else:
+        import dask.array as da
+        try:
+            return da.coarsen(np.sum, a, {i: int(f)
+                                          for i, f in enumerate(factor)})
+        # we provide slightly better error message in hypersy context
+        except ValueError:
+            raise ValueError("Rebinning does not allign with data dask chunks."
+                             " Rebin fewer dimensions at a time to avoid this"
+                             " error")
 
 
-def _linear_bin(s, scale,
-                crop=True):
+def jit_ifnumba(func):
+    try:
+        import numba
+        return numba.jit(func)
+    except ImportError:
+        return func
 
+
+@jit_ifnumba
+def _linear_bin_loop(result, data, scale):
+    for j in range(result.shape[0]):
+        x1 = j * scale
+        x2 = min((1 + j) * scale, data.shape[0])
+        value = result[j:j + 1]
+        if (x2 - x1) >= 1:
+            cx1 = math.ceil(x1)
+            rem = cx1 - x1
+            value += data[math.floor(x1)] * rem
+            x1 = cx1
+            while (x2 - x1) >= 1:
+                value += data[cx1]
+                x1 += 1
+        if x2 != x1:
+            value += data[math.floor(x1)] * (x2 - x1)
+
+
+def _linear_bin(dat, scale, crop=True):
     """
     Binning of the spectrum image by a non-integer pixel value.
-
     Parameters
     ----------
     originalSpectrum: numpy.array, or the s.data, where s is a signal array.
-
     scale: a list of floats for each dimension specify the new:old pixel ratio
         e.g. a ratio of 1 is no binning
              a ratio of 2 means that each pixel in the new spectrum is
              twice the size of the pixels in the old spectrum.
-
     crop_str: when binning by a non-integer number of pixels it is likely that
          the final row in each dimension contains less than the full quota to
          fill one pixel.
@@ -124,72 +163,39 @@ def _linear_bin(s, scale,
          pixels and one row containing only 0.8 pixels worth. Selection of
          crop_str = 'True' or crop = 'False' determines whether or not this
          'black' line is cropped from the final binned array or not.
-
         *Please note that if crop=False is used, the final row in each
     dimension may appear black, if a fractional number of pixels are left
     over. It can be removed but has been left to preserve total counts
     before and after binning.*
-
     Return
     ------
     An np.array with new dimensions width/scale for each
     dimension in the data.
-
     """
-    if len(s.shape) != len(scale):
+    if len(dat.shape) != len(scale):
         raise ValueError(
-           'The list of bins must match the number of dimensions, including the\
+            'The list of bins must match the number of dimensions, including the\
             energy dimension.\
             In order to not bin in any of these dimensions specifically, \
             simply set the value in shape to 1')
 
-    newSpectrum = s[:]
-    for dimension_number, step in enumerate(scale):
+    if not hasattr(_linear_bin_loop, "__numba__"):
+        _logger.warning("Install numba to speed up the computation of `rebin`")
 
-        latestSpectrum = np.copy(newSpectrum)
+    all_integer = np.all([isinstance(n, numbers.Integral) for n in scale])
+    dtype = (dat.dtype if (all_integer or "complex" in dat.dtype.name)
+             else "float")
 
-        if dimension_number != 0:
-            latestSpectrum = np.swapaxes(latestSpectrum, 0, dimension_number)
+    for axis, s in enumerate(scale):
+        dat = np.swapaxes(dat, 0, axis)
+        dim = (math.floor(dat.shape[0] / s) if crop
+               else math.ceil(dat.shape[0] / s))
+        result = np.zeros((dim,) + dat.shape[1:], dtype=dtype)
+        _linear_bin_loop(result=result, data=dat, scale=s)
+        result = result.swapaxes(0, axis)
+        dat = result
 
-        size = latestSpectrum.shape
-
-        def get_dimension(i, size):
-            if i != 0:
-                new_size = size
-            elif crop:
-                new_size = math.floor(size / step)
-            else:
-                new_size = math.ceil(size / step)
-            return new_size
-
-        newSpectrum = np.zeros([get_dimension(i, dimension_size)
-                                for i, dimension_size in
-                                enumerate(size)],
-                               dtype="float")
-
-        k = newSpectrum.shape[0]
-        for j in range(k):
-            bottomPos = j*step
-            topPos = min((1+j)*step, size[0])
-            updatedValue = newSpectrum[j]
-            while (topPos - bottomPos) >= 1:
-                if math.ceil(bottomPos) - bottomPos != 0:
-                    updatedValue += latestSpectrum[math.floor(bottomPos)] * \
-                               (math.ceil(bottomPos) - bottomPos)
-                    bottomPos = math.ceil(bottomPos)
-                else:
-                    updatedValue += latestSpectrum[int(bottomPos)]
-                    bottomPos += 1
-            if topPos != bottomPos:
-                updatedValue += latestSpectrum[
-                                math.floor(bottomPos)]*(topPos-bottomPos)
-            # Update new_spectrum
-            newSpectrum[j] = updatedValue
-
-        if dimension_number != 0:
-            newSpectrum = np.swapaxes(newSpectrum, 0, dimension_number)
-
-    return newSpectrum
+    return result
 
 
 def sarray2dict(sarray, dictionary=None):
