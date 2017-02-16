@@ -70,27 +70,27 @@ def test_metadata():
 
 def test_metadata_with_bytes_string():
     filename = os.path.join(
-            my_path, 'emd_files', 'example_bytes_string_metadata.emd')
+        my_path, 'emd_files', 'example_bytes_string_metadata.emd')
     f = h5py.File(filename, 'r')
     dim1 = f['test_group']['data_group']['dim1']
     dim1_name = dim1.attrs['name']
     dim1_units = dim1.attrs['units']
     f.close()
-    assert type(dim1_name) is np.bytes_
-    assert type(dim1_units) is np.bytes_
+    assert isinstance(dim1_name, np.bytes_)
+    assert isinstance(dim1_units, np.bytes_)
     signal = load(os.path.join(my_path, 'emd_files', filename))
 
 
 def test_data_numpy_object_dtype():
     filename = os.path.join(
-            my_path, 'emd_files', 'example_object_dtype_data.emd')
+        my_path, 'emd_files', 'example_object_dtype_data.emd')
     signal = load(filename)
     assert len(signal) == 0
 
 
 def test_data_axis_length_1():
     filename = os.path.join(
-            my_path, 'emd_files', 'example_axis_len_1.emd')
+        my_path, 'emd_files', 'example_axis_len_1.emd')
     signal = load(filename)
     assert signal.data.shape == (5, 1, 5)
 

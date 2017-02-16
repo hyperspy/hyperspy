@@ -29,6 +29,7 @@ def _parse_substitutions(string, simultaneous=True):
         expr = expr.subs(*tuple(map(str.strip, sub.split('='))))
     return expr
 
+
 class Expression(Component):
 
     """Create a component from a string expression.

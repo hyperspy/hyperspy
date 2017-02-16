@@ -1333,7 +1333,6 @@ class EELSSpectrum_mixin:
         return model
 
     def Linear_bin(self, scale, crop=True):
-
         """
         Binning of the spectrum image by a non-integer pixel value.
 
@@ -1404,6 +1403,7 @@ class EELSSpectrum_mixin:
                     *= scale[i]
 
         return m
+
 
 class LazyEELSSpectrum(EELSSpectrum_mixin, LazySignal1D):
 

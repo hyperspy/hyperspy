@@ -627,6 +627,7 @@ def load_only_data(filename, array_shape, record_by, num_axes, data=None):
         raise IOError("Please report this issue to the HyperSpy developers.")
     return dc
 
+
 def _guess_units_from_mode(objects_dict, header):
     # in case the xml file doesn't contain the "Mode" or the header doesn't
     # contain 'Dim-1_UnitsLength', return "meters" as default, which will be

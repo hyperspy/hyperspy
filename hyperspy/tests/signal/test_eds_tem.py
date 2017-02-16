@@ -323,6 +323,7 @@ class Test_eds_markers:
 
 
 class Test_linear_bin:
+
     def test_linear_bin1(self):
         spectrum = EDSTEMSpectrum(np.ones([3, 3, 1]))
         res = spectrum.linear_bin([1.5, 1.5, 1])

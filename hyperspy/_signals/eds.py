@@ -203,7 +203,6 @@ class EDS_mixin:
     sum.__doc__ = Signal1D.sum.__doc__
 
     def linear_bin(self, scale, crop=True):
-
         """
         Binning of the spectrum image by a non-integer pixel value.
 
