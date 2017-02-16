@@ -7,9 +7,11 @@ except ImportError:
 
 import warnings
 import math as math
+import logging
 
 import numpy as np
-import numba
+
+_logger = logging.getLogger(__name__)
 
 
 def get_array_memory_size_in_GiB(shape, dtype):
@@ -117,7 +119,15 @@ def rebin(a, new_shape):
                              " error")
 
 
-@numba.jit
+def jit_ifnumba(func):
+    try:
+        import numba
+        return numba.jit(func)
+    except ImportError:
+        return func
+
+
+@jit_ifnumba
 def _linear_bin_loop(result, data, scale):
     for j in range(result.shape[0]):
         x1 = j * scale
@@ -167,6 +177,9 @@ def _linear_bin(dat, scale, crop=True):
             energy dimension.\
             In order to not bin in any of these dimensions specifically, \
             simply set the value in shape to 1')
+
+    if not hasattr(_linear_bin_loop, "__numba__"):
+        _logger.warning("Install numba to speed up the computation of `rebin`")
 
     for axis, s in enumerate(scale):
         dat = np.swapaxes(dat, 0, axis)
