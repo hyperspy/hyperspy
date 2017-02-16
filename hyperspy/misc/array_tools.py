@@ -175,7 +175,7 @@ def _linear_bin(dat, scale, crop=True):
         result = np.zeros((dim,) + dat.shape[1:], dtype="float")
         _linear_bin_loop(result=result, data=dat, scale=s)
         result = result.swapaxes(0, axis)
-        dat =  result
+        dat = result
 
     return result
 
