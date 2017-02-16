@@ -136,6 +136,28 @@ class Test_permanent_markers:
         m = markers.point(x=5, y=5)
         s.add_marker(m, permanent=True)
         assert list(s.metadata.Markers)[0][1] == m
+
+    def test_remove_permanent_marker_name(self):
+        s = Signal1D(np.arange(10))
+        m = markers.point(x=5, y=5)
+        m.name = 'test'
+        s.add_marker(m, permanent=True)
+        assert list(s.metadata.Markers)[0][1] == m
+        del s.metadata.Markers.test
+        assert len(list(s.metadata.Markers)) == 0
+
+    def test_permanent_marker_names(self):
+        s = Signal1D(np.arange(10))
+        m0 = markers.point(x=5, y=5)
+        m1 = markers.point(x=5, y=5)
+        m0.name = 'test'
+        m1.name = 'test'
+        s.add_marker(m0, permanent=True)
+        s.add_marker(m1, permanent=True)
+        assert s.metadata.Markers.test == m0
+        assert m0.name == 'test'
+        assert s.metadata.Markers.test1 == m1
+        assert m1.name == 'test1'
     
     def test_add_permanent_marker_twice(self):
         s = Signal1D(np.arange(10))
