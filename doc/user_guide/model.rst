@@ -108,7 +108,7 @@ Specifying custom components
 
 .. versionadded:: 0.8.1 :py:class:`~._components.expression.Expression` component
 
-.. versionadded:: 1.1 :py:class:`~._components.expression.Expression` component can create 2D components.
+.. versionadded:: 1.2 :py:class:`~._components.expression.Expression` component can create 2D components.
 
 The easiest way to turn a mathematical expression into a component is using the
 :py:class:`~._components.expression.Expression` component. For example, the
