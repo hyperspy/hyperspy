@@ -28,6 +28,7 @@ from hyperspy.samfire_utils.samfire_worker import create_worker
 
 _logger = logging.getLogger(__name__)
 
+
 def _walk_compute(athing):
     if isinstance(athing, dict):
         this = {}
@@ -194,7 +195,7 @@ class SamfirePool(ParallelPool):
 
     def update_parameters(self):
         """Updates various worker parameters.
-        
+
         Currently updates:
             - Optional components (that can be switched off by the worker)
             - Parameter boundaries

@@ -190,7 +190,6 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
         _logger.debug("Photometric: %s" % op['photometric'])
         _logger.debug('is_imagej: {}'.format(tiff[0].is_imagej))
 
-
         # workaround for 'palette' photometric, keep only 'X' and 'Y' axes
         sl = None
         if op['photometric'] == 3:

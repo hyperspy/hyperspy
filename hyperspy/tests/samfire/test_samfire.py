@@ -140,6 +140,7 @@ def generate_test_model():
     l2.active_is_multidimensional = True
     return m, gs01, gs02, gs03
 
+
 class TestSamfireEmpty:
 
     def setup_method(self, method):
