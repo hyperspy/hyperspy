@@ -159,7 +159,7 @@ class Expression(Component):
         if self._is2D:
             y = y[0]
         if self._is2D and self._add_rotation:
-            position = position or (0,0)
+            position = position or (0, 0)
             rotx = sympy.sympify(
                 "{0} + (x - {0}) * cos(rotation_angle) - (y - {1}) *"
                 " sin(rotation_angle)"
