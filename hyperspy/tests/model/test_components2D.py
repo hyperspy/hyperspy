@@ -127,7 +127,7 @@ class TestExpression2D:
     def test_with_rotation_no_position_init_values(self):
         g = hs.model.components2D.Expression(
             GAUSSIAN2D_EXPR, "gaussian2d", add_rotation=True, module="numpy",
-        sx=.5, sy=.1, x0=0, y0=0, rotation_angle=np.radians(45))
+            sx=.5, sy=.1, x0=0, y0=0, rotation_angle=np.radians(45))
         l = np.linspace(-2, 2, 5)
         x, y = np.meshgrid(l, l)
         assert_allclose(
