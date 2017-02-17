@@ -7,6 +7,7 @@ import hyperspy.api as hs
 GAUSSIAN2D_EXPR = \
     "exp(-((x-x0)**2 / (2 * sx ** 2) + (y-y0)**2 / (2 * sy ** 2)))"
 
+
 class TestGaussian2D:
 
     def setup_method(self, method):
