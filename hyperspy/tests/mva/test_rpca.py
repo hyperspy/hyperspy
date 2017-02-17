@@ -98,7 +98,7 @@ class TestORPCA:
         self.momentum = 0.1
 
         # Test tolerance
-        self.tol = 1e-3
+        self.tol = 3e-3
 
     def test_default(self):
         X, E, U, S, V = orpca(self.X, rank=self.rank)

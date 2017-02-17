@@ -6,9 +6,10 @@
 
 import os.path
 from os import remove
-
+import tempfile
 
 import numpy as np
+import h5py
 
 from hyperspy.io import load
 from hyperspy.signals import BaseSignal, Signal2D, Signal1D
@@ -65,6 +66,44 @@ def test_metadata():
         np.testing.assert_equal(
             signal.metadata.Signal.as_dictionary().get(key), ref_value)
     assert isinstance(signal, Signal2D)
+
+
+def test_metadata_with_bytes_string():
+    filename = os.path.join(
+        my_path, 'emd_files', 'example_bytes_string_metadata.emd')
+    f = h5py.File(filename, 'r')
+    dim1 = f['test_group']['data_group']['dim1']
+    dim1_name = dim1.attrs['name']
+    dim1_units = dim1.attrs['units']
+    f.close()
+    assert isinstance(dim1_name, np.bytes_)
+    assert isinstance(dim1_units, np.bytes_)
+    signal = load(os.path.join(my_path, 'emd_files', filename))
+
+
+def test_data_numpy_object_dtype():
+    filename = os.path.join(
+        my_path, 'emd_files', 'example_object_dtype_data.emd')
+    signal = load(filename)
+    assert len(signal) == 0
+
+
+def test_data_axis_length_1():
+    filename = os.path.join(
+        my_path, 'emd_files', 'example_axis_len_1.emd')
+    signal = load(filename)
+    assert signal.data.shape == (5, 1, 5)
+
+
+class TestMinimalSave():
+
+    def setup_method(self, method):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.filename = tmp + '/testfile.emd'
+        self.signal = Signal1D([0, 1])
+
+    def test_minimal_save(self):
+        self.signal.save(self.filename)
 
 
 class TestCaseSaveAndRead():

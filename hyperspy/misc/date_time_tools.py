@@ -152,7 +152,10 @@ def ISO_format_to_serial_date(date, time, timezone='UTC'):
     """ Convert ISO format to a serial date. """
     if timezone is None or timezone == 'Coordinated Universal Time':
         timezone = 'UTC'
-    dt = parser.parse('%sT%s' % (date, time)).replace(tzinfo=tz.gettz(timezone))
+    dt = parser.parse(
+        '%sT%s' %
+        (date, time)).replace(
+        tzinfo=tz.gettz(timezone))
     return datetime_to_serial_date(dt)
 
 

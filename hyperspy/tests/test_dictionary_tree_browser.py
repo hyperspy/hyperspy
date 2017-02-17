@@ -77,6 +77,7 @@ class TestDictionaryBrowser:
                         "leaf211": 211},
                 },
                 "_sig_Some name": {
+                    'attributes': {'_lazy': False},
                     'axes': [
                         {
                             'name': 'x',

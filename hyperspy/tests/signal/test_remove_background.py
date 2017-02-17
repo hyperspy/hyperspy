@@ -2,8 +2,10 @@ import numpy as np
 
 from hyperspy import signals
 from hyperspy import components1d
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class TestRemoveBackground1DGaussian:
 
     def setup_method(self, method):
@@ -31,6 +33,7 @@ class TestRemoveBackground1DGaussian:
         assert np.allclose(s1.data, np.zeros(len(s1.data)))
 
 
+@lazifyTestClass
 class TestRemoveBackground1DPowerLaw:
 
     def setup_method(self, method):

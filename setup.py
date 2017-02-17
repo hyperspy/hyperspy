@@ -61,6 +61,7 @@ install_req = ['scipy',
                'h5py',
                'python-dateutil',
                'ipyparallel',
+               'dask[array]',
                'scikit-image']
 
 # the hack to deal with setuptools + installing the package in ReadTheDoc:
@@ -331,6 +332,7 @@ with update_version_when_dev() as version:
                   'hyperspy.samfire_utils.goodness_of_fit_tests',
                   ],
         install_requires=install_req,
+        test_require=["pytest>=3.0.2"],
         package_data={
             'hyperspy':
             [

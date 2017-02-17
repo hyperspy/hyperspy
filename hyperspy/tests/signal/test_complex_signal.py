@@ -23,8 +23,10 @@ from numpy.testing import assert_allclose
 import pytest
 
 import hyperspy.api as hs
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class TestComplexProperties:
 
     real_ref = np.arange(9).reshape((3, 3))
@@ -80,10 +82,14 @@ class TestComplexProperties:
             np.pi)
 
 
-@pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
-def test_get_unwrapped_phase_1D(parallel):
+@pytest.mark.parametrize('parallel,lazy', [(True, False),
+                                           (False, False),
+                                           (False, True)])
+def test_get_unwrapped_phase_1D(parallel, lazy):
     phase = 6 * (1 - np.abs(np.indices((9,)) - 4) / 4)
     s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
+    if lazy:
+        s = s.as_lazy()
     s.axes_manager.set_signal_dimension(1)
     phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False,
                                         parallel=parallel)
@@ -93,10 +99,14 @@ def test_get_unwrapped_phase_1D(parallel):
     assert_allclose(phase_unwrapped.data, phase)
 
 
-@pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
-def test_get_unwrapped_phase_2D(parallel):
+@pytest.mark.parametrize('parallel,lazy', [(True, False),
+                                           (False, False),
+                                           (False, True)])
+def test_get_unwrapped_phase_2D(parallel, lazy):
     phase = 5 * (1 - np.abs(np.indices((9, 9)) - 4).sum(axis=0) / 8)
     s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
+    if lazy:
+        s = s.as_lazy()
     phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False,
                                         parallel=parallel)
     assert (
@@ -105,10 +115,14 @@ def test_get_unwrapped_phase_2D(parallel):
     assert_allclose(phase_unwrapped.data, phase)
 
 
-@pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
-def test_get_unwrapped_phase_3D(parallel):
+@pytest.mark.parametrize('parallel,lazy', [(True, False),
+                                           (False, False),
+                                           (False, True)])
+def test_get_unwrapped_phase_3D(parallel, lazy):
     phase = 4 * (1 - np.abs(np.indices((9, 9, 9)) - 4).sum(axis=0) / 12)
     s = hs.signals.ComplexSignal(np.ones_like(phase) * np.exp(1j * phase))
+    if lazy:
+        s = s.as_lazy()
     phase_unwrapped = s.unwrapped_phase(seed=42, show_progressbar=False,
                                         parallel=parallel)
     assert (

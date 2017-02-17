@@ -30,7 +30,7 @@ before_install:
 install:
 
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      DEPS="numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython lxml ipyparallel";
+      DEPS="pytest pytest-cov numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython lxml ipyparallel dask";
       conda create -n testenv --yes $DEPS;
       source activate testenv;
       conda install pip;

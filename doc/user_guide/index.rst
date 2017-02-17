@@ -27,6 +27,7 @@ HyperSpy User Guide (DRAFT)
     electron_holography.rst
     io.rst
     events.rst
+    big_data.rst
     metadata_structure.rst
     credits.rst
     bibliography.rst

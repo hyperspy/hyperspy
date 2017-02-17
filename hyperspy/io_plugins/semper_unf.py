@@ -358,7 +358,7 @@ class SemperFormat(object):
         return data, iform
 
     @classmethod
-    def load_from_unf(cls, filename):
+    def load_from_unf(cls, filename, lazy=False):
         """Load a `.unf`-file into a :class:`~.SemperFormat` object.
 
         Parameters
@@ -414,22 +414,16 @@ class SemperFormat(object):
                     warning += ' (Error message: {})'.format(str(e))
                     warnings.warn(warning)
             # Read picture data:
-            nlay, nrow, ncol = metadata['NLAY'], metadata[
-                'NROW'], metadata['NCOL']
-            data = np.empty((nlay, nrow, ncol), dtype=data_format)
-            for k in range(nlay):
-                for j in range(nrow):
-                    rec_length = np.fromfile(f, dtype='<i4', count=1)[0]
-                    # Not always ncol, see below
-                    count = rec_length // np.dtype(data_format).itemsize
-                    row = np.fromfile(f, dtype=data_format, count=count)
-                    # [:ncol] is used because Semper always writes an even
-                    # number of bytes which is a problem when reading in single
-                    # bytes (IFORM = 0, np.byte). If ncol is odd, an empty
-                    # byte (0) is added which has to be skipped during read in:
-                    data[k, j, :] = row[:ncol]
-                    test = np.fromfile(f, dtype='<i4', count=1)[0]
-                    assert test == rec_length
+            pos = f.tell()
+            shape = metadata['NLAY'], metadata['NROW'], metadata['NCOL']
+            if lazy:
+                from dask.array import from_delayed
+                from dask import delayed
+                task = delayed(_read_data)(f, filename, pos, data_format,
+                                           shape)
+                data = from_delayed(task, shape=shape, dtype=data_format)
+            else:
+                data = _read_data(f, filename, pos, data_format, shape)
         offsets = (metadata.get('X0V0', 0.),
                    metadata.get('Y0V2', 0.),
                    metadata.get('Z0V4', 0.))
@@ -588,7 +582,7 @@ class SemperFormat(object):
                          'ICLAYN': data.shape[0] // 2 + 1})
         return cls(data, title, offsets, scales, units, metadata)
 
-    def to_signal(self):
+    def to_signal(self, lazy=False):
         """Export a :class:`~.SemperFormat` object to a
         :class:`~hyperspy.signals.Signal` object.
 
@@ -603,7 +597,7 @@ class SemperFormat(object):
 
         """
         import hyperspy.api as hp
-        data = np.squeeze(self.data)  # Reduce unneeded dimensions!
+        data = self.data.squeeze()  # Reduce unneeded dimensions!
         iclass = self.ICLASS_DICT.get(self.metadata.get('ICLASS'))
         if iclass == 'spectrum':
             signal = hp.signals.Signal1D(data)
@@ -626,6 +620,8 @@ class SemperFormat(object):
             date, time = self._convert_date_time_from_label()
             signal.metadata.set_item('General.date', date)
             signal.metadata.set_item('General.time', time)
+        if lazy:
+            signal = signal.as_lazy()
         signal.original_metadata.add_dictionary(self.metadata)
         return signal
 
@@ -682,10 +678,33 @@ def pack_to_intbytes(fmt, value):
     return [int(c) for c in struct.pack(fmt, value)]
 
 
+def _read_data(fobj, fname, position, data_format, shape):
+    if fobj.closed:
+        fobj = open(fname, 'rb')
+    fobj.seek(position)
+    nlay, nrow, ncol = shape
+    data = np.empty(shape, dtype=data_format)
+    for k in range(nlay):
+        for j in range(nrow):
+            rec_length = np.fromfile(fobj, dtype='<i4', count=1)[0]
+            # Not always ncol, see below
+            count = rec_length // np.dtype(data_format).itemsize
+            row = np.fromfile(fobj, dtype=data_format, count=count)
+            # [:ncol] is used because Semper always writes an even
+            # number of bytes which is a problem when reading in single
+            # bytes (IFORM = 0, np.byte). If ncol is odd, an empty
+            # byte (0) is added which has to be skipped during read in:
+            data[k, j, :] = row[:ncol]
+            test = np.fromfile(fobj, dtype='<i4', count=1)[0]
+            assert test == rec_length
+    return data
+
+
 def file_reader(filename, **kwds):
-    semper = SemperFormat.load_from_unf(filename)
+    lazy = kwds.get('lazy', False)
+    semper = SemperFormat.load_from_unf(filename, lazy=lazy)
     semper.log_info()
-    return [semper.to_signal()._to_dictionary()]
+    return [semper.to_signal(lazy=lazy)._to_dictionary()]
 
 
 def file_writer(filename, signal, **kwds):

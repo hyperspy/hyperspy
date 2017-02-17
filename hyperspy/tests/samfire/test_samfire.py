@@ -142,11 +142,12 @@ def generate_test_model():
     l2.active_is_multidimensional = True
     return m, gs01, gs02, gs03
 
+
 class TestSamfireEmpty:
 
     def setup_method(self, method):
         self.shape = (7, 15)
-        s = hs.signals.Signal1D(np.ones(self.shape + (1024,))+3.)
+        s = hs.signals.Signal1D(np.ones(self.shape + (1024,)) + 3.)
         s.estimate_poissonian_noise_variance()
         m = s.create_model()
         m.append(hs.model.components1D.Gaussian())

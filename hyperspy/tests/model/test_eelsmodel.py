@@ -19,6 +19,12 @@ class TestCreateEELSModel:
         from hyperspy.models.eelsmodel import EELSModel
         assert isinstance(self.s.create_model(), EELSModel)
 
+    def test_create_eelsmodel_no_md(self):
+        s = self.s
+        del s.metadata.Acquisition_instrument
+        with pytest.raises(ValueError):
+            s.create_model()
+
     def test_auto_add_edges_true(self):
         m = self.s.create_model(auto_add_edges=True)
         cnames = [component.name for component in m]

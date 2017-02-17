@@ -62,3 +62,14 @@ class TestUtilsStack:
         res = s1.split()
         np.testing.assert_array_almost_equal(list_s[-1].data, res[-1].data)
         assert res[-1].metadata.General.title == 'test'
+
+    def test_stack_broadcast_number(self):
+        s = self.signal
+        rs = utils.stack([5, s])
+        np.testing.assert_array_equal(
+            rs.inav[..., 0].data, 5 * np.ones((3, 2, 5)))
+
+    def test_stack_broadcast_number_not_default(self):
+        s = self.signal
+        rs = utils.stack([5, s], axis='E')
+        np.testing.assert_array_equal(rs.isig[0].data, 5 * np.ones((3, 2)))

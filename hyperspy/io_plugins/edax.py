@@ -693,6 +693,9 @@ def spc_reader(filename,
         data_offset = original_metadata['spc_header']['dataStart']
 
         mode = kwargs.pop('mode', 'c')
+        lazy = kwargs.pop('lazy', False)
+        if lazy:
+            mode = 'r'
 
         # Read data from file into a numpy memmap object
         data = np.memmap(f, mode=mode, offset=data_offset,
@@ -785,8 +788,10 @@ def spd_reader(filename,
                      '2': 'u2',
                      '4': 'u4'}[str(original_metadata['spd_header'][
                          'countBytes'])]
-
+        lazy = kwargs.pop('lazy', False)
         mode = kwargs.pop('mode', 'c')
+        if lazy:
+            mode = 'r'
 
         # Read data from file into a numpy memmap object
         data = np.memmap(f, mode=mode, offset=data_offset, dtype=data_type,

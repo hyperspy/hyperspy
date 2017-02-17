@@ -56,6 +56,8 @@ import codecs
 from ast import literal_eval
 from datetime import datetime, timedelta
 import numpy as np
+import dask.array as da
+import dask.delayed as dd
 from struct import unpack as strct_unp
 from zlib import decompress as unzip_block
 import logging
@@ -802,7 +804,8 @@ class BCF_reader(SFS_reader):
         self.hypermap = {}
 
     def persistent_parse_hypermap(self, index=0, downsample=None,
-                                  cutoff_at_kV=None):
+                                  cutoff_at_kV=None,
+                                  lazy=False):
         """Parse and assign the hypermap to the HyperMap instance.
 
         Arguments:
@@ -819,13 +822,15 @@ class BCF_reader(SFS_reader):
         dwn = downsample
         hypermap = self.parse_hypermap(index=index,
                                        downsample=dwn,
-                                       cutoff_at_kV=cutoff_at_kV)
+                                       cutoff_at_kV=cutoff_at_kV,
+                                       lazy=lazy)
         self.hypermap[index] = HyperMap(hypermap,
                                         self,
                                         index=index,
                                         downsample=dwn)
 
-    def parse_hypermap(self, index=0, downsample=1, cutoff_at_kV=None):
+    def parse_hypermap(self, index=0, downsample=1, cutoff_at_kV=None,
+                       lazy=False):
         """Unpack the Delphi/Bruker binary spectral map and return
         numpy array in memory efficient way.
 
@@ -842,9 +847,10 @@ class BCF_reader(SFS_reader):
             memory requiriments. (default 1)
         cutoff_at_kV -- value in keV to truncate the array at. Helps reducing
           size of array. (default None)
+        lazy -- return dask.array (True) or numpy.array (False) (default False)
 
         Returns:
-        numpy array of bruker hypermap, with (y,x,E) shape.
+        numpy or dask array of bruker hypermap, with (y,x,E) shape.
         """
 
         if type(cutoff_at_kV) in (int, float):
@@ -854,19 +860,38 @@ class BCF_reader(SFS_reader):
             cutoff_chan = None
 
         if fast_unbcf:
-            spectrum_file = self.get_file('EDSDatabase/SpectrumData' +
-                                          str(index))
-            return unbcf_fast.parse_to_numpy(spectrum_file,
-                                             downsample=downsample,
-                                             cutoff=cutoff_chan)
+            fh = dd(self.get_file)('EDSDatabase/SpectrumData' + str(index))
+            value = dd(unbcf_fast.parse_to_numpy)(fh,
+                                                  downsample=downsample,
+                                                  cutoff=cutoff_chan,
+                                                  description=False)
+            if lazy:
+                shape, dtype = unbcf_fast.parse_to_numpy(fh.compute(),
+                                                         downsample=downsample,
+                                                         cutoff=cutoff_chan,
+                                                         description=True)
+                res = da.from_delayed(value, shape=shape, dtype=dtype)
+            else:
+                res = value.compute()
+            return res
         else:
             _logger.warning("""using slow python parser,
 this is going to take a while... please wait""")
-            return self.py_parse_hypermap(index=0,
-                                          downsample=downsample,
-                                          cutoff_at_channel=cutoff_chan)
+            value = dd(self.py_parse_hypermap)(index=0,
+                                               downsample=downsample,
+                                               cutoff_at_channel=cutoff_chan,
+                                               description=False)
+            if lazy:
+                shape, dtype = self.py_parse_hypermap(
+                    index=0, downsample=downsample,
+                    cutoff_at_channel=cutoff_chan, description=True)
+                res = da.from_delayed(value, shape=shape, dtype=dtype)
+            else:
+                res = value.compute()
+            return res
 
-    def py_parse_hypermap(self, index=0, downsample=1, cutoff_at_channel=None):
+    def py_parse_hypermap(self, index=0, downsample=1, cutoff_at_channel=None,
+                          description=False):
         """Unpack the Delphi/Bruker binary spectral map and return
         numpy array in memory efficient way using pure python implementation.
         (Slow!)
@@ -909,10 +934,11 @@ this is going to take a while... please wait""")
         buffer1 = next(iter_data)
         height, width = strct_unp('<ii', buffer1[:8])
         dwn_factor = downsample
-        total_pixels = -(-height // dwn_factor) * -(-width // dwn_factor)
-        total_channels = total_pixels * max_chan
+        shape = (-(-height // dwn_factor), -(-width // dwn_factor), max_chan)
+        if description:
+            return shape, depth
         # hyper map as very flat array:
-        vfa = np.zeros(total_channels, dtype=depth)
+        vfa = np.zeros(shape[0] * shape[1] * shape[2], dtype=depth)
         offset = 0x1A0
         size = size_chnk
         for line_cnt in range(height):
@@ -1059,7 +1085,7 @@ class HyperMap(object):
 
 # wrapper functions for hyperspy:
 def file_reader(filename, select_type=None, index=0, downsample=1,
-                cutoff_at_kV=None, instrument=None):
+                cutoff_at_kV=None, instrument=None, lazy=False):
     """Reads a bruker bcf file and loads the data into the appropriate class,
     then wraps it into appropriate hyperspy required list of dictionaries
     used by hyperspy.api.load() method.
@@ -1085,14 +1111,16 @@ def file_reader(filename, select_type=None, index=0, downsample=1,
         return bcf_hyperspectra(obj_bcf, index=index,
                                 downsample=downsample,
                                 cutoff_at_kV=cutoff_at_kV,
-                                instrument=instrument)
+                                instrument=instrument,
+                                lazy=lazy)
     else:
         return bcf_imagery(obj_bcf, instrument=instrument) + bcf_hyperspectra(
             obj_bcf,
             index=index,
             downsample=downsample,
             cutoff_at_kV=cutoff_at_kV,
-            instrument=instrument)
+            instrument=instrument,
+            lazy=lazy)
 
 
 def bcf_imagery(obj_bcf, instrument=None):
@@ -1135,7 +1163,7 @@ def bcf_imagery(obj_bcf, instrument=None):
 
 
 def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
-                     instrument=None):
+                     instrument=None, lazy=False):
     """ Return hyperspy required list of dict with eds
     hyperspectra and metadata.
     """
@@ -1147,7 +1175,7 @@ If parsing is uncomfortably slow, first install cython, then reinstall hyperspy.
 For more information, check the 'Installing HyperSpy' section in the documentation.""")
         warn_once = False
     obj_bcf.persistent_parse_hypermap(index=index, downsample=downsample,
-                                      cutoff_at_kV=cutoff_at_kV)
+                                      cutoff_at_kV=cutoff_at_kV, lazy=lazy)
     eds_metadata = obj_bcf.header.get_spectra_metadata(index=index)
     mode = _get_mode(obj_bcf, instrument=instrument)
     hyperspectra = [{'data': obj_bcf.hypermap[index].hypermap,
