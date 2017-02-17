@@ -66,7 +66,7 @@ install_req = ['scipy',
 extras_require = {
     "learning": ['scikit-learn'],
     "bcf": ['lxml'],
-    "gui-jupyter": "ipywidgets",
+    "gui-jupyter": ["ipywidgets"],
 }
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
