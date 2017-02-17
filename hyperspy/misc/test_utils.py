@@ -185,22 +185,6 @@ def reset_rcParams_default():
 
 
 @simple_decorator
-def switch_backend_mpl(function):
-    def wrapper(*args, **kwargs):
-        # if necessary, change the backend to display a figure and to be able to
-        # close it.
-        original_backend = matplotlib.get_backend()
-        if original_backend == 'agg':
-            matplotlib.pyplot.switch_backend('TkAgg')
-
-        function(*args, **kwargs)
-
-        if original_backend == 'agg':  # switch back to the original backend
-            matplotlib.pyplot.switch_backend(original_backend)
-    return wrapper
-
-
-@simple_decorator
 def update_close_figure(function):
     def wrapper():
         signal = function()
