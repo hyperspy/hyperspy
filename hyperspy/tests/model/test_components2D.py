@@ -124,6 +124,26 @@ class TestExpression2D:
                        5.46609733e-099, 9.64172248e-175]])
         )
 
+    def test_with_rotation_no_position_init_values(self):
+        g = hs.model.components2D.Expression(
+            GAUSSIAN2D_EXPR, "gaussian2d", add_rotation=True, module="numpy",
+        sx=.5, sy=.1, x0=0, y0=0, rotation_angle=np.radians(45))
+        l = np.linspace(-2, 2, 5)
+        x, y = np.meshgrid(l, l)
+        assert_allclose(
+            g.function(x, y),
+            np.array([[9.64172248e-175, 5.46609733e-099, 5.03457536e-045,
+                       7.53374790e-013, 1.83156389e-002],
+                      [1.89386646e-098, 3.13356463e-044, 8.42346375e-012,
+                       3.67879441e-001, 2.61025584e-012],
+                      [2.63952332e-044, 1.27462190e-011, 1.00000000e+000,
+                       1.27462190e-011, 2.63952332e-044],
+                      [2.61025584e-012, 3.67879441e-001, 8.42346375e-012,
+                       3.13356463e-044, 1.89386646e-098],
+                      [1.83156389e-002, 7.53374790e-013, 5.03457536e-045,
+                       5.46609733e-099, 9.64172248e-175]])
+        )
+
     def test_no_rotation(self):
         g = hs.model.components2D.Expression(
             GAUSSIAN2D_EXPR, name="gaussian2d", add_rotation=False,
