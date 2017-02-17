@@ -35,7 +35,7 @@ import warnings
 import os
 import subprocess
 import fileinput
-
+import itertools
 import re
 
 # stuff to check presence of compiler:
@@ -62,6 +62,13 @@ install_req = ['scipy',
                'python-dateutil',
                'ipyparallel',
                'scikit-image']
+
+extras_require = {
+    "learning": ['scikit-learn'],
+    "bcf": ['lxml'],
+    "gui-jupyter": ["ipywidgets"],
+}
+extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
 # the hack to deal with setuptools + installing the package in ReadTheDoc:
 if 'readthedocs.org' in sys.executable:
@@ -330,6 +337,7 @@ with update_version_when_dev() as version:
                   'hyperspy.samfire_utils.goodness_of_fit_tests',
                   ],
         install_requires=install_req,
+        extras_require=extras_require,
         package_data={
             'hyperspy':
             [
