@@ -4,6 +4,8 @@ from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 
+GAUSSIAN2D_EXPR = \
+    "exp(-((x-x0)**2 / (2 * sx ** 2) + (y-y0)**2 / (2 * sy ** 2)))"
 
 class TestGaussian2D:
 
@@ -34,8 +36,8 @@ class TestExpression2D:
 
     def test_with_rotation(self):
         g = hs.model.components2D.Expression(
-            "exp(-((x-x0)**2 / (2 * sx ** 2) + (y-y0)**2 / (2 * sy ** 2)))",
-            name="gaussian2d", add_rotation=True, position=("x0", "y0"),)
+            GAUSSIAN2D_EXPR, name="gaussian2d", add_rotation=True,
+            position=("x0", "y0"),)
         g.rotation_angle.value = np.radians(20)
         g.sy.value = .1
         g.sx.value = 0.5
@@ -74,9 +76,8 @@ class TestExpression2D:
 
     def test_with_rotation_center_tuple(self):
         g = hs.model.components2D.Expression(
-            "exp(-((x-x0)**2 / (2 * sx ** 2) + (y-y0)**2 / (2 * sy ** 2)))",
-            "gaussian2d", add_rotation=True, position=("x0", "y0"),
-            module="numpy", rotation_center=(1, 2))
+            GAUSSIAN2D_EXPR, "gaussian2d", add_rotation=True,
+            position=("x0", "y0"), module="numpy", rotation_center=(1, 2))
         g.rotation_angle.value = np.radians(30)
         g.sx.value = .1
         g.sy.value = .1
@@ -100,8 +101,7 @@ class TestExpression2D:
 
     def test_with_rotation_no_position(self):
         g = hs.model.components2D.Expression(
-            "exp(-((x-x0)**2 / (2 * sx ** 2) + (y-y0)**2 / (2 * sy ** 2)))",
-            "gaussian2d", add_rotation=True, module="numpy")
+            GAUSSIAN2D_EXPR, "gaussian2d", add_rotation=True, module="numpy")
         g.rotation_angle.value = np.radians(45)
         g.sx.value = .5
         g.sy.value = .1
@@ -125,8 +125,8 @@ class TestExpression2D:
 
     def test_no_rotation(self):
         g = hs.model.components2D.Expression(
-            "exp(-((x-x0)**2 / (2 * sx ** 2) + (y-y0)**2 / (2 * sy ** 2)))",
-            name="gaussian2d", add_rotation=False, position=("x0", "y0"),)
+            GAUSSIAN2D_EXPR, name="gaussian2d", add_rotation=False,
+            position=("x0", "y0"),)
         g.sy.value = .1
         g.sx.value = 0.5
         g.sy.value = 1
