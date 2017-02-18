@@ -429,10 +429,17 @@ def dict2signal(signal_dict, lazy=False):
         if "Markers" in mp:
             markers_dict = {}
             for marker_name in mp['Markers'].keys():
-                marker = dict2marker(mp['Markers'][marker_name], marker_name)
-                if marker is not False:
-                    marker.axes_manager = signal.axes_manager
-                    markers_dict[marker_name] = marker
+                try:
+                    marker = dict2marker(
+                            mp['Markers'][marker_name], marker_name)
+                    if marker is not False:
+                        marker.axes_manager = signal.axes_manager
+                        markers_dict[marker_name] = marker
+                except Exception as expt:
+                    _logger.warning(
+                        "Marker {} could not be loaded, skipping it. "
+                        "Error: {}".format(marker_name, expt))
+            del signal.metadata.Markers
             signal.metadata.Markers = markers_dict
     return signal
 
