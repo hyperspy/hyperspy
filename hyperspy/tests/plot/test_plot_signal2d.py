@@ -18,15 +18,18 @@
 import numpy as np
 import scipy.ndimage
 import traits.api as t
-from matplotlib.testing.decorators import image_comparison, cleanup
+import pytest
+import matplotlib.pyplot as plt
 
 import hyperspy.api as hs
-from hyperspy.misc.test_utils import get_matplotlib_version_label, update_close_figure
+from hyperspy.misc.test_utils import get_matplotlib_version_label
 from hyperspy.drawing.utils import plot_RGB_map
+from hyperspy.tests.plot.test_plot_signal import _TestPlot
 
 mplv = get_matplotlib_version_label()
 scalebar_color = 'blue'
-default_tol = 0.05
+default_tol = 2.0
+baseline_dir = 'plot_signal2d-%s' % mplv
 
 
 def _generate_image_stack_signal():
@@ -61,242 +64,85 @@ def _set_signal_axes(axes_manager, name=t.Undefined, units=t.Undefined,
         sig_axis.offset = offset
     return axes_manager
 
-#
-#@image_comparison(baseline_images=['%s_rgb_image' % mplv],
-#                  extensions=['png'], tol=default_tol)
-#def test_rgb_image():
-#    w = 20
-#    ch1 = hs.signals.Signal2D(np.arange(w * w).reshape(w, w))
-#    ch1.axes_manager = _set_signal_axes(ch1.axes_manager)
-#    ch2 = hs.signals.Signal2D(np.arange(w * w).reshape(w, w).T)
-#    ch2.axes_manager = _set_signal_axes(ch2.axes_manager)
-#    plot_RGB_map([ch1, ch2])
-#
-#
-#""" Navigation 0, Signal 2 """
-#
-#
-#def _setup_nav0_sig2():
-#    width = 20
-#    data = np.arange(width * width).reshape((width, width))
-#    s = hs.signals.Signal2D(data)
-#    scale = 1E9
-#    offset = -scale * width / 2
-#    s.axes_manager = _set_signal_axes(s.axes_manager, units='1/m',
-#                                      scale=scale, offset=offset)
-#    s.axes_manager[0].name = 'x'
-#    s.axes_manager[1].name = 'y'
-#    return s
-#
-#
-#def _test_plot_nav0_sig2():
-#    s = _setup_nav0_sig2()
-#    s.metadata.General.title = '1: Nav 0, Sig 2, with scalebar and no axis ticks'
-#    s.plot(scalebar_color=scalebar_color)
-#    return s
-#
-#
-#@image_comparison(baseline_images=['%s_nav0_signal2_1sig' % mplv],
-#                  extensions=['png'], tol=default_tol)
-#def test_plot_nav0_sig2():
-#    _test_plot_nav0_sig2()
-#
-#
-#@cleanup
-#@update_close_figure
-#def test_plot_nav0_sig2_close():
-#    return _test_plot_nav0_sig2() # return for update_close_figure decorator
-#
-#
-#def _test_plot_nav0_sig2_axes_ticks():
-#    s = _setup_nav0_sig2()
-#    s.metadata.General.title = '2: Nav 0, Sig 2 with axes_ticks=True'
-#    s.plot(scalebar_color=scalebar_color, axes_ticks=True)
-#    return s
-#
-#
-#@image_comparison(baseline_images=['%s_nav0_signal2_2sig' % mplv],
-#                  extensions=['png'], tol=default_tol)
-#def test_plot_nav0_sig2_axes_ticks():
-#    _test_plot_nav0_sig2_axes_ticks()
-#
-#
-#@cleanup
-#@update_close_figure
-#def test_plot_nav0_sig2_axes_ticks_close():
-#    return _test_plot_nav0_sig2_axes_ticks()
-#
-#
-#def _test_plot_nav0_sig2_no_scalebar():
-#    s = _setup_nav0_sig2()
-#    s.metadata.General.title = '3: Nav 0, Sig 2, without scalebar'
-#    s.plot(scalebar=False, scalebar_color=scalebar_color)
-#    return s
-#
-#
-#@image_comparison(baseline_images=['%s_nav0_signal2_3sig' % mplv],
-#                  extensions=['png'], tol=default_tol)
-#def test_plot_nav0_sig2_no_scalebar():
-#    _test_plot_nav0_sig2_no_scalebar()
-#
-#
-#@cleanup
-#@update_close_figure
-#def test_plot_nav0_sig2_no_scalebar_close():
-#    return _test_plot_nav0_sig2_no_scalebar()
-#
-#
-#def _test_plot_nav0_sig2_different_signal_axes_scale():
-#    s = _setup_nav0_sig2()
-#    s.metadata.General.title = '4: Nav 0, Sig 2, without scalebar '\
-#        '(different axes scale)'
-#    s.axes_manager[0].scale = 5E9
-#    s.axes_manager[0].name = t.Undefined
-#    s.axes_manager[1].name = t.Undefined
-#    s.plot(scalebar_color=scalebar_color)
-#    return s
-#
-#
-#@image_comparison(baseline_images=['%s_nav0_signal2_4nav' % mplv,
-#                                   '%s_nav0_signal2_4nav' % mplv],
-#                  extensions=['png'], tol=default_tol)
-#def test_plot_nav0_sig2_different_signal_axes_scale():
-#    _test_plot_nav0_sig2_different_signal_axes_scale()
-#
-#
-#@cleanup
-#@update_close_figure
-#def test_plot_nav0_sig2_different_signal_axes_scale_close():
-#    return _test_plot_nav0_sig2_different_signal_axes_scale()
-#
-#""" Navigation 2, Signal 2 """
-#
-#
-#def _setup_nav2_sig2(complex_data=False):
-#    data = np.arange(5 * 7 * 10 * 20).reshape((5, 7, 10, 20))
-#    if complex_data:
-#        data = data + 1j * (data + 200)
-#    s = hs.signals.Signal2D(data)
-#    s.axes_manager = _set_signal_axes(s.axes_manager, name='Energy',
-#                                      units='1/m', scale=500.0, offset=0.0)
-#    s.axes_manager = _set_navigation_axes(s.axes_manager, name='',
-#                                          units='m', scale=1E-6, offset=5E-6)
-#    return s
-#
-#
-#def _test_plot_nav2_sig2():
-#    s = _setup_nav2_sig2()
-#    s.metadata.General.title = '1: Nav 2, Sig 2'
-#    s.plot(scalebar_color=scalebar_color)
-#    return s
-#
-#
-#@image_comparison(baseline_images=['%s_nav2_signal2_1nav' % mplv,
-#                                   '%s_nav2_signal2_1sig' % mplv],
-#                  extensions=['png'], tol=default_tol)
-#def test_plot_nav2_sig2():
-#    _test_plot_nav2_sig2()
-#
-#
-#@cleanup
-#@update_close_figure
-#def test_plot_nav2_sig2_close():
-#    return _test_plot_nav2_sig2()
-#
-#
-#@image_comparison(baseline_images=['%s_nav2_signal2_2nav' % mplv,
-#                                   '%s_nav2_signal2_2sig' % mplv],
-#                  extensions=['png'], tol=default_tol)
-#def test_plot_nav2_sig2_no_scalebar():
-#    s = _setup_nav2_sig2()
-#    s.metadata.General.title = '2: Nav 2, Sig 2, without scalebar'
-#    s.plot(scalebar=False, scalebar_color=scalebar_color)
-#    s._plot.signal_plot.update()
-#    s._plot.navigator_plot.update()
-#    s._plot.close()
-#
-## test for plotting complex signal 2D, still not implemented
-## def _test_plot_nav2_sig2_complex():
-##    s = _setup_nav2_sig2(complex_data=True)
-##    s.metadata.General.title = '3: Nav 2, Sig 2 complex'
-##    s.plot()
-##    return s
-##
-##
-##@image_comparison(baseline_images=['%s_nav2_signal2_3nav_complex' % mplv,
-##                                   '%s_nav2_signal2_3sig_complex' % mplv],
-##                  extensions=['png'])
-## def test_plot_nav2_sig2_complex():
-##    _test_plot_nav2_sig2_complex()
-##
-##@cleanup
-##@update_close_figure
-## def test_plot_nav2_sig2_complex():
-##    return _test_plot_nav2_sig2_complex()
-#
-#
-#@image_comparison(baseline_images=['%s_plot_multiple_images' % mplv],
-#                  extensions=['png'], tol=default_tol)
-#def test_plot_multiple_images():
-#    image = _generate_image_stack_signal()
-#
-#    image.metadata.General.title = 'multi-dimensional Lena'
-#    hs.plot.plot_images(image, tight_layout=True,
-#                        scalebar_color=scalebar_color)
-#
-#
-#@image_comparison(baseline_images=['%s_plot_multiple_images_label' % mplv],
-#                  extensions=['png'], tol=default_tol)
-#def test_plot_multiple_images_label():
-#    image = _generate_image_stack_signal()
-#
-#    image.metadata.General.title = 'multi-dimensional Lena'
-#    hs.plot.plot_images(image, suptitle='Custom figure title',
-#                        label=['Signal2D 1', 'Signal2D 2', 'Signal2D 3',
-#                               'Signal2D 4', 'Signal2D 5', 'Signal2D 6'],
-#                        axes_decor=None, tight_layout=True)
-#
-#
-#@image_comparison(baseline_images=['%s_plot_multiple_images_list' % mplv],
-#                  extensions=['png'], tol=default_tol)
-#def test_plot_multiple_images_list():
-#    # load red channel of raccoon as an image
-#    image0 = hs.signals.Signal2D(scipy.misc.face()[:, :, 0])
-#
-#    image0.metadata.General.title = 'Rocky Raccoon - R'
-#    axes0 = image0.axes_manager
-#    axes0[0].name = "x"
-#    axes0[1].name = "y"
-#    axes0[0].units = "mm"
-#    axes0[1].units = "mm"
-#
-#    # load lena into 2x3 hyperimage
-#    image1 = _generate_image_stack_signal()
-#    axes1 = image1.axes_manager
-#    axes1[2].name = "x"
-#    axes1[3].name = "y"
-#    axes1[2].units = "nm"
-#    axes1[3].units = "nm"
-#
-#    # load green channel of raccoon as an image
-#    image2 = hs.signals.Signal2D(scipy.misc.face()[:, :, 1])
-#    image2.metadata.General.title = 'Rocky Raccoon - G'
-#    axes2 = image2.axes_manager
-#    axes2[0].name = "x"
-#    axes2[1].name = "y"
-#    axes2[0].units = "mm"
-#    axes2[1].units = "mm"
-#
-#    # load rgb imimagesage
-#    rgb = hs.signals.Signal1D(scipy.misc.face())
-#    rgb.change_dtype("rgb8")
-#    rgb.metadata.General.title = 'RGB'
-#    axesRGB = rgb.axes_manager
-#    axesRGB[0].name = "x"
-#    axesRGB[1].name = "y"
-#    axesRGB[0].units = "nm"
-#    axesRGB[1].units = "nm"
-#
-#    hs.plot.plot_images([image0, image1, image2, rgb], tight_layout=True,
-#                        # colorbar='single',
-#                        labelwrap=20)
+
+@pytest.mark.skipif("sys.platform == 'darwin'")
+@pytest.mark.parametrize("normalization", ['single', 'global'])
+@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
+def test_rgb_image(normalization):
+    w = 20
+    data = np.arange(1, w * w + 1).reshape(w, w)
+    ch1 = hs.signals.Signal2D(data)
+    ch1.axes_manager = _set_signal_axes(ch1.axes_manager)
+    ch2 = hs.signals.Signal2D(data.T * 2)
+    ch2.axes_manager = _set_signal_axes(ch2.axes_manager)
+    plot_RGB_map([ch1, ch2], normalization=normalization)
+    return plt.gcf()
+
+
+def _generate_parameter():
+    parameters = []
+    for scalebar in [True, False]:
+        for colorbar in [True, False]:
+            for axes_ticks in [True, False]:
+                for centre_colormap in [True, False]:
+                    parameters.append([scalebar, colorbar, axes_ticks,
+                                       centre_colormap])
+    return parameters
+
+
+@pytest.mark.parametrize(("scalebar", "colorbar", "axes_ticks",
+                          "centre_colormap"),
+                         _generate_parameter())
+@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
+def test_plot(scalebar, colorbar, axes_ticks, centre_colormap):
+    test_plot = _TestPlot(ndim=0, sdim=2)
+    test_plot.signal.plot(scalebar=scalebar,
+                          colorbar=colorbar,
+                          axes_ticks=axes_ticks,
+                          centre_colormap=centre_colormap)
+    return test_plot.signal._plot.signal_plot.figure
+
+
+@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
+def test_plot_multiple_images_list():
+    # load red channel of raccoon as an image
+    image0 = hs.signals.Signal2D(scipy.misc.face()[:, :, 0])
+
+    image0.metadata.General.title = 'Rocky Raccoon - R'
+    axes0 = image0.axes_manager
+    axes0[0].name = "x"
+    axes0[1].name = "y"
+    axes0[0].units = "mm"
+    axes0[1].units = "mm"
+
+    # load lena into 2x3 hyperimage
+    image1 = _generate_image_stack_signal()
+    axes1 = image1.axes_manager
+    axes1[2].name = "x"
+    axes1[3].name = "y"
+    axes1[2].units = "nm"
+    axes1[3].units = "nm"
+
+    # load green channel of raccoon as an image
+    image2 = hs.signals.Signal2D(scipy.misc.face()[:, :, 1])
+    image2.metadata.General.title = 'Rocky Raccoon - G'
+    axes2 = image2.axes_manager
+    axes2[0].name = "x"
+    axes2[1].name = "y"
+    axes2[0].units = "mm"
+    axes2[1].units = "mm"
+
+    # load rgb imimagesage
+    rgb = hs.signals.Signal1D(scipy.misc.face())
+    rgb.change_dtype("rgb8")
+    rgb.metadata.General.title = 'RGB'
+    axesRGB = rgb.axes_manager
+    axesRGB[0].name = "x"
+    axesRGB[1].name = "y"
+    axesRGB[0].units = "nm"
+    axesRGB[1].units = "nm"
+
+    hs.plot.plot_images([image0, image1, image2, rgb], tight_layout=True,
+                        # colorbar='single',
+                        labelwrap=20)
+    return plt.gcf()
