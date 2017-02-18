@@ -63,6 +63,12 @@ class MarkerBase(object):
             """, arguments=['obj'])
         self._closing = False
 
+    def __deepcopy__(self, memo):
+        new_marker = dict2marker(
+                self._to_dictionary(),
+                self.name)
+        return new_marker
+
     @property
     def marker_properties(self):
         return self._marker_properties
@@ -85,9 +91,9 @@ class MarkerBase(object):
 
     def _to_dictionary(self):
         marker_dict = {}
-        marker_dict['_marker_properties'] = self.marker_properties
+        marker_dict['marker_properties'] = self.marker_properties
         marker_dict['marker_type'] = self.__class__.__name__
-        marker_dict['_plot_on_signal'] = self._plot_on_signal
+        marker_dict['plot_on_signal'] = self._plot_on_signal
 
         data_dict = {}
         data_dict['x1'] = self.data['x1'].item().tolist()
@@ -209,7 +215,7 @@ def dict2marker(marker_dict, marker_name):
                 "not recognized".format(marker_name, marker_type))
         return(False)
     marker.set_data(**marker_dict['data'])
-    marker.set_marker_properties(**marker_dict['_marker_properties'])
-    marker._plot_on_signal = marker_dict['_plot_on_signal']
+    marker.set_marker_properties(**marker_dict['marker_properties'])
+    marker._plot_on_signal = marker_dict['plot_on_signal']
     marker.name = marker_name
     return(marker)
