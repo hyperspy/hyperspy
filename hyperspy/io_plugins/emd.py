@@ -150,8 +150,8 @@ class EMD(object):
                 dataset.attrs[key] = value
             except Exception:  # ...let the user know what could not be added!
                 self._log.exception(
-                        'The hdf5 writer could not write the following '
-                        'information in the file: %s : %s', key, value)
+                    'The hdf5 writer could not write the following '
+                    'information in the file: %s : %s', key, value)
 
     def _read_signal_from_group(self, name, group, lazy=False):
         self._log.debug('Calling _read_signal_from_group')
@@ -201,9 +201,8 @@ class EMD(object):
         for key, value in group.attrs.items():
             metadata[key] = value
         if signal.data.dtype == np.object:
-            self._log.warning(
-                    'HyperSpy could not load the data in {}, '
-                    'skipping it'.format(name))
+            self._log.warning('HyperSpy could not load the data in {}, '
+                              'skipping it'.format(name))
         else:
             # Add signal:
             self.add_signal(signal, name, metadata)

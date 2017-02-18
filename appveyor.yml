@@ -56,6 +56,10 @@ install:
   - "%CMD_IN_ENV% conda install -yq %DEPS%"
     # Having 'sip' folder on path confuses import of `sip`.
   - "%CMD_IN_ENV% conda install pip"
+  - "pip install pytest-mpl"
+    # Force to have the freetype font in matplotlib from pip for plot testing
+  - "pip uninstall -y matplotlib"
+  - "pip install matplotlib"
   # TODO: Remove once anaconda taitsui package is at v5:
   - "IF \"%PYTHON_MAJOR%\" EQU \"3\" pip install --upgrade traitsui tqdm"
   - ps: Add-AppveyorMessage "Installing hyperspy..."
@@ -67,7 +71,7 @@ test_script:
   # Run the project tests
   - ps: Add-AppveyorMessage "Running tests..."
   - "python setup.py build_ext --inplace"
-  - "py.test"
+  - "py.test --mpl"
   - "python setup.py clean"
   - ps: Add-AppveyorMessage "Testing completed."
 

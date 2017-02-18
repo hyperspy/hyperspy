@@ -31,8 +31,10 @@ from hyperspy.io import load
 from hyperspy.io_plugins.hdf5 import get_signal_chunks
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
+from hyperspy._signals.signal2d import Signal2D
 from hyperspy.roi import Point2DROI
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
+from hyperspy.utils import markers
 
 my_path = os.path.dirname(__file__)
 
@@ -363,6 +365,264 @@ class TestAxesConfiguration:
 
     def teardown_method(self, method):
         remove(self.filename)
+
+
+class Test_permanent_markers_io:
+
+    def test_save_permanent_marker(self):
+        s = Signal2D(np.arange(100).reshape(10,10))
+        m = markers.point(x=5, y=5)
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/testsavefile.hdf5'
+        s.save(filename)
+
+    def test_save_load_empty_metadata_markers(self):
+        s = Signal2D(np.arange(100).reshape(10,10))
+        m = markers.point(x=5, y=5)
+        m.name = "test"
+        s.add_marker(m, permanent=True)
+        del s.metadata.Markers.test
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/testsavefile.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        assert len(s1.metadata.Markers) == 0
+
+    def test_save_load_permanent_marker(self):
+        x, y = 5, 2
+        color = 'red'
+        size = 10
+        name = 'testname'
+        s = Signal2D(np.arange(100).reshape(10,10))
+        m = markers.point(x=x, y=y, color=color, size=size)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/testloadfile.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        assert s1.metadata.Markers.has_item(name)
+        m1 = s1.metadata.Markers.get_item(name)
+        assert m1.get_data_position('x1') == x
+        assert m1.get_data_position('y1') == y
+        assert m1.get_data_position('size') == size
+        assert m1.marker_properties['color'] == color
+        assert m1.name == name
+
+    def test_save_load_permanent_marker_all_types(self):
+        x1, y1, x2, y2 = 5, 2, 1, 8
+        s = Signal2D(np.arange(100).reshape(10,10))
+        m0 = markers.point(x=x1, y=y1)
+        m1 = markers.horizontal_line(y=y1)
+        m2 = markers.horizontal_line_segment(x1=x1, x2=x2, y=y1)
+        m3 = markers.line_segment(x1=x1, x2=x2, y1=y1, y2=y2)
+        m4 = markers.rectangle(x1=x1, x2=x2, y1=y1, y2=y2)
+        m5 = markers.text(x=x1, y=y1, text="test")
+        m6 = markers.vertical_line(x=x1)
+        m7 = markers.vertical_line_segment(x=x1, y1=y1, y2=y2)
+        s.add_marker(m0, permanent=True)
+        s.add_marker(m1, permanent=True)
+        s.add_marker(m2, permanent=True)
+        s.add_marker(m3, permanent=True)
+        s.add_marker(m4, permanent=True)
+        s.add_marker(m5, permanent=True)
+        s.add_marker(m6, permanent=True)
+        s.add_marker(m7, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/testallmarkersfile.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        assert len(list(s1.metadata.Markers)) == 8
+
+    def test_save_load_horizontal_line_marker(self):
+        y = 8
+        color = 'blue'
+        linewidth = 2.5
+        name = "horizontal_line_test"
+        s = Signal2D(np.arange(100).reshape(10,10))
+        m = markers.horizontal_line(y=y, color=color, linewidth=linewidth)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/test_save_horizontal_line_marker.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        marker1 = s1.metadata.Markers.get_item(name)
+        assert marker1.name == name
+        assert marker1.get_data_position('y1') == y
+        assert marker1.marker_properties['color'] == color
+        assert marker1.marker_properties['linewidth'] == linewidth
+
+    def test_save_load_horizontal_line_segment_marker(self):
+        x1, x2, y = 1, 5, 8
+        color = 'red'
+        linewidth = 1.2
+        name = "horizontal_line_segment_test"
+        s = Signal2D(np.arange(100).reshape(10,10))
+        m = markers.horizontal_line_segment(
+                x1=x1, x2=x2, y=y, color=color, linewidth=linewidth)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/test_save_horizontal_line_segment_marker.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        marker1 = s1.metadata.Markers.get_item(name)
+        assert marker1.name == name
+        assert marker1.get_data_position('x1') == x1
+        assert marker1.get_data_position('x2') == x2
+        assert marker1.get_data_position('y1') == y
+        assert marker1.marker_properties['color'] == color
+        assert marker1.marker_properties['linewidth'] == linewidth
+
+    def test_save_load_vertical_line_marker(self):
+        x = 9
+        color = 'black'
+        linewidth = 3.5
+        name = "vertical_line_test"
+        s = Signal2D(np.arange(100).reshape(10,10))
+        m = markers.vertical_line(x=x, color=color, linewidth=linewidth)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/test_save_vertical_line_marker.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        marker1 = s1.metadata.Markers.get_item(name)
+        assert marker1.name == name
+        assert marker1.get_data_position('x1') == x
+        assert marker1.marker_properties['color'] == color
+        assert marker1.marker_properties['linewidth'] == linewidth
+
+    def test_save_load_vertical_line_segment_marker(self):
+        x, y1, y2 = 2, 1, 3
+        color = 'white'
+        linewidth = 4.2
+        name = "vertical_line_segment_test"
+        s = Signal2D(np.arange(100).reshape(10,10))
+        m = markers.vertical_line_segment(
+                x=x, y1=y1, y2=y2, color=color, linewidth=linewidth)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/test_save_vertical_line_segment_marker.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        marker1 = s1.metadata.Markers.get_item(name)
+        assert marker1.name == name
+        assert marker1.get_data_position('x1') == x
+        assert marker1.get_data_position('y1') == y1
+        assert marker1.get_data_position('y2') == y2
+        assert marker1.marker_properties['color'] == color
+        assert marker1.marker_properties['linewidth'] == linewidth
+
+    def test_save_load_line_segment_marker(self):
+        x1, x2, y1, y2 = 1, 9, 4, 7
+        color = 'cyan'
+        linewidth = 0.7
+        name = "line_segment_test"
+        s = Signal2D(np.arange(100).reshape(10,10))
+        m = markers.line_segment(
+                x1=x1, x2=x2, y1=y1, y2=y2, color=color, linewidth=linewidth)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/test_save_line_segment_marker.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        marker1 = s1.metadata.Markers.get_item(name)
+        assert marker1.name == name
+        assert marker1.get_data_position('x1') == x1
+        assert marker1.get_data_position('x2') == x2
+        assert marker1.get_data_position('y1') == y1
+        assert marker1.get_data_position('y2') == y2
+        assert marker1.marker_properties['color'] == color
+        assert marker1.marker_properties['linewidth'] == linewidth
+
+    def test_save_load_point_marker(self):
+        x, y = 9, 8
+        color = 'purple'
+        name = "point test"
+        s = Signal2D(np.arange(100).reshape(10,10))
+        m = markers.point(
+                x=x, y=y, color=color)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/test_save_point_marker.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        marker1 = s1.metadata.Markers.get_item(name)
+        assert marker1.name == name
+        assert marker1.get_data_position('x1') == x
+        assert marker1.get_data_position('y1') == y
+        assert marker1.marker_properties['color'] == color
+
+    def test_save_load_rectangle_marker(self):
+        x1, x2, y1, y2 = 2, 4, 1, 3
+        color = 'yellow'
+        linewidth = 0.7
+        name = "rectangle_test"
+        s = Signal2D(np.arange(100).reshape(10,10))
+        m = markers.rectangle(
+                x1=x1, x2=x2, y1=y1, y2=y2, color=color, linewidth=linewidth)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/test_save_rectangle_marker.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        marker1 = s1.metadata.Markers.get_item(name)
+        assert marker1.name == name
+        assert marker1.get_data_position('x1') == x1
+        assert marker1.get_data_position('x2') == x2
+        assert marker1.get_data_position('y1') == y1
+        assert marker1.get_data_position('y2') == y2
+        assert marker1.marker_properties['color'] == color
+        assert marker1.marker_properties['linewidth'] == linewidth
+
+    def test_save_load_text_marker(self):
+        x, y = 3, 9.5
+        color = 'brown'
+        name = "text_test"
+        text = "a text"
+        s = Signal2D(np.arange(100).reshape(10,10))
+        m = markers.text(
+                x=x, y=y, text=text, color=color)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/test_save_text_marker.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        marker1 = s1.metadata.Markers.get_item(name)
+        assert marker1.name == name
+        assert marker1.get_data_position('x1') == x
+        assert marker1.get_data_position('y1') == y
+        assert marker1.get_data_position('text') == text
+        assert marker1.marker_properties['color'] == color
+
+    def test_save_load_multidim_navigation_marker(self):
+        x, y = (1, 2, 3), (5, 6, 7)
+        name = 'test point'
+        s = Signal2D(np.arange(300).reshape(3, 10, 10))
+        m = markers.point(x=x, y=y)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/test_save_multidim_nav_marker.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        marker1 = s1.metadata.Markers.get_item(name)
+        assert marker1.get_data_position('x1') == x[0]
+        assert marker1.get_data_position('y1') == y[0]
+        s1.axes_manager.navigation_axes[0].index = 1
+        assert marker1.get_data_position('x1') == x[1]
+        assert marker1.get_data_position('y1') == y[1]
+        s1.axes_manager.navigation_axes[0].index = 2
+        assert marker1.get_data_position('x1') == x[2]
+        assert marker1.get_data_position('y1') == y[2]
 
 
 def test_strings_from_py2():

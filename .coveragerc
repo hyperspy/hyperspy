@@ -5,8 +5,8 @@ include = */hyperspy/*
 omit =
     */hyperspy/external/*
     */hyperspy/ipython_profile/*
-    */hyperspy/drawing/*
     */hyperspy/gui/*
     */setup.py
     */examples/*
     */bin/*
+    */continuous_integration/*

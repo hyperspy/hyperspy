@@ -1575,7 +1575,7 @@ class BaseSignal(FancySlicing,
                     # They are broadcastable but have different number of axes
                     ns, no = broadcast_signals(self, other)
                     sdata = ns.data
-                    odata= no.data
+                    odata = no.data
                     if op_name in INPLACE_OPERATORS:
                         # This should raise a ValueError if the operation
                         # changes the shape of the object on the left.
@@ -1739,7 +1739,7 @@ class BaseSignal(FancySlicing,
                 file_data_dict["learning_results"])
         if self._lazy is not oldlazy:
             self._assign_subclass()
-    
+
 # TODO: try to find a way to use dask ufuncs when called with lazy data (e.g.
 # np.log(s) -> da.log(s.data) wrapped.
     def __array__(self, dtype=None):
@@ -2895,7 +2895,6 @@ class BaseSignal(FancySlicing,
         return self._apply_function_on_data_and_remove_axis(np.nanmin, axis,
                                                             out=out)
     nanmin.__doc__ %= (NAN_FUNC.format('min', min.__doc__))
-
 
     def nanmean(self, axis=None, out=None):
         """%s """

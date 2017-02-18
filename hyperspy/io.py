@@ -140,7 +140,7 @@ def load(filenames=None,
     warn_str = "'{}' argument is deprecated, please use 'lazy' instead"
     for k in deprecated:
         if k in kwds:
-            lazy=True
+            lazy = True
             warnings.warn(warn_str.format(k), VisibleDeprecationWarning)
             del kwds[k]
     if lazy is None:

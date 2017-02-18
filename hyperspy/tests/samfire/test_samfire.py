@@ -21,6 +21,8 @@ import pytest
 
 import dill
 import copy
+from matplotlib.testing.decorators import cleanup
+
 import hyperspy.api as hs
 from hyperspy.samfire_utils.samfire_kernel import multi_kernel
 from hyperspy.misc.utils import DictionaryTreeBrowser
@@ -139,6 +141,7 @@ def generate_test_model():
     m.assign_current_values_to_all()
     l2.active_is_multidimensional = True
     return m, gs01, gs02, gs03
+
 
 class TestSamfireEmpty:
 
@@ -311,6 +314,7 @@ class TestSamfireMain:
         self.model, self.lor1, self.g, self.lor2 = generate_test_model()
         self.shape = (7, 15)
 
+    @cleanup
     def test_multiprocessed(self):
         self.model.fit()
         samf = self.model.create_samfire(ipyparallel=False)

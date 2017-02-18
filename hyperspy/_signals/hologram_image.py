@@ -265,7 +265,7 @@ class HologramImage(Signal2D):
                 if isinstance(reference.data, daArray):
                     reference = reference.as_lazy()
 
-        # Testing match of navigation axes of reference and self 
+        # Testing match of navigation axes of reference and self
         # (exception: reference nav_dim=1):
         if (reference and not reference.axes_manager.navigation_shape ==
                 self.axes_manager.navigation_shape and
@@ -314,7 +314,7 @@ class HologramImage(Signal2D):
         else:
             sb_position_temp = sb_position.deepcopy()
 
-        ## Parsing sideband size
+        # Parsing sideband size
 
         # Default value is 1/2 distance between sideband and central band
         if sb_size is None:
@@ -351,8 +351,8 @@ class HologramImage(Signal2D):
         else:
             if not isinstance(sb_smoothness, BaseSignal):
                 if isinstance(
-                        sb_smoothness,
-                    (np.ndarray, daArray)) and sb_smoothness.size > 1:
+                    sb_smoothness,
+                        (np.ndarray, daArray)) and sb_smoothness.size > 1:
                     sb_smoothness = BaseSignal(sb_smoothness).T
                 else:
                     sb_smoothness = BaseSignal(sb_smoothness)
@@ -364,7 +364,8 @@ class HologramImage(Signal2D):
                 raise ValueError('Sideband smoothness dimensions do not match'
                                  ' neither reference nor hologram '
                                  'dimensions.')
-            # sb_position navdim=0, therefore map function should not iterate it:
+            # sb_position navdim=0, therefore map function should not iterate
+            # it:
             else:
                 sb_smoothness_temp = np.float64(sb_smoothness.data)
         else:
@@ -374,7 +375,7 @@ class HologramImage(Signal2D):
         if sb_unit == 'nm':
             f_sampling = np.divide(
                 1,
-                [a * b for a, b in \
+                [a * b for a, b in
                  zip(self.axes_manager.signal_shape,
                      (self.axes_manager.signal_axes[0].scale,
                       self.axes_manager.signal_axes[1].scale))]
@@ -384,7 +385,7 @@ class HologramImage(Signal2D):
         elif sb_unit == 'mrad':
             f_sampling = np.divide(
                 1,
-                [a * b for a, b in \
+                [a * b for a, b in
                  zip(self.axes_manager.signal_shape,
                      (self.axes_manager.signal_axes[0].scale,
                       self.axes_manager.signal_axes[1].scale))]
@@ -397,8 +398,8 @@ class HologramImage(Signal2D):
                                      "set_microscope_parameters method")
 
             momentum = 2 * constants.m_e * constants.elementary_charge * ht * \
-                    1000 * (1 + constants.elementary_charge * ht * \
-                            1000 / (2 * constants.m_e * constants.c ** 2))
+                1000 * (1 + constants.elementary_charge * ht *
+                        1000 / (2 * constants.m_e * constants.c ** 2))
             wavelength = constants.h / np.sqrt(momentum) * 1e9  # in nm
             sb_size_temp = sb_size_temp / (1000 * wavelength *
                                            np.mean(f_sampling))
@@ -407,8 +408,8 @@ class HologramImage(Signal2D):
 
         # Find output shape:
         if output_shape is None:
-            ##  Future improvement will give a possibility to choose
-            # if sb_size.axes_manager.navigation_size > 0: 
+            # Future improvement will give a possibility to choose
+            # if sb_size.axes_manager.navigation_size > 0:
             #     output_shape = (np.int(sb_size.inav[0].data*2), np.int(sb_size.inav[0].data*2))
             # else:
             #     output_shape = (np.int(sb_size.data*2), np.int(sb_size.data*2))
@@ -505,13 +506,14 @@ class HologramImage(Signal2D):
         wave_image.set_signal_type('complex_signal2d')
 
         wave_image.axes_manager.signal_axes[0].scale = \
-                self.axes_manager.signal_axes[0].scale * \
-                self.axes_manager.signal_shape[0] / output_shape[1]
+            self.axes_manager.signal_axes[0].scale * \
+            self.axes_manager.signal_shape[0] / output_shape[1]
         wave_image.axes_manager.signal_axes[1].scale = \
-                self.axes_manager.signal_axes[1].scale * \
-                self.axes_manager.signal_shape[1] / output_shape[0]
+            self.axes_manager.signal_axes[1].scale * \
+            self.axes_manager.signal_shape[1] / output_shape[0]
 
-        # Reconstruction parameters are stored in holo_reconstruction_parameters:
+        # Reconstruction parameters are stored in
+        # holo_reconstruction_parameters:
 
         if store_parameters:
             rec_param_dict = OrderedDict(

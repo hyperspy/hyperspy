@@ -139,8 +139,8 @@ class TestProtochipsGasCellCSVNoUser():
     def test_read_original_metadata(self):
         om = self.s_list[0].original_metadata.Protochips_header
         assert (om.Calibration_file_path == "The calibration files names"
-                        " are saved in the 'Original notes' array of the "
-                        "original metadata.")
+                " are saved in the 'Original notes' array of the "
+                "original metadata.")
         assert om.Holder_Pressure_units == 'Torr'
         assert om.Holder_Temperature_units == 'Degrees C'
         assert om.Start_time == datetime_gas_cell_no_user[2]
