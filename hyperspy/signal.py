@@ -4355,30 +4355,13 @@ class BaseSignal(FancySlicing,
                                     navigation_axes=idx_nav,
                                     optimize=optimize)
                 res.metadata.set_item('Signal.Noise_properties.variance', var)
-
         if optimize:
             res._make_sure_data_is_contiguous(log=True)
         if res.metadata.has_item('Markers'):
-            temp_marker_dict = res.metadata.Markers.as_dictionary()
-            markers_dict = {}
-            for marker_name in temp_marker_dict.keys():
-                marker = dict2marker(
-                        temp_marker_dict[marker_name], marker_name)
-                if marker is not False:
-                    marker_shape = marker._get_data_shape()
-                    if (not (len(marker_shape) == 0)) and (
-                        marker_shape != res.axes_manager.navigation_shape):
-                        _logger.warning(
-                            "The marker {} does not have the same navigation "
-                            "shape {} as the transposed signal {}".format(
-                                    marker.name, marker_shape,
-                                    res.axes_manager.navigation_shape))
-                    else:
-                        marker.axes_manager = res.axes_manager
-                        markers_dict[marker_name] = marker
-            if len(markers_dict) == 0:
-                del res.metadata.Markers
-            res.metadata.Markers = markers_dict
+            # The markers might fail if the navigation dimensions are changed
+            # so the safest is simply to not carry them over from the 
+            # previous signal.
+            del res.metadata.Markers
 
         return res
 
