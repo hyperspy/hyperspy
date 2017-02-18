@@ -4087,15 +4087,22 @@ class BaseSignal(FancySlicing,
             running on a system without display.
 
         Examples
-        -------
+        --------
         >>> import scipy.misc
         >>> im = hs.signals.Signal2D(scipy.misc.ascent())
         >>> m = hs.markers.rectangle(x1=150, y1=100, x2=400,
         >>>                                  y2=400, color='red')
         >>> im.add_marker(m)
 
+        Adding to a 1D signal, where the point will change
+        when the navigation index is changed
+        >>> s = hs.signals.Signal1D(np.random.random((3, 100)))
+        >>> marker = hs.markers.point((19, 10, 60), (0.2, 0.5, 0.9))
+        >>> s.add_marker(marker, permanent=True, plot_marker=True)
+        >>> s.plot(plot_markers=True) #doctest: +SKIP
+
         Add permanent marker
-        >>> s = hs.signals.Signal2D(np.random.random(100, 100))
+        >>> s = hs.signals.Signal2D(np.random.random((100, 100)))
         >>> marker = hs.markers.point(50, 60)
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
         >>> s.plot(plot_markers=True) #doctest: +SKIP
