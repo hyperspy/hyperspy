@@ -370,7 +370,7 @@ class TestAxesConfiguration:
 class Test_permanent_markers_io:
 
     def test_save_permanent_marker(self):
-        s = Signal2D(np.arange(100).reshape(10,10))
+        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(x=5, y=5)
         s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:
@@ -378,7 +378,7 @@ class Test_permanent_markers_io:
         s.save(filename)
 
     def test_save_load_empty_metadata_markers(self):
-        s = Signal2D(np.arange(100).reshape(10,10))
+        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(x=5, y=5)
         m.name = "test"
         s.add_marker(m, permanent=True)
@@ -394,7 +394,7 @@ class Test_permanent_markers_io:
         color = 'red'
         size = 10
         name = 'testname'
-        s = Signal2D(np.arange(100).reshape(10,10))
+        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(x=x, y=y, color=color, size=size)
         m.name = name
         s.add_marker(m, permanent=True)
@@ -412,7 +412,7 @@ class Test_permanent_markers_io:
 
     def test_save_load_permanent_marker_all_types(self):
         x1, y1, x2, y2 = 5, 2, 1, 8
-        s = Signal2D(np.arange(100).reshape(10,10))
+        s = Signal2D(np.arange(100).reshape(10, 10))
         m0 = markers.point(x=x1, y=y1)
         m1 = markers.horizontal_line(y=y1)
         m2 = markers.horizontal_line_segment(x1=x1, x2=x2, y=y1)
@@ -440,7 +440,7 @@ class Test_permanent_markers_io:
         color = 'blue'
         linewidth = 2.5
         name = "horizontal_line_test"
-        s = Signal2D(np.arange(100).reshape(10,10))
+        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.horizontal_line(y=y, color=color, linewidth=linewidth)
         m.name = name
         s.add_marker(m, permanent=True)
@@ -459,7 +459,7 @@ class Test_permanent_markers_io:
         color = 'red'
         linewidth = 1.2
         name = "horizontal_line_segment_test"
-        s = Signal2D(np.arange(100).reshape(10,10))
+        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.horizontal_line_segment(
                 x1=x1, x2=x2, y=y, color=color, linewidth=linewidth)
         m.name = name
@@ -481,7 +481,7 @@ class Test_permanent_markers_io:
         color = 'black'
         linewidth = 3.5
         name = "vertical_line_test"
-        s = Signal2D(np.arange(100).reshape(10,10))
+        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.vertical_line(x=x, color=color, linewidth=linewidth)
         m.name = name
         s.add_marker(m, permanent=True)
@@ -500,7 +500,7 @@ class Test_permanent_markers_io:
         color = 'white'
         linewidth = 4.2
         name = "vertical_line_segment_test"
-        s = Signal2D(np.arange(100).reshape(10,10))
+        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.vertical_line_segment(
                 x=x, y1=y1, y2=y2, color=color, linewidth=linewidth)
         m.name = name
@@ -522,7 +522,7 @@ class Test_permanent_markers_io:
         color = 'cyan'
         linewidth = 0.7
         name = "line_segment_test"
-        s = Signal2D(np.arange(100).reshape(10,10))
+        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.line_segment(
                 x1=x1, x2=x2, y1=y1, y2=y2, color=color, linewidth=linewidth)
         m.name = name
@@ -544,7 +544,7 @@ class Test_permanent_markers_io:
         x, y = 9, 8
         color = 'purple'
         name = "point test"
-        s = Signal2D(np.arange(100).reshape(10,10))
+        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(
                 x=x, y=y, color=color)
         m.name = name
@@ -564,7 +564,7 @@ class Test_permanent_markers_io:
         color = 'yellow'
         linewidth = 0.7
         name = "rectangle_test"
-        s = Signal2D(np.arange(100).reshape(10,10))
+        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.rectangle(
                 x1=x1, x2=x2, y1=y1, y2=y2, color=color, linewidth=linewidth)
         m.name = name
@@ -587,7 +587,7 @@ class Test_permanent_markers_io:
         color = 'brown'
         name = "text_test"
         text = "a text"
-        s = Signal2D(np.arange(100).reshape(10,10))
+        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.text(
                 x=x, y=y, text=text, color=color)
         m.name = name

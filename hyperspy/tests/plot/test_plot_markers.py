@@ -165,7 +165,7 @@ class Test_permanent_markers:
         assert m0.name == 'test'
         assert s.metadata.Markers.test1 == m1
         assert m1.name == 'test1'
-    
+
     def test_add_permanent_marker_twice(self):
         s = Signal1D(np.arange(10))
         m = markers.point(x=5, y=5)
@@ -202,14 +202,14 @@ class Test_permanent_markers:
             s.add_marker(m_rect, permanent=True)
 
     def test_add_permanent_marker_signal2d(self):
-        s = Signal2D(np.arange(100).reshape(10,10))
+        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(x=5, y=5)
         s.add_marker(m, permanent=True)
         assert list(s.metadata.Markers)[0][1] == m
 
     def test_deepcopy_permanent_marker(self):
         x, y, color, name = 2, 9, 'blue', 'test_point'
-        s = Signal2D(np.arange(100).reshape(10,10))
+        s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(x=x, y=y, color=color)
         m.name = name
         s.add_marker(m, permanent=True)

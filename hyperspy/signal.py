@@ -1834,7 +1834,7 @@ class BaseSignal(FancySlicing,
         return np.atleast_1d(
             self.data.__getitem__(axes_manager._getitem_tuple))
 
-    def plot(self, navigator="auto", axes_manager=None, 
+    def plot(self, navigator="auto", axes_manager=None,
             plot_markers=False, **kwargs):
         """%s
         %s
@@ -3521,7 +3521,8 @@ class BaseSignal(FancySlicing,
             temp_marker_dict = dc.metadata.Markers.as_dictionary()
             markers_dict = {}
             for marker_name in temp_marker_dict.keys():
-                marker = dict2marker(temp_marker_dict[marker_name], marker_name)
+                marker = dict2marker(
+                        temp_marker_dict[marker_name], marker_name)
                 if marker is not False:
                     marker.axes_manager = dc.axes_manager
                     markers_dict[marker_name] = marker
@@ -4077,12 +4078,12 @@ class BaseSignal(FancySlicing,
             If False, the marker will only appear in the current
             plot. If True, the marker will be added to the
             metadata.Markers list, and be plotted with plot(plot_markers=True).
-            If the signal is saved as a HyperSpy HDF5 file, the markers will be 
+            If the signal is saved as a HyperSpy HDF5 file, the markers will be
             stored in the HDF5 signal and be restored when the file is loaded.
         plot_signal : bool, default True
             If True, and if the plotting window for this signal is not
             open: will open the plotting window.
-            If False, and if no plotting is open: will not open a 
+            If False, and if no plotting is open: will not open a
             plotting window. Useful when adding many markers, or when
             running on a system without display.
 
@@ -4118,7 +4119,8 @@ class BaseSignal(FancySlicing,
         a new plot if none is currently open
         >>> s = hs.signals.Signal2D(np.random.randint(10, size=(3, 100, 100)))
         >>> marker = hs.markers.point((10, 30, 50), (30, 50, 60), color='red')
-        >>> s.add_marker(marker, permanent=True, plot_marker=False, plot_signal=False)
+        >>> s.add_marker(marker, permanent=True,
+        >>>        plot_marker=False, plot_signal=False)
         >>> s.plot(plot_markers=True) #doctest: +SKIP
 
         Removing a permanent marker
@@ -4134,7 +4136,7 @@ class BaseSignal(FancySlicing,
             raise ValueError(
                     "Navigation shape of the marker must be 0 or the "
                     "same navigation shape as this signal.")
-        if (not marker.signal is None) and (not marker.signal is self):
+        if (marker.signal is not None) and (marker.signal is not self):
             raise ValueError("Markers can not be added to several signals")
         marker._plot_on_signal = plot_on_signal
         marker._plot_marker = plot_marker
@@ -4359,7 +4361,7 @@ class BaseSignal(FancySlicing,
             res._make_sure_data_is_contiguous(log=True)
         if res.metadata.has_item('Markers'):
             # The markers might fail if the navigation dimensions are changed
-            # so the safest is simply to not carry them over from the 
+            # so the safest is simply to not carry them over from the
             # previous signal.
             del res.metadata.Markers
 
