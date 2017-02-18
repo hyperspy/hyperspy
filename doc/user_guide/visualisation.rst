@@ -138,7 +138,7 @@ arguments are supported as well:
     >>> import scipy
     >>> img = hs.signals.Signal2D(scipy.misc.lena())
     >>> img.plot(colorbar=True, scalebar=False,
-    >>>          axes_ticks=True, cmap='RdYlBu_r', saturated_pixels=0)
+    >>> 	 axes_ticks=True, cmap='RdYlBu_r', saturated_pixels=0)
 
 
 .. figure::  images/custom_cmap.png
@@ -242,7 +242,7 @@ Data files used in the following examples can be downloaded using
     >>> urlretrieve(url + 'image011.tif', 'image011.tif')
 
 .. NOTE::
-    See also the `SEM EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-      demos/blob/master/electron_microscopy/EDS/>`_ .
+    See also the `SEM EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-demos/blob/master/electron_microscopy/EDS/>`_ .
 
 .. NOTE::
 
@@ -347,7 +347,7 @@ Data files used in the following examples can be downloaded using
     >>> urlretrieve(url + 'Ni_La_intensity.hdf5', 'Ni_La_intensity.hdf5')
 
 .. NOTE::
-    See also the `EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-  demos/blob/master/electron_microscopy/EDS/>`_ .
+    See also the `EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-demos/blob/master/electron_microscopy/EDS/>`_ .
 
 Although HyperSpy does not currently support plotting when signal_dimension is
 greater than 2, `Mayavi <http://docs.enthought.com/mayavi/mayavi/>`_ can be
@@ -374,7 +374,7 @@ found in :ref:`EDS lines intensity<get_lines_intensity>`.
    Visualisation of isosurfaces with mayavi.
 
 .. NOTE::
-    See also the `SEM EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-      demos/blob/master/electron_microscopy/EDS/>`_ .
+    See also the `SEM EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-demos/blob/master/electron_microscopy/EDS/>`_ .
 
 .. NOTE::
 
