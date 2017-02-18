@@ -440,3 +440,23 @@ class Test_permanent_markers_hdf5_io:
         assert marker1.get_data_position('text') == text
         assert marker1.marker_properties['color'] == color
 
+    def test_save_load_multidim_navigation_marker(self):
+        x, y = (1, 2, 3), (5, 6, 7)
+        name = 'test point'
+        s = Signal2D(np.arange(300).reshape(3, 10, 10))
+        m = markers.point(x=x, y=y)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/test_save_multidim_nav_marker.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        marker1 = s1.metadata.Markers.get_item(name)
+        assert marker1.get_data_position('x1') == x[0]
+        assert marker1.get_data_position('y1') == y[0]
+        s1.axes_manager.navigation_axes[0].index = 1
+        assert marker1.get_data_position('x1') == x[1]
+        assert marker1.get_data_position('y1') == y[1]
+        s1.axes_manager.navigation_axes[0].index = 2
+        assert marker1.get_data_position('x1') == x[2]
+        assert marker1.get_data_position('y1') == y[2]
