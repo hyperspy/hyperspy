@@ -4076,12 +4076,15 @@ class BaseSignal(FancySlicing,
         permanent : bool, default False
             If False, the marker will only appear in the current
             plot. If True, the marker will be added to the
-            markers list, and be plotted with plot(plot_markers=True).
+            metadata.Markers list, and be plotted with plot(plot_markers=True).
+            If the signal is saved as a HyperSpy HDF5 file, the markers will be 
+            stored in the HDF5 signal and be restored when the file is loaded.
         plot_signal : bool, default True
             If True, and if the plotting window for this signal is not
             open: will open the plotting window.
             If False, and if no plotting is open: will not open a 
-            plotting window.
+            plotting window. Useful when adding many markers, or when
+            running on a system without display.
 
         Examples
         -------
@@ -4111,6 +4114,12 @@ class BaseSignal(FancySlicing,
         >>> s.add_marker(marker, permanent=True, plot_marker=False, plot_signal=False)
         >>> s.plot(plot_markers=True) #doctest: +SKIP
 
+        Removing a permanent marker
+        >>> s = hs.signals.Signal2D(np.random.randint(10, size=(100, 100)))
+        >>> marker = hs.markers.point(10, 60, color='red')
+        >>> marker.name = "point_marker"
+        >>> s.add_marker(marker, permanent=True)
+        >>> del s.metadata.Markers.point_marker
         """
         marker_data_shape = marker._get_data_shape()
         if (not (len(marker_data_shape) == 0)) and (
