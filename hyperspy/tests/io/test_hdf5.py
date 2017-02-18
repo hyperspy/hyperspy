@@ -624,6 +624,15 @@ class Test_permanent_markers_io:
         assert marker1.get_data_position('x1') == x[2]
         assert marker1.get_data_position('y1') == y[2]
 
+    def test_load_unknown_marker_type(self):
+        # test_marker_bad_marker_type.hdf5 has 5 markers,
+        # where one of them has an unknown marker type
+        s = load(os.path.join(
+            my_path,
+            "hdf5_files",
+            "test_marker_bad_marker_type.hdf5"))
+        assert len(s.metadata.Markers) == 4
+
 
 def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
