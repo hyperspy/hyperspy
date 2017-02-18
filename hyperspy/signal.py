@@ -4121,6 +4121,8 @@ class BaseSignal(FancySlicing,
             if marker._plot_on_signal:
                 self._plot.signal_plot.add_marker(marker)
             else:
+                if self._plot.navigator_plot is None:
+                    self.plot()
                 self._plot.navigator_plot.add_marker(marker)
             marker.plot()
         if permanent:
