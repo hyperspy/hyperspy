@@ -4069,10 +4069,10 @@ class BaseSignal(FancySlicing,
         ----------
         marker : `hyperspy.drawing._markers`
             The marker to add. See `plot.markers`
-        plot_on_signal : bool
+        plot_on_signal : bool, default True
             If True, add the marker to the signal
             If False, add the marker to the navigator
-        plot_marker : bool
+        plot_marker : bool, default True
             If True, plot the marker.
         permanent : bool, default False
             If False, the marker will only appear in the current
