@@ -138,7 +138,7 @@ arguments are supported as well:
     >>> import scipy
     >>> img = hs.signals.Signal2D(scipy.misc.lena())
     >>> img.plot(colorbar=True, scalebar=False,
-    >>> 	 axes_ticks=True, cmap='RdYlBu_r', saturated_pixels=0)
+    >>>          axes_ticks=True, cmap='RdYlBu_r', saturated_pixels=0)
 
 
 .. figure::  images/custom_cmap.png
@@ -242,7 +242,7 @@ Data files used in the following examples can be downloaded using
     >>> urlretrieve(url + 'image011.tif', 'image011.tif')
 
 .. NOTE::
-    See also the `SEM EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-	demos/blob/master/electron_microscopy/EDS/>`_ .
+    See also the `SEM EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-      demos/blob/master/electron_microscopy/EDS/>`_ .
 
 .. NOTE::
 
@@ -347,7 +347,7 @@ Data files used in the following examples can be downloaded using
     >>> urlretrieve(url + 'Ni_La_intensity.hdf5', 'Ni_La_intensity.hdf5')
 
 .. NOTE::
-    See also the `EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-	demos/blob/master/electron_microscopy/EDS/>`_ .
+    See also the `EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-  demos/blob/master/electron_microscopy/EDS/>`_ .
 
 Although HyperSpy does not currently support plotting when signal_dimension is
 greater than 2, `Mayavi <http://docs.enthought.com/mayavi/mayavi/>`_ can be
@@ -374,7 +374,7 @@ found in :ref:`EDS lines intensity<get_lines_intensity>`.
    Visualisation of isosurfaces with mayavi.
 
 .. NOTE::
-    See also the `SEM EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-	demos/blob/master/electron_microscopy/EDS/>`_ .
+    See also the `SEM EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-      demos/blob/master/electron_microscopy/EDS/>`_ .
 
 .. NOTE::
 
@@ -897,3 +897,71 @@ The markers can be added to the navigator as well. In the following example, eac
   :width:   400
 
   Multi-dimensional markers.
+
+These markers can also be permanently added to a signal, which is saved in metadata.Markers:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    >>> marker = hs.markers.point(5, 9)
+    >>> s.add_marker(marker, permanent=True)
+    >>> s.metadata.Markers
+    └── point = <hyperspy.drawing._markers.point.Point object at 0x7efd01ec7400>
+    >>> s.plot(plot_markers=True)
+
+
+.. figure::  images/permanent_marker_one.png
+  :align:   center
+  :width:   400
+
+  Plotting with permanent markers.
+
+If the signal got a navigation dimension, the markers can be made to change
+as a function of the navigation index. For a signal with 1 navigation axis:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal2D(np.arange(300).reshape(3, 10, 10))
+    >>> marker = hs.markers.point((5, 1, 2), (9, 8, 1), color='red')
+    >>> s.add_marker(marker, permanent=True)
+
+Or for a signal with 2 navigation axes:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal2D(np.arange(400).reshape(2, 2, 10, 10))
+    >>> marker = hs.markers.point(((5, 1), (1, 2)), ((2, 6), (9, 8)))
+    >>> s.add_marker(marker, permanent=True)
+
+This can be extended to 4 (or more) navigation dimensions:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal2D(np.arange(1600).reshape(2, 2, 2, 2, 10, 10))
+    >>> x = np.arange(16).reshape(2, 2, 2, 2)
+    >>> y = np.arange(16).reshape(2, 2, 2, 2)
+    >>> marker = hs.markers.point(x=x, y=y, color='red')
+    >>> s.add_marker(marker, permanent=True)
+
+Many markers can added by using a for loop. Note, adding many markers
+might lead to very slow plotting.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal2D(np.arange(300).reshape(3, 10, 10))
+    >>> for i in range(10):
+    >>>     marker = hs.markers.point(i, i, size=60)
+    >>>     s.add_marker(marker, permanent=True)
+
+Permanent markers are stored in the HDF5 file if the signal is saved:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    >>> marker = hs.markers.point(2, 1, color='red')
+    >>> s.metadata.Markers
+    └── point = <hyperspy.drawing._markers.point.Point object at 0x7efd0109def0>
+    >>> s.save("storing_marker.hdf5")
+    >>> s1 = hs.load("storing_marker.hdf5")
+    >>> s1.metadata.Markers
+    └── point = <hyperspy.drawing._markers.point.Point object at 0x7efcfadb06d8>
