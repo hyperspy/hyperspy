@@ -21,20 +21,25 @@ from hyperspy.drawing.marker import MarkerBase
 
 class Point(MarkerBase):
 
-    """Point marker that can be added to the signal figure
+    """Point marker that can be added to the signal figure.
+
+    If the signal has one or several navigation axes, the point marker
+    can change as a function of the navigation position. This done by
+    using an array for the x and y parameters. This array must have
+    the same shape as the navigation axes of the signal.
 
     Parameters
-    ---------
-    x: array or float
+    ----------
+    x : array or float
         The position of the point in x. If float, the marker is fixed.
         If array, the marker will be updated when navigating. The array should
-        have the same dimensions in the nagivation axes.
-    y: array or float
+        have the same dimensions in the navigation axes.
+    y : array or float
         The position of the point in y. see x arguments
-    size: array or float
+    size : array or float, optional, default 20
         The size of the point. see x arguments
-    kwargs:
-        Kewywords argument of axvline valid properties (i.e. recognized by
+    kwargs :
+        Keywords argument of axvline valid properties (i.e. recognized by
         mpl.plot).
 
     Example
@@ -44,7 +49,7 @@ class Point(MarkerBase):
                                      color='red')
     >>> im.add_marker(m)
 
-    #Markers on local maxima
+    Markers on local maxima
     >>> from skimage.feature import peak_local_max
     >>> import scipy.misc
     >>> im = hs.signals.Signal2D(scipy.misc.ascent()).as_signal2D([2,0])
