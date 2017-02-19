@@ -50,6 +50,16 @@ class VerticalLine(MarkerBase):
         self.set_marker_properties(**kwargs)
         self.name = 'vertical_line'
 
+    def __repr__(self):
+        string = "<marker.{}, {} (x={},color={})>".format(
+                self.__class__.__name__,
+                self.name,
+                self.get_data_position('x1'),
+                self.marker_properties['color'],
+                self.get_data_position('size'),
+                )
+        return(string)
+
     def update(self):
         if self.auto_update is False:
             return

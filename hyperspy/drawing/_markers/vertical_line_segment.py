@@ -60,6 +60,17 @@ class VerticalLineSegment(MarkerBase):
         self.set_marker_properties(**kwargs)
         self.name = 'vertical_line_segment'
 
+    def __repr__(self):
+        string = "<marker.{}, {} (x={},y1={},y2={},color={})>".format(
+                self.__class__.__name__,
+                self.name,
+                self.get_data_position('x1'),
+                self.get_data_position('y1'),
+                self.get_data_position('y2'),
+                self.marker_properties['color'],
+                )
+        return(string)
+
     def update(self):
         if self.auto_update is False:
             return

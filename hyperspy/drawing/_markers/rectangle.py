@@ -63,6 +63,18 @@ class Rectangle(MarkerBase):
         self.set_marker_properties(**kwargs)
         self.name = 'rectangle'
 
+    def __repr__(self):
+        string = "<marker.{}, {} (x1={},x2={},y1={},y2={},color={})>".format(
+                self.__class__.__name__,
+                self.name,
+                self.get_data_position('x1'),
+                self.get_data_position('x2'),
+                self.get_data_position('y1'),
+                self.get_data_position('y2'),
+                self.marker_properties['color'],
+                )
+        return(string)
+
     def update(self):
         if self.auto_update is False:
             return

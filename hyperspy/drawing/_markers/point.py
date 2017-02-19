@@ -69,6 +69,17 @@ class Point(MarkerBase):
         self.set_marker_properties(**kwargs)
         self.name = 'point'
 
+    def __repr__(self):
+        string = "<marker.{}, {} (x={},y={},color={},size={})>".format(
+                self.__class__.__name__,
+                self.name,
+                self.get_data_position('x1'),
+                self.get_data_position('y1'),
+                self.marker_properties['color'],
+                self.get_data_position('size'),
+                )
+        return(string)
+
     def update(self):
         if self.auto_update is False:
             return

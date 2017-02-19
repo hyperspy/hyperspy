@@ -59,6 +59,17 @@ class HorizontalLineSegment(MarkerBase):
         self.set_marker_properties(**kwargs)
         self.name = 'horizontal_line_segment'
 
+    def __repr__(self):
+        string = "<marker.{}, {} (x1={},x2={},y={},color={})>".format(
+                self.__class__.__name__,
+                self.name,
+                self.get_data_position('x1'),
+                self.get_data_position('x2'),
+                self.get_data_position('y1'),
+                self.marker_properties['color'],
+                )
+        return(string)
+
     def update(self):
         if self.auto_update is False:
             return
