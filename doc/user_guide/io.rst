@@ -81,6 +81,7 @@ analysing large files. To load a file without loading it to memory simply set
 
 More details on lazy evaluation support in :ref:`big-data-label`.
 
+.. load-multiple-label::
 
 Loading multiple files
 ----------------------
@@ -95,6 +96,8 @@ functions, e.g.:
 
 or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_
 
+.. versionadded:: 1.2.0
+   stack multi-signal files
 
 By default HyperSpy will return a list of all the files loaded. Alternatively,
 HyperSpy can stack the data of the files contain data with exactly the same

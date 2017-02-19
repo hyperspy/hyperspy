@@ -166,7 +166,7 @@ a component is very easy, just modify the following template to suit your needs:
 
     from hyperspy.component import Component
 
-    class My_Component(Component):
+    class MyComponent(Component):
 
         """
         """

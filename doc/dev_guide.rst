@@ -134,6 +134,8 @@ consistency that you can read all about in the `Python Style Guide <https://www.
 
 You can check your code with the `pep8 Code Checker <https://pypi.python.org/pypi/pep8>`_.
 
+.. _tests-label:
+
 Write tests
 ^^^^^^^^^^^
 
@@ -142,18 +144,40 @@ Every new function that is writen in to HyperSpy needs to be tested and document
 Tests are short functions found in hyperspy/tests that call your functions
 under some known conditions and check the outputs against known values. They should
 depend on as few other features as possible so that when they break we know exactly
-what caused it. Ideally, the tests should be written at the same time than the code itself, as they are very convenient to run to check outputs when coding. Writing tests can seem laborious but you'll probaby soon find that they're very important as they force you to sanity check all you do.
+what caused it. Ideally, the tests should be written at the same time than the
+code itself, as they are very convenient to run to check outputs when coding.
+Writing tests can seem laborious but you'll probaby soon find that they're very
+important as they force you to sanity check all you do.
 
-HyperSpy uses the `nose <http://nose.readthedocs.io/en/latest/>`_ library for testing.
-There are different ways to `run tests <http://nose.readthedocs.io/en/latest/usage.html>`_:
-	- run ``nosetests`` script (make sure you are running nosetests for python 3) in a console.
-	- call ``nose.main()`` in a test script.
+HyperSpy uses the `py.test <http://doc.pytest.org/>`_ library for testing. The
+tests reside in the ``hyperspy.tests`` module. To run them:
+
+.. code:: bash
+
+   py.test --pyargs hyperspy
+
+Or, from hyperspy's project folder simply:
+
+.. code:: bash
+
+   py.test
+
 
 Useful hints on HyperSpy testing:
-	- When comparing integers, it's fine to use ``==``. When comparing floats, be sure to use ``nose.tools.assert_almost_equal()``.
-	- ``numpy.testing.assert_equal()`` is convenient to compare numpy arrays.
-	- The ``hyperspy.misc.test_utils.py`` contains a few useful functions for testing.
-	- Once, you have pushed your PR to the official HyperSpy repository, it can be useful to check the coverage of your tests using the coveralls.io check of your PR. There should be a link to it at the bottom of your PR on the github PR page. This service can help you to find how well your code is being tested and exactly which part is not currently tested.
+
+* When comparing integers, it's fine to use ``==``. When comparing floats, be
+  sure to use ``nose.tools.assert_almost_equal()``.
+* ``numpy.testing.assert_equal()`` is convenient to compare numpy arrays.
+* The ``hyperspy.misc.test_utils.py`` contains a few useful functions for
+  testing.
+* Once, you have pushed your PR to the official HyperSpy repository, it
+  can be useful to check the coverage of your tests using the
+  coveralls.io check of your PR. There should be a link to it at the
+  bottom of your PR on the github PR page. This service can help you to
+  find how well your code is being tested and exactly which part is not
+  currently tested.
+
+.. _plot-test-label:
 
 Plot testing
 ^^^^^^^^^^^^
