@@ -306,6 +306,25 @@ class EELSSpectrum_mixin:
             substract_from_offset(without_nans(zlpc.data).mean(),
                                   also_align + [self])
 
+    def spikes_removal_tool(self, signal_mask=None,
+                            navigation_mask=None,
+                            filter_zero_loss=False,
+                            zero_loss_width=5.0):
+        if filter_zero_loss:
+            zlpc = self.estimate_zero_loss_peak_centre()
+            (signal_axis, ) = self.axes_manager[self.axes_manager.signal_axes]
+            axis = signal_axis.axis
+            mini_value = zlpc.data.mean() - zero_loss_width/2
+            maxi_value = zlpc.data.mean() + zero_loss_width/2
+            mask = -((mini_value <= axis) & (axis <= maxi_value))
+            if signal_mask:
+                signal_mask = mask & signal_mask
+            else:
+                signal_mask = mask
+            import matplotlib.pyplot as plt
+        super().spikes_removal_tool(signal_mask=signal_mask,
+             navigation_mask=navigation_mask)
+
     def estimate_elastic_scattering_intensity(
             self, threshold, show_progressbar=None):
         """Rough estimation of the elastic scattering intensity by
