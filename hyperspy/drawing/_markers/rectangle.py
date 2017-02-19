@@ -78,10 +78,14 @@ class Rectangle(MarkerBase):
     def update(self):
         if self.auto_update is False:
             return
-        self.marker.set_xdata([self.get_data_position('x1'),
-                               self.get_data_position('x2')])
-        self.marker.set_ydata([self.get_data_position('y1'),
-                               self.get_data_position('y2')])
+        width = abs(self.get_data_position('x1') -
+                    self.get_data_position('x2'))
+        height = abs(self.get_data_position('y1') -
+                     self.get_data_position('y2'))
+        self.marker.set_xy([self.get_data_position('x1'),
+                               self.get_data_position('y1')])
+        self.marker.set_width(width)
+        self.marker.set_height(height)
 
     def plot(self):
         if self.ax is None:
