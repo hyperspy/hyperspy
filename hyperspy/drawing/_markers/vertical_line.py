@@ -24,22 +24,25 @@ class VerticalLine(MarkerBase):
     """Vertical line marker that can be added to the signal figure
 
     Parameters
-    ---------
-    x: array or float
+    ----------
+    x : array or float
         The position of the line. If float, the marker is fixed.
         If array, the marker will be updated when navigating. The array should
-        have the same dimensions in the nagivation axes.
-    kwargs:
-        Kewywords argument of axvline valid properties (i.e. recognized by
+        have the same dimensions in the navigation axes.
+    kwargs :
+        Keywords argument of axvline valid properties (i.e. recognized by
         mpl.plot).
 
     Example
     -------
-    >>> import numpy as np
     >>> s = hs.signals.Signal1D(np.random.random([10, 100]))
     >>> m = hs.plot.markers.vertical_line(x=range(10), color='green')
     >>> s.add_marker(m)
 
+    Adding a marker permanently to a signal
+    >>> s = hs.signals.Signal1D(np.random.random((100, 100)))
+    >>> m = hs.plot.markers.vertical_line(x=30)
+    >>> s.add_marker(m, permanent=True)
     """
 
     def __init__(self, x, **kwargs):

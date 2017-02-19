@@ -49,6 +49,11 @@ class Point(MarkerBase):
                                      color='red')
     >>> im.add_marker(m)
 
+    Adding a marker permanently to a signal
+    >>> im = hs.signals.Signal2D(np.random.random([10, 50, 50]))
+    >>> m = hs.plot.markers.point(10, 30, color='blue', size=50)
+    >>> im.add_marker(m, permanent=True)
+
     Markers on local maxima
     >>> from skimage.feature import peak_local_max
     >>> import scipy.misc

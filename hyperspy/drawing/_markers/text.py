@@ -24,17 +24,17 @@ class Text(MarkerBase):
     """Text marker that can be added to the signal figure
 
     Parameters
-    ---------
-    x: array or float
+    ----------
+    x : array or float
         The position of the text in x. If float, the marker is fixed.
         If array, the marker will be updated when navigating. The array should
-        have the same dimensions in the nagivation axes.
-    y: array or float
+        have the same dimensions in the navigation axes.
+    y : array or float
         The position of the text in y. see x arguments
-    text: array or str
+    text : array or str
         The text. see x arguments
-    kwargs:
-        Kewywords argument of axvline valid properties (i.e. recognized by
+    kwargs :
+        Keywords argument of axvline valid properties (i.e. recognized by
         mpl.plot).
 
     Example
@@ -49,6 +49,10 @@ class Text(MarkerBase):
     >>>                             text=[i for i in 'abcdefghij'])
     >>> s.add_marker(m)
 
+    Add a marker permanently to a signal
+    >>> s = hs.signals.Signal1D(np.arange(100).reshape([10,10]))
+    >>> m = hs.plot.markers.text(5, 5, "a_text")
+    >>> s.add_marker(m, permanent=True)
     """
 
     def __init__(self, x, y, text, **kwargs):

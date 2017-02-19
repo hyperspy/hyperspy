@@ -25,20 +25,24 @@ class HorizontalLine(MarkerBase):
 
     Parameters
     ---------
-    y: array or float
+    y : array or float
         The position of the line. If float, the marker is fixed.
         If array, the marker will be updated when navigating. The array should
-        have the same dimensions in the nagivation axes.
-    kwargs:
-        Kewywords argument of axvline valid properties (i.e. recognized by
+        have the same dimensions in the navigation axes.
+    kwargs :
+        Keywords argument of axvline valid properties (i.e. recognized by
         mpl.plot).
 
     Example
     -------
-    >>> import numpy as np
     >>> s = hs.signals.Signal1D(np.random.random([10, 100])) * 10
     >>> m = hs.plot.markers.horizontal_line(y=range(10), color='green')
     >>> s.add_marker(m)
+
+    Adding a marker permanently to a signal
+    >>> s = hs.signals.Signal1D(np.random.random([10, 100]))
+    >>> m = hs.plot.markers.horizontal_line(y=5, color='green')
+    >>> s.add_marker(m, permanent=True)
 
     """
 

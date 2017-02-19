@@ -124,7 +124,7 @@ class MarkerBase(object):
                  x2=None, y2=None, text=None, size=None):
         """
         Set data to the structured array. Each field of data should have
-        the same dimensions than the nagivation axes. The other fields are
+        the same dimensions than the navigation axes. The other fields are
         overwritten.
         """
         self.data = np.array((np.array(x1), np.array(y1),
@@ -138,7 +138,7 @@ class MarkerBase(object):
     def add_data(self, **kwargs):
         """
         Add data to the structured array. Each field of data should have
-        the same dimensions than the nagivation axes. The other fields are
+        the same dimensions than the navigation axes. The other fields are
         not changed.
         """
         if self.data is None:

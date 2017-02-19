@@ -26,23 +26,23 @@ class Rectangle(MarkerBase):
     """Rectangle marker that can be added to the signal figure
 
     Parameters
-    ---------
-    x1: array or float
+    ----------
+    x1 : array or float
         The position of the up left corner of the rectangle in x.
         If float, the marker is fixed.
         If array, the marker will be updated when navigating. The array should
-        have the same dimensions in the nagivation axes.
-    y1: array or float
+        have the same dimensions in the navigation axes.
+    y1 : array or float
         The position of the up left corner of the rectangle in y.
         see x1 arguments
-    x2: array or float
+    x2 : array or float
         The position of the down right corner of the rectangle in x.
         see x1 arguments
-    y2: array or float
+    y2 : array or float
         The position of the down right of the rectangle in y.
         see x1 arguments
-    kwargs:
-        Kewywords argument of axvline valid properties (i.e. recognized by
+    kwargs :
+        Keywords argument of axvline valid properties (i.e. recognized by
         mpl.plot).
 
     Example
@@ -53,6 +53,10 @@ class Rectangle(MarkerBase):
     >>>                                  color='red')
     >>> im.add_marker(m)
 
+    Adding a marker permanently to a signal
+    >>> im = hs.signals.Signal2D(np.random.random((50, 50))
+    >>> m = hs.plot.markers.rectangle(x1=20, y1=30, x2=40, y2=49)
+    >>> im.add_marker(m, permanent=True)
     """
 
     def __init__(self, x1, y1, x2, y2, **kwargs):
