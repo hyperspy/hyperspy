@@ -87,7 +87,7 @@ class Point(MarkerBase):
                                  self.get_data_position('y1')])
         self.marker._sizes = [self.get_data_position('size')]
 
-    def plot(self):
+    def plot(self, fig_draw_animated=True):
         if self.ax is None:
             raise AttributeError(
                 "To use this method the marker needs to be first add to a " +
@@ -98,7 +98,8 @@ class Point(MarkerBase):
                                       **self.marker_properties)
         self.marker._sizes = [self.get_data_position('size')]
         self.marker.set_animated(True)
-        try:
-            self.ax.hspy_fig._draw_animated()
-        except:
-            pass
+        if fig_draw_animated:
+            try:
+                self.ax.hspy_fig._draw_animated()
+            except:
+                pass

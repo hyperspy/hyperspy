@@ -1970,7 +1970,8 @@ class BaseSignal(FancySlicing,
 
         if plot_markers:
             if self.metadata.has_item('Markers'):
-                self._plot_permanent_markers()
+                with self._plot.signal_plot.events.suppress():
+                    self._plot_permanent_markers()
 
     plot.__doc__ %= BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 
@@ -4153,15 +4154,19 @@ class BaseSignal(FancySlicing,
 
     def _plot_permanent_markers(self):
         marker_dict_list = list(self.metadata.Markers.__dict__.values())
-        for marker_dict in marker_dict_list:
+        if {'_dtb_value_': False, 'key': '_double_lines'} in marker_dict_list:
+            marker_dict_list.remove({'_dtb_value_': False, 'key': '_double_lines'})
+        for index, marker_dict in enumerate(marker_dict_list):
             marker = marker_dict['_dtb_value_']
-            if marker is not False:
-                if marker.plot_marker:
-                    if marker._plot_on_signal:
-                        self._plot.signal_plot.add_marker(marker)
-                    else:
-                        self._plot.navigator_plot.add_marker(marker)
-                    marker.plot()
+            if marker.plot_marker:
+                if marker._plot_on_signal:
+                    self._plot.signal_plot.add_marker(marker)
+                else:
+                    self._plot.navigator_plot.add_marker(marker)
+                if index == len(marker_dict_list)-1:
+                    marker.plot(fig_draw_animated=True)
+                else:
+                    marker.plot(fig_draw_animated=False)
 
     def add_poissonian_noise(self, **kwargs):
         """Add Poissonian noise to the data"""
