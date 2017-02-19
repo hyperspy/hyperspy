@@ -172,7 +172,7 @@ class MarkerBase(object):
         else:
             return data[ind].item()[()]
 
-    def close(self):
+    def close(self, update_plot=True):
         if self._closing:
             return
         self._closing = True
@@ -182,7 +182,8 @@ class MarkerBase(object):
             for f in self.events.closed.connected:
                 self.events.closed.disconnect(f)
             # m.ax.figure.canvas.draw()
-            self.ax.hspy_fig._draw_animated()
+            if update_plot:
+                self.ax.hspy_fig._draw_animated()
         except:
             pass
 
