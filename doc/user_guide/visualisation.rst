@@ -916,6 +916,18 @@ These markers can also be permanently added to a signal, which is saved in metad
 
   Plotting with permanent markers.
 
+Markers can be removed by deleting them from the metadata
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    >>> marker = hs.markers.point(5, 9)
+    >>> s.add_marker(marker, permanent=True)
+    >>> s.metadata.Markers
+    └── point = <marker.Point, point (x=5,y=9,color=black,size=20)>
+    >>> del s.metadata.Markers.point
+    >>> s.metadata.Markers # Returns nothing
+
 If the signal got a navigation dimension, the markers can be made to change
 as a function of the navigation index. For a signal with 1 navigation axis:
 
