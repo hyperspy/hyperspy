@@ -710,6 +710,20 @@ class TestModelFitBinned:
         np.testing.assert_allclose(self.m[0].centre.value, 0.5)
         np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
+    def test_model_is_not_linear(self):
+        """
+        Model is not currently linear as Gaussian sigma and centre parameters are free
+        """
+        assert not self.m._check_all_active_components_are_linear()
+
+    def test_fit_lsq_linear(self):
+        self.m[0].sigma.free = False
+        self.m[0].centre.free = False
+        self.m.fit(fitter="linear")
+        np.testing.assert_allclose(self.m[0].A.value, 6132.640632924692, 1)
+        np.testing.assert_allclose(self.m[0].centre.value, 0.5)
+        np.testing.assert_allclose(self.m[0].sigma.value, 1)
+
     def test_wrong_method(self):
         with pytest.raises(ValueError):
             self.m.fit(method="dummy")
@@ -955,6 +969,19 @@ class TestMultifit:
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
                                              [4., 4.])
 
+    def test_bounded_snapping_lsq_linear(self):
+        m = self.m
+        m[0].A.free = True
+        m[0].r.free = False
+
+        m.signal.data *= 2.
+        m[0].A.value = 2.
+        m[0].r.value = 3.
+        m[0].r.assign_current_value_to_all()
+        m.multifit(fitter='linear', bounded=True, show_progressbar=None)
+        np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
+                                             [4., 4.])
+
 
 class TestStoreCurrentValues:
 
@@ -1143,3 +1170,15 @@ class TestAdjustPosition:
         assert len(list(self.m._position_widgets.values())[0]) == 2
         self.m.disable_adjust_position()
         assert len(self.m._position_widgets) == 0
+
+
+class TestLinearFitting:
+    def setup_method(self, method):
+        self.s = hs.datasets.example_signals.EDS_SEM_Spectrum().isig[5.0:15.0]
+
+    def test_linear_fitting_with_offset(self):
+        m = self.s.create_model(auto_background=False)
+        c = hs.model.components1D.Expression('a*x+b', 'Linear')
+        m.append(c)
+        m.fit('linear')
+        np.testing.assert_allclose(m.p0, np.array([941.6686498804164, 47773.64289591281, -5902.642841343069, 57056.112565450574]))

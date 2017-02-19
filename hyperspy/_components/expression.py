@@ -225,7 +225,7 @@ class Expression(Component):
                         self,
                         Expression)
                     )
-   
+
     @property
     def constant_term(self):
         "Get value of constant term of component"
@@ -242,7 +242,18 @@ class Expression(Component):
         for para in self.parameters:
             if para.name in free_symbols:
                 constant_expr = constant_expr.subs(para.name, para.value)
-        return constant_expr
+        return float(constant_expr)
+
+    @property
+    def _free_offset_parameter(self):
+        "Returns any free parameter that act as an offset"
+        offset_parameter = None
+        for i, para in enumerate(self.parameters):
+            symbol = self._parameter_strings[i]
+            if para.free and check_if_parameter_is_offset(self._str_expression, symbol):
+                offset_parameter = para
+        return offset_parameter
+
 
 def check_parameter_linearity(expr, name):
     "Check whether expression is linear for a given parameter"
@@ -252,6 +263,17 @@ def check_parameter_linearity(expr, name):
     except TypeError:
         return False
     return True
+
+
+def check_if_parameter_is_offset(expr, name):
+    '''Separate offset from an expression, for instance
+    b from ax+b in an expression
+    expr : str - component expression
+    name : str - attribute in expression to determine
+    '''
+    first_derivative_for_x = sympy.Eq(sympy.diff(expr, name, 1), 0)
+    return first_derivative_for_x == False
+
 
 def extract_constant_part_of_expression(expr, *args):
     """

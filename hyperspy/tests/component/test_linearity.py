@@ -36,3 +36,10 @@ def test_gaussian_linear():
     assert g.A._is_linear
     assert not g.centre._is_linear
     assert not g.sigma._is_linear
+
+def test_if_parameter_is_offset():
+    from hyperspy._components.expression import check_if_parameter_is_offset
+    expr = 'ax + b'
+
+    assert not check_if_parameter_is_offset(expr, 'a')
+    assert check_if_parameter_is_offset(expr, 'b')

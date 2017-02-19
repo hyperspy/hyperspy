@@ -28,6 +28,7 @@ import scipy
 import scipy.odr as odr
 from scipy.optimize import (leastsq, least_squares,
                             minimize, differential_evolution)
+from scipy.optimize import lsq_linear as linear
 from scipy.linalg import svd
 from contextlib import contextmanager
 
@@ -836,81 +837,46 @@ class BaseModel(list):
         to_return = self.__call__(non_convolved=False, onlyactive=True)
         return to_return
 
-    def get_raw_signal_for_linear_fitting(self):
-        """Gets the current signal, for linear fitting"""
-        to_return = self.signal()[np.where(self.channel_switches)]
-        if self.signal.metadata.Signal.binned is True:
-            to_return = to_return / self.signal.axes_manager[-1].scale
-        return to_return
-
-    def get_signal_for_linear_fitting(self):
-        """
-        Gets the current signal minus fixed model components, for linear fitting
-        -This could use the previous function to reduce typing-
-        """
-        self._set_p0()
-        deactivated_components = []
-        for component in self:
-            if component.active:
-                if not component.free_parameters:
-                    for parameter in component.parameters:
-                        if parameter.twin:
-                            deactivated_components.append(component)
-                            break
-                else:
-                    deactivated_components.append(component)
-        for comp in deactivated_components:
-            comp.active = False
-
-        fixed_model = self._model_function(self.p0)
-
-        for comp in deactivated_components:
-            comp.active = True
-        signal = self.signal()[np.where(self.channel_switches)]
-        signal_to_fit_to = signal - fixed_model
-        if self.signal.metadata.Signal.binned is True:
-            signal_to_fit_to = signal_to_fit_to / self.signal.axes_manager[-1].scale
-        return signal_to_fit_to
-
-    def check_all_active_components_are_linear(self):
+    def _check_all_active_components_are_linear(self):
         """Loops through active components checking all parameters are linear"""
         for comp in self:
             if comp.active:
                 for parameter in comp.parameters:
                     if parameter.free:
-                        if not parameter._is_linear:
+                        if not parameter.is_linear:
                             return False
         return True
 
-    def get_nonlinear_components(self):
-        """Loops through active components checking all parameters are linear"""
+    def _get_nonlinear_components(self):
+        """Returning list of all active nonlinear components"""
         nonlinear = []
         for comp in self:
             if comp.active:
                 for parameter in comp.parameters:
                     if parameter.free:
                         if not parameter._is_linear:
-                            nonlinear.append(comp)
+                            nonlinear.append(comp)  # component is not linear
                             break
         return nonlinear
 
-    def check_and_set_linear_parameters_not_zero(self):
+    def _check_and_set_linear_parameters_not_zero(self):
+        """Linear components will not scale correctly if they are currently set to zero"""
         for comp in self:
             if comp.active:
                 for parameter in comp.free_parameters:
-                    print(parameter.value)
                     if parameter.value == 0:
                         parameter._set_value(1)
-                        warnings.warn("Value of linear parameter " + parameter.name + " of component " + comp.name + " was set to zero. Changed to value=1 for fitting.")
-        #old, doesn't work bc p0 not used: self.p0 = [value if value != 0 else 1 for value in self.p0]
+                        logging.warning("Value of linear parameter " + parameter.name + " of component " +
+                                     comp.name + " was set to zero. Changed to value = 1 for fitting.")
 
-    def get_constant_term(self):
+    def _get_constant_term(self):
+        '''Get constant term from model, i.e. b from `expr = ax + b`, if b is fixed.'''
+        # TODO: Support convolution
         constant_term = 0
         for comp in self:
             if comp.active:
                 constant_term += comp.constant_term
         return constant_term
-
 
     def _errfunc2(self, param, y, weights=None):
         if weights is None:
@@ -984,6 +950,10 @@ class BaseModel(list):
                 "odr" performs the optimization using the orthogonal distance
                 regression algorithm. It does not support bounds.
 
+                "linear" performs least-squares fitting using linear
+                algebra, and then optimizes it using a linear_lstsq iterative approach
+                similar to the "leastsq" algorithm. Very fast and supports bounds.
+
                 "Nelder-Mead", "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B"
                 and "TNC" are wrappers for scipy.optimize.minimize(). Only
                 "L-BFGS-B" and "TNC" support bounds.
@@ -1028,8 +998,10 @@ class BaseModel(list):
 
         """
 
-        if fitter is None:  # None meant "from preferences" before v1.3
-            fitter = "leastsq"
+        if fitter is None:
+            if self.check_all_active_components_are_linear():
+                fitter = "linear"
+            else: fitter = preferences.Model.default_fitter
         switch_aap = (update_plot != self._plot_active)
         if switch_aap is True and update_plot is False:
             cm = self.suspend_update
@@ -1055,11 +1027,11 @@ class BaseModel(list):
 
         if bounded is True:
             if fitter not in ("leastsq", "mpfit", "TNC",
-                              "L-BFGS-B", "Differential Evolution"):
+                              "L-BFGS-B", "Differential Evolution", "linear"):
                 raise ValueError("Bounded optimization is only "
                                  "supported by 'leastsq', "
-                                 "'mpfit', 'TNC', 'L-BFGS-B' or"
-                                 "'Differential Evolution'.")
+                                 "'mpfit', 'TNC', 'L-BFGS-B', "
+                                 "'Differential Evolution' or 'linear'.")
             else:
                 # this has to be done before setting the p0,
                 # so moved things around
@@ -1086,11 +1058,12 @@ class BaseModel(list):
 
             if method == 'ml':
                 weights = None
-                if fitter in ("leastsq", "odr", "mpfit"):
+                if fitter in ("leastsq", "odr", "mpfit", "linear"):
                     raise NotImplementedError(
                         "Maximum likelihood estimation is not supported "
-                        'for the "leastsq", "mpfit" or "odr" optimizers')
+                        'for the "leastsq", "mpfit", "odr", or "linear" optimizers')
             elif method == "ls":
+
                 metadata = self.signal.metadata
                 if "Signal.Noise_properties.variance" not in metadata:
                     variance = 1
@@ -1120,8 +1093,8 @@ class BaseModel(list):
             args = (self.signal()[np.where(self.channel_switches)],
                     weights)
 
-            not_linear_error = "Not all components are linear. Fit with a " + \
-                               "different fitter or set non-linear " + \
+            not_linear_error = "Not all components are linear_lstsq. Fit with a " + \
+                               "different fitter or set non-linear_lstsq " + \
                                "`parameters.free = False`. These " + \
                                "components are nonlinear:"
 
@@ -1210,65 +1183,115 @@ class BaseModel(list):
                 self.fit_output = m
 
             elif fitter == "linear":
-                print("Fitting using linear fit")
-                nonlinear = self.get_nonlinear_components()
+                nonlinear = self._get_nonlinear_components()
                 if nonlinear:
                     raise AttributeError(not_linear_error + str(nonlinear))
-                # INCLUDE CHECK that there is at least 1 COMPONENT - if none, raise error
-                print(self.p0)
-                self.check_and_set_linear_parameters_not_zero()
-                print(self._set_p0())
+                # INCLUDE CHECK that there is at least 1 COMPONENT - if none,
+                # raise error
+
+                # TODO: May need to add all components that are linearly twinned with
+                # a component in order to scale them correctly. Should try and see what would 
+                # happen if I had three gaussians ABC, where B is twinned and follows A, but B and C
+                # are in similar positions. Will C be overfit in the position where B would normally sit?
+                #  
+                self._check_and_set_linear_parameters_not_zero()
+                self._set_p0()
+                number_of_free_parameters = len(self.p0)
                 signal_axis = self.axis.axis[np.where(self.channel_switches)]
-                component_data = np.array([component.function(signal_axis)
-                                           for component in self if len(component.free_parameters) > 0 and component.active])
-                constant_term = self.get_constant_term()
-                y = self.signal()[np.where(self.channel_switches)] / self.signal.axes_manager[-1].scale - constant_term
+                
+                comp_data = np.zeros((number_of_free_parameters,) + signal_axis.shape)
+                comp_data_constant_values = np.zeros((number_of_free_parameters,) + signal_axis.shape)
+                fixed_comp_data = np.zeros(signal_axis.shape)
+                fixed_comp_data_constant_values = np.zeros(signal_axis.shape)
+
+                def maybe_convolve(thing):
+                    'Convolve component data if necessary'
+                    import numbers
+                    
+                    if component.convolved and self.convolved:
+                        if isinstance(thing, numbers.Number):
+                            convolved = np.convolve(
+                                thing * np.ones(self.convolution_axis.shape), self.low_loss(self.axes_manager), mode="valid")
+                            convolved = convolved[np.where(self.channel_switches)]
+                        else:
+                            convolved = np.convolve(thing(self.convolution_axis), self.low_loss(
+                                self.axes_manager), mode="valid")
+                            convolved = convolved[np.where(self.channel_switches)]
+                        data = convolved
+
+                    else:
+                        if isinstance(thing, numbers.Number):
+                            not_convolved = thing * np.ones(signal_axis.shape)
+                        else:
+                            not_convolved = thing(signal_axis)
+                        data = not_convolved
+                    return data
+
+                def append_component():
+                    'Separate free and constant data for fitting'
+                    if component.free_parameters:
+                        # linear component to fit, with constant part
+                        # Constant part of just linear components
+                        comp_data_constant_values[self.current_free_param] = maybe_convolve(component.constant_term)
+                        if not component._free_offset_parameter or component._free_offset_parameter and len(component.parameters) < 2 :
+                            comp_data[self.current_free_param] = maybe_convolve(component.function)
+                            self.current_free_param += 1
+                        else:
+                            comp_data[self.current_free_param] = maybe_convolve(component.function) - maybe_convolve(component._free_offset_parameter.value)
+                            comp_data[self.current_free_param+1] = maybe_convolve(component._free_offset_parameter.value)
+                            self.current_free_param += 2
+                    else:  # No free parameters, so component is a fixed.
+                        # Entire value of fixed components
+                        fixed_comp_data[:] += maybe_convolve(component.function)
+                        fixed_comp_data_constant_values[:] += maybe_convolve(component.constant_term)
+                    return
+
+                def is_twinned(component):
+                    twinned = False
+                    for para in component.parameters:
+                        if para.twin:
+                            twinned = True
+                            break
+                    return twinned
+
+                self.current_free_param = 0
+                for component in self:
+                    append_component()
+
+                comp_data = comp_data - comp_data_constant_values
+                model_constant_term = self._get_constant_term()
+
+                y = self.signal()[np.where(self.channel_switches)]
+
+                if self.signal.metadata.Signal.binned == True:
+                    y = y / self.signal.axes_manager[-1].scale
+
+                # Later we are subtracting the constant terms from all
+                # components, so must remove constant term from fixed
+                # components here:
+                fixed_values = fixed_comp_data - fixed_comp_data_constant_values
+
+                y = y - model_constant_term - fixed_values
                 if bounded:
                     self.set_boundaries()
                     bounds = self.free_parameters_boundaries
+                    self._set_p0()
                     current_values = self.p0
-                    bounds = ([bmin/value if bmin is not None else -np.inf
-                                for (bmin, bmax), value in zip(bounds, current_values)],
-                              [bmax/value if bmax is not None else np.inf
-                                for (bmin, bmax), value in zip(bounds, current_values)])
+                    # Must scale bounds by current value as bounds refer to
+                    # scaling factor
+                    new_bounds = ([bmin / value if bmin is not None else -np.inf
+                                   for (bmin, bmax), value in zip(bounds, current_values)],
+                                  [bmax / value if bmax is not None else np.inf
+                                   for (bmin, bmax), value in zip(bounds, current_values)])
 
-                    output = linear(component_data.T, y, bounds = bounds)
+                    output = linear(comp_data.T, y, bounds=new_bounds)
                 else:
-                    output = linear(component_data.T, y)
+                    output = linear(comp_data.T, y)
                 fit_coefficients = output["x"]
-                self.p0 = tuple([oldp0*fit_coefficient for oldp0, fit_coefficient in zip(self.p0, fit_coefficients)])
+                self.p0 = tuple([oldp0 * fit_coefficient for oldp0,
+                                 fit_coefficient in zip(self.p0, fit_coefficients)])
                 self.fit_output = output
-
-            elif fitter == "linear_lstsq":
-                print("Fitting using linear_lstsq fit")
-                nonlinear = self.get_nonlinear_components()
-                if nonlinear:
-                    raise AttributeError(not_linear_error + str(nonlinear))
-                self.check_and_set_linear_parameters_not_zero()
-
-                signal_axis = self.axis.axis[np.where(self.channel_switches)]
-                component_data = np.array([component.function(signal_axis)
-                                           for component in self if len(component.free_parameters) > 0 and component.active])
-                y = self.get_signal_for_linear_fitting()
-                params, residuals, rank, singular = linear_lstsq(component_data.T, y)
-                fit_coefficients = params
-                self.fit_output = [params, residuals, rank, singular]
-                self.p0 = tuple([oldp0*fit_coefficient for oldp0, fit_coefficient in zip(self.p0, fit_coefficients)])
-
-            elif fitter == "non_negative_linear":
-                nonlinear = self.get_nonlinear_components()
-                if nonlinear:
-                    raise AttributeError(not_linear_error + str(nonlinear))
-                self.check_and_set_linear_parameters_not_zero()
-
-                signal_axis = self.axis.axis[np.where(self.channel_switches)]
-                component_data = np.array([component.function(signal_axis)
-                                           for component in self if len(component.free_parameters) > 0 and component.active])
-                y = self.get_signal_for_linear_fitting()
-                output = nnls(component_data.T, y)
-                fit_coefficients = output[0]
-                self.p0 = tuple([oldp0*fit_coefficient for oldp0, fit_coefficient in zip(self.p0, fit_coefficients)])
-                self.fit_output = output
+                self.comp_data = comp_data
 
             else:
                 # General optimizers
