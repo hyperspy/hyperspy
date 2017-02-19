@@ -220,10 +220,9 @@ def dict2marker(marker_dict, marker_name):
 
 def markers_metadata_dict_to_markers(metadata_markers_dict, axes_manager):
     markers_dict = {}
-    for marker_name in metadata_markers_dict.keys():
+    for marker_name, m_dict in metadata_markers_dict.items():
         try:
-            marker = dict2marker(
-                    metadata_markers_dict[marker_name], marker_name)
+            marker = dict2marker(m_dict, marker_name)
             if marker is not False:
                 marker.axes_manager = axes_manager
                 markers_dict[marker_name] = marker
