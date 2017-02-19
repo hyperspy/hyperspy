@@ -4155,24 +4155,22 @@ class BaseSignal(FancySlicing,
             for marker_tuple in list(self.metadata.Markers):
                 if marker is marker_tuple[1]:
                     raise ValueError("Marker already added to signal")
-            name_list = list(self.metadata.Markers.as_dictionary().keys())
+            name_list = self.metadata.Markers.keys()
             name = marker.name
             temp_name = name
-            for i in range(1, 100000):
-                if temp_name in name_list:
-                    temp_name = name + str(i)
-                else:
-                    name = temp_name
-                    break
+            i = 1
+            while temp_name in name_list:
+                temp_name = name + str(i)
+                i += 1
             marker.name = temp_name
-            self.metadata.Markers[name] = marker
+            self.metadata.Markers[marker.name] = marker
             marker.signal = self
 
     def _plot_permanent_markers(self):
         marker_dict_list = list(self.metadata.Markers.__dict__.values())
         for marker_dict in marker_dict_list:
-            if marker_dict['_dtb_value_'] is not False:
-                marker = marker_dict['_dtb_value_']
+            marker = marker_dict['_dtb_value_']
+            if marker is not False:
                 if marker.plot_marker:
                     if marker._plot_on_signal:
                         self._plot.signal_plot.add_marker(marker)
