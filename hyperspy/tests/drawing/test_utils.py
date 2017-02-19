@@ -17,7 +17,6 @@
 
 import matplotlib
 from matplotlib.testing.decorators import cleanup
-import nose.tools as nt
 import warnings
 import sys
 import pytest
@@ -44,7 +43,7 @@ def test_create_figure():
         window_title = 'test title'
         fig = utils.create_figure(window_title=window_title,
                                   _on_figure_window_close=dummy_function)
-        nt.assert_true(isinstance(fig, matplotlib.figure.Figure))
+        assert isinstance(fig, matplotlib.figure.Figure) == True
         matplotlib.pyplot.close(fig)
         
     if original_backend == 'agg':  # switch back to the original backend

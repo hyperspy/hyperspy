@@ -19,14 +19,13 @@ import numpy as np
 import pytest
 from matplotlib.testing.decorators import cleanup
 
-from hyperspy.misc.test_utils import (get_matplotlib_version_label,
-                                      update_close_figure)
+from hyperspy.misc.test_utils import update_close_figure
 from hyperspy.signals import Signal2D, Signal1D
 from hyperspy.utils import markers
 
-mplv = get_matplotlib_version_label()
+
 default_tol = 2.0
-baseline_dir = 'plot_markers-%s' % mplv
+baseline_dir = 'plot_markers'
 
 
 @pytest.mark.skipif("sys.platform == 'darwin'")

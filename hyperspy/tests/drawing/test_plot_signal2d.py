@@ -22,14 +22,13 @@ import pytest
 import matplotlib.pyplot as plt
 
 import hyperspy.api as hs
-from hyperspy.misc.test_utils import get_matplotlib_version_label
 from hyperspy.drawing.utils import plot_RGB_map
-from hyperspy.tests.plot.test_plot_signal import _TestPlot
+from hyperspy.tests.drawing.test_plot_signal import _TestPlot
 
-mplv = get_matplotlib_version_label()
+
 scalebar_color = 'blue'
 default_tol = 2.0
-baseline_dir = 'plot_signal2d-%s' % mplv
+baseline_dir = 'plot_signal2d'
 
 
 def _generate_image_stack_signal():

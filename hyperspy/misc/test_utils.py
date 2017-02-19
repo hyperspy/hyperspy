@@ -5,12 +5,7 @@
 from contextlib import contextmanager
 import warnings
 import re
-import sys
-import inspect
-import matplotlib
-from distutils.version import LooseVersion
 import numpy as np
-import numpy.testing as nt
 from numpy.testing import assert_allclose
 
 from hyperspy.decorators import simple_decorator
@@ -166,16 +161,6 @@ def assert_warns(message=None, category=None):
         if len(remaining) > 0:
             msg = 'No warning raised matching:\n%s' % '\n'.join(remaining)
             raise ValueError(msg)
-
-
-def get_matplotlib_version_label():
-    """ Return a string describing the matplotlib version installed. The string
-    is used to label the references images for plot testing. """
-    version = LooseVersion(matplotlib.__version__)
-    if version >= LooseVersion('2.0.0'):
-        return 'mpl2'
-    else:
-        return 'mpl1'
 
 
 def reset_rcParams_default():

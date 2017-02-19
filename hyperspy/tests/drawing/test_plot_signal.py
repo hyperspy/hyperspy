@@ -20,14 +20,13 @@ import traits.api as t
 import pytest
 from matplotlib.testing.decorators import cleanup
 
-from hyperspy.misc.test_utils import (get_matplotlib_version_label,
-                                      update_close_figure)
+from hyperspy.misc.test_utils import update_close_figure
 import hyperspy.api as hs
 
-mplv = get_matplotlib_version_label()
+
 scalebar_color = 'blue'
 default_tol = 2.0
-baseline_dir = 'plot_signal-%s' % mplv
+baseline_dir = 'plot_signal'
 
 
 class _TestPlot:
