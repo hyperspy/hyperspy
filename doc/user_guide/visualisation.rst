@@ -906,7 +906,7 @@ These markers can also be permanently added to a signal, which is saved in metad
     >>> marker = hs.markers.point(5, 9)
     >>> s.add_marker(marker, permanent=True)
     >>> s.metadata.Markers
-    └── point = <hyperspy.drawing._markers.point.Point object at 0x7efd01ec7400>
+    └── point = <marker.Point, point (x=5,y=9,color=black,size=20)>
     >>> s.plot(plot_markers=True)
 
 
@@ -959,8 +959,9 @@ Permanent markers are stored in the HDF5 file if the signal is saved:
 
     >>> s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     >>> marker = hs.markers.point(2, 1, color='red')
+    >>> s.add_marker(marker, plot_signal=False, plot_marker=False, permanent=True) 
     >>> s.metadata.Markers
-    └── point = <hyperspy.drawing._markers.point.Point object at 0x7efd0109def0>
+    └── point = <marker.Point, point (x=2,y=1,color=red,size=20)>
     >>> s.save("storing_marker.hdf5")
     >>> s1 = hs.load("storing_marker.hdf5")
     >>> s1.metadata.Markers
