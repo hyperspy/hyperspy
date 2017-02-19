@@ -110,10 +110,25 @@ class TestMarkers:
         m1 = markers.point((5, 10), (5, 10))
         m2 = markers.point(((12, 2, 9), (1, 2, 3)), ((2, 5, 1), (3, 9, 2)))
         m3 = markers.vertical_line(((12, 2), (2, 5), (9, 2)))
+        m4 = markers.point(5, 5)
+        m4.data['x1'][()] = np.array(None, dtype=np.object)
+        m4.data['y1'][()] = np.array(None, dtype=np.object)
+        m5 = markers.vertical_line(9)
+        m6 = markers.rectangle(1, 5, 6, 8)
+        m7 = markers.rectangle((1, 2), (5, 6), (6, 7), (8, 9))
+        m8 = markers.point(
+                np.arange(256).reshape(2, 2, 2, 2, 2, 2, 2, 2),
+                np.arange(256).reshape(2, 2, 2, 2, 2, 2, 2, 2))
         assert m0._get_data_shape() == ()
         assert m1._get_data_shape() == (2,)
         assert m2._get_data_shape() == (2, 3)
         assert m3._get_data_shape() == (3, 2)
+        with pytest.raises(ValueError):
+            assert m4._get_data_shape() == ()
+        assert m5._get_data_shape() == ()
+        assert m6._get_data_shape() == ()
+        assert m7._get_data_shape() == (2,)
+        assert m8._get_data_shape() == (2, 2, 2, 2, 2, 2, 2, 2)
 
     def test_add_marker_signal1d_navigation_dim(self):
         s = Signal1D(np.zeros((3, 50, 50)))

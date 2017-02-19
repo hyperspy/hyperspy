@@ -100,17 +100,16 @@ class MarkerBase(object):
         return marker_dict
 
     def _get_data_shape(self):
-        if self.data['x1'].flatten()[0].flatten()[0] is not None:
-            data_shape = np.array(self.data['x1'].item()).shape
-        elif self.data['x2'].flatten()[0].flatten()[0] is not None:
-            data_shape = np.array(self.data['x2'].item()).shape
-        elif self.data['y1'].flatten()[0].flatten()[0] is not None:
-            data_shape = np.array(self.data['y1'].item()).shape
-        elif self.data['y2'].flatten()[0].flatten()[0] is not None:
-            data_shape = np.array(self.data['y2'].item()).shape
+        data_shape = None
+        for key in ('x1', 'x2', 'y1', 'y2'):
+            ar = self.data[key][()]
+            if next(ar.flat) is not None:
+                data_shape = ar.shape
+                break
+        if data_shape is None:
+            raise ValueError("None of the coordinates have value")
         else:
-            raise ValueError("None of the coordinates has values")
-        return data_shape
+            return data_shape
 
     def set_marker_properties(self, **kwargs):
         """
