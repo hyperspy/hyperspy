@@ -23,6 +23,7 @@ from hyperspy.misc.test_utils import (get_matplotlib_version_label,
                                       update_close_figure)
 from hyperspy.signals import Signal2D, Signal1D
 from hyperspy.utils import markers
+from hyperspy.drawing.marker import dict2marker
 
 mplv = get_matplotlib_version_label()
 default_tol = 2.0
@@ -151,7 +152,18 @@ class TestMarkers:
         s.add_marker(m2)
 
 
+def sanitize_dict(dictionary):
+    new_dictionary = {}
+    for key, value in dictionary.items():
+        if isinstance(value, dict):
+            new_dictionary[key] = sanitize_dict(value)
+        elif value is not None:
+            new_dictionary[key] = value
+    return new_dictionary
+
+
 class Test_permanent_markers:
+
 
     def test_add_permanent_marker(self):
         s = Signal1D(np.arange(10))
@@ -205,6 +217,7 @@ class Test_permanent_markers:
         m_hline = markers.horizontal_line(y=5)
         m_hline_segment = markers.horizontal_line_segment(x1=1, x2=9, y=5)
         m_rect = markers.rectangle(x1=1, x2=3, y1=5, y2=10)
+        m_text = markers.text(x=1, y=5, text="test")
         s.add_marker(m_point, permanent=True)
         s.add_marker(m_line, permanent=True)
         s.add_marker(m_vline, permanent=True)
@@ -212,7 +225,8 @@ class Test_permanent_markers:
         s.add_marker(m_hline, permanent=True)
         s.add_marker(m_hline_segment, permanent=True)
         s.add_marker(m_rect, permanent=True)
-        assert len(list(s.metadata.Markers)) == 7
+        s.add_marker(m_text, permanent=True)
+        assert len(list(s.metadata.Markers)) == 8
         with pytest.raises(ValueError):
             s.add_marker(m_rect, permanent=True)
 
@@ -234,6 +248,60 @@ class Test_permanent_markers:
         assert m.get_data_position('y1') == m1.get_data_position('y1')
         assert m.name == m1.name
         assert m.marker_properties['color'] == m1.marker_properties['color']
+
+    def test_dict2marker(self):
+        m_point0 = markers.point(x=5, y=5)
+        m_point1 = markers.point(x=(5, 10), y=(1, 5))
+        m_line = markers.line_segment(x1=5, x2=10, y1=5, y2=10)
+        m_vline = markers.vertical_line(x=5)
+        m_vline_segment = markers.vertical_line_segment(x=4, y1=3, y2=6)
+        m_hline = markers.horizontal_line(y=5)
+        m_hline_segment = markers.horizontal_line_segment(x1=1, x2=9, y=5)
+        m_rect = markers.rectangle(x1=1, x2=3, y1=5, y2=10)
+        m_text = markers.text(x=1, y=5, text="test")
+
+        m_point0_new = dict2marker(m_point0._to_dictionary(), m_point0.name)
+        m_point1_new = dict2marker(m_point1._to_dictionary(), m_point1.name)
+        m_line_new = dict2marker(m_line._to_dictionary(), m_line.name)
+        m_vline_new = dict2marker(m_vline._to_dictionary(), m_vline.name)
+        m_vline_segment_new = dict2marker(
+                m_vline_segment._to_dictionary(), m_vline_segment.name)
+        m_hline_new = dict2marker(m_hline._to_dictionary(), m_hline.name)
+        m_hline_segment_new = dict2marker(
+                m_hline_segment._to_dictionary(), m_hline_segment.name)
+        m_rect_new = dict2marker(m_rect._to_dictionary(), m_rect.name)
+        m_text_new = dict2marker(m_text._to_dictionary(), m_text.name)
+
+        m_point0_dict = sanitize_dict(m_point0._to_dictionary())
+        m_point1_dict = sanitize_dict(m_point1._to_dictionary())
+        m_line_dict = sanitize_dict(m_line._to_dictionary())
+        m_vline_dict = sanitize_dict(m_vline._to_dictionary())
+        m_vline_segment_dict = sanitize_dict(m_vline_segment._to_dictionary())
+        m_hline_dict = sanitize_dict(m_hline._to_dictionary())
+        m_hline_segment_dict = sanitize_dict(m_hline_segment._to_dictionary())
+        m_rect_dict = sanitize_dict(m_rect._to_dictionary())
+        m_text_dict = sanitize_dict(m_text._to_dictionary())
+
+        m_point0_new_dict = sanitize_dict(m_point0_new._to_dictionary())
+        m_point1_new_dict = sanitize_dict(m_point1_new._to_dictionary())
+        m_line_new_dict = sanitize_dict(m_line_new._to_dictionary())
+        m_vline_new_dict = sanitize_dict(m_vline_new._to_dictionary())
+        m_vline_segment_new_dict = sanitize_dict(
+                m_vline_segment_new._to_dictionary())
+        m_hline_new_dict = sanitize_dict(m_hline_new._to_dictionary())
+        m_hline_segment_new_dict = sanitize_dict(
+                m_hline_segment_new._to_dictionary())
+        m_rect_new_dict = sanitize_dict(m_rect_new._to_dictionary())
+        m_text_new_dict = sanitize_dict(m_text_new._to_dictionary())
+        assert m_point0_dict == m_point0_new_dict
+        assert m_point1_dict == m_point1_new_dict
+        assert m_line_dict == m_line_new_dict
+        assert m_vline_dict == m_vline_new_dict
+        assert m_vline_segment_dict == m_vline_segment_new_dict
+        assert m_hline_dict == m_hline_new_dict
+        assert m_hline_segment_dict == m_hline_segment_new_dict
+        assert m_rect_dict == m_rect_new_dict
+        assert m_text_dict == m_text_new_dict
 
 
 def _test_plot_rectange_markers():
