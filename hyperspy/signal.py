@@ -1970,8 +1970,7 @@ class BaseSignal(FancySlicing,
 
         if plot_markers:
             if self.metadata.has_item('Markers'):
-                with self._plot.signal_plot.events.suppress():
-                    self._plot_permanent_markers()
+                self._plot_permanent_markers()
 
     plot.__doc__ %= BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 
