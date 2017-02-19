@@ -20,7 +20,7 @@ import pytest
 from matplotlib.testing.decorators import cleanup
 
 from hyperspy.misc.test_utils import (get_matplotlib_version_label,
-                                      update_close_figure)
+                                      update_close_figure, sanitize_dict)
 from hyperspy.signals import Signal2D, Signal1D
 from hyperspy.utils import markers
 from hyperspy.drawing.marker import dict2marker
@@ -150,16 +150,6 @@ class TestMarkers:
         with pytest.raises(ValueError):
             s.add_marker(m1)
         s.add_marker(m2)
-
-
-def sanitize_dict(dictionary):
-    new_dictionary = {}
-    for key, value in dictionary.items():
-        if isinstance(value, dict):
-            new_dictionary[key] = sanitize_dict(value)
-        elif value is not None:
-            new_dictionary[key] = value
-    return new_dictionary
 
 
 class Test_permanent_markers:

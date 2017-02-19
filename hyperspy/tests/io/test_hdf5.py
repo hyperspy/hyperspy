@@ -36,6 +36,7 @@ from hyperspy.roi import Point2DROI
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 from hyperspy.utils import markers
 from hyperspy.drawing.marker import dict2marker
+from hyperspy.misc.test_utils import sanitize_dict
 
 my_path = os.path.dirname(__file__)
 
@@ -366,16 +367,6 @@ class TestAxesConfiguration:
 
     def teardown_method(self, method):
         remove(self.filename)
-
-
-def sanitize_dict(dictionary):
-    new_dictionary = {}
-    for key, value in dictionary.items():
-        if isinstance(value, dict):
-            new_dictionary[key] = sanitize_dict(value)
-        elif value is not None:
-            new_dictionary[key] = value
-    return new_dictionary
 
 
 class Test_permanent_markers_io:
