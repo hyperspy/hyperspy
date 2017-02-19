@@ -35,7 +35,7 @@ import warnings
 import os
 import subprocess
 import fileinput
-
+import itertools
 import re
 
 # stuff to check presence of compiler:
@@ -63,6 +63,13 @@ install_req = ['scipy',
                'ipyparallel',
                'dask[array]',
                'scikit-image']
+
+extras_require = {
+    "learning": ['scikit-learn'],
+    "bcf": ['lxml'],
+    "gui-jupyter": ["ipywidgets"],
+}
+extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
 # the hack to deal with setuptools + installing the package in ReadTheDoc:
 if 'readthedocs.org' in sys.executable:
@@ -333,6 +340,7 @@ with update_version_when_dev() as version:
                   ],
         install_requires=install_req,
         test_require=["pytest>=3.0.2"],
+        extras_require=extras_require,
         package_data={
             'hyperspy':
             [
