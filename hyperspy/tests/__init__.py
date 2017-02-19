@@ -21,8 +21,6 @@ from traits.etsconfig.api import ETSConfig
 import os
 import warnings
 ETSConfig.toolkit = "null"
-import matplotlib
-matplotlib.use("Agg")
 from hyperspy.defaults_parser import preferences
 preferences.General.show_progressbar = False
 
@@ -51,3 +49,6 @@ else:
     # We allow extrernal warnings:
     warnings.filterwarnings('default',
                             module="(?!hyperspy)")
+
+from hyperspy.misc.test_utils import reset_rcParams_default
+reset_rcParams_default()

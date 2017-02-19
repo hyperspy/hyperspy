@@ -1,11 +1,8 @@
-from distutils.version import LooseVersion
 from unittest import mock
 
 import numpy as np
-import scipy
-
 import pytest
-from numpy.testing import assert_allclose
+from matplotlib.testing.decorators import cleanup
 
 import hyperspy.api as hs
 from hyperspy.misc.utils import slugify
@@ -1109,6 +1106,7 @@ class TestAdjustPosition:
         self.s = hs.signals.Signal1D(np.random.rand(10, 10, 20))
         self.m = self.s.create_model()
 
+    @cleanup
     def test_enable_adjust_position(self):
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()
@@ -1116,23 +1114,27 @@ class TestAdjustPosition:
         # Check that both line and label was added
         assert len(list(self.m._position_widgets.values())[0]) == 2
 
+    @cleanup
     def test_disable_adjust_position(self):
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()
         self.m.disable_adjust_position()
         assert len(self.m._position_widgets) == 0
 
+    @cleanup
     def test_enable_all(self):
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()
         self.m.append(hs.model.components1D.Gaussian())
         assert len(self.m._position_widgets) == 2
 
+    @cleanup
     def test_enable_all_zero_start(self):
         self.m.enable_adjust_position()
         self.m.append(hs.model.components1D.Gaussian())
         assert len(self.m._position_widgets) == 1
 
+    @cleanup
     def test_manual_close(self):
         self.m.append(hs.model.components1D.Gaussian())
         self.m.append(hs.model.components1D.Gaussian())

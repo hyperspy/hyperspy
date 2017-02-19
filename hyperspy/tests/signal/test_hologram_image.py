@@ -83,6 +83,7 @@ x_stop = img_size3x - 1 - int(img_size3x / 9)
 y_start = int(img_size3y / 9)
 y_stop = img_size3y - 1 - int(img_size3y / 9)
 
+
 @pytest.mark.parametrize('parallel,lazy', [(True, False), (False, False),
                                            (None, True)])
 def test_reconstruct_phase_single(parallel, lazy):
@@ -242,6 +243,7 @@ def test_reconstruct_phase_multi(parallel, lazy):
     phase3a_new_crop.crop(2, y_start, y_stop)
     phase3a_new_crop.crop(3, x_start, x_stop)
     assert_allclose(phase3a_new_crop.data, phase3_ref_crop, atol=2E-2)
+
 
 def test_reconstruct_phase_raises():
     holo_image3 = hs.signals.HologramImage(holo3)

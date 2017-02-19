@@ -102,6 +102,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         t = s.estimate_elastic_scattering_intensity(threshold=2.5)
         np.testing.assert_array_almost_equal(t.data, 249999.985133)
 
+
 @lazifyTestClass
 class TestEstimateZLPCentre:
 
