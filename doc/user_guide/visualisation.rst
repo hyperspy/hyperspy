@@ -959,7 +959,7 @@ Permanent markers are stored in the HDF5 file if the signal is saved:
 
     >>> s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     >>> marker = hs.markers.point(2, 1, color='red')
-    >>> s.add_marker(marker, plot_signal=False, plot_marker=False, permanent=True) 
+    >>> s.add_marker(marker, plot_marker=False, permanent=True) 
     >>> s.metadata.Markers
     └── point = <marker.Point, point (x=2,y=1,color=red,size=20)>
     >>> s.save("storing_marker.hdf5")
