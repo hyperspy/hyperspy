@@ -633,6 +633,17 @@ class Test_permanent_markers_io:
             "test_marker_bad_marker_type.hdf5"))
         assert len(s.metadata.Markers) == 4
 
+    def test_load_missing_y2_value(self):
+        # test_marker_point_y2_data_deleted.hdf5 has 5 markers,
+        # where one of them is missing the y2 value, however the
+        # the point marker only needs the x1 and y1 value to work
+        # so this should load
+        s = load(os.path.join(
+            my_path,
+            "hdf5_files",
+            "test_marker_point_y2_data_deleted.hdf5"))
+        assert len(s.metadata.Markers) == 5
+
 
 def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
