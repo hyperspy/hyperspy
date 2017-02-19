@@ -54,10 +54,11 @@ class VerticalLineSegment(MarkerBase):
 
     def __init__(self, x, y1, y2, **kwargs):
         MarkerBase.__init__(self)
-        lp = {'color': 'black', 'linewidth': 1}
+        lp = {'color': 'black', 'linewidth': 1, 'linestyle': 'solid'}
         self.marker_properties = lp
         self.set_data(x1=x, y1=y1, y2=y2)
         self.set_marker_properties(**kwargs)
+        self._matplotlib_collection_type = 'line'
 
     def update(self):
         if self.auto_update is False:
@@ -91,3 +92,11 @@ class VerticalLineSegment(MarkerBase):
         else:
             segments[0][1, 1] = self.get_data_position('y2')
         self.marker.set_segments(segments)
+
+    def _get_segment(self):
+        """Getting data for use with matplotlib Collections"""
+        x1 = self.get_data_position('x1')
+        x2 = self.get_data_position('x1')
+        y1 = self.get_data_position('y1')
+        y2 = self.get_data_position('y2')
+        return(((x1, y1), (x2, y2)))
