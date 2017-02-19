@@ -35,6 +35,7 @@ from hyperspy._signals.signal2d import Signal2D
 from hyperspy.roi import Point2DROI
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 from hyperspy.utils import markers
+from hyperspy.drawing.marker import dict2marker
 
 my_path = os.path.dirname(__file__)
 
@@ -367,6 +368,16 @@ class TestAxesConfiguration:
         remove(self.filename)
 
 
+def sanitize_dict(dictionary):
+    new_dictionary = {}
+    for key, value in dictionary.items():
+        if isinstance(value, dict):
+            new_dictionary[key] = sanitize_dict(value)
+        elif value is not None:
+            new_dictionary[key] = value
+    return new_dictionary
+
+
 class Test_permanent_markers_io:
 
     def test_save_permanent_marker(self):
@@ -421,6 +432,7 @@ class Test_permanent_markers_io:
         m5 = markers.text(x=x1, y=y1, text="test")
         m6 = markers.vertical_line(x=x1)
         m7 = markers.vertical_line_segment(x=x1, y1=y1, y2=y2)
+
         s.add_marker(m0, permanent=True)
         s.add_marker(m1, permanent=True)
         s.add_marker(m2, permanent=True)
@@ -429,11 +441,31 @@ class Test_permanent_markers_io:
         s.add_marker(m5, permanent=True)
         s.add_marker(m6, permanent=True)
         s.add_marker(m7, permanent=True)
+
         with tempfile.TemporaryDirectory() as tmp:
             filename = tmp + '/testallmarkersfile.hdf5'
         s.save(filename)
         s1 = load(filename)
+        m_dict = s1.metadata.Markers
+
+        m0_new_dict = sanitize_dict(m_dict.get_item(m0.name)._to_dictionary())
+        m1_new_dict = sanitize_dict(m_dict.get_item(m1.name)._to_dictionary())
+        m2_new_dict = sanitize_dict(m_dict.get_item(m2.name)._to_dictionary())
+        m3_new_dict = sanitize_dict(m_dict.get_item(m3.name)._to_dictionary())
+        m4_new_dict = sanitize_dict(m_dict.get_item(m4.name)._to_dictionary())
+        m5_new_dict = sanitize_dict(m_dict.get_item(m5.name)._to_dictionary())
+        m6_new_dict = sanitize_dict(m_dict.get_item(m6.name)._to_dictionary())
+        m7_new_dict = sanitize_dict(m_dict.get_item(m7.name)._to_dictionary())
+
         assert len(list(s1.metadata.Markers)) == 8
+        assert sanitize_dict(m0._to_dictionary()) == m0_new_dict
+        assert sanitize_dict(m1._to_dictionary()) == m1_new_dict
+        assert sanitize_dict(m2._to_dictionary()) == m2_new_dict
+        assert sanitize_dict(m3._to_dictionary()) == m3_new_dict
+        assert sanitize_dict(m4._to_dictionary()) == m4_new_dict
+        assert sanitize_dict(m5._to_dictionary()) == m5_new_dict
+        assert sanitize_dict(m6._to_dictionary()) == m6_new_dict
+        assert sanitize_dict(m7._to_dictionary()) == m7_new_dict
 
     def test_save_load_horizontal_line_marker(self):
         y = 8
