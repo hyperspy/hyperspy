@@ -36,7 +36,7 @@ from hyperspy.roi import Point2DROI
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 from hyperspy.utils import markers
 from hyperspy.drawing.marker import dict2marker
-from hyperspy.misc.test_utils import sanitize_dict
+from hyperspy.misc.test_utils import sanitize_dict as san_dict
 
 my_path = os.path.dirname(__file__)
 
@@ -415,48 +415,32 @@ class Test_permanent_markers_io:
     def test_save_load_permanent_marker_all_types(self):
         x1, y1, x2, y2 = 5, 2, 1, 8
         s = Signal2D(np.arange(100).reshape(10, 10))
-        m0 = markers.point(x=x1, y=y1)
-        m1 = markers.horizontal_line(y=y1)
-        m2 = markers.horizontal_line_segment(x1=x1, x2=x2, y=y1)
-        m3 = markers.line_segment(x1=x1, x2=x2, y1=y1, y2=y2)
-        m4 = markers.rectangle(x1=x1, x2=x2, y1=y1, y2=y2)
-        m5 = markers.text(x=x1, y=y1, text="test")
-        m6 = markers.vertical_line(x=x1)
-        m7 = markers.vertical_line_segment(x=x1, y1=y1, y2=y2)
-
-        s.add_marker(m0, permanent=True)
-        s.add_marker(m1, permanent=True)
-        s.add_marker(m2, permanent=True)
-        s.add_marker(m3, permanent=True)
-        s.add_marker(m4, permanent=True)
-        s.add_marker(m5, permanent=True)
-        s.add_marker(m6, permanent=True)
-        s.add_marker(m7, permanent=True)
-
+        m0_list = [
+            markers.point(x=x1, y=y1),
+            markers.horizontal_line(y=y1),
+            markers.horizontal_line_segment(x1=x1, x2=x2, y=y1),
+            markers.line_segment(x1=x1, x2=x2, y1=y1, y2=y2),
+            markers.rectangle(x1=x1, x2=x2, y1=y1, y2=y2),
+            markers.text(x=x1, y=y1, text="test"),
+            markers.vertical_line(x=x1),
+            markers.vertical_line_segment(x=x1, y1=y1, y2=y2),
+            ]
+        for m in m0_list:
+            s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:
             filename = tmp + '/testallmarkersfile.hdf5'
         s.save(filename)
         s1 = load(filename)
-        m_dict = s1.metadata.Markers
-
-        m0_new_dict = sanitize_dict(m_dict.get_item(m0.name)._to_dictionary())
-        m1_new_dict = sanitize_dict(m_dict.get_item(m1.name)._to_dictionary())
-        m2_new_dict = sanitize_dict(m_dict.get_item(m2.name)._to_dictionary())
-        m3_new_dict = sanitize_dict(m_dict.get_item(m3.name)._to_dictionary())
-        m4_new_dict = sanitize_dict(m_dict.get_item(m4.name)._to_dictionary())
-        m5_new_dict = sanitize_dict(m_dict.get_item(m5.name)._to_dictionary())
-        m6_new_dict = sanitize_dict(m_dict.get_item(m6.name)._to_dictionary())
-        m7_new_dict = sanitize_dict(m_dict.get_item(m7.name)._to_dictionary())
-
+        markers_dict = s1.metadata.Markers
+        m0_dict_list = []
+        m1_dict_list = []
+        for m in m0_list:
+            m0_dict_list.append(san_dict(m._to_dictionary()))
+            m1_dict_list.append(
+                    san_dict(markers_dict.get_item(m.name)._to_dictionary()))
         assert len(list(s1.metadata.Markers)) == 8
-        assert sanitize_dict(m0._to_dictionary()) == m0_new_dict
-        assert sanitize_dict(m1._to_dictionary()) == m1_new_dict
-        assert sanitize_dict(m2._to_dictionary()) == m2_new_dict
-        assert sanitize_dict(m3._to_dictionary()) == m3_new_dict
-        assert sanitize_dict(m4._to_dictionary()) == m4_new_dict
-        assert sanitize_dict(m5._to_dictionary()) == m5_new_dict
-        assert sanitize_dict(m6._to_dictionary()) == m6_new_dict
-        assert sanitize_dict(m7._to_dictionary()) == m7_new_dict
+        for m0_dict, m1_dict in zip(m0_dict_list, m1_dict_list):
+            assert m0_dict == m1_dict
 
     def test_save_load_horizontal_line_marker(self):
         y = 8
@@ -471,11 +455,8 @@ class Test_permanent_markers_io:
             filename = tmp + '/test_save_horizontal_line_marker.hdf5'
         s.save(filename)
         s1 = load(filename)
-        marker1 = s1.metadata.Markers.get_item(name)
-        assert marker1.name == name
-        assert marker1.get_data_position('y1') == y
-        assert marker1.marker_properties['color'] == color
-        assert marker1.marker_properties['linewidth'] == linewidth
+        m1 = s1.metadata.Markers.get_item(name)
+        assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
     def test_save_load_horizontal_line_segment_marker(self):
         x1, x2, y = 1, 5, 8
@@ -491,13 +472,8 @@ class Test_permanent_markers_io:
             filename = tmp + '/test_save_horizontal_line_segment_marker.hdf5'
         s.save(filename)
         s1 = load(filename)
-        marker1 = s1.metadata.Markers.get_item(name)
-        assert marker1.name == name
-        assert marker1.get_data_position('x1') == x1
-        assert marker1.get_data_position('x2') == x2
-        assert marker1.get_data_position('y1') == y
-        assert marker1.marker_properties['color'] == color
-        assert marker1.marker_properties['linewidth'] == linewidth
+        m1 = s1.metadata.Markers.get_item(name)
+        assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
     def test_save_load_vertical_line_marker(self):
         x = 9
@@ -512,11 +488,8 @@ class Test_permanent_markers_io:
             filename = tmp + '/test_save_vertical_line_marker.hdf5'
         s.save(filename)
         s1 = load(filename)
-        marker1 = s1.metadata.Markers.get_item(name)
-        assert marker1.name == name
-        assert marker1.get_data_position('x1') == x
-        assert marker1.marker_properties['color'] == color
-        assert marker1.marker_properties['linewidth'] == linewidth
+        m1 = s1.metadata.Markers.get_item(name)
+        assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
     def test_save_load_vertical_line_segment_marker(self):
         x, y1, y2 = 2, 1, 3
@@ -532,13 +505,8 @@ class Test_permanent_markers_io:
             filename = tmp + '/test_save_vertical_line_segment_marker.hdf5'
         s.save(filename)
         s1 = load(filename)
-        marker1 = s1.metadata.Markers.get_item(name)
-        assert marker1.name == name
-        assert marker1.get_data_position('x1') == x
-        assert marker1.get_data_position('y1') == y1
-        assert marker1.get_data_position('y2') == y2
-        assert marker1.marker_properties['color'] == color
-        assert marker1.marker_properties['linewidth'] == linewidth
+        m1 = s1.metadata.Markers.get_item(name)
+        assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
     def test_save_load_line_segment_marker(self):
         x1, x2, y1, y2 = 1, 9, 4, 7
@@ -554,14 +522,8 @@ class Test_permanent_markers_io:
             filename = tmp + '/test_save_line_segment_marker.hdf5'
         s.save(filename)
         s1 = load(filename)
-        marker1 = s1.metadata.Markers.get_item(name)
-        assert marker1.name == name
-        assert marker1.get_data_position('x1') == x1
-        assert marker1.get_data_position('x2') == x2
-        assert marker1.get_data_position('y1') == y1
-        assert marker1.get_data_position('y2') == y2
-        assert marker1.marker_properties['color'] == color
-        assert marker1.marker_properties['linewidth'] == linewidth
+        m1 = s1.metadata.Markers.get_item(name)
+        assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
     def test_save_load_point_marker(self):
         x, y = 9, 8
@@ -576,16 +538,13 @@ class Test_permanent_markers_io:
             filename = tmp + '/test_save_point_marker.hdf5'
         s.save(filename)
         s1 = load(filename)
-        marker1 = s1.metadata.Markers.get_item(name)
-        assert marker1.name == name
-        assert marker1.get_data_position('x1') == x
-        assert marker1.get_data_position('y1') == y
-        assert marker1.marker_properties['color'] == color
+        m1 = s1.metadata.Markers.get_item(name)
+        assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
     def test_save_load_rectangle_marker(self):
         x1, x2, y1, y2 = 2, 4, 1, 3
         color = 'yellow'
-        linewidth = 0.7
+        linewidth = 5
         name = "rectangle_test"
         s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.rectangle(
@@ -596,14 +555,8 @@ class Test_permanent_markers_io:
             filename = tmp + '/test_save_rectangle_marker.hdf5'
         s.save(filename)
         s1 = load(filename)
-        marker1 = s1.metadata.Markers.get_item(name)
-        assert marker1.name == name
-        assert marker1.get_data_position('x1') == x1
-        assert marker1.get_data_position('x2') == x2
-        assert marker1.get_data_position('y1') == y1
-        assert marker1.get_data_position('y2') == y2
-        assert marker1.marker_properties['color'] == color
-        assert marker1.marker_properties['linewidth'] == linewidth
+        m1 = s1.metadata.Markers.get_item(name)
+        assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
     def test_save_load_text_marker(self):
         x, y = 3, 9.5
@@ -619,12 +572,8 @@ class Test_permanent_markers_io:
             filename = tmp + '/test_save_text_marker.hdf5'
         s.save(filename)
         s1 = load(filename)
-        marker1 = s1.metadata.Markers.get_item(name)
-        assert marker1.name == name
-        assert marker1.get_data_position('x1') == x
-        assert marker1.get_data_position('y1') == y
-        assert marker1.get_data_position('text') == text
-        assert marker1.marker_properties['color'] == color
+        m1 = s1.metadata.Markers.get_item(name)
+        assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
     def test_save_load_multidim_navigation_marker(self):
         x, y = (1, 2, 3), (5, 6, 7)
@@ -637,15 +586,16 @@ class Test_permanent_markers_io:
             filename = tmp + '/test_save_multidim_nav_marker.hdf5'
         s.save(filename)
         s1 = load(filename)
-        marker1 = s1.metadata.Markers.get_item(name)
-        assert marker1.get_data_position('x1') == x[0]
-        assert marker1.get_data_position('y1') == y[0]
+        m1 = s1.metadata.Markers.get_item(name)
+        assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
+        assert m1.get_data_position('x1') == x[0]
+        assert m1.get_data_position('y1') == y[0]
         s1.axes_manager.navigation_axes[0].index = 1
-        assert marker1.get_data_position('x1') == x[1]
-        assert marker1.get_data_position('y1') == y[1]
+        assert m1.get_data_position('x1') == x[1]
+        assert m1.get_data_position('y1') == y[1]
         s1.axes_manager.navigation_axes[0].index = 2
-        assert marker1.get_data_position('x1') == x[2]
-        assert marker1.get_data_position('y1') == y[2]
+        assert m1.get_data_position('x1') == x[2]
+        assert m1.get_data_position('y1') == y[2]
 
     def test_load_unknown_marker_type(self):
         # test_marker_bad_marker_type.hdf5 has 5 markers,
