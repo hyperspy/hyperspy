@@ -90,19 +90,13 @@ class MarkerBase(object):
                 pass
 
     def _to_dictionary(self):
-        marker_dict = {}
-        marker_dict['marker_properties'] = self.marker_properties
-        marker_dict['marker_type'] = self.__class__.__name__
-        marker_dict['plot_on_signal'] = self._plot_on_signal
-
-        data_dict = {}
-        data_dict['x1'] = self.data['x1'].item().tolist()
-        data_dict['x2'] = self.data['x2'].item().tolist()
-        data_dict['y1'] = self.data['y1'].item().tolist()
-        data_dict['y2'] = self.data['y2'].item().tolist()
-        data_dict['text'] = self.data['text'].item().tolist()
-        data_dict['size'] = self.data['size'].item().tolist()
-        marker_dict['data'] = data_dict
+        marker_dict = {
+            'marker_properties': self.marker_properties,
+            'marker_type': self.__class__.__name__,
+            'plot_on_signal': self._plot_on_signal,
+            'data': { k: self.data[k][()].tolist() for k in (
+                'x1', 'x2', 'y1', 'y2', 'text', 'size')}
+            }
         return marker_dict
 
     def _get_data_shape(self):
