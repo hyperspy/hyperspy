@@ -4147,6 +4147,9 @@ class BaseSignal(FancySlicing,
             marker.name = temp_name
             self.metadata.Markers[marker.name] = marker
             marker.signal = self
+        if not plot_marker and not permanent:
+            _logger.warning(
+                    "plot_marker=False and permanent=False does nothing")
 
     def _plot_permanent_markers(self):
         marker_dict_list = list(self.metadata.Markers.__dict__.values())
