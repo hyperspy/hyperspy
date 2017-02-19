@@ -22,6 +22,8 @@ from hyperspy.events import Event, Events
 import hyperspy.drawing._markers as markers
 import logging
 
+_logger = logging.getLogger(__name__)
+
 
 class MarkerBase(object):
 
@@ -214,3 +216,19 @@ def dict2marker(marker_dict, marker_name):
     marker._plot_on_signal = marker_dict['plot_on_signal']
     marker.name = marker_name
     return(marker)
+
+
+def markers_metadata_dict_to_markers(metadata_markers_dict, axes_manager):
+    markers_dict = {}
+    for marker_name in metadata_markers_dict.keys():
+        try:
+            marker = dict2marker(
+                    metadata_markers_dict[marker_name], marker_name)
+            if marker is not False:
+                marker.axes_manager = axes_manager
+                markers_dict[marker_name] = marker
+        except Exception as expt:
+            _logger.warning(
+                "Marker {} could not be loaded, skipping it. "
+                "Error: {}".format(marker_name, expt))
+    return(markers_dict)

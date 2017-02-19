@@ -46,7 +46,7 @@ from hyperspy.misc import rgb_tools
 from hyperspy.misc.utils import underline
 from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
-from hyperspy.drawing.marker import dict2marker
+from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
@@ -3519,13 +3519,9 @@ class BaseSignal(FancySlicing,
 
         if dc.metadata.has_item('Markers'):
             temp_marker_dict = dc.metadata.Markers.as_dictionary()
-            markers_dict = {}
-            for marker_name in temp_marker_dict.keys():
-                marker = dict2marker(
-                        temp_marker_dict[marker_name], marker_name)
-                if marker is not False:
-                    marker.axes_manager = dc.axes_manager
-                    markers_dict[marker_name] = marker
+            markers_dict = markers_metadata_dict_to_markers(
+                    temp_marker_dict,
+                    dc.axes_manager)
             dc.metadata.Markers = markers_dict
         return dc
 
