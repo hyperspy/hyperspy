@@ -152,10 +152,11 @@ To run the tests, you can call the ``pytest`` script in a console:
     
 You need make sure, that you are running pytest for python 3 and for the correct python distribution. Depending on your system, the name of the script can be different.
 
-Useful hints on HyperSpy testing:
+Useful hints on testing:
 	- When comparing integers, it's fine to use ``==``. When comparing floats, be sure to use ``numpy.testing.assert_almost_equal()`` or ``numpy.testing.assert_allclose()``.
 	- ``numpy.testing.assert_equal()`` is convenient to compare numpy arrays.
 	- The ``hyperspy.misc.test_utils.py`` contains a few useful functions for testing.
+	- ``@pytest.mark.parametrize()`` is a very convenient decorator to test several parameters of the same function without having to write to much repetitive code, which is often error-prone. See `pytest documentation for more details <http://doc.pytest.org/en/latest/parametrize.html>`_.
 	- Once, you have pushed your PR to the official HyperSpy repository, it can be useful to check the coverage of your tests using the coveralls.io check of your PR. There should be a link to it at the bottom of your PR on the github PR page. This service can help you to find how well your code is being tested and exactly which part is not currently tested.
 
 Plot testing
