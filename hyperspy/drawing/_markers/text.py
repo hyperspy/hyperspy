@@ -77,17 +77,7 @@ class Text(MarkerBase):
                                   self.get_data_position('y1')])
         self.marker.set_text(self.get_data_position('text'))
 
-    def plot(self):
-        if self.ax is None:
-            raise AttributeError(
-                "To use this method the marker needs to be first add to a " +
-                "figure using `s._plot.signal_plot.add_marker(m)` or " +
-                "`s._plot.navigator_plot.add_marker(m)`")
+    def _plot_marker(self):
         self.marker = self.ax.text(
             self.get_data_position('x1'), self.get_data_position('y1'),
             self.get_data_position('text'), **self.marker_properties)
-        self.marker.set_animated(True)
-        try:
-            self.ax.hspy_fig._draw_animated()
-        except:
-            pass

@@ -4163,9 +4163,9 @@ class BaseSignal(FancySlicing,
                 else:
                     self._plot.navigator_plot.add_marker(marker)
                 if index == len(marker_dict_list)-1:
-                    marker.plot(fig_draw_animated=True)
+                    marker.plot(update_plot=True)
                 else:
-                    marker.plot(fig_draw_animated=False)
+                    marker.plot(update_plot=False)
 
     def add_poissonian_noise(self, **kwargs):
         """Add Poissonian noise to the data"""

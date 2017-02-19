@@ -87,12 +87,7 @@ class Rectangle(MarkerBase):
         self.marker.set_width(width)
         self.marker.set_height(height)
 
-    def plot(self):
-        if self.ax is None:
-            raise AttributeError(
-                "To use this method the marker needs to be first add to a " +
-                "figure using `s._plot.signal_plot.add_marker(m)` or " +
-                "`s._plot.navigator_plot.add_marker(m)`")
+    def _plot_marker(self):
         width = abs(self.get_data_position('x1') -
                     self.get_data_position('x2'))
         height = abs(self.get_data_position('y1') -
@@ -100,8 +95,3 @@ class Rectangle(MarkerBase):
         self.marker = self.ax.add_patch(plt.Rectangle(
             (self.get_data_position('x1'), self.get_data_position('y1')),
             width, height, **self.marker_properties))
-        self.marker.set_animated(True)
-        try:
-            self.ax.hspy_fig._draw_animated()
-        except:
-            pass

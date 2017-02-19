@@ -76,19 +76,9 @@ class VerticalLineSegment(MarkerBase):
             return
         self._update_segment()
 
-    def plot(self):
-        if self.ax is None:
-            raise AttributeError(
-                "To use this method the marker needs to be first add to a " +
-                "figure using `s._plot.signal_plot.add_marker(m)` or " +
-                "`s._plot.navigator_plot.add_marker(m)`")
+    def _plot_marker(self):
         self.marker = self.ax.vlines(0, 0, 1, **self.marker_properties)
         self._update_segment()
-        self.marker.set_animated(True)
-        try:
-            self.ax.hspy_fig._draw_animated()
-        except:
-            pass
 
     def _update_segment(self):
         segments = self.marker.get_segments()

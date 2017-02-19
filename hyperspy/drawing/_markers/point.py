@@ -87,19 +87,8 @@ class Point(MarkerBase):
                                  self.get_data_position('y1')])
         self.marker._sizes = [self.get_data_position('size')]
 
-    def plot(self, fig_draw_animated=True):
-        if self.ax is None:
-            raise AttributeError(
-                "To use this method the marker needs to be first add to a " +
-                "figure using `s._plot.signal_plot.add_marker(m)` or " +
-                "`s._plot.navigator_plot.add_marker(m)`")
+    def _plot_marker(self):
         self.marker = self.ax.scatter(self.get_data_position('x1'),
                                       self.get_data_position('y1'),
                                       **self.marker_properties)
         self.marker._sizes = [self.get_data_position('size')]
-        self.marker.set_animated(True)
-        if fig_draw_animated:
-            try:
-                self.ax.hspy_fig._draw_animated()
-            except:
-                pass

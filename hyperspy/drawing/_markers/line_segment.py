@@ -78,23 +78,13 @@ class LineSegment(MarkerBase):
             return
         self._update_segment()
 
-    def plot(self):
-        if self.ax is None:
-            raise AttributeError(
-                "To use this method the marker needs to be first add to a " +
-                "figure using `s._plot.signal_plot.add_marker(m)` or " +
-                "`s._plot.navigator_plot.add_marker(m)`")
+    def _plot_marker(self):
         x1 = self.get_data_position('x1')
         x2 = self.get_data_position('x2')
         y1 = self.get_data_position('y1')
         y2 = self.get_data_position('y2')
         self.marker = self.ax.plot((x1, x2), (y1, y2),
                                    **self.marker_properties)[0]
-        self.marker.set_animated(True)
-        try:
-            self.ax.hspy_fig._draw_animated()
-        except:
-            pass
 
     def _update_segment(self):
         x1 = self.get_data_position('x1')

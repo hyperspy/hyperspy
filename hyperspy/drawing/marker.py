@@ -172,7 +172,44 @@ class MarkerBase(object):
         else:
             return data[ind].item()[()]
 
+    def plot(self, update_plot=True):
+        """
+        Plot a marker which has been added to a signal.
+
+        Parameters
+        ----------
+        update_plot : bool, optional, default True
+            If True, will update the plot after adding the marker.
+            If False, the marker will be added to the plot, but will not
+            be visualized until the plot is updated. This is useful when
+            plotting many markers, since updating the plot after adding
+            each marker will slow things down.
+        """
+        if self.ax is None:
+            raise AttributeError(
+                "To use this method the marker needs to be first add to a " +
+                "figure using `s._plot.signal_plot.add_marker(m)` or " +
+                "`s._plot.navigator_plot.add_marker(m)`")
+        self._plot_marker()
+        self.marker.set_animated(True)
+        if update_plot:
+            try:
+                self.ax.hspy_fig._draw_animated()
+            except:
+                pass
+
     def close(self, update_plot=True):
+        """Remove and disconnect the marker.
+
+        Parameters
+        ----------
+        update_plot : bool, optional, default True
+            If True, the figure is updated after removing the marker.
+            If False, the figure is not updated after removing the marker.
+            This is useful when many markers are added to a figure,
+            since updating the plot after removing each marker will slow
+            things down.
+        """
         if self._closing:
             return
         self._closing = True
