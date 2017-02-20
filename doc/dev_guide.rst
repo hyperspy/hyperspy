@@ -153,6 +153,7 @@ Useful hints on HyperSpy testing:
 	- When comparing integers, it's fine to use ``==``. When comparing floats, be sure to use ``nose.tools.assert_almost_equal()``.
 	- ``numpy.testing.assert_equal()`` is convenient to compare numpy arrays.
 	- The ``hyperspy.misc.test_utils.py`` contains a few useful functions for testing.
+	- The use of the ``@lazifyTestClass`` decorator consists in automatically creating new test_lazy_* methods from all existing test_* methods, see the `first post of github issue #1219 <https://github.com/hyperspy/hyperspy/pull/1219>`_ for more details.
 	- Once, you have pushed your PR to the official HyperSpy repository, it can be useful to check the coverage of your tests using the coveralls.io check of your PR. There should be a link to it at the bottom of your PR on the github PR page. This service can help you to find how well your code is being tested and exactly which part is not currently tested.
 
 Plot testing
@@ -236,7 +237,7 @@ methods that operate on the data becomes slightly more complicated. However, we
 have attempted to streamline it as much as possible. ``LazySignals`` use
 ``dask.array.Array`` for the ``data`` field instead of the usual
 ``numpy.ndarray``. The full documentation is available
-`here<https://dask.readthedocs.io/en/latest/array.html>`_. While interfaces of
+`here <https://dask.readthedocs.io/en/latest/array.html>`_. While interfaces of
 the two arrays are indeed almost identical, the most important differences are
 (``da`` being ``dask.array.Array`` in the examples):
 
@@ -267,4 +268,6 @@ signal and navigation masking and yields (returns on subsequent calls) the
 underlying dask blocks as numpy arrays. It is important to note that stacking
 all (flat) blocks and reshaping the result into the initial data shape will not
 result in identical arrays. For illustration it is best to see the `dask
-documentation<https://dask.readthedocs.io/en/latest/array.html>`_.
+documentation <https://dask.readthedocs.io/en/latest/array.html>`_.
+
+For a summary of the implementation, see the `first post of github issue #1219 <https://github.com/hyperspy/hyperspy/pull/1219>`_.
