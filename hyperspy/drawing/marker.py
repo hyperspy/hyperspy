@@ -19,6 +19,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from hyperspy.events import Event, Events
+import hyperspy.drawing._markers as markers
+import logging
 
 
 class MarkerBase(object):
@@ -44,6 +46,10 @@ class MarkerBase(object):
         # Properties
         self.marker = None
         self._marker_properties = {}
+        self.signal = None
+        self._plot_on_signal = True
+        self.name = ''
+        self.plot_marker = True
 
         # Events
         self.events = Events()
@@ -76,6 +82,35 @@ class MarkerBase(object):
                 self.ax.hspy_fig._draw_animated()
             except:
                 pass
+
+    def _to_dictionary(self):
+        marker_dict = {}
+        marker_dict['_marker_properties'] = self.marker_properties
+        marker_dict['marker_type'] = self.__class__.__name__
+        marker_dict['_plot_on_signal'] = self._plot_on_signal
+
+        data_dict = {}
+        data_dict['x1'] = self.data['x1'].item().tolist()
+        data_dict['x2'] = self.data['x2'].item().tolist()
+        data_dict['y1'] = self.data['y1'].item().tolist()
+        data_dict['y2'] = self.data['y2'].item().tolist()
+        data_dict['text'] = self.data['text'].item().tolist()
+        data_dict['size'] = self.data['size'].item().tolist()
+        marker_dict['data'] = data_dict
+        return marker_dict
+
+    def _get_data_shape(self):
+        if self.data['x1'].flatten()[0].flatten()[0] is not None:
+            data_shape = np.array(self.data['x1'].item()).shape
+        elif self.data['x2'].flatten()[0].flatten()[0] is not None:
+            data_shape = np.array(self.data['x2'].item()).shape
+        elif self.data['y1'].flatten()[0].flatten()[0] is not None:
+            data_shape = np.array(self.data['y1'].item()).shape
+        elif self.data['y2'].flatten()[0].flatten()[0] is not None:
+            data_shape = np.array(self.data['y2'].item()).shape
+        else:
+            raise ValueError("None of the coordinates has values")
+        return data_shape
 
     def set_marker_properties(self, **kwargs):
         """
@@ -147,3 +182,34 @@ class MarkerBase(object):
             self.ax.hspy_fig._draw_animated()
         except:
             pass
+
+
+def dict2marker(marker_dict, marker_name):
+    marker_type = marker_dict['marker_type']
+    if marker_type == 'Point':
+        marker = markers.point.Point(0, 0)
+    elif marker_type == 'HorizontalLine':
+        marker = markers.horizontal_line.HorizontalLine(0)
+    elif marker_type == 'HorizontalLineSegment':
+        marker = markers.horizontal_line_segment.HorizontalLineSegment(0, 0, 0)
+    elif marker_type == 'LineSegment':
+        marker = markers.line_segment.LineSegment(0, 0, 0, 0)
+    elif marker_type == 'Rectangle':
+        marker = markers.rectangle.Rectangle(0, 0, 0, 0)
+    elif marker_type == 'Text':
+        marker = markers.text.Text(0, 0, "")
+    elif marker_type == 'VerticalLine':
+        marker = markers.vertical_line.VerticalLine(0)
+    elif marker_type == 'VerticalLineSegment':
+        marker = markers.vertical_line_segment.VerticalLineSegment(0, 0, 0)
+    else:
+        _log = logging.getLogger(__name__)
+        _log.warning(
+                "Marker {} with marker type {} "
+                "not recognized".format(marker_name, marker_type))
+        return(False)
+    marker.set_data(**marker_dict['data'])
+    marker.set_marker_properties(**marker_dict['_marker_properties'])
+    marker._plot_on_signal = marker_dict['_plot_on_signal']
+    marker.name = marker_name
+    return(marker)

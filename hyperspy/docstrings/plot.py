@@ -49,7 +49,11 @@ BASE_PLOT_DOCSTRING = \
             If the signal dtype is RGB or RGBA this parameters has no
             effect and is always "slider".
         axes_manager : {None, axes_manager}
-            If None `axes_manager` is used."""
+            If None `axes_manager` is used.
+        plot_markers : bool, default False
+            Plot markers added using s.add_marker(marker, permanent=True).
+            Note, a large number of markers might lead to very slow plotting.
+            """
 
 PLOT2D_DOCSTRING = \
     """colorbar : bool, optional

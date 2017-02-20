@@ -48,6 +48,7 @@ class HorizontalLine(MarkerBase):
         self.marker_properties = lp
         self.set_data(y1=y)
         self.set_marker_properties(**kwargs)
+        self.name = 'horizontal_line'
 
     def update(self):
         if self.auto_update is False:
