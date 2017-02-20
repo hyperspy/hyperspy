@@ -955,8 +955,8 @@ This can be extended to 4 (or more) navigation dimensions:
     >>> marker = hs.markers.point(x=x, y=y, color='red')
     >>> s.add_marker(marker, permanent=True)
 
-Many markers can added by using a for loop. Note, adding many markers
-might lead to very slow plotting.
+Many markers can added by using a for loop. Note, adding many (50+) markers
+this way might lead to very slow plotting.
 
 .. code-block:: python
 
@@ -965,8 +965,8 @@ might lead to very slow plotting.
     >>>     marker = hs.markers.point(i, i, size=60)
     >>>     s.add_marker(marker, permanent=True)
 
-If you want to add a large amount of markers at the same time a list can be
-used:
+If you want to add a large amount of markers at the same time we advise
+to add them as an iterable (list, tuple, ...), which will be much faster:
 
 .. code-block:: python
 
@@ -974,7 +974,7 @@ used:
     >>> s = hs.signals.Signal2D(np.arange(300).reshape(3, 10, 10))
     >>> marker_list = []
     >>> for i in range(500):
-    >>>     marker = hs.markers.point(random()*10, random()*10, size=60)
+    >>>     marker = hs.markers.point(random()*10, random()*10, size=30)
     >>>     marker_list.append(marker)
     >>> s.add_marker(marker_list, permanent=True)
 

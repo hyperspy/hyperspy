@@ -4064,10 +4064,10 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        marker : marker object or list of marker objects
-            The marker or list of markers to add. See `plot.markers`.
-            If you want to add a large number of markers, add them as a
-            list, since this will be much faster.
+        marker : marker object or iterable of marker objects
+            The marker or iterable (list, tuple, ...) of markers to add.
+            See `plot.markers`. If you want to add a large number of markers,
+            add them as an iterable, since this will be much faster.
         plot_on_signal : bool, default True
             If True, add the marker to the signal
             If False, add the marker to the navigator
