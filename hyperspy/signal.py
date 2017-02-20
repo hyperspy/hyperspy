@@ -4114,6 +4114,16 @@ class BaseSignal(FancySlicing,
         >>> marker.name = "point_marker"
         >>> s.add_marker(marker, permanent=True)
         >>> del s.metadata.Markers.point_marker
+
+        Adding many markers as a list
+        >>> from numpy.random import random
+        >>> s = hs.signals.Signal2D(np.random.randint(10, size=(100, 100)))
+        >>> marker_list = []
+        >>> for i in range(100):
+        >>>     marker = hs.markers.point(random()*100, random()*100, color='red')
+        >>>     marker_list.append(marker)
+        >>> s.add_marker(marker_list, permanent=True)
+
         """
         if issubclass(marker.__class__, MarkerBase):
             marker_list = [marker]
