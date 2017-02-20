@@ -43,7 +43,7 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import array_tools
 from hyperspy.misc import rgb_tools
-from hyperspy.misc.utils import underline
+from hyperspy.misc.utils import underline, isiterable
 from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.drawing.marker import (markers_metadata_dict_to_markers, 
@@ -4125,10 +4125,10 @@ class BaseSignal(FancySlicing,
         >>> s.add_marker(marker_list, permanent=True)
 
         """
-        if issubclass(marker.__class__, MarkerBase):
-            marker_list = [marker]
-        else:
+        if isiterable(marker):
             marker_list = marker
+        else:
+            marker_list = [marker]
         markers_dict = {}
         if permanent:
             if not self.metadata.has_item('Markers'):
