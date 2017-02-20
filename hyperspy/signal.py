@@ -4137,48 +4137,48 @@ class BaseSignal(FancySlicing,
             for marker_tuple in list(self.metadata.Markers):
                 marker_object_list.append(marker_tuple[1])
             name_list = self.metadata.Markers.keys()
-        for marker in marker_list:
-            marker_data_shape = marker._get_data_shape()
+        for m in marker_list:
+            marker_data_shape = m._get_data_shape()
             if (not (len(marker_data_shape) == 0)) and (
                     marker_data_shape != self.axes_manager.navigation_shape):
                 raise ValueError(
                     "Navigation shape of the marker must be 0 or the "
                     "same navigation shape as this signal.")
-            if (marker.signal is not None) and (marker.signal is not self):
+            if (m.signal is not None) and (m.signal is not self):
                 raise ValueError("Markers can not be added to several signals")
-            marker._plot_on_signal = plot_on_signal
+            m._plot_on_signal = plot_on_signal
             if plot_marker:
                 if self._plot is None:
                     self.plot()
-                if marker._plot_on_signal:
-                    self._plot.signal_plot.add_marker(marker)
+                if m._plot_on_signal:
+                    self._plot.signal_plot.add_marker(m)
                 else:
                     if self._plot.navigator_plot is None:
                         self.plot()
-                    self._plot.navigator_plot.add_marker(marker)
-                if marker == marker_list[-1]:
-                    marker.plot(update_plot=True)
-                else:
-                    marker.plot(update_plot=False)
+                    self._plot.navigator_plot.add_marker(m)
+                m.plot(update_plot=False)
             if permanent:
                 for marker_object in marker_object_list:
-                    if marker is marker_object:
+                    if m is marker_object:
                         raise ValueError("Marker already added to signal")
-                name = marker.name
+                name = m.name
                 temp_name = name
                 i = 1
                 while temp_name in name_list:
                     temp_name = name + str(i)
                     i += 1
-                marker.name = temp_name
-                markers_dict[marker.name] = marker
-                marker.signal = self
-                marker_object_list.append(marker)
-                name_list.append(marker.name)
+                m.name = temp_name
+                markers_dict[m.name] = m
+                m.signal = self
+                marker_object_list.append(m)
+                name_list.append(m.name)
             if not plot_marker and not permanent:
                 _logger.warning(
                     "plot_marker=False and permanent=False does nothing")
-        self.metadata.Markers = markers_dict
+        if permanent:
+            self.metadata.Markers = markers_dict
+        if plot_marker:
+            m.ax.hspy_fig._draw_animated()
 
     def _plot_permanent_markers(self):
         marker_dict_list = list(self.metadata.Markers.__dict__.values())
