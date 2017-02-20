@@ -23,7 +23,6 @@ import logging
 
 import numpy as np
 from natsort import natsorted
-from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 
 from .misc.io.tools import ensure_directory
 from .misc.io.tools import overwrite as overwrite_method
@@ -404,6 +403,7 @@ def dict2signal(signal_dict, lazy=False):
     elif signal_dimension == -1:
         # If not defined, all dimension are categorised as signal
         signal_dimension = signal_dict["data"].ndim
+
     signal = assign_signal_subclass(signal_dimension=signal_dimension,
                                     signal_type=signal_type,
                                     dtype=signal_dict['data'].dtype,
@@ -425,12 +425,6 @@ def dict2signal(signal_dict, lazy=False):
                     value = function(value)
                 if value is not None:
                     signal.metadata.set_item(mpattr, value)
-    if "metadata" in signal_dict and "Markers" in mp:
-        markers_dict = markers_metadata_dict_to_markers(
-                mp['Markers'],
-                axes_manager=signal.axes_manager)
-        del signal.metadata.Markers
-        signal.metadata.Markers = markers_dict
     return signal
 
 

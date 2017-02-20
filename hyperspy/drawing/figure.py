@@ -52,7 +52,7 @@ class BlittedFigure(object):
         if self.figure is None:
             return  # Already closed
         for marker in self.ax_markers:
-            marker.close(update_plot=False)
+            marker.close()
         self.events.closed.trigger(obj=self)
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)
