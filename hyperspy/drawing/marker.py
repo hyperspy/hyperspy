@@ -67,8 +67,8 @@ class MarkerBase(object):
 
     def __deepcopy__(self, memo):
         new_marker = dict2marker(
-                self._to_dictionary(),
-                self.name)
+            self._to_dictionary(),
+            self.name)
         return new_marker
 
     @property
@@ -96,9 +96,9 @@ class MarkerBase(object):
             'marker_properties': self.marker_properties,
             'marker_type': self.__class__.__name__,
             'plot_on_signal': self._plot_on_signal,
-            'data': { k: self.data[k][()].tolist() for k in (
+            'data': {k: self.data[k][()].tolist() for k in (
                 'x1', 'x2', 'y1', 'y2', 'text', 'size')}
-            }
+        }
         return marker_dict
 
     def _get_data_shape(self):

@@ -118,8 +118,8 @@ class TestMarkers:
         m6 = markers.rectangle(1, 5, 6, 8)
         m7 = markers.rectangle((1, 2), (5, 6), (6, 7), (8, 9))
         m8 = markers.point(
-                np.arange(256).reshape(2, 2, 2, 2, 2, 2, 2, 2),
-                np.arange(256).reshape(2, 2, 2, 2, 2, 2, 2, 2))
+            np.arange(256).reshape(2, 2, 2, 2, 2, 2, 2, 2),
+            np.arange(256).reshape(2, 2, 2, 2, 2, 2, 2, 2))
         assert m0._get_data_shape() == ()
         assert m1._get_data_shape() == (2,)
         assert m2._get_data_shape() == (2, 3)
@@ -153,7 +153,6 @@ class TestMarkers:
 
 
 class Test_permanent_markers:
-
 
     def test_add_permanent_marker(self):
         s = Signal1D(np.arange(10))
@@ -255,10 +254,10 @@ class Test_permanent_markers:
         m_line_new = dict2marker(m_line._to_dictionary(), m_line.name)
         m_vline_new = dict2marker(m_vline._to_dictionary(), m_vline.name)
         m_vline_segment_new = dict2marker(
-                m_vline_segment._to_dictionary(), m_vline_segment.name)
+            m_vline_segment._to_dictionary(), m_vline_segment.name)
         m_hline_new = dict2marker(m_hline._to_dictionary(), m_hline.name)
         m_hline_segment_new = dict2marker(
-                m_hline_segment._to_dictionary(), m_hline_segment.name)
+            m_hline_segment._to_dictionary(), m_hline_segment.name)
         m_rect_new = dict2marker(m_rect._to_dictionary(), m_rect.name)
         m_text_new = dict2marker(m_text._to_dictionary(), m_text.name)
 
@@ -277,10 +276,10 @@ class Test_permanent_markers:
         m_line_new_dict = sanitize_dict(m_line_new._to_dictionary())
         m_vline_new_dict = sanitize_dict(m_vline_new._to_dictionary())
         m_vline_segment_new_dict = sanitize_dict(
-                m_vline_segment_new._to_dictionary())
+            m_vline_segment_new._to_dictionary())
         m_hline_new_dict = sanitize_dict(m_hline_new._to_dictionary())
         m_hline_segment_new_dict = sanitize_dict(
-                m_hline_segment_new._to_dictionary())
+            m_hline_segment_new._to_dictionary())
         m_rect_new_dict = sanitize_dict(m_rect_new._to_dictionary())
         m_text_new_dict = sanitize_dict(m_text_new._to_dictionary())
         assert m_point0_dict == m_point0_new_dict
@@ -323,7 +322,8 @@ def _test_plot_rectange_markers():
 
 
 @pytest.mark.skipif("sys.platform == 'darwin'")
-@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_rectange_markers():
     im = _test_plot_rectange_markers()
     return im._plot.signal_plot.figure
@@ -350,7 +350,8 @@ def _test_plot_point_markers():
 
 
 @pytest.mark.skipif("sys.platform == 'darwin'")
-@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_point_markers():
     s = _test_plot_point_markers()
     return s._plot.signal_plot.figure
@@ -376,14 +377,16 @@ def _test_plot_text_markers():
 
 
 @pytest.mark.skipif("sys.platform == 'darwin'")
-@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_text_markers_nav():
     s = _test_plot_text_markers()
     return s._plot.navigator_plot.figure
 
 
 @pytest.mark.skipif("sys.platform == 'darwin'")
-@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_text_markers_sig():
     s = _test_plot_text_markers()
     return s._plot.signal_plot.figure
@@ -412,7 +415,8 @@ def _test_plot_line_markers():
 
 
 @pytest.mark.skipif("sys.platform == 'darwin'")
-@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_line_markers():
     im = _test_plot_line_markers()
     return im._plot.signal_plot.figure

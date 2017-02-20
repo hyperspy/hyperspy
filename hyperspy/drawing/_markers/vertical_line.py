@@ -55,12 +55,12 @@ class VerticalLine(MarkerBase):
 
     def __repr__(self):
         string = "<marker.{}, {} (x={},color={})>".format(
-                self.__class__.__name__,
-                self.name,
-                self.get_data_position('x1'),
-                self.marker_properties['color'],
-                self.get_data_position('size'),
-                )
+            self.__class__.__name__,
+            self.name,
+            self.get_data_position('x1'),
+            self.marker_properties['color'],
+            self.get_data_position('size'),
+        )
         return(string)
 
     def update(self):

@@ -65,13 +65,13 @@ class Text(MarkerBase):
 
     def __repr__(self):
         string = "<marker.{}, {} (x={},y={},text={},color={})>".format(
-                self.__class__.__name__,
-                self.name,
-                self.get_data_position('x1'),
-                self.get_data_position('y1'),
-                self.get_data_position('text'),
-                self.marker_properties['color'],
-                )
+            self.__class__.__name__,
+            self.name,
+            self.get_data_position('x1'),
+            self.get_data_position('y1'),
+            self.get_data_position('text'),
+            self.marker_properties['color'],
+        )
         return(string)
 
     def update(self):

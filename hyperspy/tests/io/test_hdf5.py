@@ -424,7 +424,7 @@ class Test_permanent_markers_io:
             markers.text(x=x1, y=y1, text="test"),
             markers.vertical_line(x=x1),
             markers.vertical_line_segment(x=x1, y1=y1, y2=y2),
-            ]
+        ]
         for m in m0_list:
             s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:
@@ -437,7 +437,7 @@ class Test_permanent_markers_io:
         for m in m0_list:
             m0_dict_list.append(san_dict(m._to_dictionary()))
             m1_dict_list.append(
-                    san_dict(markers_dict.get_item(m.name)._to_dictionary()))
+                san_dict(markers_dict.get_item(m.name)._to_dictionary()))
         assert len(list(s1.metadata.Markers)) == 8
         for m0_dict, m1_dict in zip(m0_dict_list, m1_dict_list):
             assert m0_dict == m1_dict
@@ -465,7 +465,7 @@ class Test_permanent_markers_io:
         name = "horizontal_line_segment_test"
         s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.horizontal_line_segment(
-                x1=x1, x2=x2, y=y, color=color, linewidth=linewidth)
+            x1=x1, x2=x2, y=y, color=color, linewidth=linewidth)
         m.name = name
         s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:
@@ -498,7 +498,7 @@ class Test_permanent_markers_io:
         name = "vertical_line_segment_test"
         s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.vertical_line_segment(
-                x=x, y1=y1, y2=y2, color=color, linewidth=linewidth)
+            x=x, y1=y1, y2=y2, color=color, linewidth=linewidth)
         m.name = name
         s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:
@@ -515,7 +515,7 @@ class Test_permanent_markers_io:
         name = "line_segment_test"
         s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.line_segment(
-                x1=x1, x2=x2, y1=y1, y2=y2, color=color, linewidth=linewidth)
+            x1=x1, x2=x2, y1=y1, y2=y2, color=color, linewidth=linewidth)
         m.name = name
         s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:
@@ -531,7 +531,7 @@ class Test_permanent_markers_io:
         name = "point test"
         s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(
-                x=x, y=y, color=color)
+            x=x, y=y, color=color)
         m.name = name
         s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:
@@ -548,7 +548,7 @@ class Test_permanent_markers_io:
         name = "rectangle_test"
         s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.rectangle(
-                x1=x1, x2=x2, y1=y1, y2=y2, color=color, linewidth=linewidth)
+            x1=x1, x2=x2, y1=y1, y2=y2, color=color, linewidth=linewidth)
         m.name = name
         s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:
@@ -565,7 +565,7 @@ class Test_permanent_markers_io:
         text = "a text"
         s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.text(
-                x=x, y=y, text=text, color=color)
+            x=x, y=y, text=text, color=color)
         m.name = name
         s.add_marker(m, permanent=True)
         with tempfile.TemporaryDirectory() as tmp:

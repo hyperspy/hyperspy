@@ -427,8 +427,8 @@ def dict2signal(signal_dict, lazy=False):
                     signal.metadata.set_item(mpattr, value)
     if "metadata" in signal_dict and "Markers" in mp:
         markers_dict = markers_metadata_dict_to_markers(
-                mp['Markers'],
-                axes_manager=signal.axes_manager)
+            mp['Markers'],
+            axes_manager=signal.axes_manager)
         del signal.metadata.Markers
         signal.metadata.Markers = markers_dict
     return signal

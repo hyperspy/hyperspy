@@ -1835,7 +1835,7 @@ class BaseSignal(FancySlicing,
             self.data.__getitem__(axes_manager._getitem_tuple))
 
     def plot(self, navigator="auto", axes_manager=None,
-            plot_markers=False, **kwargs):
+             plot_markers=False, **kwargs):
         """%s
         %s
 
@@ -3520,8 +3520,8 @@ class BaseSignal(FancySlicing,
         if dc.metadata.has_item('Markers'):
             temp_marker_dict = dc.metadata.Markers.as_dictionary()
             markers_dict = markers_metadata_dict_to_markers(
-                    temp_marker_dict,
-                    dc.axes_manager)
+                temp_marker_dict,
+                dc.axes_manager)
             dc.metadata.Markers = markers_dict
         return dc
 
@@ -4116,8 +4116,8 @@ class BaseSignal(FancySlicing,
         if (not (len(marker_data_shape) == 0)) and (
                 marker_data_shape != self.axes_manager.navigation_shape):
             raise ValueError(
-                    "Navigation shape of the marker must be 0 or the "
-                    "same navigation shape as this signal.")
+                "Navigation shape of the marker must be 0 or the "
+                "same navigation shape as this signal.")
         if (marker.signal is not None) and (marker.signal is not self):
             raise ValueError("Markers can not be added to several signals")
         marker._plot_on_signal = plot_on_signal
@@ -4149,12 +4149,13 @@ class BaseSignal(FancySlicing,
             marker.signal = self
         if not plot_marker and not permanent:
             _logger.warning(
-                    "plot_marker=False and permanent=False does nothing")
+                "plot_marker=False and permanent=False does nothing")
 
     def _plot_permanent_markers(self):
         marker_dict_list = list(self.metadata.Markers.__dict__.values())
         if {'_dtb_value_': False, 'key': '_double_lines'} in marker_dict_list:
-            marker_dict_list.remove({'_dtb_value_': False, 'key': '_double_lines'})
+            marker_dict_list.remove(
+                {'_dtb_value_': False, 'key': '_double_lines'})
         for index, marker_dict in enumerate(marker_dict_list):
             marker = marker_dict['_dtb_value_']
             if marker.plot_marker:
@@ -4162,7 +4163,7 @@ class BaseSignal(FancySlicing,
                     self._plot.signal_plot.add_marker(marker)
                 else:
                     self._plot.navigator_plot.add_marker(marker)
-                if index == len(marker_dict_list)-1:
+                if index == len(marker_dict_list) - 1:
                     marker.plot(update_plot=True)
                 else:
                     marker.plot(update_plot=False)
