@@ -46,8 +46,7 @@ from hyperspy.misc import rgb_tools
 from hyperspy.misc.utils import underline, isiterable
 from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
-from hyperspy.drawing.marker import (markers_metadata_dict_to_markers, 
-        MarkerBase)
+from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
@@ -4184,16 +4183,16 @@ class BaseSignal(FancySlicing,
                 self._plot.navigator_plot.ax.hspy_fig._draw_animated()
 
     def _plot_permanent_markers(self):
-        marker_dict_list = list(self.metadata.Markers.__dict__.values())
-        for index, marker_dict in enumerate(marker_dict_list):
-            marker = marker_dict['_dtb_value_']
-            if issubclass(marker.__class__, MarkerBase):
-                if marker.plot_marker:
-                    if marker._plot_on_signal:
-                        self._plot.signal_plot.add_marker(marker)
-                    else:
-                        self._plot.navigator_plot.add_marker(marker)
-                    marker.plot(update_plot=False)
+        marker_name_list = self.metadata.Markers.keys()
+        markers_dict = self.metadata.Markers.__dict__
+        for marker_name in marker_name_list:
+            marker = markers_dict[marker_name]['_dtb_value_']
+            if marker.plot_marker:
+                if marker._plot_on_signal:
+                    self._plot.signal_plot.add_marker(marker)
+                else:
+                    self._plot.navigator_plot.add_marker(marker)
+                marker.plot(update_plot=False)
         if self._plot.signal_plot:
             self._plot.signal_plot.ax.hspy_fig._draw_animated()
         if self._plot.navigator_plot:
