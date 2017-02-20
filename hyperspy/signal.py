@@ -4178,24 +4178,26 @@ class BaseSignal(FancySlicing,
         if permanent:
             self.metadata.Markers = markers_dict
         if plot_marker:
-            m.ax.hspy_fig._draw_animated()
+            if self._plot.signal_plot:
+                self._plot.signal_plot.ax.hspy_fig._draw_animated()
+            if self._plot.navigator_plot:
+                self._plot.navigator_plot.ax.hspy_fig._draw_animated()
 
     def _plot_permanent_markers(self):
         marker_dict_list = list(self.metadata.Markers.__dict__.values())
-        if {'_dtb_value_': False, 'key': '_double_lines'} in marker_dict_list:
-            marker_dict_list.remove(
-                {'_dtb_value_': False, 'key': '_double_lines'})
         for index, marker_dict in enumerate(marker_dict_list):
             marker = marker_dict['_dtb_value_']
-            if marker.plot_marker:
-                if marker._plot_on_signal:
-                    self._plot.signal_plot.add_marker(marker)
-                else:
-                    self._plot.navigator_plot.add_marker(marker)
-                if index == len(marker_dict_list) - 1:
-                    marker.plot(update_plot=True)
-                else:
+            if issubclass(marker.__class__, MarkerBase):
+                if marker.plot_marker:
+                    if marker._plot_on_signal:
+                        self._plot.signal_plot.add_marker(marker)
+                    else:
+                        self._plot.navigator_plot.add_marker(marker)
                     marker.plot(update_plot=False)
+        if self._plot.signal_plot:
+            self._plot.signal_plot.ax.hspy_fig._draw_animated()
+        if self._plot.navigator_plot:
+            self._plot.navigator_plot.ax.hspy_fig._draw_animated()
 
     def add_poissonian_noise(self, **kwargs):
         """Add Poissonian noise to the data"""
