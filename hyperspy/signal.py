@@ -1833,8 +1833,8 @@ class BaseSignal(FancySlicing,
         return np.atleast_1d(
             self.data.__getitem__(axes_manager._getitem_tuple))
 
-    def plot(self, navigator="auto", axes_manager=None, 
-            plot_markers=False, **kwargs):
+    def plot(self, navigator="auto", axes_manager=None,
+             plot_markers=False, **kwargs):
         """%s
         %s
 
@@ -4069,7 +4069,7 @@ class BaseSignal(FancySlicing,
         plot_signal : bool, default True
             If True, and if the plotting window for this signal is not
             open: will open the plotting window.
-            If False, and if no plotting is open: will not open a 
+            If False, and if no plotting is open: will not open a
             plotting window.
 
         Examples
@@ -4105,8 +4105,8 @@ class BaseSignal(FancySlicing,
         if (not (len(marker_data_shape) == 0)) and (
                 marker_data_shape != self.axes_manager.navigation_shape):
             raise ValueError(
-                    "Navigation shape of the marker must be 0 or the "
-                    "same navigation shape as this signal.")
+                "Navigation shape of the marker must be 0 or the "
+                "same navigation shape as this signal.")
         if (not marker.signal is None) and (not marker.signal is self):
             raise ValueError("Markers can not be added to several signals")
         marker._plot_on_signal = plot_on_signal

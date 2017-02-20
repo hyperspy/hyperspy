@@ -205,8 +205,8 @@ def dict2marker(marker_dict, marker_name):
     else:
         _log = logging.getLogger(__name__)
         _log.warning(
-                "Marker {} with marker type {} "
-                "not recognized".format(marker_name, marker_type))
+            "Marker {} with marker type {} "
+            "not recognized".format(marker_name, marker_type))
         return(False)
     marker.set_data(**marker_dict['data'])
     marker.set_marker_properties(**marker_dict['_marker_properties'])
