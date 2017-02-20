@@ -388,6 +388,8 @@ class DictionaryTreeBrowser(object):
                 elif isinstance(item_['_dtb_value_'], BaseSignal):
                     item = item_['_dtb_value_']._to_dictionary()
                     key = '_sig_' + key
+                elif hasattr(item_['_dtb_value_'], '_to_dictionary'):
+                    item = item_['_dtb_value_']._to_dictionary()
                 else:
                     item = item_['_dtb_value_']
                 par_dict.__setitem__(key, item)
