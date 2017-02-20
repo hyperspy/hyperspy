@@ -151,6 +151,13 @@ class TestMarkers:
             s.add_marker(m1)
         s.add_marker(m2)
 
+    def test_add_markers_as_list(self):
+        s = Signal1D(np.arange(10))
+        marker_list = []
+        for i in range(12):
+            marker_list.append(markers.point(4, 8))
+        s.add_marker(marker_list)
+
 
 class Test_permanent_markers:
 
@@ -219,6 +226,36 @@ class Test_permanent_markers:
         with pytest.raises(ValueError):
             s.add_marker(m_rect, permanent=True)
 
+    def test_add_markers_as_list(self):
+        s = Signal1D(np.arange(10))
+        marker_list = []
+        for i in range(10):
+            marker_list.append(markers.point(1, 2))
+        s.add_marker(marker_list, permanent=True)
+        assert len(s.metadata.Markers) == 10
+
+    def test_add_markers_as_list_add_same_twice(self):
+        s = Signal1D(np.arange(10))
+        marker_list = []
+        for i in range(10):
+            marker_list.append(markers.point(1, 2))
+        s.add_marker(marker_list, permanent=True)
+        with pytest.raises(ValueError):
+            s.add_marker(marker_list, permanent=True)
+
+    def test_add_markers_as_list_add_different_twice(self):
+        s = Signal1D(np.arange(10))
+        marker_list0 = []
+        for i in range(10):
+            marker_list0.append(markers.point(1, 2))
+        s.add_marker(marker_list0, permanent=True)
+        assert len(s.metadata.Markers) == 10
+        marker_list1 = []
+        for i in range(10):
+            marker_list1.append(markers.point(4, 8))
+        s.add_marker(marker_list1, permanent=True)
+        assert len(s.metadata.Markers) == 20
+    
     def test_add_permanent_marker_signal2d(self):
         s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(x=5, y=5)
