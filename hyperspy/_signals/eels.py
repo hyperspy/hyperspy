@@ -267,7 +267,6 @@ class EELSSpectrum_mixin:
         zlpc = estimate_zero_loss_peak_centre(self, mask, signal_range)
         mean_ = without_nans(zlpc.data).mean()
         if print_stats is True:
-            print()
             print(underline("Initial ZLP position statistics"))
             zlpc.print_summary_statistics()
 
@@ -308,22 +307,22 @@ class EELSSpectrum_mixin:
 
     def spikes_removal_tool(self, signal_mask=None,
                             navigation_mask=None,
-                            filter_zero_loss=False,
-                            zero_loss_width=5.0):
-        if filter_zero_loss:
+                            filter_zero_loss_peak=False,
+                            zero_loss_width=5.0,
+                            threshold=400):
+        if filter_zero_loss_peak:
             zlpc = self.estimate_zero_loss_peak_centre()
             (signal_axis, ) = self.axes_manager[self.axes_manager.signal_axes]
             axis = signal_axis.axis
             mini_value = zlpc.data.mean() - zero_loss_width/2
             maxi_value = zlpc.data.mean() + zero_loss_width/2
-            mask = -((mini_value <= axis) & (axis <= maxi_value))
+            mask = (mini_value <= axis) & (axis <= maxi_value)
             if signal_mask:
                 signal_mask = mask & signal_mask
             else:
                 signal_mask = mask
-            import matplotlib.pyplot as plt
         super().spikes_removal_tool(signal_mask=signal_mask,
-             navigation_mask=navigation_mask)
+             navigation_mask=navigation_mask, threshold=threshold)
 
     def estimate_elastic_scattering_intensity(
             self, threshold, show_progressbar=None):

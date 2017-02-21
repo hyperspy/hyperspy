@@ -24,8 +24,20 @@ from hyperspy.decorators import lazifyTestClass
 from hyperspy.gui.egerton_quantification import SpikesRemoval
 
 
+class _TestSpikesRemovalTool:
+
+    def _add_spikes_to_data(self, data, coordinates, values):
+        data2 = data.copy()
+        for coordinate, value in zip(coordinates, values):
+            data2[coordinate] *= value
+        return data2
+    
+    def _get_index_from_coordinate(self, coordinate):
+        return self.s.data.shape[1]*coordinate[0] + coordinate[1]
+
+        
 @lazifyTestClass
-class TestSpikesRemovalTool:
+class TestSpikesRemovalTool(_TestSpikesRemovalTool):
 
     def setup_method(self, method):
         data = np.arange(5*10*20).reshape(5, 10, 20)
@@ -41,16 +53,7 @@ class TestSpikesRemovalTool:
         self.s2.add_gaussian_noise(5)
         self.sr = SpikesRemoval(self.s)
         self.sr2 = SpikesRemoval(self.s2)
-
-    def _add_spikes_to_data(self, data, coordinates, values):
-        data = data.copy()
-        for coordinate, value in zip(coordinates, values):
-            data[coordinate] *= value
-        return data
     
-    def _get_index_from_coordinate(self, coordinate):
-        return self.s.data.shape[1]*coordinate[0] + coordinate[1]
-
     def test_detect_spikes(self):
         assert self.sr.detect_spike() == False
 

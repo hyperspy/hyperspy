@@ -323,7 +323,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         plt.draw()
 
     def spikes_removal_tool(self, signal_mask=None,
-                            navigation_mask=None):
+                            navigation_mask=None,
+                            threshold=400):
         """Graphical interface to remove spikes from EELS spectra.
 
         Parameters
@@ -343,7 +344,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         self._check_signal_dimension_equals_one()
         sr = SpikesRemoval(self,
                            navigation_mask=navigation_mask,
-                           signal_mask=signal_mask)
+                           signal_mask=signal_mask,
+                           threshold=threshold)
         sr.configure_traits()
         return sr
 
