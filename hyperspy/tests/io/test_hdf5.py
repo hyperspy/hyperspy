@@ -371,6 +371,7 @@ class TestAxesConfiguration:
 
 class Test_permanent_markers_io:
 
+    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_save_permanent_marker(self):
         s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(x=5, y=5)
@@ -379,6 +380,7 @@ class Test_permanent_markers_io:
             filename = tmp + '/testsavefile.hdf5'
         s.save(filename)
 
+    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_save_load_empty_metadata_markers(self):
         s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(x=5, y=5)
@@ -391,6 +393,7 @@ class Test_permanent_markers_io:
         s1 = load(filename)
         assert len(s1.metadata.Markers) == 0
 
+    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_save_load_permanent_marker(self):
         x, y = 5, 2
         color = 'red'
@@ -412,6 +415,7 @@ class Test_permanent_markers_io:
         assert m1.marker_properties['color'] == color
         assert m1.name == name
 
+    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_save_load_permanent_marker_all_types(self):
         x1, y1, x2, y2 = 5, 2, 1, 8
         s = Signal2D(np.arange(100).reshape(10, 10))
@@ -442,6 +446,7 @@ class Test_permanent_markers_io:
         for m0_dict, m1_dict in zip(m0_dict_list, m1_dict_list):
             assert m0_dict == m1_dict
 
+    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_save_load_horizontal_line_marker(self):
         y = 8
         color = 'blue'
@@ -458,6 +463,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
+    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_save_load_horizontal_line_segment_marker(self):
         x1, x2, y = 1, 5, 8
         color = 'red'
@@ -475,6 +481,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
+    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_save_load_vertical_line_marker(self):
         x = 9
         color = 'black'
@@ -491,6 +498,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
+    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_save_load_vertical_line_segment_marker(self):
         x, y1, y2 = 2, 1, 3
         color = 'white'
@@ -508,6 +516,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
+    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_save_load_line_segment_marker(self):
         x1, x2, y1, y2 = 1, 9, 4, 7
         color = 'cyan'
@@ -525,6 +534,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
+    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_save_load_point_marker(self):
         x, y = 9, 8
         color = 'purple'
@@ -541,6 +551,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
+    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_save_load_rectangle_marker(self):
         x1, x2, y1, y2 = 2, 4, 1, 3
         color = 'yellow'
@@ -558,6 +569,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
+    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_save_load_text_marker(self):
         x, y = 3, 9.5
         color = 'brown'
@@ -575,6 +587,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
+    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_save_load_multidim_navigation_marker(self):
         x, y = (1, 2, 3), (5, 6, 7)
         name = 'test point'
