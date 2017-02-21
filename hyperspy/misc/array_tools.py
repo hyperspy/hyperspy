@@ -150,7 +150,7 @@ def _linear_bin_loop(result, data, scale):
             if scale > (cx1 - x1) > 0:
                 value += data[fx1] * (cx1 - x1)
                 x1 = cx1
-            if x1 <= (result.shape[0] - 1):
+            if x1 < (result.shape[0] + 1:
                 value += data[math.floor(x1)]*(x2-x1)
 
 def _linear_bin(dat, scale, crop=True):
