@@ -628,6 +628,31 @@ To fit the model to the data at the current coordinates (e.g. to fit one
 spectrum at a particular point in a spectrum-image) use
 :py:meth:`~.model.BaseModel.fit`.
 
+There are two methods of model-fitting available in in HyperSpy.
+**Nonlinear** fitting is used to fit all parameters in the components,
+minimizing the difference between the fit and the data by successive
+approximations. This difference is typically the squared error term
+(‘ls’), but can also use maximum likelihood estimation (‘ml’) in the
+case of Poisson noise. Nonlinear fitting is slow on large models, but is
+necessary if the components are nonlinear across the data. A component
+is linear when its only free parameter only scales in the y-axis. For
+the example function ``y = a(b*x-c)``, ``a`` is linear whilst ``b`` and
+``c`` is not, as ``b`` and ``c`` stretch or shift the result
+horizontally.
+
+If all components in the model are linear (only scale "upwards" with no 
+change in width or position), then **linear** fitting can be used. 
+Linear fitting uses linear regression to solve the relation
+``Ax = b`` for x, where b is the data and A are the components. It is
+extremely fast, but is less flexible as it assumes that the nonlinear
+parameters are correct. Linear fitting also assumes a Gaussian noise
+model, and so the ‘ml’ method for Poisson noise is not available.
+
+A combination of nonlinear and linear fitting can be used to speed up
+the fitting process. Note that ``background`` components are typically nonlinear,
+and need to be estimated by nonlinear fitting first and then fixed before linear 
+fitting can be used.
+
 The following table summarizes the features of the currently available
 optimizers. For more information on the local and global optimization
 algorithms, see the
@@ -640,7 +665,7 @@ algorithms, see the
 
 .. _optimizers-table:
 
-.. table:: Features of curve fitting optimizers.
+.. table:: Features of curve fitting optimizers. They are nonlinear unless specified.
 
     +--------------------------+--------+------------------+------------+--------+
     | Optimizer                | Bounds | Error estimation | Method     | Type   |
@@ -667,7 +692,8 @@ algorithms, see the
     +--------------------------+--------+------------------+------------+--------+
     | "Differential Evolution" |  Yes   | No               | 'ls', 'ml' | global |
     +--------------------------+--------+------------------+------------+--------+
-
+    | "linear"                 |  Yes   | No               | 'ls'       | local  |
+    +--------------------------+--------+------------------+------------+--------+
 
 The following example shows how to perform least squares with error estimation.
 

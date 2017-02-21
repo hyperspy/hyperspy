@@ -277,8 +277,12 @@ def check_if_parameter_is_offset(expr, name):
 
 def extract_constant_part_of_expression(expr, *args):
     """
-    Extract constant part of expression given independent variables *args.
-    Given no arguments, only x is assumed to change.
+    Check linearity by multiplying a parameter by a factor and testing if the
+    new expression is equal to multiplying the whole expression by the same factor.
+    Testing parameter `a` in example expression `f(x) = a*x + b` by multiplying
+    by factor `factor`:
+
+    `a` is linear if ``(a*LIN)*x + b == LIN*f(x)``
     """
     expr = sympy.sympify(expr)
     constant, not_constant = expr.as_independent(*args, as_Add=True)
