@@ -347,6 +347,6 @@ class Test_linear_bin:
     def test_linear_bin4(self):
         spectrum = EDSTEMSpectrum(np.ones([4, 4, 10]))
         res = spectrum.linear_bin([0.4, 0.4, 5])
-                np.testing.assert_allclose(res.data[1], [[[ 0.4]],
+        np.testing.assert_allclose(res.data[1], [[[ 0.4]],
                 [[ 0.4]],[[ 0.4]],[[ 0.4]],[[ 0.4]],[[ 2. ]],
                 [[ 2. ]],[[ 1.2]],[[ 0.4]],[[ 0.4]]], atol=1e-3)
