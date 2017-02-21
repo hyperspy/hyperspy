@@ -45,7 +45,6 @@ def test_create_figure():
                                   _on_figure_window_close=dummy_function)
         assert isinstance(fig, matplotlib.figure.Figure) == True
         matplotlib.pyplot.close(fig)
-        
+
     if original_backend == 'agg':  # switch back to the original backend
         matplotlib.pyplot.switch_backend(original_backend)
-
