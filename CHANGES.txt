@@ -42,6 +42,8 @@ Enhancements
 * :py:meth:`~.signal.BaseSignal.map` can now take functions that return
   differently-shaped arrays or arbitrary objects, see :ref:`map-label`.
 * Add support for stacking multi-signal files. See :ref:`load-multiple-label`.
+* Markers can now be saved to hdf5 and creating many markers is easier and
+  faster. See :ref:`plot.markers`.
 
 For developers
 --------------
