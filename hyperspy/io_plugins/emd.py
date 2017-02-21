@@ -201,9 +201,8 @@ class EMD(object):
         for key, value in group.attrs.items():
             metadata[key] = value
         if signal.data.dtype == np.object:
-            self._log.warning(
-                'HyperSpy could not load the data in {}, '
-                'skipping it'.format(name))
+            self._log.warning('HyperSpy could not load the data in {}, '
+                              'skipping it'.format(name))
         else:
             # Add signal:
             self.add_signal(signal, name, metadata)
