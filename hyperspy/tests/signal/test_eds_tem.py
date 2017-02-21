@@ -17,6 +17,7 @@
 
 
 import numpy as np
+import pytest
 from matplotlib.testing.decorators import cleanup
 
 from hyperspy.signals import EDSTEMSpectrum
