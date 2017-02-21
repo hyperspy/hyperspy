@@ -20,9 +20,10 @@ import pytest
 from matplotlib.testing.decorators import cleanup
 
 from hyperspy.misc.test_utils import (get_matplotlib_version_label,
-                                      update_close_figure)
+                                      update_close_figure, sanitize_dict)
 from hyperspy.signals import Signal2D, Signal1D
 from hyperspy.utils import markers
+from hyperspy.drawing.marker import dict2marker
 
 mplv = get_matplotlib_version_label()
 default_tol = 2.0
@@ -105,6 +106,256 @@ class TestMarkers:
         m.add_data(y1=[1, 2])
         assert m.auto_update is True
 
+    def test_get_data_shape_point(self):
+        m0 = markers.point(5, 5)
+        m1 = markers.point((5, 10), (5, 10))
+        m2 = markers.point(((12, 2, 9), (1, 2, 3)), ((2, 5, 1), (3, 9, 2)))
+        m3 = markers.vertical_line(((12, 2), (2, 5), (9, 2)))
+        m4 = markers.point(5, 5)
+        m4.data['x1'][()] = np.array(None, dtype=np.object)
+        m4.data['y1'][()] = np.array(None, dtype=np.object)
+        m5 = markers.vertical_line(9)
+        m6 = markers.rectangle(1, 5, 6, 8)
+        m7 = markers.rectangle((1, 2), (5, 6), (6, 7), (8, 9))
+        m8 = markers.point(
+            np.arange(256).reshape(2, 2, 2, 2, 2, 2, 2, 2),
+            np.arange(256).reshape(2, 2, 2, 2, 2, 2, 2, 2))
+        assert m0._get_data_shape() == ()
+        assert m1._get_data_shape() == (2,)
+        assert m2._get_data_shape() == (2, 3)
+        assert m3._get_data_shape() == (3, 2)
+        with pytest.raises(ValueError):
+            assert m4._get_data_shape() == ()
+        assert m5._get_data_shape() == ()
+        assert m6._get_data_shape() == ()
+        assert m7._get_data_shape() == (2,)
+        assert m8._get_data_shape() == (2, 2, 2, 2, 2, 2, 2, 2)
+
+    def test_add_marker_not_plot(self):
+        # This will do nothing, since plot_marker=False and permanent=False
+        # So this test will return a _logger warning
+        s = Signal1D(np.arange(10))
+        m = markers.point(x=5, y=5)
+        s.add_marker(m, plot_marker=False)
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_add_marker_signal1d_navigation_dim(self):
+        s = Signal1D(np.zeros((3, 50, 50)))
+        m0 = markers.point(5, 5)
+        m1 = markers.point((5, 10), (10, 15))
+        m2 = markers.point(np.zeros((50, 3)), np.zeros((50, 3)))
+        s.add_marker(m0)
+        with pytest.raises(ValueError):
+            s.add_marker(m1)
+        s.add_marker(m2)
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_add_marker_signal2d_navigation_dim(self):
+        s = Signal2D(np.zeros((3, 50, 50)))
+        m0 = markers.point(5, 5)
+        m1 = markers.point((5, 10), (10, 15))
+        m2 = markers.point(np.zeros((3, )), np.zeros((3, )))
+        s.add_marker(m0)
+        with pytest.raises(ValueError):
+            s.add_marker(m1)
+        s.add_marker(m2)
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_add_markers_as_list(self):
+        s = Signal1D(np.arange(10))
+        marker_list = []
+        for i in range(12):
+            marker_list.append(markers.point(4, 8))
+        s.add_marker(marker_list)
+
+
+class Test_permanent_markers:
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_add_permanent_marker(self):
+        s = Signal1D(np.arange(10))
+        m = markers.point(x=5, y=5)
+        s.add_marker(m, permanent=True)
+        assert list(s.metadata.Markers)[0][1] == m
+
+    def test_add_permanent_marker_not_plot(self):
+        s = Signal1D(np.arange(10))
+        m = markers.point(x=5, y=5)
+        s.add_marker(m, permanent=True, plot_marker=False)
+        assert list(s.metadata.Markers)[0][1] == m
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_remove_permanent_marker_name(self):
+        s = Signal1D(np.arange(10))
+        m = markers.point(x=5, y=5)
+        m.name = 'test'
+        s.add_marker(m, permanent=True)
+        assert list(s.metadata.Markers)[0][1] == m
+        del s.metadata.Markers.test
+        assert len(list(s.metadata.Markers)) == 0
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_permanent_marker_names(self):
+        s = Signal1D(np.arange(10))
+        m0 = markers.point(x=5, y=5)
+        m1 = markers.point(x=5, y=5)
+        m0.name = 'test'
+        m1.name = 'test'
+        s.add_marker(m0, permanent=True)
+        s.add_marker(m1, permanent=True)
+        assert s.metadata.Markers.test == m0
+        assert m0.name == 'test'
+        assert s.metadata.Markers.test1 == m1
+        assert m1.name == 'test1'
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_add_permanent_marker_twice(self):
+        s = Signal1D(np.arange(10))
+        m = markers.point(x=5, y=5)
+        s.add_marker(m, permanent=True)
+        with pytest.raises(ValueError):
+            s.add_marker(m, permanent=True)
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_add_permanent_marker_twice_different_signal(self):
+        s0 = Signal1D(np.arange(10))
+        s1 = Signal1D(np.arange(10))
+        m = markers.point(x=5, y=5)
+        s0.add_marker(m, permanent=True)
+        with pytest.raises(ValueError):
+            s1.add_marker(m, permanent=True)
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_add_several_permanent_markers(self):
+        s = Signal1D(np.arange(10))
+        m_point = markers.point(x=5, y=5)
+        m_line = markers.line_segment(x1=5, x2=10, y1=5, y2=10)
+        m_vline = markers.vertical_line(x=5)
+        m_vline_segment = markers.vertical_line_segment(x=4, y1=3, y2=6)
+        m_hline = markers.horizontal_line(y=5)
+        m_hline_segment = markers.horizontal_line_segment(x1=1, x2=9, y=5)
+        m_rect = markers.rectangle(x1=1, x2=3, y1=5, y2=10)
+        m_text = markers.text(x=1, y=5, text="test")
+        s.add_marker(m_point, permanent=True)
+        s.add_marker(m_line, permanent=True)
+        s.add_marker(m_vline, permanent=True)
+        s.add_marker(m_vline_segment, permanent=True)
+        s.add_marker(m_hline, permanent=True)
+        s.add_marker(m_hline_segment, permanent=True)
+        s.add_marker(m_rect, permanent=True)
+        s.add_marker(m_text, permanent=True)
+        assert len(list(s.metadata.Markers)) == 8
+        with pytest.raises(ValueError):
+            s.add_marker(m_rect, permanent=True)
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_add_markers_as_list(self):
+        s = Signal1D(np.arange(10))
+        marker_list = []
+        for i in range(10):
+            marker_list.append(markers.point(1, 2))
+        s.add_marker(marker_list, permanent=True)
+        assert len(s.metadata.Markers) == 10
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_add_markers_as_list_add_same_twice(self):
+        s = Signal1D(np.arange(10))
+        marker_list = []
+        for i in range(10):
+            marker_list.append(markers.point(1, 2))
+        s.add_marker(marker_list, permanent=True)
+        with pytest.raises(ValueError):
+            s.add_marker(marker_list, permanent=True)
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_add_markers_as_list_add_different_twice(self):
+        s = Signal1D(np.arange(10))
+        marker_list0 = []
+        for i in range(10):
+            marker_list0.append(markers.point(1, 2))
+        s.add_marker(marker_list0, permanent=True)
+        assert len(s.metadata.Markers) == 10
+        marker_list1 = []
+        for i in range(10):
+            marker_list1.append(markers.point(4, 8))
+        s.add_marker(marker_list1, permanent=True)
+        assert len(s.metadata.Markers) == 20
+    
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_add_permanent_marker_signal2d(self):
+        s = Signal2D(np.arange(100).reshape(10, 10))
+        m = markers.point(x=5, y=5)
+        s.add_marker(m, permanent=True)
+        assert list(s.metadata.Markers)[0][1] == m
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_deepcopy_permanent_marker(self):
+        x, y, color, name = 2, 9, 'blue', 'test_point'
+        s = Signal2D(np.arange(100).reshape(10, 10))
+        m = markers.point(x=x, y=y, color=color)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        s1 = s.deepcopy()
+        m1 = s1.metadata.Markers.get_item(name)
+        assert m.get_data_position('x1') == m1.get_data_position('x1')
+        assert m.get_data_position('y1') == m1.get_data_position('y1')
+        assert m.name == m1.name
+        assert m.marker_properties['color'] == m1.marker_properties['color']
+
+    def test_dict2marker(self):
+        m_point0 = markers.point(x=5, y=5)
+        m_point1 = markers.point(x=(5, 10), y=(1, 5))
+        m_line = markers.line_segment(x1=5, x2=10, y1=5, y2=10)
+        m_vline = markers.vertical_line(x=5)
+        m_vline_segment = markers.vertical_line_segment(x=4, y1=3, y2=6)
+        m_hline = markers.horizontal_line(y=5)
+        m_hline_segment = markers.horizontal_line_segment(x1=1, x2=9, y=5)
+        m_rect = markers.rectangle(x1=1, x2=3, y1=5, y2=10)
+        m_text = markers.text(x=1, y=5, text="test")
+
+        m_point0_new = dict2marker(m_point0._to_dictionary(), m_point0.name)
+        m_point1_new = dict2marker(m_point1._to_dictionary(), m_point1.name)
+        m_line_new = dict2marker(m_line._to_dictionary(), m_line.name)
+        m_vline_new = dict2marker(m_vline._to_dictionary(), m_vline.name)
+        m_vline_segment_new = dict2marker(
+            m_vline_segment._to_dictionary(), m_vline_segment.name)
+        m_hline_new = dict2marker(m_hline._to_dictionary(), m_hline.name)
+        m_hline_segment_new = dict2marker(
+            m_hline_segment._to_dictionary(), m_hline_segment.name)
+        m_rect_new = dict2marker(m_rect._to_dictionary(), m_rect.name)
+        m_text_new = dict2marker(m_text._to_dictionary(), m_text.name)
+
+        m_point0_dict = sanitize_dict(m_point0._to_dictionary())
+        m_point1_dict = sanitize_dict(m_point1._to_dictionary())
+        m_line_dict = sanitize_dict(m_line._to_dictionary())
+        m_vline_dict = sanitize_dict(m_vline._to_dictionary())
+        m_vline_segment_dict = sanitize_dict(m_vline_segment._to_dictionary())
+        m_hline_dict = sanitize_dict(m_hline._to_dictionary())
+        m_hline_segment_dict = sanitize_dict(m_hline_segment._to_dictionary())
+        m_rect_dict = sanitize_dict(m_rect._to_dictionary())
+        m_text_dict = sanitize_dict(m_text._to_dictionary())
+
+        m_point0_new_dict = sanitize_dict(m_point0_new._to_dictionary())
+        m_point1_new_dict = sanitize_dict(m_point1_new._to_dictionary())
+        m_line_new_dict = sanitize_dict(m_line_new._to_dictionary())
+        m_vline_new_dict = sanitize_dict(m_vline_new._to_dictionary())
+        m_vline_segment_new_dict = sanitize_dict(
+            m_vline_segment_new._to_dictionary())
+        m_hline_new_dict = sanitize_dict(m_hline_new._to_dictionary())
+        m_hline_segment_new_dict = sanitize_dict(
+            m_hline_segment_new._to_dictionary())
+        m_rect_new_dict = sanitize_dict(m_rect_new._to_dictionary())
+        m_text_new_dict = sanitize_dict(m_text_new._to_dictionary())
+        assert m_point0_dict == m_point0_new_dict
+        assert m_point1_dict == m_point1_new_dict
+        assert m_line_dict == m_line_new_dict
+        assert m_vline_dict == m_vline_new_dict
+        assert m_vline_segment_dict == m_vline_segment_new_dict
+        assert m_hline_dict == m_hline_new_dict
+        assert m_hline_segment_dict == m_hline_segment_new_dict
+        assert m_rect_dict == m_rect_new_dict
+        assert m_text_dict == m_text_new_dict
+
 
 def _test_plot_rectange_markers():
     # Create test image 100x100 pixels:
@@ -135,7 +386,8 @@ def _test_plot_rectange_markers():
 
 
 @pytest.mark.skipif("sys.platform == 'darwin'")
-@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_rectange_markers():
     im = _test_plot_rectange_markers()
     return im._plot.signal_plot.figure
@@ -162,7 +414,8 @@ def _test_plot_point_markers():
 
 
 @pytest.mark.skipif("sys.platform == 'darwin'")
-@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_point_markers():
     s = _test_plot_point_markers()
     return s._plot.signal_plot.figure
@@ -188,14 +441,16 @@ def _test_plot_text_markers():
 
 
 @pytest.mark.skipif("sys.platform == 'darwin'")
-@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_text_markers_nav():
     s = _test_plot_text_markers()
     return s._plot.navigator_plot.figure
 
 
 @pytest.mark.skipif("sys.platform == 'darwin'")
-@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_text_markers_sig():
     s = _test_plot_text_markers()
     return s._plot.signal_plot.figure
@@ -224,7 +479,8 @@ def _test_plot_line_markers():
 
 
 @pytest.mark.skipif("sys.platform == 'darwin'")
-@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_line_markers():
     im = _test_plot_line_markers()
     return im._plot.signal_plot.figure
