@@ -142,6 +142,8 @@ def _linear_bin_loop(result, data, scale):
             while (x2 - x1) >= 1:
                 value += data[cx1]
                 x1 += 1
+            if x2 != x1:
+                value+= data[math.floor(x1)]*(x2-x1)
         else:
             fx1 = math.floor(x1)
             cx1 = math.ceil(x1)
