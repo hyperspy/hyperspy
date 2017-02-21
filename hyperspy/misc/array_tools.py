@@ -150,7 +150,7 @@ def _linear_bin_loop(result, data, scale):
             if scale > (cx1 - x1) > 0:
                 value += data[fx1] * (cx1 - x1)
                 x1 = cx1
-            if x1 < (result.shape[0] + 1:
+            if x1 < (result.shape[0] + 1):
                 value += data[math.floor(x1)]*(x2-x1)
 
 def _linear_bin(dat, scale, crop=True):
@@ -158,26 +158,32 @@ def _linear_bin(dat, scale, crop=True):
     Binning of the spectrum image by a non-integer pixel value.
     Parameters
     ----------
-    originalSpectrum: numpy.array, or the s.data, where s is a signal array.
-    scale: a list of floats for each dimension specify the new:old pixel ratio
+    originalSpectrum : numpy.array,
+        or the s.data, where s is a signal array.
+    scale : a list of floats
+        for each dimension specify the new:old pixel ratio
         e.g. a ratio of 1 is no binning
              a ratio of 2 means that each pixel in the new spectrum is
              twice the size of the pixels in the old spectrum.
-    crop_str: when binning by a non-integer number of pixels it is likely that
+    crop_str : {'False'}, optional
+        when binning by a non-integer number of pixels it is likely that
          the final row in each dimension contains less than the full quota to
          fill one pixel.
          e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
          pixels and one row containing only 0.8 pixels worth. Selection of
          crop_str = 'True' or crop = 'False' determines whether or not this
          'black' line is cropped from the final binned array or not.
+
         *Please note that if crop=False is used, the final row in each
-    dimension may appear black, if a fractional number of pixels are left
-    over. It can be removed but has been left to preserve total counts
-    before and after binning.*
-    Return
+        dimension may appear black, if a fractional number of pixels are left
+        over. It can be removed but has been left to preserve total counts
+        before and after binning.*
+
+    Returns
     ------
-    An np.array with new dimensions width/scale for each
-    dimension in the data.
+    np.array
+        with new dimensions width/scale for each
+        dimension in the data.
     """
     if len(dat.shape) != len(scale):
         raise ValueError(

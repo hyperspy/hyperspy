@@ -208,48 +208,42 @@ class EDS_mixin:
 
         Parameters
         ----------
-        scale: a list of floats for each dimension specify the new:old pixel
-               ratio
-              e.g. [1, 1, 2]
-              a ratio of 1 is no binning in the x and y directions.
-              a ratio of 2 means that each pixel in the new spectrum is
-              twice the width of the pixels in the old spectrum, in the energy,
-              dimension.
-         crop: when binning by a non-integer number of pixels it is likely that
-               the final row in each dimension contains less than the full
-               quota to fill one pixel.
+        scale : a list of floats
+            for each dimension specify the new:old pixel ratio
+            e.g. a ratio of 1 is no binning
+                 a ratio of 2 means that each pixel in the new spectrum is
+                 twice the size of the pixels in the old spectrum.
+        crop_str : {'False'}, optional
+            when binning by a non-integer number of pixels it is likely that
+             the final row in each dimension contains less than the full quota to
+             fill one pixel.
              e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
              pixels and one row containing only 0.8 pixels worth. Selection of
-             crop = 'True' or crop = 'False' determines whether or not this
+             crop_str = 'True' or crop = 'False' determines whether or not this
              'black' line is cropped from the final binned array or not.
 
-        *Please note that if crop=False is used, the final row in each
-        dimension may appear black, if a fractional number of pixels are left
-        over. It can be removed but has been left to preserve total counts
-        before and after binning.*
+            *Please note that if crop=False is used, the final row in each
+            dimension may appear black, if a fractional number of pixels are left
+            over. It can be removed but has been left to preserve total counts
+            before and after binning.*
 
-        Return
+        Returns
         ------
-        A new spectrum image with new dimensions width/scale for each
-        dimension in the data. The axes scales and real_time/live_time are also
-        corrected accordingly.
+        s : Signal subclass
 
         Examples
         --------
-        Input:
-        spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
-        spectrum.data[1, 2, 9] = 5
-        print(spectrum)
-        print ('Sum = ', sum(sum(sum(spectrum.data))))
-        scale = [2, 2, 5]
-        test = spectrum.linear_bin(scale)
-        print(test)
-        print('Sum = ', sum(sum(sum(test.data))))
-
-        Output:
-        <EDSTEMSpectrum, title: , dimensions: (4, 4|10)>
-        Sum =  164.0
-        <EDSTEMSpectrum, title: , dimensions: (2, 2|2)>
+        >>> spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
+        >>> spectrum.data[1, 2, 9] = 5
+        >>> print(spectrum)
+        <EDXTEMSpectrum, title: dimensions: (4, 4|10)>
+        >>> print ('Sum = ', sum(sum(sum(spectrum.data))))
+        Sum = 164.0
+        >>> scale = [2, 2, 5]
+        >>> test = spectrum.linear_bin(scale)
+        >>> print(test)
+        <EDSTEMSpectrum, title: dimensions (2, 2|2)>
+        >>> print('Sum = ', sum(sum(sum(test.data))))
         Sum =  164.0
 
         """
