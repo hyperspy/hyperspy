@@ -346,7 +346,15 @@ class Test_linear_bin:
 
     def test_linear_bin4(self):
         spectrum = EDSTEMSpectrum(np.ones([4, 4, 10]))
+        spectrum.data[2][0] = 5
         res = spectrum.linear_bin([0.4, 0.4, 5])
         np.testing.assert_allclose(res.data[1], [[[ 0.4]],
                 [[ 0.4]],[[ 0.4]],[[ 0.4]],[[ 0.4]],[[ 2. ]],
                 [[ 2. ]],[[ 1.2]],[[ 0.4]],[[ 0.4]]], atol=1e-3)
+
+    def test_linear_bin_axis(self):
+        spectrum = EDSTEMSpectrum(np.ones([4, 4, 10]))
+        scale = [0.2, 0.2, 5]
+        test = spectrum.linear_bin(scale)
+        np.testing.assert_allclose((test.axes_manager[0].scale/0.2),
+                                    spectrum.axes_manager[0].scale)
