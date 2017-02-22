@@ -4,14 +4,14 @@
 Developer Guide
 ===============
 
-This 6-step guide is intended to give people who want to start contributing their 
+This 6-step guide is intended to give people who want to start contributing their
 own tools to HyperSpy a foothold to kick-start the process. This is also the way
 to start if you ultimately hope to become a member of the developer team.
 
 We anticipate that many potential contributors and developers will be scientists
 who may have a lot to offer in terms of expert knowledge but may have little
 experience when it comes to working on a reasonably large open-source project
-like HyperSpy. This guide is aimed at you - helping to reduce the barrier to make 
+like HyperSpy. This guide is aimed at you - helping to reduce the barrier to make
 a contribution.
 
 Before you start you should decide which platform (i.e. Linux, Windows, or Mac)
@@ -21,12 +21,12 @@ only the specifics that change.
 1. Start using HyperSpy and understand it
 -----------------------------------------
 
-The best way to start understanding how HyperSpy works and to build a broad 
+The best way to start understanding how HyperSpy works and to build a broad
 overview of the code as it stands is to use it -- so what are you waiting for?
-`Download HyperSpy <https://hyperspy.org/download.html>`_.
+`Download HyperSpy <http://hyperspy.org/download.html>`_.
 
 The user-guide also provides a good overview of all the parts of the code that
-are currently implemented as well as much information about how everything works 
+are currently implemented as well as much information about how everything works
 -- so read it well:
 `HyperSpy User-Guide <www.hyperspy.org/hyperspy-doc/current/index.html>`_.
 
@@ -55,8 +55,8 @@ PS: If you choose to develop in Windows/Mac you may find `Github Desktop <https:
 -------------------------
 
 Open source projects are all about community - we put in much effort to make
-good tools available to all and most people are happy to help others start out. 
-Everyone had to start at some point and the philosophy of these projects 
+good tools available to all and most people are happy to help others start out.
+Everyone had to start at some point and the philosophy of these projects
 centres around the fact that we can do better by working together.
 
 Much of the conversation happens in 'public' via online platforms. The main two
@@ -76,24 +76,24 @@ work on.
 
 Work out what you want to contribute and break it down in to managable chunks.
 
-You may have a very clear idea of what you want to contribute but if you're 
-not sure where to start you can always look through the issues and pull requests 
-on the `GitHub Page <https://github.com/hyperspy/hyperspy/>`_. You'll find that 
-there are many known areas for development in the issues and a number of 
+You may have a very clear idea of what you want to contribute but if you're
+not sure where to start you can always look through the issues and pull requests
+on the `GitHub Page <https://github.com/hyperspy/hyperspy/>`_. You'll find that
+there are many known areas for development in the issues and a number of
 pull-requests are part finished projects just sitting there waiting for a keen
 new contributor to come and learn by finishing.
 
-When you've decided what you're going to work on - let people know using the 
+When you've decided what you're going to work on - let people know using the
 online forums!
 
-It may be that someone else is doing something similar and can help, it's also 
-good to make sure that those working on related projects are pulling in the 
+It may be that someone else is doing something similar and can help, it's also
+good to make sure that those working on related projects are pulling in the
 same direction.
 
 4. Get good habits
 ------------------
 
-There are 3 key points to get right when starting out as a contributor - keep 
+There are 3 key points to get right when starting out as a contributor - keep
 work separated in managable sections, make sure that your code style is good,
 and bear in mind that every new function you write will need a test and user
 documentation!
@@ -104,7 +104,7 @@ Use git and work in managable branches
 By now you'll have had a look around GitHub - but why's it so important?
 
 Well GitHub is the public forum in which we manage and discuss development of
-the code. More importantly, it enables every developer to utilise Git which is 
+the code. More importantly, it enables every developer to utilise Git which is
 an open source "version control" system that you can use on your laptop or
 desktop. By version control we mean that you can separate out your contribution
 to the code into many versions (called branches) and switch between them easily.
@@ -112,7 +112,7 @@ Later you can choose which version you want to have integrated into HyperSpy.
 
 You can learn all about Git `here <http://www.git-scm.com/about>`_!
 
-The most important thing for you to do is to separate your contributions so that 
+The most important thing for you to do is to separate your contributions so that
 each branch is small advancement on the "master" code or on another branch. In
 the end each branch will have to be checked and reviewed by someone else before
 it can be included - so if it's too big, you will be asked to split it up!
@@ -149,7 +149,7 @@ To run the tests, you can call the ``pytest`` script in a console:
 ::
 
     pytest
-    
+
 You need make sure, that you are running pytest for python 3 and for the correct python distribution. Depending on your system, the name of the script can be different.
 
 Useful hints on testing:
@@ -168,17 +168,17 @@ To run plotting tests, you simply need to add the option ``--mpl``:
 ::
 
     pytest --mpl
-    
+
 If you don't use the ``--mpl``, the code of the tests will be executed but the images will not be compared to the references images.
-    
+
 If you need to add or change some plots, follow the workflow below:
     1. Write the tests using appropriate decorator such as ``@pytest.mark.mpl_image_compare``.
     2. If you need to generate new reference image in the folder ``plot_test_dir``, for example, run: ``py.test --mpl-generate-path=plot_test_dir``
     3. Run again the tests and this time they should pass.
     4. Use ``git add`` to put the new file in the git repository.
 
-The plotting tests need matplotlib > 2.0.0, since the matplotlib `style change <http://matplotlib.org/style_changes.html>`_ 
-between matplotlib 1.x and 2.x is enough to make the test failed. Currently, the test are not run in travis on mac os x, 
+The plotting tests need matplotlib > 2.0.0, since the matplotlib `style change <http://matplotlib.org/style_changes.html>`_
+between matplotlib 1.x and 2.x is enough to make the test failed. Currently, the test are not run in travis on mac os x,
 because travis does not support emulating display on mac os x.
 
 It can happen that tests using the ``@pytest.mark.mpl_image_compare`` decorator failed because plots
