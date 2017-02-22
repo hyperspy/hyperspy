@@ -55,13 +55,13 @@ install_req = ['scipy',
                'traitsui>=5.0',
                'natsort',
                'requests',
-               'tqdm',
+               'tqdm>=0.4.9',
                'sympy',
                'dill',
                'h5py',
                'python-dateutil',
                'ipyparallel',
-               'dask[array]',
+               'dask[array]>=0.13',
                'scikit-image']
 
 extras_require = {
