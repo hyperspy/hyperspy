@@ -407,10 +407,10 @@ class EDSModel(Model1D):
             else:
                 component.sigma.free = True
                 E = component.centre.value
-                component.sigma.twin_function_expr = _get_sigma(
-                    E, E_ref, self.units_factor)
                 component.sigma.twin_inverse_function_expr = _get_sigma(
                     E_ref, E, self.units_factor)
+                component.sigma.twin_function_expr = _get_sigma(
+                    E, E_ref, self.units_factor)
 
     def _set_energy_resolution(self, xray_lines, *args, **kwargs):
         """
