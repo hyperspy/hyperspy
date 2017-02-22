@@ -345,10 +345,10 @@ class Test_linear_bin:
                                    (20, 20, 2))
 
     def test_linear_bin4(self):
-        spectrum = EDSTEMSpectrum(np.ones([4, 4, 10]))
+        spectrum = EDSTEMSpectrum(np.ones([4, 1, 1]))
         spectrum.data[2][0] = 5
-        res = spectrum.linear_bin([0.4, 0.4, 5])
-        np.testing.assert_allclose(res.data[1], [[[ 0.4]],
+        res = spectrum.linear_bin([0.4, 1, 1])
+        np.testing.assert_allclose(res.data, [[[ 0.4]],
                 [[ 0.4]],[[ 0.4]],[[ 0.4]],[[ 0.4]],[[ 2. ]],
                 [[ 2. ]],[[ 1.2]],[[ 0.4]],[[ 0.4]]], atol=1e-3)
 
