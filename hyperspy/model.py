@@ -392,7 +392,7 @@ class BaseModel(list):
             for parameter in athing.parameters:
                 # Remove the parameter from its twin _twins
                 parameter.twin = None
-                for twin in parameter._twins:
+                for twin in [twin for twin in parameter._twins]:
                     twin.twin = None
 
             list.remove(self, athing)
