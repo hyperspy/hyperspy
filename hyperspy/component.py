@@ -137,6 +137,7 @@ class Parameter(t.HasTraits):
     _twin_inverse_function_expr = ""
     twin_function = None
     _twin_inverse_function = None
+    _twin_inverse_sympy = None
 
     def __init__(self):
         self._twins = set()
@@ -238,20 +239,21 @@ class Parameter(t.HasTraits):
         x = tuple(expr.free_symbols)[0]
         self.twin_function = lambdify(x, expr.evalf())
         self._twin_function_expr = value
-        y = sympy.Symbol(x.name + "2")
-        try:
-            inv = sympy.solveset(sympy.Eq(y, expr), x)
-            self._twin_inverse_sympy = lambdify(y, inv)
-            self._twin_inverse_function = None
-        except:
-            # Not all may have a suitable solution.
-            self._twin_inverse_function = None
-            self._twin_inverse_sympy = None
-            _logger.warning(
-                "The function {} is not invertible. Setting the value of {} "
-                "will raise an AttributeError unless you set manually "
-                "``twin_inverse_function_expr``. Otherwise, set the value of "
-                "its twin parameter instead.".format(value, self))
+        if not self.twin_inverse_function:
+            y = sympy.Symbol(x.name + "2")
+            try:
+                inv = sympy.solveset(sympy.Eq(y, expr), x)
+                self._twin_inverse_sympy = lambdify(y, inv)
+                self._twin_inverse_function = None
+            except:
+                # Not all may have a suitable solution.
+                self._twin_inverse_function = None
+                self._twin_inverse_sympy = None
+                _logger.warning(
+                    "The function {} is not invertible. Setting the value of "
+                    "{} will raise an AttributeError unless you set manually "
+                    "``twin_inverse_function_expr``. Otherwise, set the "
+                    "value of its twin parameter instead.".format(value, self))
 
     @property
     def twin_inverse_function_expr(self):
