@@ -208,7 +208,7 @@ def test_load_to_memory():
 def test_load_readonly():
     s = hs.load(FILE2, lazy=True)
     k = next(filter(lambda x: x.startswith("array-original"),
-                    s.data.dask.keys()))
+                    (key for key in s.data.dask.keys() if isinstance(key, str))))
     mm = s.data.dask[k]
     assert isinstance(mm, np.memmap)
     assert not mm.flags["WRITEABLE"]
