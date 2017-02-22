@@ -50,13 +50,13 @@ MKL libraries) and the easiest installation. The academic license is free.
 #. Download and install
    `Anaconda <https://store.continuum.io/cshop/anaconda/>`_. If you are not
    familiar with Anaconda please refer to their
-   `User Guide <https://docs.continuum.io/anaconda/index#user-guide>`_ for
+   `User Guide <https://docs.continuum.io/anaconda/>`_ for
    details.
 
 #. Then install HyperSpy executing the following `conda` commands in the Anaconda
    Prompt, Linux/Mac Terminal or Microsoft Windows Command Prompt. (This
    depends on your OS and how you have installed Anaconda, see the `Anaconda
-   User Guide <https://docs.continuum.io/anaconda/index#user-guide>`_) for
+   User Guide <https://docs.continuum.io/anaconda/>`_) for
    details.
 
    .. code-block:: bash
@@ -135,21 +135,6 @@ number of libraries that usually need to be compiled and therefore installing
 HyperSpy may require development tools. If the above does not work for you
 remember that the easiest way to install HyperSpy is
 :ref:`using Anaconda <quick-anaconda-install>`.
-
-Creating Conda environment for HyperSpy
----------------------------------------
-
-`Anaconda <https://www.continuum.io/downloads>`_ Python distribution can be
-easily set up using environment files. The two required steps are:
- 1. Download `HyperSpy environment file <https://raw.githubusercontent.com/hyperspy/hyperspy/0.8.x/anaconda_hyperspy_environment.yml>`_.
- 2. Create and activate HyperSpy environment according to instructions `here <http://conda.pydata.org/docs/using/envs.html#use-environment-from-file>`_. For Unix, the following should work:
-
-.. code-block:: bash
-
-    $ conda config --add channels conda-forge
-    $ conda env create -f anaconda_hyperspy_environment.yml
-    $ source activate hyperspy
-
 
 
 .. _install-binary:
@@ -273,22 +258,19 @@ Windows
 ^^^^^^^
 
 * If HyperSpy fails to start in Windows try installing the Microsoft Visual
-  C++ 2008 redistributable packages (
-  `64 bit <http://www.microsoft.com/download/en/details.aspx?id=15336>`_
-  or `32 bit <http://www.microsoft.com/download/en/details.aspx?id=29>`_)
   before reporting a bug.
-* In some Windows machines an error is printed at the end of the installation
-  and the entries in the context menu and the Start Menu are not installed
-  properly. In most cases the problem can be solved by restarting the computer
-  and reinstalling HyperSpy.
-* Concerning older installations with the "Hyperspy here" context menus: Due to a `Python bug <http://bugs.python.org/issue13276>`_ sometimes uninstalling
+
+* Concerning older installations with the "Hyperspy here" context menus: Due to
+ a `Python bug <http://bugs.python.org/issue13276>`_ sometimes uninstalling
   HyperSpy does not uninstall the "Hyperspy here" entries in the context menu.
-  Please run the following code in a Windows Terminal (command line prompt) with administrator rights
-  to remove the entries manually:
+  Please run the following code in a Windows Terminal (command line prompt)
+  with administrator rights to remove the entries manually:
 
   .. code-block:: bash
 
-    > uninstall_hyperspy_here
+    $ uninstall_hyperspy_here
+
+
 * If HyperSpy raises a MemoryError exception:
 
   * Install the 64bit version if you're using the 32bit one and you are running
