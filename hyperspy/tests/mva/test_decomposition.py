@@ -259,12 +259,9 @@ class TestReturnInfo:
 class TestPlotExplainedVarianceRatio:
 
     def setup_method(self, method):
-        MY_PATH = os.path.dirname(__file__)
-        fname = os.path.join(MY_PATH, '..', 'io', 'FEI_old',
-                             '64x64x5_TEM_preview.emi')
-        s = hs.load(fname)
-
-        self.s = signals.Signal1D(s.data)
+        np.random.seed(1)
+        self.s = signals.Signal1D(np.dot(np.random.random((100, 5)),
+                                         np.random.exponential(size=(5,100))))
         self.s.decomposition()
 
     def _generate_parameters():
