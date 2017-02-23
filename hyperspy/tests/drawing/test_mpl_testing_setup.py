@@ -17,8 +17,14 @@
 
 import matplotlib
 import pytest
+from distutils.version import LooseVersion
 
 
 @pytest.mark.skipif("sys.platform == 'darwin'")
 def test_mlp_agg_for_testing():
     assert matplotlib.get_backend() == 'agg'
+    
+
+def test_mpl_version():
+    # for simplicity, only matplotlib 2.x is supported for testing 
+    assert LooseVersion(matplotlib.__version__) >= LooseVersion('2.0.0')
