@@ -29,6 +29,8 @@ from hyperspy.tests.drawing.test_plot_signal import _TestPlot
 scalebar_color = 'blue'
 default_tol = 2.0
 baseline_dir = 'plot_signal2d'
+xfail_osx = pytest.mark.skipif("sys.platform == 'darwin'",
+                               reason="plotting not supported by travis osx")
 
 
 def _generate_image_stack_signal():
@@ -64,7 +66,7 @@ def _set_signal_axes(axes_manager, name=t.Undefined, units=t.Undefined,
     return axes_manager
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
+@xfail_osx
 @pytest.mark.parametrize("normalization", ['single', 'global'])
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
 def test_rgb_image(normalization):

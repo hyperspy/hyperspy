@@ -18,15 +18,17 @@
 import matplotlib
 from matplotlib.testing.decorators import cleanup
 import warnings
-import sys
 import pytest
 
 import hyperspy.drawing.utils as utils
 from hyperspy.misc.test_utils import assert_warns
 
 
-@pytest.mark.skipif(sys.platform == 'darwin',
-                    reason="Plot testing not supported on osx by travis-ci")
+xfail_osx = pytest.mark.skipif("sys.platform == 'darwin'",
+                               reason="plotting not supported by travis osx")
+
+
+@xfail_osx
 @cleanup
 def test_create_figure():
     dummy_warning = 'dummy_function have been called after closing windows'
@@ -45,7 +47,6 @@ def test_create_figure():
                                   _on_figure_window_close=dummy_function)
         assert isinstance(fig, matplotlib.figure.Figure) == True
         matplotlib.pyplot.close(fig)
-        
+
     if original_backend == 'agg':  # switch back to the original backend
         matplotlib.pyplot.switch_backend(original_backend)
-

@@ -27,10 +27,12 @@ from hyperspy.tests.drawing.test_plot_signal import _TestPlot
 scalebar_color = 'blue'
 default_tol = 2.0
 baseline_dir = 'plot_signal1d'
+xfail_osx = pytest.mark.skipif("sys.platform == 'darwin'",
+                               reason="plotting not supported by travis osx")
 
 
 @cleanup
-@pytest.mark.skipif("sys.platform == 'darwin'")
+@xfail_osx
 class TestPlotSpectra():
 
     def _test_plot_spectra(self):
@@ -62,7 +64,7 @@ class TestPlotSpectra():
             return s2._plot.navigator_plot.figure
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
+@xfail_osx
 @cleanup
 @update_close_figure
 def test_plot_nav0_close():
@@ -71,7 +73,7 @@ def test_plot_nav0_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
+@xfail_osx
 @cleanup
 @update_close_figure
 def test_plot_nav1_close():
@@ -80,7 +82,7 @@ def test_plot_nav1_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
+@xfail_osx
 @cleanup
 @update_close_figure
 def test_plot_nav2_close():
@@ -112,7 +114,7 @@ def _generate_parameter():
     return parameters
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
+@xfail_osx
 @pytest.mark.parametrize(("ndim", "plot_type"),
                          _generate_parameter())
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
@@ -124,7 +126,7 @@ def test_plot_two_cursors(ndim, plot_type):
         return s._plot.navigator_plot.figure
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
+@xfail_osx
 @cleanup
 @update_close_figure
 def test_plot_nav2_sig1_two_cursors_close():

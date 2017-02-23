@@ -19,12 +19,15 @@ import matplotlib
 import pytest
 from distutils.version import LooseVersion
 
+xfail_osx = pytest.mark.skipif("sys.platform == 'darwin'",
+                               reason="plotting not supported by travis osx")
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
+
+@xfail_osx
 def test_mlp_agg_for_testing():
     assert matplotlib.get_backend() == 'agg'
-    
+
 
 def test_mpl_version():
-    # for simplicity, only matplotlib 2.x is supported for testing 
+    # for simplicity, only matplotlib 2.x is supported for testing
     assert LooseVersion(matplotlib.__version__) >= LooseVersion('2.0.0')
