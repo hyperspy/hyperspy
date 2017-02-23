@@ -131,26 +131,42 @@ def jit_ifnumba(func):
 @jit_ifnumba
 def _linear_bin_loop(result, data, scale):
     for j in range(result.shape[0]):
+        #Begin by determining the upper and lower limits of a given new pixel.
         x1 = j * scale
         x2 = min((1 + j) * scale, data.shape[0])
         value = result[j:j + 1]
+
         if (x2 - x1) >= 1:
+            #When binning, the first part is to deal with the fractional pixel
+            #left over from it being non-integer binning e.g. when x1=1.4
             cx1 = math.ceil(x1)
             rem = cx1 - x1
+            #This will add a value of fractional pixel to the bin, eg if x1=1.4,
+            # the fist step will be to add 0.6*data[1]
             value += data[math.floor(x1)] * rem
+            #Update x1 to remove the part of the bin we have just added.
             x1 = cx1
             while (x2 - x1) >= 1:
+                #Main binning function to add full pixel values to the data.
                 value += data[cx1]
+                #Update x1 each time.
                 x1 += 1
             if x2 != x1:
+                #Finally take into account the fractional pixel left over.
                 value+= data[math.floor(x1)]*(x2-x1)
         else:
+            #When step < 1, so we are upsampling
             fx1 = math.floor(x1)
             cx1 = math.ceil(x1)
             if scale > (cx1 - x1) > 0:
+                #If our step is smaller than rounding up to the nearest whole
+                #number.
                 value += data[fx1] * (cx1 - x1)
-                x1 = cx1
+                x1 = cx1 #This step is needed when this particular bin straddes
+                #two neighbouring pixels.
             if x1 < (data.shape[0] - 1):
+                #The standard upsampling function where each new pixel is a
+                #fraction of the original pixel.
                 value += data[math.floor(x1)]*(x2-x1)
 
 def _linear_bin(dat, scale, crop=True):
@@ -200,12 +216,21 @@ def _linear_bin(dat, scale, crop=True):
              else "float")
 
     for axis, s in enumerate(scale):
+        #For each iteration of linear_bin the axis being interated over has to
+        #be switched to axis[0] in order to carry out the interation loop.
         dat = np.swapaxes(dat, 0, axis)
+        # The new dimension size is old_size/step, this is rounded down normally
+        #but if crop is switched off it is rounded up to the nearest whole
+        #number.
         dim = (math.floor(dat.shape[0] / s) if crop
                else math.ceil(dat.shape[0] / s))
+        #Set up the result np.array to have a new axis[0] size for after cropping.
         result = np.zeros((dim,) + dat.shape[1:], dtype=dtype)
+        #Carry out binning over axis[0]
         _linear_bin_loop(result=result, data=dat, scale=s)
+        #Swap axis[0] back to the original axis location.
         result = result.swapaxes(0, axis)
+        #Update the np.array reading of iterating over the next axis.
         dat = result
 
     return result
