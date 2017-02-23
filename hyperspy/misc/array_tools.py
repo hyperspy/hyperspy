@@ -180,7 +180,7 @@ def _linear_bin(dat, scale, crop=True):
         before and after binning.*
 
     Returns
-    ------
+    -------
     np.array
         with new dimensions width/scale for each
         dimension in the data.

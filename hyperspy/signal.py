@@ -2277,7 +2277,7 @@ class BaseSignal(FancySlicing,
             before and after binning.*
 
         Returns
-        ------
+        -------
         s : Signal subclass
 
         Examples

@@ -1358,7 +1358,7 @@ class EELSSpectrum_mixin:
             before and after binning.*
 
         Returns
-        ------
+        -------
         s : Signal subclass
 
         Examples

@@ -21,7 +21,7 @@ from functools import partial
 
 import numpy as np
 import dask.array as da
-import dask.delayed as dd
+#import dask.delayed as dd
 from dask import threaded
 from dask.diagnostics import ProgressBar
 from itertools import product

@@ -69,14 +69,14 @@ set when making the :py:class:`~.signal.BaseSignal` object.
 .. code-block:: python
 
     >>> dict0 = {'size': 10, 'name':'Ax0', 'units':'A', 'scale':0.2, 'offset':1}
-    >>> dict1 = {'size': 20, 'name':'Ax1', 'units':'B', 'scale':0.1, 'offset':2} 
+    >>> dict1 = {'size': 20, 'name':'Ax1', 'units':'B', 'scale':0.1, 'offset':2}
     >>> s = hs.signals.BaseSignal(np.random.random((10,20)), axes=[dict0, dict1])
     >>> s.axes_manager
     <Axes manager, axes: (|20, 10)>
-		Name |   size |  index |  offset |   scale |  units 
-    ================ | ====== | ====== | ======= | ======= | ====== 
-    ---------------- | ------ | ------ | ------- | ------- | ------ 
-	       Axes1 |     20 |        |       2 |     0.1 |      B 
+		Name |   size |  index |  offset |   scale |  units
+    ================ | ====== | ====== | ======= | ======= | ======
+    ---------------- | ------ | ------ | ------- | ------- | ------
+	       Axes1 |     20 |        |       2 |     0.1 |      B
 	       Axes0 |     10 |        |       1 |     0.2 |      A
 
 This also applies to the :py:attr:`~.signal.BaseSignal.metadata`.
@@ -904,8 +904,8 @@ be a divisor of the original shape.
 
     >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
     >>> print(s)
-    >>> print(s.rebin([512]))
     <EDSSEMSpectrum, title: EDS SEM Signal1D, dimensions: (|1024)>
+    >>> print(s.rebin([512]))
     <EDSSEMSpectrum, title: EDS SEM Signal1D, dimensions: (|512)>
 
 .. versionadded:: 1.1
@@ -918,14 +918,14 @@ than one in order to 'up-sample', for example:
     >>> spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
     >>> spectrum.data[1, 2, 9] = 5
     >>> print(spectrum)
+    <EDSTEMSpectrum, title: , dimensions: (4, 4|10)>
     >>> print ('Sum = ', sum(sum(sum(spectrum.data))))
+    Sum =  164.0
     >>> scale = [0.5, 0.5, 5]
     >>> test = spectrum.linear_bin(step)
     >>> print(test)
-    >>> print('Sum =', sum(sum(sum(test.data))))
-    <EDSTEMSpectrum, title: , dimensions: (4, 4|10)>
-    Sum =  164.0
     <EDSTEMSpectrum, title: , dimensions: (8, 8|2)>
+    >>> print('Sum =', sum(sum(sum(test.data))))
     Sum =  164.0
 
 
