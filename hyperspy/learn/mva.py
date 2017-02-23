@@ -1011,8 +1011,12 @@ class MVA():
         """
         s = self.get_explained_variance_ratio()
 
+        n_max = len(self.learning_results.explained_variance_ratio)
         if n is None:
-            n = len(self.learning_results.explained_variance_ratio)
+            n = n_max
+        elif n > n_max:
+            _logger.info("n is too large, setting n to its maximal value.")
+            n = n_max
 
         # Determine right number of components for signal and cutoff value
         if isinstance(threshold, float):
