@@ -11,7 +11,7 @@ matrix:
   - os: osx
     language: generic
     python: 3.5
-    env: export FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+    env: export FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'; SETUP_XVFB=True
   allow_failures:
   - env: export FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
 

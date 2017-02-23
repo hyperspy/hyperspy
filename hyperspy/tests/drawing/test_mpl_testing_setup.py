@@ -19,6 +19,7 @@ import matplotlib
 import pytest
 from distutils.version import LooseVersion
 
+
 xfail_osx = pytest.mark.skipif("sys.platform == 'darwin'",
                                reason="plotting not supported by travis osx")
 
@@ -31,3 +32,12 @@ def test_mlp_agg_for_testing():
 def test_mpl_version():
     # for simplicity, only matplotlib 2.x is supported for testing
     assert LooseVersion(matplotlib.__version__) >= LooseVersion('2.0.0')
+
+
+# dummy test to check if travis osx is working
+@pytest.mark.mpl_image_compare(baseline_dir='', tolerance=2)
+def test_dummy_test():
+    fig = matplotlib.pyplot.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    ax.plot([1, 2, 2])
+    return fig
