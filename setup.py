@@ -345,6 +345,7 @@ with update_version_when_dev() as version:
             'hyperspy':
             [
                 'misc/eds/example_signals/*.hdf5',
+                'tests/drawing/plot_explained_variance_ratio/*.png',
                 'tests/drawing/plot_signal/*.png',
                 'tests/drawing/plot_signal1d/*.png',
                 'tests/drawing/plot_signal2d/*.png',
@@ -378,7 +379,6 @@ with update_version_when_dev() as version:
                 'tests/io/ripple_files/*.rpl',
                 'tests/io/ripple_files/*.raw',
                 'tests/io/emd_files/*.emd',
-                'tests/mva/plot_explained_variance_ratio/*.png',
                 'tests/io/protochips_data/*.npy',
                 'tests/io/protochips_data/*.csv',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
