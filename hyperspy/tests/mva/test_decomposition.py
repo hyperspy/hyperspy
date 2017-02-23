@@ -260,8 +260,10 @@ class TestPlotExplainedVarianceRatio:
 
     def setup_method(self, method):
         np.random.seed(1)
-        self.s = signals.Signal1D(np.dot(np.random.random((100, 5)),
-                                         np.random.exponential(size=(5,100))))
+        sources = np.random.exponential(size=(5, 100))
+        np.random.seed(1)
+        mixmat = np.random.random((100, 5))
+        self.s = signals.Signal1D(np.dot(mixmat, sources))
         self.s.decomposition()
 
     def _generate_parameters():
