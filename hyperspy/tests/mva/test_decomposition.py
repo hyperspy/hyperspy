@@ -16,17 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import numpy as np
 import pytest
 
-import hyperspy.api as hs
 from hyperspy import signals
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
-
-
-baseline_dir = 'plot_explained_variance_ratio'
-default_tol = 2.0
 
 
 class TestNdAxes:
@@ -253,39 +247,3 @@ class TestReturnInfo:
                 algorithm=algorithm,
                 return_info=False,
                 output_dimension=1) is None
-
-
-@pytest.mark.skipif("sys.platform == 'darwin'")
-class TestPlotExplainedVarianceRatio:
-
-    def setup_method(self, method):
-        np.random.seed(1)
-        sources = np.random.random(size=(5, 100))
-        np.random.seed(1)
-        mixmat = np.random.random((100, 5))
-        self.s = signals.Signal1D(np.dot(mixmat, sources))
-        np.random.seed(1)
-        self.s.add_gaussian_noise(.1)
-        self.s.decomposition()
-
-    def _generate_parameters():
-        parameters = []
-        for n in [10, 50]:
-            for xaxis_type in ['index', 'number']:
-                for threshold in [0, 0.001]:
-                    for xaxis_labeling in ['ordinal', 'cardinal']:
-                        parameters.append([n, threshold, xaxis_type,
-                                           xaxis_labeling])
-        return parameters
-
-    @pytest.mark.skipif("sys.platform == 'darwin'")
-    @pytest.mark.parametrize(("n", "threshold", "xaxis_type", "xaxis_labeling"),
-                             _generate_parameters())
-    @pytest.mark.mpl_image_compare(
-        baseline_dir=baseline_dir, tolerance=default_tol)
-    def test_plot_explained_variance_ratio(self, n, threshold, xaxis_type,
-                                           xaxis_labeling):
-        ax = self.s.plot_explained_variance_ratio(n, threshold=threshold,
-                                                  xaxis_type=xaxis_type,
-                                                  xaxis_labeling=xaxis_labeling)
-        return ax.get_figure()
