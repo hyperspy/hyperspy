@@ -2,10 +2,10 @@ What's new
 **********
 
 We only cover here the main highlights, for a detailed list of all the changes
-see `the github commits changelog
-<https://github.com/hyperspy/hyperspy/commits/master>`_.
+see `the commits in the GITHUB milestones
+<https://github.com/hyperspy/hyperspy/milestones?state=closed>`_.
 
-.. _changes_1.1.2: 
+.. _changes_1.1.2:
 v1.1.2
 ======
 
@@ -15,7 +15,7 @@ the `bugs fixed
 and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.1.2+label%3Aenhancement>`_.
 
 
-.. _changes_1.1.1: 
+.. _changes_1.1.1:
 v1.1.1
 ======
 
@@ -30,7 +30,7 @@ Enhancements
 * New metadata added to the HyperSpy metadata specifications: ``magnification``,
   ``frame_number``, ``camera_length``, ``authors``, ``doi``, ``notes`` and
   ``quantity``. See :ref:`metadata_structure` for details.
-* The y-axis label (for 1D signals) and colorbar label (for 2D signals) 
+* The y-axis label (for 1D signals) and colorbar label (for 2D signals)
   are now taken from the new ``metadata.Signal.quantity``.
 * The ``time`` and ``date`` metadata are now stored in the ISO 8601 format.
 * All metadata in the HyperSpy metadata specification is now read from all
@@ -82,10 +82,10 @@ NEW
 
 * :ref:`roi-label`.
 * :ref:`Robust PCA <rpca-label>` (RPCA) and online RPCA algorithms.
-* Numpy ufuncs can now :ref:`operate on HyperSpy's signals <ufunc-label>`. 
+* Numpy ufuncs can now :ref:`operate on HyperSpy's signals <ufunc-label>`.
 * ComplexSignal and specialised subclasses to :ref:`operate on complex data <complex_data-label>`.
 * Events :ref:`logging <logger-label>`.
-* Query and :ref:`fetch spectra <eelsdb-label>` from `The EELS Database <https://eelsdb.eu/>`_. 
+* Query and :ref:`fetch spectra <eelsdb-label>` from `The EELS Database <https://eelsdb.eu/>`_.
 * :ref:`interactive-label`.
 * :ref:`events-label`.
 
@@ -95,7 +95,7 @@ Model
 * :ref:`SAMFire-label`.
 * Store :ref:`models in hdf5 files <storing_models-label>`.
 * Add :ref:`fancy indexing <model_indexing-label>` to `Model`.
-* :ref:`Two-dimensional model fitting <2D_model-label>`.  
+* :ref:`Two-dimensional model fitting <2D_model-label>`.
 
 EDS
 ^^^
@@ -106,10 +106,10 @@ EDS
 
 IO
 ^^
-* Support for reading certain files without :ref:`loading them to memory <load_to_memory-label>`. 
-* :ref:`Bruker's composite file (bcf) <bcf-format>` reading support. 
+* Support for reading certain files without :ref:`loading them to memory <load_to_memory-label>`.
+* :ref:`Bruker's composite file (bcf) <bcf-format>` reading support.
 * :ref:`Electron Microscopy Datasets (EMD) <emd-format>` read and write support.
-* :ref:`SEMPER unf <unf-format>` read and write support. 
+* :ref:`SEMPER unf <unf-format>` read and write support.
 * :ref:`DENS heat log <dens-format>` read support.
 * :ref:`NanoMegas blockfile <blockfile-format>` read and write support.
 
@@ -123,7 +123,7 @@ Enhancements
 Documentation
 -------------
 
-* The following sections of the User Guide were revised and largely overwritten: 
+* The following sections of the User Guide were revised and largely overwritten:
 
   * :ref:`install-label`.
   * :ref:`ml-label`.
@@ -139,7 +139,7 @@ API changes
 * Remove simulation classes.
 * The :py:class:`~._signals.signal1D.Signal1D`,
   :py:class:`~._signals.image.Signal2D` and :py:class:`~.signal.BaseSignal`
-  classes deprecated the old `Spectrum` `Image` and `Signal` classes. 
+  classes deprecated the old `Spectrum` `Image` and `Signal` classes.
 
 
 

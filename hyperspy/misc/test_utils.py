@@ -5,12 +5,7 @@
 from contextlib import contextmanager
 import warnings
 import re
-import sys
-import inspect
-import matplotlib
-from distutils.version import LooseVersion
 import numpy as np
-import numpy.testing as nt
 from numpy.testing import assert_allclose
 
 from hyperspy.decorators import simple_decorator
@@ -168,36 +163,10 @@ def assert_warns(message=None, category=None):
             raise ValueError(msg)
 
 
-def get_matplotlib_version_label():
-    """ Return a string describing the matplotlib version installed. The string
-    is used to label the references images for plot testing. """
-    version = LooseVersion(matplotlib.__version__)
-    if version >= LooseVersion('2.0.0'):
-        return 'mpl2'
-    else:
-        return 'mpl1'
-
-
 def reset_rcParams_default():
     import matplotlib.pyplot as plt
     plt.rcParams.clear()
     plt.rcParams.update(plt.rcParamsDefault)
-
-
-@simple_decorator
-def switch_backend_mpl(function):
-    def wrapper(*args, **kwargs):
-        # if necessary, change the backend to display a figure and to be able to
-        # close it.
-        original_backend = matplotlib.get_backend()
-        if original_backend == 'agg':
-            matplotlib.pyplot.switch_backend('TkAgg')
-
-        function(*args, **kwargs)
-
-        if original_backend == 'agg':  # switch back to the original backend
-            matplotlib.pyplot.switch_backend(original_backend)
-    return wrapper
 
 
 @simple_decorator

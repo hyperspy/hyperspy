@@ -955,15 +955,29 @@ This can be extended to 4 (or more) navigation dimensions:
     >>> marker = hs.markers.point(x=x, y=y, color='red')
     >>> s.add_marker(marker, permanent=True)
 
-Many markers can added by using a for loop. Note, adding many markers
-might lead to very slow plotting.
+If you want to add a large amount of markers at the same time we advise
+to add them as an iterable (list, tuple, ...), which will be much faster:
 
 .. code-block:: python
 
+    >>> from numpy.random import random
     >>> s = hs.signals.Signal2D(np.arange(300).reshape(3, 10, 10))
-    >>> for i in range(10):
-    >>>     marker = hs.markers.point(i, i, size=60)
-    >>>     s.add_marker(marker, permanent=True)
+    >>> markers = (hs.markers.point(random()*10, random()*10, size=30) for i in range(500))
+    >>> s.add_marker(markers, permanent=True)
+
+This can also be done using different types of markers
+
+.. code-block:: python
+
+    >>> from numpy.random import random
+    >>> s = hs.signals.Signal2D(np.arange(300).reshape(3, 10, 10))
+    >>> markers = []
+    >>> for i in range(200):
+    >>>     markers.append(hs.markers.horizontal_line(random()*10))
+    >>>     markers.append(hs.markers.vertical_line(random()*10))
+    >>>     markers.append(hs.markers.point(random()*10, random()*10))
+    >>>     markers.append(hs.markers.text(random()*10, random()*10, "sometext"))
+    >>> s.add_marker(markers, permanent=True)
 
 Permanent markers are stored in the HDF5 file if the signal is saved:
 

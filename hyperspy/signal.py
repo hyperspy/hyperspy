@@ -43,7 +43,7 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import array_tools
 from hyperspy.misc import rgb_tools
-from hyperspy.misc.utils import underline
+from hyperspy.misc.utils import underline, isiterable
 from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
@@ -4063,8 +4063,10 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        marker : `hyperspy.drawing._markers`
-            The marker to add. See `plot.markers`
+        marker : marker object or iterable of marker objects
+            The marker or iterable (list, tuple, ...) of markers to add.
+            See `plot.markers`. If you want to add a large number of markers,
+            add them as an iterable, since this will be much faster.
         plot_on_signal : bool, default True
             If True, add the marker to the signal
             If False, add the marker to the navigator
@@ -4111,62 +4113,90 @@ class BaseSignal(FancySlicing,
         >>> marker.name = "point_marker"
         >>> s.add_marker(marker, permanent=True)
         >>> del s.metadata.Markers.point_marker
+
+        Adding many markers as a list
+        >>> from numpy.random import random
+        >>> s = hs.signals.Signal2D(np.random.randint(10, size=(100, 100)))
+        >>> marker_list = []
+        >>> for i in range(100):
+        >>>     marker = hs.markers.point(random()*100, random()*100, color='red')
+        >>>     marker_list.append(marker)
+        >>> s.add_marker(marker_list, permanent=True)
+
         """
-        marker_data_shape = marker._get_data_shape()
-        if (not (len(marker_data_shape) == 0)) and (
-                marker_data_shape != self.axes_manager.navigation_shape):
-            raise ValueError(
-                "Navigation shape of the marker must be 0 or the "
-                "same navigation shape as this signal.")
-        if (marker.signal is not None) and (marker.signal is not self):
-            raise ValueError("Markers can not be added to several signals")
-        marker._plot_on_signal = plot_on_signal
-        if plot_marker:
-            if self._plot is None:
-                self.plot()
-            if marker._plot_on_signal:
-                self._plot.signal_plot.add_marker(marker)
-            else:
-                if self._plot.navigator_plot is None:
-                    self.plot()
-                self._plot.navigator_plot.add_marker(marker)
-            marker.plot()
+        if isiterable(marker):
+            marker_list = marker
+        else:
+            marker_list = [marker]
+        markers_dict = {}
         if permanent:
             if not self.metadata.has_item('Markers'):
                 self.metadata.add_node('Markers')
+            marker_object_list = []
             for marker_tuple in list(self.metadata.Markers):
-                if marker is marker_tuple[1]:
-                    raise ValueError("Marker already added to signal")
+                marker_object_list.append(marker_tuple[1])
             name_list = self.metadata.Markers.keys()
-            name = marker.name
-            temp_name = name
-            i = 1
-            while temp_name in name_list:
-                temp_name = name + str(i)
-                i += 1
-            marker.name = temp_name
-            self.metadata.Markers[marker.name] = marker
-            marker.signal = self
-        if not plot_marker and not permanent:
-            _logger.warning(
-                "plot_marker=False and permanent=False does nothing")
+        for m in marker_list:
+            marker_data_shape = m._get_data_shape()
+            if (not (len(marker_data_shape) == 0)) and (
+                    marker_data_shape != self.axes_manager.navigation_shape):
+                raise ValueError(
+                    "Navigation shape of the marker must be 0 or the "
+                    "same navigation shape as this signal.")
+            if (m.signal is not None) and (m.signal is not self):
+                raise ValueError("Markers can not be added to several signals")
+            m._plot_on_signal = plot_on_signal
+            if plot_marker:
+                if self._plot is None:
+                    self.plot()
+                if m._plot_on_signal:
+                    self._plot.signal_plot.add_marker(m)
+                else:
+                    if self._plot.navigator_plot is None:
+                        self.plot()
+                    self._plot.navigator_plot.add_marker(m)
+                m.plot(update_plot=False)
+            if permanent:
+                for marker_object in marker_object_list:
+                    if m is marker_object:
+                        raise ValueError("Marker already added to signal")
+                name = m.name
+                temp_name = name
+                i = 1
+                while temp_name in name_list:
+                    temp_name = name + str(i)
+                    i += 1
+                m.name = temp_name
+                markers_dict[m.name] = m
+                m.signal = self
+                marker_object_list.append(m)
+                name_list.append(m.name)
+            if not plot_marker and not permanent:
+                _logger.warning(
+                    "plot_marker=False and permanent=False does nothing")
+        if permanent:
+            self.metadata.Markers = markers_dict
+        if plot_marker:
+            if self._plot.signal_plot:
+                self._plot.signal_plot.ax.hspy_fig._draw_animated()
+            if self._plot.navigator_plot:
+                self._plot.navigator_plot.ax.hspy_fig._draw_animated()
 
     def _plot_permanent_markers(self):
-        marker_dict_list = list(self.metadata.Markers.__dict__.values())
-        if {'_dtb_value_': False, 'key': '_double_lines'} in marker_dict_list:
-            marker_dict_list.remove(
-                {'_dtb_value_': False, 'key': '_double_lines'})
-        for index, marker_dict in enumerate(marker_dict_list):
-            marker = marker_dict['_dtb_value_']
+        marker_name_list = self.metadata.Markers.keys()
+        markers_dict = self.metadata.Markers.__dict__
+        for marker_name in marker_name_list:
+            marker = markers_dict[marker_name]['_dtb_value_']
             if marker.plot_marker:
                 if marker._plot_on_signal:
                     self._plot.signal_plot.add_marker(marker)
                 else:
                     self._plot.navigator_plot.add_marker(marker)
-                if index == len(marker_dict_list) - 1:
-                    marker.plot(update_plot=True)
-                else:
-                    marker.plot(update_plot=False)
+                marker.plot(update_plot=False)
+        if self._plot.signal_plot:
+            self._plot.signal_plot.ax.hspy_fig._draw_animated()
+        if self._plot.navigator_plot:
+            self._plot.navigator_plot.ax.hspy_fig._draw_animated()
 
     def add_poissonian_noise(self, **kwargs):
         """Add Poissonian noise to the data"""

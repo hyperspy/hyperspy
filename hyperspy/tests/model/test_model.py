@@ -413,11 +413,15 @@ class TestModel1D:
         g1 = hs.model.components1D.Gaussian()
         g2 = hs.model.components1D.Gaussian()
         g3 = hs.model.components1D.Gaussian()
+        g3.A.twin = g1.A
+        g1.sigma.twin = g2.sigma
         m.extend([g1, g2, g3])
         del m[:2]
         assert g1 not in m
         assert g2 not in m
         assert g3 in m
+        assert not g1.sigma.twin
+        assert not g1.A._twins
 
     def test_get_component_by_name(self):
         m = self.model
