@@ -47,7 +47,7 @@ setup_path = os.path.dirname(__file__)
 
 import hyperspy.Release as Release
 
-install_req = ['scipy',
+install_req = ['scipy>=0.15',
                'ipython>=2.0',
                'matplotlib>=1.2',
                'numpy>=1.10',
