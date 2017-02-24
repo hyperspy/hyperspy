@@ -71,7 +71,7 @@ test_script:
   # Run the project tests
   - ps: Add-AppveyorMessage "Running tests..."
   - "python setup.py build_ext --inplace"
-    #- "py.test --mpl"
+  - "py.test --mpl"
   - "python setup.py clean"
   - ps: Add-AppveyorMessage "Testing completed."
 
