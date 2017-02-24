@@ -86,7 +86,8 @@ artifacts:
 before_deploy:
   - ps: Add-AppveyorMessage "Running deployment step..."
   - "pip install winpython"
-  - "pip install https://github.com/hyperspy/hyperspy-bundle/archive/master.zip"
+    #  - "pip install https://github.com/hyperspy/hyperspy-bundle/archive/master.zip"
+  - "pip install https://github.com/francisco-dlp/hyperspy-bundle/archive/add_ui_sm.zip"
   # Download WinPython installer if not cached
   - ps: Add-AppveyorMessage "Installing WinPython..."
   - "SET WP_INSTDIR=%APPDATA%\\wpdir\\WinPython-%PYTHON_ARCH%bit\\"
