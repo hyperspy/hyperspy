@@ -508,7 +508,7 @@ in range 0-255).
 
 Blockfiles are by default loaded in a "copy-on-write" manner using
 `numpy.memmap
-<http://docs.scipy.org/doc/numpy/referen-ce/generated/numpy.memmap.html>`_ .
+<http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.html>`_ .
 For blockfiles ``load`` takes the ``mmap_mode`` keyword argument enabling
 loading the file using a different mode. However, note that lazy loading
 does not support in-place writing (i.e lazy loading and the "r+" mode
@@ -601,7 +601,7 @@ EMD Electron Microscopy Datasets (HDF5)
 EMD stands for “Electron Microscopy Dataset.” It is a subset of the open source
 HDF5 wrapper format. N-dimensional data arrays of any standard type can be
 stored in an HDF5 file, as well as tags and other metadata. The EMD format was
-developed at Lawrence Berkeley National Lab (see http://emdatasets.lbl.gov/ for
+developed at Lawrence Berkeley National Lab (see http://emdatasets.com/ for
 more information). NOT to be confused with the FEI EMD format which was
 developed later and has a different structure.
 
