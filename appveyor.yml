@@ -86,8 +86,7 @@ artifacts:
 before_deploy:
   - ps: Add-AppveyorMessage "Running deployment step..."
   - "pip install winpython"
-    #  - "pip install https://github.com/hyperspy/hyperspy-bundle/archive/master.zip"
-  - "pip install https://github.com/francisco-dlp/hyperspy-bundle/archive/add_ui_sm.zip"
+  - "pip install https://github.com/hyperspy/hyperspy-bundle/archive/master.zip"
   # Download WinPython installer if not cached
   - ps: Add-AppveyorMessage "Installing WinPython..."
   - "SET WP_INSTDIR=%APPDATA%\\wpdir\\WinPython-%PYTHON_ARCH%bit\\"
@@ -118,7 +117,7 @@ before_deploy:
   - "%CMD_IN_ENV% %WP_INSTDIR%/scripts/env.bat"
   # Give info about python vesion and compiler used to compile the python
   - "%CMD_IN_ENV% python.exe -c \"import sys; print(sys.version)\""
-  - "%CMD_IN_ENV% pip install .[all] configobj start_jupyter_cm cython"
+  - "%CMD_IN_ENV% pip install --upgrade .[all] configobj start_jupyter_cm cython"
   # Try to run twice as workaround for permission error
   - "%CMD_IN_ENV% pip install hyperspyui || pip install hyperspyui"
   # setting back the config:
@@ -141,7 +140,6 @@ deploy:
     #   sem-geologist:
     #secure: RRqUkx9H5VuFNITmm+YzgB0qnqgVGPH1yrPVxb4oCD+FAjcTch2WZAiPEKn4L6w6
   artifact: /.*\.exe/, win_wheels  # upload all exe installers and wheels to release assets
-  #artifact: win_wheels
   draft: false
   prerelease: false
   force_update: true
