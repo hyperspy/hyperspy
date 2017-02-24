@@ -117,7 +117,8 @@ before_deploy:
   - "%CMD_IN_ENV% %WP_INSTDIR%/scripts/env.bat"
   # Give info about python vesion and compiler used to compile the python
   - "%CMD_IN_ENV% python.exe -c \"import sys; print(sys.version)\""
-  - "%CMD_IN_ENV% pip install --upgrade tqdm notebook cython dask ipython configobj start_jupyter_cm ipywidgets ipyparallel pytest pytest-mpl sympy"
+  - "%CMD_IN_ENV% pip install --upgrade tqdm notebook cython ipython configobj start_jupyter_cm ipywidgets ipyparallel pytest pytest-mpl sympy"
+  - "%CMD_IN_ENV% pip install dask==0.13"
   - "%CMD_IN_ENV% pip install .[all]"
   # Try to run twice as workaround for permission error
   - "%CMD_IN_ENV% pip install hyperspyui || pip install hyperspyui"
