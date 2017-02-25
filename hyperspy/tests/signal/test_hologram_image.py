@@ -16,8 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
+import gc
 
+import numpy as np
 import numpy.testing as nt
 from numpy.testing import assert_allclose
 import pytest
@@ -40,9 +41,9 @@ def test_set_microscope_parameters(lazy):
     assert (holo_image.metadata.Acquisition_instrument.TEM.tilt_stage == 2.2)
 
 
-def calc_holo(x, y, phase_ref, fringe_spacing, fringe_direction):
-    return 2 * (1 + np.cos(phase_ref + fringe_spacing / (2 * np.pi) * (
-        x * np.cos(fringe_direction) + y * np.sin(fringe_direction))))
+def calc_holo(x, y, phase_ref, FRINGE_SPACING, FRINGE_DIRECTION):
+    return 2 * (1 + np.cos(phase_ref + FRINGE_SPACING / (2 * np.pi) * (
+        x * np.cos(FRINGE_DIRECTION) + y * np.sin(FRINGE_DIRECTION))))
 
 
 def calc_phaseref(x, y, z, img_sizex, img_sizey):
@@ -50,43 +51,28 @@ def calc_phaseref(x, y, z, img_sizex, img_sizey):
 
 
 img_size = 1024
-img_size3x = 768
-img_size3y = 512
-fringe_direction = -np.pi / 6
-fringe_spacing = 5.23
-fringe_direction3 = np.pi / 3
-fringe_spacing3 = 6.11
-ls = np.linspace(-img_size / 2, img_size / 2 - 1, img_size)
-
-x, y = np.meshgrid(ls, ls)
-phase_ref = calc_phaseref(x, 0, 0, img_size / 2.2, 1)
-holo = calc_holo(x, y, phase_ref, fringe_spacing, fringe_direction)
-ref = calc_holo(x, y, 0, fringe_spacing, fringe_direction)
-
-x2, z2, y2 = np.meshgrid(ls, np.array([0, 1]), ls)
-phase_ref2 = calc_phaseref(x2, y2, z2, img_size / 2.2, img_size / 2.2)
-holo2 = calc_holo(x2, y2, phase_ref2, fringe_spacing, fringe_direction)
-ref2 = calc_holo(x2, y2, 0, fringe_spacing, fringe_direction)
-
-x3, z3, y3 = np.meshgrid(
-    np.linspace(-img_size3x / 2, img_size3x / 2, img_size3x),
-    np.arange(6), np.linspace(-img_size3y / 2, img_size3y / 2, img_size3y))
-phase_ref3 = calc_phaseref(x3, y3, z3 / 6, img_size3x * 2, img_size3y * 2)
-newshape = (2, 3, img_size3x, img_size3y)
-holo3 = calc_holo(x3, y3, phase_ref3, fringe_spacing3,
-                  fringe_direction3).reshape(newshape)
-ref3 = calc_holo(x3, y3, 0, fringe_spacing3,
-                 fringe_direction3).reshape(newshape)
-x_start = int(img_size3x / 9)
+IMG_SIZE3X = 512
+IMG_SIZE3Y = 256
+FRINGE_DIRECTION = -np.pi / 6
+FRINGE_SPACING = 5.23
+FRINGE_DIRECTION3 = np.pi / 3
+FRINGE_SPACING3 = 6.11
+LS = np.linspace(-img_size / 2, img_size / 2 - 1, img_size)
+X_START = int(IMG_SIZE3X / 9)
 # larger fringes require larger crop
-x_stop = img_size3x - 1 - int(img_size3x / 9)
-y_start = int(img_size3y / 9)
-y_stop = img_size3y - 1 - int(img_size3y / 9)
+X_STOP = IMG_SIZE3X - 1 - int(IMG_SIZE3X / 9)
+Y_START = int(IMG_SIZE3Y / 9)
+Y_STOP = IMG_SIZE3Y - 1 - int(IMG_SIZE3Y / 9)
 
 
 @pytest.mark.parametrize('parallel,lazy', [(True, False), (False, False),
                                            (None, True)])
 def test_reconstruct_phase_single(parallel, lazy):
+
+    x, y = np.meshgrid(LS, LS)
+    phase_ref = calc_phaseref(x, 0, 0, img_size / 2.2, 1)
+    holo = calc_holo(x, y, phase_ref, FRINGE_SPACING, FRINGE_DIRECTION)
+    ref = calc_holo(x, y, 0, FRINGE_SPACING, FRINGE_DIRECTION)
     holo_image = hs.signals.HologramImage(holo)
     ref_image = hs.signals.HologramImage(ref)
     if lazy:
@@ -107,10 +93,10 @@ def test_reconstruct_phase_single(parallel, lazy):
         sb_smoothness=sb_smoothness_cc,
         sb_unit=sb_units_cc,
         parallel=parallel)
-    x_start = int(wave_image.axes_manager.signal_shape[0] / 10)
-    x_stop = int(wave_image.axes_manager.signal_shape[0] * 9 / 10)
-    wave_crop = wave_image.data[x_start:x_stop, x_start:x_stop]
-    wave_cc_crop = wave_image_cc.data[x_start:x_stop, x_start:x_stop]
+    X_START = int(wave_image.axes_manager.signal_shape[0] / 10)
+    X_STOP = int(wave_image.axes_manager.signal_shape[0] * 9 / 10)
+    wave_crop = wave_image.data[X_START:X_STOP, X_START:X_STOP]
+    wave_cc_crop = wave_image_cc.data[X_START:X_STOP, X_START:X_STOP]
 
     # asserts that waves from different
     assert_allclose(wave_crop, np.conj(wave_cc_crop), rtol=1e-3)
@@ -118,11 +104,11 @@ def test_reconstruct_phase_single(parallel, lazy):
     # reconstruction with given sideband parameters
 
     # Cropping the reconstructed and original phase images and comparing:
-    x_start = int(img_size / 10)
-    x_stop = img_size - 1 - int(img_size / 10)
+    X_START = int(img_size / 10)
+    X_STOP = img_size - 1 - int(img_size / 10)
     phase_new_crop = wave_image.unwrapped_phase(
-        parallel=parallel).data[x_start:x_stop, x_start:x_stop]
-    phase_ref_crop = phase_ref[x_start:x_stop, x_start:x_stop]
+        parallel=parallel).data[X_START:X_STOP, X_START:X_STOP]
+    phase_ref_crop = phase_ref[X_START:X_STOP, X_START:X_STOP]
     assert_allclose(phase_new_crop, phase_ref_crop, atol=1E-2)
 
 
@@ -131,6 +117,10 @@ def test_reconstruct_phase_single(parallel, lazy):
 def test_reconstruct_phase_nonstandard(parallel, lazy):
     # 2. Testing reconstruction with non-standard output size for stacked
     # images:
+    x2, z2, y2 = np.meshgrid(LS, np.array([0, 1]), LS)
+    phase_ref2 = calc_phaseref(x2, y2, z2, img_size / 2.2, img_size / 2.2)
+    holo2 = calc_holo(x2, y2, phase_ref2, FRINGE_SPACING, FRINGE_DIRECTION)
+    ref2 = calc_holo(x2, y2, 0, FRINGE_SPACING, FRINGE_DIRECTION)
     holo_image2 = hs.signals.HologramImage(holo2)
     ref_image2 = hs.signals.HologramImage(ref2)
 
@@ -184,12 +174,12 @@ def test_reconstruct_phase_nonstandard(parallel, lazy):
         np.linspace(0, output_shape[0], img_size),
         np.linspace(0, output_shape[0], img_size))
 
-    x_start = int(img_size / 10)
-    x_stop = img_size - 1 - int(img_size / 10)
-    phase_new_crop0 = phase_new0[x_start:x_stop, x_start:x_stop]
-    phase_new_crop1 = phase_new1[x_start:x_stop, x_start:x_stop]
-    phase_ref_crop0 = phase_ref2[0, x_start:x_stop, x_start:x_stop]
-    phase_ref_crop1 = phase_ref2[1, x_start:x_stop, x_start:x_stop]
+    X_START = int(img_size / 10)
+    X_STOP = img_size - 1 - int(img_size / 10)
+    phase_new_crop0 = phase_new0[X_START:X_STOP, X_START:X_STOP]
+    phase_new_crop1 = phase_new1[X_START:X_STOP, X_START:X_STOP]
+    phase_ref_crop0 = phase_ref2[0, X_START:X_STOP, X_START:X_STOP]
+    phase_ref_crop1 = phase_ref2[1, X_START:X_STOP, X_START:X_STOP]
     assert_allclose(phase_new_crop0, phase_ref_crop0, atol=0.05)
     assert_allclose(phase_new_crop1, phase_ref_crop1, atol=0.01)
 
@@ -198,6 +188,17 @@ def test_reconstruct_phase_nonstandard(parallel, lazy):
                                            (None, True)])
 def test_reconstruct_phase_multi(parallel, lazy):
 
+    x3, z3, y3 = np.meshgrid(
+        np.linspace(-IMG_SIZE3X / 2, IMG_SIZE3X / 2, IMG_SIZE3X),
+        np.arange(6), np.linspace(-IMG_SIZE3Y / 2, IMG_SIZE3Y / 2, IMG_SIZE3Y))
+    phase_ref3 = calc_phaseref(x3, y3, z3 / 6, IMG_SIZE3X * 2, IMG_SIZE3Y * 2)
+    newshape = (2, 3, IMG_SIZE3X, IMG_SIZE3Y)
+    holo3 = calc_holo(x3, y3, phase_ref3, FRINGE_SPACING3,
+                      FRINGE_DIRECTION3).reshape(newshape)
+    ref3 = calc_holo(x3, y3, 0, FRINGE_SPACING3,
+                     FRINGE_DIRECTION3).reshape(newshape)
+    del x3, z3, y3
+    gc.collect()
     holo_image3 = hs.signals.HologramImage(holo3)
     ref_image3 = hs.signals.HologramImage(ref3)
 
@@ -210,10 +211,10 @@ def test_reconstruct_phase_multi(parallel, lazy):
 
     # Cropping the reconstructed and original phase images and comparing:
     phase3_new_crop = wave_image3.unwrapped_phase(parallel=parallel)
-    phase3_new_crop.crop(2, y_start, y_stop)
-    phase3_new_crop.crop(3, x_start, x_stop)
-    phase3_ref_crop = phase_ref3.reshape(newshape)[:, :, x_start:x_stop,
-                                                   y_start:y_stop]
+    phase3_new_crop.crop(2, Y_START, Y_STOP)
+    phase3_new_crop.crop(3, X_START, X_STOP)
+    phase3_ref_crop = phase_ref3.reshape(newshape)[:, :, X_START:X_STOP,
+                                                   Y_START:Y_STOP]
     assert_allclose(phase3_new_crop.data, phase3_ref_crop, atol=2E-2)
 
     # 3a. Testing reconstruction with input parameters in 'nm' and with multiple parameter input,
@@ -240,14 +241,9 @@ def test_reconstruct_phase_multi(parallel, lazy):
         sb_unit=sb_units3,
         parallel=parallel)
     phase3a_new_crop = wave_image3a.unwrapped_phase(parallel=parallel)
-    phase3a_new_crop.crop(2, y_start, y_stop)
-    phase3a_new_crop.crop(3, x_start, x_stop)
+    phase3a_new_crop.crop(2, Y_START, Y_STOP)
+    phase3a_new_crop.crop(3, X_START, X_STOP)
     assert_allclose(phase3a_new_crop.data, phase3_ref_crop, atol=2E-2)
-
-
-def test_reconstruct_phase_raises():
-    holo_image3 = hs.signals.HologramImage(holo3)
-    ref_image3 = hs.signals.HologramImage(ref3)
     # a. Mismatch of navigation dimensions of object and reference
     # holograms, except if reference hologram ndim=0
     with pytest.raises(ValueError):
@@ -259,7 +255,7 @@ def test_reconstruct_phase_raises():
     #   b. Mismatch of signal shapes of object and reference holograms
     with pytest.raises(ValueError):
         holo_image3.reconstruct_phase(
-            ref_image3.inav[:, :].isig[y_start:y_stop, x_start:x_stop])
+            ref_image3.inav[:, :].isig[Y_START:Y_STOP, X_START:X_STOP])
 
     #   c. Mismatch of signal shape of sb_position
     sb_position_mismatched = hs.signals.Signal2D(np.arange(9).reshape((3, 3)))
