@@ -16,8 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
+import gc
 
+import numpy as np
 import numpy.testing as nt
 from numpy.testing import assert_allclose
 import pytest
@@ -50,8 +51,8 @@ def calc_phaseref(x, y, z, img_sizex, img_sizey):
 
 
 img_size = 1024
-IMG_SIZE3X = 768
-IMG_SIZE3Y = 512
+IMG_SIZE3X = 512
+IMG_SIZE3Y = 256
 FRINGE_DIRECTION = -np.pi / 6
 FRINGE_SPACING = 5.23
 FRINGE_DIRECTION3 = np.pi / 3
@@ -196,7 +197,8 @@ def test_reconstruct_phase_multi(parallel, lazy):
                       FRINGE_DIRECTION3).reshape(newshape)
     ref3 = calc_holo(x3, y3, 0, FRINGE_SPACING3,
                      FRINGE_DIRECTION3).reshape(newshape)
-
+    del x3, z3, y3
+    gc.collect()
     holo_image3 = hs.signals.HologramImage(holo3)
     ref_image3 = hs.signals.HologramImage(ref3)
 
