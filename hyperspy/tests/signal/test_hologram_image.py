@@ -117,13 +117,15 @@ def test_reconstruct_phase_single(parallel, lazy):
 def test_reconstruct_phase_nonstandard(parallel, lazy):
     # 2. Testing reconstruction with non-standard output size for stacked
     # images:
+    gc.collect()
     x2, z2, y2 = np.meshgrid(LS, np.array([0, 1]), LS)
     phase_ref2 = calc_phaseref(x2, y2, z2, img_size / 2.2, img_size / 2.2)
     holo2 = calc_holo(x2, y2, phase_ref2, FRINGE_SPACING, FRINGE_DIRECTION)
     ref2 = calc_holo(x2, y2, 0, FRINGE_SPACING, FRINGE_DIRECTION)
     holo_image2 = hs.signals.HologramImage(holo2)
     ref_image2 = hs.signals.HologramImage(ref2)
-
+    del x2, z2, y2
+    gc.collect()
     if lazy:
         ref_image2 = ref_image2.as_lazy()
         holo_image2 = holo_image2.as_lazy()
@@ -152,7 +154,8 @@ def test_reconstruct_phase_nonstandard(parallel, lazy):
         output_shape=output_shape,
         parallel=parallel)
     assert wave_image2 == wave_image2a
-
+    del wave_image2a
+    gc.collect()
     # interpolate reconstructed phase to compare with the input (reference
     # phase):
     interp_x = np.arange(output_shape[0])
