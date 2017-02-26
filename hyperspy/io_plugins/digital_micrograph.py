@@ -967,6 +967,67 @@ class ImageObject(object):
         return mapping
 
 
+def _get_markers_dict(tags_dict):
+    markers_dict = {}
+    annotations_dict = tags_dict[
+            'DocumentObjectList']['TagGroup0']['AnnotationGroupList']
+    for annotation in annotations_dict.values():
+        marker_type = None
+        if 'Rectangle' in annotation:
+            position = annotation['Rectangle']
+        if 'AnnotationType' in annotation:
+            annotation_type = annotation['AnnotationType']
+            if annotation_type == 2:
+                marker_type = "LineSegment"
+            elif annotation_type == 3:
+                pass # Arrow
+            elif annotation_type == 4:
+                pass # Double arrow
+            elif annotation_type == 5:
+                marker_type = "Rectangle"
+            elif annotation_type == 6:
+                pass # Ellipse
+            elif annotation_type == 8:
+                pass # maskspot
+            elif annotation_type == 9:
+                pass # maskarray
+            elif annotation_type == 13:
+                marker_type = "Text"
+            elif annotation_type == 15:
+                pass # maskbandpass
+            elif annotation_type == 19:
+                pass # maskwedge
+            elif annotation_type == 23:
+                marker_type = "Rectangle" # roirectangle
+            elif annotation_type == 25:
+                marker_type = "LineSegment" # roiline
+            elif annotation_type == 27:
+                marker_type = "Point" # roipoint
+            elif annotation_type == 29:
+                pass # roicurve, also roi loop
+            elif annotation_type == 31:
+                pass # scalebar
+        if marker_type:
+            temp_dict = {
+                    'marker_type':marker_type,
+                    'plot_on_signal':True,
+                    'data':{
+                        'x1':position[0],
+                        'x2':position[1],
+                        'y1':position[2],
+                        'y2':position[3],
+                        'size':20,
+                        'text':None,
+                        },
+                    'marker_properties':{
+                        'color':'red',
+                        'linewidth':2,
+                        },
+                    }
+            markers_dict[marker_type] = temp_dict
+    return(markers_dict)
+
+
 def file_reader(filename, record_by=None, order=None, lazy=False):
     """Reads a DM3 file and loads the data into the appropriate class.
     data_id can be specified to load a given image within a DM3 file that
@@ -1009,6 +1070,11 @@ def file_reader(filename, record_by=None, order=None, lazy=False):
                                     dtype=image.dtype)
             else:
                 data = image.get_data()
+
+            markers_dict = _get_markers_dict(dm.tags_dict)
+            if markers_dict:
+                mp['Markers'] = markers_dict
+
             imd.append(
                 {'data': data,
                  'axes': axes,
@@ -1017,5 +1083,6 @@ def file_reader(filename, record_by=None, order=None, lazy=False):
                  'post_process': post_process,
                  'mapping': image.get_mapping(),
                  })
+
 
     return imd
