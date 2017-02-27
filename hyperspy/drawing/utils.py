@@ -203,7 +203,7 @@ def plot_RGB_map(im_list, normalization='single', dont_plot=False):
     if len(im_list) == 3:
         rgb[:, :, 2] = im_list[2].data.squeeze()
     if normalization == 'single':
-        for i in range(rgb.shape[2]):
+        for i in range(len(im_list)):
             rgb[:, :, i] /= rgb[:, :, i].max()
     elif normalization == 'global':
         rgb /= rgb.max()
@@ -980,7 +980,7 @@ def plot_spectra(
     spectra : iterable object
         Ordered spectra list to plot. If `style` is "cascade" or "mosaic"
         the spectra can have different size and axes.
-    style : {'default', 'overlap','cascade', 'mosaic', 'heatmap'}
+    style : {'default', 'overlap', 'cascade', 'mosaic', 'heatmap'}
         The style of the plot. The default is "overlap" and can be
         customized in `preferences`.
     color : matplotlib color or a list of them or `None`

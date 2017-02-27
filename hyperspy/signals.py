@@ -1,7 +1,7 @@
 """
 The Signal class and its specilized subclasses:
 
-    Signal
+    BaseSignal
         For generic data with arbitrary signal_dimension. All other signal
         classes inherit from this one. It should only be used with none of
         the others is appropriated.
@@ -39,15 +39,19 @@ The Signal class and its specilized subclasses:
 """
 
 # -*- coding: utf-8 -*-
-from hyperspy._signals.signal1d import Signal1D
-from hyperspy._signals.signal2d import Signal2D
-from hyperspy._signals.complex_signal import ComplexSignal
-from hyperspy._signals.complex_signal1d import ComplexSignal1D
-from hyperspy._signals.complex_signal2d import ComplexSignal2D
-from hyperspy._signals.eels import EELSSpectrum
-from hyperspy._signals.eds_sem import EDSSEMSpectrum
-from hyperspy._signals.eds_tem import EDSTEMSpectrum
-from hyperspy._signals.dielectric_function import DielectricFunction
 from hyperspy.signal import BaseSignal
-from hyperspy._signals.hologram_image import HologramImage
-
+from hyperspy._signals.lazy import LazySignal
+from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
+from hyperspy._signals.signal2d import (Signal2D, LazySignal2D)
+from hyperspy._signals.eels import (EELSSpectrum, LazyEELSSpectrum)
+from hyperspy._signals.eds_sem import (EDSSEMSpectrum, LazyEDSSEMSpectrum)
+from hyperspy._signals.eds_tem import (EDSTEMSpectrum, LazyEDSTEMSpectrum)
+from hyperspy._signals.complex_signal import (ComplexSignal, LazyComplexSignal)
+from hyperspy._signals.complex_signal1d import (ComplexSignal1D,
+                                                LazyComplexSignal1D)
+from hyperspy._signals.complex_signal2d import (ComplexSignal2D,
+                                                LazyComplexSignal2D)
+from hyperspy._signals.dielectric_function import (DielectricFunction,
+                                                   LazyDielectricFunction)
+from hyperspy._signals.hologram_image import (HologramImage,
+                                              LazyHologramImage)

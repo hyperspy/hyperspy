@@ -623,7 +623,7 @@ class MVA():
         factors.unfold()
         if mask is not None:
             mask.unfold()
-            factors = factors.data.T[~mask.data]
+            factors = factors.data.T[np.where(~mask.data)]
         else:
             factors = factors.data.T
 

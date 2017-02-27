@@ -4,7 +4,7 @@ shallow_clone: true
 environment:
 
   global:
-    TEST_DEPS: "nose wheel pip"
+    TEST_DEPS: "pytest pytest-cov wheel pip"
     NSIS_DIR: "%PROGRAMFILES(x86)%/NSIS"
 
 
@@ -20,7 +20,7 @@ environment:
       CONDA_NPY: "19"
       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.3.20160209/WinPython-32bit-3.5.1.2.exe'
       WP_CRC: '172d19a743ccfaf55af779d15f29f67fca83a46f08b0af855dfaf809b4184c0d'
-      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython lxml ipyparallel"
+      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython lxml ipyparallel dask"
 
     - PYTHON: "C:\\Miniconda35-x64"
       PYTHON_VERSION: "3.5.x"
@@ -30,7 +30,7 @@ environment:
       CONDA_NPY: "19"
       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.3.20160209/WinPython-64bit-3.5.1.2.exe'
       WP_CRC: '07e854b9aa7a31d8bbf7829d04a45b6d6266603690520e365199af2d98751ab1'
-      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython lxml ipyparallel"
+      DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython lxml ipyparallel dask"
 
 
 
@@ -56,6 +56,10 @@ install:
   - "%CMD_IN_ENV% conda install -yq %DEPS%"
     # Having 'sip' folder on path confuses import of `sip`.
   - "%CMD_IN_ENV% conda install pip"
+  - "pip install pytest-mpl"
+    # Force to have the freetype font in matplotlib from pip for plot testing
+  - "pip uninstall -y matplotlib"
+  - "pip install matplotlib"
   # TODO: Remove once anaconda taitsui package is at v5:
   - "IF \"%PYTHON_MAJOR%\" EQU \"3\" pip install --upgrade traitsui tqdm"
   - ps: Add-AppveyorMessage "Installing hyperspy..."
@@ -67,7 +71,7 @@ test_script:
   # Run the project tests
   - ps: Add-AppveyorMessage "Running tests..."
   - "python setup.py build_ext --inplace"
-  - "python continuous_integration/nosetest.py hyperspy.tests"
+  - "py.test --mpl"
   - "python setup.py clean"
   - ps: Add-AppveyorMessage "Testing completed."
 
@@ -101,7 +105,7 @@ before_deploy:
   - ps: Add-AppveyorMessage "Setting up WinPython environment..."
   - ps: Start-FileDownload ('http://freefr.dl.sourceforge.net/project/nsis/NSIS%202/2.46/nsis-2.46-strlen_8192.zip') ../nsis_patch.zip
   - ps: if ((Get-FileHash '../nsis_patch.zip').Hash -ne '3BA22DDC0F14DBD75A9487EB6C9BD85F535E7038927D251103B97E0AAD94EEAD') { exit(1) }
-  - "7z x ../nsis_patch.zip -o%NSIS_DIR -aoa"
+  - "7z x ../nsis_patch.zip -o%NSIS_DIR% -aoa"
   - ps: Start-FileDownload ('http://nsis.sourceforge.net/mediawiki/images/e/eb/Textreplace.zip') ../Textreplace.zip
   - ps: if ((Get-FileHash '../Textreplace.zip').Hash -ne '6462C0C22E87E7C81DD9076D40ACC74C515243A56F10F4F8FE720F7099DB3BA2') { exit(1) }
   - "7z x ../Textreplace.zip -o%NSIS_DIR% -aoa"
@@ -116,6 +120,8 @@ before_deploy:
   - "%CMD_IN_ENV% python.exe -c \"import sys; print(sys.version)\""
   - "%CMD_IN_ENV% python.exe setup.py recythonize"
   - "%CMD_IN_ENV% python.exe setup.py install"
+  # Try to run twice as workaround for permission error
+  - "%CMD_IN_ENV% pip install hyperspyui || pip install hyperspyui"
   # setting back the config:
   - "ren %WP_INSTDIR%\\settings\\pydistutils_bak.cfg pydistutils.cfg"
   # Custom installer step
