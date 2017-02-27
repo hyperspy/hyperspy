@@ -875,13 +875,11 @@ class Component(t.HasTraits):
             raise ValueError('Only boolean values are permitted')
 
         if value == self.active_is_multidimensional:
-            _logger.warning('`active_is_multidimensional` already %s for %s' %
-                            (str(value), self.name))
             return
 
         if value:  # Turn on
             if self._axes_manager.navigation_size < 2:
-                _logger.warning('`navigation_size` < 2, skipping')
+                _logger.info('`navigation_size` < 2, skipping')
                 return
             # Store value at current position
             self._create_active_array()
