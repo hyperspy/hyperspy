@@ -439,7 +439,8 @@ def save(filename, signal, overwrite=None, **kwds):
     if extension == '':
         extension = \
             preferences.General.default_file_format
-        extension = extension if extension != "hdf5" else "hspy"
+        if preferences.General.hspy_extension:
+            extension = extension if extension != "hdf5" else "hspy"
         filename = filename + '.' + extension
     writer = None
     for plugin in io_plugins:
