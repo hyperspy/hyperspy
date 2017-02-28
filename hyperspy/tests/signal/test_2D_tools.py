@@ -208,23 +208,24 @@ class TestFindPeaks2D:
         for method in self.methods:
             yield self.gets_right_answer, method, self.ref, self.ans
 
-    def creates_array(self, method, dataset):
+    def creates_signal(self, method, dataset):
         peaks = dataset.find_peaks2D(method=method)
-        npt.assert_is_instance(peaks, np.ndarray)
+        assert isinstance(peaks, hs.signal.BaseSignal)
 
     def peaks_match_input(self, method, dataset):
         peaks = dataset.find_peaks2D(method=method)
         signal_shape = dataset.axes_manager.navigation_shape[::-1] if dataset.axes_manager.navigation_size > 0 else (1,)
-        npt.assert_equal(peaks.shape, signal_shape)
+        peaks_shape = peaks.axes_manager.navigation_shape[::-1] if peaks.axes_manager.navigation_size > 0 else (1,)
+        npt.assert_equal(peaks_shape, signal_shape)
 
     def peaks_are_coordinates(self, method, dataset):
         peaks = dataset.find_peaks2D(method=method)
-        peak_shapes = np.array([peak.shape for peak in peaks.flatten()])
+        peak_shapes = np.array([peak.shape for peak in peaks.data.flatten()])
         npt.assert_true(np.all(peak_shapes[:, 1] == 2))
 
     def gets_right_answer(self, method, dataset, answer):
         peaks = dataset.find_peaks2D()
-        npt.assert_true(np.all(peaks[0] == answer[0]))
+        npt.assert_true(np.all(peaks.data[0] == answer[0]))
 
 if __name__ == '__main__':
     import pytest
