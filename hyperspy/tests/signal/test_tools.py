@@ -184,6 +184,14 @@ class Test3D:
         self.signal.axes_manager[2].name = "E"
         self.signal.axes_manager[0].scale = 0.5
         self.data = self.signal.data.copy()
+        
+    def test_indexmin(self):
+        s = self.signal.indexmin('E')
+        ar = self.data.argmin(2)
+        np.testing.assert_array_equal(ar, s.data)
+        assert s.data.ndim == 2
+        assert s.axes_manager.signal_dimension == 0
+        assert s.axes_manager.navigation_dimension == 2
 
     def test_indexmax(self):
         s = self.signal.indexmax('E')
@@ -192,6 +200,14 @@ class Test3D:
         assert s.data.ndim == 2
         assert s.axes_manager.signal_dimension == 0
         assert s.axes_manager.navigation_dimension == 2
+        
+    def test_valuemin(self):
+        s = self.signal.valuemin('x')
+        ar = self.signal.axes_manager['x'].index2value(self.data.argmin(1))
+        np.testing.assert_array_equal(ar, s.data)
+        assert s.data.ndim == 2
+        assert s.axes_manager.signal_dimension == 1
+        assert s.axes_manager.navigation_dimension == 1
 
     def test_valuemax(self):
         s = self.signal.valuemax('x')
