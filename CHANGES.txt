@@ -44,6 +44,9 @@ Enhancements
 * Add support for stacking multi-signal files. See :ref:`load-multiple-label`.
 * Markers can now be saved to hdf5 and creating many markers is easier and
   faster. See :ref:`plot.markers`.
+* Add option to save to HDF5 file using the ".hspy" extension instead of
+  ".hdf5". See :ref:`hdf5-format`. This will be the default extension in
+  HyperSpy 1.3.
 
 For developers
 --------------

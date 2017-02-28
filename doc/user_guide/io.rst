@@ -230,7 +230,7 @@ HDF5 follows the HyperSpy specification, it is possible to save it with the
     >>> s.save('test.hspy')
 
 It is possible to use the ``.hspy`` extension by default by changing the
-value is ``preferences`` using the GUI or programatically:
+value is :py:obj:`hs.preferences` using the GUI or programatically:
 
 .. code-block:: python
 
@@ -240,7 +240,7 @@ value is ``preferences`` using the GUI or programatically:
 From HyperSpy 1.3 ``.hspy`` will be the default extension.
 
 .. versionadded:: 0.8
-    Saving list, tuples and signals present in `:py:attr:`~.metadata``.
+    Saving list, tuples and signals present in :py:attr:`~.metadata`.
 
 When saving to hdf5, all supported objects in the signal's :py:attr:`~.metadata`
 is stored. This includes  lists, tuples and signals. Please note
