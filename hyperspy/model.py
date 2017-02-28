@@ -1009,8 +1009,8 @@ class BaseModel(list):
             if grad is not False:
                 raise ValueError('Custom minimization does not support '
                                  'gradient (for now).')
-            from toolz import curry
-            min_function = curry(min_function, self)
+            from functools import partial
+            min_function = partial(min_function, self)
 
         with cm(update_on_resume=True):
             self.p_std = None
