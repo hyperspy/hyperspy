@@ -11,7 +11,7 @@ matrix:
   - os: osx
     language: generic
     python: 3.5
-    env: export FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+    env: export FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'; SETUP_XVFB=True
   allow_failures:
   - env: export FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
 
@@ -53,10 +53,7 @@ script:
   - if [[ $MINIMAL_ENV == 'False' ]]; then
       python setup.py build_ext --inplace;
       pip install coverage coveralls pytest-cov pytest-mpl;
-      if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
-        py.test --mpl --cov=hyperspy --pyargs hyperspy;
-      else py.test --cov=hyperspy --pyargs hyperspy;
-      fi
+      py.test --mpl --cov=hyperspy --pyargs hyperspy;
     else python3 setup.py build_ext --inplace;
       echo "available installed python libraries (pip3 list):"
       pip3 list;

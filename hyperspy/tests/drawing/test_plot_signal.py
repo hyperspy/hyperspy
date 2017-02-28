@@ -27,6 +27,8 @@ import hyperspy.api as hs
 scalebar_color = 'blue'
 default_tol = 2.0
 baseline_dir = 'plot_signal'
+xfail_osx = pytest.mark.skipif("sys.platform == 'darwin'",
+                               reason="plotting not supported by travis osx")
 
 
 class _TestPlot:
@@ -100,7 +102,7 @@ def _generate_parameter():
     return parameters
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
+@xfail_osx
 @pytest.mark.parametrize(("ndim", "sdim", "plot_type", "data_type"),
                          _generate_parameter())
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
@@ -126,7 +128,7 @@ def _get_figure(test_plot, data_type, plot_type):
     return fig
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
+@xfail_osx
 @cleanup
 @update_close_figure
 def test_plot_nav0_sig1_close():
@@ -135,7 +137,7 @@ def test_plot_nav0_sig1_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
+@xfail_osx
 @cleanup
 @update_close_figure
 def test_plot_nav1_sig1_close():
@@ -144,7 +146,7 @@ def test_plot_nav1_sig1_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
+@xfail_osx
 @cleanup
 @update_close_figure
 def test_plot_nav2_sig1_close():
@@ -153,7 +155,7 @@ def test_plot_nav2_sig1_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
+@xfail_osx
 @cleanup
 @update_close_figure
 def test_plot_nav0_sig2_close():
@@ -162,7 +164,7 @@ def test_plot_nav0_sig2_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
+@xfail_osx
 @cleanup
 @update_close_figure
 def test_plot_nav1_sig2_close():
@@ -171,7 +173,7 @@ def test_plot_nav1_sig2_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
+@xfail_osx
 @cleanup
 @update_close_figure
 def test_plot_nav2_sig2_close():
