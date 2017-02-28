@@ -369,12 +369,17 @@ Example:
 
 The following methods operate only on one axis at a time:
 
+.. versionadded:: 1.2
+   :py:meth:`~.signal.BaseSignal.valuemin`, :py:meth:`~.signal.BaseSignal.indexmin`
+
 * :py:meth:`~.signal.BaseSignal.diff`
 * :py:meth:`~.signal.BaseSignal.derivative`
 * :py:meth:`~.signal.BaseSignal.integrate_simpson`
 * :py:meth:`~.signal.BaseSignal.integrate1D`
 * :py:meth:`~.signal.BaseSignal.valuemax`
 * :py:meth:`~.signal.BaseSignal.indexmax`
+* :py:meth:`~.signal.BaseSignal.valuemin`
+* :py:meth:`~.signal.BaseSignal.indexmin`
 
 .. versionadded:: 1.0
    numpy ufunc operate on HyperSpy signals

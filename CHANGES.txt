@@ -27,6 +27,8 @@ NEW
   :ref:`map-label`.
 * :ref:`electron-holography-label` reconstruction.
 * Support for reading :ref:`edax-format` files.
+* New signal methods :py:meth:`~.signal.BaseSignal.indexmin` and
+  :py:meth:`~.signal.BaseSignal.valuemin`.
 
 Enhancements
 ------------
