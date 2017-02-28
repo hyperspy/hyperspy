@@ -710,7 +710,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
                                       "implementations.".format(method))
         for z, indices in zip(self._iterate_signal(),
                               self.axes_manager._array_indices_generator()):
-            peaks[indices] = method(z, *args, **kwargs)
+            peaks = self.map(method, *args, **kwargs)
 
         return peaks
 
@@ -813,7 +813,7 @@ def find_peaks_max(z, alpha=3., size=10):
 
 
 def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
-                         distance_cutoff=50):
+                         distance_cutoff=50.):
     """Method to locate positive peaks in an image based on gradient
     thresholding and subsequent refinement within masked regions.
 
@@ -1025,7 +1025,7 @@ def find_peaks_stat(z, alpha=1., window_radius=10, convergence_ratio=0.05):
     return clean_peaks(stat_peak_finder(z))
 
 
-def find_peaks_dog(z, min_sigma=1., max_sigma=50, sigma_ratio=1.6,
+def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
                    threshold=0.2, overlap=0.5):
     """
     Finds peaks via the difference of Gaussian Matrices method from
@@ -1070,7 +1070,7 @@ def find_peaks_dog(z, min_sigma=1., max_sigma=50, sigma_ratio=1.6,
     return np.array(clean_centers)
 
 
-def find_peaks_log(z, min_sigma=1, max_sigma=50., num_sigma=10.,
+def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10.,
                    threshold=0.2, overlap=0.5, log_scale=False):
     """
     Finds peaks via the Laplacian of Gaussian Matrices method from
