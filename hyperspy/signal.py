@@ -1864,7 +1864,11 @@ class BaseSignal(FancySlicing,
         elif axes_manager.signal_dimension == 2:
             self._plot = mpl_hie.MPL_HyperImage_Explorer()
         else:
-            raise ValueError('Plotting is not supported for this view')
+            raise ValueError(
+                    "Plotting is not supported for this view. "
+                    "Try 's.transpose(signal_axes=1).plot()' for plotting as "
+                    "a 1D signal, or 's.transpose(signal_axes=(1,2)).plot()' "
+                    "for plotting as a 2D signal.")
 
         self._plot.axes_manager = axes_manager
         self._plot.signal_data_function = self.__call__
