@@ -198,10 +198,6 @@ def get_ext():
 
 
 def test_hspy_extension(tmpfilepath):
-    # test_marker_point_y2_data_deleted.hdf5 has 5 markers,
-    # where one of them is missing the y2 value, however the
-    # the point marker only needs the x1 and y1 value to work
-    # so this should load
     try:
         hspy_extension = preferences.General.hspy_extension
         preferences.General.hspy_extension = True
@@ -213,10 +209,6 @@ def test_hspy_extension(tmpfilepath):
 
 
 def test_hdf5_extension(tmpfilepath):
-    # test_marker_point_y2_data_deleted.hdf5 has 5 markers,
-    # where one of them is missing the y2 value, however the
-    # the point marker only needs the x1 and y1 value to work
-    # so this should load
     try:
         hspy_extension = preferences.General.hspy_extension
         preferences.General.hspy_extension = False
