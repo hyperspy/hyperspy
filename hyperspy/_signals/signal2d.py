@@ -700,7 +700,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             raise NotImplementedError("The method `{}` is not implemented. "
                                       "See documentation for available "
                                       "implementations.".format(method))
-        peaks = self.map(method, *args, **kwargs)
+        peaks = self.map(method, *args, **kwargs, inplace=False, ragged=True)
 
         return peaks
 
