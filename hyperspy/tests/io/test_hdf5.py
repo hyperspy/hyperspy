@@ -189,12 +189,12 @@ def tmpfilepath():
         yield os.path.join(tmp, "test")
         gc.collect()        # Make sure any memmaps are closed first!
 
+
 def get_ext():
     if preferences.General.hspy_extension:
         return ".hspy"
     else:
         return ".hdf5"
-
 
 
 def test_hspy_extension(tmpfilepath):
@@ -210,6 +210,7 @@ def test_hspy_extension(tmpfilepath):
         assert os.path.exists(tmpfilepath + ".hspy")
     finally:
         preferences.General.hspy_extension = hspy_extension
+
 
 def test_hdf5_extension(tmpfilepath):
     # test_marker_point_y2_data_deleted.hdf5 has 5 markers,
