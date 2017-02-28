@@ -924,7 +924,7 @@ class ImageObject(object):
                     None),
                 "ImageList.TagGroup0.ImageTags.EELS_Spectrometer.Aperture_label": (
                     "Acquisition_instrument.TEM.Detector.EELS.aperture_size",
-                    lambda string: float(string.replace('mm', '').replace(' ',''))),
+                    lambda string: float(string.replace('mm', ''))),
                 "ImageList.TagGroup0.ImageTags.EELS Spectrometer.Instrument name": (
                     "Acquisition_instrument.TEM.Detector.EELS.spectrometer",
                     None),
