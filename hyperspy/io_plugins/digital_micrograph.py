@@ -967,7 +967,7 @@ class ImageObject(object):
         return mapping
 
 
-def _get_markers_dict(tags_dict):
+def _get_markers_dict(tags_dict, scale_x=1, scale_y=1):
     markers_dict = {}
     annotations_dict = tags_dict[
             'DocumentObjectList']['TagGroup0']['AnnotationGroupList']
@@ -1008,16 +1008,20 @@ def _get_markers_dict(tags_dict):
             elif annotation_type == 31:
                 pass # scalebar
         if marker_type:
+            if 'Label' in annotation:
+                marker_text = annotation['Label']
+            else:
+                marker_text = None
             temp_dict = {
                     'marker_type':marker_type,
                     'plot_on_signal':True,
                     'data':{
-                        'x1':position[0],
-                        'x2':position[1],
-                        'y1':position[2],
-                        'y2':position[3],
+                        'y1':position[0]*scale_y,
+                        'x1':position[1]*scale_x,
+                        'y2':position[2]*scale_y,
+                        'x2':position[3]*scale_x,
                         'size':20,
-                        'text':None,
+                        'text':marker_text,
                         },
                     'marker_properties':{
                         'color':'red',
@@ -1071,7 +1075,13 @@ def file_reader(filename, record_by=None, order=None, lazy=False):
             else:
                 data = image.get_data()
 
-            markers_dict = _get_markers_dict(dm.tags_dict)
+            scale_x, scale_y = 1, 1
+            for axis in axes:
+                if axis['index_in_array'] == 0:
+                    scale_y = axis['scale']
+                if axis['index_in_array'] == 1:
+                    scale_x = axis['scale']
+            markers_dict = _get_markers_dict(dm.tags_dict, scale_x, scale_y)
             if markers_dict:
                 mp['Markers'] = markers_dict
 
