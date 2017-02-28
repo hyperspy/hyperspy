@@ -214,16 +214,40 @@ of arbitrary dimensions. It is based on the `HDF5 open standard
 applications
 <http://www.hdfgroup.org/products/hdf5_tools/SWSummarybyName.htm>`_.
 
-Note that only HDF5 files written by HyperSpy are supported
+Only loading of HDF5 files following the HyperSpy specification are supported.
+
+.. versionadded:: 1.2
+    Saving hdf5 files with extension ``.hspy``.
+
+The default extension is ``.hdf5`` but, in order to make it explicit that the
+HDF5 follows the HyperSpy specification, it is possible to save it with the
+``.hspy`` extension as follows.
+
+
+.. code-block:: python
+
+    >>> s = hs.signals.BaseSignal([0])
+    >>> s.save('test.hspy')
+
+It is possible to use the ``.hspy`` extension by default by changing the
+value is ``preferences`` using the GUI or programatically:
+
+.. code-block:: python
+
+    >>> hs.preferences.General.hspy_extension = True
+    >>> hs.save() # make the changes permanent
+
+From HyperSpy 1.3 ``.hspy`` will be the default extension.
 
 .. versionadded:: 0.8
+    Saving list, tuples and signals present in `:py:attr:`~.metadata``.
 
-It is also possible to save more complex structures (i.e. lists, tuples and
-signals) in :py:attr:`~.metadata` of the signal. Please note that in order to
-increase saving efficiency and speed, if possible, the inner-most structures
-are converted to numpy arrays when saved. This procedure homogenizes any types
-of the objects inside, most notably casting numbers as strings if any other
-strings are present:
+When saving to hdf5, all supported objects in the signal's :py:attr:`~.metadata`
+is stored. This includes  lists, tuples and signals. Please note
+that in order to increase saving efficiency and speed, if possible, the
+inner-most structures are converted to numpy arrays when saved. This procedure
+homogenizes any types of the objects inside, most notably casting numbers as
+strings if any other strings are present:
 
 .. code-block:: python
 
