@@ -2,7 +2,17 @@ language: python
 
 matrix:
   include:
+  - python: 3.5
+    env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+  - env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'; MPLBACKEND="agg"
+    os: osx
+    language: generic
+  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
   - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='True'
+  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'; MPLBACKEND="agg"
+    os: osx
+    language: generic
   allow_failures:
   - env: export FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
 
@@ -21,7 +31,6 @@ install:
       DEPS="pip numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython lxml ipyparallel dask traits traitsui";
     else DEPS="pip ipython numpy scipy matplotlib h5py sympy scikit-image";
     fi
-  - echo $DEPS
   - conda create -n testenv --yes python=$PYTHON;
     source activate testenv;
     conda install -y -c conda-forge $DEPS;
