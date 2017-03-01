@@ -489,27 +489,27 @@ class EDXSpectrum(object):
         # map stuff from harware xml branch:
         self.hardware_metadata = json.loads(json.dumps(hardware_header,
                                                        cls=ObjectifyJSONEncoder))
-        # self.amplification = self.hardware_metadata['Amplification']  # USED
+        self.amplification = self.hardware_metadata['Amplification']  # USED
 
         # map stuff from detector xml branch
         self.detector_metadata = json.loads(json.dumps(detector_header,
                                                        cls=ObjectifyJSONEncoder))
-        # self.detector_type = self.detector_metadata['Type']  # USED
+        self.detector_type = self.detector_metadata['Type']  # USED
 
         # decode silly hidden detector layer info:
-        # det_l_str = self.detector_metadata['DetLayers']
-        # dec_det_l_str = codecs.decode(det_l_str.encode('ascii'), 'base64')
-        # mini_xml = objectify.fromstring(unzip_block(dec_det_l_str))
+        det_l_str = self.detector_metadata['DetLayers']
+        dec_det_l_str = codecs.decode(det_l_str.encode('ascii'), 'base64')
+        mini_xml = objectify.fromstring(unzip_block(dec_det_l_str))
         self.detector_metadata['DetLayers'] = {}  # Overwrite with dict
-        # for i in mini_xml.getchildren():
-        #     self.detector_metadata['DetLayers'][i.tag] = dict(i.attrib)
+        for i in mini_xml.getchildren():
+            self.detector_metadata['DetLayers'][i.tag] = dict(i.attrib)
 
         # map stuff from esma xml branch:
         self.esma_metadata = json.loads(json.dumps(esma_header,
                                                    cls=ObjectifyJSONEncoder))
         # USED:
-        # self.hv = self.esma_metadata['PrimaryEnergy']
-        # self.elevationAngle = self.esma_metadata['ElevationAngle']
+        self.hv = self.esma_metadata['PrimaryEnergy']
+        self.elevationAngle = self.esma_metadata['ElevationAngle']
         #self.azimutAngle = self.esma_metadata['AzimutAngle']
 
         # map stuff from spectra xml branch:
@@ -518,8 +518,8 @@ class EDXSpectrum(object):
         self.calibAbs = self.spectrum_metadata['CalibAbs']
         self.calibLin = self.spectrum_metadata['CalibLin']
         self.chnlCnt = self.spectrum_metadata['ChannelCount']
-        # self.date = self.spectrum_metadata['Date']  # Not Used?
-        # self.time = self.spectrum_metadata['Time']  # Not Used?
+        self.date = self.spectrum_metadata['Date']  # Not Used?
+        self.time = self.spectrum_metadata['Time']  # Not Used?
 
         # main data:
         self.data = np.fromstring(str(spectrum.Channels), dtype='Q', sep=",")
@@ -695,10 +695,7 @@ class HyperHeader(object):
         Returns:
         optimal channel number
         """
-        try:
-            bruker_hv_range = self.spectra_data[index].amplification / 1000
-        except:
-            return self.spectra_data[index].energy_to_channel(self.sem.hv)
+        bruker_hv_range = self.spectra_data[index].amplification / 1000
         if self.sem.hv >= bruker_hv_range:
             return self.spectra_data[index].data.shape[0]
         else:
