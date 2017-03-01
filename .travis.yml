@@ -50,8 +50,9 @@ script:
 
 after_success:
 - coveralls
-- if [[ $MINIMAL_ENV == 'False' ]]; then python setup.py bdist_wheel;
-  else python setup.py sdist; # only create the sdist ones 
+- if [[ $MINIMAL_ENV == 'False' ]]; then
+    python setup.py bdist_wheel;
+  else python setup.py sdist;
   fi
 
 before_deploy:
