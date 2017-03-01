@@ -28,6 +28,7 @@ install:
       pip install .[all];
     else pip install .;
     fi
+  - python setup.py build_ext --inplace;
 
 before_script: # configure a headless display to test plot generation
   - "export DISPLAY=:99.0"
