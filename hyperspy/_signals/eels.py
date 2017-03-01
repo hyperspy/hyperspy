@@ -751,6 +751,107 @@ class EELSSpectrum_mixin:
                 self.tmp_parameters.filename +
                 'after_fourier_ratio_deconvolution')
         return cl
+    
+    def fourier_ratio_deconvolution_llspectra(self, kernel, zl=None,
+                                        fwhm=None,
+                                        threshold=None):
+        """Performs Fourier-ratio deconvolution of two similar spectrum.
+        
+        Parameters
+        ----------
+        kernel: EELSSpectrum
+            The spectrum to be deconvolved from parent spectrum
+        zl: ZLP spectrum to avoid Gaussian aproximation of ZLP
+        fwhm : float or None
+            Full-width half-maximum of the Gaussian function by which
+            the end convolved ZLP is initially approximated as.  If
+            None, the FWHM of the zero-loss peak of the low-loss is
+            estimated and used.
+        threshold : {None, float}
+            Truncation energy to estimate the intensity of the
+            elastic scattering. If None the threshold is taken as the
+             first minimum after the ZLP centre.
+        
+        Notes
+        -----
+        Wang, Feng, Ray Egerton, and Marek Malac. “Fourier-Ratio Deconvolution
+        Techniques for Electron Energy-Loss Spectroscopy (EELS).”
+        Ultramicroscopy 109, no. 10 (September 2009): 1245–49.
+        doi:10.1016/j.ultramic.2009.05.011.
+        """
+        
+        self._check_signal_dimension_equals_one()
+        orig_spectrum_size = self.axes_manager.signal_axes[0].size
+    
+        if zl is None:
+            zl_provided = False
+            if threshold is None:
+                threshold = kernel.estimate_elastic_scattering_threshold()
+        else:
+            zl_provided = True
+    
+        spectrum = self.deepcopy()
+        kernel = kernel.deepcopy()
+        
+        kernel.hanning_taper()
+        spectrum.hanning_taper()
+        
+        kernel_size = kernel.axes_manager.signal_axes[0].size
+        spectrum_size = spectrum.axes_manager.signal_axes[0].size
+        # Conservative new size to solve the wrap-around problem
+        size = kernel_size + spectrum_size - 1
+        # Increase to the closest multiple of two to enhance the FFT
+        # performance
+        size = int(2 ** np.ceil(np.log2(size)))
+        
+        axis = kernel.axes_manager.signal_axes[0]
+        js = np.fft.rfft(spectrum.data, n=size, axis=axis.index_in_array)
+        jk = np.fft.rfft(kernel.data, n=size, axis=axis.index_in_array)
+    
+        if not zl_provided:
+            print('No zero loss provided')
+            if fwhm is None:
+                fwhm = float(kernel.get_current_signal().estimate_peak_width()())
+                _logger.info("FWHM = %1.2f" % fwhm)
+            
+            I0 = kernel.estimate_elastic_scattering_intensity(threshold=threshold)
+            I0 = I0.data
+            if kernel.axes_manager.navigation_size > 0:
+                I0_shape = list(I0.shape)
+                I0_shape.insert(axis.index_in_array, 1)
+                I0 = I0.reshape(I0_shape)
+            
+            from hyperspy.components1d import Gaussian
+            g = Gaussian()
+            g.sigma.value = fwhm / 2.3548
+            g.A.value = 1
+            g.centre.value = 0
+            zl = g.function(
+                np.linspace(axis.offset,
+                            axis.offset + axis.scale * (size - 1),
+                            size))
+            z = np.fft.rfft(zl)
+            zshape = [1, ] * len(spectrum.data.shape)
+            zshape[axis.index_in_array] = js.shape[axis.index_in_array]
+        else:
+            I0 = zl.estimate_elastic_scattering_intensity(threshold=10.).data
+            if kernel.axes_manager.navigation_size > 0:
+                I0_shape = list(I0.shape)
+                I0_shape.insert(axis.index_in_array, 1)
+                I0 = I0.reshape(I0_shape)
+            z = np.fft.rfft(zl/I0, n=size, axis=axis.index_in_array)
+            
+        spectrum.data = np.fft.irfft(z * js / jk,
+                               axis=axis.index_in_array)
+        spectrum.data *= I0
+        spectrum.crop(-1, None, int(orig_spectrum_size))
+        spectrum.metadata.General.title = (spectrum.metadata.General.title +
+                                     ' after Fourier-ratio deconvolution')
+        if spectrum.tmp_parameters.has_item('filename'):
+            spectrum.tmp_parameters.filename = (
+                spectrum.tmp_parameters.filename +
+                'after_fourier_ratio_deconvolution')
+        return spectrum
 
     def richardson_lucy_deconvolution(self, psf, iterations=15, mask=None,
                                       show_progressbar=None,
