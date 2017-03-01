@@ -50,7 +50,7 @@ class VolumePlasmonDrude(Component):
 
     """
 
-    def __init__(self, intensity = 1., plasmon_energy = 15., fwhm = 1.5):
+    def __init__(self, intensity = 1., plasmon_energy=15., fwhm=1.5):
         Component.__init__(self, ['intensity', 'plasmon_energy',
                                   'fwhm'])
         self._position = self.plasmon_energy
