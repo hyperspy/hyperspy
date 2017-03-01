@@ -319,6 +319,20 @@ class LazySignal(BaseSignal):
 
     valuemax.__doc__ = BaseSignal.valuemax.__doc__
 
+    def valuemin(self, axis, out=None):
+        idx = self.indexmin(axis)
+        old_data = idx.data
+        data = old_data.map_blocks(
+            lambda x: self.axes_manager[axis].index2value(x))
+        if out is None:
+            idx.data = data
+            return idx
+        else:
+            out.data = data
+            out.events.data_changed.trigger(obj=out)
+
+    valuemin.__doc__ = BaseSignal.valuemin.__doc__
+
     def get_histogram(self, bins='freedman', out=None, **kwargs):
         if 'range_bins' in kwargs:
             _logger.warning("'range_bins' argument not supported for lazy "
