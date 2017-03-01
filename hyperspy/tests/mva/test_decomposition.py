@@ -369,10 +369,10 @@ class TestComplexSignalDecomposition:
         (i.e. an m x n matrix).
         The first r values of scree plot / singular values should be non-zero.
         """
-        m, n, r = 100, 40, 10
+        m, n, r = 32, 32, 3
 
-        A = 100*(np.random.random((m,r)) + 1j* np.random.random((m,r)))
-        B = 100*(np.random.random((n,r)) + 1j* np.random.random((n,r)))
+        A = (np.random.random((m,r)) + 1j* np.random.random((m,r)))
+        B = (np.random.random((n,r)) + 1j* np.random.random((n,r)))
 
         s = signals.ComplexSignal1D(np.dot(A,B.T))
         s.decomposition()
