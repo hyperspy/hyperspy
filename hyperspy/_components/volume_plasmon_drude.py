@@ -36,7 +36,7 @@ class VolumePlasmonDrude(Component):
     +------------+-----------------+
     |    E_p     |  plasmon_energy |
     +------------+-----------------+
-    | delta_E_p  |       dEp       |
+    | delta_E_p  |      fwhm       |
     +------------+-----------------+
     | intensity  |   intensity     |
     +------------+-----------------+
@@ -50,15 +50,15 @@ class VolumePlasmonDrude(Component):
 
     """
 
-    def __init__(self, intensity = 1., plasmon_energy = 15., dEp = 1.5):
+    def __init__(self, intensity = 1., plasmon_energy = 15., fwhm = 1.5):
         Component.__init__(self, ['intensity', 'plasmon_energy',
-                                  'dEp'])
+                                  'fwhm'])
         self._position = self.plasmon_energy
         self.intensity.value = intensity
         self.plasmon_energy.value = plasmon_energy
-        self.dEp.value = dEp
+        self.fwhm.value = fwhm
         self.plasmon_energy.grad = self.grad_plasmon_energy
-        self.dEp.grad = self.grad_dEp
+        self.fwhm.grad = self.grad_fwhm
         self.intensity.grad = self.grad_intensity
 
     def function(self, x):
@@ -87,7 +87,7 @@ class VolumePlasmonDrude(Component):
             0)
 
     # Partial derivative with respect to the plasmon linewidth delta_E_p
-    def grad_dEp(self, x):
+    def grad_fwhm(self, x):
         plasmon_energy = self.plasmon_energy.value
         fwhm = self.fwhm.value
         intensity = self.intensity.value
