@@ -3,21 +3,7 @@ language: python
 matrix:
   include:
   - python: 3.5
-    env: PYTHON=3.5 FAIL_ON_EXTERNAL_DEPRECATION='False' MINIMAL_ENV='False'
-  - python: 3.5
-    env: PYTHON=3.5 FAIL_ON_EXTERNAL_DEPRECATION='False' MINIMAL_ENV='False' MPLBACKEND='agg'
-    os: osx
-  - python: 3.6
-    env: PYTHON=3.6 FAIL_ON_EXTERNAL_DEPRECATION='False' MINIMAL_ENV='False'
-  - python: 3.6
-    env: PYTHON=3.6 FAIL_ON_EXTERNAL_DEPRECATION='True' MINIMAL_ENV='False'
-  - python: 3.6
-    env: PYTHON=3.6 FAIL_ON_EXTERNAL_DEPRECATION='False' MINIMAL_ENV='True'
-  - python: 3.6
-    env: PYTHON=3.6 FAIL_ON_EXTERNAL_DEPRECATION='False' MINIMAL_ENV='False' MPLBACKEND='agg'
-    os: osx
-  allow_failures:
-  - env: FAIL_ON_EXTERNAL_DEPRECATION='True' MINIMAL_ENV='False'
+    env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
 
 before_install:
   - if [[ $TRAVIS_OS_NAME == 'osx' ]] ; then
