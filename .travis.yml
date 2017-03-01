@@ -2,7 +2,8 @@ language: python
 
 matrix:
   include:
-  - env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+  - python: 3.5
+    env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
   - env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'; MPLBACKEND="agg"
     os: osx
     language: generic
