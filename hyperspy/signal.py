@@ -256,7 +256,7 @@ class MVATools(object):
         ----------
 
         comp_ids : None, int, or list of ints
-            if None, returns maps of 3 components.
+            if None, returns maps of all components.
             if int, returns maps of components with ids from 0 to given
             int.
             if list of ints, returns maps of components with ids in
@@ -314,7 +314,7 @@ class MVATools(object):
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         if comp_ids is None:
-            comp_ids = range(3)
+            comp_ids = range(factors.shape[1])
 
         elif not hasattr(comp_ids, '__iter__'):
             comp_ids = range(comp_ids)
@@ -381,7 +381,7 @@ class MVATools(object):
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         if comp_ids is None:
-            comp_ids = range(3)
+            comp_ids = range(loadings.shape[0])
 
         elif not hasattr(comp_ids, '__iter__'):
             comp_ids = range(comp_ids)
@@ -479,7 +479,7 @@ class MVATools(object):
 
         # Select the desired factors
         if comp_ids is None:
-            comp_ids = range(3)
+            comp_ids = range(factors.shape[1])
         elif not hasattr(comp_ids, '__iter__'):
             comp_ids = range(comp_ids)
         mask = np.zeros(factors.shape[1], dtype=np.bool)
@@ -626,7 +626,7 @@ class MVATools(object):
                 export_loadings_default_file_format
 
         if comp_ids is None:
-            comp_ids = range(3)
+            comp_ids = range(loadings.shape[0])
         elif not hasattr(comp_ids, '__iter__'):
             comp_ids = range(comp_ids)
         mask = np.zeros(loadings.shape[0], dtype=np.bool)
@@ -747,7 +747,7 @@ class MVATools(object):
         ----------
 
         comp_ids : None, int, or list of ints
-            if None, returns maps of 3 components.
+            if None, returns maps of all components.
             if int, returns maps of components with ids from 0 to given
             int.
             if list of ints, returns maps of components with ids in
