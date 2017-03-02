@@ -759,9 +759,9 @@ class EELSSpectrum_mixin:
         
         Parameters
         ----------
-        kernel: EELSSpectrum
+        kernel : EELSSpectrum
             The spectrum to be deconvolved from parent spectrum
-        zl: ZLP spectrum to avoid Gaussian aproximation of ZLP
+        zl : ZLP spectrum to avoid Gaussian approximation of ZLP
         fwhm : float or None
             Full-width half-maximum of the Gaussian function by which
             the end convolved ZLP is initially approximated as.  If
@@ -771,6 +771,10 @@ class EELSSpectrum_mixin:
             Truncation energy to estimate the intensity of the
             elastic scattering. If None the threshold is taken as the
              first minimum after the ZLP centre.
+             
+        Returns
+        -------
+        A signal of the original spectrum with the kernel deconvolved from it.
         
         Notes
         -----
