@@ -209,6 +209,7 @@ class TestPowerLawExtrapolation:
         s = sc.power_law_extrapolation(extrapolation_size=100)
         np.testing.assert_allclose(s.data, self.s.data, atol=10e-3)
 
+
 @lazifyTestClass
 class TestFourierRatioDeconvolution:
 

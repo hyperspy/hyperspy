@@ -184,7 +184,7 @@ class Test3D:
         self.signal.axes_manager[2].name = "E"
         self.signal.axes_manager[0].scale = 0.5
         self.data = self.signal.data.copy()
-        
+
     def test_indexmin(self):
         s = self.signal.indexmin('E')
         ar = self.data.argmin(2)
@@ -200,7 +200,7 @@ class Test3D:
         assert s.data.ndim == 2
         assert s.axes_manager.signal_dimension == 0
         assert s.axes_manager.navigation_dimension == 2
-        
+
     def test_valuemin(self):
         s = self.signal.valuemin('x')
         ar = self.signal.axes_manager['x'].index2value(self.data.argmin(1))

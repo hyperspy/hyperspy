@@ -1865,11 +1865,11 @@ class BaseSignal(FancySlicing,
             self._plot = mpl_hie.MPL_HyperImage_Explorer()
         else:
             raise ValueError(
-                    "Plotting is not supported for this view. "
-                    "Try e.g. 's.transpose(signal_axes=1).plot()' for "
-                    "plotting as a 1D signal, or "
-                    "'s.transpose(signal_axes=(1,2)).plot()' "
-                    "for plotting as a 2D signal.")
+                "Plotting is not supported for this view. "
+                "Try e.g. 's.transpose(signal_axes=1).plot()' for "
+                "plotting as a 1D signal, or "
+                "'s.transpose(signal_axes=(1,2)).plot()' "
+                "for plotting as a 2D signal.")
 
         self._plot.axes_manager = axes_manager
         self._plot.signal_data_function = self.__call__
@@ -3078,7 +3078,7 @@ class BaseSignal(FancySlicing,
         else:
             return self.sum(axis=axis, out=out)
     integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
-    
+
     def indexmin(self, axis, out=None):
         """Returns a signal with the index of the minimum along an axis.
 
@@ -3175,7 +3175,7 @@ class BaseSignal(FancySlicing,
             out.data[:] = data
             out.events.data_changed.trigger(obj=out)
     valuemax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
-    
+
     def valuemin(self, axis, out=None):
         """Returns a signal with the value of coordinates of the minimum along an axis.
 

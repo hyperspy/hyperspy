@@ -38,7 +38,8 @@ class TestPlotSpectra():
 
     @pytest.mark.parametrize("style", ['default', 'overlap', 'cascade', 'mosaic',
                                        'heatmap'])
-    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_spectra(self, style):
         ax = hs.plot.plot_spectra(self._test_plot_spectra(), style=style,
                                   legend='auto')
@@ -47,7 +48,8 @@ class TestPlotSpectra():
         return ax.figure
 
     @pytest.mark.parametrize("figure", ['1nav', '1sig', '2nav', '2sig'])
-    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_spectra_sync(self, figure):
         s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0).inav[:, :3]
         s2 = s1.deepcopy() * -1
@@ -115,7 +117,8 @@ def _generate_parameter():
 @pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.parametrize(("ndim", "plot_type"),
                          _generate_parameter())
-@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_two_cursors(ndim, plot_type):
     s = _test_plot_two_cursors(ndim=ndim)
     if plot_type == "sig":
