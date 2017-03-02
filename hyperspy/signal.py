@@ -43,9 +43,10 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import array_tools
 from hyperspy.misc import rgb_tools
-from hyperspy.misc.utils import underline
+from hyperspy.misc.utils import underline, isiterable
 from hyperspy.external.astroML.histtools import histogram
 from hyperspy.drawing.utils import animate_legend
+from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
@@ -1574,7 +1575,7 @@ class BaseSignal(FancySlicing,
                     # They are broadcastable but have different number of axes
                     ns, no = broadcast_signals(self, other)
                     sdata = ns.data
-                    odata= no.data
+                    odata = no.data
                     if op_name in INPLACE_OPERATORS:
                         # This should raise a ValueError if the operation
                         # changes the shape of the object on the left.
@@ -1738,7 +1739,7 @@ class BaseSignal(FancySlicing,
                 file_data_dict["learning_results"])
         if self._lazy is not oldlazy:
             self._assign_subclass()
-    
+
 # TODO: try to find a way to use dask ufuncs when called with lazy data (e.g.
 # np.log(s) -> da.log(s.data) wrapped.
     def __array__(self, dtype=None):
@@ -1833,7 +1834,8 @@ class BaseSignal(FancySlicing,
         return np.atleast_1d(
             self.data.__getitem__(axes_manager._getitem_tuple))
 
-    def plot(self, navigator="auto", axes_manager=None, **kwargs):
+    def plot(self, navigator="auto", axes_manager=None,
+             plot_markers=False, **kwargs):
         """%s
         %s
 
@@ -1862,7 +1864,12 @@ class BaseSignal(FancySlicing,
         elif axes_manager.signal_dimension == 2:
             self._plot = mpl_hie.MPL_HyperImage_Explorer()
         else:
-            raise ValueError('Plotting is not supported for this view')
+            raise ValueError(
+                    "Plotting is not supported for this view. "
+                    "Try e.g. 's.transpose(signal_axes=1).plot()' for "
+                    "plotting as a 1D signal, or "
+                    "'s.transpose(signal_axes=(1,2)).plot()' "
+                    "for plotting as a 2D signal.")
 
         self._plot.axes_manager = axes_manager
         self._plot.signal_data_function = self.__call__
@@ -1965,6 +1972,11 @@ class BaseSignal(FancySlicing,
             self._plot.signal_plot.events.closed.connect(
                 lambda: self.events.data_changed.disconnect(self.update_plot),
                 [])
+
+        if plot_markers:
+            if self.metadata.has_item('Markers'):
+                self._plot_permanent_markers()
+
     plot.__doc__ %= BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 
     def save(self, filename=None, overwrite=None, extension=None,
@@ -2889,7 +2901,6 @@ class BaseSignal(FancySlicing,
                                                             out=out)
     nanmin.__doc__ %= (NAN_FUNC.format('min', min.__doc__))
 
-
     def nanmean(self, axis=None, out=None):
         """%s """
         if axis is None:
@@ -3067,6 +3078,36 @@ class BaseSignal(FancySlicing,
         else:
             return self.sum(axis=axis, out=out)
     integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+    
+    def indexmin(self, axis, out=None):
+        """Returns a signal with the index of the minimum along an axis.
+
+        Parameters
+        ----------
+        axis %s
+        %s
+
+        Returns
+        -------
+        s : Signal
+            The data dtype is always int.
+
+        See also
+        --------
+        max, min, sum, mean, std, var, valuemax, amax
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = BaseSignal(np.random.random((64,64,1024)))
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.indexmax(-1).data.shape
+        (64,64)
+
+        """
+        return self._apply_function_on_data_and_remove_axis(np.argmin, axis,
+                                                            out=out)
 
     def indexmax(self, axis, out=None):
         """Returns a signal with the index of the maximum along an axis.
@@ -3134,6 +3175,33 @@ class BaseSignal(FancySlicing,
             out.data[:] = data
             out.events.data_changed.trigger(obj=out)
     valuemax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+    
+    def valuemin(self, axis, out=None):
+        """Returns a signal with the value of coordinates of the minimum along an axis.
+
+        Parameters
+        ----------
+        axis %s
+        %s
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        max, min, sum, mean, std, var, indexmax, amax
+
+        """
+        idx = self.indexmin(axis)
+        data = self.axes_manager[axis].index2value(idx.data)
+        if out is None:
+            idx.data = data
+            return idx
+        else:
+            out.data[:] = data
+            out.events.data_changed.trigger(obj=out)
+    valuemin.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def get_histogram(self, bins='freedman', range_bins=None, out=None,
                       **kwargs):
@@ -3510,6 +3578,13 @@ class BaseSignal(FancySlicing,
         for oaxis, caxis in zip(self.axes_manager._axes,
                                 dc.axes_manager._axes):
             caxis.navigate = oaxis.navigate
+
+        if dc.metadata.has_item('Markers'):
+            temp_marker_dict = dc.metadata.Markers.as_dictionary()
+            markers_dict = markers_metadata_dict_to_markers(
+                temp_marker_dict,
+                dc.axes_manager)
+            dc.metadata.Markers = markers_dict
         return dc
 
     def deepcopy(self):
@@ -4040,7 +4115,9 @@ class BaseSignal(FancySlicing,
     def is_rgbx(self):
         return rgb_tools.is_rgbx(self.data)
 
-    def add_marker(self, marker, plot_on_signal=True, plot_marker=True):
+    def add_marker(
+            self, marker, plot_on_signal=True, plot_marker=True,
+            permanent=False, plot_signal=True):
         """
         Add a marker to the signal or navigator plot.
 
@@ -4048,31 +4125,140 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        marker: `hyperspy.drawing._markers`
-            the marker to add. see `plot.markers`
-        plot_on_signal: bool
+        marker : marker object or iterable of marker objects
+            The marker or iterable (list, tuple, ...) of markers to add.
+            See `plot.markers`. If you want to add a large number of markers,
+            add them as an iterable, since this will be much faster.
+        plot_on_signal : bool, default True
             If True, add the marker to the signal
             If False, add the marker to the navigator
-        plot_marker: bool
-            if True, plot the marker
+        plot_marker : bool, default True
+            If True, plot the marker.
+        permanent : bool, default False
+            If False, the marker will only appear in the current
+            plot. If True, the marker will be added to the
+            metadata.Markers list, and be plotted with plot(plot_markers=True).
+            If the signal is saved as a HyperSpy HDF5 file, the markers will be
+            stored in the HDF5 signal and be restored when the file is loaded.
 
         Examples
-        -------
+        --------
         >>> import scipy.misc
         >>> im = hs.signals.Signal2D(scipy.misc.ascent())
-        >>> m = hs.plot.markers.rectangle(x1=150, y1=100, x2=400,
+        >>> m = hs.markers.rectangle(x1=150, y1=100, x2=400,
         >>>                                  y2=400, color='red')
         >>> im.add_marker(m)
 
+        Adding to a 1D signal, where the point will change
+        when the navigation index is changed
+        >>> s = hs.signals.Signal1D(np.random.random((3, 100)))
+        >>> marker = hs.markers.point((19, 10, 60), (0.2, 0.5, 0.9))
+        >>> s.add_marker(marker, permanent=True, plot_marker=True)
+        >>> s.plot(plot_markers=True) #doctest: +SKIP
+
+        Add permanent marker
+        >>> s = hs.signals.Signal2D(np.random.random((100, 100)))
+        >>> marker = hs.markers.point(50, 60)
+        >>> s.add_marker(marker, permanent=True, plot_marker=True)
+        >>> s.plot(plot_markers=True) #doctest: +SKIP
+
+        Add permanent marker which changes with navigation position, and
+        do not add it to a current plot
+        >>> s = hs.signals.Signal2D(np.random.randint(10, size=(3, 100, 100)))
+        >>> marker = hs.markers.point((10, 30, 50), (30, 50, 60), color='red')
+        >>> s.add_marker(marker, permanent=True, plot_marker=False)
+        >>> s.plot(plot_markers=True) #doctest: +SKIP
+
+        Removing a permanent marker
+        >>> s = hs.signals.Signal2D(np.random.randint(10, size=(100, 100)))
+        >>> marker = hs.markers.point(10, 60, color='red')
+        >>> marker.name = "point_marker"
+        >>> s.add_marker(marker, permanent=True)
+        >>> del s.metadata.Markers.point_marker
+
+        Adding many markers as a list
+        >>> from numpy.random import random
+        >>> s = hs.signals.Signal2D(np.random.randint(10, size=(100, 100)))
+        >>> marker_list = []
+        >>> for i in range(100):
+        >>>     marker = hs.markers.point(random()*100, random()*100, color='red')
+        >>>     marker_list.append(marker)
+        >>> s.add_marker(marker_list, permanent=True)
+
         """
-        if self._plot is None:
-            self.plot()
-        if plot_on_signal:
-            self._plot.signal_plot.add_marker(marker)
+        if isiterable(marker):
+            marker_list = marker
         else:
-            self._plot.navigator_plot.add_marker(marker)
+            marker_list = [marker]
+        markers_dict = {}
+        if permanent:
+            if not self.metadata.has_item('Markers'):
+                self.metadata.add_node('Markers')
+            marker_object_list = []
+            for marker_tuple in list(self.metadata.Markers):
+                marker_object_list.append(marker_tuple[1])
+            name_list = self.metadata.Markers.keys()
+        for m in marker_list:
+            marker_data_shape = m._get_data_shape()
+            if (not (len(marker_data_shape) == 0)) and (
+                    marker_data_shape != self.axes_manager.navigation_shape):
+                raise ValueError(
+                    "Navigation shape of the marker must be 0 or the "
+                    "same navigation shape as this signal.")
+            if (m.signal is not None) and (m.signal is not self):
+                raise ValueError("Markers can not be added to several signals")
+            m._plot_on_signal = plot_on_signal
+            if plot_marker:
+                if self._plot is None:
+                    self.plot()
+                if m._plot_on_signal:
+                    self._plot.signal_plot.add_marker(m)
+                else:
+                    if self._plot.navigator_plot is None:
+                        self.plot()
+                    self._plot.navigator_plot.add_marker(m)
+                m.plot(update_plot=False)
+            if permanent:
+                for marker_object in marker_object_list:
+                    if m is marker_object:
+                        raise ValueError("Marker already added to signal")
+                name = m.name
+                temp_name = name
+                i = 1
+                while temp_name in name_list:
+                    temp_name = name + str(i)
+                    i += 1
+                m.name = temp_name
+                markers_dict[m.name] = m
+                m.signal = self
+                marker_object_list.append(m)
+                name_list.append(m.name)
+            if not plot_marker and not permanent:
+                _logger.warning(
+                    "plot_marker=False and permanent=False does nothing")
+        if permanent:
+            self.metadata.Markers = markers_dict
         if plot_marker:
-            marker.plot()
+            if self._plot.signal_plot:
+                self._plot.signal_plot.ax.hspy_fig._draw_animated()
+            if self._plot.navigator_plot:
+                self._plot.navigator_plot.ax.hspy_fig._draw_animated()
+
+    def _plot_permanent_markers(self):
+        marker_name_list = self.metadata.Markers.keys()
+        markers_dict = self.metadata.Markers.__dict__
+        for marker_name in marker_name_list:
+            marker = markers_dict[marker_name]['_dtb_value_']
+            if marker.plot_marker:
+                if marker._plot_on_signal:
+                    self._plot.signal_plot.add_marker(marker)
+                else:
+                    self._plot.navigator_plot.add_marker(marker)
+                marker.plot(update_plot=False)
+        if self._plot.signal_plot:
+            self._plot.signal_plot.ax.hspy_fig._draw_animated()
+        if self._plot.navigator_plot:
+            self._plot.navigator_plot.ax.hspy_fig._draw_animated()
 
     def add_poissonian_noise(self, **kwargs):
         """Add Poissonian noise to the data"""
@@ -4249,6 +4435,12 @@ class BaseSignal(FancySlicing,
                 res.metadata.set_item('Signal.Noise_properties.variance', var)
         if optimize:
             res._make_sure_data_is_contiguous(log=True)
+        if res.metadata.has_item('Markers'):
+            # The markers might fail if the navigation dimensions are changed
+            # so the safest is simply to not carry them over from the
+            # previous signal.
+            del res.metadata.Markers
+
         return res
 
     @property

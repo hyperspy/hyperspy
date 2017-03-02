@@ -389,6 +389,12 @@ class BaseModel(list):
         if not np.iterable(thing):
             thing = [thing, ]
         for athing in thing:
+            for parameter in athing.parameters:
+                # Remove the parameter from its twin _twins
+                parameter.twin = None
+                for twin in [twin for twin in parameter._twins]:
+                    twin.twin = None
+
             list.remove(self, athing)
             athing.model = None
         if self._plot_active:

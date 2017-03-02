@@ -860,7 +860,7 @@ class BCF_reader(SFS_reader):
             cutoff_chan = None
 
         if fast_unbcf:
-            fh = dd(self.get_file)('EDSDatabase/SpectrumData'+str(index))
+            fh = dd(self.get_file)('EDSDatabase/SpectrumData' + str(index))
             value = dd(unbcf_fast.parse_to_numpy)(fh,
                                                   downsample=downsample,
                                                   cutoff=cutoff_chan,
@@ -938,7 +938,7 @@ this is going to take a while... please wait""")
         if description:
             return shape, depth
         # hyper map as very flat array:
-        vfa = np.zeros(shape[0]*shape[1]*shape[2], dtype=depth)
+        vfa = np.zeros(shape[0] * shape[1] * shape[2], dtype=depth)
         offset = 0x1A0
         size = size_chnk
         for line_cnt in range(height):

@@ -75,6 +75,7 @@ class Signal1DFigure(BlittedFigure):
             self.right_ax = self.ax.twinx()
             self.right_ax.hspy_fig = self
             self.right_ax.yaxis.set_animated(True)
+        plt.tight_layout()
 
     def add_line(self, line, ax='left'):
         if ax == 'left':

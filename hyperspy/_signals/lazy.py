@@ -319,6 +319,20 @@ class LazySignal(BaseSignal):
 
     valuemax.__doc__ = BaseSignal.valuemax.__doc__
 
+    def valuemin(self, axis, out=None):
+        idx = self.indexmin(axis)
+        old_data = idx.data
+        data = old_data.map_blocks(
+            lambda x: self.axes_manager[axis].index2value(x))
+        if out is None:
+            idx.data = data
+            return idx
+        else:
+            out.data = data
+            out.events.data_changed.trigger(obj=out)
+
+    valuemin.__doc__ = BaseSignal.valuemin.__doc__
+
     def get_histogram(self, bins='freedman', out=None, **kwargs):
         if 'range_bins' in kwargs:
             _logger.warning("'range_bins' argument not supported for lazy "
@@ -359,7 +373,7 @@ class LazySignal(BaseSignal):
         return variance
 
     # def _get_navigation_signal(self, data=None, dtype=None):
-    #     return super()._get_navigation_signal(data=data, dtype=dtype).as_lazy()
+    # return super()._get_navigation_signal(data=data, dtype=dtype).as_lazy()
 
     # _get_navigation_signal.__doc__ = BaseSignal._get_navigation_signal.__doc__
 
@@ -477,7 +491,7 @@ class LazySignal(BaseSignal):
         navigation_mask : {BaseSignal, numpy array, dask array}
             The navigation locations marked as True are not returned (flat) or
             set to NaN or 0.
-        signal_mask : {BaseSignal, numpy array, dask array} 
+        signal_mask : {BaseSignal, numpy array, dask array}
             The signal locations marked as True are not returned (flat) or set
             to NaN or 0.
 
@@ -493,7 +507,7 @@ class LazySignal(BaseSignal):
 
         if signal_mask is None:
             signal_mask = slice(None) if flat_signal else \
-                    np.zeros(self.axes_manager.signal_size, dtype='bool')
+                np.zeros(self.axes_manager.signal_size, dtype='bool')
         else:
             try:
                 signal_mask = to_array(signal_mask).ravel()
@@ -522,7 +536,7 @@ class LazySignal(BaseSignal):
             nav_mask = ~nav_mask
         for ind in indices:
             chunk = get(data.dask,
-                        (data.name, ) + ind + (0,)*bool(signalsize))
+                        (data.name, ) + ind + (0,) * bool(signalsize))
             n_mask = get(nav_mask.dask, (nav_mask.name, ) + ind)
             if flat_signal:
                 yield chunk[n_mask, ...][..., signal_mask]
@@ -619,7 +633,7 @@ class LazySignal(BaseSignal):
             num_chunks = np.ceil(blocksize / output_dimension)
         blocksize *= num_chunks
 
-        ## LEARN
+        # LEARN
         if algorithm == 'PCA':
             from sklearn.decomposition import IncrementalPCA
             obj = IncrementalPCA(n_components=output_dimension)
@@ -674,8 +688,8 @@ class LazySignal(BaseSignal):
                 raG = da.sqrt(aG)
                 rbH = da.sqrt(bH)
 
-                coeff = raG[(..., ) + (None, )*rbH.ndim] *\
-                        rbH[(None, )*raG.ndim + (...,)]
+                coeff = raG[(..., ) + (None, ) * rbH.ndim] *\
+                    rbH[(None, ) * raG.ndim + (...,)]
                 coeff.map_blocks(np.nan_to_num)
                 coeff = da.where(coeff == 0, 1, coeff)
                 data = data / coeff
@@ -796,7 +810,7 @@ def _reshuffle_mixed_blocks(array, ndim, sshape, nav_chunks):
     ndim : int
         the number of navigation (shuffled) dimensions
     sshape : tuple of ints
-        The shape 
+        The shape
     """
     splits = np.cumsum([multiply(ar)
                         for ar in product(*nav_chunks)][:-1]).tolist()
@@ -818,7 +832,7 @@ def _reshuffle_mixed_blocks(array, ndim, sshape, nav_chunks):
             else:
                 return np.concatenate(what, axis=axis)
 
-        for chunks, axis in zip(nav_chunks[::-1], range(ndim-1, -1, -1)):
+        for chunks, axis in zip(nav_chunks[::-1], range(ndim - 1, -1, -1)):
             step = len(chunks)
             all_chunks = split_stack_list(all_chunks, step, axis)
         return all_chunks

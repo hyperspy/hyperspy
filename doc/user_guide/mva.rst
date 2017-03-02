@@ -91,6 +91,11 @@ To obtain a scree plot for your dataset, run the
 
    PCA scree plot
 
+.. versionadded:: 1.2.0
+   ``log``, ``threshold``, ``hline``, ``xaxis_type``, ``xaxis_labeling``,
+   ``signal_fmt``, ``noise_fmt``, ``threshold``, ``xaxis_type`` keyword
+   arguments.
+
 The default options for this method will plot a bare scree plot, but the
 method's arguments allow for a great deal of customization. For
 example, by specifying a ``threshold`` value, a cutoff line will be drawn at

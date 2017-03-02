@@ -68,7 +68,7 @@ class MPL_HyperExplorer(object):
                 self.axes_manager.navigation_axes,
                 title=self.signal_title + " navigation sliders")
             return
-        title = title or self.signal_title +" Navigator" if self.signal_title else ""
+        title = title or self.signal_title + " Navigator" if self.signal_title else ""
         if self.navigator_plot is not None:
             self.navigator_plot.plot()
             return

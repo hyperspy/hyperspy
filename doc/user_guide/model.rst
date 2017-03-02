@@ -108,9 +108,11 @@ Specifying custom components
 
 .. versionadded:: 0.8.1 :py:class:`~._components.expression.Expression` component
 
+.. versionadded:: 1.2 :py:class:`~._components.expression.Expression` component can create 2D components.
+
 The easiest way to turn a mathematical expression into a component is using the
 :py:class:`~._components.expression.Expression` component. For example, the
-following is all you need to create a`Gaussian` component  with more sensible
+following is all you need to create a `Gaussian` component  with more sensible
 parameters for spectroscopy than the one that ships with HyperSpy:
 
 .. code-block:: python
@@ -143,17 +145,28 @@ a funtion. By default it "translates" the expression using
 numpy, but often it is possible to boost performance by using
 `numexpr <https://github.com/pydata/numexpr>`_ instead.
 
+It can also create 2D components with optional rotation. In the following example
+we create a 2D gaussian that rotates around its center:
 
-:py:class:`~._components.expression.Expression` is only useful for analytical
-functions. If you know how to write the function with Python, turning it into
-a component is very easy modifying the following template:
+.. code-block:: python
+
+    g = hs.model.components2D.Expression(
+        "k * exp(-((x-x0)**2 / (2 * sx ** 2) + (y-y0)**2 / (2 * sy ** 2)))",
+        "Gaussian2d", add_rotation=True, position=("x0", "y0"),
+        module="numpy", )
+
+
+Of course :py:class:`~._components.expression.Expression` is only useful for analytical
+functions. For more general components you need to create the component "by hand". The
+good news is that, if you know how to write the function with Python, turning it into
+a component is very easy, just modify the following template to suit your needs:
 
 
 .. code-block:: python
 
     from hyperspy.component import Component
 
-    class My_Component(Component):
+    class MyComponent(Component):
 
         """
         """
@@ -536,14 +549,14 @@ For example:
             A	5.000000
             centre	0.000000
 
-.. deprecated:: 1.1.3
+.. deprecated:: 1.2.0
     Setting the :py:attr:`~.component.Parameter.twin_function` and
     :py:attr:`~.component.Parameter.twin_inverse_function` attributes. Set the
     :py:attr:`~.component.Parameter.twin_function_expr` and
     :py:attr:`~.component.Parameter.twin_inverse_function_expr` attributes
     instead.
 
-.. versionadded:: 1.1.3
+.. versionadded:: 1.2.0
     :py:attr:`~.component.Parameter.twin_function_expr` and
     :py:attr:`~.component.Parameter.twin_inverse_function_expr`.
 

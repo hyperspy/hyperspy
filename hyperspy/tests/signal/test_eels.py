@@ -102,6 +102,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
         t = s.estimate_elastic_scattering_intensity(threshold=2.5)
         np.testing.assert_array_almost_equal(t.data, 249999.985133)
 
+
 @lazifyTestClass
 class TestEstimateZLPCentre:
 
@@ -207,3 +208,13 @@ class TestPowerLawExtrapolation:
         sc = self.s.isig[:300]
         s = sc.power_law_extrapolation(extrapolation_size=100)
         np.testing.assert_allclose(s.data, self.s.data, atol=10e-3)
+
+@lazifyTestClass
+class TestFourierRatioDeconvolution:
+
+    def test_running(self):
+        s = hs.signals.EELSSpectrum(np.arange(200))
+        s_ll = hs.signals.EELSSpectrum(np.zeros(100))
+        s_ll.data[18:23] = [3, 10, 20, 10, 3]
+        s_ll.axes_manager[0].offset = -20
+        s.fourier_ratio_deconvolution(s_ll)

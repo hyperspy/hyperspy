@@ -809,6 +809,8 @@ class ImageObject(object):
         except AttributeError:
             if 'Name' in ImageTags['Microscope_Info'].keys():
                 return ImageTags.Microscope_Info.Name
+            elif 'Microscope' in ImageTags['Microscope_Info'].keys():
+                return ImageTags.Microscope_Info.Microscope
 
     def _parse_string(self, tag):
         if len(tag) == 0:
@@ -847,10 +849,12 @@ class ImageObject(object):
 
         if "Microscope_Info" in self.imdict.ImageTags.keys():
             is_TEM = is_diffraction = None
-            if "Illumination_Mode" in self.imdict.ImageTags['Microscope_Info'].keys():
+            if "Illumination_Mode" in self.imdict.ImageTags[
+                    'Microscope_Info'].keys():
                 is_TEM = (
                     'TEM' == self.imdict.ImageTags.Microscope_Info.Illumination_Mode)
-            if "Imaging_Mode" in self.imdict.ImageTags['Microscope_Info'].keys():
+            if "Imaging_Mode" in self.imdict.ImageTags[
+                    'Microscope_Info'].keys():
                 is_diffraction = (
                     'DIFFRACTION' == self.imdict.ImageTags.Microscope_Info.Imaging_Mode)
 
@@ -920,7 +924,7 @@ class ImageObject(object):
                     None),
                 "ImageList.TagGroup0.ImageTags.EELS_Spectrometer.Aperture_label": (
                     "Acquisition_instrument.TEM.Detector.EELS.aperture_size",
-                    lambda string: float(string.replace(' mm', ''))),
+                    lambda string: float(string.replace('mm', ''))),
                 "ImageList.TagGroup0.ImageTags.EELS Spectrometer.Instrument name": (
                     "Acquisition_instrument.TEM.Detector.EELS.spectrometer",
                     None),

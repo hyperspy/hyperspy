@@ -140,10 +140,12 @@ def get_header_from_signal(signal, endianess='<'):
     return header, note
 
 
-def file_reader(filename, endianess='<',  mmap_mode='c',
+def file_reader(filename, endianess='<', mmap_mode=None,
                 lazy=False, **kwds):
     _logger.debug("Reading blockfile: %s" % filename)
     metadata = {}
+    if mmap_mode is None:
+        mmap_mode = 'r' if lazy else 'c'
     # Makes sure we open in right mode:
     if '+' in mmap_mode or ('write' in mmap_mode and
                             'copyonwrite' != mmap_mode):
@@ -207,7 +209,8 @@ def file_reader(filename, endianess='<',  mmap_mode='c',
     units = ['nm', 'nm', 'cm', 'cm']
     names = ['y', 'x', 'dy', 'dx']
     scales = [header['SY'], header['SX'], SDP, SDP]
-    date, time, time_zone = serial_date_to_ISO_format(header['Acquisition_time'])
+    date, time, time_zone = serial_date_to_ISO_format(
+        header['Acquisition_time'])
     metadata = {'General': {'original_filename': os.path.split(filename)[1],
                             'date': date,
                             'time': time,

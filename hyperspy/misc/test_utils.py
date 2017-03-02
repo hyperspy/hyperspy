@@ -5,10 +5,10 @@
 from contextlib import contextmanager
 import warnings
 import re
-
 import numpy as np
-import numpy.testing as nt
 from numpy.testing import assert_allclose
+
+from hyperspy.decorators import simple_decorator
 
 
 @contextmanager
@@ -163,6 +163,26 @@ def assert_warns(message=None, category=None):
             raise ValueError(msg)
 
 
+def reset_rcParams_default():
+    import matplotlib.pyplot as plt
+    plt.rcParams.clear()
+    plt.rcParams.update(plt.rcParamsDefault)
+
+
+@simple_decorator
+def update_close_figure(function):
+    def wrapper():
+        signal = function()
+
+        p = signal._plot
+        p.signal_plot.update()
+        if hasattr(p, 'navigation_plot'):
+            p.navigation_plot.update()
+        p.close()
+
+    return wrapper
+
+
 # Adapted from:
 # https://github.com/gem/oq-engine/blob/master/openquake/server/tests/helpers.py
 def assert_deep_almost_equal(actual, expected, *args, **kwargs):
@@ -203,3 +223,13 @@ def assert_deep_almost_equal(actual, expected, *args, **kwargs):
             trace = ' -> '.join(reversed(exc.traces))
             exc = AssertionError("%s\nTRACE: %s" % (exc, trace))
         raise exc
+
+
+def sanitize_dict(dictionary):
+    new_dictionary = {}
+    for key, value in dictionary.items():
+        if isinstance(value, dict):
+            new_dictionary[key] = sanitize_dict(value)
+        elif value is not None:
+            new_dictionary[key] = value
+    return new_dictionary

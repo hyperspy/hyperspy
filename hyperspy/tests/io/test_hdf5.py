@@ -31,8 +31,13 @@ from hyperspy.io import load
 from hyperspy.io_plugins.hdf5 import get_signal_chunks
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
+from hyperspy._signals.signal2d import Signal2D
 from hyperspy.roi import Point2DROI
 from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
+from hyperspy.utils import markers
+from hyperspy.drawing.marker import dict2marker
+from hyperspy.misc.test_utils import sanitize_dict as san_dict
+from hyperspy.api import preferences
 
 my_path = os.path.dirname(__file__)
 
@@ -181,8 +186,37 @@ class TestLoadingNewSavedMetadata:
 @pytest.fixture()
 def tmpfilepath():
     with tempfile.TemporaryDirectory() as tmp:
-        yield os.path.join(tmp, "test.hdf5")
+        yield os.path.join(tmp, "test")
         gc.collect()        # Make sure any memmaps are closed first!
+
+
+def get_ext():
+    if preferences.General.hspy_extension:
+        return ".hspy"
+    else:
+        return ".hdf5"
+
+
+def test_hspy_extension(tmpfilepath):
+    try:
+        hspy_extension = preferences.General.hspy_extension
+        preferences.General.hspy_extension = True
+        s = BaseSignal([0])
+        s.save(tmpfilepath)
+        assert os.path.exists(tmpfilepath + ".hspy")
+    finally:
+        preferences.General.hspy_extension = hspy_extension
+
+
+def test_hdf5_extension(tmpfilepath):
+    try:
+        hspy_extension = preferences.General.hspy_extension
+        preferences.General.hspy_extension = False
+        s = BaseSignal([0])
+        s.save(tmpfilepath)
+        assert os.path.exists(tmpfilepath + ".hdf5")
+    finally:
+        preferences.General.hspy_extension = hspy_extension
 
 
 class TestSavingMetadataContainers:
@@ -194,7 +228,7 @@ class TestSavingMetadataContainers:
         s = self.s
         s.metadata.set_item('test', ['a', 'b', '\u6f22\u5b57'])
         s.save(tmpfilepath)
-        l = load(tmpfilepath)
+        l = load(tmpfilepath + get_ext())
         assert isinstance(l.metadata.test[0], str)
         assert isinstance(l.metadata.test[1], str)
         assert isinstance(l.metadata.test[2], str)
@@ -212,7 +246,7 @@ class TestSavingMetadataContainers:
         s = self.s
         s.metadata.set_item('test', [[1., 2], ('3', 4)])
         s.save(tmpfilepath)
-        l = load(tmpfilepath)
+        l = load(tmpfilepath + get_ext())
         assert isinstance(l.metadata.test, list)
         assert isinstance(l.metadata.test[0], list)
         assert isinstance(l.metadata.test[1], tuple)
@@ -221,7 +255,7 @@ class TestSavingMetadataContainers:
         s = self.s
         s.metadata.set_item('test', [[1., 2], ['3', 4]])
         s.save(tmpfilepath)
-        l = load(tmpfilepath)
+        l = load(tmpfilepath + get_ext())
         assert isinstance(l.metadata.test[0][0], float)
         assert isinstance(l.metadata.test[0][1], float)
         assert isinstance(l.metadata.test[1][0], str)
@@ -231,7 +265,7 @@ class TestSavingMetadataContainers:
         s = self.s
         s.metadata.set_item('test', (BaseSignal([1]), 0.1, 'test_string'))
         s.save(tmpfilepath)
-        l = load(tmpfilepath)
+        l = load(tmpfilepath + get_ext())
         assert isinstance(l.metadata.test, tuple)
         assert isinstance(l.metadata.test[0], Signal1D)
         assert isinstance(l.metadata.test[1], float)
@@ -241,7 +275,7 @@ class TestSavingMetadataContainers:
         s = self.s
         s.metadata.set_item('test', Point2DROI(1, 2))
         s.save(tmpfilepath)
-        l = load(tmpfilepath)
+        l = load(tmpfilepath + get_ext())
         assert 'test' not in l.metadata
 
     def test_date_time(self, tmpfilepath):
@@ -250,7 +284,7 @@ class TestSavingMetadataContainers:
         s.metadata.General.date = date
         s.metadata.General.time = time
         s.save(tmpfilepath)
-        l = load(tmpfilepath)
+        l = load(tmpfilepath + get_ext())
         assert l.metadata.General.date == date
         assert l.metadata.General.time == time
 
@@ -263,7 +297,7 @@ class TestSavingMetadataContainers:
         s.metadata.General.authors = authors
         s.metadata.General.doi = doi
         s.save(tmpfilepath)
-        l = load(tmpfilepath)
+        l = load(tmpfilepath + get_ext())
         assert l.metadata.General.notes == notes
         assert l.metadata.General.authors == authors
         assert l.metadata.General.doi == doi
@@ -273,7 +307,7 @@ class TestSavingMetadataContainers:
         quantity = "Intensity (electron)"
         s.metadata.Signal.quantity = quantity
         s.save(tmpfilepath)
-        l = load(tmpfilepath)
+        l = load(tmpfilepath + get_ext())
         assert l.metadata.Signal.quantity == quantity
 
 
@@ -365,6 +399,268 @@ class TestAxesConfiguration:
         remove(self.filename)
 
 
+class Test_permanent_markers_io:
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_save_permanent_marker(self):
+        s = Signal2D(np.arange(100).reshape(10, 10))
+        m = markers.point(x=5, y=5)
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/testsavefile.hdf5'
+        s.save(filename)
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_save_load_empty_metadata_markers(self):
+        s = Signal2D(np.arange(100).reshape(10, 10))
+        m = markers.point(x=5, y=5)
+        m.name = "test"
+        s.add_marker(m, permanent=True)
+        del s.metadata.Markers.test
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/testsavefile.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        assert len(s1.metadata.Markers) == 0
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_save_load_permanent_marker(self):
+        x, y = 5, 2
+        color = 'red'
+        size = 10
+        name = 'testname'
+        s = Signal2D(np.arange(100).reshape(10, 10))
+        m = markers.point(x=x, y=y, color=color, size=size)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/testloadfile.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        assert s1.metadata.Markers.has_item(name)
+        m1 = s1.metadata.Markers.get_item(name)
+        assert m1.get_data_position('x1') == x
+        assert m1.get_data_position('y1') == y
+        assert m1.get_data_position('size') == size
+        assert m1.marker_properties['color'] == color
+        assert m1.name == name
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_save_load_permanent_marker_all_types(self):
+        x1, y1, x2, y2 = 5, 2, 1, 8
+        s = Signal2D(np.arange(100).reshape(10, 10))
+        m0_list = [
+            markers.point(x=x1, y=y1),
+            markers.horizontal_line(y=y1),
+            markers.horizontal_line_segment(x1=x1, x2=x2, y=y1),
+            markers.line_segment(x1=x1, x2=x2, y1=y1, y2=y2),
+            markers.rectangle(x1=x1, x2=x2, y1=y1, y2=y2),
+            markers.text(x=x1, y=y1, text="test"),
+            markers.vertical_line(x=x1),
+            markers.vertical_line_segment(x=x1, y1=y1, y2=y2),
+        ]
+        for m in m0_list:
+            s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/testallmarkersfile.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        markers_dict = s1.metadata.Markers
+        m0_dict_list = []
+        m1_dict_list = []
+        for m in m0_list:
+            m0_dict_list.append(san_dict(m._to_dictionary()))
+            m1_dict_list.append(
+                san_dict(markers_dict.get_item(m.name)._to_dictionary()))
+        assert len(list(s1.metadata.Markers)) == 8
+        for m0_dict, m1_dict in zip(m0_dict_list, m1_dict_list):
+            assert m0_dict == m1_dict
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_save_load_horizontal_line_marker(self):
+        y = 8
+        color = 'blue'
+        linewidth = 2.5
+        name = "horizontal_line_test"
+        s = Signal2D(np.arange(100).reshape(10, 10))
+        m = markers.horizontal_line(y=y, color=color, linewidth=linewidth)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/test_save_horizontal_line_marker.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        m1 = s1.metadata.Markers.get_item(name)
+        assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_save_load_horizontal_line_segment_marker(self):
+        x1, x2, y = 1, 5, 8
+        color = 'red'
+        linewidth = 1.2
+        name = "horizontal_line_segment_test"
+        s = Signal2D(np.arange(100).reshape(10, 10))
+        m = markers.horizontal_line_segment(
+            x1=x1, x2=x2, y=y, color=color, linewidth=linewidth)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/test_save_horizontal_line_segment_marker.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        m1 = s1.metadata.Markers.get_item(name)
+        assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_save_load_vertical_line_marker(self):
+        x = 9
+        color = 'black'
+        linewidth = 3.5
+        name = "vertical_line_test"
+        s = Signal2D(np.arange(100).reshape(10, 10))
+        m = markers.vertical_line(x=x, color=color, linewidth=linewidth)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/test_save_vertical_line_marker.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        m1 = s1.metadata.Markers.get_item(name)
+        assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_save_load_vertical_line_segment_marker(self):
+        x, y1, y2 = 2, 1, 3
+        color = 'white'
+        linewidth = 4.2
+        name = "vertical_line_segment_test"
+        s = Signal2D(np.arange(100).reshape(10, 10))
+        m = markers.vertical_line_segment(
+            x=x, y1=y1, y2=y2, color=color, linewidth=linewidth)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/test_save_vertical_line_segment_marker.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        m1 = s1.metadata.Markers.get_item(name)
+        assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_save_load_line_segment_marker(self):
+        x1, x2, y1, y2 = 1, 9, 4, 7
+        color = 'cyan'
+        linewidth = 0.7
+        name = "line_segment_test"
+        s = Signal2D(np.arange(100).reshape(10, 10))
+        m = markers.line_segment(
+            x1=x1, x2=x2, y1=y1, y2=y2, color=color, linewidth=linewidth)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/test_save_line_segment_marker.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        m1 = s1.metadata.Markers.get_item(name)
+        assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_save_load_point_marker(self):
+        x, y = 9, 8
+        color = 'purple'
+        name = "point test"
+        s = Signal2D(np.arange(100).reshape(10, 10))
+        m = markers.point(
+            x=x, y=y, color=color)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/test_save_point_marker.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        m1 = s1.metadata.Markers.get_item(name)
+        assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_save_load_rectangle_marker(self):
+        x1, x2, y1, y2 = 2, 4, 1, 3
+        color = 'yellow'
+        linewidth = 5
+        name = "rectangle_test"
+        s = Signal2D(np.arange(100).reshape(10, 10))
+        m = markers.rectangle(
+            x1=x1, x2=x2, y1=y1, y2=y2, color=color, linewidth=linewidth)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/test_save_rectangle_marker.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        m1 = s1.metadata.Markers.get_item(name)
+        assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_save_load_text_marker(self):
+        x, y = 3, 9.5
+        color = 'brown'
+        name = "text_test"
+        text = "a text"
+        s = Signal2D(np.arange(100).reshape(10, 10))
+        m = markers.text(
+            x=x, y=y, text=text, color=color)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/test_save_text_marker.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        m1 = s1.metadata.Markers.get_item(name)
+        assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    def test_save_load_multidim_navigation_marker(self):
+        x, y = (1, 2, 3), (5, 6, 7)
+        name = 'test point'
+        s = Signal2D(np.arange(300).reshape(3, 10, 10))
+        m = markers.point(x=x, y=y)
+        m.name = name
+        s.add_marker(m, permanent=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            filename = tmp + '/test_save_multidim_nav_marker.hdf5'
+        s.save(filename)
+        s1 = load(filename)
+        m1 = s1.metadata.Markers.get_item(name)
+        assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
+        assert m1.get_data_position('x1') == x[0]
+        assert m1.get_data_position('y1') == y[0]
+        s1.axes_manager.navigation_axes[0].index = 1
+        assert m1.get_data_position('x1') == x[1]
+        assert m1.get_data_position('y1') == y[1]
+        s1.axes_manager.navigation_axes[0].index = 2
+        assert m1.get_data_position('x1') == x[2]
+        assert m1.get_data_position('y1') == y[2]
+
+    def test_load_unknown_marker_type(self):
+        # test_marker_bad_marker_type.hdf5 has 5 markers,
+        # where one of them has an unknown marker type
+        s = load(os.path.join(
+            my_path,
+            "hdf5_files",
+            "test_marker_bad_marker_type.hdf5"))
+        assert len(s.metadata.Markers) == 4
+
+    def test_load_missing_y2_value(self):
+        # test_marker_point_y2_data_deleted.hdf5 has 5 markers,
+        # where one of them is missing the y2 value, however the
+        # the point marker only needs the x1 and y1 value to work
+        # so this should load
+        s = load(os.path.join(
+            my_path,
+            "hdf5_files",
+            "test_marker_point_y2_data_deleted.hdf5"))
+        assert len(s.metadata.Markers) == 5
+
+
 def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
     assert s.metadata.Sample.elements.dtype.char == "U"
@@ -374,7 +670,7 @@ def test_lazy_metadata_arrays(tmpfilepath):
     s = BaseSignal([1, 2, 3])
     s.metadata.array = np.arange(10.)
     s.save(tmpfilepath)
-    l = load(tmpfilepath, lazy=True)
+    l = load(tmpfilepath + get_ext(), lazy=True)
     # Can't deepcopy open hdf5 file handles
     with pytest.raises(TypeError):
         l.deepcopy()
