@@ -5,7 +5,60 @@ We only cover here the main highlights, for a detailed list of all the changes
 see `the commits in the GITHUB milestones
 <https://github.com/hyperspy/hyperspy/milestones?state=closed>`_.
 
-.. _changes_1.1.2:
+.. _changes_1.2:
+
+v1.2
+====
+
+This is a minor release. Follow the following links for details on all
+the `bugs fixed
+<https://github.com/hyperspy/hyperspy/issues?q=label%3Abug+is%3Aclosed+milestone%3Av1.2>`_,
+`enhancements
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.2+label%3Aenhancement>`_
+and `new features
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.2+label%3Anew>`_.
+
+NEW
+---
+
+* Lazy loading and evaluation. See :ref:`big-data-label`.
+* Parallel :py:meth:`~.signal.BaseSignal.map` and all the functions that use
+  it internally (a good fraction of HyperSpy's functionaly). See
+  :ref:`map-label`.
+* :ref:`electron-holography-label` reconstruction.
+* Support for reading :ref:`edax-format` files.
+* New signal methods :py:meth:`~.signal.BaseSignal.indexmin` and
+  :py:meth:`~.signal.BaseSignal.valuemin`.
+
+Enhancements
+------------
+* Easier creation of :py:class:`~._components.expression.Expression` components
+  using substitutions. See the
+  :ref:`User Guide for details <expression_component-label>`.
+* :py:class:`~._components.expression.Expression` takes two dimensional
+  functions that can automatically include a rotation parameter. See the
+  :ref:`User Guide for details <expression_component-label>`.
+* Better support for EMD files.
+* The scree plot got a beauty treatment and some extra features. See
+  :ref:`scree-plot`.
+* :py:meth:`~.signal.BaseSignal.map` can now take functions that return
+  differently-shaped arrays or arbitrary objects, see :ref:`map-label`.
+* Add support for stacking multi-signal files. See :ref:`load-multiple-label`.
+* Markers can now be saved to hdf5 and creating many markers is easier and
+  faster. See :ref:`plot.markers`.
+* Add option to save to HDF5 file using the ".hspy" extension instead of
+  ".hdf5". See :ref:`hdf5-format`. This will be the default extension in
+  HyperSpy 1.3.
+
+For developers
+--------------
+* Most of HyperSpy plotting features are now covered by unittests. See
+  :ref:`plot-test-label`.
+* unittests migrated from nose to pytest. See :ref:`tests-label`.
+
+
+
+.. _changes_1.1.2: 
 v1.1.2
 ======
 
@@ -36,6 +89,7 @@ Enhancements
 * All metadata in the HyperSpy metadata specification is now read from all
   supported file formats when available.
 
+.. _changes_1.1:
 v1.1
 ====
 

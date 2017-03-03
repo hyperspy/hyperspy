@@ -15,10 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import matplotlib
-from matplotlib.testing.decorators import cleanup
 import warnings
 import sys
+from unittest.mock import Mock
+
+import matplotlib
+from matplotlib.testing.decorators import cleanup
 import pytest
 
 import hyperspy.drawing.utils as utils
@@ -30,22 +32,13 @@ from hyperspy.misc.test_utils import assert_warns
 @cleanup
 def test_create_figure():
     dummy_warning = 'dummy_function have been called after closing windows'
+    if matplotlib.get_backend() not in ("GTKAgg", "WXAgg", "TkAgg", "Qt4Agg"):
+        pytest.xfail("{} backend does not support on_close event.".format(
+            matplotlib.get_backend()))
 
-    original_backend = matplotlib.get_backend()
-    if original_backend == 'agg':
-        matplotlib.pyplot.switch_backend('TkAgg')
-
-    def dummy_function():
-        # raise a warning to check if this function have been called
-        warnings.warn(dummy_warning, UserWarning)
-
-    with assert_warns(message=dummy_warning, category=UserWarning):
-        window_title = 'test title'
-        fig = utils.create_figure(window_title=window_title,
-                                  _on_figure_window_close=dummy_function)
-        assert isinstance(fig, matplotlib.figure.Figure) == True
-        matplotlib.pyplot.close(fig)
-        
-    if original_backend == 'agg':  # switch back to the original backend
-        matplotlib.pyplot.switch_backend(original_backend)
-
+    dummy_function = Mock()
+    fig = utils.create_figure(window_title="test title",
+                              _on_figure_window_close=dummy_function)
+    assert isinstance(fig, matplotlib.figure.Figure) == True
+    matplotlib.pyplot.close(fig)
+    dummy_function.assert_called_once_with()
