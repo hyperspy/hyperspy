@@ -681,6 +681,24 @@ class AxesManager(t.HasTraits):
                      else tuple())
         return nav_shape + sig_shape
 
+    @property
+    def signal_extent(self):
+        signal_extent = []
+#        if self.signal_dimension != 0:
+        for signal_axis in self.signal_axes:
+            signal_extent.append(signal_axis.low_value)
+            signal_extent.append(signal_axis.high_value)
+        return tuple(signal_extent)
+
+    @property
+    def navigation_extent(self):
+        navigation_extent = []
+#        if self.navigation_dimension != 0:
+        for navigation_axis in self.navigation_axes:
+            navigation_extent.append(navigation_axis.low_value)
+            navigation_extent.append(navigation_axis.high_value)
+        return tuple(navigation_extent)
+
     def remove(self, axes):
         """Remove one or more axes
         """
@@ -861,26 +879,14 @@ class AxesManager(t.HasTraits):
         if self.navigation_dimension != 0:
             self.navigation_shape = tuple([
                 axis.size for axis in self.navigation_axes])
-            navigation_extent = []
-            for navigation_axis in self.navigation_axes:
-                navigation_extent.append(navigation_axis.low_value)
-                navigation_extent.append(navigation_axis.high_value)
-            self.navigation_extent = tuple(navigation_extent)
         else:
             self.navigation_shape = ()
-            self.navigation_extent = ()
 
         if self.signal_dimension != 0:
             self.signal_shape = tuple([
                 axis.size for axis in self.signal_axes])
-            signal_extent = []
-            for signal_axis in self.signal_axes:
-                signal_extent.append(signal_axis.low_value)
-                signal_extent.append(signal_axis.high_value)
-            self.signal_extent = tuple(signal_extent)
         else:
             self.signal_shape = ()
-            self.signal_extent = ()
         self.navigation_size = (np.cumprod(self.navigation_shape)[-1]
                                 if self.navigation_shape else 0)
         self.signal_size = (np.cumprod(self.signal_shape)[-1]
