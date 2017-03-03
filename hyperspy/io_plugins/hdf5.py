@@ -40,8 +40,8 @@ description = \
 
 full_support = False
 # Recognised file extension
-file_extensions = ['hdf', 'h4', 'hdf4', 'h5', 'hdf5', 'he4', 'he5']
-default_extension = 4
+file_extensions = ['hdf', 'h4', 'hdf4', 'h5', 'hdf5', 'he4', 'he5', "hspy"]
+default_extension = 7
 
 # Writing capabilities
 writes = True

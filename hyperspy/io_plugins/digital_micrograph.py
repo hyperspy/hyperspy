@@ -809,6 +809,8 @@ class ImageObject(object):
         except AttributeError:
             if 'Name' in ImageTags['Microscope_Info'].keys():
                 return ImageTags.Microscope_Info.Name
+            elif 'Microscope' in ImageTags['Microscope_Info'].keys():
+                return ImageTags.Microscope_Info.Microscope
 
     def _parse_string(self, tag):
         if len(tag) == 0:
@@ -922,7 +924,7 @@ class ImageObject(object):
                     None),
                 "ImageList.TagGroup0.ImageTags.EELS_Spectrometer.Aperture_label": (
                     "Acquisition_instrument.TEM.Detector.EELS.aperture_size",
-                    lambda string: float(string.replace(' mm', ''))),
+                    lambda string: float(string.replace('mm', ''))),
                 "ImageList.TagGroup0.ImageTags.EELS Spectrometer.Instrument name": (
                     "Acquisition_instrument.TEM.Detector.EELS.spectrometer",
                     None),

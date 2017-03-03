@@ -2,47 +2,42 @@ language: python
 
 matrix:
   include:
-  - python: 3.5
-    env: export FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
-  - python: 3.5
-    env: export FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
-  - python: 3.5
-    env: export FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='True'
-  - os: osx
+  - env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+  - env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'; MPLBACKEND="agg"
+    os: osx
     language: generic
-    python: 3.5
-    env: export FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
+  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='True'
+  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'; MPLBACKEND="agg"
+    os: osx
+    language: generic
   allow_failures:
-  - env: export FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
+  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
 
 before_install:
   - if [[ $TRAVIS_OS_NAME == 'osx' ]] ; then
       curl "https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh" -o miniconda.sh;
     else wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
     fi
-  - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      chmod +x miniconda.sh;
-      ./miniconda.sh -b -p $HOME/miniconda;
-      export "PATH=$HOME/miniconda/bin:$PATH";
-      hash -r;
-      conda update --yes conda;
-    fi
+  - chmod +x miniconda.sh;
+    ./miniconda.sh -b -p $HOME/miniconda;
+    export "PATH=$HOME/miniconda/bin:$PATH";
+    hash -r;
 install:
 
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      DEPS="pytest pytest-cov numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython lxml ipyparallel dask";
-      conda create -n testenv --yes $DEPS;
-      source activate testenv;
-      conda install pip;
-      if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
-        pip uninstall -y matplotlib;
-        pip install matplotlib;
-      fi;
-      python setup.py install;
-      pip install pytest pytest-xdist;
-    else pip install pytest;
-    pip3 install .;
+      DEPS="pip numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython lxml ipyparallel dask traits traitsui";
+    else DEPS="pip ipython numpy scipy matplotlib h5py sympy scikit-image";
     fi
+  - conda create -n testenv --yes python=$PYTHON;
+    source activate testenv;
+    conda install -y -c conda-forge $DEPS;
+  - if [[ $MINIMAL_ENV == 'False' ]] ; then
+      pip install .[all];
+    else pip install .;
+    fi
+  - python setup.py build_ext --inplace;
 
 before_script: # configure a headless display to test plot generation
   - "export DISPLAY=:99.0"
@@ -50,34 +45,18 @@ before_script: # configure a headless display to test plot generation
   - sleep 3 # give xvfb some time to start
 
 script:
-  - if [[ $MINIMAL_ENV == 'False' ]]; then
-      python setup.py build_ext --inplace;
-      pip install coverage coveralls pytest-cov pytest-mpl;
-      if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
-        py.test --mpl --cov=hyperspy --pyargs hyperspy;
-      else py.test --cov=hyperspy --pyargs hyperspy;
-      fi
-    else python3 setup.py build_ext --inplace;
-      echo "available installed python libraries (pip3 list):"
-      pip3 list;
-      pip3 install coverage coveralls pytest-cov pytest-mpl;
-      py.test --mpl --cov=hyperspy --pyargs hyperspy.tests;
-    fi
+  - pip install coverage coveralls pytest pytest-cov pytest-mpl;
+    py.test --mpl --cov=hyperspy --pyargs hyperspy;
 
 after_success:
 - coveralls
 - if [[ $MINIMAL_ENV == 'False' ]]; then
-    if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
-      python setup.py bdist_wheel;
-    else python setup.py sdist;
-    fi;
+    python setup.py bdist_wheel;
+  else python setup.py sdist;
   fi
 
 before_deploy:
-- if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
-    export DISTRIB=$(ls ./dist/*.whl);
-  else export DISTRIB=$(ls ./dist/*.tar.gz);
-  fi
+- export DISTRIB=$(ls ./dist/*.whl);
 
 deploy:
   provider: releases

@@ -369,12 +369,17 @@ Example:
 
 The following methods operate only on one axis at a time:
 
+.. versionadded:: 1.2
+   :py:meth:`~.signal.BaseSignal.valuemin`, :py:meth:`~.signal.BaseSignal.indexmin`
+
 * :py:meth:`~.signal.BaseSignal.diff`
 * :py:meth:`~.signal.BaseSignal.derivative`
 * :py:meth:`~.signal.BaseSignal.integrate_simpson`
 * :py:meth:`~.signal.BaseSignal.integrate1D`
 * :py:meth:`~.signal.BaseSignal.valuemax`
 * :py:meth:`~.signal.BaseSignal.indexmax`
+* :py:meth:`~.signal.BaseSignal.valuemin`
+* :py:meth:`~.signal.BaseSignal.indexmin`
 
 .. versionadded:: 1.0
    numpy ufunc operate on HyperSpy signals
@@ -691,6 +696,7 @@ is raised.
         raise ValueError(exception_message)
     ValueError: Invalid dimensions for this operation
 
+
 Broacasting operates exactly in the same way for the signal axes:
 
 .. code-block:: python
@@ -773,11 +779,12 @@ to make a horizontal "collage" of the image stack:
 
   Rotation of images by iteration.
 
-.. versionadded:: 0.7
-
+.. _map-label:
 
 Iterating external functions with the map method
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 0.7
 
 Performing an operation on the data at each coordinate, as in the previous example,
 using an external function can be more easily accomplished using the
@@ -864,6 +871,10 @@ data (default, ``True``) or storing it to a new signal (``False``).
 .. versionadded:: 1.2.0
     ``parallel`` keyword.
 
+
+
+.. _parallel-map-label:
+
 The execution can be sped up by passing ``parallel`` keyword to the
 :py:meth:`~.signal.BaseSignal.map` method:
 
@@ -872,7 +883,7 @@ The execution can be sped up by passing ``parallel`` keyword to the
     >>> import time
     >>> def slow_func(data):
     ...     time.sleep(1.)
-    ...     return data+1
+    ...     return data + 1
     >>> s = hs.signals.Signal1D(np.arange(20).reshape((20,1)))
     >>> s
     <Signal1D, title: , dimensions: (20|1)>

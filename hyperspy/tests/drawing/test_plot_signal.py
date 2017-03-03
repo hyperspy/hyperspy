@@ -103,7 +103,8 @@ def _generate_parameter():
 @pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.parametrize(("ndim", "sdim", "plot_type", "data_type"),
                          _generate_parameter())
-@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_sig_nav(ndim, sdim, plot_type, data_type):
     test_plot = _TestPlot(ndim, sdim, data_type)
     test_plot.signal.plot()

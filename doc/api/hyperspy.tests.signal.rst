@@ -132,6 +132,14 @@ hyperspy.tests.signal.test_kramers_kronig_transform module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.signal.test_lazy module
+--------------------------------------
+
+.. automodule:: hyperspy.tests.signal.test_lazy
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.signal.test_map_method module
 --------------------------------------------
 

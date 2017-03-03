@@ -29,7 +29,6 @@ default_tol = 2.0
 baseline_dir = 'plot_markers'
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 class TestMarkers:
 
     def test_get_data(self):
@@ -137,7 +136,6 @@ class TestMarkers:
         m = markers.point(x=5, y=5)
         s.add_marker(m, plot_marker=False)
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_add_marker_signal1d_navigation_dim(self):
         s = Signal1D(np.zeros((3, 50, 50)))
         m0 = markers.point(5, 5)
@@ -148,7 +146,6 @@ class TestMarkers:
             s.add_marker(m1)
         s.add_marker(m2)
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_add_marker_signal2d_navigation_dim(self):
         s = Signal2D(np.zeros((3, 50, 50)))
         m0 = markers.point(5, 5)
@@ -159,7 +156,6 @@ class TestMarkers:
             s.add_marker(m1)
         s.add_marker(m2)
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_add_markers_as_list(self):
         s = Signal1D(np.arange(10))
         marker_list = []
@@ -170,7 +166,6 @@ class TestMarkers:
 
 class Test_permanent_markers:
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_add_permanent_marker(self):
         s = Signal1D(np.arange(10))
         m = markers.point(x=5, y=5)
@@ -183,7 +178,6 @@ class Test_permanent_markers:
         s.add_marker(m, permanent=True, plot_marker=False)
         assert list(s.metadata.Markers)[0][1] == m
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_remove_permanent_marker_name(self):
         s = Signal1D(np.arange(10))
         m = markers.point(x=5, y=5)
@@ -193,7 +187,6 @@ class Test_permanent_markers:
         del s.metadata.Markers.test
         assert len(list(s.metadata.Markers)) == 0
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_permanent_marker_names(self):
         s = Signal1D(np.arange(10))
         m0 = markers.point(x=5, y=5)
@@ -207,7 +200,6 @@ class Test_permanent_markers:
         assert s.metadata.Markers.test1 == m1
         assert m1.name == 'test1'
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_add_permanent_marker_twice(self):
         s = Signal1D(np.arange(10))
         m = markers.point(x=5, y=5)
@@ -215,7 +207,6 @@ class Test_permanent_markers:
         with pytest.raises(ValueError):
             s.add_marker(m, permanent=True)
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_add_permanent_marker_twice_different_signal(self):
         s0 = Signal1D(np.arange(10))
         s1 = Signal1D(np.arange(10))
@@ -224,7 +215,6 @@ class Test_permanent_markers:
         with pytest.raises(ValueError):
             s1.add_marker(m, permanent=True)
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_add_several_permanent_markers(self):
         s = Signal1D(np.arange(10))
         m_point = markers.point(x=5, y=5)
@@ -247,7 +237,6 @@ class Test_permanent_markers:
         with pytest.raises(ValueError):
             s.add_marker(m_rect, permanent=True)
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_add_markers_as_list(self):
         s = Signal1D(np.arange(10))
         marker_list = []
@@ -256,7 +245,6 @@ class Test_permanent_markers:
         s.add_marker(marker_list, permanent=True)
         assert len(s.metadata.Markers) == 10
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_add_markers_as_list_add_same_twice(self):
         s = Signal1D(np.arange(10))
         marker_list = []
@@ -266,7 +254,6 @@ class Test_permanent_markers:
         with pytest.raises(ValueError):
             s.add_marker(marker_list, permanent=True)
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_add_markers_as_list_add_different_twice(self):
         s = Signal1D(np.arange(10))
         marker_list0 = []
@@ -279,15 +266,13 @@ class Test_permanent_markers:
             marker_list1.append(markers.point(4, 8))
         s.add_marker(marker_list1, permanent=True)
         assert len(s.metadata.Markers) == 20
-    
-    @pytest.mark.skipif("sys.platform == 'darwin'")
+
     def test_add_permanent_marker_signal2d(self):
         s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(x=5, y=5)
         s.add_marker(m, permanent=True)
         assert list(s.metadata.Markers)[0][1] == m
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
     def test_deepcopy_permanent_marker(self):
         x, y, color, name = 2, 9, 'blue', 'test_point'
         s = Signal2D(np.arange(100).reshape(10, 10))
@@ -384,7 +369,6 @@ def _test_plot_rectange_markers():
     return im
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_rectange_markers():
@@ -392,7 +376,6 @@ def test_plot_rectange_markers():
     return im._plot.signal_plot.figure
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @cleanup
 @update_close_figure
 def test_plot_rectange_markers_close():
@@ -412,7 +395,6 @@ def _test_plot_point_markers():
     return s
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_point_markers():
@@ -420,7 +402,6 @@ def test_plot_point_markers():
     return s._plot.signal_plot.figure
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @cleanup
 @update_close_figure
 def test_plot_point_markers_close():
@@ -439,7 +420,6 @@ def _test_plot_text_markers():
     return s
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_text_markers_nav():
@@ -447,7 +427,6 @@ def test_plot_text_markers_nav():
     return s._plot.navigator_plot.figure
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_text_markers_sig():
@@ -455,7 +434,6 @@ def test_plot_text_markers_sig():
     return s._plot.signal_plot.figure
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @cleanup
 @update_close_figure
 def test_plot_text_markers_close():
@@ -477,7 +455,6 @@ def _test_plot_line_markers():
     return im
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_line_markers():
@@ -485,7 +462,6 @@ def test_plot_line_markers():
     return im._plot.signal_plot.figure
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @cleanup
 @update_close_figure
 def test_plot_line_markers_close():
