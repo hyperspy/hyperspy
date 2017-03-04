@@ -476,15 +476,16 @@ class EDXSpectrum(object):
             be 'TRTSpectrum'
         """
         TRTHeader = spectrum.TRTHeaderedClass
-        #<ClassInstance Type="TRTSpectrumHardwareHeader>:
-        hardware_header = TRTHeader.ClassInstance
-        #<ClassInstance Type="TRTDetectorHeader>:
-        detector_header = TRTHeader.ClassInstance[1]
-        #<ClassInstance Type="TRTESMAHeader">:
-        esma_header = TRTHeader.ClassInstance[2]
+        hardware_header = TRTHeader.xpath(
+            "ClassInstance[@Type='TRTSpectrumHardwareHeader']")[0]
+        detector_header = TRTHeader.xpath(
+            "ClassInstance[@Type='TRTDetectorHeader']")[0]
+        esma_header = TRTHeader.xpath(
+            "ClassInstance[@Type='TRTESMAHeader']")[0]
         # what TRT means?
         # ESMA could stand for Electron Scanning Microscope Analysis
-        spectrum_header = spectrum.ClassInstance[0]
+        spectrum_header = spectrum.xpath(
+            "ClassInstance[@Type='TRTSpectrumHeader']")[0]
 
         # map stuff from harware xml branch:
         self.hardware_metadata = json.loads(json.dumps(hardware_header,
@@ -518,8 +519,8 @@ class EDXSpectrum(object):
         self.calibAbs = self.spectrum_metadata['CalibAbs']
         self.calibLin = self.spectrum_metadata['CalibLin']
         self.chnlCnt = self.spectrum_metadata['ChannelCount']
-        self.date = self.spectrum_metadata['Date']  # Not Used?
-        self.time = self.spectrum_metadata['Time']  # Not Used?
+        #self.date = self.spectrum_metadata['Date']  # Not Used?
+        #self.time = self.spectrum_metadata['Time']  # Not Used?
 
         # main data:
         self.data = np.fromstring(str(spectrum.Channels), dtype='Q', sep=",")
@@ -974,7 +975,12 @@ this is going to take a while... please wait""")
                     buffer1 = buffer1[offset:] + next(iter_data)
                     size = size_chnk + size - offset
                     offset = 0
-                if flag == 1:  # and (chan1 != chan2)
+                if flag == 0:
+                    data1 = buffer1[offset:offset + data_size2]
+                    arr16 = np.fromstring(data1, dtype=np.uint16)
+                    pixel = np.bincount(arr16, minlength=chan1 - 1)
+                    offset += data_size2
+                elif flag == 1:  # and (chan1 != chan2)
                     # Unpack packed 12-bit data to 16-bit uints:
                     data1 = buffer1[offset:offset + data_size2]
                     switched_i2 = np.fromstring(data1,
@@ -994,7 +1000,7 @@ this is going to take a while... please wait""")
                     exp16 &= np.uint16(0x0FFF)  # Mask all shorts to 12bit
                     pixel = np.bincount(exp16, minlength=chan1 - 1)
                     offset += data_size2
-                else:
+                else:  # flag > 1
                     # Unpack instructively packed data to pixel channels:
                     pixel = []
                     the_end = offset + data_size2 - 4
