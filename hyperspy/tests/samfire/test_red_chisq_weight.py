@@ -16,7 +16,7 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import nose.tools as nt
+
 
 from hyperspy.samfire_utils.weights.red_chisq import ReducedChiSquaredWeight
 from hyperspy.misc.utils import DictionaryTreeBrowser
@@ -24,7 +24,7 @@ from hyperspy.misc.utils import DictionaryTreeBrowser
 
 class Test_Red_chisq_weight:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.w = ReducedChiSquaredWeight()
         artificial_model = DictionaryTreeBrowser()
         artificial_model.add_node('red_chisq.data')
@@ -34,12 +34,12 @@ class Test_Red_chisq_weight:
     def test_function(self):
         w = self.w
         ind = (2, 3)
-        nt.assert_equal(w.function(ind), 16)
+        assert w.function(ind) == 16
 
     def test_map_noslice(self):
         w = self.w
         mask = np.ones((5, 7), dtype=bool)
         mask[0, 0] = False
         ans = w.map(mask)
-        nt.assert_true(np.all(w.model.red_chisq.data[mask] - 1 == ans[mask]))
-        nt.assert_true(np.isnan(ans[0, 0]))
+        assert np.all(w.model.red_chisq.data[mask] - 1 == ans[mask])
+        assert np.isnan(ans[0, 0])
