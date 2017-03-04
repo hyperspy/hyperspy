@@ -17,7 +17,6 @@
 
 import scipy.misc
 import pytest
-from matplotlib.testing.decorators import cleanup
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import update_close_figure
@@ -29,7 +28,6 @@ default_tol = 2.0
 baseline_dir = 'plot_signal1d'
 
 
-@cleanup
 class TestPlotSpectra():
 
     def _test_plot_spectra(self):
@@ -38,7 +36,7 @@ class TestPlotSpectra():
     @pytest.mark.parametrize("style", ['default', 'overlap', 'cascade', 'mosaic',
                                        'heatmap'])
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
-    def test_plot_spectra(self, style):
+    def test_plot_spectra(self, mpl_cleanup, style):
         ax = hs.plot.plot_spectra(self._test_plot_spectra(), style=style,
                                   legend='auto')
         if style == 'mosaic':
@@ -47,7 +45,7 @@ class TestPlotSpectra():
 
     @pytest.mark.parametrize("figure", ['1nav', '1sig', '2nav', '2sig'])
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
-    def test_plot_spectra_sync(self, figure):
+    def test_plot_spectra_sync(self, mpl_cleanup, figure):
         s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0).inav[:, :3]
         s2 = s1.deepcopy() * -1
         hs.plot.plot_signals([s1, s2])
@@ -61,7 +59,6 @@ class TestPlotSpectra():
             return s2._plot.navigator_plot.figure
 
 
-@cleanup
 @update_close_figure
 def test_plot_nav0_close():
     test_plot = _TestPlot(ndim=0, sdim=1)
@@ -69,7 +66,6 @@ def test_plot_nav0_close():
     return test_plot.signal
 
 
-@cleanup
 @update_close_figure
 def test_plot_nav1_close():
     test_plot = _TestPlot(ndim=1, sdim=1)
@@ -77,7 +73,6 @@ def test_plot_nav1_close():
     return test_plot.signal
 
 
-@cleanup
 @update_close_figure
 def test_plot_nav2_close():
     test_plot = _TestPlot(ndim=2, sdim=1)
@@ -111,7 +106,7 @@ def _generate_parameter():
 @pytest.mark.parametrize(("ndim", "plot_type"),
                          _generate_parameter())
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
-def test_plot_two_cursors(ndim, plot_type):
+def test_plot_two_cursors(mpl_cleanup, ndim, plot_type):
     s = _test_plot_two_cursors(ndim=ndim)
     if plot_type == "sig":
         return s._plot.signal_plot.figure
@@ -119,7 +114,6 @@ def test_plot_two_cursors(ndim, plot_type):
         return s._plot.navigator_plot.figure
 
 
-@cleanup
 @update_close_figure
 def test_plot_nav2_sig1_two_cursors_close():
     return _test_plot_two_cursors(ndim=2)

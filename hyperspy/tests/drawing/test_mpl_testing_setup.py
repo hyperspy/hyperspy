@@ -31,7 +31,7 @@ def test_mpl_version():
 @pytest.mark.xfail(reason="Check if plotting tests are working.",
                    strict=True)
 @pytest.mark.mpl_image_compare(baseline_dir='', tolerance=2)
-def test_plotting_test_working():
+def test_plotting_test_working(mpl_cleanup):
     # If this test passes, it means that the plotting tests are not working!
     # In this case, the test will be reported as failed because the xfail is
     # 'strict'.

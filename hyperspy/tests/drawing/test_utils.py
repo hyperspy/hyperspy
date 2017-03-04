@@ -18,13 +18,11 @@
 from unittest.mock import Mock
 
 import matplotlib
-from matplotlib.testing.decorators import cleanup
 import pytest
 
 import hyperspy.drawing.utils as utils
 
 
-@cleanup
 def test_create_figure():
     if matplotlib.get_backend() not in ("GTKAgg", "WXAgg", "TkAgg", "Qt4Agg"):
         pytest.xfail("{} backend does not support on_close event.".format(
