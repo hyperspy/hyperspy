@@ -1178,8 +1178,6 @@ def animate_legend(figure='last'):
 
     figure.canvas.mpl_connect('pick_event', onpick)
 
-    plt.show()
-
 
 def plot_histograms(signal_list,
                     bins='freedman',

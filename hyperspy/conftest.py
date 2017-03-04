@@ -23,6 +23,7 @@ def setup_module(mod):
         import dask
         dask.set_options(get=dask.async.get_sync)
 
+
 @pytest.fixture
 def mpl_cleanup():
     from matplotlib.testing.decorators import _do_cleanup
