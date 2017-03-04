@@ -1,6 +1,10 @@
 # Configure mpl and traits to work in a headless system
 from traits.etsconfig.api import ETSConfig
 ETSConfig.toolkit = "null"
+
+# pytest-mpl 0.7 already import pyplot this line is called, so setting the 
+# matplotlib backend to 'agg' as early as we can will be useless.
+# However, resetting the rcParams to matplotlib default does the job.
 import matplotlib.pyplot as plt
 plt.rcParams.clear()
 plt.rcParams.update(plt.rcParamsDefault)

@@ -32,25 +32,28 @@ baseline_dir = 'plot_signal1d'
 
 style = ['default', 'overlap', 'cascade', 'mosaic', 'heatmap']
 
+
 def _generate_filename_list():
-    filename_list = ['test_plot_spectra_%s'%s for s in style]
+    path = os.path.dirname(__file__)
+    filename_list = ['test_plot_spectra_%s' % s for s in style]
     filename_list2 = []
     for filename in filename_list:
         for i in range(0, 4):
-            filename_list2.append(os.path.join(baseline_dir,
-                                               '%s%i.png'%(filename, i)))
+            filename_list2.append(os.path.join(path, baseline_dir,
+                                               '%s%i.png' % (filename, i)))
     return filename_list2
 
-class TestPlotSpectra(): 
 
-    s = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])     
-    
+class TestPlotSpectra():
+
+    s = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
+
     @classmethod
     def setup_class(cls):
-        # duplicate baseline images to match the test_name when the 
+        # duplicate baseline images to match the test_name when the
         # parametrized 'test_plot_spectra' are run.
         for filename in _generate_filename_list():
-            copyfile("%s.png"%filename[:-5], filename)
+            copyfile("%s.png" % filename[:-5], filename)
 
     @classmethod
     def teardown_class(cls):
@@ -68,8 +71,8 @@ class TestPlotSpectra():
     def _generate_ids(style, duplicate=4):
         ids = []
         for s in style:
-            ids.extend([s]*duplicate)
-        return ids                           
+            ids.extend([s] * duplicate)
+        return ids
 
     @pytest.mark.parametrize(("style", "fig", "ax"),
                              _generate_parameters(style[:-2]),
@@ -82,7 +85,7 @@ class TestPlotSpectra():
         if ax:
             fig = plt.figure()
             ax = fig.add_subplot(111)
-        
+
         ax = hs.plot.plot_spectra(self.s, style=style, legend='auto',
                                   fig=fig, ax=ax)
         if style == 'mosaic':
