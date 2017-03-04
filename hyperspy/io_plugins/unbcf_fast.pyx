@@ -163,7 +163,14 @@ cdef bin_to_numpy(DataStream data_stream,
             n_of_pulses = data_stream.read_16()
             data_size2 = data_stream.read_16()
             data_stream.skip(2)  # skip to data
-            if flag == 1:
+            if flag == 0:
+                unpack16bit(hypermap,
+                            pixel_x // downsample,
+                            line_cnt // downsample,
+                            data_stream.ptr_to(data_size2),
+                            n_of_pulses,
+                            max_chan)
+            elif flag == 1:
                 unpack12bit(hypermap,
                             pixel_x // downsample,
                             line_cnt // downsample,
@@ -274,6 +281,21 @@ cdef void unpack12bit(channel_t[:, :, :] dest, int x, int y,
             channel = <int>(((src[6*(i//4)+5] << 8) + src[6*(i//4)+4]) & 4095)
         if channel < cutoff:
             dest[y, x, channel] += 1
+
+
+@cython.cdivision(True)
+@cython.boundscheck(False)
+cdef void unpack16bit(channel_t[:, :, :] dest, int x, int y,
+                      unsigned char * src,
+                      uint16_t no_of_pulses,
+                      int cutoff):
+    """unpack 16bit packed array into selection of memoryview"""
+    cdef int i, channel
+    for i in range(no_of_pulses):
+        channel = <int>((src[2*i] >> 8) + (src[2*i+1] << 8))
+        if channel < cutoff:
+            dest[y, x, channel] += 1
+
 
 #the main function:
 
