@@ -16,7 +16,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import matplotlib
-import pytest
 from distutils.version import LooseVersion
 
 

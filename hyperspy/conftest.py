@@ -1,8 +1,9 @@
 # Configure mpl and traits to work in a headless system
 from traits.etsconfig.api import ETSConfig
 ETSConfig.toolkit = "null"
-import matplotlib
-matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+plt.rcParams.clear()
+plt.rcParams.update(plt.rcParamsDefault)
 
 import pytest
 import numpy as np

@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import warnings
 import sys
 from unittest.mock import Mock
 
@@ -24,14 +23,12 @@ from matplotlib.testing.decorators import cleanup
 import pytest
 
 import hyperspy.drawing.utils as utils
-from hyperspy.misc.test_utils import assert_warns
 
 
 @pytest.mark.skipif(sys.platform == 'darwin',
                     reason="Plot testing not supported on osx by travis-ci")
 @cleanup
 def test_create_figure():
-    dummy_warning = 'dummy_function have been called after closing windows'
     if matplotlib.get_backend() not in ("GTKAgg", "WXAgg", "TkAgg", "Qt4Agg"):
         pytest.xfail("{} backend does not support on_close event.".format(
             matplotlib.get_backend()))
