@@ -30,7 +30,6 @@ baseline_dir = 'plot_signal1d'
 
 
 @cleanup
-@pytest.mark.skipif("sys.platform == 'darwin'")
 class TestPlotSpectra():
 
     def _test_plot_spectra(self):
@@ -62,7 +61,6 @@ class TestPlotSpectra():
             return s2._plot.navigator_plot.figure
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @cleanup
 @update_close_figure
 def test_plot_nav0_close():
@@ -71,7 +69,6 @@ def test_plot_nav0_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @cleanup
 @update_close_figure
 def test_plot_nav1_close():
@@ -80,7 +77,6 @@ def test_plot_nav1_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @cleanup
 @update_close_figure
 def test_plot_nav2_close():
@@ -112,7 +108,6 @@ def _generate_parameter():
     return parameters
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.parametrize(("ndim", "plot_type"),
                          _generate_parameter())
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
@@ -124,7 +119,6 @@ def test_plot_two_cursors(ndim, plot_type):
         return s._plot.navigator_plot.figure
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @cleanup
 @update_close_figure
 def test_plot_nav2_sig1_two_cursors_close():

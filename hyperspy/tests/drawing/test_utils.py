@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 from unittest.mock import Mock
 
 import matplotlib
@@ -25,8 +24,6 @@ import pytest
 import hyperspy.drawing.utils as utils
 
 
-@pytest.mark.skipif(sys.platform == 'darwin',
-                    reason="Plot testing not supported on osx by travis-ci")
 @cleanup
 def test_create_figure():
     if matplotlib.get_backend() not in ("GTKAgg", "WXAgg", "TkAgg", "Qt4Agg"):

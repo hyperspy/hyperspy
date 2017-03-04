@@ -100,7 +100,6 @@ def _generate_parameter():
     return parameters
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.parametrize(("ndim", "sdim", "plot_type", "data_type"),
                          _generate_parameter())
 @pytest.mark.mpl_image_compare(
@@ -127,7 +126,6 @@ def _get_figure(test_plot, data_type, plot_type):
     return fig
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @cleanup
 @update_close_figure
 def test_plot_nav0_sig1_close():
@@ -136,7 +134,6 @@ def test_plot_nav0_sig1_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @cleanup
 @update_close_figure
 def test_plot_nav1_sig1_close():
@@ -145,7 +142,6 @@ def test_plot_nav1_sig1_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @cleanup
 @update_close_figure
 def test_plot_nav2_sig1_close():
@@ -154,7 +150,6 @@ def test_plot_nav2_sig1_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @cleanup
 @update_close_figure
 def test_plot_nav0_sig2_close():
@@ -163,7 +158,6 @@ def test_plot_nav0_sig2_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @cleanup
 @update_close_figure
 def test_plot_nav1_sig2_close():
@@ -172,7 +166,6 @@ def test_plot_nav1_sig2_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @cleanup
 @update_close_figure
 def test_plot_nav2_sig2_close():

@@ -64,7 +64,6 @@ def _set_signal_axes(axes_manager, name=t.Undefined, units=t.Undefined,
     return axes_manager
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.parametrize("normalization", ['single', 'global'])
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol)
