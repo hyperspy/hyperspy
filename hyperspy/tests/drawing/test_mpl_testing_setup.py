@@ -17,7 +17,7 @@
 
 import matplotlib
 from distutils.version import LooseVersion
-
+import pytest
 
 def test_mlp_agg_for_testing():
     assert matplotlib.get_backend() == 'agg'
@@ -26,3 +26,21 @@ def test_mlp_agg_for_testing():
 def test_mpl_version():
     # for simplicity, only matplotlib 2.x is supported for testing
     assert LooseVersion(matplotlib.__version__) >= LooseVersion('2.0.0')
+
+
+@pytest.mark.xfail(reason="Check if plotting tests are working.",
+                   strict=True)
+@pytest.mark.mpl_image_compare(baseline_dir='', tolerance=2)
+def test_plotting_test_working():
+    # If this test passes, it means that the plotting tests are not working!
+    # In this case, the test will be reported as failed because the xfail is
+    # 'strict'.
+    #
+    # To check if the plotting test are working, we compare this plot with an
+    # incorrect baseline image, so it would fail as expected.
+    fig = matplotlib.pyplot.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    ax.plot([1, 2, 2])
+    # to generate a different plot uncomment the next line
+#    ax.plot([1, 2, 3, 4]) # Uncomment this line to make sure the test is properly failing
+    return fig
