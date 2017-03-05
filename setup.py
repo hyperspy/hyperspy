@@ -35,7 +35,7 @@ import warnings
 import os
 import subprocess
 import fileinput
-
+import itertools
 import re
 
 # stuff to check presence of compiler:
@@ -47,7 +47,7 @@ setup_path = os.path.dirname(__file__)
 
 import hyperspy.Release as Release
 
-install_req = ['scipy',
+install_req = ['scipy>=0.15',
                'ipython>=2.0',
                'matplotlib>=1.2',
                'numpy>=1.10',
@@ -55,12 +55,21 @@ install_req = ['scipy',
                'traitsui>=5.0',
                'natsort',
                'requests',
-               'tqdm',
+               'tqdm>=0.4.9',
                'sympy',
                'dill',
                'h5py',
                'python-dateutil',
-               'ipyparallel']
+               'ipyparallel',
+               'dask[array]>=0.13, !=0.14',
+               'scikit-image']
+
+extras_require = {
+    "learning": ['scikit-learn'],
+    "bcf": ['lxml'],
+    "gui-jupyter": ["ipywidgets"],
+}
+extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
 # the hack to deal with setuptools + installing the package in ReadTheDoc:
 if 'readthedocs.org' in sys.executable:
@@ -80,9 +89,7 @@ def update_version(version):
 
 
 # Extensions. Add your extension here:
-raw_extensions = [Extension("hyperspy.tests.misc.cython.test_cython_integration",
-                            ['hyperspy/tests/misc/cython/test_cython_integration.pyx']),
-                  Extension("hyperspy.io_plugins.unbcf_fast",
+raw_extensions = [Extension("hyperspy.io_plugins.unbcf_fast",
                             ['hyperspy/io_plugins/unbcf_fast.pyx']),
                   ]
 
@@ -194,11 +201,14 @@ def find_post_checkout_cleanup_line():
 # after changing branches:
 if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
     exec_str = sys.executable
-    if os.name == 'nt':
-        exec_str = exec_str.replace('\\', '/')  # Won't work otherwise
     recythonize_str = ' '.join([exec_str,
                                 os.path.join(setup_path, 'setup.py'),
-                                'clean --all build_ext --inplace \n'])
+                                'clean --all build_ext --inplace\n'])
+    if os.name == 'nt':
+        exec_str = exec_str.replace('\\', '/')
+        recythonize_str = recythonize_str.replace('\\', '/')
+        for i in range(len(cleanup_list)):
+            cleanup_list[i] = cleanup_list[i].replace('\\', '/')
     if (not os.path.exists(post_checout_hook_file)):
         with open(post_checout_hook_file, 'w') as pchook:
             pchook.write('#!/bin/sh\n')
@@ -217,9 +227,9 @@ if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
                     ' '.join([i for i in cleanup_list]) + '\n'
                 hook_lines[line_n + 1] = recythonize_str
             else:
-                hook_lines.append('\n#cleanup_cythonized_and_compiled:')
+                hook_lines.append('\n#cleanup_cythonized_and_compiled:\n')
                 hook_lines.append(
-                    '\nrm ' + ' '.join([i for i in cleanup_list]) + '\n')
+                    'rm ' + ' '.join([i for i in cleanup_list]) + '\n')
                 hook_lines.append(recythonize_str)
             with open(post_checout_hook_file, 'w') as pchook:
                 pchook.writelines(hook_lines)
@@ -318,6 +328,7 @@ with update_version_when_dev() as version:
                   'hyperspy.misc.eels',
                   'hyperspy.misc.eds',
                   'hyperspy.misc.io',
+                  'hyperspy.misc.holography',
                   'hyperspy.misc.machine_learning',
                   'hyperspy.external',
                   'hyperspy.external.mpfit',
@@ -328,6 +339,8 @@ with update_version_when_dev() as version:
                   'hyperspy.samfire_utils.goodness_of_fit_tests',
                   ],
         install_requires=install_req,
+        test_require=["pytest>=3.0.2"],
+        extras_require=extras_require,
         package_data={
             'hyperspy':
             [
@@ -341,6 +354,8 @@ with update_version_when_dev() as version:
                 'tests/io/dm4_1D_data/*.dm4',
                 'tests/io/dm4_2D_data/*.dm4',
                 'tests/io/dm4_3D_data/*.dm4',
+                'tests/io/dm3_locale/*.dm3',
+                'tests/io/edax_files.zip',
                 'tests/io/FEI_new/*.emi',
                 'tests/io/FEI_new/*.ser',
                 'tests/io/FEI_new/*.npy',
@@ -354,13 +369,17 @@ with update_version_when_dev() as version:
                 'tests/io/npy_files/*.npy',
                 'tests/io/unf_files/*.unf',
                 'tests/io/bcf_data/*.bcf',
+                'tests/io/bcf_data/*.json',
                 'tests/io/bcf_data/*.npy',
                 'tests/io/ripple_files/*.rpl',
                 'tests/io/ripple_files/*.raw',
                 'tests/io/emd_files/*.emd',
+                'tests/drawing/plot_signal/*.png',
+                'tests/drawing/plot_signal1d/*.png',
+                'tests/drawing/plot_signal2d/*.png',
+                'tests/drawing/plot_markers/*.png',
                 'tests/io/protochips_data/*.npy',
                 'tests/io/protochips_data/*.csv',
-                'tests/drawing/*.ipynb',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
             ],
         },

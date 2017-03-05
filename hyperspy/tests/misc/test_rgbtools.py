@@ -16,14 +16,13 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import nose.tools as nt
 import numpy as np
 import hyperspy.misc.rgb_tools as rt
 
 
 class TestRGBTools:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.data_c = np.ones((2, 2, 3), dtype=np.uint8, order='C')
         self.data_f = np.ones((2, 2, 3), dtype=np.uint8, order='F')
         mask = [[[0, 1, 1], [1, 0, 1]], [[1, 1, 0], [0, 0, 1]]]
@@ -32,54 +31,54 @@ class TestRGBTools:
 
     def test_rgbx2regular_array_corder_from_c(self):
         d = rt.rgbx2regular_array(self.data_c)
-        nt.assert_true(d.flags['C_CONTIGUOUS'])
+        assert d.flags['C_CONTIGUOUS']
 
     def test_rgbx2regular_array_corder_from_f(self):
         d = rt.rgbx2regular_array(self.data_f)
-        nt.assert_true(d.flags['C_CONTIGUOUS'])
+        assert d.flags['C_CONTIGUOUS']
 
     def test_rgbx2regular_array_corder_from_c_slices(self):
         d = rt.rgbx2regular_array(self.data_c[0:1, ...])
-        nt.assert_true(d.flags['C_CONTIGUOUS'])
+        assert d.flags['C_CONTIGUOUS']
         d = rt.rgbx2regular_array(self.data_c[:, 0:1, :])
-        nt.assert_true(d.flags['C_CONTIGUOUS'])
+        assert d.flags['C_CONTIGUOUS']
 
     def test_rgbx2regular_array_cordermask_from_cmasked(self):
         d = rt.rgbx2regular_array(self.data_masked)
-        nt.assert_is_instance(d, np.ma.MaskedArray)
-        nt.assert_true(d.flags['C_CONTIGUOUS'])
+        assert isinstance(d, np.ma.MaskedArray)
+        assert d.flags['C_CONTIGUOUS']
 
     def test_rgbx2regular_array_cordermask_from_cmasked_slices(self):
         d = rt.rgbx2regular_array(self.data_masked[0:1, ...])
-        nt.assert_true(d.flags['C_CONTIGUOUS'])
-        nt.assert_is_instance(d, np.ma.MaskedArray)
+        assert d.flags['C_CONTIGUOUS']
+        assert isinstance(d, np.ma.MaskedArray)
         d = rt.rgbx2regular_array(self.data_masked[:, 0:1, :])
-        nt.assert_true(d.flags['C_CONTIGUOUS'])
-        nt.assert_is_instance(d, np.ma.MaskedArray)
+        assert d.flags['C_CONTIGUOUS']
+        assert isinstance(d, np.ma.MaskedArray)
 
     def test_regular_array2rgbx_corder_from_c(self):
         d = rt.regular_array2rgbx(self.data_c)
-        nt.assert_true(d.flags['C_CONTIGUOUS'])
+        assert d.flags['C_CONTIGUOUS']
 
     def test_regular_array2rgbx_corder_from_f(self):
         d = rt.regular_array2rgbx(self.data_f)
-        nt.assert_true(d.flags['C_CONTIGUOUS'])
+        assert d.flags['C_CONTIGUOUS']
 
     def test_regular_array2rgbx_corder_from_c_slices(self):
         d = rt.regular_array2rgbx(self.data_c[0:1, ...])
-        nt.assert_true(d.flags['C_CONTIGUOUS'])
+        assert d.flags['C_CONTIGUOUS']
         d = rt.regular_array2rgbx(self.data_c[:, 0:1, :])
-        nt.assert_true(d.flags['C_CONTIGUOUS'])
+        assert d.flags['C_CONTIGUOUS']
 
     def test_regular_array2rgbx_cordermask_from_cmasked(self):
         d = rt.regular_array2rgbx(self.data_masked)
-        nt.assert_is_instance(d, np.ma.MaskedArray)
-        nt.assert_true(d.flags['C_CONTIGUOUS'])
+        assert isinstance(d, np.ma.MaskedArray)
+        assert d.flags['C_CONTIGUOUS']
 
     def test_regular_array2rgbx_cordermask_from_cmasked_slices(self):
         d = rt.regular_array2rgbx(self.data_masked[0:1, ...])
-        nt.assert_is_instance(d, np.ma.MaskedArray)
-        nt.assert_true(d.flags['C_CONTIGUOUS'])
+        assert isinstance(d, np.ma.MaskedArray)
+        assert d.flags['C_CONTIGUOUS']
         d = rt.regular_array2rgbx(self.data_masked[:, 0:1, :])
-        nt.assert_is_instance(d, np.ma.MaskedArray)
-        nt.assert_true(d.flags['C_CONTIGUOUS'])
+        assert isinstance(d, np.ma.MaskedArray)
+        assert d.flags['C_CONTIGUOUS']

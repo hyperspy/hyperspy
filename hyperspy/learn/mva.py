@@ -623,7 +623,7 @@ class MVA():
         factors.unfold()
         if mask is not None:
             mask.unfold()
-            factors = factors.data.T[~mask.data]
+            factors = factors.data.T[np.where(~mask.data)]
         else:
             factors = factors.data.T
 
@@ -674,6 +674,7 @@ class MVA():
         self._unmix_components()
         self._auto_reverse_bss_component(lr)
         lr.bss_algorithm = algorithm
+        lr.bss_node = str(lr.bss_node)
 
     def normalize_decomposition_components(self, target='factors',
                                            function=np.sum):
@@ -919,11 +920,8 @@ class MVA():
         s.axes_manager[-1].units = ''
         return s
 
-    def plot_explained_variance_ratio(self, n=None, log=True, threshold=0,
-                                      hline='auto', xaxis_type='index',
-                                      xaxis_labeling=None, signal_fmt=None,
-                                      noise_fmt=None, fig=None, ax=None,
-                                      **kwargs):
+    def plot_explained_variance_ratio(self, n=None, log=True, threshold=0, hline='auto', xaxis_type='index',
+                                      xaxis_labeling=None, signal_fmt=None, noise_fmt=None, fig=None, ax=None, **kwargs):
         """Plot the decomposition explained variance ratio vs index number
         (Scree Plot).
 

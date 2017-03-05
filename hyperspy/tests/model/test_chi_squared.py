@@ -18,14 +18,13 @@
 
 import numpy as np
 
-from nose.tools import assert_true
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy.components1d import Gaussian
 
 
 class TestChiSquared:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = Signal1D(np.array([1.0, 2, 4, 7, 12, 7, 4, 2, 1]))
         m = s.create_model()
         self.model = m
@@ -38,7 +37,7 @@ class TestChiSquared:
         g = Gaussian()
         m.append(g)
         m.fit()
-        assert_true(np.allclose(m.chisq(), 7.78966223))
+        assert np.allclose(m.chisq(), 7.78966223)
 
     def test_dof_with_fit(self):
         m = self.model
@@ -47,14 +46,14 @@ class TestChiSquared:
         m.extend((g, g1))
         g1.set_parameters_not_free('A')
         m.fit()
-        assert_true(np.equal(m.dof(), 5))
+        assert np.equal(m.dof(), 5)
 
     def test_red_chisq_with_fit(self):
         m = self.model
         g = Gaussian()
         m.append(g)
         m.fit()
-        assert_true(np.allclose(m.red_chisq(), 1.55793245))
+        assert np.allclose(m.red_chisq(), 1.55793245)
 
     def test_chisq(self):
         m = self.model
@@ -64,7 +63,7 @@ class TestChiSquared:
         g.centre.value = self.centre
         m.append(g)
         m._calculate_chisq()
-        assert_true(np.allclose(m.chisq(), 7.78966223))
+        assert np.allclose(m.chisq(), 7.78966223)
 
     def test_dof_with_p0(self):
         m = self.model
@@ -74,7 +73,7 @@ class TestChiSquared:
         g1.set_parameters_not_free('A')
         m._set_p0()
         m._set_current_degrees_of_freedom()
-        assert_true(np.equal(m.dof(), 5))
+        assert np.equal(m.dof(), 5)
 
     def test_red_chisq(self):
         m = self.model
@@ -86,7 +85,7 @@ class TestChiSquared:
         m._set_p0()
         m._set_current_degrees_of_freedom()
         m._calculate_chisq()
-        assert_true(np.allclose(m.red_chisq(), 1.55793245))
+        assert np.allclose(m.red_chisq(), 1.55793245)
 
     def test_chisq_in_range(self):
         m = self.model
@@ -94,7 +93,7 @@ class TestChiSquared:
         m.append(g)
         m.set_signal_range(1, 7)
         m.fit()
-        assert_true(np.allclose(m.red_chisq(), 2.87544335))
+        assert np.allclose(m.red_chisq(), 2.87544335)
 
     def test_chisq_with_inactive_components(self):
         m = self.model
@@ -104,7 +103,7 @@ class TestChiSquared:
         m.append(gin)
         gin.active = False
         m.fit()
-        assert_true(np.allclose(m.chisq(), 7.78966223))
+        assert np.allclose(m.chisq(), 7.78966223)
 
     def test_dof_with_inactive_components(self):
         m = self.model
@@ -114,4 +113,4 @@ class TestChiSquared:
         m.append(gin)
         gin.active = False
         m.fit()
-        assert_true(np.equal(m.dof(), 3))
+        assert np.equal(m.dof(), 3)

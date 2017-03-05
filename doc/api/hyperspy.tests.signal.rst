@@ -100,6 +100,14 @@ hyperspy.tests.signal.test_folding module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.signal.test_hologram_image module
+------------------------------------------------
+
+.. automodule:: hyperspy.tests.signal.test_hologram_image
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.signal.test_image module
 ---------------------------------------
 
@@ -120,6 +128,14 @@ hyperspy.tests.signal.test_kramers_kronig_transform module
 ----------------------------------------------------------
 
 .. automodule:: hyperspy.tests.signal.test_kramers_kronig_transform
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.tests.signal.test_lazy module
+--------------------------------------
+
+.. automodule:: hyperspy.tests.signal.test_lazy
     :members:
     :undoc-members:
     :show-inheritance:

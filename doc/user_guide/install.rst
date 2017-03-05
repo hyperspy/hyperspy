@@ -50,13 +50,13 @@ MKL libraries) and the easiest installation. The academic license is free.
 #. Download and install
    `Anaconda <https://store.continuum.io/cshop/anaconda/>`_. If you are not
    familiar with Anaconda please refer to their
-   `User Guide <https://docs.continuum.io/anaconda/index#user-guide>`_ for
+   `User Guide <https://docs.continuum.io/anaconda/>`_ for
    details.
 
 #. Then install HyperSpy executing the following `conda` commands in the Anaconda
    Prompt, Linux/Mac Terminal or Microsoft Windows Command Prompt. (This
    depends on your OS and how you have installed Anaconda, see the `Anaconda
-   User Guide <https://docs.continuum.io/anaconda/index#user-guide>`_) for
+   User Guide <https://docs.continuum.io/anaconda/>`_) for
    details.
 
    .. code-block:: bash
@@ -108,27 +108,33 @@ Install using `pip`:
 
 
 pip installs automatically the strictly required libraries. However, for full
-functionality you may need to install some other dependencies,
-see :ref:`install-dependencies`. Also, be aware that HyperSpy depends on a
+functionality you may need to install some other dependencies. To install with
+full functionality:
+
+
+.. code-block:: bash
+
+    $ pip install hyperspy[all]
+
+Alternatively you can select that extra functionality required:
+
+* ``bcf`` to install required libraries to read Brucker files.
+* ``learning`` to install required libraries for some machine learning features.
+* ``gui-jupyter`` to install required libraries for Jupyter widgets
+
+For example:
+
+.. code-block:: bash
+
+    $ pip install hyperspy[bcf, gui-jupyter]
+
+See also :ref:`install-dependencies`.
+
+Finally, be aware that HyperSpy depends on a
 number of libraries that usually need to be compiled and therefore installing
 HyperSpy may require development tools. If the above does not work for you
 remember that the easiest way to install HyperSpy is
 :ref:`using Anaconda <quick-anaconda-install>`.
-
-Creating Conda environment for HyperSpy
----------------------------------------
-
-`Anaconda <https://www.continuum.io/downloads>`_ Python distribution can be
-easily set up using environment files. The two required steps are:
- 1. Download `HyperSpy environment file <https://raw.githubusercontent.com/hyperspy/hyperspy/0.8.x/anaconda_hyperspy_environment.yml>`_.
- 2. Create and activate HyperSpy environment according to instructions `here <http://conda.pydata.org/docs/using/envs.html#use-environment-from-file>`_. For Unix, the following should work:
-
-.. code-block:: bash
-
-    $ conda config --add channels conda-forge
-    $ conda env create -f anaconda_hyperspy_environment.yml
-    $ source activate hyperspy
-
 
 
 .. _install-binary:
@@ -235,43 +241,13 @@ Installing the required libraries
 
 When installing HyperSpy using Python installers or from source the Python
 programming language and the following libraries must be installed in the
-system: numpy, scipy, matplotlib (>= 1.2), ipython, natsort, tqdm, ipyparallel,
-python-dateutil, traits and traitsui. For full functionality it is recommended
-to also install h5py, scikit-image, scikit-learn and lxml. If HyperSpy is going
-to be installed from  source, cython is also required.In addition, since
-version 0.7.2 the lowess filter requires statsmodels. In Windows HyperSpy uses
-the Ipython's QtConsole and therefore Qt and PyQt or PySide are also required.
-
-
-In Debian/Ubuntu you can install the libraries as follows:
-
-.. code-block:: bash
-
-    $ sudo apt-get install python-numpy python-matplotlib ipython
-    ipython-notebook python-traits python-traitsui python-h5py
-    python-scikit-learn python-scikit-image python-nose
-    python-statsmodels python3-tqdm
-
-..
-    In Arch Linux, the following command should install the required packages to
-    get a fully functional installation:
-
-    .. code-block:: bash
-
-        $ sudo pacman -Sy python2 python2-numpy	python2-matplotlib	python2-pip
-        python2-traits python2-traitsui python2-h5py python2-scikit-learn python2-nose
-        python2-statsmodels python2-pillow python2-pyqt4 python2-pyqt5 python2-scipy
-        python2-pandas python2-setuptools ipython2	python2-jinja python2-pyzmq
-        python2-pyqt4 python2-tornado python2-sip python2-pygments python2-scikit-image
-
-        # Or, just run this command from the root hyperspy directory to import the
-        # list of packages and install automatically:
-        $ xargs sudo pacman -Sy --noconfirm < doc/package_lists/arch_linux_package_list.txt
-
-        # Once these are installed, go to the HyperSpy directory and run:
-        $ sudo pip2 install -e ./
-
-        # If desired, the python2-seaborn library can also be installed from AUR for prettier plotting
+system: numpy, scipy, matplotlib (>= 1.2), h5py, scikit-image, ipython, natsort,
+tqdm, ipyparallel, python-dateutil, traits and traitsui.
+For full functionality it is recommended to also install scikit-learn and lxml.
+If HyperSpy is going to be installed from  source, cython is also required.
+In addition, since version 0.7.2 the lowess filter requires statsmodels.
+In Windows HyperSpy uses the Ipython's QtConsole and therefore Qt and PyQt or
+PySide are also required.
 
 .. _known-issues:
 
@@ -282,22 +258,19 @@ Windows
 ^^^^^^^
 
 * If HyperSpy fails to start in Windows try installing the Microsoft Visual
-  C++ 2008 redistributable packages (
-  `64 bit <http://www.microsoft.com/download/en/details.aspx?id=15336>`_
-  or `32 bit <http://www.microsoft.com/download/en/details.aspx?id=29>`_)
   before reporting a bug.
-* In some Windows machines an error is printed at the end of the installation
-  and the entries in the context menu and the Start Menu are not installed
-  properly. In most cases the problem can be solved by restarting the computer
-  and reinstalling HyperSpy.
-* Concerning older installations with the "Hyperspy here" context menus: Due to a `Python bug <http://bugs.python.org/issue13276>`_ sometimes uninstalling
+
+* Concerning older installations with the "Hyperspy here" context menus: Due to
+ a `Python bug <http://bugs.python.org/issue13276>`_ sometimes uninstalling
   HyperSpy does not uninstall the "Hyperspy here" entries in the context menu.
-  Please run the following code in a Windows Terminal (command line prompt) with administrator rights
-  to remove the entries manually:
+  Please run the following code in a Windows Terminal (command line prompt)
+  with administrator rights to remove the entries manually:
 
   .. code-block:: bash
 
-    > uninstall_hyperspy_here
+    $ uninstall_hyperspy_here
+
+
 * If HyperSpy raises a MemoryError exception:
 
   * Install the 64bit version if you're using the 32bit one and you are running

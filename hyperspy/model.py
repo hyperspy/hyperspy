@@ -21,7 +21,7 @@ import os
 import tempfile
 import numbers
 import logging
-from distutils.version import StrictVersion
+from distutils.version import LooseVersion
 
 import numpy as np
 import scipy
@@ -389,6 +389,12 @@ class BaseModel(list):
         if not np.iterable(thing):
             thing = [thing, ]
         for athing in thing:
+            for parameter in athing.parameters:
+                # Remove the parameter from its twin _twins
+                parameter.twin = None
+                for twin in [twin for twin in parameter._twins]:
+                    twin.twin = None
+
             list.remove(self, athing)
             athing.model = None
         if self._plot_active:
@@ -1044,8 +1050,8 @@ class BaseModel(list):
             if fitter == "leastsq":
                 if bounded:
                     # leastsq with bounds requires scipy >= 0.17
-                    if StrictVersion(
-                            scipy.__version__) < StrictVersion("0.17"):
+                    if LooseVersion(
+                            scipy.__version__) < LooseVersion("0.17"):
                         raise ImportError(
                             "leastsq with bounds requires SciPy >= 0.17")
 

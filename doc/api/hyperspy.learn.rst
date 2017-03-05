@@ -20,6 +20,14 @@ hyperspy.learn.mva module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.learn.onmf module
+--------------------------
+
+.. automodule:: hyperspy.learn.onmf
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.learn.rpca module
 --------------------------
 
