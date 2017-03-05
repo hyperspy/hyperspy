@@ -619,7 +619,7 @@ class HyperHeader(object):
         hv = self.sem.hv
         if instrument is not None:
             self.mode = instrument
-        if hv > 30.0:  # workaround to know if TEM or SEM
+        elif hv > 30.0:  # workaround to know if TEM or SEM
             self.mode = 'TEM'
         else:
             self.mode = 'SEM'
@@ -1261,7 +1261,7 @@ For more information, check the 'Installing HyperSpy' section in the documentati
         'General': {'original_filename': obj_bcf.filename.split('/')[-1],
                          'title': 'EDX',
                          'date': obj_bcf.header.date,
-                                  'time': obj_bcf.header.time},
+                         'time': obj_bcf.header.time},
         'Sample': {'name': obj_bcf.header.name,
                          'elements': sorted(list(obj_bcf.header.elements)),
                          'xray_lines': sorted(gen_elem_list(obj_bcf.header.elements))},
