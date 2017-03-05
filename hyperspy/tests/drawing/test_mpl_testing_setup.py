@@ -19,8 +19,12 @@ import matplotlib
 from distutils.version import LooseVersion
 import pytest
 
-def test_mlp_agg_for_testing():
-    assert matplotlib.get_backend() == 'agg'
+from hyperspy.misc.test_utils import check_running_tests_in_CI
+
+
+def test_mlp_agg_for_CI_testing():
+    if check_running_tests_in_CI():
+        assert matplotlib.get_backend() == 'agg'
 
 
 def test_mpl_version():

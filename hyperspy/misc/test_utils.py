@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 from contextlib import contextmanager
 import warnings
 import re
@@ -240,3 +241,8 @@ def sanitize_dict(dictionary):
         elif value is not None:
             new_dictionary[key] = value
     return new_dictionary
+
+
+def check_running_tests_in_CI():
+    if 'CI' in os.environ:
+        return os.environ.get('CI')
