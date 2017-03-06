@@ -752,7 +752,7 @@ class EELSSpectrum_mixin:
                 'after_fourier_ratio_deconvolution')
         return cl
     
-    def fourier_ratio_deconvolution_llspectra(self, kernel, zl=None,
+    def fourier_ratio_deconvolution_llspectra(self, kernel, zlp=None,
                                         fwhm=None,
                                         threshold=None):
         """Performs Fourier-ratio deconvolution of two similar spectrum.
@@ -761,7 +761,7 @@ class EELSSpectrum_mixin:
         ----------
         kernel : EELSSpectrum
             The spectrum to be deconvolved from parent spectrum
-        zl : ZLP spectrum to avoid Gaussian approximation of ZLP
+        zlp : ZLP spectrum to avoid Gaussian approximation of ZLP
         fwhm : float or None
             Full-width half-maximum of the Gaussian function by which
             the end convolved ZLP is initially approximated as.  If
@@ -787,12 +787,12 @@ class EELSSpectrum_mixin:
         self._check_signal_dimension_equals_one()
         orig_spectrum_size = self.axes_manager.signal_axes[0].size
     
-        if zl is None:
-            zl_provided = False
+        if zlp is None:
+            zlp_provided = False
             if threshold is None:
                 threshold = kernel.estimate_elastic_scattering_threshold()
         else:
-            zl_provided = True
+            zlp_provided = True
     
         spectrum = self.deepcopy()
         kernel = kernel.deepcopy()
@@ -812,7 +812,7 @@ class EELSSpectrum_mixin:
         js = np.fft.rfft(spectrum.data, n=size, axis=axis.index_in_array)
         jk = np.fft.rfft(kernel.data, n=size, axis=axis.index_in_array)
     
-        if not zl_provided:
+        if not zlp_provided:
             print('No zero loss provided')
             if fwhm is None:
                 fwhm = float(kernel.get_current_signal().estimate_peak_width()())
@@ -826,10 +826,7 @@ class EELSSpectrum_mixin:
                 I0 = I0.reshape(I0_shape)
             
             from hyperspy.components1d import Gaussian
-            g = Gaussian()
-            g.sigma.value = fwhm / 2.3548
-            g.A.value = 1
-            g.centre.value = 0
+            g = Gaussian(sigma=fwhm / 2.3548, A=1, centre=0)
             zl = g.function(
                 np.linspace(axis.offset,
                             axis.offset + axis.scale * (size - 1),
