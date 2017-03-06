@@ -835,12 +835,12 @@ class EELSSpectrum_mixin:
             zshape = [1, ] * len(spectrum.data.shape)
             zshape[axis.index_in_array] = js.shape[axis.index_in_array]
         else:
-            I0 = zl.estimate_elastic_scattering_intensity(threshold=10.).data
+            I0 = zlp.estimate_elastic_scattering_intensity(threshold=10.).data
             if kernel.axes_manager.navigation_size > 0:
                 I0_shape = list(I0.shape)
                 I0_shape.insert(axis.index_in_array, 1)
                 I0 = I0.reshape(I0_shape)
-            z = np.fft.rfft(zl/I0, n=size, axis=axis.index_in_array)
+            z = np.fft.rfft(zlp/I0, n=size, axis=axis.index_in_array)
             
         spectrum.data = np.fft.irfft(z * js / jk,
                                axis=axis.index_in_array)
