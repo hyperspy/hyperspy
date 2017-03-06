@@ -32,6 +32,14 @@ hyperspy.Release module
     :undoc-members:
     :show-inheritance:
 
+hyperspy._lazy_signals module
+-----------------------------
+
+.. automodule:: hyperspy._lazy_signals
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.api module
 -------------------
 
@@ -68,6 +76,14 @@ hyperspy.components2d module
 ----------------------------
 
 .. automodule:: hyperspy.components2d
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.conftest module
+------------------------
+
+.. automodule:: hyperspy.conftest
     :members:
     :undoc-members:
     :show-inheritance:

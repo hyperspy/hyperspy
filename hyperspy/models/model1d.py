@@ -786,13 +786,16 @@ class Model1D(BaseModel):
         --------
         Signal range set interactivly
 
+        >>> s = hs.signals.Signal1D([0,1,2,4,8,4,2,1,0])
+        >>> m = s.create_model()
         >>> g1 = hs.model.components1D.Gaussian()
         >>> m.append(g1)
         >>> m.fit_component(g1)
 
         Signal range set through direct input
 
-        >>> m.fit_component(g1, signal_range=(50,100))
+        >>> m.fit_component(g1, signal_range=(1,7))
+
         """
         component = self._get_component(component)
         cf = ComponentFit(self, component, signal_range,

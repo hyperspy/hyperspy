@@ -92,6 +92,14 @@ hyperspy._signals.hologram_image module
     :undoc-members:
     :show-inheritance:
 
+hyperspy._signals.lazy module
+-----------------------------
+
+.. automodule:: hyperspy._signals.lazy
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy._signals.signal1d module
 ---------------------------------
 

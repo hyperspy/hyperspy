@@ -21,6 +21,46 @@ from hyperspy.exceptions import NoInteractiveError
 from hyperspy.defaults_parser import preferences
 from hyperspy.gui.tools import Signal1DRangeSelector
 
+from functools import wraps
+import types
+
+
+def lazify(func, **kwargs):
+    from hyperspy.signal import BaseSignal
+
+    @wraps(func)
+    def lazified_func(self, *args, **kwds):
+        for k in self.__dict__.keys():
+            if not k.startswith('__'):
+                v = getattr(self, k)
+                if isinstance(v, BaseSignal):
+                    v = v.as_lazy()
+                    setattr(self, k, v)
+        self.__dict__.update(kwargs)
+        return func(self, *args, **kwds)
+    return lazified_func
+
+
+def lazifyTestClass(*args, **kwargs):
+    def lazifyTest(original_class):
+        original_class.lazify = lazify
+        thelist = [k for k in original_class.__dict__.keys()]
+        for thing in thelist:
+            if thing.startswith('test'):
+                if not thing.startswith('test_lazy'):
+                    newname = 'test_lazy' + thing[4:]
+                    if newname not in thelist:
+                        newfunc = lazify(getattr(original_class, thing),
+                                         **kwargs)
+                        newfunc.__name__ = newname
+                        setattr(original_class, newname, newfunc)
+
+        return original_class
+    if len(args):
+        return lazifyTest(*args)
+    else:
+        return lazifyTest
+
 
 def simple_decorator(decorator):
     """This decorator can be used to turn simple functions

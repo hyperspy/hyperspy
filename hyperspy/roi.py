@@ -866,18 +866,22 @@ class CircleROI(BaseInteractiveROI):
             mask |= gr < self.r_inner**2
         tiles = []
         shape = []
+        chunks = []
         for i in range(len(slices)):
+            if signal._lazy:
+                chunks.append(signal.data.chunks[i][0])
             if i == natax.index(axes[0]):
-                tiles.append(1)
-                shape.append(mask.shape[0])
+                thisshape = mask.shape[0]
+                tiles.append(thisshape)
+                shape.append(thisshape)
             elif i == natax.index(axes[1]):
-                tiles.append(1)
-                shape.append(mask.shape[1])
+                thisshape = mask.shape[1]
+                tiles.append(thisshape)
+                shape.append(thisshape)
             else:
-                tiles.append(signal.axes_manager.shape[i])
+                tiles.append(signal.axes_manager._axes[i].size)
                 shape.append(1)
         mask = mask.reshape(shape)
-        mask = np.tile(mask, tiles)
 
         nav_axes = [ax.navigate for ax in axes]
         nav_dim = signal.axes_manager.navigation_dimension
@@ -895,7 +899,15 @@ class CircleROI(BaseInteractiveROI):
 
         roi = slicer(slices, out=out)
         roi = out or roi
-        roi.data = np.ma.masked_array(roi.data, mask, hard_mask=True)
+        if roi._lazy:
+            import dask.array as da
+            mask = da.from_array(mask, chunks=chunks)
+            mask = da.broadcast_to(mask, tiles)
+            # By default promotes dtype to float if required
+            roi.data = da.where(mask, np.nan, roi.data)
+        else:
+            mask = np.broadcast_to(mask, tiles)
+            roi.data = np.ma.masked_array(roi.data, mask, hard_mask=True)
         if out is None:
             return roi
         else:
@@ -993,8 +1005,8 @@ class Line2DROI(BaseInteractiveROI):
         # (in contrast to standard numpy indexing)
         line_col = np.linspace(src_col, dst_col, length)
         line_row = np.linspace(src_row, dst_row, length)
-
-        data = np.zeros((2, length, int(linewidth)))
+        linewidth = int(linewidth)
+        data = np.zeros((2, length, linewidth))
         data[0, :, :] = np.tile(line_col, [linewidth, 1]).T
         data[1, :, :] = np.tile(line_row, [linewidth, 1]).T
 
@@ -1152,9 +1164,9 @@ class Line2DROI(BaseInteractiveROI):
             from hyperspy.signals import BaseSignal
             roi = BaseSignal(profile, axes=axm._get_axes_dicts(),
                              metadata=signal.metadata.deepcopy(
-                             ).as_dictionary(),
-                             original_metadata=signal.original_metadata.
-                             deepcopy().as_dictionary())
+            ).as_dictionary(),
+                original_metadata=signal.original_metadata.
+                deepcopy().as_dictionary())
             return roi
         else:
             out.data = profile

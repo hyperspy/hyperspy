@@ -1,8 +1,10 @@
+.. _electron-holography-label:
+
 Electron Holography
 *******************
 
 HyperSpy provides the user with a signal class which can be used to process electron holography data:
- 
+
 * :py:class:`~._signals.hologram_image.HologramImage`
 
 It inherits from :py:class:`~._signals.signal2d.Signal2D` class and thus can use all of its functionality.
@@ -37,6 +39,8 @@ position and size as parameters:
 
 .. code-block:: python
 
+    >>> import hyperspy.api as hs
+    >>> im =  hs.datasets.example_signals.object_hologram()
     >>> wave_image = im.reconstruct_phase(sb_position=(<y>, <x>), sb_size=sb_radius)
 
 The parameters can be found automatically by calling following methods:
@@ -61,8 +65,20 @@ To reconstruct the hologram with a vacuum reference wave, the reference hologram
 
 .. code-block:: python
 
+    >>> reference_hologram = hs.datasets.example_signals.reference_hologram()
     >>> wave_image = im.reconstruct_phase(reference_hologram, sb_position=sb_position, sb_size=sb_sb_size)
 
+Using reconstructed wave one can access its amplitude and phase (also unwrapped phase) using :meth:`~._signals.complex_signal2d.ComplexSignal2D.amplitude` and
+ :meth:`~._signals.complex_signal2d.ComplexSignal2D.phase` properties (also :meth:`~._signals.complex_signal2d.ComplexSignal2D.unwrapped_phase` method):
+
+.. code-block:: python
+
+    >>> wave_image.unwrapped_phase().plot()
+
+.. figure:: images/holography_unwrapped_phase.png
+    :align: center
+
+Preferences user interface.
 
 Additionally, it is possible to change the smoothness of the sideband filter edge (which is by default set to 5% of the
 filter radius) using parameter `sb_smoothness`.

@@ -1,22 +1,25 @@
 from unittest import mock
 
 import numpy as np
-from numpy.testing import assert_array_equal
-import nose.tools as nt
+from numpy.testing import assert_array_equal, assert_allclose
+
+import pytest
 
 from hyperspy import signals
+from hyperspy.decorators import lazifyTestClass
 
 
 def _verify_test_sum_x_E(self, s):
     np.testing.assert_array_equal(self.signal.data.sum(), s.data)
-    nt.assert_equal(s.data.ndim, 1)
+    assert s.data.ndim == 1
     # Check that there is still one signal axis.
-    nt.assert_equal(s.axes_manager.signal_dimension, 1)
+    assert s.axes_manager.signal_dimension == 1
 
 
+@lazifyTestClass
 class Test2D:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.signal = signals.Signal1D(np.arange(5 * 10).reshape(5, 10))
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "E"
@@ -26,8 +29,8 @@ class Test2D:
     def test_sum_x(self):
         s = self.signal.sum("x")
         np.testing.assert_array_equal(self.signal.data.sum(0), s.data)
-        nt.assert_equal(s.data.ndim, 1)
-        nt.assert_equal(s.axes_manager.navigation_dimension, 0)
+        assert s.data.ndim == 1
+        assert s.axes_manager.navigation_dimension == 0
 
     def test_sum_x_E(self):
         s = self.signal.sum(("x", "E"))
@@ -45,7 +48,7 @@ class Test2D:
         s1.events.data_changed.connect(m.data_changed)
         s2 = self.signal.deepcopy()
         s1.crop(0, 2, 4)
-        nt.assert_true(m.data_changed.called)
+        assert m.data_changed.called
         s2.crop("x", 2, 4)
         np.testing.assert_array_almost_equal(s1.data, s2.data)
 
@@ -63,43 +66,41 @@ class Test2D:
 
     def test_split_axis0(self):
         result = self.signal.split(0, 2)
-        nt.assert_equal(len(result), 2)
+        assert len(result) == 2
         np.testing.assert_array_almost_equal(result[0].data, self.data[:2, :])
         np.testing.assert_array_almost_equal(result[1].data, self.data[2:4, :])
 
     def test_split_axis1(self):
         result = self.signal.split(1, 2)
-        nt.assert_equal(len(result), 2)
+        assert len(result) == 2
         np.testing.assert_array_almost_equal(result[0].data, self.data[:, :5])
         np.testing.assert_array_almost_equal(result[1].data, self.data[:, 5:])
 
     def test_split_axisE(self):
         result = self.signal.split("E", 2)
-        nt.assert_equal(len(result), 2)
+        assert len(result) == 2
         np.testing.assert_array_almost_equal(result[0].data, self.data[:, :5])
         np.testing.assert_array_almost_equal(result[1].data, self.data[:, 5:])
 
     def test_split_default(self):
         result = self.signal.split()
-        nt.assert_equal(len(result), 5)
+        assert len(result) == 5
         np.testing.assert_array_almost_equal(result[0].data, self.data[0])
 
     def test_histogram(self):
         result = self.signal.get_histogram(3)
-        nt.assert_true(isinstance(result, signals.Signal1D))
-        np.testing.assert_equal(result.data, [17, 16, 17])
-        nt.assert_true(result.metadata.Signal.binned)
+        assert isinstance(result, signals.Signal1D)
+        assert_array_equal(result.data, np.array([17, 16, 17]))
+        assert result.metadata.Signal.binned
 
     def test_estimate_poissonian_noise_copy_data(self):
         self.signal.estimate_poissonian_noise_variance()
         variance = self.signal.metadata.Signal.Noise_properties.variance
-        nt.assert_true(
-            variance.data is not self.signal.data)
+        assert variance.data is not self.signal.data
 
     def test_estimate_poissonian_noise_noarg(self):
         self.signal.estimate_poissonian_noise_variance()
         variance = self.signal.metadata.Signal.Noise_properties.variance
-        np.testing.assert_array_equal(variance.data, self.signal.data)
         np.testing.assert_array_equal(variance.data, self.signal.data)
 
     def test_estimate_poissonian_noise_with_args(self):
@@ -114,14 +115,18 @@ class Test2D:
 
     def test_unfold_image(self):
         s = self.signal
+        if s._lazy:
+            pytest.skip("LazyS do not support folding")
         s = s.transpose(signal_axes=2)
         s.unfold()
-        nt.assert_equal(s.data.shape, (50,))
+        assert s.data.shape == (50,)
 
     def test_unfold_image_returns_true(self):
         s = self.signal
+        if s._lazy:
+            pytest.skip("LazyS do not support folding")
         s = s.transpose(signal_axes=2)
-        nt.assert_true(s.unfold())
+        assert s.unfold()
 
     def test_print_summary(self):
         # Just test if it doesn't raise an exception
@@ -130,33 +135,33 @@ class Test2D:
     def test_numpy_unfunc_one_arg_titled(self):
         self.signal.metadata.General.title = "yes"
         result = np.exp(self.signal)
-        nt.assert_true(isinstance(result, signals.Signal1D))
+        assert isinstance(result, signals.Signal1D)
         np.testing.assert_array_equal(result.data, np.exp(self.signal.data))
-        nt.assert_equal(result.metadata.General.title, "exp(yes)")
+        assert result.metadata.General.title == "exp(yes)"
 
     def test_numpy_unfunc_one_arg_untitled(self):
         result = np.exp(self.signal)
-        nt.assert_equal(result.metadata.General.title,
-                        "exp(Untitled Signal 1)")
+        assert (result.metadata.General.title ==
+                "exp(Untitled Signal 1)")
 
     def test_numpy_unfunc_two_arg_titled(self):
         s1, s2 = self.signal.deepcopy(), self.signal.deepcopy()
         s1.metadata.General.title = "A"
         s2.metadata.General.title = "B"
         result = np.add(s1, s2)
-        nt.assert_true(isinstance(result, signals.Signal1D))
+        assert isinstance(result, signals.Signal1D)
         np.testing.assert_array_equal(result.data, np.add(s1.data, s2.data))
-        nt.assert_equal(result.metadata.General.title, "add(A, B)")
+        assert result.metadata.General.title == "add(A, B)"
 
     def test_numpy_unfunc_two_arg_untitled(self):
         s1, s2 = self.signal.deepcopy(), self.signal.deepcopy()
         result = np.add(s1, s2)
-        nt.assert_equal(result.metadata.General.title,
-                        "add(Untitled Signal 1, Untitled Signal 2)")
+        assert (result.metadata.General.title ==
+                "add(Untitled Signal 1, Untitled Signal 2)")
 
     def test_numpy_func(self):
         result = np.angle(self.signal)
-        nt.assert_true(isinstance(result, np.ndarray))
+        assert isinstance(result, np.ndarray)
         np.testing.assert_array_equal(result, np.angle(self.signal.data))
 
 
@@ -164,36 +169,53 @@ def _test_default_navigation_signal_operations_over_many_axes(self, op):
     s = getattr(self.signal, op)()
     ar = getattr(self.data, op)(axis=(0, 1))
     np.testing.assert_array_equal(ar, s.data)
-    nt.assert_equal(s.data.ndim, 1)
-    nt.assert_equal(s.axes_manager.signal_dimension, 1)
-    nt.assert_equal(s.axes_manager.navigation_dimension, 0)
+    assert s.data.ndim == 1
+    assert s.axes_manager.signal_dimension == 1
+    assert s.axes_manager.navigation_dimension == 0
 
 
+@lazifyTestClass
 class Test3D:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.signal = signals.Signal1D(np.arange(2 * 4 * 6).reshape(2, 4, 6))
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "y"
         self.signal.axes_manager[2].name = "E"
         self.signal.axes_manager[0].scale = 0.5
         self.data = self.signal.data.copy()
+        
+    def test_indexmin(self):
+        s = self.signal.indexmin('E')
+        ar = self.data.argmin(2)
+        np.testing.assert_array_equal(ar, s.data)
+        assert s.data.ndim == 2
+        assert s.axes_manager.signal_dimension == 0
+        assert s.axes_manager.navigation_dimension == 2
 
     def test_indexmax(self):
         s = self.signal.indexmax('E')
         ar = self.data.argmax(2)
         np.testing.assert_array_equal(ar, s.data)
-        nt.assert_equal(s.data.ndim, 2)
-        nt.assert_equal(s.axes_manager.signal_dimension, 0)
-        nt.assert_equal(s.axes_manager.navigation_dimension, 2)
+        assert s.data.ndim == 2
+        assert s.axes_manager.signal_dimension == 0
+        assert s.axes_manager.navigation_dimension == 2
+        
+    def test_valuemin(self):
+        s = self.signal.valuemin('x')
+        ar = self.signal.axes_manager['x'].index2value(self.data.argmin(1))
+        np.testing.assert_array_equal(ar, s.data)
+        assert s.data.ndim == 2
+        assert s.axes_manager.signal_dimension == 1
+        assert s.axes_manager.navigation_dimension == 1
 
     def test_valuemax(self):
         s = self.signal.valuemax('x')
         ar = self.signal.axes_manager['x'].index2value(self.data.argmax(1))
         np.testing.assert_array_equal(ar, s.data)
-        nt.assert_equal(s.data.ndim, 2)
-        nt.assert_equal(s.axes_manager.signal_dimension, 1)
-        nt.assert_equal(s.axes_manager.navigation_dimension, 1)
+        assert s.data.ndim == 2
+        assert s.axes_manager.signal_dimension == 1
+        assert s.axes_manager.navigation_dimension == 1
 
     def test_default_navigation_sum(self):
         _test_default_navigation_signal_operations_over_many_axes(self, 'sum')
@@ -217,166 +239,179 @@ class Test3D:
         self.signal.estimate_poissonian_noise_variance()
         new_s = self.signal.rebin((2, 1, 6))
         var = new_s.metadata.Signal.Noise_properties.variance
-        nt.assert_equal(new_s.data.shape, (1, 2, 6))
-        nt.assert_equal(var.data.shape, (1, 2, 6))
+        assert new_s.data.shape == (1, 2, 6)
+        assert var.data.shape == (1, 2, 6)
         from hyperspy.misc.array_tools import rebin
+
+        if self.signal._lazy:
+            from distutils.version import LooseVersion
+            import dask
+            if LooseVersion(np.__version__) >= "1.12.0" and \
+               LooseVersion(dask.__version__) <= "0.13.0":
+                pytest.skip("Dask not up to date with new numpy")
+
         np.testing.assert_array_equal(rebin(self.signal.data, (1, 2, 6)),
                                       var.data)
         np.testing.assert_array_equal(rebin(self.signal.data, (1, 2, 6)),
                                       new_s.data)
 
-    @nt.raises(AttributeError)
     def test_rebin_no_variance(self):
         new_s = self.signal.rebin((2, 1, 6))
-        _ = new_s.metadata.Signal.Noise_properties
+        with pytest.raises(AttributeError):
+            _ = new_s.metadata.Signal.Noise_properties
 
     def test_rebin_const_variance(self):
         self.signal.metadata.set_item(
             'Signal.Noise_properties.variance', 0.3)
         new_s = self.signal.rebin((2, 1, 6))
-        nt.assert_equal(new_s.metadata.Signal.Noise_properties.variance, 0.3)
+        assert new_s.metadata.Signal.Noise_properties.variance == 0.3
 
     def test_swap_axes_simple(self):
         s = self.signal
-        nt.assert_equal(s.swap_axes(0, 1).data.shape, (4, 2, 6))
-        nt.assert_equal(s.swap_axes(0, 2).axes_manager.shape, (6, 2, 4))
-        nt.assert_true(s.swap_axes(0, 2).data.flags['C_CONTIGUOUS'])
+        if s._lazy:
+            pytest.skip("LazyS do not support axes swapping")
+        assert s.swap_axes(0, 1).data.shape == (4, 2, 6)
+        assert s.swap_axes(0, 2).axes_manager.shape == (6, 2, 4)
+        assert s.swap_axes(0, 2).data.flags['C_CONTIGUOUS']
 
     def test_swap_axes_iteration(self):
         s = self.signal
+        if s._lazy:
+            pytest.skip("LazyS do not support axes swapping")
         s = s.swap_axes(0, 2)
-        nt.assert_equal(s.axes_manager._getitem_tuple[:2], (0, 0))
+        assert s.axes_manager._getitem_tuple[:2] == (0, 0)
         s.axes_manager.indices = (2, 1)
-        nt.assert_equal(s.axes_manager._getitem_tuple[:2], (1, 2))
+        assert s.axes_manager._getitem_tuple[:2] == (1, 2)
 
     def test_get_navigation_signal_nav_dim0(self):
         s = self.signal
         s = s.transpose(signal_axes=3)
         ns = s._get_navigation_signal()
-        nt.assert_equal(ns.axes_manager.signal_dimension, 1)
-        nt.assert_equal(ns.axes_manager.signal_size, 1)
-        nt.assert_equal(ns.axes_manager.navigation_dimension, 0)
+        assert ns.axes_manager.signal_dimension == 1
+        assert ns.axes_manager.signal_size == 1
+        assert ns.axes_manager.navigation_dimension == 0
 
     def test_get_navigation_signal_nav_dim1(self):
         s = self.signal
         s = s.transpose(signal_axes=2)
         ns = s._get_navigation_signal()
-        nt.assert_equal(ns.axes_manager.signal_shape,
-                        s.axes_manager.navigation_shape)
-        nt.assert_equal(ns.axes_manager.navigation_dimension, 0)
+        assert (ns.axes_manager.signal_shape ==
+                s.axes_manager.navigation_shape)
+        assert ns.axes_manager.navigation_dimension == 0
 
     def test_get_navigation_signal_nav_dim2(self):
         s = self.signal
         s = s.transpose(signal_axes=1)
         ns = s._get_navigation_signal()
-        nt.assert_equal(ns.axes_manager.signal_shape,
-                        s.axes_manager.navigation_shape)
-        nt.assert_equal(ns.axes_manager.navigation_dimension, 0)
+        assert (ns.axes_manager.signal_shape ==
+                s.axes_manager.navigation_shape)
+        assert ns.axes_manager.navigation_dimension == 0
 
     def test_get_navigation_signal_nav_dim3(self):
         s = self.signal
         s = s.transpose(signal_axes=0)
         ns = s._get_navigation_signal()
-        nt.assert_equal(ns.axes_manager.signal_shape,
-                        s.axes_manager.navigation_shape)
-        nt.assert_equal(ns.axes_manager.navigation_dimension, 0)
+        assert (ns.axes_manager.signal_shape ==
+                s.axes_manager.navigation_shape)
+        assert ns.axes_manager.navigation_dimension == 0
 
-    @nt.raises(ValueError)
     def test_get_navigation_signal_wrong_data_shape(self):
         s = self.signal
         s = s.transpose(signal_axes=1)
-        s._get_navigation_signal(data=np.zeros((3, 2)))
+        with pytest.raises(ValueError):
+            s._get_navigation_signal(data=np.zeros((3, 2)))
 
-    @nt.raises(ValueError)
     def test_get_navigation_signal_wrong_data_shape_dim0(self):
         s = self.signal
         s = s.transpose(signal_axes=3)
-        s._get_navigation_signal(data=np.asarray(0))
+        with pytest.raises(ValueError):
+            s._get_navigation_signal(data=np.asarray(0))
 
     def test_get_navigation_signal_given_data(self):
         s = self.signal
         s = s.transpose(signal_axes=1)
         data = np.zeros(s.axes_manager._navigation_shape_in_array)
         ns = s._get_navigation_signal(data=data)
-        nt.assert_is(ns.data, data)
+        assert ns.data is data
 
     def test_get_signal_signal_nav_dim0(self):
         s = self.signal
         s = s.transpose(signal_axes=0)
         ns = s._get_signal_signal()
-        nt.assert_equal(ns.axes_manager.navigation_dimension, 0)
-        nt.assert_equal(ns.axes_manager.navigation_size, 0)
-        nt.assert_equal(ns.axes_manager.signal_dimension, 1)
+        assert ns.axes_manager.navigation_dimension == 0
+        assert ns.axes_manager.navigation_size == 0
+        assert ns.axes_manager.signal_dimension == 1
 
     def test_get_signal_signal_nav_dim1(self):
         s = self.signal
         s = s.transpose(signal_axes=1)
         ns = s._get_signal_signal()
-        nt.assert_equal(ns.axes_manager.signal_shape,
-                        s.axes_manager.signal_shape)
-        nt.assert_equal(ns.axes_manager.navigation_dimension, 0)
+        assert (ns.axes_manager.signal_shape ==
+                s.axes_manager.signal_shape)
+        assert ns.axes_manager.navigation_dimension == 0
 
     def test_get_signal_signal_nav_dim2(self):
         s = self.signal
         s = s.transpose(signal_axes=2)
         s._assign_subclass()
         ns = s._get_signal_signal()
-        nt.assert_equal(ns.axes_manager.signal_shape,
-                        s.axes_manager.signal_shape)
-        nt.assert_equal(ns.axes_manager.navigation_dimension, 0)
+        assert (ns.axes_manager.signal_shape ==
+                s.axes_manager.signal_shape)
+        assert ns.axes_manager.navigation_dimension == 0
 
     def test_get_signal_signal_nav_dim3(self):
         s = self.signal
         s = s.transpose(signal_axes=3)
         s._assign_subclass()
         ns = s._get_signal_signal()
-        nt.assert_equal(ns.axes_manager.signal_shape,
-                        s.axes_manager.signal_shape)
-        nt.assert_equal(ns.axes_manager.navigation_dimension, 0)
+        assert (ns.axes_manager.signal_shape ==
+                s.axes_manager.signal_shape)
+        assert ns.axes_manager.navigation_dimension == 0
 
-    @nt.raises(ValueError)
     def test_get_signal_signal_wrong_data_shape(self):
         s = self.signal
         s = s.transpose(signal_axes=1)
-        s._get_signal_signal(data=np.zeros((3, 2)))
+        with pytest.raises(ValueError):
+            s._get_signal_signal(data=np.zeros((3, 2)))
 
-    @nt.raises(ValueError)
     def test_get_signal_signal_wrong_data_shape_dim0(self):
         s = self.signal
         s = s.transpose(signal_axes=0)
-        s._get_signal_signal(data=np.asarray(0))
+        with pytest.raises(ValueError):
+            s._get_signal_signal(data=np.asarray(0))
 
     def test_get_signal_signal_given_data(self):
         s = self.signal
         s = s.transpose(signal_axes=2)
         data = np.zeros(s.axes_manager._signal_shape_in_array)
         ns = s._get_signal_signal(data=data)
-        nt.assert_is(ns.data, data)
+        assert ns.data is data
 
     def test_get_navigation_signal_dtype(self):
         s = self.signal
-        nt.assert_equal(s._get_navigation_signal().data.dtype.name,
-                        s.data.dtype.name)
+        assert (s._get_navigation_signal().data.dtype.name ==
+                s.data.dtype.name)
 
     def test_get_signal_signal_dtype(self):
         s = self.signal
-        nt.assert_equal(s._get_signal_signal().data.dtype.name,
-                        s.data.dtype.name)
+        assert (s._get_signal_signal().data.dtype.name ==
+                s.data.dtype.name)
 
     def test_get_navigation_signal_given_dtype(self):
         s = self.signal
-        nt.assert_equal(
-            s._get_navigation_signal(dtype="bool").data.dtype.name, "bool")
+        assert (
+            s._get_navigation_signal(dtype="bool").data.dtype.name == "bool")
 
     def test_get_signal_signal_given_dtype(self):
         s = self.signal
-        nt.assert_equal(
-            s._get_signal_signal(dtype="bool").data.dtype.name, "bool")
+        assert (
+            s._get_signal_signal(dtype="bool").data.dtype.name == "bool")
 
 
+@lazifyTestClass
 class Test4D:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = signals.Signal1D(np.ones((5, 4, 3, 6)))
         for axis, name in zip(
                 s.axes_manager._get_axes_in_natural_order(),
@@ -393,32 +428,42 @@ class Test4D:
     def test_diff_axis(self):
         s = self.s
         diff = s.diff(axis=2, order=2)
-        nt.assert_equal(
-            diff.axes_manager[2].offset,
+        assert (
+            diff.axes_manager[2].offset ==
             s.axes_manager[2].offset + s.axes_manager[2].scale)
 
     def test_rollaxis_int(self):
-        nt.assert_equal(self.s.rollaxis(2, 0).data.shape, (4, 3, 5, 6))
+        assert self.s.rollaxis(2, 0).data.shape == (4, 3, 5, 6)
 
     def test_rollaxis_str(self):
-        nt.assert_equal(self.s.rollaxis("z", "x").data.shape, (4, 3, 5, 6))
+        assert self.s.rollaxis("z", "x").data.shape == (4, 3, 5, 6)
 
     def test_unfold_spectrum(self):
+        if self.s._lazy:
+            pytest.skip("LazyS do not support folding")
         self.s.unfold()
-        nt.assert_equal(self.s.data.shape, (60, 6))
+        assert self.s.data.shape == (60, 6)
 
     def test_unfold_spectrum_returns_true(self):
-        nt.assert_true(self.s.unfold())
+        if self.s._lazy:
+            pytest.skip("LazyS do not support folding")
+        assert self.s.unfold()
 
     def test_unfold_spectrum_signal_returns_false(self):
-        nt.assert_false(self.s.unfold_signal_space())
+        if self.s._lazy:
+            pytest.skip("LazyS do not support folding")
+        assert not self.s.unfold_signal_space()
 
     def test_unfold_image(self):
+        if self.s._lazy:
+            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         im.unfold()
-        nt.assert_equal(im.data.shape, (30, 12))
+        assert im.data.shape == (30, 12)
 
     def test_image_signal_unfolded_deepcopy(self):
+        if self.s._lazy:
+            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         im.unfold()
         # The following could fail if the constructor was not taking the fact
@@ -427,33 +472,41 @@ class Test4D:
         im.deepcopy()
 
     def test_image_signal_unfolded_false(self):
+        if self.s._lazy:
+            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
-        nt.assert_false(im.metadata._HyperSpy.Folding.signal_unfolded)
+        assert not im.metadata._HyperSpy.Folding.signal_unfolded
 
     def test_image_signal_unfolded_true(self):
+        if self.s._lazy:
+            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         im.unfold()
-        nt.assert_true(im.metadata._HyperSpy.Folding.signal_unfolded)
+        assert im.metadata._HyperSpy.Folding.signal_unfolded
 
     def test_image_signal_unfolded_back_to_false(self):
+        if self.s._lazy:
+            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         im.unfold()
         im.fold()
-        nt.assert_false(im.metadata._HyperSpy.Folding.signal_unfolded)
+        assert not im.metadata._HyperSpy.Folding.signal_unfolded
 
 
 def test_signal_iterator():
-    s = signals.Signal1D(np.arange(3).reshape((3, 1)))
-    nt.assert_equal(next(s).data[0], 0)
-    # If the following fails it can be because the iteration index was not
-    # restarted
-    for i, signal in enumerate(s):
-        nt.assert_equal(i, signal.data[0])
+    sig = signals.Signal1D(np.arange(3).reshape((3, 1)))
+    for s in (sig, sig.as_lazy()):
+        assert next(s).data[0] == 0
+        # If the following fails it can be because the iteration index was not
+        # restarted
+        for i, signal in enumerate(s):
+            assert i == signal.data[0]
 
 
+@lazifyTestClass
 class TestDerivative:
 
-    def setup(self):
+    def setup_method(self, method):
         offset = 3
         scale = 0.1
         x = np.arange(-offset, offset, scale)
@@ -464,14 +517,13 @@ class TestDerivative:
 
     def test_derivative_data(self):
         der = self.s.derivative(axis=0, order=4)
-        nt.assert_true(np.allclose(der.data,
-                                   np.sin(der.axes_manager[0].axis),
-                                   atol=1e-2),)
+        assert_allclose(der.data, np.sin(der.axes_manager[0].axis), atol=1e-2)
 
 
+@lazifyTestClass
 class TestOutArg:
 
-    def setup(self):
+    def setup_method(self, method):
         # Some test require consistent random data for reference to be correct
         np.random.seed(0)
         s = signals.Signal1D(np.random.rand(5, 4, 3, 6))
@@ -489,7 +541,7 @@ class TestOutArg:
         s2 = f(**kwargs)
         r = f(out=s1, **kwargs)
         m.data_changed.assert_called_with(obj=s1)
-        nt.assert_is_none(r)
+        assert r is None
         assert_array_equal(s1.data, s2.data)
 
     def test_get_histogram(self):
@@ -542,6 +594,12 @@ class TestOutArg:
     def test_rebin(self):
         s = self.s
         new_shape = (3, 2, 1, 3)
+        if self.s._lazy:
+            from distutils.version import LooseVersion
+            import dask
+            if LooseVersion(np.__version__) >= "1.12.0" and \
+               LooseVersion(dask.__version__) <= "0.13.0":
+                pytest.skip("Dask not up to date with new numpy")
         self._run_single(s.rebin, s, dict(new_shape=new_shape))
 
     def test_as_spectrum(self):
@@ -590,11 +648,13 @@ class TestOutArg:
         h2 = s.get_histogram(bins=5)
         s.get_histogram(bins=5, out=h1)
         assert_array_equal(h1.data, h2.data)
-        nt.assert_equal(h1.axes_manager[-1].size,
-                        h2.axes_manager[-1].size,)
+        assert (h1.axes_manager[-1].size ==
+                h2.axes_manager[-1].size)
 
     def test_masked_array_mean(self):
         s = self.s
+        if s._lazy:
+            pytest.skip("LazyS do not support masked arrays")
         mask = (s.data > 0.5)
         s.data = np.arange(s.data.size).reshape(s.data.shape)
         s.data = np.ma.masked_array(s.data, mask=mask)
@@ -613,6 +673,8 @@ class TestOutArg:
 
     def test_masked_array_sum(self):
         s = self.s
+        if s._lazy:
+            pytest.skip("LazyS do not support masked arrays")
         mask = (s.data > 0.5)
         s.data = np.ma.masked_array(np.ones_like(s.data), mask=mask)
         sr = s.sum(axis=('x', 'z',))
@@ -620,28 +682,31 @@ class TestOutArg:
 
     def test_masked_arrays_out(self):
         s = self.s
+        if s._lazy:
+            pytest.skip("LazyS do not support masked arrays")
         mask = (s.data > 0.5)
         s.data = np.ones_like(s.data)
         s.data = np.ma.masked_array(s.data, mask=mask)
         self._run_single(s.sum, s, dict(axis=('x', 'z')))
 
-    @nt.raises(ValueError)
     def test_wrong_out_shape(self):
         s = self.s
         ss = s.sum()  # Sum over navigation, data shape (6,)
-        s.sum(axis=s.axes_manager._axes, out=ss)
+        with pytest.raises(ValueError):
+            s.sum(axis=s.axes_manager._axes, out=ss)
 
-    @nt.raises(ValueError)
     def test_wrong_out_shape_masked(self):
         s = self.s
         s.data = np.ma.array(s.data)
         ss = s.sum()  # Sum over navigation, data shape (6,)
-        s.sum(axis=s.axes_manager._axes, out=ss)
+        with pytest.raises(ValueError):
+            s.sum(axis=s.axes_manager._axes, out=ss)
 
 
+@lazifyTestClass
 class TestTranspose:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = signals.BaseSignal(np.random.rand(1, 2, 3, 4, 5, 6))
         for ax, name in zip(self.s.axes_manager._axes, 'abcdef'):
             ax.name = name
@@ -651,83 +716,85 @@ class TestTranspose:
 
     def test_signal_int_transpose(self):
         t = self.s.transpose(signal_axes=2)
-        nt.assert_equal(t.axes_manager.signal_shape, (6, 5))
-        nt.assert_equal([ax.name for ax in t.axes_manager.signal_axes],
-                        ['f', 'e'])
-        nt.assert_is_instance(t, signals.Signal2D)
-        nt.assert_is_instance(t.metadata.Signal.Noise_properties.variance,
-                              signals.Signal2D)
+        assert t.axes_manager.signal_shape == (6, 5)
+        assert ([ax.name for ax in t.axes_manager.signal_axes] ==
+                ['f', 'e'])
+        assert isinstance(t, signals.Signal2D)
+        assert isinstance(t.metadata.Signal.Noise_properties.variance,
+                          signals.Signal2D)
 
     def test_signal_iterable_int_transpose(self):
         t = self.s.transpose(signal_axes=[0, 5, 4])
-        nt.assert_equal(t.axes_manager.signal_shape, (6, 1, 2))
-        nt.assert_equal([ax.name for ax in t.axes_manager.signal_axes],
-                        ['f', 'a', 'b'])
+        assert t.axes_manager.signal_shape == (6, 1, 2)
+        assert ([ax.name for ax in t.axes_manager.signal_axes] ==
+                ['f', 'a', 'b'])
 
     def test_signal_iterable_names_transpose(self):
         t = self.s.transpose(signal_axes=['f', 'a', 'b'])
-        nt.assert_equal(t.axes_manager.signal_shape, (6, 1, 2))
-        nt.assert_equal([ax.name for ax in t.axes_manager.signal_axes],
-                        ['f', 'a', 'b'])
+        assert t.axes_manager.signal_shape == (6, 1, 2)
+        assert ([ax.name for ax in t.axes_manager.signal_axes] ==
+                ['f', 'a', 'b'])
 
     def test_signal_iterable_axes_transpose(self):
         t = self.s.transpose(signal_axes=self.s.axes_manager.signal_axes[:2])
-        nt.assert_equal(t.axes_manager.signal_shape, (6, 5))
-        nt.assert_equal([ax.name for ax in t.axes_manager.signal_axes],
-                        ['f', 'e'])
+        assert t.axes_manager.signal_shape == (6, 5)
+        assert ([ax.name for ax in t.axes_manager.signal_axes] ==
+                ['f', 'e'])
 
-    @nt.raises(ValueError)
     def test_signal_one_name(self):
-        self.s.transpose(signal_axes='a')
+        with pytest.raises(ValueError):
+            self.s.transpose(signal_axes='a')
 
-    @nt.raises(ValueError)
     def test_too_many_signal_axes(self):
-        self.s.transpose(signal_axes=10)
+        with pytest.raises(ValueError):
+            self.s.transpose(signal_axes=10)
 
     def test_navigation_int_transpose(self):
         t = self.s.transpose(navigation_axes=2)
-        nt.assert_equal(t.axes_manager.navigation_shape, (2, 1))
-        nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
-                        ['b', 'a'])
+        assert t.axes_manager.navigation_shape == (2, 1)
+        assert ([ax.name for ax in t.axes_manager.navigation_axes] ==
+                ['b', 'a'])
 
     def test_navigation_iterable_int_transpose(self):
         t = self.s.transpose(navigation_axes=[0, 5, 4])
-        nt.assert_equal(t.axes_manager.navigation_shape, (6, 1, 2))
-        nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
-                        ['f', 'a', 'b'])
+        assert t.axes_manager.navigation_shape == (6, 1, 2)
+        assert ([ax.name for ax in t.axes_manager.navigation_axes] ==
+                ['f', 'a', 'b'])
 
     def test_navigation_iterable_names_transpose(self):
         t = self.s.transpose(navigation_axes=['f', 'a', 'b'])
-        nt.assert_equal(t.axes_manager.navigation_shape, (6, 1, 2))
-        nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
-                        ['f', 'a', 'b'])
+        assert t.axes_manager.navigation_shape == (6, 1, 2)
+        assert ([ax.name for ax in t.axes_manager.navigation_axes] ==
+                ['f', 'a', 'b'])
 
     def test_navigation_iterable_axes_transpose(self):
         t = self.s.transpose(
             navigation_axes=self.s.axes_manager.signal_axes[
                 :2])
-        nt.assert_equal(t.axes_manager.navigation_shape, (6, 5))
-        nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
-                        ['f', 'e'])
+        assert t.axes_manager.navigation_shape == (6, 5)
+        assert ([ax.name for ax in t.axes_manager.navigation_axes] ==
+                ['f', 'e'])
 
-    @nt.raises(ValueError)
     def test_navigation_one_name(self):
-        self.s.transpose(navigation_axes='a')
+        with pytest.raises(ValueError):
+            self.s.transpose(navigation_axes='a')
 
-    @nt.raises(ValueError)
     def test_too_many_navigation_axes(self):
-        self.s.transpose(navigation_axes=10)
+        with pytest.raises(ValueError):
+            self.s.transpose(navigation_axes=10)
 
     def test_transpose_shortcut(self):
         s = self.s.transpose(signal_axes=2)
         t = s.T
-        nt.assert_equal(t.axes_manager.navigation_shape, (5, 6))
-        nt.assert_equal([ax.name for ax in t.axes_manager.navigation_axes],
-                        ['e', 'f'])
+        assert t.axes_manager.navigation_shape == (6, 5)
+        assert ([ax.name for ax in t.axes_manager.navigation_axes] ==
+                ['f', 'e'])
 
     def test_optimize(self):
+        if self.s._lazy:
+            pytest.skip("LazyS do not support optimizations")
         t = self.s.transpose(signal_axes=['f', 'a', 'b'], optimize=False)
-        nt.assert_is(t.data.base, self.s.data)
+        assert t.data.base is self.s.data
 
         t = self.s.transpose(signal_axes=['f', 'a', 'b'], optimize=True)
-        nt.assert_is_not(t.data.base, self.s.data)
+        assert t.data.base is not self.s.data

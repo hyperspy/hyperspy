@@ -35,7 +35,7 @@ import warnings
 import os
 import subprocess
 import fileinput
-
+import itertools
 import re
 
 # stuff to check presence of compiler:
@@ -47,7 +47,7 @@ setup_path = os.path.dirname(__file__)
 
 import hyperspy.Release as Release
 
-install_req = ['scipy',
+install_req = ['scipy>=0.15',
                'ipython>=2.0',
                'matplotlib>=1.2',
                'numpy>=1.10',
@@ -55,13 +55,21 @@ install_req = ['scipy',
                'traitsui>=5.0',
                'natsort',
                'requests',
-               'tqdm',
+               'tqdm>=0.4.9',
                'sympy',
                'dill',
                'h5py',
                'python-dateutil',
                'ipyparallel',
+               'dask[array]>=0.13, !=0.14',
                'scikit-image']
+
+extras_require = {
+    "learning": ['scikit-learn'],
+    "bcf": ['lxml'],
+    "gui-jupyter": ["ipywidgets"],
+}
+extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
 # the hack to deal with setuptools + installing the package in ReadTheDoc:
 if 'readthedocs.org' in sys.executable:
@@ -320,6 +328,7 @@ with update_version_when_dev() as version:
                   'hyperspy.misc.eels',
                   'hyperspy.misc.eds',
                   'hyperspy.misc.io',
+                  'hyperspy.misc.holography',
                   'hyperspy.misc.machine_learning',
                   'hyperspy.external',
                   'hyperspy.external.mpfit',
@@ -330,6 +339,8 @@ with update_version_when_dev() as version:
                   'hyperspy.samfire_utils.goodness_of_fit_tests',
                   ],
         install_requires=install_req,
+        test_require=["pytest>=3.0.2"],
+        extras_require=extras_require,
         package_data={
             'hyperspy':
             [
@@ -344,6 +355,7 @@ with update_version_when_dev() as version:
                 'tests/io/dm4_2D_data/*.dm4',
                 'tests/io/dm4_3D_data/*.dm4',
                 'tests/io/dm3_locale/*.dm3',
+                'tests/io/edax_files.zip',
                 'tests/io/FEI_new/*.emi',
                 'tests/io/FEI_new/*.ser',
                 'tests/io/FEI_new/*.npy',
@@ -362,9 +374,12 @@ with update_version_when_dev() as version:
                 'tests/io/ripple_files/*.rpl',
                 'tests/io/ripple_files/*.raw',
                 'tests/io/emd_files/*.emd',
+                'tests/drawing/plot_signal/*.png',
+                'tests/drawing/plot_signal1d/*.png',
+                'tests/drawing/plot_signal2d/*.png',
+                'tests/drawing/plot_markers/*.png',
                 'tests/io/protochips_data/*.npy',
                 'tests/io/protochips_data/*.csv',
-                'tests/drawing/*.ipynb',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
             ],
         },
