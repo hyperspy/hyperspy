@@ -1012,6 +1012,8 @@ def map_result_construction(signal,
                 len(sig_shape) - sig.axes_manager.signal_dimension, 0, -1):
             sig.axes_manager._append_axis(sig_shape[-ind], navigate=False)
     sig.get_dimensions_from_data()
+    if not sig.axes_manager._axes:
+        add_scalar_axis(sig)
     return res
 
 
@@ -1030,3 +1032,14 @@ def multiply(iterable):
     for i in iterable:
         prod *= i
     return prod
+
+def add_scalar_axis(signal):
+    am = signal.axes_manager
+    from hyperspy.signal import BaseSignal
+    signal.__class__ = BaseSignal
+    am.remove(am._axes)
+    am._append_axis(size=1,
+                    scale=1,
+                    offset=0,
+                    name="Scalar",
+                    navigate=False)
