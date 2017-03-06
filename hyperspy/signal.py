@@ -2607,13 +2607,8 @@ class BaseSignal(FancySlicing,
         else:
             # Create a "Scalar" axis because the axis is the last one left and
             # HyperSpy does not # support 0 dimensions
-            am.remove(axes)
-            am._append_axis(
-                size=1,
-                scale=1,
-                offset=0,
-                name="Scalar",
-                navigate=False,)
+            from hyperspy.misc.utils import add_scalar_axis
+            add_scalar_axis(self)
 
     def _ma_workaround(self, s, function, axes, ar_axes, out):
         # TODO: Remove if and when numpy.ma accepts tuple `axis`
