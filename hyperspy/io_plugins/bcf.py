@@ -519,8 +519,6 @@ class EDXSpectrum(object):
         self.calibAbs = self.spectrum_metadata['CalibAbs']
         self.calibLin = self.spectrum_metadata['CalibLin']
         self.chnlCnt = self.spectrum_metadata['ChannelCount']
-        #self.date = self.spectrum_metadata['Date']  # Not Used?
-        #self.time = self.spectrum_metadata['Time']  # Not Used?
 
         # main data:
         self.data = np.fromstring(str(spectrum.Channels), dtype='Q', sep=",")
@@ -588,7 +586,7 @@ class HyperHeader(object):
         #self.channel_factors = {}
         self.spectra_data = {}
         self._set_sum_edx(root)
-        
+
     def _set_sem(self, root):
         """wrap objectified xml part to class attributes for self.sem,
         self.stage and self.*_res
