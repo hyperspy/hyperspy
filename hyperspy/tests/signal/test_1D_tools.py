@@ -349,3 +349,24 @@ class TestSmoothing:
             polynomial_order=polyorder,
             differential_order=deriv,)
         np.testing.assert_allclose(data, self.s.data)
+
+@pytest.mark.parametrize('lazy', [True, False])
+@pytest.mark.parametrize('offset', [3, 0])
+def test_hanning(lazy, offset):
+    sig = hs.signals.Signal1D(np.random.rand(5, 20))
+    ind = 2
+    if lazy:
+        sig = sig.as_lazy()
+    data = np.array(sig.data)
+    channels = 5
+    hanning = np.hanning(channels*2)
+    data[..., :offset] = 0
+    data[..., offset:offset+channels] *= hanning[:channels]
+    rl = None if offset == 0 else -offset
+    data[..., -offset-channels:rl] *= hanning[-channels:]
+    if offset != 0:
+        data[..., -offset:] = 0
+
+    assert channels == sig.hanning_taper(side='both', channels=channels,
+                                         offset=offset)
+    np.testing.assert_allclose(data, sig.data)
