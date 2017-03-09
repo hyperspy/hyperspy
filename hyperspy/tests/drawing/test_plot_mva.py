@@ -22,7 +22,7 @@ import pytest
 from hyperspy import signals
 
 
-baseline_dir = 'plot_decomposition'
+baseline_dir = 'plot_mva'
 default_tol = 2.0
 
 
