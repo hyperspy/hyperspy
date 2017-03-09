@@ -351,8 +351,6 @@ class MVATools(object):
                     same_window=same_window)
                 if same_window:
                     plt.legend(ncol=factors.shape[1] // 2, loc='best')
-                    # This is working but it throws a error message...
-                    # animate_legend(f)
             elif self.axes_manager.signal_dimension == 2:
                 if same_window:
                     ax = f.add_subplot(rows, per_row, i + 1)
@@ -375,6 +373,7 @@ class MVATools(object):
                 plt.title(title)
             else:
                 plt.suptitle(title)
+            animate_legend(f)
         try:
             plt.tight_layout()
         except:
@@ -762,7 +761,8 @@ class MVATools(object):
                                    title=None,
                                    cmap=plt.cm.gray,
                                    per_row=3):
-        """Plot factors from a decomposition.
+        """Plot factors from a decomposition. In case of 1D signal axis, each
+        factors line can be toggled on and off by clicking on the legended line.
 
         Parameters
         ----------
@@ -823,7 +823,9 @@ class MVATools(object):
     def plot_bss_factors(self, comp_ids=None, calibrate=True,
                          same_window=None, title=None,
                          per_row=3):
-        """Plot factors from blind source separation results.
+        """Plot factors from blind source separation results. In case of 1D
+        signal axis, each factors line can be toggled on and off by clicking 
+        on the legended line.
 
         Parameters
         ----------
@@ -889,8 +891,9 @@ class MVATools(object):
                                     no_nans=False,
                                     per_row=3,
                                     axes_decor='all'):
-        """Plot loadings from PCA. In case of 1D navigation axis, each loading
-        line can be toggled on and off by clicking on the legended line.
+        """Plot loadings from a decomposition. In case of 1D navigation axis,
+        each loading line can be toggled on and off by clicking on the legended
+        line.
 
         Parameters
         ----------
@@ -976,8 +979,9 @@ class MVATools(object):
                           same_window=None, title=None,
                           with_factors=False, cmap=plt.cm.gray,
                           no_nans=False, per_row=3, axes_decor='all'):
-        """Plot loadings from ICA. In case of 1D navigation axis, each loading
-        line can be toggled on and off by clicking on the legended line.
+        """Plot loadings from blind source separation results. In case of 1D 
+        navigation axis, each loading line can be toggled on and off by 
+        clicking on the legended line.
 
         Parameters
         ----------
