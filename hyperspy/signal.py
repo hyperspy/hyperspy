@@ -270,11 +270,8 @@ class MVATools(object):
         same_window : bool
             if True, plots each factor to the same window.  They are
             not scaled.
-        comp_label : string, the label that is either the plot title
-        (if plotting in
-            separate windows) or the label in the legend (if plotting
-            in the
-            same window)
+        comp_label : string
+            Title of the plot
         cmap : a matplotlib colormap
             The colormap used for factor images or
             any peak characteristic scatter map
@@ -334,6 +331,7 @@ class MVATools(object):
             f = plt.figure(figsize=(4 * per_row, 3 * rows))
         else:
             f = plt.figure()
+
         for i in range(len(comp_ids)):
             if self.axes_manager.signal_dimension == 1:
                 if same_window:
@@ -341,6 +339,7 @@ class MVATools(object):
                 else:
                     if i > 0:
                         f = plt.figure()
+                        plt.title('%s' % comp_label)
                     ax = f.add_subplot(111)
                 ax = sigdraw._plot_1D_component(
                     factors=factors,
@@ -360,6 +359,7 @@ class MVATools(object):
                 else:
                     if i > 0:
                         f = plt.figure()
+                        plt.title('%s' % comp_label)
                     ax = f.add_subplot(111)
 
                 sigdraw._plot_2D_component(factors=factors,
@@ -369,6 +369,12 @@ class MVATools(object):
                                            cmap=cmap, comp_label=comp_label)
             if not same_window:
                 fig_list.append(f)
+        if same_window:  # Main title for same window
+            title = '%s' % comp_label
+            if self.axes_manager.signal_dimension == 1:
+                plt.title(title)
+            else:
+                plt.suptitle(title)
         try:
             plt.tight_layout()
         except:
@@ -404,6 +410,7 @@ class MVATools(object):
             f = plt.figure(figsize=(4 * per_row, 3 * rows))
         else:
             f = plt.figure()
+
         for i in range(n):
             if self.axes_manager.navigation_dimension == 1:
                 if same_window:
@@ -752,7 +759,7 @@ class MVATools(object):
                                    comp_ids=None,
                                    calibrate=True,
                                    same_window=None,
-                                   comp_label='Decomposition factor',
+                                   title=None,
                                    cmap=plt.cm.gray,
                                    per_row=3):
         """Plot factors from a decomposition.
@@ -776,9 +783,9 @@ class MVATools(object):
             if True, plots each factor to the same window.  They are
             not scaled.
 
-        comp_label : string, the label that is either the plot title
-            (if plotting in separate windows) or the label in the legend
-            (if plotting in the same window)
+        title : string
+            Title of the plot.
+
         cmap : The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
@@ -801,17 +808,20 @@ class MVATools(object):
         factors = self.learning_results.factors
         if comp_ids is None:
             comp_ids = self.learning_results.output_dimension
+        if title is None:
+            title = self._get_plot_title('Decomposition factors of',
+                                         same_window)
 
         return self._plot_factors_or_pchars(factors,
                                             comp_ids=comp_ids,
                                             calibrate=calibrate,
                                             same_window=same_window,
-                                            comp_label=comp_label,
+                                            comp_label=title,
                                             cmap=cmap,
                                             per_row=per_row)
 
     def plot_bss_factors(self, comp_ids=None, calibrate=True,
-                         same_window=None, comp_label='BSS factor',
+                         same_window=None, title=None,
                          per_row=3):
         """Plot factors from blind source separation results.
 
@@ -834,11 +844,8 @@ class MVATools(object):
             if True, plots each factor to the same window.  They are
             not scaled.
 
-        comp_label : string, the label that is either the plot title
-        (if plotting in
-            separate windows) or the label in the legend (if plotting
-            in the
-            same window)
+        title : string
+            Title of the plot.
 
         cmap : The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
@@ -862,11 +869,14 @@ class MVATools(object):
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         factors = self.learning_results.bss_factors
+        if title is None:
+            title = self._get_plot_title('BSS factors of', same_window)
+
         return self._plot_factors_or_pchars(factors,
                                             comp_ids=comp_ids,
                                             calibrate=calibrate,
                                             same_window=same_window,
-                                            comp_label=comp_label,
+                                            comp_label=title,
                                             per_row=per_row)
 
     def plot_decomposition_loadings(self,

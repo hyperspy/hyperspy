@@ -106,9 +106,9 @@ def _plot_1D_component(factors, idx, axes_manager, ax=None,
     else:
         x = np.arange(axis.size)
         plt.xlabel('Channel index')
-    ax.plot(x, factors[:, idx], label='%s %i' % (comp_label, idx))
+    ax.plot(x, factors[:, idx], label='%i' % idx)
     if comp_label and not same_window:
-        plt.title('%s %s' % (comp_label, idx))
+        plt.title('%s' % comp_label)
     return ax
 
 
@@ -128,7 +128,7 @@ def _plot_2D_component(factors, idx, axes_manager,
                   axes[0].high_value,
                   axes[0].low_value)
     if comp_label:
-        plt.title('%s %s' % (comp_label, idx))
+        plt.title('%s' % idx)
     im = ax.imshow(factors[:, idx].reshape(shape),
                    cmap=cmap, interpolation='nearest',
                    extent=extent)
