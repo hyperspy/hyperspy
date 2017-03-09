@@ -352,6 +352,8 @@ class MVATools(object):
                     same_window=same_window)
                 if same_window:
                     plt.legend(ncol=factors.shape[1] // 2, loc='best')
+                    # This is working but it throws a error message...
+                    # animate_legend(f)
             elif self.axes_manager.signal_dimension == 2:
                 if same_window:
                     ax = f.add_subplot(rows, per_row, i + 1)
@@ -402,7 +404,6 @@ class MVATools(object):
             f = plt.figure(figsize=(4 * per_row, 3 * rows))
         else:
             f = plt.figure()
-
         for i in range(n):
             if self.axes_manager.navigation_dimension == 1:
                 if same_window:
@@ -410,6 +411,7 @@ class MVATools(object):
                 else:
                     if i > 0:
                         f = plt.figure()
+                        plt.title('%s' % comp_label)
                     ax = f.add_subplot(111)
             elif self.axes_manager.navigation_dimension == 2:
                 if same_window:
@@ -417,6 +419,7 @@ class MVATools(object):
                 else:
                     if i > 0:
                         f = plt.figure()
+                        plt.title('%s' % comp_label)
                     ax = f.add_subplot(111)
             sigdraw._plot_loading(
                 loadings, idx=comp_ids[i], axes_manager=self.axes_manager,
@@ -425,6 +428,12 @@ class MVATools(object):
                 axes_decor=axes_decor)
             if not same_window:
                 fig_list.append(f)
+        if same_window:  # Main title for same window
+            title = '%s' % comp_label
+            if self.axes_manager.navigation_dimension == 1:
+                plt.title(title)
+            else:
+                plt.suptitle(title)
         try:
             plt.tight_layout()
         except:
@@ -440,7 +449,7 @@ class MVATools(object):
         else:
             if self.axes_manager.navigation_dimension == 1:
                 plt.legend(ncol=loadings.shape[0] // 2, loc='best')
-                animate_legend()
+                animate_legend(f)
             if with_factors:
                 return f, self._plot_factors_or_pchars(factors,
                                                        comp_ids=comp_ids,
@@ -864,13 +873,14 @@ class MVATools(object):
                                     comp_ids=None,
                                     calibrate=True,
                                     same_window=None,
-                                    comp_label='Decomposition loading',
+                                    title=None,
                                     with_factors=False,
                                     cmap=plt.cm.gray,
                                     no_nans=False,
                                     per_row=3,
                                     axes_decor='all'):
-        """Plot loadings from PCA.
+        """Plot loadings from PCA. In case of 1D navigation axis, each loading
+        line can be toggled on and off by clicking on the legended line.
 
         Parameters
         ----------
@@ -884,18 +894,14 @@ class MVATools(object):
 
         calibrate : bool
             if True, calibrates plots where calibration is available
-            from
-            the axes_manager.  If False, plots are in pixels/channels.
+            from the axes_manager. If False, plots are in pixels/channels.
 
         same_window : bool
             if True, plots each factor to the same window.  They are
             not scaled.
 
-        comp_label : string,
-            The label that is either the plot title (if plotting in
-            separate windows) or the label in the legend (if plotting
-            in the same window). In this case, each loading line can be
-            toggled on and off by clicking on the legended line.
+        title : string
+            Title of the plot.
 
         with_factors : bool
             If True, also returns figure(s) with the factors for the
@@ -940,23 +946,28 @@ class MVATools(object):
 
         if comp_ids is None:
             comp_ids = self.learning_results.output_dimension
+        if title is None:
+            title = self._get_plot_title('Decomposition loadings of',
+                                         same_window)
+
         return self._plot_loadings(
             loadings,
             comp_ids=comp_ids,
             with_factors=with_factors,
             factors=factors,
             same_window=same_window,
-            comp_label=comp_label,
+            comp_label=title,
             cmap=cmap,
             no_nans=no_nans,
             per_row=per_row,
             axes_decor=axes_decor)
 
     def plot_bss_loadings(self, comp_ids=None, calibrate=True,
-                          same_window=None, comp_label='BSS loading',
+                          same_window=None, title=None,
                           with_factors=False, cmap=plt.cm.gray,
                           no_nans=False, per_row=3, axes_decor='all'):
-        """Plot loadings from ICA
+        """Plot loadings from ICA. In case of 1D navigation axis, each loading
+        line can be toggled on and off by clicking on the legended line.
 
         Parameters
         ----------
@@ -977,11 +988,8 @@ class MVATools(object):
             if True, plots each factor to the same window.  They are
             not scaled.
 
-        comp_label : string,
-            The label that is either the plot title (if plotting in
-            separate windows) or the label in the legend (if plotting
-            in the same window). In this case, each loading line can be
-            toggled on and off by clicking on the legended line.
+        title : string
+            Title of the plot.
 
         with_factors : bool
             If True, also returns figure(s) with the factors for the
@@ -1002,10 +1010,10 @@ class MVATools(object):
         axes_decor : {'all', 'ticks', 'off', None}, optional
             Controls how the axes are displayed on each image; default is 'all'
             If 'all', both ticks and axis labels will be shown
-            If 'ticks', no axis labels will be shown, but ticks/labels will
+            If 'ticks', no axis labels will be shown, but ticks / labels will
             If 'off', all decorations and frame will be disabled
             If None, no axis decorations will be shown, but ticks/frame will
-            
+
         See Also
         --------
         plot_bss_factors, plot_bss_results.
@@ -1018,6 +1026,9 @@ class MVATools(object):
                                       "`plot_bss_results` instead.")
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
+        if title is None:
+            title = self._get_plot_title('BSS loadings of',
+                                         same_window)
         loadings = self.learning_results.bss_loadings.T
         if with_factors:
             factors = self.learning_results.bss_factors
@@ -1029,11 +1040,20 @@ class MVATools(object):
             with_factors=with_factors,
             factors=factors,
             same_window=same_window,
-            comp_label=comp_label,
+            comp_label=title,
             cmap=cmap,
             no_nans=no_nans,
             per_row=per_row,
             axes_decor=axes_decor)
+
+    def _get_plot_title(self, base_title='Loadings', same_window=True):
+        title_md = self.metadata.General.title
+        title = "%s %s" % (base_title, title_md)
+        if title_md == '':  # remove the 'of' if 'title' is a empty string
+            title = title.replace(' of ', '')
+        if not same_window:
+            title = title.replace('loadings', 'loading')
+        return title
 
     def export_decomposition_results(self, comp_ids=None,
                                      folder=None,
@@ -1882,11 +1902,11 @@ class BaseSignal(FancySlicing,
             self._plot = mpl_hie.MPL_HyperImage_Explorer()
         else:
             raise ValueError(
-                    "Plotting is not supported for this view. "
-                    "Try e.g. 's.transpose(signal_axes=1).plot()' for "
-                    "plotting as a 1D signal, or "
-                    "'s.transpose(signal_axes=(1,2)).plot()' "
-                    "for plotting as a 2D signal.")
+                "Plotting is not supported for this view. "
+                "Try e.g. 's.transpose(signal_axes=1).plot()' for "
+                "plotting as a 1D signal, or "
+                "'s.transpose(signal_axes=(1,2)).plot()' "
+                "for plotting as a 2D signal.")
 
         self._plot.axes_manager = axes_manager
         self._plot.signal_data_function = self.__call__
@@ -3095,7 +3115,7 @@ class BaseSignal(FancySlicing,
         else:
             return self.sum(axis=axis, out=out)
     integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
-    
+
     def indexmin(self, axis, out=None):
         """Returns a signal with the index of the minimum along an axis.
 
@@ -3192,7 +3212,7 @@ class BaseSignal(FancySlicing,
             out.data[:] = data
             out.events.data_changed.trigger(obj=out)
     valuemax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
-    
+
     def valuemin(self, axis, out=None):
         """Returns a signal with the value of coordinates of the minimum along an axis.
 

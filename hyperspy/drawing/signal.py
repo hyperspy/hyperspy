@@ -25,6 +25,7 @@ from traits.api import Undefined
 
 from hyperspy.drawing.utils import set_axes_decor
 
+
 def _plot_quiver_scatter_overlay(image, axes_manager,
                                  calibrate=True, shifts=None,
                                  char=None, ax=None, comp_label=None,
@@ -131,10 +132,10 @@ def _plot_2D_component(factors, idx, axes_manager,
     im = ax.imshow(factors[:, idx].reshape(shape),
                    cmap=cmap, interpolation='nearest',
                    extent=extent)
-    
+
     # Set axes decorations based on user input
     set_axes_decor(ax, axes_decor)
-        
+
     div = make_axes_locatable(ax)
     cax = div.append_axes("right", size="5%", pad=0.05)
     plt.colorbar(im, cax=cax)
@@ -169,11 +170,14 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
             plt.xlabel('pixels')
             plt.ylabel('pixels')
         if comp_label:
-            plt.title('%s %s' % (comp_label, idx))
-    
+            if same_window:
+                plt.title('%s' % idx)
+            else:
+                plt.title('%s #%s' % (comp_label, idx))
+
         # Set axes decorations based on user input
         set_axes_decor(ax, axes_decor)
-        
+
         div = make_axes_locatable(ax)
         cax = div.append_axes("right", size="5%", pad=0.05)
         plt.colorbar(im, cax=cax)
@@ -183,9 +187,9 @@ def _plot_loading(loadings, idx, axes_manager, ax=None,
         else:
             x = np.arange(axes[0].size)
         ax.step(x, loadings[idx],
-                label='%s %s' % (comp_label, idx))
+                label='%s' % idx)
         if comp_label and not same_window:
-            plt.title('%s %s' % (comp_label, idx))
+            plt.title('%s #%s' % (comp_label, idx))
         plt.ylabel('Score (a. u.)')
         if calibrate:
             if axes[0].units is not Undefined:

@@ -69,7 +69,7 @@ class TestPlotExplainedVarianceRatio:
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_decomposition_loadings_nav1(self, n):
         return self.s.plot_decomposition_loadings(n)
-    
+
     @pytest.mark.skipif("sys.platform == 'darwin'")
     @pytest.mark.parametrize("n", (3, [3, 4]))
     @pytest.mark.mpl_image_compare(
@@ -85,5 +85,5 @@ class TestPlotExplainedVarianceRatio:
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_decomposition_loadings_nav2(self, n, per_row, axes_decor):
         return self.s2.plot_decomposition_loadings(n, per_row=per_row,
-                                                   comp_label='Loading',
+                                                   title='Loading',
                                                    axes_decor=axes_decor)
