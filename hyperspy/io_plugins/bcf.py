@@ -1293,6 +1293,8 @@ def parse_line(line_string):
     using alfa"""
     if len(line_string) == 1:
         line_string = line_string + 'a'
+    elif len(line_string) > 2:
+        line_string = line_string[:2]
     return line_string.capitalize()
 
 
