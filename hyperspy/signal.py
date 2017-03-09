@@ -4198,6 +4198,7 @@ class BaseSignal(FancySlicing,
             for marker_tuple in list(self.metadata.Markers):
                 marker_object_list.append(marker_tuple[1])
             name_list = self.metadata.Markers.keys()
+        marker_name_suffix = 1
         for m in marker_list:
             marker_data_shape = m._get_data_shape()
             if (not (len(marker_data_shape) == 0)) and (
@@ -4224,10 +4225,9 @@ class BaseSignal(FancySlicing,
                         raise ValueError("Marker already added to signal")
                 name = m.name
                 temp_name = name
-                i = 1
                 while temp_name in name_list:
-                    temp_name = name + str(i)
-                    i += 1
+                    temp_name = name + str(marker_name_suffix)
+                    marker_name_suffix += 1
                 m.name = temp_name
                 markers_dict[m.name] = m
                 m.signal = self
