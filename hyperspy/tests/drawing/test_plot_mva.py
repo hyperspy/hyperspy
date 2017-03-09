@@ -22,7 +22,7 @@ import pytest
 from hyperspy import signals
 
 
-baseline_dir = 'plot_explained_variance_ratio'
+baseline_dir = 'plot_decomposition'
 default_tol = 2.0
 
 
@@ -38,6 +38,8 @@ class TestPlotExplainedVarianceRatio:
         np.random.seed(1)
         self.s.add_gaussian_noise(.1)
         self.s.decomposition()
+        self.s2 = signals.Signal1D(self.s.data.reshape(10, 10, 100))
+        self.s2.decomposition()
 
     def _generate_parameters():
         parameters = []
@@ -60,3 +62,28 @@ class TestPlotExplainedVarianceRatio:
                                                   xaxis_type=xaxis_type,
                                                   xaxis_labeling=xaxis_labeling)
         return ax.get_figure()
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    @pytest.mark.parametrize("n", [3, [3, 4]])
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_decomposition_loadings_nav1(self, n):
+        return self.s.plot_decomposition_loadings(n)
+    
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    @pytest.mark.parametrize("n", (3, [3, 4]))
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_decomposition_factors_nav1(self, n):
+        return self.s.plot_decomposition_factors(n)
+
+    @pytest.mark.skipif("sys.platform == 'darwin'")
+    @pytest.mark.parametrize(("n", "per_row", "axes_decor"),
+                             ((6, 3, 'all'), (8, 4, None),
+                              ([3, 4, 5, 6], 2, 'ticks')))
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=baseline_dir, tolerance=default_tol)
+    def test_plot_decomposition_loadings_nav2(self, n, per_row, axes_decor):
+        return self.s2.plot_decomposition_loadings(n, per_row=per_row,
+                                                   comp_label='Loading',
+                                                   axes_decor=axes_decor)

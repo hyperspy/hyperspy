@@ -345,7 +345,7 @@ with update_version_when_dev() as version:
             'hyperspy':
             [
                 'misc/eds/example_signals/*.hdf5',
-                'tests/drawing/plot_explained_variance_ratio/*.png',
+                'tests/drawing/plot_mva/*.png',
                 'tests/drawing/plot_signal/*.png',
                 'tests/drawing/plot_signal1d/*.png',
                 'tests/drawing/plot_signal2d/*.png',

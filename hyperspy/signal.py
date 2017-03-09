@@ -379,7 +379,8 @@ class MVATools(object):
     def _plot_loadings(self, loadings, comp_ids=None, calibrate=True,
                        same_window=None, comp_label=None,
                        with_factors=False, factors=None,
-                       cmap=plt.cm.gray, no_nans=False, per_row=3):
+                       cmap=plt.cm.gray, no_nans=False, per_row=3,
+                       axes_decor='all'):
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         if comp_ids is None:
@@ -420,7 +421,8 @@ class MVATools(object):
             sigdraw._plot_loading(
                 loadings, idx=comp_ids[i], axes_manager=self.axes_manager,
                 no_nans=no_nans, calibrate=calibrate, cmap=cmap,
-                comp_label=comp_label, ax=ax, same_window=same_window)
+                comp_label=comp_label, ax=ax, same_window=same_window,
+                axes_decor=axes_decor)
             if not same_window:
                 fig_list.append(f)
         try:
@@ -766,10 +768,8 @@ class MVATools(object):
             not scaled.
 
         comp_label : string, the label that is either the plot title
-        (if plotting in
-            separate windows) or the label in the legend (if plotting
-            in the
-            same window)
+            (if plotting in separate windows) or the label in the legend
+            (if plotting in the same window)
         cmap : The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
@@ -868,7 +868,8 @@ class MVATools(object):
                                     with_factors=False,
                                     cmap=plt.cm.gray,
                                     no_nans=False,
-                                    per_row=3):
+                                    per_row=3,
+                                    axes_decor='all'):
         """Plot loadings from PCA.
 
         Parameters
@@ -912,6 +913,13 @@ class MVATools(object):
             the number of plots in each row, when the same_window
             parameter is True.
 
+        axes_decor : {'all', 'ticks', 'off', None}, optional
+            Controls how the axes are displayed on each image; default is 'all'
+            If 'all', both ticks and axis labels will be shown
+            If 'ticks', no axis labels will be shown, but ticks/labels will
+            If 'off', all decorations and frame will be disabled
+            If None, no axis decorations will be shown, but ticks/frame will
+
         See Also
         --------
         plot_decomposition_factors, plot_decomposition_results.
@@ -941,12 +949,13 @@ class MVATools(object):
             comp_label=comp_label,
             cmap=cmap,
             no_nans=no_nans,
-            per_row=per_row)
+            per_row=per_row,
+            axes_decor=axes_decor)
 
     def plot_bss_loadings(self, comp_ids=None, calibrate=True,
                           same_window=None, comp_label='BSS loading',
                           with_factors=False, cmap=plt.cm.gray,
-                          no_nans=False, per_row=3):
+                          no_nans=False, per_row=3, axes_decor='all'):
         """Plot loadings from ICA
 
         Parameters
@@ -990,6 +999,13 @@ class MVATools(object):
             the number of plots in each row, when the same_window
             parameter is True.
 
+        axes_decor : {'all', 'ticks', 'off', None}, optional
+            Controls how the axes are displayed on each image; default is 'all'
+            If 'all', both ticks and axis labels will be shown
+            If 'ticks', no axis labels will be shown, but ticks/labels will
+            If 'off', all decorations and frame will be disabled
+            If None, no axis decorations will be shown, but ticks/frame will
+            
         See Also
         --------
         plot_bss_factors, plot_bss_results.
@@ -1016,7 +1032,8 @@ class MVATools(object):
             comp_label=comp_label,
             cmap=cmap,
             no_nans=no_nans,
-            per_row=per_row)
+            per_row=per_row,
+            axes_decor=axes_decor)
 
     def export_decomposition_results(self, comp_ids=None,
                                      folder=None,
