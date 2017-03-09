@@ -1026,18 +1026,20 @@ this is going to take a while... please wait""")
                     buffer1 = buffer1[offset:] + next(iter_data)
                     offset = 0
                 # the pixel header contains such information:
-                # x index of pixel,
-                # number of channels for whole mapping,
-                # number of channels for pixel,
-                # some dummy placehollder (same value in every known bcf),
-                # flag distinguishing 12bit packing (1) or instructed packing,
-                # value which sometimes shows the size of packed data,
-                # number of pulses if data is 12bit packed, or contains 16bit
-                #  packed additional to instructed data,
-                # packed data size - next header is after that size,
-                # dummy -- empty 2bytes
+                # x index of pixel (uint32);
+                # number of channels for whole mapping (unit16);
+                # number of channels for pixel (uint16);
+                # dummy placehollder (same value in every known bcf) (32bit);
+                # flag distinguishing packing data type (16bit):
+                #    0 - 16bit packed pulses, 1 - 12bit packed pulses,
+                #    >1 - instructively packed spectra;
+                # value which sometimes shows the size of packed data (uint16);
+                # number of pulses if pulse data are present (uint16) or
+                #      additional pulses to the instructively packed data;
+                # packed data size (32bit) (without additional pulses) \ 
+                #       next header is after that amount of bytes;
                 x_pix, chan1, chan2, dummy1, flag, dummy_size1, n_of_pulses,\
-                    data_size2, dummy2 = strct_unp('<IHHIHHHHH',
+                    data_size2 = strct_unp('<IHHIHHHI',
                                                    buffer1[offset:offset + 22])
                 pix_idx = (x_pix // dwn_factor) + ((-(-width // dwn_factor)) *
                                                    (line_cnt // dwn_factor))
