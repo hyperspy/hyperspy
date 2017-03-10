@@ -179,6 +179,10 @@ class SpikesRemovalHandler(tu.Handler):
     def close(self, info, is_ok):
         # Removes the span selector from the plot
         info.object.span_selector_switch(False)
+        try:
+            info.object.signal._plot.close()
+        except:
+            pass
         return True
 
     def apply(self, info, *args, **kwargs):
@@ -427,6 +431,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                     minimum),
                 self.signal.axes_manager.signal_axes[0].index2value(
                     maximum))
+            self.signal._plot.pointer._set_indices(self.coordinates[self.index])
             self.update_plot()
             self.create_interpolation_line()
 
