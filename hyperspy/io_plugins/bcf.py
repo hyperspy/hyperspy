@@ -947,8 +947,6 @@ class BCF_reader(SFS_reader):
                 res = value.compute()
             return res
         else:
-            _logger.warning("""using slow python parser,
-this is going to take a while... please wait""")
             value = dd(self.py_parse_hypermap)(index=0,
                                                downsample=downsample,
                                                cutoff_at_channel=cutoff_chan,
@@ -1226,7 +1224,7 @@ def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
     global warn_once
     if (fast_unbcf == False) and warn_once:
         _logger.warning("""unbcf_fast library is not present...
-Parsing BCF with Python-only backend.
+Parsing BCF with Python-only backend, which is slow... please wait.
 If parsing is uncomfortably slow, first install cython, then reinstall hyperspy.
 For more information, check the 'Installing HyperSpy' section in the documentation.""")
         warn_once = False
