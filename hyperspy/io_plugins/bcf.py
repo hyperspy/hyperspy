@@ -269,7 +269,7 @@ but compression signature is missing in the header. Aborting....""")
         if self.sfs.compression == 'None':
             return self._iter_read_chunks(), self.sfs.usable_chunk,\
                 self.size_in_chunks
-        elif self.sfs.compression in ('zlib', 'bzip2'):
+        elif self.sfs.compression == 'zlib':
             return self._iter_read_compr_chunks(), self.uncompressed_blk_size,\
                 self.no_of_compr_blk
         else:
