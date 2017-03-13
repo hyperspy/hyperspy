@@ -25,6 +25,8 @@ import re
 import h5py
 import numpy as np
 from dask.array import from_array
+import json
+import os
 
 import logging
 
@@ -33,12 +35,12 @@ import logging
 # ----------------------
 format_name = 'Electron Microscopy Data (EMD)'
 description = 'Read data from Berkeleys EMD files.'
-full_support = True  # Hopefully?
+full_support = False  # Hopefully?
 # Recognised file extension
 file_extensions = ('emd', 'EMD')
 default_extension = 0
 # Writing features
-writes = True
+writes = False
 EMD_VERSION = '0.2'
 # ----------------------
 
@@ -403,15 +405,94 @@ class EMD(object):
         info_str += pad_string0
         self._log.info(info_str)
 
+def fei_check(filename):
+    check = False
+    f = h5py.File(filename,'r')
+    if 'Version' in list(f.keys()):
+        version = f.get('Version')
+        v_dict = json.loads(version[()][0])
+        if v_dict['format'] == 'Velox':
+            check = True
+    
+    f.close()
+    
+    return check
+    
+class FeiEMDReader(object):
+    def __init__(self,filename):
+        self.filename = filename
+        self.f = h5py.File(filename,'r')
+        self.d_grp = self.f.get('Data')
+        self._read_data()
+        self.f.close()
+        
+    def _read_data(self):
+        self._check_im_type()
+        
+        if self.im_type == 'Image':
+            self._read_im()
+        
+    def _check_im_type(self):
+        if 'Image' in self.d_grp:
+            if 'SpectrumImage' in self.d_grp:
+                self.im_type = 'SI'
+                self.record_by = 'spectrum'
+                raise NotImplementedError('Cannot currently read FEI EMD spectrum images')
+            else:
+                self.im_type = 'Image'
+                self.record_by = 'image'
+        else:
+            self.im_type = 'Spectrum'
+            self.record_by = 'spectrum'
+            raise NotImplementedError('Cannot currently read FEI EMD spectra')
+    
+    def _read_im(self):
+        im_grp = self.d_grp.get("Image")
+        data_grp = im_grp[list(im_grp.keys())[0]]
+        dataset = data_grp['Data']
+        self.data = dataset[:,:,0]
+
+        self.axes = [{'index_in_array': 0,
+          'name': 'y',
+          'offset': 0.0,
+          'scale': 1.0,
+          'size': self.data.shape[0],
+          'units': ''},
+          {'index_in_array': 1,
+           'name': 'x',
+           'offset': 0.0,
+           'size': self.data.shape[1],
+           'units': ''}
+         ]
+
+    def get_metadata_dict(self):
+        meta_gen = {}
+        meta_gen['original_filename'] = os.path.split(self.filename)[1]
+        meta_gen['title'] = meta_gen['original_filename'].rpartition('.')[0]
+        
+        meta_sig = {}
+        meta_sig['record_by'] = self.record_by
+        meta_sig['signal_type'] = ''
+        
+        return {'General': meta_gen, 'Signal': meta_sig}
 
 def file_reader(filename, log_info=False,
                 lazy=False, **kwds):
-    emd = EMD.load_from_emd(filename, lazy)
-    if log_info:
-        emd.log_info()
     dictionaries = []
-    for signal in emd.signals.values():
-        dictionaries.append(signal._to_dictionary())
+    if fei_check(filename) == True:
+        print('EMD is FEI format')
+        emd = FeiEMDReader(filename)
+        dictionaries.append({'data':emd.data,
+        'axes': emd.axes,
+        'metadata':emd.get_metadata_dict()})
+    
+    else:
+        emd = EMD.load_from_emd(filename, lazy)
+        if log_info:
+            emd.log_info()
+        for signal in emd.signals.values():
+            dictionaries.append(signal._to_dictionary())
+            
     return dictionaries
 
 
