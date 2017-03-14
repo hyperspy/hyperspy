@@ -157,6 +157,15 @@ class TestCaseSaveAndRead():
 
     def teardown_method(self, method):
         remove(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
+        
+
+class FeiEMDTest():
+    
+    def test_fei_emd_image(self):
+        signal = load(os.path.join(my_path, 'emd_files', 'example_fei_emd_image.emd'))
+        fei_image = np.load(os.path.join(my_path, 'emd_files', 'fei_emd_image.npy'))
+        np.testing.assert_equal(signal.data, fei_image)
+        assert isinstance(signal, Signal2D)
 
 
 if __name__ == '__main__':
