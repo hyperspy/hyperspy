@@ -35,6 +35,7 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
+from hyperspy.utils.plot import markers
 
 _logger = logging.getLogger(__name__)
 
@@ -54,6 +55,7 @@ class EELSSpectrum_mixin:
                 hasattr(self.metadata.Sample, 'elements'):
             self.add_elements(self.metadata.Sample.elements)
         self.metadata.Signal.binned = True
+        self._edge_markers = {}
 
     def add_elements(self, elements, include_pre_edges=False):
         """Declare the elemental composition of the sample.
@@ -1331,6 +1333,196 @@ class EELSSpectrum_mixin:
                           dictionary=dictionary)
         return model
 
+    def plot(self,
+             EELS_edges=False,
+             only_edges=("Major", "Minor"),
+             **kwargs):
+        """
+        Plot the EELS spectrum. The following markers can be added
+
+        - The position of the EELS edges and their names.
+
+        Parameters
+        ----------
+        EELS_edges: {False, True, list of string or string}
+            If not False, indicate the position and the name of the X-ray
+            lines.
+            If True, if `metadata.Sample.elements` contains a
+            list, use those.
+            Alternatively, provide a string of a single edge, or an iterable containing a list of valid elements, EELS
+            families or edges.
+        only_edges : string
+            Either 'Major' or 'Minor'. Defaults to both.
+        kwargs
+            The extra keyword arguments for plot()
+
+        """
+        super().plot(**kwargs)
+        self._plot_EELS_edges(EELS_edges, only_edges)
+
+    def _plot_EELS_edges(self, EELS_edges=False, only_edges=("Major", "Minor")):
+        if EELS_edges is not False: # ie. either True, a string or a list/tuple
+            if EELS_edges is True:
+                extra_edges = []
+                try:
+                    elements = self.metadata.Sample.elements
+                except AttributeError:
+                    raise Warning("No elements defined. Add them with s.add_elements, "
+                          "or specify elements, edge families or edges directly")
+            elif isinstance(EELS_edges, str): # a single element/edge
+                extra_edges = list(EELS_edges)
+                try:
+                    elements = self.metadata.Sample.elements
+                except:
+                    elements = []
+            else:
+                extra_edges = EELS_edges # a list of edges/families/elements
+                try:
+                    elements = self.metadata.Sample.elements
+                except:
+                    elements = []
+
+            elements_dict = self._get_edges_from_elements(elements, only_edges) # from s.metadata
+
+            extra_elements, extra_families, extra_edges = self._separate_extra_edges(extra_edges)
+            extra_elements_dict = self._get_edges_from_elements(extra_elements)
+            extra_family_dict = self._get_edges_from_family(extra_families)
+            extra_edge_dict = self._get_specific_edges(extra_edges)
+
+            all_edges_dict = {**elements_dict, **extra_elements_dict, **extra_family_dict, **extra_edge_dict}
+
+            self.add_EELS_edges_markers(all_edges_dict)
+
+    def add_EELS_edges_markers(self, all_edges_dict):
+        """
+        Add marker on a spec.plot() with the name of the selected X-ray
+        lines
+
+        Parameters
+        ----------
+        EELS_edges: list of string
+            A valid list of X-ray lines
+        """
+
+        line_energy = []
+        intensity = []
+        names = []
+
+        for edge in all_edges_dict:
+            # Set up markers for all pixels in spectrum image
+            energy = all_edges_dict[edge]
+            line_energy.append(energy)
+            intensity.append(self.isig[energy].data) #intensity has the same shape as the navigation space * N markers
+            names.append(edge)
+
+        for i in range(len(line_energy)):
+            edge = markers.vertical_line_segment(x=line_energy[i], y1=None, y2=intensity[i] * 0.6)
+            self.add_marker(edge)
+            text = markers.text(
+                x=line_energy[i], y=intensity[i] * 0.8, text=names[i], rotation=90)
+            self.add_marker(text)
+            self._edge_markers[names[i]] = [edge, text]
+            edge.events.closed.connect(self._edge_marker_closed)
+            text.events.closed.connect(self._edge_marker_closed)
+
+    def _edge_marker_closed(self, obj):
+        marker = obj
+        for EELS_edge, line_markers in reversed(list(
+                self._edge_markers.items())):
+            if marker in line_markers:
+                line_markers.remove(marker)
+            if not line_markers:
+                self._edge_markers.pop(EELS_edge)
+
+    def remove_EELS_edges_markers(self, EELS_edges):
+        """
+        Remove marker previously added on a spec.plot() with the name of the
+        selected X-ray lines
+
+        Parameters
+        ----------
+        EELS_edges: list of string
+            A valid list of X-ray lines to remove
+        """
+        for EELS_edge in EELS_edges:
+            if EELS_edge in self._edge_markers:
+                line_markers = self._edge_markers[EELS_edge]
+                while line_markers:
+                    m = line_markers.pop()
+                    m.close()
+
+    def _get_edges_from_elements(self, elements, only_edges=("Major", "Minor")):
+        names_and_energies = {}
+        axis_min = self.axes_manager[-1].low_value
+        axis_max = self.axes_manager[-1].high_value
+
+        for element in elements:
+            Binding_energies = elements_db[element]["Atomic_properties"]["Binding_energies"]
+            for edge in Binding_energies.keys():
+                relevance = Binding_energies[edge]["relevance"]
+                energy = Binding_energies[edge]["onset_energy (eV)"]
+                if relevance in only_edges and axis_min < energy < axis_max:
+                    names_and_energies[element + "_" + edge] = energy
+        return names_and_energies
+
+    def _get_specific_edges(self, element_edges):
+        names_and_energies = {}
+        axis_min = self.axes_manager[-1].low_value
+        axis_max = self.axes_manager[-1].high_value
+
+        for element_edge in element_edges:
+            element, edge = element_edge.split("_")
+            Binding_energies = elements_db[element]["Atomic_properties"]["Binding_energies"]
+            energy = Binding_energies[edge]["onset_energy (eV)"]
+            if axis_min < energy < axis_max:
+                names_and_energies[element_edge] = energy
+        return names_and_energies
+
+    def _get_edges_from_family(self, element_families):
+        names_and_energies = {}
+        axis_min = self.axes_manager[-1].low_value
+        axis_max = self.axes_manager[-1].high_value
+
+        for element_family in element_families:
+            element, family = element_family.split("_")
+            Binding_energies = elements_db[element]["Atomic_properties"]["Binding_energies"]
+            for edge in Binding_energies.keys():
+                energy = Binding_energies[edge]["onset_energy (eV)"]
+                if family in edge and axis_min < energy < axis_max:
+                    names_and_energies[element + "_" + edge] = energy
+        return names_and_energies
+
+    def _separate_extra_edges(self, extra_edges):
+        elements, families, edges = [], [], []
+        shells = ["K", "L", "M", "N", "O"]
+
+        for extra_edge in extra_edges:
+            edge_split_underscore = extra_edge.split("_")
+
+            if len(edge_split_underscore) == 1:
+                element = edge_split_underscore[0]
+                if element in elements_db.keys():
+                    elements.append(element)
+            elif len(edge_split_underscore) == 2:
+                if len(edge_split_underscore[1]) == 1:
+                    element = edge_split_underscore[0]
+                    family = edge_split_underscore[1]
+                    if element in elements_db.keys() and family in shells:
+                        families.append(element + "_" + family)
+                    else:
+                        raise AttributeError(
+                            "'" + extra_edge + "' is not an accepted label. Should be either an element ('Zr'), "
+                                         "element edge family ('Zr_L') or an EELS edge ('Zr_L3')")
+                elif len(edge_split_underscore[1]) == 2:
+                    element = edge_split_underscore[0]
+                    edge = edge_split_underscore[1]
+                    if element in elements_db.keys() and edge[0] in shells:
+                        edges.append(element + "_" + edge)
+                    else:
+                        raise AttributeError(
+                            "'" + extra_edge + "' is not an accepted label. Should be either an element ('Zr'), "
+                                               "element edge family ('Zr_L') or an EELS edge ('Zr_L3')")
+        return elements, families, edges
 
 class LazyEELSSpectrum(EELSSpectrum_mixin, LazySignal1D):
 
