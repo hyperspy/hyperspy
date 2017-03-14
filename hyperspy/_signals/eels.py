@@ -1370,7 +1370,7 @@ class EELSSpectrum_mixin:
                     raise Warning("No elements defined. Add them with s.add_elements, "
                           "or specify elements, edge families or edges directly")
             elif isinstance(EELS_edges, str): # a single element/edge
-                extra_edges = list(EELS_edges)
+                extra_edges = [EELS_edges]
                 try:
                     elements = self.metadata.Sample.elements
                 except:
@@ -1395,8 +1395,7 @@ class EELSSpectrum_mixin:
 
     def add_EELS_edges_markers(self, all_edges_dict):
         """
-        Add marker on a spec.plot() with the name of the selected X-ray
-        lines
+        Add marker on a spec.plot() with the name of the selected EELS edge
 
         Parameters
         ----------
