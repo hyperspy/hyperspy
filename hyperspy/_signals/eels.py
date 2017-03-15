@@ -31,7 +31,6 @@ from hyperspy.decorators import only_interactive
 from hyperspy.gui.eels import TEMParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
-from hyperspy.external.progressbar import progressbar
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
@@ -1345,10 +1344,7 @@ class EELSSpectrum_mixin:
         Parameters
         ----------
         EELS_edges: {False, True, list of string or string}
-            If not False, indicate the position and the name of the X-ray
-            lines.
-            If True, if `metadata.Sample.elements` contains a
-            list, use those.
+            If True, draws on s.metadata.Sample.elements for edges.
             Alternatively, provide a string of a single edge, or an iterable containing a list of valid elements, EELS
             families or edges.
         only_edges : string
@@ -1361,6 +1357,7 @@ class EELSSpectrum_mixin:
         self._plot_EELS_edges(EELS_edges, only_edges)
 
     def _plot_EELS_edges(self, EELS_edges=False, only_edges=("Major", "Minor")):
+        "Filters through the given EELS edges, orders them and creates a dict of their name and energy"
         if EELS_edges is not False: # ie. either True, a string or a list/tuple
             if EELS_edges is True:
                 extra_edges = []
@@ -1382,13 +1379,18 @@ class EELSSpectrum_mixin:
                 except:
                     elements = []
 
-            elements_dict = self._get_edges_from_elements(elements, only_edges) # from s.metadata
+            # Get edges from s.metadata.Sample.elements
+            elements_dict = self._get_edges_from_elements(elements, only_edges)
 
+            # Get edges from argument of s.plot(), sort them by individual edges,
+            # families of edges or all edge families from an element
             extra_elements, extra_families, extra_edges = self._separate_extra_edges(extra_edges)
+
             extra_elements_dict = self._get_edges_from_elements(extra_elements)
             extra_family_dict = self._get_edges_from_family(extra_families)
             extra_edge_dict = self._get_specific_edges(extra_edges)
 
+            # Merge dicts - no need to worry about duplicates.
             all_edges_dict = {**elements_dict, **extra_elements_dict, **extra_family_dict, **extra_edge_dict}
 
             self.add_EELS_edges_markers(all_edges_dict)
@@ -1399,26 +1401,46 @@ class EELSSpectrum_mixin:
 
         Parameters
         ----------
-        EELS_edges: list of string
-            A valid list of X-ray lines
+        EELS_edges: dict
+            A valid dict with EELS edges as key and energy position as value
         """
 
         line_energy = []
-        intensity = []
         names = []
+        datamax = self.data.max(self.axes_manager.signal_indices_in_array)
+        datamin = self.data.min(self.axes_manager.signal_indices_in_array)
+        delta = datamax - datamin
+
+        halfway_energy_axis = self.axes_manager[-1].low_value/2 + self.axes_manager[-1].high_value/2
 
         for edge in all_edges_dict:
             # Set up markers for all pixels in spectrum image
             energy = all_edges_dict[edge]
             line_energy.append(energy)
-            intensity.append(self.isig[energy].data) #intensity has the same shape as the navigation space * N markers
             names.append(edge)
 
         for i in range(len(line_energy)):
-            edge = markers.vertical_line_segment(x=line_energy[i], y1=None, y2=intensity[i] * 0.6)
+            # Use the last symbol of the edge to displace the label vertically
+            # For Zr_L3, shift up 3 times 10% of image_height from the bottom or top axis.
+            # For O_K, shift 0 times.
+            last_symbol = names[i][-1]
+            if last_symbol.isdigit():
+                n = int(last_symbol)
+            else:
+                n = 0
+
+            edge = markers.vertical_line(x=line_energy[i])
             self.add_marker(edge)
+            if line_energy[i] < halfway_energy_axis:
+                # If the marker is on the left hand of the screen, plot it from the bottom
+                y_position = datamin + (n*0.1*delta + 0.05*delta)
+            else:
+                # Else plot it from the top. EELS signals tend to decay quickly so there is whitespace
+                # available in these positions
+                y_position = datamax - (n*0.1*delta + 0.05*delta)
             text = markers.text(
-                x=line_energy[i], y=intensity[i] * 0.8, text=names[i], rotation=90)
+                x=line_energy[i], y=y_position, text=names[i],
+                bbox=dict(facecolor='white'))
             self.add_marker(text)
             self._edge_markers[names[i]] = [edge, text]
             edge.events.closed.connect(self._edge_marker_closed)
