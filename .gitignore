@@ -35,6 +35,7 @@ doc/log.txt
 *.DS_Store
 .ropeproject/*
 .idea/*
+desktop.ini
 *.pyproj
 hyperspy/tests/misc/cython/test_cython_integration.c
 hyperspy/io_plugins/unbcf_fast.c
