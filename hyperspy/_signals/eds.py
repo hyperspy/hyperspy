@@ -1053,5 +1053,5 @@ class EDSSpectrum(EDS_mixin, Signal1D):
     pass
 
 
-class LazyEDSSpectrum(EDS_mixin, LazySignal1D):
+class LazyEDSSpectrum(EDSSpectrum, LazySignal1D):
     pass
