@@ -29,3 +29,6 @@ from . import Release
 
 __all__ = ["api"]
 __version__ = Release.version
+
+import dask.array
+dask.array.Array.__deepcopy__ = lambda obj, memo: dask.array.Array.copy(obj)
