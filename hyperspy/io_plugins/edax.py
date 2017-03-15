@@ -869,7 +869,7 @@ def spd_reader(filename,
         if nav_units not in [None, 'um']:
             _logger.warning("Did not understand nav_units input \"{}\". "
                             "Defaulting to microns.\n".format(nav_units))
-        nav_units = '$\mu m$'
+        nav_units = r'$\mu m$'
 
     # Create navigation axes dictionaries:
     x_axis = {
