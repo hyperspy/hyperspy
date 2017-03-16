@@ -40,7 +40,7 @@ full_support = False  # Hopefully?
 file_extensions = ('emd', 'EMD')
 default_extension = 0
 # Writing features
-writes = False
+writes = True
 EMD_VERSION = '0.2'
 # ----------------------
 
@@ -405,18 +405,26 @@ class EMD(object):
         info_str += pad_string0
         self._log.info(info_str)
 
-def fei_check(filename):
-    check = False
-    f = h5py.File(filename,'r')
-    if 'Version' in list(f.keys()):
-        version = f.get('Version')
-        v_dict = json.loads(version[()][0])
-        if v_dict['format'] == 'Velox':
-            check = True
-    
-    f.close()
-    
-    return check
+def fei_check(filename):    
+    with h5py.File(filename,'r') as f:
+        if 'Version' in list(f.keys()):
+            version = f.get('Version')
+            v_dict = json.loads(version.value[0].decode('utf-8'))
+            if v_dict['format'] == 'Velox':
+                return True
+#
+#            
+#    check = False
+#    f = h5py.File(filename,'r')
+#    if 'Version' in list(f.keys()):
+#        version = f.get('Version')
+#        v_dict = json.loads(version.value[0].decode('utf-8'))
+#        if v_dict['format'] == 'Velox':
+#            check = True
+#    
+#    f.close()
+#    
+#    return check
     
 class FeiEMDReader(object):
     def __init__(self,filename):
@@ -510,3 +518,5 @@ def file_writer(filename, signal, signal_metadata=None, user=None,
         comments=comments)
     emd.add_signal(signal, metadata=signal_metadata)
     emd.save_to_emd(filename)
+
+fname = '/home/eric/Python_prog/hyperspy/hyperspy/tests/io/emd_files/example_fei_emd_image.emd'

@@ -97,13 +97,15 @@ def test_data_axis_length_1():
 
 class TestMinimalSave():
 
-    def setup_method(self, method):
-        with tempfile.TemporaryDirectory() as tmp:
-            self.filename = tmp + '/testfile.emd'
-        self.signal = Signal1D([0, 1])
+#    def setup_method(self, method):
+#        with tempfile.TemporaryDirectory() as tmp:
+#            self.filename = tmp + '/testfile.emd'
+#        self.signal = Signal1D([0, 1])
 
     def test_minimal_save(self):
-        self.signal.save(self.filename)
+        self.signal = Signal1D([0, 1])
+        with tempfile.TemporaryDirectory() as tmp:
+            self.signal.save(os.path.join(tmp, 'testfile.emd'))
 
 
 class TestCaseSaveAndRead():
@@ -159,7 +161,7 @@ class TestCaseSaveAndRead():
         remove(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
         
 
-class FeiEMDTest():
+class TestFeiEMD():
     
     def test_fei_emd_image(self):
         signal = load(os.path.join(my_path, 'emd_files', 'example_fei_emd_image.emd'))
