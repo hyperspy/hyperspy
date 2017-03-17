@@ -866,3 +866,16 @@ class EDSModel(Model1D):
         if plot_result and img.axes_manager.signal_dimension != 0:
             utils.plot.plot_signals(intensities, **kwargs)
         return intensities
+
+    def remove(self, thing):
+        thing = self._get_component(thing)
+        if not np.iterable(thing):
+            thing = [thing, ]
+        for comp in thing:
+            if comp in self.xray_lines:
+                self.xray_lines.remove(comp)
+            elif comp in self.family_lines:
+                self.family_lines.remove(comp)
+            elif comp in self.background_components:
+                self.background_components.remove(comp)
+        super().remove(thing)
