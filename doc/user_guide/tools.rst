@@ -60,6 +60,40 @@ in the :py:attr:`~.signal.BaseSignal.metadata` attribute and the axes
 information (including calibration) can be accessed (and modified) in the
 :py:attr:`~.signal.BaseSignal.axes_manager` attribute.
 
+Signal initialization
+---------------------
+
+Many of the values in the :py:attr:`~.signal.BaseSignal.axes_manager` can be
+set when making the :py:class:`~.signal.BaseSignal` object.
+
+.. code-block:: python
+
+    >>> dict0 = {'size': 10, 'name':'Ax0', 'units':'A', 'scale':0.2, 'offset':1}
+    >>> dict1 = {'size': 20, 'name':'Ax1', 'units':'B', 'scale':0.1, 'offset':2} 
+    >>> s = hs.signals.BaseSignal(np.random.random((10,20)), axes=[dict0, dict1])
+    >>> s.axes_manager
+    <Axes manager, axes: (|20, 10)>
+		Name |   size |  index |  offset |   scale |  units 
+    ================ | ====== | ====== | ======= | ======= | ====== 
+    ---------------- | ------ | ------ | ------- | ------- | ------ 
+	       Axes1 |     20 |        |       2 |     0.1 |      B 
+	       Axes0 |     10 |        |       1 |     0.2 |      A
+
+This also applies to the :py:attr:`~.signal.BaseSignal.metadata`.
+
+.. code-block:: python
+
+    >>> metadata_dict = {'General':{'name':'A BaseSignal'}}
+    >>> metadata_dict['General']['title'] = 'A BaseSignal title'
+    >>> s = hs.signals.BaseSignal(np.arange(10), metadata=metadata_dict)
+    >>> s.metadata
+    ├── General
+    │   ├── name = A BaseSignal
+    │   └── title = A BaseSignal title
+    └── Signal
+	├── binned = False
+	└── signal_type =
+
 
 The navigation and signal dimensions
 ------------------------------------
@@ -182,6 +216,8 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |              :py:class:`~._signals.signal2d.Signal2D`                   |        2         |       -               |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
+    |      :py:class:`~._signals.hologram_image.HologramImage`                |        2         |      hologram         |  real    |
+    +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |           :py:class:`~._signals.dielectric_function.DielectricFunction` |        1         |    DielectricFunction |  complex |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |      :py:class:`~._signals.complex_signal.ComplexSignal`                |        -         |       -               | complex  |
@@ -190,7 +226,6 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`              |        2         |       -               | complex  |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
-
 
 The following example shows how to transform between different subclasses.
 
@@ -301,6 +336,12 @@ time are:
 * :py:meth:`~.signal.BaseSignal.mean`
 * :py:meth:`~.signal.BaseSignal.std`
 * :py:meth:`~.signal.BaseSignal.var`
+* :py:meth:`~.signal.BaseSignal.nansum`
+* :py:meth:`~.signal.BaseSignal.nanmax`
+* :py:meth:`~.signal.BaseSignal.nanmin`
+* :py:meth:`~.signal.BaseSignal.nanmean`
+* :py:meth:`~.signal.BaseSignal.nanstd`
+* :py:meth:`~.signal.BaseSignal.nanvar`
 
 Note that by default all this methods perform the operation over *all*
 navigation axes.
@@ -328,12 +369,17 @@ Example:
 
 The following methods operate only on one axis at a time:
 
+.. versionadded:: 1.2
+   :py:meth:`~.signal.BaseSignal.valuemin`, :py:meth:`~.signal.BaseSignal.indexmin`
+
 * :py:meth:`~.signal.BaseSignal.diff`
 * :py:meth:`~.signal.BaseSignal.derivative`
 * :py:meth:`~.signal.BaseSignal.integrate_simpson`
 * :py:meth:`~.signal.BaseSignal.integrate1D`
 * :py:meth:`~.signal.BaseSignal.valuemax`
 * :py:meth:`~.signal.BaseSignal.indexmax`
+* :py:meth:`~.signal.BaseSignal.valuemin`
+* :py:meth:`~.signal.BaseSignal.indexmin`
 
 .. versionadded:: 1.0
    numpy ufunc operate on HyperSpy signals
@@ -650,6 +696,7 @@ is raised.
         raise ValueError(exception_message)
     ValueError: Invalid dimensions for this operation
 
+
 Broacasting operates exactly in the same way for the signal axes:
 
 .. code-block:: python
@@ -732,11 +779,12 @@ to make a horizontal "collage" of the image stack:
 
   Rotation of images by iteration.
 
-.. versionadded:: 0.7
-
+.. _map-label:
 
 Iterating external functions with the map method
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 0.7
 
 Performing an operation on the data at each coordinate, as in the previous example,
 using an external function can be more easily accomplished using the
@@ -783,6 +831,68 @@ arguments as in the following example.
 
   Rotation of images using :py:meth:`~.signal.BaseSignal.map` with different
   arguments for each image in the stack.
+
+.. versionadded:: 1.2.0
+    ``inplace`` keyword and non-preserved output shapes
+
+If all function calls do not return identically-shaped results, only navigation
+information is preserved, and the final result is an array where
+each element corresponds to the result of the function (or arbitrary object
+type). As such, most HyperSpy functions cannot operate on such Signal, and the
+data should be accessed directly.
+
+``inplace`` keyword (by default ``True``) of the
+:py:meth:`~.signal.BaseSignal.map` method allows either overwriting the current
+data (default, ``True``) or storing it to a new signal (``False``).
+
+.. code-block:: python
+
+    >>> import scipy.ndimage
+    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.ascent()]*4))
+    >>> angles = hs.signals.BaseSignal(np.array([0, 45, 90, 135]))
+    >>> result = image_stack.map(scipy.ndimage.rotate,
+    ...                            angle=angles.T,
+    ...                            inplace=False,
+    ...                            reshape=True)
+    100%|████████████████████████████████████████████| 4/4 [00:00<00:00, 18.42it/s]
+
+    >>> result
+    <BaseSignal, title: , dimensions: (4|)>
+    >>> image_stack.data.dtype
+    dtype('O')
+    >>> for d in result.data.flat:
+    ...     print(d.shape)
+    (512, 512)
+    (724, 724)
+    (512, 512)
+    (724, 724)
+
+
+.. versionadded:: 1.2.0
+    ``parallel`` keyword.
+
+
+
+.. _parallel-map-label:
+
+The execution can be sped up by passing ``parallel`` keyword to the
+:py:meth:`~.signal.BaseSignal.map` method:
+
+.. code-block:: python
+
+    >>> import time
+    >>> def slow_func(data):
+    ...     time.sleep(1.)
+    ...     return data + 1
+    >>> s = hs.signals.Signal1D(np.arange(20).reshape((20,1)))
+    >>> s
+    <Signal1D, title: , dimensions: (20|1)>
+    >>> s.map(slow_func, parallel=False)
+    100%|██████████████████████████████████████| 20/20 [00:20<00:00,  1.00s/it]
+    >>> # some operations will be done in parallel:
+    >>> s.map(slow_func, parallel=True)
+    100%|██████████████████████████████████████| 20/20 [00:02<00:00,  6.73it/s]
+
 
 Cropping
 ^^^^^^^^

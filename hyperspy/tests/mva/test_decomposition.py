@@ -1,7 +1,5 @@
 import numpy as np
-import nose.tools
-from nose.plugins.skip import SkipTest
-from nose.tools import raises
+import pytest
 
 from hyperspy import signals
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
@@ -9,7 +7,7 @@ from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 
 class TestNdAxes:
 
-    def setUp(self):
+    def setup_method(self, method):
         # Create three signals with dimensions:
         # s1 : <BaseSignal, title: , dimensions: (4, 3, 2|2, 3)>
         # s2 : <BaseSignal, title: , dimensions: (2, 3|4, 3, 2)>
@@ -77,7 +75,7 @@ class TestNdAxes:
 
 class TestGetExplainedVarinaceRatio:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = signals.BaseSignal(np.empty(1))
         self.s = s
 
@@ -87,14 +85,14 @@ class TestGetExplainedVarinaceRatio:
             self.s.get_explained_variance_ratio().data,
             np.asarray([2, 4]))
 
-    @nose.tools.raises(AttributeError)
     def test_no_evr(self):
-        self.s.get_explained_variance_ratio()
+        with pytest.raises(AttributeError):
+            self.s.get_explained_variance_ratio()
 
 
 class TestReverseDecompositionComponent:
 
-    def setUp(self):
+    def setup_method(self, method):
         s = signals.BaseSignal(np.zeros(1))
         self.factors = np.ones([2, 3])
         self.loadings = np.ones([2, 3])
@@ -145,7 +143,7 @@ class TestReverseDecompositionComponent:
 
 class TestNormalizeComponents():
 
-    def setUp(self):
+    def setup_method(self, method):
         s = signals.BaseSignal(np.zeros(1))
         self.factors = np.ones([2, 3])
         self.loadings = np.ones([2, 3])
@@ -194,32 +192,40 @@ class TestNormalizeComponents():
 
 class TestReturnInfo:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = signals.Signal1D(np.random.random((20, 100)))
 
     def test_decomposition_not_supported(self):
         # Not testing MLPCA, takes too long
         for algorithm in ["svd", "fast_svd"]:
             print(algorithm)
-            nose.tools.assert_is_none(self.s.decomposition(
-                algorithm=algorithm, return_info=True, output_dimension=1))
+            assert self.s.decomposition(
+                algorithm=algorithm, return_info=True, output_dimension=1) is None
 
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_decomposition_supported_return_true(self):
         for algorithm in ["RPCA_GoDec", "ORPCA"]:
-            nose.tools.assert_is_not_none(
-                self.s.decomposition(algorithm=algorithm, return_info=True, output_dimension=1))
-        if not sklearn_installed:
-            raise SkipTest
-        for algorithm in ["sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", ]:
-            nose.tools.assert_is_not_none(
-                self.s.decomposition(algorithm=algorithm, return_info=True, output_dimension=1))
+            assert self.s.decomposition(
+                algorithm=algorithm,
+                return_info=True,
+                output_dimension=1) is not None
+        for algorithm in ["sklearn_pca", "nmf",
+                          "sparse_pca", "mini_batch_sparse_pca", ]:
+            assert self.s.decomposition(
+                algorithm=algorithm,
+                return_info=True,
+                output_dimension=1) is not None
 
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_decomposition_supported_return_false(self):
         for algorithm in ["RPCA_GoDec", "ORPCA"]:
-            nose.tools.assert_is_none(
-                self.s.decomposition(algorithm=algorithm, return_info=False, output_dimension=1))
-        if not sklearn_installed:
-            raise SkipTest
-        for algorithm in ["sklearn_pca", "nmf", "sparse_pca", "mini_batch_sparse_pca", ]:
-            nose.tools.assert_is_none(
-                self.s.decomposition(algorithm=algorithm, return_info=False, output_dimension=1))
+            assert self.s.decomposition(
+                algorithm=algorithm,
+                return_info=False,
+                output_dimension=1) is None
+        for algorithm in ["sklearn_pca", "nmf",
+                          "sparse_pca", "mini_batch_sparse_pca", ]:
+            assert self.s.decomposition(
+                algorithm=algorithm,
+                return_info=False,
+                output_dimension=1) is None

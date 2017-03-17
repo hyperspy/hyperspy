@@ -32,9 +32,12 @@ doc/examples
 doc/gh-pages
 doc/log.txt
 *Thumbs.db
+*.DS_Store
 .ropeproject/*
 .idea/*
 *.pyproj
 hyperspy/tests/misc/cython/test_cython_integration.c
 hyperspy/io_plugins/unbcf_fast.c
 hyperspy/misc/etc/test_compilers.obj
+/.cache/
+/.spyproject/

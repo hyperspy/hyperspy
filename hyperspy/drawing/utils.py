@@ -26,6 +26,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import hyperspy as hs
+from distutils.version import LooseVersion
 
 from hyperspy.defaults_parser import preferences
 
@@ -176,8 +177,6 @@ def on_figure_window_close(figure, function):
         # In PyQt window.connect supports multiple functions
         from IPython.external.qt_for_kernel import QtCore
         window.connect(window, QtCore.SIGNAL('closing()'), function)
-    else:
-        raise AttributeError("The %s backend is not supported. " % backend)
 
 
 def plot_RGB_map(im_list, normalization='single', dont_plot=False):
@@ -202,7 +201,7 @@ def plot_RGB_map(im_list, normalization='single', dont_plot=False):
     if len(im_list) == 3:
         rgb[:, :, 2] = im_list[2].data.squeeze()
     if normalization == 'single':
-        for i in range(rgb.shape[2]):
+        for i in range(len(im_list)):
             rgb[:, :, i] /= rgb[:, :, i].max()
     elif normalization == 'global':
         rgb /= rgb.max()
@@ -979,7 +978,7 @@ def plot_spectra(
     spectra : iterable object
         Ordered spectra list to plot. If `style` is "cascade" or "mosaic"
         the spectra can have different size and axes.
-    style : {'default', 'overlap','cascade', 'mosaic', 'heatmap'}
+    style : {'default', 'overlap', 'cascade', 'mosaic', 'heatmap'}
         The style of the plot. The default is "overlap" and can be
         customized in `preferences`.
     color : matplotlib color or a list of them or `None`
@@ -1048,7 +1047,11 @@ def plot_spectra(
             raise ValueError("Color must be None, a valid matplotlib color "
                              "string or a list of valid matplotlib colors.")
     else:
-        color = itertools.cycle(plt.rcParams['axes.color_cycle'])
+        if LooseVersion(mpl.__version__) >= "1.5.3":
+            color = itertools.cycle(
+                plt.rcParams['axes.prop_cycle'].by_key()["color"])
+        else:
+            color = itertools.cycle(plt.rcParams['axes.color_cycle'])
 
     if line_style is not None:
         if isinstance(line_style, str):

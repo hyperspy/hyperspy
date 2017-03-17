@@ -26,4 +26,5 @@ try:
         from sklearn.decomposition import FastICA
         sklearn_installed = True
 except ImportError:
+    fast_svd = None
     sklearn_installed = False

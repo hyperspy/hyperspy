@@ -19,6 +19,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
+import dask.array as da
 import scipy as sp
 import logging
 from scipy.fftpack import fftn, ifftn
@@ -30,6 +31,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
 from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.signal import BaseSignal
+from hyperspy._signals.lazy import LazySignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
@@ -38,14 +40,17 @@ from hyperspy.docstrings.plot import (
 _logger = logging.getLogger(__name__)
 
 
-def shift_image(im, shift, interpolation_order=1, fill_value=np.nan):
-    fractional, integral = np.modf(shift)
-    if fractional.any():
-        order = interpolation_order
+def shift_image(im, shift=0, interpolation_order=1, fill_value=np.nan):
+    if np.any(shift):
+        fractional, integral = np.modf(shift)
+        if fractional.any():
+            order = interpolation_order
+        else:
+            # Disable interpolation
+            order = 0
+        return sp.ndimage.shift(im, shift, cval=fill_value, order=order)
     else:
-        # Disable interpolation
-        order = 0
-    im[:] = sp.ndimage.shift(im, shift, cval=fill_value, order=order)
+        return im
 
 
 def triu_indices_minus_diag(n):
@@ -93,7 +98,7 @@ def fft_correlation(in1, in2, normalize=False):
     s2 = np.array(in2.shape)
     size = s1 + s2 - 1
     # Use 2**n-sized FFT
-    fsize = 2 ** np.ceil(np.log2(size))
+    fsize = (2 ** np.ceil(np.log2(size))).astype("int")
     IN1 = fftn(in1, fsize)
     IN1 *= fftn(in2, fsize).conjugate()
     if normalize is True:
@@ -106,7 +111,8 @@ def fft_correlation(in1, in2, normalize=False):
 
 def estimate_image_shift(ref, image, roi=None, sobel=True,
                          medfilter=True, hanning=True, plot=False,
-                         dtype='float', normalize_corr=False,):
+                         dtype='float', normalize_corr=False,
+                         return_maxval=True):
     """Estimate the shift in a image using phase correlation
 
     This method can only estimate the shift by comparing
@@ -126,9 +132,10 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         apply a median filter for noise reduction
     hanning : bool
         Apply a 2d hanning filter
-    plot : bool
-        If True plots the images after applying the filters and
-        the phase correlation
+    plot : bool | matplotlib.Figure
+        If True, plots the images after applying the filters and the phase
+        correlation. If a figure instance, the images will be plotted to the
+        given figure.
     reference : \'current\' | \'cascade\'
         If \'current\' (default) the image at the current
         coordinates is taken as reference. If \'cascade\' each image
@@ -149,6 +156,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         The maximum value of the correlation
 
     """
+    ref, image = da.compute(ref, image)
     # Make a copy of the images to avoid modifying them
     ref = ref.copy().astype(dtype)
     image = image.copy().astype(dtype)
@@ -185,21 +193,42 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
     max_val = phase_correlation.max()
 
     # Plot on demand
-    if plot is True:
-        f, axarr = plt.subplots(1, 3)
-        axarr[0].imshow(ref)
-        axarr[1].imshow(image)
-        axarr[2].imshow(phase_correlation)
-        axarr[0].set_title('Reference')
-        axarr[1].set_title('Signal2D')
-        axarr[2].set_title('Phase correlation')
-        plt.show()
+    if plot is True or isinstance(plot, plt.Figure):
+        if isinstance(plot, plt.Figure):
+            f = plot
+            axarr = plot.axes
+            if len(axarr) < 3:
+                for i in range(3):
+                    f.add_subplot(1, 3, i)
+                axarr = plot.axes
+        else:
+            f, axarr = plt.subplots(1, 3)
+        full_plot = len(axarr[0].images) == 0
+        if full_plot:
+            axarr[0].set_title('Reference')
+            axarr[1].set_title('Image')
+            axarr[2].set_title('Phase correlation')
+            axarr[0].imshow(ref)
+            axarr[1].imshow(image)
+            d = (np.array(phase_correlation.shape) - 1) // 2
+            extent = [-d[1], d[1], -d[0], d[0]]
+            axarr[2].imshow(np.fft.fftshift(phase_correlation),
+                            extent=extent)
+            plt.show()
+        else:
+            axarr[0].images[0].set_data(ref)
+            axarr[1].images[0].set_data(image)
+            axarr[2].images[0].set_data(np.fft.fftshift(phase_correlation))
+            # TODO: Renormalize images
+            f.canvas.draw()
     # Liberate the memory. It is specially necessary if it is a
     # memory map
     del ref
     del image
-
-    return -np.array((shift0, shift1)), max_val
+    if return_maxval:
+        return -np.array((shift0, shift1)), max_val
+    else:
+        return -np.array((shift0, shift1))
 
 
 class Signal2D(BaseSignal, CommonSignal2D):
@@ -207,6 +236,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
     """
     """
     _signal_dimension = 2
+    _lazy = False
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
@@ -304,9 +334,11 @@ class Signal2D(BaseSignal, CommonSignal2D):
             apply a median filter for noise reduction
         hanning : bool
             Apply a 2d hanning filter
-        plot : bool
+        plot : bool or "reuse"
             If True plots the images after applying the filters and
-            the phase correlation
+            the phase correlation. If 'reuse', it will also plot the images,
+            but it will only use one figure, and continously update the images
+            in that figure as it progresses through the stack.
         dtype : str or dtype
             Typecode or data-type in which the calculations must be
             performed.
@@ -343,6 +375,9 @@ class Signal2D(BaseSignal, CommonSignal2D):
         shifts = []
         nrows = None
         images_number = self.axes_manager._max_index + 1
+        if plot == 'reuse':
+            # Reuse figure for plots
+            plot = plt.figure()
         if reference == 'stat':
             nrows = images_number if chunk_size is None else \
                 min(images_number, chunk_size)
@@ -446,7 +481,9 @@ class Signal2D(BaseSignal, CommonSignal2D):
                 dtype='float',
                 correlation_threshold=None,
                 chunk_size=30,
-                interpolation_order=1):
+                interpolation_order=1,
+                show_progressbar=None,
+                parallel=None):
         """Align the images in place using user provided shifts or by
         estimating the shifts.
         Please, see `estimate_shift2D` docstring for details
@@ -469,6 +506,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         interpolation_order: int, default 1.
             The order of the spline interpolation. Default is 1, linear
             interpolation.
+        parallel : {None, bool}
         Returns
         -------
         shifts : np.array
@@ -486,6 +524,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
         Ultramicroscopy 102, no. 1 (December 2004): 27–36.
         """
         self._check_signal_dimension_equals_two()
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         if shifts is None:
             shifts = self.estimate_shift2D(
                 roi=roi,
@@ -497,7 +537,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
                 dtype=dtype,
                 correlation_threshold=correlation_threshold,
                 normalize_corr=normalize_corr,
-                chunk_size=chunk_size)
+                chunk_size=chunk_size,
+                show_progressbar=show_progressbar)
             return_shifts = True
         else:
             return_shifts = False
@@ -537,14 +578,12 @@ class Signal2D(BaseSignal, CommonSignal2D):
                 yaxis.size += bottom - top
 
         # Translate with sub-pixel precision if necesary
-        for im, shift in zip(self._iterate_signal(),
-                             shifts):
-            if np.any(shift):
-                shift_image(im, -shift,
-                            fill_value=fill_value,
-                            interpolation_order=interpolation_order)
-                del im
-
+        self._map_iterate(shift_image, iterating_kwargs=(('shift', -shifts),),
+                          fill_value=fill_value,
+                          ragged=False,
+                          parallel=parallel,
+                          interpolation_order=interpolation_order,
+                          show_progressbar=show_progressbar)
         if crop and not expand:
             # Crop the image to the valid size
             shifts = -shifts
@@ -604,7 +643,12 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         """
         yy, xx = np.indices(self.axes_manager._signal_shape_in_array)
-        ramp = offset * np.ones(self.data.shape, dtype=self.data.dtype)
+        if self._lazy:
+            import dask.array as da
+            ramp = offset * da.ones(self.data.shape, dtype=self.data.dtype,
+                                    chunks=self.data.chunks)
+        else:
+            ramp = offset * np.ones(self.data.shape, dtype=self.data.dtype)
         ramp += ramp_x * xx
         ramp += ramp_y * yy
         self.data += ramp
@@ -1060,3 +1104,10 @@ def find_peaks_log(z, min_sigma=1, max_sigma=50., num_sigma=10.,
     except IndexError:
         return NO_PEAKS
     return centers
+
+class LazySignal2D(LazySignal, Signal2D):
+
+    _lazy = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)

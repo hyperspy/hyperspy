@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import nose.tools as nt
+
 import warnings
 
 from hyperspy.misc.test_utils import ignore_warning, assert_warns, all_warnings
@@ -72,7 +72,7 @@ def test_ignore_message_fails():
             try:
                 warnsC()
             except UserWarning as e:
-                nt.assert_equal(str(e), "Warning C!")
+                assert str(e) == "Warning C!"
             else:
                 raise ValueError("Expected warning to give error!")
     with all_warnings():
@@ -81,7 +81,7 @@ def test_ignore_message_fails():
             try:
                 warnsA()
             except UserWarning as e:
-                nt.assert_equal(str(e), "Warning A!")
+                assert str(e) == "Warning A!"
             else:
                 raise ValueError("Expected warning to give error!")
 
@@ -103,7 +103,7 @@ def test_ignore_type_fails():
             try:
                 warnsB()
             except DeprecationWarning as e:
-                nt.assert_equal(str(e), "Warning B!")
+                assert str(e) == "Warning B!"
             else:
                 raise ValueError("Expected warning to give error!")
 
