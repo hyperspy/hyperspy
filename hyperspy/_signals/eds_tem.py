@@ -659,5 +659,5 @@ class EDSTEMSpectrum(EDSTEM_mixin, EDSSpectrum):
     pass
 
 
-class LazyEDSTEMSpectrum(EDSTEM_mixin, LazyEDSSpectrum):
+class LazyEDSTEMSpectrum(EDSTEMSpectrum, LazyEDSSpectrum):
     pass
