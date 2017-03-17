@@ -135,15 +135,15 @@ class EDSModel(Model1D):
         self.start_energy = self.axes_manager.signal_axes[0].low_value
         self.background_components = list()
         if 'dictionary' in kwargs or len(args) > 1:
+            auto_add_lines = False
+            auto_background = False
             d = args[1] if len(args) > 1 else kwargs['dictionary']
             if len(d['xray_lines']) > 0:
                 self.xray_lines.extend(
                     [self[name] for name in d['xray_lines']])
-                auto_add_lines = False
             if len(d['background_components']) > 0:
                 self.background_components.extend(
                     [self[name] for name in d['background_components']])
-                auto_background = False
         if auto_background is True:
             self.add_polynomial_background()
         if auto_add_lines is True:
