@@ -28,7 +28,7 @@
 # ----------------------
 format_name = 'bruker composite file bcf'
 description = """the proprietary format used by Bruker's
-Esprit(R) software to save hyppermaps together with 16bit SEM imagery,
+Esprit(R) software to save hypermaps together with 16bit SEM imagery,
 EDS spectra and metadata describing the dimentions of the data and
 SEM/TEM (limited) parameters"""
 full_support = False
@@ -594,8 +594,10 @@ class HyperHeader(object):
         semData = root.xpath("ClassInstance[@Type='TRTSEMData']")[0]
         # sem acceleration voltage, working distance, magnification:
         self.sem.hv = semData.HV.pyval  # in kV
-        self.sem.wd = semData.WD.pyval  # in mm
-        self.sem.mag = semData.Mag.pyval  # in times
+        # Working distance in mm USED?
+        self.sem.wd = semData.WD.pyval if hasattr(semData, 'WD') else None
+        # Magnification in times
+        self.sem.mag = semData.Mag.pyval if hasattr(semData, 'Mag') else None
         # image/hypermap resolution in um/pixel:
         try:
             self.x_res = semData.DX.pyval  # in micrometers
@@ -633,8 +635,9 @@ class HyperHeader(object):
         """
         acq_inst = {
             'beam_energy': self.sem.hv,
-            'magnification': self.sem.mag,
         }
+        if self.sem.mag:
+            acq_inst['magnification'] = self.sem.mag
         if 'Tilt' in self.stage_metadata:
             acq_inst['tilt_stage'] = self.stage_metadata['Tilt']
         if detector:
@@ -650,29 +653,29 @@ class HyperHeader(object):
                 acq_inst['Detector']['EDS'][
                     'azimuth_angle'] = eds_metadata.esma_metadata['AzimutAngle']
         return acq_inst
-    
+
     def _parse_image(self, xml_node, overview=False):
         """parse image from bruker xml image node."""
         if overview:
             rect_node = xml_node.xpath("".join(["ChildClassInstances",
-                "/ClassInstance[@Type='TRTRectangleOverlayElement' and",
-                " @Name='Map']",
-                "/TRTSolidOverlayElement",
-                "/TRTBasicLineOverlayElement",
-                "/TRTOverlayElement"]))[0]
+                                                "/ClassInstance[@Type='TRTRectangleOverlayElement' and",
+                                                " @Name='Map']",
+                                                "/TRTSolidOverlayElement",
+                                                "/TRTBasicLineOverlayElement",
+                                                "/TRTOverlayElement"]))[0]
             over_rect = rect_node.Rect
             rect = {'y1': over_rect.Top * self.y_res,
                     'x1': over_rect.Left * self.x_res,
                     'y2': over_rect.Bottom * self.y_res,
                     'x2': over_rect.Right * self.x_res}
             over_dict = {'marker_type': 'Rectangle',
-                         'plot_on_signal':True,
+                         'plot_on_signal': True,
                          'data': rect,
                          'marker_properties': {'color': 'yellow',
                                                'linewidth': 2}}
         image = Container()
         image.width = int(xml_node.Width)  # in pixels
-        image.height = int(xml_node.Height)  # # in pixels
+        image.height = int(xml_node.Height)  # in pixels
         image.plane_count = int(xml_node.PlaneCount)
         image.images = []
         for i in range(image.plane_count):
@@ -693,7 +696,7 @@ class HyperHeader(object):
                     item['metadata']['Markers'] = {'overview': over_dict}
                 image.images.append(item)
         return image
-    
+
     def _set_images(self, root):
         """Wrap objectified xml part with image to class attributes
         for self.image.
@@ -707,9 +710,11 @@ class HyperHeader(object):
                 "/ClassInstance[@Type='TRTContainerClass' ",
                 "and @Name='OverviewImages']",
                 "/ChildClassInstances",
-                "/ClassInstance[@Type='TRTImageData']"]))[0]
-            self.overview = self._parse_image(overview_node, overview=True)
-    
+                "/ClassInstance[@Type='TRTImageData']"]))
+            if len(overview_node) > 0:  # in case there is no image
+                self.overview = self._parse_image(
+                    overview_node[0], overview=True)
+
     def _set_elements(self, root):
         """wrap objectified xml part with selection of elements to
         self.elements list
@@ -824,7 +829,7 @@ class HyperHeader(object):
         width = self.image.width
         real_time = line_cnt_sum * line_avg * pix_avg * pix_time * width / 1000000.0
         return float(real_time)
-    
+
     def gen_hspy_item_dict_basic(self):
         i = {'axes': [{'name': 'height',
                        'offset': 0,
@@ -835,15 +840,15 @@ class HyperHeader(object):
                        'scale': self.x_res,
                        'units': self.units}],
              'metadata': {
-                'Acquisition_instrument':
-                    {self.mode: self.get_acq_instrument_dict()},
+            'Acquisition_instrument':
+            {self.mode: self.get_acq_instrument_dict()},
                 'Sample': {'name': self.name},
-                         },
-             'original_metadata': {
+        },
+            'original_metadata': {
                  'DSP Configuration': self.dsp_metadata,
                  'Stage': self.stage_metadata
-                                  }
-             }
+        }
+        }
         return i
 
 
@@ -1034,11 +1039,11 @@ class BCF_reader(SFS_reader):
                 # value which sometimes shows the size of packed data (uint16);
                 # number of pulses if pulse data are present (uint16) or
                 #      additional pulses to the instructively packed data;
-                # packed data size (32bit) (without additional pulses) \ 
+                # packed data size (32bit) (without additional pulses) \
                 #       next header is after that amount of bytes;
                 x_pix, chan1, chan2, dummy1, flag, dummy_size1, n_of_pulses,\
                     data_size2 = strct_unp('<IHHIHHHI',
-                                                   buffer1[offset:offset + 22])
+                                           buffer1[offset:offset + 22])
                 pix_idx = (x_pix // dwn_factor) + ((-(-width // dwn_factor)) *
                                                    (line_cnt // dwn_factor))
                 offset += 22
@@ -1144,10 +1149,11 @@ class BCF_reader(SFS_reader):
             new_dtype = ''.join(['u', str(vfa.dtype)])
             vfa.dtype = new_dtype
         return vfa
-    
+
     def add_filename_to_general(self, item):
         item['metadata']['General']['original_filename'] = \
             self.filename.split('/')[-1]
+
 
 class HyperMap(object):
 
@@ -1209,7 +1215,7 @@ def bcf_imagery(obj_bcf):
     for img in obj_bcf.header.image.images:
         obj_bcf.add_filename_to_general(img)
         imagery_list.append(img)
-    if obj_bcf.header.version == 2:
+    if hasattr(obj_bcf.header, 'overview'):
         for img2 in obj_bcf.header.overview.images:
             obj_bcf.add_filename_to_general(img2)
             imagery_list.append(img2)
@@ -1294,6 +1300,3 @@ def parse_line(line_string):
     elif len(line_string) > 2:
         line_string = line_string[:2]
     return line_string.capitalize()
-
-
-
