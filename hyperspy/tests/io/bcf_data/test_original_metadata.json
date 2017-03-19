@@ -1,157 +1,20 @@
 {
-    "Spectrum": {
-        "Time": "17:5:2",
-        "ChannelCount": 2048,
-        "CalibLin": 0.010001,
-        "XmlClassType": "TRTSpectrumHeader",
-        "Date": "1.4.2016",
-        "CalibAbs": -0.472397235,
-        "SigmaAbs": 0.0002286813269,
-        "Size": 82,
-        "SigmaLin": 0.0004466391048
+    "Stage": {
+        "Y": 36517.61,
+        "State": 7936,
+        "Z": 40234.7,
+        "X": 62409.2,
+        "Tilt": 0.5,
+        "XmlClassType": "TRTSEMStageData",
+        "Rotation": 329.49719
     },
-    "Analysis": {
-        "ReferenceFactor": -1,
-        "TRTKnownHeader": {
-            "Size": 662,
-            "Type": "RTESMA"
-        },
-        "BaseRefStdDev": 0.001917334934,
-        "AzimutAngle": 90.0,
-        "ElevationAngle": 35.0,
-        "ReferenceStdDev": -1,
-        "CoatCorrection": null,
-        "PrimaryEnergy": 20.0,
-        "XmlClassType": "TRTESMAHeader"
-    },
-    "Line counter": [
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274,
-        274
-    ],
     "Detector": {
-        "PileUpMinEnergy": 1,
-        "PileUpWithBG": false,
-        "WindowType": "slew AP3.3",
-        "Type": "XFlash 6|10",
-        "Corrections": {
-            "Shift": {
-                "RangeStart": 0.08,
-                "MainCorrection": 1,
-                "FormulaType": "Internal",
-                "RangeEnd": 0.555
-            },
-            "Tail": {
-                "MainCorrection": 1,
-                "FormulaType": "Internal"
-            },
-            "FWHMShift": null,
-            "Shelf": {
-                "Coefficient0": 1,
-                "MainCorrection": 1,
-                "FormulaType": "Internal",
-                "RangeEnd": 10.0,
-                "RangeStart": 0.08
-            },
-            "Escape": null
+        "TRTKnownHeader": {
+            "Version": 5,
+            "Size": 9932,
+            "Type": "RTDetector"
         },
-        "ResponseFunctionCount": 21,
-        "SampleOffset": -3,
-        "ShelfFactor": 1,
-        "XmlClassType": "TRTDetectorHeader",
-        "ShiftData": [
-            0.07,
-            0.0058,
-            0.183,
-            0.0078,
-            0.277,
-            0.0058,
-            0.555,
-            0,
-            1.1,
-            0,
-            3.293,
-            0.0064,
-            5.89,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
-        "PulsePairResTimeCount": 0,
+        "ShiftFactor": 0.3975,
         "ResponseFunction": [
             [
                 0,
@@ -574,15 +437,74 @@
                 0
             ]
         ],
-        "WindowLayers": {
+        "ResponseFunctionCount": 21,
+        "PileUpWithBG": false,
+        "Corrections": {
+            "Shift": {
+                "FormulaType": "Internal",
+                "RangeEnd": 0.555,
+                "RangeStart": 0.08,
+                "MainCorrection": 1
+            },
+            "FWHMShift": null,
+            "Shelf": {
+                "RangeEnd": 10.0,
+                "FormulaType": "Internal",
+                "Coefficient0": 1,
+                "RangeStart": 0.08,
+                "MainCorrection": 1
+            },
+            "Tail": {
+                "FormulaType": "Internal",
+                "MainCorrection": 1
+            },
+            "Escape": null
+        },
+        "DetLayers": {
             "Layer0": {
-                "Atom": 5,
-                "Thickness": 0.013
+                "Atom": "13",
+                "Thickness": "5E-3"
+            },
+            "Layer3": {
+                "Atom": "6",
+                "Thickness": "6E-3"
+            },
+            "Layer2": {
+                "Atom": "5",
+                "Thickness": "6E-3"
+            },
+            "Layer1": {
+                "Atom": "7",
+                "Thickness": "8.5E-2"
             },
             "Layer4": {
-                "Atom": 13,
-                "Thickness": 0.035
-            },
+                "Atom": "8",
+                "Thickness": "6.5E-2"
+            }
+        },
+        "PileUpMinEnergy": 1,
+        "ShiftData": [
+            0.07,
+            0.0058,
+            0.183,
+            0.0078,
+            0.277,
+            0.0058,
+            0.555,
+            0,
+            1.1,
+            0,
+            3.293,
+            0.0064,
+            5.89,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "Serial": "8273/74",
+        "WindowLayers": {
             "Layer3": {
                 "Atom": 8,
                 "Thickness": 0.085
@@ -591,89 +513,176 @@
                 "Atom": 6,
                 "Thickness": 0.145
             },
-            "Layer2": {
-                "Atom": 7,
-                "Thickness": 0.045
+            "Layer4": {
+                "Atom": 13,
+                "Thickness": 0.035
+            },
+            "Layer0": {
+                "Atom": 5,
+                "Thickness": 0.013
             },
             "Layer5": {
                 "Atom": 14,
-                "Thickness": 380.0,
-                "RelativeArea": 0.23
-            }
-        },
-        "Technology": "SD3pr",
-        "DetectorThickness": 0.45,
-        "SampleCount": 5,
-        "CorrectionType": 3,
-        "Serial": "8273/74",
-        "TRTKnownHeader": {
-            "Size": 9932,
-            "Type": "RTDetector",
-            "Version": 5
-        },
-        "ShiftFactor": 0.3975,
-        "TailFactor": 1,
-        "ShiftFactor2": -0.982,
-        "SiDeadLayerThickness": 0.029,
-        "DetLayers": {
-            "Layer0": {
-                "Atom": "13",
-                "Thickness": "5E-3"
-            },
-            "Layer4": {
-                "Atom": "8",
-                "Thickness": "6.5E-2"
-            },
-            "Layer3": {
-                "Atom": "6",
-                "Thickness": "6E-3"
-            },
-            "Layer1": {
-                "Atom": "7",
-                "Thickness": "8.5E-2"
+                "RelativeArea": 0.23,
+                "Thickness": 380.0
             },
             "Layer2": {
-                "Atom": "5",
-                "Thickness": "6E-3"
+                "Atom": 7,
+                "Thickness": 0.045
             }
-        }
+        },
+        "Type": "XFlash 6|10",
+        "SiDeadLayerThickness": 0.029,
+        "WindowType": "slew AP3.3",
+        "XmlClassType": "TRTDetectorHeader",
+        "DetectorThickness": 0.45,
+        "ShiftFactor2": -0.982,
+        "TailFactor": 1,
+        "PulsePairResTimeCount": 0,
+        "ShelfFactor": 1,
+        "Technology": "SD3pr",
+        "SampleOffset": -3,
+        "CorrectionType": 3,
+        "SampleCount": 5
     },
+    "Microscope": {
+        "DX": 8.73678506197784,
+        "XmlClassType": "TRTSEMData",
+        "Flags": 16776960,
+        "HV": 20,
+        "WD": 7.69044,
+        "DY": 8.73678506197786,
+        "Mag": 131.1433
+    },
+    "Analysis": {
+        "ReferenceStdDev": -1,
+        "ElevationAngle": 35.0,
+        "TRTKnownHeader": {
+            "Size": 662,
+            "Type": "RTESMA"
+        },
+        "AzimutAngle": 90.0,
+        "XmlClassType": "TRTESMAHeader",
+        "PrimaryEnergy": 20.0,
+        "ReferenceFactor": -1,
+        "BaseRefStdDev": 0.001917334934,
+        "CoatCorrection": null
+    },
+    "Spectrum": {
+        "SigmaLin": 0.0004466391048,
+        "Time": "17:5:2",
+        "XmlClassType": "TRTSpectrumHeader",
+        "ChannelCount": 2048,
+        "SigmaAbs": 0.0002286813269,
+        "Date": "1.4.2016",
+        "Size": 82,
+        "CalibAbs": -0.472397235,
+        "CalibLin": 0.010001
+    },
+    "Line counter": [
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274,
+        274
+    ],
     "Hardware": {
-        "ZeroPeakPosition": 95,
-        "Amplification": 20000.0,
         "TRTKnownHeader": {
             "Size": 137,
             "Type": "RTHardware"
         },
-        "XmlClassType": "TRTSpectrumHardwareHeader",
+        "ZeroPeakPosition": 95,
+        "ZeroPeakFrequency": 33332,
         "ShapingTime": 130000,
-        "ZeroPeakFrequency": 33332
+        "XmlClassType": "TRTSpectrumHardwareHeader",
+        "Amplification": 20000.0
     },
     "DSP Configuration": {
+        "LineAverage": 5,
+        "ImageHeight": 75,
         "Channel0": 1,
+        "ChannelName1": "SE",
         "PixelAverage": 16,
         "ChannelCount": 2,
-        "CounterChannelUsed": 0,
-        "CounterMode": 0,
         "ImageWidth": 100,
-        "PixelTime": 2,
-        "TiltAngle": 0,
-        "ImageHeight": 75,
-        "ChannelName1": "SE",
+        "XmlClassType": "TRTDSPConfiguration",
         "ChannelName0": "BSE",
+        "PixelTime": 2,
+        "Channel1": 1,
+        "CounterMode": 0,
+        "CounterChannelUsed": 0,
         "CounterIndex": 1,
         "SEBitCount": 12,
-        "XmlClassType": "TRTDSPConfiguration",
-        "LineAverage": 5,
-        "Channel1": 1
-    },
-    "Stage": {
-        "X": 62409.2,
-        "Y": 36517.61,
-        "Z": 40234.7,
-        "Rotation": 329.49719,
-        "Tilt": 0.5,
-        "State": 7936,
-        "XmlClassType": "TRTSEMStageData"
+        "TiltAngle": 0
     }
 }
