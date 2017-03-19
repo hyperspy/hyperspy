@@ -473,7 +473,7 @@ class EDXSpectrum(object):
     def __init__(self, spectrum):
         """
         Wrap the objectified bruker EDS spectrum xml part
-        to the python object, leaving all the xml and bruker clutter behind
+        to the python object, leaving all the xml and bruker clutter behind.
 
         Arguments:
         spectrum -- lxml objectified xml where spectrum.attrib['Type'] should
@@ -571,11 +571,8 @@ class HyperHeader(object):
         self.date = dt.date().isoformat()
         self.time = dt.time().isoformat()
         self.version = int(root.Header.FileVersion)
-        # create containers:
-        self.sem = Container()
-        self.stage = Container()
         # fill the sem and stage attributes:
-        self._set_sem(root)
+        self._set_microscope(root)
         self._get_mode(instrument)
         self._set_images(root)
         self.elements = {}
@@ -587,36 +584,39 @@ class HyperHeader(object):
         self.spectra_data = {}
         self._set_sum_edx(root)
 
-    def _set_sem(self, root):
-        """wrap objectified xml part to class attributes for self.sem,
-        self.stage and self.*_res
+    def _set_microscope(self, root):
+        """set microscope metadata from objectified xml part (TRTSEMData,
+        TRTSEMStageData, TRTDSPConfiguration).
+        
+        BCF can contain basic parameters of SEM column, and optionaly
+        the stage. This metadata can be not fully or at all availbale to
+        Esprit and saved into bcf file as it depends from license and
+        the link and implementation state between the microscope's
+        software and Bruker system.
         """
+        
         semData = root.xpath("ClassInstance[@Type='TRTSEMData']")[0]
-        # sem acceleration voltage, working distance, magnification:
-        self.sem.hv = semData.HV.pyval  # in kV
-        # Working distance in mm USED?
-        self.sem.wd = semData.WD.pyval if hasattr(semData, 'WD') else None
-        # Magnification in times
-        self.sem.mag = semData.Mag.pyval if hasattr(semData, 'Mag') else None
+        self.sem_metadata = dictionarize(semData)
+        # parse values for use in hspy metadata:
+        self.hv = self.sem_metadata.get('HV', 0.0)  # in kV
         # image/hypermap resolution in um/pixel:
-        try:
-            self.x_res = semData.DX.pyval  # in micrometers
-            self.y_res = semData.DY.pyval  # in micrometers
+        if 'DX' in self.sem_metadata:
             self.units = 'µm'
-        except AttributeError:
-            self.x_res = 1.0  # in pixels
-            self.y_res = 1.0  # in pixels
+        else:
             self.units = 'pix'
-        semStageData = root.xpath("ClassInstance[@Type='TRTSEMStageData']")[0]
+        self.x_res = self.sem_metadata.get('DX', 1.0)
+        self.y_res = self.sem_metadata.get('DY', 1.0)
         # stage position:
+        semStageData = root.xpath("ClassInstance[@Type='TRTSEMStageData']")[0]
         self.stage_metadata = dictionarize(semStageData)
+        # DSP configuration (always present, part of Bruker system):
         DSPConf = root.xpath("ClassInstance[@Type='TRTDSPConfiguration']")[0]
         self.dsp_metadata = dictionarize(DSPConf)
 
     def _get_mode(self, instrument=None):
         # where is no way to determine what kind of instrument was used:
         # TEM or SEM (mode attribute)
-        hv = self.sem.hv
+        hv = self.hv
         if instrument is not None:
             self.mode = instrument
         elif hv > 30.0:  # workaround to know if TEM or SEM
@@ -633,22 +633,17 @@ class HyperHeader(object):
         """return python dictionary with aquisition instrument
         mandatory data
         """
-        acq_inst = {
-            'beam_energy': self.sem.hv,
-        }
-        if self.sem.mag:
-            acq_inst['magnification'] = self.sem.mag
+        acq_inst = {'beam_energy': self.hv}
+        if 'Mag' in self.sem_metadata:
+            acq_inst['magnification'] = self.sem_metadata['Mag']
         if 'Tilt' in self.stage_metadata:
             acq_inst['tilt_stage'] = self.stage_metadata['Tilt']
         if detector:
             eds_metadata = self.get_spectra_metadata(**kwargs)
             acq_inst['Detector'] = {'EDS': {
-                #'azimuth_angle': eds_metadata.azimutAngle,
                 'elevation_angle': eds_metadata.elevationAngle,
                 'detector_type': eds_metadata.detector_type,
-                'real_time': self.calc_real_time()
-            }
-            }
+                'real_time': self.calc_real_time()}}
             if 'AzimutAngle' in eds_metadata.esma_metadata:
                 acq_inst['Detector']['EDS'][
                     'azimuth_angle'] = eds_metadata.esma_metadata['AzimutAngle']
@@ -752,10 +747,10 @@ class HyperHeader(object):
         optimal channel number
         """
         bruker_hv_range = self.spectra_data[index].amplification / 1000
-        if self.sem.hv >= bruker_hv_range:
+        if self.hv >= bruker_hv_range:
             return self.spectra_data[index].data.shape[0]
         else:
-            return self.spectra_data[index].energy_to_channel(self.sem.hv)
+            return self.spectra_data[index].energy_to_channel(self.hv)
 
     def estimate_map_depth(self, index=0, downsample=1, for_numpy=False):
         """estimate minimal dtype of array using cumulative spectra
@@ -845,6 +840,7 @@ class HyperHeader(object):
                 'Sample': {'name': self.name},
         },
             'original_metadata': {
+                 'Microscope': self.sem_metadata,
                  'DSP Configuration': self.dsp_metadata,
                  'Stage': self.stage_metadata
         }
@@ -1279,20 +1275,20 @@ For more information, check the 'Installing HyperSpy' section in the documentati
                               'Spectrum': eds_metadata.spectrum_metadata,
                               'DSP Configuration': obj_bcf.header.dsp_metadata,
                               'Line counter': obj_bcf.header.line_counter,
-                              'Stage': obj_bcf.header.stage_metadata}
+                              'Stage': obj_bcf.header.stage_metadata,
+                              'Microscope': obj_bcf.header.sem_metadata}
     }]
     return hyperspectra
 
 
 def gen_elem_list(the_dict):
     return ['_'.join([i, parse_line(the_dict[i]['line'])]) for i in the_dict]
-#    return [z_to_element(i) for i in the_list]
 
 
 def parse_line(line_string):
     """standardize line describtion.
 
-    Bruker saves line describtion in all caps
+    Bruker saves line description in all caps
     and omits the type if only one exists instead of
     using alfa"""
     if len(line_string) == 1:
