@@ -438,7 +438,7 @@ class ObjectifyJSONEncoder(json.JSONEncoder):
     """ JSON encoder that can handle simple lxml objectify types,
         Handles xml attributes, also returns all data types"""
 
-    def default(self, o):
+    def default(self, o):  # noqa
         dictionary = {}
         if hasattr(o, '__dict__') and len(o.__dict__) > 0:
             d1 = o.__dict__.copy()
@@ -933,8 +933,8 @@ class BCF_reader(SFS_reader):
             cutoff_chan = None
 
         if fast_unbcf:
-            fh = dd(self.get_file)('EDSDatabase/SpectrumData' + str(index))
-            value = dd(unbcf_fast.parse_to_numpy)(fh,
+            fh = dd(self.get_file)('EDSDatabase/SpectrumData' + str(index))  # noqa
+            value = dd(unbcf_fast.parse_to_numpy)(fh,                        # noqa
                                                   downsample=downsample,
                                                   cutoff=cutoff_chan,
                                                   description=False)
@@ -961,7 +961,7 @@ class BCF_reader(SFS_reader):
                 res = value.compute()
             return res
 
-    def py_parse_hypermap(self, index=0, downsample=1, cutoff_at_channel=None,
+    def py_parse_hypermap(self, index=0, downsample=1, cutoff_at_channel=None,  # noqa
                           description=False):
         """Unpack the Delphi/Bruker binary spectral map and return
         numpy array in memory efficient way using pure python implementation.
@@ -1166,7 +1166,7 @@ class HyperMap(object):
 
 
 # wrapper functions for hyperspy:
-def file_reader(filename, select_type=None, index=0, downsample=1,
+def file_reader(filename, select_type=None, index=0, downsample=1,     # noqa
                 cutoff_at_kV=None, instrument=None, lazy=False):
     """Reads a bruker bcf file and loads the data into the appropriate class,
     then wraps it into appropriate hyperspy required list of dictionaries
@@ -1218,7 +1218,7 @@ def bcf_imagery(obj_bcf):
     return imagery_list
 
 
-def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
+def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,  # noqa
                      lazy=False):
     """ Return hyperspy required list of dict with eds
     hyperspectra and metadata.
