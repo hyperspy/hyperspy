@@ -171,7 +171,7 @@ class LazySignal(BaseSignal):
                 res = self.data.rechunk(new_chunks)
         else:
             if isinstance(self.data, np.ma.masked_array):
-                data = np.where(self.data.mask, np.nan, np.array(self.data))
+                data = np.where(self.data.mask, np.nan, self.data)
             else:
                 data = self.data
             res = da.from_array(data, chunks=new_chunks)
