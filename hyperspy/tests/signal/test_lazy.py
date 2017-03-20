@@ -104,3 +104,10 @@ def test_as_array_dask(sig):
 def test_as_array_fail():
     with pytest.raises(ValueError):
         to_array('asd', chunks=None)
+
+def test_ma_lazify():
+    s = hs.signals.BaseSignal(np.ma.masked_array(data=[1,2,3], mask=[0,1,0]))
+    l = s.as_lazy()
+    assert np.isnan(l.data[1].compute())
+    ss = hs.stack([s,s])
+    assert np.isnan(ss.data[:,1]).all()
