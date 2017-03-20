@@ -24,7 +24,7 @@ import hyperspy.drawing.utils as utils
 
 
 def test_create_figure():
-    if matplotlib.get_backend() not in ("GTKAgg", "WXAgg", "TkAgg", "Qt4Agg"):
+    if matplotlib.get_backend() == "agg":
         pytest.xfail("{} backend does not support on_close event.".format(
             matplotlib.get_backend()))
 

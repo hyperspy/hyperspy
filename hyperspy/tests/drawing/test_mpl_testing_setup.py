@@ -32,7 +32,12 @@ def test_mpl_version():
     assert LooseVersion(matplotlib.__version__) >= LooseVersion('2.0.0')
 
 
-@pytest.mark.xfail(reason="Check if plotting tests are working.",
+# Skip if mpl plugin is not called, because it will not failed (no image comparison)
+@pytest.mark.skipif(not pytest.config.getvalue("mpl"),
+                    reason="'mpl' plugin not call.")
+@pytest.mark.xfail(reason="Check if plotting tests are working: if this failed,"
+                   "it means that the image comparison of the plotting test are"
+                   " not working.",
                    strict=True)
 @pytest.mark.mpl_image_compare(baseline_dir='', tolerance=2)
 def test_plotting_test_working(mpl_cleanup):
