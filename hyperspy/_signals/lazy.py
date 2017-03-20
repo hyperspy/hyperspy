@@ -170,7 +170,11 @@ class LazySignal(BaseSignal):
             if self.data.chunks != new_chunks and rechunk:
                 res = self.data.rechunk(new_chunks)
         else:
-            res = da.from_array(self.data, chunks=new_chunks)
+            if isinstance(self.data, np.ma.masked_array):
+                data = np.where(self.data.mask, np.nan, np.array(self.data))
+            else:
+                data = self.data
+            res = da.from_array(data, chunks=new_chunks)
         assert isinstance(res, da.Array)
         return res
 
