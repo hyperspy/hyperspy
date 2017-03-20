@@ -22,27 +22,32 @@ import numpy as np
 import dask.array as da
 
 
+def _get_shapes(am, ignore_axis):
+    if ignore_axis is not None:
+        try:
+            ignore_axis = am[ignore_axis]
+        except ValueError:
+            pass
+    sigsh = tuple(axis.size if (ignore_axis is None or axis is not
+                                ignore_axis)
+                  else 1 for axis in am.signal_axes) if am.signal_dimension != 0 else ()
+
+    navsh = tuple(axis.size if (ignore_axis is None or axis is not
+                                ignore_axis)
+                  else 1 for axis in am.navigation_axes) if am.navigation_dimension != 0 else ()
+    return sigsh, navsh
+
 def are_signals_aligned(*args, ignore_axis=None):
     if len(args) < 2:
         raise ValueError(
             "This function requires at least two signal instances")
     args = list(args)
     am = args.pop().axes_manager
-    if ignore_axis is not None:
-        ia = am[ignore_axis]
-    sigsh = tuple(axis.size if (ignore_axis is None or axis is not ia)
-                   else 1 for axis in am.signal_axes )
 
-    navsh = tuple(axis.size if (ignore_axis is None or axis is not ia)
-                   else 1 for axis in am.navigation_axes )
+    sigsh, navsh = _get_shapes(am, ignore_axis)
     while args:
         amo = args.pop().axes_manager
-        if ignore_axis is not None:
-            iao = amo[ignore_axis]
-        sigsho = tuple(axis.size if (ignore_axis is None or axis is not iao)
-                       else 1 for axis in amo.signal_axes )
-        navsho = tuple(axis.size if (ignore_axis is None or axis is not iao)
-                       else 1 for axis in amo.navigation_axes )
+        sigsho, navsho = _get_shapes(amo, ignore_axis)
 
         if not (are_aligned(sigsh[::-1], sigsho[::-1]) and
                 are_aligned(navsh[::-1], navsho[::-1])):
