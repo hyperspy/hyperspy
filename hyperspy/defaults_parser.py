@@ -323,9 +323,11 @@ class Preferences(t.HasTraits):
 
     def gui(self):
         import hyperspy.gui.preferences
+        import hyperspy.gui_ipywidgets.preferences
         self.EELS.trait_view("traits_view",
                              hyperspy.gui.preferences.eels_view)
         self.edit_traits(view=hyperspy.gui.preferences.preferences_view)
+        hyperspy.gui_ipywidgets.preferences.show_preferences_widget(preferences)
 
     def save(self):
         config = configparser.ConfigParser(allow_no_value=True)
