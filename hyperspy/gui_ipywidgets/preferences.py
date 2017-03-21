@@ -96,10 +96,10 @@ def show_preferences_widget(preferences):
     save_button = ipywidgets.Button(
         description="Save",
         tooltip="Make changes permanent")
+
     def on_button_clicked(b):
         preferences.save()
 
     save_button.on_click(on_button_clicked)
-
 
     display(ipywidgets.VBox([ipytabs_, save_button]))
