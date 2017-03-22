@@ -2,6 +2,14 @@ import traitlets
 import traits.api as t
 
 
+def has_traits(obj):
+    return isinstance(obj, t.HasTraits)
+
+
+def has_traitlets(obj):
+    return isinstance(obj, traitlets.HasTraits)
+
+
 class link_traits(traitlets.link):
     """Link traits from different objects together so they remain in sync.
 
@@ -21,20 +29,22 @@ class link_traits(traitlets.link):
         # _validate_link(source, target)
         self.source, self.target = source, target
         try:
-            setattr(target[0], target[1], getattr(source[0], source[1]))
+            source_value = getattr(source[0], source[1])
+            if source_value not in (t.Undefined, traitlets.Undefined):
+                setattr(target[0], target[1], source_value)
         finally:
-            if isinstance(source[0], t.HasTraits):
+            if has_traits(source[0]):
                 source[0].on_trait_change(
                     self._update_target_traits, name=source[1])
-            elif isinstance(source[0], traitlets.HasTraits):
+            elif has_traitlets(source[0]):
                 source[0].observe(self._update_target, names=source[1])
             else:
                 raise ValueError(
                     "source must contains either traits or traitlets.")
-            if isinstance(target[0], t.HasTraits):
+            if has_traits(target[0]):
                 target[0].on_trait_change(
                     self._update_source_traits, name=target[1])
-            elif isinstance(target[0], traitlets.HasTraits):
+            elif has_traitlets(target[0]):
                 target[0].observe(self._update_source, names=target[1])
             else:
                 raise ValueError(
