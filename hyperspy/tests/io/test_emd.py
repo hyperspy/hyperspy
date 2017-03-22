@@ -166,6 +166,12 @@ class FeiEMDTest():
         fei_image = np.load(os.path.join(my_path, 'emd_files', 'fei_emd_image.npy'))
         np.testing.assert_equal(signal.data, fei_image)
         assert isinstance(signal, Signal2D)
+        
+    def test_fei_emd_spectrum(self):
+        signal = load(os.path.join(my_path, 'emd_files', 'example_fei_emd_spectrum.emd'))
+        fei_spectrum = np.load(os.path.join(my_path, 'emd_files', 'fei_emd_spectrum.npy'))
+        np.testing.assert_equal(signal.data, fei_spectrum)
+        assert isinstance(signal, Signal1D)
 
 
 if __name__ == '__main__':

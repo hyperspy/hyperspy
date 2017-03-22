@@ -431,6 +431,8 @@ class FeiEMDReader(object):
         
         if self.im_type == 'Image':
             self._read_im()
+        elif self.im_type == 'Spectrum':
+            self._read_spectrum()
         
     def _check_im_type(self):
         if 'Image' in self.d_grp:
@@ -444,7 +446,6 @@ class FeiEMDReader(object):
         else:
             self.im_type = 'Spectrum'
             self.record_by = 'spectrum'
-            raise NotImplementedError('Cannot currently read FEI EMD spectra')
     
     def _read_im(self):
         im_grp = self.d_grp.get("Image")
@@ -464,6 +465,21 @@ class FeiEMDReader(object):
            'size': self.data.shape[1],
            'units': ''}
          ]
+        
+    def _read_spectrum(self):
+        spec_grp = self.d_grp.get("Spectrum")
+        data_grp = spec_grp[list(spec_grp.keys())[0]]
+        dataset = data_grp['Data']
+        self.data = dataset[:,0]
+        
+        self.axes = [{'index_in_array': 0,
+                      'name': 'E',
+                      'offset': 0,
+                      'scale': 1.0,
+                      'size': self.data.shape[0],
+                      'units': ''}
+                ]
+        
 
     def get_metadata_dict(self):
         meta_gen = {}
