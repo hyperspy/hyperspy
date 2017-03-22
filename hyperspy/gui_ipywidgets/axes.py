@@ -8,13 +8,24 @@ from hyperspy.misc.link_traits import link_traits
 def ipy_navigation_sliders(axes):
     widgets = []
     for axis in axes:
-        widget = ipywidgets.IntSlider(
+        iwidget = ipywidgets.IntSlider(
             min=0,
             max=axis.size - 1,
             readout=True,
         )
-        link_traits((axis, "index"), (widget, "value"))
-        widgets.append(labelme(str(axis).replace(" ", "_"), widget))
+        link_traits((axis, "index"), (iwidget, "value"))
+        vwidget = ipywidgets.FloatSlider(
+            min=axis.low_value,
+            max=axis.high_value,
+            # readout_format=".lf"
+        )
+        link_traits((axis, "value"), (vwidget, "value"))
+        link_traits((axis, "high_value"), (vwidget, "max"))
+        link_traits((axis, "low_value"), (vwidget, "min"))
+        bothw = ipywidgets.VBox([iwidget, vwidget])
+        labeled_widget = labelme(str(axis).replace(" ", "_"), bothw)
+        link_traits((axis, "name"), (labeled_widget.children[0], "value"))
+        widgets.append(labeled_widget)
     box = ipywidgets.VBox(widgets)
     display(box)
 
