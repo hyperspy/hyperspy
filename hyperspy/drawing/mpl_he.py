@@ -21,6 +21,7 @@ from traits.api import Undefined
 
 from hyperspy.drawing import widgets, signal1d, image
 from hyperspy.gui.axes import navigation_sliders
+from hyperspy.gui_ipywidgets.axes import ipy_navigation_sliders
 
 
 class MPL_HyperExplorer(object):
@@ -67,6 +68,8 @@ class MPL_HyperExplorer(object):
             navigation_sliders(
                 self.axes_manager.navigation_axes,
                 title=self.signal_title + " navigation sliders")
+            ipy_navigation_sliders(
+                self.axes_manager.navigation_axes,)
             return
         title = title or self.signal_title + " Navigator" if self.signal_title else ""
         if self.navigator_plot is not None:
@@ -97,6 +100,8 @@ class MPL_HyperExplorer(object):
                 navigation_sliders(
                     self.axes_manager.navigation_axes,
                     title=self.signal_title + " navigation sliders")
+                ipy_navigation_sliders(
+                    self.axes_manager.navigation_axes,)
                 for axis in self.axes_manager.navigation_axes[:-2]:
                     axis.events.index_changed.connect(sf.update, [])
                     sf.events.closed.connect(
@@ -126,6 +131,8 @@ class MPL_HyperExplorer(object):
                     navigation_sliders(
                         self.axes_manager.navigation_axes,
                         title=self.signal_title + " navigation sliders")
+                    ipy_navigation_sliders(
+                        self.axes_manager.navigation_axes,)
                     for axis in self.axes_manager.navigation_axes[2:]:
                         axis.events.index_changed.connect(imf.update, [])
                         imf.events.closed.connect(

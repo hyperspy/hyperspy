@@ -5,17 +5,8 @@ import traits
 import ipywidgets
 
 from hyperspy.misc.link_traits import link_traits
+from hyperspy.preferences import labelme
 
-FORM_ITEM_LAYOUT = ipywidgets.Layout(
-    display='flex',
-    flex_flow='row',
-    justify_content='space-between',
-)
-
-
-def labelme(label, widget):
-    return ipywidgets.HBox(
-        [ipywidgets.Label(label), widget], layout=FORM_ITEM_LAYOUT)
 
 
 def bool2checkbox(trait, label):
