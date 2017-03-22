@@ -18,6 +18,7 @@ def ipy_navigation_sliders(axes):
     box = ipywidgets.VBox(widgets)
     display(box)
 
+
 def _get_axis_widgets(axis):
     widgets = []
 
@@ -63,6 +64,7 @@ def _get_axis_widgets(axis):
     link_traits((axis, "offset"), (widget, "value"))
 
     return widgets
+
 
 def ipy_axes_gui(axes_manager):
     nav_widgets = [ipywidgets.VBox(_get_axis_widgets(axis))
