@@ -5,7 +5,7 @@ import traits
 import ipywidgets
 
 from hyperspy.misc.link_traits import link_traits
-from hyperspy.preferences import labelme
+from hyperspy.gui_ipywidgets.utils import labelme
 
 
 def bool2checkbox(trait, label):
