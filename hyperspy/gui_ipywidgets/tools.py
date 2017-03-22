@@ -97,7 +97,7 @@ def calibrate_ipy(range_selector):
         labelme_sandwich("New right", new_right, units),
         labelme_sandwich("Left", left, units),
         labelme_sandwich("Right", right, units),
-        labelme_sandwich("Scale", scale, ""), # No units, but padding
+        labelme_sandwich("Scale", scale, ""),  # No units, but padding
         labelme_sandwich("Offset", offset, units),
         help,
         ipywidgets.HBox((apply, close))
