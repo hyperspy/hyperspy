@@ -37,13 +37,13 @@ def interactive_range_ipy(range_selector):
             obj.span_selector_switch(True)
     apply.on_click(on_apply_clicked)
 
-
     box = ipywidgets.VBox([
         ipywidgets.HBox([left, units, ipywidgets.Label("-"), right, units]),
         help,
         ipywidgets.HBox((apply, close))
     ])
     display(box)
+
     def on_close_clicked(b):
         range_selector.span_selector_switch(False)
         box.close()
