@@ -8,7 +8,6 @@ from hyperspy.misc.link_traits import link_traits
 from hyperspy.preferences import labelme
 
 
-
 def bool2checkbox(trait, label):
     tooltip = trait.desc if trait.desc else ""
     widget = ipywidgets.Checkbox(
