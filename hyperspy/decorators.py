@@ -20,6 +20,7 @@
 from hyperspy.exceptions import NoInteractiveError
 from hyperspy.defaults_parser import preferences
 from hyperspy.gui.tools import Signal1DRangeSelector
+from hyperspy.gui_ipywidgets.tools import interactive_range_ipy
 
 from functools import wraps
 import types
@@ -113,6 +114,7 @@ def interactive_range_selector(cm):
             range_selector = Signal1DRangeSelector(self)
             range_selector.on_close.append((cm, self))
             range_selector.edit_traits()
+            interactive_range_ipy(range_selector)
         else:
             cm(self, *args, **kwargs)
     return wrapper
