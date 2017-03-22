@@ -932,6 +932,8 @@ class AxesManager(t.HasTraits):
         from hyperspy.gui.axes import data_axis_view
         for axis in self._axes:
             axis.edit_traits(view=data_axis_view)
+        from hyperspy.gui_ipywidgets.axes import ipy_axes_gui
+        ipy_axes_gui(self)
 
     def copy(self):
         return copy.copy(self)
