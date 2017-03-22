@@ -28,7 +28,6 @@ def bool2checkbox(trait, label):
 
 def float2floattext(trait, label):
     tooltip = trait.desc if trait.desc else ""
-
     widget = ipywidgets.FloatText(
         tooltip=tooltip,
     )
@@ -44,7 +43,6 @@ def directory2unicode(trait, label):
 
 def range2floatrangeslider(trait, label):
     tooltip = trait.desc if trait.desc else ""
-
     widget = ipywidgets.FloatSlider(
         min=trait.trait_type._low,
         max=trait.trait_type._high,
@@ -59,7 +57,7 @@ def enum2dropdown(trait, label):
         tooltip=tooltip,)
     return labelme(widget=widget, label=label)
 
-traits2ipywidgets = {
+TRAITS2IPYWIDGETS = {
     traits.trait_types.CBool: bool2checkbox,
     traits.trait_types.Bool: bool2checkbox,
     traits.trait_types.CFloat: float2floattext,
@@ -82,7 +80,7 @@ def show_preferences_widget(preferences):
         tabtraits = getattr(preferences, tab).traits()
         for trait_name in getattr(preferences, tab).editable_traits():
             trait = tabtraits[trait_name]
-            widget = traits2ipywidgets[type(trait.trait_type)](
+            widget = TRAITS2IPYWIDGETS[type(trait.trait_type)](
                 trait, get_label(trait, trait_name))
             ipytab.append(widget)
             link_traits((getattr(preferences, tab), trait_name),
