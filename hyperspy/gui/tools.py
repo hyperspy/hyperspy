@@ -320,6 +320,7 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
             self._update_calibration()
 
     def _update_calibration(self, *args, **kwargs):
+        print(self.left_value, self.right_value)
         if self.left_value == self.right_value:
             return
         lc = self.axis.value2index(self.ss_left_value)

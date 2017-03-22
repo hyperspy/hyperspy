@@ -49,6 +49,7 @@ from hyperspy.gui.tools import (
     SmoothingLowess,
     SmoothingTV,
     ButterworthFilter)
+from hyperspy.gui_ipywidgets.tools import calibrate_ipy
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.gui.egerton_quantification import BackgroundRemoval
 from hyperspy.decorators import only_interactive
@@ -804,6 +805,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         self._check_signal_dimension_equals_one()
         calibration = Signal1DCalibration(self)
         calibration.edit_traits()
+        calibrate_ipy(calibration)
 
     def smooth_savitzky_golay(self,
                               polynomial_order=None,
