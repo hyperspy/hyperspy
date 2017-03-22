@@ -1480,7 +1480,10 @@ class BaseModel(list):
                 parameters = component.free_parameters if only_free \
                     else component.parameters
                 for parameter in parameters:
-                    if not hasattr(parameter.value, '__iter__'):
+                    if hasattr(parameter.value, '__iter__'):
+                        for idx in range(len(parameter.value)):
+                            print("\t\ta[%d]\t%g" % (idx, parameter.value[idx]))
+                    else:
                         print("\t\t%s\t%g" % (
                             parameter.name, parameter.value))
 
