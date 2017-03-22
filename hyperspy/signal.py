@@ -376,7 +376,7 @@ class MVATools(object):
         else:
             return f
 
-    def _plot_loadings(self, loadings, comp_ids=None, calibrate=True,
+    def _plot_loadings(self, loadings, comp_ids, calibrate=True,
                        same_window=None, comp_label=None,
                        with_factors=False, factors=None,
                        cmap=plt.cm.gray, no_nans=False, per_row=3):
@@ -738,7 +738,7 @@ class MVATools(object):
                     s.save(filename)
 
     def plot_decomposition_factors(self,
-                                   comp_ids=None,
+                                   comp_ids,
                                    calibrate=True,
                                    same_window=None,
                                    comp_label='Decomposition factor',
@@ -861,7 +861,7 @@ class MVATools(object):
                                             per_row=per_row)
 
     def plot_decomposition_loadings(self,
-                                    comp_ids=None,
+                                    comp_ids,
                                     calibrate=True,
                                     same_window=None,
                                     comp_label='Decomposition loading',
