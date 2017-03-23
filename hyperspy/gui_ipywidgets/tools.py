@@ -111,12 +111,14 @@ def calibrate_ipy(obj):
         box.close()
     close.on_click(on_close_clicked)
 
+
 def smooth_savitzky_golay_ipy(obj):
     window_length = OddIntSlider(
         value=3, step=2, min=3, max=max(int(obj.axis.size * 0.25), 3))
     polynomial_order = ipywidgets.IntSlider(value=3, min=1,
                                             max=window_length.value - 1)
     # Polynomial order must be less than window length
+
     def update_bound(change):
         polynomial_order.max = change.new - 1
     window_length.observe(update_bound, "value")
@@ -135,6 +137,7 @@ def smooth_savitzky_golay_ipy(obj):
         labelme("Color", color),
     ])
     display(box)
+
 
 def smooth_lowess_ipy(obj):
     smoothing_parameter = ipywidgets.FloatSlider(min=0, max=1)
