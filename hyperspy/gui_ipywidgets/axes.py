@@ -84,6 +84,7 @@ def ipy_axes_gui(axes_manager):
                    for axis in axes_manager.signal_axes]
     nav_accordion = ipywidgets.Accordion(nav_widgets)
     sig_accordion = ipywidgets.Accordion(sig_widgets)
+    i = 0 # For when there is not navigation axes
     for i in range(axes_manager.navigation_dimension):
         nav_accordion.set_title(i, "Axis %i" % i)
     for j in range(axes_manager.signal_dimension):
