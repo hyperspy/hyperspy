@@ -53,6 +53,7 @@ from hyperspy.gui_ipywidgets.tools import (
     calibrate_ipy, smooth_savitzky_golay_ipy, smooth_lowess_ipy, smooth_tv_ipy)
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.gui.egerton_quantification import BackgroundRemoval
+from hyperspy.gui_ipywidgets.tools import remove_background_ipy
 from hyperspy.decorators import only_interactive
 from hyperspy.decorators import interactive_range_selector
 from scipy.ndimage.filters import gaussian_filter1d
@@ -1018,6 +1019,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if signal_range == 'interactive':
             br = BackgroundRemoval(self)
             br.edit_traits()
+            remove_background_ipy(br)
         else:
             if background_type == 'PowerLaw':
                 background_estimator = components1d.PowerLaw()

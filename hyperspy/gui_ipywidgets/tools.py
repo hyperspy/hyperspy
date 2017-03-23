@@ -2,7 +2,8 @@ import ipywidgets
 from IPython.display import display
 import traitlets
 
-from hyperspy.gui_ipywidgets.utils import labelme, labelme_sandwich
+from hyperspy.gui_ipywidgets.utils import (
+    labelme, labelme_sandwich, enum2dropdown)
 from hyperspy.misc.link_traits import link_traits
 from hyperspy.gui_ipywidgets.custom_widgets import OddIntSlider
 
@@ -239,6 +240,58 @@ def fit_component_ipy(obj):
         labelme("Only current", only_current),
         help,
         ipywidgets.HBox((fit, close))
+    ])
+    display(box)
+
+    def on_close_clicked(b):
+        obj.span_selector_switch(False)
+        box.close()
+    close.on_click(on_close_clicked)
+
+
+def remove_background_ipy(obj):
+    fast = ipywidgets.Checkbox()
+    help = ipywidgets.Label(
+        "Click on the signal figure and drag to the right to select a"
+        "range. Press `Fit` to fit the component in that range. If only "
+        "current is unchecked the fit is performed in the whole dataset.")
+    help = ipywidgets.Accordion(children=[help])
+    help.set_title(0, "Help")
+    close = ipywidgets.Button(
+        description="Close",
+        tooltip="Close widget and remove span selector from the signal figure.")
+    apply = ipywidgets.Button(
+        description="Apply",
+        tooltip="Remove the background in the whole dataset.")
+    def on_apply_clicked(b):
+        obj.apply()
+    apply.on_click(on_apply_clicked)
+    polynomial_order = ipywidgets.IntSlider(min=1, max=10)
+    labeled_polyorder = labelme("Polynomial order", polynomial_order)
+    background_type = enum2dropdown(obj.traits()["background_type"])
+    def enable_poly_order(change):
+        if change.new == "Polynomial":
+            for child in labeled_polyorder.children:
+                child.layout.display = ""
+        else:
+            for child in labeled_polyorder.children:
+                child.layout.display = "none"
+    background_type.observe(enable_poly_order, "value")
+    link_traits((obj, "background_type"), (background_type, "value"))
+    # Trigger the function that controls the visibility of poly order as
+    # setting the default value doesn't trigger it.
+    class Dummy:
+        new = background_type.value
+    enable_poly_order(change=Dummy())
+    link_traits((obj, "polynomial_order"),
+                (background_type, "polynomial_order"))
+    link_traits((obj, "fast"), (fast, "value"))
+    box = ipywidgets.VBox([
+        labelme("Background type", background_type),
+        labeled_polyorder,
+        labelme("Fast", fast),
+        help,
+        ipywidgets.HBox((apply, close)),
     ])
     display(box)
 
