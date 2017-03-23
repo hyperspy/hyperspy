@@ -1,7 +1,9 @@
 import ipywidgets
 import traitlets
 
+
 class OddIntSlider(ipywidgets.IntSlider):
+
     @traitlets.validate('value')
     def _validate_value(self, proposal):
         value = proposal['value']

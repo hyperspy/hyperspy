@@ -17,7 +17,7 @@ def labelme(label, widget):
     return ipywidgets.HBox(
         [label, widget],
         layout=FORM_ITEM_LAYOUT,
-        )
+    )
 
 
 def labelme_sandwich(label1, widget, label2):
