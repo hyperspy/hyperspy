@@ -53,6 +53,9 @@ OurFindButton = tu.Action(name="Find next",
 OurPreviousButton = tu.Action(name="Find previous",
                               action="back",)
 
+OurFitButton = tu.Action(name="Fit",
+                         action="fit")
+
 
 class SmoothingHandler(tu.Handler):
 
@@ -784,18 +787,28 @@ class ImageContrastEditor(t.HasTraits):
     def close(self):
         plt.close(self.ax.figure)
 
+class ComponentFitHandler(SpanSelectorInSignal1DHandler):
+
+
+    def fit(self, info):
+        """Handles the **Apply** button being clicked.
+
+        """
+        obj = info.object
+        obj._fit_fired()
+        return
+
+
+
 
 class ComponentFit(SpanSelectorInSignal1D):
-    fit = t.Button()
-    only_current = t.List(t.Bool(True))
+    only_current = t.Bool(True)
 
     view = tu.View(
-        tu.Item('fit', show_label=False),
-        tu.Item('only_current', show_label=False, style='custom',
-                editor=tu.CheckListEditor(values=[(True, 'Only current')])),
-        buttons=[OurCloseButton],
+        tu.Item('only_current', show_label=True,),
+        buttons=[OurFitButton, OurCloseButton],
         title='Fit single component',
-        handler=SpanSelectorInSignal1DHandler,
+        handler=ComponentFitHandler,
     )
 
     def __init__(self, model, component, signal_range=None,
@@ -808,7 +821,6 @@ class ComponentFit(SpanSelectorInSignal1D):
         self.signal = model.signal
         self.axis = self.signal.axes_manager.signal_axes[0]
         self.span_selector = None
-        self.only_current = [True] if only_current else []  # CheckListEditor
         self.model = model
         self.component = component
         self.signal_range = signal_range
@@ -852,7 +864,7 @@ class ComponentFit(SpanSelectorInSignal1D):
 
         # Setting reasonable initial value for parameters through
         # the components estimate_parameters function (if it has one)
-        only_current = len(self.only_current) > 0   # CheckListEditor
+        only_current = self.only_current
         if self.estimate_parameters:
             if hasattr(self.component, 'estimate_parameters'):
                 if (self.signal_range != "interactive" and

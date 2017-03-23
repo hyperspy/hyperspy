@@ -214,3 +214,33 @@ def image_constast_editor_ipy(obj):
         obj.close()
         box.close()
     close.on_click(on_close_clicked)
+
+
+def fit_component_ipy(obj):
+    only_current = ipywidgets.Checkbox()
+    help = ipywidgets.Label(
+        "Click on the signal figure and drag to the right to select a"
+        "range. Press `Fit` to fit the component in that range. If only "
+        "current is unchecked the fit is performed in the whole dataset.")
+    help = ipywidgets.Accordion(children=[help])
+    help.set_title(0, "Help")
+    link_traits((obj, "only_current"), (only_current, "value"))
+    fit = ipywidgets.Button(
+        description="Fit",
+        tooltip="Fit in the selected signal range")
+    close = ipywidgets.Button(
+        description="Close",
+        tooltip="Close widget and remove span selector from the signal figure.")
+    def on_fit_clicked(b):
+        obj._fit_fired()
+    fit.on_click(on_fit_clicked)
+    box = ipywidgets.VBox([
+        labelme("Only current", only_current),
+        help,
+        ipywidgets.HBox((fit, close))
+    ])
+    display(box)
+    def on_close_clicked(b):
+        obj.span_selector_switch(False)
+        box.close()
+    close.on_click(on_close_clicked)
