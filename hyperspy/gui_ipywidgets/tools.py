@@ -111,12 +111,14 @@ def calibrate_ipy(obj):
         box.close()
     close.on_click(on_close_clicked)
 
+
 def smooth_savitzky_golay_ipy(obj):
     window_length = OddIntSlider(
         value=3, step=2, min=3, max=max(int(obj.axis.size * 0.25), 3))
     polynomial_order = ipywidgets.IntSlider(value=3, min=1,
                                             max=window_length.value - 1)
     # Polynomial order must be less than window length
+
     def update_bound(change):
         polynomial_order.max = change.new - 1
     window_length.observe(update_bound, "value")
@@ -135,6 +137,7 @@ def smooth_savitzky_golay_ipy(obj):
         labelme("Color", color),
     ])
     display(box)
+
 
 def smooth_lowess_ipy(obj):
     smoothing_parameter = ipywidgets.FloatSlider(min=0, max=1)
@@ -157,7 +160,8 @@ def smooth_tv_ipy(obj):
         value=smoothing_parameter.max)
     color = ipywidgets.ColorPicker()
     link_traits((obj, "smoothing_parameter"), (smoothing_parameter, "value"))
-    link_traits((smoothing_parameter_max, "value"), (smoothing_parameter, "max"))
+    link_traits((smoothing_parameter_max, "value"),
+                (smoothing_parameter, "max"))
     link_traits((obj, "line_color_ipy"), (color, "value"))
     box = ipywidgets.VBox([
         labelme("Weight", smoothing_parameter),
