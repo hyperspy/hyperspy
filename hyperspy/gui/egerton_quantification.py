@@ -242,6 +242,8 @@ SPIKES_REMOVAL_INSTRUCTIONS = (
     "it does."
 
     "\n")
+
+
 class SpikesRemoval(SpanSelectorInSignal1D):
     interpolator_kind = t.Enum(
         'Linear',
