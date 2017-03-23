@@ -49,7 +49,8 @@ from hyperspy.gui.tools import (
     SmoothingLowess,
     SmoothingTV,
     ButterworthFilter)
-from hyperspy.gui_ipywidgets.tools import calibrate_ipy
+from hyperspy.gui_ipywidgets.tools import (
+    calibrate_ipy, smooth_savitzky_golay_ipy)
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.gui.egerton_quantification import BackgroundRemoval
 from hyperspy.decorators import only_interactive
@@ -852,6 +853,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             if window_length is not None:
                 smoother.window_length = window_length
             smoother.edit_traits()
+            smooth_savitzky_golay_ipy(smoother)
 
     def smooth_lowess(self,
                       smoothing_parameter=None,

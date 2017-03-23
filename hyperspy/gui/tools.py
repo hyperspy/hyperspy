@@ -20,6 +20,7 @@ import logging
 
 import numpy as np
 import scipy as sp
+import matplotlib.colors
 import matplotlib.pyplot as plt
 import traits.api as t
 import traitsui.api as tu
@@ -320,7 +321,6 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
             self._update_calibration()
 
     def _update_calibration(self, *args, **kwargs):
-        print(self.left_value, self.right_value)
         if self.left_value == self.right_value:
             return
         lc = self.axis.value2index(self.ss_left_value)
@@ -341,20 +341,21 @@ class Signal1DRangeSelector(SpanSelectorInSignal1D):
 
 
 class Smoothing(t.HasTraits):
-    line_color = t.Color('blue')
+    line_color = t.Color("blue")
+    line_color_ipy = t.Str("blue")
     differential_order = t.Int(0)
 
     @property
     def line_color_rgb(self):
         try:
             # PyQt and WX
-            return self.line_color.Get()
+            return np.array(self.line_color.Get()) / 255.
         except AttributeError:
             try:
                 # PySide
-                return self.line_color.getRgb()
+                return np.array(self.line_color.getRgb()) / 255.
             except:
-                raise
+                return matplotlib.colors.to_rgb(self.line_color_ipy)
 
     def __init__(self, signal):
         self.ax = None
@@ -378,7 +379,7 @@ class Smoothing(t.HasTraits):
         l2.data_function = self.model2plot
 
         l2.set_line_properties(
-            color=np.array(self.line_color_rgb) / 255.,
+            color=self.line_color_rgb,
             type='line')
         # Add the line to the figure
         hse.signal_plot.add_line(l2)
@@ -398,11 +399,14 @@ class Smoothing(t.HasTraits):
         self.smooth_diff_line = drawing.signal1d.Signal1DLine()
         self.smooth_diff_line.data_function = self.diff_model2plot
         self.smooth_diff_line.set_line_properties(
-            color=np.array(self.line_color_rgb) / 255.,
+            color=self.line_color_rgb,
             type='line')
         self.signal._plot.signal_plot.add_line(self.smooth_diff_line,
                                                ax='right')
         self.smooth_diff_line.axes_manager = self.signal.axes_manager
+
+    def _line_color_ipy_changed(self):
+        self.line_color = str(self.line_color_ipy)
 
     def turn_diff_line_off(self):
         if self.smooth_diff_line is None:
@@ -421,10 +425,10 @@ class Smoothing(t.HasTraits):
 
     def _line_color_changed(self, old, new):
         self.smooth_line.line_properties = {
-            'color': np.array(self.line_color_rgb) / 255.}
+            'color': self.line_color_rgb}
         if self.smooth_diff_line is not None:
             self.smooth_diff_line.line_properties = {
-                'color': np.array(self.line_color_rgb) / 255.}
+                'color': self.line_color_rgb}
         self.update_lines()
 
     def diff_model2plot(self, axes_manager=None):
