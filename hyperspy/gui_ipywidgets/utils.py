@@ -33,6 +33,7 @@ def labelme_sandwich(label1, widget, label2):
         [label1, widget, label2],
         layout=FORM_ITEM_LAYOUT)
 
+
 def enum2dropdown(trait):
     tooltip = trait.desc if trait.desc else ""
     widget = ipywidgets.Dropdown(

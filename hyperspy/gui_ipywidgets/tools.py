@@ -263,12 +263,14 @@ def remove_background_ipy(obj):
     apply = ipywidgets.Button(
         description="Apply",
         tooltip="Remove the background in the whole dataset.")
+
     def on_apply_clicked(b):
         obj.apply()
     apply.on_click(on_apply_clicked)
     polynomial_order = ipywidgets.IntSlider(min=1, max=10)
     labeled_polyorder = labelme("Polynomial order", polynomial_order)
     background_type = enum2dropdown(obj.traits()["background_type"])
+
     def enable_poly_order(change):
         if change.new == "Polynomial":
             for child in labeled_polyorder.children:
@@ -280,6 +282,7 @@ def remove_background_ipy(obj):
     link_traits((obj, "background_type"), (background_type, "value"))
     # Trigger the function that controls the visibility of poly order as
     # setting the default value doesn't trigger it.
+
     class Dummy:
         new = background_type.value
     enable_poly_order(change=Dummy())
