@@ -231,6 +231,7 @@ def fit_component_ipy(obj):
     close = ipywidgets.Button(
         description="Close",
         tooltip="Close widget and remove span selector from the signal figure.")
+
     def on_fit_clicked(b):
         obj._fit_fired()
     fit.on_click(on_fit_clicked)
@@ -240,6 +241,7 @@ def fit_component_ipy(obj):
         ipywidgets.HBox((fit, close))
     ])
     display(box)
+
     def on_close_clicked(b):
         obj.span_selector_switch(False)
         box.close()

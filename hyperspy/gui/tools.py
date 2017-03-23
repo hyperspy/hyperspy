@@ -787,8 +787,8 @@ class ImageContrastEditor(t.HasTraits):
     def close(self):
         plt.close(self.ax.figure)
 
-class ComponentFitHandler(SpanSelectorInSignal1DHandler):
 
+class ComponentFitHandler(SpanSelectorInSignal1DHandler):
 
     def fit(self, info):
         """Handles the **Apply** button being clicked.
@@ -797,8 +797,6 @@ class ComponentFitHandler(SpanSelectorInSignal1DHandler):
         obj = info.object
         obj._fit_fired()
         return
-
-
 
 
 class ComponentFit(SpanSelectorInSignal1D):
