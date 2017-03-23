@@ -24,6 +24,7 @@ import dask.array as da
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.common_signal1d import CommonSignal1D
 from hyperspy.gui.egerton_quantification import SpikesRemoval
+from hyperspy.gui_ipywidgets.tools import spikes_removal_ipy
 import math
 
 import scipy.interpolate
@@ -348,6 +349,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                            navigation_mask=navigation_mask,
                            signal_mask=signal_mask)
         sr.configure_traits()
+        spikes_removal_ipy(sr)
         return sr
 
     def create_model(self, dictionary=None):

@@ -6,6 +6,7 @@ from hyperspy.gui_ipywidgets.utils import (
     labelme, labelme_sandwich, enum2dropdown)
 from hyperspy.misc.link_traits import link_traits
 from hyperspy.gui_ipywidgets.custom_widgets import OddIntSlider
+from hyperspy.gui.egerton_quantification import SPIKES_REMOVAL_INSTRUCTIONS
 
 
 def interactive_range_ipy(obj):
@@ -253,8 +254,10 @@ def remove_background_ipy(obj):
     fast = ipywidgets.Checkbox()
     help = ipywidgets.Label(
         "Click on the signal figure and drag to the right to select a"
-        "range. Press `Fit` to fit the component in that range. If only "
-        "current is unchecked the fit is performed in the whole dataset.")
+        "range. Press `Apply` to remove the background in the whole dataset. "
+        "If fast is checked, the background parameters are estimated using a "
+        "fast (analytical) method that can compromise accuray. When unchecked "
+        "non linear least squares is employed instead.")
     help = ipywidgets.Accordion(children=[help])
     help.set_title(0, "Help")
     close = ipywidgets.Button(
@@ -286,8 +289,7 @@ def remove_background_ipy(obj):
     class Dummy:
         new = background_type.value
     enable_poly_order(change=Dummy())
-    link_traits((obj, "polynomial_order"),
-                (background_type, "polynomial_order"))
+    link_traits((obj, "polynomial_order"), (polynomial_order, "value"))
     link_traits((obj, "fast"), (fast, "value"))
     box = ipywidgets.VBox([
         labelme("Background type", background_type),
@@ -295,6 +297,92 @@ def remove_background_ipy(obj):
         labelme("Fast", fast),
         help,
         ipywidgets.HBox((apply, close)),
+    ])
+    display(box)
+
+    def on_close_clicked(b):
+        obj.span_selector_switch(False)
+        box.close()
+    close.on_click(on_close_clicked)
+
+
+def spikes_removal_ipy(obj):
+    threshold = ipywidgets.FloatText()
+    add_noise = ipywidgets.Checkbox()
+    default_spike_width = ipywidgets.IntText()
+    interpolator_kind = enum2dropdown(obj.traits()["interpolator_kind"])
+    spline_order = ipywidgets.IntSlider(min=1, max=10)
+    help = ipywidgets.Label(SPIKES_REMOVAL_INSTRUCTIONS)
+    help = ipywidgets.Accordion(children=[help])
+    help.set_title(0, "Help")
+
+    show_diff = ipywidgets.Button(
+        description="Show derivative histogram",
+        tooltip="This figure is useful to estimate the threshold.")
+    close = ipywidgets.Button(
+        description="Close",
+        tooltip="Close widget and remove span selector from the signal figure.")
+    next = ipywidgets.Button(
+        description="Find next",
+        tooltip="Find next spike")
+    previous = ipywidgets.Button(
+        description="Find previous",
+        tooltip="Find previous spike")
+    remove = ipywidgets.Button(
+        description="Remove spike",
+        tooltip="Remove spike and find next one.")
+
+    def on_show_diff_clicked(b):
+        obj._show_derivative_histogram_fired()
+    show_diff.on_click(on_show_diff_clicked)
+
+    def on_next_clicked(b):
+        obj.find()
+    next.on_click(on_next_clicked)
+
+    def on_previous_clicked(b):
+        obj.find(back=True)
+    previous.on_click(on_previous_clicked)
+
+    def on_remove_clicked(b):
+        obj.apply()
+    remove.on_click(on_remove_clicked)
+    labeled_spline_order = labelme("Spline order", spline_order)
+
+    def enable_interpolator_kind(change):
+        if change.new == "Spline":
+            for child in labeled_spline_order.children:
+                child.layout.display = ""
+        else:
+            for child in labeled_spline_order.children:
+                child.layout.display = "none"
+    interpolator_kind.observe(enable_interpolator_kind, "value")
+    link_traits((obj, "interpolator_kind"), (interpolator_kind, "value"))
+    link_traits((obj, "threshold"), (threshold, "value"))
+    link_traits((obj, "add_noise"), (add_noise, "value"))
+    link_traits((obj, "default_spike_width"), (default_spike_width, "value"))
+    link_traits((obj, "spline_order"), (spline_order, "value"))
+    # Trigger the function that controls the visibility  as
+    # setting the default value doesn't trigger it.
+
+    class Dummy:
+        new = interpolator_kind.value
+    enable_interpolator_kind(change=Dummy())
+    advanced = ipywidgets.Accordion((
+        ipywidgets.VBox([
+            labelme("Add noise", add_noise),
+            labelme("Interpolator kind", interpolator_kind),
+            labelme("Default spike width", default_spike_width),
+            labelme("Spline order", spline_order), ]),))
+
+    advanced.set_title(0, "Advanced settings")
+    box = ipywidgets.VBox([
+        ipywidgets.VBox([
+            show_diff,
+            labelme("Threshold", threshold), ]),
+        advanced,
+        help,
+        ipywidgets.HBox([previous, next, remove, close])
     ])
     display(box)
 
