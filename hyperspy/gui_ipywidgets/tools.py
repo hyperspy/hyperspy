@@ -111,14 +111,12 @@ def calibrate_ipy(obj):
         box.close()
     close.on_click(on_close_clicked)
 
-
 def smooth_savitzky_golay_ipy(obj):
     window_length = OddIntSlider(
         value=3, step=2, min=3, max=max(int(obj.axis.size * 0.25), 3))
     polynomial_order = ipywidgets.IntSlider(value=3, min=1,
                                             max=window_length.value - 1)
     # Polynomial order must be less than window length
-
     def update_bound(change):
         polynomial_order.max = change.new - 1
     window_length.observe(update_bound, "value")
@@ -137,7 +135,6 @@ def smooth_savitzky_golay_ipy(obj):
         labelme("Color", color),
     ])
     display(box)
-
 
 def smooth_lowess_ipy(obj):
     smoothing_parameter = ipywidgets.FloatSlider(min=0, max=1)
@@ -160,8 +157,7 @@ def smooth_tv_ipy(obj):
         value=smoothing_parameter.max)
     color = ipywidgets.ColorPicker()
     link_traits((obj, "smoothing_parameter"), (smoothing_parameter, "value"))
-    link_traits((smoothing_parameter_max, "value"),
-                (smoothing_parameter, "max"))
+    link_traits((smoothing_parameter_max, "value"), (smoothing_parameter, "max"))
     link_traits((obj, "line_color_ipy"), (color, "value"))
     box = ipywidgets.VBox([
         labelme("Weight", smoothing_parameter),
@@ -169,3 +165,46 @@ def smooth_tv_ipy(obj):
         labelme("Color", color),
     ])
     display(box)
+
+def image_constast_editor_ipy(obj):
+    left = ipywidgets.FloatText(disabled=True)
+    right = ipywidgets.FloatText(disabled=True)
+    help = ipywidgets.Label(
+        "Click on the histogram figure and drag to the right to select a"
+        "range. Press `Apply` to set the new contrast limits, `Reset` to reset "
+        "them or `Close` to cancel.")
+    help = ipywidgets.Accordion(children=[help])
+    help.set_title(0, "Help")
+    close = ipywidgets.Button(
+        description="Close",
+        tooltip="Close widget and remove span selector from the signal figure.")
+    apply = ipywidgets.Button(
+        description="Apply",
+        tooltip="Perform the operation using the selected range.")
+    reset = ipywidgets.Button(
+        description="Reset",
+        tooltip="Reset the contrast to the previous value.")
+
+    # Connect
+    link_traits((obj, "ss_left_value"), (left, "value"))
+    link_traits((obj, "ss_right_value"), (right, "value"))
+
+    def on_apply_clicked(b):
+        obj.apply()
+    apply.on_click(on_apply_clicked)
+    def on_reset_clicked(b):
+        obj.reset()
+    reset.on_click(on_reset_clicked)
+
+    box = ipywidgets.VBox([
+        labelme("vmin", left),
+        labelme("vmax", right),
+        help,
+        ipywidgets.HBox((apply, reset, close))
+    ])
+    display(box)
+
+    def on_close_clicked(b):
+        obj.close()
+        box.close()
+    close.on_click(on_close_clicked)
