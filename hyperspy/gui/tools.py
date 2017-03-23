@@ -611,9 +611,6 @@ class SmoothingTV(Smoothing):
     def _smoothing_parameter_changed(self, old, new):
         self.update_lines()
 
-    def _number_of_iterations_changed(self, old, new):
-        self.update_lines()
-
     def model2plot(self, axes_manager=None):
         self.single_spectrum.data = self.signal().copy()
         self.single_spectrum.smooth_tv(

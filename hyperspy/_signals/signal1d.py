@@ -50,7 +50,7 @@ from hyperspy.gui.tools import (
     SmoothingTV,
     ButterworthFilter)
 from hyperspy.gui_ipywidgets.tools import (
-    calibrate_ipy, smooth_savitzky_golay_ipy, smooth_lowess_ipy)
+    calibrate_ipy, smooth_savitzky_golay_ipy, smooth_lowess_ipy, smooth_tv_ipy)
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.gui.egerton_quantification import BackgroundRemoval
 from hyperspy.decorators import only_interactive
@@ -929,6 +929,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if smoothing_parameter is None:
             smoother = SmoothingTV(self)
             smoother.edit_traits()
+            smooth_tv_ipy(smoother)
         else:
             self.map(_tv_denoise_1d, weight=smoothing_parameter,
                      ragged=False,
