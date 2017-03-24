@@ -7,7 +7,7 @@ and user interface. That function gets the widget function from this registry
 and executes it passing the ``obj``, ``display`` and any extra keyword
 arguments. When ``display`` is true, ``function`` displays the widget. If
 ``False`` it returns a dictionary with whatever is needed to display the
-widgets externally (usually for testing or customisation purposes). 
+widgets externally (usually for testing or customisation purposes).
 
 '''
 
