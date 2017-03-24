@@ -1748,7 +1748,6 @@ class BaseModel(list):
         else:
             return list.__getitem__(self, value)
 
-
     def create_samfire(self, workers=None, setup=True, **kwargs):
         """Creates a SAMFire object.
 

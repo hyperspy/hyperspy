@@ -705,7 +705,6 @@ class Parameter(t.HasTraits):
         return view
 
 
-
 class Component(t.HasTraits):
     __axes_manager = None
 
