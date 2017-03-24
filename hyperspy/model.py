@@ -1748,25 +1748,6 @@ class BaseModel(list):
         else:
             return list.__getitem__(self, value)
 
-    def notebook_interaction(self):
-        """Creates interactive notebook widgets for all components and
-        parameters, if available.
-        Requires `ipywidgets` to be installed.
-        """
-        from ipywidgets import Accordion
-        from traitlets import TraitError as TraitletError
-        from IPython.display import display as ip_display
-
-        try:
-            children = [component.notebook_interaction(False) for component in
-                        self]
-            accord = Accordion(children=children)
-            for i, comp in enumerate(self):
-                accord.set_title(i, comp.name)
-            ip_display(accord)
-        except TraitletError:
-            _logger.info('This function is only avialable when running in a'
-                         ' notebook')
 
     def create_samfire(self, workers=None, setup=True, **kwargs):
         """Creates a SAMFire object.

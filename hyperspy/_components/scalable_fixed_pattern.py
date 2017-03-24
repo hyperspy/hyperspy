@@ -125,33 +125,3 @@ class ScalableFixedPattern(Component):
 
     def grad_yscale(self, x):
         return self.function(x) / self.yscale.value
-
-    def notebook_interaction(self, display=True):
-        from ipywidgets import Checkbox
-        from traitlets import TraitError as TraitletError
-        from IPython.display import display as ip_display
-
-        try:
-            container = super(ScalableFixedPattern,
-                              self).notebook_interaction(display=False)
-            interpolate = Checkbox(description='interpolate',
-                                   value=self.interpolate)
-
-            def on_interpolate_change(change):
-                self.interpolate = change['new']
-
-            interpolate.observe(on_interpolate_change, names='value')
-
-            container.children = (container.children[0], interpolate) + \
-                container.children[1:]
-
-            if not display:
-                return container
-            ip_display(container)
-        except TraitletError:
-            if display:
-                print('This function is only avialable when running in a'
-                      ' notebook')
-            else:
-                raise
-    notebook_interaction.__doc__ = Component.notebook_interaction.__doc__
