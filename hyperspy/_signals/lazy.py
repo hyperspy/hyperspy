@@ -93,7 +93,7 @@ class LazySignal(BaseSignal):
         self._lazy = False
         self._assign_subclass()
 
-    def _get_dask_chunks(self, axis=None):
+    def _get_dask_chunks(self, axis=None, dtype=None):
         """Returns dask chunks
         Aims:
             - Have at least one signal (or specified axis) in a single chunk,
@@ -104,6 +104,8 @@ class LazySignal(BaseSignal):
             If axis is None (default), returns chunks for current data shape so
             that at least one signal is in the chunk. If an axis is specified,
             only that particular axis is guaranteed to be "not sliced".
+        dtype : {string, np.dtype}
+            The dtype of target chunks.
         Returns
         -------
         Tuple of tuples, dask chunks
@@ -121,7 +123,11 @@ class LazySignal(BaseSignal):
         else:
             need_axes = self.axes_manager.signal_axes
 
-        typesize = dc.dtype.itemsize
+        if dtype is None:
+            dtype = dc.dtype
+        elif not isinstance(dtype, np.dtype):
+            dtype = np.dtype(dtype)
+        typesize = max(dtype.itemsize, dc.dtype.itemsize)
         want_to_keep = multiply([ax.size for ax in need_axes]) * typesize
 
         # @mrocklin reccomends to have around 100MB chunks, so we do that:
@@ -160,11 +166,20 @@ class LazySignal(BaseSignal):
                 chunks.append((dc.shape[i], ))
         return tuple(chunks)
 
-    def _make_lazy(self, axis=None, rechunk=False):
-        self.data = self._lazy_data(axis=axis, rechunk=rechunk)
+    def _make_lazy(self, axis=None, rechunk=False, dtype=None):
+        self.data = self._lazy_data(axis=axis, rechunk=rechunk, dtype=dtype)
 
-    def _lazy_data(self, axis=None, rechunk=True):
-        new_chunks = self._get_dask_chunks(axis=axis)
+    def change_dtype(self, dtype):
+        from hyperspy.misc import rgb_tools
+        if not isinstance(dtype, np.dtype) and (dtype not in
+                                                rgb_tools.rgb_dtypes):
+            dtype = np.dtype(dtype)
+            self._make_lazy(rechunk=True, dtype=dtype)
+        super().change_dtype(dtype)
+    change_dtype.__doc__ = BaseSignal.change_dtype.__doc__
+
+    def _lazy_data(self, axis=None, rechunk=True, dtype=None):
+        new_chunks = self._get_dask_chunks(axis=axis, dtype=dtype)
         if isinstance(self.data, da.Array):
             res = self.data
             if self.data.chunks != new_chunks and rechunk:
