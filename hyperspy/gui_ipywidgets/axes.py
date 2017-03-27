@@ -5,6 +5,7 @@ from hyperspy.gui_ipywidgets.utils import (
 from hyperspy.misc.link_traits import link_traits
 
 
+@register_ipy_widget(toolkey="navigation_sliders")
 @add_display_arg
 def ipy_navigation_sliders(axes):
     widgets = []

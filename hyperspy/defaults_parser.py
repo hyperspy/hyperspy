@@ -314,7 +314,7 @@ if not defaults_file_exists or rewrite is True:
 config2template(template, config)
 
 
-@gui(toolkey="Preferences")
+@add_gui_method(toolkey="Preferences")
 class Preferences(t.HasTraits):
     EELS = t.Instance(EELSConfig)
     EDS = t.Instance(EDSConfig)

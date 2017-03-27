@@ -21,8 +21,7 @@ from traits.api import Undefined
 
 from hyperspy.drawing import widgets, signal1d, image
 from hyperspy.gui.axes import navigation_sliders
-from hyperspy.gui_ipywidgets.axes import ipy_navigation_sliders
-
+from hyperspy.ui_registry import register_toolkey
 
 class MPL_HyperExplorer(object):
 

@@ -112,7 +112,7 @@ toolkit: str, iterable of strings or None
 """
 
 
-def gui(toolkey):
+def add_gui_method(toolkey):
     def decorator(cls):
         register_toolkey(toolkey)
         # Not using functools.partialmethod because it is not possible to set
