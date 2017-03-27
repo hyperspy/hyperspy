@@ -23,6 +23,7 @@ from hyperspy.drawing import widgets, signal1d, image
 from hyperspy.gui.axes import navigation_sliders
 from hyperspy.ui_registry import register_toolkey
 
+
 class MPL_HyperExplorer(object):
 
     """
