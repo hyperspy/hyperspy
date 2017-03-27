@@ -28,11 +28,12 @@ from hyperspy.component import Component
 from hyperspy.misc.eels.hartree_slater_gos import HartreeSlaterGOS
 from hyperspy.misc.eels.hydrogenic_gos import HydrogenicGOS
 from hyperspy.misc.eels.effective_angle import effective_angle
+from hyperspy.ui_registry import add_gui_method
 
 
 _logger = logging.getLogger(__name__)
 
-
+@add_gui_method(toolkey="EELSCLEdge_Component")
 class EELSCLEdge(Component):
 
     """EELS core loss ionisation edge from hydrogenic or tabulated

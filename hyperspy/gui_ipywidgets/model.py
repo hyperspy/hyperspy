@@ -3,7 +3,7 @@ from ipywidgets import (
     Accordion, FloatSlider, FloatText, Layout, HBox, VBox, Checkbox)
 
 from hyperspy.misc.link_traits import link_traits
-from hyperspy.gui_ipywidgets.utils import add_display_arg
+from hyperspy.gui_ipywidgets.utils import add_display_arg, register_ipy_widget
 
 
 def _interactive_slider_bounds(obj, index=None):
@@ -90,7 +90,7 @@ def _get_value_widget(obj, index=None):
     container = HBox((thismin, widget, thismax))
     return container
 
-
+@register_ipy_widget(toolkey="Parameter")
 @add_display_arg
 def get_parameter_widget(obj, **kwargs):
     """Creates interactive notebook widgets for the parameter, if
@@ -106,6 +106,7 @@ def get_parameter_widget(obj, **kwargs):
     return container
 
 
+@register_ipy_widget(toolkey="Component")
 @add_display_arg
 def get_component_widget(obj, **kwargs):
     """Creates interactive notebook widgets for all component parameters,
@@ -124,6 +125,7 @@ def get_component_widget(obj, **kwargs):
     return container
 
 
+@register_ipy_widget(toolkey="Model")
 @add_display_arg
 def get_model_widget(obj, **kwargs):
     """Creates interactive notebook widgets for all components and
@@ -139,6 +141,7 @@ def get_model_widget(obj, **kwargs):
     return accordion
 
 
+@register_ipy_widget(toolkey="EELSCLEdge_Component")
 @add_display_arg
 def get_eelscl_widget(obj, **kwargs):
     """Create ipywidgets for the EELSCLEDge component.
@@ -157,6 +160,7 @@ def get_eelscl_widget(obj, **kwargs):
     return container
 
 
+@register_ipy_widget(toolkey="ScalableFixedPattern_Component")
 @add_display_arg
 def get_scalable_fixed_patter_widget(obj, **kwargs):
     container = get_component_widget(obj)

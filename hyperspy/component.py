@@ -34,6 +34,7 @@ from hyperspy.exceptions import NavigationDimensionError
 from hyperspy.misc.export_dictionary import export_to_dictionary, \
     load_from_dictionary
 from hyperspy.events import Events, Event
+from hyperspy.ui_registry import add_gui_method, register_toolkey
 
 import logging
 
@@ -51,7 +52,7 @@ class NoneFloat(t.CFloat):   # Lazy solution, but usable
             return None
         return super(NoneFloat, self).validate(object, name, value)
 
-
+@add_gui_method(toolkey="Parameter")
 class Parameter(t.HasTraits):
 
     """Model parameter
@@ -705,6 +706,7 @@ class Parameter(t.HasTraits):
         return view
 
 
+@add_gui_method(toolkey="Component")
 class Component(t.HasTraits):
     __axes_manager = None
 

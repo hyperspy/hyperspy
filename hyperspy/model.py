@@ -47,6 +47,7 @@ from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.events import Events, Event, EventSuppressor
 import warnings
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
 
@@ -97,7 +98,7 @@ class ModelComponents(object):
                                     component_type)
         return ans
 
-
+@add_gui_method(toolkey="Model")
 class BaseModel(list):
 
     """Model and data fitting tools applicable to signals of both one and two
