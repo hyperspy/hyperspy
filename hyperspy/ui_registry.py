@@ -66,7 +66,7 @@ def register_toolkey(toolkey):
     ui_registry[toolkey] = {}
 
 
-def _gui(self, toolkey, display=True, toolkit=None, **kwargs):
+def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
     error = "There is not user interface registered for this feature."
     from hyperspy.ui_registry import ui_registry
     toolkits = None
@@ -92,7 +92,7 @@ def _gui(self, toolkey, display=True, toolkit=None, **kwargs):
 
 def get_partial_gui(toolkey):
     def pg(self, display=True, toolkit=None, **kwargs):
-        return _gui(self, toolkey=toolkey, display=display,
+        return get_gui(self, toolkey=toolkey, display=display,
                     toolkit=None, **kwargs)
     return pg
 
@@ -121,3 +121,6 @@ def add_gui_method(toolkey):
         setattr(cls.gui, "__doc__", GUI_DT)
         return cls
     return decorator
+
+
+register_toolkey("navigation_sliders")

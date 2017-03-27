@@ -65,7 +65,7 @@ def get_label(trait, label):
 
 @register_ipy_widget(toolkey="Preferences")
 @add_display_arg
-def show_preferences_widget(obj):
+def show_preferences_widget(obj, **kwargs):
     ipytabs = {}
     for tab in obj.editable_traits():
         ipytab = []

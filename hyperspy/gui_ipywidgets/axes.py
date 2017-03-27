@@ -7,9 +7,9 @@ from hyperspy.misc.link_traits import link_traits
 
 @register_ipy_widget(toolkey="navigation_sliders")
 @add_display_arg
-def ipy_navigation_sliders(axes):
+def ipy_navigation_sliders(obj, **kwargs):
     widgets = []
-    for axis in axes:
+    for axis in obj:
         iwidget = ipywidgets.IntSlider(
             min=0,
             max=axis.size - 1,
@@ -81,7 +81,7 @@ def _get_axis_widgets(axis):
 
 @register_ipy_widget(toolkey="AxesManager")
 @add_display_arg
-def ipy_axes_gui(obj):
+def ipy_axes_gui(obj, **kwargs):
     nav_widgets = [ipywidgets.VBox(_get_axis_widgets(axis))
                    for axis in obj.navigation_axes]
     sig_widgets = [ipywidgets.VBox(_get_axis_widgets(axis))

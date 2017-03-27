@@ -21,7 +21,7 @@ from traits.api import Undefined
 
 from hyperspy.drawing import widgets, signal1d, image
 from hyperspy.gui.axes import navigation_sliders
-from hyperspy.ui_registry import register_toolkey
+from hyperspy.ui_registry import get_gui
 
 
 class MPL_HyperExplorer(object):
@@ -65,11 +65,9 @@ class MPL_HyperExplorer(object):
         if self.navigator_data_function is None:
             return
         if self.navigator_data_function is "slider":
-            navigation_sliders(
-                self.axes_manager.navigation_axes,
-                title=self.signal_title + " navigation sliders")
-            ipy_navigation_sliders(
-                self.axes_manager.navigation_axes,)
+            get_gui(self=self.axes_manager.navigation_axes,
+                    toolkey="navigation_sliders",
+                    title=self.signal_title + " navigation sliders")
             return
         title = title or self.signal_title + " Navigator" if self.signal_title else ""
         if self.navigator_plot is not None:
@@ -97,11 +95,9 @@ class MPL_HyperExplorer(object):
             sf.plot()
             self.pointer.set_mpl_ax(sf.ax)
             if self.axes_manager.navigation_dimension > 1:
-                navigation_sliders(
-                    self.axes_manager.navigation_axes,
-                    title=self.signal_title + " navigation sliders")
-                ipy_navigation_sliders(
-                    self.axes_manager.navigation_axes,)
+                get_gui(self=self.axes_manager.navigation_axes,
+                        toolkey="navigation_sliders",
+                        title=self.signal_title + " navigation sliders")
                 for axis in self.axes_manager.navigation_axes[:-2]:
                     axis.events.index_changed.connect(sf.update, [])
                     sf.events.closed.connect(
@@ -128,11 +124,9 @@ class MPL_HyperExplorer(object):
                 imf.yaxis = self.axes_manager.navigation_axes[1]
                 imf.xaxis = self.axes_manager.navigation_axes[0]
                 if self.axes_manager.navigation_dimension > 2:
-                    navigation_sliders(
-                        self.axes_manager.navigation_axes,
-                        title=self.signal_title + " navigation sliders")
-                    ipy_navigation_sliders(
-                        self.axes_manager.navigation_axes,)
+                    get_gui(self=self.axes_manager.navigation_axes,
+                            toolkey="navigation_sliders",
+                            title=self.signal_title + " navigation sliders")
                     for axis in self.axes_manager.navigation_axes[2:]:
                         axis.events.index_changed.connect(imf.update, [])
                         imf.events.closed.connect(

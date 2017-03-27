@@ -26,7 +26,7 @@ from traits.trait_errors import TraitError
 from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
-from hyperspy.ui_registry import gui
+from hyperspy.ui_registry import add_gui_method
 
 import warnings
 

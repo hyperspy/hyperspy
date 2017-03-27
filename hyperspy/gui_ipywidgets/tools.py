@@ -9,7 +9,7 @@ from hyperspy.gui.egerton_quantification import SPIKES_REMOVAL_INSTRUCTIONS
 
 
 @add_display_arg
-def interactive_range_ipy(obj):
+def interactive_range_ipy(obj, **kwargs):
     # Define widgets
     axis = obj.axis
     left = ipywidgets.FloatText(disabled=True)
@@ -55,7 +55,7 @@ def interactive_range_ipy(obj):
 
 
 @add_display_arg
-def calibrate_ipy(obj):
+def calibrate_ipy(obj, **kwargs):
     # Define widgets
     axis = obj.axis
     left = ipywidgets.FloatText(disabled=True)
@@ -116,7 +116,7 @@ def calibrate_ipy(obj):
 
 
 @add_display_arg
-def smooth_savitzky_golay_ipy(obj):
+def smooth_savitzky_golay_ipy(obj, **kwargs):
     window_length = OddIntSlider(
         value=3, step=2, min=3, max=max(int(obj.axis.size * 0.25), 3))
     polynomial_order = ipywidgets.IntSlider(value=3, min=1,
@@ -144,7 +144,7 @@ def smooth_savitzky_golay_ipy(obj):
 
 
 @add_display_arg
-def smooth_lowess_ipy(obj):
+def smooth_lowess_ipy(obj, **kwargs):
     smoothing_parameter = ipywidgets.FloatSlider(min=0, max=1)
     number_of_iterations = ipywidgets.IntText()
     color = ipywidgets.ColorPicker()
@@ -160,7 +160,7 @@ def smooth_lowess_ipy(obj):
 
 
 @add_display_arg
-def smooth_tv_ipy(obj):
+def smooth_tv_ipy(obj, **kwargs):
     smoothing_parameter = ipywidgets.FloatSlider(min=0.1, max=1000)
     smoothing_parameter_max = ipywidgets.FloatText(
         value=smoothing_parameter.max)
@@ -178,7 +178,7 @@ def smooth_tv_ipy(obj):
 
 
 @add_display_arg
-def image_constast_editor_ipy(obj):
+def image_constast_editor_ipy(obj, **kwargs):
     left = ipywidgets.FloatText(disabled=True)
     right = ipywidgets.FloatText(disabled=True)
     help = ipywidgets.Label(
@@ -224,7 +224,7 @@ def image_constast_editor_ipy(obj):
 
 
 @add_display_arg
-def fit_component_ipy(obj):
+def fit_component_ipy(obj, **kwargs):
     only_current = ipywidgets.Checkbox()
     help = ipywidgets.Label(
         "Click on the signal figure and drag to the right to select a"
@@ -257,7 +257,7 @@ def fit_component_ipy(obj):
 
 
 @add_display_arg
-def remove_background_ipy(obj):
+def remove_background_ipy(obj, **kwargs):
     fast = ipywidgets.Checkbox()
     help = ipywidgets.Label(
         "Click on the signal figure and drag to the right to select a"
@@ -314,7 +314,7 @@ def remove_background_ipy(obj):
 
 
 @add_display_arg
-def spikes_removal_ipy(obj):
+def spikes_removal_ipy(obj, **kwargs):
     threshold = ipywidgets.FloatText()
     add_noise = ipywidgets.Checkbox()
     default_spike_width = ipywidgets.IntText()

@@ -92,7 +92,7 @@ def _get_value_widget(obj, index=None):
 
 
 @add_display_arg
-def get_parameter_widget(obj):
+def get_parameter_widget(obj, **kwargs):
     """Creates interactive notebook widgets for the parameter, if
     available.
 
@@ -107,7 +107,7 @@ def get_parameter_widget(obj):
 
 
 @add_display_arg
-def get_component_widget(obj):
+def get_component_widget(obj, **kwargs):
     """Creates interactive notebook widgets for all component parameters,
     if available.
 
@@ -125,7 +125,7 @@ def get_component_widget(obj):
 
 
 @add_display_arg
-def get_model_widget(obj):
+def get_model_widget(obj, **kwargs):
     """Creates interactive notebook widgets for all components and
     parameters, if available.
 
@@ -140,7 +140,7 @@ def get_model_widget(obj):
 
 
 @add_display_arg
-def get_eelscl_widget(obj):
+def get_eelscl_widget(obj, **kwargs):
     """Create ipywidgets for the EELSCLEDge component.
 
     """
@@ -158,7 +158,7 @@ def get_eelscl_widget(obj):
 
 
 @add_display_arg
-def get_scalable_fixed_patter_widget(obj):
+def get_scalable_fixed_patter_widget(obj, **kwargs):
     container = get_component_widget(obj)
     interpolate = Checkbox(description='interpolate',
                            value=obj.interpolate)
