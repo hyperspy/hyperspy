@@ -4,7 +4,8 @@ import traits
 import ipywidgets
 
 from hyperspy.misc.link_traits import link_traits
-from hyperspy.gui_ipywidgets.utils import labelme
+from hyperspy.gui_ipywidgets.utils import (
+    labelme, register_ipy_widget, add_display_arg)
 
 
 def bool2checkbox(trait, label):
@@ -62,23 +63,25 @@ def get_label(trait, label):
     return label
 
 
+@register_ipy_widget(toolkey="Preferences")
 @add_display_arg
-def show_preferences_widget(preferences):
+def show_preferences_widget(obj):
     ipytabs = {}
-    for tab in preferences.editable_traits():
+    for tab in obj.editable_traits():
         ipytab = []
-        tabtraits = getattr(preferences, tab).traits()
-        for trait_name in getattr(preferences, tab).editable_traits():
+        tabtraits = getattr(obj, tab).traits()
+        for trait_name in getattr(obj, tab).editable_traits():
             trait = tabtraits[trait_name]
             widget = TRAITS2IPYWIDGETS[type(trait.trait_type)](
                 trait, get_label(trait, trait_name))
             ipytab.append(widget)
-            link_traits((getattr(preferences, tab), trait_name),
+            link_traits((getattr(obj, tab), trait_name),
                         (widget.children[1], "value"))
         ipytabs[tab] = ipywidgets.VBox(ipytab)
     titles = ["General", "Plot", "Model", "EELS", "EDS", "Machine Learning"]
     ipytabs_ = ipywidgets.Tab(
-        children=[ipytabs[title.replace(" ", "")] for title in titles], titles=titles)
+        children=[ipytabs[title.replace(" ", "")] for title in titles],
+        titles=titles)
     for i, title in enumerate(titles):
         ipytabs_.set_title(i, title)
     save_button = ipywidgets.Button(
@@ -86,7 +89,7 @@ def show_preferences_widget(preferences):
         tooltip="Make changes permanent")
 
     def on_button_clicked(b):
-        preferences.save()
+        obj.save()
 
     save_button.on_click(on_button_clicked)
 

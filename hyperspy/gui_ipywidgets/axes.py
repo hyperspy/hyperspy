@@ -78,7 +78,7 @@ def _get_axis_widgets(axis):
     return widgets
 
 
-@register_ipy_widget(toolkey="axes_manager")
+@register_ipy_widget(toolkey="AxesManager")
 @add_display_arg
 def ipy_axes_gui(obj):
     nav_widgets = [ipywidgets.VBox(_get_axis_widgets(axis))

@@ -458,7 +458,7 @@ class DataAxis(t.HasTraits):
         return any_changes
 
 
-@gui(toolkey="axes_manager")
+@gui(toolkey="AxesManager")
 class AxesManager(t.HasTraits):
 
     """Contains and manages the data axes.
