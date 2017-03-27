@@ -92,7 +92,7 @@ def _gui(self, toolkey, display=True, toolkit=None, **kwargs):
 
 def get_partial_gui(toolkey):
     def pg(self, display=True, toolkit=None, **kwargs):
-        return _gui(self, toolkey=toolkey, display=True,
+        return _gui(self, toolkey=toolkey, display=display,
                     toolkit=None, **kwargs)
     return pg
 
