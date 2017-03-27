@@ -83,6 +83,7 @@ import hyperspy.gui_ipywidgets
 
 set_log_level(preferences.General.logging_level)
 
+
 def get_configuration_directory_path():
     import hyperspy.misc.config_dir
     return hyperspy.misc.config_dir.config_path
