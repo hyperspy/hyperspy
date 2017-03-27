@@ -33,6 +33,7 @@ from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
 
+
 @add_gui_method(toolkey="EELSCLEdge_Component")
 class EELSCLEdge(Component):
 

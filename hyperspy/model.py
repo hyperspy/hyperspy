@@ -98,6 +98,7 @@ class ModelComponents(object):
                                     component_type)
         return ans
 
+
 @add_gui_method(toolkey="Model")
 class BaseModel(list):
 

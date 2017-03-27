@@ -52,6 +52,7 @@ class NoneFloat(t.CFloat):   # Lazy solution, but usable
             return None
         return super(NoneFloat, self).validate(object, name, value)
 
+
 @add_gui_method(toolkey="Parameter")
 class Parameter(t.HasTraits):
 

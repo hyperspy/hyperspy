@@ -90,6 +90,7 @@ def _get_value_widget(obj, index=None):
     container = HBox((thismin, widget, thismax))
     return container
 
+
 @register_ipy_widget(toolkey="Parameter")
 @add_display_arg
 def get_parameter_widget(obj, **kwargs):
