@@ -681,11 +681,7 @@ def find_subclasses(mod, cls):
 
 
 def isiterable(obj):
-    if isinstance(obj, collections.Iterable):
-        return True
-    else:
-        return False
-
+    return isinstance(obj, collections.Iterable)
 
 def ordinal(value):
     """
@@ -1031,3 +1027,7 @@ def multiply(iterable):
     for i in iterable:
         prod *= i
     return prod
+
+def iterable_not_string(thing):
+    return isinstance(thing, collections.Iterable) and \
+            not isinstance(thing, str)

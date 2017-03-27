@@ -39,6 +39,7 @@ from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.drawing import signal as sigdraw
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.io.tools import ensure_directory
+from hyperspy.misc.utils import iterable_not_string
 from hyperspy.external.progressbar import progressbar
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import array_tools
@@ -4336,11 +4337,7 @@ class BaseSignal(FancySlicing,
         <BaseSignal, title: , dimensions: (8, 7, 6, 5, 4, 1|9, 3, 2)>
 
         """
-        from collections import Iterable
 
-        def iterable_not_string(thing):
-            return isinstance(thing, Iterable) and \
-                not isinstance(thing, str)
         am = self.axes_manager
         ns = self.axes_manager.navigation_axes + self.axes_manager.signal_axes
         ax_list = am._axes
