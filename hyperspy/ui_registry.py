@@ -40,10 +40,12 @@ def register_widget(toolkit, toolkey):
     if not toolkey in ui_registry:
         raise NameError("%s is not a registered toolkey" % toolkey)
     toolkit_registry.add(toolkit)
+
     def decorator(f):
         ui_registry[toolkey][toolkit] = f
         return f
     return decorator
+
 
 def register_toolkey(toolkey):
     """Register a toolkey.
@@ -57,6 +59,7 @@ def register_toolkey(toolkey):
         raise NameError(
             "Another tool has been registered with the same name.")
     ui_registry[toolkey] = {}
+
 
 def _gui(self, toolkey, display=True, toolkit=None, **kwargs):
     error = "There is not user interface registered for this feature."
@@ -75,13 +78,14 @@ def _gui(self, toolkey, display=True, toolkit=None, **kwargs):
         if toolkits is None or toolkit in toolkits:
             return f(obj=self, display=display, **kwargs)
 
+
 def get_partial_gui(toolkey):
     def pg(self, display=True, toolkit=None, **kwargs):
         """testing
         """
-        return _gui(self, toolkey=toolkey, display=True, toolkit=None, **kwargs)
+        return _gui(self, toolkey=toolkey, display=True,
+                    toolkit=None, **kwargs)
     return pg
-
 
 
 def gui(toolkey):
