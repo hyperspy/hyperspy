@@ -47,7 +47,7 @@ setup_path = os.path.dirname(__file__)
 
 import hyperspy.Release as Release
 
-install_req = ['scipy',
+install_req = ['scipy>=0.15',
                'ipython>=2.0',
                'matplotlib>=1.2',
                'numpy>=1.10',
@@ -61,7 +61,7 @@ install_req = ['scipy',
                'h5py',
                'python-dateutil',
                'ipyparallel',
-               'dask[array]>=0.13',
+               'dask[array]>=0.13' !=0.14,
                'scikit-image'
                'numba']
 

@@ -700,7 +700,7 @@ class EELSSpectrum_mixin:
 
         ll.hanning_taper()
         cl.hanning_taper()
-        if self._lazy or zlp._lazy:
+        if self._lazy or ll._lazy:
             rfft = da.fft.rfft
             irfft = da.fft.irfft
         else:

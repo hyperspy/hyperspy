@@ -28,6 +28,14 @@ hyperspy.tests.mva.test_export module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.mva.test_onmf module
+-----------------------------------
+
+.. automodule:: hyperspy.tests.mva.test_onmf
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.mva.test_rpca module
 -----------------------------------
 

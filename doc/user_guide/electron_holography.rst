@@ -1,3 +1,5 @@
+.. _electron-holography-label:
+
 Electron Holography
 *******************
 

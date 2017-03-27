@@ -177,8 +177,6 @@ def on_figure_window_close(figure, function):
         # In PyQt window.connect supports multiple functions
         from IPython.external.qt_for_kernel import QtCore
         window.connect(window, QtCore.SIGNAL('closing()'), function)
-    else:
-        raise AttributeError("The %s backend is not supported. " % backend)
 
 
 def plot_RGB_map(im_list, normalization='single', dont_plot=False):
@@ -1050,7 +1048,8 @@ def plot_spectra(
                              "string or a list of valid matplotlib colors.")
     else:
         if LooseVersion(mpl.__version__) >= "1.5.3":
-            color = itertools.cycle(plt.rcParams['axes.prop_cycle'].by_key()["color"])
+            color = itertools.cycle(
+                plt.rcParams['axes.prop_cycle'].by_key()["color"])
         else:
             color = itertools.cycle(plt.rcParams['axes.color_cycle'])
 

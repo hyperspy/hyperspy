@@ -22,6 +22,7 @@ class TestCreateEELSModel:
     def test_create_eelsmodel_no_md(self):
         s = self.s
         del s.metadata.Acquisition_instrument
+        hs.preferences.General.interactive = False
         with pytest.raises(ValueError):
             s.create_model()
 

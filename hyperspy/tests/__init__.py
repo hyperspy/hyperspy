@@ -21,6 +21,9 @@ from traits.etsconfig.api import ETSConfig
 import os
 import warnings
 ETSConfig.toolkit = "null"
+if "DISPLAY" not in os.environ:
+    import matplotlib
+    matplotlib.use("Agg")
 from hyperspy.defaults_parser import preferences
 preferences.General.show_progressbar = False
 

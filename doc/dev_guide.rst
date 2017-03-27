@@ -31,8 +31,9 @@ are currently implemented as well as much information about how everything works
 `HyperSpy User-Guide <www.hyperspy.org/hyperspy-doc/current/index.html>`_.
 
 For developing the code the home of hyperspy is on github and you'll see that
-a lot of this guide boils down to using that platform well. so visit the following link and poke around the code, issues, and pull requests:
-`HyperSpy on Github <https://github.com/hyperspy/hyperspy>`_.
+a lot of this guide boils down to using that platform well. so visit the
+following link and poke around the code, issues, and pull requests: `HyperSpy
+on Github <https://github.com/hyperspy/hyperspy>`_.
 
 It's probably also worth visiting the `Github <https://github.com/>`_ home page
 and going through the "boot camp" to get a feel for the terminology.
@@ -47,9 +48,12 @@ pattern is:
     6. Create a pull request (PR) to the official HyperSpy repository.
 
 Note: You cannot mess up the main HyperSpy project unless you have been promoted
-to write access and the dev-team. So when you're starting out be confident to play, get it wrong, and if it all goes wrong you can always get a fresh install of HyperSpy!!
+to write access and the dev-team. So when you're starting out be confident to
+play, get it wrong, and if it all goes wrong you can always get a fresh install
+of HyperSpy!!
 
-PS: If you choose to develop in Windows/Mac you may find `Github Desktop <https://desktop.github.com>`_ useful.
+PS: If you choose to develop in Windows/Mac you may find `Github Desktop
+<https://desktop.github.com>`_ useful.
 
 2. Got a problem? -- ask!
 -------------------------
@@ -62,13 +66,14 @@ centres around the fact that we can do better by working together.
 Much of the conversation happens in 'public' via online platforms. The main two
 forums used by HyperSpy developers are:
 
-`Gitter <https://gitter.im/hyperspy/hyperspy>`_ -- where we host a live chat-room in which people can ask questions and
-discuss things in a relatively informal way.
+`Gitter <https://gitter.im/hyperspy/hyperspy>`_ -- where we host a live
+chat-room in which people can ask questions and discuss things in a relatively
+informal way.
 
-`Github <https://github.com/hyperspy/hyperspy/issues>`_ -- the main repository for the source code also enables issues to be
-raised in a way that means they're logged until dealt with. This is also a
-good place to make a proposal for some new feature or tool that you want to
-work on.
+`Github <https://github.com/hyperspy/hyperspy/issues>`_ -- the main repository
+for the source code also enables issues to be raised in a way that means
+they're logged until dealt with. This is also a good place to make a proposal
+for some new feature or tool that you want to work on.
 
 
 3. Pick your battles
@@ -130,9 +135,13 @@ Get the style right
 ^^^^^^^^^^^^^^^^^^^
 
 HyperSpy follows the Style Guide for Python Code - these are just some rules for
-consistency that you can read all about in the `Python Style Guide <https://www.python.org/dev/peps/pep-0008/>`_.
+consistency that you can read all about in the `Python Style Guide
+<https://www.python.org/dev/peps/pep-0008/>`_.
 
-You can check your code with the `pep8 Code Checker <https://pypi.python.org/pypi/pep8>`_.
+You can check your code with the `pep8 Code Checker
+<https://pypi.python.org/pypi/pep8>`_.
+
+.. _tests-label:
 
 Write tests
 ^^^^^^^^^^^
@@ -142,48 +151,81 @@ Every new function that is writen in to HyperSpy needs to be tested and document
 Tests are short functions found in hyperspy/tests that call your functions
 under some known conditions and check the outputs against known values. They should
 depend on as few other features as possible so that when they break we know exactly
-what caused it. Ideally, the tests should be written at the same time than the code itself, as they are very convenient to run to check outputs when coding. Writing tests can seem laborious but you'll probaby soon find that they're very important as they force you to sanity check all you do.
+what caused it. Ideally, the tests should be written at the same time than the
+code itself, as they are very convenient to run to check outputs when coding.
+Writing tests can seem laborious but you'll probaby soon find that they're very
+important as they force you to sanity check all you do.
 
-HyperSpy uses the `pytest <http://doc.pytest.org/>`_ library for testing. The version of pytest should be more recent than 3.0.2.
-To run the tests, you can call the ``pytest`` script in a console:
-::
+HyperSpy uses the `py.test <http://doc.pytest.org/>`_ library for testing. The
+tests reside in the ``hyperspy.tests`` module. To run them:
 
-    pytest
+.. code:: bash
 
-You need make sure, that you are running pytest for python 3 and for the correct python distribution. Depending on your system, the name of the script can be different.
+   py.test --pyargs hyperspy
+
+Or, from hyperspy's project folder simply:
+
+.. code:: bash
+
+   py.test
+
 
 Useful hints on testing:
-	- When comparing integers, it's fine to use ``==``. When comparing floats, be sure to use ``numpy.testing.assert_almost_equal()`` or ``numpy.testing.assert_allclose()``.
-	- ``numpy.testing.assert_equal()`` is convenient to compare numpy arrays.
-	- The ``hyperspy.misc.test_utils.py`` contains a few useful functions for testing.
-	- ``@pytest.mark.parametrize()`` is a very convenient decorator to test several parameters of the same function without having to write to much repetitive code, which is often error-prone. See `pytest documentation for more details <http://doc.pytest.org/en/latest/parametrize.html>`_.
-	- Once, you have pushed your PR to the official HyperSpy repository, it can be useful to check the coverage of your tests using the coveralls.io check of your PR. There should be a link to it at the bottom of your PR on the github PR page. This service can help you to find how well your code is being tested and exactly which part is not currently tested.
+
+* When comparing integers, it's fine to use ``==``. When comparing floats, be
+  sure to use ``numpy.testing.assert_almost_equal()`` or
+  ``numpy.testing.assert_allclose()``.
+* ``numpy.testing.assert_equal()`` is convenient to compare numpy arrays.
+* The ``hyperspy.misc.test_utils.py`` contains a few useful functions for
+  testing.
+* ``@pytest.mark.parametrize()`` is a very convenient decorator to test several
+  parameters of the same function without having to write to much repetitive
+  code, which is often error-prone. See `pytest documentation for more details
+  <http://doc.pytest.org/en/latest/parametrize.html>`_.
+* Once, you have pushed your PR to the official HyperSpy repository, it can be
+  useful to check the coverage of your tests using the coveralls.io check of
+  your PR. There should be a link to it at the bottom of your PR on the github
+  PR page. This service can help you to find how well your code is being tested
+  and exactly which part is not currently tested.
+
+
+.. _plot-test-label:
 
 Plot testing
 ^^^^^^^^^^^^
-Ploting is tested using the ``@pytest.mark.mpl_image_compare`` decorator of the `pytest mpl plugin <https://pypi.python.org/pypi/pytest-mpl>`_.
-This decorator uses reference images to compare with the generated output during the tests. The references images are located in the folder defined by the argument ``baseline_dir`` of the ``@pytest.mark.mpl_image_compare`` decorator.
+Ploting is tested using the ``@pytest.mark.mpl_image_compare`` decorator of the
+`pytest mpl plugin <https://pypi.python.org/pypi/pytest-mpl>`_.  This decorator
+uses reference images to compare with the generated output during the tests.
+The references images are located in the folder defined by the argument
+``baseline_dir`` of the ``@pytest.mark.mpl_image_compare`` decorator.
 
 To run plotting tests, you simply need to add the option ``--mpl``:
 ::
 
     pytest --mpl
 
-If you don't use the ``--mpl``, the code of the tests will be executed but the images will not be compared to the references images.
+If you don't use the ``--mpl``, the code of the tests will be executed but the
+images will not be compared to the references images.
 
 If you need to add or change some plots, follow the workflow below:
-    1. Write the tests using appropriate decorator such as ``@pytest.mark.mpl_image_compare``.
-    2. If you need to generate new reference image in the folder ``plot_test_dir``, for example, run: ``py.test --mpl-generate-path=plot_test_dir``
+
+    1. Write the tests using appropriate decorator such as
+       ``@pytest.mark.mpl_image_compare``.
+    2. If you need to generate new reference image in the folder
+       ``plot_test_dir``, for example, run: ``py.test
+       --mpl-generate-path=plot_test_dir``
     3. Run again the tests and this time they should pass.
     4. Use ``git add`` to put the new file in the git repository.
 
-The plotting tests need matplotlib > 2.0.0, since the matplotlib `style change <http://matplotlib.org/style_changes.html>`_
-between matplotlib 1.x and 2.x is enough to make the test failed. Currently, the test are not run in travis on mac os x,
-because travis does not support emulating display on mac os x.
+The plotting tests need matplotlib > 2.0.0, since the matplotlib `style change
+<http://matplotlib.org/style_changes.html>`_ between matplotlib 1.x and 2.x is
+enough to make the test failed. Currently, the test are not run in travis on
+mac os x, because travis does not support emulating display on mac os x.
 
-It can happen that tests using the ``@pytest.mark.mpl_image_compare`` decorator failed because plots
-have been generated by other tests. In this case, the tests causing the trouble need
-to be decorated with the matplotlib ``@cleanup`` decorator.
+It can happen that tests using the ``@pytest.mark.mpl_image_compare`` decorator
+failed because plots have been generated by other tests. In this case, the
+tests causing the trouble need to be decorated with the matplotlib ``@cleanup``
+decorator.
 
 See `pytest-mpl <https://pypi.python.org/pypi/pytest-mpl>`_ for more details.
 
@@ -200,7 +242,11 @@ the syntax should be.
 User-guide Documentation -- A description of the functionality of the code and how
 to use it with examples and links to the relevant code.
 
-Build the documentation -- To check the output of what you wrote, you can build the documentation, which requires python-sphinx and numpydoc to be installed. Run the make command in the ``doc`` to build the documentation. For example ``make html`` will build the whole documentation in html format. See the make command documentation for more details.
+Build the documentation -- To check the output of what you wrote, you can build
+the documentation, which requires python-sphinx and numpydoc to be installed.
+Run the make command in the ``doc`` to build the documentation. For example
+``make html`` will build the whole documentation in html format. See the make
+command documentation for more details.
 
 5. Make your contribution
 -------------------------
@@ -213,10 +259,11 @@ discussed.
 ---------------------------
 
 Python is not the fastest language, and can be particularly slow in loops.
-Performance can sometimes be significantly improved by implementing optional cython
-code alongside the pure Python versions. While developing cython code, make use of
-the official cython recommendations (http://docs.cython.org/).
-Add your cython extensions to the setup.py, in the existing list of ``raw_extensions``.
+Performance can sometimes be significantly improved by implementing optional
+cython code alongside the pure Python versions. While developing cython code,
+make use of the official cython recommendations (http://docs.cython.org/).  Add
+your cython extensions to the setup.py, in the existing list of
+``raw_extensions``.
 
 Unlike the cython recommendation, the cythonized .c or .cpp files are not welcome
 in the git source repository (except original c or c++ files), since they are typically
@@ -224,24 +271,27 @@ quite large. Cythonization will take place during Travis CI and Appveyor buildin
 The cythonized code will be generated and included in source or binary distributions
 for end users. To help troubleshoot potential deprecation with future cython releases,
 add a comment with in the header of your .pyx files with the cython version.
-If cython is present in the build environment and any cythonized c/c++ file is missing,
-then setup.py tries to cythonize all extensions automatically.
+If cython is present in the build environment and any cythonized c/c++ file is
+missing, then setup.py tries to cythonize all extensions automatically.
 
-To make the development easier the new command ``recythonize`` has been added to setup.py.
-It can be used in conjunction with other default commands.
-For example ``python setup.py recythonize build_ext --inplace``
-will recythonize all changed (and described in setup.py!) cython code and compile.
+To make the development easier the new command ``recythonize`` has been added
+to setup.py.  It can be used in conjunction with other default commands.  For
+example ``python setup.py recythonize build_ext --inplace`` will recythonize
+all changed (and described in setup.py!) cython code and compile.
 
-When developing on git branches, the first time you call setup.py in conjunction with
-or without any other command - it will generate a post-checkout hook, which will include
-a potential cythonization and compilation product list (.c/.cpp/.so/.pyd). With your next
-``git checkout`` the hook will remove them and automatically run ``python setup.py build_ext --inplace``
-to cythonize and compile the code if available. If an older version of HyperSpy (<= 0.8.4.x)
-is checked out this should have no side effects.
+When developing on git branches, the first time you call setup.py in
+conjunction with or without any other command - it will generate a
+post-checkout hook, which will include a potential cythonization and
+compilation product list (.c/.cpp/.so/.pyd). With your next ``git checkout``
+the hook will remove them and automatically run ``python setup.py build_ext
+--inplace`` to cythonize and compile the code if available.  If an older
+version of HyperSpy (<= 0.8.4.x) is checked out this should have no side
+effects.
 
-If another custom post-checkout hook is detected on PR, then setup.py tries to append
-or update the relevant part. To prevent unwanted hook generation or update you can create
-the empty file ``.hook_ignore`` in source directory (same level as setup.py).
+If another custom post-checkout hook is detected on PR, then setup.py tries to
+append or update the relevant part. To prevent unwanted hook generation or
+update you can create the empty file ``.hook_ignore`` in source directory (same
+level as setup.py).
 
 7. Adding new methods
 ---------------------
