@@ -111,6 +111,7 @@ toolkit: str, iterable of strings or None
 
 """
 
+
 def gui(toolkey):
     def decorator(cls):
         register_toolkey(toolkey)
