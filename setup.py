@@ -62,7 +62,8 @@ install_req = ['scipy',
                'python-dateutil',
                'ipyparallel',
                'dask[array]>=0.13',
-               'scikit-image']
+               'scikit-image'
+               'numba']
 
 extras_require = {
     "learning": ['scikit-learn'],

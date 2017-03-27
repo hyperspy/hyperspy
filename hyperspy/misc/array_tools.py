@@ -164,7 +164,7 @@ def _linear_bin_loop(result, data, scale):
                 value += data[fx1] * (cx1 - x1)
                 x1 = cx1 #This step is needed when this particular bin straddes
                 #two neighbouring pixels.
-            if x1 < (data.shape[0] - 1):
+            if x1 < x2:
                 #The standard upsampling function where each new pixel is a
                 #fraction of the original pixel.
                 value += data[math.floor(x1)]*(x2-x1)
