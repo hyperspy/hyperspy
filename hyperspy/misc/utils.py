@@ -683,6 +683,7 @@ def find_subclasses(mod, cls):
 def isiterable(obj):
     return isinstance(obj, collections.Iterable)
 
+
 def ordinal(value):
     """
     Converts zero or a *postive* integer (or their string
@@ -1028,6 +1029,7 @@ def multiply(iterable):
         prod *= i
     return prod
 
+
 def iterable_not_string(thing):
     return isinstance(thing, collections.Iterable) and \
-            not isinstance(thing, str)
+        not isinstance(thing, str)
