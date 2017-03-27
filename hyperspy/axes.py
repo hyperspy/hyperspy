@@ -457,6 +457,7 @@ class DataAxis(t.HasTraits):
             any_changes = True
         return any_changes
 
+
 @gui(toolkey="axes_manager")
 class AxesManager(t.HasTraits):
 

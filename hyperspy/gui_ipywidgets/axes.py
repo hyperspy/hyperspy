@@ -77,6 +77,7 @@ def _get_axis_widgets(axis):
 
     return widgets
 
+
 @register_ipy_widget(toolkey="axes_manager")
 @add_display_arg
 def ipy_axes_gui(obj):

@@ -7,6 +7,7 @@ from hyperspy.misc.link_traits import link_traits
 from hyperspy.gui_ipywidgets.custom_widgets import OddIntSlider
 from hyperspy.gui.egerton_quantification import SPIKES_REMOVAL_INSTRUCTIONS
 
+
 @add_display_arg
 def interactive_range_ipy(obj):
     # Define widgets
@@ -51,6 +52,7 @@ def interactive_range_ipy(obj):
         box.close()
     close.on_click(on_close_clicked)
     return box
+
 
 @add_display_arg
 def calibrate_ipy(obj):
@@ -112,6 +114,7 @@ def calibrate_ipy(obj):
     close.on_click(on_close_clicked)
     return box
 
+
 @add_display_arg
 def smooth_savitzky_golay_ipy(obj):
     window_length = OddIntSlider(
@@ -139,6 +142,7 @@ def smooth_savitzky_golay_ipy(obj):
     ])
     return box
 
+
 @add_display_arg
 def smooth_lowess_ipy(obj):
     smoothing_parameter = ipywidgets.FloatSlider(min=0, max=1)
@@ -153,6 +157,7 @@ def smooth_lowess_ipy(obj):
         labelme("Color", color),
     ])
     return box
+
 
 @add_display_arg
 def smooth_tv_ipy(obj):
@@ -170,6 +175,7 @@ def smooth_tv_ipy(obj):
         labelme("Color", color),
     ])
     return box
+
 
 @add_display_arg
 def image_constast_editor_ipy(obj):
@@ -216,6 +222,7 @@ def image_constast_editor_ipy(obj):
     close.on_click(on_close_clicked)
     return box
 
+
 @add_display_arg
 def fit_component_ipy(obj):
     only_current = ipywidgets.Checkbox()
@@ -247,6 +254,7 @@ def fit_component_ipy(obj):
         box.close()
     close.on_click(on_close_clicked)
     return box
+
 
 @add_display_arg
 def remove_background_ipy(obj):
@@ -303,6 +311,7 @@ def remove_background_ipy(obj):
         box.close()
     close.on_click(on_close_clicked)
     return box
+
 
 @add_display_arg
 def spikes_removal_ipy(obj):

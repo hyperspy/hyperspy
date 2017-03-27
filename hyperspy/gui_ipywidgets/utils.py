@@ -48,6 +48,7 @@ def enum2dropdown(trait):
         tooltip=tooltip,)
     return widget
 
+
 def add_display_arg(f):
     @functools.wraps(f)
     def wrapper(display=True, *args, **kwargs):

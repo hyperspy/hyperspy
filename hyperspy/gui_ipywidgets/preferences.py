@@ -61,6 +61,7 @@ def get_label(trait, label):
              if not trait.label else trait.label)
     return label
 
+
 @add_display_arg
 def show_preferences_widget(preferences):
     ipytabs = {}
