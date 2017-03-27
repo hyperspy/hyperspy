@@ -26,6 +26,7 @@ from traits.trait_errors import TraitError
 from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
+from hyperspy.ui_registry import gui
 
 import warnings
 
@@ -456,7 +457,7 @@ class DataAxis(t.HasTraits):
             any_changes = True
         return any_changes
 
-
+@gui(toolkey="axes_manager")
 class AxesManager(t.HasTraits):
 
     """Contains and manages the data axes.
@@ -927,13 +928,6 @@ class AxesManager(t.HasTraits):
                     y.index += self._step
         except TraitError:
             pass
-
-    def gui(self):
-        from hyperspy.gui.axes import data_axis_view
-        for axis in self._axes:
-            axis.edit_traits(view=data_axis_view)
-        from hyperspy.gui_ipywidgets.axes import ipy_axes_gui
-        ipy_axes_gui(self)
 
     def copy(self):
         return copy.copy(self)

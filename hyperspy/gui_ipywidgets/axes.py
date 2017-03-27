@@ -1,10 +1,11 @@
 import ipywidgets
-from IPython.display import display
 
-from hyperspy.gui_ipywidgets.utils import labelme
+from hyperspy.gui_ipywidgets.utils import (
+    labelme, register_ipy_widget, add_display_arg)
 from hyperspy.misc.link_traits import link_traits
 
 
+@add_display_arg
 def ipy_navigation_sliders(axes):
     widgets = []
     for axis in axes:
@@ -27,7 +28,7 @@ def ipy_navigation_sliders(axes):
         link_traits((axis, "name"), (labeled_widget.children[0], "value"))
         widgets.append(labeled_widget)
     box = ipywidgets.VBox(widgets)
-    display(box)
+    return box
 
 
 def _get_axis_widgets(axis):
@@ -76,18 +77,19 @@ def _get_axis_widgets(axis):
 
     return widgets
 
-
-def ipy_axes_gui(axes_manager):
+@register_ipy_widget(toolkey="axes_manager")
+@add_display_arg
+def ipy_axes_gui(obj):
     nav_widgets = [ipywidgets.VBox(_get_axis_widgets(axis))
-                   for axis in axes_manager.navigation_axes]
+                   for axis in obj.navigation_axes]
     sig_widgets = [ipywidgets.VBox(_get_axis_widgets(axis))
-                   for axis in axes_manager.signal_axes]
+                   for axis in obj.signal_axes]
     nav_accordion = ipywidgets.Accordion(nav_widgets)
     sig_accordion = ipywidgets.Accordion(sig_widgets)
     i = 0  # For when there is not navigation axes
-    for i in range(axes_manager.navigation_dimension):
+    for i in range(obj.navigation_dimension):
         nav_accordion.set_title(i, "Axis %i" % i)
-    for j in range(axes_manager.signal_dimension):
+    for j in range(obj.signal_dimension):
         sig_accordion.set_title(j, "Axis %i" % (i + j + 1))
     tabs = ipywidgets.HBox([nav_accordion, sig_accordion])
-    display(tabs)
+    return tabs

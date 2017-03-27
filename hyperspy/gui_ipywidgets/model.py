@@ -1,9 +1,9 @@
 from traitlets import TraitError as TraitletError
-from IPython.display import display as ip_display
 from ipywidgets import (
     Accordion, FloatSlider, FloatText, Layout, HBox, VBox, Checkbox)
 
 from hyperspy.misc.link_traits import link_traits
+from hyperspy.gui_ipywidgets.utils import add_display_arg
 
 
 def _interactive_slider_bounds(obj, index=None):
@@ -90,7 +90,7 @@ def _get_value_widget(obj, index=None):
     container = HBox((thismin, widget, thismax))
     return container
 
-
+@add_display_arg
 def get_parameter_widget(obj):
     """Creates interactive notebook widgets for the parameter, if
     available.
@@ -105,6 +105,7 @@ def get_parameter_widget(obj):
     return container
 
 
+@add_display_arg
 def get_component_widget(obj):
     """Creates interactive notebook widgets for all component parameters,
     if available.
@@ -122,6 +123,7 @@ def get_component_widget(obj):
     return container
 
 
+@add_display_arg
 def get_model_widget(obj):
     """Creates interactive notebook widgets for all components and
     parameters, if available.
@@ -136,6 +138,7 @@ def get_model_widget(obj):
     return accordion
 
 
+@add_display_arg
 def get_eelscl_widget(obj):
     """Create ipywidgets for the EELSCLEDge component.
 
@@ -153,6 +156,7 @@ def get_eelscl_widget(obj):
     return container
 
 
+@add_display_arg
 def get_scalable_fixed_patter_widget(obj):
     container = get_component_widget(obj)
     interpolate = Checkbox(description='interpolate',

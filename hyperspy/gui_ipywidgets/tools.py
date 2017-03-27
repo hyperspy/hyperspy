@@ -1,14 +1,13 @@
 import ipywidgets
-from IPython.display import display
 import traitlets
 
 from hyperspy.gui_ipywidgets.utils import (
-    labelme, labelme_sandwich, enum2dropdown)
+    labelme, labelme_sandwich, enum2dropdown, add_display_arg)
 from hyperspy.misc.link_traits import link_traits
 from hyperspy.gui_ipywidgets.custom_widgets import OddIntSlider
 from hyperspy.gui.egerton_quantification import SPIKES_REMOVAL_INSTRUCTIONS
 
-
+@add_display_arg
 def interactive_range_ipy(obj):
     # Define widgets
     axis = obj.axis
@@ -46,14 +45,14 @@ def interactive_range_ipy(obj):
         help,
         ipywidgets.HBox((apply, close))
     ])
-    display(box)
 
     def on_close_clicked(b):
         obj.span_selector_switch(False)
         box.close()
     close.on_click(on_close_clicked)
+    return box
 
-
+@add_display_arg
 def calibrate_ipy(obj):
     # Define widgets
     axis = obj.axis
@@ -106,14 +105,14 @@ def calibrate_ipy(obj):
         help,
         ipywidgets.HBox((apply, close))
     ])
-    display(box)
 
     def on_close_clicked(b):
         obj.span_selector_switch(False)
         box.close()
     close.on_click(on_close_clicked)
+    return box
 
-
+@add_display_arg
 def smooth_savitzky_golay_ipy(obj):
     window_length = OddIntSlider(
         value=3, step=2, min=3, max=max(int(obj.axis.size * 0.25), 3))
@@ -138,9 +137,9 @@ def smooth_savitzky_golay_ipy(obj):
         labelme("Differential order", differential_order),
         labelme("Color", color),
     ])
-    display(box)
+    return box
 
-
+@add_display_arg
 def smooth_lowess_ipy(obj):
     smoothing_parameter = ipywidgets.FloatSlider(min=0, max=1)
     number_of_iterations = ipywidgets.IntText()
@@ -153,9 +152,9 @@ def smooth_lowess_ipy(obj):
         labelme("Number of iterations", number_of_iterations),
         labelme("Color", color),
     ])
-    display(box)
+    return box
 
-
+@add_display_arg
 def smooth_tv_ipy(obj):
     smoothing_parameter = ipywidgets.FloatSlider(min=0.1, max=1000)
     smoothing_parameter_max = ipywidgets.FloatText(
@@ -170,9 +169,9 @@ def smooth_tv_ipy(obj):
         labelme("Weight max", smoothing_parameter_max),
         labelme("Color", color),
     ])
-    display(box)
+    return box
 
-
+@add_display_arg
 def image_constast_editor_ipy(obj):
     left = ipywidgets.FloatText(disabled=True)
     right = ipywidgets.FloatText(disabled=True)
@@ -210,14 +209,14 @@ def image_constast_editor_ipy(obj):
         help,
         ipywidgets.HBox((apply, reset, close))
     ])
-    display(box)
 
     def on_close_clicked(b):
         obj.close()
         box.close()
     close.on_click(on_close_clicked)
+    return box
 
-
+@add_display_arg
 def fit_component_ipy(obj):
     only_current = ipywidgets.Checkbox()
     help = ipywidgets.Label(
@@ -242,14 +241,14 @@ def fit_component_ipy(obj):
         help,
         ipywidgets.HBox((fit, close))
     ])
-    display(box)
 
     def on_close_clicked(b):
         obj.span_selector_switch(False)
         box.close()
     close.on_click(on_close_clicked)
+    return box
 
-
+@add_display_arg
 def remove_background_ipy(obj):
     fast = ipywidgets.Checkbox()
     help = ipywidgets.Label(
@@ -298,14 +297,14 @@ def remove_background_ipy(obj):
         help,
         ipywidgets.HBox((apply, close)),
     ])
-    display(box)
 
     def on_close_clicked(b):
         obj.span_selector_switch(False)
         box.close()
     close.on_click(on_close_clicked)
+    return box
 
-
+@add_display_arg
 def spikes_removal_ipy(obj):
     threshold = ipywidgets.FloatText()
     add_noise = ipywidgets.Checkbox()
@@ -384,9 +383,9 @@ def spikes_removal_ipy(obj):
         help,
         ipywidgets.HBox([previous, next, remove, close])
     ])
-    display(box)
 
     def on_close_clicked(b):
         obj.span_selector_switch(False)
         box.close()
     close.on_click(on_close_clicked)
+    return box

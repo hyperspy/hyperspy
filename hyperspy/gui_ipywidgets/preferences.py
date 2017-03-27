@@ -1,4 +1,3 @@
-from IPython.display import display
 import traitlets
 import traits.api as t
 import traits
@@ -62,7 +61,7 @@ def get_label(trait, label):
              if not trait.label else trait.label)
     return label
 
-
+@add_display_arg
 def show_preferences_widget(preferences):
     ipytabs = {}
     for tab in preferences.editable_traits():
@@ -90,4 +89,5 @@ def show_preferences_widget(preferences):
 
     save_button.on_click(on_button_clicked)
 
-    display(ipywidgets.VBox([ipytabs_, save_button]))
+    container = ipywidgets.VBox([ipytabs_, save_button])
+    return container

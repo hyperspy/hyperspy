@@ -1,6 +1,13 @@
+import functools
+
 import ipywidgets
 from traits.api import Undefined
+import IPython.display
 
+from hyperspy.ui_registry import register_widget
+
+
+register_ipy_widget = functools.partial(register_widget, toolkit="ipywidgets")
 
 FORM_ITEM_LAYOUT = ipywidgets.Layout(
     display='flex',
@@ -40,3 +47,13 @@ def enum2dropdown(trait):
         options=trait.trait_type.values,
         tooltip=tooltip,)
     return widget
+
+def add_display_arg(f):
+    @functools.wraps(f)
+    def wrapper(display=True, *args, **kwargs):
+        widget = f(*args, **kwargs)
+        if display:
+            IPython.display.display(widget)
+        else:
+            return widget
+    return wrapper
