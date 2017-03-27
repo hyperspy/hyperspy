@@ -36,6 +36,11 @@ def register_widget(toolkit, toolkey):
         the toolkey is not in the ``ui_registry`` dictionary a ``NameError``
         is raised.
 
+    Returns
+    -------
+    widgets: dictionary or None
+        Dictionary containing the widget objects if display is False, else None.
+
     """
     if not toolkey in ui_registry:
         raise NameError("%s is not a registered toolkey" % toolkey)
@@ -74,19 +79,37 @@ def _gui(self, toolkey, display=True, toolkit=None, **kwargs):
             "`toolkit` must be a string, an iterable of strings or None.")
     if toolkey not in ui_registry or not ui_registry[toolkey]:
         raise NotImplementedError(error)
+    if not display:
+        widgets = {}
     for toolkit, f in ui_registry[toolkey].items():
         if toolkits is None or toolkit in toolkits:
-            return f(obj=self, display=display, **kwargs)
+            thisw = f(obj=self, display=display, **kwargs)
+            if not display:
+                widgets[toolkit] = thisw
+    if not display:
+        return widgets
 
 
 def get_partial_gui(toolkey):
     def pg(self, display=True, toolkit=None, **kwargs):
-        """testing
-        """
         return _gui(self, toolkey=toolkey, display=True,
                     toolkit=None, **kwargs)
     return pg
 
+GUI_DT = """Display or return interactive GUI element if available.
+
+Parameters
+----------
+display: bool
+    If True, display the user interface widgets. If False, return the widgets
+    container in a dictionary, usually for customisation or testing.
+toolkit: str, iterable of strings or None
+    If None (default), all available widgets are displayed or returned. If
+    string, only the widgets of the selected toolkit are displayed if available.
+    If an interable of toolkit strings, the widgets of all listed toolkits are
+    displayed or returned.
+
+"""
 
 def gui(toolkey):
     def decorator(cls):
@@ -94,6 +117,6 @@ def gui(toolkey):
         # Not using functools.partialmethod because it is not possible to set
         # the docstring that way.
         setattr(cls, "gui", get_partial_gui(toolkey))
-        # setattr(cls.gui, "__doc__", "testing")
+        setattr(cls.gui, "__doc__", GUI_DT)
         return cls
     return decorator
