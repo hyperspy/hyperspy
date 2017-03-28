@@ -178,6 +178,7 @@ def get_scalable_fixed_patter_widget(obj, **kwargs):
         container.children[1:]
     return container
 
+
 @register_ipy_widget(toolkey="Model1D.fit_component")
 @add_display_arg
 def fit_component_ipy(obj, **kwargs):
