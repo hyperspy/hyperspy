@@ -25,7 +25,6 @@ from hyperspy.gui.tools import Signal1DRangeSelector
 from hyperspy.ui_registry import get_gui
 
 
-
 def lazify(func, **kwargs):
     from hyperspy.signal import BaseSignal
     from hyperspy.model import BaseModel

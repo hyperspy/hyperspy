@@ -8,6 +8,7 @@ from hyperspy.misc.link_traits import link_traits
 from hyperspy.gui_ipywidgets.custom_widgets import OddIntSlider
 from hyperspy.gui.egerton_quantification import SPIKES_REMOVAL_INSTRUCTIONS
 
+
 @register_ipy_widget(toolkey="interactive_range_selector")
 @add_display_arg
 def interactive_range_ipy(obj, **kwargs):
@@ -53,6 +54,7 @@ def interactive_range_ipy(obj, **kwargs):
         box.close()
     close.on_click(on_close_clicked)
     return box
+
 
 @register_ipy_widget(toolkey="Signal1D.calibrate")
 @add_display_arg
