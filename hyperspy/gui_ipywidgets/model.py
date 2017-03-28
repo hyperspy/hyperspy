@@ -1,6 +1,7 @@
 from traitlets import TraitError as TraitletError
 from ipywidgets import (
     Accordion, FloatSlider, FloatText, Layout, HBox, VBox, Checkbox)
+import numpy as np
 
 from hyperspy.misc.link_traits import link_traits
 from hyperspy.gui_ipywidgets.utils import add_display_arg, register_ipy_widget
@@ -85,7 +86,7 @@ def _get_value_widget(obj, index=None):
                                           index=index)
         widget.observe(this_observed, names='value')
     else:
-        link_traits((obj, "value"), value, "value")
+        link_traits((obj, "value"), (widget, "value"))
 
     container = HBox((thismin, widget, thismax))
     return container
@@ -99,9 +100,9 @@ def get_parameter_widget(obj, **kwargs):
 
     """
     if obj._number_of_elements == 1:
-        container = obj._get_value_widget()
+        container = _get_value_widget(obj)
     else:
-        children = [obj._get_value_widget(index=i) for i in
+        children = [_get_value_widget(obj=obj, index=i) for i in
                     range(obj._number_of_elements)]
         container = VBox(children)
     return container
@@ -122,7 +123,7 @@ def get_component_widget(obj, **kwargs):
 
     container = VBox([active])
     for parameter in obj.parameters:
-        container.children += get_parameter_widget(parameter),
+        container.children += get_parameter_widget(parameter, display=False),
     return container
 
 
@@ -134,8 +135,8 @@ def get_model_widget(obj, **kwargs):
 
     """
 
-    children = [get_component_widget(component) for component in
-                obj]
+    children = [get_component_widget(component, display=False)
+                for component in obj]
     accordion = Accordion(children=children)
     for i, comp in enumerate(obj):
         accordion.set_title(i, comp.name)
@@ -157,14 +158,14 @@ def get_eelscl_widget(obj, **kwargs):
     container = VBox([active, fine_structure, fs_smoothing])
     for parameter in [obj.intensity, obj.effective_angle,
                       obj.onset_energy]:
-        container.children += get_parameter_widget(parameter),
+        container.children += get_parameter_widget(parameter, display=False),
     return container
 
 
 @register_ipy_widget(toolkey="ScalableFixedPattern_Component")
 @add_display_arg
 def get_scalable_fixed_patter_widget(obj, **kwargs):
-    container = get_component_widget(obj)
+    container = get_component_widget(obj, display=False)
     interpolate = Checkbox(description='interpolate',
                            value=obj.interpolate)
 
