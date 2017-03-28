@@ -24,7 +24,6 @@ import dask.array as da
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.common_signal1d import CommonSignal1D
 from hyperspy.gui.egerton_quantification import SpikesRemoval
-from hyperspy.gui_ipywidgets.tools import spikes_removal_ipy
 import math
 
 import scipy.interpolate
@@ -50,11 +49,9 @@ from hyperspy.gui.tools import (
     SmoothingLowess,
     SmoothingTV,
     ButterworthFilter)
-from hyperspy.gui_ipywidgets.tools import (
-    calibrate_ipy, smooth_savitzky_golay_ipy, smooth_lowess_ipy, smooth_tv_ipy)
+from hyperspy.ui_registry import get_gui
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.gui.egerton_quantification import BackgroundRemoval
-from hyperspy.gui_ipywidgets.tools import remove_background_ipy
 from hyperspy.decorators import only_interactive
 from hyperspy.decorators import interactive_range_selector
 from scipy.ndimage.filters import gaussian_filter1d
@@ -348,8 +345,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         sr = SpikesRemoval(self,
                            navigation_mask=navigation_mask,
                            signal_mask=signal_mask)
-        sr.configure_traits()
-        spikes_removal_ipy(sr)
+        return get_gui(sr, toolkey="Signal1D.spikes_removal_tool")
         return sr
 
     def create_model(self, dictionary=None):
@@ -808,8 +804,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         """
         self._check_signal_dimension_equals_one()
         calibration = Signal1DCalibration(self)
-        calibration.edit_traits()
-        calibrate_ipy(calibration)
+        return get_gui(calibration, toolkey="Signal1D.calibrate")
 
     def smooth_savitzky_golay(self,
                               polynomial_order=None,
@@ -855,8 +850,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 smoother.polynomial_order = polynomial_order
             if window_length is not None:
                 smoother.window_length = window_length
-            smoother.edit_traits()
-            smooth_savitzky_golay_ipy(smoother)
+            get_gui(smoother, toolkey="Signal1D.smooth_savitzky_golay")
 
     def smooth_lowess(self,
                       smoothing_parameter=None,
@@ -898,8 +892,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 smoother.smoothing_parameter = smoothing_parameter
             if number_of_iterations is not None:
                 smoother.number_of_iterations = number_of_iterations
-            smoother.edit_traits()
-            smooth_lowess_ipy(smoother)
+            get_gui(smoother, toolkey="Signal1D.smooth_lowess")
         else:
             self.map(lowess,
                      exog=self.axes_manager[-1].axis,
@@ -931,8 +924,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         self._check_signal_dimension_equals_one()
         if smoothing_parameter is None:
             smoother = SmoothingTV(self)
-            smoother.edit_traits()
-            smooth_tv_ipy(smoother)
+            return get_gui(smoother, toolkey="Signal1D.smooth_total_variation")
         else:
             self.map(_tv_denoise_1d, weight=smoothing_parameter,
                      ragged=False,
@@ -1020,8 +1012,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         self._check_signal_dimension_equals_one()
         if signal_range == 'interactive':
             br = BackgroundRemoval(self)
-            br.edit_traits()
-            remove_background_ipy(br)
+            return get_gui(br, toolkey="Signal1D.remove_background")
         else:
             if background_type == 'PowerLaw':
                 background_estimator = components1d.PowerLaw()

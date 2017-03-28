@@ -17,13 +17,13 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 # custom exceptions
+from functools import wraps
+
 from hyperspy.exceptions import NoInteractiveError
 from hyperspy.defaults_parser import preferences
 from hyperspy.gui.tools import Signal1DRangeSelector
-from hyperspy.gui_ipywidgets.tools import interactive_range_ipy
+from hyperspy.ui_registry import get_gui
 
-from functools import wraps
-import types
 
 
 def lazify(func, **kwargs):
@@ -114,8 +114,7 @@ def interactive_range_selector(cm):
         if preferences.General.interactive is True and not args and not kwargs:
             range_selector = Signal1DRangeSelector(self)
             range_selector.on_close.append((cm, self))
-            range_selector.edit_traits()
-            interactive_range_ipy(range_selector)
+            get_gui(range_selector, toolkey="interactive_range_selector")
         else:
             cm(self, *args, **kwargs)
     return wrapper

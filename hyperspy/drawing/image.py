@@ -25,7 +25,7 @@ from traits.api import Undefined
 from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
 from hyperspy.gui.tools import ImageContrastEditor
-from hyperspy.gui_ipywidgets.tools import image_constast_editor_ipy
+from hyperspy.ui_registry import get_gui
 from hyperspy.misc import math_tools
 from hyperspy.misc import rgb_tools
 from hyperspy.drawing.figure import BlittedFigure
@@ -377,8 +377,7 @@ class ImagePlot(BlittedFigure):
 
     def adjust_contrast(self):
         ceditor = ImageContrastEditor(self)
-        ceditor.edit_traits()
-        image_constast_editor_ipy(ceditor)
+        get_gui(ceditor, toolkey="Signal1D.calibrate")
         return ceditor
 
     def connect(self):

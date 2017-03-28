@@ -29,7 +29,7 @@ from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.drawing.widgets import VerticalLineWidget, LabelWidget
 from hyperspy.gui.tools import ComponentFit
-from hyperspy.gui_ipywidgets.tools import fit_component_ipy
+from hyperspy.ui_registry import get_gui
 from hyperspy.events import EventSuppressor
 
 
@@ -803,7 +803,6 @@ class Model1D(BaseModel):
                           estimate_parameters, fit_independent,
                           only_current, **kwargs)
         if signal_range == "interactive":
-            cf.edit_traits()
-            fit_component_ipy(cf)
+            get_gui(cf, toolkey="Model1D.fit_component")
         else:
             cf.apply()

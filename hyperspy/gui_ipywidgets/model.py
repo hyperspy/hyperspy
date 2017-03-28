@@ -176,3 +176,36 @@ def get_scalable_fixed_patter_widget(obj, **kwargs):
     container.children = (container.children[0], interpolate) + \
         container.children[1:]
     return container
+
+@register_ipy_widget(toolkey="Model1D.fit_component")
+@add_display_arg
+def fit_component_ipy(obj, **kwargs):
+    only_current = Checkbox()
+    help = Label(
+        "Click on the signal figure and drag to the right to select a"
+        "range. Press `Fit` to fit the component in that range. If only "
+        "current is unchecked the fit is performed in the whole dataset.")
+    help = Accordion(children=[help])
+    help.set_title(0, "Help")
+    link_traits((obj, "only_current"), (only_current, "value"))
+    fit = Button(
+        description="Fit",
+        tooltip="Fit in the selected signal range")
+    close = Button(
+        description="Close",
+        tooltip="Close widget and remove span selector from the signal figure.")
+
+    def on_fit_clicked(b):
+        obj._fit_fired()
+    fit.on_click(on_fit_clicked)
+    box = VBox([
+        labelme("Only current", only_current),
+        help,
+        HBox((fit, close))
+    ])
+
+    def on_close_clicked(b):
+        obj.span_selector_switch(False)
+        box.close()
+    close.on_click(on_close_clicked)
+    return box

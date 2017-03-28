@@ -22,9 +22,7 @@ from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
 
 
-add_gui_method(toolkey="ScalableFixedPattern_Component")
-
-
+@add_gui_method(toolkey="ScalableFixedPattern_Component")
 class ScalableFixedPattern(Component):
 
     """Fixed pattern component with interpolation support.

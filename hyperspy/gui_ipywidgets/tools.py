@@ -2,12 +2,13 @@ import ipywidgets
 import traitlets
 
 from hyperspy.gui_ipywidgets.utils import (
-    labelme, labelme_sandwich, enum2dropdown, add_display_arg)
+    labelme, labelme_sandwich, enum2dropdown, add_display_arg,
+    register_ipy_widget)
 from hyperspy.misc.link_traits import link_traits
 from hyperspy.gui_ipywidgets.custom_widgets import OddIntSlider
 from hyperspy.gui.egerton_quantification import SPIKES_REMOVAL_INSTRUCTIONS
 
-
+@register_ipy_widget(toolkey="interactive_range_selector")
 @add_display_arg
 def interactive_range_ipy(obj, **kwargs):
     # Define widgets
@@ -53,7 +54,7 @@ def interactive_range_ipy(obj, **kwargs):
     close.on_click(on_close_clicked)
     return box
 
-
+@register_ipy_widget(toolkey="Signal1D.calibrate")
 @add_display_arg
 def calibrate_ipy(obj, **kwargs):
     # Define widgets
@@ -115,6 +116,7 @@ def calibrate_ipy(obj, **kwargs):
     return box
 
 
+@register_ipy_widget(toolkey="Signal1D.smooth_savitzky_golay")
 @add_display_arg
 def smooth_savitzky_golay_ipy(obj, **kwargs):
     window_length = OddIntSlider(
@@ -143,6 +145,7 @@ def smooth_savitzky_golay_ipy(obj, **kwargs):
     return box
 
 
+@register_ipy_widget(toolkey="Signal1D.smooth_lowess")
 @add_display_arg
 def smooth_lowess_ipy(obj, **kwargs):
     smoothing_parameter = ipywidgets.FloatSlider(min=0, max=1)
@@ -159,6 +162,7 @@ def smooth_lowess_ipy(obj, **kwargs):
     return box
 
 
+@register_ipy_widget(toolkey="Signal1D.smooth_total_variation")
 @add_display_arg
 def smooth_tv_ipy(obj, **kwargs):
     smoothing_parameter = ipywidgets.FloatSlider(min=0.1, max=1000)
@@ -177,6 +181,7 @@ def smooth_tv_ipy(obj, **kwargs):
     return box
 
 
+@register_ipy_widget(toolkey="Signal1D.calibrate")
 @add_display_arg
 def image_constast_editor_ipy(obj, **kwargs):
     left = ipywidgets.FloatText(disabled=True)
@@ -223,39 +228,7 @@ def image_constast_editor_ipy(obj, **kwargs):
     return box
 
 
-@add_display_arg
-def fit_component_ipy(obj, **kwargs):
-    only_current = ipywidgets.Checkbox()
-    help = ipywidgets.Label(
-        "Click on the signal figure and drag to the right to select a"
-        "range. Press `Fit` to fit the component in that range. If only "
-        "current is unchecked the fit is performed in the whole dataset.")
-    help = ipywidgets.Accordion(children=[help])
-    help.set_title(0, "Help")
-    link_traits((obj, "only_current"), (only_current, "value"))
-    fit = ipywidgets.Button(
-        description="Fit",
-        tooltip="Fit in the selected signal range")
-    close = ipywidgets.Button(
-        description="Close",
-        tooltip="Close widget and remove span selector from the signal figure.")
-
-    def on_fit_clicked(b):
-        obj._fit_fired()
-    fit.on_click(on_fit_clicked)
-    box = ipywidgets.VBox([
-        labelme("Only current", only_current),
-        help,
-        ipywidgets.HBox((fit, close))
-    ])
-
-    def on_close_clicked(b):
-        obj.span_selector_switch(False)
-        box.close()
-    close.on_click(on_close_clicked)
-    return box
-
-
+@register_ipy_widget(toolkey="Signal1D.remove_background")
 @add_display_arg
 def remove_background_ipy(obj, **kwargs):
     fast = ipywidgets.Checkbox()
@@ -313,6 +286,7 @@ def remove_background_ipy(obj, **kwargs):
     return box
 
 
+@register_ipy_widget(toolkey="Signal1D.spikes_removal_tool")
 @add_display_arg
 def spikes_removal_ipy(obj, **kwargs):
     threshold = ipywidgets.FloatText()
