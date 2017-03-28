@@ -51,7 +51,8 @@ def enum2dropdown(trait):
 
 def add_display_arg(f):
     @functools.wraps(f)
-    def wrapper(display=True, *args, **kwargs):
+    def wrapper(*args, **kwargs):
+        display = kwargs.get("display", True)
         widget = f(*args, **kwargs)
         if display:
             IPython.display.display(widget)
