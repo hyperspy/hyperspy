@@ -98,11 +98,6 @@ def copy_slice_from_whitelist(
 
     for key in keys:
         val = _from._whitelist[key]
-        if key == 'self':
-            target = None
-        else:
-            target = attrgetter(key)(_from)
-
         if val is None:
             # attrsetter(_to, key, attrgetter(key)(_from))
             # continue
@@ -118,6 +113,12 @@ def copy_slice_from_whitelist(
             continue
         if 'id' in flags:
             continue
+
+        if key == 'self':
+            target = None
+        else:
+            target = attrgetter(key)(_from)
+
         if 'inav' in flags or 'isig' in flags:
             slice_nav = make_slice_navigation_decision(flags, isNav)
             result = _slice_target(
@@ -206,8 +207,16 @@ class FancySlicing(object):
 
     def _slicer(self, slices, isNavigation=None, out=None):
         array_slices = self._get_array_slices(slices, isNavigation)
+        new_data = self.data[array_slices]
+        if new_data.size == 1 and new_data.dtype is np.dtype('O'):
+            if isinstance(new_data[0], np.ndarray):
+                return self.__class__(new_data[0]).transpose(navigation_axes=0)
+            else:
+                return new_data[0]
+
         if out is None:
-            _obj = self._deepcopy_with_new_data(self.data[array_slices])
+            _obj = self._deepcopy_with_new_data(new_data,
+                                                copy_variance=True)
             _to_remove = []
             for slice_, axis in zip(array_slices, _obj.axes_manager._axes):
                 if (isinstance(slice_, slice) or
@@ -218,7 +227,7 @@ class FancySlicing(object):
             for _ind in reversed(sorted(_to_remove)):
                 _obj._remove_axis(_ind)
         else:
-            out.data = self.data[array_slices]
+            out.data = new_data
             _obj = out
             i = 0
             for slice_, axis_src in zip(array_slices, self.axes_manager._axes):

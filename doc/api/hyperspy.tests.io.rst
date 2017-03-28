@@ -60,6 +60,14 @@ hyperspy.tests.io.test_dm_stackbuilder_plugin module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.io.test_edax module
+----------------------------------
+
+.. automodule:: hyperspy.tests.io.test_edax
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.io.test_emd module
 ---------------------------------
 
@@ -88,6 +96,14 @@ hyperspy.tests.io.test_msa module
 ---------------------------------
 
 .. automodule:: hyperspy.tests.io.test_msa
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.tests.io.test_protochips module
+----------------------------------------
+
+.. automodule:: hyperspy.tests.io.test_protochips
     :members:
     :undoc-members:
     :show-inheritance:

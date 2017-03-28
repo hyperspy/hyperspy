@@ -17,14 +17,15 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from datetime import datetime, timedelta
-from dateutil import tz
 from traits.api import Undefined
 import numpy as np
 import logging
 import warnings
+import datetime
+import dateutil
 
 from hyperspy.misc.array_tools import sarray2dict, dict2sarray
+from hyperspy.misc.date_time_tools import serial_date_to_ISO_format, datetime_to_serial_date
 
 _logger = logging.getLogger(__name__)
 
@@ -43,26 +44,9 @@ writes = [(2, 2), (2, 1), (2, 0)]
 magics = [0x0102]
 
 
-def _from_serial_date(serial):
-    # Excel date&time format
-    origin = datetime(1899, 12, 30, tzinfo=tz.tzutc())
-    secs = (serial % 1.0) * 86400.0
-    dt = timedelta(int(serial), secs, secs / 1000)
-    utc = origin + dt
-    return utc.astimezone(tz.tzlocal())
-
-
-def _to_serial_date(dt):
-    origin = datetime(1899, 12, 30, tzinfo=tz.tzutc())
-    delta = dt - origin
-    return float(delta.days) + (float(delta.seconds) / 86400)
-
-
 mapping = {
     'blockfile_header.Beam_energy':
     ("Acquisition_instrument.TEM.beam_energy", lambda x: x * 1e-3),
-    'blockfile_header.Acquisition_time':
-    ("General.time", _from_serial_date),
     'blockfile_header.Camera_length':
     ("Acquisition_instrument.TEM.camera_length", lambda x: x * 1e-4),
     'blockfile_header.Scan_rotation':
@@ -108,8 +92,8 @@ def get_default_header(endianess='<'):
     header['MAGIC'][0] = magics[0]
     header['Data_offset_1'][0] = 0x1000     # Always this value observed
     header['UNKNOWN1'][0] = 131141          # Very typical value (always?)
-    header['Acquisition_time'][0] = _to_serial_date(
-        datetime.fromtimestamp(86400, tz.tzutc()))
+    header['Acquisition_time'][0] = datetime_to_serial_date(
+        datetime.datetime.fromtimestamp(86400, dateutil.tz.tzutc()))
     # Default to UNIX epoch + 1 day
     # Have to add 1 day, as dateutil's timezones dont work before epoch
     return header
@@ -126,7 +110,7 @@ def get_header_from_signal(signal, endianess='<'):
     if signal.axes_manager.navigation_dimension == 2:
         NX, NY = signal.axes_manager.navigation_shape
         SX = signal.axes_manager.navigation_axes[0].scale
-        SY = signal.axes_manager.navigation_axes[0].scale
+        SY = signal.axes_manager.navigation_axes[1].scale
     elif signal.axes_manager.navigation_dimension == 1:
         NX = signal.axes_manager.navigation_shape[0]
         NY = 1
@@ -221,7 +205,12 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
     units = ['nm', 'nm', 'cm', 'cm']
     names = ['y', 'x', 'dy', 'dx']
     scales = [header['SY'], header['SX'], SDP, SDP]
-    metadata = {'General': {'original_filename': os.path.split(filename)[1]},
+    date, time, time_zone = serial_date_to_ISO_format(header['Acquisition_time'])
+    metadata = {'General': {'original_filename': os.path.split(filename)[1],
+                            'date': date,
+                            'time': time,
+                            'time_zone': time_zone,
+                            'notes': header['Note']},
                 "Signal": {'signal_type': "diffraction",
                            'record_by': 'image', },
                 }

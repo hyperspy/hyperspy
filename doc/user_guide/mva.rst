@@ -83,7 +83,7 @@ To obtain a scree plot for your dataset, run the
 
 .. code-block:: python
 
-    >>> ax = s.plot_explained_variance_ratio()
+    >>> ax = s.plot_explained_variance_ratio(n=20)
 
 .. figure::  images/screeplot.png
    :align:   center
@@ -91,9 +91,34 @@ To obtain a scree plot for your dataset, run the
 
    PCA scree plot
 
-Note that in the figure, the first component has index 0. This is because
+The default options for this method will plot a bare scree plot, but the
+method's arguments allow for a great deal of customization. For
+example, by specifying a ``threshold`` value, a cutoff line will be drawn at
+the total variance specified, and the components above this value will be
+styled distinctly from the remaining components to show which are considered
+signal, as opposed to noise. Alternatively, by providing an integer value
+for ``threshold``, the line will be drawn at the specified component (see
+below). These options (together with many others), can be customized to
+develop a figure of your liking. See the documentation of
+:py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio` for more details.
+
+Note that in the above figure, the first component has index 0. This is because
 Python uses zero based indexing i.e. the initial element of a sequence is found
-at index 0.
+at index 0. To switch to a "number-based" (rather than "index-based")
+notation, specify the ``xaxis_type`` parameter:
+
+.. code-block:: python
+
+    >>> ax = s.plot_explained_variance_ratio(n=20,
+    >>>                                      threshold=4,
+    >>>                                      xaxis_type='number')
+
+.. figure::  images/screeplot2.png
+   :align:   center
+   :width:   500
+
+   PCA scree plot with number-based axis labeling and a threshold value
+   specified
 
 .. versionadded:: 0.7
 
@@ -201,26 +226,46 @@ the following code will train ORPCA using the first 32 samples of the data.
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
-                       output_dimension=3
+                       output_dimension=3,
                        training_samples=32)
 
-Finally, online RPCA includes two alternative methods to the default solver,
-which can again improve the convergence and speed of the algorithm. The first
-is block-coordinate descent (BCD), and the second is based on stochastic gradient
-descent (SGD), which takes an additional parameter to set the learning rate.
+Finally, online RPCA includes three alternative methods to the default
+closed-form solver, which can again improve both the convergence and speed
+of the algorithm. These are particularly useful for very large datasets.
+
+The first method is block-coordinate descent (BCD), and takes no
+additional parameters:
 
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
-                       output_dimension=3
-                       method='BCD',
-                       training_samples=32)
+                       output_dimension=3,
+                       method='BCD')
+
+The second is based on stochastic gradient descent (SGD), and takes an
+additional parameter to set the learning rate. The learning rate dictates
+the size of the steps taken by the gradient descent algorithm, and setting
+it too large can lead to oscillations that prevent the algorithm from
+finding the correct minima. Usually a value between 1 and 2 works well:
+
+.. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
-                       output_dimension=3
+                       output_dimension=3,
                        method='SGD',
+                       learning_rate=1.1)
+
+The third method is MomentumSGD, which typically improves the convergence
+properties of stochastic gradient descent. This takes the further parameter
+"momentum", which should be a fraction between 0 and 1.
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='ORPCA',
+                       output_dimension=3,
+                       method='MomentumSGD',
                        learning_rate=1.1,
-                       training_samples=32)
+                       momentum=0.5)
 
 Non-negative matrix factorization
 ----------------------------
@@ -234,6 +279,11 @@ can be accessed in HyperSpy with:
 
 Unlike PCA, NMF forces the components to be strictly non-negative, which can aid
 the physical interpretation of components for count data such as images, EELS or EDS.
+
+NMF takes the optional argument "output_dimension", which determines the number
+of components to keep. Setting this to a small number is recommended to keep
+the computation time small. Often it is useful to run a PCA decomposition first
+and use the scree plot to determine a value for "output_dimension".
 
 Blind Source Separation
 =======================

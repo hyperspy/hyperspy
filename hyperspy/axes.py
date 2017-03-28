@@ -28,7 +28,6 @@ from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
 
 import warnings
-from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 class ndindex_nat(np.ndindex):
@@ -231,16 +230,30 @@ class DataAxis(t.HasTraits):
             try:
                 start = v2i(start)
             except ValueError:
-                # The value is below the axis limits
-                # we slice from the start.
-                start = None
+                if start > self.high_value:
+                    # The start value is above the axis limit
+                    raise IndexError(
+                        "Start value above axis high bound for  axis %s."
+                        "value: %f high_bound: %f" % (repr(self), start,
+                                                      self.high_value))
+                else:
+                    # The start value is below the axis limit,
+                    # we slice from the start.
+                    start = None
         if isfloat(stop):
             try:
                 stop = v2i(stop)
             except ValueError:
-                # The value is above the axes limits
-                # we slice up to the end.
-                stop = None
+                if stop < self.low_value:
+                    # The stop value is below the axis limits
+                    raise IndexError(
+                        "Stop value below axis low bound for  axis %s."
+                        "value: %f low_bound: %f" % (repr(self), stop,
+                                                     self.low_value))
+                else:
+                    # The stop value is below the axis limit,
+                    # we slice until the end.
+                    stop = None
 
         if step == 0:
             raise ValueError("slice step cannot be zero")
@@ -297,22 +310,6 @@ class DataAxis(t.HasTraits):
 
     def __str__(self):
         return self._get_name() + " axis"
-
-    def connect(self, f):
-        warnings.warn(
-            "The method `DataAxis.connect()` has been deprecated and will "
-            "be removed in HyperSpy 0.10. Please use "
-            "`DataAxis.events.value_changed.connect()` instead.",
-            VisibleDeprecationWarning)
-        self.events.value_changed.connect(f, [])
-
-    def disconnect(self, f):
-        warnings.warn(
-            "The method `DataAxis.disconnect()` has been deprecated and "
-            "will be removed in HyperSpy 0.10. Please use "
-            "`DataAxis.events.indices_changed.disconnect()` instead.",
-            VisibleDeprecationWarning)
-        self.events.value_changed.disconnect(f)
 
     def update_index_bounds(self):
         self.high_index = self.size - 1
@@ -391,14 +388,6 @@ class DataAxis(t.HasTraits):
                 return index
             else:
                 raise ValueError("The value is out of the axis limits")
-
-    def set_index_from_value(self, value):
-        warnings.warn(
-            "The method `DataAxis.set_index_from_value()` has been deprecated "
-            "and will be removed in HyperSpy 0.10. Please set the value using "
-            "the `value` attribute and the index will update automatically.",
-            VisibleDeprecationWarning)
-        self.value = value
 
     def index2value(self, index):
         if isinstance(index, np.ndarray):
@@ -664,7 +653,7 @@ class AxesManager(t.HasTraits):
             return self.signal_axes[int(y.real)]
         else:
             raise IndexError("axesmanager imaginary part of complex indices "
-                             "must be 0, 1 or 2")
+                             "must be 0, 1, 2 or 3")
 
     def __getslice__(self, i=None, j=None):
         """x.__getslice__(i, j) <==> x[i:j]
@@ -847,7 +836,7 @@ class AxesManager(t.HasTraits):
             self.events.any_axis_changed.trigger(obj=self)
 
     def _update_attributes(self):
-        getitem_tuple = ()
+        getitem_tuple = []
         values = []
         self.signal_axes = ()
         self.navigation_axes = ()
@@ -862,10 +851,12 @@ class AxesManager(t.HasTraits):
             else:
                 getitem_tuple += axis.slice,
                 self.signal_axes += axis,
+        if not self.signal_axes and self.navigation_axes:
+            getitem_tuple[-1] = slice(axis.index, axis.index + 1)
 
         self.signal_axes = self.signal_axes[::-1]
         self.navigation_axes = self.navigation_axes[::-1]
-        self._getitem_tuple = getitem_tuple
+        self._getitem_tuple = tuple(getitem_tuple)
         self.signal_dimension = len(self.signal_axes)
         self.navigation_dimension = len(self.navigation_axes)
         if self.navigation_dimension != 0:
@@ -914,22 +905,6 @@ class AxesManager(t.HasTraits):
 
         for axis in self._axes:
             axis.navigate = tl.pop(0)
-
-    def connect(self, f):
-        warnings.warn(
-            "The method `AxesManager.connect()` has been deprecated and will "
-            "be removed in HyperSpy 0.10. Please use "
-            "`AxesManager.events.indices_changed.connect()` instead.",
-            VisibleDeprecationWarning)
-        self.events.indices_changed.connect(f, [])
-
-    def disconnect(self, f):
-        warnings.warn(
-            "The method `AxesManager.disconnect()` has been deprecated and "
-            "will be removed in HyperSpy 0.10. Please use "
-            "`AxesManager.events.indices_changed.disconnect()` instead.",
-            VisibleDeprecationWarning)
-        self.events.indices_changed.disconnect(f)
 
     def key_navigator(self, event):
         if len(self.navigation_axes) not in (1, 2):
@@ -1051,7 +1026,7 @@ class AxesManager(t.HasTraits):
                 signature = "\n<tr class='bolder_row'> "
             else:
                 signature = "\n<tr> "
-            signature +=" ".join(("{}" for _ in args))+" </tr>"
+            signature += " ".join(("{}" for _ in args)) + " </tr>"
             return signature.format(*map(lambda x:
                                          '\n<' + tag +
                                          '>{}</'.format(x) + tag + '>',

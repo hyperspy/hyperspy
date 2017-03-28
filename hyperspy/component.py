@@ -33,7 +33,6 @@ from hyperspy.exceptions import NavigationDimensionError
 from hyperspy.misc.export_dictionary import export_to_dictionary, \
     load_from_dictionary
 from hyperspy.events import Events, Event
-from hyperspy.exceptions import VisibleDeprecationWarning
 
 import logging
 
@@ -199,22 +198,6 @@ class Parameter(t.HasTraits):
 
     def __len__(self):
         return self._number_of_elements
-
-    def connect(self, f):
-        warnings.warn(
-            "The method `Parameter.connect()` has been deprecated and will be "
-            "removed in HyperSpy 0.10. Please use "
-            "`Parameter.events.value_changed.connect()` instead.",
-            VisibleDeprecationWarning)
-        self.events.value_changed.connect(f, [])
-
-    def disconnect(self, f):
-        warnings.warn(
-            "The method `Parameter.disconnect()` has been deprecated and will "
-            "be removed in HyperSpy 0.10. Please use "
-            "`Parameter.events.value_changed.disconnect()` instead.",
-            VisibleDeprecationWarning)
-        self.events.value_changed.disconnect(f)
 
     def _get_value(self):
         if self.twin is None:
@@ -838,22 +821,6 @@ class Component(t.HasTraits):
         for parameter in self.parameters:
             parameter._axes_manager = value
         self.__axes_manager = value
-
-    def connect(self, f):
-        warnings.warn(
-            "The method `Component.connect()` has been deprecated and will be "
-            "removed in HyperSpy 0.10. Please use "
-            "`Component.events.active_changed.connect()` instead.",
-            VisibleDeprecationWarning)
-        self.events.active_changed.connect(f, [])
-
-    def disconnect(self, f):
-        warnings.warn(
-            "The method `Component.disconnect()` has been deprecated and will "
-            "be removed in HyperSpy 0.10. Please use "
-            "`Component.events.active_changed.disconnect()` instead.",
-            VisibleDeprecationWarning)
-        self.events.active_changed.disconnect(f)
 
     def _get_active(self):
         if self.active_is_multidimensional is True:

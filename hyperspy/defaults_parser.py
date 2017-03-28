@@ -18,6 +18,7 @@
 
 
 import os.path
+from os import cpu_count
 import configparser
 import logging
 
@@ -56,15 +57,17 @@ def guess_gos_path():
 
 if os.path.isfile(defaults_file):
     # Remove config file if obsolated
-    f = open(defaults_file)
-    if 'Not really' in f.readline():
-        # It is the old config file
-        f.close()
+    with open(defaults_file) as f:
+        if 'Not really' in f.readline():
+                # It is the old config file
+            defaults_file_exists = False
+        else:
+            defaults_file_exists = True
+    if not defaults_file_exists:
+        # It actually exists, but is an obsoleted unsupported version of it
+        # so we delete it.
         _logger.info('Removing obsoleted config file')
         os.remove(defaults_file)
-        defaults_file_exists = False
-    else:
-        defaults_file_exists = True
 else:
     defaults_file_exists = False
 
@@ -115,6 +118,10 @@ class GeneralConfig(t.HasTraits):
              'DictionaryTreeBrowser, but with double lines')
     logging_level = t.Enum(['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', ],
                            desc='the log level of all hyperspy modules.')
+    parallel = t.CBool(
+        True,
+        desc='Use parallel threads for computations by default.'
+    )
 
     def _logger_on_changed(self, old, new):
         if new is True:
@@ -243,7 +250,7 @@ template['General'].logging_level = 'WARNING'
 def template2config(template, config):
     for section, traited_class in template.items():
         config.add_section(section)
-        for key, item in traited_class.get().items():
+        for key, item in traited_class.trait_get().items():
             config.set(section, key, str(item))
 
 
@@ -258,7 +265,7 @@ def config2template(template, config):
             if name == 'fine_structure_smoothing':
                 value = float(value)
             config_dict[name] = value
-        traited_class.set(True, **config_dict)
+        traited_class.trait_set(True, **config_dict)
 
 
 def dictionary_from_template(template):
@@ -289,7 +296,8 @@ if defaults_file_exists:
 
 if not defaults_file_exists or rewrite is True:
     _logger.info('Writing the config file')
-    config.write(open(defaults_file, 'w'))
+    with open(defaults_file, "w") as df:
+        config.write(df)
 
 # Use the traited classes to cast the content of the ConfigParser
 config2template(template, config)
