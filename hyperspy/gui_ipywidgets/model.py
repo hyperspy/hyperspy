@@ -116,11 +116,7 @@ def get_component_widget(obj, **kwargs):
 
     """
     active = Checkbox(description='active', value=obj.active)
-
-    def on_active_change(change):
-        obj.active = change['new']
-    active.observe(on_active_change, names='value')
-
+    link_traits((obj, "active"), (active, "value"))
     container = VBox([active])
     for parameter in obj.parameters:
         container.children += get_parameter_widget(parameter, display=False),
