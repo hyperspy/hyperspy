@@ -1,10 +1,12 @@
 from traitlets import TraitError as TraitletError
 from ipywidgets import (
-    Accordion, FloatSlider, FloatText, Layout, HBox, VBox, Checkbox)
+    Accordion, FloatSlider, FloatText, Layout, HBox, VBox, Checkbox, Label,
+    Button)
 import numpy as np
 
 from hyperspy.misc.link_traits import link_traits
-from hyperspy.gui_ipywidgets.utils import add_display_arg, register_ipy_widget
+from hyperspy.gui_ipywidgets.utils import (
+    add_display_arg, register_ipy_widget, labelme)
 
 
 def _interactive_slider_bounds(obj, index=None):
