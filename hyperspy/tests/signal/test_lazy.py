@@ -53,7 +53,6 @@ def test_blockiter_bothmasks(signal, flat, dtype, nm, sm):
     real_second = get(signal.data.dask, (signal.data.name, 0, 1, 0, 0)).copy()
     # Don't want to rechunk, so change dtype manually
     signal.data = signal.data.astype(dtype)
-    # signal.change_dtype(dtype)
     it = signal._block_iterator(flat_signal=flat,
                                 navigation_mask=nm,
                                 signal_mask=sm,
