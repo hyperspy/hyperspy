@@ -826,3 +826,20 @@ def test_lazy_transpose_rechunks():
     assert len(chunks[1]) != 1
     assert len(chunks[2]) == 1
     assert len(chunks[3]) == 1
+
+
+def test_lazy_changetype_rechunk():
+    ar = da.ones((50, 50, 256, 256), chunks=(5, 5, 256, 256), dtype='uint8')
+    s = signals.Signal2D(ar).as_lazy()
+    s._make_lazy(rechunk=True)
+    assert s.data.dtype is np.dtype('uint8')
+    chunks_old = s.data.chunks
+    s.change_dtype('float')
+    assert s.data.dtype is np.dtype('float')
+    chunks_new = s.data.chunks
+    assert (len(chunks_old[0]) * len(chunks_old[1]) <
+            len(chunks_new[0]) * len(chunks_new[1]))
+    s.change_dtype('uint8')
+    assert s.data.dtype is np.dtype('uint8')
+    chunks_newest = s.data.chunks
+    assert chunks_newest == chunks_new
