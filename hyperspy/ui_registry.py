@@ -16,7 +16,7 @@ import types
 
 from hyperspy.misc.utils import isiterable
 
-ui_registry = {}
+UI_REGISTRY = {}
 
 toolkit_registry = set()
 
@@ -33,7 +33,7 @@ def register_widget(toolkit, toolkey):
         The name of the widget toolkit e.g. ipywidgets
     toolkey: string
         The "key" of the tool for which the widget provides an interface. If
-        the toolkey is not in the ``ui_registry`` dictionary a ``NameError``
+        the toolkey is not in the ``UI_REGISTRY`` dictionary a ``NameError``
         is raised.
 
     Returns
@@ -42,12 +42,12 @@ def register_widget(toolkit, toolkey):
         Dictionary containing the widget objects if display is False, else None.
 
     """
-    if not toolkey in ui_registry:
+    if not toolkey in UI_REGISTRY:
         raise NameError("%s is not a registered toolkey" % toolkey)
     toolkit_registry.add(toolkit)
 
     def decorator(f):
-        ui_registry[toolkey][toolkit] = f
+        UI_REGISTRY[toolkey][toolkit] = f
         return f
     return decorator
 
@@ -60,15 +60,15 @@ def register_toolkey(toolkey):
     toolkey: string
 
     """
-    if toolkey in ui_registry:
+    if toolkey in UI_REGISTRY:
         raise NameError(
             "Another tool has been registered with the same name.")
-    ui_registry[toolkey] = {}
+    UI_REGISTRY[toolkey] = {}
 
 
 def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
     error = "There is not user interface registered for this feature."
-    from hyperspy.ui_registry import ui_registry
+    from hyperspy.ui_registry import UI_REGISTRY
     toolkits = None
     if isinstance(toolkit, str):
         toolkits = (toolkit,)
@@ -77,11 +77,11 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
     elif toolkit is not None:
         raise ValueError(
             "`toolkit` must be a string, an iterable of strings or None.")
-    if toolkey not in ui_registry or not ui_registry[toolkey]:
+    if toolkey not in UI_REGISTRY or not UI_REGISTRY[toolkey]:
         raise NotImplementedError(error)
     if not display:
         widgets = {}
-    for toolkit, f in ui_registry[toolkey].items():
+    for toolkit, f in UI_REGISTRY[toolkey].items():
         if toolkits is None or toolkit in toolkits:
             thisw = f(obj=self, display=display, **kwargs)
             if not display:

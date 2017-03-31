@@ -1,5 +1,8 @@
 import traitsui.api as tui
 
+from hyperspy.gui_traitsui.utils import (
+    register_traitsui_widget, add_display_arg)
+
 
 class PreferencesHandler(tui.Handler):
 
@@ -7,7 +10,8 @@ class PreferencesHandler(tui.Handler):
         # Removes the span selector from the plot
         info.object.save()
         return True
-preferences_view = tui.View(
+
+PREFERENCES_VIEW = tui.View(
     tui.Group(tui.Item('General', style='custom', show_label=False, ),
               label='General'),
     tui.Group(tui.Item('Model', style='custom', show_label=False, ),
@@ -24,7 +28,7 @@ preferences_view = tui.View(
     title='Preferences',
     handler=PreferencesHandler,)
 
-eels_view = tui.View(
+EELS_VIEW = tui.View(
     tui.Group(
         'synchronize_cl_with_ll',
         label='General'),
@@ -39,3 +43,11 @@ eels_view = tui.View(
             label='Fine structure'),
         label='Model')
 )
+
+
+@register_traitsui_widget(toolkey="Preferences")
+@add_display_arg
+def preferences_traitsui(obj, **kwargs):
+    obj.EELS.trait_view("traits_view", EELS_VIEW)
+    obj.trait_view("traits_view", PREFERENCES_VIEW)
+    return obj
