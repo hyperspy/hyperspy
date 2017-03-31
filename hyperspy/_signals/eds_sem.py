@@ -310,5 +310,5 @@ class EDSSEMSpectrum(EDSSEM_mixin, EDSSpectrum):
     pass
 
 
-class LazyEDSSEMSpectrum(EDSSEM_mixin, LazyEDSSpectrum):
+class LazyEDSSEMSpectrum(EDSSEMSpectrum, LazyEDSSpectrum):
     pass

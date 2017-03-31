@@ -34,7 +34,7 @@ class ComplexSignal1D(ComplexSignal, CommonSignal1D):
         self.metadata.Signal.binned = False
 
 
-class LazyComplexSignal1D(LazyComplexSignal, CommonSignal1D):
+class LazyComplexSignal1D(ComplexSignal1D, LazyComplexSignal):
 
     """BaseSignal subclass for lazy complex 1-dimensional data."""
 
