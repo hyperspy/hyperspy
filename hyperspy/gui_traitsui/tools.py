@@ -141,83 +141,83 @@ range_selector_view = tu.View(
 
 
 smoothing_savitzky_golay_view = tu.View(
+    tu.Group(
         tu.Group(
-            tu.Group(
-                'window_length',
-                tu.Item(
-                    'decrease_window_length',
-                    show_label=False),
-                tu.Item(
-                    'increase_window_length',
-                    show_label=False),
-                orientation="horizontal"),
-            'polynomial_order',
+            'window_length',
             tu.Item(
-                name='differential_order',
-                tooltip='The order of the derivative to compute. This must '
-                        'be a nonnegative integer. The default is 0, which '
-                        'means to filter the data without differentiating.',
-            ),
-            'line_color'),
-        kind='live',
-        handler=SmoothingHandler,
-        buttons=OKCancelButtons,
-        title='Savitzky-Golay Smoothing',
-    )
+                'decrease_window_length',
+                show_label=False),
+            tu.Item(
+                'increase_window_length',
+                show_label=False),
+            orientation="horizontal"),
+        'polynomial_order',
+        tu.Item(
+            name='differential_order',
+            tooltip='The order of the derivative to compute. This must '
+            'be a nonnegative integer. The default is 0, which '
+            'means to filter the data without differentiating.',
+        ),
+        'line_color'),
+    kind='live',
+    handler=SmoothingHandler,
+    buttons=OKCancelButtons,
+    title='Savitzky-Golay Smoothing',
+)
 
 
 smoothing_lowess_view = tu.View(
-        tu.Group(
-            'smoothing_parameter',
-            'number_of_iterations',
-            'line_color'),
-        kind='live',
-        handler=SmoothingHandler,
-        buttons=OKCancelButtons,
-        title='Lowess Smoothing',)
+    tu.Group(
+        'smoothing_parameter',
+        'number_of_iterations',
+        'line_color'),
+    kind='live',
+    handler=SmoothingHandler,
+    buttons=OKCancelButtons,
+    title='Lowess Smoothing',)
 
-smoothing_tv_view =  tu.View(
-        tu.Group(
-            'smoothing_parameter',
-            'line_color'),
-        kind='live',
-        handler=SmoothingHandler,
-        buttons=OKCancelButtons,
-        title='Total Variation Smoothing',)
+smoothing_tv_view = tu.View(
+    tu.Group(
+        'smoothing_parameter',
+        'line_color'),
+    kind='live',
+    handler=SmoothingHandler,
+    buttons=OKCancelButtons,
+    title='Total Variation Smoothing',)
 
 
 smoothing_butterworth_view = tu.View(
-        tu.Group(
-            'cutoff_frequency_ratio',
-            'order',
-            'type'),
-        kind='live',
-        handler=SmoothingHandler,
-        buttons=OKCancelButtons,
-        title='Butterworth filter',)
+    tu.Group(
+        'cutoff_frequency_ratio',
+        'order',
+        'type'),
+    kind='live',
+    handler=SmoothingHandler,
+    buttons=OKCancelButtons,
+    title='Butterworth filter',)
 
 load_view = tu.View(
-        tu.Group('filename'),
-        kind='livemodal',
-        buttons=[OKButton, CancelButton],
-        title='Load file')
+    tu.Group('filename'),
+    kind='livemodal',
+    buttons=[OKButton, CancelButton],
+    title='Load file')
 
 
 image_constrast_view = tu.View(tu.Item('ss_left_value',
-                           label='vmin',
-                           show_label=True,
-                           style='readonly',),
-                   tu.Item('ss_right_value',
-                           label='vmax',
-                           show_label=True,
-                           style='readonly'),
-                   handler=ImageContrastHandler,
-                   buttons=[OKButton,
-                            OurApplyButton,
-                            OurResetButton,
-                            CancelButton, ],
-                   title='Constrast adjustment tool',
-                   )
+                                       label='vmin',
+                                       show_label=True,
+                                       style='readonly',),
+                               tu.Item('ss_right_value',
+                                       label='vmax',
+                                       show_label=True,
+                                       style='readonly'),
+                               handler=ImageContrastHandler,
+                               buttons=[OKButton,
+                                        OurApplyButton,
+                                        OurResetButton,
+                                        CancelButton, ],
+                               title='Constrast adjustment tool',
+                               )
 
 
 integrate_area_view = tu.View(
@@ -227,18 +227,18 @@ integrate_area_view = tu.View(
 )
 
 background_removal_view = tu.View(
+    tu.Group(
+        'background_type',
+        'fast',
         tu.Group(
-            'background_type',
-            'fast',
-            tu.Group(
-                'polynomial_order',
-                visible_when='background_type == \'Polynomial\''), ),
-        buttons=[OKButton, CancelButton],
-        handler=SpanSelectorInSignal1DHandler,
-        title='Background removal tool',
-        resizable=True,
-        width=300,
-    )
+            'polynomial_order',
+            visible_when='background_type == \'Polynomial\''), ),
+    buttons=[OKButton, CancelButton],
+    handler=SpanSelectorInSignal1DHandler,
+    title='Background removal tool',
+    resizable=True,
+    width=300,
+)
 
 
 class SpikesRemovalHandler(tu.Handler):
@@ -280,36 +280,36 @@ class SpikesRemovalHandler(tu.Handler):
         return
 
 spikes_removal_view = tu.View(tu.Group(
-        tu.Group(
-            tu.Item('click_to_show_instructions',
-                    show_label=False, ),
-            tu.Item('show_derivative_histogram',
-                    show_label=False,
-                    tooltip="To determine the appropriate threshold,\n"
-                            "plot the derivative magnitude histogram, \n"
-                            "and look for outliers at high magnitudes \n"
-                            "(which represent sudden spikes in the data)"),
-            'threshold',
-            show_border=True,
-        ),
-        tu.Group(
-            'add_noise',
-            'interpolator_kind',
-            'default_spike_width',
-            tu.Group(
-                'spline_order',
-                enabled_when='interpolator_kind == \'Spline\''),
-            show_border=True,
-            label='Advanced settings'),
+    tu.Group(
+        tu.Item('click_to_show_instructions',
+                show_label=False, ),
+        tu.Item('show_derivative_histogram',
+                show_label=False,
+                tooltip="To determine the appropriate threshold,\n"
+                "plot the derivative magnitude histogram, \n"
+                "and look for outliers at high magnitudes \n"
+                "(which represent sudden spikes in the data)"),
+        'threshold',
+        show_border=True,
     ),
-        buttons=[thisOKButton,
-                 thisPreviousButton,
-                 thisFindButton,
-                 thisApplyButton, ],
-        handler=SpikesRemovalHandler,
-        title='Spikes removal tool',
-        resizable=False,
-    )
+    tu.Group(
+        'add_noise',
+        'interpolator_kind',
+        'default_spike_width',
+        tu.Group(
+            'spline_order',
+            enabled_when='interpolator_kind == \'Spline\''),
+        show_border=True,
+        label='Advanced settings'),
+),
+    buttons=[thisOKButton,
+             thisPreviousButton,
+             thisFindButton,
+             thisApplyButton, ],
+    handler=SpikesRemovalHandler,
+    title='Spikes removal tool',
+    resizable=False,
+)
 # Spike removal buttons
 thisOKButton = tu.Action(name="OK",
                          action="OK",
@@ -332,6 +332,7 @@ thisPreviousButton = tu.Action(name="Find previous",
                                "navigation\n"
                                       "dimensions) spike in the data.")
 ##########
+
 
 class ImageContrastHandler(tu.Handler):
 
@@ -369,7 +370,6 @@ class ImageContrastHandler(tu.Handler):
 
         """
         info.object._help()
-
 
 
 class ComponentFitHandler(SpanSelectorInSignal1DHandler):

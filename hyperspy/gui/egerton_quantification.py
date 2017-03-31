@@ -158,7 +158,6 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.signal._plot.auto_update_plot = True
 
 
-
 SPIKES_REMOVAL_INSTRUCTIONS = (
     "\nTo remove spikes from the data:\n\n"
 
@@ -218,7 +217,6 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                        "of the spectrum. The noise properties defined\n"
                        "in the Signal metadata are used if present,"
                             "otherwise\nshot noise is used as a default")
-
 
     def __init__(self, signal, navigation_mask=None, signal_mask=None):
         super(SpikesRemoval, self).__init__(signal)

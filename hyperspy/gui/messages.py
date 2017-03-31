@@ -19,8 +19,6 @@
 import traits.api as t
 
 
-
-
 class Message(t.HasTraits):
     text = t.Str
     is_ok = t.Bool(False)

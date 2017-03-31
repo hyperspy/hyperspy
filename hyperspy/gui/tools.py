@@ -33,8 +33,6 @@ from hyperspy.drawing.widgets import VerticalLineWidget
 _logger = logging.getLogger(__name__)
 
 
-
-
 class SpanSelectorInSignal1D(t.HasTraits):
     ss_left_value = t.Float(np.nan)
     ss_right_value = t.Float(np.nan)
@@ -206,7 +204,6 @@ class Signal1DRangeSelector(SpanSelectorInSignal1D):
     on_close = t.List()
 
 
-
 class Smoothing(t.HasTraits):
     line_color = t.Color("blue")
     line_color_ipy = t.Str("blue")
@@ -326,7 +323,6 @@ class SmoothingSavitzkyGolay(Smoothing):
 
     increase_window_length = t.Button(orientation="horizontal", label="+")
     decrease_window_length = t.Button(orientation="horizontal", label="-")
-
 
     def _increase_window_length_fired(self):
         if self.window_length % 2:
@@ -450,7 +446,6 @@ class ButterworthFilter(Smoothing):
     type = t.Enum('low', 'high')
     order = t.Int(2)
 
-
     def _cutoff_frequency_ratio_changed(self, old, new):
         self.update_lines()
 
@@ -471,12 +466,9 @@ class Load(t.HasTraits):
     filename = t.File
 
 
-
-
 class ImageContrastEditor(t.HasTraits):
     ss_left_value = t.Float()
     ss_right_value = t.Float()
-
 
     def __init__(self, image):
         super(ImageContrastEditor, self).__init__()
@@ -545,12 +537,8 @@ class ImageContrastEditor(t.HasTraits):
         plt.close(self.ax.figure)
 
 
-
-
-
 class IntegrateArea(SpanSelectorInSignal1D):
     integrate = t.Button()
-
 
     def __init__(self, signal, signal_range=None):
         if signal.axes_manager.signal_dimension != 1:

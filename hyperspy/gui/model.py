@@ -2,10 +2,10 @@ import traits.api as t
 
 from hyperspy.gui.tools import SpanSelectorInSignal1D
 
+
 class ComponentFit(SpanSelectorInSignal1D):
 
     only_current = t.Bool(True)
-
 
     def __init__(self, model, component, signal_range=None,
                  estimate_parameters=True, fit_independent=False,

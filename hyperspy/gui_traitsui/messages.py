@@ -1,6 +1,7 @@
 import traitsui.api as tu
 from traitsui.menu import OKButton, CancelButton
 
+
 class MessageHandler(tu.Handler):
 
     def close(self, info, is_ok):
