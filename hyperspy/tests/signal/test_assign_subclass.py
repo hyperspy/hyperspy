@@ -4,6 +4,7 @@ import numpy as np
 
 import hyperspy.api as hs
 from hyperspy.io import assign_signal_subclass
+from hyperspy import _lazy_signals
 
 
 testcase = namedtuple('testcase', ['dtype', 'sig_dim', 'sig_type', 'cls'])
@@ -44,7 +45,7 @@ def test_assignment_class():
                 signal_dimension=case.sig_dim,
                 signal_type=case.sig_type,
                 lazy=True) is
-            getattr(hs.signals, lazyclass))
+            getattr(_lazy_signals, lazyclass))
 
 
 class TestConvertBaseSignal:
@@ -56,7 +57,7 @@ class TestConvertBaseSignal:
         assert not self.s._lazy
         self.s._lazy = True
         self.s._assign_subclass()
-        assert isinstance(self.s, hs.signals.LazySignal)
+        assert isinstance(self.s, _lazy_signals.LazySignal)
         assert self.s._lazy
 
     def test_base_to_1d(self):
@@ -87,9 +88,9 @@ class TestConvertSignal1D:
     def test_lazy_to_eels_and_back(self):
         self.s = self.s.as_lazy()
         self.s.set_signal_type("EELS")
-        assert isinstance(self.s, hs.signals.LazyEELSSpectrum)
+        assert isinstance(self.s, _lazy_signals.LazyEELSSpectrum)
         self.s.set_signal_type("")
-        assert isinstance(self.s, hs.signals.LazySignal1D)
+        assert isinstance(self.s, _lazy_signals.LazySignal1D)
 
     def test_signal1d_to_eels(self):
         self.s.set_signal_type("EELS")
