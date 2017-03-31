@@ -17,8 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import traits.api as t
-import traitsui.api as tu
-from traitsui.menu import OKButton, CancelButton
 
 
 class SEMParametersUI(t.HasTraits):
@@ -35,16 +33,6 @@ class SEMParametersUI(t.HasTraits):
                               label='Elevation angle (degree)')
     energy_resolution_MnKa = t.Float(t.Undefined,
                                      label='Energy resolution MnKa (eV)')
-
-    traits_view = tu.View(
-        tu.Group('beam_energy',
-                 'tilt_stage',
-                 label='SEM', show_border=True),
-        tu.Group('live_time', 'azimuth_angle',
-                 'elevation_angle', 'energy_resolution_MnKa',
-                 label='EDS', show_border=True),
-        kind='modal', buttons=[OKButton, CancelButton],
-        title='SEM parameters definition wizard')
 
 
 class TEMParametersUI(t.HasTraits):
@@ -68,14 +56,10 @@ class TEMParametersUI(t.HasTraits):
     beam_current = t.Float(t.Undefined,
                            label='Beam current (nA)')
 
-    traits_view = tu.View(
-        tu.Group('beam_energy',
-                 'tilt_stage',
-                 'probe_area',
-                 'beam_current',
-                 label='TEM', show_border=True),
-        tu.Group('real_time', 'live_time', 'azimuth_angle',
-                 'elevation_angle', 'energy_resolution_MnKa',
-                 label='EDS', show_border=True),
-        kind='modal', buttons=[OKButton, CancelButton],
-        title='TEM parameters definition wizard')
+class TEMParametersUI(t.HasTraits):
+    convergence_angle = t.Float(t.Undefined,
+                                label='Convergence semi-angle (mrad)')
+    beam_energy = t.Float(t.Undefined,
+                          label='Beam energy (keV)')
+    collection_angle = t.Float(t.Undefined,
+                               label='Collection semi-angle (mrad)')

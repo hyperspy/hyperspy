@@ -23,8 +23,6 @@ import scipy as sp
 import matplotlib.colors
 import matplotlib.pyplot as plt
 import traits.api as t
-import traitsui.api as tu
-from traitsui.menu import (OKButton, CancelButton, OKCancelButtons)
 
 from hyperspy import drawing
 from hyperspy.exceptions import SignalDimensionError
@@ -35,116 +33,6 @@ from hyperspy.drawing.widgets import VerticalLineWidget
 _logger = logging.getLogger(__name__)
 
 
-OurOKButton = tu.Action(name="OK",
-                        action="OK",)
-
-OurApplyButton = tu.Action(name="Apply",
-                           action="apply")
-
-OurResetButton = tu.Action(name="Reset",
-                           action="reset")
-
-OurCloseButton = tu.Action(name="Close",
-                           action="close_directly")
-
-OurFindButton = tu.Action(name="Find next",
-                          action="find",)
-
-OurPreviousButton = tu.Action(name="Find previous",
-                              action="back",)
-
-OurFitButton = tu.Action(name="Fit",
-                         action="fit")
-
-
-class SmoothingHandler(tu.Handler):
-
-    def close(self, info, is_ok):
-        # Removes the span selector from the plot
-        if is_ok is True:
-            info.object.apply()
-        else:
-            info.object.close()
-        return True
-
-
-class SpanSelectorInSignal1DHandler(tu.Handler):
-
-    def close(self, info, is_ok):
-        # Removes the span selector from the plot
-        info.object.span_selector_switch(False)
-        if is_ok is True:
-            self.apply(info)
-
-        return True
-
-    def close_directly(self, info):
-        if (info.ui.owner is not None) and self.close(info, False):
-            info.ui.owner.close()
-
-    def apply(self, info, *args, **kwargs):
-        """Handles the **Apply** button being clicked.
-
-        """
-        obj = info.object
-        obj.is_ok = True
-        if hasattr(obj, 'apply'):
-            obj.apply()
-
-        return
-
-    def next(self, info, *args, **kwargs):
-        """Handles the **Next** button being clicked.
-
-        """
-        obj = info.object
-        obj.is_ok = True
-        if hasattr(obj, 'next'):
-            next(obj)
-        return
-
-
-class Signal1DRangeSelectorHandler(tu.Handler):
-
-    def close(self, info, is_ok):
-        # Removes the span selector from the plot
-        info.object.span_selector_switch(False)
-        if is_ok is True:
-            self.apply(info)
-        return True
-
-    def apply(self, info, *args, **kwargs):
-        """Handles the **Apply** button being clicked.
-
-        """
-        obj = info.object
-        if obj.ss_left_value != obj.ss_right_value:
-            info.object.span_selector_switch(False)
-            for method, cls in obj.on_close:
-                method(cls, obj.ss_left_value, obj.ss_right_value)
-            info.object.span_selector_switch(True)
-
-        obj.is_ok = True
-
-        return
-
-
-class CalibrationHandler(SpanSelectorInSignal1DHandler):
-
-    def apply(self, info, *args, **kwargs):
-        """Handles the **Apply** button being clicked.
-        """
-        if info.object.signal is None:
-            return
-        axis = info.object.axis
-        axis.scale = info.object.scale
-        axis.offset = info.object.offset
-        axis.units = info.object.units
-        info.object.span_selector_switch(on=False)
-        info.object.signal._replot()
-        info.object.span_selector_switch(on=True)
-        info.object.last_calibration_stored = True
-        return
 
 
 class SpanSelectorInSignal1D(t.HasTraits):
@@ -276,25 +164,6 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
     offset = t.Float()
     scale = t.Float()
     units = t.Unicode()
-    view = tu.View(
-        tu.Group(
-            'left_value',
-            'right_value',
-            tu.Item('ss_left_value',
-                    label='Left',
-                    style='readonly'),
-            tu.Item('ss_right_value',
-                    label='Right',
-                    style='readonly'),
-            tu.Item(name='offset',
-                    style='readonly'),
-            tu.Item(name='scale',
-                    style='readonly'),
-            'units',),
-        handler=CalibrationHandler,
-        buttons=[OKButton, OurApplyButton, CancelButton],
-        kind='live',
-        title='Calibration parameters')
 
     def __init__(self, signal):
         super(Signal1DCalibration, self).__init__(signal)
@@ -336,11 +205,6 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
 class Signal1DRangeSelector(SpanSelectorInSignal1D):
     on_close = t.List()
 
-    view = tu.View(
-        tu.Item('ss_left_value', label='Left', style='readonly'),
-        tu.Item('ss_right_value', label='Right', style='readonly'),
-        handler=Signal1DRangeSelectorHandler,
-        buttons=[OKButton, OurApplyButton, CancelButton],)
 
 
 class Smoothing(t.HasTraits):
@@ -463,30 +327,6 @@ class SmoothingSavitzkyGolay(Smoothing):
     increase_window_length = t.Button(orientation="horizontal", label="+")
     decrease_window_length = t.Button(orientation="horizontal", label="-")
 
-    view = tu.View(
-        tu.Group(
-            tu.Group(
-                'window_length',
-                tu.Item(
-                    'decrease_window_length',
-                    show_label=False),
-                tu.Item(
-                    'increase_window_length',
-                    show_label=False),
-                orientation="horizontal"),
-            'polynomial_order',
-            tu.Item(
-                name='differential_order',
-                tooltip='The order of the derivative to compute. This must '
-                        'be a nonnegative integer. The default is 0, which '
-                        'means to filter the data without differentiating.',
-            ),
-            'line_color'),
-        kind='live',
-        handler=SmoothingHandler,
-        buttons=OKCancelButtons,
-        title='Savitzky-Golay Smoothing',
-    )
 
     def _increase_window_length_fired(self):
         if self.window_length % 2:
@@ -561,15 +401,6 @@ class SmoothingLowess(Smoothing):
                                   )
     number_of_iterations = t.Range(low=1,
                                    value=1)
-    view = tu.View(
-        tu.Group(
-            'smoothing_parameter',
-            'number_of_iterations',
-            'line_color'),
-        kind='live',
-        handler=SmoothingHandler,
-        buttons=OKCancelButtons,
-        title='Lowess Smoothing',)
 
     def __init__(self, *args, **kwargs):
         super(SmoothingLowess, self).__init__(*args, **kwargs)
@@ -602,15 +433,6 @@ class SmoothingLowess(Smoothing):
 class SmoothingTV(Smoothing):
     smoothing_parameter = t.Float(200)
 
-    view = tu.View(
-        tu.Group(
-            'smoothing_parameter',
-            'line_color'),
-        kind='live',
-        handler=SmoothingHandler,
-        buttons=OKCancelButtons,
-        title='Total Variation Smoothing',)
-
     def _smoothing_parameter_changed(self, old, new):
         self.update_lines()
 
@@ -628,15 +450,6 @@ class ButterworthFilter(Smoothing):
     type = t.Enum('low', 'high')
     order = t.Int(2)
 
-    view = tu.View(
-        tu.Group(
-            'cutoff_frequency_ratio',
-            'order',
-            'type'),
-        kind='live',
-        handler=SmoothingHandler,
-        buttons=OKCancelButtons,
-        title='Butterworth filter',)
 
     def _cutoff_frequency_ratio_changed(self, old, new):
         self.update_lines()
@@ -656,70 +469,14 @@ class ButterworthFilter(Smoothing):
 
 class Load(t.HasTraits):
     filename = t.File
-    traits_view = tu.View(
-        tu.Group('filename'),
-        kind='livemodal',
-        buttons=[OKButton, CancelButton],
-        title='Load file')
 
 
-class ImageContrastHandler(tu.Handler):
-
-    def close(self, info, is_ok):
-        # Removes the span selector from the plot
-        #        info.object.span_selector_switch(False)
-        #        if is_ok is True:
-        #            self.apply(info)
-        if is_ok is False:
-            info.object.image.update()
-        info.object.close()
-        return True
-
-    def apply(self, info):
-        """Handles the **Apply** button being clicked.
-
-        """
-        obj = info.object
-        obj.apply()
-
-        return
-
-    @staticmethod
-    def reset(info):
-        """Handles the **Apply** button being clicked.
-
-        """
-        obj = info.object
-        obj.reset()
-        return
-
-    @staticmethod
-    def our_help(info):
-        """Handles the **Apply** button being clicked.
-
-        """
-        info.object._help()
 
 
 class ImageContrastEditor(t.HasTraits):
     ss_left_value = t.Float()
     ss_right_value = t.Float()
 
-    view = tu.View(tu.Item('ss_left_value',
-                           label='vmin',
-                           show_label=True,
-                           style='readonly',),
-                   tu.Item('ss_right_value',
-                           label='vmax',
-                           show_label=True,
-                           style='readonly'),
-                   handler=ImageContrastHandler,
-                   buttons=[OKButton,
-                            OurApplyButton,
-                            OurResetButton,
-                            CancelButton, ],
-                   title='Constrast adjustment tool',
-                   )
 
     def __init__(self, image):
         super(ImageContrastEditor, self).__init__()
@@ -788,130 +545,12 @@ class ImageContrastEditor(t.HasTraits):
         plt.close(self.ax.figure)
 
 
-class ComponentFitHandler(SpanSelectorInSignal1DHandler):
 
-    def fit(self, info):
-        """Handles the **Apply** button being clicked.
-
-        """
-        obj = info.object
-        obj._fit_fired()
-        return
-
-
-class ComponentFit(SpanSelectorInSignal1D):
-    only_current = t.Bool(True)
-
-    view = tu.View(
-        tu.Item('only_current', show_label=True,),
-        buttons=[OurFitButton, OurCloseButton],
-        title='Fit single component',
-        handler=ComponentFitHandler,
-    )
-
-    def __init__(self, model, component, signal_range=None,
-                 estimate_parameters=True, fit_independent=False,
-                 only_current=True, **kwargs):
-        if model.signal.axes_manager.signal_dimension != 1:
-            raise SignalDimensionError(
-                model.signal.axes_manager.signal_dimension, 1)
-
-        self.signal = model.signal
-        self.axis = self.signal.axes_manager.signal_axes[0]
-        self.span_selector = None
-        self.model = model
-        self.component = component
-        self.signal_range = signal_range
-        self.estimate_parameters = estimate_parameters
-        self.fit_independent = fit_independent
-        self.fit_kwargs = kwargs
-        if signal_range == "interactive":
-            if not hasattr(self.model, '_plot'):
-                self.model.plot()
-            elif self.model._plot is None:
-                self.model.plot()
-            elif self.model._plot.is_active() is False:
-                self.model.plot()
-            self.span_selector_switch(on=True)
-
-    def _fit_fired(self):
-        if (self.signal_range != "interactive" and
-                self.signal_range is not None):
-            self.model.set_signal_range(*self.signal_range)
-        elif self.signal_range == "interactive":
-            self.model.set_signal_range(self.ss_left_value,
-                                        self.ss_right_value)
-
-        # Backup "free state" of the parameters and fix all but those
-        # of the chosen component
-        if self.fit_independent:
-            active_state = []
-            for component_ in self.model:
-                active_state.append(component_.active)
-                if component_ is not self.component:
-                    component_.active = False
-                else:
-                    component_.active = True
-        else:
-            free_state = []
-            for component_ in self.model:
-                for parameter in component_.parameters:
-                    free_state.append(parameter.free)
-                    if component_ is not self.component:
-                        parameter.free = False
-
-        # Setting reasonable initial value for parameters through
-        # the components estimate_parameters function (if it has one)
-        only_current = self.only_current
-        if self.estimate_parameters:
-            if hasattr(self.component, 'estimate_parameters'):
-                if (self.signal_range != "interactive" and
-                        self.signal_range is not None):
-                    self.component.estimate_parameters(
-                        self.signal,
-                        self.signal_range[0],
-                        self.signal_range[1],
-                        only_current=only_current)
-                elif self.signal_range == "interactive":
-                    self.component.estimate_parameters(
-                        self.signal,
-                        self.ss_left_value,
-                        self.ss_right_value,
-                        only_current=only_current)
-
-        if only_current:
-            self.model.fit(**self.fit_kwargs)
-        else:
-            self.model.multifit(**self.fit_kwargs)
-
-        # Restore the signal range
-        if self.signal_range is not None:
-            self.model.channel_switches = (
-                self.model.backup_channel_switches.copy())
-
-        self.model.update_plot()
-
-        if self.fit_independent:
-            for component_ in self.model:
-                component_.active = active_state.pop(0)
-        else:
-            # Restore the "free state" of the components
-            for component_ in self.model:
-                for parameter in component_.parameters:
-                    parameter.free = free_state.pop(0)
-
-    def apply(self):
-        self._fit_fired()
 
 
 class IntegrateArea(SpanSelectorInSignal1D):
     integrate = t.Button()
 
-    view = tu.View(
-        buttons=[OKButton, CancelButton],
-        title='Integrate in range',
-        handler=SpanSelectorInSignal1DHandler,
-    )
 
     def __init__(self, signal, signal_range=None):
         if signal.axes_manager.signal_dimension != 1:

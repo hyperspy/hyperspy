@@ -20,9 +20,6 @@ import numpy as np
 import scipy as sp
 import matplotlib.text as mpl_text
 import traits.api as t
-import traitsui.api as tu
-from traitsui.menu import OKButton, CancelButton
-from pyface.message_dialog import information
 
 from hyperspy import components1d
 from hyperspy.component import Component
@@ -54,19 +51,6 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                            'ss_range',
                            default='full')
     hi = t.Int(0)
-    view = tu.View(
-        tu.Group(
-            'background_type',
-            'fast',
-            tu.Group(
-                'polynomial_order',
-                visible_when='background_type == \'Polynomial\''), ),
-        buttons=[OKButton, CancelButton],
-        handler=SpanSelectorInSignal1DHandler,
-        title='Background removal tool',
-        resizable=True,
-        width=300,
-    )
 
     def __init__(self, signal):
         super(BackgroundRemoval, self).__init__(signal)
@@ -174,43 +158,6 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.signal._plot.auto_update_plot = True
 
 
-class SpikesRemovalHandler(tu.Handler):
-
-    def close(self, info, is_ok):
-        # Removes the span selector from the plot
-        info.object.span_selector_switch(False)
-        return True
-
-    def apply(self, info, *args, **kwargs):
-        """Handles the **Apply** button being clicked.
-
-        """
-        obj = info.object
-        obj.is_ok = True
-        if hasattr(obj, 'apply'):
-            obj.apply()
-
-        return
-
-    def find(self, info, *args, **kwargs):
-        """Handles the **Next** button being clicked.
-
-        """
-        obj = info.object
-        obj.is_ok = True
-        if hasattr(obj, 'find'):
-            obj.find()
-        return
-
-    def back(self, info, *args, **kwargs):
-        """Handles the **Next** button being clicked.
-
-        """
-        obj = info.object
-        obj.is_ok = True
-        if hasattr(obj, 'find'):
-            obj.find(back=True)
-        return
 
 SPIKES_REMOVAL_INSTRUCTIONS = (
     "\nTo remove spikes from the data:\n\n"
@@ -272,57 +219,6 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                        "in the Signal metadata are used if present,"
                             "otherwise\nshot noise is used as a default")
 
-    thisOKButton = tu.Action(name="OK",
-                             action="OK",
-                             tooltip="Close the spikes removal tool")
-
-    thisApplyButton = tu.Action(name="Remove spike",
-                                action="apply",
-                                tooltip="Remove the current spike by "
-                                "interpolating\n"
-                                       "with the specified settings (and find\n"
-                                       "the next spike automatically)")
-    thisFindButton = tu.Action(name="Find next",
-                               action="find",
-                               tooltip="Find the next (in terms of navigation\n"
-                               "dimensions) spike in the data.")
-
-    thisPreviousButton = tu.Action(name="Find previous",
-                                   action="back",
-                                   tooltip="Find the previous (in terms of "
-                                   "navigation\n"
-                                          "dimensions) spike in the data.")
-    view = tu.View(tu.Group(
-        tu.Group(
-            tu.Item('click_to_show_instructions',
-                    show_label=False, ),
-            tu.Item('show_derivative_histogram',
-                    show_label=False,
-                    tooltip="To determine the appropriate threshold,\n"
-                            "plot the derivative magnitude histogram, \n"
-                            "and look for outliers at high magnitudes \n"
-                            "(which represent sudden spikes in the data)"),
-            'threshold',
-            show_border=True,
-        ),
-        tu.Group(
-            'add_noise',
-            'interpolator_kind',
-            'default_spike_width',
-            tu.Group(
-                'spline_order',
-                enabled_when='interpolator_kind == \'Spline\''),
-            show_border=True,
-            label='Advanced settings'),
-    ),
-        buttons=[thisOKButton,
-                 thisPreviousButton,
-                 thisFindButton,
-                 thisApplyButton, ],
-        handler=SpikesRemovalHandler,
-        title='Spikes removal tool',
-        resizable=False,
-    )
 
     def __init__(self, signal, navigation_mask=None, signal_mask=None):
         super(SpikesRemoval, self).__init__(signal)
@@ -365,6 +261,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self.update_plot()
 
     def _click_to_show_instructions_fired(self):
+        from pyface.message_dialog import information
         m = information(None, SPIKES_REMOVAL_INSTRUCTIONS,
                         title="Instructions"),
 
