@@ -23,6 +23,7 @@ from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
 from hyperspy.defaults_parser import preferences
 from hyperspy.decorators import only_interactive
 
+
 class SEMParametersUI(t.HasTraits):
 
     beam_energy = t.Float(t.Undefined,

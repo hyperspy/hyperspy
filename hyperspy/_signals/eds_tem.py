@@ -50,6 +50,7 @@ class TEMParametersUI(t.HasTraits):
     beam_current = t.Float(t.Undefined,
                            label='Beam current (nA)')
 
+
 class EDSTEM_mixin:
 
     _signal_type = "EDS_TEM"

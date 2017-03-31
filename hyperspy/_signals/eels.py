@@ -37,6 +37,7 @@ from hyperspy.misc.utils import without_nans
 
 _logger = logging.getLogger(__name__)
 
+
 class TEMParametersUI(t.HasTraits):
     convergence_angle = t.Float(t.Undefined,
                                 label='Convergence semi-angle (mrad)')
@@ -44,6 +45,7 @@ class TEMParametersUI(t.HasTraits):
                           label='Beam energy (keV)')
     collection_angle = t.Float(t.Undefined,
                                label='Collection semi-angle (mrad)')
+
 
 class EELSSpectrum_mixin:
 
@@ -1337,9 +1339,12 @@ class EELSSpectrum_mixin:
                           dictionary=dictionary)
         return model
 
+
 class EELSSpectrum(EELSSpectrum_mixin, Signal1D):
 
     pass
+
+
 class LazyEELSSpectrum(EELSSpectrum, LazySignal1D):
 
     pass
