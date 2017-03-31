@@ -23,6 +23,21 @@ from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
 from hyperspy.defaults_parser import preferences
 from hyperspy.decorators import only_interactive
 
+class SEMParametersUI(t.HasTraits):
+
+    beam_energy = t.Float(t.Undefined,
+                          label='Beam energy (keV)')
+    live_time = t.Float(t.Undefined,
+                        label='Live time (s)')
+    tilt_stage = t.Float(t.Undefined,
+                         label='Stage tilt (degree)')
+    azimuth_angle = t.Float(t.Undefined,
+                            label='Azimuth angle (degree)')
+    elevation_angle = t.Float(t.Undefined,
+                              label='Elevation angle (degree)')
+    energy_resolution_MnKa = t.Float(t.Undefined,
+                                     label='Energy resolution MnKa (eV)')
+
 
 class EDSSEM_mixin:
 

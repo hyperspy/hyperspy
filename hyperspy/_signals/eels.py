@@ -28,7 +28,6 @@ from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
 from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.decorators import only_interactive
-from hyperspy.gui.eels import TEMParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
 from hyperspy.external.progressbar import progressbar
@@ -38,6 +37,13 @@ from hyperspy.misc.utils import without_nans
 
 _logger = logging.getLogger(__name__)
 
+class TEMParametersUI(t.HasTraits):
+    convergence_angle = t.Float(t.Undefined,
+                                label='Convergence semi-angle (mrad)')
+    beam_energy = t.Float(t.Undefined,
+                          label='Beam energy (keV)')
+    collection_angle = t.Float(t.Undefined,
+                               label='Collection semi-angle (mrad)')
 
 class EELSSpectrum_mixin:
 
@@ -1337,4 +1343,3 @@ class EELSSpectrum(EELSSpectrum_mixin, Signal1D):
 class LazyEELSSpectrum(EELSSpectrum, LazySignal1D):
 
     pass
-

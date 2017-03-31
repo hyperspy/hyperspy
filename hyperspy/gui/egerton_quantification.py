@@ -24,12 +24,7 @@ import traits.api as t
 from hyperspy import components1d
 from hyperspy.component import Component
 from hyperspy import drawing
-from hyperspy.gui.tools import (SpanSelectorInSignal1D,
-                                SpanSelectorInSignal1DHandler,
-                                OurOKButton,
-                                OurFindButton,
-                                OurPreviousButton,
-                                OurApplyButton)
+from hyperspy.gui.tools import SpanSelectorInSignal1D
 import hyperspy.gui.messages as messages
 
 

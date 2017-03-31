@@ -20,7 +20,6 @@ from functools import partial
 from traits.api import Undefined
 
 from hyperspy.drawing import widgets, signal1d, image
-from hyperspy.gui.axes import navigation_sliders
 from hyperspy.ui_registry import get_gui
 
 

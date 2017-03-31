@@ -25,7 +25,6 @@ class Message(t.HasTraits):
 
     def __init__(self, text):
         self.text = text
-    traits_view = information_view
 
 
 class Options(t.HasTraits):

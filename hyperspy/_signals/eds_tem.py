@@ -23,12 +23,32 @@ from scipy import constants
 from hyperspy import utils
 from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
 from hyperspy.decorators import only_interactive
-from hyperspy.gui.eds import TEMParametersUI
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
 from hyperspy.misc.eds import utils as utils_eds
 import warnings
 
+
+class TEMParametersUI(t.HasTraits):
+
+    beam_energy = t.Float(t.Undefined,
+                          label='Beam energy (keV)')
+    real_time = t.Float(t.Undefined,
+                        label='Real time (s)')
+    tilt_stage = t.Float(t.Undefined,
+                         label='Stage tilt (degree)')
+    live_time = t.Float(t.Undefined,
+                        label='Live time (s)')
+    probe_area = t.Float(t.Undefined,
+                         label='Beam/probe area (nm^2)')
+    azimuth_angle = t.Float(t.Undefined,
+                            label='Azimuth angle (degree)')
+    elevation_angle = t.Float(t.Undefined,
+                              label='Elevation angle (degree)')
+    energy_resolution_MnKa = t.Float(t.Undefined,
+                                     label='Energy resolution MnKa (eV)')
+    beam_current = t.Float(t.Undefined,
+                           label='Beam current (nA)')
 
 class EDSTEM_mixin:
 
