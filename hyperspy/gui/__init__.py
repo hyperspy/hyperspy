@@ -38,7 +38,7 @@ _logger.debug('Loading hyperspy.gui')
 _logger.debug('Current MPL backend: %s', backend)
 if "WX" in backend:
     set_ets_toolkit("wx")
-elif "Qt" in backend:
+elif "Qt4" in backend:
     set_ets_toolkit("qt4")
 else:
     set_ets_toolkit("null")
