@@ -24,8 +24,10 @@ import tempfile
 
 import h5py
 import numpy as np
+import dask
 import dask.array as da
 import pytest
+from distutils.version import LooseVersion
 
 from hyperspy.io import load
 from hyperspy.io_plugins.hdf5 import get_signal_chunks
@@ -665,7 +667,8 @@ def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
     assert s.metadata.Sample.elements.dtype.char == "U"
 
-
+@pytest.mark.skipif(LooseVersion(dask.__version__) >= LooseVersion('0.14.1'),
+                    reason='Fixed in later dask versions')
 def test_lazy_metadata_arrays(tmpfilepath):
     s = BaseSignal([1, 2, 3])
     s.metadata.array = np.arange(10.)
