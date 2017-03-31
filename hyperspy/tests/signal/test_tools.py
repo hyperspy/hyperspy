@@ -1,6 +1,7 @@
 from unittest import mock
 
 import numpy as np
+import dask.array as da
 from numpy.testing import assert_array_equal, assert_allclose
 
 import pytest
@@ -814,3 +815,14 @@ class TestTranspose:
 
         t = self.s.transpose(signal_axes=['f', 'a', 'b'], optimize=True)
         assert t.data.base is not self.s.data
+
+
+def test_lazy_transpose_rechunks():
+    ar = da.ones((50, 50, 256, 256), chunks=(5, 5, 256, 256))
+    s = signals.Signal2D(ar).as_lazy()
+    s1 = s.T
+    chunks = s1.data.chunks
+    assert len(chunks[0]) != 1
+    assert len(chunks[1]) != 1
+    assert len(chunks[2]) == 1
+    assert len(chunks[3]) == 1

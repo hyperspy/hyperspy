@@ -814,6 +814,11 @@ class LazySignal(BaseSignal):
         target.explained_variance = explained_variance
         target.explained_variance_ratio = explained_variance_ratio
 
+    def transpose(self, *args, **kwargs):
+        res = super().transpose(*args, **kwargs)
+        res._make_lazy(rechunk=True)
+        return res
+    transpose.__doc__ = BaseSignal.transpose.__doc__
 
 def _reshuffle_mixed_blocks(array, ndim, sshape, nav_chunks):
     """Reshuffles dask block-shuffled array
