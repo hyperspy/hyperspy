@@ -467,6 +467,7 @@ class Load(t.HasTraits):
     filename = t.File
     lazy = t.Bool(False)
 
+
 @add_gui_method(toolkey="Signal1D.contrast_editor")
 class ImageContrastEditor(t.HasTraits):
     ss_left_value = t.Float()

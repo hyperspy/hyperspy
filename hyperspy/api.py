@@ -78,7 +78,6 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.utils import *
 from hyperspy import datasets
 from hyperspy.logger import set_log_level
-import hyperspy.gui.tools
 # Register ipywidgets by importing the module
 import hyperspy.gui_ipywidgets
 
