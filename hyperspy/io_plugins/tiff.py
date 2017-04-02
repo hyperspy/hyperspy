@@ -20,10 +20,14 @@ import os
 import logging
 import warnings
 from distutils.version import LooseVersion
+from datetime import datetime
+from dateutil import parser
+import pint
 
 import numpy as np
 import traits.api as t
 from hyperspy.misc import rgb_tools
+from hyperspy.misc.date_time_tools import get_date_time_from_metadata
 
 _logger = logging.getLogger(__name__)
 # Plugin characteristics
@@ -58,6 +62,8 @@ axes_label_codes = {
     'V': "event",
     'Q': t.Undefined,
     '_': t.Undefined}
+
+ureg = pint.UnitRegistry()
 
 
 def _import_tifffile_library(import_local_tifffile_if_necessary=False,
@@ -118,6 +124,11 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
     if export_scale:
         kwds.update(_get_tags_dict(signal, extratags=extratags))
         _logger.debug("kwargs passed to tifffile.py imsave: {0}".format(kwds))
+
+    if 'date' in signal.metadata['General'].keys():
+        dt = get_date_time_from_metadata(signal.metadata,
+                                         formatting='datetime')
+        kwds['datetime'] = dt
 
     imsave(filename, data,
            software="hyperspy",
@@ -242,6 +253,11 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
                          },
               }
 
+        if 'datetime' in op.keys():
+            dt = datetime.strptime(_decode_string(
+                op['datetime']), "%Y:%m:%d %H:%M:%S")
+            md['General']['date'] = dt.date().isoformat()
+            md['General']['time'] = dt.time().isoformat()
         if 'units' in intensity_axis.keys():
             md['Signal']['quantity'] = intensity_axis['units']
         if 'scale' in intensity_axis.keys() and 'offset' in intensity_axis.keys():
@@ -264,6 +280,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
              'original_metadata': op,
              'axes': axes,
              'metadata': md,
+             'mapping': mapping,
              }]
 
 
@@ -333,19 +350,14 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
                     image_description.split('spacing=')[1].splitlines()[0])
 
     # for FEI Helios tiff files (apparently, works also for Quanta):
-    elif 'helios_metadata' in op.keys():
-        _logger.debug("Reading FEI Helios tif metadata")
-        op = op['helios_metadata']
-        scales['x'], scales['y'] = _get_scale_FEI(op)
-        for key in ['x', 'y']:
-            units[key] = 'm'
-
-    # for FEI SEM tiff files (not sure this is still necessary, some FEI files
-    # may still need it...):
-    elif '34682' in op.keys():
-        _logger.debug("Reading FEI SEM tif metadata")
-        op = _read_original_metadata_FEI(op)
-        scales['x'], scales['y'] = _get_scale_FEI(op)
+    elif 'helios_metadata' in op.keys() or 'sfeg_metadata' in op.keys():
+        _logger.debug("Reading FEI tif metadata")
+        try:
+            op = op['helios_metadata']
+        except KeyError:
+            op = op['sfeg_metadata']
+        scales['x'] = float(op['Scan']['PixelWidth'])
+        scales['y'] = float(op['Scan']['PixelHeight'])
         for key in ['x', 'y']:
             units[key] = 'm'
 
@@ -358,15 +370,6 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
             for key in ['x', 'y']:
                 scales[key] = ps
                 units[key] = units0
-        else:  # in case the scale is not saved as metadata
-            scales, units = _get_scale_units_Zeiss(op[''], shape)
-
-    # for Zeiss SEM tiff files (not sure this is still necessary, some Zeiss
-    # files may still need it...):
-    elif '34118' in op.keys():
-        _logger.debug("Reading Zeiss tif metadata")
-        op = _read_original_metadata_Zeiss(op)
-        scales, units = _get_scale_units_Zeiss(op['sem_metadata'], shape)
 
     if force_read_resolution and 'resolution_unit' in op.keys() \
             and 'x_resolution' in op.keys():
@@ -498,50 +501,6 @@ def _imagej_description(version='1.11a', **kwargs):
     return '\n'.join(result + append + [''])
 
 
-def _read_original_metadata_FEI(original_metadata):
-    """ information saved in tag '34682' """
-    metadata_string = _decode_string(original_metadata['34682'])
-    import configparser
-    metadata = configparser.ConfigParser(allow_no_value=True)
-    metadata.read_string(metadata_string)
-    d = {section: dict(metadata.items(section))
-         for section in metadata.sections()}
-    return d
-
-
-def _get_scale_FEI(original_metadata):
-    try:
-        return (float(original_metadata['Scan']['PixelWidth']),
-                float(original_metadata['Scan']['PixelHeight']))
-    except KeyError:
-        return (float(original_metadata['Scan']['pixelwidth']),
-                float(original_metadata['Scan']['pixelheight']))
-
-
-def _read_original_metadata_Zeiss(original_metadata):
-    """ information saved in tag '34118' """
-    metadata_list = _decode_string(original_metadata['34118']).splitlines()
-    original_metadata['sem_metadata'] = metadata_list
-    return original_metadata
-
-
-def _get_scale_units_Zeiss(op, shape):
-    # Older generation of Zeiss software doesn't store/compute correctly the
-    # scale in the metadata... it needs to be corrected by the image
-    # pixel number.
-    scales, units = {}, {}
-    corr = 1024 / max(size for size in shape)
-    scales['x'], scales['y'] = _get_scale_Zeiss(op, corr)
-    for key in ['x', 'y']:
-        units[key] = 'm'
-
-    return scales, units
-
-
-def _get_scale_Zeiss(metadata_list, corr=1.0):
-    return float(metadata_list[3]) * corr, float(metadata_list[11]) * corr
-
-
 def _decode_string(string):
     try:
         string = string.decode('utf8')
@@ -549,3 +508,97 @@ def _decode_string(string):
         # Sometimes the strings are encoded in latin-1 instead of utf8
         string = string.decode('latin-1', errors='ignore')
     return string
+
+
+def _parse_beam_current_FEI(value):
+    try:
+        return float(value) * 1e9
+    except ValueError:
+        return None
+
+
+def _parse_tuple_Zeiss(tup):
+    value = tup[1]
+    try:
+        return float(value)
+    except ValueError:
+        return value
+
+
+def _parse_tuple_Zeiss_with_units(tup, to_units=None):
+    (value, parse_units) = tup[1:]
+    if to_units is not None:
+        v = value * ureg(parse_units)
+        value = float("%.3e" % v.to(to_units).magnitude)
+    return value
+
+
+# mapping FEI metadata
+mapping_FEI = {
+    'Beam.HV':
+    ("Acquisition_instrument.SEM.beam_energy", lambda x: float(x) * 1e-3),
+    'Stage.StageX':
+    ("Acquisition_instrument.SEM.Stage.x", None),
+    'Stage.StageY':
+    ("Acquisition_instrument.SEM.Stage.y", None),
+    'Stage.StageZ':
+    ("Acquisition_instrument.SEM.Stage.z", None),
+    'Stage.StageR':
+    ("Acquisition_instrument.SEM.Stage.rotation", None),
+    'Stage.StageT':
+    ("Acquisition_instrument.SEM.Stage.tilt", None),
+    'Stage.WorkingDistance':
+    ("Acquisition_instrument.SEM.working_distance", lambda x: float(x) * 1e3),
+    'Scan.Dwelltime':
+    ("Acquisition_instrument.SEM.dwell_time", None),
+    'EBeam.BeamCurrent':
+    ("Acquisition_instrument.SEM.beam_current", _parse_beam_current_FEI),
+    'System.SystemType':
+    ("Acquisition_instrument.SEM.microscope", None),
+    'User.Date':
+    ("General.date", lambda x: parser.parse(x).date().isoformat()),
+    'User.Time':
+    ("General.time", lambda x: parser.parse(x).time().isoformat()),
+    'User.User':
+    ("General.authors", None),
+}
+
+# mapping Zeiss metadata
+mapping_Zeiss = {
+    'ap_actualkv':
+    ("Acquisition_instrument.SEM.beam_energy", _parse_tuple_Zeiss),
+    'ap_mag':
+    ("Acquisition_instrument.SEM.magnification", _parse_tuple_Zeiss),
+    'ap_stage_at_x':
+    ("Acquisition_instrument.SEM.Stage.x", _parse_tuple_Zeiss),
+    'ap_stage_at_y':
+    ("Acquisition_instrument.SEM.Stage.y", _parse_tuple_Zeiss),
+    'ap_stage_at_z':
+    ("Acquisition_instrument.SEM.Stage.z", _parse_tuple_Zeiss),
+    'ap_stage_at_r':
+    ("Acquisition_instrument.SEM.Stage.rotation", _parse_tuple_Zeiss),
+    'ap_stage_at_t':
+    ("Acquisition_instrument.SEM.Stage.tilt", _parse_tuple_Zeiss),
+    'ap_free_wd':
+    ("Acquisition_instrument.SEM.working_distance",
+     lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='mm')),
+    'dp_dwell_time':
+    ("Acquisition_instrument.SEM.dwell_time",
+     lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='s')),
+    'ap_beam_current':
+    ("Acquisition_instrument.SEM.beam_current",
+     lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='nA')),
+    'sv_serial_number':
+    ("Acquisition_instrument.SEM.microscope", _parse_tuple_Zeiss),
+    # I have not find the corresponding metadata....
+    #'???':
+    #("General.date", lambda tup: parser.parse(tup[1]).date().isoformat()),
+    #'???':
+    #("General.time", lambda tup: parser.parse(tup[1]).time().isoformat()),
+    'sv_user_name':
+    ("General.authors", _parse_tuple_Zeiss),
+}
+
+mapping = {}
+mapping.update(mapping_FEI)
+mapping.update(mapping_Zeiss)
