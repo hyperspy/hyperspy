@@ -10,7 +10,7 @@ register_traitsui_widget = functools.partial(
 def add_display_arg(f):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
-        display = kwargs.get("display", True)
+        display = kwargs.pop("display", True)
         obj = f(*args, **kwargs)
         if display:
             obj.edit_traits()
