@@ -4,6 +4,7 @@ from traitsui.menu import OKButton, CancelButton
 from hyperspy.gui_traitsui.utils import (
     add_display_arg, register_traitsui_widget)
 
+
 @register_traitsui_widget(toolkey="microscope_parameters_EDS_SEM")
 @add_display_arg
 def microscope_parameters_EDS_SEM(obj, **kwargs):
@@ -17,6 +18,7 @@ def microscope_parameters_EDS_SEM(obj, **kwargs):
         kind='modal', buttons=[OKButton, CancelButton],
         title='SEM parameters definition wizard')
     return obj, {"view": view}
+
 
 @register_traitsui_widget(toolkey="microscope_parameters_EDS_TEM")
 @add_display_arg
@@ -33,6 +35,7 @@ def microscope_parameters_EDS_TEM(obj, **kwargs):
         kind='modal', buttons=[OKButton, CancelButton],
         title='TEM parameters definition wizard')
     return obj, {"view": view}
+
 
 @register_traitsui_widget(toolkey="microscope_parameters_EELS")
 @add_display_arg
