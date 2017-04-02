@@ -52,7 +52,6 @@ install_req = ['scipy>=0.15',
                'matplotlib>=1.2',
                'numpy>=1.10',
                'traits>=4.5.0',
-               'traitsui>=5.0',
                'natsort',
                'requests',
                'tqdm>=0.4.9',
@@ -68,6 +67,7 @@ extras_require = {
     "learning": ['scikit-learn'],
     "bcf": ['lxml'],
     "gui-jupyter": ["ipywidgets"],
+    "gui-traitsui": ["traitsui>=5.0"],
 }
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
