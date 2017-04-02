@@ -17,18 +17,22 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import warnings
+
 import traits.api as t
 import numpy as np
 from scipy import constants
+
 from hyperspy import utils
 from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
 from hyperspy.decorators import only_interactive
 from hyperspy.defaults_parser import preferences
 import hyperspy.gui.messages as messagesui
 from hyperspy.misc.eds import utils as utils_eds
-import warnings
+from hyperspy.ui_registry import add_gui_method
 
 
+@add_gui_method(toolkey="microscope_parameters_EDS_TEM")
 class TEMParametersUI(t.HasTraits):
 
     beam_energy = t.Float(t.Undefined,
@@ -205,7 +209,7 @@ class EDSTEM_mixin:
         for key, value in mapping.items():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
-        tem_par.edit_traits()
+        tem_par.gui()
 
         mapping = {
             'Acquisition_instrument.TEM.beam_energy':

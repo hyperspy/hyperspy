@@ -22,8 +22,10 @@ import traits.api as t
 from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
 from hyperspy.defaults_parser import preferences
 from hyperspy.decorators import only_interactive
+from hyperspy.ui_registry import add_gui_method
 
 
+@add_gui_method(toolkey="microscope_parameters_EDS_SEM")
 class SEMParametersUI(t.HasTraits):
 
     beam_energy = t.Float(t.Undefined,
@@ -223,7 +225,6 @@ class EDSSEM_mixin:
 
     @only_interactive
     def _set_microscope_parameters(self):
-        from hyperspy.gui.eds import SEMParametersUI
         tem_par = SEMParametersUI()
         mapping = {
             'Acquisition_instrument.SEM.beam_energy': 'tem_par.beam_energy',
@@ -240,7 +241,7 @@ class EDSSEM_mixin:
         for key, value in mapping.items():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
-        tem_par.edit_traits()
+        tem_par.gui()
 
         mapping = {
             'Acquisition_instrument.SEM.beam_energy': tem_par.beam_energy,

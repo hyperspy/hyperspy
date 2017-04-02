@@ -34,10 +34,11 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
+from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
 
-
+@add_gui_method(toolkey="microscope_parameters_EELS")
 class TEMParametersUI(t.HasTraits):
     convergence_angle = t.Float(t.Undefined,
                                 label='Convergence semi-angle (mrad)')
@@ -896,7 +897,7 @@ class EELSSpectrum_mixin:
         for key, value in mapping.items():
             if self.metadata.has_item(key):
                 exec('%s = self.metadata.%s' % (value, key))
-        tem_par.edit_traits()
+        tem_par.gui()
         mapping = {
             'Acquisition_instrument.TEM.convergence_angle':
             tem_par.convergence_angle,
