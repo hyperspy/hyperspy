@@ -93,8 +93,6 @@ except ImportError:
     _logging.info("traitsui not installed, traitsui UI elements disabled.")
 
 
-
-
 def get_configuration_directory_path():
     import hyperspy.misc.config_dir
     return hyperspy.misc.config_dir.config_path
