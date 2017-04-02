@@ -1,5 +1,6 @@
 import os
 import tempfile
+from distutils.version import LooseVersion
 
 import numpy as np
 
@@ -421,10 +422,15 @@ def test_read_FEI_SEM_scale_metadata_16bits():
 def test_read_Zeiss_SEM_scale_metadata_1k_image():
     fname = os.path.join(MY_PATH2, 'test_tiff_Zeiss_SEM_1k.tif')
     s = hs.load(fname)
-    assert s.axes_manager[0].units == 'm'
-    assert s.axes_manager[1].units == 'm'
-    assert_allclose(s.axes_manager[0].scale, 2.614514e-06, atol=1E-12)
-    assert_allclose(s.axes_manager[1].scale, 2.614514e-06, atol=1E-12)
+    import skimage
+    if LooseVersion(skimage.__version__) >= '0.13.0':
+        scale_factor, units = 1, 'µm'
+    else:
+        scale_factor, units = 1E6, 'm'
+    assert s.axes_manager[0].units == units
+    assert s.axes_manager[1].units == units
+    assert_allclose(s.axes_manager[0].scale * scale_factor, 2.615, atol=1E-3)
+    assert_allclose(s.axes_manager[1].scale * scale_factor, 2.615, atol=1E-3)
     assert s.data.dtype == 'uint16'
 
 

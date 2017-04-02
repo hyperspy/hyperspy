@@ -208,8 +208,9 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
         scales = [1.0] * len(names)
         offsets = [0.0] * len(names)
         units = [t.Undefined] * len(names)
+        intensity_axis = {}
         try:
-            scales_d, units_d, offsets_d, intensity_axis = \
+            scales_d, units_d, offsets_d, intensity_axis, op = \
                 _parse_scale_unit(tiff, op, shape,
                                   force_read_resolution)
             for i, name in enumerate(names):
@@ -331,25 +332,41 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
                 scales['z'] = float(
                     image_description.split('spacing=')[1].splitlines()[0])
 
-    # for FEI SEM tiff files:
+    # for FEI Helios tiff files (apparently, works also for Quanta):
+    elif 'helios_metadata' in op.keys():
+        _logger.debug("Reading FEI Helios tif metadata")
+        op = op['helios_metadata']
+        scales['x'], scales['y'] = _get_scale_FEI(op)
+        for key in ['x', 'y']:
+            units[key] = 'm'
+
+    # for FEI SEM tiff files (not sure this is still necessary, some FEI files
+    # may still need it...):
     elif '34682' in op.keys():
-        _logger.debug("Reading FEI tif metadata")
+        _logger.debug("Reading FEI SEM tif metadata")
         op = _read_original_metadata_FEI(op)
         scales['x'], scales['y'] = _get_scale_FEI(op)
         for key in ['x', 'y']:
             units[key] = 'm'
 
     # for Zeiss SEM tiff files:
+    elif 'sem_metadata' in op.keys():
+        _logger.debug("Reading Zeiss tif metadata")
+        op = op['sem_metadata']
+        if 'ap_pixel_size' in op.keys():
+            (ps, units0) = op['ap_pixel_size'][1:]
+            for key in ['x', 'y']:
+                scales[key] = ps
+                units[key] = units0
+        else:  # in case the scale is not saved as metadata
+            scales, units = _get_scale_units_Zeiss(op[''], shape)
+
+    # for Zeiss SEM tiff files (not sure this is still necessary, some Zeiss
+    # files may still need it...):
     elif '34118' in op.keys():
         _logger.debug("Reading Zeiss tif metadata")
         op = _read_original_metadata_Zeiss(op)
-        # It seems that Zeiss software doesn't store/compute correctly the
-        # scale in the metadata... it needs to be corrected by the image
-        # resolution.
-        corr = 1024 / max(size for size in shape)
-        scales['x'], scales['y'] = _get_scale_Zeiss(op, corr)
-        for key in ['x', 'y']:
-            units[key] = 'm'
+        scales, units = _get_scale_units_Zeiss(op['sem_metadata'], shape)
 
     if force_read_resolution and 'resolution_unit' in op.keys() \
             and 'x_resolution' in op.keys():
@@ -366,7 +383,7 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
                     units[key] = 'µm'
                     scales[key] = scales[key] * 10000
 
-    return scales, units, offsets, intensity_axis
+    return scales, units, offsets, intensity_axis, op
 
 
 def _get_scales_from_x_y_resolution(op):
@@ -445,7 +462,7 @@ def _get_dm_kwargs_extratag(signal, scales, units, offsets):
         extratags.extend([(65005, 's', 3, units[0], False),  # z unit
                           (65008, 'd', 1, offsets[0], False),  # z origin
                           (65011, 'd', 1, float(scales[0]), False),  # z scale
-                          #                          (65014, 's', 3, units[0], False), # z unit full name
+                          #(65014, 's', 3, units[0], False), # z unit full name
                           (65017, 'i', 1, 1, False)])
     return extratags
 
@@ -489,24 +506,39 @@ def _read_original_metadata_FEI(original_metadata):
     metadata.read_string(metadata_string)
     d = {section: dict(metadata.items(section))
          for section in metadata.sections()}
-    original_metadata['FEI_metadata'] = d
-    return original_metadata
+    return d
 
 
 def _get_scale_FEI(original_metadata):
-    return float(original_metadata['FEI_metadata']['Scan']['pixelwidth']),\
-        float(original_metadata['FEI_metadata']['Scan']['pixelheight'])
+    try:
+        return (float(original_metadata['Scan']['PixelWidth']),
+                float(original_metadata['Scan']['PixelHeight']))
+    except KeyError:
+        return (float(original_metadata['Scan']['pixelwidth']),
+                float(original_metadata['Scan']['pixelheight']))
 
 
 def _read_original_metadata_Zeiss(original_metadata):
     """ information saved in tag '34118' """
     metadata_list = _decode_string(original_metadata['34118']).splitlines()
-    original_metadata['Zeiss_metadata'] = metadata_list
+    original_metadata['sem_metadata'] = metadata_list
     return original_metadata
 
 
-def _get_scale_Zeiss(original_metadata, corr=1.0):
-    metadata_list = original_metadata['Zeiss_metadata']
+def _get_scale_units_Zeiss(op, shape):
+    # Older generation of Zeiss software doesn't store/compute correctly the
+    # scale in the metadata... it needs to be corrected by the image
+    # pixel number.
+    scales, units = {}, {}
+    corr = 1024 / max(size for size in shape)
+    scales['x'], scales['y'] = _get_scale_Zeiss(op, corr)
+    for key in ['x', 'y']:
+        units[key] = 'm'
+
+    return scales, units
+
+
+def _get_scale_Zeiss(metadata_list, corr=1.0):
     return float(metadata_list[3]) * corr, float(metadata_list[11]) * corr
 
 
