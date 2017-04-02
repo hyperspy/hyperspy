@@ -1,26 +1,8 @@
 from traitsui.menu import (OKButton, CancelButton, OKCancelButtons)
 import traitsui.api as tu
 
-OurOKButton = tu.Action(name="OK",
-                        action="OK",)
+from hyperspy.gui_traitsui.buttons import *
 
-OurApplyButton = tu.Action(name="Apply",
-                           action="apply")
-
-OurResetButton = tu.Action(name="Reset",
-                           action="reset")
-
-OurCloseButton = tu.Action(name="Close",
-                           action="close_directly")
-
-OurFindButton = tu.Action(name="Find next",
-                          action="find",)
-
-OurPreviousButton = tu.Action(name="Find previous",
-                              action="back",)
-
-OurFitButton = tu.Action(name="Fit",
-                         action="fit")
 
 
 class SmoothingHandler(tu.Handler):
@@ -111,6 +93,45 @@ class CalibrationHandler(SpanSelectorInSignal1DHandler):
         info.object.span_selector_switch(on=True)
         info.object.last_calibration_stored = True
         return
+
+class ImageContrastHandler(tu.Handler):
+
+    def close(self, info, is_ok):
+        # Removes the span selector from the plot
+        #        info.object.span_selector_switch(False)
+        #        if is_ok is True:
+        #            self.apply(info)
+        if is_ok is False:
+            info.object.image.update()
+        info.object.close()
+        return True
+
+    def apply(self, info):
+        """Handles the **Apply** button being clicked.
+
+        """
+        obj = info.object
+        obj.apply()
+
+        return
+
+    @staticmethod
+    def reset(info):
+        """Handles the **Apply** button being clicked.
+
+        """
+        obj = info.object
+        obj.reset()
+        return
+
+    @staticmethod
+    def our_help(info):
+        """Handles the **Apply** button being clicked.
+
+        """
+        info.object._help()
+
+
 
 
 signal1d_calibration_view = tu.View(
@@ -279,6 +300,26 @@ class SpikesRemovalHandler(tu.Handler):
             obj.find(back=True)
         return
 
+thisOKButton = tu.Action(name="OK",
+                         action="OK",
+                         tooltip="Close the spikes removal tool")
+
+thisApplyButton = tu.Action(name="Remove spike",
+                            action="apply",
+                            tooltip="Remove the current spike by "
+                            "interpolating\n"
+                                   "with the specified settings (and find\n"
+                                   "the next spike automatically)")
+thisFindButton = tu.Action(name="Find next",
+                           action="find",
+                           tooltip="Find the next (in terms of navigation\n"
+                           "dimensions) spike in the data.")
+
+thisPreviousButton = tu.Action(name="Find previous",
+                               action="back",
+                               tooltip="Find the previous (in terms of "
+                               "navigation\n"
+                                      "dimensions) spike in the data.")
 spikes_removal_view = tu.View(tu.Group(
     tu.Group(
         tu.Item('click_to_show_instructions',
@@ -310,74 +351,3 @@ spikes_removal_view = tu.View(tu.Group(
     title='Spikes removal tool',
     resizable=False,
 )
-# Spike removal buttons
-thisOKButton = tu.Action(name="OK",
-                         action="OK",
-                         tooltip="Close the spikes removal tool")
-
-thisApplyButton = tu.Action(name="Remove spike",
-                            action="apply",
-                            tooltip="Remove the current spike by "
-                            "interpolating\n"
-                                   "with the specified settings (and find\n"
-                                   "the next spike automatically)")
-thisFindButton = tu.Action(name="Find next",
-                           action="find",
-                           tooltip="Find the next (in terms of navigation\n"
-                           "dimensions) spike in the data.")
-
-thisPreviousButton = tu.Action(name="Find previous",
-                               action="back",
-                               tooltip="Find the previous (in terms of "
-                               "navigation\n"
-                                      "dimensions) spike in the data.")
-##########
-
-
-class ImageContrastHandler(tu.Handler):
-
-    def close(self, info, is_ok):
-        # Removes the span selector from the plot
-        #        info.object.span_selector_switch(False)
-        #        if is_ok is True:
-        #            self.apply(info)
-        if is_ok is False:
-            info.object.image.update()
-        info.object.close()
-        return True
-
-    def apply(self, info):
-        """Handles the **Apply** button being clicked.
-
-        """
-        obj = info.object
-        obj.apply()
-
-        return
-
-    @staticmethod
-    def reset(info):
-        """Handles the **Apply** button being clicked.
-
-        """
-        obj = info.object
-        obj.reset()
-        return
-
-    @staticmethod
-    def our_help(info):
-        """Handles the **Apply** button being clicked.
-
-        """
-        info.object._help()
-
-
-class ComponentFitHandler(SpanSelectorInSignal1DHandler):
-
-    def fit(self, info):
-        """Handles the **Apply** button being clicked.
-
-        """
-        obj = info.object
-        obj._fit_fired()
-        return
