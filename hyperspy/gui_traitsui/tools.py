@@ -4,7 +4,6 @@ import traitsui.api as tu
 from hyperspy.gui_traitsui.buttons import *
 
 
-
 class SmoothingHandler(tu.Handler):
 
     def close(self, info, is_ok):
@@ -94,6 +93,7 @@ class CalibrationHandler(SpanSelectorInSignal1DHandler):
         info.object.last_calibration_stored = True
         return
 
+
 class ImageContrastHandler(tu.Handler):
 
     def close(self, info, is_ok):
@@ -130,8 +130,6 @@ class ImageContrastHandler(tu.Handler):
 
         """
         info.object._help()
-
-
 
 
 signal1d_calibration_view = tu.View(
