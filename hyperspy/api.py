@@ -78,10 +78,21 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.utils import *
 from hyperspy import datasets
 from hyperspy.logger import set_log_level
-# Register ipywidgets by importing the module
-import hyperspy.gui_ipywidgets
-
 set_log_level(preferences.General.logging_level)
+import logging
+_logger = logging.getLogger(__name__)
+try:
+    # Register ipywidgets by importing the module
+    import hyperspy.gui_ipywidgets
+except ImportError:
+    _logging.info("ipywidgets not installed, ipywidgets UI elements disabled.")
+try:
+    # Register traitui UI elements by importing the module
+    import hyperspy.gui_traitsui
+except ImportError:
+    _logging.info("traitsui not installed, traitsui UI elements disabled.")
+
+
 
 
 def get_configuration_directory_path():
