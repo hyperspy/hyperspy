@@ -19,11 +19,13 @@ def ipy_navigation_sliders(obj, **kwargs):
         vwidget = ipywidgets.FloatSlider(
             min=axis.low_value,
             max=axis.high_value,
+            step=axis.scale,
             # readout_format=".lf"
         )
         link_traits((axis, "value"), (vwidget, "value"))
         link_traits((axis, "high_value"), (vwidget, "max"))
         link_traits((axis, "low_value"), (vwidget, "min"))
+        link_traits((axis, "scale"), (vwidget, "step"))
         bothw = ipywidgets.VBox([iwidget, vwidget])
         labeled_widget = labelme(str(axis).replace(" ", "_"), bothw)
         link_traits((axis, "name"), (labeled_widget.children[0], "value"))
