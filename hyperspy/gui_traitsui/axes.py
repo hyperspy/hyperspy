@@ -1,14 +1,16 @@
-
 import traits.api as t
 import traitsui.api as tui
 
+from hyperspy.gui_traitsui.utils import register_traitsui_widget, add_display_arg
 
-def navigation_sliders(data_axes, title=None):
+@register_traitsui_widget(toolkey="navigation_sliders")
+@add_display_arg
+def navigation_sliders(obj, title=None, **kwargs):
     """Raises a windows with sliders to control the index of DataAxis
 
     Parameters
     ----------
-    data_axes : list of DataAxis instances
+    obj : list of DataAxis instances
 
     """
 
@@ -17,7 +19,7 @@ def navigation_sliders(data_axes, title=None):
 
     nav = NavigationSliders()
     view_tuple = ()
-    for axis in data_axes:
+    for axis in obj:
         name = str(axis).replace(" ", "_")
         nav.add_class_trait(name, axis)
         nav.trait_set([name, axis])
@@ -41,8 +43,8 @@ def navigation_sliders(data_axes, title=None):
     view = tui.View(tui.VSplit(view_tuple), title="Navigation sliders"
                     if title is None
                     else title)
-
-    nav.edit_traits(view=view)
+    nav.trait_view("traits_view", view)
+    return nav
 
 
 data_axis_view = tui.View(
