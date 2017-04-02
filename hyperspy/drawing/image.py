@@ -25,7 +25,6 @@ from traits.api import Undefined
 from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
 from hyperspy.gui.tools import ImageContrastEditor
-from hyperspy.ui_registry import get_gui
 from hyperspy.misc import math_tools
 from hyperspy.misc import rgb_tools
 from hyperspy.drawing.figure import BlittedFigure
@@ -375,10 +374,9 @@ class ImagePlot(BlittedFigure):
         # method arguments and auto contrast does not work then
         self.update()
 
-    def adjust_contrast(self):
+    def adjust_contrast(self, display=True):
         ceditor = ImageContrastEditor(self)
-        get_gui(ceditor, toolkey="Signal1D.calibrate")
-        return ceditor
+        return ceditor.gui(display=display)
 
     def connect(self):
         self.figure.canvas.mpl_connect('key_press_event',

@@ -29,6 +29,7 @@ from hyperspy.exceptions import SignalDimensionError
 from hyperspy.gui import messages
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import VerticalLineWidget
+from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
 
@@ -464,8 +465,9 @@ class ButterworthFilter(Smoothing):
 
 class Load(t.HasTraits):
     filename = t.File
+    lazy = t.Bool(False)
 
-
+@add_gui_method(toolkey="Signal1D.contrast_editor")
 class ImageContrastEditor(t.HasTraits):
     ss_left_value = t.Float()
     ss_right_value = t.Float()

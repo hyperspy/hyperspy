@@ -183,7 +183,7 @@ def smooth_tv_ipy(obj, **kwargs):
     return box
 
 
-@register_ipy_widget(toolkey="Signal1D.calibrate")
+@register_ipy_widget(toolkey="Signal1D.contrast_editor")
 @add_display_arg
 def image_constast_editor_ipy(obj, **kwargs):
     left = ipywidgets.FloatText(disabled=True)
