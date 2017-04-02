@@ -28,7 +28,7 @@ from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.drawing.widgets import VerticalLineWidget, LabelWidget
-from hyperspy.gui.tools import ComponentFit
+from hyperspy.gui.model import ComponentFit
 from hyperspy.ui_registry import get_gui
 from hyperspy.events import EventSuppressor
 
