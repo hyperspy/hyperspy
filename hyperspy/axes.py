@@ -960,15 +960,7 @@ class AxesManager(t.HasTraits):
                 self.navigation_axes[::-1]]
 
     def show(self):
-        from hyperspy.gui.axes import get_axis_group
-        import traitsui.api as tui
-        context = {}
-        ag = []
-        for n, axis in enumerate(self._get_axes_in_natural_order()):
-            ag.append(get_axis_group(n, str(axis)))
-            context['axis%i' % n] = axis
-        ag = tuple(ag)
-        self.edit_traits(view=tui.View(*ag), context=context)
+        self.gui()
 
     def _get_dimension_str(self):
         string = "("

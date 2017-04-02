@@ -50,4 +50,4 @@ EELS_VIEW = tui.View(
 def preferences_traitsui(obj, **kwargs):
     obj.EELS.trait_view("traits_view", EELS_VIEW)
     obj.trait_view("traits_view", PREFERENCES_VIEW)
-    return obj
+    return obj, {}

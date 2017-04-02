@@ -11,9 +11,9 @@ def add_display_arg(f):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
         display = kwargs.pop("display", True)
-        obj = f(*args, **kwargs)
+        obj, kwargs = f(*args, **kwargs)
         if display:
-            obj.edit_traits()
+            obj.edit_traits(**kwargs)
         else:
             return obj
     return wrapper

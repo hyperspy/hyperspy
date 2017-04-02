@@ -45,7 +45,7 @@ def navigation_sliders(obj, title=None, **kwargs):
                     if title is None
                     else title)
     nav.trait_view("traits_view", view)
-    return nav
+    return nav, {}
 
 
 data_axis_view = tui.View(
@@ -83,7 +83,7 @@ def get_axis_group(n, label=''):
             tui.Item('axis%i.index' % n, style='readonly'),
             tui.Item('axis%i.value' % n, style='readonly'),
             tui.Item('axis%i.units' % n),
-            tui.Item('axis%i.navigate' % n, label='navigate'),
+            tui.Item('axis%i.navigate' % n, label='navigate', style="readonly"),
             show_border=True,),
         tui.Group(
             tui.Item('axis%i.scale' % n),
@@ -93,3 +93,15 @@ def get_axis_group(n, label=''):
         label=label,
         show_border=True,)
     return group
+
+@register_traitsui_widget(toolkey="AxesManager")
+@add_display_arg
+def axes_gui(obj, **kwargs):
+    context = {}
+    ag = []
+    for n, axis in enumerate(obj._get_axes_in_natural_order()):
+        ag.append(get_axis_group(n, str(axis)))
+        context['axis%i' % n] = axis
+    ag = tuple(ag)
+    obj.trait_view("traits_view", tui.View(*ag))
+    return obj, {"context": context}
