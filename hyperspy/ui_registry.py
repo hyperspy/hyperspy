@@ -67,7 +67,7 @@ def register_toolkey(toolkey):
 
 
 def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
-    error = "There is not user interface registered for this feature."
+    error = "There is no user interface registered for this feature."
     from hyperspy.ui_registry import UI_REGISTRY
     toolkits = None
     if isinstance(toolkit, str):
