@@ -3,6 +3,7 @@ import traitsui.api as tui
 
 from hyperspy.gui_traitsui.utils import register_traitsui_widget, add_display_arg
 
+
 @register_traitsui_widget(toolkey="navigation_sliders")
 @add_display_arg
 def navigation_sliders(obj, title=None, **kwargs):
