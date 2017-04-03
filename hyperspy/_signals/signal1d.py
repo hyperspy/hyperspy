@@ -23,7 +23,7 @@ import dask.array as da
 
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.common_signal1d import CommonSignal1D
-from hyperspy.gui.tools import SpikesRemoval
+from hyperspy.signal_tools import SpikesRemoval
 import math
 
 import scipy.interpolate
@@ -43,7 +43,7 @@ from hyperspy.misc.utils import stack
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
 from hyperspy._signals.lazy import lazyerror
-from hyperspy.gui.tools import (
+from hyperspy.signal_tools import (
     Signal1DCalibration,
     SmoothingSavitzkyGolay,
     SmoothingLowess,
@@ -51,11 +51,11 @@ from hyperspy.gui.tools import (
     ButterworthFilter)
 from hyperspy.ui_registry import get_gui
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
-from hyperspy.gui.tools import BackgroundRemoval
+from hyperspy.signal_tools import BackgroundRemoval
 from hyperspy.decorators import only_interactive
 from hyperspy.decorators import interactive_range_selector
 from scipy.ndimage.filters import gaussian_filter1d
-from hyperspy.gui.tools import IntegrateArea
+from hyperspy.signal_tools import IntegrateArea
 from hyperspy import components1d
 from hyperspy._signals.lazy import LazySignal
 

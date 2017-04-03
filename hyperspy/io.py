@@ -150,7 +150,7 @@ def load(filenames=None,
 
     if filenames is None:
         if preferences.General.interactive is True:
-            from hyperspy.gui.tools import Load
+            from hyperspy.signal_tools import Load
             load_ui = Load()
             get_gui(load_ui, toolkey="load")
             if load_ui.filename:

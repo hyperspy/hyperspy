@@ -21,7 +21,7 @@ from functools import wraps
 
 from hyperspy.exceptions import NoInteractiveError
 from hyperspy.defaults_parser import preferences
-from hyperspy.gui.tools import Signal1DRangeSelector
+from hyperspy.signal_tools import Signal1DRangeSelector
 from hyperspy.ui_registry import get_gui
 
 

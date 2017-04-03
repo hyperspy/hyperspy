@@ -6,7 +6,7 @@ from hyperspy.gui_ipywidgets.utils import (
     register_ipy_widget)
 from hyperspy.misc.link_traits import link_traits
 from hyperspy.gui_ipywidgets.custom_widgets import OddIntSlider
-from hyperspy.gui.tools import SPIKES_REMOVAL_INSTRUCTIONS
+from hyperspy.signal_tools import SPIKES_REMOVAL_INSTRUCTIONS
 
 
 @register_ipy_widget(toolkey="interactive_range_selector")

@@ -24,7 +24,7 @@ from traits.api import Undefined
 
 from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
-from hyperspy.gui.tools import ImageContrastEditor
+from hyperspy.signal_tools import ImageContrastEditor
 from hyperspy.misc import math_tools
 from hyperspy.misc import rgb_tools
 from hyperspy.drawing.figure import BlittedFigure
