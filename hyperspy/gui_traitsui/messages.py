@@ -11,6 +11,7 @@ class Message(t.HasTraits):
     def __init__(self, text):
         self.text = text
 
+
 class MessageHandler(tu.Handler):
 
     def close(self, info, is_ok):

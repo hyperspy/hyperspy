@@ -150,12 +150,12 @@ def estimate_variance_parameters(
                    "Gain offset: %.2f\n" % results0['fit'][1] +
                    "Correlation factor: %.2f\n" % c)
         if (store_results == "ask" and
-            hyperspy.defaults_parser.preferences.General.interactive is True):
-                while is_ok not in ("Yes", "No"):
-                    is_ok = input(
-                        message +
-                        "Would you like to store the results (Yes/No)?")
-                is_ok = is_ok == "Yes"
+                hyperspy.defaults_parser.preferences.General.interactive is True):
+            while is_ok not in ("Yes", "No"):
+                is_ok = input(
+                    message +
+                    "Would you like to store the results (Yes/No)?")
+            is_ok = is_ok == "Yes"
         else:
             is_ok = store_results
             _logger.info(message)
