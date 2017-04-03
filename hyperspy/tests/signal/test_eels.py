@@ -218,3 +218,17 @@ class TestFourierRatioDeconvolution:
         s_ll.data[18:23] = [3, 10, 20, 10, 3]
         s_ll.axes_manager[0].offset = -20
         s.fourier_ratio_deconvolution(s_ll)
+
+@lazifyTestClass
+class TestFourierRatioDeconvolutionLlspectra:
+    
+    def test_running(self):
+        E = np.arange(-5,20)
+        plasmon = hs.signals.EELSSpectrum(hs.model.components1D.Lorentzian(A=10, gamma=1, centre=15.).function(E))
+        surface_plasmon = hs.model.components1D.Lorentzian(A=4, gamma=1, centre=7.).function(E) - hs.model.components1D.Lorentzian(A=1, gamma=1, centre=15.).function(E)
+        zlp = hs.signals.EELSSpectrum(hs.model.components1D.Lorentzian(A=50, gamma=1.5, centre=0.).function(E))
+        
+        s =  hs.signals.EELSSpectrum(zlp+surface_plasmon+plasmon)
+        
+        
+        s.fourier_ratio_deconvolution_llspectra(plasmon, zlp=zlp)
