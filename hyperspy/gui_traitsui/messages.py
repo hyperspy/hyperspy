@@ -42,6 +42,7 @@ def information(text):
     message.edit_traits(view=view)
     return message.is_ok
 
+
 @register_traitsui_widget(toolkey="SimpleMessage")
 @add_display_arg
 def simple_message(obj, **kwargs):

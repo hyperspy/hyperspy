@@ -731,12 +731,13 @@ SPIKES_REMOVAL_INSTRUCTIONS = (
 
     "\n")
 
+
 @add_gui_method(toolkey="SimpleMessage")
 class SimpleMessage(t.HasTraits):
     text = t.Str
+
     def __init__(self, text=""):
         self.text = text
-
 
 
 class SpikesRemoval(SpanSelectorInSignal1D):
