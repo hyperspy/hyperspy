@@ -117,7 +117,7 @@ def _create_signal(shape, dim, dtype, metadata):
                 s.set_microscope_parameters(
                     beam_energy=100.,
                     live_time=1.,
-                    tilt_stage=2.,
+                    tilt_a=2.,
                     azimuth_angle=3.,
                     elevation_angle=4.,
                     energy_resolution_MnKa=5.)
@@ -172,7 +172,7 @@ def test_data(pdict):
                     )
                 elif "EDS" in s.metadata.Signal.signal_type and metadata:
                     mdpaths += (
-                        "Acquisition_instrument.TEM.tilt_stage",
+                        "Acquisition_instrument.TEM.Stage.tilt_a",
                         "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
                         "Acquisition_instrument.TEM.Detector.EDS.elevation_angle",
                         "Acquisition_instrument.TEM.Detector."

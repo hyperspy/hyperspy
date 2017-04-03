@@ -53,9 +53,9 @@ class EDSTEM_mixin:
         mp.Signal.signal_type = "EDS_TEM"
 
         mp = self.metadata
-        if "Acquisition_instrument.TEM.tilt_stage" not in mp:
+        if "Acquisition_instrument.TEM.Stage.tilt_a" not in mp:
             mp.set_item(
-                "Acquisition_instrument.TEM.tilt_stage",
+                "Acquisition_instrument.TEM.Stage.tilt_a",
                 preferences.EDS.eds_tilt_stage)
         if "Acquisition_instrument.TEM.Detector.EDS.elevation_angle" not in mp:
             mp.set_item(
@@ -74,7 +74,7 @@ class EDSTEM_mixin:
     def set_microscope_parameters(self,
                                   beam_energy=None,
                                   live_time=None,
-                                  tilt_stage=None,
+                                  tilt_a=None,
                                   azimuth_angle=None,
                                   elevation_angle=None,
                                   energy_resolution_MnKa=None,
@@ -92,8 +92,8 @@ class EDSTEM_mixin:
             The energy of the electron beam in keV
         live_time : float
             In seconds
-        tilt_stage : float
-            In degree
+        tilt_a : float
+            The tilt of the stage in degree
         azimuth_angle : float
             In degree
         elevation_angle : float
@@ -127,8 +127,8 @@ class EDSTEM_mixin:
             md.set_item(
                 "Acquisition_instrument.TEM.Detector.EDS.live_time",
                 live_time)
-        if tilt_stage is not None:
-            md.set_item("Acquisition_instrument.TEM.tilt_stage", tilt_stage)
+        if tilt_a is not None:
+            md.set_item("Acquisition_instrument.TEM.Stage.tilt_a", tilt_a)
         if azimuth_angle is not None:
             md.set_item(
                 "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
@@ -155,7 +155,7 @@ class EDSTEM_mixin:
                 "Acquisition_instrument.TEM.Detector.EDS.real_time",
                 real_time)
 
-        if set([beam_energy, live_time, tilt_stage, azimuth_angle,
+        if set([beam_energy, live_time, tilt_a, azimuth_angle,
                 elevation_angle, energy_resolution_MnKa]) == {None}:
             self._are_microscope_parameters_missing()
 
@@ -165,8 +165,8 @@ class EDSTEM_mixin:
         mapping = {
             'Acquisition_instrument.TEM.beam_energy':
             'tem_par.beam_energy',
-            'Acquisition_instrument.TEM.tilt_stage':
-            'tem_par.tilt_stage',
+            'Acquisition_instrument.TEM.Stage.tilt_a':
+            'tem_par.tilt_a',
             'Acquisition_instrument.TEM.Detector.EDS.live_time':
             'tem_par.live_time',
             'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
@@ -189,8 +189,8 @@ class EDSTEM_mixin:
         mapping = {
             'Acquisition_instrument.TEM.beam_energy':
             tem_par.beam_energy,
-            'Acquisition_instrument.TEM.tilt_stage':
-            tem_par.tilt_stage,
+            'Acquisition_instrument.TEM.Stage.tilt_a':
+            tem_par.tilt_a,
             'Acquisition_instrument.TEM.Detector.EDS.live_time':
             tem_par.live_time,
             'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
