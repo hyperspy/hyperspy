@@ -23,7 +23,7 @@ import dask.array as da
 
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.common_signal1d import CommonSignal1D
-from hyperspy.gui.egerton_quantification import SpikesRemoval
+from hyperspy.gui.tools import SpikesRemoval
 import math
 
 import scipy.interpolate
@@ -51,7 +51,7 @@ from hyperspy.gui.tools import (
     ButterworthFilter)
 from hyperspy.ui_registry import get_gui
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
-from hyperspy.gui.egerton_quantification import BackgroundRemoval
+from hyperspy.gui.tools import BackgroundRemoval
 from hyperspy.decorators import only_interactive
 from hyperspy.decorators import interactive_range_selector
 from scipy.ndimage.filters import gaussian_filter1d
