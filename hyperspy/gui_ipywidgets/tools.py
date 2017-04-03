@@ -17,9 +17,9 @@ def interactive_range_ipy(obj, **kwargs):
     left = ipywidgets.FloatText(disabled=True)
     right = ipywidgets.FloatText(disabled=True)
     units = ipywidgets.Label()
-    help = ipywidgets.Label(
+    help = ipywidgets.HTML(
         "Click on the signal figure and drag to the right to select a signal "
-        "range. Press `Apply` to perform the operation or `Close` to cancel.")
+        "range. Press `Apply` to perform the operation or `Close` to cancel.",)
     help = ipywidgets.Accordion(children=[help])
     help.set_title(0, "Help")
     close = ipywidgets.Button(
@@ -68,11 +68,11 @@ def calibrate_ipy(obj, **kwargs):
     new_left = ipywidgets.FloatText(disabled=False)
     new_right = ipywidgets.FloatText(disabled=False)
     units = ipywidgets.Label()
-    help = ipywidgets.Label(
+    help = ipywidgets.HTML(
         "Click on the signal figure and drag to the right to select a signal "
         "range. Set the new left and right values and press `Apply` to update "
         "the calibration of the axis with the new values or press "
-        " `Close` to cancel.")
+        " `Close` to cancel.",)
     help = ipywidgets.Accordion(children=[help])
     help.set_title(0, "Help")
     close = ipywidgets.Button(
@@ -188,10 +188,10 @@ def smooth_tv_ipy(obj, **kwargs):
 def image_constast_editor_ipy(obj, **kwargs):
     left = ipywidgets.FloatText(disabled=True)
     right = ipywidgets.FloatText(disabled=True)
-    help = ipywidgets.Label(
+    help = ipywidgets.HTML(
         "Click on the histogram figure and drag to the right to select a"
         "range. Press `Apply` to set the new contrast limits, `Reset` to reset "
-        "them or `Close` to cancel.")
+        "them or `Close` to cancel.",)
     help = ipywidgets.Accordion(children=[help])
     help.set_title(0, "Help")
     close = ipywidgets.Button(
@@ -234,12 +234,12 @@ def image_constast_editor_ipy(obj, **kwargs):
 @add_display_arg
 def remove_background_ipy(obj, **kwargs):
     fast = ipywidgets.Checkbox()
-    help = ipywidgets.Label(
+    help = ipywidgets.HTML(
         "Click on the signal figure and drag to the right to select a"
         "range. Press `Apply` to remove the background in the whole dataset. "
         "If fast is checked, the background parameters are estimated using a "
         "fast (analytical) method that can compromise accuray. When unchecked "
-        "non linear least squares is employed instead.")
+        "non linear least squares is employed instead.",)
     help = ipywidgets.Accordion(children=[help])
     help.set_title(0, "Help")
     close = ipywidgets.Button(
@@ -297,13 +297,14 @@ def spikes_removal_ipy(obj, **kwargs):
     interpolator_kind = enum2dropdown(obj.traits()["interpolator_kind"])
     spline_order = ipywidgets.IntSlider(min=1, max=10)
     progress_bar = ipywidgets.IntProgress(max=len(obj.coordinates) - 1)
-    help = ipywidgets.Label(SPIKES_REMOVAL_INSTRUCTIONS)
+    help = ipywidgets.HTML(value=SPIKES_REMOVAL_INSTRUCTIONS)
     help = ipywidgets.Accordion(children=[help])
     help.set_title(0, "Help")
 
     show_diff = ipywidgets.Button(
         description="Show derivative histogram",
-        tooltip="This figure is useful to estimate the threshold.")
+        tooltip="This figure is useful to estimate the threshold.",
+        layout=ipywidgets.Layout(width="auto"))
     close = ipywidgets.Button(
         description="Close",
         tooltip="Close widget and remove span selector from the signal figure.")

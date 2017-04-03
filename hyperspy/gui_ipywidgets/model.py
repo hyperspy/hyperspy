@@ -184,7 +184,9 @@ def fit_component_ipy(obj, **kwargs):
     help = Label(
         "Click on the signal figure and drag to the right to select a"
         "range. Press `Fit` to fit the component in that range. If only "
-        "current is unchecked the fit is performed in the whole dataset.")
+        "current is unchecked the fit is performed in the whole dataset.",
+        layout=ipywidgets.Layout(width="auto"))
+
     help = Accordion(children=[help])
     help.set_title(0, "Help")
     link_traits((obj, "only_current"), (only_current, "value"))

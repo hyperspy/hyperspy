@@ -20,7 +20,8 @@ def labelme(label, widget):
     if label is Undefined:
         label = ""
     if not isinstance(label, ipywidgets.Label):
-        label = ipywidgets.Label(label)
+        label = ipywidgets.Label(label,
+                                 layout=ipywidgets.Layout(width="auto"))
     return ipywidgets.HBox(
         [label, widget],
         layout=FORM_ITEM_LAYOUT,
