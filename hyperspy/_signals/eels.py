@@ -29,7 +29,6 @@ from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.decorators import only_interactive
 from hyperspy.defaults_parser import preferences
-import hyperspy.gui.messages as messagesui
 from hyperspy.external.progressbar import progressbar
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
@@ -838,6 +837,7 @@ class EELSSpectrum_mixin:
                 missing_parameters.append(item)
         if missing_parameters:
             if preferences.General.interactive is True:
+                import hyperspy.gui_traitsui.messages as messagesui
                 par_str = "The following parameters are missing:\n"
                 for par in missing_parameters:
                     par_str += '%s\n' % par

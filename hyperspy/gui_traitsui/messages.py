@@ -1,6 +1,15 @@
 import traitsui.api as tu
 from traitsui.menu import OKButton, CancelButton
 
+import traits.api as t
+
+
+class Message(t.HasTraits):
+    text = t.Str
+    is_ok = t.Bool(False)
+
+    def __init__(self, text):
+        self.text = text
 
 class MessageHandler(tu.Handler):
 
@@ -12,14 +21,20 @@ class MessageHandler(tu.Handler):
             info.object.is_ok = False
         return True
 
-information_view = tu.View(tu.Group(
-    tu.Item('text',
-            show_label=False,
-            style='readonly',
-            springy=True,
-            width=300,
-            padding=15),),
-    kind='modal',
-    buttons=[OKButton, CancelButton],
-    handler=MessageHandler,
-    title='Message')
+
+def information(text):
+    message = Message(text)
+    message.text = text
+    view = tu.View(tu.Group(
+        tu.Item('text',
+                show_label=False,
+                style='readonly',
+                springy=True,
+                width=300,
+                padding=15),),
+        kind='modal',
+        buttons=[OKButton, CancelButton],
+        handler=MessageHandler,
+        title='Message')
+    message.edit_traits(view=view)
+    return message.is_ok

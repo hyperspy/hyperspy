@@ -26,7 +26,6 @@ import traits.api as t
 
 from hyperspy import drawing
 from hyperspy.exceptions import SignalDimensionError
-from hyperspy.gui import messages
 from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import VerticalLineWidget
 from hyperspy.ui_registry import add_gui_method
@@ -175,18 +174,12 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
     def _left_value_changed(self, old, new):
         if self.span_selector is not None and \
                 self.span_selector.range is None:
-            messages.information(
-                'Please select a range in the spectrum figure'
-                'by dragging the mouse over it')
             return
         else:
             self._update_calibration()
 
     def _right_value_changed(self, old, new):
         if self.span_selector.range is None:
-            messages.information(
-                'Please select a range in the spectrum figure'
-                'by dragging the mouse over it')
             return
         else:
             self._update_calibration()

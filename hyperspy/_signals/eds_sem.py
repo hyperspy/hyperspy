@@ -266,7 +266,6 @@ class EDSSEM_mixin:
         raises an UI item to fill the values
 
         """
-        import hyperspy.gui.messages as messagesui
         must_exist = (
             'Acquisition_instrument.SEM.beam_energy',
             'Acquisition_instrument.SEM.Detector.EDS.live_time', )
@@ -278,6 +277,7 @@ class EDSSEM_mixin:
                 missing_parameters.append(item)
         if missing_parameters:
             if preferences.General.interactive is True:
+                import hyperspy.gui_traitsui.messages as messagesui
                 par_str = "The following parameters are missing:\n"
                 for par in missing_parameters:
                     par_str += '%s\n' % par

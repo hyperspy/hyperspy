@@ -27,7 +27,6 @@ from hyperspy import utils
 from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
 from hyperspy.decorators import only_interactive
 from hyperspy.defaults_parser import preferences
-import hyperspy.gui.messages as messagesui
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.ui_registry import add_gui_method
 
@@ -251,6 +250,7 @@ class EDSTEM_mixin:
                 missing_parameters.append(item)
         if missing_parameters:
             if preferences.General.interactive is True:
+                import hyperspy.gui_traitsui.messages as messagesui
                 par_str = "The following parameters are missing:\n"
                 for par in missing_parameters:
                     par_str += '%s\n' % par
