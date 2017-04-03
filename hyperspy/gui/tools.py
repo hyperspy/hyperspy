@@ -575,6 +575,7 @@ class IntegrateArea(SpanSelectorInSignal1D):
         if plot is True:
             self.signal.plot()
 
+
 class BackgroundRemoval(SpanSelectorInSignal1D):
     background_type = t.Enum(
         'Power Law',
