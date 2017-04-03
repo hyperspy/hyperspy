@@ -731,6 +731,13 @@ SPIKES_REMOVAL_INSTRUCTIONS = (
 
     "\n")
 
+@add_gui_method(toolkey="SimpleMessage")
+class SimpleMessage(t.HasTraits):
+    text = t.Str
+    def __init__(self, text=""):
+        self.text = text
+
+
 
 class SpikesRemoval(SpanSelectorInSignal1D):
     interpolator_kind = t.Enum(
@@ -844,8 +851,14 @@ class SpikesRemoval(SpanSelectorInSignal1D):
             spike = self.detect_spike()
 
         if spike is False:
-            from hyperspy.gui_traitsui import messages
-            messages.information('End of dataset reached')
+            m = SimpleMessage()
+            m.text = 'End of dataset reached'
+            try:
+                m.gui()
+            except NotImplementedError:
+                # This is only available for traitsui, ipywidgets has a
+                # progress bar instead.
+                pass
             self.index = 0
             self._reset_line()
             return

@@ -1,7 +1,9 @@
+import traits.api as t
 import traitsui.api as tu
 from traitsui.menu import OKButton, CancelButton
 
-import traits.api as t
+from hyperspy.gui_traitsui.utils import (
+    register_traitsui_widget, add_display_arg)
 
 
 class Message(t.HasTraits):
@@ -39,3 +41,18 @@ def information(text):
         title='Message')
     message.edit_traits(view=view)
     return message.is_ok
+
+@register_traitsui_widget(toolkey="SimpleMessage")
+@add_display_arg
+def simple_message(obj, **kwargs):
+    view = tu.View(tu.Group(
+        tu.Item('text',
+                show_label=False,
+                style='readonly',
+                springy=True,
+                width=300,
+                padding=15),),
+        kind='modal',
+        buttons=[OKButton],
+        title='Message')
+    return obj, {"view": view}

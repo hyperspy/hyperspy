@@ -35,6 +35,7 @@ def set_ets_toolkit(toolkit):
         import hyperspy.gui_traitsui.tools
         import hyperspy.gui_traitsui.preferences
         import hyperspy.gui_traitsui.microscope_parameters
+        import hyperspy.gui_traitsui.messages
     except ValueError:
         pass
 
