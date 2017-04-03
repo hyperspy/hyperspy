@@ -20,7 +20,7 @@ import os
 import logging
 import warnings
 from distutils.version import LooseVersion
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil import parser
 import pint
 
@@ -28,6 +28,7 @@ import numpy as np
 import traits.api as t
 from hyperspy.misc import rgb_tools
 from hyperspy.misc.date_time_tools import get_date_time_from_metadata
+from hyperspy.misc.utils import DictionaryTreeBrowser
 
 _logger = logging.getLogger(__name__)
 # Plugin characteristics
@@ -125,7 +126,7 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
         kwds.update(_get_tags_dict(signal, extratags=extratags))
         _logger.debug("kwargs passed to tifffile.py imsave: {0}".format(kwds))
 
-    if 'date' in signal.metadata['General'].keys():
+    if 'date' in signal.metadata['General']:
         dt = get_date_time_from_metadata(signal.metadata,
                                          formatting='datetime')
         kwds['datetime'] = dt
@@ -161,7 +162,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
     _logger.debug('************* Loading *************')
     # For testing the use of local and skimage tifffile library
     import_local_tifffile = False
-    if 'import_local_tifffile' in kwds.keys():
+    if 'import_local_tifffile' in kwds:
         import_local_tifffile = kwds.pop('import_local_tifffile')
 
     imsave, TiffFile = _import_tifffile_library(import_local_tifffile)
@@ -197,7 +198,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
             op[key] = tag.value
         names = [axes_label_codes[axis] for axis in axes]
 
-        _logger.debug('Tiff tags list: %s' % op.keys())
+        _logger.debug('Tiff tags list: %s' % op)
         _logger.debug("Photometric: %s" % op['photometric'])
         _logger.debug('is_imagej: {}'.format(tiff[0].is_imagej))
 
@@ -253,14 +254,14 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
                          },
               }
 
-        if 'datetime' in op.keys():
+        if 'datetime' in op:
             dt = datetime.strptime(_decode_string(
                 op['datetime']), "%Y:%m:%d %H:%M:%S")
             md['General']['date'] = dt.date().isoformat()
             md['General']['time'] = dt.time().isoformat()
-        if 'units' in intensity_axis.keys():
+        if 'units' in intensity_axis:
             md['Signal']['quantity'] = intensity_axis['units']
-        if 'scale' in intensity_axis.keys() and 'offset' in intensity_axis.keys():
+        if 'scale' in intensity_axis and 'offset' in intensity_axis:
             dic = {'gain_factor': intensity_axis['scale'],
                    'gain_offset': intensity_axis['offset']}
             md['Signal']['Noise_properties'] = {'Variance_linear_model': dic}
@@ -276,11 +277,14 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
     else:
         dc = _load_data(*data_args, memmap=memmap, **kwds)
 
+    metadata = Metadata(op)
+    md.update(metadata.get_additional_metadata())
+
     return [{'data': dc,
              'original_metadata': op,
              'axes': axes,
              'metadata': md,
-             'mapping': mapping,
+             'mapping': metadata.mapping,
              }]
 
 
@@ -303,37 +307,37 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
     intensity_axis = {}
 
     # for files created with DM
-    if '65003' in op.keys():
+    if '65003' in op:
         _logger.debug("Reading Gatan DigitalMicrograph tif metadata")
         units['y'] = _decode_string(op['65003'])  # x units
-    if '65004' in op.keys():
+    if '65004' in op:
         units['x'] = _decode_string(op['65004'])  # y units
-    if '65005' in op.keys():
+    if '65005' in op:
         units['z'] = _decode_string(op['65005'])  # z units
-    if '65009' in op.keys():
+    if '65009' in op:
         scales['y'] = op['65009']   # x scales
-    if '65010' in op.keys():
+    if '65010' in op:
         scales['x'] = op['65010']   # y scales
-    if '65011' in op.keys():
+    if '65011' in op:
         scales['z'] = op['65011']   # z scales
-    if '65006' in op.keys():
+    if '65006' in op:
         offsets['y'] = op['65006']   # x offset
-    if '65007' in op.keys():
+    if '65007' in op:
         offsets['x'] = op['65007']   # y offset
-    if '65008' in op.keys():
+    if '65008' in op:
         offsets['z'] = op['65008']   # z offset
-    if '65022' in op.keys():
+    if '65022' in op:
         intensity_axis['units'] = _decode_string(
             op['65022'])   # intensity units
-    if '65024' in op.keys():
+    if '65024' in op:
         intensity_axis['offset'] = op['65024']   # intensity offset
-    if '65025' in op.keys():
+    if '65025' in op:
         intensity_axis['scale'] = op['65025']   # intensity scale
 
     # for files created with imageJ
     if tiff[0].is_imagej:
         image_description = _decode_string(op["image_description"])
-        if "image_description_1" in op.keys():
+        if "image_description_1" in op:
             image_description = _decode_string(op["image_description_1"])
         _logger.debug(
             "Image_description tag: {0}".format(image_description))
@@ -350,29 +354,43 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
                     image_description.split('spacing=')[1].splitlines()[0])
 
     # for FEI Helios tiff files (apparently, works also for Quanta):
-    elif 'helios_metadata' in op.keys() or 'sfeg_metadata' in op.keys():
+    elif 'helios_metadata' in op or 'sfeg_metadata' in op:
         _logger.debug("Reading FEI tif metadata")
         try:
-            op = op['helios_metadata']
+            op['fei_metadata'] = op['helios_metadata']
+            del op['helios_metadata']
         except KeyError:
-            op = op['sfeg_metadata']
-        scales['x'] = float(op['Scan']['PixelWidth'])
-        scales['y'] = float(op['Scan']['PixelHeight'])
+            op['fei_metadata'] = op['sfeg_metadata']
+            del op['sfeg_metadata']
+        scales['x'] = float(op['fei_metadata']['Scan']['PixelWidth'])
+        scales['y'] = float(op['fei_metadata']['Scan']['PixelHeight'])
         for key in ['x', 'y']:
             units[key] = 'm'
 
     # for Zeiss SEM tiff files:
-    elif 'sem_metadata' in op.keys():
+    elif 'sem_metadata' in op:
         _logger.debug("Reading Zeiss tif metadata")
-        op = op['sem_metadata']
-        if 'ap_pixel_size' in op.keys():
-            (ps, units0) = op['ap_pixel_size'][1:]
+        if 'ap_pixel_size' in op['sem_metadata']:
+            (ps, units0) = op['sem_metadata']['ap_pixel_size'][1:]
             for key in ['x', 'y']:
                 scales[key] = ps
                 units[key] = units0
 
-    if force_read_resolution and 'resolution_unit' in op.keys() \
-            and 'x_resolution' in op.keys():
+    # for TVIPS tiff files:
+    elif 'tvips_metadata' in op:
+        _logger.debug("Reading TVIPS tif metadata")
+        if 'pixel_size_x' in op['tvips_metadata'] and 'pixel_size_y' in op['tvips_metadata']:
+            scales['x'] = op['tvips_metadata']['pixel_size_x']
+            scales['y'] = op['tvips_metadata']['pixel_size_y']
+
+        else:
+            scales['x'], scales['y'] = _get_scales_from_x_y_resolution(
+                op, factor=1e-2)
+        for key in ['x', 'y']:
+            units[key] = 'm'
+
+    if force_read_resolution and 'resolution_unit' in op \
+            and 'x_resolution' in op:
         res_unit_tag = op['resolution_unit']
         if res_unit_tag != 1:
             _logger.debug("Resolution unit: %s" % res_unit_tag)
@@ -389,9 +407,9 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
     return scales, units, offsets, intensity_axis, op
 
 
-def _get_scales_from_x_y_resolution(op):
-    scales = op["y_resolution"][1] / op["y_resolution"][0], \
-        op["x_resolution"][1] / op["x_resolution"][0]
+def _get_scales_from_x_y_resolution(op, factor=1):
+    scales = (op["y_resolution"][1] / op["y_resolution"][0] * factor,
+              op["x_resolution"][1] / op["x_resolution"][0] * factor)
     return scales
 
 
@@ -510,95 +528,167 @@ def _decode_string(string):
     return string
 
 
-def _parse_beam_current_FEI(value):
-    try:
-        return float(value) * 1e9
-    except ValueError:
-        return None
+class Metadata:
 
+    def __init__(self, original_metadata):
+        self.original_metadata = original_metadata
+        self.mapping = {}
+        self.get_mapping_FEI()
+        self.get_mapping_Zeiss()
+        if 'tvips_metadata' in self.original_metadata:
+            self.get_mapping_TVIPS()
 
-def _parse_tuple_Zeiss(tup):
-    value = tup[1]
-    try:
-        return float(value)
-    except ValueError:
+    def get_additional_metadata(self):
+        self.md = DictionaryTreeBrowser()
+        if 'tvips_metadata' in self.original_metadata:
+            self._get_additional_metadata_TVIPS()
+        return self.md.as_dictionary()
+
+    def _parse_beam_current_FEI(self, value):
+        try:
+            return float(value) * 1e9
+        except ValueError:
+            return None
+
+    def _parse_tuple_Zeiss(self, tup):
+        value = tup[1]
+        try:
+            return float(value)
+        except ValueError:
+            return value
+
+    def _parse_tuple_Zeiss_with_units(self, tup, to_units=None):
+        (value, parse_units) = tup[1:]
+        if to_units is not None:
+            v = value * ureg(parse_units)
+            value = float("%.3e" % v.to(to_units).magnitude)
         return value
 
+    def _parse_tvips_time(self, value):
+        # assuming this is the time in second
+        return str(timedelta(seconds=int(value)))
 
-def _parse_tuple_Zeiss_with_units(tup, to_units=None):
-    (value, parse_units) = tup[1:]
-    if to_units is not None:
-        v = value * ureg(parse_units)
-        value = float("%.3e" % v.to(to_units).magnitude)
-    return value
+    def _parse_tvips_date(self, value):
+        # get a number, such as 132122901, no idea, what it is... this is not
+        # an excel serial, nor an unix time...
+        return None
 
+    def _parse_string(self, value):
+        if value == '':
+            value = None
+        return value
 
-# mapping FEI metadata
-mapping_FEI = {
-    'Beam.HV':
-    ("Acquisition_instrument.SEM.beam_energy", lambda x: float(x) * 1e-3),
-    'Stage.StageX':
-    ("Acquisition_instrument.SEM.Stage.x", None),
-    'Stage.StageY':
-    ("Acquisition_instrument.SEM.Stage.y", None),
-    'Stage.StageZ':
-    ("Acquisition_instrument.SEM.Stage.z", None),
-    'Stage.StageR':
-    ("Acquisition_instrument.SEM.Stage.rotation", None),
-    'Stage.StageT':
-    ("Acquisition_instrument.SEM.Stage.tilt", None),
-    'Stage.WorkingDistance':
-    ("Acquisition_instrument.SEM.working_distance", lambda x: float(x) * 1e3),
-    'Scan.Dwelltime':
-    ("Acquisition_instrument.SEM.dwell_time", None),
-    'EBeam.BeamCurrent':
-    ("Acquisition_instrument.SEM.beam_current", _parse_beam_current_FEI),
-    'System.SystemType':
-    ("Acquisition_instrument.SEM.microscope", None),
-    'User.Date':
-    ("General.date", lambda x: parser.parse(x).date().isoformat()),
-    'User.Time':
-    ("General.time", lambda x: parser.parse(x).time().isoformat()),
-    'User.User':
-    ("General.authors", None),
-}
+    def get_mapping_FEI(self):
+        # mapping FEI metadata
+        mapping_FEI = {
+            'fei_metadata.Beam.HV':
+            ("Acquisition_instrument.SEM.beam_energy", lambda x: float(x) * 1e-3),
+            'fei_metadata.Stage.StageX':
+            ("Acquisition_instrument.SEM.Stage.x", None),
+            'fei_metadata.Stage.StageY':
+            ("Acquisition_instrument.SEM.Stage.y", None),
+            'fei_metadata.Stage.StageZ':
+            ("Acquisition_instrument.SEM.Stage.z", None),
+            'fei_metadata.Stage.StageR':
+            ("Acquisition_instrument.SEM.Stage.rotation", None),
+            'fei_metadata.Stage.StageT':
+            ("Acquisition_instrument.SEM.Stage.tilt", None),
+            'fei_metadata.Stage.WorkingDistance':
+            ("Acquisition_instrument.SEM.working_distance", lambda x: float(x) * 1e3),
+            'fei_metadata.Scan.Dwelltime':
+            ("Acquisition_instrument.SEM.dwell_time", None),
+            'fei_metadata.EBeam.BeamCurrent':
+            ("Acquisition_instrument.SEM.beam_current",
+             self._parse_beam_current_FEI),
+            'fei_metadata.System.SystemType':
+            ("Acquisition_instrument.SEM.microscope", None),
+            'fei_metadata.User.Date':
+            ("General.date", lambda x: parser.parse(x).date().isoformat()),
+            'fei_metadata.User.Time':
+            ("General.time", lambda x: parser.parse(x).time().isoformat()),
+            'fei_metadata.User.User':
+            ("General.authors", None),
+        }
+        self.mapping.update(mapping_FEI)
 
-# mapping Zeiss metadata
-mapping_Zeiss = {
-    'ap_actualkv':
-    ("Acquisition_instrument.SEM.beam_energy", _parse_tuple_Zeiss),
-    'ap_mag':
-    ("Acquisition_instrument.SEM.magnification", _parse_tuple_Zeiss),
-    'ap_stage_at_x':
-    ("Acquisition_instrument.SEM.Stage.x", _parse_tuple_Zeiss),
-    'ap_stage_at_y':
-    ("Acquisition_instrument.SEM.Stage.y", _parse_tuple_Zeiss),
-    'ap_stage_at_z':
-    ("Acquisition_instrument.SEM.Stage.z", _parse_tuple_Zeiss),
-    'ap_stage_at_r':
-    ("Acquisition_instrument.SEM.Stage.rotation", _parse_tuple_Zeiss),
-    'ap_stage_at_t':
-    ("Acquisition_instrument.SEM.Stage.tilt", _parse_tuple_Zeiss),
-    'ap_free_wd':
-    ("Acquisition_instrument.SEM.working_distance",
-     lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='mm')),
-    'dp_dwell_time':
-    ("Acquisition_instrument.SEM.dwell_time",
-     lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='s')),
-    'ap_beam_current':
-    ("Acquisition_instrument.SEM.beam_current",
-     lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='nA')),
-    'sv_serial_number':
-    ("Acquisition_instrument.SEM.microscope", _parse_tuple_Zeiss),
-    # I have not find the corresponding metadata....
-    #'???':
-    #("General.date", lambda tup: parser.parse(tup[1]).date().isoformat()),
-    #'???':
-    #("General.time", lambda tup: parser.parse(tup[1]).time().isoformat()),
-    'sv_user_name':
-    ("General.authors", _parse_tuple_Zeiss),
-}
+    def get_mapping_Zeiss(self):
+        # mapping Zeiss metadata
+        mapping_Zeiss = {
+            'sem_metadata.ap_actualkv':
+            ("Acquisition_instrument.SEM.beam_energy", self._parse_tuple_Zeiss),
+            'sem_metadata.ap_mag':
+            ("Acquisition_instrument.SEM.magnification", self._parse_tuple_Zeiss),
+            'sem_metadata.ap_stage_at_x':
+            ("Acquisition_instrument.SEM.Stage.x", self._parse_tuple_Zeiss),
+            'sem_metadata.ap_stage_at_y':
+            ("Acquisition_instrument.SEM.Stage.y", self._parse_tuple_Zeiss),
+            'sem_metadata.ap_stage_at_z':
+            ("Acquisition_instrument.SEM.Stage.z", self._parse_tuple_Zeiss),
+            'sem_metadata.ap_stage_at_r':
+            ("Acquisition_instrument.SEM.Stage.rotation", self._parse_tuple_Zeiss),
+            'sem_metadata.ap_stage_at_t':
+            ("Acquisition_instrument.SEM.Stage.tilt", self._parse_tuple_Zeiss),
+            'sem_metadata.ap_free_wd':
+            ("Acquisition_instrument.SEM.working_distance",
+             lambda tup: self._parse_tuple_Zeiss_with_units(tup, to_units='mm')),
+            'sem_metadata.dp_dwell_time':
+            ("Acquisition_instrument.SEM.dwell_time",
+             lambda tup: self._parse_tuple_Zeiss_with_units(tup, to_units='s')),
+            'sem_metadata.ap_beam_current':
+            ("Acquisition_instrument.SEM.beam_current",
+             lambda tup: self._parse_tuple_Zeiss_with_units(tup, to_units='nA')),
+            'sem_metadata.sv_serial_number':
+            ("Acquisition_instrument.SEM.microscope", self._parse_tuple_Zeiss),
+            # I have not find the corresponding metadata....
+            #'sem_metadata.???':
+            #("General.date", lambda tup: parser.parse(tup[1]).date().isoformat()),
+            #'sem_metadata.???':
+            #("General.time", lambda tup: parser.parse(tup[1]).time().isoformat()),
+            'sem_metadata.sv_user_name':
+            ("General.authors", self._parse_tuple_Zeiss),
+        }
+        self.mapping.update(mapping_Zeiss)
 
-mapping = {}
-mapping.update(mapping_FEI)
-mapping.update(mapping_Zeiss)
+    def get_mapping_TVIPS(self):
+        try:
+            if self.original_metadata['tvips_metadata']['tem_mode'] == 3:
+                mapped_magnification = 'camera_length'
+            else:
+                mapped_magnification = 'magnification'
+        except KeyError:
+            mapped_magnification = 'magnification'
+
+        # mapping TVIPSs metadata
+        mapping_TVIPS = {
+            'tvips_metadata.tem_magnification':
+            ("Acquisition_instrument.TEM.%s" % mapped_magnification, None),
+            'tvips_metadata.camera_type':
+            ("Acquisition_instrument.TEM.Detector.Camera.name", None),
+            'tvips_metadata.exposure_time':
+            ("Acquisition_instrument.TEM.Detector.Camera.exposure_time",
+             lambda x: float(x) * 1e-3),
+            'tvips_metadata.tem_high_tension':
+            ("Acquisition_instrument.TEM.beam_energy", lambda x: float(x) * 1e-3),
+            'tvips_metadata.comment':
+            ("General.notes", self._parse_string),
+            'tvips_metadata.date':
+            ("General.date", self._parse_tvips_date),
+            'tvips_metadata.time':
+            ("General.time", self._parse_tvips_time),
+        }
+        self.mapping.update(mapping_TVIPS)
+
+    def _get_additional_metadata_TVIPS(self):
+        if 'tem_stage_position' in self.original_metadata['tvips_metadata']:
+            stage = self.original_metadata['tvips_metadata']['tem_stage_position']
+            # Guess on what is x, y, z, tilt_a and tilt_b...
+            self.md.set_item(
+                "Acquisition_instrument.TEM.Stage.x", stage[0] * 1E3)
+            self.md.set_item(
+                "Acquisition_instrument.TEM.Stage.y", stage[1] * 1E3)
+            self.md.set_item(
+                "Acquisition_instrument.TEM.Stage.z", stage[2] * 1E3)
+            self.md.set_item(
+                "Acquisition_instrument.TEM.Stage.tilt_a", stage[3])
+            self.md.set_item(
+                "Acquisition_instrument.TEM.Stage.tilt_b", stage[4])
