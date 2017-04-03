@@ -22,8 +22,10 @@ import time
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.eels import EELSSpectrum
 from hyperspy.components1d import Gaussian
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class TestModelIndexing:
 
     def setup_method(self, method):
@@ -100,6 +102,7 @@ class TestModelIndexing:
         assert m[0]._active_array[0, 0]
 
 
+@lazifyTestClass
 class TestModelIndexingClass:
 
     def setup_method(self, method):
@@ -119,6 +122,7 @@ class TestModelIndexingClass:
         assert isinstance(m_eels, type(m_eels.inav[1:]))
 
 
+@lazifyTestClass
 class TestEELSModelSlicing:
 
     def setup_method(self, method):

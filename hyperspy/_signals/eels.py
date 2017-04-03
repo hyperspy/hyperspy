@@ -1397,12 +1397,8 @@ class EELSSpectrum_mixin:
 
         return m
 
-
-class LazyEELSSpectrum(EELSSpectrum_mixin, LazySignal1D):
+    pass
+class LazyEELSSpectrum(EELSSpectrum, LazySignal1D):
 
     pass
 
-
-class EELSSpectrum(EELSSpectrum_mixin, Signal1D):
-
-    pass
