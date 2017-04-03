@@ -296,6 +296,7 @@ def spikes_removal_ipy(obj, **kwargs):
     default_spike_width = ipywidgets.IntText()
     interpolator_kind = enum2dropdown(obj.traits()["interpolator_kind"])
     spline_order = ipywidgets.IntSlider(min=1, max=10)
+    progress_bar = ipywidgets.IntProgress(max=len(obj.coordinates) - 1)
     help = ipywidgets.Label(SPIKES_REMOVAL_INSTRUCTIONS)
     help = ipywidgets.Accordion(children=[help])
     help.set_title(0, "Help")
@@ -346,6 +347,7 @@ def spikes_removal_ipy(obj, **kwargs):
     link_traits((obj, "add_noise"), (add_noise, "value"))
     link_traits((obj, "default_spike_width"), (default_spike_width, "value"))
     link_traits((obj, "spline_order"), (spline_order, "value"))
+    link_traits((obj, "index"), (progress_bar, "value"))
     # Trigger the function that controls the visibility  as
     # setting the default value doesn't trigger it.
 
@@ -363,7 +365,8 @@ def spikes_removal_ipy(obj, **kwargs):
     box = ipywidgets.VBox([
         ipywidgets.VBox([
             show_diff,
-            labelme("Threshold", threshold), ]),
+            labelme("Threshold", threshold),
+            labelme("Progress", progress_bar), ]),
         advanced,
         help,
         ipywidgets.HBox([previous, next, remove, close])
