@@ -917,7 +917,7 @@ These markers can also be permanently added to a signal, which is saved in
     >>> s.add_marker(marker, permanent=True)
     >>> s.metadata.Markers
     └── point = <marker.Point, point (x=5,y=9,color=black,size=20)>
-    >>> s.plot(plot_markers=True)
+    >>> s.plot()
 
 
 .. figure::  images/permanent_marker_one.png
@@ -937,6 +937,18 @@ Markers can be removed by deleting them from the metadata
     └── point = <marker.Point, point (x=5,y=9,color=black,size=20)>
     >>> del s.metadata.Markers.point
     >>> s.metadata.Markers # Returns nothing
+
+
+To suppress plotting of permanent markers, use `plot_markers=False` when
+calling `s.plot`:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    >>> marker = hs.markers.point(5, 9)
+    >>> s.add_marker(marker, permanent=True, plot_marker=False)
+    >>> s.plot(plot_markers=False)
+
 
 If the signal got a navigation dimension, the markers can be made to change
 as a function of the navigation index. For a signal with 1 navigation axis:

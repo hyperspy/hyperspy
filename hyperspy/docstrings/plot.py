@@ -50,7 +50,7 @@ BASE_PLOT_DOCSTRING = \
             effect and is always "slider".
         axes_manager : {None, axes_manager}
             If None `axes_manager` is used.
-        plot_markers : bool, default False
+        plot_markers : bool, default True
             Plot markers added using s.add_marker(marker, permanent=True).
             Note, a large number of markers might lead to very slow plotting.
             """

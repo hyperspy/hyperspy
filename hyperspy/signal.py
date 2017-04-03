@@ -1835,7 +1835,7 @@ class BaseSignal(FancySlicing,
             self.data.__getitem__(axes_manager._getitem_tuple))
 
     def plot(self, navigator="auto", axes_manager=None,
-             plot_markers=False, **kwargs):
+             plot_markers=True, **kwargs):
         """%s
         %s
 
