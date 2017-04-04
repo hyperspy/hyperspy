@@ -117,7 +117,7 @@ def _create_signal(shape, dim, dtype, metadata):
                 s.set_microscope_parameters(
                     beam_energy=100.,
                     live_time=1.,
-                    tilt_a=2.,
+                    tilt_stage=2.,
                     azimuth_angle=3.,
                     elevation_angle=4.,
                     energy_resolution_MnKa=5.)

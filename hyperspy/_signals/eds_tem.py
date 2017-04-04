@@ -74,7 +74,7 @@ class EDSTEM_mixin:
     def set_microscope_parameters(self,
                                   beam_energy=None,
                                   live_time=None,
-                                  tilt_a=None,
+                                  tilt_stage=None,
                                   azimuth_angle=None,
                                   elevation_angle=None,
                                   energy_resolution_MnKa=None,
@@ -92,7 +92,7 @@ class EDSTEM_mixin:
             The energy of the electron beam in keV
         live_time : float
             In seconds
-        tilt_a : float
+        tilt_stage : float
             The tilt of the stage in degree
         azimuth_angle : float
             In degree
@@ -127,8 +127,8 @@ class EDSTEM_mixin:
             md.set_item(
                 "Acquisition_instrument.TEM.Detector.EDS.live_time",
                 live_time)
-        if tilt_a is not None:
-            md.set_item("Acquisition_instrument.TEM.Stage.tilt_a", tilt_a)
+        if tilt_stage is not None:
+            md.set_item("Acquisition_instrument.TEM.Stage.tilt_a", tilt_stage)
         if azimuth_angle is not None:
             md.set_item(
                 "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
@@ -155,7 +155,7 @@ class EDSTEM_mixin:
                 "Acquisition_instrument.TEM.Detector.EDS.real_time",
                 real_time)
 
-        if set([beam_energy, live_time, tilt_a, azimuth_angle,
+        if set([beam_energy, live_time, tilt_stage, azimuth_angle,
                 elevation_angle, energy_resolution_MnKa]) == {None}:
             self._are_microscope_parameters_missing()
 
