@@ -33,6 +33,7 @@ from hyperspy.events import EventSuppressor
 from hyperspy.signal_tools import SpanSelectorInSignal1D
 from hyperspy.ui_registry import add_gui_method
 
+
 @add_gui_method(toolkey="Model1D.fit_component")
 class ComponentFit(SpanSelectorInSignal1D):
 
