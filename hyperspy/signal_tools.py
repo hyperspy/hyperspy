@@ -160,6 +160,7 @@ class LineInSignal1D(t.HasTraits):
         self.draw()
 
 
+@add_gui_method(toolkey="Signal1D.calibrate")
 class Signal1DCalibration(SpanSelectorInSignal1D):
     left_value = t.Float(label='New left value')
     right_value = t.Float(label='New right value')
@@ -308,6 +309,7 @@ class Smoothing(t.HasTraits):
                 type='line')
 
 
+@add_gui_method(toolkey="Signal1D.smooth_savitzky_golay")
 class SmoothingSavitzkyGolay(Smoothing):
 
     polynomial_order = t.Int(
@@ -388,6 +390,7 @@ class SmoothingSavitzkyGolay(Smoothing):
         self.signal._replot()
 
 
+@add_gui_method(toolkey="Signal1D.smooth_lowess")
 class SmoothingLowess(Smoothing):
     smoothing_parameter = t.Range(low=0.,
                                   high=1.,
@@ -424,6 +427,7 @@ class SmoothingLowess(Smoothing):
         self.signal._replot()
 
 
+@add_gui_method(toolkey="Signal1D.smooth_total_variation")
 class SmoothingTV(Smoothing):
     smoothing_parameter = t.Float(200)
 
@@ -439,8 +443,9 @@ class SmoothingTV(Smoothing):
         return self.single_spectrum.data
 
 
+@add_gui_method(toolkey="Signal1D.smooth_butterworth")
 class ButterworthFilter(Smoothing):
-    cutoff_frequency_ratio = t.Range(0., 1., 0.05)
+    cutoff_frequency_ratio = t.Range(0.01, 1., 0.01)
     type = t.Enum('low', 'high')
     order = t.Int(2)
 
@@ -537,6 +542,7 @@ class ImageContrastEditor(t.HasTraits):
         plt.close(self.ax.figure)
 
 
+@add_gui_method(toolkey="Signal1D.integrate_in_range")
 class IntegrateArea(SpanSelectorInSignal1D):
     integrate = t.Button()
 
@@ -575,6 +581,7 @@ class IntegrateArea(SpanSelectorInSignal1D):
             self.signal.plot()
 
 
+@add_gui_method(toolkey="Signal1D.remove_background")
 class BackgroundRemoval(SpanSelectorInSignal1D):
     background_type = t.Enum(
         'Power Law',
@@ -740,6 +747,7 @@ class SimpleMessage(t.HasTraits):
         self.text = text
 
 
+@add_gui_method(toolkey="Signal1D.spikes_removal_tool")
 class SpikesRemoval(SpanSelectorInSignal1D):
     interpolator_kind = t.Enum(
         'Linear',

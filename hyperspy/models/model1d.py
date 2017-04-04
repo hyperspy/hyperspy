@@ -24,7 +24,6 @@ import traits.api as t
 
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 import hyperspy.drawing.signal1d
-from hyperspy._signals.signal1d import Signal1D
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
@@ -32,8 +31,9 @@ from hyperspy.drawing.widgets import VerticalLineWidget, LabelWidget
 from hyperspy.ui_registry import get_gui
 from hyperspy.events import EventSuppressor
 from hyperspy.signal_tools import SpanSelectorInSignal1D
+from hyperspy.ui_registry import add_gui_method
 
-
+@add_gui_method(toolkey="Model1D.fit_component")
 class ComponentFit(SpanSelectorInSignal1D):
 
     only_current = t.Bool(True)
@@ -310,6 +310,7 @@ class Model1D(BaseModel):
 
     @signal.setter
     def signal(self, value):
+        from hyperspy._signals.signal1d import Signal1D
         if isinstance(value, Signal1D):
             self._signal = value
         else:
@@ -903,6 +904,6 @@ class Model1D(BaseModel):
                           estimate_parameters, fit_independent,
                           only_current, **kwargs)
         if signal_range == "interactive":
-            get_gui(cf, toolkey="Model1D.fit_component")
+            return cf.gui()
         else:
             cf.apply()

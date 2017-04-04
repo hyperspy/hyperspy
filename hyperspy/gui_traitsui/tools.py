@@ -229,6 +229,21 @@ def smooth_tv_traitsui(obj, **kwargs):
     return obj, {"view": view}
 
 
+@register_traitsui_widget(toolkey="Signal1D.smooth_butterworth")
+@add_display_arg
+def smooth_butterworth(obj, **kwargs):
+    view = tu.View(
+        tu.Group(
+            'cutoff_frequency_ratio',
+            'order',
+            'type'),
+        kind='live',
+        handler=SmoothingHandler,
+        buttons=OKCancelButtons,
+        title='Butterworth filter',)
+    return obj, {"view": view}
+
+
 @register_traitsui_widget(toolkey="load")
 @add_display_arg
 def load(obj, **kwargs):

@@ -125,12 +125,4 @@ def add_gui_method(toolkey):
 
 register_toolkey("interactive_range_selector")
 register_toolkey("navigation_sliders")
-register_toolkey("Signal1D.spikes_removal_tool")
-register_toolkey("Signal1D.calibrate")
-register_toolkey("Signal1D.smooth_savitzky_golay")
-register_toolkey("Signal1D.smooth_lowess")
-register_toolkey("Signal1D.smooth_total_variation")
-register_toolkey("Signal1D.remove_background")
-register_toolkey("Signal1D.integrate_in_range")
-register_toolkey("Model1D.fit_component")
 register_toolkey("load")

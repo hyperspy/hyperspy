@@ -183,6 +183,24 @@ def smooth_tv_ipy(obj, **kwargs):
     return box
 
 
+@register_ipy_widget(toolkey="Signal1D.smooth_butterworth")
+@add_display_arg
+def smooth_butterworth(obj, **kwargs):
+    cutoff = ipywidgets.FloatSlider(min=0.01, max=1.)
+    order = ipywidgets.IntText()
+    type_ = ipywidgets.Dropdown(options=("low", "high"))
+    color = ipywidgets.ColorPicker()
+    link_traits((obj, "cutoff_frequency_ratio"), (cutoff, "value"))
+    link_traits((obj, "type"), (type_, "value"))
+    link_traits((obj, "order"), (order, "value"))
+    box = ipywidgets.VBox([
+        labelme("Cutoff frequency ration", cutoff),
+        labelme("Type", type_),
+        labelme("Order", order),
+    ])
+    return box
+
+
 @register_ipy_widget(toolkey="Signal1D.contrast_editor")
 @add_display_arg
 def image_constast_editor_ipy(obj, **kwargs):
