@@ -213,7 +213,7 @@ if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
         with open(post_checkout_hook_file, 'w') as pchook:
             pchook.write('#!/bin/sh\n')
             pchook.write('#cleanup_cythonized_and_compiled:\n')
-            pchook.write('rm ' + ' '.join([i for i in cleanup_list]) + '\n')
+            pchook.write('rm ' + ' '.join(['"%s"' % i for i in cleanup_list]) + '\n')
             pchook.write(recythonize_str)
         hook_mode = 0o777  # make it executable
         os.chmod(post_checkout_hook_file, hook_mode)
@@ -229,7 +229,7 @@ if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
             else:
                 hook_lines.append('\n#cleanup_cythonized_and_compiled:\n')
                 hook_lines.append(
-                    'rm ' + ' '.join([i for i in cleanup_list]) + '\n')
+                    'rm ' + ' '.join(['"%s"' % i for i in cleanup_list]) + '\n')
                 hook_lines.append(recythonize_str)
             with open(post_checkout_hook_file, 'w') as pchook:
                 pchook.writelines(hook_lines)
