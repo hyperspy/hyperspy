@@ -1433,12 +1433,10 @@ class EELSSpectrum_mixin:
                           dictionary=dictionary)
         return model
 
-
-class LazyEELSSpectrum(EELSSpectrum_mixin, LazySignal1D):
-
-    pass
-
-
 class EELSSpectrum(EELSSpectrum_mixin, Signal1D):
 
     pass
+class LazyEELSSpectrum(EELSSpectrum, LazySignal1D):
+
+    pass
+
