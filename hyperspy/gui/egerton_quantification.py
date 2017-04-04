@@ -413,7 +413,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
             minimum = max(0, self.argmax - 50)
             maximum = min(len(self.signal()) - 1, self.argmax + 50)
             thresh_label = DerivativeTextParameters(
-                text="$\mathsf{\delta}_\mathsf{max}=$",
+                text=r"$\mathsf{\delta}_\mathsf{max}=$",
                 color="black")
             self.ax.legend([thresh_label], [repr(int(self.derivmax))],
                            handler_map={DerivativeTextParameters:
