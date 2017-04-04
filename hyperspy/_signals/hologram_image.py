@@ -22,8 +22,7 @@ import scipy.constants as constants
 import numpy as np
 from dask.array import Array as daArray
 
-from hyperspy.signals import (Signal2D, BaseSignal, Signal1D)
-from hyperspy._signals.lazy import LazySignal
+from hyperspy.signals import (Signal2D, BaseSignal, Signal1D, LazySignal)
 from hyperspy.misc.holography.reconstruct import (
     reconstruct, estimate_sideband_position, estimate_sideband_size)
 

@@ -145,10 +145,8 @@ class TestModelSaving:
         s = Signal1D(range(100))
         m = s.create_model()
         m.append(Gaussian())
-        m[-1].A.value = 13
-        m[-1].name = 'something'
-        m.append(Gaussian())
-        m[-1].A.value = 3
+        m.components.Gaussian.A.value = 13
+        m.components.Gaussian.name = 'something'
         self.m = m
 
     def test_save_and_load_model(self):
@@ -158,7 +156,6 @@ class TestModelSaving:
         assert hasattr(l.models, 'a')
         n = l.models.restore('a')
         assert n.components.something.A.value == 13
-        assert n.components.Gaussian.A.value == 3
 
     def teardown_method(self, method):
         gc.collect()        # Make sure any memmaps are closed first!

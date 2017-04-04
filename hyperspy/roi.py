@@ -357,8 +357,7 @@ class BaseInteractiveROI(BaseROI):
             navigation_signal = signal
         if navigation_signal is not None:
             if navigation_signal not in self.signal_map:
-                self.add_widget(navigation_signal, color=color,
-                                axes=kwargs.get("axes", None))
+                self.add_widget(navigation_signal, color=color)
         if (self.update not in
                 signal.axes_manager.events.any_axis_changed.connected):
             signal.axes_manager.events.any_axis_changed.connect(

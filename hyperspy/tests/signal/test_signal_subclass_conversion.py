@@ -4,7 +4,6 @@ import pytest
 
 from hyperspy.signals import BaseSignal
 from hyperspy import signals
-from hyperspy import _lazy_signals
 from hyperspy.exceptions import DataDimensionError
 from hyperspy.decorators import lazifyTestClass
 
@@ -28,7 +27,7 @@ class Test1d:
         s.set_signal_type("EELS")
         assert s.metadata.Signal.signal_type == "EELS"
         if s._lazy:
-            _class = _lazy_signals.LazyEELSSpectrum
+            _class = signals.LazyEELSSpectrum
         else:
             _class = signals.EELSSpectrum
         assert isinstance(s, _class)
@@ -64,7 +63,7 @@ class Test2d:
         s = im.as_signal1D(0)
         assert s.metadata.Signal.signal_type == "EELS"
         if s._lazy:
-            _class = _lazy_signals.LazyEELSSpectrum
+            _class = signals.LazyEELSSpectrum
         else:
             _class = signals.EELSSpectrum
         assert isinstance(s, _class)

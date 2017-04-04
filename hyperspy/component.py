@@ -896,14 +896,13 @@ class Component(t.HasTraits):
 
     def _set_name(self, value):
         old_value = self._name
-        if old_value == value:
-            return
         if self.model:
             for component in self.model:
                 if value == component.name:
-                    raise ValueError(
-                        "Another component already has "
-                        "the name " + str(value))
+                    if not (component is self):
+                        raise ValueError(
+                            "Another component already has "
+                            "the name " + str(value))
             self._name = value
             setattr(self.model.components, slugify(
                 value, valid_variable_name=True), self)
@@ -1106,10 +1105,10 @@ class Component(t.HasTraits):
                 is not None else 0
             if parameter.twin is None:
                 if dim <= 1:
-                    print ('%s = %s ± %s %s' % (parameter.name,
-                                                parameter.value,
-                                                parameter.std,
-                                                parameter.units))
+                    return ('%s = %s ± %s %s' % (parameter.name,
+                                                 parameter.value,
+                                                 parameter.std,
+                                                 parameter.units))
 
     def __call__(self):
         """Returns the corresponding model for the current coordinates
@@ -1273,7 +1272,6 @@ class Component(t.HasTraits):
             the parameters of the component, to be later used for setting up
             correct twins.
         """
-
         if dic['_id_name'] == self._id_name:
             id_dict = {}
             for p in dic['parameters']:
@@ -1285,7 +1283,6 @@ class Component(t.HasTraits):
                 else:
                     raise ValueError(
                         "_id_name of parameters in component and dictionary do not match")
-
             load_from_dictionary(self, dic)
             return id_dict
         else:

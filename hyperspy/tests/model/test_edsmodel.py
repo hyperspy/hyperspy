@@ -4,10 +4,8 @@ from hyperspy.misc.test_utils import assert_warns
 
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.elements import elements as elements_db
-from hyperspy.decorators import lazifyTestClass
 
 
-@lazifyTestClass
 class TestlineFit:
 
     def setup_method(self, method):
@@ -167,7 +165,6 @@ class TestlineFit:
             '$\\mathrm{Zn}_{\\mathrm{Ka}}$']
 
 
-@lazifyTestClass
 class TestMaps:
 
     def setup_method(self, method):

@@ -6,7 +6,6 @@ from matplotlib.testing.decorators import cleanup
 
 import hyperspy.api as hs
 from hyperspy.misc.utils import slugify
-from hyperspy.decorators import lazifyTestClass
 
 
 class TestModelJacobians:
@@ -601,7 +600,6 @@ class TestModel2D:
         np.testing.assert_allclose(gt.sigma_y.value, 2.)
 
 
-@lazifyTestClass
 class TestModelFitBinned:
 
     def setup_method(self, method):
@@ -730,7 +728,6 @@ class TestModelFitBinned:
             self.m.fit(method="dummy")
 
 
-@lazifyTestClass
 class TestModelWeighted:
 
     def setup_method(self, method):
@@ -872,7 +869,6 @@ class TestModelScalarVariance:
         np.testing.assert_allclose(self.m.red_chisq.data, 0.86206965)
 
 
-@lazifyTestClass
 class TestModelSignalVariance:
 
     def setup_method(self, method):
@@ -898,7 +894,6 @@ class TestModelSignalVariance:
                                    0.91453032901427167)
 
 
-@lazifyTestClass
 class TestMultifit:
 
     def setup_method(self, method):
@@ -1096,7 +1091,6 @@ class TestAsSignal:
                                                         np.ones((2, 5)) * 2]))
 
 
-@lazifyTestClass
 class TestCreateModel:
 
     def setup_method(self, method):
