@@ -8,6 +8,7 @@ from hyperspy.misc.link_traits import link_traits
 @register_ipy_widget(toolkey="navigation_sliders")
 @add_display_arg
 def ipy_navigation_sliders(obj, **kwargs):
+    continuous_update = ipywidgets.Checkbox(True)
     widgets = []
     for axis in obj:
         iwidget = ipywidgets.IntSlider(
@@ -15,6 +16,8 @@ def ipy_navigation_sliders(obj, **kwargs):
             max=axis.size - 1,
             readout=True,
         )
+        link_traits((continuous_update, "value"),
+                    (iwidget, "continuous_update"))
         link_traits((axis, "index"), (iwidget, "value"))
         vwidget = ipywidgets.FloatSlider(
             min=axis.low_value,
@@ -22,6 +25,8 @@ def ipy_navigation_sliders(obj, **kwargs):
             step=axis.scale,
             # readout_format=".lf"
         )
+        link_traits((continuous_update, "value"),
+                    (vwidget, "continuous_update"))
         link_traits((axis, "value"), (vwidget, "value"))
         link_traits((axis, "high_value"), (vwidget, "max"))
         link_traits((axis, "low_value"), (vwidget, "min"))
@@ -30,6 +35,7 @@ def ipy_navigation_sliders(obj, **kwargs):
         labeled_widget = labelme(str(axis).replace(" ", "_"), bothw)
         link_traits((axis, "name"), (labeled_widget.children[0], "value"))
         widgets.append(labeled_widget)
+    widgets.append(labelme("Continuous update", continuous_update))
     box = ipywidgets.VBox(widgets)
     return box
 
