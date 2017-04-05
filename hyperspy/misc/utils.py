@@ -1034,6 +1034,7 @@ def iterable_not_string(thing):
     return isinstance(thing, collections.Iterable) and \
         not isinstance(thing, str)
 
+
 def signal_range_from_roi(signal_range):
     from hyperspy.roi import SpanROI
     if isinstance(signal_range, SpanROI):

@@ -261,6 +261,7 @@ class EELSSpectrum_mixin:
 
         """
         signal_range = signal_range_from_roi(signal_range)
+
         def substract_from_offset(value, signals):
             if isinstance(value, da.Array):
                 value = value.compute()
