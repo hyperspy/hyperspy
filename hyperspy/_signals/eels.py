@@ -31,8 +31,9 @@ from hyperspy.decorators import only_interactive
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
 from hyperspy.components1d import PowerLaw
-from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
-from hyperspy.misc.utils import without_nans
+from hyperspy.misc.utils import (
+    isiterable, closest_power_of_two, underline, without_nans,
+    signal_range_from_roi)
 from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
@@ -259,6 +260,7 @@ class EELSSpectrum_mixin:
         more information read its docstring.
 
         """
+        signal_range = signal_range_from_roi(signal_range)
         def substract_from_offset(value, signals):
             if isinstance(value, da.Array):
                 value = value.compute()

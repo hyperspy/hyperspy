@@ -32,6 +32,7 @@ from hyperspy.ui_registry import get_gui
 from hyperspy.events import EventSuppressor
 from hyperspy.signal_tools import SpanSelectorInSignal1D
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
+from hyperspy.misc.utils import signal_range_from_roi
 
 
 @add_gui_method(toolkey="Model1D.fit_component")
@@ -471,6 +472,11 @@ class Model1D(BaseModel):
         -----
         To use the full energy range call the function without arguments.
         """
+        try:
+            x1, x2 = signal_range_from_roi(x1)
+        except TypeError:
+            # It was not a ROI, we carry on
+            pass
         i1, i2 = self.axis.value_range_to_indices(x1, x2)
         self._set_signal_range_in_pixels(i1, i2)
 
@@ -497,6 +503,11 @@ class Model1D(BaseModel):
         x2 : None or float
 
         """
+        try:
+            x1, x2 = signal_range_from_roi(x1)
+        except TypeError:
+            # It was not a ROI, we carry on
+            pass
         i1, i2 = self.axis.value_range_to_indices(x1, x2)
         self._remove_signal_range_in_pixels(i1, i2)
 
@@ -527,6 +538,11 @@ class Model1D(BaseModel):
         x2 : None or float
 
         """
+        try:
+            x1, x2 = signal_range_from_roi(x1)
+        except TypeError:
+            # It was not a ROI, we carry on
+            pass
         i1, i2 = self.axis.value_range_to_indices(x1, x2)
         self._add_signal_range_in_pixels(i1, i2)
 
@@ -864,6 +880,7 @@ class Model1D(BaseModel):
             display=True,
             toolkit=None,
             **kwargs):
+        signal_range = signal_range_from_roi(signal_range)
         component = self._get_component(component)
         cf = ComponentFit(self, component, signal_range,
                           estimate_parameters, fit_independent,

@@ -17,30 +17,28 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import math
+
 import matplotlib.pyplot as plt
 import numpy as np
 import dask.array as da
-
-from hyperspy.signal import BaseSignal
-from hyperspy._signals.common_signal1d import CommonSignal1D
-from hyperspy.signal_tools import SpikesRemoval
-from hyperspy.models.model1d import Model1D
-import math
-
 import scipy.interpolate
-try:
-    from scipy.signal import savgol_filter
-    savgol_imported = True
-except ImportError:
-    savgol_imported = False
 import scipy as sp
+from scipy.signal import savgol_filter
+from scipy.ndimage.filters import gaussian_filter1d
 try:
     from statsmodels.nonparametric.smoothers_lowess import lowess
     statsmodels_installed = True
 except:
     statsmodels_installed = False
 
-from hyperspy.misc.utils import stack
+from hyperspy.signal import BaseSignal
+from hyperspy._signals.common_signal1d import CommonSignal1D
+from hyperspy.signal_tools import SpikesRemoval
+from hyperspy.models.model1d import Model1D
+
+
+from hyperspy.misc.utils import stack, signal_range_from_roi
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
 from hyperspy._signals.lazy import lazyerror
@@ -55,7 +53,6 @@ from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.signal_tools import BackgroundRemoval
 from hyperspy.decorators import only_interactive
 from hyperspy.decorators import interactive_range_selector
-from scipy.ndimage.filters import gaussian_filter1d
 from hyperspy.signal_tools import IntegrateArea
 from hyperspy import components1d
 from hyperspy._signals.lazy import LazySignal
@@ -786,6 +783,7 @@ _spikes_diagnosis,
         signal range with integers.
         >>> s_int = s.integrate_in_range(signal_range=(100,120))
         """
+        signal_range = signal_range_from_roi(signal_range)
 
         if signal_range == 'interactive':
             self_copy = self.deepcopy()
@@ -798,6 +796,7 @@ _spikes_diagnosis,
         return integrated_signal1D
 
     def _integrate_in_range_commandline(self, signal_range):
+        signal_range = signal_range_from_roi(signal_range)
         e1 = signal_range[0]
         e2 = signal_range[1]
         integrated_signal1D = self.isig[e1:e2].integrate1D(-1)
@@ -836,9 +835,6 @@ SignalDimensionError if the signal dimension is not 1.
                               window_length=None,
                               differential_order=0,
                               parallel=None, display=True, toolkit=None):
-        if not savgol_imported:
-            raise ImportError("scipy >= 0.14 needs to be installed to use"
-                              "this feature.")
         self._check_signal_dimension_equals_one()
         if (polynomial_order is not None and
                 window_length is not None):
@@ -994,6 +990,7 @@ SignalDimensionError if the signal dimension is not 1.
     def _remove_background_cli(
             self, signal_range, background_estimator, fast=True,
             show_progressbar=None):
+        signal_range = signal_range_from_roi(signal_range)
         from hyperspy.models.model1d import Model1D
         model = Model1D(self)
         model.append(background_estimator)
@@ -1014,6 +1011,7 @@ SignalDimensionError if the signal dimension is not 1.
             polynomial_order=2,
             fast=True,
             show_progressbar=None, display=True, toolkit=None):
+        signal_range = signal_range_from_roi(signal_range)
         self._check_signal_dimension_equals_one()
         if signal_range == 'interactive':
             br = BackgroundRemoval(self)
@@ -1105,6 +1103,11 @@ SignalDimensionError if the signal dimension is not 1.
 
         """
         self._check_signal_dimension_equals_one()
+        try:
+            left_value, right_value = signal_range_from_roi(left_value)
+        except TypeError:
+            # It was not a ROI, we carry on
+            pass
         self.crop(axis=self.axes_manager.signal_axes[0].index_in_axes_manager,
                   start=left_value, end=right_value)
 
