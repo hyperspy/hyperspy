@@ -80,6 +80,8 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
             toolkits.append("ipywidgets")
         if preferences.General.enable_traitsui_gui:
             toolkits.append("traitsui")
+        if not toolkits:
+            return
     else:
         raise ValueError(
             "`toolkit` must be a string, an iterable of strings or None.")
@@ -102,20 +104,23 @@ def get_partial_gui(toolkey):
                        toolkit=None, **kwargs)
     return pg
 
+DISPLAY_DT ="""display: bool
+    If True, display the user interface widgets. If False, return the widgets
+    container in a dictionary, usually for customisation or testing."""
+
+TOOLKIT_DT="""toolkit: str, iterable of strings or None
+    If None (default), all available widgets are displayed or returned. If
+    string, only the widgets of the selected toolkit are displayed if available.
+    If an interable of toolkit strings, the widgets of all listed toolkits are
+    displayed or returned."""
 GUI_DT = """Display or return interactive GUI element if available.
 
 Parameters
 ----------
-display: bool
-    If True, display the user interface widgets. If False, return the widgets
-    container in a dictionary, usually for customisation or testing.
-toolkit: str, iterable of strings or None
-    If None (default), all available widgets are displayed or returned. If
-    string, only the widgets of the selected toolkit are displayed if available.
-    If an interable of toolkit strings, the widgets of all listed toolkits are
-    displayed or returned.
+%s
+%s
 
-"""
+""" % (DISPLAY_DT, TOOLKIT_DT)
 
 
 def add_gui_method(toolkey):

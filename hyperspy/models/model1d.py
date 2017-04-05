@@ -31,7 +31,7 @@ from hyperspy.drawing.widgets import VerticalLineWidget, LabelWidget
 from hyperspy.ui_registry import get_gui
 from hyperspy.events import EventSuppressor
 from hyperspy.signal_tools import SpanSelectorInSignal1D
-from hyperspy.ui_registry import add_gui_method
+from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 
 
 @add_gui_method(toolkey="Model1D.fit_component")
@@ -861,50 +861,55 @@ class Model1D(BaseModel):
             estimate_parameters=True,
             fit_independent=False,
             only_current=True,
+            display=True,
+            toolkit=None,
             **kwargs):
-        """Fit just the given component in the given signal range.
-
-        This method is useful to obtain starting parameters for the
-        components. Any keyword arguments are passed to the fit method.
-
-        Parameters
-        ----------
-        component : component instance
-            The component must be in the model, otherwise an exception
-            is raised. The component can be specified by name, index or itself.
-        signal_range : {'interactive', (left_value, right_value), None}
-            If 'interactive' the signal range is selected using the span
-             selector on the spectrum plot. The signal range can also
-             be manually specified by passing a tuple of floats. If None
-             the current signal range is used.
-        estimate_parameters : bool, default True
-            If True will check if the component has an
-            estimate_parameters function, and use it to estimate the
-            parameters in the component.
-        fit_independent : bool, default False
-            If True, all other components are disabled. If False, all other
-            component paramemeters are fixed.
-
-        Examples
-        --------
-        Signal range set interactivly
-
-        >>> s = hs.signals.Signal1D([0,1,2,4,8,4,2,1,0])
-        >>> m = s.create_model()
-        >>> g1 = hs.model.components1D.Gaussian()
-        >>> m.append(g1)
-        >>> m.fit_component(g1)
-
-        Signal range set through direct input
-
-        >>> m.fit_component(g1, signal_range=(1,7))
-
-        """
         component = self._get_component(component)
         cf = ComponentFit(self, component, signal_range,
                           estimate_parameters, fit_independent,
                           only_current, **kwargs)
         if signal_range == "interactive":
-            return cf.gui()
+            return cf.gui(display=display, toolkit=toolkit)
         else:
             cf.apply()
+    fit_component.__doc__ = \
+"""Fit just the given component in the given signal range.
+
+This method is useful to obtain starting parameters for the
+components. Any keyword arguments are passed to the fit method.
+
+Parameters
+----------
+component : component instance
+    The component must be in the model, otherwise an exception
+    is raised. The component can be specified by name, index or itself.
+signal_range : {'interactive', (left_value, right_value), None}
+    If 'interactive' the signal range is selected using the span
+     selector on the spectrum plot. The signal range can also
+     be manually specified by passing a tuple of floats. If None
+     the current signal range is used.
+estimate_parameters : bool, default True
+    If True will check if the component has an
+    estimate_parameters function, and use it to estimate the
+    parameters in the component.
+fit_independent : bool, default False
+    If True, all other components are disabled. If False, all other
+    component paramemeters are fixed.
+%s
+%s
+
+Examples
+--------
+Signal range set interactivly
+
+>>> s = hs.signals.Signal1D([0,1,2,4,8,4,2,1,0])
+>>> m = s.create_model()
+>>> g1 = hs.model.components1D.Gaussian()
+>>> m.append(g1)
+>>> m.fit_component(g1)
+
+Signal range set through direct input
+
+>>> m.fit_component(g1, signal_range=(1,7))
+
+""" % (DISPLAY_DT, TOOLKIT_DT)
