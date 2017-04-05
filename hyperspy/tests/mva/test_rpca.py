@@ -9,7 +9,7 @@ class TestRPCA:
     def setup_method(self, method):
         # Define shape etc.
         m = 256  # Dimensionality
-        n = 256  # Number of samples
+        n = 250  # Number of samples
         r = 3
         s = 0.01
 
@@ -106,6 +106,15 @@ class TestORPCA:
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         assert normX < self.tol
+
+    def test_fast(self):
+        X, E, U, S, V = orpca(self.X, rank=self.rank, fast=True)
+        # Only check shapes
+        assert X.shape == (self.m, self.n)
+        assert E.shape == (self.m, self.n)
+        assert U.shape == (self.m, self.rank)
+        assert S.shape == (self.rank,)
+        assert V.shape == (self.n, self.rank)
 
     def test_method_BCD(self):
         X, E, U, S, V = orpca(self.X, rank=self.rank, method='BCD')
