@@ -69,12 +69,18 @@ def register_toolkey(toolkey):
 def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
     error = "There is no user interface registered for this feature."
     from hyperspy.ui_registry import UI_REGISTRY
-    toolkits = None
+    from hyperspy.defaults_parser import preferences
     if isinstance(toolkit, str):
         toolkits = (toolkit,)
     elif isiterable(toolkit):
         toolkits = toolkit
-    elif toolkit is not None:
+    elif toolkit is None:
+        toolkits = []
+        if preferences.General.enable_ipywidgets_gui:
+            toolkits.append("ipywidgets")
+        if preferences.General.enable_traitsui_gui:
+            toolkits.append("traitsui")
+    else:
         raise ValueError(
             "`toolkit` must be a string, an iterable of strings or None.")
     if toolkey not in UI_REGISTRY or not UI_REGISTRY[toolkey]:

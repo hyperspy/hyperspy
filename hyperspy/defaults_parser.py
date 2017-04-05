@@ -104,6 +104,14 @@ class GeneralConfig(t.HasTraits):
         True,
         desc='If enabled, HyperSpy will prompt the user when options are '
         'available, otherwise it will use the default values if possible')
+    enable_ipywidgets_gui = t.CBool(
+        True,
+        desc="Display ipywidgets in the Jupyter Notebook. "
+        "Requires installing ipywidgets.")
+    enable_traitsui_gui = t.CBool(
+        True,
+        desc="Display traitsui user interface elements. "
+        "Requires installing traitsui.")
     logger_on = t.CBool(
         False,
         label='Automatic logging',
