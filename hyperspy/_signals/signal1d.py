@@ -348,7 +348,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                            signal_mask=signal_mask)
         return sr.gui(display=display, toolkit=toolkit)
     spikes_removal_tool.__doc__ =\
-"""Graphical interface to remove spikes from EELS spectra.
+        """Graphical interface to remove spikes from EELS spectra.
 
 Parameters
 ----------
@@ -809,7 +809,7 @@ _spikes_diagnosis,
         calibration = Signal1DCalibration(self)
         return calibration.gui(display=display, toolkit=toolkit)
     calibrate.__doc__ = \
-"""Calibrate the spectral dimension using a gui.
+        """Calibrate the spectral dimension using a gui.
 It displays a window where the new calibration can be set by:
 * Setting the offset, units and scale directly
 * Selection a range by dragging the mouse on the spectrum figure
@@ -856,7 +856,7 @@ SignalDimensionError if the signal dimension is not 1.
                 smoother.window_length = window_length
             return smoother.gui(display=display, toolkit=toolkit)
         smooth_savitzky_golay.__doc__ = \
-"""Apply a Savitzky-Golay filter to the data in place.
+            """Apply a Savitzky-Golay filter to the data in place.
 If `polynomial_order` or `window_length` or `differential_order` are
 None the method is run in interactive mode.
 Parameters
@@ -907,7 +907,7 @@ More information about the filter in `scipy.signal.savgol_filter`.
                      ragged=False,
                      parallel=parallel)
     smooth_lowess.__doc__ = \
-"""Lowess data smoothing in place.
+        """Lowess data smoothing in place.
 If `smoothing_parameter` or `number_of_iterations` are None the method
 is run in interactive mode.
 Parameters
@@ -948,7 +948,7 @@ is required for this method.
                      show_progressbar=show_progressbar,
                      parallel=parallel)
     smooth_tv.__doc__ = \
-"""Total variation data smoothing in place.
+        """Total variation data smoothing in place.
 Parameters
 ----------
 smoothing_parameter: float or None
@@ -979,7 +979,7 @@ SignalDimensionError if the signal dimension is not 1.
         else:
             return smoother.gui(display=display, toolkit=toolkit)
     filter_butterworth.__doc__ = \
-"""Butterworth filter in place.
+        """Butterworth filter in place.
 
 Parameters
 ----------
@@ -1041,7 +1041,7 @@ SignalDimensionError if the signal dimension is not 1.
                 show_progressbar=show_progressbar)
             return spectra
     remove_background.__doc__ = \
-"""Remove the background, either in place using a gui or returned as a new
+        """Remove the background, either in place using a gui or returned as a new
 spectrum using the command line.
 Parameters
 ----------
@@ -1081,7 +1081,6 @@ Raises
 ------
 SignalDimensionError if the signal dimension is not 1.
 """ % (DISPLAY_DT, TOOLKIT_DT)
-
 
     @interactive_range_selector
     def crop_signal1D(self, left_value=None, right_value=None,):

@@ -379,7 +379,7 @@ class ImagePlot(BlittedFigure):
         ceditor = ImageContrastEditor(self)
         return ceditor.gui(display=display, toolkit=toolkit)
     adjust_contrast.__doc__ = \
-"""Display widgets to adjust image contrast if available.
+        """Display widgets to adjust image contrast if available.
 Parameters
 ----------
 %s

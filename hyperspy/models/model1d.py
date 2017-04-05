@@ -873,7 +873,7 @@ class Model1D(BaseModel):
         else:
             cf.apply()
     fit_component.__doc__ = \
-"""Fit just the given component in the given signal range.
+        """Fit just the given component in the given signal range.
 
 This method is useful to obtain starting parameters for the
 components. Any keyword arguments are passed to the fit method.
