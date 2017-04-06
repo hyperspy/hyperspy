@@ -187,8 +187,14 @@ def load(filenames=None,
                         n = len(obj)
                     else:
                         n = 1
+                        # read calibration of first signal
+                        axis0 = obj.axes_manager.as_dictionary()["axis-0"]
+                        scale = axis0["scale"]
+                        offset = axis0["offset"]
+                        units = axis0["units"]
                     # Initialize signal 2D list:
                     signals = [[] for j in range(n)]
+
                 else:
                     # Check that number of signals per file doesn't change
                     # for other files:
@@ -207,7 +213,21 @@ def load(filenames=None,
                             (f_error_fmt % (i, len(obj), filename)))
                 # Append loaded signals to 2D list:
                 if n == 1:
-                    signals[0].append(obj)
+
+                    this_axis0 = obj.axes_manager.as_dictionary()["axis-0"]
+                    this_scale = this_axis0["scale"]
+                    this_offset = this_axis0["offset"]
+                    this_units = this_axis0["units"]
+                    if i > 0: # check if calibration is same as in first signal
+                        if scale != this_axis0["scale"] or \
+                           offset != this_axis0["offset"] or \
+                           units != this_axis0["units"]:
+                               # warn and dont append
+                               _logger.warning('wrong calibration encountered while loading signals from ' + filename)
+                        else:
+                            signals[0].append(obj)
+                    else:
+                        signals[0].append(obj)
                 elif n > 1:
                     for j in range(n):
                         signals[j].append(obj[j])
