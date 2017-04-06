@@ -442,6 +442,10 @@ class SmoothingTV(Smoothing):
             show_progressbar=False)
 
         return self.single_spectrum.data
+    def apply(self):
+        self.signal.smooth_tv(
+            smoothing_parameter=self.smoothing_parameter)
+        self.signal._replot()
 
 
 @add_gui_method(toolkey="Signal1D.smooth_butterworth")
