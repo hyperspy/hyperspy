@@ -442,6 +442,7 @@ class SmoothingTV(Smoothing):
             show_progressbar=False)
 
         return self.single_spectrum.data
+
     def apply(self):
         self.signal.smooth_tv(
             smoothing_parameter=self.smoothing_parameter)
