@@ -101,7 +101,7 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
 def get_partial_gui(toolkey):
     def pg(self, display=True, toolkit=None, **kwargs):
         return get_gui(self, toolkey=toolkey, display=display,
-                       toolkit=None, **kwargs)
+                       toolkit=toolkit, **kwargs)
     return pg
 
 DISPLAY_DT = """display: bool
