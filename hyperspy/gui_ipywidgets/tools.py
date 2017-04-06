@@ -359,6 +359,7 @@ def remove_background_ipy(obj, **kwargs):
         help,
         ipywidgets.HBox((apply, close)),
     ])
+
     def on_apply_clicked(b):
         obj.apply()
         box.close()
