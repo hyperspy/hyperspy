@@ -5,3 +5,4 @@ import hyperspy.gui_ipywidgets.axes
 import hyperspy.gui_ipywidgets.model
 import hyperspy.gui_ipywidgets.tools
 import hyperspy.gui_ipywidgets.preferences
+import hyperspy.gui_ipywidgets.roi

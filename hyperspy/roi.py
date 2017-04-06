@@ -52,6 +52,7 @@ from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.axes import DataAxis
 from hyperspy.drawing import widgets
+from hyperspy.ui_registry import add_gui_method
 
 
 class BaseROI(t.HasTraits):
@@ -485,6 +486,7 @@ class BasePointROI(BaseInteractiveROI):
         return s
 
 
+@add_gui_method(toolkey="Point1DROI")
 class Point1DROI(BasePointROI):
 
     """Selects a single point in a 1D space. The coordinate of the point in the
@@ -541,6 +543,7 @@ class Point1DROI(BasePointROI):
             self.value)
 
 
+@add_gui_method(toolkey="Point2DROI")
 class Point2DROI(BasePointROI):
 
     """Selects a single point in a 2D space. The coordinates of the point in
@@ -581,6 +584,7 @@ class Point2DROI(BasePointROI):
             self.x, self.y)
 
 
+@add_gui_method(toolkey="SpanROI")
 class SpanROI(BaseInteractiveROI):
 
     """Selects a range in a 1D space. The coordinates of the range in
@@ -633,6 +637,7 @@ class SpanROI(BaseInteractiveROI):
             self.right)
 
 
+@add_gui_method(toolkey="RectangularROI")
 class RectangularROI(BaseInteractiveROI):
 
     """Selects a range in a 2D space. The coordinates of the range in
@@ -770,6 +775,7 @@ class RectangularROI(BaseInteractiveROI):
             self.bottom)
 
 
+@add_gui_method(toolkey="CircleROI")
 class CircleROI(BaseInteractiveROI):
 
     cx, cy, r, r_inner = (t.CFloat(t.Undefined),) * 4
@@ -930,6 +936,7 @@ class CircleROI(BaseInteractiveROI):
                 self.r_inner)
 
 
+@add_gui_method(toolkey="Line2DROI")
 class Line2DROI(BaseInteractiveROI):
 
     x1, y1, x2, y2, linewidth = (t.CFloat(t.Undefined),) * 5
