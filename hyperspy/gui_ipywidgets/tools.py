@@ -132,6 +132,12 @@ def smooth_savitzky_golay_ipy(obj, **kwargs):
     window_length.observe(update_bound, "value")
     differential_order = ipywidgets.IntSlider(value=0, min=0, max=10)
     color = ipywidgets.ColorPicker()
+    close = ipywidgets.Button(
+        description="Close",
+        tooltip="Close widget and remove the smoothed line from the signal figure.")
+    apply = ipywidgets.Button(
+        description="Apply",
+        tooltip="Perform the operation using the selected range.")
     link_traits((obj, "polynomial_order"), (polynomial_order, "value"))
     link_traits((obj, "window_length"), (window_length, "value"))
     link_traits((obj, "differential_order"), (differential_order, "value"))
@@ -143,7 +149,15 @@ def smooth_savitzky_golay_ipy(obj, **kwargs):
         labelme("polynomial order", polynomial_order),
         labelme("Differential order", differential_order),
         labelme("Color", color),
+        ipywidgets.HBox((apply, close))
     ])
+    def on_apply_clicked(b):
+        obj.apply()
+    apply.on_click(on_apply_clicked)
+    def on_close_clicked(b):
+        obj.close()
+        box.close()
+    close.on_click(on_close_clicked)
     return box
 
 
@@ -153,6 +167,12 @@ def smooth_lowess_ipy(obj, **kwargs):
     smoothing_parameter = ipywidgets.FloatSlider(min=0, max=1)
     number_of_iterations = ipywidgets.IntText()
     color = ipywidgets.ColorPicker()
+    close = ipywidgets.Button(
+        description="Close",
+        tooltip="Close widget and remove the smoothed line from the signal figure.")
+    apply = ipywidgets.Button(
+        description="Apply",
+        tooltip="Perform the operation using the selected range.")
     link_traits((obj, "smoothing_parameter"), (smoothing_parameter, "value"))
     link_traits((obj, "number_of_iterations"), (number_of_iterations, "value"))
     link_traits((obj, "line_color_ipy"), (color, "value"))
@@ -160,7 +180,15 @@ def smooth_lowess_ipy(obj, **kwargs):
         labelme("Smoothing parameter", smoothing_parameter),
         labelme("Number of iterations", number_of_iterations),
         labelme("Color", color),
+        ipywidgets.HBox((apply, close))
     ])
+    def on_apply_clicked(b):
+        obj.apply()
+    apply.on_click(on_apply_clicked)
+    def on_close_clicked(b):
+        obj.close()
+        box.close()
+    close.on_click(on_close_clicked)
     return box
 
 
@@ -171,6 +199,12 @@ def smooth_tv_ipy(obj, **kwargs):
     smoothing_parameter_max = ipywidgets.FloatText(
         value=smoothing_parameter.max)
     color = ipywidgets.ColorPicker()
+    close = ipywidgets.Button(
+        description="Close",
+        tooltip="Close widget and remove the smoothed line from the signal figure.")
+    apply = ipywidgets.Button(
+        description="Apply",
+        tooltip="Perform the operation using the selected range.")
     link_traits((obj, "smoothing_parameter"), (smoothing_parameter, "value"))
     link_traits((smoothing_parameter_max, "value"),
                 (smoothing_parameter, "max"))
@@ -179,7 +213,15 @@ def smooth_tv_ipy(obj, **kwargs):
         labelme("Weight", smoothing_parameter),
         labelme("Weight max", smoothing_parameter_max),
         labelme("Color", color),
+        ipywidgets.HBox((apply, close))
     ])
+    def on_apply_clicked(b):
+        obj.apply()
+    apply.on_click(on_apply_clicked)
+    def on_close_clicked(b):
+        obj.close()
+        box.close()
+    close.on_click(on_close_clicked)
     return box
 
 
@@ -190,6 +232,12 @@ def smooth_butterworth(obj, **kwargs):
     order = ipywidgets.IntText()
     type_ = ipywidgets.Dropdown(options=("low", "high"))
     color = ipywidgets.ColorPicker()
+    close = ipywidgets.Button(
+        description="Close",
+        tooltip="Close widget and remove the smoothed line from the signal figure.")
+    apply = ipywidgets.Button(
+        description="Apply",
+        tooltip="Perform the operation using the selected range.")
     link_traits((obj, "cutoff_frequency_ratio"), (cutoff, "value"))
     link_traits((obj, "type"), (type_, "value"))
     link_traits((obj, "order"), (order, "value"))
@@ -197,7 +245,15 @@ def smooth_butterworth(obj, **kwargs):
         labelme("Cutoff frequency ration", cutoff),
         labelme("Type", type_),
         labelme("Order", order),
+        ipywidgets.HBox((apply, close))
     ])
+    def on_apply_clicked(b):
+        obj.apply()
+    apply.on_click(on_apply_clicked)
+    def on_close_clicked(b):
+        obj.close()
+        box.close()
+    close.on_click(on_close_clicked)
     return box
 
 

@@ -851,8 +851,8 @@ SignalDimensionError if the signal dimension is not 1.
             if window_length is not None:
                 smoother.window_length = window_length
             return smoother.gui(display=display, toolkit=toolkit)
-        smooth_savitzky_golay.__doc__ = \
-            """Apply a Savitzky-Golay filter to the data in place.
+    smooth_savitzky_golay.__doc__ = \
+"""Apply a Savitzky-Golay filter to the data in place.
 If `polynomial_order` or `window_length` or `differential_order` are
 None the method is run in interactive mode.
 Parameters
