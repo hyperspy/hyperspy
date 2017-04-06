@@ -111,7 +111,6 @@ for leftover in raw_extensions:
                     path +
                     '.cpython-*.so'))
 
-
 def count_c_extensions(extensions):
     c_num = 0
     for extension in extensions:
@@ -201,7 +200,7 @@ def find_post_checkout_cleanup_line():
 # after changing branches:
 if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
     exec_str = sys.executable
-    recythonize_str = ' '.join([exec_str,
+    recythonize_str = ' '.join(['"%s"'%exec_str,'"%s"'%
                                 os.path.join(setup_path, 'setup.py'),
                                 'clean --all build_ext --inplace\n'])
     if os.name == 'nt':
@@ -224,7 +223,7 @@ if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
             line_n = find_post_checkout_cleanup_line()
             if line_n is not None:
                 hook_lines[line_n] = 'rm ' + \
-                    ' '.join([i for i in cleanup_list]) + '\n'
+                    ' '.join(['"%s"' % i for i in cleanup_list]) + '\n'
                 hook_lines[line_n + 1] = recythonize_str
             else:
                 hook_lines.append('\n#cleanup_cythonized_and_compiled:\n')
