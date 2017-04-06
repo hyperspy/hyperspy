@@ -1,3 +1,5 @@
+import functools
+
 from traitlets import TraitError as TraitletError
 from ipywidgets import (
     Accordion, FloatSlider, FloatText, Layout, HBox, VBox, Checkbox, Label,
