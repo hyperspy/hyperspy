@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import functools
 
 import numpy as np
 import scipy as sp
@@ -463,6 +464,11 @@ class ButterworthFilter(Smoothing):
                                 self.type)
         smoothed = sp.signal.filtfilt(b, a, self.signal())
         return smoothed
+    def apply(self):
+        b, a = sp.signal.butter(self.order, self.cutoff_frequency_ratio,
+                                self.type)
+        f = functools.partial(sp.signal.filtfilt, b, a)
+        self.signal.map(f)
 
 
 class Load(t.HasTraits):
