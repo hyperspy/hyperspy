@@ -17,12 +17,14 @@ def span_roi_ipy(obj, **kwargs):
     container = ipywidgets.HBox([left, right])
     return container
 
+
 @register_ipy_widget(toolkey="Point1DROI")
 @add_display_arg
 def point1d_roi_ipy(obj, **kwargs):
     value = ipywidgets.FloatText(description="value")
     link_traits((obj, "value"), (value, "value"))
     return value
+
 
 @register_ipy_widget(toolkey="Point2DROI")
 @add_display_arg
@@ -33,6 +35,7 @@ def point_2d_ipy(obj, **kwargs):
     link_traits((obj, "y"), (y, "value"))
     container = ipywidgets.HBox([x, y])
     return container
+
 
 @register_ipy_widget(toolkey="RectangularROI")
 @add_display_arg
@@ -46,9 +49,10 @@ def rectangular_roi_ipy(obj, **kwargs):
     bottom = ipywidgets.FloatText(description="bottom")
     link_traits((obj, "top"), (top, "value"))
     link_traits((obj, "bottom"), (bottom, "value"))
-    container2 = ipywidgets.HBox([top,  bottom])
+    container2 = ipywidgets.HBox([top, bottom])
     container = ipywidgets.VBox([container1, container2])
     return container
+
 
 @register_ipy_widget(toolkey="CircleROI")
 @add_display_arg
@@ -65,6 +69,7 @@ def circle_roi_ipy(obj, **kwargs):
     container2 = ipywidgets.HBox([radius, inner_radius])
     container = ipywidgets.VBox([container1, container2])
     return container
+
 
 @register_ipy_widget(toolkey="Line2DROI")
 @add_display_arg
