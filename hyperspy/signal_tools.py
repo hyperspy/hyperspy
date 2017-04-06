@@ -710,13 +710,18 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.bg_line.update()
 
     def apply(self):
-        self.signal._plot.auto_update_plot = False
+        if self.signal._plot:
+            self.signal._plot.close()
+            plot = True
+        else:
+            plot = False
         new_spectra = self.signal._remove_background_cli(
             (self.ss_left_value, self.ss_right_value),
             self.background_estimator, fast=self.fast)
         self.signal.data = new_spectra.data
-        self.signal._replot()
-        self.signal._plot.auto_update_plot = True
+        self.signal.events.data_changed.trigger(self)
+        if plot:
+            self.signal.plot()
 
 
 SPIKES_REMOVAL_INSTRUCTIONS = (

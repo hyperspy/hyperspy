@@ -331,9 +331,6 @@ def remove_background_ipy(obj, **kwargs):
         description="Apply",
         tooltip="Remove the background in the whole dataset.")
 
-    def on_apply_clicked(b):
-        obj.apply()
-    apply.on_click(on_apply_clicked)
     polynomial_order = ipywidgets.IntSlider(min=1, max=10)
     labeled_polyorder = labelme("Polynomial order", polynomial_order)
     background_type = enum2dropdown(obj.traits()["background_type"])
@@ -362,6 +359,10 @@ def remove_background_ipy(obj, **kwargs):
         help,
         ipywidgets.HBox((apply, close)),
     ])
+    def on_apply_clicked(b):
+        obj.apply()
+        box.close()
+    apply.on_click(on_apply_clicked)
 
     def on_close_clicked(b):
         obj.span_selector_switch(False)
