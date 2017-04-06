@@ -151,9 +151,11 @@ def smooth_savitzky_golay_ipy(obj, **kwargs):
         labelme("Color", color),
         ipywidgets.HBox((apply, close))
     ])
+
     def on_apply_clicked(b):
         obj.apply()
     apply.on_click(on_apply_clicked)
+
     def on_close_clicked(b):
         obj.close()
         box.close()
@@ -182,9 +184,11 @@ def smooth_lowess_ipy(obj, **kwargs):
         labelme("Color", color),
         ipywidgets.HBox((apply, close))
     ])
+
     def on_apply_clicked(b):
         obj.apply()
     apply.on_click(on_apply_clicked)
+
     def on_close_clicked(b):
         obj.close()
         box.close()
@@ -215,9 +219,11 @@ def smooth_tv_ipy(obj, **kwargs):
         labelme("Color", color),
         ipywidgets.HBox((apply, close))
     ])
+
     def on_apply_clicked(b):
         obj.apply()
     apply.on_click(on_apply_clicked)
+
     def on_close_clicked(b):
         obj.close()
         box.close()
@@ -247,9 +253,11 @@ def smooth_butterworth(obj, **kwargs):
         labelme("Order", order),
         ipywidgets.HBox((apply, close))
     ])
+
     def on_apply_clicked(b):
         obj.apply()
     apply.on_click(on_apply_clicked)
+
     def on_close_clicked(b):
         obj.close()
         box.close()
