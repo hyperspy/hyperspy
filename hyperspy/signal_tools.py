@@ -464,6 +464,7 @@ class ButterworthFilter(Smoothing):
                                 self.type)
         smoothed = sp.signal.filtfilt(b, a, self.signal())
         return smoothed
+
     def apply(self):
         b, a = sp.signal.butter(self.order, self.cutoff_frequency_ratio,
                                 self.type)
