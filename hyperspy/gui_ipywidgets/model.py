@@ -41,15 +41,6 @@ def _interactive_slider_bounds(obj, index=None):
     return {'min': _min, 'max': _max, 'step': step}
 
 
-def _interactive_tuple_update(obj, value=None, index=None):
-    """Callback function for the widgets, to update the value
-    """
-    if value is not None:
-        if index is None:
-            obj.value = value['new']
-        else:
-            obj.value = obj.value[:index] + (value['new'],) +\
-                obj.value[index + 1:]
 
 
 def _get_value_widget(obj, index=None):
@@ -87,9 +78,12 @@ def _get_value_widget(obj, index=None):
     thismin.observe(on_min_change, names='value')
     thismax.observe(on_max_change, names='value')
     if index is not None:  # value is tuple, expanding
-        this_observed = functools.partial(_interactive_tuple_update,
-                                          index=index, obj=obj)
-        widget.observe(this_observed, names='value')
+        def _interactive_tuple_update(value):
+            """Callback function for the widgets, to update the value
+            """
+            obj.value = obj.value[:index] + (value['new'],) +\
+                obj.value[index + 1:]
+        widget.observe(_interactive_tuple_update, names='value')
     else:
         link_traits((obj, "value"), (widget, "value"))
 
@@ -107,9 +101,28 @@ def get_parameter_widget(obj, **kwargs):
     if obj._number_of_elements == 1:
         container = _get_value_widget(obj)
     else:
-        children = [_get_value_widget(obj=obj, index=i) for i in
-                    range(obj._number_of_elements)]
-        container = Accordion([VBox(children)], descrition=obj.name)
+        par_widgets = [_get_value_widget(obj=obj, index=i)
+                       for i in range(obj._number_of_elements)]
+        update = Button(
+            description="Update",
+            tooltip="Unlike most other widgets, the multivalue parameter "
+            "widgets do not update automatically when the value of the "
+            "changes by other means. Use this button to update the values"
+            "manually")
+        def on_update_clicked(b):
+            for value, container in zip(obj.value, par_widgets):
+
+                minwidget = container.children[0]
+                vwidget = container.children[1]
+                maxwidget = container.children[2]
+                if value < vwidget.min:
+                    minwidget.value = value
+                elif value > vwidget.max:
+                    maxwidget.value = value
+                vwidget.value = value
+        update.on_click(on_update_clicked)
+        container = Accordion([VBox([update] + par_widgets)],
+                              descrition=obj.name)
         container.set_title(0, obj.name)
 
     return container
