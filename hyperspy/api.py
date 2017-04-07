@@ -85,12 +85,12 @@ try:
     # Register ipywidgets by importing the module
     import hyperspy.gui_ipywidgets
 except ImportError:
-    _logger.info("ipywidgets not installed, ipywidgets UI elements disabled.")
+    _logger.warning("ipywidgets not installed, ipywidgets UI elements disabled.")
 try:
     # Register traitui UI elements by importing the module
     import hyperspy.gui_traitsui
 except ImportError:
-    _logger.info("traitsui not installed, traitsui UI elements disabled.")
+    _logger.warning("traitsui not installed, traitsui UI elements disabled.")
 
 
 def get_configuration_directory_path():
