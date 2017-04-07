@@ -16,6 +16,7 @@ import types
 
 from hyperspy.misc.utils import isiterable
 
+
 UI_REGISTRY = {}
 
 toolkit_registry = set()
@@ -67,7 +68,6 @@ def register_toolkey(toolkey):
 
 
 def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
-    error = "There is no user interface registered for this feature."
     from hyperspy.ui_registry import UI_REGISTRY
     from hyperspy.defaults_parser import preferences
     if isinstance(toolkit, str):
@@ -86,14 +86,25 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
         raise ValueError(
             "`toolkit` must be a string, an iterable of strings or None.")
     if toolkey not in UI_REGISTRY or not UI_REGISTRY[toolkey]:
-        raise NotImplementedError(error)
+        raise NotImplementedError(
+            "There is no user interface registered for this feature."
+            "Try installing ipywidgets or traitsui.")
     if not display:
         widgets = {}
+    available_toolkits = set()
+    used_toolkits = set()
     for toolkit, f in UI_REGISTRY[toolkey].items():
-        if toolkits is None or toolkit in toolkits:
+        if toolkit in toolkits:
+            used_toolkits.add(toolkit)
             thisw = f(obj=self, display=display, **kwargs)
             if not display:
                 widgets[toolkit] = thisw
+        else:
+            available_toolkits.add(toolkit)
+    if not used_toolkits and available_toolkits:
+        raise NotImplementedError(
+            "The %s toolkits are not available for this functionality, "
+            "try %s" % (toolkits, available_toolkits))
     if not display:
         return widgets
 
