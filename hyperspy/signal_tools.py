@@ -106,7 +106,11 @@ class LineInSignal1D(t.HasTraits):
     position = t.Float()
     is_ok = t.Bool(False)
     on = t.Bool(False)
-    color = t.Color("black")
+    try:
+        color = t.Color("black")
+    except ModuleNotFoundError: # traitsui is not installed
+        pass
+    color_str = t.Str("black")
 
     def __init__(self, signal):
         if signal.axes_manager.signal_dimension != 1:
@@ -205,21 +209,30 @@ class Signal1DRangeSelector(SpanSelectorInSignal1D):
 
 
 class Smoothing(t.HasTraits):
-    line_color = t.Color("blue")
+    try:
+        line_color = t.Color("blue")
+    except ModuleNotFoundError:
+        # traitsui is required to define this trait so it is not defined when
+        # traitsui is not installed.
+        pass
     line_color_ipy = t.Str("blue")
     differential_order = t.Int(0)
 
     @property
     def line_color_rgb(self):
-        try:
-            # PyQt and WX
-            return np.array(self.line_color.Get()) / 255.
-        except AttributeError:
+        if hasattr(self, "line_color"):
             try:
-                # PySide
-                return np.array(self.line_color.getRgb()) / 255.
-            except:
-                return matplotlib.colors.to_rgb(self.line_color_ipy)
+                # PyQt and WX
+                return np.array(self.line_color.Get()) / 255.
+            except AttributeError:
+                try:
+                    # PySide
+                    return np.array(self.line_color.getRgb()) / 255.
+                except:
+                    return matplotlib.colors.to_rgb(self.line_color_ipy)
+        else:
+            return matplotlib.colors.to_rgb(self.line_color_ipy)
+
 
     def __init__(self, signal):
         self.ax = None
@@ -270,7 +283,10 @@ class Smoothing(t.HasTraits):
         self.smooth_diff_line.axes_manager = self.signal.axes_manager
 
     def _line_color_ipy_changed(self):
-        self.line_color = str(self.line_color_ipy)
+        if hasattr(self, "line_color"):
+            self.line_color = str(self.line_color_ipy)
+        else:
+            self._line_color_changed(None,None)
 
     def turn_diff_line_off(self):
         if self.smooth_diff_line is None:
