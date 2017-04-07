@@ -108,7 +108,7 @@ class LineInSignal1D(t.HasTraits):
     on = t.Bool(False)
     try:
         color = t.Color("black")
-    except ModuleNotFoundError: # traitsui is not installed
+    except ModuleNotFoundError:  # traitsui is not installed
         pass
     color_str = t.Str("black")
 
@@ -233,7 +233,6 @@ class Smoothing(t.HasTraits):
         else:
             return matplotlib.colors.to_rgb(self.line_color_ipy)
 
-
     def __init__(self, signal):
         self.ax = None
         self.data_line = None
@@ -286,7 +285,7 @@ class Smoothing(t.HasTraits):
         if hasattr(self, "line_color"):
             self.line_color = str(self.line_color_ipy)
         else:
-            self._line_color_changed(None,None)
+            self._line_color_changed(None, None)
 
     def turn_diff_line_off(self):
         if self.smooth_diff_line is None:
