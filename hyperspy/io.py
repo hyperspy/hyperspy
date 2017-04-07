@@ -359,7 +359,7 @@ def load(filenames=None,
                             signals[0].append(obj)
                         else: # warn and dont append
                             _logger.warning('wrong calibration encountered while loading signals from ' + filename)
-                elif n > 1:
+                else:
                     for j in range(n):
                         signals[j].append(obj[j])
             # Next, merge the signals in the `stack_axis` direction:
