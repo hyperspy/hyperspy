@@ -17,7 +17,7 @@ def _interactive_slider_bounds(obj, index=None):
     be changed later by the user.
 
     """
-    fraction = 10.
+    pad = 10.
     _min, _max, step = None, None, None
     value = obj.value if index is None else obj.value[index]
     if obj.bmin is not None:
@@ -25,9 +25,9 @@ def _interactive_slider_bounds(obj, index=None):
     if obj.bmax is not None:
         _max = obj.bmax
     if _max is None and _min is not None:
-        _max = value + fraction * (value - _min)
+        _max = value + pad
     if _min is None and _max is not None:
-        _min = value - fraction * (_max - value)
+        _min = value - pad
     if _min is None and _max is None:
         if obj is obj.component._position:
             axis = obj._axes_manager.signal_axes[-1]
@@ -35,8 +35,8 @@ def _interactive_slider_bounds(obj, index=None):
             _max = axis.axis.max()
             step = np.abs(axis.scale)
         else:
-            _max = value + np.abs(value * fraction)
-            _min = value - np.abs(value * fraction)
+            _max = value + pad
+            _min = value - pad
     if step is None:
         step = (_max - _min) * 0.001
     return {'min': _min, 'max': _max, 'step': step}
