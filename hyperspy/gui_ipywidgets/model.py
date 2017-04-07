@@ -63,9 +63,10 @@ def _get_value_widget(obj, index=None):
                         layout=Layout(flex='0 1 auto',
                                       width='auto'),)
     current_value = obj.value if index is None else obj.value[index]
-    current_name = obj.name
-    if index is not None:
-        current_name += '_{}'.format(index)
+    if index is None:
+        current_name = obj.name
+    else:
+        current_name = '{}'.format(index)
     widget = FloatSlider(value=current_value,
                          min=thismin.value,
                          max=thismax.value,
@@ -108,7 +109,9 @@ def get_parameter_widget(obj, **kwargs):
     else:
         children = [_get_value_widget(obj=obj, index=i) for i in
                     range(obj._number_of_elements)]
-        container = VBox(children)
+        container = Accordion([VBox(children)], descrition=obj.name)
+        container.set_title(0, obj.name)
+
     return container
 
 
