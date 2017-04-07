@@ -245,6 +245,39 @@ def load(filenames=None,
     >>> s = hs.load('file*.blo', lazy=True, stack=True)
 
     """
+    def calibration_is_ok(obj, calibration):
+        """
+        Check if calibration data of `obj` matches `calibration`
+
+        Parameters
+        ----------
+        obj : signal
+            The signal to be checked
+        calibration : tuple
+            calibration data (offset, scale, units)
+
+        Returns
+        -------
+        True :
+            calbration data matches
+        False :
+            otherwise
+        """
+        this_axis0 = obj.axes_manager.as_dictionary()["axis-0"]
+        if calibration[0] != this_axis0["scale"] or \
+           calibration[1] != this_axis0["offset"] or \
+           calibration[2] != this_axis0["units"]:
+            return False
+        else:
+            return True
+
+    def get_calibration(obj):
+        """
+        Returns calibration data (`scale`, `offset`, `units`) of signal `obj`
+        """
+        a = obj.axes_manager.as_dictionary()["axis-0"]
+        return (a["scale"], a["offset"], a["units"])
+
     deprecated = ['mmap_dir', 'load_to_memory']
     warn_str = "'{}' argument is deprecated, please use 'lazy' instead"
     for k in deprecated:
@@ -297,6 +330,8 @@ def load(filenames=None,
                         n = len(obj)
                     else:
                         n = 1
+                        # read calibration of first signal
+                        cal = get_calibration(obj)
                     # Initialize signal 2D list:
                     signals = [[] for j in range(n)]
                 else:
@@ -317,7 +352,13 @@ def load(filenames=None,
                             (f_error_fmt % (i, len(obj), filename)))
                 # Append loaded signals to 2D list:
                 if n == 1:
-                    signals[0].append(obj)
+                    if i == 0:
+                        signals[0].append(obj)
+                    else: # check if calibration is same as in first signal
+                        if calibration_is_ok(obj, cal):
+                            signals[0].append(obj)
+                        else: # warn and dont append
+                            _logger.warning('wrong calibration encountered while loading signals from ' + filename)
                 elif n > 1:
                     for j in range(n):
                         signals[j].append(obj[j])
