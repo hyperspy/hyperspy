@@ -85,7 +85,8 @@ try:
     # Register ipywidgets by importing the module
     import hyperspy.gui_ipywidgets
 except ImportError:
-    _logger.warning("ipywidgets not installed, ipywidgets UI elements disabled.")
+    _logger.warning(
+        "ipywidgets not installed, ipywidgets UI elements disabled.")
 try:
     # Register traitui UI elements by importing the module
     import hyperspy.gui_traitsui
