@@ -41,8 +41,6 @@ def _interactive_slider_bounds(obj, index=None):
     return {'min': _min, 'max': _max, 'step': step}
 
 
-
-
 def _get_value_widget(obj, index=None):
     widget_bounds = _interactive_slider_bounds(obj, index=index)
     thismin = FloatText(value=widget_bounds['min'],
@@ -109,6 +107,7 @@ def get_parameter_widget(obj, **kwargs):
             "widgets do not update automatically when the value of the "
             "changes by other means. Use this button to update the values"
             "manually")
+
         def on_update_clicked(b):
             for value, container in zip(obj.value, par_widgets):
 
