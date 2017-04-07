@@ -6,6 +6,7 @@ from dask.threaded import get
 import hyperspy.api as hs
 from hyperspy._signals.lazy import (_reshuffle_mixed_blocks,
                                     to_array)
+from hyperspy import _lazy_signals
 
 
 @pytest.fixture(scope='module')
@@ -13,7 +14,7 @@ def signal():
     ar = da.from_array(np.arange(6. * 9 * 7 * 11).reshape((6, 9, 7, 11)),
                        chunks=((2, 1, 3), (4, 5), (7,), (11,))
                        )
-    return hs.signals.LazySignal2D(ar)
+    return _lazy_signals.LazySignal2D(ar)
 
 
 @pytest.mark.parametrize("sl", [(0, 0),
