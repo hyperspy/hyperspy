@@ -86,8 +86,8 @@ def _get_value_widget(obj, index=None):
     thismin.observe(on_min_change, names='value')
     thismax.observe(on_max_change, names='value')
     if index is not None:  # value is tuple, expanding
-        this_observed = functools.partial(obj._interactive_tuple_update,
-                                          index=index)
+        this_observed = functools.partial(_interactive_tuple_update,
+                                          index=index, obj=obj)
         widget.observe(this_observed, names='value')
     else:
         link_traits((obj, "value"), (widget, "value"))
