@@ -109,7 +109,7 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
             else:
                 available_disabled_toolkits.add("ipywidgets")
         if "traitsui" in TOOLKIT_REGISTRY:
-            if preferences.General.enable_ipywidgets_gui:
+            if preferences.General.enable_traitsui_gui:
                 toolkits.add("traitsui")
             else:
                 available_disabled_toolkits.add("traitsui")
