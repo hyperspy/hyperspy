@@ -142,7 +142,10 @@ class MPL_HyperExplorer(object):
             self.navigator_plot.close()
 
     def is_active(self):
-        return True if self.signal_plot.figure else False
+        if self.signal_plot and self.signal_plot.figure:
+            return True
+        else:
+            return False
 
     def plot(self, **kwargs):
         if self.pointer is None:
