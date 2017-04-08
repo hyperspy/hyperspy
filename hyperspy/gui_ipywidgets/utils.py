@@ -60,3 +60,8 @@ def add_display_arg(f):
         else:
             return widget
     return wrapper
+
+
+def string_to_html(string):
+    string = string.replace('\n', '<br />')
+    return string
