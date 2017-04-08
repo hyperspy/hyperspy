@@ -23,7 +23,6 @@ from hyperspy.drawing import widgets, signal1d, image
 from hyperspy.ui_registry import get_gui
 
 
-
 class MPL_HyperExplorer(object):
 
     """
