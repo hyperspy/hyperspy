@@ -59,6 +59,7 @@ def generate_axis(offset, scale, size, offset_index=0):
                        offset + scale * (size - 1 - offset_index),
                        size)
 
+
 @add_gui_method(toolkey="DataAxis")
 class DataAxis(t.HasTraits):
     name = t.Str()
