@@ -45,46 +45,43 @@ def ipy_navigation_sliders(obj, **kwargs):
 def _get_axis_widgets(obj):
     widgets = []
 
-    widget = ipywidgets.Text()
-    widgets.append(labelme(ipywidgets.Label("Name"), widget))
-    link_traits((obj, "name"), (widget, "value"))
+    name = ipywidgets.Text()
+    widgets.append(labelme(ipywidgets.Label("Name"), name))
+    link_traits((obj, "name"), (name, "value"))
 
-    widget = ipywidgets.IntText(disabled=True)
-    widgets.append(labelme("Size", widget))
-    link_traits((obj, "size"), (widget, "value"))
+    size = ipywidgets.IntText(disabled=True)
+    widgets.append(labelme("Size", size))
+    link_traits((obj, "size"), (size, "value"))
 
-    widget = ipywidgets.IntText(disabled=True)
-    widgets.append(labelme("Index in array", widget))
-    link_traits((obj, "index_in_array"), (widget, "value"))
+    index_in_array = ipywidgets.IntText(disabled=True)
+    widgets.append(labelme("Index in array", index_in_array))
+    link_traits((obj, "index_in_array"), (index_in_array, "value"))
 
-    widget = ipywidgets.IntSlider(min=0, max=obj.size - 1)
-    widgets.append(labelme("Index", widget))
-    link_traits((obj, "index"), (widget, "value"))
+    index = ipywidgets.IntSlider(min=0, max=obj.size - 1)
+    widgets.append(labelme("Index", index))
+    link_traits((obj, "index"), (index, "value"))
 
-    widget = ipywidgets.FloatSlider(
+    value = ipywidgets.FloatSlider(
         min=obj.low_value,
         max=obj.high_value,
     )
-    widgets.append(labelme("Value", widget))
-    link_traits((obj, "value"), (widget, "value"))
-    link_traits((obj, "high_value"), (widget, "max"))
-    link_traits((obj, "low_value"), (widget, "min"))
+    widgets.append(labelme("Value", value))
+    link_traits((obj, "value"), (value, "value"))
+    link_traits((obj, "high_value"), (value, "max"))
+    link_traits((obj, "low_value"), (value, "min"))
+    link_traits((obj, "scale"), (value, "step"))
 
-    widget = ipywidgets.Text()
-    widgets.append(labelme("Units", widget))
-    link_traits((obj, "units"), (widget, "value"))
+    units = ipywidgets.Text()
+    widgets.append(labelme("Units", units))
+    link_traits((obj, "units"), (units, "value"))
 
-    widget = ipywidgets.Checkbox(disabled=True)
-    widgets.append(labelme("Navigate", widget))
-    link_traits((obj, "navigate"), (widget, "value"))
+    scale = ipywidgets.FloatText()
+    widgets.append(labelme("Scale", scale))
+    link_traits((obj, "scale"), (scale, "value"))
 
-    widget = ipywidgets.FloatText()
-    widgets.append(labelme("Scale", widget))
-    link_traits((obj, "scale"), (widget, "value"))
-
-    widget = ipywidgets.FloatText()
-    widgets.append(labelme("Offset", widget))
-    link_traits((obj, "offset"), (widget, "value"))
+    offset = ipywidgets.FloatText()
+    widgets.append(labelme("Offset", offset))
+    link_traits((obj, "offset"), (offset, "value"))
 
     return ipywidgets.VBox(widgets)
 
