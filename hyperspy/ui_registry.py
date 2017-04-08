@@ -19,7 +19,7 @@ from hyperspy.misc.utils import isiterable
 
 UI_REGISTRY = {}
 
-toolkit_registry = set()
+TOOLKIT_REGISTRY = set()
 
 
 def register_widget(toolkit, toolkey):
@@ -45,7 +45,7 @@ def register_widget(toolkit, toolkey):
     """
     if not toolkey in UI_REGISTRY:
         raise NameError("%s is not a registered toolkey" % toolkey)
-    toolkit_registry.add(toolkit)
+    TOOLKIT_REGISTRY.add(toolkit)
 
     def decorator(f):
         UI_REGISTRY[toolkey][toolkit] = f
@@ -68,12 +68,23 @@ def register_toolkey(toolkey):
 
 
 def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
-    from hyperspy.ui_registry import UI_REGISTRY
+    if not TOOLKIT_REGISTRY:
+        raise ImportError(
+            "No toolkit installed. Install ipywidgets or traitsui to enable"
+            "GUI elements"
+        )
     from hyperspy.defaults_parser import preferences
     if isinstance(toolkit, str):
-        toolkits = (toolkit,)
-    elif isiterable(toolkit):
-        toolkits = toolkit
+        toolkit = (toolkit,)
+    if isiterable(toolkit):
+        toolkits = set()
+        for tk in toolkit:
+            if tk in TOOLKIT_REGISTRY:
+                toolkits.add(tk)
+            else:
+                raise ValueError(
+                    "{} is not a registered toolkit.".format(tk)
+                )
     elif toolkit is None:
         toolkits = []
         if preferences.General.enable_ipywidgets_gui:
