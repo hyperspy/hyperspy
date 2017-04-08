@@ -32,7 +32,7 @@ def ipy_navigation_sliders(obj, **kwargs):
         link_traits((axis, "low_value"), (vwidget, "min"))
         link_traits((axis, "scale"), (vwidget, "step"))
         bothw = ipywidgets.VBox([iwidget, vwidget])
-        labeled_widget = labelme(str(axis).replace(" ", "_"), bothw)
+        labeled_widget = labelme(str(axis), bothw)
         link_traits((axis, "name"), (labeled_widget.children[0], "value"))
         widgets.append(labeled_widget)
     widgets.append(labelme("Continuous update", continuous_update))
