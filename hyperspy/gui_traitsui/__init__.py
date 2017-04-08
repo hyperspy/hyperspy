@@ -18,6 +18,7 @@
 
 import logging
 
+import traitsui # Just to raise an import error at this point if not installed
 import matplotlib
 from traits.etsconfig.api import ETSConfig
 
@@ -37,8 +38,15 @@ def set_ets_toolkit(toolkit):
             import hyperspy.gui_traitsui.preferences
             import hyperspy.gui_traitsui.microscope_parameters
             import hyperspy.gui_traitsui.messages
+        else:
+            _logger.warning(
+                "The %s matplotlib backend is not supported by the installed "
+                "traitsui version. Hence, the traitsui GUI elements are not "
+                "available." % matplotlib.get_backend())
+
     except ValueError:
-        pass
+        _logger.debug("Setting ETS toolkit to %s failed" % toolkit)
+        set_ets_toolkit("null")
 
 # Get the backend from matplotlib
 backend = matplotlib.rcParams["backend"]
@@ -48,7 +56,7 @@ if "WX" in backend:
     set_ets_toolkit("wx")
 elif "Qt4" in backend:
     set_ets_toolkit("qt4")
+elif "Qt5" in backend:
+    set_ets_toolkit("qt5")
 else:
     set_ets_toolkit("null")
-    from hyperspy.defaults_parser import preferences
-    preferences.General.interactive = False
