@@ -40,59 +40,61 @@ def ipy_navigation_sliders(obj, **kwargs):
     return box
 
 
-def _get_axis_widgets(axis):
+@register_ipy_widget(toolkey="DataAxis")
+@add_display_arg
+def _get_axis_widgets(obj):
     widgets = []
 
     widget = ipywidgets.Text()
-    widgets.append(labelme(str(axis).replace(" ", "_"), widget))
-    link_traits((axis, "name"), (widget, "value"))
+    widgets.append(labelme(ipywidgets.Label("Name"), widget))
+    link_traits((obj, "name"), (widget, "value"))
 
     widget = ipywidgets.IntText(disabled=True)
     widgets.append(labelme("Size", widget))
-    link_traits((axis, "size"), (widget, "value"))
+    link_traits((obj, "size"), (widget, "value"))
 
     widget = ipywidgets.IntText(disabled=True)
     widgets.append(labelme("Index in array", widget))
-    link_traits((axis, "index_in_array"), (widget, "value"))
+    link_traits((obj, "index_in_array"), (widget, "value"))
 
-    widget = ipywidgets.IntSlider(min=0, max=axis.size - 1)
+    widget = ipywidgets.IntSlider(min=0, max=obj.size - 1)
     widgets.append(labelme("Index", widget))
-    link_traits((axis, "index"), (widget, "value"))
+    link_traits((obj, "index"), (widget, "value"))
 
     widget = ipywidgets.FloatSlider(
-        min=axis.low_value,
-        max=axis.high_value,
+        min=obj.low_value,
+        max=obj.high_value,
     )
     widgets.append(labelme("Value", widget))
-    link_traits((axis, "value"), (widget, "value"))
-    link_traits((axis, "high_value"), (widget, "max"))
-    link_traits((axis, "low_value"), (widget, "min"))
+    link_traits((obj, "value"), (widget, "value"))
+    link_traits((obj, "high_value"), (widget, "max"))
+    link_traits((obj, "low_value"), (widget, "min"))
 
     widget = ipywidgets.Text()
     widgets.append(labelme("Units", widget))
-    link_traits((axis, "units"), (widget, "value"))
+    link_traits((obj, "units"), (widget, "value"))
 
     widget = ipywidgets.Checkbox(disabled=True)
     widgets.append(labelme("Navigate", widget))
-    link_traits((axis, "navigate"), (widget, "value"))
+    link_traits((obj, "navigate"), (widget, "value"))
 
     widget = ipywidgets.FloatText()
     widgets.append(labelme("Scale", widget))
-    link_traits((axis, "scale"), (widget, "value"))
+    link_traits((obj, "scale"), (widget, "value"))
 
     widget = ipywidgets.FloatText()
     widgets.append(labelme("Offset", widget))
-    link_traits((axis, "offset"), (widget, "value"))
+    link_traits((obj, "offset"), (widget, "value"))
 
-    return widgets
+    return ipywidgets.VBox(widgets)
 
 
 @register_ipy_widget(toolkey="AxesManager")
 @add_display_arg
 def ipy_axes_gui(obj, **kwargs):
-    nav_widgets = [ipywidgets.VBox(_get_axis_widgets(axis))
+    nav_widgets = [_get_axis_widgets(axis, display=False)
                    for axis in obj.navigation_axes]
-    sig_widgets = [ipywidgets.VBox(_get_axis_widgets(axis))
+    sig_widgets = [_get_axis_widgets(axis, display=False)
                    for axis in obj.signal_axes]
     nav_accordion = ipywidgets.Accordion(nav_widgets)
     sig_accordion = ipywidgets.Accordion(sig_widgets)
