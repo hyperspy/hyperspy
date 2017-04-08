@@ -18,7 +18,7 @@
 
 import logging
 
-import traitsui # Just to raise an import error at this point if not installed
+import traitsui  # Just to raise an import error at this point if not installed
 import matplotlib
 from traits.etsconfig.api import ETSConfig
 
