@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 
 import traits.api as t
 
@@ -23,6 +24,9 @@ from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
 from hyperspy.defaults_parser import preferences
 from hyperspy.decorators import only_interactive
 from hyperspy.ui_registry import add_gui_method
+
+
+_logger = logging.getLogger(__name__)
 
 
 @add_gui_method(toolkey="microscope_parameters_EDS_SEM")
@@ -195,6 +199,9 @@ class EDSSEM_mixin:
         Now set to 135.0 eV
 
         """
+        if {beam_energy, live_time, tilt_stage, azimuth_angle,
+                elevation_angle, energy_resolution_MnKa} == {None}:
+            return self._set_microscope_parameters_gui()
         md = self.metadata
 
         if beam_energy is not None:
@@ -219,12 +226,9 @@ class EDSSEM_mixin:
                 "energy_resolution_MnKa",
                 energy_resolution_MnKa)
 
-        if {beam_energy, live_time, tilt_stage, azimuth_angle,
-                elevation_angle, energy_resolution_MnKa} == {None}:
-            self._are_microscope_parameters_missing()
 
     @only_interactive
-    def _set_microscope_parameters(self):
+    def _set_microscope_parameters_gui(self):
         tem_par = SEMParametersUI()
         mapping = {
             'Acquisition_instrument.SEM.beam_energy': 'tem_par.beam_energy',
@@ -258,7 +262,6 @@ class EDSSEM_mixin:
         for key, value in mapping.items():
             if value != t.Undefined:
                 self.metadata.set_item(key, value)
-        self._are_microscope_parameters_missing()
 
     def _are_microscope_parameters_missing(self):
         """Check if the EDS parameters necessary for quantification
@@ -276,19 +279,8 @@ class EDSSEM_mixin:
             if exists is False:
                 missing_parameters.append(item)
         if missing_parameters:
-            if preferences.General.interactive is True:
-                import hyperspy.gui_traitsui.messages as messagesui
-                par_str = "The following parameters are missing:\n"
-                for par in missing_parameters:
-                    par_str += '%s\n' % par
-                par_str += 'Please set them in the following wizard'
-                is_ok = messagesui.information(par_str)
-                if is_ok:
-                    self._set_microscope_parameters()
-                else:
-                    return True
-            else:
-                return True
+            _logger.info("Missing parameters {}".format(missing_parameters))
+            return True
         else:
             return False
 

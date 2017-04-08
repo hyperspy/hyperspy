@@ -839,19 +839,8 @@ class EELSSpectrum_mixin:
             if exists is False:
                 missing_parameters.append(item)
         if missing_parameters:
-            if preferences.General.interactive is True:
-                import hyperspy.gui_traitsui.messages as messagesui
-                par_str = "The following parameters are missing:\n"
-                for par in missing_parameters:
-                    par_str += '%s\n' % par
-                par_str += 'Please set them in the following wizard'
-                is_ok = messagesui.information(par_str)
-                if is_ok:
-                    self._set_microscope_parameters()
-                else:
-                    return True
-            else:
-                return True
+            _logger.info("Missing parameters {}".format(missing_parameters))
+            return True
         else:
             return False
 
@@ -862,7 +851,7 @@ class EELSSpectrum_mixin:
         """Set the microscope parameters that are necessary to calculate
         the GOS.
 
-        If not all of them are defined, raises in interactive mode
+        If not all of them are defined, in interactive mode
         raises an UI item to fill the values
 
         beam_energy: float
@@ -872,6 +861,9 @@ class EELSSpectrum_mixin:
         collection_angle : float
             The collection semi-angle in mrad.
         """
+
+        if set((beam_energy, convergence_angle, collection_angle)) == {None}:
+            return self._set_microscope_parameters_gui()
 
         mp = self.metadata
         if beam_energy is not None:
@@ -885,10 +877,9 @@ class EELSSpectrum_mixin:
                 "Acquisition_instrument.TEM.Detector.EELS.collection_angle",
                 collection_angle)
 
-        self._are_microscope_parameters_missing()
 
     @only_interactive
-    def _set_microscope_parameters(self):
+    def _set_microscope_parameters_gui(self):
         tem_par = TEMParametersUI()
         mapping = {
             'Acquisition_instrument.TEM.convergence_angle':
@@ -913,7 +904,6 @@ class EELSSpectrum_mixin:
         for key, value in mapping.items():
             if value != t.Undefined:
                 self.metadata.set_item(key, value)
-        self._are_microscope_parameters_missing()
 
     def power_law_extrapolation(self,
                                 window_size=20,
