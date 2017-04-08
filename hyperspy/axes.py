@@ -961,6 +961,11 @@ class AxesManager(t.HasTraits):
                 self.navigation_axes[::-1]]
 
     def show(self):
+        from hyperspy.exceptions import VisibleDeprecationWarning
+        msg = (
+            "The `AxesManager.show` method is deprecated and will be removed "
+            "in v2.0. Use `gui` instead.")
+        warnings.warn(msg, VisibleDeprecationWarning)
         self.gui()
 
     def _get_dimension_str(self):
