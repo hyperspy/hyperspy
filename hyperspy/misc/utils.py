@@ -1042,5 +1042,6 @@ def signal_range_from_roi(signal_range):
     else:
         return signal_range
 
+
 def deprecation_warning(msg):
     warnings.warn(msg, VisibleDeprecationWarning)
