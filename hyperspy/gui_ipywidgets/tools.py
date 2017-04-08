@@ -3,7 +3,7 @@ import traitlets
 
 from hyperspy.gui_ipywidgets.utils import (
     labelme, labelme_sandwich, enum2dropdown, add_display_arg,
-    register_ipy_widget, string_to_html)
+    register_ipy_widget)
 from hyperspy.misc.link_traits import link_traits
 from hyperspy.gui_ipywidgets.custom_widgets import OddIntSlider
 from hyperspy.signal_tools import SPIKES_REMOVAL_INSTRUCTIONS
@@ -381,7 +381,7 @@ def spikes_removal_ipy(obj, **kwargs):
     interpolator_kind = enum2dropdown(obj.traits()["interpolator_kind"])
     spline_order = ipywidgets.IntSlider(min=1, max=10)
     progress_bar = ipywidgets.IntProgress(max=len(obj.coordinates) - 1)
-    help = ipywidgets.HTML(value=string_to_html(SPIKES_REMOVAL_INSTRUCTIONS))
+    help = ipywidgets.HTML(value=SPIKES_REMOVAL_INSTRUCTIONS.replace('\n', '<br/>'))
     help = ipywidgets.Accordion(children=[help])
     help.set_title(0, "Help")
 
