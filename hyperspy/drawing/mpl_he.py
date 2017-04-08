@@ -16,11 +16,15 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from functools import partial
+import logging
 
 from traits.api import Undefined
 
 from hyperspy.drawing import widgets, signal1d, image
 from hyperspy.ui_registry import get_gui
+
+
+_logger = logging.getLogger(__name__)
 
 
 class MPL_HyperExplorer(object):
@@ -135,12 +139,8 @@ class MPL_HyperExplorer(object):
         try:
             self.axes_manager.navigation_sliders(
                 title=self.signal_title + " navigation sliders")
-        except NotImplementedError as e:
-            _logger.warning(
-                "No toolkit available to display the navigation sliders."
-                "Install/enable ipywidgets and/or traitsui to enable "
-                "interactive navigation of this signal. Alternatively,"
-                "set the index of the axes manually.")
+        except (ValueError, ImportError) as e:
+            _logger.warning("Navigation sliders not available. " + str(e))
 
     def close_navigator_plot(self):
         if self.navigator_plot:
