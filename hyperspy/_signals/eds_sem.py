@@ -226,7 +226,6 @@ class EDSSEM_mixin:
                 "energy_resolution_MnKa",
                 energy_resolution_MnKa)
 
-
     @only_interactive
     def _set_microscope_parameters_gui(self):
         tem_par = SEMParametersUI()

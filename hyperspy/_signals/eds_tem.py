@@ -185,7 +185,6 @@ class EDSTEM_mixin:
                 "Acquisition_instrument.TEM.Detector.EDS.real_time",
                 real_time)
 
-
     @only_interactive
     def _set_microscope_parameters_gui(self):
         tem_par = TEMParametersUI()

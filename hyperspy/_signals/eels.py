@@ -877,7 +877,6 @@ class EELSSpectrum_mixin:
                 "Acquisition_instrument.TEM.Detector.EELS.collection_angle",
                 collection_angle)
 
-
     @only_interactive
     def _set_microscope_parameters_gui(self):
         tem_par = TEMParametersUI()
