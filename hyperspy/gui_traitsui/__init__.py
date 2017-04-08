@@ -30,12 +30,13 @@ def set_ets_toolkit(toolkit):
         ETSConfig.toolkit = toolkit
         _logger.debug('Current ETS toolkit set to: %s', toolkit)
         # Register the UI elements
-        import hyperspy.gui_traitsui.axes
-        import hyperspy.gui_traitsui.model
-        import hyperspy.gui_traitsui.tools
-        import hyperspy.gui_traitsui.preferences
-        import hyperspy.gui_traitsui.microscope_parameters
-        import hyperspy.gui_traitsui.messages
+        if toolkit != "null":
+            import hyperspy.gui_traitsui.axes
+            import hyperspy.gui_traitsui.model
+            import hyperspy.gui_traitsui.tools
+            import hyperspy.gui_traitsui.preferences
+            import hyperspy.gui_traitsui.microscope_parameters
+            import hyperspy.gui_traitsui.messages
     except ValueError:
         pass
 
