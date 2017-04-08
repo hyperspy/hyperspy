@@ -106,10 +106,12 @@ class LineInSignal1D(t.HasTraits):
     position = t.Float()
     is_ok = t.Bool(False)
     on = t.Bool(False)
-    try:
-        color = t.Color("black")
-    except ModuleNotFoundError:  # traitsui is not installed
-        pass
+    # The following is disabled because as of traits 4.6 the Color trait
+    # imports traitsui (!)
+    # try:
+    #     color = t.Color("black")
+    # except ModuleNotFoundError:  # traitsui is not installed
+    #     pass
     color_str = t.Str("black")
 
     def __init__(self, signal):
@@ -209,12 +211,14 @@ class Signal1DRangeSelector(SpanSelectorInSignal1D):
 
 
 class Smoothing(t.HasTraits):
-    try:
-        line_color = t.Color("blue")
-    except ModuleNotFoundError:
-        # traitsui is required to define this trait so it is not defined when
-        # traitsui is not installed.
-        pass
+    # The following is disabled because as of traits 4.6 the Color trait
+    # imports traitsui (!)
+    # try:
+    #     line_color = t.Color("blue")
+    # except ModuleNotFoundError:
+    #     # traitsui is required to define this trait so it is not defined when
+    #     # traitsui is not installed.
+    #     pass
     line_color_ipy = t.Str("blue")
     differential_order = t.Int(0)
 
