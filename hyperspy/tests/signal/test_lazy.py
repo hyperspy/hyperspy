@@ -9,7 +9,7 @@ from hyperspy._signals.lazy import (_reshuffle_mixed_blocks,
 from hyperspy import _lazy_signals
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture
 def signal():
     ar = da.from_array(np.arange(6. * 9 * 7 * 11).reshape((6, 9, 7, 11)),
                        chunks=((2, 1, 3), (4, 5), (7,), (11,))
@@ -51,7 +51,8 @@ sig_mask[0, :] = True
 def test_blockiter_bothmasks(signal, flat, dtype, nm, sm):
     real_first = get(signal.data.dask, (signal.data.name, 0, 0, 0, 0)).copy()
     real_second = get(signal.data.dask, (signal.data.name, 0, 1, 0, 0)).copy()
-    signal.change_dtype(dtype)
+    # Don't want to rechunk, so change dtype manually
+    signal.data = signal.data.astype(dtype)
     it = signal._block_iterator(flat_signal=flat,
                                 navigation_mask=nm,
                                 signal_mask=sm,
