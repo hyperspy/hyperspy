@@ -67,6 +67,21 @@ def register_toolkey(toolkey):
     UI_REGISTRY[toolkey] = {}
 
 
+def _toolkits_to_string(toolkits):
+    if isinstance(toolkits, str):
+        return "{} toolkit".format(toolkits)
+    else:
+        toolkits = tuple(toolkits)
+        if len(toolkits) == 1:
+            return "{} toolkit".format(toolkits[0])
+
+        elif len(toolkits) == 2:
+            return " and ".join(toolkits) + " toolkits"
+        else:  # > 2
+            txt = ", ".join(toolkits[:-1])
+            return txt + " and {}".format(toolkits[-1]) + " toolkits"
+
+
 def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
     if not TOOLKIT_REGISTRY:
         raise ImportError(
@@ -99,12 +114,16 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
             else:
                 available_disabled_toolkits.add("traitsui")
         if not toolkits and available_disabled_toolkits:
+            is_or_are = "is" if len(
+                available_disabled_toolkits) == 1 else "are"
+            them_or_it = ("it" if len(available_disabled_toolkits) == 1
+                          else "them")
             raise ValueError(
-                "No toolkit available. The {} toolkits are installed but "
+                "No toolkit available. The {} {} installed but "
                 "disabled in `preferences`. Enable them in `preferences` or "
                 "manually select a toolkit with the `toolkit` argument.".format(
-                    available_disabled_toolkits
-                )
+                    _toolkits_to_string(available_disabled_toolkits),
+                    is_or_are, them_or_it)
             )
 
     else:
@@ -127,9 +146,13 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
         else:
             available_toolkits.add(toolkit)
     if not used_toolkits and available_toolkits:
+        is_or_are = "is" if len(toolkits) == 1 else "are"
         raise NotImplementedError(
-            "The %s toolkits are not available for this functionality, "
-            "try %s" % (toolkits, available_toolkits))
+            "The {} {} not available for this functionality,try with "
+            "the {}.".format(
+                _toolkits_to_string(toolkits),
+                is_or_are,
+                _toolkits_to_string(available_toolkits)))
     if not display:
         return widgets
 
