@@ -56,20 +56,20 @@ def _get_axis_widgets(obj):
     index_in_array = ipywidgets.IntText(disabled=True)
     widgets.append(labelme("Index in array", index_in_array))
     link_traits((obj, "index_in_array"), (index_in_array, "value"))
+    if obj.navigate:
+        index = ipywidgets.IntSlider(min=0, max=obj.size - 1)
+        widgets.append(labelme("Index", index))
+        link_traits((obj, "index"), (index, "value"))
 
-    index = ipywidgets.IntSlider(min=0, max=obj.size - 1)
-    widgets.append(labelme("Index", index))
-    link_traits((obj, "index"), (index, "value"))
-
-    value = ipywidgets.FloatSlider(
-        min=obj.low_value,
-        max=obj.high_value,
-    )
-    widgets.append(labelme("Value", value))
-    link_traits((obj, "value"), (value, "value"))
-    link_traits((obj, "high_value"), (value, "max"))
-    link_traits((obj, "low_value"), (value, "min"))
-    link_traits((obj, "scale"), (value, "step"))
+        value = ipywidgets.FloatSlider(
+            min=obj.low_value,
+            max=obj.high_value,
+        )
+        widgets.append(labelme("Value", value))
+        link_traits((obj, "value"), (value, "value"))
+        link_traits((obj, "high_value"), (value, "max"))
+        link_traits((obj, "low_value"), (value, "min"))
+        link_traits((obj, "scale"), (value, "step"))
 
     units = ipywidgets.Text()
     widgets.append(labelme("Units", units))
