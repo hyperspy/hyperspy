@@ -1170,10 +1170,10 @@ class AxesManager(t.HasTraits):
 
     def navigation_sliders(self, title="", display=True, toolkit=None):
         return get_gui(self=self.navigation_axes,
-                    toolkey="navigation_sliders",
-                    title=title)
+                       toolkey="navigation_sliders",
+                       title=title)
     navigation_sliders.__doc__ = \
-"""Navigation sliders to control the index of the navigation axes.
+        """Navigation sliders to control the index of the navigation axes.
 
 Parameters
 ----------
