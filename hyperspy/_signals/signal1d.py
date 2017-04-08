@@ -783,6 +783,12 @@ _spikes_diagnosis,
         signal range with integers.
         >>> s_int = s.integrate_in_range(signal_range=(100,120))
         """
+        from hyperspy.misc.utils import deprecation_warning
+        msg = (
+            "The `Signal1D.integrate_in_range` method is deprecated and will "
+            "be removed in v2.0. Use a `roi.SpanRoi` followed by `integrate1D` "
+            "instead.")
+        deprecation_warning(msg)
         signal_range = signal_range_from_roi(signal_range)
 
         if signal_range == 'interactive':
