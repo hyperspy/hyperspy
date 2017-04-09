@@ -5,8 +5,6 @@ import hyperspy.api as hs
 from hyperspy.gui_ipywidgets.tests.utils import KWARGS
 
 
-
-
 def setup():
     setup_test_comm()
 
