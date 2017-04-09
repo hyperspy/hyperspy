@@ -41,7 +41,7 @@ _logger = logging.getLogger(__name__)
 
 
 @add_gui_method(toolkey="microscope_parameters_EELS")
-class TEMParametersUI(BaseSetMetadataItems):
+class EELSTEMParametersUI(BaseSetMetadataItems):
     convergence_angle = t.Float(t.Undefined,
                                 label='Convergence semi-angle (mrad)')
     beam_energy = t.Float(t.Undefined,
@@ -860,7 +860,7 @@ class EELSSpectrum_mixin:
                                   toolkit=None,
                                   display=True):
         if set((beam_energy, convergence_angle, collection_angle)) == {None}:
-            tem_par = TEMParametersUI(self)
+            tem_par = EELSTEMParametersUI(self)
             return tem_par.gui(toolkit=toolkit, display=display)
         mp = self.metadata
         if beam_energy is not None:

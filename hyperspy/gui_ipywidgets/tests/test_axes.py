@@ -2,12 +2,9 @@ from ipywidgets.widgets.tests import setup_test_comm, teardown_test_comm
 import numpy as np
 
 import hyperspy.api as hs
+from hyperspy.gui_ipywidgets.tests.utils import KWARGS
 
 
-KWARGS = {
-    "toolkit": "ipywidgets",
-    "display": False,
-}
 
 
 def setup():

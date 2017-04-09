@@ -36,7 +36,7 @@ _logger = logging.getLogger(__name__)
 
 
 @add_gui_method(toolkey="microscope_parameters_EDS_TEM")
-class TEMParametersUI(BaseSetMetadataItems):
+class EDSTEMParametersUI(BaseSetMetadataItems):
     beam_energy = t.Float(t.Undefined,
                           label='Beam energy (keV)')
     real_time = t.Float(t.Undefined,
@@ -131,7 +131,7 @@ class EDSTEM_mixin:
                                   toolkit=None):
         if set([beam_energy, live_time, tilt_stage, azimuth_angle,
                 elevation_angle, energy_resolution_MnKa]) == {None}:
-            tem_par = TEMParametersUI(self)
+            tem_par = EDSTEMParametersUI(self)
             return tem_par.gui(display=display, toolkit=toolkit)
 
         md = self.metadata
