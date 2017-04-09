@@ -874,7 +874,7 @@ class EELSSpectrum_mixin:
                 "Acquisition_instrument.TEM.Detector.EELS.collection_angle",
                 collection_angle)
     set_microscope_parameters.__doc__ = \
-"""Set the microscope parameters that are necessary to calculate
+        """Set the microscope parameters that are necessary to calculate
 the GOS.
 
 If not all of them are defined, in interactive mode
@@ -889,7 +889,6 @@ collection_angle : float
 {}
 {}
 """.format(TOOLKIT_DT, DISPLAY_DT)
-
 
     def power_law_extrapolation(self,
                                 window_size=20,

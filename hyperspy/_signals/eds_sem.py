@@ -207,7 +207,7 @@ class EDSSEM_mixin:
                 "energy_resolution_MnKa",
                 energy_resolution_MnKa)
     set_microscope_parameters.__doc__ = \
-"""Set the microscope parameters.
+        """Set the microscope parameters.
 
 If no arguments are given, raises an interactive mode to fill
 the values.

@@ -169,7 +169,7 @@ class EDSTEM_mixin:
                 "Acquisition_instrument.TEM.Detector.EDS.real_time",
                 real_time)
     set_microscope_parameters.__doc__ = \
-"""Set the microscope parameters.
+        """Set the microscope parameters.
 
 If no arguments are given, raises an interactive mode to fill
 the values.
