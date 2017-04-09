@@ -54,12 +54,16 @@ class link_traits(traitlets.link):
         if self.updating:
             return
         with self._busy_updating():
+            if new is t.Undefined and has_traitlets(self.target[0]):
+                new = self.target[0].traits()[self.target[1]].default_value
             setattr(self.target[0], self.target[1], new)
 
     def _update_source_traits(self, new):
         if self.updating:
             return
         with self._busy_updating():
+            if new is t.Undefined and has_traitlets(self.source[0]):
+                new = self.source[0].traits()[self.source[1]].default_value
             setattr(self.source[0], self.source[1], new)
 
     def unlink(self):
