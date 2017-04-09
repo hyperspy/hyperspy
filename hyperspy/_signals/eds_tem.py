@@ -24,6 +24,7 @@ import traits.api as t
 import numpy as np
 from scipy import constants
 
+from hyperspy.signal import BaseSetMetadataItems
 from hyperspy import utils
 from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
 from hyperspy.decorators import only_interactive
@@ -35,8 +36,7 @@ _logger = logging.getLogger(__name__)
 
 
 @add_gui_method(toolkey="microscope_parameters_EDS_TEM")
-class TEMParametersUI(t.HasTraits):
-
+class TEMParametersUI(BaseSetMetadataItems):
     beam_energy = t.Float(t.Undefined,
                           label='Beam energy (keV)')
     real_time = t.Float(t.Undefined,
@@ -55,6 +55,26 @@ class TEMParametersUI(t.HasTraits):
                                      label='Energy resolution MnKa (eV)')
     beam_current = t.Float(t.Undefined,
                            label='Beam current (nA)')
+    mapping = {
+        'Acquisition_instrument.TEM.beam_energy':
+        'beam_energy',
+        'Acquisition_instrument.TEM.tilt_stage':
+        'tilt_stage',
+        'Acquisition_instrument.TEM.Detector.EDS.live_time':
+        'live_time',
+        'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
+        'azimuth_angle',
+        'Acquisition_instrument.TEM.Detector.EDS.elevation_angle':
+        'elevation_angle',
+        'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
+        'energy_resolution_MnKa',
+        'Acquisition_instrument.TEM.beam_current':
+        'beam_current',
+        'Acquisition_instrument.TEM.probe_area':
+        'probe_area',
+        'Acquisition_instrument.TEM.Detector.EDS.real_time':
+        'real_time', }
+
 
 
 class EDSTEM_mixin:
@@ -185,56 +205,9 @@ class EDSTEM_mixin:
                 "Acquisition_instrument.TEM.Detector.EDS.real_time",
                 real_time)
 
-    @only_interactive
     def _set_microscope_parameters_gui(self):
-        tem_par = TEMParametersUI()
-        mapping = {
-            'Acquisition_instrument.TEM.beam_energy':
-            'tem_par.beam_energy',
-            'Acquisition_instrument.TEM.tilt_stage':
-            'tem_par.tilt_stage',
-            'Acquisition_instrument.TEM.Detector.EDS.live_time':
-            'tem_par.live_time',
-            'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
-            'tem_par.azimuth_angle',
-            'Acquisition_instrument.TEM.Detector.EDS.elevation_angle':
-            'tem_par.elevation_angle',
-            'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
-            'tem_par.energy_resolution_MnKa',
-            'Acquisition_instrument.TEM.beam_current':
-            'tem_par.beam_current',
-            'Acquisition_instrument.TEM.probe_area':
-            'tem_par.probe_area',
-            'Acquisition_instrument.TEM.Detector.EDS.real_time':
-            'tem_par.real_time', }
-        for key, value in mapping.items():
-            if self.metadata.has_item(key):
-                exec('%s = self.metadata.%s' % (value, key))
+        tem_par = TEMParametersUI(self)
         tem_par.gui()
-
-        mapping = {
-            'Acquisition_instrument.TEM.beam_energy':
-            tem_par.beam_energy,
-            'Acquisition_instrument.TEM.tilt_stage':
-            tem_par.tilt_stage,
-            'Acquisition_instrument.TEM.Detector.EDS.live_time':
-            tem_par.live_time,
-            'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
-            tem_par.azimuth_angle,
-            'Acquisition_instrument.TEM.Detector.EDS.elevation_angle':
-            tem_par.elevation_angle,
-            'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
-            tem_par.energy_resolution_MnKa,
-            'Acquisition_instrument.TEM.beam_current':
-            tem_par.beam_current,
-            'Acquisition_instrument.TEM.probe_area':
-            tem_par.probe_area,
-            'Acquisition_instrument.TEM.Detector.EDS.real_time':
-            tem_par.real_time, }
-
-        for key, value in mapping.items():
-            if value != t.Undefined:
-                self.metadata.set_item(key, value)
 
     def _are_microscope_parameters_missing(self):
         """Check if the EDS parameters necessary for quantification

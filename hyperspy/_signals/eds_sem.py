@@ -24,13 +24,14 @@ from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
 from hyperspy.defaults_parser import preferences
 from hyperspy.decorators import only_interactive
 from hyperspy.ui_registry import add_gui_method
+from hyperspy.signal import BaseSetMetadataItems
 
 
 _logger = logging.getLogger(__name__)
 
 
 @add_gui_method(toolkey="microscope_parameters_EDS_SEM")
-class SEMParametersUI(t.HasTraits):
+class SEMParametersUI(BaseSetMetadataItems):
 
     beam_energy = t.Float(t.Undefined,
                           label='Beam energy (keV)')
@@ -44,6 +45,17 @@ class SEMParametersUI(t.HasTraits):
                               label='Elevation angle (degree)')
     energy_resolution_MnKa = t.Float(t.Undefined,
                                      label='Energy resolution MnKa (eV)')
+    mapping = {
+        'Acquisition_instrument.SEM.beam_energy': 'beam_energy',
+        'Acquisition_instrument.SEM.tilt_stage': 'tilt_stage',
+        'Acquisition_instrument.SEM.Detector.EDS.live_time':
+        'live_time',
+        'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle':
+        'azimuth_angle',
+        'Acquisition_instrument.SEM.Detector.EDS.elevation_angle':
+        'elevation_angle',
+        'Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa':
+        'energy_resolution_MnKa', }
 
 
 class EDSSEM_mixin:
@@ -228,39 +240,8 @@ class EDSSEM_mixin:
 
     @only_interactive
     def _set_microscope_parameters_gui(self):
-        tem_par = SEMParametersUI()
-        mapping = {
-            'Acquisition_instrument.SEM.beam_energy': 'tem_par.beam_energy',
-            'Acquisition_instrument.SEM.tilt_stage': 'tem_par.tilt_stage',
-            'Acquisition_instrument.SEM.Detector.EDS.live_time':
-            'tem_par.live_time',
-            'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle':
-            'tem_par.azimuth_angle',
-            'Acquisition_instrument.SEM.Detector.EDS.elevation_angle':
-            'tem_par.elevation_angle',
-            'Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa':
-            'tem_par.energy_resolution_MnKa', }
-
-        for key, value in mapping.items():
-            if self.metadata.has_item(key):
-                exec('%s = self.metadata.%s' % (value, key))
+        tem_par = SEMParametersUI(self)
         tem_par.gui()
-
-        mapping = {
-            'Acquisition_instrument.SEM.beam_energy': tem_par.beam_energy,
-            'Acquisition_instrument.SEM.tilt_stage': tem_par.tilt_stage,
-            'Acquisition_instrument.SEM.Detector.EDS.live_time':
-            tem_par.live_time,
-            'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle':
-            tem_par.azimuth_angle,
-            'Acquisition_instrument.SEM.Detector.EDS.elevation_angle':
-            tem_par.elevation_angle,
-            'Acquisition_instrument.SEM.Detector.EDS.energy_resolution_MnKa':
-            tem_par.energy_resolution_MnKa, }
-
-        for key, value in mapping.items():
-            if value != t.Undefined:
-                self.metadata.set_item(key, value)
 
     def _are_microscope_parameters_missing(self):
         """Check if the EDS parameters necessary for quantification

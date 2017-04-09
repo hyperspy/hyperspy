@@ -5,20 +5,13 @@ import ipywidgets
 
 from hyperspy.misc.link_traits import link_traits
 from hyperspy.gui_ipywidgets.utils import (
-    labelme, register_ipy_widget, add_display_arg)
+    labelme, register_ipy_widget, add_display_arg, enum2dropdown,
+    float2floattext, get_label)
 
 
 def bool2checkbox(trait, label):
     tooltip = trait.desc if trait.desc else ""
     widget = ipywidgets.Checkbox(
-        tooltip=tooltip,
-    )
-    return labelme(widget=widget, label=label)
-
-
-def float2floattext(trait, label):
-    tooltip = trait.desc if trait.desc else ""
-    widget = ipywidgets.FloatText(
         tooltip=tooltip,
     )
     return labelme(widget=widget, label=label)
@@ -40,12 +33,6 @@ def range2floatrangeslider(trait, label):
     return labelme(widget=widget, label=label)
 
 
-def enum2dropdown(trait, label):
-    tooltip = trait.desc if trait.desc else ""
-    widget = ipywidgets.Dropdown(
-        options=trait.trait_type.values,
-        tooltip=tooltip,)
-    return labelme(widget=widget, label=label)
 
 TRAITS2IPYWIDGETS = {
     traits.trait_types.CBool: bool2checkbox,
@@ -57,10 +44,6 @@ TRAITS2IPYWIDGETS = {
 }
 
 
-def get_label(trait, label):
-    label = (label.replace("_", " ").capitalize()
-             if not trait.label else trait.label)
-    return label
 
 
 @register_ipy_widget(toolkey="Preferences")

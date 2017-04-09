@@ -24,6 +24,7 @@ import dask.array as da
 import traits.api as t
 from scipy import constants
 
+from hyperspy.signal import BaseSetMetadataItems
 from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
 from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
@@ -40,13 +41,21 @@ _logger = logging.getLogger(__name__)
 
 
 @add_gui_method(toolkey="microscope_parameters_EELS")
-class TEMParametersUI(t.HasTraits):
+class TEMParametersUI(BaseSetMetadataItems):
     convergence_angle = t.Float(t.Undefined,
                                 label='Convergence semi-angle (mrad)')
     beam_energy = t.Float(t.Undefined,
                           label='Beam energy (keV)')
     collection_angle = t.Float(t.Undefined,
                                label='Collection semi-angle (mrad)')
+    mapping = {
+        'Acquisition_instrument.TEM.convergence_angle':
+        'convergence_angle',
+        'Acquisition_instrument.TEM.beam_energy':
+        'beam_energy',
+        'Acquisition_instrument.TEM.Detector.EELS.collection_angle':
+        'collection_angle',
+    }
 
 
 class EELSSpectrum_mixin:
@@ -879,30 +888,8 @@ class EELSSpectrum_mixin:
 
     @only_interactive
     def _set_microscope_parameters_gui(self):
-        tem_par = TEMParametersUI()
-        mapping = {
-            'Acquisition_instrument.TEM.convergence_angle':
-            'tem_par.convergence_angle',
-            'Acquisition_instrument.TEM.beam_energy':
-            'tem_par.beam_energy',
-            'Acquisition_instrument.TEM.Detector.EELS.collection_angle':
-            'tem_par.collection_angle',
-        }
-        for key, value in mapping.items():
-            if self.metadata.has_item(key):
-                exec('%s = self.metadata.%s' % (value, key))
+        tem_par = TEMParametersUI(self)
         tem_par.gui()
-        mapping = {
-            'Acquisition_instrument.TEM.convergence_angle':
-            tem_par.convergence_angle,
-            'Acquisition_instrument.TEM.beam_energy':
-            tem_par.beam_energy,
-            'Acquisition_instrument.TEM.Detector.EELS.collection_angle':
-            tem_par.collection_angle,
-        }
-        for key, value in mapping.items():
-            if value != t.Undefined:
-                self.metadata.set_item(key, value)
 
     def power_law_extrapolation(self,
                                 window_size=20,

@@ -42,12 +42,26 @@ def labelme_sandwich(label1, widget, label2):
         layout=FORM_ITEM_LAYOUT)
 
 
+def get_label(trait, label):
+    label = (label.replace("_", " ").capitalize()
+             if not trait.label else trait.label)
+    return label
+
+
 def enum2dropdown(trait):
     tooltip = trait.desc if trait.desc else ""
     widget = ipywidgets.Dropdown(
         options=trait.trait_type.values,
         tooltip=tooltip,)
     return widget
+
+
+def float2floattext(trait, label):
+    tooltip = trait.desc if trait.desc else ""
+    widget = ipywidgets.FloatText(
+        tooltip=tooltip,
+    )
+    return labelme(widget=widget, label=label)
 
 
 def add_display_arg(f):

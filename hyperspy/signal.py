@@ -28,6 +28,7 @@ import logging
 import numpy as np
 import scipy as sp
 from matplotlib import pyplot as plt
+import traits.api as t
 import numbers
 
 from hyperspy.axes import AxesManager
@@ -1451,6 +1452,20 @@ class SpecialSlicersSignal(SpecialSlicers):
 
     def __len__(self):
         return self.obj.axes_manager.signal_shape[0]
+
+
+class BaseSetMetadataItems(t.HasTraits):
+
+    def __init__(self, signal):
+        for key, value in self.mapping.items():
+            if signal.metadata.has_item(key):
+                setattr(self, value, signal.metadata.get_item(key))
+        self.signal = signal
+
+    def store(self, *args, **kwargs):
+        for key, value in self.mapping.items():
+            if getattr(self, value) != t.Undefined:
+                self.signal.metadata.set_item(key, getattr(self, value))
 
 
 class BaseSignal(FancySlicing,

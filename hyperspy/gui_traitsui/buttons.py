@@ -20,3 +20,6 @@ OurPreviousButton = tu.Action(name="Find previous",
 
 OurFitButton = tu.Action(name="Fit",
                          action="fit")
+
+StoreButton = tu.Action(name="Store",
+                        action="store")

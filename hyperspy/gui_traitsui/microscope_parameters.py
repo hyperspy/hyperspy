@@ -3,6 +3,14 @@ from traitsui.menu import OKButton, CancelButton
 
 from hyperspy.gui_traitsui.utils import (
     add_display_arg, register_traitsui_widget)
+from hyperspy.gui_traitsui.buttons import StoreButton
+
+
+class SetMetadataItemsHandler(tu.Handler):
+
+    def store(self, info):
+        info.object.store()
+        return True
 
 
 @register_traitsui_widget(toolkey="microscope_parameters_EDS_SEM")
@@ -15,7 +23,8 @@ def microscope_parameters_EDS_SEM(obj, **kwargs):
         tu.Group('live_time', 'azimuth_angle',
                  'elevation_angle', 'energy_resolution_MnKa',
                  label='EDS', show_border=True),
-        kind='modal', buttons=[OKButton, CancelButton],
+        buttons=[StoreButton],
+        handler=SetMetadataItemsHandler,
         title='SEM parameters definition wizard')
     return obj, {"view": view}
 
@@ -32,7 +41,7 @@ def microscope_parameters_EDS_TEM(obj, **kwargs):
         tu.Group('real_time', 'live_time', 'azimuth_angle',
                  'elevation_angle', 'energy_resolution_MnKa',
                  label='EDS', show_border=True),
-        kind='modal', buttons=[OKButton, CancelButton],
+        buttons=[StoreButton],
         title='TEM parameters definition wizard')
     return obj, {"view": view}
 
@@ -46,6 +55,6 @@ def microscope_parameters_EELS(obj, **kwargs):
                  label='TEM', show_border=True),
         tu.Group('collection_angle',
                  label='EELS', show_border=True),
-        kind='modal', buttons=[OKButton, CancelButton],
+        buttons=[StoreButton],
         title='TEM parameters definition wizard')
     return obj, {"view": view}
