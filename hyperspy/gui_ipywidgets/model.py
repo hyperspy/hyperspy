@@ -94,7 +94,7 @@ def _get_value_widget(obj, index=None):
     return {
         "widget": container,
         "wdict": wdict,
-        }
+    }
 
 
 @register_ipy_widget(toolkey="Parameter")
@@ -140,7 +140,7 @@ def get_parameter_widget(obj, **kwargs):
     return {
         "widget": container,
         "wdict": wdict,
-        }
+    }
 
 
 @register_ipy_widget(toolkey="Component")
@@ -163,7 +163,7 @@ def get_component_widget(obj, **kwargs):
     return {
         "widget": container,
         "wdict": wdict,
-        }
+    }
 
 
 @register_ipy_widget(toolkey="Model")
@@ -176,7 +176,9 @@ def get_model_widget(obj, **kwargs):
     children = []
     wdict = {}
     for component in obj:
-        idict = component.gui(display=False, toolkit="ipywidgets")["ipywidgets"]
+        idict = component.gui(
+            display=False,
+            toolkit="ipywidgets")["ipywidgets"]
         children.append(idict["widget"])
         wdict["component_{}".format(component.name)] = idict["wdict"]
     accordion = Accordion(children=children)
@@ -185,7 +187,7 @@ def get_model_widget(obj, **kwargs):
     return {
         "widget": accordion,
         "wdict": wdict
-        }
+    }
 
 
 @register_ipy_widget(toolkey="EELSCLEdge_Component")
@@ -214,7 +216,7 @@ def get_eelscl_widget(obj, **kwargs):
     return {
         "widget": container,
         "wdict": wdict,
-        }
+    }
 
 
 @register_ipy_widget(toolkey="ScalableFixedPattern_Component")
@@ -232,8 +234,7 @@ def get_scalable_fixed_patter_widget(obj, **kwargs):
     return {
         "widget": container,
         "wdict": wdict,
-        }
-
+    }
 
 
 @register_ipy_widget(toolkey="Model1D.fit_component")
@@ -276,4 +277,4 @@ def fit_component_ipy(obj, **kwargs):
     return {
         "widget": box,
         "wdict": wdict,
-        }
+    }
