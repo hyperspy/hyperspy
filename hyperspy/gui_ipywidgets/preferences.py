@@ -33,7 +33,6 @@ def range2floatrangeslider(trait, label):
     return labelme(widget=widget, label=label)
 
 
-
 TRAITS2IPYWIDGETS = {
     traits.trait_types.CBool: bool2checkbox,
     traits.trait_types.Bool: bool2checkbox,
@@ -42,8 +41,6 @@ TRAITS2IPYWIDGETS = {
     traits.trait_types.Range: range2floatrangeslider,
     traits.trait_types.Enum: enum2dropdown,
 }
-
-
 
 
 @register_ipy_widget(toolkey="Preferences")

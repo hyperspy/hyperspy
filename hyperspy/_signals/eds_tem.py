@@ -76,7 +76,6 @@ class TEMParametersUI(BaseSetMetadataItems):
         'real_time', }
 
 
-
 class EDSTEM_mixin:
 
     _signal_type = "EDS_TEM"
