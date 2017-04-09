@@ -30,7 +30,7 @@ from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
 from hyperspy.decorators import only_interactive
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.eds import utils as utils_eds
-from hyperspy.ui_registry import add_gui_method
+from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 
 _logger = logging.getLogger(__name__)
 
@@ -126,50 +126,15 @@ class EDSTEM_mixin:
                                   energy_resolution_MnKa=None,
                                   beam_current=None,
                                   probe_area=None,
-                                  real_time=None):
-        """Set the microscope parameters.
-
-        If no arguments are given, raises an interactive mode to fill
-        the values.
-
-        Parameters
-        ----------
-        beam_energy: float
-            The energy of the electron beam in keV
-        live_time : float
-            In seconds
-        tilt_stage : float
-            In degree
-        azimuth_angle : float
-            In degree
-        elevation_angle : float
-            In degree
-        energy_resolution_MnKa : float
-            In eV
-        beam_current: float
-            In nA
-        probe_area: float
-            In nm^2
-        real_time: float
-            In seconds
-
-        Examples
-        --------
-        >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
-        >>> print(s.metadata.Acquisition_instrument.
-        >>>       TEM.Detector.EDS.energy_resolution_MnKa)
-        >>> s.set_microscope_parameters(energy_resolution_MnKa=135.)
-        >>> print(s.metadata.Acquisition_instrument.
-        >>>       TEM.Detector.EDS.energy_resolution_MnKa)
-        133.312296
-        135.0
-
-        """
+                                  real_time=None,
+                                  display=True,
+                                  toolkit=None):
         if set([beam_energy, live_time, tilt_stage, azimuth_angle,
                 elevation_angle, energy_resolution_MnKa]) == {None}:
-            return self._set_microscope_parameters_gui()
-        md = self.metadata
+            tem_par = TEMParametersUI(self)
+            return tem_par.gui(display=display, toolkit=toolkit)
 
+        md = self.metadata
         if beam_energy is not None:
             md.set_item("Acquisition_instrument.TEM.beam_energy ", beam_energy)
         if live_time is not None:
@@ -203,10 +168,47 @@ class EDSTEM_mixin:
             md.set_item(
                 "Acquisition_instrument.TEM.Detector.EDS.real_time",
                 real_time)
+    set_microscope_parameters.__doc__ = \
+"""Set the microscope parameters.
 
-    def _set_microscope_parameters_gui(self):
-        tem_par = TEMParametersUI(self)
-        tem_par.gui()
+If no arguments are given, raises an interactive mode to fill
+the values.
+
+Parameters
+----------
+beam_energy: float
+    The energy of the electron beam in keV
+live_time : float
+    In seconds
+tilt_stage : float
+    In degree
+azimuth_angle : float
+    In degree
+elevation_angle : float
+    In degree
+energy_resolution_MnKa : float
+    In eV
+beam_current: float
+    In nA
+probe_area: float
+    In nm^2
+real_time: float
+    In seconds
+{}
+{}
+
+Examples
+--------
+>>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+>>> print(s.metadata.Acquisition_instrument.
+>>>       TEM.Detector.EDS.energy_resolution_MnKa)
+>>> s.set_microscope_parameters(energy_resolution_MnKa=135.)
+>>> print(s.metadata.Acquisition_instrument.
+>>>       TEM.Detector.EDS.energy_resolution_MnKa)
+133.312296
+135.0
+
+""".format(DISPLAY_DT, TOOLKIT_DT)
 
     def _are_microscope_parameters_missing(self):
         """Check if the EDS parameters necessary for quantification

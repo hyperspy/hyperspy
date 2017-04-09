@@ -35,7 +35,7 @@ from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import (
     isiterable, closest_power_of_two, underline, without_nans,
     signal_range_from_roi)
-from hyperspy.ui_registry import add_gui_method
+from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 
 _logger = logging.getLogger(__name__)
 
@@ -856,24 +856,12 @@ class EELSSpectrum_mixin:
     def set_microscope_parameters(self,
                                   beam_energy=None,
                                   convergence_angle=None,
-                                  collection_angle=None):
-        """Set the microscope parameters that are necessary to calculate
-        the GOS.
-
-        If not all of them are defined, in interactive mode
-        raises an UI item to fill the values
-
-        beam_energy: float
-            The energy of the electron beam in keV
-        convengence_angle : float
-            The microscope convergence semi-angle in mrad.
-        collection_angle : float
-            The collection semi-angle in mrad.
-        """
-
+                                  collection_angle=None,
+                                  toolkit=None,
+                                  display=True):
         if set((beam_energy, convergence_angle, collection_angle)) == {None}:
-            return self._set_microscope_parameters_gui()
-
+            tem_par = TEMParametersUI(self)
+            return tem_par.gui(toolkit=toolkit, display=display)
         mp = self.metadata
         if beam_energy is not None:
             mp.set_item("Acquisition_instrument.TEM.beam_energy", beam_energy)
@@ -885,11 +873,23 @@ class EELSSpectrum_mixin:
             mp.set_item(
                 "Acquisition_instrument.TEM.Detector.EELS.collection_angle",
                 collection_angle)
+    set_microscope_parameters.__doc__ = \
+"""Set the microscope parameters that are necessary to calculate
+the GOS.
 
-    @only_interactive
-    def _set_microscope_parameters_gui(self):
-        tem_par = TEMParametersUI(self)
-        tem_par.gui()
+If not all of them are defined, in interactive mode
+raises an UI item to fill the values
+
+beam_energy: float
+    The energy of the electron beam in keV
+convengence_angle : float
+    The microscope convergence semi-angle in mrad.
+collection_angle : float
+    The collection semi-angle in mrad.
+{}
+{}
+""".format(TOOLKIT_DT, DISPLAY_DT)
+
 
     def power_law_extrapolation(self,
                                 window_size=20,
