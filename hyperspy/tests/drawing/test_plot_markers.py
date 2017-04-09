@@ -26,7 +26,8 @@ from hyperspy.drawing.marker import dict2marker
 
 default_tol = 2.0
 baseline_dir = 'plot_markers'
-
+style_pytest_mpl = 'default'
+ 
 
 class TestMarkers:
 
@@ -369,7 +370,7 @@ def _test_plot_rectange_markers():
 
 
 @pytest.mark.mpl_image_compare(
-    baseline_dir=baseline_dir, tolerance=default_tol)
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_rectange_markers(mpl_cleanup):
     im = _test_plot_rectange_markers()
     return im._plot.signal_plot.figure
@@ -394,7 +395,7 @@ def _test_plot_point_markers():
 
 
 @pytest.mark.mpl_image_compare(
-    baseline_dir=baseline_dir, tolerance=default_tol)
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_point_markers(mpl_cleanup):
     s = _test_plot_point_markers()
     return s._plot.signal_plot.figure
@@ -418,14 +419,14 @@ def _test_plot_text_markers():
 
 
 @pytest.mark.mpl_image_compare(
-    baseline_dir=baseline_dir, tolerance=default_tol)
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_text_markers_nav(mpl_cleanup):
     s = _test_plot_text_markers()
     return s._plot.navigator_plot.figure
 
 
 @pytest.mark.mpl_image_compare(
-    baseline_dir=baseline_dir, tolerance=default_tol)
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_text_markers_sig(mpl_cleanup):
     s = _test_plot_text_markers()
     return s._plot.signal_plot.figure
@@ -452,7 +453,7 @@ def _test_plot_line_markers():
 
 
 @pytest.mark.mpl_image_compare(
-    baseline_dir=baseline_dir, tolerance=default_tol)
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_line_markers(mpl_cleanup):
     im = _test_plot_line_markers()
     return im._plot.signal_plot.figure

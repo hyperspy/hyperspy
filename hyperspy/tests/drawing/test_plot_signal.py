@@ -26,6 +26,7 @@ import hyperspy.api as hs
 scalebar_color = 'blue'
 default_tol = 2.0
 baseline_dir = 'plot_signal'
+style_pytest_mpl = 'default'
 
 
 class _TestPlot:
@@ -102,7 +103,7 @@ def _generate_parameter():
 @pytest.mark.parametrize(("ndim", "sdim", "plot_type", "data_type"),
                          _generate_parameter())
 @pytest.mark.mpl_image_compare(
-    baseline_dir=baseline_dir, tolerance=default_tol)
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_sig_nav(mpl_cleanup, ndim, sdim, plot_type, data_type):
     test_plot = _TestPlot(ndim, sdim, data_type)
     test_plot.signal.plot()
