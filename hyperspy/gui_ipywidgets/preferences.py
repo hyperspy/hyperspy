@@ -22,12 +22,14 @@ def directory2unicode(trait, label):
         tooltip=tooltip,)
     return labelme(widget=widget, label=label)
 
+
 def enum2dropdown(trait, label):
     tooltip = trait.desc if trait.desc else ""
     widget = ipywidgets.Dropdown(
         options=trait.trait_type.values,
         tooltip=tooltip,)
     return labelme(widget=widget, label=label)
+
 
 def range2floatrangeslider(trait, label):
     tooltip = trait.desc if trait.desc else ""
