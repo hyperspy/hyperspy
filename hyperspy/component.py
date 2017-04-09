@@ -997,10 +997,10 @@ class Component(t.HasTraits):
                 is not None else 0
             if parameter.twin is None:
                 if dim <= 1:
-                    return ('%s = %s ± %s %s' % (parameter.name,
-                                                 parameter.value,
-                                                 parameter.std,
-                                                 parameter.units))
+                    print ('%s = %s ± %s %s' % (parameter.name,
+                                                parameter.value,
+                                                parameter.std,
+                                                parameter.units))
 
     def __call__(self):
         """Returns the corresponding model for the current coordinates
@@ -1166,6 +1166,7 @@ class Component(t.HasTraits):
         """
 
         if dic['_id_name'] == self._id_name:
+            load_from_dictionary(self, dic)
             id_dict = {}
             for p in dic['parameters']:
                 idname = p['_id_name']
@@ -1176,8 +1177,6 @@ class Component(t.HasTraits):
                 else:
                     raise ValueError(
                         "_id_name of parameters in component and dictionary do not match")
-
-            load_from_dictionary(self, dic)
             return id_dict
         else:
             raise ValueError( "_id_name of component and dictionary do not match, \ncomponent._id_name = %s\

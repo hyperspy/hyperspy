@@ -64,11 +64,10 @@ def _set_signal_axes(axes_manager, name=t.Undefined, units=t.Undefined,
     return axes_manager
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.parametrize("normalization", ['single', 'global'])
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol)
-def test_rgb_image(normalization):
+def test_rgb_image(mpl_cleanup, normalization):
     w = 20
     data = np.arange(1, w * w + 1).reshape(w, w)
     ch1 = hs.signals.Signal2D(data)
@@ -95,7 +94,7 @@ def _generate_parameter():
                          _generate_parameter())
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol)
-def test_plot(scalebar, colorbar, axes_ticks, centre_colormap):
+def test_plot(mpl_cleanup, scalebar, colorbar, axes_ticks, centre_colormap):
     test_plot = _TestPlot(ndim=0, sdim=2)
     test_plot.signal.plot(scalebar=scalebar,
                           colorbar=colorbar,
@@ -106,7 +105,7 @@ def test_plot(scalebar, colorbar, axes_ticks, centre_colormap):
 
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol)
-def test_plot_multiple_images_list():
+def test_plot_multiple_images_list(mpl_cleanup):
     # load red channel of raccoon as an image
     image0 = hs.signals.Signal2D(scipy.misc.face()[:, :, 0])
 

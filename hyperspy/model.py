@@ -1462,14 +1462,16 @@ class BaseModel(list):
             if only_active is False or component.active:
                 component.plot(only_free=only_free)
 
-    def print_current_values(self, only_free=True):
+    def print_current_values(self, only_free=True, skip_multi=False):
         """Print the value of each parameter of the model.
 
         Parameters
         ----------
         only_free : bool
             If True, only the value of the parameters that are free will
-             be printed.
+            be printed.
+        skip_multi : bool
+            If True, parameters with attribute "__iter__" are not printed
 
         """
         print("Components\tParameter\tValue")
@@ -1482,9 +1484,13 @@ class BaseModel(list):
                 parameters = component.free_parameters if only_free \
                     else component.parameters
                 for parameter in parameters:
-                    if not hasattr(parameter.value, '__iter__'):
-                        print("\t\t%s\t%g" % (
-                            parameter.name, parameter.value))
+                    if hasattr(parameter.value, '__iter__'):
+                        if not skip_multi:
+                            for idx in range(len(parameter.value)):
+                                print("\t\t%s[%d]\t%g" % (parameter.name, idx,
+                                                          parameter.value[idx]))
+                    else:
+                        print("\t\t%s\t%g" % (parameter.name, parameter.value))
 
     def set_parameters_not_free(self, component_list=None,
                                 parameter_name_list=None):
