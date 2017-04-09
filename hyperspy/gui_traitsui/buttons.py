@@ -23,3 +23,6 @@ OurFitButton = tu.Action(name="Fit",
 
 StoreButton = tu.Action(name="Store",
                         action="store")
+
+SaveButton = tu.Action(name="Save",
+                       action="save")

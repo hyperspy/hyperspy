@@ -1,12 +1,14 @@
 import traitsui.api as tui
+from traitsui.menu import CancelButton
 
+from hyperspy.gui_traitsui.buttons import SaveButton
 from hyperspy.gui_traitsui.utils import (
     register_traitsui_widget, add_display_arg)
 
 
 class PreferencesHandler(tui.Handler):
 
-    def close(self, info, is_ok):
+    def save(self, info):
         # Removes the span selector from the plot
         info.object.save()
         return True
@@ -26,6 +28,7 @@ PREFERENCES_VIEW = tui.View(
     tui.Group(tui.Item('Plot', style='custom', show_label=False, ),
               label='Plot'),
     title='Preferences',
+    buttons=[SaveButton, CancelButton],
     handler=PreferencesHandler,)
 
 EELS_VIEW = tui.View(
