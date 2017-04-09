@@ -199,10 +199,11 @@ class ImagePlot(BlittedFigure):
 
     def create_figure(self, max_size=8, min_size=2):
         if self.scalebar is True:
-
             wfactor = 1.1
         else:
             wfactor = 1
+        rcParams_factor = np.array(plt.rcParams['figure.figsize']) / \
+            np.array(plt.rcParamsDefault['figure.figsize'])
         height = abs(self._extent[3] - self._extent[2]) * self._aspect
         width = abs(self._extent[1] - self._extent[0])
         rcParams_factor = np.array(plt.rcParams['figure.figsize']) / \
