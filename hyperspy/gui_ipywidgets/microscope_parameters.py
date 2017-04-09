@@ -26,7 +26,7 @@ def _set_microscope_parameters(obj, **kwargs):
         tooltip="Store the values in metadata")
     store_button.on_click(obj.store)
     wdict["store_button"] = store_button
-    container =  ipywidgets.VBox([ipywidgets.VBox(widgets), store_button])
+    container = ipywidgets.VBox([ipywidgets.VBox(widgets), store_button])
     return {
         "widget": container,
         "wdict": wdict}
