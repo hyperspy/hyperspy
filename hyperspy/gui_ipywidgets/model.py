@@ -43,6 +43,7 @@ def _interactive_slider_bounds(obj, index=None):
 
 
 def _get_value_widget(obj, index=None):
+    wdict = {}
     widget_bounds = _interactive_slider_bounds(obj, index=index)
     thismin = FloatText(value=widget_bounds['min'],
                         description='min',
@@ -87,7 +88,13 @@ def _get_value_widget(obj, index=None):
         link_traits((obj, "value"), (widget, "value"))
 
     container = HBox((thismin, widget, thismax))
-    return container
+    wdict["value"] = widget
+    wdict["min"] = thismin
+    wdict["max"] = thismax
+    return {
+        "widget": container,
+        "wdict": wdict,
+        }
 
 
 @register_ipy_widget(toolkey="Parameter")
@@ -98,10 +105,14 @@ def get_parameter_widget(obj, **kwargs):
 
     """
     if obj._number_of_elements == 1:
-        container = _get_value_widget(obj)
+        return _get_value_widget(obj)
     else:
-        par_widgets = [_get_value_widget(obj=obj, index=i)
-                       for i in range(obj._number_of_elements)]
+        wdict = {}
+        par_widgets = []
+        for i in range(obj._number_of_elements):
+            thiswd = _get_value_widget(obj=obj, index=i)
+            par_widgets.append(thiswd["widget"])
+            wdict["element{}".format(i)] = thiswd["wdict"]
         update = Button(
             description="Update",
             tooltip="Unlike most other widgets, the multivalue parameter "
@@ -121,11 +132,15 @@ def get_parameter_widget(obj, **kwargs):
                     maxwidget.value = value
                 vwidget.value = value
         update.on_click(on_update_clicked)
+        wdict["update_button"] = update
         container = Accordion([VBox([update] + par_widgets)],
                               descrition=obj.name)
         container.set_title(0, obj.name)
 
-    return container
+    return {
+        "widget": container,
+        "wdict": wdict,
+        }
 
 
 @register_ipy_widget(toolkey="Component")
@@ -135,12 +150,20 @@ def get_component_widget(obj, **kwargs):
     if available.
 
     """
+    wdict = {}
     active = Checkbox(description='active', value=obj.active)
+    wdict["active"] = active
     link_traits((obj, "active"), (active, "value"))
     container = VBox([active])
     for parameter in obj.parameters:
-        container.children += get_parameter_widget(parameter, display=False),
-    return container
+        pardict = parameter.gui(
+            toolkit="ipywidgets", display=False)["ipywidgets"]
+        wdict["parameter_{}".format(parameter.name)] = pardict["wdict"]
+        container.children += pardict["widget"],
+    return {
+        "widget": container,
+        "wdict": wdict,
+        }
 
 
 @register_ipy_widget(toolkey="Model")
@@ -150,13 +173,19 @@ def get_model_widget(obj, **kwargs):
     parameters, if available.
 
     """
-
-    children = [get_component_widget(component, display=False)
-                for component in obj]
+    children = []
+    wdict = {}
+    for component in obj:
+        idict = component.gui(display=False, toolkit="ipywidgets")["ipywidgets"]
+        children.append(idict["widget"])
+        wdict["component_{}".format(component.name)] = idict["wdict"]
     accordion = Accordion(children=children)
     for i, comp in enumerate(obj):
         accordion.set_title(i, comp.name)
-    return accordion
+    return {
+        "widget": accordion,
+        "wdict": wdict
+        }
 
 
 @register_ipy_widget(toolkey="EELSCLEdge_Component")
@@ -165,6 +194,7 @@ def get_eelscl_widget(obj, **kwargs):
     """Create ipywidgets for the EELSCLEDge component.
 
     """
+    wdict = {}
     active = Checkbox(description='active', value=obj.active)
     fine_structure = Checkbox(description='Fine structure',
                               value=obj.fine_structure_active)
@@ -172,39 +202,52 @@ def get_eelscl_widget(obj, **kwargs):
                                min=0, max=1, step=0.001,
                                value=obj.fine_structure_smoothing)
     container = VBox([active, fine_structure, fs_smoothing])
+    wdict["active"] = active
+    wdict["fine_structure"] = fine_structure
+    wdict["fs_smoothing"] = fs_smoothing
     for parameter in [obj.intensity, obj.effective_angle,
                       obj.onset_energy]:
-        container.children += get_parameter_widget(parameter, display=False),
-    return container
+        pdict = parameter.gui(
+            toolkit="ipywidgets", display=False)["ipywidgets"]
+        container.children += pdict["widget"],
+        wdict["parameter_{}".format(parameter.name)] = pdict["wdict"]
+    return {
+        "widget": container,
+        "wdict": wdict,
+        }
 
 
 @register_ipy_widget(toolkey="ScalableFixedPattern_Component")
 @add_display_arg
 def get_scalable_fixed_patter_widget(obj, **kwargs):
-    container = get_component_widget(obj, display=False)
+    cdict = get_component_widget(obj, display=False)
+    wdict = cdict["wdict"]
+    container = cdict["widget"]
     interpolate = Checkbox(description='interpolate',
                            value=obj.interpolate)
-
-    def on_interpolate_change(change):
-        obj.interpolate = change['new']
-
-    interpolate.observe(on_interpolate_change, names='value')
-
+    wdict["interpolate"] = interpolate
+    link_traits((obj, "interpolate"), (interpolate, "value"))
     container.children = (container.children[0], interpolate) + \
         container.children[1:]
-    return container
+    return {
+        "widget": container,
+        "wdict": wdict,
+        }
+
 
 
 @register_ipy_widget(toolkey="Model1D.fit_component")
 @add_display_arg
 def fit_component_ipy(obj, **kwargs):
+    wdict = {}
     only_current = Checkbox()
+    wdict["only_current"] = only_current
     help = Label(
         "Click on the signal figure and drag to the right to select a"
         "range. Press `Fit` to fit the component in that range. If only "
         "current is unchecked the fit is performed in the whole dataset.",
         layout=ipywidgets.Layout(width="auto"))
-
+    wdict["help"] = only_current
     help = Accordion(children=[help])
     help.set_title(0, "Help")
     link_traits((obj, "only_current"), (only_current, "value"))
@@ -214,6 +257,8 @@ def fit_component_ipy(obj, **kwargs):
     close = Button(
         description="Close",
         tooltip="Close widget and remove span selector from the signal figure.")
+    wdict["close_button"] = close
+    wdict["fit_button"] = fit
 
     def on_fit_clicked(b):
         obj._fit_fired()
@@ -228,4 +273,7 @@ def fit_component_ipy(obj, **kwargs):
         obj.span_selector_switch(False)
         box.close()
     close.on_click(on_close_clicked)
-    return box
+    return {
+        "widget": box,
+        "wdict": wdict,
+        }
