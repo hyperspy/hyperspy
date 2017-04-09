@@ -21,7 +21,7 @@ def span_roi_ipy(obj, **kwargs):
     return {
         "widget": container,
         "wdict": wdict,
-        }
+    }
 
 
 @register_ipy_widget(toolkey="Point1DROI")
@@ -34,7 +34,7 @@ def point1d_roi_ipy(obj, **kwargs):
     return {
         "widget": value,
         "wdict": wdict,
-        }
+    }
 
 
 @register_ipy_widget(toolkey="Point2DROI")
@@ -51,7 +51,7 @@ def point_2d_ipy(obj, **kwargs):
     return {
         "widget": container,
         "wdict": wdict,
-        }
+    }
 
 
 @register_ipy_widget(toolkey="RectangularROI")
@@ -76,7 +76,7 @@ def rectangular_roi_ipy(obj, **kwargs):
     return {
         "widget": container,
         "wdict": wdict,
-        }
+    }
 
 
 @register_ipy_widget(toolkey="CircleROI")
@@ -101,7 +101,7 @@ def circle_roi_ipy(obj, **kwargs):
     return {
         "widget": container,
         "wdict": wdict,
-        }
+    }
 
 
 @register_ipy_widget(toolkey="Line2DROI")
@@ -129,4 +129,4 @@ def line2d_roi_ipy(obj, **kwargs):
     return {
         "widget": container,
         "wdict": wdict,
-        }
+    }
