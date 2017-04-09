@@ -8,21 +8,24 @@ from hyperspy.misc.link_traits import link_traits
 @register_ipy_widget(toolkey="navigation_sliders")
 @add_display_arg
 def ipy_navigation_sliders(obj, **kwargs):
-    continuous_update = ipywidgets.Checkbox(True)
+    continuous_update = ipywidgets.Checkbox(True,
+                                            description="Continous update")
     widgets = []
     for axis in obj:
         iwidget = ipywidgets.IntSlider(
             min=0,
             max=axis.size - 1,
             readout=True,
+            description="index"
         )
         link_traits((continuous_update, "value"),
                     (iwidget, "continuous_update"))
         link_traits((axis, "index"), (iwidget, "value"))
-        vwidget = ipywidgets.FloatSlider(
+        vwidget = ipywidgets.BoundedFloatText(
             min=axis.low_value,
             max=axis.high_value,
             step=axis.scale,
+            description="value"
             # readout_format=".lf"
         )
         link_traits((continuous_update, "value"),
@@ -31,11 +34,16 @@ def ipy_navigation_sliders(obj, **kwargs):
         link_traits((axis, "high_value"), (vwidget, "max"))
         link_traits((axis, "low_value"), (vwidget, "min"))
         link_traits((axis, "scale"), (vwidget, "step"))
-        bothw = ipywidgets.VBox([iwidget, vwidget])
-        labeled_widget = labelme(str(axis), bothw)
-        link_traits((axis, "name"), (labeled_widget.children[0], "value"))
-        widgets.append(labeled_widget)
-    widgets.append(labelme("Continuous update", continuous_update))
+        name = ipywidgets.Label(str(axis),
+                                layout=ipywidgets.Layout(width="15%"))
+        units = ipywidgets.Label(layout=ipywidgets.Layout(width="5%"),
+                                 disabled=True)
+        link_traits((axis, "name"), (name, "value"))
+        link_traits((axis, "units"), (units, "value"))
+        bothw = ipywidgets.HBox([name, iwidget, vwidget, units])
+        # labeled_widget = labelme(str(axis), bothw)
+        widgets.append(bothw)
+    widgets.append(continuous_update)
     box = ipywidgets.VBox(widgets)
     return box
 
