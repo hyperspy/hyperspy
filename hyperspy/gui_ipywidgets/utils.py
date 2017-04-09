@@ -68,10 +68,9 @@ def add_display_arg(f):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
         display = kwargs.pop("display", True)
-        widget = f(*args, **kwargs)
+        widget_dict = f(*args, **kwargs)
         if display:
-            IPython.display.display(widget)
+            IPython.display.display(widget["widget"])
         else:
-            return widget
+            return widget_dict
     return wrapper
-
