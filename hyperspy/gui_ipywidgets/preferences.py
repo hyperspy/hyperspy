@@ -89,4 +89,4 @@ def show_preferences_widget(obj, **kwargs):
     return {
         "widget": container,
         "wdict": wdict,
-        }
+    }
