@@ -1051,6 +1051,8 @@ class SpikesRemoval(SpanSelectorInSignal1D):
             self.interpolated_line.update()
 
     def apply(self):
+        if not self.interpolated_line: # No spike selected
+            return
         self.signal()[:] = self.get_interpolated_spectrum()
         self.signal.events.data_changed.trigger(obj=self.signal)
         self.update_spectrum_line()
