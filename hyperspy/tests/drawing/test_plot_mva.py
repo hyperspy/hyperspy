@@ -26,7 +26,6 @@ baseline_dir = 'plot_mva'
 default_tol = 2.0
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 class TestPlotExplainedVarianceRatio:
 
     def setup_method(self, method):
@@ -51,7 +50,6 @@ class TestPlotExplainedVarianceRatio:
                                            xaxis_labeling])
         return parameters
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
     @pytest.mark.parametrize(("n", "threshold", "xaxis_type", "xaxis_labeling"),
                              _generate_parameters())
     @pytest.mark.mpl_image_compare(
@@ -63,21 +61,18 @@ class TestPlotExplainedVarianceRatio:
                                                   xaxis_labeling=xaxis_labeling)
         return ax.get_figure()
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
     @pytest.mark.parametrize("n", [3, [3, 4]])
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_decomposition_loadings_nav1(self, n):
         return self.s.plot_decomposition_loadings(n)
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
     @pytest.mark.parametrize("n", (3, [3, 4]))
     @pytest.mark.mpl_image_compare(
         baseline_dir=baseline_dir, tolerance=default_tol)
     def test_plot_decomposition_factors_nav1(self, n):
         return self.s.plot_decomposition_factors(n)
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
     @pytest.mark.parametrize(("n", "per_row", "axes_decor"),
                              ((6, 3, 'all'), (8, 4, None),
                               ([3, 4, 5, 6], 2, 'ticks')))
