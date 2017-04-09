@@ -63,7 +63,7 @@ def interactive_range_ipy(obj, **kwargs):
     return {
         "widget": box,
         "wdict": wdict,
-        }
+    }
 
 
 @register_ipy_widget(toolkey="Signal1D.calibrate")
@@ -141,7 +141,7 @@ def calibrate_ipy(obj, **kwargs):
     return {
         "widget": box,
         "wdict": wdict,
-        }
+    }
 
 
 @register_ipy_widget(toolkey="Signal1D.smooth_savitzky_golay")
@@ -197,7 +197,7 @@ def smooth_savitzky_golay_ipy(obj, **kwargs):
     return {
         "widget": box,
         "wdict": wdict,
-        }
+    }
 
 
 @register_ipy_widget(toolkey="Signal1D.smooth_lowess")
@@ -239,7 +239,7 @@ def smooth_lowess_ipy(obj, **kwargs):
     return {
         "widget": box,
         "wdict": wdict,
-        }
+    }
 
 
 @register_ipy_widget(toolkey="Signal1D.smooth_total_variation")
@@ -283,7 +283,7 @@ def smooth_tv_ipy(obj, **kwargs):
     return {
         "widget": box,
         "wdict": wdict,
-        }
+    }
 
 
 @register_ipy_widget(toolkey="Signal1D.smooth_butterworth")
@@ -326,7 +326,7 @@ def smooth_butterworth(obj, **kwargs):
     return {
         "widget": box,
         "wdict": wdict,
-        }
+    }
 
 
 @register_ipy_widget(toolkey="Signal1D.contrast_editor")
@@ -383,7 +383,7 @@ def image_constast_editor_ipy(obj, **kwargs):
     return {
         "widget": box,
         "wdict": wdict,
-        }
+    }
 
 
 @register_ipy_widget(toolkey="Signal1D.remove_background")
@@ -452,7 +452,7 @@ def remove_background_ipy(obj, **kwargs):
     return {
         "widget": box,
         "wdict": wdict,
-        }
+    }
 
 
 @register_ipy_widget(toolkey="Signal1D.spikes_removal_tool")
@@ -560,4 +560,4 @@ def spikes_removal_ipy(obj, **kwargs):
     return {
         "widget": box,
         "wdict": wdict,
-        }
+    }
