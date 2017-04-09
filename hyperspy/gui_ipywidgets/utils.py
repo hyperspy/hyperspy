@@ -74,3 +74,4 @@ def add_display_arg(f):
         else:
             return widget
     return wrapper
+

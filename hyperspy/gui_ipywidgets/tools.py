@@ -381,7 +381,7 @@ def spikes_removal_ipy(obj, **kwargs):
     interpolator_kind = enum2dropdown(obj.traits()["interpolator_kind"])
     spline_order = ipywidgets.IntSlider(min=1, max=10)
     progress_bar = ipywidgets.IntProgress(max=len(obj.coordinates) - 1)
-    help = ipywidgets.HTML(value=SPIKES_REMOVAL_INSTRUCTIONS)
+    help = ipywidgets.HTML(value=SPIKES_REMOVAL_INSTRUCTIONS.replace('\n', '<br/>'))
     help = ipywidgets.Accordion(children=[help])
     help.set_title(0, "Help")
 
