@@ -25,8 +25,7 @@ from matplotlib import pyplot as plt
 from distutils.version import LooseVersion
 
 from hyperspy import utils
-from hyperspy._signals.signal1d import Signal1D
-from hyperspy.signals import LazySignal1D
+from hyperspy._signals.signal1d import Signal1D, LazySignal1D
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
@@ -1053,5 +1052,5 @@ class EDSSpectrum(EDS_mixin, Signal1D):
     pass
 
 
-class LazyEDSSpectrum(EDS_mixin, LazySignal1D):
+class LazyEDSSpectrum(EDSSpectrum, LazySignal1D):
     pass
