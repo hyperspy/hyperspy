@@ -310,6 +310,7 @@ with update_version_when_dev() as version:
                   'hyperspy.learn',
                   'hyperspy._signals',
                   'hyperspy.gui_ipywidgets',
+                  'hyperspy.gui_ipywidgets.tests',
                   'hyperspy.gui_traitsui',
                   'hyperspy.utils',
                   'hyperspy.tests',

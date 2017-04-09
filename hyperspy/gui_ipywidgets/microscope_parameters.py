@@ -10,6 +10,7 @@ from hyperspy.misc.link_traits import link_traits
 def _set_microscope_parameters(obj, **kwargs):
     traits = obj.traits()
     widgets = []
+    wdict = {}
     for trait_name in obj.editable_traits():
         if trait_name in ("mapping", "signal"):
             continue
@@ -17,14 +18,18 @@ def _set_microscope_parameters(obj, **kwargs):
         widget = float2floattext(
             trait, get_label(trait, trait_name))
         widgets.append(widget)
+        wdict[trait_name] = widget.children[1]
         link_traits((obj, trait_name),
                     (widget.children[1], "value"))
     store_button = ipywidgets.Button(
         description="Store",
         tooltip="Store the values in metadata")
     store_button.on_click(obj.store)
-    return ipywidgets.VBox([ipywidgets.VBox(widgets),
-                            store_button])
+    wdict["store_button"] = store_button
+    container =  ipywidgets.VBox([ipywidgets.VBox(widgets), store_button])
+    return {
+        "widget": container,
+        "wdict": wdict}
 
 
 @register_ipy_widget(toolkey="microscope_parameters_EELS")

@@ -139,4 +139,4 @@ def ipy_axes_gui(obj, **kwargs):
     return {
         "widget": tabs,
         "wdict": wdict,
-        }
+    }
