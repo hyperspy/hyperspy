@@ -55,7 +55,7 @@ class PESCoreLineShape(Component):
         self.ab.grad = self.grad_ab
 
         # Linearity
-        self.A.is_linear = True
+        self.A.is_linear = False # This is probably linear, but unsure
         self.fwhm.is_linear = False
         self.origin.is_linear = False
         self.ab.is_linear = False

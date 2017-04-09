@@ -48,7 +48,7 @@ class HeavisideStep(Component):
         self.n.grad = self.grad_n
 
         # Linearity
-        self.A.is_linear = False # Should this be False or True?
+        self.A.is_linear = True
         self.n.is_linear = False
 
     def function(self, x):
