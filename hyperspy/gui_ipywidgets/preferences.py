@@ -54,7 +54,10 @@ TRAITS2IPYWIDGETS = {
 @add_display_arg
 def show_preferences_widget(obj, **kwargs):
     ipytabs = {}
+    wdict = {}
     for tab in obj.editable_traits():
+        tabdict = {}
+        wdict["tab_{}".format(tab)] = tabdict
         ipytab = []
         tabtraits = getattr(obj, tab).traits()
         for trait_name in getattr(obj, tab).editable_traits():
@@ -62,6 +65,7 @@ def show_preferences_widget(obj, **kwargs):
             widget = TRAITS2IPYWIDGETS[type(trait.trait_type)](
                 trait, get_label(trait, trait_name))
             ipytab.append(widget)
+            tabdict[trait_name] = widget.children[1]
             link_traits((getattr(obj, tab), trait_name),
                         (widget.children[1], "value"))
         ipytabs[tab] = ipywidgets.VBox(ipytab)
@@ -74,6 +78,7 @@ def show_preferences_widget(obj, **kwargs):
     save_button = ipywidgets.Button(
         description="Save",
         tooltip="Make changes permanent")
+    wdict["save_button"] = save_button
 
     def on_button_clicked(b):
         obj.save()
@@ -81,4 +86,7 @@ def show_preferences_widget(obj, **kwargs):
     save_button.on_click(on_button_clicked)
 
     container = ipywidgets.VBox([ipytabs_, save_button])
-    return container
+    return {
+        "widget": container,
+        "wdict": wdict,
+        }
