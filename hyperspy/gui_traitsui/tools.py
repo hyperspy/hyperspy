@@ -191,7 +191,8 @@ def smooth_savitzky_golay_traitsui(obj, **kwargs):
                 'be a nonnegative integer. The default is 0, which '
                 'means to filter the data without differentiating.',
             ),
-            'line_color'),
+            # 'line_color',
+            ),
         kind='live',
         handler=SmoothingHandler,
         buttons=OKCancelButtons,
@@ -207,7 +208,8 @@ def smooth_lowess_traitsui(obj, **kwargs):
         tu.Group(
             'smoothing_parameter',
             'number_of_iterations',
-            'line_color'),
+            # 'line_color',
+            ),
         kind='live',
         handler=SmoothingHandler,
         buttons=OKCancelButtons,
@@ -221,7 +223,8 @@ def smooth_tv_traitsui(obj, **kwargs):
     view = tu.View(
         tu.Group(
             'smoothing_parameter',
-            'line_color'),
+            # 'line_color',
+            ),
         kind='live',
         handler=SmoothingHandler,
         buttons=OKCancelButtons,
