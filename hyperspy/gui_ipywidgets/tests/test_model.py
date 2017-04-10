@@ -38,3 +38,17 @@ def test_component():
     assert wd["active"].value == c.active
     assert wd["parameter_a"]["value"].value == c.a.value
     assert wd["parameter_b"]["value"].value == c.b.value
+
+def test_model():
+    s = hs.signals.Signal1D([0])
+    m = s.create_model()
+    c = Component(["a", "b"])
+    d = Component(["a", "b"])
+    m.extend((c, d))
+    c.name = "c"
+    d.name = "d"
+    c.active = False
+    d.active = True
+    wd = m.gui(**KWARGS)["ipywidgets"]["wdict"]
+    assert wd["component_c"]["active"].value == c.active
+    assert wd["component_d"]["active"].value == d.active
