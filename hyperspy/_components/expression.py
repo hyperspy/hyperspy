@@ -147,10 +147,8 @@ class Expression(Component):
             self.__doc__ = _CLASS_DOC % (
                 name, sympy.latex(_parse_substitutions(expression)))
 
-        for parameter in self._parameter_strings:
-            # Linearity
-            par_attr = getattr(self, parameter)
-            setattr(par_attr, "is_linear", False) # Change it manually later
+        for par in self.parameters:
+            par.is_linear = False # Linearity
 
     def function(self, x):
         return self._f(x, *[p.value for p in self.parameters])
