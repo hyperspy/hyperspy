@@ -39,6 +39,7 @@ def test_component():
     assert wd["parameter_a"]["value"].value == c.a.value
     assert wd["parameter_b"]["value"].value == c.b.value
 
+
 def test_model():
     s = hs.signals.Signal1D([0])
     m = s.create_model()
