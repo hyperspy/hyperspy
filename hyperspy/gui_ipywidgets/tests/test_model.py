@@ -22,6 +22,7 @@ def test_parameter():
     assert wd["min"].value == p.bmin
     assert wd["max"].value == p.bmax
 
+
 def test_component():
     c = Component(["a", "b"])
     c.a.value = 3
