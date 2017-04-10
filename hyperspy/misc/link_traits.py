@@ -38,7 +38,7 @@ class link_traits(traitlets.link):
         self.source, self.target = source, target
         try:
             source_value = getattr(source[0], source[1])
-            if source_value not in (t.Undefined, traitlets.Undefined):
+            if source_value not in (t.Undefined, traitlets.Undefined, None):
                 setattr(target[0], target[1], source_value)
         finally:
             if has_traits(source[0]):
@@ -117,7 +117,7 @@ class directional_link(traitlets.dlink):
         self.source, self.target = source, target
         try:
             source_value = getattr(source[0], source[1])
-            if source_value not in (t.Undefined, traitlets.Undefined):
+            if source_value not in (t.Undefined, traitlets.Undefined, None):
                 setattr(target[0], target[1], self._transform(source_value))
         finally:
             if has_traits(source[0]):
