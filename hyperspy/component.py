@@ -177,6 +177,7 @@ class Parameter(t.HasTraits):
                            'self': ('id', None),
                            }
         self._slicing_whitelist = {'map': 'inav'}
+        self.is_linear = False
 
     def _load_dictionary(self, dictionary):
         """Load data from dictionary
