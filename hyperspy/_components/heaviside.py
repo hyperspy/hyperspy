@@ -49,7 +49,6 @@ class HeavisideStep(Component):
 
         # Linearity
         self.A.is_linear = True
-        self.n.is_linear = False
 
     def function(self, x):
         x = np.asanyarray(x)
