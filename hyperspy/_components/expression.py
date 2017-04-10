@@ -147,9 +147,6 @@ class Expression(Component):
             self.__doc__ = _CLASS_DOC % (
                 name, sympy.latex(_parse_substitutions(expression)))
 
-    def function(self, x):
-        return self._f(x, *[p.value for p in self.parameters])
-
     def compile_function(self, module="numpy", position=False):
         import sympy
         from sympy.utilities.lambdify import lambdify
