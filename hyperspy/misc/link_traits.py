@@ -87,6 +87,7 @@ class link_traits(traitlets.link):
             self.target[0].unobserve(self._update_source, names=self.target[1])
         self.source, self.target = None, None
 
+
 class directional_link(traitlets.dlink):
     """Link the trait of a source object with traits of target objects.
 
@@ -110,6 +111,7 @@ class directional_link(traitlets.dlink):
     link
 
     """
+
     def __init__(self, source, target, transform=None):
         self._transform = transform if transform else lambda x: x
         self.source, self.target = source, target
@@ -135,7 +137,6 @@ class directional_link(traitlets.dlink):
             if new is t.Undefined and has_traitlets(self.target[0]):
                 new = self.target[0].traits()[self.target[1]].default_value
             setattr(self.target[0], self.target[1], self._transform(new))
-
 
     def unlink(self):
         if isinstance(self.source[0], t.HasTraits):
