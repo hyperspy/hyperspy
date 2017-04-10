@@ -29,10 +29,6 @@ class RC(Component):
     def __init__(self, V=1, V0=0, tau=1.):
         Component.__init__(self, ('Vmax', 'V0', 'tau'))
         self.Vmax.value, self.V0.value, self.tau.value = V, V0, tau
-
-        self.Vmax.is_linear = False
-        self.V0.is_linear = False
-        self.tau.is_linear = False
         
     def function(self, x):
         """

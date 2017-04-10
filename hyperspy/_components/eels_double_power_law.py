@@ -48,10 +48,6 @@ class DoublePowerLaw(Component):
 
         # Linearity
         self.A.is_linear = False # Check this when function works
-        self.r.is_linear = False
-        self.origin.is_linear = False
-        self.shift.is_linear = False
-        self.ratio.is_linear = False
 
     def function(self, x):
         """

@@ -51,13 +51,6 @@ class Vignetting(Component):
 
         # Linearity
         self.height.is_linear = False # Maybe linear, but unsure
-        self.period.is_linear = False
-        self.left_slope.is_linear = False
-        self.right_slope.is_linear = False
-        self.left.is_linear = False
-        self.right.is_linear = False
-        self.sigma.is_linear = False
-        self.optical_center.is_linear = False
 
     def function(self, x):
         sigma = self.sigma.value

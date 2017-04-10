@@ -56,10 +56,6 @@ class PESCoreLineShape(Component):
 
         # Linearity
         self.A.is_linear = False # This is probably linear, but unsure
-        self.fwhm.is_linear = False
-        self.origin.is_linear = False
-        self.ab.is_linear = False
-        self.shirley.is_linear = False
 
         # Options
         self.factor = 1.

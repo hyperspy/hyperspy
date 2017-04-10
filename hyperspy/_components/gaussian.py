@@ -118,8 +118,6 @@ class Gaussian(Component):
 
         # Linearity
         self.A.is_linear = True
-        self.sigma.is_linear = False
-        self.centre.is_linear = False
 
     def function(self, x):
         A = self.A.value

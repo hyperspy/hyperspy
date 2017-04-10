@@ -65,9 +65,6 @@ class SEE(Component):
 
         # Linearity
         self.A.is_linear = True
-        self.sigma.is_linear = False
-        self.Phi.is_linear = False
-        self.B.is_linear = False
 
     def __repr__(self):
         return 'SEE'

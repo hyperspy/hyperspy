@@ -82,8 +82,6 @@ class ScalableFixedPattern(Component):
 
         # Linearity
         self.yscale.is_linear = True
-        self.xscale.is_linear = False
-        self.shift.is_linear = False
 
     def prepare_interpolator(self, kind='linear', fill_value=0, **kwargs):
         """Prepare interpolation.

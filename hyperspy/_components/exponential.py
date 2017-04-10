@@ -46,7 +46,6 @@ class Exponential(Component):
 
         # Linearity
         self.A.is_linear = True
-        self.tau.is_linear = False
 
     def function(self, x):
         """

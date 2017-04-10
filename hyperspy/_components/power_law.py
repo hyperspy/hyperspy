@@ -65,8 +65,6 @@ class PowerLaw(Component):
 
         # Linearity
         self.A.is_linear = True
-        self.r.is_linear = False
-        self.origin.is_linear = False
 
     def function(self, x):
         return np.where(x > self.left_cutoff, self.A.value *

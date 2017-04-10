@@ -63,8 +63,6 @@ class VolumePlasmonDrude(Component):
 
         # Linearity
         self.intensity.is_linear = True
-        self.plasmon_energy.is_linear = False
-        self.fwhm.is_linear = False
 
     def function(self, x):
         plasmon_energy = self.plasmon_energy.value

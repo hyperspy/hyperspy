@@ -118,16 +118,6 @@ class Voigt(Component):
         self.isbackground = False
         self.convolved = True
 
-        # Linearity
-        self.area.is_linear = False
-        self.centre.is_linear = False
-        self.FWHM.is_linear = False
-        self.gamma.is_linear = False
-        self.resolution.is_linear = False
-        self.shirley_background.is_linear = False
-        self.non_isochromaticity.is_linear = False
-        self.transmission_function.is_linear = False
-
     def function(self, x):
         area = self.area.value * self.transmission_function.value
         centre = self.centre.value

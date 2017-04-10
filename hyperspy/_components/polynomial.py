@@ -46,9 +46,6 @@ class Polynomial(Component):
         self.coefficients.value = np.zeros((order + 1,))
         self.coefficients.grad = self.grad_coefficients
 
-        # Linearity
-        self.coefficients.is_linear = False
-
     def get_polynomial_order(self):
         return len(self.coefficients.value) - 1
 

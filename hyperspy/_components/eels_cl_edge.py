@@ -137,9 +137,6 @@ class EELSCLEdge(Component):
 
         # Linearity
         self.intensity.is_linear = True
-        self.fine_structure_coeff.is_linear = False
-        self.effective_angle.is_linear = False
-        self.onset_energy.is_linear = False
 
         self._whitelist['GOS'] = ('init', GOS)
         if GOS == 'Hartree-Slater':
