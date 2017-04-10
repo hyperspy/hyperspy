@@ -20,8 +20,8 @@ image lena.jpg you can type:
     >>> s = hs.load("lena.jpg")
 
 If the loading was successful, the variable :guilabel:`s` contains a generic
-:py:class:`~.signal.BaseSignal`, a :py:class:`~._signals.signal1d.Signal1D` or an
-:py:class:`~._signals.signal2d.Signal2D`.
+:py:class:`~.signal.BaseSignal`, a :py:class:`~._signals.signal1d.Signal1D` or
+an :py:class:`~._signals.signal2d.Signal2D`.
 
 .. NOTE::
     Note for python programmers: the data is stored in a numpy array
@@ -62,20 +62,26 @@ using the :py:meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 
 .. _load_to_memory-label:
 
-.. versionadded:: 1.0
-    `load_to_memory` argument.
+.. deprecated:: 1.2
+   ``memmap_dir`` and ``load_to_memory`` :py:func:`~.io.load` keyword
+   arguments. Use ``lazy`` instead of ``load_to_memory``. ``lazy`` makes
+   ``memmap_dir`` unnecessary.
 
-Some file readers support accessing the data without reading it to memory. This
-feature can be useful when analysing large files. To load a file without loading
-it to memory simply set `load_to_memory` to `False` e.g.
+.. versionadd: 1.2
+   ``lazy`` keyword argument.
+
+Almost all file readers support accessing the data without reading it to memory
+(see :ref:`supported-formats` for a list). This feature can be useful when
+analysing large files. To load a file without loading it to memory simply set
+``lazy`` to ``True`` e.g.:
 
 .. code-block:: python
 
-    >>> s = hs.load("filename.hdf5", load_to_memory=False)
+    >>> s = hs.load("filename.hdf5", lazy=True)
 
-However, note that as of v1.0 HyperSpy cannot efficiently use this feature to
-operate on big data files. Only hdf5, blockfile and EMD currently support not
-reading to memory.
+More details on lazy evaluation support in :ref:`big-data-label`.
+
+.. load-multiple-label::
 
 Loading multiple files
 ----------------------
@@ -90,6 +96,8 @@ functions, e.g.:
 
 or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_
 
+.. versionadded:: 1.2.0
+   stack multi-signal files
 
 By default HyperSpy will return a list of all the files loaded. Alternatively,
 HyperSpy can stack the data of the files contain data with exactly the same
@@ -127,8 +135,8 @@ To save data to a file use the :py:meth:`~.signal.BaseSignal.save` method. The
 first argument is the filename and the format is defined by the filename
 extension. If the filename does not contain the extension the default format
 (:ref:`hdf5-format`) is used. For example, if the :py:const:`s` variable
-contains the :py:class:`~.signal.BaseSignal` that you want to write to a file, the
-following will write the data to a file called :file:`spectrum.hdf5` in the
+contains the :py:class:`~.signal.BaseSignal` that you want to write to a file,
+the following will write the data to a file called :file:`spectrum.hdf5` in the
 default :ref:`hdf5-format` format:
 
 .. code-block:: python
@@ -151,48 +159,48 @@ Supported formats
 =================
 
 Here is a summary of the different formats that are currently supported by
-HyperSpy.
+HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
 
 
 .. table:: Supported file formats
 
-    +--------------------+-----------+----------+
-    | Format             | Read      | Write    |
-    +====================+===========+==========+
-    | Gatan's dm3        |    Yes    |    No    |
-    +--------------------+-----------+----------+
-    | Gatan's dm4        |    Yes    |    No    |
-    +--------------------+-----------+----------+
-    | FEI's emi and ser  |    Yes    |    No    |
-    +--------------------+-----------+----------+
-    | HDF5               |    Yes    |    Yes   |
-    +--------------------+-----------+----------+
-    | Image: jpg..       |    Yes    |    Yes   |
-    +--------------------+-----------+----------+
-    | TIFF               |    Yes    |    Yes   |
-    +--------------------+-----------+----------+
-    | MRC                |    Yes    |    No    |
-    +--------------------+-----------+----------+
-    | EMSA/MSA           |    Yes    |    Yes   |
-    +--------------------+-----------+----------+
-    | NetCDF             |    Yes    |    No    |
-    +--------------------+-----------+----------+
-    | Ripple             |    Yes    |    Yes   |
-    +--------------------+-----------+----------+
-    | SEMPER unf         |    Yes    |    Yes   |
-    +--------------------+-----------+----------+
-    | Blockfile          |    Yes    |    Yes   |
-    +--------------------+-----------+----------+
-    | DENS heater log    |    Yes    |    No    |
-    +--------------------+-----------+----------+
-    | Bruker's bcf       |    Yes    |    No    |
-    +--------------------+-----------+----------+
-    | EMD (Berkley Labs) |    Yes    |    Yes   |
-    +--------------------+-----------+----------+
-    | Protochips log     |    Yes    |    No    |
-    +--------------------+-----------+----------+
-    | EDAX .spc and .spd |    Yes    |    No    |
-    +--------------------+-----------+----------+
+    +--------------------+--------+--------+--------+
+    | Format             | Read   | Write  | lazy   |
+    +====================+========+========+========+
+    | Gatan's dm3        |    Yes |    No  |    Yes |
+    +--------------------+--------+--------+--------+
+    | Gatan's dm4        |    Yes |    No  |    Yes |
+    +--------------------+--------+--------+--------+
+    | FEI's emi and ser  |    Yes |    No  |    Yes |
+    +--------------------+--------+--------+--------+
+    | HDF5               |    Yes |    Yes |    Yes |
+    +--------------------+--------+--------+--------+
+    | Image: jpg..       |    Yes |    Yes |    Yes |
+    +--------------------+--------+--------+--------+
+    | TIFF               |    Yes |    Yes |    Yes |
+    +--------------------+--------+--------+--------+
+    | MRC                |    Yes |    No  |    Yes |
+    +--------------------+--------+--------+--------+
+    | EMSA/MSA           |    Yes |    Yes |    No  |
+    +--------------------+--------+--------+--------+
+    | NetCDF             |    Yes |    No  |    No  |
+    +--------------------+--------+--------+--------+
+    | Ripple             |    Yes |    Yes |    Yes |
+    +--------------------+--------+--------+--------+
+    | SEMPER unf         |    Yes |    Yes |    Yes |
+    +--------------------+--------+--------+--------+
+    | Blockfile          |    Yes |    Yes |    Yes |
+    +--------------------+--------+--------+--------+
+    | DENS heater log    |    Yes |    No  |    No  |
+    +--------------------+--------+--------+--------+
+    | Bruker's bcf       |    Yes |    No  |    Yes |
+    +--------------------+--------+--------+--------+
+    | EMD (Berkley Labs) |    Yes |    Yes |    Yes |
+    +--------------------+--------+--------+--------+
+    | Protochips log     |    Yes |    No  |    No  |
+    +--------------------+--------+--------+--------+
+    | EDAX .spc and .spd |    Yes |    No  |    Yes |
+    +--------------------+--------+--------+--------+
 
 .. _hdf5-format:
 
@@ -206,16 +214,40 @@ of arbitrary dimensions. It is based on the `HDF5 open standard
 applications
 <http://www.hdfgroup.org/products/hdf5_tools/SWSummarybyName.htm>`_.
 
-Note that only HDF5 files written by HyperSpy are supported
+Only loading of HDF5 files following the HyperSpy specification are supported.
+
+.. versionadded:: 1.2
+    Saving hdf5 files with extension ``.hspy``.
+
+The default extension is ``.hdf5`` but, in order to make it explicit that the
+HDF5 follows the HyperSpy specification, it is possible to save it with the
+``.hspy`` extension as follows.
+
+
+.. code-block:: python
+
+    >>> s = hs.signals.BaseSignal([0])
+    >>> s.save('test.hspy')
+
+It is possible to use the ``.hspy`` extension by default by changing the
+value is :py:obj:`hs.preferences` using the GUI or programatically:
+
+.. code-block:: python
+
+    >>> hs.preferences.General.hspy_extension = True
+    >>> hs.save() # make the changes permanent
+
+From HyperSpy 1.3 ``.hspy`` will be the default extension.
 
 .. versionadded:: 0.8
+    Saving list, tuples and signals present in :py:attr:`~.metadata`.
 
-It is also possible to save more complex structures (i.e. lists, tuples and signals) in
-:py:attr:`~.metadata` of the signal. Please note that in order to increase
-saving efficiency and speed, if possible, the inner-most structures are
-converted to numpy arrays when saved. This procedure homogenizes any types of
-the objects inside, most notably casting numbers as strings if any other
-strings are present:
+When saving to hdf5, all supported objects in the signal's :py:attr:`~.metadata`
+is stored. This includes  lists, tuples and signals. Please note
+that in order to increase saving efficiency and speed, if possible, the
+inner-most structures are converted to numpy arrays when saved. This procedure
+homogenizes any types of the objects inside, most notably casting numbers as
+strings if any other strings are present:
 
 .. code-block:: python
 
@@ -279,8 +311,13 @@ This is a format widely used for tomographic data. Our implementation is based
 on `this specification
 <http://ami.scripps.edu/software/mrctools/mrc_specification.php>`_. We also
 partly support FEI's custom header. We do not provide writing features for this
-format, but, as it is an an open format, we may implement this feature in the
+format, but, as it is an open format, we may implement this feature in the
 future on demand.
+
+For mrc files ``load`` takes the ``mmap_mode`` keyword argument enabling
+loading the file using a different mode (default is copy-on-write) . However,
+note that lazy loading does not support in-place writing (i.e lazy loading and
+the "r+" mode are incompatible).
 
 .. _msa-format:
 
@@ -336,6 +373,12 @@ using the encoding argument, e.g.:
 
     >>> s.save('file.rpl', encoding = 'utf8')
 
+
+For mrc files ``load`` takes the ``mmap_mode`` keyword argument enabling
+loading the file using a different mode (default is copy-on-write) . However,
+note that lazy loading does not support in-place writing (i.e lazy loading and
+the "r+" mode are incompatible).
+
 .. _image-format:
 
 Images
@@ -366,7 +409,7 @@ bio-scientific imaging. See `the library webpage
 
 .. versionadded: 1.0
    Add support for writing/reading scale and unit to tif files to be read with
-   ImageJ or DigitalMicrograph 
+   ImageJ or DigitalMicrograph
 
 Currently HyperSpy has limited support for reading and saving the TIFF tags.
 However, the way that HyperSpy reads and saves the scale and the units of tiff
@@ -381,7 +424,7 @@ FEI and Zeiss SEM softwares.
     >>> # software doesn't (properly) use these tags when saving tiff files.
     >>> s = hs.load('file.tif', force_read_resolution=True)
 
-HyperSpy can also read and save custom tags through Christoph Gohlke's tifffile 
+HyperSpy can also read and save custom tags through Christoph Gohlke's tifffile
 library. See `the library webpage
 <http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`_ for more details.
 
@@ -390,12 +433,12 @@ library. See `the library webpage
     >>> # Saving the string 'Random metadata' in a custom tag (ID 65000)
     >>> extratag = [(65000, 's', 1, "Random metadata", False)]
     >>> s.save('file.tif', extratags=extratag)
- 
+
     >>> # Saving the string 'Random metadata' from a custom tag (ID 65000)
     >>> s2 = hs.load('file.tif')
     >>> s2.original_metadata['Number_65000']
     b'Random metadata'
-    
+
 .. _dm3-format:
 
 Gatan Digital Micrograph
@@ -449,7 +492,7 @@ problem.
 
 HyperSpy (unlike TIA) can read data directly from the ``.ser`` files. However,
 by doing so, the information that is stored in the emi file is lost.
-Therefore strongly reccommend to load using the ``.emi`` file instead.
+Therefore strongly recommend to load using the ``.emi`` file instead.
 
 When reading an ``.emi`` file if there are several ``.ser`` files associated
 with it, all of them will be read and returned as a list.
@@ -474,7 +517,7 @@ Blockfile
 
 HyperSpy can read and write the blockfile format from NanoMegas ASTAR software.
 It is used to store a series of diffraction patterns from scanning precession
-electron difraction (SPED) measurements, with a limited set of metadata. The
+electron diffraction (SPED) measurements, with a limited set of metadata. The
 header of the blockfile contains information about centering and distortions
 of the diffraction patterns, but is not applied to the signal during reading.
 Blockfiles only support data values of type
@@ -487,32 +530,13 @@ in range 0-255).
    versions of the format might therefore not be readable. Complete
    interoperability with the official software can neither be guaranteed.
 
-Blockfiles are by default loaded into memory, but can instead be loaded in a
-"copy-on-write" manner using
-`numpy.memmap <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.html>`_
-. This behavior can be controlled by the arguments `load_to_memory` and
-`mmap_mode`. For valid values for `mmap_mode`, see the documentation for
-`numpy.memmap <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.html>`_.
-
-Examples of ways of loading:
-
-.. code-block:: python
-
-    >>> hs.load('file.blo')     # Default loading, equivalent to the next line
-    >>> hs.load('file.blo', load_to_memory=True)    # Load directly to memory
-    >>> # Default memmap loading:
-    >>> hs.load('file.blo', load_to_memory=False, mmap_mode='c')
-
-    >>> # Loads data read only:
-    >>> hs.load('file.blo', load_to_memory=False, mmap_mode='r')
-    >>> # Loads data read/write:
-    >>> hs.load('file.blo', load_to_memory=False, mmap_mode='r+')
-
-By loading the data read/write, any changes to the original data array will be
-written to disk. The data is written when the original data array is deleted,
-or when :py:meth:`BaseSignal.data.flush` (`numpy.memmap.flush <http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.flush.html>`_)
-is called.
-
+Blockfiles are by default loaded in a "copy-on-write" manner using
+`numpy.memmap
+<http://docs.scipy.org/doc/numpy/reference/generated/numpy.memmap.html>`_ .
+For blockfiles ``load`` takes the ``mmap_mode`` keyword argument enabling
+loading the file using a different mode. However, note that lazy loading
+does not support in-place writing (i.e lazy loading and the "r+" mode
+are incompatible).
 
 .. _dens-format:
 
@@ -532,35 +556,38 @@ Bruker composite file
 ----------------
 
 HyperSpy can read "hypermaps" saved with Bruker's Esprit v1.x or v2.x in bcf
-hybrid (virtual file system/container with xml and binary data, optionally compressed) format.
-Most bcf import functionality is implemented. Both high-resolution 16-bit SEM images
-and hyperspectral EDX data can be retrieved simultaneously.
+hybrid (virtual file system/container with xml and binary data, optionally
+compressed) format. Most bcf import functionality is implemented. Both
+high-resolution 16-bit SEM images and hyperspectral EDX data can be retrieved
+simultaneously.
 
-BCF can look as all inclusive format, however it does not save some key EDX parameters:
-any of dead/live/real times, FWHM at Mn_Ka line.
-However, real time for whole map is calculated from pixelAverage, lineAverage, pixelTime, lineCounter
-and map height parameters.
+BCF can look as all inclusive format, however it does not save some key EDX
+parameters: any of dead/live/real times, FWHM at Mn_Ka line. However, real time
+for whole map is calculated from pixelAverage, lineAverage, pixelTime,
+lineCounter and map height parameters.
 
-Note that Bruker Esprit uses a similar format for EBSD data, but it is not currently
-supported by HyperSpy.
+Note that Bruker Esprit uses a similar format for EBSD data, but it is not
+currently supported by HyperSpy.
 
 Extra loading arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
-select_type: One of ('spectrum', 'image'). If specified just selected type of data
-is returned. (default None)
+select_type: One of ('spectrum', 'image'). If specified just selected type of
+data is returned. (default None)
 
 index: index of dataset in bcf v2 files, which can hold few datasets (delaut 0)
 
 downsample: the downsample ratio of hyperspectral array (hight and width only),
-can be integer >=1, where '1' results in no downsampling (default 1). The underlying
-method of downsampling is unchangable: sum. Differently than block_reduce from skimage.measure
-it is memory efficient (does not creates intermediate arrays, works inplace).
-  
-cutoff_at_kV: if set (can be int of float >= 0) can be used either to
-crop or enlarge energy (or channels) range at max values. (default None)
+can be integer >=1, where '1' results in no downsampling (default 1). The
+underlying method of downsampling is unchangeable: sum. Differently than
+block_reduce from skimage.measure it is memory efficient (does not creates
+intermediate arrays, works inplace).
 
-Example of loading reduced (downsampled, and with energy range cropped) "spectrum only"
-data from bcf (original shape: 80keV EDS range (4096 channels), 100x75 pixels):
+cutoff_at_kV: if set (can be int of float >= 0) can be used either to crop or
+enlarge energy (or channels) range at max values. (default None)
+
+Example of loading reduced (downsampled, and with energy range cropped)
+"spectrum only" data from bcf (original shape: 80keV EDS range (4096 channels),
+100x75 pixels):
 
 .. code-block:: python
 
@@ -576,8 +603,8 @@ load the same file without extra arguments:
     <Image, title: SE, dimensions: (|100, 75)>,
     <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|1095)>]
 
-The loaded array energy dimention can by forced to be larger than the data recorded
-by setting the 'cutoff_at_kV' kwarg to higher value:
+The loaded array energy dimension can by forced to be larger than the data
+recorded by setting the 'cutoff_at_kV' kwarg to higher value:
 
 .. code-block:: python
 
@@ -586,7 +613,7 @@ by setting the 'cutoff_at_kV' kwarg to higher value:
     <Image, title: SE, dimensions: (|100, 75)>,
     <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|4096)>]
 
-Note that setting downsample to >1 currently locks out using sem imagery
+Note that setting downsample to >1 currently locks out using SEM imagery
 as navigator in the plotting.
 
 
@@ -596,12 +623,11 @@ EMD Electron Microscopy Datasets (HDF5)
 ---------------------------------------
 
 EMD stands for “Electron Microscopy Dataset.” It is a subset of the open source
-HDF5 wrapper format. N-dimensional data arrays of any standard type can be stored
-in an HDF5 file, as well as tags and other metadata.
-The EMD format was developed at Lawrence Berkeley National Lab
-(see http://emdatasets.lbl.gov/ for more information).
-NOT to be confused with the FEI EMD format which was developed later and has a
-different structure.
+HDF5 wrapper format. N-dimensional data arrays of any standard type can be
+stored in an HDF5 file, as well as tags and other metadata. The EMD format was
+developed at Lawrence Berkeley National Lab (see http://emdatasets.com/ for
+more information). NOT to be confused with the FEI EMD format which was
+developed later and has a different structure.
 
 .. _protochips-format:
 
@@ -609,4 +635,11 @@ Protochips log
 --------------
 
 HyperSpy can read heater, biasing and gas cell log files for Protochips holder.
-The format stores all the captured data together with a small header in a csv file. The reader extracts the measured quantity (e. g. temperature, pressure, current, voltage) along the time axis, as well as the notes saved during the experiment. The reader returns a list of signal with each signal corresponding to a quantity. Since there is a small fluctuation in the step of the time axis, the reader assumes that the step is constant and takes its mean, which is a good approximation. Further realase of HyperSpy will read the time axis more precisely by supporting non-linear axis.
+The format stores all the captured data together with a small header in a csv
+file. The reader extracts the measured quantity (e. g. temperature, pressure,
+current, voltage) along the time axis, as well as the notes saved during the
+experiment. The reader returns a list of signal with each signal corresponding
+to a quantity. Since there is a small fluctuation in the step of the time axis,
+the reader assumes that the step is constant and takes its mean, which is a
+good approximation. Further release of HyperSpy will read the time axis more
+precisely by supporting non-linear axis.

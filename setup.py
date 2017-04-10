@@ -34,8 +34,7 @@ import warnings
 
 import os
 import subprocess
-import fileinput
-
+import itertools
 import re
 
 # stuff to check presence of compiler:
@@ -47,7 +46,7 @@ setup_path = os.path.dirname(__file__)
 
 import hyperspy.Release as Release
 
-install_req = ['scipy',
+install_req = ['scipy>=0.15',
                'ipython>=2.0',
                'matplotlib>=1.2',
                'numpy>=1.10',
@@ -55,13 +54,21 @@ install_req = ['scipy',
                'traitsui>=5.0',
                'natsort',
                'requests',
-               'tqdm',
+               'tqdm>=0.4.9',
                'sympy',
                'dill',
                'h5py',
                'python-dateutil',
                'ipyparallel',
+               'dask[array]>=0.13, !=0.14',
                'scikit-image']
+
+extras_require = {
+    "learning": ['scikit-learn'],
+    "bcf": ['lxml'],
+    "gui-jupyter": ["ipywidgets"],
+}
+extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
 # the hack to deal with setuptools + installing the package in ReadTheDoc:
 if 'readthedocs.org' in sys.executable:
@@ -102,7 +109,6 @@ for leftover in raw_extensions:
                     setup_path,
                     path +
                     '.cpython-*.so'))
-
 
 def count_c_extensions(extensions):
     c_num = 0
@@ -174,7 +180,7 @@ Installation will continue in 5 sec...""")
 
 
 # HOOKS ######
-post_checout_hook_file = os.path.join(setup_path, '.git/hooks/post-checkout')
+post_checkout_hook_file = os.path.join(setup_path, '.git/hooks/post-checkout')
 git_dir = os.path.join(setup_path, '.git')
 hook_ignorer = os.path.join(setup_path, '.hook_ignore')
 
@@ -182,7 +188,7 @@ hook_ignorer = os.path.join(setup_path, '.hook_ignore')
 def find_post_checkout_cleanup_line():
     """find the line index in the git post-checkout hooks
     'rm extension1 extension2 ...'"""
-    with open(post_checout_hook_file, 'r') as pchook:
+    with open(post_checkout_hook_file, 'r') as pchook:
         hook_lines = pchook.readlines()
         for i in range(1, len(hook_lines), 1):
             if re.search('#cleanup_cythonized_and_compiled:',
@@ -193,7 +199,7 @@ def find_post_checkout_cleanup_line():
 # after changing branches:
 if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
     exec_str = sys.executable
-    recythonize_str = ' '.join([exec_str,
+    recythonize_str = ' '.join(['"%s"'%exec_str,'"%s"'%
                                 os.path.join(setup_path, 'setup.py'),
                                 'clean --all build_ext --inplace\n'])
     if os.name == 'nt':
@@ -201,29 +207,29 @@ if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
         recythonize_str = recythonize_str.replace('\\', '/')
         for i in range(len(cleanup_list)):
             cleanup_list[i] = cleanup_list[i].replace('\\', '/')
-    if (not os.path.exists(post_checout_hook_file)):
-        with open(post_checout_hook_file, 'w') as pchook:
+    if (not os.path.exists(post_checkout_hook_file)):
+        with open(post_checkout_hook_file, 'w') as pchook:
             pchook.write('#!/bin/sh\n')
             pchook.write('#cleanup_cythonized_and_compiled:\n')
-            pchook.write('rm ' + ' '.join([i for i in cleanup_list]) + '\n')
+            pchook.write('rm ' + ' '.join(['"%s"' % i for i in cleanup_list]) + '\n')
             pchook.write(recythonize_str)
         hook_mode = 0o777  # make it executable
-        os.chmod(post_checout_hook_file, hook_mode)
+        os.chmod(post_checkout_hook_file, hook_mode)
     else:
-        with open(post_checout_hook_file, 'r') as pchook:
+        with open(post_checkout_hook_file, 'r') as pchook:
             hook_lines = pchook.readlines()
         if re.search(r'#!/bin/.*?sh', hook_lines[0]) is not None:
             line_n = find_post_checkout_cleanup_line()
             if line_n is not None:
                 hook_lines[line_n] = 'rm ' + \
-                    ' '.join([i for i in cleanup_list]) + '\n'
+                    ' '.join(['"%s"' % i for i in cleanup_list]) + '\n'
                 hook_lines[line_n + 1] = recythonize_str
             else:
                 hook_lines.append('\n#cleanup_cythonized_and_compiled:\n')
                 hook_lines.append(
-                    'rm ' + ' '.join([i for i in cleanup_list]) + '\n')
+                    'rm ' + ' '.join(['"%s"' % i for i in cleanup_list]) + '\n')
                 hook_lines.append(recythonize_str)
-            with open(post_checout_hook_file, 'w') as pchook:
+            with open(post_checkout_hook_file, 'w') as pchook:
                 pchook.writelines(hook_lines)
 
 
@@ -320,6 +326,7 @@ with update_version_when_dev() as version:
                   'hyperspy.misc.eels',
                   'hyperspy.misc.eds',
                   'hyperspy.misc.io',
+                  'hyperspy.misc.holography',
                   'hyperspy.misc.machine_learning',
                   'hyperspy.external',
                   'hyperspy.external.mpfit',
@@ -330,9 +337,16 @@ with update_version_when_dev() as version:
                   'hyperspy.samfire_utils.goodness_of_fit_tests',
                   ],
         install_requires=install_req,
+        test_require=["pytest>=3.0.2"],
+        extras_require=extras_require,
         package_data={
             'hyperspy':
             [
+                'tests/drawing/*.png',
+                'tests/drawing/plot_signal/*.png',
+                'tests/drawing/plot_signal1d/*.png',
+                'tests/drawing/plot_signal2d/*.png',
+                'tests/drawing/plot_markers/*.png',
                 'misc/eds/example_signals/*.hdf5',
                 'tests/io/blockfile_data/*.blo',
                 'tests/io/dens_data/*.dens',
@@ -344,6 +358,7 @@ with update_version_when_dev() as version:
                 'tests/io/dm4_2D_data/*.dm4',
                 'tests/io/dm4_3D_data/*.dm4',
                 'tests/io/dm3_locale/*.dm3',
+                'tests/io/edax_files.zip',
                 'tests/io/FEI_new/*.emi',
                 'tests/io/FEI_new/*.ser',
                 'tests/io/FEI_new/*.npy',
@@ -364,7 +379,6 @@ with update_version_when_dev() as version:
                 'tests/io/emd_files/*.emd',
                 'tests/io/protochips_data/*.npy',
                 'tests/io/protochips_data/*.csv',
-                'tests/drawing/*.ipynb',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
             ],
         },

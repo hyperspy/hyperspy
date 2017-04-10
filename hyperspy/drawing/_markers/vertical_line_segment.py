@@ -26,30 +26,33 @@ class VerticalLineSegment(MarkerBase):
     """Vertical line segment marker that can be added to the signal figure
 
     Parameters
-    ---------
-    x: array or float
+    ----------
+    x : array or float
         The position of line segment in x.
         If float, the marker is fixed.
         If array, the marker will be updated when navigating. The array should
-        have the same dimensions in the nagivation axes.
-    y1: array or float
+        have the same dimensions in the navigation axes.
+    y1 : array or float
         The position of the start of the line segment in x.
         see x1 arguments
-    y2: array or float
+    y2 : array or float
         The position of the start of the line segment in y.
         see x1 arguments
-    kwargs:
-        Kewywords argument of axvline valid properties (i.e. recognized by
+    kwargs :
+        Keywords argument of axvline valid properties (i.e. recognized by
         mpl.plot).
 
     Example
     -------
-    >>> import numpy as np
     >>> im = hs.signals.Signal2D(np.zeros((100, 100)))
     >>> m = hs.plot.markers.vertical_line_segment(
     >>>     x=20, y1=30, y2=70, linewidth=4, color='red', linestyle='dotted')
     >>> im.add_marker(m)
 
+    Add a marker permanently to a marker
+    >>> im = hs.signals.Signal2D(np.zeros((60, 60)))
+    >>> m = hs.plot.markers.vertical_line_segment(x=10, y1=20, y2=50)
+    >>> im.add_marker(m, permanent=True)
     """
 
     def __init__(self, x, y1, y2, **kwargs):
@@ -58,25 +61,27 @@ class VerticalLineSegment(MarkerBase):
         self.marker_properties = lp
         self.set_data(x1=x, y1=y1, y2=y2)
         self.set_marker_properties(**kwargs)
+        self.name = 'vertical_line_segment'
+
+    def __repr__(self):
+        string = "<marker.{}, {} (x={},y1={},y2={},color={})>".format(
+            self.__class__.__name__,
+            self.name,
+            self.get_data_position('x1'),
+            self.get_data_position('y1'),
+            self.get_data_position('y2'),
+            self.marker_properties['color'],
+        )
+        return(string)
 
     def update(self):
         if self.auto_update is False:
             return
         self._update_segment()
 
-    def plot(self):
-        if self.ax is None:
-            raise AttributeError(
-                "To use this method the marker needs to be first add to a " +
-                "figure using `s._plot.signal_plot.add_marker(m)` or " +
-                "`s._plot.navigator_plot.add_marker(m)`")
+    def _plot_marker(self):
         self.marker = self.ax.vlines(0, 0, 1, **self.marker_properties)
         self._update_segment()
-        self.marker.set_animated(True)
-        try:
-            self.ax.hspy_fig._draw_animated()
-        except:
-            pass
 
     def _update_segment(self):
         segments = self.marker.get_segments()
