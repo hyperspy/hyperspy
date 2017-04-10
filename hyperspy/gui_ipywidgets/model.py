@@ -29,7 +29,7 @@ def _interactive_slider_bounds(obj, index=None):
     if _min is None and _max is not None:
         _min = value - pad
     if _min is None and _max is None:
-        if obj is obj.component._position:
+        if obj.component and obj is obj.component._position:
             axis = obj._axes_manager.signal_axes[-1]
             _min = axis.axis.min()
             _max = axis.axis.max()

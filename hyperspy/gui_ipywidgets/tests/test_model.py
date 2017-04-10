@@ -22,6 +22,17 @@ def test_parameter():
     assert wd["min"].value == p.bmin
     assert wd["max"].value == p.bmax
 
+def test_multivalue_parameter():
+    p = Parameter()
+    p._number_of_elements = 2
+    p.value = (1.5, 3)
+    wd = p.gui(**KWARGS)["ipywidgets"]["wdict"]
+    assert wd["element0"]["value"].value == p.value[0]
+    assert wd["element1"]["value"].value == p.value[1]
+    wd["element0"]["value"].value = -4
+    wd["element1"]["value"].value = -3
+    assert wd["element0"]["value"].value == p.value[0]
+    assert wd["element1"]["value"].value == p.value[1]
 
 def test_component():
     c = Component(["a", "b"])
