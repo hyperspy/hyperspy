@@ -7,7 +7,7 @@ from ipywidgets import (
     Button)
 import numpy as np
 
-from hyperspy.misc.link_traits import link_traits
+from hyperspy.misc.link_traits import link_traits, directional_link
 from hyperspy.gui_ipywidgets.utils import (
     add_display_arg, register_ipy_widget, labelme)
 
@@ -77,6 +77,10 @@ def _get_value_widget(obj, index=None):
 
     thismin.observe(on_min_change, names='value')
     thismax.observe(on_max_change, names='value')
+    # We store the link in the widget so that they are not deleted by the
+    # garbage collector
+    thismin._link = directional_link((obj, "bmin"), (thismin, "value"))
+    thismax._link = directional_link((obj, "bmax"), (thismax, "value"))
     if index is not None:  # value is tuple, expanding
         def _interactive_tuple_update(value):
             """Callback function for the widgets, to update the value
