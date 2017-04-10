@@ -14,7 +14,7 @@ In addition to cropping using the powerful and compact :ref:`Signal indexing
 <signal.indexing>` syntax the following method is available to crop spectra
 using a GUI:
 
-The :py:meth:`~.signal.Signal1DTools.crop_signal1D`, method is used to crop the
+The :py:meth:`~.signal.Signal1D.crop_signal1D`, method is used to crop the
 spectral energy range. If no parameter is passed, a user interface appears in
 which to crop the one dimensional signal.
 
