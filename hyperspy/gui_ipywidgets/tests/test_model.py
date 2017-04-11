@@ -5,6 +5,7 @@ from numpy.random import random
 import hyperspy.api as hs
 from hyperspy.component import Component, Parameter
 from hyperspy.gui_ipywidgets.tests.utils import KWARGS
+from hyperspy.models.model1d import ComponentFit
 
 
 def test_parameter():
@@ -103,3 +104,26 @@ def test_scalable_fixed_pattern():
     assert wd["interpolate"].value == c.interpolate
     wd["interpolate"].value = not c.interpolate
     assert wd["interpolate"].value == c.interpolate
+
+def test_fit_component():
+    np.random.seed(0)
+    s = hs.signals.Signal1D(np.random.normal(size=1000, loc=1)).get_histogram()
+    s = hs.stack([s, s], axis=0)
+    m = s.create_model()
+    m.extend([hs.model.components1D.Gaussian(),
+              hs.model.components1D.Gaussian()])
+    g1, g2 = m
+    g1.centre.value = 0
+    g2.centre.value = 8
+    fc = ComponentFit(model=m, component=g1)
+    fc.ss_left_value = -2
+    fc.ss_right_value = 4
+    fc.only_current = not fc.only_current
+    wd = fc.gui(**KWARGS)["ipywidgets"]["wdict"]
+    wd["fit_button"]._click_handlers(wd["fit_button"])    # Trigger it
+    assert wd["only_current"].value == fc.only_current
+    wd["only_current"].value = not fc.only_current
+    assert wd["only_current"].value == fc.only_current
+    assert g2.centre.value == 8
+    np.testing.assert_allclose(g1.centre.value, 0.8042438333279404)
+    np.testing.assert_allclose(g1.sigma.value, 0.9650467153128363)
