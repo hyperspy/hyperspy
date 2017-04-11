@@ -72,18 +72,20 @@ def calibrate_ipy(obj, **kwargs):
     # Define widgets
     wdict = {}
     axis = obj.axis
-    left = ipywidgets.FloatText(disabled=True)
-    right = ipywidgets.FloatText(disabled=True)
-    offset = ipywidgets.FloatText(disabled=True)
-    scale = ipywidgets.FloatText(disabled=True)
-    new_left = ipywidgets.FloatText(disabled=False)
-    new_right = ipywidgets.FloatText(disabled=False)
-    units = ipywidgets.Label()
+    left = ipywidgets.FloatText(disabled=True, description="Left")
+    right = ipywidgets.FloatText(disabled=True, description="Right")
+    offset = ipywidgets.FloatText(disabled=True, description="Offset")
+    scale = ipywidgets.FloatText(disabled=True, description="Scale")
+    new_left = ipywidgets.FloatText(disabled=False, description="New left")
+    new_right = ipywidgets.FloatText(disabled=False, description="New right")
+    units = ipywidgets.Text(description="Units", )
+    unitsl = ipywidgets.Label(layout=ipywidgets.Layout(width="10%"))
     help = ipywidgets.HTML(
         "Click on the signal figure and drag to the right to select a signal "
         "range. Set the new left and right values and press `Apply` to update "
         "the calibration of the axis with the new values or press "
         " `Close` to cancel.",)
+    wdict["help"] = help
     help = ipywidgets.Accordion(children=[help])
     help.set_title(0, "Help")
     close = ipywidgets.Button(
@@ -99,25 +101,23 @@ def calibrate_ipy(obj, **kwargs):
     link_traits((obj, "ss_right_value"), (right, "value"))
     link_traits((obj, "left_value"), (new_left, "value"))
     link_traits((obj, "right_value"), (new_right, "value"))
-    link_traits((axis, "units"), (units, "value"))
-    link_traits((axis, "offset"), (offset, "value"))
-    link_traits((axis, "scale"), (scale, "value"))
+    link_traits((obj, "units"), (units, "value"))
+    link_traits((obj, "units"), (unitsl, "value"))
+    link_traits((obj, "offset"), (offset, "value"))
+    link_traits((obj, "scale"), (scale, "value"))
 
     def on_apply_clicked(b):
-        axis.scale = obj.scale
-        axis.offset = obj.offset
-        obj.span_selector_switch(on=False)
-        obj.signal._plot.signal_plot.update()
-        obj.span_selector_switch(on=True)
+        obj.apply()
     apply.on_click(on_apply_clicked)
 
     box = ipywidgets.VBox([
-        labelme_sandwich("New left", new_left, units),
-        labelme_sandwich("New right", new_right, units),
-        labelme_sandwich("Left", left, units),
-        labelme_sandwich("Right", right, units),
-        labelme_sandwich("Scale", scale, ""),  # No units, but padding
-        labelme_sandwich("Offset", offset, units),
+        ipywidgets.HBox([new_left, unitsl]),
+        ipywidgets.HBox([new_right, unitsl]),
+        ipywidgets.HBox([left, unitsl]),
+        ipywidgets.HBox([right, unitsl]),
+        ipywidgets.HBox([offset, unitsl]),
+        scale,
+        units,
         help,
         ipywidgets.HBox((apply, close))
     ])
@@ -134,7 +134,6 @@ def calibrate_ipy(obj, **kwargs):
     wdict["new_left"] = new_left
     wdict["new_right"] = new_right
     wdict["units"] = units
-    wdict["help"] = help
     wdict["close_button"] = close
     wdict["apply_button"] = apply
 

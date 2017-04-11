@@ -85,14 +85,7 @@ class CalibrationHandler(SpanSelectorInSignal1DHandler):
         """
         if info.object.signal is None:
             return
-        axis = info.object.axis
-        axis.scale = info.object.scale
-        axis.offset = info.object.offset
-        axis.units = info.object.units
-        info.object.span_selector_switch(on=False)
-        info.object.signal._replot()
-        info.object.span_selector_switch(on=True)
-        info.object.last_calibration_stored = True
+        info.object.apply()
         return
 
 
@@ -153,7 +146,7 @@ def calibration_traitsui(obj, **kwargs):
                     style='readonly'),
             'units',),
         handler=CalibrationHandler,
-        buttons=[OKButton, OurApplyButton, CancelButton],
+        buttons=[OurApplyButton, CancelButton],
         kind='live',
         title='Calibration parameters')
     return obj, {"view": view}

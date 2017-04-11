@@ -205,6 +205,16 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
             (self.left_value, self.right_value), (lc, rc),
             modify_calibration=False)
 
+    def apply(self):
+        axis = self.axis
+        axis.scale = self.scale
+        axis.offset = self.offset
+        axis.units = self.units
+        self.span_selector_switch(on=False)
+        self.signal._replot()
+        self.span_selector_switch(on=True)
+        self.last_calibration_stored = True
+
 
 class Signal1DRangeSelector(SpanSelectorInSignal1D):
     on_close = t.List()
