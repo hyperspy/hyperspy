@@ -61,7 +61,8 @@ install_req = ['scipy>=0.15',
                'python-dateutil',
                'ipyparallel',
                'dask[array]>=0.13, !=0.14',
-               'scikit-image']
+               'scikit-image',
+               'pint>0.7']
 
 extras_require = {
     "learning": ['scikit-learn'],
