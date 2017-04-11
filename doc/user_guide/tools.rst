@@ -764,7 +764,7 @@ to make a horizontal "collage" of the image stack:
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.lena()]*5))
+    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.ascent()]*5))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> for image, angle in zip(image_stack, (0, 45, 90, 135, 180)):
@@ -793,7 +793,7 @@ using an external function can be more easily accomplished using the
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.lena()]*4))
+    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.ascent()]*4))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> image_stack.map(scipy.ndimage.rotate,
@@ -814,7 +814,7 @@ arguments as in the following example.
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.lena()]*4))
+    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.ascent()]*4))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> angles = hs.signals.BaseSignal(np.array([0, 45, 90, 135]))
@@ -936,7 +936,7 @@ with same dimension.
 
 .. code-block:: python
 
-    >>> image = hs.signals.Signal2D(scipy.misc.lena())
+    >>> image = hs.signals.Signal2D(scipy.misc.ascent())
     >>> image = hs.stack([hs.stack([image]*3,axis=0)]*3,axis=1)
     >>> image.plot()
 

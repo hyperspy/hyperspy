@@ -136,7 +136,7 @@ arguments are supported as well:
 .. code-block:: python
 
     >>> import scipy
-    >>> img = hs.signals.Signal2D(scipy.misc.lena())
+    >>> img = hs.signals.Signal2D(scipy.misc.ascent())
     >>> img.plot(colorbar=True, scalebar=False,
     >>> 	 axes_ticks=True, cmap='RdYlBu_r', saturated_pixels=0)
 
@@ -408,7 +408,7 @@ different slices of a multidimensional image (a *hyperimage*):
 .. code-block:: python
 
     >>> import scipy
-    >>> image = hs.signals.Signal2D([scipy.misc.lena()]*6)
+    >>> image = hs.signals.Signal2D([scipy.misc.ascent()]*6)
     >>> angles = hs.signals.BaseSignal(range(10,70,10))
     >>> image.map(scipy.ndimage.rotate, angle=angles.T, reshape=False)
     >>> hs.plot.plot_images(image, tight_layout=True)
@@ -430,7 +430,7 @@ In this example, the axes labels and the ticks are also disabled with `axes_deco
 .. code-block:: python
 
     >>> import scipy
-    >>> image = hs.signals.Signal2D([scipy.misc.lena()]*6)
+    >>> image = hs.signals.Signal2D([scipy.misc.ascent()]*6)
     >>> angles = hs.signals.BaseSignal(range(10,70,10))
     >>> image.map(scipy.ndimage.rotate, angle=angles.T, reshape=False)
     >>> hs.plot.plot_images(
@@ -459,7 +459,7 @@ This example also demonstrates how to wrap labels using `labelwrap` (for prevent
     >>> image0.metadata.General.title = 'Rocky Raccoon - R'
 
     >>> # load lena into 6 hyperimage
-    >>> image1 = hs.signals.Signal2D([scipy.misc.lena()]*6)
+    >>> image1 = hs.signals.Signal2D([scipy.misc.ascent()]*6)
     >>> angles = hs.signals.BaseSignal(np.arange(10,70,10)).T
     >>> image1.map(scipy.ndimage.rotate, angle=angles, reshape=False)
 
@@ -582,7 +582,7 @@ a file:
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s = hs.signals.Signal1D(scipy.misc.lena()[100:160:10])
+    >>> s = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
     >>> cascade_plot = hs.plot.plot_spectra(s, style='cascade')
     >>> cascade_plot.figure.savefig("cascade_plot.png")
 
@@ -604,7 +604,7 @@ and provide the legend labels:
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s = hs.signals.Signal1D(scipy.misc.lena()[100:160:10])
+    >>> s = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
     >>> color_list = ['red', 'red', 'blue', 'blue', 'red', 'red']
     >>> line_style_list = ['-','--','steps','-.',':','-']
     >>> hs.plot.plot_spectra(s, style='cascade', color=color_list,
@@ -625,8 +625,8 @@ generate a list of colors that follows a certain colormap:
 
     >>> import scipy.misc
     >>> fig, axarr = plt.subplots(1,2)
-    >>> s1 = hs.signals.Signal1D(scipy.misc.lena()[100:160:10])
-    >>> s2 = hs.signals.Signal1D(scipy.misc.lena()[200:260:10])
+    >>> s1 = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
+    >>> s2 = hs.signals.Signal1D(scipy.misc.ascent()[200:260:10])
     >>> hs.plot.plot_spectra(s1,
     >>>                         style='cascade',
     >>>                         color=[plt.cm.RdBu(i/float(len(s1)-1))
@@ -653,7 +653,7 @@ There are also two other styles, "heatmap" and "mosaic":
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s = hs.signals.Signal1D(scipy.misc.lena()[100:160:10])
+    >>> s = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
     >>> hs.plot.plot_spectra(s, style='heatmap')
 
 .. figure::  images/plot_spectra_heatmap.png
@@ -666,7 +666,7 @@ There are also two other styles, "heatmap" and "mosaic":
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s = hs.signals.Signal1D(scipy.misc.lena()[100:120:10])
+    >>> s = hs.signals.Signal1D(scipy.misc.ascent()[100:120:10])
     >>> hs.plot.plot_spectra(s, style='mosaic')
 
 .. figure::  images/plot_spectra_mosaic.png
@@ -682,7 +682,7 @@ For the "heatmap" style, different `matplotlib color schemes <http://matplotlib.
 
     >>> import matplotlib.cm
     >>> import scipy.misc
-    >>> s = hs.signals.Signal1D(scipy.misc.lena()[100:120:10])
+    >>> s = hs.signals.Signal1D(scipy.misc.ascent()[100:120:10])
     >>> ax = hs.plot.plot_spectra(s, style="heatmap")
     >>> ax.images[0].set_cmap(matplotlib.cm.jet)
 
@@ -701,7 +701,7 @@ that are passed directly to matplotlib.pyplot.figure as keyword arguments:
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s = hs.signals.Signal1D(scipy.misc.lena()[100:160:10])
+    >>> s = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
     >>> legendtext = ['Plot 0', 'Plot 1', 'Plot 2', 'Plot 3', 'Plot 4', 'Plot 5']
     >>> cascade_plot = hs.plot.plot_spectra(
     >>>     s, style='cascade', legend=legendtext, dpi=60,
@@ -722,7 +722,7 @@ The function returns a matplotlib ax object, which can be used to customize the 
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s = hs.signals.Signal1D(scipy.misc.lena()[100:160:10])
+    >>> s = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
     >>> cascade_plot = hs.plot.plot_spectra(s)
     >>> cascade_plot.set_xlabel("An axis")
     >>> cascade_plot.set_ylabel("Another axis")
@@ -742,8 +742,8 @@ subplots in the same figure. This will only work for "cascade" and "overlap" sty
 
     >>> import scipy.misc
     >>> fig, axarr = plt.subplots(1,2)
-    >>> s1 = hs.signals.Signal1D(scipy.misc.lena()[100:160:10])
-    >>> s2 = hs.signals.Signal1D(scipy.misc.lena()[200:260:10])
+    >>> s1 = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
+    >>> s2 = hs.signals.Signal1D(scipy.misc.ascent()[200:260:10])
     >>> hs.plot.plot_spectra(s1, style='cascade',color='blue',ax=axarr[0],fig=fig)
     >>> hs.plot.plot_spectra(s2, style='cascade',color='red',ax=axarr[1],fig=fig)
     >>> fig.canvas.draw()
@@ -846,7 +846,7 @@ can be used in a static way
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> im = hs.signals.Signal2D(scipy.misc.lena())
+    >>> im = hs.signals.Signal2D(scipy.misc.ascent())
     >>> m = hs.plot.markers.rectangle(x1=150, y1=100, x2=400, y2=400, color='red')
     >>> im.add_marker(m)
 
