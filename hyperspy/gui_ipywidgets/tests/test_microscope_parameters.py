@@ -1,4 +1,3 @@
-from ipywidgets.widgets.tests import setup_test_comm, teardown_test_comm
 from numpy.random import random
 
 import hyperspy.api as hs
@@ -6,14 +5,6 @@ from hyperspy.gui_ipywidgets.tests.utils import KWARGS
 from hyperspy._signals.eels import EELSTEMParametersUI
 from hyperspy._signals.eds_sem import EDSSEMParametersUI
 from hyperspy._signals.eds_tem import EDSTEMParametersUI
-
-
-def setup():
-    setup_test_comm()
-
-
-def teardown():
-    teardown_test_comm()
 
 
 class TestSetMicroscopeParameters:
