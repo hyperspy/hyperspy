@@ -69,7 +69,8 @@ def test_model():
     assert wd["component_c"]["active"].value == c.active
     assert wd["component_d"]["active"].value == d.active
 
-def test_eels_components():
+
+def test_eels_component():
     s = hs.signals.EELSSpectrum(np.empty((500,)))
     s.add_elements(("C",))
     s.set_microscope_parameters(100, 10, 10)
@@ -89,3 +90,15 @@ def test_eels_components():
     assert wd["active"].value == c.active
     assert wd["fs_smoothing"].value == c.fine_structure_smoothing
     assert wd["fine_structure"].value == c.fine_structure_active
+
+def test_scalable_fixed_pattern():
+    s = hs.signals.Signal1D(np.empty((500,)))
+    m = s.create_model()
+    c = hs.model.components1D.ScalableFixedPattern(s)
+    c.name = "sfp"
+    m.append(c)
+    c.intepolate = not c.interpolate
+    wd = m.gui(**KWARGS)["ipywidgets"]["wdict"]["component_sfp"]
+    assert wd["interpolate"].value == c.interpolate
+    wd["interpolate"].value = not c.interpolate
+    assert wd["interpolate"].value == c.interpolate
