@@ -1,5 +1,5 @@
 
-from ipywidgets.widgets.tests import setup_test_comm, teardown_test_comm
+import numpy as np
 from numpy.random import random
 
 import hyperspy.api as hs
@@ -34,6 +34,8 @@ def test_multivalue_parameter():
     wd["element1"]["value"].value = -3
     assert wd["element0"]["value"].value == p.value[0]
     assert wd["element1"]["value"].value == p.value[1]
+    # TODO: update button
+    # TODO: bounds
 
 
 def test_component():
@@ -66,3 +68,24 @@ def test_model():
     wd = m.gui(**KWARGS)["ipywidgets"]["wdict"]
     assert wd["component_c"]["active"].value == c.active
     assert wd["component_d"]["active"].value == d.active
+
+def test_eels_components():
+    s = hs.signals.EELSSpectrum(np.empty((500,)))
+    s.add_elements(("C",))
+    s.set_microscope_parameters(100, 10, 10)
+    m = s.create_model(auto_background=False)
+    c = m.components.C_K
+    c.active = False
+    c.fine_structure_smoothing = 0.1
+    c.fine_structure_active = True
+    wd = m.gui(**KWARGS)["ipywidgets"]["wdict"]["component_C_K"]
+    assert wd["active"].value == c.active
+    assert wd["fs_smoothing"].value == c.fine_structure_smoothing
+    assert wd["fine_structure"].value == c.fine_structure_active
+    assert "parameter_fine_structure_coeff" not in wd
+    wd["active"].value = not c.active
+    wd["fs_smoothing"].value = 0.2
+    wd["fine_structure"].value = not c.fine_structure_active
+    assert wd["active"].value == c.active
+    assert wd["fs_smoothing"].value == c.fine_structure_smoothing
+    assert wd["fine_structure"].value == c.fine_structure_active
