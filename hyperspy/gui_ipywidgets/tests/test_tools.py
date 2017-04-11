@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.testing
 import numpy.random
 
 import hyperspy.api as hs
@@ -44,3 +45,53 @@ class TestTools:
         assert s.axes_manager[0].scale == 1
         assert s.axes_manager[0].offset == 0
         assert s.axes_manager[0].units == "nm"
+
+    def test_smooth_sg(self):
+        s = self.s
+        s.add_gaussian_noise(0.1)
+        s2 = s.deepcopy()
+        wd = s.smooth_savitzky_golay(**KWARGS)["ipywidgets"]["wdict"]
+        wd["window_length"].value = 11
+        wd["polynomial_order"].value = 5
+        wd["differential_order"].value = 1
+        wd["color"].value = "red"
+        wd["apply_button"]._click_handlers(wd["apply_button"])    # Trigger it
+        s2.smooth_savitzky_golay(polynomial_order=5, window_length=11,
+                                 differential_order=1)
+        np.testing.assert_allclose(s.data, s2.data)
+
+    def test_smooth_lowess(self):
+        s = self.s
+        s.add_gaussian_noise(0.1)
+        s2 = s.deepcopy()
+        wd = s.smooth_lowess(**KWARGS)["ipywidgets"]["wdict"]
+        wd["smoothing_parameter"].value = 0.9
+        wd["number_of_iterations"].value = 3
+        wd["color"].value = "red"
+        wd["apply_button"]._click_handlers(wd["apply_button"])    # Trigger it
+        s2.smooth_lowess(smoothing_parameter=0.9, number_of_iterations=3)
+        np.testing.assert_allclose(s.data, s2.data)
+
+    def test_smooth_tv(self):
+        s = self.s
+        s.add_gaussian_noise(0.1)
+        s2 = s.deepcopy()
+        wd = s.smooth_tv(**KWARGS)["ipywidgets"]["wdict"]
+        wd["smoothing_parameter"].value = 300
+        wd["color"].value = "red"
+        wd["apply_button"]._click_handlers(wd["apply_button"])    # Trigger it
+        s2.smooth_tv(smoothing_parameter=300)
+        np.testing.assert_allclose(s.data, s2.data)
+
+    def filter_butterworth(self):
+        s = self.s
+        s.add_gaussian_noise(0.1)
+        s2 = s.deepcopy()
+        wd = s.filter_butterworth(**KWARGS)["ipywidgets"]["wdict"]
+        wd["cutoff"].value = 0.5
+        wd["order"].value = 3
+        wd["type"].value = "high"
+        wd["color"].value = "red"
+        wd["apply_button"]._click_handlers(wd["apply_button"])    # Trigger it
+        s2.filter_butterworth(cutoff_frequency_ratio=0.5, order=3, type_="high")
+        np.testing.assert_allclose(s.data, s2.data)
