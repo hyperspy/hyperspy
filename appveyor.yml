@@ -170,6 +170,8 @@ deploy:
     #secure: KwAfARhGEqOnZHltPB6kKu8xmnoiGSk7NMYJBIEbWvFCuVnepoPV7ZcIjUN3pUpK
     #   sem-geologist:
     #secure: RRqUkx9H5VuFNITmm+YzgB0qnqgVGPH1yrPVxb4oCD+FAjcTch2WZAiPEKn4L6w6
+    #   ericpre:
+    #secure: ae8XsPI+vKJI9AWm0r9+ec71CIkXcnCHlNIQ57v+87hh5k1xuAAxIOi1CFKEmmZv
   artifact: /.*\.exe/, win_wheels  # upload all exe installers and wheels to release assets
   draft: false
   prerelease: false
