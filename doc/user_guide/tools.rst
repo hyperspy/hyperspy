@@ -678,6 +678,10 @@ are not equal `numpy broadcasting rules apply
 <http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html>`_ independently
 for the navigation and signal axes.
 
+.. WARNING::
+
+    Hyperspy does not check if the calibration of the signals matches.
+
 In the following example `s2` has only one navigation axis while `s` has two.
 However, because the size of their first navigation axis is the same, their
 dimensions are compatible and `s2` is

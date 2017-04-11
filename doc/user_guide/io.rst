@@ -330,6 +330,10 @@ is widely used to exchange single spectrum data, but it does not support
 multidimensional data. It can be used to exchange single spectra with Gatan's
 Digital Micrograph.
 
+.. WARNING::
+    If several spectra are loaded and stacked (``hs.load('pattern', stack_signals=True``)
+    the calibration read from the first spectrum and applied to all other spectra.
+
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
 
