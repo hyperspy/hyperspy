@@ -105,6 +105,7 @@ def test_scalable_fixed_pattern():
     wd["interpolate"].value = not c.interpolate
     assert wd["interpolate"].value == c.interpolate
 
+
 def test_fit_component():
     np.random.seed(0)
     s = hs.signals.Signal1D(np.random.normal(size=1000, loc=1)).get_histogram()
