@@ -90,7 +90,7 @@ To close all the figures run the following command:
 .. NOTE::
 
     This is a `matplotlib <http://matplotlib.sourceforge.net/>`_ command.
-    Matplotlib is the library that hyperspy uses to produce the plots. You can
+    Matplotlib is the library that HyperSpy uses to produce the plots. You can
     learn how to pan/zoom and more  `in the matplotlib documentation
     <http://matplotlib.sourceforge.net/users/navigation_toolbar.html>`_
 

@@ -42,7 +42,7 @@ currently available specialised :py:class:`~.signal.BaseSignal` subclasses.
 
 
 The :py:mod:`~.signals` module, which contains all available signal subclasses,
-is imported in the user namespace when loading hyperspy. In the following
+is imported in the user namespace when loading HyperSpy. In the following
 example we create a Signal2D instance from a 2D numpy array:
 
 .. code-block:: python
@@ -454,7 +454,7 @@ features differ from numpy):
 
   + Allow independent indexing of signal and navigation dimensions
   + Support indexing with decimal numbers.
-  + Use the image order for indexing i.e. [x, y, z,...] (hyperspy) vs
+  + Use the image order for indexing i.e. [x, y, z,...] (HyperSpy) vs
     [...,z,y,x] (numpy)
 
 * HyperSpy indexing does not:

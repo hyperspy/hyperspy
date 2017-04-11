@@ -53,7 +53,7 @@ but some features such as navigation sliders may be missing.
 
 .. warning::
         When using the qt4 backend in Python 2 the matplotlib magic must be
-        executed after importing hyperspy and qt must be the default hyperspy
+        executed after importing HyperSpy and qt must be the default HyperSpy
         backend.
 
 .. NOTE::
@@ -114,7 +114,7 @@ working with HyperSpy/Python interactively.
 Loading data
 ------------
 
-Once hyperspy is running, to load from a supported file format (see
+Once HyperSpy is running, to load from a supported file format (see
 :ref:`supported-formats`) simply type:
 
 .. code-block:: python
