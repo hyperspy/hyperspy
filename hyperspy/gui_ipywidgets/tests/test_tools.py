@@ -93,5 +93,8 @@ class TestTools:
         wd["type"].value = "high"
         wd["color"].value = "red"
         wd["apply_button"]._click_handlers(wd["apply_button"])    # Trigger it
-        s2.filter_butterworth(cutoff_frequency_ratio=0.5, order=3, type_="high")
+        s2.filter_butterworth(
+            cutoff_frequency_ratio=0.5,
+            order=3,
+            type_="high")
         np.testing.assert_allclose(s.data, s2.data)
