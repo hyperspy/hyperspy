@@ -91,6 +91,7 @@ def test_eels_component():
     assert wd["fs_smoothing"].value == c.fine_structure_smoothing
     assert wd["fine_structure"].value == c.fine_structure_active
 
+
 def test_scalable_fixed_pattern():
     s = hs.signals.Signal1D(np.empty((500,)))
     m = s.create_model()
