@@ -1275,6 +1275,7 @@ class Component(t.HasTraits):
         """
 
         if dic['_id_name'] == self._id_name:
+            load_from_dictionary(self, dic)
             id_dict = {}
             for p in dic['parameters']:
                 idname = p['_id_name']
@@ -1285,8 +1286,6 @@ class Component(t.HasTraits):
                 else:
                     raise ValueError(
                         "_id_name of parameters in component and dictionary do not match")
-
-            load_from_dictionary(self, dic)
             return id_dict
         else:
             raise ValueError( "_id_name of component and dictionary do not match, \ncomponent._id_name = %s\

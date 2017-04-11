@@ -16,14 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-from traits.etsconfig.api import ETSConfig
 import os
 import warnings
-ETSConfig.toolkit = "null"
-if "DISPLAY" not in os.environ:
-    import matplotlib
-    matplotlib.use("Agg")
+
 from hyperspy.defaults_parser import preferences
 preferences.General.show_progressbar = False
 
@@ -52,6 +47,3 @@ else:
     # We allow extrernal warnings:
     warnings.filterwarnings('default',
                             module="(?!hyperspy)")
-
-from hyperspy.misc.test_utils import reset_rcParams_default
-reset_rcParams_default()
