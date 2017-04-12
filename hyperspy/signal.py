@@ -57,7 +57,7 @@ from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
                                         broadcast_signals)
-from hyperspy.misc.array_tools import _linear_bin
+from hyperspy.misc.array_tools import rebin
 
 
 import warnings
@@ -2307,7 +2307,7 @@ class BaseSignal(FancySlicing,
         # dimensions, as is necessary for signal2Ds
         scale = scale[0:-signal_dimension] + scale[::-1][0:signal_dimension]
 
-        newSpectrum = _linear_bin(spectrum, scale, crop)
+        newSpectrum = rebin(spectrum, scale, crop)
 
         m = self._deepcopy_with_new_data(newSpectrum)
 
