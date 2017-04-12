@@ -1504,4 +1504,4 @@ For 2-dimensional complex images, a linear phase ramp can be added to the signal
 `ramp_x` and `ramp_y` dictate the slope of the ramp in `x`- and `y` direction, while the offset
 is determined by the `offset` parameter. The fulcrum of the linear ramp is at the origin
 and the slopes are given in units of the axis with the according scale taken into account.
-Both are available via the :py:class:`~.axes.:py:class:`~.axes.AxesManager`` of the signal.
+Both are available via the :py:class:`~.axes.AxesManager` of the signal.
