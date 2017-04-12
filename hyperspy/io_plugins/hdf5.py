@@ -367,15 +367,23 @@ def hdfgroup2signaldict(group, lazy=False):
             # Move exposure time to Detector.Camera.exposure_time
             if "TEM" in exp["metadata"]["Acquisition_instrument"]:
                 tem = exp["metadata"]["Acquisition_instrument"]["TEM"]
+                exposure = None
                 if "tilt_stage" in tem:
                     tem["Stage"] = {"tilt_a": tem["tilt_stage"]}
                     del tem["tilt_stage"]
                 if "exposure" in tem:
+                    exposure = "exposure"
+                # Digital_micrograph plugin was parsing to 'exposure_time'
+                # instead of 'exposure': need this to be compatible with
+                # previous behaviour
+                if "exposure_time" in tem:
+                    exposure = "exposure_time"
+                if exposure is not None:
                     if "Detector" not in tem:
                         tem["Detector"] = {"Camera":{
-                            "exposure": tem["exposure"]}}
-                    tem["Detector"]["Camera"] = {"exposure": tem["exposure"]}
-                    del tem["exposure"]
+                            "exposure": tem[exposure]}}
+                    tem["Detector"]["Camera"] = {"exposure": tem[exposure]}
+                    del tem[exposure]
             # Move tilt_stage to Stage.tilt_a
             if "SEM" in exp["metadata"]["Acquisition_instrument"]:
                 sem = exp["metadata"]["Acquisition_instrument"]["SEM"]
