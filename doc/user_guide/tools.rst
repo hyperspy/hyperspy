@@ -58,12 +58,12 @@ examples, the data is stored in a numpy array in the
 :py:attr:`~.signal.BaseSignal.original_metadata` attribute, the mapped parameters
 in the :py:attr:`~.signal.BaseSignal.metadata` attribute and the axes
 information (including calibration) can be accessed (and modified) in the
-:py:class:`~.axes.:py:class:`~.axes.AxesManager`` attribute.
+:py:class:`~.axes.AxesManager` attribute.
 
 Signal initialization
 ---------------------
 
-Many of the values in the :py:class:`~.axes.:py:class:`~.axes.AxesManager`` can be
+Many of the values in the :py:class:`~.axes.AxesManager` can be
 set when making the :py:class:`~.signal.BaseSignal` object.
 
 .. code-block:: python
