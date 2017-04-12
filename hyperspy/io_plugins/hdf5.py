@@ -357,6 +357,26 @@ def hdfgroup2signaldict(group, lazy=False):
                 exp["metadata"]["Signal"][key] = exp["metadata"][key]
                 del exp["metadata"][key]
 
+    if current_file_version < LooseVersion("1.3"):
+        if "Acquisition_instrument" in exp["metadata"]:
+            if "TEM" in exp["metadata"]["Acquisition_instrument"]:
+                tem = exp["metadata"]["Acquisition_instrument"]["TEM"]
+                if "tilt_stage" in tem:
+                    tem["Stage"] = {"tilt_a": tem["tilt_stage"]}
+                    del tem["tilt_stage"]
+                if "exposure_time" in tem:
+                    if "Detector" not in tem:
+                        tem["Detector"] = {}
+                    if "exposure" in tem:
+                        tem["Detector"]["Camera"] = {
+                            "exposure": tem["exposure"]}
+                        del tem["tilt_stage"]
+            if "SEM" in exp["metadata"]["Acquisition_instrument"]:
+                sem = exp["metadata"]["Acquisition_instrument"]["SEM"]
+                if "tilt_stage" in sem:
+                    sem["Stage"] = {"tilt_a": sem["tilt_stage"]}
+                    del sem["tilt_stage"]
+
     return exp
 
 
