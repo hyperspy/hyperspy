@@ -906,23 +906,17 @@ method that operates *in place*.
 Rebinning
 ^^^^^^^^^
 
-There are two options to rebin data:
-The first uses the :py:meth:`~.signal.BaseSignal.rebin` method to rebin data,
-to a new dimensional size specified by the user. Please note the new shape must
-be a divisor of the original shape.
-
+Rebinning of the spectral data will be carried out by two methods.
+The fast method will run if the new shape is a divisor of the original shape.
+Otherwise a slower linear interpolation method will be applied. Both methods are incorporated into the :py:meth:`~.signals.eds.rebin` function.
+Example using fast binning:
 .. code-block:: python
 
     >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
     >>> print(s)
     <EDSSEMSpectrum, title: EDS SEM Signal1D, dimensions: (|1024)>
-    >>> print(s.rebin([512]))
+    >>> print(s.rebin((2)))
     <EDSSEMSpectrum, title: EDS SEM Signal1D, dimensions: (|512)>
-
-.. versionadded:: 1.1
-The second, uses the :py:meth:`~.signals.eds.linear_bin` to rebin the data,
-by a given ratio, or list of ratios. These can also be non-integers and less
-than one in order to 'up-sample', for example:
 
 .. code-block:: python
 
@@ -933,7 +927,7 @@ than one in order to 'up-sample', for example:
     >>> print ('Sum = ', sum(sum(sum(spectrum.data))))
     Sum =  164.0
     >>> scale = [0.5, 0.5, 5]
-    >>> test = spectrum.linear_bin(step)
+    >>> test = spectrum.rebin(scale)
     >>> print(test)
     <EDSTEMSpectrum, title: , dimensions: (8, 8|2)>
     >>> print('Sum =', sum(sum(sum(test.data))))

@@ -113,7 +113,8 @@ def rebin(a, scale, crop=True):
     """
     lenShape = len(a.shape)
     #check whether or not interpolation is needed.
-    if np.count_nonzero(np.asarray(s.data.shape)%np.asarray(scale)) != 0:
+    if (np.count_nonzero(np.asarray(a.data.shape)%np.asarray(scale)) != 0\
+       or (all(isinstance(item, int) for item in scale)) is not True):
         return _linear_bin(a, scale, crop)
     else:
         #if interpolation is not needed run fast re_bin function.
@@ -171,10 +172,10 @@ def _linear_bin_loop(result, data, scale):
             x1 = cx1
             while (x2 - x1) >= 1:
                 #Main binning function to add full pixel values to the data.
-                value += data[cx1]
+                value += data[x1]
                 #Update x1 each time.
                 x1 += 1
-            if x2 != x1:
+            if x2 > x1:
                 #Finally take into account the fractional pixel left over.
                 value+= data[math.floor(x1)]*(x2-x1)
         else:
@@ -187,9 +188,10 @@ def _linear_bin_loop(result, data, scale):
                 value += data[fx1] * (cx1 - x1)
                 x1 = cx1 #This step is needed when this particular bin straddes
                 #two neighbouring pixels.
+            if x1 < x2:
             #The standard upsampling function where each new pixel is a
             #fraction of the original pixel.
-            value += data[math.floor(x1)]*(x2-x1)
+                value += data[math.floor(x1)]*(x2-x1)
 
 def _linear_bin(dat, scale, crop=True):
     """

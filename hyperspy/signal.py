@@ -2226,7 +2226,7 @@ class BaseSignal(FancySlicing,
         >>> print ('Sum = ', sum(sum(sum(spectrum.data))))
         Sum = 164.0
         >>> scale = [2, 2, 5]
-        >>> test = spectrum.linear_bin(scale)
+        >>> test = spectrum.rebin(scale)
         >>> print(test)
         <EDSTEMSpectrum, title: dimensions (2, 2|2)>
         >>> print('Sum = ', sum(sum(sum(test.data))))
@@ -2239,7 +2239,7 @@ class BaseSignal(FancySlicing,
         # dimensions, as is necessary for signal2Ds
         scale = scale[0:-signal_dimension] + scale[::-1][0:signal_dimension]
 
-        newSpectrum = array_tools.array_tools.rebin(spectrum, scale, crop)
+        newSpectrum = hyperspy.misc.array_tools.rebin(spectrum, scale, crop)
 
         m = self._deepcopy_with_new_data(newSpectrum)
 

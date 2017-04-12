@@ -1369,7 +1369,7 @@ class EELSSpectrum_mixin:
         >>> print ('Sum = ', sum(sum(sum(spectrum.data))))
         Sum = 164.0
         >>> scale = [2, 2, 5]
-        >>> test = spectrum.linear_bin(scale)
+        >>> test = spectrum.rebin(scale)
         >>> print(test)
         <EELSSpectrum, title: dimensions (2, 2|2)>
         >>> print('Sum = ', sum(sum(sum(test.data))))
@@ -1377,7 +1377,7 @@ class EELSSpectrum_mixin:
         """
 
         spectrum = self.data
-        newSpectrum = array_tools.rebin(spectrum, scale, crop)
+        newSpectrum = super().rebin(scale, crop)
 
         m = self._deepcopy_with_new_data(newSpectrum)
 
