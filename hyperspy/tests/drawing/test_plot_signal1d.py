@@ -17,7 +17,9 @@
 
 import scipy.misc
 import pytest
-from matplotlib.testing.decorators import cleanup
+import matplotlib.pyplot as plt
+import os
+from shutil import copyfile
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import update_close_figure
@@ -28,27 +30,72 @@ scalebar_color = 'blue'
 default_tol = 2.0
 baseline_dir = 'plot_signal1d'
 
+style = ['default', 'overlap', 'cascade', 'mosaic', 'heatmap']
 
-@cleanup
-@pytest.mark.skipif("sys.platform == 'darwin'")
+
+def _generate_filename_list():
+    path = os.path.dirname(__file__)
+    filename_list = ['test_plot_spectra_%s' % s for s in style]
+    filename_list2 = []
+    for filename in filename_list:
+        for i in range(0, 4):
+            filename_list2.append(os.path.join(path, baseline_dir,
+                                               '%s%i.png' % (filename, i)))
+    return filename_list2
+
+
 class TestPlotSpectra():
 
-    def _test_plot_spectra(self):
-        return hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
+    s = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
 
-    @pytest.mark.parametrize("style", ['default', 'overlap', 'cascade', 'mosaic',
-                                       'heatmap'])
-    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
-    def test_plot_spectra(self, style):
-        ax = hs.plot.plot_spectra(self._test_plot_spectra(), style=style,
-                                  legend='auto')
+    @classmethod
+    def setup_class(cls):
+        # duplicate baseline images to match the test_name when the
+        # parametrized 'test_plot_spectra' are run.
+        for filename in _generate_filename_list():
+            copyfile("%s.png" % filename[:-5], filename)
+
+    @classmethod
+    def teardown_class(cls):
+        for filename in _generate_filename_list():
+            os.remove(filename)
+
+    def _generate_parameters(style):
+        parameters = []
+        for s in style:
+            for fig in [True, None]:
+                for ax in [True, None]:
+                    parameters.append([s, fig, ax])
+        return parameters
+
+    def _generate_ids(style, duplicate=4):
+        ids = []
+        for s in style:
+            ids.extend([s] * duplicate)
+        return ids
+
+    @pytest.mark.parametrize(("style", "fig", "ax"),
+                             _generate_parameters(style[:-2]),
+                             ids=_generate_ids(style[:-2]))
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol)
+    def test_plot_spectra(self, mpl_cleanup, style, fig, ax):
+        if fig:
+            fig = plt.figure()
+        if ax:
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+
+        ax = hs.plot.plot_spectra(self.s, style=style, legend='auto',
+                                  fig=fig, ax=ax)
         if style == 'mosaic':
             ax = ax[0]
         return ax.figure
 
     @pytest.mark.parametrize("figure", ['1nav', '1sig', '2nav', '2sig'])
-    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
-    def test_plot_spectra_sync(self, figure):
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol)
+    def test_plot_spectra_sync(self, mpl_cleanup, figure):
         s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0).inav[:, :3]
         s2 = s1.deepcopy() * -1
         hs.plot.plot_signals([s1, s2])
@@ -62,8 +109,6 @@ class TestPlotSpectra():
             return s2._plot.navigator_plot.figure
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
-@cleanup
 @update_close_figure
 def test_plot_nav0_close():
     test_plot = _TestPlot(ndim=0, sdim=1)
@@ -71,8 +116,6 @@ def test_plot_nav0_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
-@cleanup
 @update_close_figure
 def test_plot_nav1_close():
     test_plot = _TestPlot(ndim=1, sdim=1)
@@ -80,8 +123,6 @@ def test_plot_nav1_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
-@cleanup
 @update_close_figure
 def test_plot_nav2_close():
     test_plot = _TestPlot(ndim=2, sdim=1)
@@ -112,11 +153,11 @@ def _generate_parameter():
     return parameters
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.parametrize(("ndim", "plot_type"),
                          _generate_parameter())
-@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
-def test_plot_two_cursors(ndim, plot_type):
+@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                               tolerance=default_tol)
+def test_plot_two_cursors(mpl_cleanup, ndim, plot_type):
     s = _test_plot_two_cursors(ndim=ndim)
     if plot_type == "sig":
         return s._plot.signal_plot.figure
@@ -124,8 +165,6 @@ def test_plot_two_cursors(ndim, plot_type):
         return s._plot.navigator_plot.figure
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
-@cleanup
 @update_close_figure
 def test_plot_nav2_sig1_two_cursors_close():
     return _test_plot_two_cursors(ndim=2)

@@ -162,7 +162,7 @@ def parse_ripple(fp):
                 err = 'Separator in line "%s" is wrong, ' % line
                 err += 'it should be a <TAB> ("\\t")'
                 raise IOError(err)
-            line = line.split(sep)  # now it's a list
+            line = [seg.strip() for seg in line.split(sep)]  # now it's a list
             if (line[0] in rpl_keys) is True:
                 value_type = rpl_keys[line[0]]
                 if isinstance(value_type, tuple):  # is selection list
