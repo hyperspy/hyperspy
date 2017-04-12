@@ -547,3 +547,32 @@ def test_read_BW_Zeiss_optical_scale_metadata3():
     assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-3)
     assert s.metadata.General.date == '2016-06-13'
     assert s.metadata.General.time == '16:08:49'
+
+
+def test_read_TVIPS_metadata():
+    md = {'Acquisition_instrument': {'TEM': {'Detector': {'Camera': {'exposure_time': 0.4,
+                                                                     'name': 'F416'}},
+                                             'Stage': {'tilt_a': -0.0070000002,
+                                                       'tilt_b': -0.055,
+                                                       'x': 0.0,
+                                                       'y': -9.2000000506686774e-05,
+                                                       'z': 7.0000001350933871e-06},
+                                             'beam_energy': 99.0,
+                                             'magnification': 32000.0}},
+          'General': {'original_filename': 'TVIPS_bin4.tif',
+                      'time': '9:01:17',
+                      'title': ''},
+          'Signal': {'binned': False, 'signal_type': ''},
+          '_HyperSpy': {'Folding': {'original_axes_manager': None,
+                                    'original_shape': None,
+                                    'signal_unfolded': False,
+                                    'unfolded': False}}}
+    fname = os.path.join(MY_PATH2, 'TVIPS_bin4.tif')
+    s = hs.load(fname)
+    assert s.data.dtype == np.uint8
+    assert s.data.shape == (1024, 1024)
+    assert s.axes_manager[0].units == 'm'
+    assert s.axes_manager[1].units == 'm'
+    assert_allclose(s.axes_manager[0].scale, 1.420e-09, atol=1E-12)
+    assert_allclose(s.axes_manager[1].scale, 1.420e-09, atol=1E-12)
+    assert_deep_almost_equal(s.metadata.as_dictionary(), md)
