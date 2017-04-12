@@ -31,7 +31,6 @@ from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
 from hyperspy.utils.plot import markers
-from hyperspy.misc.array_tools import rebin
 
 _logger = logging.getLogger(__name__)
 
@@ -179,29 +178,8 @@ class EDS_mixin:
             return s
     sum.__doc__ = Signal1D.sum.__doc__
 
-    def rebin(self, new_shape, out=None):
-        new_shape_in_array = []
-        for axis in self.axes_manager._axes:
-            new_shape_in_array.append(
-                new_shape[axis.index_in_axes_manager])
-        factors = (np.array(self.data.shape) /
-                   np.array(new_shape_in_array))
-        s = super().rebin(new_shape, out=out)
-        s = out or s
-        # modify time per spectrum
-        this_md = self.metadata
-        that_md = s.metadata
-        keys = ("Acquisition_instrument.SEM.Detector.EDS.live_time",
-                "Acquisition_instrument.TEM.Detector.EDS.live_time",
-                "Acquisition_instrument.SEM.Detector.EDS.real_time",
-                "Acquisition_instrument.TEM.Detector.EDS.real_time",)
-        for key in keys:
-            if key in this_md:
-                that_md.set_item(key, this_md.get_item(key) * np.prod(factors))
-        return s
-    sum.__doc__ = Signal1D.sum.__doc__
 
-    def linear_bin(self, scale, crop=True):
+    def rebin(self, scale, crop=True):
         """
         Binning of the spectrum image by a non-integer pixel value.
 
@@ -248,7 +226,7 @@ class EDS_mixin:
         """
 
         spectrum = self.data
-        newSpectrum = rebin(spectrum, scale, crop)
+        newSpectrum = array_tools.rebin(spectrum, scale, crop)
 
         m = self._deepcopy_with_new_data(newSpectrum)
 

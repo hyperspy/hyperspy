@@ -57,9 +57,6 @@ from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
                                         broadcast_signals)
-from hyperspy.misc.array_tools import rebin
-
-
 import warnings
 
 _logger = logging.getLogger(__name__)
@@ -2190,73 +2187,8 @@ class BaseSignal(FancySlicing,
             data = self.data.transpose(nav_iia_r + sig_iia_r)
             return data
 
-    def rebin(self, new_shape, out=None):
-        """Returns the object with the data rebinned.
 
-        Parameters
-        ----------
-        new_shape: tuple of ints
-            The new shape elements must be divisors of the original shape
-            elements.
-        %s
-
-        Returns
-        -------
-        s : Signal subclass
-
-        Raises
-        ------
-        ValueError
-            When there is a mismatch between the number of elements in the
-            signal shape and `new_shape` or `new_shape` elements are not
-            divisors of the original signal shape.
-
-
-        Examples
-        --------
-        >>> import hyperspy.api as hs
-        >>> s = hs.signals.Signal1D(np.zeros((10, 100)))
-        >>> s
-        <Signal1D, title: , dimensions: (10|100)>
-        >>> s.rebin((5, 100))
-        <Signal1D, title: , dimensions: (5|100)>
-        I
-        """
-        if len(new_shape) != len(self.data.shape):
-            raise ValueError("Wrong shape size")
-        new_shape_in_array = []
-        for axis in self.axes_manager._axes:
-            new_shape_in_array.append(
-                new_shape[axis.index_in_axes_manager])
-        factors = (np.array(self.data.shape) /
-                   np.array(new_shape_in_array))
-        s = out or self._deepcopy_with_new_data(None, copy_variance=True)
-        data = array_tools.rebin(self.data, new_shape_in_array)
-        if out:
-            if out._lazy:
-                out.data = data
-            else:
-                out.data[:] = data
-        else:
-            s.data = data
-        for axis, axis_src in zip(s.axes_manager._axes,
-                                  self.axes_manager._axes):
-            axis.scale = axis_src.scale * factors[axis.index_in_array]
-        s.get_dimensions_from_data()
-        if s.metadata.has_item('Signal.Noise_properties.variance'):
-            if isinstance(s.metadata.Signal.Noise_properties.variance,
-                          BaseSignal):
-                var = s.metadata.Signal.Noise_properties.variance
-                s.metadata.Signal.Noise_properties.variance = var.rebin(
-                    new_shape)
-        if out is None:
-            return s
-        else:
-            out.events.data_changed.trigger(obj=out)
-
-    rebin.__doc__ %= OUT_ARG
-
-    def linear_bin(self, scale, crop=True):
+    def rebin(self, scale, crop=True):
         """
         Binning of the spectrum image by a non-integer pixel value.
 
@@ -2307,7 +2239,7 @@ class BaseSignal(FancySlicing,
         # dimensions, as is necessary for signal2Ds
         scale = scale[0:-signal_dimension] + scale[::-1][0:signal_dimension]
 
-        newSpectrum = rebin(spectrum, scale, crop)
+        newSpectrum = array_tools.array_tools.rebin(spectrum, scale, crop)
 
         m = self._deepcopy_with_new_data(newSpectrum)
 

@@ -35,7 +35,6 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
-from hyperspy.misc.array_tools import rebin
 
 _logger = logging.getLogger(__name__)
 
@@ -1332,7 +1331,7 @@ class EELSSpectrum_mixin:
                           dictionary=dictionary)
         return model
 
-    def Linear_bin(self, scale, crop=True):
+    def rebin(self, scale, crop=True):
         """
         Binning of the spectrum image by a non-integer pixel value.
 
@@ -1378,7 +1377,7 @@ class EELSSpectrum_mixin:
         """
 
         spectrum = self.data
-        newSpectrum = rebin(spectrum, scale, crop)
+        newSpectrum = array_tools.rebin(spectrum, scale, crop)
 
         m = self._deepcopy_with_new_data(newSpectrum)
 
