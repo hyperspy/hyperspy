@@ -31,7 +31,7 @@ from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
 from hyperspy.utils.plot import markers
-from hyperspy.misc.array_tools import _linear_bin
+from hyperspy.misc.array_tools import rebin
 
 _logger = logging.getLogger(__name__)
 
@@ -248,7 +248,7 @@ class EDS_mixin:
         """
 
         spectrum = self.data
-        newSpectrum = _linear_bin(spectrum, scale, crop)
+        newSpectrum = rebin(spectrum, scale, crop)
 
         m = self._deepcopy_with_new_data(newSpectrum)
 

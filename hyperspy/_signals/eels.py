@@ -35,7 +35,7 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
-from hyperspy.misc.array_tools import _linear_bin
+from hyperspy.misc.array_tools import rebin
 
 _logger = logging.getLogger(__name__)
 
@@ -1378,7 +1378,7 @@ class EELSSpectrum_mixin:
         """
 
         spectrum = self.data
-        newSpectrum = _linear_bin(spectrum, scale, crop)
+        newSpectrum = rebin(spectrum, scale, crop)
 
         m = self._deepcopy_with_new_data(newSpectrum)
 
@@ -1398,11 +1398,10 @@ class EELSSpectrum_mixin:
         return m
 
 class EELSSpectrum(EELSSpectrum_mixin, Signal1D):
-    
+
     pass
 
 
 class LazyEELSSpectrum(EELSSpectrum, LazySignal1D):
 
     pass
-
