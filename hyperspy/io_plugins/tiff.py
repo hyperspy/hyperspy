@@ -665,7 +665,7 @@ class Metadata:
             'tvips_metadata.camera_type':
             ("Acquisition_instrument.TEM.Detector.Camera.name", None),
             'tvips_metadata.exposure_time':
-            ("Acquisition_instrument.TEM.Detector.Camera.exposure_time",
+            ("Acquisition_instrument.TEM.Detector.Camera.exposure",
              lambda x: float(x) * 1e-3),
             'tvips_metadata.tem_high_tension':
             ("Acquisition_instrument.TEM.beam_energy", lambda x: float(x) * 1e-3),

@@ -536,7 +536,7 @@ def test_read_BW_Zeiss_optical_scale_metadata3():
 
 
 def test_read_TVIPS_metadata():
-    md = {'Acquisition_instrument': {'TEM': {'Detector': {'Camera': {'exposure_time': 0.4,
+    md = {'Acquisition_instrument': {'TEM': {'Detector': {'Camera': {'exposure': 0.4,
                                                                      'name': 'F416'}},
                                              'Stage': {'tilt_a': -0.0070000002,
                                                        'tilt_b': -0.055,

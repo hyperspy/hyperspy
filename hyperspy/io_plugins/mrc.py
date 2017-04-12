@@ -229,7 +229,7 @@ mapping = {
     'fei_header.z_stage':
     ("Acquisition_instrument.TEM.Stage.z", None),
     'fei_header.exp_time':
-    ("Acquisition_instrument.TEM.Detector.Camera.exposure_time", None),
+    ("Acquisition_instrument.TEM.Detector.Camera.exposure", None),
     'fei_header.magnification':
     ("Acquisition_instrument.TEM.magnification", None),
    }
