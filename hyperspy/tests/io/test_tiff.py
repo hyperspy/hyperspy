@@ -13,13 +13,6 @@ from hyperspy.misc.test_utils import assert_deep_almost_equal
 MY_PATH = os.path.dirname(__file__)
 MY_PATH2 = os.path.join(MY_PATH, "tiff_files")
 
-import skimage
-# Major change in reading the metadata with tifffile.py
-if LooseVersion(skimage.__version__) >= '0.13.0':
-    recent_skimage = True
-else:
-    recent_skimage = False
-
 
 def test_rgba16():
     """ Use skimage tifffile.py library """
@@ -69,9 +62,8 @@ def test_read_unit_um():
         assert s.axes_manager[1].units == 'µm'
         assert_allclose(s2.axes_manager[0].scale, 0.16867, atol=1E-5)
         assert_allclose(s2.axes_manager[1].scale, 0.16867, atol=1E-5)
-        if recent_skimage:
-            assert s2.metadata.General.date == s.metadata.General.date
-            assert s2.metadata.General.time == s.metadata.General.time
+        assert s2.metadata.General.date == s.metadata.General.date
+        assert s2.metadata.General.time == s.metadata.General.time
 
 
 def test_write_read_intensity_axes_DM():
@@ -436,8 +428,6 @@ FEI_Helios_metadata = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 
                                                  'unfolded': False}}}
 
 
-@pytest.mark.xfail(not recent_skimage,
-                   reason="Reading metadata only supported for skimage >= 0.13")
 def test_read_FEI_SEM_scale_metadata_8bits():
     fname = os.path.join(MY_PATH2, 'FEI-Helios-Ebeam-8bits.tif')
     s = hs.load(fname)
@@ -449,8 +439,6 @@ def test_read_FEI_SEM_scale_metadata_8bits():
     assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
 
 
-@pytest.mark.xfail(not recent_skimage,
-                   reason="Reading metadata only supported for skimage >= 0.13")
 def test_read_FEI_SEM_scale_metadata_16bits():
     fname = os.path.join(MY_PATH2, 'FEI-Helios-Ebeam-16bits.tif')
     s = hs.load(fname)
@@ -463,8 +451,6 @@ def test_read_FEI_SEM_scale_metadata_16bits():
     assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
 
 
-@pytest.mark.xfail(not recent_skimage,
-                   reason="Reading metadata only supported for skimage >= 0.13")
 def test_read_Zeiss_SEM_scale_metadata_1k_image():
     md = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 10.2,
                                                        'tilt': -0.0,
