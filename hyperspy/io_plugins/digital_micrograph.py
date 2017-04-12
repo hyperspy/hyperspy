@@ -961,7 +961,7 @@ class ImageObject(object):
             mapping.update({
                 "ImageList.TagGroup0.ImageTags.Acquisition.Parameters.Detector." +
                 "exposure_s": (
-                    "Acquisition_instrument.TEM.exposure_time",
+                    "Acquisition_instrument.TEM.Camera.exposure",
                     None),
             })
         return mapping

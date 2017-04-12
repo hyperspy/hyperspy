@@ -75,7 +75,7 @@ def test_missing_tag():
     s = load(fname)
     md = s.metadata
     assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
-    assert_allclose(md.Acquisition_instrument.TEM.exposure_time, 0.2)
+    assert_allclose(md.Acquisition_instrument.TEM.Camera.exposure, 0.2)
     assert md.General.date == "2014-07-09"
     assert md.General.time == "18:56:37"
     assert md.General.title == "test_diffraction_pattern_tags_removed"
@@ -87,7 +87,7 @@ def test_read_TEM_metadata():
     md = s.metadata
     assert md.Acquisition_instrument.TEM.acquisition_mode == "TEM"
     assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
-    assert_allclose(md.Acquisition_instrument.TEM.exposure_time, 0.5)
+    assert_allclose(md.Acquisition_instrument.TEM.Camera.exposure, 0.5)
     assert_allclose(md.Acquisition_instrument.TEM.magnification, 51.0)
     assert md.Acquisition_instrument.TEM.microscope == "FEI Tecnai"
     assert md.General.date == "2015-07-20"
@@ -107,7 +107,7 @@ def test_read_Diffraction_metadata():
     md = s.metadata
     assert md.Acquisition_instrument.TEM.acquisition_mode == "TEM"
     assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
-    assert_allclose(md.Acquisition_instrument.TEM.exposure_time, 0.2)
+    assert_allclose(md.Acquisition_instrument.TEM.Camera.exposure, 0.2)
     assert_allclose(md.Acquisition_instrument.TEM.camera_length, 320.0)
     assert md.Acquisition_instrument.TEM.microscope == "FEI Tecnai"
     assert md.General.date == "2014-07-09"
