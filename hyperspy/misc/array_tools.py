@@ -68,7 +68,7 @@ def homogenize_ndim(*args):
             for ary in args]
 
 
-def rebin(a, new_shape):
+def rebin(a, scale, crop=True):
     """Rebin array.
 
     rebin ndarray data into a smaller ndarray of the same rank whose dimensions
@@ -78,8 +78,24 @@ def rebin(a, new_shape):
     Parameters
     ----------
     a : numpy array
-    new_shape : tuple
-        shape after binning
+    scale : a list of floats
+        for each dimension specify the new:old pixel ratio
+        e.g. a ratio of 1 is no binning
+             a ratio of 2 means that each pixel in the new spectrum is
+             twice the size of the pixels in the old spectrum.
+    crop_str : {'True'}, optional
+        when binning by a non-integer number of pixels it is likely that
+         the final row in each dimension contains less than the full quota to
+         fill one pixel.
+         e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
+         pixels and one row containing only 0.8 pixels worth. Selection of
+         crop_str = 'True' or crop = 'False' determines whether or not this
+         'black' line is cropped from the final binned array or not.
+
+        *Please note that if crop=False is used, the final row in each
+        dimension may appear black, if a fractional number of pixels are left
+        over. It can be removed but has been left to preserve total counts
+        before and after binning.*
 
     Returns
     -------
@@ -92,32 +108,39 @@ def rebin(a, new_shape):
 
     Notes
     -----
-    Adapted from scipy cookbook
+    Fast re_bin function Adapted from scipy cookbook
 
     """
     lenShape = len(a.shape)
-    # ensure the new shape is integers
-    new_shape = tuple(int(ns) for ns in new_shape)
-    factor = np.asarray(a.shape) // np.asarray(new_shape)
-    if factor.max() < 2:
-        return a.copy()
-    if isinstance(a, np.ndarray):
-        # most of the operations will fall here and dask is not imported
-        rshape = ()
-        for athing in zip(new_shape, factor):
-            rshape += athing
-        return a.reshape(rshape).sum(axis=tuple(
-            2 * i + 1 for i in range(lenShape)))
+    #check whether or not interpolation is needed.
+    if np.count_nonzero(np.asarray(s.data.shape)%np.asarray(scale)) != 0:
+        return _linear_bin(a, scale, crop)
     else:
-        import dask.array as da
-        try:
-            return da.coarsen(np.sum, a, {i: int(f)
-                                          for i, f in enumerate(factor)})
-        # we provide slightly better error message in hypersy context
-        except ValueError:
-            raise ValueError("Rebinning does not allign with data dask chunks."
-                             " Rebin fewer dimensions at a time to avoid this"
-                             " error")
+        #if interpolation is not needed run fast re_bin function.
+        #Adapted from scipy cookbook.
+        new_shape = np.asarray(a.shape)//np.asarray(scale)
+        # ensure the new shape is integers
+        new_shape = tuple(int(ns) for ns in new_shape)
+        scale = np.asarray(a.shape) // np.asarray(new_shape)
+        if scale.max() < 2:
+            return a.copy()
+        if isinstance(a, np.ndarray):
+            # most of the operations will fall here and dask is not imported
+            rshape = ()
+            for athing in zip(new_shape, scale):
+                rshape += athing
+            return a.reshape(rshape).sum(axis=tuple(
+                2 * i + 1 for i in range(lenShape)))
+        else:
+            import dask.array as da
+            try:
+                return da.coarsen(np.sum, a, {i: int(f)
+                                              for i, f in enumerate(scale)})
+            # we provide slightly better error message in hypersy context
+            except ValueError:
+                raise ValueError("Rebinning does not allign with data dask chunks."
+                                 " Rebin fewer dimensions at a time to avoid this"
+                                 " error")
 
 
 def jit_ifnumba(func):
@@ -164,10 +187,9 @@ def _linear_bin_loop(result, data, scale):
                 value += data[fx1] * (cx1 - x1)
                 x1 = cx1 #This step is needed when this particular bin straddes
                 #two neighbouring pixels.
-            if x1 < x2:
-                #The standard upsampling function where each new pixel is a
-                #fraction of the original pixel.
-                value += data[math.floor(x1)]*(x2-x1)
+            #The standard upsampling function where each new pixel is a
+            #fraction of the original pixel.
+            value += data[math.floor(x1)]*(x2-x1)
 
 def _linear_bin(dat, scale, crop=True):
     """
@@ -181,7 +203,7 @@ def _linear_bin(dat, scale, crop=True):
         e.g. a ratio of 1 is no binning
              a ratio of 2 means that each pixel in the new spectrum is
              twice the size of the pixels in the old spectrum.
-    crop_str : {'False'}, optional
+    crop_str : {'True'}, optional
         when binning by a non-integer number of pixels it is likely that
          the final row in each dimension contains less than the full quota to
          fill one pixel.
