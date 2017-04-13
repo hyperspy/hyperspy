@@ -210,17 +210,20 @@ class LazySignal(BaseSignal):
     def swap_axes(self, *args):
         raise lazyerror
 
-    def rebin(self, new_shape, out=None):
-        if len(new_shape) != len(self.data.shape):
-            raise ValueError("Wrong shape size")
+    def rebin(self, scale, out=None, crop=False):
         new_shape_in_array = []
+        new_shape = []
+        for axis, s in enumerate(scale):
+            dim = (math.floor(self.data.shape[axis] / s) if crop
+            else math.ceil(self.data.shape[axis] / s))
+            new_shape[axis] = dim
         for axis in self.axes_manager._axes:
             new_shape_in_array.append(new_shape[axis.index_in_axes_manager])
-        factors = (np.array(self.data.shape) / np.array(new_shape_in_array))
+        factors = np.asarray(scale)
         axis = {ax.index_in_array: ax
                 for ax in self.axes_manager._axes}[factors.argmax()]
         self._make_lazy(axis=axis)
-        return super().rebin(new_shape, out=out)
+        return super().rebin(scale, out=out, crop=crop)
 
     rebin.__doc__ = BaseSignal.rebin.__doc__
 

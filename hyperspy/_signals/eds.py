@@ -179,7 +179,7 @@ class EDS_mixin:
     sum.__doc__ = Signal1D.sum.__doc__
 
 
-    def rebin(self, scale, crop=True):
+    def rebin(self, scale, out=None, crop=True):
         """
         Binning of the spectrum image by a non-integer pixel value.
 
@@ -226,9 +226,10 @@ class EDS_mixin:
         """
 
         spectrum = self.data
-        newSpectrum = super().rebin(scale, crop)
+        newSpectrum = super().rebin(scale, out=out, crop=crop)
 
-        m = self._deepcopy_with_new_data(newSpectrum)
+        m = out or self._deepcopy_with_new_data(None, copy_variance=True)
+        data = array_tools.rebin(self.data, scale, crop)
 
         m.get_dimensions_from_data()
         for s, step in zip(m.axes_manager._axes, scale):
@@ -249,6 +250,16 @@ class EDS_mixin:
             for i, t in enumerate(m.axes_manager.navigation_axes):
                 m.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time\
                     *= scale[i]
+        if m.metdadata.has_item('Signal,Noise_properties.variance'):
+            if isinstance(m.metadata.Signal.Noise_properties.variance,
+                          BaseSignal):
+                var = m.metadata.Signal.Noise_properties.variance
+                m.metadata.Signal.Noise_properties.variance = var.rebin(
+                    scale)#can't find where this function goes...
+        if out is None:
+            return m
+        else:
+            out.events.data_changed.trigger(obj=out)
 
         return m
 

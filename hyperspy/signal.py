@@ -2188,7 +2188,7 @@ class BaseSignal(FancySlicing,
             return data
 
 
-    def rebin(self, scale, crop=True):
+    def rebin(self, scale, out=None, crop=True):
         """
         Binning of the spectrum image by a non-integer pixel value.
 
@@ -2241,13 +2241,23 @@ class BaseSignal(FancySlicing,
 
         newSpectrum = hyperspy.misc.array_tools.rebin(spectrum, scale, crop)
 
-        m = self._deepcopy_with_new_data(newSpectrum)
-
+        m = out or self._deepcopy_with_new_data(newSpectrum)
+        if out:
+            if out._lazy:
+                out.data = data
+            else:
+                out.data[:] = data
+        else:
+            m.data = data
         m.get_dimensions_from_data()
         for s, step in zip(m.axes_manager._axes, scale):
             s.scale *= step
+        if out is None:
+            return m
+        else:
+            out.event.data_changed.trigger(obj=out)
 
-        return m
+    rebin._doc_%=OUT.ARG
 
     def split(self,
               axis='auto',
