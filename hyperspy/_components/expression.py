@@ -222,7 +222,7 @@ class Expression(Component):
 def check_parameter_linearity(expression, name):
     """
     Check linearity by multiplying a parameter by a factor and testing if the
-    new expression is equal to multiplying the expression by the same factor.
+    new expression is equal to multiplying the whole expression by the same factor.
     Testing parameter `a` in example expression `f(x) = a*x + b` by multiplying
     by factor `factor`:
 
