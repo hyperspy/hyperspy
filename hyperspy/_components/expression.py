@@ -1,5 +1,6 @@
 from functools import wraps
 from hyperspy.component import Component
+import sympy
 
 _CLASS_DOC = \
     """%s component (created with Expression).
@@ -147,8 +148,10 @@ class Expression(Component):
             self.__doc__ = _CLASS_DOC % (
                 name, sympy.latex(_parse_substitutions(expression)))
 
+        for para in self.parameters:
+            para.is_linear = self.is_linear(expression, [para.name])
+
     def compile_function(self, module="numpy", position=False):
-        import sympy
         from sympy.utilities.lambdify import lambdify
         expr = _parse_substitutions(self._str_expression)
         # Extract x
@@ -215,3 +218,14 @@ class Expression(Component):
                         self,
                         Expression)
                     )
+
+    def is_linear(self, expr, vars):
+        # Checks if parameters in the component are linear
+        for x in vars:
+            for y in vars:
+                try:
+                    if not sympy.Eq(sympy.diff(expr, x, y), 0):
+                        return False
+                except TypeError:
+                    return False
+        return True
