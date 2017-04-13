@@ -157,8 +157,7 @@ class ImagePlot(BlittedFigure):
         if yaxis.units is not Undefined:
             self._ylabel += ' (%s)' % yaxis.units
 
-        if (xaxis.units == yaxis.units) and (
-                xaxis.scale == yaxis.scale):
+        if (xaxis.units == yaxis.units) and (xaxis.scale == yaxis.scale):
             self._auto_scalebar = True
             self._auto_axes_ticks = False
             self.pixel_units = xaxis.units
@@ -176,6 +175,7 @@ class ImagePlot(BlittedFigure):
     def _calculate_aspect(self):
         xaxis = self.xaxis
         yaxis = self.yaxis
+        factor = 1
         # Apply aspect ratio constraint
         if self.min_aspect:
             min_asp = self.min_aspect
@@ -187,8 +187,6 @@ class ImagePlot(BlittedFigure):
                 factor = min_asp ** -1 * xaxis.size / yaxis.size
                 self._auto_scalebar = False
                 self._auto_axes_ticks = True
-            else:
-                factor = 1
         self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
 
     def optimize_contrast(self, data):
@@ -199,22 +197,37 @@ class ImagePlot(BlittedFigure):
 
     def create_figure(self, max_size=8, min_size=2):
         if self.scalebar is True:
-            wfactor = 1.1
+            wfactor = 1.0 + plt.rcParams['font.size'] / 100
         else:
             wfactor = 1
-        rcParams_factor = np.array(plt.rcParams['figure.figsize']) / \
-            np.array(plt.rcParamsDefault['figure.figsize'])
-        height = abs(self._extent[3] - self._extent[2]) * self._aspect
-        width = abs(self._extent[1] - self._extent[0])
-        rcParams_factor = np.array(plt.rcParams['figure.figsize']) / \
-            np.array(plt.rcParamsDefault['figure.figsize'])
-        figsize = np.array((width * wfactor, height)) * max_size / max(
-            (width * wfactor, height)) * rcParams_factor
+
+#        height = abs(self._extent[3] - self._extent[2]) * self._aspect
+#        width = abs(self._extent[1] - self._extent[0])
+#        figsize = np.array((width * wfactor, height)) * \
+#            max(plt.rcParams['figure.figsize']) / max(width * wfactor, height)
+#        self.figure = utils.create_figure(
+#            window_title=("Figure " + self.title
+#                          if self.title
+#                          else None),
+#            figsize=figsize.clip(min_size, max_size))
+
+        # get the aspect_ratio we want to display
+        aspect_ratio_image = self.xaxis.size / self.yaxis.size * self._aspect
+        clipped_rcParams_figsize = np.array(
+            plt.rcParams["figure.figsize"]).clip(min_size, max_size)
+        # Find which direction should be limited by rcParams
+        if aspect_ratio_image < wfactor:  # max size defined by height
+            max_size = clipped_rcParams_figsize[1]
+            figsize = (max_size * aspect_ratio_image, max_size)
+        else:  # max size defined by width
+            max_size = clipped_rcParams_figsize[0]
+            figsize = (max_size, max_size / aspect_ratio_image)
+
         self.figure = utils.create_figure(
             window_title=("Figure " + self.title
                           if self.title
                           else None),
-            figsize=figsize.clip(min_size, max_size))
+            figsize=figsize)
         self.figure.canvas.mpl_connect('draw_event', self._on_draw)
         utils.on_figure_window_close(self.figure, self._on_close)
 
@@ -272,7 +285,10 @@ class ImagePlot(BlittedFigure):
         self.figure.canvas.draw()
         if hasattr(self.figure, 'tight_layout'):
             try:
-                self.figure.tight_layout()
+                if self.axes_ticks == 'off' and not self.colorbar:
+                    plt.subplots_adjust(0, 0, 1, 1)
+                else:
+                    self.figure.tight_layout()
             except:
                 # tight_layout is a bit brittle, we do this just in case it
                 # complains
@@ -371,6 +387,9 @@ class ImagePlot(BlittedFigure):
             self.ax.imshow(data,
                            **new_args)
             self.figure.canvas.draw()
+
+        if self.axes_ticks == 'off':
+            self.ax.set_axis_off()
 
     def _update(self):
         # This "wrapper" because on_trait_change fiddles with the
