@@ -149,7 +149,7 @@ class Expression(Component):
                 name, sympy.latex(_parse_substitutions(expression)))
 
         for para in self.parameters:
-            para.is_linear = check_expression_is_linear(expression, [para.name])
+            para.is_linear = check_parameter_linearity(expression, para.name)
 
     def compile_function(self, module="numpy", position=False):
         from sympy.utilities.lambdify import lambdify
@@ -219,12 +219,18 @@ class Expression(Component):
                         Expression)
                     )
 
-def check_expression_is_linear(expression, name):
-    if name not in expression:
-        raise AttributeError("The parameter '" + name + "' is not in the expression.")
-    try:
-        if not sympy.Eq(sympy.diff(expression, name, 2), 0):
-            return False
-    except TypeError:
-        return False
-    return True
+def check_parameter_linearity(expression, name):
+    """
+    Check linearity by multiplying a parameter by a factor and testing if the
+    new expression is equal to multiplying the expression by the same factor.
+    Testing parameter `a` in example expression `f(x) = a*x + b` by multiplying
+    by factor `factor`:
+
+    `a` is linear if ``(a*LIN)*x + b == LIN*f(x)``
+    """
+
+    expression = sympy.simplify(expression)
+    symb = sympy.Symbol(name)
+    factor = sympy.Symbol("factor")
+    return sympy.simplify(
+        expression * factor - expression.subs(symb, symb * factor)) == 0
