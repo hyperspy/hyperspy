@@ -967,74 +967,102 @@ class ImageObject(object):
         return mapping
 
 
-def _get_markers_dict(tags_dict, scale_x=1, scale_y=1):
+def _get_markers_dict(tags_dict, offset_x=0, offset_y=0, scale_x=1, scale_y=1):
     markers_dict = {}
     annotations_dict = tags_dict[
             'DocumentObjectList']['TagGroup0']['AnnotationGroupList']
     for annotation in annotations_dict.values():
-        marker_type = None
+        marker_properties = {}
+        temp_dict = {}
+        marker_text = None
         if 'Rectangle' in annotation:
             position = annotation['Rectangle']
         if 'AnnotationType' in annotation:
             annotation_type = annotation['AnnotationType']
             if annotation_type == 2:
-                marker_type = "LineSegment"
+                temp_dict['marker_type'] = "LineSegment"
+                marker_properties['linewidth'] = 2
             elif annotation_type == 3:
-                pass # Arrow
+                _logger.info('Arrow marker not loaded: not implemented')
             elif annotation_type == 4:
-                pass # Double arrow
+                _logger.info('Double arrow marker not loaded: not implemented')
             elif annotation_type == 5:
-                marker_type = "Rectangle"
+                temp_dict['marker_type'] = "Rectangle"
+                marker_properties['linewidth'] = 2
             elif annotation_type == 6:
-                pass # Ellipse
+                _logger.info('Ellipse marker not loaded: not implemented')
             elif annotation_type == 8:
-                pass # maskspot
+                _logger.info('Mask spot marker not loaded: not implemented')
             elif annotation_type == 9:
-                pass # maskarray
+                _logger.info('Mask array marker not loaded: not implemented')
             elif annotation_type == 13:
-                marker_type = "Text"
+                temp_dict['marker_type'] = "Text"
+                marker_text = annotation['Text']
             elif annotation_type == 15:
-                pass # maskbandpass
+                _logger.info(
+                        'Mask band pass marker not loaded: not implemented')
             elif annotation_type == 19:
-                pass # maskwedge
-            elif annotation_type == 23:
-                marker_type = "Rectangle" # roirectangle
-            elif annotation_type == 25:
-                marker_type = "LineSegment" # roiline
+                _logger.info('Mask wedge marker not loaded: not implemented')
+            elif annotation_type == 23:  # roirectangle
+                temp_dict['marker_type'] = "Rectangle"
+                marker_properties['linestyle'] = '--'
+                marker_properties['linewidth'] = 2
+            elif annotation_type == 25:  # roiline
+                temp_dict['marker_type'] = "LineSegment"
+                marker_properties['linestyle'] = '--'
+                marker_properties['linewidth'] = 2
             elif annotation_type == 27:
-                marker_type = "Point" # roipoint
+                temp_dict['marker_type'] = "Point"
             elif annotation_type == 29:
-                pass # roicurve, also roi loop
+                _logger.info('ROI curve marker not loaded: not implemented')
             elif annotation_type == 31:
-                pass # scalebar
-        if marker_type:
-            if 'Label' in annotation:
-                marker_text = annotation['Label']
-            else:
-                marker_text = None
+                _logger.info('Scalebar marker not loaded: not implemented')
+        if 'marker_type' in temp_dict:
             if 'ForegroundColor' in annotation:
-                color = annotation['ForegroundColor']
+                color_raw = annotation['ForegroundColor']
                 # Colors in DM are saved as negative values
-                color = tuple((abs(c) for c in color))
+                # Some values are also in 16-bit
+                color = []
+                for raw_value in color_raw:
+                    raw_value = abs(raw_value)
+                    if raw_value > 1:
+                        raw_value /= 2**16
+                    color.append(raw_value)
+                color = tuple(color)
             else:
                 color = 'red'
-            temp_dict = {
-                    'marker_type':marker_type,
-                    'plot_on_signal':True,
-                    'data':{
-                        'y1':position[0]*scale_y,
-                        'x1':position[1]*scale_x,
-                        'y2':position[2]*scale_y,
-                        'x2':position[3]*scale_x,
-                        'size':20,
-                        'text':marker_text,
+            if 'Label' in annotation:
+                marker_label = annotation['Label']
+                label_marker_dict = {
+                    'marker_type': "Text",
+                    'plot_on_signal': True,
+                    'data': {
+                        'y1': position[0]*scale_y+offset_y,
+                        'x1': position[1]*scale_x+offset_x,
+                        'size': 20,
+                        'text': marker_label,
                         },
-                    'marker_properties':{
-                        'color':color,
-                        'linewidth':2,
-                        },
+                    'marker_properties': {
+                        'color': color,
+                        'va': 'bottom',
+                        }
                     }
-            markers_dict[marker_type] = temp_dict
+                marker_name = "Text" + str(annotation['UniqueID'])
+                markers_dict[marker_name] = label_marker_dict
+
+            marker_properties['color'] = color
+            temp_dict['plot_on_signal'] = True,
+            temp_dict['data'] = {
+                        'y1': position[0]*scale_y+offset_y,
+                        'x1': position[1]*scale_x+offset_x,
+                        'y2': position[2]*scale_y+offset_y,
+                        'x2': position[3]*scale_x+offset_x,
+                        'size': 20,
+                        'text': marker_text,
+                        }
+            temp_dict['marker_properties'] = marker_properties
+            name = temp_dict['marker_type'] + str(annotation['UniqueID'])
+            markers_dict[name] = temp_dict
     return(markers_dict)
 
 
@@ -1081,13 +1109,16 @@ def file_reader(filename, record_by=None, order=None, lazy=False):
             else:
                 data = image.get_data()
 
-            scale_x, scale_y = 1, 1
+            offset_x, offset_y, scale_x, scale_y = 0, 0, 1, 1
             for axis in axes:
                 if axis['index_in_array'] == 0:
                     scale_y = axis['scale']
+                    offset_y = axis['offset']
                 if axis['index_in_array'] == 1:
                     scale_x = axis['scale']
-            markers_dict = _get_markers_dict(dm.tags_dict, scale_x, scale_y)
+                    offset_x = axis['offset']
+            markers_dict = _get_markers_dict(
+                    dm.tags_dict, offset_x, offset_y, scale_x, scale_y)
             if markers_dict:
                 mp['Markers'] = markers_dict
 
@@ -1099,6 +1130,5 @@ def file_reader(filename, record_by=None, order=None, lazy=False):
                  'post_process': post_process,
                  'mapping': image.get_mapping(),
                  })
-
 
     return imd
