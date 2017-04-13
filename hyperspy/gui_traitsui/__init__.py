@@ -30,35 +30,48 @@ _logger.debug("Initial ETS toolkit set to {}".format(ETSConfig.toolkit))
 
 def set_ets_toolkit(toolkit):
     try:
-        ETSConfig.toolkit = toolkit
-        _logger.debug('Current ETS toolkit set to: %s', toolkit)
-        # Register the UI elements
-        if toolkit != "null":
-            import hyperspy.gui_traitsui.axes
-            import hyperspy.gui_traitsui.model
-            import hyperspy.gui_traitsui.tools
-            import hyperspy.gui_traitsui.preferences
-            import hyperspy.gui_traitsui.microscope_parameters
-            import hyperspy.gui_traitsui.messages
-        else:
-            _logger.warning(
-                "The %s matplotlib backend is not supported by the installed "
-                "traitsui version. Hence, the traitsui GUI elements are not "
-                "available." % matplotlib.get_backend())
-
+        if ETSConfig.toolkit == "":
+            ETSConfig.toolkit = toolkit
+            _logger.debug('Current ETS toolkit set to: %s', toolkit)
+        elif ETSConfig.toolkit != toolkit:
+            # ETS toolkit already set to a different value
+            _logger.debug(
+                'ETS toolkit and matplotlib backend mismatch: the ETS toolkit '
+                'is {} while the matplotlib toolkit is {}. '
+                'Things may not works as expected.'.format(
+                    ETSConfig.toolkit, toolkit))
     except ValueError:
         _logger.debug("Setting ETS toolkit to %s failed" % toolkit)
         set_ets_toolkit("null")
 
 # Get the backend from matplotlib
 backend = matplotlib.rcParams["backend"]
-_logger.debug('Loading hyperspy.gui')
+_logger.debug('Loading hyperspy.traitsui_gui')
 _logger.debug('Current MPL backend: %s', backend)
+_logger.debug('Current ETS toolkit: %s', ETSConfig.toolkit)
 if "WX" in backend:
     set_ets_toolkit("wx")
 elif "Qt4" in backend:
     set_ets_toolkit("qt4")
 elif "Qt5" in backend:
     set_ets_toolkit("qt5")
-else:
+elif ETSConfig.toolkit == "":
+    # The toolkit has not been set and no supported toolkit is available, so
+    # setting it to "null"
     set_ets_toolkit("null")
+    _logger.warning(
+        "The {} matplotlib backend is not supported by the "
+        "installed traitsui version and the ETS toolkit has been set to null. "
+        "To set the ETS toolkit independently from the matplotlib backend, "
+        "set it before importing matplotlib.".format(matplotlib.get_backend()))
+
+if ETSConfig.toolkit and ETSConfig.toolkit != "null":
+    # Register the GUI elements
+    import hyperspy.gui_traitsui.axes
+    import hyperspy.gui_traitsui.model
+    import hyperspy.gui_traitsui.tools
+    import hyperspy.gui_traitsui.preferences
+    import hyperspy.gui_traitsui.microscope_parameters
+    import hyperspy.gui_traitsui.messages
+else:
+    _logger.warning("The traitsui GUI elements are not available.")
