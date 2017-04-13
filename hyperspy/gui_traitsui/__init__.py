@@ -48,7 +48,6 @@ def set_ets_toolkit(toolkit):
 backend = matplotlib.rcParams["backend"]
 _logger.debug('Loading hyperspy.traitsui_gui')
 _logger.debug('Current MPL backend: %s', backend)
-_logger.debug('Current ETS toolkit: %s', ETSConfig.toolkit)
 if "WX" in backend:
     set_ets_toolkit("wx")
 elif "Qt4" in backend:
