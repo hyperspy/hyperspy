@@ -25,6 +25,12 @@ def test_sympy_linear_expression():
     assert not g.centre.is_linear
     assert not g.fwhm.is_linear
 
+def test_sympy_linear_expression2():
+    expression = "a * x + b"
+    g = Expression(expression, name="Test_function2")
+    assert not g.a.is_linear
+    assert not g.b.is_linear
+
 def test_gaussian_linear():
     g = Gaussian()
     assert g.A.is_linear
