@@ -1012,6 +1012,12 @@ def _get_markers_dict(tags_dict, scale_x=1, scale_y=1):
                 marker_text = annotation['Label']
             else:
                 marker_text = None
+            if 'ForegroundColor' in annotation:
+                color = annotation['ForegroundColor']
+                # Colors in DM are saved as negative values
+                color = tuple((abs(c) for c in color))
+            else:
+                color = 'red'
             temp_dict = {
                     'marker_type':marker_type,
                     'plot_on_signal':True,
@@ -1024,7 +1030,7 @@ def _get_markers_dict(tags_dict, scale_x=1, scale_y=1):
                         'text':marker_text,
                         },
                     'marker_properties':{
-                        'color':'red',
+                        'color':color,
                         'linewidth':2,
                         },
                     }
