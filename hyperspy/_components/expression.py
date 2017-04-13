@@ -149,7 +149,7 @@ class Expression(Component):
                 name, sympy.latex(_parse_substitutions(expression)))
 
         for para in self.parameters:
-            para.is_linear = check_parameter_is_linear(expression, [para.name])
+            para.is_linear = check_expression_is_linear(expression, [para.name])
 
     def compile_function(self, module="numpy", position=False):
         from sympy.utilities.lambdify import lambdify
@@ -219,7 +219,7 @@ class Expression(Component):
                         Expression)
                     )
 
-def check_parameter_is_linear(expression, name):
+def check_expression_is_linear(expression, name):
     if name not in expression:
         raise AttributeError("The parameter '" + name + "' is not in the expression.")
     try:
