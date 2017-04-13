@@ -230,7 +230,10 @@ def check_parameter_linearity(expression, name):
     """
 
     expression = sympy.simplify(expression)
-    symb = sympy.Symbol(name)
+    symbol = sympy.Symbol(name)
+    if not symbol in expression.free_symbols:
+        raise AttributeError(
+        "The parameter '" + name + "' is not in the expression.")
     factor = sympy.Symbol("factor")
     return sympy.simplify(
-        expression * factor - expression.subs(symb, symb * factor)) == 0
+        expression * factor - expression.subs(symbol, symbol * factor)) == 0
