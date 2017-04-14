@@ -47,7 +47,7 @@ class EDSSEMParametersUI(BaseSetMetadataItems):
                                      label='Energy resolution MnKa (eV)')
     mapping = {
         'Acquisition_instrument.SEM.beam_energy': 'beam_energy',
-        'Acquisition_instrument.SEM.tilt_stage': 'tilt_stage',
+        'Acquisition_instrument.TEM.Stage.tilt_a': 'tilt_stage',
         'Acquisition_instrument.SEM.Detector.EDS.live_time':
         'live_time',
         'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle':

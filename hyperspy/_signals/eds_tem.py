@@ -56,12 +56,9 @@ class EDSTEMParametersUI(BaseSetMetadataItems):
     beam_current = t.Float(t.Undefined,
                            label='Beam current (nA)')
     mapping = {
-        'Acquisition_instrument.TEM.beam_energy':
-        'beam_energy',
-        'Acquisition_instrument.TEM.tilt_stage':
-        'tilt_stage',
-        'Acquisition_instrument.TEM.Detector.EDS.live_time':
-        'live_time',
+        'Acquisition_instrument.TEM.beam_energy': 'beam_energy',
+        'Acquisition_instrument.TEM.Stage.tilt_a': 'tilt_stage',
+        'Acquisition_instrument.TEM.Detector.EDS.live_time': 'live_time',
         'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
         'azimuth_angle',
         'Acquisition_instrument.TEM.Detector.EDS.elevation_angle':
