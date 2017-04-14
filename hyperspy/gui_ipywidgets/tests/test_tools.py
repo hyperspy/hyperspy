@@ -83,6 +83,22 @@ class TestTools:
         s2.smooth_tv(smoothing_parameter=300)
         np.testing.assert_allclose(s.data, s2.data)
 
+    def test_filter_butterworth(self):
+        s = self.s
+        s.add_gaussian_noise(0.1)
+        s2 = s.deepcopy()
+        wd = s.filter_butterworth(**KWARGS)["ipywidgets"]["wdict"]
+        wd["cutoff"].value = 0.5
+        wd["order"].value = 3
+        wd["type"].value = "high"
+        wd["color"].value = "red"
+        wd["apply_button"]._click_handlers(wd["apply_button"])    # Trigger it
+        s2.filter_butterworth(
+            cutoff_frequency_ratio=0.5,
+            order=3,
+            type="high")
+        np.testing.assert_allclose(s.data, s2.data)
+
     def filter_butterworth(self):
         s = self.s
         s.add_gaussian_noise(0.1)

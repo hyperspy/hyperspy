@@ -304,7 +304,8 @@ def smooth_butterworth(obj, **kwargs):
     link_traits((obj, "order"), (order, "value"))
     wdict["cutoff"] = cutoff
     wdict["order"] = order
-    wdict["type_"] = type_
+    wdict["type"] = type_
+    wdict["color"] = color
     wdict["close_button"] = close
     wdict["apply_button"] = apply
     box = ipywidgets.VBox([

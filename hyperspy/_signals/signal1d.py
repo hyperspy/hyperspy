@@ -977,6 +977,8 @@ SignalDimensionError if the signal dimension is not 1.
         smoother = ButterworthFilter(self)
         if cutoff_frequency_ratio is not None:
             smoother.cutoff_frequency_ratio = cutoff_frequency_ratio
+            smoother.type = type
+            smoother.order =order
             smoother.apply()
         else:
             return smoother.gui(display=display, toolkit=toolkit)
