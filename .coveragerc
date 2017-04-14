@@ -8,3 +8,4 @@ omit =
     */setup.py
     */examples/*
     */continuous_integration/*
+    *_test*.py
