@@ -12,14 +12,6 @@ hyperspy.misc.io.tools module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.misc.io.ttols module
------------------------------
-
-.. automodule:: hyperspy.misc.io.ttols
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 hyperspy.misc.io.utils_readfile module
 --------------------------------------
 

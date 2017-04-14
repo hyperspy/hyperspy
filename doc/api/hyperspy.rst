@@ -12,7 +12,8 @@ Subpackages
     hyperspy.docstrings
     hyperspy.drawing
     hyperspy.external
-    hyperspy.gui
+    hyperspy.gui_ipywidgets
+    hyperspy.gui_traitsui
     hyperspy.io_plugins
     hyperspy.learn
     hyperspy.misc
@@ -176,10 +177,26 @@ hyperspy.signal module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.signal_tools module
+----------------------------
+
+.. automodule:: hyperspy.signal_tools
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.signals module
 -----------------------
 
 .. automodule:: hyperspy.signals
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.ui_registry module
+---------------------------
+
+.. automodule:: hyperspy.ui_registry
     :members:
     :undoc-members:
     :show-inheritance:

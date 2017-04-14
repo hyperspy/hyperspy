@@ -116,6 +116,14 @@ hyperspy.tests.signal.test_image module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.signal.test_inheritance module
+---------------------------------------------
+
+.. automodule:: hyperspy.tests.signal.test_inheritance
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.signal.test_integrate_in_range module
 ----------------------------------------------------
 
