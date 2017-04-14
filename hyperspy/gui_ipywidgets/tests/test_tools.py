@@ -7,7 +7,6 @@ from hyperspy.gui_ipywidgets.tests.utils import KWARGS
 from hyperspy.signal_tools import Signal1DCalibration
 
 
-
 class TestTools:
 
     def setup_method(self, method):
@@ -109,9 +108,9 @@ class TestTools:
             polynomial_order=2,
             fast=False,)
         wd = s.remove_background(**KWARGS)["ipywidgets"]["wdict"]
-        assert wd["polynomial_order"].layout.display == "none" # not visible
+        assert wd["polynomial_order"].layout.display == "none"  # not visible
         wd["background_type"].value = "Polynomial"
-        assert wd["polynomial_order"].layout.display == "" # visible
+        assert wd["polynomial_order"].layout.display == ""  # visible
         wd["polynomial_order"].value = 2
         wd["fast"].value = False
         wd["left"].value = 15.
