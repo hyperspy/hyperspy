@@ -651,7 +651,7 @@ class EDS_mixin:
         """Calculate the take-off-angle (TOA).
 
         TOA is the angle with which the X-rays leave the surface towards
-        the detector. Parameters are read in 'SEM.tilt_stage',
+        the detector. Parameters are read in 'SEM.Stage.tilt_a',
         'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle' and
         'SEM.Detector.EDS.elevation_angle' in 'metadata'.
 
@@ -683,7 +683,7 @@ class EDS_mixin:
         elif self.metadata.Signal.signal_type == "EDS_TEM":
             mp = self.metadata.Acquisition_instrument.TEM
 
-        tilt_stage = mp.tilt_stage
+        tilt_stage = mp.Stage.tilt_a
         azimuth_angle = mp.Detector.EDS.azimuth_angle
         elevation_angle = mp.Detector.EDS.elevation_angle
 
