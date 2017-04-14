@@ -99,9 +99,9 @@ class EDSTEM_mixin:
         mp.Signal.signal_type = "EDS_TEM"
 
         mp = self.metadata
-        if "Acquisition_instrument.TEM.tilt_stage" not in mp:
+        if "Acquisition_instrument.TEM.Stage.tilt_a" not in mp:
             mp.set_item(
-                "Acquisition_instrument.TEM.tilt_stage",
+                "Acquisition_instrument.TEM.Stage.tilt_a",
                 preferences.EDS.eds_tilt_stage)
         if "Acquisition_instrument.TEM.Detector.EDS.elevation_angle" not in mp:
             mp.set_item(
@@ -142,7 +142,7 @@ class EDSTEM_mixin:
                 "Acquisition_instrument.TEM.Detector.EDS.live_time",
                 live_time)
         if tilt_stage is not None:
-            md.set_item("Acquisition_instrument.TEM.tilt_stage", tilt_stage)
+            md.set_item("Acquisition_instrument.TEM.Stage.tilt_a", tilt_stage)
         if azimuth_angle is not None:
             md.set_item(
                 "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
