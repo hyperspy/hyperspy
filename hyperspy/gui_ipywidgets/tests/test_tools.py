@@ -7,10 +7,11 @@ from hyperspy.gui_ipywidgets.tests.utils import KWARGS
 from hyperspy.signal_tools import Signal1DCalibration
 
 
+
 class TestTools:
 
     def setup_method(self, method):
-        self.s = hs.signals.Signal1D(np.arange(100))
+        self.s = hs.signals.Signal1D(1 + np.arange(100)**2)
         self.s.axes_manager[0].offset = 10
         self.s.axes_manager[0].scale = 2
         self.s.axes_manager[0].units = "m"
@@ -99,18 +100,21 @@ class TestTools:
             type="high")
         np.testing.assert_allclose(s.data, s2.data)
 
-    def filter_butterworth(self):
+    def test_remove_background(self):
         s = self.s
         s.add_gaussian_noise(0.1)
-        s2 = s.deepcopy()
-        wd = s.filter_butterworth(**KWARGS)["ipywidgets"]["wdict"]
-        wd["cutoff"].value = 0.5
-        wd["order"].value = 3
-        wd["type"].value = "high"
-        wd["color"].value = "red"
+        s2 = s.remove_background(
+            signal_range=(15., 50.),
+            background_type='Polynomial',
+            polynomial_order=2,
+            fast=False,)
+        wd = s.remove_background(**KWARGS)["ipywidgets"]["wdict"]
+        assert wd["polynomial_order"].layout.display == "none" # not visible
+        wd["background_type"].value = "Polynomial"
+        assert wd["polynomial_order"].layout.display == "" # visible
+        wd["polynomial_order"].value = 2
+        wd["fast"].value = False
+        wd["left"].value = 15.
+        wd["right"].value = 50.
         wd["apply_button"]._click_handlers(wd["apply_button"])    # Trigger it
-        s2.filter_butterworth(
-            cutoff_frequency_ratio=0.5,
-            order=3,
-            type_="high")
         np.testing.assert_allclose(s.data, s2.data)

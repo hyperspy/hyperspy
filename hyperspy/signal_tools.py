@@ -744,9 +744,11 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             plot = True
         else:
             plot = False
-        new_spectra = self.signal._remove_background_cli(
-            (self.ss_left_value, self.ss_right_value),
-            self.background_estimator, fast=self.fast)
+        new_spectra = self.signal.remove_background(
+            signal_range=(self.ss_left_value, self.ss_right_value),
+            background_type=self.background_type,
+            fast=self.fast,
+            polynomial_order=self.polynomial_order)
         self.signal.data = new_spectra.data
         self.signal.events.data_changed.trigger(self)
         if plot:

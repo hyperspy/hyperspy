@@ -1039,7 +1039,6 @@ SignalDimensionError if the signal dimension is not 1.
                     "Background type: " +
                     background_type +
                     " not recognized")
-
             spectra = self._remove_background_cli(
                 signal_range=signal_range,
                 background_estimator=background_estimator,

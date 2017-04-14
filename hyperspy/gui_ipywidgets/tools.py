@@ -390,7 +390,11 @@ def image_constast_editor_ipy(obj, **kwargs):
 @add_display_arg
 def remove_background_ipy(obj, **kwargs):
     wdict = {}
-    fast = ipywidgets.Checkbox()
+    left = ipywidgets.FloatText(disabled=True, description="Left")
+    right = ipywidgets.FloatText(disabled=True, description="Right")
+    link_traits((obj, "ss_left_value"), (left, "value"))
+    link_traits((obj, "ss_right_value"), (right, "value"))
+    fast = ipywidgets.Checkbox(description="Fast")
     help = ipywidgets.HTML(
         "Click on the signal figure and drag to the right to select a"
         "range. Press `Apply` to remove the background in the whole dataset. "
@@ -407,17 +411,15 @@ def remove_background_ipy(obj, **kwargs):
         description="Apply",
         tooltip="Remove the background in the whole dataset.")
 
-    polynomial_order = ipywidgets.IntSlider(min=1, max=10)
-    labeled_polyorder = labelme("Polynomial order", polynomial_order)
+    polynomial_order = ipywidgets.IntText(description="Polynomial order")
     background_type = enum2dropdown(obj.traits()["background_type"])
+    background_type.description = "Background type"
 
     def enable_poly_order(change):
         if change.new == "Polynomial":
-            for child in labeled_polyorder.children:
-                child.layout.display = ""
+            polynomial_order.layout.display = ""
         else:
-            for child in labeled_polyorder.children:
-                child.layout.display = "none"
+            polynomial_order.layout.display = "none"
     background_type.observe(enable_poly_order, "value")
     link_traits((obj, "background_type"), (background_type, "value"))
     # Trigger the function that controls the visibility of poly order as
@@ -428,14 +430,17 @@ def remove_background_ipy(obj, **kwargs):
     enable_poly_order(change=Dummy())
     link_traits((obj, "polynomial_order"), (polynomial_order, "value"))
     link_traits((obj, "fast"), (fast, "value"))
+    wdict["left"] = left
+    wdict["right"] = right
     wdict["fast"] = fast
     wdict["polynomial_order"] = polynomial_order
     wdict["background_type"] = background_type
     wdict["apply_button"] = apply
     box = ipywidgets.VBox([
-        labelme("Background type", background_type),
-        labeled_polyorder,
-        labelme("Fast", fast),
+        left, right,
+        background_type,
+        polynomial_order,
+        fast,
         help,
         ipywidgets.HBox((apply, close)),
     ])
