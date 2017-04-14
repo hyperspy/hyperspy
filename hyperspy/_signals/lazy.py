@@ -820,6 +820,7 @@ class LazySignal(BaseSignal):
         return res
     transpose.__doc__ = BaseSignal.transpose.__doc__
 
+
 def _reshuffle_mixed_blocks(array, ndim, sshape, nav_chunks):
     """Reshuffles dask block-shuffled array
 

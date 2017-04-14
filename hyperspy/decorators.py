@@ -28,6 +28,7 @@ import types
 def lazify(func, **kwargs):
     from hyperspy.signal import BaseSignal
     from hyperspy.model import BaseModel
+
     @wraps(func)
     def lazified_func(self, *args, **kwds):
         for k in self.__dict__.keys():

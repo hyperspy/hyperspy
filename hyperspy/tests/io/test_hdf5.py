@@ -683,6 +683,7 @@ def test_strings_from_py2():
     s = EDS_TEM_Spectrum()
     assert s.metadata.Sample.elements.dtype.char == "U"
 
+
 @pytest.mark.skipif(LooseVersion(dask.__version__) >= LooseVersion('0.14.1'),
                     reason='Fixed in later dask versions')
 def test_lazy_metadata_arrays(tmpfilepath):

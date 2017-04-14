@@ -213,7 +213,7 @@ def file_reader(filename, endianess='<', **kwds):
                   'axes': axes,
                   'metadata': metadata,
                   'original_metadata': original_metadata,
-                  'mapping':mapping}
+                  'mapping': mapping}
 
     return [dictionary, ]
 
@@ -232,4 +232,4 @@ mapping = {
     ("Acquisition_instrument.TEM.Detector.Camera.exposure", None),
     'fei_header.magnification':
     ("Acquisition_instrument.TEM.magnification", None),
-   }
+}

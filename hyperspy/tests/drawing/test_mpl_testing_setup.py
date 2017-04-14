@@ -32,7 +32,8 @@ def test_mpl_version():
     assert LooseVersion(matplotlib.__version__) >= LooseVersion('2.0.0')
 
 
-# Skip if mpl plugin is not called, because it will not failed (no image comparison)
+# Skip if mpl plugin is not called, because it will not failed (no image
+# comparison)
 @pytest.mark.skipif(not pytest.config.getvalue("mpl"),
                     reason="'mpl' plugin not called.")
 @pytest.mark.xfail(reason="Check if plotting tests are working: if this test passes,"
@@ -51,5 +52,6 @@ def test_plotting_test_working(mpl_cleanup):
     ax = fig.add_subplot(1, 1, 1)
     ax.plot([1, 2, 2])
     # to generate a different plot uncomment the next line
-#    ax.plot([1, 2, 3, 4]) # Uncomment this line to make sure the test is properly failing
+# ax.plot([1, 2, 3, 4]) # Uncomment this line to make sure the test is
+# properly failing
     return fig
