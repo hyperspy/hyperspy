@@ -61,7 +61,9 @@ install_req = ['scipy>=0.15',
                'ipyparallel',
                'dask[array]>=0.13, !=0.14',
                'scikit-image>=0.13',
-               'pint>0.7']
+               'pint>0.7',
+               'statsmodels',
+               ]
 
 extras_require = {
     "learning": ['scikit-learn'],
