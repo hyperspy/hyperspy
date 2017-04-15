@@ -55,7 +55,6 @@ class NoneFloat(t.CFloat):   # Lazy solution, but usable
 class Parameter(t.HasTraits):
 
     """Model parameter
-
     Attributes
     ----------
     value : float or array
@@ -100,7 +99,6 @@ class Parameter(t.HasTraits):
         Similar to ext_force_positive, but in this case the bounds are
         defined by bmin and bmax. It is a better idea to use
         an optimizer that supports bounding though.
-
     Methods
     -------
     as_signal(field = 'values')
@@ -111,7 +109,6 @@ class Parameter(t.HasTraits):
         Saves the value of the parameter map to the specified format
     connect, disconnect(function)
         Call the functions connected when the value attribute changes.
-
     """
     __number_of_elements = 1
     __value = 0
@@ -144,10 +141,8 @@ class Parameter(t.HasTraits):
         self.events = Events()
         self.events.value_changed = Event("""
             Event that triggers when the `Parameter.value` changes.
-
             The event triggers after the internal state of the `Parameter` has
             been updated.
-
             Arguments
             ---------
             obj : Parameter
@@ -180,7 +175,6 @@ class Parameter(t.HasTraits):
 
     def _load_dictionary(self, dictionary):
         """Load data from dictionary
-
         Parameters
         ----------
         dict : dictionary
@@ -198,7 +192,6 @@ class Parameter(t.HasTraits):
         id_value : int
             the ID value of the original parameter, to be later used for setting
             up the correct twins
-
         """
         if dictionary['_id_name'] == self._id_name:
             load_from_dictionary(self, dictionary)
@@ -487,11 +480,9 @@ class Parameter(t.HasTraits):
 
     def store_current_value_in_array(self):
         """Store the value and std attributes.
-
         See also
         --------
         fetch, assign_current_value_to_all
-
         """
         indices = self._axes_manager.indices[::-1]
         # If it is a single spectrum indices is ()
@@ -504,12 +495,9 @@ class Parameter(t.HasTraits):
 
     def fetch(self):
         """Fetch the stored value and std attributes.
-
-
         See Also
         --------
         store_current_value_in_array, assign_current_value_to_all
-
         """
         indices = self._axes_manager.indices[::-1]
         # If it is a single spectrum indices is ()
@@ -521,17 +509,14 @@ class Parameter(t.HasTraits):
 
     def assign_current_value_to_all(self, mask=None):
         """Assign the current value attribute to all the  indices
-
         Parameters
         ----------
         mask: {None, boolean numpy array}
             Set only the indices that are not masked i.e. where
             mask is False.
-
         See Also
         --------
         store_current_value_in_array, fetch
-
         """
         if mask is None:
             mask = np.zeros(self.map.shape, dtype='bool')
@@ -541,7 +526,6 @@ class Parameter(t.HasTraits):
     def _create_array(self):
         """Create the map array to store the information in
         multidimensional datasets.
-
         """
         shape = self._axes_manager._navigation_shape_in_array
         if not shape:
@@ -563,19 +547,14 @@ class Parameter(t.HasTraits):
 
     def as_signal(self, field='values'):
         """Get a parameter map as a signal object.
-
         Please note that this method only works when the navigation
         dimension is greater than 0.
-
         Parameters
         ----------
         field : {'values', 'std', 'is_set'}
-
         Raises
         ------
-
         NavigationDimensionError : if the navigation dimension is 0
-
         """
         from hyperspy.signal import BaseSignal
 
@@ -609,18 +588,14 @@ class Parameter(t.HasTraits):
 
     def plot(self, **kwargs):
         """Plot parameter signal.
-
         Parameters
         ----------
         **kwargs
             Any extra keyword arguments are passed to the signal plot.
-
         Example
         -------
         >>> parameter.plot() #doctest: +SKIP
-
         Set the minimum and maximum displayed values
-
         >>> parameter.plot(vmin=0, vmax=1) #doctest: +SKIP
         """
         self.as_signal().plot(**kwargs)
@@ -628,9 +603,7 @@ class Parameter(t.HasTraits):
     def export(self, folder=None, name=None, format=None,
                save_std=False):
         """Save the data to a file.
-
         All the arguments are optional.
-
         Parameters
         ----------
         folder : str or None
@@ -643,7 +616,6 @@ class Parameter(t.HasTraits):
               modified by appending a number to the file path.
         save_std : bool
             If True, also the standard deviation will be saved
-
         """
         if format is None:
             format = preferences.General.default_export_format
@@ -661,7 +633,6 @@ class Parameter(t.HasTraits):
         """Returns parameter as a dictionary, saving all attributes from
         self._whitelist.keys() For more information see
         :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
-
         Parameters
         ----------
         fullcopy : Bool (optional, False)
@@ -680,7 +651,6 @@ class Parameter(t.HasTraits):
                 parameter attributes.  For more information see
                 :meth:`hyperspy.misc.export_dictionary.export_to_dictionary`
             * any field from _whitelist.keys() *
-
         """
         dic = {'_twins': [id(t) for t in self._twins]}
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
@@ -827,10 +797,8 @@ class Component(t.HasTraits):
         self.events = Events()
         self.events.active_changed = Event("""
             Event that triggers when the `Component.active` changes.
-
             The event triggers after the internal state of the `Component` has
             been updated.
-
             Arguments
             ---------
             obj : Component
@@ -896,13 +864,14 @@ class Component(t.HasTraits):
 
     def _set_name(self, value):
         old_value = self._name
+        if old_value == value:
+            return
         if self.model:
             for component in self.model:
                 if value == component.name:
-                    if not (component is self):
-                        raise ValueError(
-                            "Another component already has "
-                            "the name " + str(value))
+                    raise ValueError(
+                        "Another component already has "
+                        "the name " + str(value))
             self._name = value
             setattr(self.model.components, slugify(
                 value, valid_variable_name=True), self)
@@ -1039,13 +1008,11 @@ class Component(t.HasTraits):
 
     def plot(self, only_free=True):
         """Plot the value of the parameters of the model
-
         Parameters
         ----------
         only_free : bool
             If True, only the value of the parameters that are free will
              be plotted
-
         """
         if only_free:
             parameters = self.free_parameters
@@ -1059,7 +1026,6 @@ class Component(t.HasTraits):
     def export(self, folder=None, format=None, save_std=False,
                only_free=True):
         """Plot the value of the parameters of the model
-
         Parameters
         ----------
         folder : str or None
@@ -1079,7 +1045,6 @@ class Component(t.HasTraits):
             If True, only the value of the parameters that are free will
              be
             exported.
-
         Notes
         -----
         The name of the files will be determined by each the Component
@@ -1087,7 +1052,6 @@ class Component(t.HasTraits):
         each Parameter name attributes. Therefore, it is possible to
         customise
         the file names modify the name attributes.
-
         """
         if only_free:
             parameters = self.free_parameters
@@ -1105,14 +1069,13 @@ class Component(t.HasTraits):
                 is not None else 0
             if parameter.twin is None:
                 if dim <= 1:
-                    return ('%s = %s ± %s %s' % (parameter.name,
-                                                 parameter.value,
-                                                 parameter.std,
-                                                 parameter.units))
+                    print ('%s = %s ± %s %s' % (parameter.name,
+                                                parameter.value,
+                                                parameter.std,
+                                                parameter.units))
 
     def __call__(self):
         """Returns the corresponding model for the current coordinates
-
         Returns
         -------
         numpy array
@@ -1149,20 +1112,17 @@ class Component(t.HasTraits):
     def set_parameters_free(self, parameter_name_list=None):
         """
         Sets parameters in a component to free.
-
         Parameters
         ----------
         parameter_name_list : None or list of strings, optional
             If None, will set all the parameters to free.
             If list of strings, will set all the parameters with the same name
             as the strings in parameter_name_list to free.
-
         Examples
         --------
         >>> v1 = hs.model.components1D.Voigt()
         >>> v1.set_parameters_free()
         >>> v1.set_parameters_free(parameter_name_list=['area','centre'])
-
         See also
         --------
         set_parameters_not_free
@@ -1184,20 +1144,17 @@ class Component(t.HasTraits):
     def set_parameters_not_free(self, parameter_name_list=None):
         """
         Sets parameters in a component to not free.
-
         Parameters
         ----------
         parameter_name_list : None or list of strings, optional
             If None, will set all the parameters to not free.
             If list of strings, will set all the parameters with the same name
             as the strings in parameter_name_list to not free.
-
         Examples
         --------
         >>> v1 = hs.model.components1D.Voigt()
         >>> v1.set_parameters_not_free()
         >>> v1.set_parameters_not_free(parameter_name_list=['area','centre'])
-
         See also
         --------
         set_parameters_free
@@ -1272,7 +1229,9 @@ class Component(t.HasTraits):
             the parameters of the component, to be later used for setting up
             correct twins.
         """
+
         if dic['_id_name'] == self._id_name:
+            load_from_dictionary(self, dic)
             id_dict = {}
             for p in dic['parameters']:
                 idname = p['_id_name']
@@ -1283,7 +1242,6 @@ class Component(t.HasTraits):
                 else:
                     raise ValueError(
                         "_id_name of parameters in component and dictionary do not match")
-            load_from_dictionary(self, dic)
             return id_dict
         else:
             raise ValueError( "_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
