@@ -248,7 +248,7 @@ class ImagePlot(BlittedFigure):
                 transform=self.ax.transAxes,
                 fontsize=12,
                 color='red',
-                animated=True)
+                animated=self.figure.canvas.supports_blit)
         for marker in self.ax_markers:
             marker.plot()
         self.update(**kwargs)
@@ -257,7 +257,7 @@ class ImagePlot(BlittedFigure):
                 self.ax.scalebar = widgets.ScaleBar(
                     ax=self.ax,
                     units=self.pixel_units,
-                    animated=True,
+                    animated=self.figure.canvas.supports_blit,
                     color=self.scalebar_color,
                 )
 
@@ -265,7 +265,8 @@ class ImagePlot(BlittedFigure):
             self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
             self._colorbar.set_label(
                 self.quantity_label, rotation=-90, va='bottom')
-            self._colorbar.ax.yaxis.set_animated(True)
+            self._colorbar.ax.yaxis.set_animated(
+                self.figure.canvas.supports_blit)
 
         self.figure.canvas.draw_idle()
         if hasattr(self.figure, 'tight_layout'):
@@ -349,14 +350,19 @@ class ImagePlot(BlittedFigure):
             if redraw_colorbar is True:
                 # ims[0].autoscale()
                 self._colorbar.draw_all()
-                self._colorbar.solids.set_animated(True)
+                self._colorbar.solids.set_animated(
+                    self.figure.canvas.supports_blit
+                )
             else:
                 ims[0].changed()
-            self._draw_animated()
-            # It seems that nans they're simply not drawn, so simply replacing
-            # the data does not update the value of the nan pixels to the
-            # background color. We redraw everything as a workaround.
-            if np.isnan(data).any():
+            if self.figure.canvas.supports_blit:
+                self._draw_animated()
+                # It seems that nans they're simply not drawn, so simply replacing
+                # the data does not update the value of the nan pixels to the
+                # background color. We redraw everything as a workaround.
+                if np.isnan(data).any():
+                    self.figure.canvas.draw_idle()
+            else:
                 self.figure.canvas.draw_idle()
         else:
             new_args = {'interpolation': 'nearest',
@@ -364,7 +370,7 @@ class ImagePlot(BlittedFigure):
                         'vmax': vmax,
                         'extent': self._extent,
                         'aspect': self._aspect,
-                        'animated': True}
+                        'animated': self.figure.canvas.supports_blit}
             new_args.update(kwargs)
             self.ax.imshow(data,
                            **new_args)

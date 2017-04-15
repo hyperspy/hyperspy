@@ -19,8 +19,11 @@ class BlittedFigure(object):
     def _on_draw(self, *args):
         if self.figure:
             canvas = self.figure.canvas
-            self._background = canvas.copy_from_bbox(self.figure.bbox)
-            self._draw_animated()
+            if canvas.supports_blit:
+                self._background = canvas.copy_from_bbox(self.figure.bbox)
+                self._draw_animated()
+            else:
+                canvas.draw_idle()
 
     def _draw_animated(self):
         if self.ax.figure:
@@ -38,7 +41,7 @@ class BlittedFigure(object):
                 artists.append(ax.get_xaxis())
                 [ax.draw_artist(a) for a in artists if
                  a.get_animated() is True]
-            if self.figure:
+            if self.ax.figure.canvas.supports_blit:
                 canvas.blit(self.figure.bbox)
 
     def add_marker(self, marker):

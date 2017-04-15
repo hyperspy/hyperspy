@@ -64,8 +64,9 @@ class Signal1DFigure(BlittedFigure):
 
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
-        self.ax.yaxis.set_animated(True)
-        self.ax.xaxis.set_animated(True)
+        animated = self.figure.canvas.supports_blit
+        self.ax.yaxis.set_animated(animated)
+        self.ax.xaxis.set_animated(animated)
         self.ax.hspy_fig = self
 
     def create_right_axis(self):
@@ -74,7 +75,8 @@ class Signal1DFigure(BlittedFigure):
         if self.right_ax is None:
             self.right_ax = self.ax.twinx()
             self.right_ax.hspy_fig = self
-            self.right_ax.yaxis.set_animated(True)
+            self.right_ax.yaxis.set_animated(
+                self.figure.canvas.supports_blit)
         plt.tight_layout()
 
     def add_line(self, line, ax='left'):
@@ -141,8 +143,6 @@ class Signal1DFigure(BlittedFigure):
         for line in self.ax_lines + \
                 self.right_ax_lines:
             line.update()
-        # To be discussed
-        # self.ax.hspy_fig._draw_animated()
 
 
 class Signal1DLine(object):
@@ -291,7 +291,7 @@ class Signal1DLine(object):
             self.line.remove()
         self.line, = self.ax.plot(self.axis.axis, data,
                                   **self.line_properties)
-        self.line.set_animated(True)
+        self.line.set_animated(self.ax.figure.canvas.supports_blit)
         self.axes_manager.events.indices_changed.connect(self.update, [])
         self.events.closed.connect(
             lambda: self.axes_manager.events.indices_changed.disconnect(
@@ -306,7 +306,7 @@ class Signal1DLine(object):
                                      transform=self.ax.transAxes,
                                      fontsize=12,
                                      color=self.line.get_color(),
-                                     animated=True)
+                                     animated=self.ax.figure.canvas.supports_blit)
         self.ax.figure.canvas.draw_idle()
 
     def update(self, force_replot=False):
@@ -346,11 +346,10 @@ class Signal1DLine(object):
             self.ax.set_ylim(y_min, y_max)
         if self.plot_indices is True:
             self.text.set_text(self.axes_manager.indices)
-        try:
+        if self.ax.figure.canvas.supports_blit:
             self.ax.hspy_fig._draw_animated()
-        except:
-            # There may be errors if the figure does no longer exist.
-            pass
+        else:
+            self.ax.figure.canvas.draw_idle()
 
     def close(self):
         if self.line in self.ax.lines:
