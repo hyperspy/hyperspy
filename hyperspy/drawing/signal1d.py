@@ -221,7 +221,7 @@ class Signal1DLine(object):
                 self._line_properties[key] = item
         if self.line is not None:
             plt.setp(self.line, **self.line_properties)
-            self.ax.figure.canvas.draw()
+            self.ax.figure.canvas.draw_idle()
 
     def set_line_properties(self, **kwargs):
         self.line_properties = kwargs
@@ -279,7 +279,7 @@ class Signal1DLine(object):
 
         if self.line is not None:
             plt.setp(self.line, **self.line_properties)
-            self.ax.figure.canvas.draw()
+            self.ax.figure.canvas.draw_idle()
 
     def plot(self, data=1):
         f = self.data_function
@@ -307,7 +307,7 @@ class Signal1DLine(object):
                                      fontsize=12,
                                      color=self.line.get_color(),
                                      animated=True)
-        self.ax.figure.canvas.draw()
+        self.ax.figure.canvas.draw_idle()
 
     def update(self, force_replot=False):
         """Update the current spectrum figure"""
@@ -363,7 +363,7 @@ class Signal1DLine(object):
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)
         try:
-            self.ax.figure.canvas.draw()
+            self.ax.figure.canvas.draw_idle()
         except:
             pass
 

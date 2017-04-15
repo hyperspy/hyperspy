@@ -267,7 +267,7 @@ class ImagePlot(BlittedFigure):
                 self.quantity_label, rotation=-90, va='bottom')
             self._colorbar.ax.yaxis.set_animated(True)
 
-        self.figure.canvas.draw()
+        self.figure.canvas.draw_idle()
         if hasattr(self.figure, 'tight_layout'):
             try:
                 self.figure.tight_layout()
@@ -357,7 +357,7 @@ class ImagePlot(BlittedFigure):
             # the data does not update the value of the nan pixels to the
             # background color. We redraw everything as a workaround.
             if np.isnan(data).any():
-                self.figure.canvas.draw()
+                self.figure.canvas.draw_idle()
         else:
             new_args = {'interpolation': 'nearest',
                         'vmin': vmin,
@@ -368,7 +368,7 @@ class ImagePlot(BlittedFigure):
             new_args.update(kwargs)
             self.ax.imshow(data,
                            **new_args)
-            self.figure.canvas.draw()
+            self.figure.canvas.draw_idle()
 
     def _update(self):
         # This "wrapper" because on_trait_change fiddles with the
@@ -390,7 +390,7 @@ Parameters
     def connect(self):
         self.figure.canvas.mpl_connect('key_press_event',
                                        self.on_key_press)
-        self.figure.canvas.draw()
+        self.figure.canvas.draw_idle()
         if self.axes_manager:
             self.axes_manager.events.indices_changed.connect(self.update, [])
             self.events.closed.connect(

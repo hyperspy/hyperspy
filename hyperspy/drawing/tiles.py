@@ -92,7 +92,7 @@ class HistogramTilePlot(BlittedFigure):
                     ax.set_ylim(0, np.max(hist) * 1.1)
                     # ax.set_title(c_n + ' ' + p_n)
         self._draw_animated()
-        self.figure.canvas.draw()
+        self.figure.canvas.draw_idle()
 
     def close(self):
         try:

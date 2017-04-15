@@ -133,7 +133,7 @@ class LineInSignal1D(t.HasTraits):
         self.on_trait_change(self.switch_on_off, 'on')
 
     def draw(self):
-        self.signal._plot.signal_plot.figure.canvas.draw()
+        self.signal._plot.signal_plot.figure.canvas.draw_idle()
 
     def switch_on_off(self, obj, trait_name, old, new):
         if not self.signal._plot.is_active():
@@ -558,7 +558,7 @@ class ImageContrastEditor(t.HasTraits):
         self.ax.set_xticks([])
         self.ax.set_yticks([])
         self.ax.set_xlim(vmin, vmax)
-        self.ax.figure.canvas.draw()
+        self.ax.figure.canvas.draw_idle()
 
     def reset(self):
         data = self.image.data_function().ravel()

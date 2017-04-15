@@ -54,7 +54,7 @@ class RangeWidget(ResizableDraggableWidgetBase):
             elif value is False:
                 self.disconnect()
             try:
-                self.ax.figure.canvas.draw()
+                self.ax.figure.canvas.draw_idle()
             except:  # figure does not exist
                 pass
             if value is False:
@@ -464,4 +464,4 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
         if self.on_move_cid is not None:
             self.canvas.mpl_disconnect(cid)
         self.ax.patches.remove(self.rect)
-        self.ax.figure.canvas.draw()
+        self.ax.figure.canvas.draw_idle()

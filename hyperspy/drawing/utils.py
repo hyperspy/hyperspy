@@ -178,7 +178,7 @@ def plot_RGB_map(im_list, normalization='single', dont_plot=False):
         ax.set_axis_off()
         ax.imshow(rgb, interpolation='nearest')
 #        cursors.set_mpl_ax(ax)
-        figure.canvas.draw()
+        figure.canvas.draw_idle()
     else:
         return rgb
 
@@ -1139,7 +1139,7 @@ def animate_legend(figure='last'):
             legline.set_alpha(1.0)
         else:
             legline.set_alpha(0.2)
-        figure.canvas.draw()
+        figure.canvas.draw_idle()
 
     figure.canvas.mpl_connect('pick_event', onpick)
 

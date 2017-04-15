@@ -163,7 +163,7 @@ class WidgetBase(object):
         if self.is_on() is True:
             self._add_patch_to(ax)
             self.connect(ax)
-            canvas.draw()
+            canvas.draw_idle()
             self.select()
 
     def select(self):

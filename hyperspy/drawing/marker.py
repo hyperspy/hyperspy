@@ -86,7 +86,7 @@ class MarkerBase(object):
         if self.marker is not None:
             plt.setp(self.marker, **self.marker_properties)
             try:
-                # self.ax.figure.canvas.draw()
+                # self.ax.figure.canvas.draw_idle()
                 self.ax.hspy_fig._draw_animated()
             except:
                 pass
@@ -218,7 +218,7 @@ class MarkerBase(object):
             self.events.closed.trigger(obj=self)
             for f in self.events.closed.connected:
                 self.events.closed.disconnect(f)
-            # m.ax.figure.canvas.draw()
+            # m.ax.figure.canvas.draw_idle()
             if update_plot:
                 self.ax.hspy_fig._draw_animated()
         except:

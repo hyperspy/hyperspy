@@ -217,7 +217,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
             axarr[1].images[0].set_data(image)
             axarr[2].images[0].set_data(np.fft.fftshift(phase_correlation))
             # TODO: Renormalize images
-            f.canvas.draw()
+            f.canvas.draw_idle()
     # Liberate the memory. It is specially necessary if it is a
     # memory map
     del ref
