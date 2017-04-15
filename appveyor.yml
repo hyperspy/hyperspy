@@ -6,6 +6,7 @@ environment:
   global:
     TEST_DEPS: "pytest pytest-cov wheel pip"
     NSIS_DIR: "%PROGRAMFILES(x86)%/NSIS"
+    MPLBACKEND: "agg"
 
 
   matrix:

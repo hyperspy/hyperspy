@@ -34,7 +34,6 @@ import warnings
 
 import os
 import subprocess
-import fileinput
 import itertools
 import re
 
@@ -62,7 +61,8 @@ install_req = ['scipy>=0.15',
                'python-dateutil',
                'ipyparallel',
                'dask[array]>=0.13, !=0.14',
-               'scikit-image']
+               'scikit-image>=0.13',
+               'pint>0.7']
 
 extras_require = {
     "learning": ['scikit-learn'],
@@ -343,6 +343,11 @@ with update_version_when_dev() as version:
         package_data={
             'hyperspy':
             [
+                'tests/drawing/*.png',
+                'tests/drawing/plot_signal/*.png',
+                'tests/drawing/plot_signal1d/*.png',
+                'tests/drawing/plot_signal2d/*.png',
+                'tests/drawing/plot_markers/*.png',
                 'misc/eds/example_signals/*.hdf5',
                 'tests/io/blockfile_data/*.blo',
                 'tests/io/dens_data/*.dens',
@@ -373,10 +378,6 @@ with update_version_when_dev() as version:
                 'tests/io/ripple_files/*.rpl',
                 'tests/io/ripple_files/*.raw',
                 'tests/io/emd_files/*.emd',
-                'tests/drawing/plot_signal/*.png',
-                'tests/drawing/plot_signal1d/*.png',
-                'tests/drawing/plot_signal2d/*.png',
-                'tests/drawing/plot_markers/*.png',
                 'tests/io/protochips_data/*.npy',
                 'tests/io/protochips_data/*.csv',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
