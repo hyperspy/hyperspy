@@ -7,6 +7,7 @@ from hyperspy.events import Event, Events
 class BlittedFigure(object):
 
     def __init__(self):
+        self._background = None
         self.events = Events()
         self.events.closed = Event("""
             Event that triggers when the figure window is closed.
@@ -26,7 +27,7 @@ class BlittedFigure(object):
                 canvas.draw_idle()
 
     def _draw_animated(self):
-        if self.ax.figure:
+        if self.ax.figure and self._background:
             canvas = self.ax.figure.canvas
             canvas.restore_region(self._background)
             for ax in self.figure.axes:
