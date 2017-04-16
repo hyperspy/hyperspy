@@ -149,7 +149,7 @@ class Expression(Component):
                 name, sympy.latex(_parse_substitutions(expression)))
 
         for para in self.parameters:
-            para.is_linear = check_parameter_linearity(expression, para.name)
+            para._is_linear = check_parameter_linearity(expression, para.name)
 
     def compile_function(self, module="numpy", position=False):
         from sympy.utilities.lambdify import lambdify
@@ -218,8 +218,25 @@ class Expression(Component):
                         self,
                         Expression)
                     )
-
-def check_parameter_linearity(expression, name):
+   
+    @property
+    def constant_term(self):
+        "Get value of constant term of component"
+        # First get currently constant parameters
+        linear_parameters = []
+        for para in self.free_parameters:
+            if para._is_linear:
+                linear_parameters.append(para.name)
+        constant_expr, not_constant_expr = extract_constant_part_of_expression(self._str_expression, *linear_parameters)
+        
+        # Then replace symbols with value of each parameter
+        free_symbols = [str(free) for free in constant_expr.free_symbols]
+        for para in self.parameters:
+            if para.name in free_symbols:
+                constant_expr = constant_expr.subs(para.name, para.value)
+        return constant_expr
+    
+def check_parameter_linearity_old(expression, name):
     """
     Check linearity by multiplying a parameter by a factor and testing if the
     new expression is equal to multiplying the whole expression by the same factor.
@@ -238,12 +255,19 @@ def check_parameter_linearity(expression, name):
     return sympy.simplify(
         expression * factor - expression.subs(symbol, symbol * factor)) == 0
 
+def check_parameter_linearity(expr, name):
+    try: 
+        if not sympy.Eq(sympy.diff(expr, name, 2), 0):
+            return False
+    except TypeError:
+        return False
+    return True
+
 def extract_constant_part_of_expression(expr, *args):
     """
     Extract constant part of expression given independent variables *args.
     Given no arguments, only x is assumed to change.
-
-    expr must be a sympy object
     """
+    expr = sympy.sympify(expr)
     constant, not_constant = expr.as_independent(*args)
     return constant, not_constant
