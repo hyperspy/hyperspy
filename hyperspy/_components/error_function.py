@@ -57,7 +57,7 @@ class Erf(Component):
         self._position = self.origin
 
         # Linearity
-        self.A.is_linear = True
+        self.A._is_linear = True
 
     def function(self, x):
         A = self.A.value

@@ -64,7 +64,7 @@ class PowerLaw(Component):
         self.convolved = False
 
         # Linearity
-        self.A.is_linear = True
+        self.A._is_linear = True
 
     def function(self, x):
         return np.where(x > self.left_cutoff, self.A.value *

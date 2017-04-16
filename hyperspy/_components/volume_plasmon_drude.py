@@ -62,7 +62,7 @@ class VolumePlasmonDrude(Component):
         self.intensity.grad = self.grad_intensity
 
         # Linearity
-        self.intensity.is_linear = True
+        self.intensity._is_linear = True
 
     def function(self, x):
         plasmon_energy = self.plasmon_energy.value

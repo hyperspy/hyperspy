@@ -64,7 +64,7 @@ class Lorentzian(Component):
         self.centre.grad = self.grad_centre
 
         # Linearity
-        self.A.is_linear = True
+        self.A._is_linear = True
 
     def function(self, x):
         """

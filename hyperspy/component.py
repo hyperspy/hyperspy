@@ -177,7 +177,7 @@ class Parameter(t.HasTraits):
                            'self': ('id', None),
                            }
         self._slicing_whitelist = {'map': 'inav'}
-        self.is_linear = False
+        self._is_linear = False
 
     def _load_dictionary(self, dictionary):
         """Load data from dictionary
@@ -1325,3 +1325,15 @@ class Component(t.HasTraits):
                              ' a notebook')
             else:
                 raise
+    @property
+    def is_linear(self):
+        linear = True
+        for para in self.free_parameters:
+            if not para._is_linear:
+                linear = False
+        return linear
+
+    @property
+    def constant_term(self):
+        "Get value of the constant term of the component. Returns 0 for most components."
+        return 0
