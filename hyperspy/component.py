@@ -1338,3 +1338,15 @@ class Component(t.HasTraits):
     def constant_term(self):
         "Get value of the constant term of the component. Returns 0 for most components."
         return 0
+
+    def _check_only_one_linear_parameter(self):
+        """
+        Linear fitters can only work with one linear parameter per component.
+        Checks that this is the case for a given component.
+        """
+        n_free = 0
+        for para in self.parameters:
+            if para._is_linear:
+                n_free += 1
+        if n_free > 1:
+            raise AttributeError(self.name +" has more than one linear component.")

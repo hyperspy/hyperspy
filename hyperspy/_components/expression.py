@@ -235,25 +235,6 @@ class Expression(Component):
             if para.name in free_symbols:
                 constant_expr = constant_expr.subs(para.name, para.value)
         return constant_expr
-    
-def check_parameter_linearity_old(expression, name):
-    """
-    Check linearity by multiplying a parameter by a factor and testing if the
-    new expression is equal to multiplying the whole expression by the same factor.
-    Testing parameter `a` in example expression `f(x) = a*x + b` by multiplying
-    by factor `factor`:
-
-    `a` is linear if ``(a*LIN)*x + b == LIN*f(x)``
-    """
-
-    expression = sympy.simplify(expression)
-    symbol = sympy.Symbol(name)
-    if not symbol in expression.free_symbols:
-        raise AttributeError(
-        "The parameter '" + name + "' is not in the expression.")
-    factor = sympy.Symbol("factor")
-    return sympy.simplify(
-        expression * factor - expression.subs(symbol, symbol * factor)) == 0
 
 def check_parameter_linearity(expr, name):
     try: 
