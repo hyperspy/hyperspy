@@ -1327,6 +1327,7 @@ class Component(t.HasTraits):
                 raise
     @property
     def is_linear(self):
+        "Loops through the components free parameters, checks that they are linear"
         linear = True
         for para in self.free_parameters:
             if not para._is_linear:
