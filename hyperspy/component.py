@@ -1345,8 +1345,8 @@ class Component(t.HasTraits):
         Checks that this is the case for a given component.
         """
         n_free = 0
-        for para in self.parameters:
+        for para in self.free_parameters:
             if para._is_linear:
                 n_free += 1
         if n_free > 1:
-            raise AttributeError(self.name +" has more than one linear component.")
+            raise AttributeError("Component " + str(self) + " has more than one linear component.")
