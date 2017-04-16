@@ -237,3 +237,13 @@ def check_parameter_linearity(expression, name):
     factor = sympy.Symbol("factor")
     return sympy.simplify(
         expression * factor - expression.subs(symbol, symbol * factor)) == 0
+
+def extract_constant_part_of_expression(expr, *args):
+    """
+    Extract constant part of expression given independent variables *args.
+    Given no arguments, only x is assumed to change.
+
+    expr must be a sympy object
+    """
+    constant, not_constant = expr.as_independent(*args)
+    return constant, not_constant
