@@ -26,7 +26,7 @@ class Offset(Component):
 
     """Component to add a constant value in the y-axis
 
-    f(x) = k + x
+    f(x) = k
 
     +------------+-----------+
     | Parameter  | Attribute |
