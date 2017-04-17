@@ -227,8 +227,9 @@ class Expression(Component):
         for para in self.free_parameters:
             if para._is_linear:
                 linear_parameters.append(para.name)
-        constant_expr, not_constant_expr = extract_constant_part_of_expression(self._str_expression, *linear_parameters)
-        
+        constant_expr, not_constant_expr = extract_constant_part_of_expression(
+            self._str_expression, *linear_parameters)
+
         # Then replace symbols with value of each parameter
         free_symbols = [str(free) for free in constant_expr.free_symbols]
         for para in self.parameters:
@@ -237,7 +238,8 @@ class Expression(Component):
         return constant_expr
 
 def check_parameter_linearity(expr, name):
-    try: 
+    "Check whether expression is linear for a given parameter"
+    try:
         if not sympy.Eq(sympy.diff(expr, name, 2), 0):
             return False
     except TypeError:
