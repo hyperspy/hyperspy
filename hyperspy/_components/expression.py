@@ -252,5 +252,5 @@ def extract_constant_part_of_expression(expr, *args):
     Given no arguments, only x is assumed to change.
     """
     expr = sympy.sympify(expr)
-    constant, not_constant = expr.as_independent(*args)
+    constant, not_constant = expr.as_independent(*args, as_Add=True)
     return constant, not_constant
