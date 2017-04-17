@@ -63,7 +63,7 @@ class Arctan(Component):
         self._position = self.x0
 
         # Linearity
-        self.A.is_linear = True
+        self.A._is_linear = True
 
     def function(self, x):
         A = self.A.value

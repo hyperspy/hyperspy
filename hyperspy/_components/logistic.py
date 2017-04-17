@@ -46,6 +46,9 @@ class Logistic(Component):
         self.c.grad = self.grad_c
         self.origin.grad = self.grad_origin
         self._position = self.origin
+
+        # Linearity
+        self.a._is_linear = True
         
     def function(self, x):
         """
