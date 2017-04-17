@@ -29,7 +29,7 @@ def test_sympy_linear_expression2():
     expression = "a * x + b"
     g = Expression(expression, name="Test_function2")
     assert g.a._is_linear
-    assert not g.b._is_linear
+    assert g.b._is_linear
 
 def test_gaussian_linear():
     g = Gaussian()
