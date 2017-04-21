@@ -13,13 +13,6 @@ from hyperspy.misc.test_utils import assert_deep_almost_equal
 MY_PATH = os.path.dirname(__file__)
 MY_PATH2 = os.path.join(MY_PATH, "tiff_files")
 
-import skimage
-# Major change in reading the metadata with tifffile.py
-if LooseVersion(skimage.__version__) >= '0.13.0':
-    recent_skimage = True
-else:
-    recent_skimage = False
-
 
 def test_rgba16():
     """ Use skimage tifffile.py library """
@@ -69,9 +62,8 @@ def test_read_unit_um():
         assert s.axes_manager[1].units == 'µm'
         assert_allclose(s2.axes_manager[0].scale, 0.16867, atol=1E-5)
         assert_allclose(s2.axes_manager[1].scale, 0.16867, atol=1E-5)
-        if recent_skimage:
-            assert s2.metadata.General.date == s.metadata.General.date
-            assert s2.metadata.General.time == s.metadata.General.time
+        assert s2.metadata.General.date == s.metadata.General.date
+        assert s2.metadata.General.time == s.metadata.General.time
 
 
 def test_write_read_intensity_axes_DM():
@@ -436,8 +428,6 @@ FEI_Helios_metadata = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 
                                                  'unfolded': False}}}
 
 
-@pytest.mark.xfail(not recent_skimage,
-                   reason="Reading metadata only supported for skimage >= 0.13")
 def test_read_FEI_SEM_scale_metadata_8bits():
     fname = os.path.join(MY_PATH2, 'FEI-Helios-Ebeam-8bits.tif')
     s = hs.load(fname)
@@ -449,8 +439,6 @@ def test_read_FEI_SEM_scale_metadata_8bits():
     assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
 
 
-@pytest.mark.xfail(not recent_skimage,
-                   reason="Reading metadata only supported for skimage >= 0.13")
 def test_read_FEI_SEM_scale_metadata_16bits():
     fname = os.path.join(MY_PATH2, 'FEI-Helios-Ebeam-16bits.tif')
     s = hs.load(fname)
@@ -463,8 +451,6 @@ def test_read_FEI_SEM_scale_metadata_16bits():
     assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
 
 
-@pytest.mark.xfail(not recent_skimage,
-                   reason="Reading metadata only supported for skimage >= 0.13")
 def test_read_Zeiss_SEM_scale_metadata_1k_image():
     md = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 10.2,
                                                        'tilt': -0.0,
@@ -547,3 +533,32 @@ def test_read_BW_Zeiss_optical_scale_metadata3():
     assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-3)
     assert s.metadata.General.date == '2016-06-13'
     assert s.metadata.General.time == '16:08:49'
+
+
+def test_read_TVIPS_metadata():
+    md = {'Acquisition_instrument': {'TEM': {'Detector': {'Camera': {'exposure': 0.4,
+                                                                     'name': 'F416'}},
+                                             'Stage': {'tilt_a': -0.0070000002,
+                                                       'tilt_b': -0.055,
+                                                       'x': 0.0,
+                                                       'y': -9.2000000506686774e-05,
+                                                       'z': 7.0000001350933871e-06},
+                                             'beam_energy': 99.0,
+                                             'magnification': 32000.0}},
+          'General': {'original_filename': 'TVIPS_bin4.tif',
+                      'time': '9:01:17',
+                      'title': ''},
+          'Signal': {'binned': False, 'signal_type': ''},
+          '_HyperSpy': {'Folding': {'original_axes_manager': None,
+                                    'original_shape': None,
+                                    'signal_unfolded': False,
+                                    'unfolded': False}}}
+    fname = os.path.join(MY_PATH2, 'TVIPS_bin4.tif')
+    s = hs.load(fname)
+    assert s.data.dtype == np.uint8
+    assert s.data.shape == (1024, 1024)
+    assert s.axes_manager[0].units == 'm'
+    assert s.axes_manager[1].units == 'm'
+    assert_allclose(s.axes_manager[0].scale, 1.420e-09, atol=1E-12)
+    assert_allclose(s.axes_manager[1].scale, 1.420e-09, atol=1E-12)
+    assert_deep_almost_equal(s.metadata.as_dictionary(), md)

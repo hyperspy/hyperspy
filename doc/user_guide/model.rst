@@ -123,7 +123,7 @@ parameters for spectroscopy than the one that ships with HyperSpy:
     ... position="x0",
     ... height=1,
     ... fwhm=1,
-    ... centre=0,
+    ... x0=0,
     ... module="numpy")
 
 If the expression is inconvenient to write out in full (e.g. it's long and/or
