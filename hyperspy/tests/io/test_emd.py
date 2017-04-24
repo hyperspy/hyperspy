@@ -97,11 +97,6 @@ def test_data_axis_length_1():
 
 class TestMinimalSave():
 
-#    def setup_method(self, method):
-#        with tempfile.TemporaryDirectory() as tmp:
-#            self.filename = tmp + '/testfile.emd'
-#        self.signal = Signal1D([0, 1])
-
     def test_minimal_save(self):
         self.signal = Signal1D([0, 1])
         with tempfile.TemporaryDirectory() as tmp:
@@ -159,19 +154,23 @@ class TestCaseSaveAndRead():
 
     def teardown_method(self, method):
         remove(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
-        
+
 
 class TestFeiEMD():
-    
+
     def test_fei_emd_image(self):
-        signal = load(os.path.join(my_path, 'emd_files', 'example_fei_emd_image.emd'))
-        fei_image = np.load(os.path.join(my_path, 'emd_files', 'fei_emd_image.npy'))
+        signal = load(os.path.join(my_path, 'emd_files',
+                                   'example_fei_emd_image.emd'))
+        fei_image = np.load(os.path.join(
+            my_path, 'emd_files', 'fei_emd_image.npy'))
         np.testing.assert_equal(signal.data, fei_image)
         assert isinstance(signal, Signal2D)
-        
+
     def test_fei_emd_spectrum(self):
-        signal = load(os.path.join(my_path, 'emd_files', 'example_fei_emd_spectrum.emd'))
-        fei_spectrum = np.load(os.path.join(my_path, 'emd_files', 'fei_emd_spectrum.npy'))
+        signal = load(os.path.join(my_path, 'emd_files',
+                                   'example_fei_emd_spectrum.emd'))
+        fei_spectrum = np.load(os.path.join(
+            my_path, 'emd_files', 'fei_emd_spectrum.npy'))
         np.testing.assert_equal(signal.data, fei_spectrum)
         assert isinstance(signal, Signal1D)
 
