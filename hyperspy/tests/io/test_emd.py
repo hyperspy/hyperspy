@@ -8,7 +8,7 @@ import os.path
 from os import remove
 import tempfile
 from numpy.testing import assert_allclose
-
+import time
 import numpy as np
 import h5py
 
@@ -160,6 +160,10 @@ class TestCaseSaveAndRead():
 
 class TestFeiEMD():
 
+    # set local time_zone to get reproducible test
+    os.environ['TZ'] = 'BST'
+    time.tzset()
+
     def test_fei_emd_image(self):
         md = {'Acquisition_instrument': {'TEM': {'beam_energy': 200.0,
                                                  'camera_length': 98.0,
@@ -168,7 +172,7 @@ class TestFeiEMD():
                                                  'tilt_stage': '0.00'}},
               'General': {'original_filename': 'example_fei_emd_image.emd',
                           'time': '2017-03-06T09:56:41',
-                          'time_zone': 'GMT',
+                          'time_zone': 'BST',
                           'title': 'example_fei_emd_image'},
               'Signal': {'binned': False, 'signal_type': ''},
               '_HyperSpy': {'Folding': {'original_axes_manager': None,

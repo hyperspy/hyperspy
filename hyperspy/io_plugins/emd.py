@@ -29,7 +29,7 @@ import json
 import os
 import math
 from datetime import datetime
-from dateutil.tz import tzlocal
+from dateutil import tz
 import pint
 
 import logging
@@ -632,14 +632,11 @@ class FeiEMDReader(object):
     def _convert_time(self, unix_time):
         # Since we don't know the actual time zone of where the data have been
         # acquired, we convert the datetime to the local time for convinience
-        dt = datetime.fromtimestamp(float(unix_time))
-        localtimezone = tzlocal()
-        self.time_zone_string = localtimezone.tzname(dt)
-        dt.astimezone(localtimezone).isoformat()
-        return dt.astimezone(localtimezone).isoformat().split('+')[0]
+        dt = datetime.fromtimestamp(float(unix_time), tz=tz.tzutc())
+        return dt.astimezone(tz.tzlocal()).isoformat().split('+')[0]
 
     def _get_local_time_zone(self):
-        return self.time_zone_string
+        return tz.tzlocal().tzname(datetime.today())
 
 
 class FeiSpectrumStream(object):
