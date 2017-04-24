@@ -11,6 +11,8 @@ from numpy.testing import assert_allclose
 import time
 import numpy as np
 import h5py
+from dateutil import tz
+from datetime import datetime
 
 from hyperspy.io import load
 from hyperspy.signals import BaseSignal, Signal2D, Signal1D
@@ -160,10 +162,6 @@ class TestCaseSaveAndRead():
 
 class TestFeiEMD():
 
-    # set local time_zone to get reproducible test
-    os.environ['TZ'] = 'BST'
-    time.tzset()
-
     def test_fei_emd_image(self):
         md = {'Acquisition_instrument': {'TEM': {'beam_energy': 200.0,
                                                  'camera_length': 98.0,
@@ -179,6 +177,12 @@ class TestFeiEMD():
                                         'original_shape': None,
                                         'signal_unfolded': False,
                                         'unfolded': False}}}
+
+        # Update time and time_zone to local ones
+        md['General']['time_zone'] = tz.tzlocal().tzname(datetime.today())
+        dt = datetime.fromtimestamp(1488794201, tz=tz.tzutc())
+        md['General']['time'] = dt.astimezone(
+            tz.tzlocal()).isoformat().split('+')[0]
 
         signal = load(os.path.join(my_path, 'emd_files',
                                    'example_fei_emd_image.emd'))
