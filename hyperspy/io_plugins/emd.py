@@ -28,6 +28,9 @@ from dask.array import from_array
 import json
 import os
 import math
+from datetime import datetime
+from dateutil.tz import tzlocal
+import pint
 
 import logging
 
@@ -425,6 +428,8 @@ def _get_keys_from_group(group):
 
 class FeiEMDReader(object):
 
+    ureg = pint.UnitRegistry()
+
     def __init__(self, filename):
         self.filename = filename
         self.dictionaries = []
@@ -543,15 +548,15 @@ class FeiEMDReader(object):
         dispersion, offset = self._get_dispersion_offset()
 
         axes = [{'index_in_array': 0,
-                 'name': 'y',
-                 'offset': float(offsets['x']) * 10**9,
-                 'scale': float(pix_scale['width']) * 10**9,
+                 'name': 'x',
+                 'offset': self._convert_scale_units(offsets['x'])[0],
+                 'scale': self._convert_scale_units(offsets['x'])[1],
                  'size': data.shape[0],
                  'units': 'nm'},
                 {'index_in_array': 0,
                  'name': 'y',
-                 'offset': float(offsets['y']) * 10**9,
-                 'scale': float(pix_scale['height']) * 10**9,
+                 'offset': self._convert_scale_units(offsets['y'])[0],
+                 'scale': self._convert_scale_units(offsets['y'])[1],
                  'size': data.shape[1],
                  'units': 'nm'},
                 {'index_in_array': 1,
@@ -576,6 +581,13 @@ class FeiEMDReader(object):
 
         return dispersion, offset
 
+    def _convert_scale_units(self, value, units):
+        v = value * self.ureg(units)
+        converted_v = v.to('nm')
+        converted_value = float(converted_v.magnitude)
+        converted_units = '{:~}'.format(converted_v)
+        return converted_value, converted_units
+
     def _get_metadata_dict(self):
         # TODO: this is currently a bit broken... this should be specific to a
         # 'sub group', either image or spectrum stream
@@ -599,6 +611,10 @@ class FeiEMDReader(object):
 
     def _get_mapping(self):
         mapping = {
+            'Acquisition.AcquisitionStartDatetime.DateTime': (
+                "General.time", self._convert_time),
+            'Acquisition.AcquisitionStartDatetime': (
+                "General.time_zone", lambda x: self._get_local_time_zone()),
             'Optics.AccelerationVoltage': (
                 "Acquisition_instrument.TEM.beam_energy", lambda x: float(x) / 1e3),
             'Optics.CameraLength': (
@@ -608,10 +624,22 @@ class FeiEMDReader(object):
             'Instrument.InstrumentClass': (
                 "Acquisition_instrument.TEM.microscope", None),
             'Stage.AlphaTilt': (
-                "Acquisition_instrument.TEM.tilt_stage", lambda x: float(x))
+                "Acquisition_instrument.TEM.tilt_stage", lambda x: '{:.2f}'.format(float(x)))
         }
 
         return mapping
+
+    def _convert_time(self, unix_time):
+        # Since we don't know the actual time zone of where the data have been
+        # acquired, we convert the datetime to the local time for convinience
+        dt = datetime.fromtimestamp(float(unix_time))
+        localtimezone = tzlocal()
+        self.time_zone_string = localtimezone.tzname(dt)
+        dt.astimezone(localtimezone).isoformat()
+        return dt.astimezone(localtimezone).isoformat().split('+')[0]
+
+    def _get_local_time_zone(self):
+        return self.time_zone_string
 
 
 class FeiSpectrumStream(object):

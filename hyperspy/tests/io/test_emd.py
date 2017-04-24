@@ -7,12 +7,14 @@
 import os.path
 from os import remove
 import tempfile
+from numpy.testing import assert_allclose
 
 import numpy as np
 import h5py
 
 from hyperspy.io import load
 from hyperspy.signals import BaseSignal, Signal2D, Signal1D
+from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
 my_path = os.path.dirname(__file__)
@@ -159,11 +161,34 @@ class TestCaseSaveAndRead():
 class TestFeiEMD():
 
     def test_fei_emd_image(self):
+        md = {'Acquisition_instrument': {'TEM': {'beam_energy': 200.0,
+                                                 'camera_length': 98.0,
+                                                 'magnification': 40000.0,
+                                                 'microscope': 'Talos',
+                                                 'tilt_stage': '0.00'}},
+              'General': {'original_filename': 'example_fei_emd_image.emd',
+                          'time': '2017-03-06T09:56:41',
+                          'time_zone': 'GMT',
+                          'title': 'example_fei_emd_image'},
+              'Signal': {'binned': False, 'signal_type': ''},
+              '_HyperSpy': {'Folding': {'original_axes_manager': None,
+                                        'original_shape': None,
+                                        'signal_unfolded': False,
+                                        'unfolded': False}}}
+
         signal = load(os.path.join(my_path, 'emd_files',
                                    'example_fei_emd_image.emd'))
         fei_image = np.load(os.path.join(
             my_path, 'emd_files', 'fei_emd_image.npy'))
-        np.testing.assert_equal(signal.data, fei_image)
+        assert signal.axes_manager[0].name == 'x'
+        assert signal.axes_manager[0].units == 'nm'
+        assert_allclose(signal.axes_manager[0].scale, 5.302414, atol=1E-5)
+        assert signal.axes_manager[1].name == 'y'
+        assert signal.axes_manager[1].units == 'nm'
+        assert_allclose(signal.axes_manager[1].scale, 5.302414, atol=1E-5)
+        assert_allclose(signal.data, fei_image)
+        assert_deep_almost_equal(signal.metadata.as_dictionary(), md)
+
         assert isinstance(signal, Signal2D)
 
     def test_fei_emd_spectrum(self):
