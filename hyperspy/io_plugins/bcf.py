@@ -622,8 +622,6 @@ class HyperHeader(object):
             'beam_energy': self.sem.hv,
             'magnification': self.sem.mag,
         }
-        if 'Tilt' in self.stage_metadata:
-            acq_inst['tilt_stage'] = self.stage_metadata['Tilt']
         if detector:
             eds_metadata = self.get_spectra_metadata(**kwargs)
             acq_inst['Detector'] = {'EDS': {
@@ -1129,6 +1127,7 @@ def bcf_imagery(obj_bcf, instrument=None):
     """
     imagery_list = []
     mode = _get_mode(obj_bcf, instrument=instrument)
+    mapping = get_mapping(mode)
     for img in obj_bcf.header.image.images:
         imagery_list.append(
             {'data': img.data,
@@ -1157,8 +1156,8 @@ def bcf_imagery(obj_bcf, instrument=None):
              'original_metadata': {
                  'DSP Configuration': obj_bcf.header.image.dsp_metadata,
                  'Stage': obj_bcf.header.stage_metadata
-             }
-             })
+             },
+             'mapping': mapping})
     return imagery_list
 
 
@@ -1178,6 +1177,7 @@ For more information, check the 'Installing HyperSpy' section in the documentati
                                       cutoff_at_kV=cutoff_at_kV, lazy=lazy)
     eds_metadata = obj_bcf.header.get_spectra_metadata(index=index)
     mode = _get_mode(obj_bcf, instrument=instrument)
+    mapping = get_mapping(mode)
     hyperspectra = [{'data': obj_bcf.hypermap[index].hypermap,
                      'axes': [{'name': 'height',
                                'size': obj_bcf.hypermap[index].hypermap.shape[0],
@@ -1218,7 +1218,8 @@ For more information, check the 'Installing HyperSpy' section in the documentati
                               'Spectrum': eds_metadata.spectrum_metadata,
                               'DSP Configuration': obj_bcf.header.image.dsp_metadata,
                               'Line counter': obj_bcf.header.line_counter,
-                              'Stage': obj_bcf.header.stage_metadata}
+                              'Stage': obj_bcf.header.stage_metadata},
+        'mapping': mapping,
     }]
     return hyperspectra
 
@@ -1252,3 +1253,18 @@ def _get_mode(obj_bcf, instrument=None):
                  "please provide the right instrument using the 'instrument' " +
                  "keyword.")
     return mode
+
+
+def get_mapping(mode):
+    return {
+        'Stage.Rotation':
+        ("Acquisition_instrument.%s.Stage.rotation" % mode, None),
+        'Stage.Tilt':
+        ("Acquisition_instrument.%s.Stage.tilt_a" % mode, None),
+        'Stage.X':
+        ("Acquisition_instrument.%s.Stage.x" % mode, None),
+        'Stage.Y':
+        ("Acquisition_instrument.%s.Stage.y" % mode, None),
+        'Stage.Z':
+        ("Acquisition_instrument.%s.Stage.z" % mode, None),
+    }

@@ -21,7 +21,6 @@ import pytest
 
 import dill
 import copy
-from matplotlib.testing.decorators import cleanup
 
 import hyperspy.api as hs
 from hyperspy.samfire_utils.samfire_kernel import multi_kernel
@@ -314,8 +313,7 @@ class TestSamfireMain:
         self.model, self.lor1, self.g, self.lor2 = generate_test_model()
         self.shape = (7, 15)
 
-    @cleanup
-    def test_multiprocessed(self):
+    def test_multiprocessed(self, mpl_cleanup):
         self.model.fit()
         samf = self.model.create_samfire(ipyparallel=False)
         samf.plot_every = np.nan

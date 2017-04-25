@@ -145,8 +145,10 @@ class TestModelSaving:
         s = Signal1D(range(100))
         m = s.create_model()
         m.append(Gaussian())
-        m.components.Gaussian.A.value = 13
-        m.components.Gaussian.name = 'something'
+        m[-1].A.value = 13
+        m[-1].name = 'something'
+        m.append(Gaussian())
+        m[-1].A.value = 3
         self.m = m
 
     def test_save_and_load_model(self):
@@ -156,6 +158,34 @@ class TestModelSaving:
         assert hasattr(l.models, 'a')
         n = l.models.restore('a')
         assert n.components.something.A.value == 13
+        assert n.components.Gaussian.A.value == 3
+
+    def teardown_method(self, method):
+        gc.collect()        # Make sure any memmaps are closed first!
+        remove('tmp.hdf5')
+
+
+class TestEELSModelSaving:
+
+    def setup_method(self, method):
+        s = Signal1D(range(100))
+        s.axes_manager[0].offset = 280
+        s.set_signal_type("EELS")
+        s.add_elements(["C"])
+        s.set_microscope_parameters(100, 10, 10)
+        m = s.create_model(auto_background=False)
+        m.components.C_K.fine_structure_smoothing = 0.5
+        m.components.C_K.fine_structure_width = 50
+        m.components.C_K.fine_structure_active = True
+        self.m = m
+
+    def test_save_and_load_model(self):
+        m = self.m
+        m.save('tmp.hdf5', overwrite=True)
+        l = load('tmp.hdf5')
+        assert hasattr(l.models, 'a')
+        n = l.models.restore('a')
+        assert n[0].fine_structure_width == 50
 
     def teardown_method(self, method):
         gc.collect()        # Make sure any memmaps are closed first!
