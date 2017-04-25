@@ -410,6 +410,19 @@ class EMD(object):
 
 
 def fei_check(filename):
+    """Function to check if the EMD file is an FEI file.
+    
+    Parameters
+    ----------
+    filename : string
+        The name of the emd-file from which to load the signals. Standard
+        format is '*.emd'.
+        
+    Returns
+    -------
+    Boolean
+    
+    """
     with h5py.File(filename, 'r') as f:
         if 'Version' in list(f.keys()):
             version = f.get('Version')
@@ -424,6 +437,25 @@ def _get_keys_from_group(group):
 
 
 class FeiEMDReader(object):
+    """
+    Class for reading FEI electron microscopy datasets.
+
+    The :class:`~.FeiEMDReader` reads EMD files saved by the FEI Velox 
+    software package.
+
+    Attributes
+    ----------
+    dictionaries: list
+        List of dictionaries which are passed to the file_reader.
+    im_type : string
+        String specifying whether the data is an image, spectrum or 
+        spectrum image.
+        
+    Methods
+    ----------
+    get_metadata_dict, get_original_metadata
+
+    """
 
     def __init__(self, filename):
         self.filename = filename
@@ -536,11 +568,6 @@ class FeiEMDReader(object):
 
         data = self.stream.get_spectrum_stack(self.image_shape)
         #data = np.zeros((1,1))
-        
-        # Obtain the spectrum dimension from the images
-        # TODO: need to find a way to reshape the data when acquisition have
-        # been stoped during a frame acquisition
-#        data = data.reshape((self.image_shape, self.stream.bin_count))
 
         pix_scale = self.get_original_metadata()['BinaryResult']['PixelSize']
         offsets = self.get_original_metadata()['BinaryResult']['Offset']
@@ -554,18 +581,18 @@ class FeiEMDReader(object):
                 offset = float(detector['OffsetEnergy'])/1000.0
 
         axes = [{'index_in_array': 0,
-                 'name': 'y',
+                 'name': 'x',
                  'offset': float(offsets['x'])*10**9,
                  'scale': float(pix_scale['width'])*10**9,
-                 'size': data.shape[0],
-                 'units': 'nm'},
-                {'index_in_array': 0,
-                 'name': 'y',
-                 'offset': float(offsets['y'])*10**9,
-                 'scale': float(pix_scale['height'])*10**9,
                  'size': data.shape[1],
                  'units': 'nm'},
                 {'index_in_array': 1,
+                 'name': 'y',
+                 'offset': float(offsets['y'])*10**9,
+                 'scale': float(pix_scale['height'])*10**9,
+                 'size': data.shape[0],
+                 'units': 'nm'},
+                {'index_in_array': 2,
                  'name': 'X-ray energy',
                  'offset': offset,
                  'scale': dispersion,
@@ -697,6 +724,7 @@ class FeiSpectrumStream(object):
         #print(self.spectrum_number, self.bin_count)
         spectrum_stack = np.zeros((shape[0],shape[1],self.bin_count),
                                   dtype=self.data_dtype)
+        print(np.shape(spectrum_stack))
         stream_index = 0
         for count in np.nditer(self.stream):
             if stream_index % (shape[0]*shape[1]) == 0:
@@ -705,8 +733,8 @@ class FeiSpectrumStream(object):
             # if different of ‘65535’, add a count to the corresponding channel
             if count != 65535:
                 channel = count
-                #print(stream_index//shape[0], stream_index%shape[0], channel)
-                spectrum_stack[stream_index//shape[0], stream_index%shape[0], channel] += 1
+                #print(stream_index//shape[1], stream_index%shape[0], channel)
+                spectrum_stack[stream_index//shape[0], stream_index%shape[1], channel] += 1
 #                print('in while:', channel, spectrum_stack[spectrum_i, channel])
                 
             else:
