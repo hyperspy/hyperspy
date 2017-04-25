@@ -7,12 +7,16 @@
 import os.path
 from os import remove
 import tempfile
-
+from numpy.testing import assert_allclose
+import time
 import numpy as np
 import h5py
+from dateutil import tz
+from datetime import datetime
 
 from hyperspy.io import load
 from hyperspy.signals import BaseSignal, Signal2D, Signal1D
+from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
 my_path = os.path.dirname(__file__)
@@ -97,11 +101,6 @@ def test_data_axis_length_1():
 
 class TestMinimalSave():
 
-#    def setup_method(self, method):
-#        with tempfile.TemporaryDirectory() as tmp:
-#            self.filename = tmp + '/testfile.emd'
-#        self.signal = Signal1D([0, 1])
-
     def test_minimal_save(self):
         self.signal = Signal1D([0, 1])
         with tempfile.TemporaryDirectory() as tmp:
@@ -159,19 +158,52 @@ class TestCaseSaveAndRead():
 
     def teardown_method(self, method):
         remove(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
-        
+
 
 class TestFeiEMD():
-    
+
     def test_fei_emd_image(self):
-        signal = load(os.path.join(my_path, 'emd_files', 'example_fei_emd_image.emd'))
-        fei_image = np.load(os.path.join(my_path, 'emd_files', 'fei_emd_image.npy'))
-        np.testing.assert_equal(signal.data, fei_image)
+        md = {'Acquisition_instrument': {'TEM': {'beam_energy': 200.0,
+                                                 'camera_length': 98.0,
+                                                 'magnification': 40000.0,
+                                                 'microscope': 'Talos',
+                                                 'tilt_stage': '0.00'}},
+              'General': {'original_filename': 'example_fei_emd_image.emd',
+                          'time': '2017-03-06T09:56:41',
+                          'time_zone': 'BST',
+                          'title': 'example_fei_emd_image'},
+              'Signal': {'binned': False, 'signal_type': ''},
+              '_HyperSpy': {'Folding': {'original_axes_manager': None,
+                                        'original_shape': None,
+                                        'signal_unfolded': False,
+                                        'unfolded': False}}}
+
+        # Update time and time_zone to local ones
+        md['General']['time_zone'] = tz.tzlocal().tzname(datetime.today())
+        dt = datetime.fromtimestamp(1488794201, tz=tz.tzutc())
+        md['General']['time'] = dt.astimezone(
+            tz.tzlocal()).isoformat().split('+')[0]
+
+        signal = load(os.path.join(my_path, 'emd_files',
+                                   'example_fei_emd_image.emd'))
+        fei_image = np.load(os.path.join(
+            my_path, 'emd_files', 'fei_emd_image.npy'))
+        assert signal.axes_manager[0].name == 'x'
+        assert signal.axes_manager[0].units == 'nm'
+        assert_allclose(signal.axes_manager[0].scale, 5.302414, atol=1E-5)
+        assert signal.axes_manager[1].name == 'y'
+        assert signal.axes_manager[1].units == 'nm'
+        assert_allclose(signal.axes_manager[1].scale, 5.302414, atol=1E-5)
+        assert_allclose(signal.data, fei_image)
+        assert_deep_almost_equal(signal.metadata.as_dictionary(), md)
+
         assert isinstance(signal, Signal2D)
-        
+
     def test_fei_emd_spectrum(self):
-        signal = load(os.path.join(my_path, 'emd_files', 'example_fei_emd_spectrum.emd'))
-        fei_spectrum = np.load(os.path.join(my_path, 'emd_files', 'fei_emd_spectrum.npy'))
+        signal = load(os.path.join(my_path, 'emd_files',
+                                   'example_fei_emd_spectrum.emd'))
+        fei_spectrum = np.load(os.path.join(
+            my_path, 'emd_files', 'fei_emd_spectrum.npy'))
         np.testing.assert_equal(signal.data, fei_spectrum)
         assert isinstance(signal, Signal1D)
         
