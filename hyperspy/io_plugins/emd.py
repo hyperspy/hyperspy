@@ -28,6 +28,9 @@ from dask.array import from_array
 import json
 import os
 import math
+from datetime import datetime
+from dateutil import tz
+import pint
 
 import logging
 
@@ -459,10 +462,12 @@ class FeiEMDReader(object):
 
     def __init__(self, filename):
         self.filename = filename
+        self.ureg = pint.UnitRegistry()
         self.dictionaries = []
         self.f = h5py.File(filename, 'r')
         self.d_grp = self.f.get('Data')
         self._check_im_type()
+        self._read_original_metadata()
         self._read_data()
         self.f.close()
 
@@ -474,7 +479,7 @@ class FeiEMDReader(object):
             self._read_spectrum()
         elif self.im_type == 'SpectrumStream':
             self._read_images()
-            self._read_spectrum_images()
+            self._read_spectrum_image()
 
     def _check_im_type(self):
         if 'Image' in self.d_grp:
@@ -489,34 +494,28 @@ class FeiEMDReader(object):
         else:
             self.im_type = 'Spectrum'
             self.record_by = 'spectrum'
-        
+
     def _read_spectrum(self):
         spec_grp = self.d_grp.get("Spectrum")
         data_grp = spec_grp[list(spec_grp.keys())[0]]
         dataset = data_grp['Data']
-        data = dataset[:,0]
-        
-        # Get offset and scale
-        dispersion = 10.0
-        offset = -1000.0
-        for detectorname, detector in self.get_original_metadata()['Detectors'].items():
-            if detector['DetectorName'] == 'SuperXG21':
-                dispersion = float(detector['Dispersion'])/1000.0
-                offset = float(detector['OffsetEnergy'])/1000.0
-        
+        data = dataset[:, 0]
+
+        dispersion, offset = self._get_dispersion_offset()
+
         axes = [{'index_in_array': 0,
-                      'name': 'E',
-                      'offset': offset,
-                      'scale': dispersion,
-                      'size': data.shape[0],
-                      'units': 'keV'}
+                 'name': 'E',
+                 'offset': offset,
+                 'scale': dispersion,
+                 'size': data.shape[0],
+                 'units': 'keV'}
                 ]
-		
+
         self.dictionaries.append({'data': data,
                                   'axes': axes,
-                                  'metadata': self.get_metadata_dict(),
-                                  'original_metadata': self.get_original_metadata(),
-                                  'mapping': self.get_mapping()})
+                                  'metadata': self._get_metadata_dict(),
+                                  'original_metadata': self.original_metadata,
+                                  'mapping': self._get_mapping()})
 
     def _read_images(self):
         # Get the image data group
@@ -524,39 +523,40 @@ class FeiEMDReader(object):
         # Get all the subgroup of the image data group and read the image for
         # each of them
         for data_sub_group in _get_keys_from_group(image_group):
-            self.dictionaries.append(self._read_image(image_group[data_sub_group]))
+            self.dictionaries.append(
+                self._read_image(image_group[data_sub_group]))
 
     def _read_image(self, data_sub_group):
         # Return a dictionary ready to parse of return to io module
         dataset = data_sub_group['Data']
         data = dataset[:, :, 0]
         self.image_shape = data.shape
-        
-        pix_scale = self.get_original_metadata()['BinaryResult']['PixelSize']
-        offsets = self.get_original_metadata()['BinaryResult']['Offset']
-        
+
+        pix_scale = self.original_metadata['BinaryResult']['PixelSize']
+        offsets = self.original_metadata['BinaryResult']['Offset']
+        original_units = self.original_metadata['BinaryResult']['PixelUnitX']
+
         axes = [{'index_in_array': 0,
                  'name': 'y',
-                 'offset': float(offsets['y'])*10**9,
-                 'scale': float(pix_scale['height'])*10**9,
-                 'size': data.shape[0],
-                 'units': 'nm'},
+                 'offset': self._convert_scale_units(offsets['y'],original_units)[0],
+                 'scale': self._convert_scale_units(pix_scale['height'],original_units)[0],
+                 'size': data.shape[1],
+                 'units': self._convert_scale_units(pix_scale['height'],original_units)[1]},
                 {'index_in_array': 1,
                  'name': 'x',
-                 'offset': float(offsets['x'])*10**9,
-                 'scale': float(pix_scale['width'])*10**9,
-                 'size': data.shape[1],
-                 'units': 'nm'}
+                 'offset': self._convert_scale_units(offsets['x'],original_units)[0],
+                 'scale': self._convert_scale_units(pix_scale['width'],original_units)[0],
+                 'size': data.shape[0],
+                 'units': self._convert_scale_units(pix_scale['width'],original_units)[1]}
                 ]
 
         return {'data': data,
                 'axes': axes,
-                'metadata': self.get_metadata_dict(),
-                'original_metadata': self.get_original_metadata(),
-                'mapping': self.get_mapping()}
+                'metadata': self._get_metadata_dict(),
+                'original_metadata': self.original_metadata,
+                'mapping': self._get_mapping()}
 
-
-    def _read_spectrum_images(self):
+    def _read_spectrum_image(self):
         # Spectrum stream group
         si_grp = self.d_grp.get("SpectrumStream")
 
@@ -569,29 +569,30 @@ class FeiEMDReader(object):
         data = self.stream.get_spectrum_stack(self.image_shape)
         #data = np.zeros((1,1))
 
-        pix_scale = self.get_original_metadata()['BinaryResult']['PixelSize']
-        offsets = self.get_original_metadata()['BinaryResult']['Offset']
-        
-        # Get offset and scale
-        dispersion = 10.0
-        offset = -1000.0
-        for detectorname, detector in self.get_original_metadata()['Detectors'].items():
-            if detector['DetectorName'] == 'SuperXG21':
-                dispersion = float(detector['Dispersion'])/1000.0
-                offset = float(detector['OffsetEnergy'])/1000.0
 
-        axes = [{'index_in_array': 0,
+        # Obtain the spectrum dimension from the images
+        # TODO: need to find a way to reshape the data when acquisition have
+        # been stoped during a frame acquisition
+		# data = data.reshape((self.image_shape, self.stream.bin_count))
+
+        pix_scale = self.original_metadata['BinaryResult']['PixelSize']
+        offsets = self.original_metadata['BinaryResult']['Offset']
+        original_units = self.original_metadata['BinaryResult']['PixelUnitX']
+
+        dispersion, offset = self._get_dispersion_offset()
+
+        axes = [{'index_in_array': 1,
                  'name': 'x',
-                 'offset': float(offsets['x'])*10**9,
-                 'scale': float(pix_scale['width'])*10**9,
-                 'size': data.shape[1],
-                 'units': 'nm'},
-                {'index_in_array': 1,
-                 'name': 'y',
-                 'offset': float(offsets['y'])*10**9,
-                 'scale': float(pix_scale['height'])*10**9,
+                 'offset': self._convert_scale_units(offsets['x'],original_units)[0],
+                 'scale': self._convert_scale_units(pix_scale['width'],original_units)[0],
                  'size': data.shape[0],
-                 'units': 'nm'},
+                 'units': self._convert_scale_units(pix_scale['width'],original_units)[1]},
+                {'index_in_array': 0,
+                 'name': 'y',
+                 'offset': self._convert_scale_units(offsets['y'],original_units)[0],
+                 'scale': self._convert_scale_units(pix_scale['height'],original_units)[0],
+                 'size': data.shape[1],
+                 'units': self._convert_scale_units(pix_scale['height'],original_units)[1]},
                 {'index_in_array': 2,
                  'name': 'X-ray energy',
                  'offset': offset,
@@ -599,17 +600,32 @@ class FeiEMDReader(object):
                  'size': data.shape[2],
                  'units': 'keV'}
                 ]
-        
-        self.dictionaries.append({'data': data,
-                                   'axes': axes,
-                                   'metadata': self.get_metadata_dict(),
-                                   'original_metadata': self.get_original_metadata(),
-                                   'mapping': self.get_mapping()})
 
-    def get_metadata_dict(self):
+        self.dictionaries.append({'data': data,
+                                  'axes': axes,
+                                  'metadata': self._get_metadata_dict(),
+                                  'original_metadata': self.original_metadata,
+                                  'mapping': self._get_mapping()})
+
+    def _get_dispersion_offset(self):
+        for detectorname, detector in self.original_metadata['Detectors'].items():
+            if detector['DetectorName'] == 'SuperXG21':
+                dispersion = float(detector['Dispersion']) / 1000.0
+                offset = float(detector['OffsetEnergy']) / 1000.0
+
+        return dispersion, offset
+
+    def _convert_scale_units(self, value, units):
+        v = np.float(value) * self.ureg(units)
+        converted_v = v.to('nm')
+        converted_value = float(converted_v.magnitude)
+        converted_units = '{:~}'.format(converted_v.units)
+        return converted_value, converted_units
+
+    def _get_metadata_dict(self):
         # TODO: this is currently a bit broken... this should be specific to a
         # 'sub group', either image or spectrum stream
-        
+
         meta_gen = {}
         meta_gen['original_filename'] = os.path.split(self.filename)[1]
         meta_gen['title'] = meta_gen['original_filename'].rpartition('.')[0]
@@ -619,30 +635,42 @@ class FeiEMDReader(object):
         meta_sig['signal_type'] = ''
 
         return {'General': meta_gen, 'Signal': meta_sig}
-    
-    def get_original_metadata(self):
+
+    def _read_original_metadata(self):
         data_group = self.f['Data'][self.im_type]
-        metadata_array = data_group[list(data_group.keys())[0]]['Metadata'][:,0]
+        metadata_array = data_group[list(data_group.keys())[
+            0]]['Metadata'][:, 0]
         mdata_string = metadata_array.tostring().decode("utf-8")
-        original_metadata = json.loads(mdata_string.rstrip('\x00'))
-        
-        return original_metadata
-    
-    def get_mapping(self):
+        self.original_metadata = json.loads(mdata_string.rstrip('\x00'))
+
+    def _get_mapping(self):
         mapping = {
-                'Optics.AccelerationVoltage': (
-                        "Acquisition_instrument.TEM.beam_energy",lambda x: float(x) / 1e3),
-                'Optics.CameraLength': (
-                        "Acquisition_instrument.TEM.camera_length",lambda x: float(x) * 1e3),
-                'CustomProperties.StemMagnification.value': (
-                        "Acquisition_instrument.TEM.magnification",lambda x: float(x)),
-                'Instrument.InstrumentClass': (
-                        "Acquisition_instrument.TEM.microscope",None),
-                'Stage.AlphaTilt': (
-                        "Acquisition_instrument.TEM.tilt_stage",lambda x: float(x))
-                }
-        
+            'Acquisition.AcquisitionStartDatetime.DateTime': (
+                "General.time", self._convert_time),
+            'Acquisition.AcquisitionStartDatetime': (
+                "General.time_zone", lambda x: self._get_local_time_zone()),
+            'Optics.AccelerationVoltage': (
+                "Acquisition_instrument.TEM.beam_energy", lambda x: float(x) / 1e3),
+            'Optics.CameraLength': (
+                "Acquisition_instrument.TEM.camera_length", lambda x: float(x) * 1e3),
+            'CustomProperties.StemMagnification.value': (
+                "Acquisition_instrument.TEM.magnification", lambda x: float(x)),
+            'Instrument.InstrumentClass': (
+                "Acquisition_instrument.TEM.microscope", None),
+            'Stage.AlphaTilt': (
+                "Acquisition_instrument.TEM.tilt_stage", lambda x: '{:.2f}'.format(float(x)))
+        }
+
         return mapping
+
+    def _convert_time(self, unix_time):
+        # Since we don't know the actual time zone of where the data have been
+        # acquired, we convert the datetime to the local time for convinience
+        dt = datetime.fromtimestamp(float(unix_time), tz=tz.tzutc())
+        return dt.astimezone(tz.tzlocal()).isoformat().split('+')[0]
+
+    def _get_local_time_zone(self):
+        return tz.tzlocal().tzname(datetime.today())
 
 
 class FeiSpectrumStream(object):
@@ -655,7 +683,7 @@ class FeiSpectrumStream(object):
     AcquisitionSettings.
     The spectrum image cube itself stored in a compressed format, that is
     not easy to decode.'
-    
+
     When we read the array, we could add an option to import only X-rays
     acquire within a "frame range" (specific scanning passes). Parsing each
     frame to hyperspy signal will take too much memory, since the data are
@@ -677,7 +705,7 @@ class FeiSpectrumStream(object):
 
     def _parse_acquisition_settings(self, group, sub_group_name):
         # This is a very inefficient way to read the data, it is using by far
-        # too much memory: create a large numpy 
+        # too much memory: create a large numpy
         # need to use another approach, see below
         acquisition_key = '%s/AcquisitionSettings' % sub_group_name
         settings = json.loads(group[acquisition_key].value[0].decode('utf-8'))
@@ -692,11 +720,11 @@ class FeiSpectrumStream(object):
 
 #    def get_spectrum_image(self, image_shape):
 #        # WORK IN PROGRESS!!
-#        # need to know the number of frame, the number of pixel in the 
+#        # need to know the number of frame, the number of pixel in the
 #        # navigation dimension to acccordingly create an numpy and filled the
 #        # value when we read through the spectrum stream
 #        # It would be good to specify a range of specific frame.
-#        
+#
 #        # TODO: Not sure if this gives the correct number of frames
 #        frame_number = math.ceil(self.spectrum_number / (image_shape[0] * image_shape[1]))
 #        print(self.spectrum_number, self.bin_count)
@@ -704,11 +732,11 @@ class FeiSpectrumStream(object):
 #                                   self.bin_count), dtype=self.data_dtype)
 #
 #        # TODO: change this loop to set the value in 'spectrum_image' array at
-#        # the correct position 
+#        # the correct position
 #        stream_index = 0
 #        for spectrum_i in range(self.spectrum_number):
 ##            print('here:', spectrum_i, stream_index, self.stream[stream_index])
-#            frame = 
+#            frame =
 #            # if different of ‘65535’, add a count to the corresponding channel
 #            while self.stream[stream_index] != 65535:
 #                channel = self.stream[stream_index]
@@ -722,12 +750,12 @@ class FeiSpectrumStream(object):
 
     def get_spectrum_stack(self, shape):
         #print(self.spectrum_number, self.bin_count)
-        spectrum_stack = np.zeros((shape[0],shape[1],self.bin_count),
+        spectrum_stack = np.zeros((shape[0], shape[1], self.bin_count),
                                   dtype=self.data_dtype)
         print(np.shape(spectrum_stack))
         stream_index = 0
         for count in np.nditer(self.stream):
-            if stream_index % (shape[0]*shape[1]) == 0:
+            if stream_index % (shape[0] * shape[1]) == 0:
                 stream_index = 0
 #            print('here:', spectrum_i, stream_index, self.stream[stream_index])
             # if different of ‘65535’, add a count to the corresponding channel
@@ -736,11 +764,12 @@ class FeiSpectrumStream(object):
                 #print(stream_index//shape[1], stream_index%shape[0], channel)
                 spectrum_stack[stream_index//shape[0], stream_index%shape[1], channel] += 1
 #                print('in while:', channel, spectrum_stack[spectrum_i, channel])
-                
+
             else:
                 stream_index += 1
 
         return spectrum_stack
+
 
 def file_reader(filename, log_info=False,
                 lazy=False, **kwds):
