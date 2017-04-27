@@ -2237,27 +2237,33 @@ class BaseSignal(FancySlicing,
         signal_dimension = self.axes_manager.signal_dimension
         # The following reverses the order of binning factors for the signal
         # dimensions, as is necessary for signal2Ds
-        scale = scale[0:-signal_dimension] + scale[::-1][0:signal_dimension]
+        factors = scale[0:-signal_dimension] + scale[::-1][0:signal_dimension]
+        s = out or self._deepcopy_with_new_data(None, copy_variance=True)
+        data = hyperspy.misc.array_tools.rebin(spectrum, factors, crop=crop)
 
-        newSpectrum = hyperspy.misc.array_tools.rebin(spectrum, scale, crop)
-
-        m = out or self._deepcopy_with_new_data(newSpectrum)
         if out:
             if out._lazy:
                 out.data = data
             else:
                 out.data[:] = data
         else:
-            m.data = data
-        m.get_dimensions_from_data()
-        for s, step in zip(m.axes_manager._axes, scale):
-            s.scale *= step
+            s.data = data
+        s.get_dimensions_from_data()
+        for axis, axis_src in zip(s.axes_manager._axes,
+                                  self.axes_manager._axes):
+            axis.scale = axis_src.scale * factors[axis.index_in_array]
+        if s.metadata.has_item('Signal.Noise_properties.variance'):
+            if isinstance(s.metadata.Signal.Noise_properties.variance,
+                          BaseSignal):
+                var = s.metadata.Signal.Noise_properties.variance
+                s.metadata.Signal.Noise_properties.variance = var.rebin(
+                    factors)
         if out is None:
-            return m
+            return s
         else:
             out.event.data_changed.trigger(obj=out)
 
-    rebin._doc_%=OUT.ARG
+    #rebin._doc_%=OUT.ARG
 
     def split(self,
               axis='auto',
