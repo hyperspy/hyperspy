@@ -213,7 +213,7 @@ class LazySignal(BaseSignal):
 
     def rebin(self, scale, out=None, crop=False):
         new_shape_in_array = []
-        new_shape = []
+        new_shape = np.zeros_like(scale)
         for axis, s in enumerate(scale):
             dim = (math.floor(self.data.shape[axis] / s) if crop
             else math.ceil(self.data.shape[axis] / s))

@@ -78,7 +78,7 @@ class Test_metadata:
         s = self.signal
         old_metadata = s.metadata.deepcopy()
         dim = s.axes_manager.shape
-        s = s.rebin([dim[0] / 2, dim[1] / 2, dim[2]])
+        s = s.rebin([2, 2, 1])
         assert (
             s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time ==
             3.1 * 2 * 2)
