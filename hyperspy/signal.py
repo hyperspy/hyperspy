@@ -2212,7 +2212,7 @@ class BaseSignal(FancySlicing,
             dimension may appear black, if a fractional number of pixels are left
             over. It can be removed but has been left to preserve total counts
             before and after binning.*
-
+        %s
         Returns
         -------
         s : Signal subclass
