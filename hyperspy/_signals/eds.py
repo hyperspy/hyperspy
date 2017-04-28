@@ -257,7 +257,6 @@ class EDS_mixin:
             out.events.data_changed.trigger(obj=out)
 
         return m
-    #sum._doc_ = Signal1D.sum._doc_
 
     def set_elements(self, elements):
         """Erase all elements and set them.
