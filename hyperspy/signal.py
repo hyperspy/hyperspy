@@ -2262,7 +2262,7 @@ class BaseSignal(FancySlicing,
             return s
         else:
             out.event.data_changed.trigger(obj=out)
-    rebin._doc_%=OUT.ARG
+    rebin.__doc__%=OUT.ARG
 
     def split(self,
               axis='auto',
