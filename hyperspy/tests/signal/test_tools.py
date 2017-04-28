@@ -593,7 +593,7 @@ class TestOutArg:
 
     def test_rebin(self):
         s = self.s
-        scale = (2.5, 2, 3, 2)
+        scale = (1, 2, 5, 2)
         if self.s._lazy:
             from distutils.version import LooseVersion
             import dask
