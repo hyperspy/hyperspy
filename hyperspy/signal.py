@@ -2261,7 +2261,7 @@ class BaseSignal(FancySlicing,
         if out is None:
             return s
         else:
-            out.event.data_changed.trigger(obj=out)
+            out.events.data_changed.trigger(obj=out)
 
     rebin.__doc__ %= OUT_ARG
 
