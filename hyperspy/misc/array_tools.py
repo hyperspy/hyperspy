@@ -113,7 +113,7 @@ def rebin(a, scale, crop=True):
     """
     lenShape = len(a.shape)
     #check whether or not interpolation is needed.
-    if (np.count_nonzero(np.asarray(a.data.shape)%np.asarray(scale)) != 0\
+    if (np.count_nonzero(np.asarray(a.shape)%np.asarray(scale)) != 0\
        or (all(isinstance(item, int) for item in scale)) is not True):
         return _linear_bin(a, scale, crop)
     else:
