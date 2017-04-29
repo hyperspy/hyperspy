@@ -25,7 +25,6 @@ import os.path
 from os import remove
 import tempfile
 from numpy.testing import assert_allclose
-import time
 import numpy as np
 import h5py
 from dateutil import tz
