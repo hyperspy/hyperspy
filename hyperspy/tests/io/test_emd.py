@@ -1,7 +1,24 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015 by Forschungszentrum Juelich GmbH
-# Author: Jan Caron
+# Copyright 2007-2015 The HyperSpy developers
 #
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
+# The EMD format is a hdf5 standard proposed at Lawrence Berkeley
+# National Lab (see http://emdatasets.com/ for more information).
+# NOT to be confused with the FEI EMD format which was developed later.
 
 
 import os.path
@@ -172,7 +189,7 @@ class TestFeiEMD():
                           'time': '2017-03-06T09:56:41',
                           'time_zone': 'BST',
                           'title': 'example_fei_emd_image'},
-              'Signal': {'binned': False, 'signal_type': ''},
+              'Signal': {'binned': False, 'signal_type': 'image'},
               '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                         'original_shape': None,
                                         'signal_unfolded': False,
@@ -206,9 +223,10 @@ class TestFeiEMD():
             my_path, 'emd_files', 'fei_emd_spectrum.npy'))
         np.testing.assert_equal(signal.data, fei_spectrum)
         assert isinstance(signal, Signal1D)
-        
+
     def test_fei_emd_si(self):
-        signal = load(os.path.join(my_path, 'emd_files', 'example_fei_emd_si.emd'))
+        signal = load(os.path.join(
+            my_path, 'emd_files', 'example_fei_emd_si.emd'))
         fei_si = np.load(os.path.join(my_path, 'emd_files', 'fei_emd_si.npy'))
         np.testing.assert_equal(signal.data, fei_si)
         assert isinstance(signal, Signal1D)
