@@ -154,7 +154,11 @@ def file_reader(filename, endianess='<', **kwds):
         f.seek(1024 + std_header['NEXT'])
         fei_header = None
     NX, NY, NZ = std_header['NX'], std_header['NY'], std_header['NZ']
-    data = np.memmap(f, mode='c', offset=f.tell(),
+    mmap_mode = kwds.pop('mmap_mode', 'c')
+    lazy = kwds.pop('lazy', False)
+    if lazy:
+        mmap_mode = 'r'
+    data = np.memmap(f, mode=mmap_mode, offset=f.tell(),
                      dtype=get_data_type(std_header['MODE'], endianess)
                      ).squeeze().reshape((NX, NY, NZ), order='F').T
 
@@ -208,6 +212,24 @@ def file_reader(filename, endianess='<', **kwds):
     dictionary = {'data': data,
                   'axes': axes,
                   'metadata': metadata,
-                  'original_metadata': original_metadata, }
+                  'original_metadata': original_metadata,
+                  'mapping':mapping}
 
     return [dictionary, ]
+
+mapping = {
+    'fei_header.a_tilt':
+    ("Acquisition_instrument.TEM.Stage.tilt_a", None),
+    'fei_header.b_tilt':
+    ("Acquisition_instrument.TEM.Stage.tilt_b", None),
+    'fei_header.x_stage':
+    ("Acquisition_instrument.TEM.Stage.x", None),
+    'fei_header.y_stage':
+    ("Acquisition_instrument.TEM.Stage.y", None),
+    'fei_header.z_stage':
+    ("Acquisition_instrument.TEM.Stage.z", None),
+    'fei_header.exp_time':
+    ("Acquisition_instrument.TEM.Detector.Camera.exposure", None),
+    'fei_header.magnification':
+    ("Acquisition_instrument.TEM.magnification", None),
+   }

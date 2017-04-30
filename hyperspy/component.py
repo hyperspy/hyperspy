@@ -17,13 +17,14 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-
-import numpy as np
 import functools
 import warnings
 
+import numpy as np
 import traits.api as t
 from traits.trait_numeric import Array
+import sympy
+from sympy.utilities.lambdify import lambdify
 
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import slugify
@@ -66,14 +67,29 @@ class Parameter(t.HasTraits):
         If it is not None, the value of the current parameter is
         a function of the given Parameter. The function is by default
         the identity function, but it can be defined by twin_function
+    twin_function_expr: str
+        Expression of the ``twin_function`` that enables setting a functional
+        relationship between the parameter and its twin. If ``twin`` is not
+        ``None``, the parameter value is calculated as the output of calling the
+        twin function with the value of the twin parameter. The string is
+        parsed using sympy, so permitted values are any valid sympy expressions
+        of one variable. If the function is invertible the twin inverse function
+        is set automatically.
+    twin_inverse_function : str
+        Expression of the ``twin_inverse_function`` that enables setting the
+        value of the twin parameter. If ``twin`` is not
+        ``None``, its value is set to the output of calling the
+        twin inverse function with the value provided. The string is
+        parsed using sympy, so permitted values are any valid sympy expressions
+        of one variable.
     twin_function : function
-        Function that, if selt.twin is not None, takes self.twin.value
-        as its only argument and returns a float or array that is
-        returned when getting Parameter.value
+        **Setting this attribute manually
+        is deprecated in HyperSpy newer than 1.1.2. It will become private in
+        HyperSpy 2.0. Please use ``twin_function_expr`` instead.**
     twin_inverse_function : function
-        The inverse of twin_function. If it is None then it is not
-        possible to set the value of the parameter twin by setting
-        the value of the current parameter.
+        **Setting this attribute manually
+        is deprecated in HyperSpy newer than 1.1.2. It will become private in
+        HyperSpy 2.0. Please use ``twin_inverse_function_expr`` instead.**
     ext_force_positive : bool
         If True, the parameter value is set to be the absolute value
         of the input value i.e. if we set Parameter.value = -3, the
@@ -117,6 +133,11 @@ class Parameter(t.HasTraits):
 
     bmin = t.Property(NoneFloat(), label="Lower bounds")
     bmax = t.Property(NoneFloat(), label="Upper bounds")
+    _twin_function_expr = ""
+    _twin_inverse_function_expr = ""
+    twin_function = None
+    _twin_inverse_function = None
+    _twin_inverse_sympy = None
 
     def __init__(self):
         self._twins = set()
@@ -134,8 +155,6 @@ class Parameter(t.HasTraits):
             value : {float | array}
                 The new value of the parameter
             """, arguments=["obj", 'value'])
-        self.twin_function = lambda x: x
-        self.twin_inverse_function = lambda x: x
         self.std = None
         self.component = None
         self.grad = None
@@ -153,9 +172,9 @@ class Parameter(t.HasTraits):
                            'ext_bounded': None,
                            'name': None,
                            'ext_force_positive': None,
+                           'twin_function_expr': None,
+                           'twin_inverse_function_expr': None,
                            'self': ('id', None),
-                           'twin_function': ('fn', None),
-                           'twin_inverse_function': ('fn', None),
                            }
         self._slicing_whitelist = {'map': 'inav'}
 
@@ -199,11 +218,86 @@ class Parameter(t.HasTraits):
     def __len__(self):
         return self._number_of_elements
 
+    @property
+    def twin_function_expr(self):
+        return self._twin_function_expr
+
+    @twin_function_expr.setter
+    def twin_function_expr(self, value):
+        if not value:
+            self.twin_function = None
+            self.twin_inverse_function = None
+            self._twin_function_expr = ""
+            self._twin_inverse_sympy = None
+            return
+        expr = sympy.sympify(value)
+        if len(expr.free_symbols) > 1:
+            raise ValueError("The expression must contain only one variable.")
+        elif len(expr.free_symbols) == 0:
+            raise ValueError("The expression must contain one variable, "
+                             "it contains none.")
+        x = tuple(expr.free_symbols)[0]
+        self.twin_function = lambdify(x, expr.evalf())
+        self._twin_function_expr = value
+        if not self.twin_inverse_function:
+            y = sympy.Symbol(x.name + "2")
+            try:
+                inv = sympy.solveset(sympy.Eq(y, expr), x)
+                self._twin_inverse_sympy = lambdify(y, inv)
+                self._twin_inverse_function = None
+            except:
+                # Not all may have a suitable solution.
+                self._twin_inverse_function = None
+                self._twin_inverse_sympy = None
+                _logger.warning(
+                    "The function {} is not invertible. Setting the value of "
+                    "{} will raise an AttributeError unless you set manually "
+                    "``twin_inverse_function_expr``. Otherwise, set the "
+                    "value of its twin parameter instead.".format(value, self))
+
+    @property
+    def twin_inverse_function_expr(self):
+        if self.twin:
+            return self._twin_inverse_function_expr
+        else:
+            return ""
+
+    @twin_inverse_function_expr.setter
+    def twin_inverse_function_expr(self, value):
+        if not value:
+            self.twin_inverse_function = None
+            self._twin_inverse_function_expr = ""
+            return
+        expr = sympy.sympify(value)
+        if len(expr.free_symbols) > 1:
+            raise ValueError("The expression must contain only one variable.")
+        elif len(expr.free_symbols) == 0:
+            raise ValueError("The expression must contain one variable, "
+                             "it contains none.")
+        x = tuple(expr.free_symbols)[0]
+        self._twin_inverse_function = lambdify(x, expr.evalf())
+        self._twin_inverse_function_expr = value
+
+    @property
+    def twin_inverse_function(self):
+        if (not self.twin_inverse_function_expr and
+                self.twin_function_expr and self._twin_inverse_sympy):
+            return lambda x: self._twin_inverse_sympy(x).pop()
+        else:
+            return self._twin_inverse_function
+
+    @twin_inverse_function.setter
+    def twin_inverse_function(self, value):
+        self._twin_inverse_function = value
+
     def _get_value(self):
         if self.twin is None:
             return self.__value
         else:
-            return self.twin_function(self.twin.value)
+            if self.twin_function:
+                return self.twin_function(self.twin.value)
+            else:
+                return self.twin.value
 
     def _set_value(self, value):
         try:
@@ -225,9 +319,17 @@ class Parameter(t.HasTraits):
         old_value = self.__value
 
         if self.twin is not None:
-            if self.twin_inverse_function is not None:
-                self.twin.value = self.twin_inverse_function(value)
-            return
+            if self.twin_function is not None:
+                if self.twin_inverse_function is not None:
+                    self.twin.value = self.twin_inverse_function(value)
+                    return
+                else:
+                    raise AttributeError(
+                        "This parameter has a ``twin_function`` but"
+                        "its ``twin_inverse_function`` is not defined.")
+            else:
+                self.twin.value = value
+                return
 
         if self.ext_bounded is False:
             self.__value = value
@@ -515,11 +617,11 @@ class Parameter(t.HasTraits):
 
         Example
         -------
-        >>> parameter.plot()
+        >>> parameter.plot() #doctest: +SKIP
 
         Set the minimum and maximum displayed values
 
-        >>> parameter.plot(vmin=0, vmax=1)
+        >>> parameter.plot(vmin=0, vmax=1) #doctest: +SKIP
         """
         self.as_signal().plot(**kwargs)
 
@@ -773,13 +875,11 @@ class Component(t.HasTraits):
             raise ValueError('Only boolean values are permitted')
 
         if value == self.active_is_multidimensional:
-            _logger.warning('`active_is_multidimensional` already %s for %s' %
-                            (str(value), self.name))
             return
 
         if value:  # Turn on
             if self._axes_manager.navigation_size < 2:
-                _logger.warning('`navigation_size` < 2, skipping')
+                _logger.info('`navigation_size` < 2, skipping')
                 return
             # Store value at current position
             self._create_active_array()
@@ -796,13 +896,14 @@ class Component(t.HasTraits):
 
     def _set_name(self, value):
         old_value = self._name
+        if old_value == value:
+            return
         if self.model:
             for component in self.model:
                 if value == component.name:
-                    if not (component is self):
-                        raise ValueError(
-                            "Another component already has "
-                            "the name " + str(value))
+                    raise ValueError(
+                        "Another component already has "
+                        "the name " + str(value))
             self._name = value
             setattr(self.model.components, slugify(
                 value, valid_variable_name=True), self)
@@ -1005,10 +1106,10 @@ class Component(t.HasTraits):
                 is not None else 0
             if parameter.twin is None:
                 if dim <= 1:
-                    return ('%s = %s ± %s %s' % (parameter.name,
-                                                 parameter.value,
-                                                 parameter.std,
-                                                 parameter.units))
+                    print ('%s = %s ± %s %s' % (parameter.name,
+                                                parameter.value,
+                                                parameter.std,
+                                                parameter.units))
 
     def __call__(self):
         """Returns the corresponding model for the current coordinates
@@ -1172,7 +1273,9 @@ class Component(t.HasTraits):
             the parameters of the component, to be later used for setting up
             correct twins.
         """
+
         if dic['_id_name'] == self._id_name:
+            load_from_dictionary(self, dic)
             id_dict = {}
             for p in dic['parameters']:
                 idname = p['_id_name']
@@ -1183,7 +1286,6 @@ class Component(t.HasTraits):
                 else:
                     raise ValueError(
                         "_id_name of parameters in component and dictionary do not match")
-            load_from_dictionary(self, dic)
             return id_dict
         else:
             raise ValueError( "_id_name of component and dictionary do not match, \ncomponent._id_name = %s\

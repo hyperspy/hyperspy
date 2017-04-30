@@ -56,6 +56,8 @@ import codecs
 from ast import literal_eval
 from datetime import datetime, timedelta
 import numpy as np
+import dask.array as da
+import dask.delayed as dd
 from struct import unpack as strct_unp
 from zlib import decompress as unzip_block
 import logging
@@ -428,13 +430,14 @@ def interpret(string):
         return literal_eval(string)
     except (ValueError, SyntaxError):
         # SyntaxError due to:
-        # literal_eval have problems with strings like this '8842_80' 
+        # literal_eval have problems with strings like this '8842_80'
         return string
 
 
 class ObjectifyJSONEncoder(json.JSONEncoder):
     """ JSON encoder that can handle simple lxml objectify types,
         Handles xml attributes, also returns all data types"""
+
     def default(self, o):
         dictionary = {}
         if hasattr(o, '__dict__') and len(o.__dict__) > 0:
@@ -479,36 +482,36 @@ class EDXSpectrum(object):
         detector_header = TRTHeader.ClassInstance[1]
         #<ClassInstance Type="TRTESMAHeader">:
         esma_header = TRTHeader.ClassInstance[2]
-        #what TRT means?
-        #ESMA could stand for Electron Scanning Microscope Analysis
+        # what TRT means?
+        # ESMA could stand for Electron Scanning Microscope Analysis
         spectrum_header = spectrum.ClassInstance[0]
-        
+
         # map stuff from harware xml branch:
         self.hardware_metadata = json.loads(json.dumps(hardware_header,
                                                        cls=ObjectifyJSONEncoder))
         self.amplification = self.hardware_metadata['Amplification']  # USED
-        
+
         # map stuff from detector xml branch
         self.detector_metadata = json.loads(json.dumps(detector_header,
                                                        cls=ObjectifyJSONEncoder))
-        self.detector_type = self.detector_metadata['Type']  # USED 
-        
-        #decode silly hidden detector layer info:
+        self.detector_type = self.detector_metadata['Type']  # USED
+
+        # decode silly hidden detector layer info:
         det_l_str = self.detector_metadata['DetLayers']
         dec_det_l_str = codecs.decode(det_l_str.encode('ascii'), 'base64')
         mini_xml = objectify.fromstring(unzip_block(dec_det_l_str))
         self.detector_metadata['DetLayers'] = {}  # Overwrite with dict
         for i in mini_xml.getchildren():
-            self.detector_metadata['DetLayers'][i.tag] = dict(i.attrib)        
-        
+            self.detector_metadata['DetLayers'][i.tag] = dict(i.attrib)
+
         # map stuff from esma xml branch:
         self.esma_metadata = json.loads(json.dumps(esma_header,
                                                    cls=ObjectifyJSONEncoder))
-        #USED:
+        # USED:
         self.hv = self.esma_metadata['PrimaryEnergy']
         self.elevationAngle = self.esma_metadata['ElevationAngle']
         #self.azimutAngle = self.esma_metadata['AzimutAngle']
-        
+
         # map stuff from spectra xml branch:
         self.spectrum_metadata = json.loads(json.dumps(spectrum_header,
                                                        cls=ObjectifyJSONEncoder))
@@ -517,8 +520,8 @@ class EDXSpectrum(object):
         self.chnlCnt = self.spectrum_metadata['ChannelCount']
         self.date = self.spectrum_metadata['Date']  # Not Used?
         self.time = self.spectrum_metadata['Time']  # Not Used?
-        
-        #main data:
+
+        # main data:
         self.data = np.fromstring(str(spectrum.Channels), dtype='Q', sep=",")
         self.energy = np.arange(self.calibAbs,
                                 self.calibLin * self.chnlCnt + self.calibAbs,
@@ -606,32 +609,31 @@ class HyperHeader(object):
         semStageData = root.xpath("ClassInstance[@Type='TRTSEMStageData']")[0]
         # stage position:
         self.stage_metadata = json.loads(json.dumps(semStageData,
-            cls=ObjectifyJSONEncoder))
+                                                    cls=ObjectifyJSONEncoder))
         DSPConf = root.xpath("ClassInstance[@Type='TRTDSPConfiguration']")[0]
         self.image.dsp_metadata = json.loads(json.dumps(DSPConf,
-            cls=ObjectifyJSONEncoder))
-        
+                                                        cls=ObjectifyJSONEncoder))
+
     def get_acq_instrument_dict(self, detector=False, **kwargs):
         """return python dictionary with aquisition instrument
         mandatory data
         """
         acq_inst = {
-                    'beam_energy': self.sem.hv,
-                    'magnification': self.sem.mag,
-                    }
-        if 'Tilt' in self.stage_metadata:
-            acq_inst['tilt_stage'] = self.stage_metadata['Tilt']
+            'beam_energy': self.sem.hv,
+            'magnification': self.sem.mag,
+        }
         if detector:
             eds_metadata = self.get_spectra_metadata(**kwargs)
             acq_inst['Detector'] = {'EDS': {
-                                     #'azimuth_angle': eds_metadata.azimutAngle,
-                                     'elevation_angle': eds_metadata.elevationAngle,
-                                     'detector_type': eds_metadata.detector_type,
-                                     'real_time': self.calc_real_time()
-                                           }
-                                   }
+                #'azimuth_angle': eds_metadata.azimutAngle,
+                'elevation_angle': eds_metadata.elevationAngle,
+                'detector_type': eds_metadata.detector_type,
+                'real_time': self.calc_real_time()
+            }
+            }
             if 'AzimutAngle' in eds_metadata.esma_metadata:
-                acq_inst['Detector']['EDS']['azimuth_angle'] = eds_metadata.esma_metadata['AzimutAngle']
+                acq_inst['Detector']['EDS'][
+                    'azimuth_angle'] = eds_metadata.esma_metadata['AzimutAngle']
         return acq_inst
 
     def _set_image(self, root):
@@ -675,7 +677,7 @@ class HyperHeader(object):
 
     def _set_sum_edx(self, root):
         for i in range(self.mapping_count):
-            #self.channel_factors[i] = int(root.xpath("ChannelFactor" +
+            # self.channel_factors[i] = int(root.xpath("ChannelFactor" +
             #                                         str(i))[0])
             self.spectra_data[i] = EDXSpectrum(root.xpath("SpectrumData" +
                                                           str(i))[0].ClassInstance)
@@ -757,7 +759,7 @@ class HyperHeader(object):
         index -- index of hypermap/spectra (default 0)
         """
         return self.spectra_data[index]
-    
+
     def calc_real_time(self):
         """calculate and return real time for whole hypermap
         in seconds
@@ -800,7 +802,8 @@ class BCF_reader(SFS_reader):
         self.hypermap = {}
 
     def persistent_parse_hypermap(self, index=0, downsample=None,
-                                  cutoff_at_kV=None):
+                                  cutoff_at_kV=None,
+                                  lazy=False):
         """Parse and assign the hypermap to the HyperMap instance.
 
         Arguments:
@@ -817,13 +820,15 @@ class BCF_reader(SFS_reader):
         dwn = downsample
         hypermap = self.parse_hypermap(index=index,
                                        downsample=dwn,
-                                       cutoff_at_kV=cutoff_at_kV)
+                                       cutoff_at_kV=cutoff_at_kV,
+                                       lazy=lazy)
         self.hypermap[index] = HyperMap(hypermap,
                                         self,
                                         index=index,
                                         downsample=dwn)
 
-    def parse_hypermap(self, index=0, downsample=1, cutoff_at_kV=None):
+    def parse_hypermap(self, index=0, downsample=1, cutoff_at_kV=None,
+                       lazy=False):
         """Unpack the Delphi/Bruker binary spectral map and return
         numpy array in memory efficient way.
 
@@ -840,9 +845,10 @@ class BCF_reader(SFS_reader):
             memory requiriments. (default 1)
         cutoff_at_kV -- value in keV to truncate the array at. Helps reducing
           size of array. (default None)
+        lazy -- return dask.array (True) or numpy.array (False) (default False)
 
         Returns:
-        numpy array of bruker hypermap, with (y,x,E) shape.
+        numpy or dask array of bruker hypermap, with (y,x,E) shape.
         """
 
         if type(cutoff_at_kV) in (int, float):
@@ -852,19 +858,38 @@ class BCF_reader(SFS_reader):
             cutoff_chan = None
 
         if fast_unbcf:
-            spectrum_file = self.get_file('EDSDatabase/SpectrumData' +
-                                          str(index))
-            return unbcf_fast.parse_to_numpy(spectrum_file,
-                                             downsample=downsample,
-                                             cutoff=cutoff_chan)
+            fh = dd(self.get_file)('EDSDatabase/SpectrumData' + str(index))
+            value = dd(unbcf_fast.parse_to_numpy)(fh,
+                                                  downsample=downsample,
+                                                  cutoff=cutoff_chan,
+                                                  description=False)
+            if lazy:
+                shape, dtype = unbcf_fast.parse_to_numpy(fh.compute(),
+                                                         downsample=downsample,
+                                                         cutoff=cutoff_chan,
+                                                         description=True)
+                res = da.from_delayed(value, shape=shape, dtype=dtype)
+            else:
+                res = value.compute()
+            return res
         else:
             _logger.warning("""using slow python parser,
 this is going to take a while... please wait""")
-            return self.py_parse_hypermap(index=0,
-                                          downsample=downsample,
-                                          cutoff_at_channel=cutoff_chan)
+            value = dd(self.py_parse_hypermap)(index=0,
+                                               downsample=downsample,
+                                               cutoff_at_channel=cutoff_chan,
+                                               description=False)
+            if lazy:
+                shape, dtype = self.py_parse_hypermap(
+                    index=0, downsample=downsample,
+                    cutoff_at_channel=cutoff_chan, description=True)
+                res = da.from_delayed(value, shape=shape, dtype=dtype)
+            else:
+                res = value.compute()
+            return res
 
-    def py_parse_hypermap(self, index=0, downsample=1, cutoff_at_channel=None):
+    def py_parse_hypermap(self, index=0, downsample=1, cutoff_at_channel=None,
+                          description=False):
         """Unpack the Delphi/Bruker binary spectral map and return
         numpy array in memory efficient way using pure python implementation.
         (Slow!)
@@ -907,10 +932,11 @@ this is going to take a while... please wait""")
         buffer1 = next(iter_data)
         height, width = strct_unp('<ii', buffer1[:8])
         dwn_factor = downsample
-        total_pixels = -(-height // dwn_factor) * -(-width // dwn_factor)
-        total_channels = total_pixels * max_chan
+        shape = (-(-height // dwn_factor), -(-width // dwn_factor), max_chan)
+        if description:
+            return shape, depth
         # hyper map as very flat array:
-        vfa = np.zeros(total_channels, dtype=depth)
+        vfa = np.zeros(shape[0] * shape[1] * shape[2], dtype=depth)
         offset = 0x1A0
         size = size_chnk
         for line_cnt in range(height):
@@ -1057,7 +1083,7 @@ class HyperMap(object):
 
 # wrapper functions for hyperspy:
 def file_reader(filename, select_type=None, index=0, downsample=1,
-                cutoff_at_kV=None, instrument=None):
+                cutoff_at_kV=None, instrument=None, lazy=False):
     """Reads a bruker bcf file and loads the data into the appropriate class,
     then wraps it into appropriate hyperspy required list of dictionaries
     used by hyperspy.api.load() method.
@@ -1074,7 +1100,7 @@ def file_reader(filename, select_type=None, index=0, downsample=1,
        crop or enlarge energy range at max values. (default None)
     instrument -- str, either 'TEM' or 'SEM'. Default is None.
       """
-    
+
     # objectified bcf file:
     obj_bcf = BCF_reader(filename)
     if select_type == 'image':
@@ -1083,14 +1109,16 @@ def file_reader(filename, select_type=None, index=0, downsample=1,
         return bcf_hyperspectra(obj_bcf, index=index,
                                 downsample=downsample,
                                 cutoff_at_kV=cutoff_at_kV,
-                                instrument=instrument)
+                                instrument=instrument,
+                                lazy=lazy)
     else:
         return bcf_imagery(obj_bcf, instrument=instrument) + bcf_hyperspectra(
             obj_bcf,
             index=index,
             downsample=downsample,
             cutoff_at_kV=cutoff_at_kV,
-            instrument=instrument)
+            instrument=instrument,
+            lazy=lazy)
 
 
 def bcf_imagery(obj_bcf, instrument=None):
@@ -1099,6 +1127,7 @@ def bcf_imagery(obj_bcf, instrument=None):
     """
     imagery_list = []
     mode = _get_mode(obj_bcf, instrument=instrument)
+    mapping = get_mapping(mode)
     for img in obj_bcf.header.image.images:
         imagery_list.append(
             {'data': img.data,
@@ -1117,23 +1146,23 @@ def bcf_imagery(obj_bcf, instrument=None):
              # TEM or SEM (mode variable)
              {'Acquisition_instrument': {
                  mode: obj_bcf.header.get_acq_instrument_dict()
-                 },
-              'General': {'original_filename': obj_bcf.filename.split('/')[-1],
+             },
+                 'General': {'original_filename': obj_bcf.filename.split('/')[-1],
                              'title': img.detector_name},
-              'Sample': {'name': obj_bcf.header.name},
-              'Signal': {'signal_type': img.detector_name,
+                 'Sample': {'name': obj_bcf.header.name},
+                 'Signal': {'signal_type': img.detector_name,
                             'record_by': 'image'},
              },
-              'original_metadata': {
-                        'DSP Configuration': obj_bcf.header.image.dsp_metadata,
-                        'Stage': obj_bcf.header.stage_metadata
-                                                 }
-             })
+             'original_metadata': {
+                 'DSP Configuration': obj_bcf.header.image.dsp_metadata,
+                 'Stage': obj_bcf.header.stage_metadata
+             },
+             'mapping': mapping})
     return imagery_list
 
 
 def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
-                     instrument=None):
+                     instrument=None, lazy=False):
     """ Return hyperspy required list of dict with eds
     hyperspectra and metadata.
     """
@@ -1145,9 +1174,10 @@ If parsing is uncomfortably slow, first install cython, then reinstall hyperspy.
 For more information, check the 'Installing HyperSpy' section in the documentation.""")
         warn_once = False
     obj_bcf.persistent_parse_hypermap(index=index, downsample=downsample,
-                                      cutoff_at_kV=cutoff_at_kV)
+                                      cutoff_at_kV=cutoff_at_kV, lazy=lazy)
     eds_metadata = obj_bcf.header.get_spectra_metadata(index=index)
     mode = _get_mode(obj_bcf, instrument=instrument)
+    mapping = get_mapping(mode)
     hyperspectra = [{'data': obj_bcf.hypermap[index].hypermap,
                      'axes': [{'name': 'height',
                                'size': obj_bcf.hypermap[index].hypermap.shape[0],
@@ -1167,29 +1197,30 @@ For more information, check the 'Installing HyperSpy' section in the documentati
                      'metadata':
                      # where is no way to determine what kind of instrument was used:
                      # TEM or SEM
-        {'Acquisition_instrument': {
+                     {'Acquisition_instrument': {
                          mode: obj_bcf.header.get_acq_instrument_dict(detector=True,
                                                                       index=index)
-                         },
+                     },
         'General': {'original_filename': obj_bcf.filename.split('/')[-1],
                          'title': 'EDX',
                          'date': obj_bcf.header.date,
-                         'time': obj_bcf.header.time},
+                                  'time': obj_bcf.header.time},
         'Sample': {'name': obj_bcf.header.name,
                          'elements': sorted(list(obj_bcf.header.elements)),
                          'xray_lines': sorted(gen_elem_list(obj_bcf.header.elements))},
         'Signal': {'signal_type': 'EDS_%s' % mode,
                          'record_by': 'spectrum',
                          'quantity': 'X-rays (Counts)'}
-        },
+    },
         'original_metadata': {'Hardware': eds_metadata.hardware_metadata,
                               'Detector': eds_metadata.detector_metadata,
                               'Analysis': eds_metadata.esma_metadata,
                               'Spectrum': eds_metadata.spectrum_metadata,
                               'DSP Configuration': obj_bcf.header.image.dsp_metadata,
                               'Line counter': obj_bcf.header.line_counter,
-                              'Stage': obj_bcf.header.stage_metadata}
-        }]
+                              'Stage': obj_bcf.header.stage_metadata},
+        'mapping': mapping,
+    }]
     return hyperspectra
 
 
@@ -1222,3 +1253,18 @@ def _get_mode(obj_bcf, instrument=None):
                  "please provide the right instrument using the 'instrument' " +
                  "keyword.")
     return mode
+
+
+def get_mapping(mode):
+    return {
+        'Stage.Rotation':
+        ("Acquisition_instrument.%s.Stage.rotation" % mode, None),
+        'Stage.Tilt':
+        ("Acquisition_instrument.%s.Stage.tilt_a" % mode, None),
+        'Stage.X':
+        ("Acquisition_instrument.%s.Stage.x" % mode, None),
+        'Stage.Y':
+        ("Acquisition_instrument.%s.Stage.y" % mode, None),
+        'Stage.Z':
+        ("Acquisition_instrument.%s.Stage.z" % mode, None),
+    }

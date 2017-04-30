@@ -30,7 +30,6 @@ from hyperspy.samfire_utils.strategy import (LocalStrategy,
                                              GlobalStrategy)
 from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
 from hyperspy.samfire_utils.global_strategies import HistogramStrategy
-from hyperspy.samfire_utils.samfire_pool import SamfirePool
 
 
 _logger = logging.getLogger(__name__)
@@ -205,6 +204,7 @@ class Samfire:
 
     def _setup(self, **kwargs):
         """Set up SAMFire - configure models, set up pool if necessary"""
+        from hyperspy.samfire_utils.samfire_pool import SamfirePool
         self._figure = None
         self.metadata._gt_dump = dill.dumps(self.metadata.goodness_test)
         self._enable_optional_components()
@@ -251,7 +251,8 @@ class Samfire:
                 self.change_strategy(self._active_strategy_ind + 1)
         except KeyboardInterrupt:
             if self.pool is not None:
-                _logger.warning('Collecting already started pixels, please wait')
+                _logger.warning(
+                    'Collecting already started pixels, please wait')
                 self.pool.collect_results()
 
     def append(self, strategy):
@@ -463,14 +464,21 @@ class Samfire:
                 value_dict['fitting_kwargs'] = self._args
                 value_dict['signal.data'] = \
                     self.model.signal.data[ind + (...,)]
+                if self.model.signal._lazy:
+                    value_dict['signal.data'] = value_dict[
+                        'signal.data'].compute()
                 if self.model.signal.metadata.has_item(
                         'Signal.Noise_properties.variance'):
                     var = self.model.signal.metadata.Signal.Noise_properties.variance
                     if isinstance(var, BaseSignal):
-                        value_dict['variance.data'] = var.data[ind + (...,)]
-                if hasattr(self.model, 'low_loss') and self.model.low_loss is not None:
-                    value_dict['low_loss.data'] = \
-                        self.model.low_loss.data[ind + (...,)]
+                        dat = var.data[ind + (...,)]
+                        value_dict['variance.data'] = dat.compute(
+                        ) if var._lazy else dat
+                if hasattr(self.model,
+                           'low_loss') and self.model.low_loss is not None:
+                    dat = self.model.low_loss.data[ind + (...,)]
+                    value_dict['low_loss.data'] = dat.compute(
+                    ) if self.model.low_loss._lazy else dat
 
                 self.running_pixels.append(ind)
                 self.metadata.marker[ind] = 0.

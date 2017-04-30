@@ -16,7 +16,7 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import nose.tools as nt
+
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.signals import Signal1D
 from hyperspy.components1d import Lorentzian
@@ -24,7 +24,7 @@ from hyperspy.components1d import Lorentzian
 
 class TestRedChisq:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.shape = (7, 15)
         art_model = DictionaryTreeBrowser()
         art_model.set_item('red_chisq.data', np.ones(self.shape))
@@ -39,35 +39,35 @@ class TestRedChisq:
     def test_changing_tolerance(self):
         t = self.t
         t.tolerance = 1.0
-        nt.assert_equal(t.tolerance, 1.0)
+        assert t.tolerance == 1.0
         t.tolerance = -3.
-        nt.assert_equal(t.tolerance, 3)
+        assert t.tolerance == 3
 
     def test_index(self):
         t = self.t
         ind = (0, 0)
-        nt.assert_true(t.test(self.m, ind))
+        assert t.test(self.m, ind)
         ind = (2, 5)
-        nt.assert_false(t.test(self.m, ind))
+        assert not t.test(self.m, ind)
         ind = (3, 5)
-        nt.assert_true(t.test(self.m, ind))
+        assert t.test(self.m, ind)
         t.tolerance = 0.1
-        nt.assert_false(t.test(self.m, ind))
+        assert not t.test(self.m, ind)
 
     def test_map(self):
         t = self.t
         mask = np.ones(self.shape, dtype='bool')
         mask[2, 5] = False
         ans = t.map(self.m, mask)
-        nt.assert_true(np.all(ans == mask))
+        assert np.all(ans == mask)
         mask[0, 0] = False
         ans = t.map(self.m, mask)
-        nt.assert_true(np.all(ans == mask))
+        assert np.all(ans == mask)
 
 
 class TestInformationCriteria:
 
-    def setUp(self):
+    def setup_method(self, method):
         m = Signal1D(np.arange(30).reshape((3, 10))).create_model()
         m.append(Lorentzian())
         m.multifit(show_progressbar=False)
@@ -81,38 +81,38 @@ class TestInformationCriteria:
 
     def test_index(self):
         ind = (0,)
-        nt.assert_false(self.aic.test(self.m, ind))
-        nt.assert_false(self.aicc.test(self.m, ind))
-        nt.assert_false(self.bic.test(self.m, ind))
+        assert not self.aic.test(self.m, ind)
+        assert not self.aicc.test(self.m, ind)
+        assert not self.bic.test(self.m, ind)
         ind = (1,)
-        nt.assert_true(self.aic.test(self.m, ind))
-        nt.assert_true(self.aicc.test(self.m, ind))
-        nt.assert_true(self.bic.test(self.m, ind))
+        assert self.aic.test(self.m, ind)
+        assert self.aicc.test(self.m, ind)
+        assert self.bic.test(self.m, ind)
         ind = (2,)
-        nt.assert_true(self.aic.test(self.m, ind))
-        nt.assert_true(self.aicc.test(self.m, ind))
-        nt.assert_true(self.bic.test(self.m, ind))
+        assert self.aic.test(self.m, ind)
+        assert self.aicc.test(self.m, ind)
+        assert self.bic.test(self.m, ind)
 
         self.aic.tolerance = -50
         self.aicc.tolerance = -50
         self.bic.tolerance = -50
         ind = (1,)
-        nt.assert_false(self.aic.test(self.m, ind))
-        nt.assert_false(self.aicc.test(self.m, ind))
-        nt.assert_false(self.bic.test(self.m, ind))
+        assert not self.aic.test(self.m, ind)
+        assert not self.aicc.test(self.m, ind)
+        assert not self.bic.test(self.m, ind)
         ind = (2,)
-        nt.assert_true(self.aic.test(self.m, ind))
-        nt.assert_true(self.aicc.test(self.m, ind))
-        nt.assert_true(self.bic.test(self.m, ind))
+        assert self.aic.test(self.m, ind)
+        assert self.aicc.test(self.m, ind)
+        assert self.bic.test(self.m, ind)
 
     def test_map(self):
         mask = np.array([True, True, False])
-        nt.assert_true(np.all(self.aic.map(self.m, mask) == [0, 1, 0]))
-        nt.assert_true(np.all(self.aicc.map(self.m, mask) == [0, 1, 0]))
-        nt.assert_true(np.all(self.bic.map(self.m, mask) == [0, 1, 0]))
+        assert np.all(self.aic.map(self.m, mask) == [0, 1, 0])
+        assert np.all(self.aicc.map(self.m, mask) == [0, 1, 0])
+        assert np.all(self.bic.map(self.m, mask) == [0, 1, 0])
         self.aic.tolerance = -50
         self.aicc.tolerance = -50
         self.bic.tolerance = -50
-        nt.assert_true(np.all(self.aic.map(self.m, mask) == [0, 0, 0]))
-        nt.assert_true(np.all(self.aicc.map(self.m, mask) == [0, 0, 0]))
-        nt.assert_true(np.all(self.bic.map(self.m, mask) == [0, 0, 0]))
+        assert np.all(self.aic.map(self.m, mask) == [0, 0, 0])
+        assert np.all(self.aicc.map(self.m, mask) == [0, 0, 0])
+        assert np.all(self.bic.map(self.m, mask) == [0, 0, 0])

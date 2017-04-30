@@ -30,9 +30,16 @@ in the following sections of this chapter.
     │   │   ├── beam_current (nA)
     │   │   ├── beam_energy (keV)
     │   │   ├── convergence_angle (mrad)
-    │       ├── magnification
+    │   │   ├── magnification
     │   │   ├── microscope
-    │   │   └── tilt_stage (º)
+    │   │   ├── Stage
+    │   │   │   ├── rotation (º)
+    │   │   │   ├── tilt_a (º)
+    │   │   │   ├── tilt_b (º)
+    │   │   │   ├── x (mm)
+    │   │   │   ├── y (mm)
+    │   │   │   └── z (mm)
+    │   │   └── working_distance (mm)
     │   └── TEM
     │       ├── Detector
     │       │   ├── EDS
@@ -48,6 +55,10 @@ in the following sections of this chapter.
     │       │       ├── exposure (s)
     │       │       ├── frame_number
     │       │       └── spectrometer
+    │       ├── Biprism
+    │       │   ├── azimuth_angle (º)
+    │       │   ├── position
+    │       │   └── voltage (V)
     │       ├── acquisition_mode
     │       ├── beam_current (nA)
     │       ├── beam_energy (keV)
@@ -55,7 +66,13 @@ in the following sections of this chapter.
     │       ├── convergence_angle (mrad)
     │       ├── magnification
     │       ├── microscope
-    │       └── tilt_stage (º)
+    │       └── Stage
+    │           ├── rotation (º)
+    │           ├── tilt_a (º)
+    │           ├── tilt_b (º)
+    │           ├── x (mm)
+    │           ├── y (mm)
+    │           └── z (mm)
     ├── General
     │   ├── authors
     │   ├── date
@@ -66,6 +83,7 @@ in the following sections of this chapter.
     │   ├── time_zone
     │   └── title
     ├── Sample
+    │   ├── credits
     │   ├── description
     │   ├── elements
     │   ├── thickness
@@ -181,11 +199,6 @@ magnification
 
     The magnification.
 
-tilt_stage
-    type: Float
-
-    The tilt of the stage in degree.
-
 SEM
 ---
 
@@ -216,10 +229,42 @@ magnification
 
     The magnification.
 
-tilt_stage
+working_distance
     type: Float
 
-    The tilt of the stage in degree.
+    The working distance in mm.
+
+Stage
+-----
+tilt_a
+    type: Float
+
+    A tilt of the stage in degree.
+
+tilt_b
+    type: Float
+
+    Another tilt of the stage in degree.
+
+rotation
+    type: Float
+
+    The rotation of the stage in degree.
+
+x
+    type: Float
+
+    The position of the stage in mm along the x axis.
+
+y
+    type: Float
+
+    The position of the stage in mm along the y axis.
+
+z
+    type: Float
+
+    The position of the stage in mm along the z axis.
 
 Detector
 --------
@@ -264,7 +309,6 @@ spectrometer
 
     The spectrometer model, e.g. Gatan Enfinium ER (Model 977).
 
-
 EDS
 ^^^
 
@@ -302,8 +346,33 @@ live_time
     The time spent to record the spectrum in second, compensated for the
     dead time of the detector.
 
+Biprism
+-------
+
+This node stores parameters of biprism used in off-axis electron holography
+
+azimuth_angle (º)
+    type: Float
+
+    Rotation angle of the biprism in degree
+
+position
+    type: Str
+
+    Position of the biprism in microscope column, e.g. Selected area aperture plane
+
+voltage
+    type: Float
+
+    Voltage of electrostatic biprism in volts
+
 Sample
 ======
+
+credits
+    type: Str
+
+    Acknowledgment of sample supplier, e.g. Prepared by Putin, Vladimir V.
 
 description
     type: Str

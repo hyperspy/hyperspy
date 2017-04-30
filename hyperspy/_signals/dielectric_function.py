@@ -20,11 +20,12 @@ import numpy as np
 from scipy import constants
 from scipy.integrate import simps, cumtrapz
 
-from hyperspy._signals.complex_signal1d import ComplexSignal1D
+from hyperspy._signals.complex_signal1d import (ComplexSignal1D,
+                                                LazyComplexSignal1D)
 from hyperspy.misc.eels.tools import eels_constant
 
 
-class DielectricFunction(ComplexSignal1D):
+class DielectricFunction_mixin:
 
     _signal_type = "DielectricFunction"
     _alias_signal_types = ["dielectric function"]
@@ -117,3 +118,11 @@ class DielectricFunction(ComplexSignal1D):
         s.metadata.General.title = ("EELS calculated from " +
                                     self.metadata.General.title)
         return s
+
+
+class DielectricFunction(DielectricFunction_mixin, ComplexSignal1D):
+    pass
+
+
+class LazyDielectricFunction(DielectricFunction, LazyComplexSignal1D):
+    pass

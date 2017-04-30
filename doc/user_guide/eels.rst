@@ -108,7 +108,7 @@ EELS curve fitting
 HyperSpy makes it really easy to quantify EELS core-loss spectra by curve
 fitting as it is shown in the next example of quantification of a boron nitride
 EELS spectrum from the `The EELS Data Base
-<http://pc-web.cemes.fr/eelsdb/index.php?page=home.php>`_.
+<https://eelsdb.eu/>`_.
 
 Load the core-loss and low-loss spectra
 
@@ -213,8 +213,7 @@ Visualize the result
    :width:   500
 
    Curve fitting quantification of a boron nitride EELS core-loss spectrum from
-   `The EELS Data Base
-   <http://pc-web.cemes.fr/eelsdb/index.php?page=home.php>`_
+   `The EELS Data Base <https://eelsdb.eu>`_
 
 
 There are several methods that are only available in

@@ -18,6 +18,7 @@
 
 
 import os.path
+from os import cpu_count
 import configparser
 import logging
 
@@ -93,6 +94,11 @@ class GeneralConfig(t.HasTraits):
         desc='Using the hdf5 format is highly reccomended because is the '
         'only one fully supported. The Ripple (rpl) format it is useful '
         'to export data to other software that do not support hdf5')
+    hspy_extension = t.CBool(
+        False,
+        desc='If enabled, HyperSpy will use the "hspy" extension when saving '
+        'to HDF5 instead of the "hdf5" extension. "hspy" will be the default'
+        'extension from HyperSpy v1.3')
     interactive = t.CBool(
         True,
         desc='If enabled, HyperSpy will prompt the user when options are '
@@ -117,6 +123,15 @@ class GeneralConfig(t.HasTraits):
              'DictionaryTreeBrowser, but with double lines')
     logging_level = t.Enum(['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', ],
                            desc='the log level of all hyperspy modules.')
+    parallel = t.CBool(
+        True,
+        desc='Use parallel threads for computations by default.'
+    )
+
+    lazy = t.CBool(
+        False,
+        desc='Load data lazily by default.'
+    )
 
     def _logger_on_changed(self, old, new):
         if new is True:

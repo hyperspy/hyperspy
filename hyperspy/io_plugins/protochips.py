@@ -120,13 +120,13 @@ class ProtochipsCSV(object):
 
     def _get_mapping(self):
         mapping = {
-                "Protochips_header.Calibration file path": (
-                    "General.notes",
-                    self._parse_calibration_file_name),
-                "Protochips_header.User": (
-                    "General.authors",
-                    None),
-                }
+            "Protochips_header.Calibration file path": (
+                "General.notes",
+                self._parse_calibration_file_name),
+            "Protochips_header.User": (
+                "General.authors",
+                None),
+        }
         return mapping
 
     def _get_metadata_time_axis(self):
@@ -165,7 +165,7 @@ class ProtochipsCSV(object):
 
     def _parse_calibration_file_name(self, path):
         basename = os.path.basename(path)
-        return "Calibration file name: %s"%basename.split('\\')[-1]
+        return "Calibration file name: %s" % basename.split('\\')[-1]
 
     def _get_axes(self):
         scale = np.diff(self.time_axis[1:-2]).mean()

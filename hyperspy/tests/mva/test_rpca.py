@@ -1,15 +1,12 @@
 import numpy as np
 import scipy.linalg
 
-import nose.tools as nt
-from nose.plugins.skip import SkipTest
-
 from hyperspy.learn.rpca import rpca_godec, orpca
 
 
 class TestRPCA:
 
-    def setUp(self):
+    def setup_method(self, method):
         # Define shape etc.
         m = 256  # Dimensionality
         n = 256  # Number of samples
@@ -40,28 +37,28 @@ class TestRPCA:
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
-        nt.assert_true(normX < self.tol)
+        assert normX < self.tol
 
     def test_power(self):
         X, E, G, U, S, V = rpca_godec(self.X, rank=self.rank, power=1)
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
-        nt.assert_true(normX < self.tol)
+        assert normX < self.tol
 
     def test_iter(self):
         X, E, G, U, S, V = rpca_godec(self.X, rank=self.rank, maxiter=1e4)
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
-        nt.assert_true(normX < self.tol)
+        assert normX < self.tol
 
     def test_tol(self):
         X, E, G, U, S, V = rpca_godec(self.X, rank=self.rank, tol=1e-4)
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
-        nt.assert_true(normX < self.tol)
+        assert normX < self.tol
 
     def test_regularization(self):
         X, E, G, U, S, V = rpca_godec(
@@ -69,12 +66,12 @@ class TestRPCA:
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
-        nt.assert_true(normX < self.tol)
+        assert normX < self.tol
 
 
 class TestORPCA:
 
-    def setUp(self):
+    def setup_method(self, method):
         # Define shape etc.
         m = 256  # Dimensionality
         n = 1024  # Number of samples
@@ -98,23 +95,24 @@ class TestORPCA:
         self.X = X
         self.learning_rate = 1.1
         self.training_samples = 32
+        self.momentum = 0.1
 
         # Test tolerance
-        self.tol = 1e-3
+        self.tol = 3e-3
 
     def test_default(self):
         X, E, U, S, V = orpca(self.X, rank=self.rank)
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
-        nt.assert_true(normX < self.tol)
+        assert normX < self.tol
 
     def test_method_BCD(self):
         X, E, U, S, V = orpca(self.X, rank=self.rank, method='BCD')
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
-        nt.assert_true(normX < self.tol)
+        assert normX < self.tol
 
     def test_method_SGD(self):
         X, E, U, S, V = orpca(self.X, rank=self.rank,
@@ -122,14 +120,24 @@ class TestORPCA:
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
-        nt.assert_true(normX < self.tol)
+        assert normX < self.tol
+
+    def test_method_MomentumSGD(self):
+        X, E, U, S, V = orpca(self.X, rank=self.rank,
+                              method='MomentumSGD',
+                              learning_rate=self.learning_rate,
+                              momentum=self.momentum)
+
+        # Check the low-rank component MSE
+        normX = np.linalg.norm(X - self.A) / (self.m * self.n)
+        assert normX < self.tol
 
     def test_init(self):
         X, E, U, S, V = orpca(self.X, rank=self.rank, init='rand')
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
-        nt.assert_true(normX < self.tol)
+        assert normX < self.tol
 
     def test_training(self):
         X, E, U, S, V = orpca(self.X, rank=self.rank, init='qr',
@@ -138,7 +146,7 @@ class TestORPCA:
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         print(normX)
-        nt.assert_true(normX < self.tol)
+        assert normX < self.tol
 
     def test_regularization(self):
         X, E, U, S, V = orpca(self.X, rank=self.rank,
@@ -147,4 +155,4 @@ class TestORPCA:
 
         # Check the low-rank component MSE
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
-        nt.assert_true(normX < self.tol)
+        assert normX < self.tol

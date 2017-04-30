@@ -629,13 +629,20 @@ class ImageObject(object):
             return ""
 
     def _get_data_array(self):
+        need_to_close = False
+        if self.file.closed:
+            self.file = open(self.filename, "rb")
+            need_to_close = True
         self.file.seek(self.imdict.ImageData.Data.offset)
         count = self.imdict.ImageData.Data.size
         if self.imdict.ImageData.DataType in (27, 28):  # Packed complex
             count = int(count / 2)
-        return np.fromfile(self.file,
+        data = np.fromfile(self.file,
                            dtype=self.dtype,
                            count=count)
+        if need_to_close:
+            self.file.close()
+        return data
 
     @property
     def size(self):
@@ -659,10 +666,7 @@ class ImageObject(object):
             return self.unpack_packed_complex(data)
         elif self.imdict.ImageData.DataType in (8, 23):  # ABGR
             # Reorder the fields
-            data = np.hstack((data[["B", "G", "R"]].view(("u1", 3))[..., ::-1],
-                              data["A"].reshape(-1, 1))).view(
-                {"names": ("R", "G", "B", "A"),
-                 "formats": ("u1",) * 4}).copy()
+            data = data[['R', 'G', 'B', 'A']].copy()
         return data.reshape(self.shape, order=self.order)
 
     def unpack_new_packed_complex(self, data):
@@ -805,6 +809,8 @@ class ImageObject(object):
         except AttributeError:
             if 'Name' in ImageTags['Microscope_Info'].keys():
                 return ImageTags.Microscope_Info.Name
+            elif 'Microscope' in ImageTags['Microscope_Info'].keys():
+                return ImageTags.Microscope_Info.Microscope
 
     def _parse_string(self, tag):
         if len(tag) == 0:
@@ -816,37 +822,37 @@ class ImageObject(object):
         is_scanning = "DigiScan" in self.imdict.ImageTags.keys()
         mapping = {
             "ImageList.TagGroup0.ImageTags.DataBar.Acquisition Date": (
-                "General.date",
-                self._get_date),
+                "General.date", self._get_date),
             "ImageList.TagGroup0.ImageTags.DataBar.Acquisition Time": (
-                "General.time",
-                self._get_time),
+                "General.time", self._get_time),
             "ImageList.TagGroup0.ImageTags.Microscope Info.Voltage": (
-                "Acquisition_instrument.TEM.beam_energy",
-                lambda x: x / 1e3),
+                "Acquisition_instrument.TEM.beam_energy", lambda x: x / 1e3),
             "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage Alpha": (
-                "Acquisition_instrument.TEM.tilt_stage",
-                None),
+                "Acquisition_instrument.TEM.Stage.tilt_a", None),
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage X": (
+                "Acquisition_instrument.TEM.Stage.x", lambda x: x * 1e-3),
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage Y": (
+                "Acquisition_instrument.TEM.Stage.y", lambda x: x * 1e-3),
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage Z": (
+                "Acquisition_instrument.TEM.Stage.z", lambda x: x * 1e-3),
             "ImageList.TagGroup0.ImageTags.Microscope Info.Illumination Mode": (
-                "Acquisition_instrument.TEM.acquisition_mode",
-                self._get_mode),
+                "Acquisition_instrument.TEM.acquisition_mode", self._get_mode),
             "ImageList.TagGroup0.ImageTags.Microscope Info.Probe Current (nA)": (
-                "Acquisition_instrument.TEM.beam_current",
-                None),
+                "Acquisition_instrument.TEM.beam_current", None),
             "ImageList.TagGroup0.ImageTags.Session Info.Operator": (
-                "General.authors",
-                self._parse_string),
+                "General.authors", self._parse_string),
             "ImageList.TagGroup0.ImageTags.Session Info.Specimen": (
-                "Sample.description",
-                self._parse_string),
+                "Sample.description", self._parse_string),
         }
 
         if "Microscope_Info" in self.imdict.ImageTags.keys():
             is_TEM = is_diffraction = None
-            if "Illumination_Mode" in self.imdict.ImageTags['Microscope_Info'].keys():
+            if "Illumination_Mode" in self.imdict.ImageTags[
+                    'Microscope_Info'].keys():
                 is_TEM = (
                     'TEM' == self.imdict.ImageTags.Microscope_Info.Illumination_Mode)
-            if "Imaging_Mode" in self.imdict.ImageTags['Microscope_Info'].keys():
+            if "Imaging_Mode" in self.imdict.ImageTags[
+                    'Microscope_Info'].keys():
                 is_diffraction = (
                     'DIFFRACTION' == self.imdict.ImageTags.Microscope_Info.Imaging_Mode)
 
@@ -916,7 +922,7 @@ class ImageObject(object):
                     None),
                 "ImageList.TagGroup0.ImageTags.EELS_Spectrometer.Aperture_label": (
                     "Acquisition_instrument.TEM.Detector.EELS.aperture_size",
-                    lambda string: float(string.replace(' mm', ''))),
+                    lambda string: float(string.replace('mm', ''))),
                 "ImageList.TagGroup0.ImageTags.EELS Spectrometer.Instrument name": (
                     "Acquisition_instrument.TEM.Detector.EELS.spectrometer",
                     None),
@@ -955,13 +961,13 @@ class ImageObject(object):
             mapping.update({
                 "ImageList.TagGroup0.ImageTags.Acquisition.Parameters.Detector." +
                 "exposure_s": (
-                    "Acquisition_instrument.TEM.exposure_time",
+                    "Acquisition_instrument.TEM.Camera.exposure",
                     None),
             })
         return mapping
 
 
-def file_reader(filename, record_by=None, order=None):
+def file_reader(filename, record_by=None, order=None, lazy=False):
     """Reads a DM3 file and loads the data into the appropriate class.
     data_id can be specified to load a given image within a DM3 file that
     contains more than one dataset.
@@ -994,8 +1000,17 @@ def file_reader(filename, record_by=None, order=None):
             if image.to_spectrum is True:
                 post_process.append(lambda s: s.to_signal1D())
             post_process.append(lambda s: s.squeeze())
+            if lazy:
+                image.filename = filename
+                from dask.array import from_delayed
+                import dask.delayed as dd
+                val = dd(image.get_data, pure=True)()
+                data = from_delayed(val, shape=image.shape,
+                                    dtype=image.dtype)
+            else:
+                data = image.get_data()
             imd.append(
-                {'data': image.get_data(),
+                {'data': data,
                  'axes': axes,
                  'metadata': mp,
                  'original_metadata': dm.tags_dict,

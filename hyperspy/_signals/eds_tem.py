@@ -21,7 +21,7 @@ import traits.api as t
 import numpy as np
 from scipy import constants
 from hyperspy import utils
-from hyperspy._signals.eds import EDSSpectrum
+from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
 from hyperspy.decorators import only_interactive
 from hyperspy.gui.eds import TEMParametersUI
 from hyperspy.defaults_parser import preferences
@@ -30,12 +30,12 @@ from hyperspy.misc.eds import utils as utils_eds
 import warnings
 
 
-class EDSTEMSpectrum(EDSSpectrum):
+class EDSTEM_mixin:
 
     _signal_type = "EDS_TEM"
 
     def __init__(self, *args, **kwards):
-        EDSSpectrum.__init__(self, *args, **kwards)
+        super().__init__(*args, **kwards)
         # Attributes defaults
         if 'Acquisition_instrument.TEM.Detector.EDS' not in self.metadata:
             if 'Acquisition_instrument.SEM.Detector.EDS' in self.metadata:
@@ -53,9 +53,9 @@ class EDSTEMSpectrum(EDSSpectrum):
         mp.Signal.signal_type = "EDS_TEM"
 
         mp = self.metadata
-        if "Acquisition_instrument.TEM.tilt_stage" not in mp:
+        if "Acquisition_instrument.TEM.Stage.tilt_a" not in mp:
             mp.set_item(
-                "Acquisition_instrument.TEM.tilt_stage",
+                "Acquisition_instrument.TEM.Stage.tilt_a",
                 preferences.EDS.eds_tilt_stage)
         if "Acquisition_instrument.TEM.Detector.EDS.elevation_angle" not in mp:
             mp.set_item(
@@ -93,7 +93,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         live_time : float
             In seconds
         tilt_stage : float
-            In degree
+            The tilt of the stage in degree
         azimuth_angle : float
             In degree
         elevation_angle : float
@@ -128,7 +128,7 @@ class EDSTEMSpectrum(EDSSpectrum):
                 "Acquisition_instrument.TEM.Detector.EDS.live_time",
                 live_time)
         if tilt_stage is not None:
-            md.set_item("Acquisition_instrument.TEM.tilt_stage", tilt_stage)
+            md.set_item("Acquisition_instrument.TEM.Stage.tilt_a", tilt_stage)
         if azimuth_angle is not None:
             md.set_item(
                 "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
@@ -165,8 +165,8 @@ class EDSTEMSpectrum(EDSSpectrum):
         mapping = {
             'Acquisition_instrument.TEM.beam_energy':
             'tem_par.beam_energy',
-            'Acquisition_instrument.TEM.tilt_stage':
-            'tem_par.tilt_stage',
+            'Acquisition_instrument.TEM.Stage.tilt_a':
+            'tem_par.tilt_a',
             'Acquisition_instrument.TEM.Detector.EDS.live_time':
             'tem_par.live_time',
             'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
@@ -189,8 +189,8 @@ class EDSTEMSpectrum(EDSSpectrum):
         mapping = {
             'Acquisition_instrument.TEM.beam_energy':
             tem_par.beam_energy,
-            'Acquisition_instrument.TEM.tilt_stage':
-            tem_par.tilt_stage,
+            'Acquisition_instrument.TEM.Stage.tilt_a':
+            tem_par.tilt_a,
             'Acquisition_instrument.TEM.Detector.EDS.live_time':
             tem_par.live_time,
             'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
@@ -368,7 +368,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         elif navigation_mask is not None:
             navigation_mask = navigation_mask.data
         xray_lines = self.metadata.Sample.xray_lines
-        composition = utils.stack(intensities)
+        composition = utils.stack(intensities, lazy=False)
         if method == 'CL':
             composition.data = utils_eds.quantification_cliff_lorimer(
                 composition.data, kfactors=factors,
@@ -387,8 +387,7 @@ class EDSTEMSpectrum(EDSSpectrum):
                 cross_sections=factors,
                 dose=self._get_dose(method))
             composition.data = results[0] * 100
-            number_of_atoms = utils.stack(intensities)
-            number_of_atoms.data = results[1]
+            number_of_atoms = composition._deepcopy_with_new_data(results[1])
             number_of_atoms = number_of_atoms.split()
         else:
             raise ValueError('Please specify method for quantification,'
@@ -535,7 +534,7 @@ class EDSTEMSpectrum(EDSSpectrum):
         """
         if isinstance(navigation_mask, float):
             navigation_mask = self.vacuum_mask(navigation_mask, closing).data
-        super(EDSSpectrum, self).decomposition(
+        super().decomposition(
             normalize_poissonian_noise=normalize_poissonian_noise,
             navigation_mask=navigation_mask, *args, **kwargs)
         self.learning_results.loadings = np.nan_to_num(
@@ -654,3 +653,11 @@ class EDSTEMSpectrum(EDSSpectrum):
             return real_time * beam_current * 1e-9 / constants.e
         else:
             raise Exception('Method need to be \'zeta\' or \'cross_section\'.')
+
+
+class EDSTEMSpectrum(EDSTEM_mixin, EDSSpectrum):
+    pass
+
+
+class LazyEDSTEMSpectrum(EDSTEMSpectrum, LazyEDSSpectrum):
+    pass
