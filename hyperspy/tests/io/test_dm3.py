@@ -151,7 +151,7 @@ def test_read_EELS_metadata():
     assert_allclose(
         md.Acquisition_instrument.TEM.magnification,
         640000.0)
-    assert_allclose(md.Acquisition_instrument.TEM.Stage.tilt_a, 24.95,
+    assert_allclose(md.Acquisition_instrument.TEM.Stage.tilt_alpha, 24.95,
                     atol=1E-2)
     assert_allclose(md.Acquisition_instrument.TEM.Stage.x, -0.478619,
                     atol=1E-2)
@@ -203,7 +203,7 @@ def test_read_EDS_metadata():
         md.Acquisition_instrument.TEM.Detector.EDS.live_time, 3.806)
     assert_allclose(
         md.Acquisition_instrument.TEM.Detector.EDS.real_time, 4.233)
-    assert_allclose(md.Acquisition_instrument.TEM.Stage.tilt_a, 24.95,
+    assert_allclose(md.Acquisition_instrument.TEM.Stage.tilt_alpha, 24.95,
                     atol=1E-2)
     assert_allclose(md.Acquisition_instrument.TEM.beam_energy, 200.0)
     assert md.Acquisition_instrument.TEM.microscope == "FEI Titan"

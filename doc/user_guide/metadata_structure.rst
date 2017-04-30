@@ -34,8 +34,8 @@ in the following sections of this chapter.
     │   │   ├── microscope
     │   │   ├── Stage
     │   │   │   ├── rotation (º)
-    │   │   │   ├── tilt_a (º)
-    │   │   │   ├── tilt_b (º)
+    │   │   │   ├── tilt_alpha (º)
+    │   │   │   ├── tilt_beta (º)
     │   │   │   ├── x (mm)
     │   │   │   ├── y (mm)
     │   │   │   └── z (mm)
@@ -68,8 +68,8 @@ in the following sections of this chapter.
     │       ├── microscope
     │       └── Stage
     │           ├── rotation (º)
-    │           ├── tilt_a (º)
-    │           ├── tilt_b (º)
+    │           ├── tilt_alpha (º)
+    │           ├── tilt_beta (º)
     │           ├── x (mm)
     │           ├── y (mm)
     │           └── z (mm)
@@ -236,12 +236,12 @@ working_distance
 
 Stage
 -----
-tilt_a
+tilt_alpha
     type: Float
 
     A tilt of the stage in degree.
 
-tilt_b
+tilt_beta
     type: Float
 
     Another tilt of the stage in degree.

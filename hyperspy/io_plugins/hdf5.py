@@ -78,7 +78,7 @@ version = "3.0"
 #
 # v3.0
 # - add Camera and Stage node
-# - move tilt_stage to Stage.tilt_a
+# - move tilt_stage to Stage.tilt_alpha
 #
 # v2.2
 # - store more metadata as string: date, time, notes, authors and doi
@@ -363,13 +363,13 @@ def hdfgroup2signaldict(group, lazy=False):
 
     if current_file_version < LooseVersion("3.0"):
         if "Acquisition_instrument" in exp["metadata"]:
-            # Move tilt_stage to Stage.tilt_a
+            # Move tilt_stage to Stage.tilt_alpha
             # Move exposure time to Detector.Camera.exposure_time
             if "TEM" in exp["metadata"]["Acquisition_instrument"]:
                 tem = exp["metadata"]["Acquisition_instrument"]["TEM"]
                 exposure = None
                 if "tilt_stage" in tem:
-                    tem["Stage"] = {"tilt_a": tem["tilt_stage"]}
+                    tem["Stage"] = {"tilt_alpha": tem["tilt_stage"]}
                     del tem["tilt_stage"]
                 if "exposure" in tem:
                     exposure = "exposure"
@@ -384,11 +384,11 @@ def hdfgroup2signaldict(group, lazy=False):
                             "exposure": tem[exposure]}}
                     tem["Detector"]["Camera"] = {"exposure": tem[exposure]}
                     del tem[exposure]
-            # Move tilt_stage to Stage.tilt_a
+            # Move tilt_stage to Stage.tilt_alpha
             if "SEM" in exp["metadata"]["Acquisition_instrument"]:
                 sem = exp["metadata"]["Acquisition_instrument"]["SEM"]
                 if "tilt_stage" in sem:
-                    sem["Stage"] = {"tilt_a": sem["tilt_stage"]}
+                    sem["Stage"] = {"tilt_alpha": sem["tilt_stage"]}
                     del sem["tilt_stage"]
 
     return exp
