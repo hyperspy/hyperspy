@@ -138,47 +138,10 @@ def on_figure_window_close(figure, function):
     function : function
 
     """
-    backend = plt.get_backend()
-    if backend not in ("GTKAgg", "WXAgg", "TkAgg", "Qt4Agg"):
-        return
+    def function_wrapper(evt):
+        function()
 
-    window = figure.canvas.manager.window
-    if not hasattr(figure, '_on_window_close'):
-        figure._on_window_close = list()
-    if function not in figure._on_window_close:
-        figure._on_window_close.append(function)
-
-    if backend == 'GTKAgg':
-        def function_wrapper(*args):
-            function()
-        window.connect('destroy', function_wrapper)
-
-    elif backend == 'WXAgg':
-        # In linux the following code produces a segmentation fault
-        # so it is enabled only for Windows
-        import wx
-
-        def function_wrapper(event):
-            # When using WX window.connect does not supports multiple functions
-            for f in figure._on_window_close:
-                f()
-            plt.close(figure)
-        window.Bind(wx.EVT_CLOSE, function_wrapper)
-
-    elif backend == 'TkAgg':
-        def function_wrapper(*args):
-            # When using TK window.connect does not supports multiple functions
-            for f in figure._on_window_close:
-                f()
-        figure.canvas.manager.window.bind("<Destroy>", function_wrapper)
-
-    elif backend == 'Qt4Agg':
-        # PyQt
-        # In PyQt window.connect supports multiple functions
-        from IPython.external.qt_for_kernel import QtCore
-        window.connect(window, QtCore.SIGNAL('closing()'), function)
-    else:
-        raise AttributeError("The %s backend is not supported. " % backend)
+    figure.canvas.mpl_connect('close_event', function_wrapper)
 
 
 def plot_RGB_map(im_list, normalization='single', dont_plot=False):
@@ -203,7 +166,7 @@ def plot_RGB_map(im_list, normalization='single', dont_plot=False):
     if len(im_list) == 3:
         rgb[:, :, 2] = im_list[2].data.squeeze()
     if normalization == 'single':
-        for i in range(rgb.shape[2]):
+        for i in range(len(im_list)):
             rgb[:, :, i] /= rgb[:, :, i].max()
     elif normalization == 'global':
         rgb /= rgb.max()
@@ -980,7 +943,7 @@ def plot_spectra(
     spectra : iterable object
         Ordered spectra list to plot. If `style` is "cascade" or "mosaic"
         the spectra can have different size and axes.
-    style : {'default', 'overlap','cascade', 'mosaic', 'heatmap'}
+    style : {'default', 'overlap', 'cascade', 'mosaic', 'heatmap'}
         The style of the plot. The default is "overlap" and can be
         customized in `preferences`.
     color : matplotlib color or a list of them or `None`
@@ -1050,7 +1013,8 @@ def plot_spectra(
                              "string or a list of valid matplotlib colors.")
     else:
         if LooseVersion(mpl.__version__) >= "1.5.3":
-            color = itertools.cycle(plt.rcParams['axes.prop_cycle'].by_key()["color"])
+            color = itertools.cycle(
+                plt.rcParams['axes.prop_cycle'].by_key()["color"])
         else:
             color = itertools.cycle(plt.rcParams['axes.color_cycle'])
 
@@ -1178,8 +1142,6 @@ def animate_legend(figure='last'):
         figure.canvas.draw()
 
     figure.canvas.mpl_connect('pick_event', onpick)
-
-    plt.show()
 
 
 def plot_histograms(signal_list,

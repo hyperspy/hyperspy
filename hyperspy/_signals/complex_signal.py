@@ -16,91 +16,81 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+from functools import wraps
 
 import numpy as np
-import h5py
+import dask.array as da
 
 from hyperspy.signal import BaseSignal
+from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
 
 
-class ComplexSignal(BaseSignal):
+def format_title(thing):
+    def title_decorator(func):
+        @wraps(func)
+        def signal_wrapper(*args, **kwargs):
+            signal = func(*args, **kwargs)
+            if signal.metadata.General.title:
+                title = signal.metadata.General.title
+            else:
+                title = 'Untitled Signal'
+            signal.metadata.General.title = thing + '({})'.format(title)
+            return signal
+        return signal_wrapper
+    return title_decorator
+
+
+class ComplexSignal_mixin:
 
     """BaseSignal subclass for complex data."""
 
     _dtype = "complex"
 
-    @property
-    def real(self):
-        """Get/set the real part of the data. Returns an appropriate HyperSpy signal."""
-        real = self._deepcopy_with_new_data(np.real(self.data))
-        if real.metadata.General.title:
-            title = real.metadata.General.title
-        else:
-            title = 'Untitled Signal'
-        real.metadata.General.title = 'real({})'.format(title)
+    @format_title('real')
+    def _get_real(self):
+        real = self._deepcopy_with_new_data(self.data.real)
         real._assign_subclass()
         return real
 
-    @real.setter
-    def real(self, real):
-        if isinstance(real, BaseSignal):
-            self.real.isig[:] = real
-        else:
-            self.data.real[:] = real
+    real = property(lambda s: s._get_real(),
+                    lambda s, v: s._set_real(v),
+                    doc="""Get/set the real part of the data. Returns an
+                    appropriate HyperSpy signal."""
+                    )
 
-    @property
-    def imag(self):
-        """Get/set imaginary part of the data. Returns an appropriate HyperSpy signal."""
-        imag = self._deepcopy_with_new_data(np.imag(self.data))
-        if imag.metadata.General.title:
-            title = imag.metadata.General.title
-        else:
-            title = 'Untitled Signal'
-        imag.metadata.General.title = 'imag({})'.format(title)
+    @format_title('imag')
+    def _get_imag(self):
+        imag = self._deepcopy_with_new_data(self.data.imag)
         imag._assign_subclass()
         return imag
 
-    @imag.setter
-    def imag(self, imag):
-        if isinstance(imag, BaseSignal):
-            self.imag.isig[:] = imag
-        else:
-            self.data.imag[:] = imag
+    imag = property(lambda s: s._get_imag(),
+                    lambda s, v: s._set_imag(v),
+                    doc="""Get/set imaginary part of the data. Returns an
+                    appropriate HyperSpy signal."""
+                    )
 
-    @property
-    def amplitude(self):
-        """Get/set the amplitude of the data. Returns an appropriate HyperSpy signal."""
-        amplitude = np.abs(self)
+    def _get_amplitude(self, amplitude):
         amplitude._assign_subclass()
         return amplitude
 
-    @amplitude.setter
-    def amplitude(self, amplitude):
-        if isinstance(amplitude, BaseSignal):
-            self.isig[:] = amplitude * np.exp(self.angle() * 1j)
-        else:
-            self.data[:] = amplitude * np.exp(1j * np.angle(self.data))
+    amplitude = property(lambda s: s._get_amplitude(),
+                         lambda s, v: s._set_amplitude(v),
+                         doc="""Get/set the amplitude of the data. Returns an
+                         appropriate HyperSpy signal.""")
 
-    @property
-    def phase(self):
-        """Get/set the phase of the data. Returns an appropriate HyperSpy signal."""
-        phase = self._deepcopy_with_new_data(np.angle(self.data))
-        if phase.metadata.General.title:
-            title = phase.metadata.General.title
-        else:
-            title = 'Untitled Signal'
-        phase.metadata.General.title = 'phase({})'.format(title)
+    @format_title('phase')
+    def _get_phase(self, phase):
         phase._assign_subclass()
         return phase
 
-    @phase.setter
-    def phase(self, phase):
-        if isinstance(phase, BaseSignal):
-            self.isig[:] = np.abs(self) * np.exp(phase * 1j)
-        else:
-            self.data[:] = np.abs(self.data) * np.exp(1j * phase)
+    phase = property(lambda s: s._get_phase(),
+                     lambda s, v: s._set_phase(v),
+                     doc="""Get/set the phase of the data. Returns an appropriate
+                     HyperSpy signal."""
+                     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -123,7 +113,8 @@ class ComplexSignal(BaseSignal):
             raise AttributeError(
                 'Complex data can only be converted into other complex dtypes!')
 
-    def angle(self, deg=False):
+    @format_title('angle')
+    def angle(self, angle, deg=False):
         """Return the angle (also known as phase or argument). If the data is real, the angle is 0
         for positive values and 2$\pi$ for negative values.
 
@@ -139,17 +130,11 @@ class ComplexSignal(BaseSignal):
             with dtype as numpy.float64.
 
         """
-        sig = self._deepcopy_with_new_data(np.angle(self.data, deg))
-        sig.set_signal_type("")
-        if sig.metadata.General.title:
-            title = sig.metadata.General.title
-        else:
-            title = 'Untitled Signal'
-        sig.metadata.General.title = 'angle({})'.format(title)
-        return sig
+        angle.set_signal_type('')
+        return angle
 
     def unwrapped_phase(self, wrap_around=False, seed=None,
-                        show_progressbar=None):
+                        show_progressbar=None, parallel=None):
         """Return the unwrapped phase as an appropriate HyperSpy signal.
 
         Parameters
@@ -166,6 +151,8 @@ class ComplexSignal(BaseSignal):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        parallel : {Bool, None, int}
+            Perform the operation parallely
 
         Returns
         -------
@@ -184,7 +171,8 @@ class ComplexSignal(BaseSignal):
         from skimage.restoration import unwrap_phase
         phase = self.phase
         phase.map(unwrap_phase, wrap_around=wrap_around, seed=seed,
-                  show_progressbar=show_progressbar)
+                  show_progressbar=show_progressbar, ragged=False,
+                  parallel=parallel)
         phase.metadata.General.title = 'unwrapped {}'.format(
             phase.metadata.General.title)
         return phase  # Now unwrapped!
@@ -227,3 +215,89 @@ class ComplexSignal(BaseSignal):
             raise ValueError('{}'.format(representation) +
                              'is not a valid input for representation (use "cartesian" or "polar")!')
     plot.__doc__ %= BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING
+
+
+class ComplexSignal(ComplexSignal_mixin, BaseSignal):
+
+    def _get_phase(self):
+        phase = self._deepcopy_with_new_data(np.angle(self.data))
+        return super()._get_phase(phase)
+
+    def _get_amplitude(self):
+        amplitude = np.abs(self)
+        return super()._get_amplitude(amplitude)
+
+    def _set_real(self, real):
+        if isinstance(real, BaseSignal):
+            self.real.isig[:] = real
+        else:
+            self.data.real[:] = real
+        self.events.data_changed.trigger(self)
+
+    def _set_imag(self, imag):
+        if isinstance(imag, BaseSignal):
+            self.imag.isig[:] = imag
+        else:
+            self.data.imag[:] = imag
+        self.events.data_changed.trigger(self)
+
+    def _set_amplitude(self, amplitude):
+        if isinstance(amplitude, BaseSignal):
+            self.isig[:] = amplitude * np.exp(self.angle() * 1j)
+        else:
+            self.data[:] = amplitude * np.exp(1j * np.angle(self.data))
+        self.events.data_changed.trigger(self)
+
+    def _set_phase(self, phase):
+        if isinstance(phase, BaseSignal):
+            self.isig[:] = np.abs(self) * np.exp(phase * 1j)
+        else:
+            self.data[:] = np.abs(self.data) * np.exp(1j * phase)
+        self.events.data_changed.trigger(self)
+
+    def angle(self, deg=False):
+        angle = self._deepcopy_with_new_data(np.angle(self.data, deg))
+        return super().angle(angle, deg=deg)
+    angle.__doc__ = ComplexSignal_mixin.angle.__doc__
+
+
+class LazyComplexSignal(ComplexSignal, LazySignal):
+
+    @format_title('absolute')
+    def _get_amplitude(self):
+        amplitude = da.numpy_compat.builtins.abs(self)
+        return super(ComplexSignal, self)._get_amplitude(amplitude)
+
+    def _get_phase(self):
+        phase = self._deepcopy_with_new_data(da.angle(self.data))
+        return super(ComplexSignal, self)._get_phase(phase)
+
+    def _set_real(self, real):
+        if isinstance(real, BaseSignal):
+            real = real.data.real
+        self.data = 1j * self.data.imag + real
+        self.events.data_changed.trigger(self)
+
+    def _set_imag(self, imag):
+        if isinstance(imag, BaseSignal):
+            imag = imag.data.real
+        self.data = self.data.real + 1j * imag
+        self.events.data_changed.trigger(self)
+
+    def _set_amplitude(self, amplitude):
+        if isinstance(amplitude, BaseSignal):
+            amplitude = amplitude.data.real
+        self.data = amplitude * da.exp(1j * da.angle(self.data))
+        self.events.data_changed.trigger(self)
+
+    def _set_phase(self, phase):
+        if isinstance(phase, BaseSignal):
+            phase = phase.data.real
+        self.data = da.numpy_compat.builtins.abs(self.data) * \
+            da.exp(1j * phase)
+        self.events.data_changed.trigger(self)
+
+    def angle(self, deg=False):
+        angle = self._deepcopy_with_new_data(da.angle(self.data, deg))
+        return super(ComplexSignal, self).angle(angle, deg=deg)
+    angle.__doc__ = ComplexSignal_mixin.angle.__doc__

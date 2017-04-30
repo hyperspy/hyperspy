@@ -141,15 +141,19 @@ class Event(object):
 
         Example usage:
         --------------
+            >>> from hyperspy.events import Event
             >>> Event()
-            <hyperspy.events.Event: {}
+            <hyperspy.events.Event: set()>
             >>> Event(doc="This event has a docstring!").__doc__
             'This event has a docstring!'
             >>> e1 = Event()
             >>> e2 = Event(arguments=('arg1', ('arg2', None)))
             >>> e1.trigger(arg1=12, arg2=43, arg3='str', arg4=4.3)  # Can trigger with whatever
             >>> e2.trigger(arg1=11, arg2=22, arg3=3.4)
-            TypeError: trigger() takes at most 3 arguments (4 given)
+            Traceback (most recent call last):
+                ...
+            TypeError: trigger() got an unexpected keyword argument 'arg3'
+
         """
         self.__doc__ = doc
         self._arguments = tuple(arguments) if arguments else None
@@ -224,7 +228,8 @@ class Event(object):
         ...     # These would normally both trigger myevent:
         ...     obj.val_a = a
         ...     obj.val_b = b
-        >>> # Trigger manually once:
+
+        Trigger manually once:
         >>> obj.events.myevent.trigger()
 
         See also

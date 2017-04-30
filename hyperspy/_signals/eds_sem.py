@@ -19,17 +19,17 @@
 
 import traits.api as t
 
-from hyperspy._signals.eds import EDSSpectrum
+from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
 from hyperspy.defaults_parser import preferences
 from hyperspy.decorators import only_interactive
 
 
-class EDSSEMSpectrum(EDSSpectrum):
+class EDSSEM_mixin:
 
     _signal_type = "EDS_SEM"
 
     def __init__(self, *args, **kwards):
-        EDSSpectrum.__init__(self, *args, **kwards)
+        super().__init__(*args, **kwards)
         # Attributes defaults
         if 'Acquisition_instrument.SEM.Detector.EDS' not in self.metadata:
             if 'Acquisition_instrument.TEM' in self.metadata:
@@ -117,9 +117,9 @@ class EDSSEMSpectrum(EDSSpectrum):
 
         """
         mp = self.metadata
-        if "Acquisition_instrument.SEM.tilt_stage" not in mp:
+        if "Acquisition_instrument.SEM.Stage.tilt_a" not in mp:
             mp.set_item(
-                "Acquisition_instrument.SEM.tilt_stage",
+                "Acquisition_instrument.SEM.Stage.tilt_a",
                 preferences.EDS.eds_tilt_stage)
         if "Acquisition_instrument.SEM.Detector.EDS.elevation_angle" not in mp:
             mp.set_item(
@@ -186,7 +186,7 @@ class EDSSEMSpectrum(EDSSpectrum):
                 "Acquisition_instrument.SEM.Detector.EDS.live_time",
                 live_time)
         if tilt_stage is not None:
-            md.set_item("Acquisition_instrument.SEM.tilt_stage", tilt_stage)
+            md.set_item("Acquisition_instrument.SEM.Stage.tilt_a", tilt_stage)
         if azimuth_angle is not None:
             md.set_item(
                 "Acquisition_instrument.SEM.Detector.EDS.azimuth_angle",
@@ -211,7 +211,7 @@ class EDSSEMSpectrum(EDSSpectrum):
         tem_par = SEMParametersUI()
         mapping = {
             'Acquisition_instrument.SEM.beam_energy': 'tem_par.beam_energy',
-            'Acquisition_instrument.SEM.tilt_stage': 'tem_par.tilt_stage',
+            'Acquisition_instrument.SEM.Stage.tilt_a': 'tem_par.Stage.tilt_a',
             'Acquisition_instrument.SEM.Detector.EDS.live_time':
             'tem_par.live_time',
             'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle':
@@ -228,7 +228,7 @@ class EDSSEMSpectrum(EDSSpectrum):
 
         mapping = {
             'Acquisition_instrument.SEM.beam_energy': tem_par.beam_energy,
-            'Acquisition_instrument.SEM.tilt_stage': tem_par.tilt_stage,
+            'Acquisition_instrument.SEM.Stage.tilt_a': tem_par.tilt_stage,
             'Acquisition_instrument.SEM.Detector.EDS.live_time':
             tem_par.live_time,
             'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle':
@@ -304,3 +304,11 @@ class EDSSEMSpectrum(EDSSpectrum):
                             auto_add_lines=auto_add_lines,
                             *args, **kwargs)
         return model
+
+
+class EDSSEMSpectrum(EDSSEM_mixin, EDSSpectrum):
+    pass
+
+
+class LazyEDSSEMSpectrum(EDSSEMSpectrum, LazyEDSSpectrum):
+    pass

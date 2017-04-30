@@ -30,14 +30,6 @@ from hyperspy._signals.eels import EELSSpectrum
 _logger = logging.getLogger(__name__)
 
 
-def _give_me_delta(master, slave):
-    return lambda x: x + slave - master
-
-
-def _give_me_idelta(master, slave):
-    return lambda x: x - slave + master
-
-
 class EELSModel(Model1D):
 
     """Build an EELS model
@@ -74,6 +66,7 @@ class EELSModel(Model1D):
                  auto_add_edges=True, ll=None,
                  GOS=None, dictionary=None):
         Model1D.__init__(self, signal1D)
+        self.signal1D = signal1D
         self._suspend_auto_fine_structure_width = False
         self.convolved = False
         self.low_loss = ll
@@ -100,7 +93,12 @@ class EELSModel(Model1D):
     def signal1D(self, value):
         if isinstance(value, EELSSpectrum):
             self._signal = value
-            self.signal._are_microscope_parameters_missing()
+            if self.signal._are_microscope_parameters_missing():
+                raise ValueError(
+                    "The required microscope parameters are not defined in "
+                    "the EELS spectrum signal metadata. Use "
+                    "``set_microscope_parameters`` to set them."
+                )
         else:
             raise ValueError(
                 "This attribute can only contain an EELSSpectrum "
@@ -207,13 +205,9 @@ class EELSModel(Model1D):
                 edge = EELSCLEdge(e_shells.pop(), GOS=self.GOS)
 
                 edge.intensity.twin = master_edge.intensity
-                delta = _give_me_delta(master_edge.GOS.onset_energy,
-                                       edge.GOS.onset_energy)
-                idelta = _give_me_idelta(master_edge.GOS.onset_energy,
-                                         edge.GOS.onset_energy)
-                edge.onset_energy.twin_function = delta
-                edge.onset_energy.twin_inverse_function = idelta
                 edge.onset_energy.twin = master_edge.onset_energy
+                edge.onset_energy.twin_function_expr = "x + {}".format(
+                    (edge.GOS.onset_energy - master_edge.GOS.onset_energy))
                 edge.free_onset_energy = False
                 self.append(edge)
 

@@ -102,7 +102,7 @@ def file_reader(filename, *args, **kwds):
     metadata = {'General': {'original_filename': os.path.split(filename)[1],
                             'date': date,
                             'time': time},
-                "Signal": {'signal_type': "", 
+                "Signal": {'signal_type': "",
                            'quantity': "Temperature (Celsius)"}, }
 
     axes = [{

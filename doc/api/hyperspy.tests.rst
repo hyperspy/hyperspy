@@ -45,14 +45,6 @@ hyperspy.tests.test_interactive module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.tests.test_travis module
----------------------------------
-
-.. automodule:: hyperspy.tests.test_travis
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 
 Module contents
 ---------------
