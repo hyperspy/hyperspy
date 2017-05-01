@@ -78,19 +78,20 @@ def rebin(a, scale, crop=True):
     Parameters
     ----------
     a : numpy array
-    scale : a list of floats
-        for each dimension specify the new:old pixel ratio
-        e.g. a ratio of 1 is no binning
-             a ratio of 2 means that each pixel in the new spectrum is
-             twice the size of the pixels in the old spectrum.
-    crop_str : {'True'}, optional
-        when binning by a non-integer number of pixels it is likely that
-         the final row in each dimension contains less than the full quota to
-         fill one pixel.
-         e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
-         pixels and one row containing only 0.8 pixels worth. Selection of
-         crop_str = 'True' or crop = 'False' determines whether or not this
-         'black' line is cropped from the final binned array or not.
+    scale : a list of floats or integer
+        For each dimension specify the new:old pixel ratio, e.g. a ratio of 1 
+        is no binning and a ratio of 2 means that each pixel in the new 
+        spectrum is twice the size of the pixels in the old spectrum.
+        The length of the list should match the dimension of the numpy array.
+    crop: bool, default True
+        When binning by a non-integer number of pixels it is likely that
+        the final row in each dimension contains less than the full quota to
+        fill one pixel.
+
+        e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
+        pixels and one row containing only 0.8 pixels worth. Selection of
+        crop='True' or crop='False' determines whether or not this
+        'black' line is cropped from the final binned array or not.
 
         *Please note that if crop=False is used, the final row in each
         dimension may appear black, if a fractional number of pixels are left
@@ -139,7 +140,7 @@ def rebin(a, scale, crop=True):
                                               for i, f in enumerate(scale)})
             # we provide slightly better error message in hypersy context
             except ValueError:
-                raise ValueError("Rebinning does not allign with data dask chunks."
+                raise ValueError("Rebinning does not align with data dask chunks."
                                  " Rebin fewer dimensions at a time to avoid this"
                                  " error")
 
@@ -196,41 +197,39 @@ def _linear_bin_loop(result, data, scale):
 def _linear_bin(dat, scale, crop=True):
     """
     Binning of the spectrum image by a non-integer pixel value.
+    
     Parameters
     ----------
-    originalSpectrum : numpy.array,
-        or the s.data, where s is a signal array.
+    originalSpectrum : numpy.array
     scale : a list of floats
-        for each dimension specify the new:old pixel ratio
-        e.g. a ratio of 1 is no binning
-             a ratio of 2 means that each pixel in the new spectrum is
-             twice the size of the pixels in the old spectrum.
-    crop_str : {'True'}, optional
-        when binning by a non-integer number of pixels it is likely that
-         the final row in each dimension contains less than the full quota to
-         fill one pixel.
-         e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
-         pixels and one row containing only 0.8 pixels worth. Selection of
-         crop_str = 'True' or crop = 'False' determines whether or not this
-         'black' line is cropped from the final binned array or not.
+        For each dimension specify the new:old pixel ratio,
+        e.g. a ratio of 1 is no binning; a ratio of 2 means that each pixel in
+        the new spectrum is twice the size of the pixels in the old spectrum.
+        The length of the list should match the dimensional of the data.
+    crop : bool, default True
+        When binning by a non-integer number of pixels it is likely that
+        the final row in each dimension contains less than the full quota to
+        fill one pixel.
+        e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
+        pixels and one row containing only 0.8 pixels worth. Selection of
+        crop='True' or crop='False' determines whether or not this 'black' 
+        line is cropped from the final binned array or not.
 
         *Please note that if crop=False is used, the final row in each
         dimension may appear black, if a fractional number of pixels are left
-        over. It can be removed but has been left to preserve total counts
-        before and after binning.*
+        over. It can be removed but has been left optional to preserve total
+        counts before and after binning.*
 
     Returns
     -------
     np.array
-        with new dimensions width/scale for each
-        dimension in the data.
+        with new dimensions width/scale for each dimension in the data.
     """
     if len(dat.shape) != len(scale):
         raise ValueError(
-            'The list of bins must match the number of dimensions, including the\
-            energy dimension.\
-            In order to not bin in any of these dimensions specifically, \
-            simply set the value in shape to 1')
+            'The list of bins must match the number of dimensions, including',
+            'the energy dimension. In order to not bin in any of these ',
+            'dimensions specifically, simply set the value in shape to 1')
 
     if not hasattr(_linear_bin_loop, "__numba__"):
         _logger.warning("Install numba to speed up the computation of `rebin`")

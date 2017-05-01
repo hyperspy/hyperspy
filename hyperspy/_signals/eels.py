@@ -36,6 +36,7 @@ from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
 from hyperspy.misc.utils import without_nans
 
+
 _logger = logging.getLogger(__name__)
 
 
@@ -1331,68 +1332,32 @@ class EELSSpectrum_mixin:
                           dictionary=dictionary)
         return model
 
-    def rebin(self, scale, crop=True):
+    def rebin(self, scale, crop=True, out=None):
         """
-        Binning of the spectrum image by a non-integer pixel value.
-
-        Parameters
-        ----------
-        scale : a list of floats
-            for each dimension specify the new:old pixel ratio
-            e.g. a ratio of 1 is no binning
-                 a ratio of 2 means that each pixel in the new spectrum is
-                 twice the size of the pixels in the old spectrum.
-        crop_str : {'False'}, optional
-            when binning by a non-integer number of pixels it is likely that
-             the final row in each dimension contains less than the full quota to
-             fill one pixel.
-             e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
-             pixels and one row containing only 0.8 pixels worth. Selection of
-             crop_str = 'True' or crop = 'False' determines whether or not this
-             'black' line is cropped from the final binned array or not.
-
-            *Please note that if crop=False is used, the final row in each
-            dimension may appear black, if a fractional number of pixels are left
-            over. It can be removed but has been left to preserve total counts
-            before and after binning.*
-
-        Returns
-        -------
-        s : Signal subclass
-
-        Examples
-        --------
-        >>> spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
-        >>> spectrum.data[1, 2, 9] = 5
-        >>> print(spectrum)
-        <EELSpectrum, title: dimensions: (4, 4|10)>
-        >>> print ('Sum = ', sum(sum(sum(spectrum.data))))
-        Sum = 164.0
-        >>> scale = [2, 2, 5]
-        >>> test = spectrum.rebin(scale)
-        >>> print(test)
-        <EELSSpectrum, title: dimensions (2, 2|2)>
-        >>> print('Sum = ', sum(sum(sum(test.data))))
-        Sum =  164.0
+        %s
         """
 
-        spectrum = self.data
-        m = super().rebin(scale, crop)
-
-        m = self._deepcopy_with_new_data(newSpectrum)
+        m = super().rebin(scale, crop=crop, out=out)
+        m = out or m
 
         m.get_dimensions_from_data()
         if "Acquisition_instrument.TEM.Detector.EELS.dwell_time" in m.metadata:
             for i, t in enumerate(m.axes_manager.navigation_axes):
                 m.metadata.Acquisition_instrument.TEM.Detector.EELS.dwell_time\
                     *= scale[i]
-
         if "Acquisition_instrument.TEM.Detector.EELS.exposure" in m.metadata:
             for i, t in enumerate(m.axes_manager.navigation_axes):
                 m.metadata.Acquisition_instrument.TEM.Detector.EELS.dwell_time\
                     *= scale[i]
+        if out is None:
+            return m
+        else:
+            out.events.data_changed.trigger(obj=out)
 
         return m
+
+    rebin.__doc__ = hyperspy.signal.BaseSignal.rebin.__doc__
+
 
 class EELSSpectrum(EELSSpectrum_mixin, Signal1D):
 

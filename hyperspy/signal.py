@@ -41,7 +41,6 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.external.progressbar import progressbar
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
-from hyperspy.misc import array_tools
 from hyperspy.misc import rgb_tools
 from hyperspy.misc.utils import underline, isiterable
 from hyperspy.external.astroML.histtools import histogram
@@ -51,13 +50,12 @@ from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC)
-from hyperspy.docstrings.plot import (
-    BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
+from hyperspy.docstrings.plot import BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
                                         broadcast_signals)
-import warnings
+
 
 _logger = logging.getLogger(__name__)
 
@@ -2187,32 +2185,33 @@ class BaseSignal(FancySlicing,
             data = self.data.transpose(nav_iia_r + sig_iia_r)
             return data
 
-
-    def rebin(self, scale, out=None, crop=True):
+    def rebin(self, scale, crop=True, out=None):
         """
-        Binning of the spectrum image by a non-integer pixel value.
+        Binning of the spectrum image by a integer or a float pixel value.
 
         Parameters
         ----------
-        scale : a list of floats
-            for each dimension specify the new:old pixel ratio
-            e.g. a ratio of 1 is no binning
-                 a ratio of 2 means that each pixel in the new spectrum is
-                 twice the size of the pixels in the old spectrum.
-        crop_str : {'False'}, optional
-            when binning by a non-integer number of pixels it is likely that
-             the final row in each dimension contains less than the full quota to
-             fill one pixel.
-             e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
-             pixels and one row containing only 0.8 pixels worth. Selection of
-             crop_str = 'True' or crop = 'False' determines whether or not this
-             'black' line is cropped from the final binned array or not.
+        scale : a list of floats or integers
+            For each dimension specify the new:old pixel ratio, e.g. a ratio of 1 
+            is no binning and a ratio of 2 means that each pixel in the new 
+            spectrum is twice the size of the pixels in the old spectrum.
+            The length of the list should match the dimension of the data.
+        crop : bool, default True
+            When binning by a non-integer number of pixels it is likely that
+            the final row in each dimension contains less than the full quota to
+            fill one pixel.
+
+            e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
+            pixels and one row containing only 0.8 pixels worth. Selection of
+            crop='True' or crop='False' determines whether or not this
+            'black' line is cropped from the final binned array or not.
 
             *Please note that if crop=False is used, the final row in each
             dimension may appear black, if a fractional number of pixels are left
             over. It can be removed but has been left to preserve total counts
             before and after binning.*
         %s
+
         Returns
         -------
         s : Signal subclass
@@ -2263,7 +2262,7 @@ class BaseSignal(FancySlicing,
         else:
             out.events.data_changed.trigger(obj=out)
 
-    rebin.__doc__ %= OUT_ARG
+    rebin.__doc__ %= (OUT_ARG)
 
     def split(self,
               axis='auto',
@@ -4162,12 +4161,14 @@ class BaseSignal(FancySlicing,
 
         Adding to a 1D signal, where the point will change
         when the navigation index is changed
+
         >>> s = hs.signals.Signal1D(np.random.random((3, 100)))
         >>> marker = hs.markers.point((19, 10, 60), (0.2, 0.5, 0.9))
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
         >>> s.plot(plot_markers=True) #doctest: +SKIP
 
         Add permanent marker
+
         >>> s = hs.signals.Signal2D(np.random.random((100, 100)))
         >>> marker = hs.markers.point(50, 60)
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
@@ -4175,12 +4176,14 @@ class BaseSignal(FancySlicing,
 
         Add permanent marker which changes with navigation position, and
         do not add it to a current plot
+
         >>> s = hs.signals.Signal2D(np.random.randint(10, size=(3, 100, 100)))
         >>> marker = hs.markers.point((10, 30, 50), (30, 50, 60), color='red')
         >>> s.add_marker(marker, permanent=True, plot_marker=False)
         >>> s.plot(plot_markers=True) #doctest: +SKIP
 
         Removing a permanent marker
+
         >>> s = hs.signals.Signal2D(np.random.randint(10, size=(100, 100)))
         >>> marker = hs.markers.point(10, 60, color='red')
         >>> marker.name = "point_marker"
@@ -4188,6 +4191,7 @@ class BaseSignal(FancySlicing,
         >>> del s.metadata.Markers.point_marker
 
         Adding many markers as a list
+
         >>> from numpy.random import random
         >>> s = hs.signals.Signal2D(np.random.randint(10, size=(100, 100)))
         >>> marker_list = []

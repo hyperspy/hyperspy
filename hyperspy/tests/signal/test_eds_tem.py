@@ -329,6 +329,7 @@ class Test_eds_markers:
             ['Zn_Ka', 'Zn_La'])
 
 
+@lazifyTestClass
 class Test_linear_bin:
 
     def test_linear_bin1(self):
@@ -352,6 +353,15 @@ class Test_linear_bin:
         spectrum = EDSTEMSpectrum(np.ones([4, 1, 1]))
         spectrum.data[2][0] = 5
         res = spectrum.rebin([0.4, 1, 1])
+        np.testing.assert_allclose(res.data, [[[ 0.4]],
+                [[ 0.4]],[[ 0.4]],[[ 0.4]],[[ 0.4]],[[ 2. ]],
+                [[ 2. ]],[[ 1.2]],[[ 0.4]],[[ 0.4]]], atol=1e-3)
+
+    def test_linear_bin4_out(self):
+        spectrum = EDSTEMSpectrum(np.ones([4, 1, 1]))
+        spectrum.data[2][0] = 5
+        res = EDSTEMSpectrum(np.zeros([10, 1, 1]))
+        spectrum.rebin([0.4, 1, 1], out=res)
         np.testing.assert_allclose(res.data, [[[ 0.4]],
                 [[ 0.4]],[[ 0.4]],[[ 0.4]],[[ 0.4]],[[ 2. ]],
                 [[ 2. ]],[[ 1.2]],[[ 0.4]],[[ 0.4]]], atol=1e-3)

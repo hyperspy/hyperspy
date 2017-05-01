@@ -68,16 +68,16 @@ set when making the :py:class:`~.signal.BaseSignal` object.
 
 .. code-block:: python
 
-    >>> dict0 = {'size': 10, 'name':'Ax0', 'units':'A', 'scale':0.2, 'offset':1}
-    >>> dict1 = {'size': 20, 'name':'Ax1', 'units':'B', 'scale':0.1, 'offset':2}
+    >>> dict0 = {'size': 10, 'name':'Axis0', 'units':'A', 'scale':0.2, 'offset':1}
+    >>> dict1 = {'size': 20, 'name':'Axis1', 'units':'B', 'scale':0.1, 'offset':2}
     >>> s = hs.signals.BaseSignal(np.random.random((10,20)), axes=[dict0, dict1])
     >>> s.axes_manager
     <Axes manager, axes: (|20, 10)>
 		Name |   size |  index |  offset |   scale |  units
     ================ | ====== | ====== | ======= | ======= | ======
     ---------------- | ------ | ------ | ------- | ------- | ------
-	       Axes1 |     20 |        |       2 |     0.1 |      B
-	       Axes0 |     10 |        |       1 |     0.2 |      A
+	       Axis1 |     20 |        |       2 |     0.1 |      B
+	       Axis0 |     10 |        |       1 |     0.2 |      A
 
 This also applies to the :py:attr:`~.signal.BaseSignal.metadata`.
 
@@ -910,13 +910,16 @@ Rebinning of the spectral data will be carried out by two methods.
 The fast method will run if the new shape is a divisor of the original shape.
 Otherwise a slower linear interpolation method will be applied. Both methods are incorporated into the :py:meth:`~.signals.eds.rebin` function.
 Example using fast binning:
+
 .. code-block:: python
 
     >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
     >>> print(s)
     <EDSSEMSpectrum, title: EDS SEM Signal1D, dimensions: (|1024)>
-    >>> print(s.rebin((2)))
+    >>> print(s.rebin([2]))
     <EDSSEMSpectrum, title: EDS SEM Signal1D, dimensions: (|512)>
+
+Example of binning using linear interpolation:
 
 .. code-block:: python
 
