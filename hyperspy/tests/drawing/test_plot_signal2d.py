@@ -102,13 +102,14 @@ def test_plot(mpl_cleanup, scalebar, colorbar, axes_ticks, centre_colormap):
                           centre_colormap=centre_colormap)
     return test_plot.signal._plot.signal_plot.figure
 
-
+@pytest.mark.parametrize(("vmin", "vmax"), (([None, 40, None, None],
+                                             [None, 250, None, None]),
+                                             (None, None)))
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol)
-def test_plot_multiple_images_list(mpl_cleanup):
+def test_plot_multiple_images_list(mpl_cleanup, vmin, vmax):
     # load red channel of raccoon as an image
     image0 = hs.signals.Signal2D(scipy.misc.face()[:, :, 0])
-
     image0.metadata.General.title = 'Rocky Raccoon - R'
     axes0 = image0.axes_manager
     axes0[0].name = "x"
@@ -118,11 +119,6 @@ def test_plot_multiple_images_list(mpl_cleanup):
 
     # load lena into 2x3 hyperimage
     image1 = _generate_image_stack_signal()
-    axes1 = image1.axes_manager
-    axes1[2].name = "x"
-    axes1[3].name = "y"
-    axes1[2].units = "nm"
-    axes1[3].units = "nm"
 
     # load green channel of raccoon as an image
     image2 = hs.signals.Signal2D(scipy.misc.face()[:, :, 1])
@@ -145,5 +141,5 @@ def test_plot_multiple_images_list(mpl_cleanup):
 
     hs.plot.plot_images([image0, image1, image2, rgb], tight_layout=True,
                         # colorbar='single',
-                        labelwrap=20)
+                        labelwrap=20, vmin=vmin, vmax=vmax)
     return plt.gcf()
