@@ -579,21 +579,21 @@ def plot_images(images,
               else 1)
 
     if isinstance(vmin, list):
-        if len(vmin) != len(images):
+        if len(vmin) != n:
             _logger.warning('The provided vmin values are ignored because the '
                             'length of the list does not match the number of '
                             'images')
-            vmin = [None] * len(images)
+            vmin = [None] * n
     else:
-        vmin = [vmin] * len(images)
+        vmin = [vmin] * n
     if isinstance(vmax, list):
-        if len(vmax) != len(images):
+        if len(vmax) != n:
             _logger.warning('The provided vmax values are ignored because the '
                             'length of the list does not match the number of '
                             'images')
-            vmax = [None] * len(images)
+            vmax = [None] * n
     else:
-        vmax = [vmax] * len(images)
+        vmax = [vmax] * n
 
     # Sort out the labeling:
     div_num = 0
@@ -739,10 +739,6 @@ def plot_images(images,
     ax_im_list = [0] * len(isrgb)
     # Loop through each image, adding subplot for each one
     for i, ims in enumerate(images):
-        # Get handles for the signal axes and axes_manager
-        axes_manager = ims.axes_manager
-        if axes_manager.navigation_dimension > 0:
-            ims = ims._deepcopy_with_new_data(ims.data)
         for j, im in enumerate(ims):
             idx += 1
             ax = f.add_subplot(rows, per_row, idx)
@@ -757,8 +753,8 @@ def plot_images(images,
                 data = im.data
                 # Find min and max for contrast
                 l_vmin, l_vmax = contrast_stretching(data, saturated_pixels)
-                l_vmin = vmin[i] if vmin[i] is not None else l_vmin
-                l_vmax = vmax[i] if vmax[i] is not None else l_vmax
+                l_vmin = vmin[idx-1] if vmin[idx-1] is not None else l_vmin
+                l_vmax = vmax[idx-1] if vmax[idx-1] is not None else l_vmax
                 if centre_colormap:
                     l_vmin, l_vmax = centre_colormap_values(l_vmin, l_vmax)
 

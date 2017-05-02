@@ -102,9 +102,16 @@ def test_plot(mpl_cleanup, scalebar, colorbar, axes_ticks, centre_colormap):
                           centre_colormap=centre_colormap)
     return test_plot.signal._plot.signal_plot.figure
 
-@pytest.mark.parametrize(("vmin", "vmax"), (([None, 40, None, None],
-                                             [None, 250, None, None]),
-                                             (None, None)))
+
+def _generate_parameter_plot_images():
+    # There are 9 images in total
+    vmin, vmax = [None] * 9, [None] * 9
+    vmin[1], vmax[2] = 30, 200
+    return vmin, vmax
+
+
+@pytest.mark.parametrize(("vmin", "vmax"), (_generate_parameter_plot_images(),
+                                           (None, None)))
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol)
 def test_plot_multiple_images_list(mpl_cleanup, vmin, vmax):
