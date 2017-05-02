@@ -509,7 +509,9 @@ def plot_images(images,
             If set, the images will be plotted to an existing MPL figure
         vmin, vmax : scalar or list of scalar, optional, default: None
             If list of scalar, the length should match the number of images to
-            show. See vmin, vmax of matplotlib.imshow() for more details.
+            show.
+            A list of scalar is not compatible with a single colorbar.
+            See vmin, vmax of matplotlib.imshow() for more details.
         *args, **kwargs, optional
             Additional arguments passed to matplotlib.imshow()
 
@@ -723,8 +725,16 @@ def plot_images(images,
     if colorbar is 'single':
         g_vmin, g_vmax = contrast_stretching(np.concatenate(
             [i.data.flatten() for i in non_rgb]), saturated_pixels)
-        g_vmin = vmin[i] if vmin[i] is not None else g_vmin
-        g_vmax = vmax[i] if vmax[i] is not None else g_vmax
+        if isinstance(vmin, list):
+            _logger.warning('vmin have to be a scalar to be compatible with a '
+                            'single colorbar')
+        else:
+            g_vmin = vmin if vmin is not None else g_vmin
+        if isinstance(vmax, list):
+            _logger.warning('vmax have to be a scalar to be compatible with a '
+                            'single colorbar')
+        else:
+            g_vmax = vmax if vmax is not None else g_vmax
         if centre_colormap:
             g_vmin, g_vmax = centre_colormap_values(g_vmin, g_vmax)
 
@@ -753,8 +763,8 @@ def plot_images(images,
                 data = im.data
                 # Find min and max for contrast
                 l_vmin, l_vmax = contrast_stretching(data, saturated_pixels)
-                l_vmin = vmin[idx-1] if vmin[idx-1] is not None else l_vmin
-                l_vmax = vmax[idx-1] if vmax[idx-1] is not None else l_vmax
+                l_vmin = vmin[idx - 1] if vmin[idx - 1] is not None else l_vmin
+                l_vmax = vmax[idx - 1] if vmax[idx - 1] is not None else l_vmax
                 if centre_colormap:
                     l_vmin, l_vmax = centre_colormap_values(l_vmin, l_vmax)
 
