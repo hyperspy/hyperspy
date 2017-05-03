@@ -92,7 +92,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         sf.axes_manager = self.axes_manager
         self.signal_plot = sf
         # Create a line to the left axis with the default indices
-        is_complex = any(np.iscomplex(self.signal_data_function()))
+        is_complex = np.iscomplex(self.signal_data_function()).any()
         sl = signal1d.Signal1DLine()
         sl.autoscale = True if not is_complex else False
         sl.data_function = self.signal_data_function
