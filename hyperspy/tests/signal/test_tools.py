@@ -1,6 +1,7 @@
 from unittest import mock
 
 import numpy as np
+import dask.array as da
 from numpy.testing import assert_array_equal, assert_allclose
 
 import pytest
@@ -185,6 +186,14 @@ class Test3D:
         self.signal.axes_manager[0].scale = 0.5
         self.data = self.signal.data.copy()
 
+    def test_indexmin(self):
+        s = self.signal.indexmin('E')
+        ar = self.data.argmin(2)
+        np.testing.assert_array_equal(ar, s.data)
+        assert s.data.ndim == 2
+        assert s.axes_manager.signal_dimension == 0
+        assert s.axes_manager.navigation_dimension == 2
+
     def test_indexmax(self):
         s = self.signal.indexmax('E')
         ar = self.data.argmax(2)
@@ -192,6 +201,14 @@ class Test3D:
         assert s.data.ndim == 2
         assert s.axes_manager.signal_dimension == 0
         assert s.axes_manager.navigation_dimension == 2
+
+    def test_valuemin(self):
+        s = self.signal.valuemin('x')
+        ar = self.signal.axes_manager['x'].index2value(self.data.argmin(1))
+        np.testing.assert_array_equal(ar, s.data)
+        assert s.data.ndim == 2
+        assert s.axes_manager.signal_dimension == 1
+        assert s.axes_manager.navigation_dimension == 1
 
     def test_valuemax(self):
         s = self.signal.valuemax('x')
@@ -700,7 +717,9 @@ class TestTranspose:
 
     def test_signal_int_transpose(self):
         t = self.s.transpose(signal_axes=2)
+        var = t.metadata.Signal.Noise_properties.variance
         assert t.axes_manager.signal_shape == (6, 5)
+        assert var.axes_manager.signal_shape == (6, 5)
         assert ([ax.name for ax in t.axes_manager.signal_axes] ==
                 ['f', 'e'])
         assert isinstance(t, signals.Signal2D)
@@ -709,19 +728,25 @@ class TestTranspose:
 
     def test_signal_iterable_int_transpose(self):
         t = self.s.transpose(signal_axes=[0, 5, 4])
+        var = t.metadata.Signal.Noise_properties.variance
         assert t.axes_manager.signal_shape == (6, 1, 2)
+        assert var.axes_manager.signal_shape == (6, 1, 2)
         assert ([ax.name for ax in t.axes_manager.signal_axes] ==
                 ['f', 'a', 'b'])
 
     def test_signal_iterable_names_transpose(self):
         t = self.s.transpose(signal_axes=['f', 'a', 'b'])
+        var = t.metadata.Signal.Noise_properties.variance
         assert t.axes_manager.signal_shape == (6, 1, 2)
+        assert var.axes_manager.signal_shape == (6, 1, 2)
         assert ([ax.name for ax in t.axes_manager.signal_axes] ==
                 ['f', 'a', 'b'])
 
     def test_signal_iterable_axes_transpose(self):
         t = self.s.transpose(signal_axes=self.s.axes_manager.signal_axes[:2])
+        var = t.metadata.Signal.Noise_properties.variance
         assert t.axes_manager.signal_shape == (6, 5)
+        assert var.axes_manager.signal_shape == (6, 5)
         assert ([ax.name for ax in t.axes_manager.signal_axes] ==
                 ['f', 'e'])
 
@@ -735,18 +760,24 @@ class TestTranspose:
 
     def test_navigation_int_transpose(self):
         t = self.s.transpose(navigation_axes=2)
+        var = t.metadata.Signal.Noise_properties.variance
         assert t.axes_manager.navigation_shape == (2, 1)
+        assert var.axes_manager.navigation_shape == (2, 1)
         assert ([ax.name for ax in t.axes_manager.navigation_axes] ==
                 ['b', 'a'])
 
     def test_navigation_iterable_int_transpose(self):
         t = self.s.transpose(navigation_axes=[0, 5, 4])
+        var = t.metadata.Signal.Noise_properties.variance
         assert t.axes_manager.navigation_shape == (6, 1, 2)
+        assert var.axes_manager.navigation_shape == (6, 1, 2)
         assert ([ax.name for ax in t.axes_manager.navigation_axes] ==
                 ['f', 'a', 'b'])
 
     def test_navigation_iterable_names_transpose(self):
         t = self.s.transpose(navigation_axes=['f', 'a', 'b'])
+        var = t.metadata.Signal.Noise_properties.variance
+        assert var.axes_manager.navigation_shape == (6, 1, 2)
         assert t.axes_manager.navigation_shape == (6, 1, 2)
         assert ([ax.name for ax in t.axes_manager.navigation_axes] ==
                 ['f', 'a', 'b'])
@@ -755,7 +786,9 @@ class TestTranspose:
         t = self.s.transpose(
             navigation_axes=self.s.axes_manager.signal_axes[
                 :2])
+        var = t.metadata.Signal.Noise_properties.variance
         assert t.axes_manager.navigation_shape == (6, 5)
+        assert var.axes_manager.navigation_shape == (6, 5)
         assert ([ax.name for ax in t.axes_manager.navigation_axes] ==
                 ['f', 'e'])
 
@@ -782,3 +815,31 @@ class TestTranspose:
 
         t = self.s.transpose(signal_axes=['f', 'a', 'b'], optimize=True)
         assert t.data.base is not self.s.data
+
+
+def test_lazy_transpose_rechunks():
+    ar = da.ones((50, 50, 256, 256), chunks=(5, 5, 256, 256))
+    s = signals.Signal2D(ar).as_lazy()
+    s1 = s.T
+    chunks = s1.data.chunks
+    assert len(chunks[0]) != 1
+    assert len(chunks[1]) != 1
+    assert len(chunks[2]) == 1
+    assert len(chunks[3]) == 1
+
+
+def test_lazy_changetype_rechunk():
+    ar = da.ones((50, 50, 256, 256), chunks=(5, 5, 256, 256), dtype='uint8')
+    s = signals.Signal2D(ar).as_lazy()
+    s._make_lazy(rechunk=True)
+    assert s.data.dtype is np.dtype('uint8')
+    chunks_old = s.data.chunks
+    s.change_dtype('float')
+    assert s.data.dtype is np.dtype('float')
+    chunks_new = s.data.chunks
+    assert (len(chunks_old[0]) * len(chunks_old[1]) <
+            len(chunks_new[0]) * len(chunks_new[1]))
+    s.change_dtype('uint8')
+    assert s.data.dtype is np.dtype('uint8')
+    chunks_newest = s.data.chunks
+    assert chunks_newest == chunks_new

@@ -376,7 +376,7 @@ class MVATools(object):
         else:
             return f
 
-    def _plot_loadings(self, loadings, comp_ids=None, calibrate=True,
+    def _plot_loadings(self, loadings, comp_ids, calibrate=True,
                        same_window=None, comp_label=None,
                        with_factors=False, factors=None,
                        cmap=plt.cm.gray, no_nans=False, per_row=3):
@@ -738,7 +738,7 @@ class MVATools(object):
                     s.save(filename)
 
     def plot_decomposition_factors(self,
-                                   comp_ids=None,
+                                   comp_ids,
                                    calibrate=True,
                                    same_window=None,
                                    comp_label='Decomposition factor',
@@ -861,7 +861,7 @@ class MVATools(object):
                                             per_row=per_row)
 
     def plot_decomposition_loadings(self,
-                                    comp_ids=None,
+                                    comp_ids,
                                     calibrate=True,
                                     same_window=None,
                                     comp_label='Decomposition loading',
@@ -1865,11 +1865,11 @@ class BaseSignal(FancySlicing,
             self._plot = mpl_hie.MPL_HyperImage_Explorer()
         else:
             raise ValueError(
-                    "Plotting is not supported for this view. "
-                    "Try e.g. 's.transpose(signal_axes=1).plot()' for "
-                    "plotting as a 1D signal, or "
-                    "'s.transpose(signal_axes=(1,2)).plot()' "
-                    "for plotting as a 2D signal.")
+                "Plotting is not supported for this view. "
+                "Try e.g. 's.transpose(signal_axes=1).plot()' for "
+                "plotting as a 1D signal, or "
+                "'s.transpose(signal_axes=(1,2)).plot()' "
+                "for plotting as a 2D signal.")
 
         self._plot.axes_manager = axes_manager
         self._plot.signal_data_function = self.__call__
@@ -3079,6 +3079,36 @@ class BaseSignal(FancySlicing,
             return self.sum(axis=axis, out=out)
     integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
+    def indexmin(self, axis, out=None):
+        """Returns a signal with the index of the minimum along an axis.
+
+        Parameters
+        ----------
+        axis %s
+        %s
+
+        Returns
+        -------
+        s : Signal
+            The data dtype is always int.
+
+        See also
+        --------
+        max, min, sum, mean, std, var, valuemax, amax
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = BaseSignal(np.random.random((64,64,1024)))
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.indexmax(-1).data.shape
+        (64,64)
+
+        """
+        return self._apply_function_on_data_and_remove_axis(np.argmin, axis,
+                                                            out=out)
+
     def indexmax(self, axis, out=None):
         """Returns a signal with the index of the maximum along an axis.
 
@@ -3145,6 +3175,33 @@ class BaseSignal(FancySlicing,
             out.data[:] = data
             out.events.data_changed.trigger(obj=out)
     valuemax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+
+    def valuemin(self, axis, out=None):
+        """Returns a signal with the value of coordinates of the minimum along an axis.
+
+        Parameters
+        ----------
+        axis %s
+        %s
+
+        Returns
+        -------
+        s : Signal
+
+        See also
+        --------
+        max, min, sum, mean, std, var, indexmax, amax
+
+        """
+        idx = self.indexmin(axis)
+        data = self.axes_manager[axis].index2value(idx.data)
+        if out is None:
+            idx.data = data
+            return idx
+        else:
+            out.data[:] = data
+            out.events.data_changed.trigger(obj=out)
+    valuemin.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def get_histogram(self, bins='freedman', range_bins=None, out=None,
                       **kwargs):
@@ -4141,6 +4198,7 @@ class BaseSignal(FancySlicing,
             for marker_tuple in list(self.metadata.Markers):
                 marker_object_list.append(marker_tuple[1])
             name_list = self.metadata.Markers.keys()
+        marker_name_suffix = 1
         for m in marker_list:
             marker_data_shape = m._get_data_shape()
             if (not (len(marker_data_shape) == 0)) and (
@@ -4167,10 +4225,9 @@ class BaseSignal(FancySlicing,
                         raise ValueError("Marker already added to signal")
                 name = m.name
                 temp_name = name
-                i = 1
                 while temp_name in name_list:
-                    temp_name = name + str(i)
-                    i += 1
+                    temp_name = name + str(marker_name_suffix)
+                    marker_name_suffix += 1
                 m.name = temp_name
                 markers_dict[m.name] = m
                 m.signal = self
@@ -4285,6 +4342,7 @@ class BaseSignal(FancySlicing,
             return isinstance(thing, Iterable) and \
                 not isinstance(thing, str)
         am = self.axes_manager
+        ns = self.axes_manager.navigation_axes + self.axes_manager.signal_axes
         ax_list = am._axes
         if isinstance(signal_axes, int):
             if navigation_axes is not None:
@@ -4297,19 +4355,18 @@ class BaseSignal(FancySlicing,
                 raise ValueError("Can't have negative number of signal axes")
             elif signal_axes == 0:
                 signal_axes = ()
-                navigation_axes = ax_list
+                navigation_axes = ax_list[::-1]
             else:
-                navigation_axes = ax_list[:-signal_axes]
-                signal_axes = ax_list[-signal_axes:]
+                navigation_axes = ax_list[:-signal_axes][::-1]
+                signal_axes = ax_list[-signal_axes:][::-1]
         elif iterable_not_string(signal_axes):
-            signal_axes = tuple(am[ax] for ax in reversed(signal_axes))
+            signal_axes = tuple(am[ax] for ax in signal_axes)
             if navigation_axes is None:
-                navigation_axes = tuple(ax for ax in ax_list if ax not in
-                                        signal_axes)
+                navigation_axes = tuple(ax for ax in ax_list
+                                        if ax not in signal_axes)[::-1]
             elif iterable_not_string(navigation_axes):
                 # want to keep the order
-                navigation_axes = tuple(am[ax] for ax in
-                                        reversed(navigation_axes))
+                navigation_axes = tuple(am[ax] for ax in navigation_axes)
                 intersection = set(signal_axes).intersection(navigation_axes)
                 if len(intersection):
                     raise ValueError("At least one axis found in both spaces:"
@@ -4329,18 +4386,18 @@ class BaseSignal(FancySlicing,
                         "Can't have negative number of navigation axes")
                 elif navigation_axes == 0:
                     navigation_axes = ()
-                    signal_axes = ax_list
+                    signal_axes = ax_list[::-1]
                 else:
-                    signal_axes = ax_list[navigation_axes:]
-                    navigation_axes = ax_list[:navigation_axes]
+                    signal_axes = ax_list[navigation_axes:][::-1]
+                    navigation_axes = ax_list[:navigation_axes][::-1]
             elif iterable_not_string(navigation_axes):
                 navigation_axes = tuple(am[ax] for ax in
-                                        reversed(navigation_axes))
-                signal_axes = tuple(ax for ax in ax_list if ax not in
-                                    navigation_axes)
+                                        navigation_axes)
+                signal_axes = tuple(ax for ax in ax_list
+                                    if ax not in navigation_axes)[::-1]
             elif navigation_axes is None:
-                signal_axes = list(reversed(am.navigation_axes))
-                navigation_axes = list(reversed(am.signal_axes))
+                signal_axes = am.navigation_axes
+                navigation_axes = am.signal_axes
             else:
                 raise ValueError(
                     "The passed navigation_axes argument is not valid")
@@ -4349,6 +4406,9 @@ class BaseSignal(FancySlicing,
         # translate to axes idx from actual objects for variance
         idx_sig = [ax.index_in_axes_manager for ax in signal_axes]
         idx_nav = [ax.index_in_axes_manager for ax in navigation_axes]
+        # From now on we operate with axes in array order
+        signal_axes = signal_axes[::-1]
+        navigation_axes = navigation_axes[::-1]
         # get data view
         array_order = tuple(
             ax.index_in_array for ax in navigation_axes)

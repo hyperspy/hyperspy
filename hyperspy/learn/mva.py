@@ -920,11 +920,8 @@ class MVA():
         s.axes_manager[-1].units = ''
         return s
 
-    def plot_explained_variance_ratio(self, n=None, log=True, threshold=0,
-                                      hline='auto', xaxis_type='index',
-                                      xaxis_labeling=None, signal_fmt=None,
-                                      noise_fmt=None, fig=None, ax=None,
-                                      **kwargs):
+    def plot_explained_variance_ratio(self, n=None, log=True, threshold=0, hline='auto', xaxis_type='index',
+                                      xaxis_labeling=None, signal_fmt=None, noise_fmt=None, fig=None, ax=None, **kwargs):
         """Plot the decomposition explained variance ratio vs index number
         (Scree Plot).
 

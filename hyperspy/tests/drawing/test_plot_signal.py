@@ -18,7 +18,6 @@
 import numpy as np
 import traits.api as t
 import pytest
-from matplotlib.testing.decorators import cleanup
 
 from hyperspy.misc.test_utils import update_close_figure
 import hyperspy.api as hs
@@ -100,11 +99,11 @@ def _generate_parameter():
     return parameters
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.parametrize(("ndim", "sdim", "plot_type", "data_type"),
                          _generate_parameter())
-@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir, tolerance=default_tol)
-def test_plot_sig_nav(ndim, sdim, plot_type, data_type):
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol)
+def test_plot_sig_nav(mpl_cleanup, ndim, sdim, plot_type, data_type):
     test_plot = _TestPlot(ndim, sdim, data_type)
     test_plot.signal.plot()
     return _get_figure(test_plot, data_type, plot_type)
@@ -126,8 +125,6 @@ def _get_figure(test_plot, data_type, plot_type):
     return fig
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
-@cleanup
 @update_close_figure
 def test_plot_nav0_sig1_close():
     test_plot = _TestPlot(ndim=0, sdim=1, data_type="real")
@@ -135,8 +132,6 @@ def test_plot_nav0_sig1_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
-@cleanup
 @update_close_figure
 def test_plot_nav1_sig1_close():
     test_plot = _TestPlot(ndim=1, sdim=1, data_type="real")
@@ -144,8 +139,6 @@ def test_plot_nav1_sig1_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
-@cleanup
 @update_close_figure
 def test_plot_nav2_sig1_close():
     test_plot = _TestPlot(ndim=2, sdim=1, data_type="real")
@@ -153,8 +146,6 @@ def test_plot_nav2_sig1_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
-@cleanup
 @update_close_figure
 def test_plot_nav0_sig2_close():
     test_plot = _TestPlot(ndim=0, sdim=2, data_type="real")
@@ -162,8 +153,6 @@ def test_plot_nav0_sig2_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
-@cleanup
 @update_close_figure
 def test_plot_nav1_sig2_close():
     test_plot = _TestPlot(ndim=1, sdim=2, data_type="real")
@@ -171,8 +160,6 @@ def test_plot_nav1_sig2_close():
     return test_plot.signal
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
-@cleanup
 @update_close_figure
 def test_plot_nav2_sig2_close():
     test_plot = _TestPlot(ndim=2, sdim=2, data_type="real")

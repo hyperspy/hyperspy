@@ -123,7 +123,7 @@ parameters for spectroscopy than the one that ships with HyperSpy:
     ... position="x0",
     ... height=1,
     ... fwhm=1,
-    ... centre=0,
+    ... x0=0,
     ... module="numpy")
 
 If the expression is inconvenient to write out in full (e.g. it's long and/or
@@ -166,7 +166,7 @@ a component is very easy, just modify the following template to suit your needs:
 
     from hyperspy.component import Component
 
-    class My_Component(Component):
+    class MyComponent(Component):
 
         """
         """
@@ -549,14 +549,14 @@ For example:
             A	5.000000
             centre	0.000000
 
-.. deprecated:: 1.1.3
+.. deprecated:: 1.2.0
     Setting the :py:attr:`~.component.Parameter.twin_function` and
     :py:attr:`~.component.Parameter.twin_inverse_function` attributes. Set the
     :py:attr:`~.component.Parameter.twin_function_expr` and
     :py:attr:`~.component.Parameter.twin_inverse_function_expr` attributes
     instead.
 
-.. versionadded:: 1.1.3
+.. versionadded:: 1.2.0
     :py:attr:`~.component.Parameter.twin_function_expr` and
     :py:attr:`~.component.Parameter.twin_inverse_function_expr`.
 

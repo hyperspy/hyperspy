@@ -81,6 +81,7 @@ analysing large files. To load a file without loading it to memory simply set
 
 More details on lazy evaluation support in :ref:`big-data-label`.
 
+.. load-multiple-label::
 
 Loading multiple files
 ----------------------
@@ -95,6 +96,8 @@ functions, e.g.:
 
 or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_
 
+.. versionadded:: 1.2.0
+   stack multi-signal files
 
 By default HyperSpy will return a list of all the files loaded. Alternatively,
 HyperSpy can stack the data of the files contain data with exactly the same
@@ -227,7 +230,7 @@ HDF5 follows the HyperSpy specification, it is possible to save it with the
     >>> s.save('test.hspy')
 
 It is possible to use the ``.hspy`` extension by default by changing the
-value is ``preferences`` using the GUI or programatically:
+value is :py:obj:`hs.preferences` using the GUI or programatically:
 
 .. code-block:: python
 
@@ -237,7 +240,7 @@ value is ``preferences`` using the GUI or programatically:
 From HyperSpy 1.3 ``.hspy`` will be the default extension.
 
 .. versionadded:: 0.8
-    Saving list, tuples and signals present in `:py:attr:`~.metadata``.
+    Saving list, tuples and signals present in :py:attr:`~.metadata`.
 
 When saving to hdf5, all supported objects in the signal's :py:attr:`~.metadata`
 is stored. This includes  lists, tuples and signals. Please note

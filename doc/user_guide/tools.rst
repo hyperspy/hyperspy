@@ -1,4 +1,4 @@
-﻿
+
 Tools: the Signal class
 ***********************
 
@@ -28,8 +28,8 @@ currently available specialised :py:class:`~.signal.BaseSignal` subclasses.
 
 .. versionchanged:: 1.0
 
-    The :py:class:`~._signals.signal1D.Signal1D`,
-    :py:class:`~._signals.image.Signal2D` and :py:class:`~.signal.BaseSignal`
+    The :py:class:`~._signals.signal1d.Signal1D`,
+    :py:class:`~._signals.signal2d.Signal2D` and :py:class:`~.signal.BaseSignal`
     classes deprecated the old `Spectrum` `Image` and `Signal` classes.
 
 .. versionadded:: 1.0
@@ -58,12 +58,12 @@ examples, the data is stored in a numpy array in the
 :py:attr:`~.signal.BaseSignal.original_metadata` attribute, the mapped parameters
 in the :py:attr:`~.signal.BaseSignal.metadata` attribute and the axes
 information (including calibration) can be accessed (and modified) in the
-:py:attr:`~.signal.BaseSignal.axes_manager` attribute.
+:py:class:`~.axes.AxesManager` attribute.
 
 Signal initialization
 ---------------------
 
-Many of the values in the :py:attr:`~.signal.BaseSignal.axes_manager` can be
+Many of the values in the :py:class:`~.axes.AxesManager` can be
 set when making the :py:class:`~.signal.BaseSignal` object.
 
 .. code-block:: python
@@ -106,7 +106,7 @@ The concept is probably best understood with an example: let's imagine a three
 dimensional dataset e.g. a numpy array with dimensions `(10, 20, 30)`. This
 dataset could be an spectrum image acquired by scanning over a sample in two
 dimensions. As in this case the signal is one-dimensional we use a
-:py:class:`~._signals.signal1D.Signal1D` subclass for this data e.g.:
+:py:class:`~._signals.signal1d.Signal1D` subclass for this data e.g.:
 
 .. code-block:: python
 
@@ -124,7 +124,7 @@ stack instead.  Actually it could has been acquired by capturing two
 dimensional images at different wavelengths. Then it would be natural to
 identify the two spatial dimensions as the signal dimensions and the wavelength
 dimension as the navigation dimension. To view the data in this way we could
-have used a :py:class:`~._signals.signal2D.Signal2D` instead e.g.:
+have used a :py:class:`~._signals.signal2d.Signal2D` instead e.g.:
 
 .. code-block:: python
 
@@ -369,12 +369,17 @@ Example:
 
 The following methods operate only on one axis at a time:
 
+.. versionadded:: 1.2
+   :py:meth:`~.signal.BaseSignal.valuemin`, :py:meth:`~.signal.BaseSignal.indexmin`
+
 * :py:meth:`~.signal.BaseSignal.diff`
 * :py:meth:`~.signal.BaseSignal.derivative`
 * :py:meth:`~.signal.BaseSignal.integrate_simpson`
 * :py:meth:`~.signal.BaseSignal.integrate1D`
 * :py:meth:`~.signal.BaseSignal.valuemax`
 * :py:meth:`~.signal.BaseSignal.indexmax`
+* :py:meth:`~.signal.BaseSignal.valuemin`
+* :py:meth:`~.signal.BaseSignal.indexmin`
 
 .. versionadded:: 1.0
    numpy ufunc operate on HyperSpy signals
@@ -691,6 +696,7 @@ is raised.
         raise ValueError(exception_message)
     ValueError: Invalid dimensions for this operation
 
+
 Broacasting operates exactly in the same way for the signal axes:
 
 .. code-block:: python
@@ -773,11 +779,12 @@ to make a horizontal "collage" of the image stack:
 
   Rotation of images by iteration.
 
-.. versionadded:: 0.7
-
+.. _map-label:
 
 Iterating external functions with the map method
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 0.7
 
 Performing an operation on the data at each coordinate, as in the previous example,
 using an external function can be more easily accomplished using the
@@ -864,6 +871,10 @@ data (default, ``True``) or storing it to a new signal (``False``).
 .. versionadded:: 1.2.0
     ``parallel`` keyword.
 
+
+
+.. _parallel-map-label:
+
 The execution can be sped up by passing ``parallel`` keyword to the
 :py:meth:`~.signal.BaseSignal.map` method:
 
@@ -872,7 +883,7 @@ The execution can be sped up by passing ``parallel`` keyword to the
     >>> import time
     >>> def slow_func(data):
     ...     time.sleep(1.)
-    ...     return data+1
+    ...     return data + 1
     >>> s = hs.signals.Signal1D(np.arange(20).reshape((20,1)))
     >>> s
     <Signal1D, title: , dimensions: (20|1)>
@@ -1177,10 +1188,10 @@ set this attribute as in the following example where we set the variance to be
     s.metadata.Signal.set_item("Noise_properties.variance", 10)
 
 For heterocedastic noise the ``variance`` attribute must be a
-:class:`~.signal_base.BaseSignal`.  Poissonian noise is a common case  of
+:class:`~.signal.BaseSignal`.  Poissonian noise is a common case  of
 heterocedastic noise where the variance is equal to the expected value. The
-:meth:`~.signal_base.BaseSignal.estimate_poissonian_noise_variance`
-:class:`~.signal_base.BaseSignal` method can help setting the variance of data with
+:meth:`~.signal.BaseSignal.estimate_poissonian_noise_variance`
+:class:`~.signal.BaseSignal` method can help setting the variance of data with
 semi-poissonian noise. With the default arguments, this method simply sets the
 variance attribute to the given ``expected_value``. However, more generally
 (although then noise is not strictly poissonian), the variance may be proportional

@@ -840,7 +840,8 @@ Markers
 
 .. versionadded:: 0.8
 
-Hyperspy provides an easy access to the main marker of matplotlib. The markers can be used in a static way
+Hyperspy provides an easy access to the main marker of matplotlib. The markers
+can be used in a static way
 
 .. code-block:: python
 
@@ -855,7 +856,9 @@ Hyperspy provides an easy access to the main marker of matplotlib. The markers c
 
   Rectangle static marker.
 
-By providing an array of positions, the marker can also change position when navigating the signal. In the following example, the local maxima are displayed for each R, G and B channel of a colour image.
+By providing an array of positions, the marker can also change position when
+navigating the signal. In the following example, the local maxima are displayed
+for each R, G and B channel of a colour image.
 
 .. code-block:: python
 
@@ -876,7 +879,9 @@ By providing an array of positions, the marker can also change position when nav
 
   Point markers in image.
 
-The markers can be added to the navigator as well. In the following example, each slice of a 2D spectrum is tagged with a text marker on the signal plot. Each slice is indicated with the same text on the navigator.
+The markers can be added to the navigator as well. In the following example,
+each slice of a 2D spectrum is tagged with a text marker on the signal plot.
+Each slice is indicated with the same text on the navigator.
 
 .. code-block:: python
 
@@ -898,7 +903,12 @@ The markers can be added to the navigator as well. In the following example, eac
 
   Multi-dimensional markers.
 
-These markers can also be permanently added to a signal, which is saved in metadata.Markers:
+
+.. versionadded:: 1.2
+   Permanent markers.
+
+These markers can also be permanently added to a signal, which is saved in
+``metadata.Markers``:
 
 .. code-block:: python
 
@@ -954,6 +964,9 @@ This can be extended to 4 (or more) navigation dimensions:
     >>> y = np.arange(16).reshape(2, 2, 2, 2)
     >>> marker = hs.markers.point(x=x, y=y, color='red')
     >>> s.add_marker(marker, permanent=True)
+
+.. versionadded:: 1.2
+   ``markers`` keyword arguments takes iterable in addition to single marker.
 
 If you want to add a large amount of markers at the same time we advise
 to add them as an iterable (list, tuple, ...), which will be much faster:
