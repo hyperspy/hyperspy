@@ -228,7 +228,7 @@ class TestFeiEMD():
             my_path, 'emd_files', 'example_fei_emd_si.emd'))
         fei_si = np.load(os.path.join(my_path, 'emd_files', 'fei_emd_si.npy'))
         np.testing.assert_equal(signal[1].data, fei_si)
-        assert isinstance(signal, Signal1D)
+        assert isinstance(signal[1], Signal1D)
 
 
 if __name__ == '__main__':
