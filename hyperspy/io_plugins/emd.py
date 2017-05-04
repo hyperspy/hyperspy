@@ -27,7 +27,6 @@ import numpy as np
 from dask.array import from_array
 import json
 import os
-import math
 from datetime import datetime
 from dateutil import tz
 import pint
@@ -49,6 +48,16 @@ EMD_VERSION = '0.2'
 # ----------------------
 
 _logger = logging.getLogger(__name__)
+
+
+def jit_ifnumba(func):
+    try:
+        import numba
+        return numba.jit(func)
+    except ImportError:
+        _logger.warning('Numba is not installed, reading spectrum image will '
+                        'be slow.')
+        return func
 
 
 class EMD(object):
@@ -414,17 +423,17 @@ class EMD(object):
 
 def fei_check(filename):
     """Function to check if the EMD file is an FEI file.
-    
+
     Parameters
     ----------
     filename : string
         The name of the emd-file from which to load the signals. Standard
         format is '*.emd'.
-        
+
     Returns
     -------
     Boolean
-    
+
     """
     with h5py.File(filename, 'r') as f:
         if 'Version' in list(f.keys()):
@@ -453,7 +462,7 @@ class FeiEMDReader(object):
     im_type : string
         String specifying whether the data is an image, spectrum or 
         spectrum image.
-        
+
     Methods
     ----------
     get_metadata_dict, get_original_metadata
@@ -464,15 +473,13 @@ class FeiEMDReader(object):
         self.filename = filename
         self.ureg = pint.UnitRegistry()
         self.dictionaries = []
-        self.f = h5py.File(filename, 'r')
-        self.d_grp = self.f.get('Data')
-        self._check_im_type()
-        self._read_original_metadata()
-        self._read_data()
-        self.f.close()
+        with h5py.File(filename, 'r') as f:
+            self.d_grp = f.get('Data')
+            self._check_im_type()
+            self._read_original_metadata(f)
+            self._read_data()
 
     def _read_data(self):
-
         if self.im_type == 'Image':
             self._read_images()
         elif self.im_type == 'Spectrum':
@@ -485,17 +492,13 @@ class FeiEMDReader(object):
         if 'Image' in self.d_grp:
             if 'SpectrumImage' in self.d_grp:
                 self.im_type = 'SpectrumStream'
-                self.record_by = 'spectrum'
-                '''_logger.warning(
-                    'Cannot currently read FEI EMD spectrum images')'''
             else:
                 self.im_type = 'Image'
-                self.record_by = 'image'
         else:
             self.im_type = 'Spectrum'
-            self.record_by = 'spectrum'
 
     def _read_spectrum(self):
+        self.record_by = 'spectrum'
         spec_grp = self.d_grp.get("Spectrum")
         data_grp = spec_grp[list(spec_grp.keys())[0]]
         dataset = data_grp['Data']
@@ -511,13 +514,17 @@ class FeiEMDReader(object):
                  'units': 'keV'}
                 ]
 
+        md = self._get_metadata_dict()
+        md['Signal']['signal_type'] = 'EDS_TEM'
+
         self.dictionaries.append({'data': data,
                                   'axes': axes,
-                                  'metadata': self._get_metadata_dict(),
+                                  'metadata': md,
                                   'original_metadata': self.original_metadata,
                                   'mapping': self._get_mapping()})
 
     def _read_images(self):
+        self.record_by = 'image'
         # Get the image data group
         image_group = self.d_grp.get("Image")
         # Get all the subgroup of the image data group and read the image for
@@ -538,25 +545,29 @@ class FeiEMDReader(object):
 
         axes = [{'index_in_array': 0,
                  'name': 'y',
-                 'offset': self._convert_scale_units(offsets['y'],original_units)[0],
-                 'scale': self._convert_scale_units(pix_scale['height'],original_units)[0],
-                 'size': data.shape[1],
-                 'units': self._convert_scale_units(pix_scale['height'],original_units)[1]},
+                 'offset': self._convert_scale_units(offsets['x'], original_units)[0],
+                 'scale': self._convert_scale_units(pix_scale['height'], original_units)[0],
+                 'size': data.shape[0],
+                 'units': self._convert_scale_units(pix_scale['height'], original_units)[1]},
                 {'index_in_array': 1,
                  'name': 'x',
-                 'offset': self._convert_scale_units(offsets['x'],original_units)[0],
-                 'scale': self._convert_scale_units(pix_scale['width'],original_units)[0],
-                 'size': data.shape[0],
-                 'units': self._convert_scale_units(pix_scale['width'],original_units)[1]}
+                 'offset': self._convert_scale_units(offsets['y'], original_units)[0],
+                 'scale': self._convert_scale_units(pix_scale['width'], original_units)[0],
+                 'size': data.shape[1],
+                 'units': self._convert_scale_units(pix_scale['width'], original_units)[1]}
                 ]
+
+        md = self._get_metadata_dict()
+        md['Signal']['signal_type'] = 'image'
 
         return {'data': data,
                 'axes': axes,
-                'metadata': self._get_metadata_dict(),
+                'metadata': md,
                 'original_metadata': self.original_metadata,
                 'mapping': self._get_mapping()}
 
     def _read_spectrum_image(self):
+        self.record_by = 'spectrum'
         # Spectrum stream group
         si_grp = self.d_grp.get("SpectrumStream")
 
@@ -566,14 +577,8 @@ class FeiEMDReader(object):
         self.si_grp = si_grp
         self.stream = stream
 
-        data = self.stream.get_spectrum_stack(self.image_shape)
-        #data = np.zeros((1,1))
-
-
-        # Obtain the spectrum dimension from the images
-        # TODO: need to find a way to reshape the data when acquisition have
-        # been stoped during a frame acquisition
-		# data = data.reshape((self.image_shape, self.stream.bin_count))
+        data = stream.get_spectrum_image(self.image_shape)
+        self.original_metadata['AcquisitionSettings'] = stream.acquisition_settings
 
         pix_scale = self.original_metadata['BinaryResult']['PixelSize']
         offsets = self.original_metadata['BinaryResult']['Offset']
@@ -581,18 +586,18 @@ class FeiEMDReader(object):
 
         dispersion, offset = self._get_dispersion_offset()
 
-        axes = [{'index_in_array': 1,
-                 'name': 'x',
-                 'offset': self._convert_scale_units(offsets['x'],original_units)[0],
-                 'scale': self._convert_scale_units(pix_scale['width'],original_units)[0],
-                 'size': data.shape[0],
-                 'units': self._convert_scale_units(pix_scale['width'],original_units)[1]},
-                {'index_in_array': 0,
+        axes = [{'index_in_array': 0,
                  'name': 'y',
-                 'offset': self._convert_scale_units(offsets['y'],original_units)[0],
-                 'scale': self._convert_scale_units(pix_scale['height'],original_units)[0],
+                 'offset': self._convert_scale_units(offsets['y'], original_units)[0],
+                 'scale': self._convert_scale_units(pix_scale['height'], original_units)[0],
+                 'size': data.shape[0],
+                 'units': self._convert_scale_units(pix_scale['height'], original_units)[1]},
+                {'index_in_array': 1,
+                 'name': 'x',
+                 'offset': self._convert_scale_units(offsets['x'], original_units)[0],
+                 'scale': self._convert_scale_units(pix_scale['width'], original_units)[0],
                  'size': data.shape[1],
-                 'units': self._convert_scale_units(pix_scale['height'],original_units)[1]},
+                 'units': self._convert_scale_units(pix_scale['width'], original_units)[1]},
                 {'index_in_array': 2,
                  'name': 'X-ray energy',
                  'offset': offset,
@@ -601,15 +606,19 @@ class FeiEMDReader(object):
                  'units': 'keV'}
                 ]
 
+        md = self._get_metadata_dict()
+        md['Signal']['signal_type'] = 'EDS_TEM'
+
         self.dictionaries.append({'data': data,
                                   'axes': axes,
-                                  'metadata': self._get_metadata_dict(),
+                                  'metadata': md,
                                   'original_metadata': self.original_metadata,
                                   'mapping': self._get_mapping()})
 
     def _get_dispersion_offset(self):
         for detectorname, detector in self.original_metadata['Detectors'].items():
-            if detector['DetectorName'] == 'SuperXG21':
+            _logger.debug('Detector: %s'%detector['DetectorName'])
+            if detector['DetectorName'] == 'SuperXG21' or detector['DetectorName'] == 'SuperXG11':
                 dispersion = float(detector['Dispersion']) / 1000.0
                 offset = float(detector['OffsetEnergy']) / 1000.0
 
@@ -623,9 +632,6 @@ class FeiEMDReader(object):
         return converted_value, converted_units
 
     def _get_metadata_dict(self):
-        # TODO: this is currently a bit broken... this should be specific to a
-        # 'sub group', either image or spectrum stream
-
         meta_gen = {}
         meta_gen['original_filename'] = os.path.split(self.filename)[1]
         meta_gen['title'] = meta_gen['original_filename'].rpartition('.')[0]
@@ -636,8 +642,8 @@ class FeiEMDReader(object):
 
         return {'General': meta_gen, 'Signal': meta_sig}
 
-    def _read_original_metadata(self):
-        data_group = self.f['Data'][self.im_type]
+    def _read_original_metadata(self, f):
+        data_group = f['Data'][self.im_type]
         metadata_array = data_group[list(data_group.keys())[
             0]]['Metadata'][:, 0]
         mdata_string = metadata_array.tostring().decode("utf-8")
@@ -700,85 +706,49 @@ class FeiSpectrumStream(object):
         self.stream = spectrum_stream_group['%s/Data' % sub_group_name][:, 0]
         self._parse_acquisition_settings(spectrum_stream_group, sub_group_name)
 
-        # Get next pixel array
-        self.spectrum_number = (self.stream == 65535).sum()
-
     def _parse_acquisition_settings(self, group, sub_group_name):
-        # This is a very inefficient way to read the data, it is using by far
-        # too much memory: create a large numpy
-        # need to use another approach, see below
         acquisition_key = '%s/AcquisitionSettings' % sub_group_name
         settings = json.loads(group[acquisition_key].value[0].decode('utf-8'))
-        print(settings)
         self.bin_count = int(settings['bincount'])
         self.data_dtype = settings['StreamEncoding']
-        scan_area = settings['RasterScanDefinition']
-        self.scan_area = [scan_area['Height'], scan_area['Width']]
-        self.size = settings['Size']
 
         self.acquisition_settings = settings
 
-#    def get_spectrum_image(self, image_shape):
-#        # WORK IN PROGRESS!!
-#        # need to know the number of frame, the number of pixel in the
-#        # navigation dimension to acccordingly create an numpy and filled the
-#        # value when we read through the spectrum stream
-#        # It would be good to specify a range of specific frame.
-#
-#        # TODO: Not sure if this gives the correct number of frames
-#        frame_number = math.ceil(self.spectrum_number / (image_shape[0] * image_shape[1]))
-#        print(self.spectrum_number, self.bin_count)
-#        spectrum_image = np.zeros((image_shape[0], image_shape[1],
-#                                   self.bin_count), dtype=self.data_dtype)
-#
-#        # TODO: change this loop to set the value in 'spectrum_image' array at
-#        # the correct position
-#        stream_index = 0
-#        for spectrum_i in range(self.spectrum_number):
-##            print('here:', spectrum_i, stream_index, self.stream[stream_index])
-#            frame =
-#            # if different of ‘65535’, add a count to the corresponding channel
-#            while self.stream[stream_index] != 65535:
-#                channel = self.stream[stream_index]
-#                spectrum_stack[spectrum_i, channel] += 1
-##                print('in while:', channel, spectrum_stack[spectrum_i, channel])
-#                stream_index += 1
-#            else:
-#                stream_index += 1
-#
-#        return spectrum_stack
+    def get_spectrum_image(self, shape):
+        return get_spectrum_image(self.stream, shape, self.bin_count,
+                                  self.data_dtype)
 
-    def get_spectrum_stack(self, shape):
-        #print(self.spectrum_number, self.bin_count)
-        spectrum_stack = np.zeros((shape[0], shape[1], self.bin_count),
-                                  dtype=self.data_dtype)
-        print(np.shape(spectrum_stack))
-        stream_index = 0
-        for count in np.nditer(self.stream):
-            if stream_index % (shape[0] * shape[1]) == 0:
-                stream_index = 0
-#            print('here:', spectrum_i, stream_index, self.stream[stream_index])
-            # if different of ‘65535’, add a count to the corresponding channel
-            if count != 65535:
-                channel = count
-                #print(stream_index//shape[1], stream_index%shape[0], channel)
-                spectrum_stack[stream_index//shape[0], stream_index%shape[1], channel] += 1
-#                print('in while:', channel, spectrum_stack[spectrum_i, channel])
 
-            else:
-                stream_index += 1
+@jit_ifnumba
+def get_spectrum_image(stream, shape, bin_count, data_dtype):
+    # TODO: implement reading a specific frame range.
+    spectrum_image = np.zeros((shape[0], shape[1], bin_count),
+                              dtype=data_dtype)
+    navigation_index = 0
+    frame_number = 0
+    for count in np.nditer(stream):
+        # when we reach the end of the frame, reset the navigation index to 0
+        if navigation_index == (shape[0] * shape[1]):
+            navigation_index = 0
+            frame_number += 1
+            _logger.debug('Frame #%i'%frame_number)
+        # if different of ‘65535’, add a count to the corresponding channel
+        if count != 65535:
+            spectrum_image[navigation_index // shape[1],
+                           navigation_index % shape[1], count] += 1
+        else:
+            navigation_index += 1
 
-        return spectrum_stack
+    return spectrum_image
 
 
 def file_reader(filename, log_info=False,
                 lazy=False, **kwds):
     dictionaries = []
     if fei_check(filename) == True:
-        print('EMD is FEI format')
+        _logger.debug('EMD is FEI format')
         emd = FeiEMDReader(filename)
         dictionaries = emd.dictionaries
-
     else:
         emd = EMD.load_from_emd(filename, lazy)
         if log_info:
