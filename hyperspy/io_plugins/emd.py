@@ -617,7 +617,8 @@ class FeiEMDReader(object):
 
     def _get_dispersion_offset(self):
         for detectorname, detector in self.original_metadata['Detectors'].items():
-            if detector['DetectorName'] == 'SuperXG21':
+            _logger.debug('Detector: %s'%detector['DetectorName'])
+            if detector['DetectorName'] == 'SuperXG21' or detector['DetectorName'] == 'SuperXG11':
                 dispersion = float(detector['Dispersion']) / 1000.0
                 offset = float(detector['OffsetEnergy']) / 1000.0
 
@@ -730,6 +731,7 @@ def get_spectrum_image(stream, shape, bin_count, data_dtype):
         if navigation_index == (shape[0] * shape[1]):
             navigation_index = 0
             frame_number += 1
+            _logger.debug('Frame #%i'%frame_number)
         # if different of ‘65535’, add a count to the corresponding channel
         if count != 65535:
             spectrum_image[navigation_index // shape[1],
