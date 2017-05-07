@@ -364,8 +364,74 @@ class DictionaryTreeBrowser(object):
             j += 1
         return string
 
+    def _get_html_print_items(self, padding='', max_len=78):
+        """Prints only the attributes that are not methods
+        """
+        from hyperspy.defaults_parser import preferences
+
+        def check_long_string(value, max_len):
+            if not isinstance(value, (str, np.string_)):
+                value = repr(value)
+            value = ensure_unicode(value)
+            strvalue = str(value)
+            _long = False
+            if max_len is not None and len(strvalue) > 2 * max_len:
+                right_limit = min(max_len, len(strvalue) - max_len)
+                strvalue = '%s ... %s' % (
+                    strvalue[:max_len], strvalue[-right_limit:])
+                _long = True
+            return _long, strvalue
+
+        def replace_html_symbols(str_value):
+            str_value = str_value.replace("<", "&#60;")
+            str_value = str_value.replace(">", "&#62;")
+            return str_value
+
+        string = ''
+        
+        for key_, value in iter(sorted(self.__dict__.items())):
+            if key_.startswith("_"):
+                continue
+            if not isinstance(key_, types.MethodType):
+                key = ensure_unicode(value['key'])
+                value = value['_dtb_value_']
+                if preferences.General.dtb_expand_structures:
+                    if isinstance(value, list) or isinstance(value, tuple):
+                        iflong, strvalue = check_long_string(value, max_len)
+                        if iflong:
+                            key += (" <list>"
+                                    if isinstance(value, list)
+                                    else " <tuple>")
+                            value = DictionaryTreeBrowser(
+                                {'[%d]' % i: v for i, v in enumerate(value)},
+                                double_lines=True)
+                        else:
+                            string += "<li>%s = %s</li>" % (
+                                key, strvalue)
+                            continue
+
+                if isinstance(value, DictionaryTreeBrowser):
+                    string += '''<ul style="margin: 0px;">
+                    <details open>
+                    <summary>
+                    <li style="display: inline;">
+                    %s
+                    </li></summary>''' % (key)
+                    string += value._get_html_print_items()
+                    string += '</details></ul>'
+                else:
+                    _, strvalue = check_long_string(value, max_len)
+                    strvalue = replace_html_symbols(strvalue)
+                    string += "<li style='margin-left:2.2em;'>%s = %s</li>" % (
+                        key, strvalue)
+        string += ""
+        return string
+
     def __repr__(self):
         return self._get_print_items()
+    
+    def _repr_html_(self):
+        return self._get_html_print_items()
 
     def __getitem__(self, key):
         return self.__getattribute__(key)
