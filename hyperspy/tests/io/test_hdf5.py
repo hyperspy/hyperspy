@@ -40,6 +40,7 @@ from hyperspy.utils import markers
 from hyperspy.drawing.marker import dict2marker
 from hyperspy.misc.test_utils import sanitize_dict as san_dict
 from hyperspy.api import preferences
+from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 my_path = os.path.dirname(__file__)
 
@@ -311,6 +312,34 @@ class TestSavingMetadataContainers:
         s.save(tmpfilepath)
         l = load(tmpfilepath + get_ext())
         assert l.metadata.Signal.quantity == quantity
+
+    def test_metadata_update_to_v3_0(self):
+        md = {'Acquisition_instrument': {'SEM': {'Stage': {'tilt_a': 5.0}},
+                                         'TEM': {'Detector': {'Camera': {'exposure': 0.20000000000000001}},
+                                                 'Stage': {'tilt_a': 10.0},
+                                                 'acquisition_mode': 'TEM',
+                                                 'beam_current': 0.0,
+                                                 'beam_energy': 200.0,
+                                                 'camera_length': 320.00000000000006,
+                                                 'microscope': 'FEI Tecnai'}},
+              'General': {'date': '2014-07-09',
+                          'original_filename': 'test_diffraction_pattern.dm3',
+                          'time': '18:56:37',
+                          'title': 'test_diffraction_pattern'},
+              'Signal': {'Noise_properties': {'Variance_linear_model': {'gain_factor': 1.0,
+                                                                        'gain_offset': 0.0}},
+                         'binned': False,
+                         'quantity': 'Intensity',
+                         'signal_type': ''},
+              '_HyperSpy': {'Folding': {'original_axes_manager': None,
+                                        'original_shape': None,
+                                        'signal_unfolded': False,
+                                        'unfolded': False}}}
+        s = load(os.path.join(
+            my_path,
+            "hdf5_files",
+            'example2_v2.2.hspy'))
+        assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
 
 def test_none_metadata():
