@@ -45,7 +45,7 @@ default_extension = 7
 
 # Writing capabilities
 writes = True
-version = "2.2"
+version = "3.0"
 
 # -----------------------
 # File format description
@@ -75,6 +75,10 @@ version = "2.2"
 # Experiments instance
 #
 # CHANGES
+#
+# v3.0
+# - add Camera and Stage node
+# - move tilt_stage to Stage.tilt_a
 #
 # v2.2
 # - store more metadata as string: date, time, notes, authors and doi
@@ -356,6 +360,36 @@ def hdfgroup2signaldict(group, lazy=False):
                     exp["metadata"]["Signal"] = {}
                 exp["metadata"]["Signal"][key] = exp["metadata"][key]
                 del exp["metadata"][key]
+
+    if current_file_version < LooseVersion("3.0"):
+        if "Acquisition_instrument" in exp["metadata"]:
+            # Move tilt_stage to Stage.tilt_a
+            # Move exposure time to Detector.Camera.exposure_time
+            if "TEM" in exp["metadata"]["Acquisition_instrument"]:
+                tem = exp["metadata"]["Acquisition_instrument"]["TEM"]
+                exposure = None
+                if "tilt_stage" in tem:
+                    tem["Stage"] = {"tilt_a": tem["tilt_stage"]}
+                    del tem["tilt_stage"]
+                if "exposure" in tem:
+                    exposure = "exposure"
+                # Digital_micrograph plugin was parsing to 'exposure_time'
+                # instead of 'exposure': need this to be compatible with
+                # previous behaviour
+                if "exposure_time" in tem:
+                    exposure = "exposure_time"
+                if exposure is not None:
+                    if "Detector" not in tem:
+                        tem["Detector"] = {"Camera":{
+                            "exposure": tem[exposure]}}
+                    tem["Detector"]["Camera"] = {"exposure": tem[exposure]}
+                    del tem[exposure]
+            # Move tilt_stage to Stage.tilt_a
+            if "SEM" in exp["metadata"]["Acquisition_instrument"]:
+                sem = exp["metadata"]["Acquisition_instrument"]["SEM"]
+                if "tilt_stage" in sem:
+                    sem["Stage"] = {"tilt_a": sem["tilt_stage"]}
+                    del sem["tilt_stage"]
 
     return exp
 
