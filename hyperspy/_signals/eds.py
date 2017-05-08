@@ -208,7 +208,7 @@ class EDS_mixin:
                           BaseSignal):
                 var = m.metadata.Signal.Noise_properties.variance
                 m.metadata.Signal.Noise_properties.variance = var.rebin(
-                    scale, crop=crop, out=out)  # can't find where this function goes...
+                    scale, crop=crop, out=out)
         if out is None:
             return m
         else:

@@ -79,8 +79,8 @@ def rebin(a, scale, crop=True):
     ----------
     a : numpy array
     scale : a list of floats or integer
-        For each dimension specify the new:old pixel ratio, e.g. a ratio of 1 
-        is no binning and a ratio of 2 means that each pixel in the new 
+        For each dimension specify the new:old pixel ratio, e.g. a ratio of 1
+        is no binning and a ratio of 2 means that each pixel in the new
         spectrum is twice the size of the pixels in the old spectrum.
         The length of the list should match the dimension of the numpy array.
     crop: bool, default True
@@ -197,7 +197,7 @@ def _linear_bin_loop(result, data, scale):
 def _linear_bin(dat, scale, crop=True):
     """
     Binning of the spectrum image by a non-integer pixel value.
-    
+
     Parameters
     ----------
     originalSpectrum : numpy.array
@@ -205,14 +205,14 @@ def _linear_bin(dat, scale, crop=True):
         For each dimension specify the new:old pixel ratio,
         e.g. a ratio of 1 is no binning; a ratio of 2 means that each pixel in
         the new spectrum is twice the size of the pixels in the old spectrum.
-        The length of the list should match the dimensional of the data.
+        The length of the list should match the dimensions of the data.
     crop : bool, default True
         When binning by a non-integer number of pixels it is likely that
         the final row in each dimension contains less than the full quota to
         fill one pixel.
         e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
         pixels and one row containing only 0.8 pixels worth. Selection of
-        crop='True' or crop='False' determines whether or not this 'black' 
+        crop='True' or crop='False' determines whether or not this 'black'
         line is cropped from the final binned array or not.
 
         *Please note that if crop=False is used, the final row in each
