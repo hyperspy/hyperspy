@@ -29,11 +29,12 @@ from hyperspy.tests.drawing.test_plot_signal import _TestPlot
 scalebar_color = 'blue'
 default_tol = 2.0
 baseline_dir = 'plot_signal1d'
+style_pytest_mpl = 'default'
 
 style = ['default', 'overlap', 'cascade', 'mosaic', 'heatmap']
 
 
-def _generate_filename_list():
+def _generate_filename_list(style):
     path = os.path.dirname(__file__)
     filename_list = ['test_plot_spectra_%s' % s for s in style]
     filename_list2 = []
@@ -51,13 +52,21 @@ class TestPlotSpectra():
     @classmethod
     def setup_class(cls):
         # duplicate baseline images to match the test_name when the
-        # parametrized 'test_plot_spectra' are run.
-        for filename in _generate_filename_list():
-            copyfile("%s.png" % filename[:-5], filename)
+        # parametrized 'test_plot_spectra' are run. For a same 'style', the
+        # expected images are the same.
+        if pytest.config.getoption("--mpl-generate-path") is None:
+            for filename in _generate_filename_list(style):
+                copyfile("%s.png" % filename[:-5], filename)
 
     @classmethod
     def teardown_class(cls):
-        for filename in _generate_filename_list():
+        # Create the baseline images: copy one baseline image for each test
+        # and remove the other ones.
+        if pytest.config.getoption("--mpl-generate-path"):
+            for filename in _generate_filename_list(style):
+                copyfile(filename, "%s.png" % filename[:-5])
+        # Delete the images that have been created in 'setup_class'
+        for filename in _generate_filename_list(style):
             os.remove(filename)
 
     def _generate_parameters(style):
@@ -75,10 +84,10 @@ class TestPlotSpectra():
         return ids
 
     @pytest.mark.parametrize(("style", "fig", "ax"),
-                             _generate_parameters(style[:-2]),
-                             ids=_generate_ids(style[:-2]))
+                             _generate_parameters(style),
+                             ids=_generate_ids(style))
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
-                                   tolerance=default_tol)
+                                   tolerance=default_tol, style=style_pytest_mpl)
     def test_plot_spectra(self, mpl_cleanup, style, fig, ax):
         if fig:
             fig = plt.figure()
@@ -94,7 +103,7 @@ class TestPlotSpectra():
 
     @pytest.mark.parametrize("figure", ['1nav', '1sig', '2nav', '2sig'])
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
-                                   tolerance=default_tol)
+                                   tolerance=default_tol, style=style_pytest_mpl)
     def test_plot_spectra_sync(self, mpl_cleanup, figure):
         s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0).inav[:, :3]
         s2 = s1.deepcopy() * -1
@@ -156,7 +165,7 @@ def _generate_parameter():
 @pytest.mark.parametrize(("ndim", "plot_type"),
                          _generate_parameter())
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
-                               tolerance=default_tol)
+                               tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_two_cursors(mpl_cleanup, ndim, plot_type):
     s = _test_plot_two_cursors(ndim=ndim)
     if plot_type == "sig":
