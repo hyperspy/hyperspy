@@ -211,7 +211,7 @@ class LazySignal(BaseSignal):
     def swap_axes(self, *args):
         raise lazyerror
 
-    def rebin(self, scale, out=None, crop=False):
+    def rebin(self, scale, crop=False, out=None):
         new_shape_in_array = []
         new_shape = np.zeros_like(scale)
         for axis, s in enumerate(scale):
@@ -224,7 +224,7 @@ class LazySignal(BaseSignal):
         axis = {ax.index_in_array: ax
                 for ax in self.axes_manager._axes}[factors.argmax()]
         self._make_lazy(axis=axis)
-        return super().rebin(scale, out=out, crop=crop)
+        return super().rebin(scale, crop=crop, out=out)
 
     rebin.__doc__ = BaseSignal.rebin.__doc__
 

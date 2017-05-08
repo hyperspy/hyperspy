@@ -237,7 +237,9 @@ Documentation comes in two parts docstrings and user-guide documentation.
 
 Docstrings -- written at the start of a function and give essential information
 about how it should be used, such as which arguments can be passed to it and what
-the syntax should be.
+the syntax should be. The docstrings need to follow the `numpy specification 
+<https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`_, 
+as shown in `this example <https://github.com/numpy/numpy/blob/master/doc/example.py>`_.
 
 User-guide Documentation -- A description of the functionality of the code and how
 to use it with examples and links to the relevant code.

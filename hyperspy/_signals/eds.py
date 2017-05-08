@@ -19,18 +19,19 @@ import itertools
 import logging
 
 import numpy as np
-import math as math
 import warnings
 import matplotlib
 from matplotlib import pyplot as plt
 from distutils.version import LooseVersion
 
 from hyperspy import utils
+from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D, LazySignal1D
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
 from hyperspy.utils.plot import markers
+
 
 _logger = logging.getLogger(__name__)
 
@@ -178,55 +179,12 @@ class EDS_mixin:
             return s
     sum.__doc__ = Signal1D.sum.__doc__
 
-
-    def rebin(self, scale, out=None, crop=True):
+    def rebin(self, scale, crop=True, out=None):
         """
-        Binning of the spectrum image by a non-integer pixel value.
-
-        Parameters
-        ----------
-        scale : a list of floats
-            for each dimension specify the new:old pixel ratio
-            e.g. a ratio of 1 is no binning
-                 a ratio of 2 means that each pixel in the new spectrum is
-                 twice the size of the pixels in the old spectrum.
-        crop_str : {'False'}, optional
-            when binning by a non-integer number of pixels it is likely that
-             the final row in each dimension contains less than the full quota to
-             fill one pixel.
-             e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
-             pixels and one row containing only 0.8 pixels worth. Selection of
-             crop_str = 'True' or crop = 'False' determines whether or not this
-             'black' line is cropped from the final binned array or not.
-
-            *Please note that if crop=False is used, the final row in each
-            dimension may appear black, if a fractional number of pixels are left
-            over. It can be removed but has been left to preserve total counts
-            before and after binning.*
-
-        Returns
-        -------
-        s : Signal subclass
-
-        Examples
-        --------
-        >>> spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
-        >>> spectrum.data[1, 2, 9] = 5
-        >>> print(spectrum)
-        <EDXTEMSpectrum, title: dimensions: (4, 4|10)>
-        >>> print ('Sum = ', sum(sum(sum(spectrum.data))))
-        Sum = 164.0
-        >>> scale = [2, 2, 5]
-        >>> test = spectrum.rebin(scale)
-        >>> print(test)
-        <EDSTEMSpectrum, title: dimensions (2, 2|2)>
-        >>> print('Sum = ', sum(sum(sum(test.data))))
-        Sum =  164.0
-
+        %s
         """
 
-        spectrum = self.data
-        m = super().rebin(scale, out=out, crop=crop)
+        m = super().rebin(scale, crop=crop, out=out)
         m = out or m
 
         if "Acquisition_instrument.SEM.Detector.EDS.real_time" in m.metadata:
@@ -245,18 +203,20 @@ class EDS_mixin:
             for i, t in enumerate(m.axes_manager.navigation_axes):
                 m.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time\
                     *= scale[i]
-        if m.metadata.has_item('Signal,Noise_properties.variance'):
+        if m.metadata.has_item('Signal.Noise_properties.variance'):
             if isinstance(m.metadata.Signal.Noise_properties.variance,
                           BaseSignal):
                 var = m.metadata.Signal.Noise_properties.variance
                 m.metadata.Signal.Noise_properties.variance = var.rebin(
-                    scale)#can't find where this function goes...
+                    scale, crop=crop, out=out)  # can't find where this function goes...
         if out is None:
             return m
         else:
             out.events.data_changed.trigger(obj=out)
 
         return m
+
+    rebin.__doc__ = BaseSignal.rebin.__doc__
 
     def set_elements(self, elements):
         """Erase all elements and set them.
