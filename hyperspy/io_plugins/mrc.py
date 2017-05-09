@@ -219,9 +219,9 @@ def file_reader(filename, endianess='<', **kwds):
 
 mapping = {
     'fei_header.a_tilt':
-    ("Acquisition_instrument.TEM.Stage.tilt_a", None),
+    ("Acquisition_instrument.TEM.Stage.tilt_alpha", None),
     'fei_header.b_tilt':
-    ("Acquisition_instrument.TEM.Stage.tilt_b", None),
+    ("Acquisition_instrument.TEM.Stage.tilt_beta", None),
     'fei_header.x_stage':
     ("Acquisition_instrument.TEM.Stage.x", None),
     'fei_header.y_stage':

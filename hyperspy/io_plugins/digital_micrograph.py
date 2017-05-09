@@ -828,7 +828,7 @@ class ImageObject(object):
             "ImageList.TagGroup0.ImageTags.Microscope Info.Voltage": (
                 "Acquisition_instrument.TEM.beam_energy", lambda x: x / 1e3),
             "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage Alpha": (
-                "Acquisition_instrument.TEM.Stage.tilt_a", None),
+                "Acquisition_instrument.TEM.Stage.tilt_alpha", None),
             "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage X": (
                 "Acquisition_instrument.TEM.Stage.x", lambda x: x * 1e-3),
             "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage Y": (

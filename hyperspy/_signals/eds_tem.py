@@ -53,9 +53,9 @@ class EDSTEM_mixin:
         mp.Signal.signal_type = "EDS_TEM"
 
         mp = self.metadata
-        if "Acquisition_instrument.TEM.Stage.tilt_a" not in mp:
+        if "Acquisition_instrument.TEM.Stage.tilt_alpha" not in mp:
             mp.set_item(
-                "Acquisition_instrument.TEM.Stage.tilt_a",
+                "Acquisition_instrument.TEM.Stage.tilt_alpha",
                 preferences.EDS.eds_tilt_stage)
         if "Acquisition_instrument.TEM.Detector.EDS.elevation_angle" not in mp:
             mp.set_item(
@@ -128,7 +128,7 @@ class EDSTEM_mixin:
                 "Acquisition_instrument.TEM.Detector.EDS.live_time",
                 live_time)
         if tilt_stage is not None:
-            md.set_item("Acquisition_instrument.TEM.Stage.tilt_a", tilt_stage)
+            md.set_item("Acquisition_instrument.TEM.Stage.tilt_alpha", tilt_stage)
         if azimuth_angle is not None:
             md.set_item(
                 "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
@@ -165,8 +165,8 @@ class EDSTEM_mixin:
         mapping = {
             'Acquisition_instrument.TEM.beam_energy':
             'tem_par.beam_energy',
-            'Acquisition_instrument.TEM.Stage.tilt_a':
-            'tem_par.tilt_a',
+            'Acquisition_instrument.TEM.Stage.tilt_alpha':
+            'tem_par.tilt_alpha',
             'Acquisition_instrument.TEM.Detector.EDS.live_time':
             'tem_par.live_time',
             'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
@@ -189,8 +189,8 @@ class EDSTEM_mixin:
         mapping = {
             'Acquisition_instrument.TEM.beam_energy':
             tem_par.beam_energy,
-            'Acquisition_instrument.TEM.Stage.tilt_a':
-            tem_par.tilt_a,
+            'Acquisition_instrument.TEM.Stage.tilt_alpha':
+            tem_par.tilt_alpha,
             'Acquisition_instrument.TEM.Detector.EDS.live_time':
             tem_par.live_time,
             'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
