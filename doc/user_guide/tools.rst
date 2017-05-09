@@ -42,7 +42,7 @@ currently available specialised :py:class:`~.signal.BaseSignal` subclasses.
 
 
 The :py:mod:`~.signals` module, which contains all available signal subclasses,
-is imported in the user namespace when loading hyperspy. In the following
+is imported in the user namespace when loading HyperSpy. In the following
 example we create a Signal2D instance from a 2D numpy array:
 
 .. code-block:: python
@@ -353,13 +353,13 @@ Example:
     >>> s = hs.signals.BaseSignal(np.random.random((2,4,6)))
     >>> s.axes_manager[0].name = 'E'
     >>> s
-    <BaseSignal, title: , dimensions: (4, 2|6)>
+    <BaseSignal, title: , dimensions: (|6, 4, 2)>
     >>> # by default perform operation over all navigation axes
     >>> s.sum()
-    <BaseSignal, title: , dimensions: (|6)>
+    <BaseSignal, title: , dimensions: (|6, 4, 2)>
     >>> # can also pass axes individually
     >>> s.sum('E')
-    <BaseSignal, title: , dimensions: (2|6)>
+    <Signal2D, title: , dimensions: (|4, 2)>
     >>> # or a tuple of axes to operate on, with duplicates, by index or directly
     >>> ans = s.sum((-1, s.axes_manager[1], 'E', 0))
     >>> ans
@@ -454,7 +454,7 @@ features differ from numpy):
 
   + Allow independent indexing of signal and navigation dimensions
   + Support indexing with decimal numbers.
-  + Use the image order for indexing i.e. [x, y, z,...] (hyperspy) vs
+  + Use the image order for indexing i.e. [x, y, z,...] (HyperSpy) vs
     [...,z,y,x] (numpy)
 
 * HyperSpy indexing does not:
@@ -549,7 +549,7 @@ data treating navigation axes using ``inav`` and signal axes using ``isig``.
 
     >>> s = hs.signals.Signal1D(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
-    <Signal1D, title: , dimensions: (10, 10, 10)>
+    <Signal1D, title: , dimensions: (3, 2|4)>
     >>> s.data
     array([[[ 0,  1,  2,  3],
         [ 4,  5,  6,  7],
@@ -568,13 +568,22 @@ data treating navigation axes using ``inav`` and signal axes using ``isig``.
     >>> s.inav[0,0].data
     array([0, 1, 2, 3])
     >>> s.inav[0,0].axes_manager
-    <Axes manager, axes: (<t axis, size: 4>,)>
+    <Axes manager, axes: (|4)>
+                Name |   size |  index |  offset |   scale |  units
+    ================ | ====== | ====== | ======= | ======= | ======
+    ---------------- | ------ | ------ | ------- | ------- | ------
+                   t |      4 |        |       0 |       1 | <undefined>
     >>> s.inav[0,0].isig[::-1].data
     array([3, 2, 1, 0])
     >>> s.isig[0]
-    <Signal1D, title: , dimensions: (2, 3)>
+    <BaseSignal, title: , dimensions: (3, 2)>
     >>> s.isig[0].axes_manager
-    <Axes manager, axes: (<x axis, size: 3, index: 0>, <y axis, size: 2, index: 0>)>
+    <Axes manager, axes: (3, 2|)>
+                Name |   size |  index |  offset |   scale |  units
+    ================ | ====== | ====== | ======= | ======= | ======
+                   x |      3 |      0 |       0 |       1 | <undefined>
+                   y |      2 |      0 |       0 |       1 | <undefined>
+    ---------------- | ------ | ------ | ------- | ------- | ------
     >>> s.isig[0].data
     array([[ 0,  4,  8],
        [12, 16, 20]])
@@ -586,7 +595,7 @@ further in the following:
 
     >>> s = hs.signals.Signal1D(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
-    <Signal1D, title: , dimensions: (10, 10, 10)>
+    <Signal1D, title: , dimensions: (3, 2|4)>
     >>> s.data
     array([[[ 0,  1,  2,  3],
         [ 4,  5,  6,  7],
@@ -605,11 +614,20 @@ further in the following:
     >>> s.inav[0,0].data
     array([0, 1, 2, 3])
     >>> s.inav[0,0].axes_manager
-    <Axes manager, axes: (<t axis, size: 4>,)>
+    <Axes manager, axes: (|4)>
+                Name |   size |  index |  offset |   scale |  units
+    ================ | ====== | ====== | ======= | ======= | ======
+    ---------------- | ------ | ------ | ------- | ------- | ------
+                   t |      4 |        |       0 |       1 | <undefined>
     >>> s.isig[0]
-    <Signal1D, title: , dimensions: (2, 3)>
+    <BaseSignal, title: , dimensions: (2, 3)>
     >>> s.isig[0].axes_manager
-    <Axes manager, axes: (<x axis, size: 3, index: 0>, <y axis, size: 2, index: 0>)>
+    <Axes manager, axes: (3, 2|)>
+                Name |   size |  index |  offset |   scale |  units
+    ================ | ====== | ====== | ======= | ======= | ======
+                   x |      3 |      0 |       0 |       1 | <undefined>
+                   y |      2 |      0 |       0 |       1 | <undefined>
+    ---------------- | ------ | ------ | ------- | ------- | ------
     >>> s.isig[0].data
     array([[ 0,  4,  8],
        [12, 16, 20]])
@@ -622,7 +640,7 @@ dimensions respectively:
 
     >>> s = hs.signals.Signal1D(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
-    <Signal1D, title: , dimensions: (10, 10, 10)>
+    <Signal1D, title: , dimensions: (3, 2|4)>
     >>> s.data
     array([[[ 0,  1,  2,  3],
         [ 4,  5,  6,  7],
@@ -636,7 +654,7 @@ dimensions respectively:
     >>> s.inav[0,0] = 1
     >>> s.inav[0,0].data
     array([1, 1, 1, 1])
-    >>> s.inav[0,0] = s[1,1]
+    >>> s.inav[0,0] = s.inav[1,1]
     >>> s.inav[0,0].data
     array([16, 17, 18, 19])
 
@@ -659,6 +677,10 @@ These operations are performed element-wise. When the dimensions of the signals
 are not equal `numpy broadcasting rules apply
 <http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html>`_ independently
 for the navigation and signal axes.
+
+.. WARNING::
+
+    Hyperspy does not check if the calibration of the signals matches.
 
 In the following example `s2` has only one navigation axis while `s` has two.
 However, because the size of their first navigation axis is the same, their
@@ -764,7 +786,7 @@ to make a horizontal "collage" of the image stack:
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.lena()]*5))
+    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.ascent()]*5))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> for image, angle in zip(image_stack, (0, 45, 90, 135, 180)):
@@ -793,7 +815,7 @@ using an external function can be more easily accomplished using the
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.lena()]*4))
+    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.ascent()]*4))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> image_stack.map(scipy.ndimage.rotate,
@@ -814,7 +836,7 @@ arguments as in the following example.
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.lena()]*4))
+    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.ascent()]*4))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> angles = hs.signals.BaseSignal(np.array([0, 45, 90, 135]))
@@ -936,7 +958,7 @@ with same dimension.
 
 .. code-block:: python
 
-    >>> image = hs.signals.Signal2D(scipy.misc.lena())
+    >>> image = hs.signals.Signal2D(scipy.misc.ascent())
     >>> image = hs.stack([hs.stack([image]*3,axis=0)]*3,axis=1)
     >>> image.plot()
 
@@ -1261,13 +1283,13 @@ operation.
 
 .. code-block:: python
 
-    >>> s = signals.Signal1D(np.arange(10))
+    >>> s = hs.signals.Signal1D(np.arange(10))
     >>> s_sum = s.sum(0)
     >>> s_sum.data
-    array(45)
+    array([45])
     >>> s.isig[:5].sum(0, out=s_sum)
     >>> s_sum.data
-    array(10)
+    array([10])
     >>> s_roi = s.isig[:3]
     >>> s_roi
     <Signal1D, title: , dimensions: (|3)>
@@ -1294,11 +1316,11 @@ signal changes.
     >>> s = hs.signals.Signal1D(np.arange(10.))
     >>> ssum = hs.interactive(s.sum, axis=0)
     >>> ssum.data
-    array(45.0)
+    array([45.0])
     >>> s.data /= 10
-    >>> s.events.data_changed.trigger()
+    >>> s.events.data_changed.trigger(s)
     >>> ssum.data
-    4.5
+    array([ 4.5])
 
 The interactive operations can be chained.
 
