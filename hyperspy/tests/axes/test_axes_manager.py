@@ -79,6 +79,46 @@ class TestAxesManager:
         assert am2[3].size != am[3].size
 
 
+class TestAxesManagerScaleOffset:
+
+    def test_low_high_value(self):
+        data = arange(11)
+        s = BaseSignal(data)
+        axes = s.axes_manager[0]
+        assert axes.low_value == data[0]
+        assert axes.high_value == data[-1]
+
+    def test_change_scale(self):
+        data = arange(132)
+        s = BaseSignal(data)
+        axes = s.axes_manager[0]
+        scale_value_list = [0.07, 76, 1]
+        for scale_value in scale_value_list:
+            axes.scale = scale_value
+            assert axes.low_value == data[0]*scale_value
+            assert axes.high_value == data[-1]*scale_value
+
+    def test_change_offset(self):
+        data = arange(81)
+        s = BaseSignal(data)
+        axes = s.axes_manager[0]
+        offset_value_list = [12, -216, 1, 0]
+        for offset_value in offset_value_list:
+            axes.offset = offset_value
+            assert axes.low_value == (data[0]+offset_value)
+            assert axes.high_value == (data[-1]+offset_value)
+
+    def test_change_offset_scale(self):
+        data = arange(11)
+        s = BaseSignal(data)
+        axes = s.axes_manager[0]
+        scale, offset = 0.123, -314
+        axes.offset = offset
+        axes.scale = scale
+        assert axes.low_value == (data[0]*scale+offset)
+        assert axes.high_value == (data[-1]*scale+offset)
+
+
 class TestAxesManagerExtent:
 
     def test_1d_basesignal(self):
