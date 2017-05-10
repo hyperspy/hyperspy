@@ -1122,6 +1122,69 @@ class MVA():
 
         return ax
 
+    def scree_plot(self, n=50, log=True, highlight=0,
+                   highlight_col='#C24D52', col='#4A70B0', markersize=100):
+        """Plot the decomposition explained variance ratio vs index number
+        (Scree Plot). This method is an alternative to
+        `plot_explained_variance_ratio`
+
+        Parameters
+        ----------
+        n : int
+            Number of components to plot.
+        log : bool
+            If True, the y axis uses a log scale.
+        highlight : int
+            Number of components to highlight as important.
+        highlight_col : str or color tuple
+            Color that will be used to plot the first number of components
+            specified by the `highlight` parameter.
+        col : str or color tuple
+            Color that will be used to plot remaining components.
+        markersize : int
+            Size of markers on plot.
+
+        Returns
+        -------
+        ax : matplotlib.axes
+
+        See Also:
+        ---------
+
+        `get_explained_variance_ration`, `decomposition`,
+        `get_decomposition_loadings`,
+        `get_decomposition_factors`, `plot_explained_variance_ratio`.
+
+        """
+        s = self.get_explained_variance_ratio()
+        if n < s.axes_manager[-1].size:
+            s = s.isig[:n]
+        plt.figure()
+        ax = plt.gca()
+        if log:
+            ax.semilogy()
+
+        if highlight > 0:
+            plt.scatter(range(highlight),
+                        s[:highlight].data,
+                        c=highlight_col,
+                        s=markersize)
+            plt.scatter(range(highlight, n),
+                        s[highlight:n].data,
+                        c=col,
+                        s=markersize)
+        else:
+            plt.scatter(range(n),
+                        s[:n].data,
+                        c=col,
+                        s=markersize)
+        ax.set_ylabel("Explained variance ratio")
+        ax.set_xlabel("Principal component number")
+        ax.margins(0.05)
+        ax.autoscale()
+        ax.set_title(s.metadata.General.title, y=1.01)
+        return ax
+
     def plot_cumulative_explained_variance_ratio(self, n=50):
         """Plot the principal components explained variance up to the
         given number
