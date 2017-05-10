@@ -253,10 +253,8 @@ class MVATools(object):
                                 vector_scale=1,
                                 per_row=3, ax=None):
         """Plot components from PCA or ICA, or peak characteristics
-
         Parameters
         ----------
-
         comp_ids : None, int, or list of ints
             if None, returns maps of all components.
             if int, returns maps of components with ids from 0 to given
@@ -276,19 +274,15 @@ class MVATools(object):
             The colormap used for factor images or
             any peak characteristic scatter map
             overlay.
-
         Parameters only valid for peak characteristics (or pk char factors):
         --------------------------------------------------------------------
-
         img_data - 2D numpy array,
             The array to overlay peak characteristics onto.  If None,
             defaults to the average image of your stack.
-
         plot_shifts - bool, default is True
             If true, plots a quiver (arrow) plot showing the shifts for
             each
             peak present in the component being plotted.
-
         plot_char - None or int
             If int, the id of the characteristic to plot as the colored
             scatter plot.
@@ -296,11 +290,9 @@ class MVATools(object):
                4: peak height
                5: peak orientation
                6: peak eccentricity
-
        quiver_color : any color recognized by matplotlib
            Determines the color of vectors drawn for
            plotting peak shifts.
-
        vector_scale : integer or None
            Scales the quiver plot arrows.  The vector
            is defined as one data unit along the X axis.
@@ -308,7 +300,6 @@ class MVATools(object):
            that when they are multiplied by vector_scale,
            they are on the scale of the image plot.
            If None, uses matplotlib's autoscaling.
-
         """
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
