@@ -178,6 +178,7 @@ class Parameter(t.HasTraits):
                            }
         self._slicing_whitelist = {'map': 'inav'}
         self._is_linear = False
+        self._is_independent = False
 
     def _load_dictionary(self, dictionary):
         """Load data from dictionary
@@ -1327,16 +1328,26 @@ class Component(t.HasTraits):
                 raise
     @property
     def is_linear(self):
-        "Loops through the components free parameters, checks that they are linear"
+        "Loops through the component's free parameters, checks that they are linear"
         linear = True
-        for para in self.free_parameters:
+        set_of_parameters_to_check = set(self.free_parameters) - set(self.independent_parameters)
+        if len(set_of_parameters_to_check) > 1:
+            return False
+        for para in set_of_parameters_to_check:
             if not para._is_linear:
                 linear = False
         return linear
 
+    def independent_parameters(self):
+        """Lists all parameters that are independent"""
+        return [para for para in self.parameters if para._is_independent]
+
     @property
-    def constant_term(self):
-        "Get value of the constant term of the component. Returns 0 for most components."
+    def independent_term(self):
+        "Get value of the independent term of the component at current indices. Returns 0 for most components."
+        return self._independent_term()
+
+    def _independent_term(self):
         return 0
 
     def _check_only_one_linear_parameter(self):
@@ -1348,5 +1359,10 @@ class Component(t.HasTraits):
         for para in self.free_parameters:
             if para._is_linear:
                 n_free += 1
-        if n_free > 1:
-            raise AttributeError("Component " + str(self) + " has more than one linear component.")
+        
+        #if n_free > 1:
+        #    raise AttributeError("Component " + str(self) + " has more than one linear component.")
+        if n_free == 1:
+            return True
+        else:
+            return False

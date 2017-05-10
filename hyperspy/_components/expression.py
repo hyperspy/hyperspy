@@ -149,7 +149,9 @@ class Expression(Component):
                 name, sympy.latex(_parse_substitutions(expression)))
 
         for para in self.parameters:
+            para._is_independent = para in self.independent_parameters
             para._is_linear = check_parameter_linearity(expression, para.name)
+            
 
     def compile_function(self, module="numpy", position=False):
         from sympy.utilities.lambdify import lambdify
@@ -219,24 +221,34 @@ class Expression(Component):
                         Expression)
                     )
    
-    @property
-    def constant_term(self):
-        "Get value of constant term of component"
-        # First get currently constant parameters
-        linear_parameters = []
-        for para in self.free_parameters:
-            if para._is_linear:
-                linear_parameters.append(para.name)
-        constant_expr, not_constant_expr = extract_constant_part_of_expression(
-            self._str_expression, *linear_parameters)
+    def _independent_term(self):
+        "Get value of the part of expression not changing with 'x'"
+        # First get expression of currently constant parameters
+        independent_expr, _ = self._extract_independent_part_of_expression()
 
         # Then replace symbols with value of each parameter
-        free_symbols = [str(free) for free in constant_expr.free_symbols]
+        free_symbols = [str(free) for free in independent_expr.free_symbols]
         for para in self.parameters:
             if para.name in free_symbols:
-                constant_expr = constant_expr.subs(para.name, para.value)
-        return constant_expr
+                independent_expr = independent_expr.subs(para.name, para.value)
+        return independent_expr
 
+    def _extract_independent_part_of_expression(self):
+        """
+        Extract constant part of expression given independent variables *args.
+        Given no arguments, only x is assumed to change.
+        """
+        expr = sympy.sympify(self._str_expression)
+        constant, not_constant = expr.as_independent("x", as_Add=True)
+        return constant, not_constant
+
+    @property
+    def independent_parameters(self):
+        """Parameters that are independent of x"""
+        independent_expr, _ = self._extract_independent_part_of_expression()
+        free_symbols = [str(free) for free in independent_expr.free_symbols]
+        return [para for para in self.parameters if para.name in free_symbols]
+            
 def check_parameter_linearity(expr, name):
     "Check whether expression is linear for a given parameter"
     try:
@@ -246,11 +258,3 @@ def check_parameter_linearity(expr, name):
         return False
     return True
 
-def extract_constant_part_of_expression(expr, *args):
-    """
-    Extract constant part of expression given independent variables *args.
-    Given no arguments, only x is assumed to change.
-    """
-    expr = sympy.sympify(expr)
-    constant, not_constant = expr.as_independent(*args, as_Add=True)
-    return constant, not_constant
