@@ -762,7 +762,8 @@ class MVATools(object):
                                    cmap=plt.cm.gray,
                                    per_row=3):
         """Plot factors from a decomposition. In case of 1D signal axis, each
-        factors line can be toggled on and off by clicking on the legended line.
+        factors line can be toggled on and off by clicking on their 
+        corresponding line in the legend.
 
         Parameters
         ----------
@@ -825,7 +826,7 @@ class MVATools(object):
                          per_row=3):
         """Plot factors from blind source separation results. In case of 1D
         signal axis, each factors line can be toggled on and off by clicking 
-        on the legended line.
+        on their corresponding line in the legend.
 
         Parameters
         ----------
@@ -981,7 +982,7 @@ class MVATools(object):
                           no_nans=False, per_row=3, axes_decor='all'):
         """Plot loadings from blind source separation results. In case of 1D 
         navigation axis, each loading line can be toggled on and off by 
-        clicking on the legended line.
+        clicking on their corresponding line in the legend.
 
         Parameters
         ----------

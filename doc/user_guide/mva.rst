@@ -337,7 +337,7 @@ results. All the other methods display each component in its own window. For 2
 and 3 it is wise to provide the number of factors or loadings you wish to
 visualise, since the default is to plot all of them. For BSS, the default is
 the number you included when running the :py:meth:`~.learn.mva.MVA.blind_source_separation`
-method. In case of one dimensional factors or loadings, the latters can be toggled on and off by clicking on the legended line.
+method. In case of one dimensional factors or loadings, the latters can be toggled on and off by clicking on their corresponding line in the legend.
 
 .. _mva.get_results:
 
