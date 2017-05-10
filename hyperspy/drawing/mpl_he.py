@@ -48,10 +48,10 @@ class MPL_HyperExplorer(object):
         return
 
     def plot_navigator(self,
-                       colorbar=False,
+                       colorbar=True,
                        scalebar=True,
                        scalebar_color="white",
-                       axes_ticks='off',
+                       axes_ticks=None,
                        saturated_pixels=0,
                        vmin=None,
                        vmax=None,
