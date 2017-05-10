@@ -19,7 +19,6 @@
 import copy
 import os.path
 import warnings
-import math
 import inspect
 from contextlib import contextmanager
 from datetime import datetime
@@ -58,7 +57,7 @@ from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
                                         broadcast_signals)
 
-import warnings
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 _logger = logging.getLogger(__name__)
 
@@ -749,9 +748,10 @@ class MVATools(object):
                                    comp_ids,
                                    calibrate=True,
                                    same_window=None,
-                                   title=None,
+                                   comp_label=None,
                                    cmap=plt.cm.gray,
-                                   per_row=3):
+                                   per_row=3,
+                                   title=None):
         """Plot factors from a decomposition. In case of 1D signal axis, each
         factors line can be toggled on and off by clicking on their 
         corresponding line in the legend.
@@ -800,6 +800,7 @@ class MVATools(object):
         factors = self.learning_results.factors
         if comp_ids is None:
             comp_ids = self.learning_results.output_dimension
+        title = self._change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('Decomposition factors of',
                                          same_window)
@@ -813,8 +814,8 @@ class MVATools(object):
                                             per_row=per_row)
 
     def plot_bss_factors(self, comp_ids=None, calibrate=True,
-                         same_window=None, title=None,
-                         per_row=3):
+                         same_window=None, comp_label=None,
+                         per_row=3, title=None):
         """Plot factors from blind source separation results. In case of 1D
         signal axis, each factors line can be toggled on and off by clicking 
         on their corresponding line in the legend.
@@ -863,6 +864,7 @@ class MVATools(object):
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         factors = self.learning_results.bss_factors
+        title = self._change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('BSS factors of', same_window)
 
@@ -877,12 +879,13 @@ class MVATools(object):
                                     comp_ids,
                                     calibrate=True,
                                     same_window=None,
-                                    title=None,
+                                    comp_label=None,
                                     with_factors=False,
                                     cmap=plt.cm.gray,
                                     no_nans=False,
                                     per_row=3,
-                                    axes_decor='all'):
+                                    axes_decor='all',
+                                    title=None):
         """Plot loadings from a decomposition. In case of 1D navigation axis,
         each loading line can be toggled on and off by clicking on the legended
         line.
@@ -951,6 +954,7 @@ class MVATools(object):
 
         if comp_ids is None:
             comp_ids = self.learning_results.output_dimension
+        title = self._change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('Decomposition loadings of',
                                          same_window)
@@ -968,9 +972,10 @@ class MVATools(object):
             axes_decor=axes_decor)
 
     def plot_bss_loadings(self, comp_ids=None, calibrate=True,
-                          same_window=None, title=None,
+                          same_window=None, comp_label=None,
                           with_factors=False, cmap=plt.cm.gray,
-                          no_nans=False, per_row=3, axes_decor='all'):
+                          no_nans=False, per_row=3, axes_decor='all',
+                          title=None):
         """Plot loadings from blind source separation results. In case of 1D 
         navigation axis, each loading line can be toggled on and off by 
         clicking on their corresponding line in the legend.
@@ -1032,6 +1037,7 @@ class MVATools(object):
                                       "`plot_bss_results` instead.")
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
+        title = self._change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('BSS loadings of',
                                          same_window)
@@ -1479,6 +1485,20 @@ class MVATools(object):
             factors.axes_manager.set_signal_dimension(factors_dim)
         loadings.plot(navigator=loadings_navigator)
         factors.plot(navigator=factors_navigator)
+
+    def _change_API_comp_label(self, title, comp_label):
+        if comp_label is not None:
+            if title is None:
+                title = comp_label
+                warnings.warn("The 'comp_label' argument will be deprecated",
+                              "in 2.0, please use 'title' instead",
+                              VisibleDeprecationWarning)
+            else:
+                warnings.warn("The 'comp_label' argument will be deprecated",
+                              "in 2.0, Since you are already using the 'title'",
+                              "argument, 'comp_label' is ignored.",
+                              VisibleDeprecationWarning)
+        return title
 
 
 class SpecialSlicersSignal(SpecialSlicers):
