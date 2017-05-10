@@ -469,10 +469,12 @@ class FeiEMDReader(object):
 
     """
 
-    def __init__(self, filename):
+    def __init__(self, filename, first_frame=0, last_frame=None):
         self.filename = filename
         self.ureg = pint.UnitRegistry()
         self.dictionaries = []
+        self.first_frame = first_frame
+        self.last_frame = last_frame
         with h5py.File(filename, 'r') as f:
             self.d_grp = f.get('Data')
             self._check_im_type()
@@ -577,7 +579,8 @@ class FeiEMDReader(object):
         self.si_grp = si_grp
         self.stream = stream
 
-        data = stream.get_spectrum_image(self.image_shape)
+        data = stream.get_spectrum_image(self.image_shape, self.first_frame,
+                                         self.last_frame)
         self.original_metadata['AcquisitionSettings'] = stream.acquisition_settings
 
         pix_scale = self.original_metadata['BinaryResult']['PixelSize']
@@ -617,7 +620,7 @@ class FeiEMDReader(object):
 
     def _get_dispersion_offset(self):
         for detectorname, detector in self.original_metadata['Detectors'].items():
-            _logger.debug('Detector: %s'%detector['DetectorName'])
+            _logger.debug('Detector: %s' % detector['DetectorName'])
             if detector['DetectorName'] == 'SuperXG21' or detector['DetectorName'] == 'SuperXG11':
                 dispersion = float(detector['Dispersion']) / 1000.0
                 offset = float(detector['OffsetEnergy']) / 1000.0
@@ -714,14 +717,16 @@ class FeiSpectrumStream(object):
 
         self.acquisition_settings = settings
 
-    def get_spectrum_image(self, shape):
+    def get_spectrum_image(self, shape, first_frame=0, last_frame=None):
+        if last_frame is None:
+            last_frame = (self.stream == 65535).sum()
         return get_spectrum_image(self.stream, shape, self.bin_count,
-                                  self.data_dtype)
+                                  self.data_dtype, first_frame, last_frame)
 
 
 @jit_ifnumba
-def get_spectrum_image(stream, shape, bin_count, data_dtype):
-    # TODO: implement reading a specific frame range.
+def get_spectrum_image(stream, shape, bin_count, data_dtype, first_frame,
+                       last_frame):
     spectrum_image = np.zeros((shape[0], shape[1], bin_count),
                               dtype=data_dtype)
     navigation_index = 0
@@ -731,11 +736,16 @@ def get_spectrum_image(stream, shape, bin_count, data_dtype):
         if navigation_index == (shape[0] * shape[1]):
             navigation_index = 0
             frame_number += 1
-            _logger.debug('Frame #%i'%frame_number)
+            # break the for loop when we reach the last frame we want to read
+            if frame_number == last_frame:
+                break
+            # Comment this line, if not numba can not compile this loop
+#            _logger.debug('Frame #%i'%frame_number)
         # if different of ‘65535’, add a count to the corresponding channel
         if count != 65535:
-            spectrum_image[navigation_index // shape[1],
-                           navigation_index % shape[1], count] += 1
+            if first_frame <= frame_number:
+                spectrum_image[navigation_index // shape[1],
+                               navigation_index % shape[1], count] += 1
         else:
             navigation_index += 1
 
@@ -747,7 +757,7 @@ def file_reader(filename, log_info=False,
     dictionaries = []
     if fei_check(filename) == True:
         _logger.debug('EMD is FEI format')
-        emd = FeiEMDReader(filename)
+        emd = FeiEMDReader(filename, **kwds)
         dictionaries = emd.dictionaries
     else:
         emd = EMD.load_from_emd(filename, lazy)
