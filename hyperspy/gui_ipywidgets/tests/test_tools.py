@@ -125,10 +125,13 @@ class TestTools:
         s.data[0, 2, 29] += 1
         s.data[1, 2, 14] += 1
         wd = s.spikes_removal_tool(**KWARGS)["ipywidgets"]["wdict"]
+
         def next():
             wd["next_button"]._click_handlers(wd["next_button"])
+
         def previous():
             wd["previous_button"]._click_handlers(wd["previous_button"])
+
         def remove():
             wd["remove_button"]._click_handlers(wd["remove_button"])
         wd["threshold"].value = 1.5
