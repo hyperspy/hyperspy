@@ -268,7 +268,7 @@ class ImagePlot(BlittedFigure):
             self._colorbar.ax.yaxis.set_animated(
                 self.figure.canvas.supports_blit)
 
-        self.figure.canvas.draw_idle()
+        self.figure.canvas.draw()
         if hasattr(self.figure, 'tight_layout'):
             try:
                 self.figure.tight_layout()
@@ -396,7 +396,7 @@ Parameters
     def connect(self):
         self.figure.canvas.mpl_connect('key_press_event',
                                        self.on_key_press)
-        self.figure.canvas.draw_idle()
+        self.figure.canvas.draw()
         if self.axes_manager:
             self.axes_manager.events.indices_changed.connect(self.update, [])
             self.events.closed.connect(

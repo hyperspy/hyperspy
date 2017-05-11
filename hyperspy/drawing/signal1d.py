@@ -307,7 +307,7 @@ class Signal1DLine(object):
                                      fontsize=12,
                                      color=self.line.get_color(),
                                      animated=self.ax.figure.canvas.supports_blit)
-        self.ax.figure.canvas.draw_idle()
+        self.ax.figure.canvas.draw()
 
     def update(self, force_replot=False):
         """Update the current spectrum figure"""
