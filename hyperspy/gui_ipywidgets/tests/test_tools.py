@@ -117,3 +117,42 @@ class TestTools:
         wd["right"].value = 50.
         wd["apply_button"]._click_handlers(wd["apply_button"])    # Trigger it
         np.testing.assert_allclose(s.data, s2.data)
+
+    def test_spikes_removal_tool(self):
+        s = hs.signals.Signal1D(np.ones((2, 3, 30)))
+        # Add three spikes
+        s.data[1, 0, 1] += 2
+        s.data[0, 2, 29] += 1
+        s.data[1, 2, 14] += 1
+        wd = s.spikes_removal_tool(**KWARGS)["ipywidgets"]["wdict"]
+        def next():
+            wd["next_button"]._click_handlers(wd["next_button"])
+        def previous():
+            wd["previous_button"]._click_handlers(wd["previous_button"])
+        def remove():
+            wd["remove_button"]._click_handlers(wd["remove_button"])
+        wd["threshold"].value = 1.5
+        next()
+        assert s.axes_manager.indices == (0, 1)
+        wd["threshold"].value = 0.5
+        assert s.axes_manager.indices == (0, 0)
+        next()
+        assert s.axes_manager.indices == (2, 0)
+        next()
+        assert s.axes_manager.indices == (0, 1)
+        previous()
+        assert s.axes_manager.indices == (2, 0)
+        wd["add_noise"].value = False
+        remove()
+        assert s.data[0, 2, 29] == 1
+        assert s.axes_manager.indices == (0, 1)
+        remove()
+        assert s.data[1, 0, 1] == 1
+        assert s.axes_manager.indices == (2, 1)
+        np.random.seed(1)
+        wd["add_noise"].value = True
+        wd["interpolator_kind"].value = "Spline"
+        wd["spline_order"].value = 3
+        remove()
+        assert s.data[1, 2, 14] == 0
+        assert s.axes_manager.indices == (0, 0)
