@@ -912,7 +912,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
             m.text = 'End of dataset reached'
             try:
                 m.gui()
-            except NotImplementedError:
+            except (NotImplementedError, ImportError):
                 # This is only available for traitsui, ipywidgets has a
                 # progress bar instead.
                 pass
@@ -1016,25 +1016,29 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         if self.kind == 'linear':
             pad = 1
         else:
-            pad = 10
+            pad = self.spline_order
         ileft = left - pad
         iright = right + pad
         ileft = np.clip(ileft, 0, len(data))
         iright = np.clip(iright, 0, len(data))
         left = int(np.clip(left, 0, len(data)))
         right = int(np.clip(right, 0, len(data)))
-        x = np.hstack((axis.axis[ileft:left], axis.axis[right:iright]))
-        y = np.hstack((data[ileft:left], data[right:iright]))
         if ileft == 0:
             # Extrapolate to the left
-            data[left:right] = data[right + 1]
+            if right == iright:
+                right -= 1
+            data[:right] = data[right:iright].mean()
 
-        elif iright == (len(data) - 1):
+        elif iright == len(data):
             # Extrapolate to the right
-            data[left:right] = data[left - 1]
+            if left == ileft:
+                left += 1
+            data[left:] = data[ileft:left].mean()
 
         else:
             # Interpolate
+            x = np.hstack((axis.axis[ileft:left], axis.axis[right:iright]))
+            y = np.hstack((data[ileft:left], data[right:iright]))
             intp = sp.interpolate.interp1d(x, y, kind=self.kind)
             data[left:right] = intp(axis.axis[left:right])
 
