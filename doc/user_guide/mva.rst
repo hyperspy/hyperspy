@@ -53,7 +53,7 @@ One of the most popular decomposition methods is principal component analysis (P
 
 Note that the `s` variable must contain either a :class:`~.signal.BaseSignal`  class
 or its subclasses, which will most likely have been loaded with the
-:func:`~.io.load` function, e.g. ``s = load('my_file.hdf5')``. Also, the signal must be
+:func:`~.io.load` function, e.g. ``s = hs.load('my_file.hdf5')``. Also, the signal must be
 multi-dimensional, that is ``s.axes_manager.navigation_size`` must be greater than
 one.
 
@@ -186,6 +186,7 @@ can greatly enhance the result.
 To perform Poissonian noise normalization:
 
 .. code-block:: python
+
      The long way:
      >>> s.decomposition(normalize_poissonian_noise=True)
 
