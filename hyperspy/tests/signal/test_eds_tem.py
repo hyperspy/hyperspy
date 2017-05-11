@@ -329,7 +329,6 @@ class Test_eds_markers:
             ['Zn_Ka', 'Zn_La'])
 
 
-@lazifyTestClass
 class Test_linear_bin:
 
     def test_linear_bin1(self):

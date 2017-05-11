@@ -2192,8 +2192,8 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         scale : a list of floats or integers
-            For each dimension specify the new:old pixel ratio, e.g. a ratio of 1 
-            is no binning and a ratio of 2 means that each pixel in the new 
+            For each dimension specify the new:old pixel ratio, e.g. a ratio of 1
+            is no binning and a ratio of 2 means that each pixel in the new
             spectrum is twice the size of the pixels in the old spectrum.
             The length of the list should match the dimension of the data.
         crop : bool, default True
@@ -2256,7 +2256,7 @@ class BaseSignal(FancySlicing,
                           BaseSignal):
                 var = s.metadata.Signal.Noise_properties.variance
                 s.metadata.Signal.Noise_properties.variance = var.rebin(
-                    factors)
+                    scale, crop=crop, out=out)
         if out is None:
             return s
         else:

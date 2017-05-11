@@ -594,12 +594,6 @@ class TestOutArg:
     def test_rebin(self):
         s = self.s
         scale = (1, 2, 1, 2)
-        if self.s._lazy:
-            from distutils.version import LooseVersion
-            import dask
-            if LooseVersion(np.__version__) >= "1.12.0" and \
-               LooseVersion(dask.__version__) <= "0.13.0":
-                pytest.skip("Dask not up to date with new numpy")
         self._run_single(s.rebin, s, dict(scale=scale))
 
     def test_as_spectrum(self):
