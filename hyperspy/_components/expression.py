@@ -150,7 +150,7 @@ class Expression(Component):
 
         for para in self.parameters:
             para._is_independent = para in self.independent_parameters
-            para._is_linear = check_parameter_linearity(expression, para.name)
+            para._is_linear = self.check_parameter_linearity(para)
             
 
     def compile_function(self, module="numpy", position=False):
@@ -249,12 +249,16 @@ class Expression(Component):
         free_symbols = [str(free) for free in independent_expr.free_symbols]
         return [para for para in self.parameters if para.name in free_symbols]
             
-def check_parameter_linearity(expr, name):
-    "Check whether expression is linear for a given parameter"
-    try:
-        if not sympy.Eq(sympy.diff(expr, name, 2), 0):
+    def check_parameter_linearity(self, para):
+        "Check whether expression is linear for a given parameter"
+        expr = self._str_expression
+        if para in self.independent_parameters:
             return False
-    except TypeError:
-        return False
-    return True
+
+        try:
+            if not sympy.Eq(sympy.diff(expr, para.name, 2), 0):
+                return False
+        except TypeError:
+            return False
+        return True
 
