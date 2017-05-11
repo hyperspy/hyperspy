@@ -857,7 +857,7 @@ def test_spikes_removal_tool():
     sr.threshold = 1.5
     sr.find()
     assert s.axes_manager.indices == (0, 1)
-    sr.threshold  = 0.5
+    sr.threshold = 0.5
     assert s.axes_manager.indices == (0, 0)
     sr.find()
     assert s.axes_manager.indices == (2, 0)
