@@ -212,7 +212,6 @@ class TestFeiEMD():
         assert_allclose(signal.axes_manager[1].scale, 5.302414, atol=1E-5)
         assert_allclose(signal.data, fei_image)
         assert_deep_almost_equal(signal.metadata.as_dictionary(), md)
-
         assert isinstance(signal, Signal2D)
 
     def test_fei_emd_spectrum(self):
@@ -228,10 +227,36 @@ class TestFeiEMD():
             my_path, 'emd_files', 'example_fei_emd_si.emd'))
         fei_si = np.load(os.path.join(my_path, 'emd_files', 'fei_emd_si.npy'))
         np.testing.assert_equal(signal[1].data, fei_si)
-        assert isinstance(signal, Signal1D)
+        assert isinstance(signal[1], Signal1D)
 
+    def test_fei_emd_si_frame_range(self):
+        signal = load(os.path.join(
+            my_path, 'emd_files', 'example_fei_emd_si.emd'), first_frame=2,
+            last_frame=4)
+        fei_si = np.load(os.path.join(my_path, 'emd_files',
+                                      'fei_emd_si_frame.npy'))
+        np.testing.assert_equal(signal[1].data, fei_si)
+        assert isinstance(signal[1], Signal1D)
+        md = signal[1].metadata
+        assert md['Acquisition_instrument']['TEM']['Detector']['EDS']['frame_number'] == 2
 
-if __name__ == '__main__':
-
-    import pytest
-    pytest.main(__name__)
+    def time_loading_frame(self):
+        # Run this function to check the loading time when loading EDS data
+        import time
+        frame_number = 100
+        point_measurement = 15
+        frame_offsets = np.arange(0, point_measurement * frame_number,
+                                  frame_number)
+        time_data = np.zeros_like(frame_offsets)
+        path = 'path to large dataset'
+        for i, frame_offset in enumerate(frame_offsets):
+            print(frame_offset + frame_number)
+            t0 = time.time()
+            load(os.path.join(path, 'large dataset.emd'),
+                 first_frame=frame_offset, last_frame=frame_offset + frame_number)
+            t1 = time.time()
+            time_data[i] = t1 - t0
+        import matplotlib.pyplot as plt
+        plt.plot(frame_offsets, time_data)
+        plt.xlabel('Frame offset')
+        plt.xlabel('Loading time (s)')
