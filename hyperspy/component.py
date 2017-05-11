@@ -1330,14 +1330,14 @@ class Component(t.HasTraits):
     def is_linear(self):
         "Loops through the component's free parameters, checks that they are linear"
         linear = True
-        set_of_parameters_to_check = set(self.free_parameters) - set(self.independent_parameters)
-        if len(set_of_parameters_to_check) > 1:
+        if len(self.free_parameters) > 1:
             return False
-        for para in set_of_parameters_to_check:
+        for para in self.free_parameters:
             if not para._is_linear:
                 linear = False
         return linear
-
+    
+    @property
     def independent_parameters(self):
         """Lists all parameters that are independent"""
         return [para for para in self.parameters if para._is_independent]
