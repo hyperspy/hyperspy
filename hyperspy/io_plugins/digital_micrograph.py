@@ -883,15 +883,6 @@ class ImageObject(object):
                 "ImageList.TagGroup0.ImageTags": (
                     "Acquisition_instrument.TEM.microscope",
                     self._get_microscope_name),
-                "ImageList.TagGroup0.ImageData.Calibrations.Brightness.Units": (
-                    "Signal.quantity",
-                    self._get_quantity),
-                "ImageList.TagGroup0.ImageData.Calibrations.Brightness.Scale": (
-                    "Signal.Noise_properties.Variance_linear_model.gain_factor",
-                    None),
-                "ImageList.TagGroup0.ImageData.Calibrations.Brightness.Origin": (
-                    "Signal.Noise_properties.Variance_linear_model.gain_offset",
-                    None),
             })
 
         if self.signal_type == "EELS":
@@ -964,6 +955,17 @@ class ImageObject(object):
                     "Acquisition_instrument.TEM.Camera.exposure",
                     None),
             })
+        mapping.update({
+            "ImageList.TagGroup0.ImageData.Calibrations.Brightness.Units": (
+                "Signal.quantity",
+                self._get_quantity),
+            "ImageList.TagGroup0.ImageData.Calibrations.Brightness.Scale": (
+                "Signal.Noise_properties.Variance_linear_model.gain_factor",
+                None),
+            "ImageList.TagGroup0.ImageData.Calibrations.Brightness.Origin": (
+                "Signal.Noise_properties.Variance_linear_model.gain_offset",
+                None),
+        })
         return mapping
 
 
