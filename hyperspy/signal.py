@@ -2093,6 +2093,13 @@ class BaseSignal(FancySlicing,
             None crop from/to the low/high end of the axis.
 
         """
+        from hyperspy.exceptions import VisibleDeprecationWarning
+        msg = (
+            "The `crop` method is deprecated and will be "
+            "removed in v2.0. Crop by slicing using `isig` instead."
+            "for example: s_cropped = s.isig[2.:10.]")
+        warnings.warn(msg, VisibleDeprecationWarning)
+        self._check_signal_dimension_equals_one()
         axis = self.axes_manager[axis]
         i1, i2 = axis._get_index(start), axis._get_index(end)
         if i1 is not None:
