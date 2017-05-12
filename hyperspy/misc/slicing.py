@@ -168,7 +168,7 @@ class FancySlicing(object):
                     slices_ += (
                         slice(float(sl.left), float(sl.right), None),
                         slice(float(sl.top), float(sl.bottom), None),
-                        )
+                    )
             else:
                 slices_ += (sl,)
         slices = slices_
