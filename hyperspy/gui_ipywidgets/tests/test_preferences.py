@@ -13,6 +13,7 @@ def test_preferences():
             for key, value in tabvalue.items():
                 assert getattr(
                     getattr(hs.preferences, tabkey[4:]), key) == value.value
+                value_bk = value.value
                 if isinstance(value, ipywidgets.Checkbox):
                     value.value = not value
                 elif isinstance(value, ipywidgets.FloatText):
@@ -26,3 +27,4 @@ def test_preferences():
                     value.value = options.pop()
                 assert getattr(
                     getattr(hs.preferences, tabkey[4:]), key) == value.value
+                value.value = value_bk
