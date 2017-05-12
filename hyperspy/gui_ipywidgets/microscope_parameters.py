@@ -4,7 +4,7 @@ import ipywidgets
 from hyperspy.gui_ipywidgets.utils import (
     labelme, register_ipy_widget, add_display_arg, float2floattext, get_label)
 
-from hyperspy.misc.link_traits import link_traits
+from hyperspy.misc.link_traits import link_bidirectional
 
 
 def _set_microscope_parameters(obj, **kwargs):
@@ -19,7 +19,7 @@ def _set_microscope_parameters(obj, **kwargs):
             trait, get_label(trait, trait_name))
         widgets.append(widget)
         wdict[trait_name] = widget.children[1]
-        link_traits((obj, trait_name),
+        link_bidirectional((obj, trait_name),
                     (widget.children[1], "value"))
     store_button = ipywidgets.Button(
         description="Store",
