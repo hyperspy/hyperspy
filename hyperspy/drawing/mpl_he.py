@@ -137,7 +137,7 @@ class MPL_HyperExplorer(object):
 
     def _get_navigation_sliders(self):
         try:
-            self.axes_manager.navigation_sliders(
+            self.axes_manager.gui_navigation_sliders(
                 title=self.signal_title + " navigation sliders")
         except (ValueError, ImportError) as e:
             _logger.warning("Navigation sliders not available. " + str(e))

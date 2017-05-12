@@ -29,7 +29,7 @@ class TestAxes:
     def test_navigation_sliders(self):
         s = self.s
         am = self.s.axes_manager
-        wd = s.axes_manager.navigation_sliders(**KWARGS)["ipywidgets"]["wdict"]
+        wd = s.axes_manager.gui_navigation_sliders(**KWARGS)["ipywidgets"]["wdict"]
         check_axis_attributes(axes_manager=am, widgets_dict=wd, index=0,
                               attributes=("value", "index", "units"))
         check_axis_attributes(axes_manager=am, widgets_dict=wd, index=1,
