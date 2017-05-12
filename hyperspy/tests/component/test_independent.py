@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from hyperspy.components1d import Expression, Gaussian
+from hyperspy.datasets import example_signals
 
 def test_independent_from_expression():
     expression = "a * x + b"
@@ -25,8 +26,8 @@ def test_independent_from_expression():
         name="test_constant",
         a = 20.0,
         b = 4.0)
-    g.b.free = False
     assert g.independent_term == 4.0
+    g.b.free = False
 
 def test_independent_from_expression2():
     expression = "A * exp(-(x-centre)**2/(2*sigma**2))"
@@ -38,3 +39,22 @@ def test_independent_from_expression2():
         sigma = 1.0)
     assert g.independent_term == 0
 
+def test_independent_from_expression3():
+    expression = "a * b * x + 10**(c/d) + e"
+    g = Expression(
+        expression, 
+        name="test_constant",
+        a = 20.0,
+        b = 4.0,
+        c = 10.0,
+        d = 2.0,
+        e = 20.0)
+    assert g.independent_term == 10**5 + 20
+
+def test_independent_after_fit():
+    s = example_signals.EDS_SEM_Spectrum()
+    m = s.create_model(auto_background=False)
+    comp = Expression("a * b * x + c+d", "test")
+    m.append(comp)
+    m.fit(fitter="leastsq")
+    assert comp.independent_term == comp.c.value + comp.d.value

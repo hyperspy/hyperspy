@@ -18,20 +18,20 @@
 
 from hyperspy.components1d import Expression, Gaussian
 
-def test_sympy_linear_expression():
+def test_linear_expression():
     expression = "height * exp(-(x - centre) ** 2 * 4 * log(2)/ fwhm ** 2)"
     g = Expression(expression, name="Test_function")
     assert g.height._is_linear
     assert not g.centre._is_linear
     assert not g.fwhm._is_linear
 
-def test_sympy_linear_expression2():
+def test_linear_expression2():
     expression = "a * x + b"
     g = Expression(expression, name="Test_function2")
     assert g.a._is_linear
     assert not g.b._is_linear
 
-def test_sympy_linear_expression3():
+def test_linear_expression3():
     expression = "a * b * x + c"
     g = Expression(expression, name="Test_function3")
     assert g.a._is_linear
@@ -50,12 +50,11 @@ def test_sympy_linear_expression3():
     g.c.free = False
     assert g.is_linear
 
-def test_sympy_linear_expression4():
+def test_linear_expression4():
     expression = "x+c"
     g = Expression(expression, name="Test_function3")
     assert not g.c._is_linear
     assert not g.is_linear
-
     
 def test_gaussian_linear():
     g = Gaussian()
