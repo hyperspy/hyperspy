@@ -381,10 +381,10 @@ class ImagePlot(BlittedFigure):
         # method arguments and auto contrast does not work then
         self.update()
 
-    def adjust_contrast(self, display=True, toolkit=None):
+    def gui_adjust_contrast(self, display=True, toolkit=None):
         ceditor = ImageContrastEditor(self)
         return ceditor.gui(display=display, toolkit=toolkit)
-    adjust_contrast.__doc__ = \
+    gui_adjust_contrast.__doc__ = \
         """Display widgets to adjust image contrast if available.
 Parameters
 ----------
@@ -405,7 +405,7 @@ Parameters
 
     def on_key_press(self, event):
         if event.key == 'h':
-            self.adjust_contrast()
+            self.gui_adjust_contrast()
 
     def set_contrast(self, vmin, vmax):
         self.vmin, self.vmax = vmin, vmax
