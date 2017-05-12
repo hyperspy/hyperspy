@@ -67,7 +67,7 @@ def show_preferences_widget(obj, **kwargs):
             ipytab.append(widget)
             tabdict[trait_name] = widget.children[1]
             link_bidirectional((getattr(obj, tab), trait_name),
-                        (widget.children[1], "value"))
+                               (widget.children[1], "value"))
         ipytabs[tab] = ipywidgets.VBox(ipytab)
     titles = ["General", "Plot", "Model", "EELS", "EDS", "Machine Learning"]
     ipytabs_ = ipywidgets.Tab(

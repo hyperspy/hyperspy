@@ -208,8 +208,10 @@ def get_eelscl_widget(obj, **kwargs):
                                min=0, max=1, step=0.001,
                                value=obj.fine_structure_smoothing)
     link_bidirectional((obj, "active"), (active, "value"))
-    link_bidirectional((obj, "fine_structure_active"), (fine_structure, "value"))
-    link_bidirectional((obj, "fine_structure_smoothing"), (fs_smoothing, "value"))
+    link_bidirectional((obj, "fine_structure_active"),
+                       (fine_structure, "value"))
+    link_bidirectional((obj, "fine_structure_smoothing"),
+                       (fs_smoothing, "value"))
     container = VBox([active, fine_structure, fs_smoothing])
     wdict["active"] = active
     wdict["fine_structure"] = fine_structure

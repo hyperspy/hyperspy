@@ -6,6 +6,7 @@ UNDEFINED = (t.Undefined, None)
 try:
     import traitlets
     UNDEFINED += (traitlets.Undefined,)
+
     def has_traitlets(obj):
         return isinstance(obj, traitlets.HasTraits)
 except ImportError:

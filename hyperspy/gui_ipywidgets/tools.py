@@ -166,9 +166,11 @@ def smooth_savitzky_golay_ipy(obj, **kwargs):
         tooltip="Perform the operation using the selected range.")
     link_bidirectional((obj, "polynomial_order"), (polynomial_order, "value"))
     link_bidirectional((obj, "window_length"), (window_length, "value"))
-    link_bidirectional((obj, "differential_order"), (differential_order, "value"))
+    link_bidirectional((obj, "differential_order"),
+                       (differential_order, "value"))
     # Differential order must be less or equal to polynomial_order
-    link_bidirectional((polynomial_order, "value"), (differential_order, "max"))
+    link_bidirectional((polynomial_order, "value"),
+                       (differential_order, "max"))
     link_bidirectional((obj, "line_color_ipy"), (color, "value"))
     box = ipywidgets.VBox([
         labelme("Window length", window_length),
@@ -212,8 +214,10 @@ def smooth_lowess_ipy(obj, **kwargs):
     apply = ipywidgets.Button(
         description="Apply",
         tooltip="Perform the operation using the selected range.")
-    link_bidirectional((obj, "smoothing_parameter"), (smoothing_parameter, "value"))
-    link_bidirectional((obj, "number_of_iterations"), (number_of_iterations, "value"))
+    link_bidirectional((obj, "smoothing_parameter"),
+                       (smoothing_parameter, "value"))
+    link_bidirectional((obj, "number_of_iterations"),
+                       (number_of_iterations, "value"))
     link_bidirectional((obj, "line_color_ipy"), (color, "value"))
     box = ipywidgets.VBox([
         labelme("Smoothing parameter", smoothing_parameter),
@@ -255,9 +259,10 @@ def smooth_tv_ipy(obj, **kwargs):
     apply = ipywidgets.Button(
         description="Apply",
         tooltip="Perform the operation using the selected range.")
-    link_bidirectional((obj, "smoothing_parameter"), (smoothing_parameter, "value"))
+    link_bidirectional((obj, "smoothing_parameter"),
+                       (smoothing_parameter, "value"))
     link_bidirectional((smoothing_parameter_max, "value"),
-                (smoothing_parameter, "max"))
+                       (smoothing_parameter, "max"))
     link_bidirectional((obj, "line_color_ipy"), (color, "value"))
     wdict["smoothing_parameter"] = smoothing_parameter
     wdict["smoothing_parameter_max"] = smoothing_parameter_max
@@ -528,10 +533,12 @@ def spikes_removal_ipy(obj, **kwargs):
             for child in labeled_spline_order.children:
                 child.layout.display = "none"
     interpolator_kind.observe(enable_interpolator_kind, "value")
-    link_bidirectional((obj, "interpolator_kind"), (interpolator_kind, "value"))
+    link_bidirectional((obj, "interpolator_kind"),
+                       (interpolator_kind, "value"))
     link_bidirectional((obj, "threshold"), (threshold, "value"))
     link_bidirectional((obj, "add_noise"), (add_noise, "value"))
-    link_bidirectional((obj, "default_spike_width"), (default_spike_width, "value"))
+    link_bidirectional((obj, "default_spike_width"),
+                       (default_spike_width, "value"))
     link_bidirectional((obj, "spline_order"), (spline_order, "value"))
     link_bidirectional((obj, "index"), (progress_bar, "value"))
     # Trigger the function that controls the visibility  as

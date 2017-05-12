@@ -20,7 +20,7 @@ def _set_microscope_parameters(obj, **kwargs):
         widgets.append(widget)
         wdict[trait_name] = widget.children[1]
         link_bidirectional((obj, trait_name),
-                    (widget.children[1], "value"))
+                           (widget.children[1], "value"))
     store_button = ipywidgets.Button(
         description="Store",
         tooltip="Store the values in metadata")
