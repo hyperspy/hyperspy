@@ -339,7 +339,9 @@ class TestEllipsis:
         s = self.signal.isig[..., 0]
         np.testing.assert_array_equal(s.data, self.data[:, :, 0, ...])
 
+
 class TestROISlicing:
+
     def setup_method(self, method):
         s = signals.Signal1D(np.random.random((10, 20, 1)))
         s.axes_manager[0].scale = 0.5
@@ -350,8 +352,11 @@ class TestROISlicing:
         s = self.s
         srx = roi.SpanROI(left=1.5, right=10)
         sry = roi.SpanROI(left=-1000, right=2)
-        assert_array_equal(s.inav[srx, :].data,s.inav[1.5:10., ].data)
-        assert_array_equal(s.inav[srx, sry].data, s.inav[1.5:10., -1000.:2.].data)
+        assert_array_equal(s.inav[srx, :].data, s.inav[1.5:10., ].data)
+        assert_array_equal(
+            s.inav[
+                srx, sry].data, s.inav[
+                1.5:10., -1000.:2.].data)
 
     def test_rectangular_roi(self):
         s = self.s
