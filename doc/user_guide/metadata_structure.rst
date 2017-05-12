@@ -32,7 +32,14 @@ in the following sections of this chapter.
     │   │   ├── convergence_angle (mrad)
     │   │   ├── magnification
     │   │   ├── microscope
-    │   │   └── tilt_stage (º)
+    │   │   ├── Stage
+    │   │   │   ├── rotation (º)
+    │   │   │   ├── tilt_alpha (º)
+    │   │   │   ├── tilt_beta (º)
+    │   │   │   ├── x (mm)
+    │   │   │   ├── y (mm)
+    │   │   │   └── z (mm)
+    │   │   └── working_distance (mm)
     │   └── TEM
     │       ├── Detector
     │       │   ├── EDS
@@ -59,7 +66,13 @@ in the following sections of this chapter.
     │       ├── convergence_angle (mrad)
     │       ├── magnification
     │       ├── microscope
-    │       └── tilt_stage (º)
+    │       └── Stage
+    │           ├── rotation (º)
+    │           ├── tilt_alpha (º)
+    │           ├── tilt_beta (º)
+    │           ├── x (mm)
+    │           ├── y (mm)
+    │           └── z (mm)
     ├── General
     │   ├── authors
     │   ├── date
@@ -186,11 +199,6 @@ magnification
 
     The magnification.
 
-tilt_stage
-    type: Float
-
-    The tilt of the stage in degree.
-
 SEM
 ---
 
@@ -221,10 +229,42 @@ magnification
 
     The magnification.
 
-tilt_stage
+working_distance
     type: Float
 
-    The tilt of the stage in degree.
+    The working distance in mm.
+
+Stage
+-----
+tilt_alpha
+    type: Float
+
+    A tilt of the stage in degree.
+
+tilt_beta
+    type: Float
+
+    Another tilt of the stage in degree.
+
+rotation
+    type: Float
+
+    The rotation of the stage in degree.
+
+x
+    type: Float
+
+    The position of the stage in mm along the x axis.
+
+y
+    type: Float
+
+    The position of the stage in mm along the y axis.
+
+z
+    type: Float
+
+    The position of the stage in mm along the z axis.
 
 Detector
 --------

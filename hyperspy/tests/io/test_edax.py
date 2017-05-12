@@ -66,7 +66,7 @@ class TestSpcSpectrum:
 
         # Testing SEM parameters
         assert_allclose(22, sem_dict['beam_energy'])
-        assert_allclose(0, sem_dict['tilt_stage'])
+        assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
 
         # Testing EDS parameters
         assert_allclose(0, eds_dict['azimuth_angle'])
@@ -136,7 +136,7 @@ class TestSpdMap:
 
         # Testing SEM parameters
         assert_allclose(22, sem_dict['beam_energy'])
-        assert_allclose(0, sem_dict['tilt_stage'])
+        assert_allclose(0, sem_dict['Stage']['tilt_alpha'])
 
         # Testing EDS parameters
         assert_allclose(0, eds_dict['azimuth_angle'])
