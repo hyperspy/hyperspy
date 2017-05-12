@@ -15,12 +15,14 @@ def test_span_roi():
     assert roi.left == -10
     assert roi.right == 0
 
+
 def test_point_1d_roi():
     roi = hs.roi.Point1DROI(value=5.5)
     wd = roi.gui(**KWARGS)["ipywidgets"]["wdict"]
     assert wd["value"].value == 5.5
     wd["value"].value = 0
     assert roi.value == 0
+
 
 def test_point2d():
     roi = hs.roi.Point2DROI(x=0, y=10)
@@ -31,6 +33,7 @@ def test_point2d():
     wd["y"].value = 0
     assert roi.x == -10
     assert roi.y == 0
+
 
 def test_rectangular_roi():
     roi = hs.roi.RectangularROI(left=0, right=10, top=-10, bottom=0)
@@ -48,6 +51,7 @@ def test_rectangular_roi():
     assert roi.top == 1.1
     assert roi.bottom == 1.2
 
+
 def test_circle_roi():
     roi = hs.roi.CircleROI(cx=0, cy=0, r=1, r_inner=0.5)
     wd = roi.gui(**KWARGS)["ipywidgets"]["wdict"]
@@ -63,6 +67,7 @@ def test_circle_roi():
     assert roi.cy == 2
     assert roi.r == 4
     assert roi.r_inner == 1.5
+
 
 def test_line2d_roi():
     roi = hs.roi.Line2DROI(x1=0, x2=10, y1=0, y2=10, linewidth=2)
