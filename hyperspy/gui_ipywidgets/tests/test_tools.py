@@ -5,6 +5,7 @@ import numpy.random
 import hyperspy.api as hs
 from hyperspy.gui_ipywidgets.tests.utils import KWARGS
 from hyperspy.signal_tools import Signal1DCalibration
+from hyperspy.signal_tools import ImageContrastEditor
 
 
 class TestTools:
@@ -159,3 +160,19 @@ class TestTools:
         remove()
         assert s.data[1, 2, 14] == 0
         assert s.axes_manager.indices == (0, 0)
+
+    def test_constrast_editor(self):
+        im = hs.signals.Signal2D(np.random.random((32, 32)))
+        im.plot()
+        wd = im._plot.signal_plot.gui_adjust_contrast(
+            **KWARGS)["ipywidgets"]["wdict"]
+        vmax = im._plot.signal_plot.vmax
+        vmin = im._plot.signal_plot.vmin
+        wd["left"].value = 0.2
+        wd["right"].value = 0.5
+        wd["apply_button"]._click_handlers(wd["apply_button"])    # Trigger it
+        assert im._plot.signal_plot.vmin == 0.2
+        assert im._plot.signal_plot.vmax == 0.5
+        wd["reset_button"]._click_handlers(wd["reset_button"])    # Trigger it
+        assert im._plot.signal_plot.vmin == vmin
+        assert im._plot.signal_plot.vmax == vmax
