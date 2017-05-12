@@ -149,16 +149,12 @@ def load(filenames=None,
     kwds['signal_type'] = signal_type
 
     if filenames is None:
-        if preferences.General.interactive is True:
-            from hyperspy.signal_tools import Load
-            load_ui = Load()
-            get_gui(load_ui, toolkey="load")
-            if load_ui.filename:
-                filenames = load_ui.filename
-                lazy = load_ui.lazy
-        else:
-            raise ValueError("No file provided to reader and "
-                             "interactive mode is disabled")
+        from hyperspy.signal_tools import Load
+        load_ui = Load()
+        get_gui(load_ui, toolkey="load")
+        if load_ui.filename:
+            filenames = load_ui.filename
+            lazy = load_ui.lazy
         if filenames is None:
             raise ValueError("No file provided to reader")
 

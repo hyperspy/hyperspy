@@ -100,10 +100,6 @@ class GeneralConfig(t.HasTraits):
         desc='If enabled, HyperSpy will use the "hspy" extension when saving '
         'to HDF5 instead of the "hdf5" extension. "hspy" will be the default'
         'extension from HyperSpy v1.3')
-    interactive = t.CBool(
-        True,
-        desc='If enabled, HyperSpy will prompt the user when options are '
-        'available, otherwise it will use the default values if possible')
     enable_ipywidgets_gui = t.CBool(
         True,
         desc="Display ipywidgets in the Jupyter Notebook. "

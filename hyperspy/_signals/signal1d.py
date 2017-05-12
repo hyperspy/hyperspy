@@ -51,7 +51,6 @@ from hyperspy.signal_tools import (
 from hyperspy.ui_registry import get_gui, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.signal_tools import BackgroundRemoval
-from hyperspy.decorators import only_interactive
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.signal_tools import IntegrateArea
 from hyperspy import components1d
@@ -808,7 +807,6 @@ _spikes_diagnosis,
         integrated_signal1D = self.isig[e1:e2].integrate1D(-1)
         return integrated_signal1D
 
-    @only_interactive
     def calibrate(self, display=True, toolkit=None):
         self._check_signal_dimension_equals_one()
         calibration = Signal1DCalibration(self)
