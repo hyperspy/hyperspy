@@ -113,6 +113,7 @@ def rebin(a, scale, crop=True):
 
     """
     lenShape = len(a.shape)
+
     #check whether or not interpolation is needed.
     if (np.count_nonzero(np.asarray(a.shape)%np.asarray(scale)) != 0\
        or (all(isinstance(item, int) for item in scale)) is not True):
@@ -123,6 +124,12 @@ def rebin(a, scale, crop=True):
         new_shape = np.asarray(a.shape)//np.asarray(scale)
         # ensure the new shape is integers
         new_shape = tuple(int(ns) for ns in new_shape)
+        #check function wont bin to zero.
+        for item in new_shape:
+            if item == 0:
+                raise ValueError("One of your dimensions collapses to zero.\
+                Re-adjust your scale values or run code with crop=False to\
+                avoid this.")
         scale = np.asarray(a.shape) // np.asarray(new_shape)
         if scale.max() < 2:
             return a.copy()
@@ -247,6 +254,11 @@ def _linear_bin(dat, scale, crop=True):
         #number.
         dim = (math.floor(dat.shape[0] / s) if crop
                else math.ceil(dat.shape[0] / s))
+        #check function wont bin to zero.
+        if dim == 0:
+            raise ValueError("One of your dimensions collapses to zero.\
+            Re-adjust your scale values or run code with crop=False to\
+            avoid this.")
         #Set up the result np.array to have a new axis[0] size for after cropping.
         result = np.zeros((dim,) + dat.shape[1:], dtype=dtype)
         #Carry out binning over axis[0]
