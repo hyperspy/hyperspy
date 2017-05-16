@@ -1,17 +1,32 @@
+# These tests are forked from traitlets and adapted to use pytest and to
+# test linking traits in addition to traitlets.
+
 import traits.api as t
+import pytest
+
 from hyperspy.link_traits.link_traits import link_directional, link_bidirectional
+
+class _A(t.HasTraits):
+    value = t.Int()
+    count = t.Int()
+try:
+    import traitlets
+    class _B(traitlets.HasTraits):
+        value = traitlets.Int()
+        count = traitlets.Int()
+    ab = ((_A, _A), (_A, _B), (_B, _B))
+except ImportError:
+    ab = (_A, _A)
 
 
 class TestLinkBidirectional:
 
-    def test_connect_same(self):
+    @pytest.mark.parametrize("A, B", ab)
+    def test_connect_same(self, A, B):
         """Verify two traitlets of the same type can be linked together using link."""
 
-        # Create two simple classes with Int traitlets.
-        class A(t.HasTraits):
-            value = t.Int()
         a = A(value=9)
-        b = A(value=8)
+        b = B(value=8)
 
         # Conenct the two classes.
         c = link_bidirectional((a, 'value'), (b, 'value'))
@@ -25,15 +40,10 @@ class TestLinkBidirectional:
         b.value = 6
         assert a.value == b.value
 
-    def test_link_different(self):
+    @pytest.mark.parametrize("A, B", ab)
+    def test_link_different(self, A, B):
         """Verify two traitlets of different types can be linked together using link."""
 
-        # Create two simple classes with Int traitlets.
-        class A(t.HasTraits):
-            value = t.Int()
-
-        class B(t.HasTraits):
-            count = t.Int()
         a = A(value=9)
         b = B(count=8)
 
@@ -49,14 +59,12 @@ class TestLinkBidirectional:
         b.count = 4
         assert a.value == b.count
 
-    def test_unlink(self):
+    @pytest.mark.parametrize("A, B", ab)
+    def test_unlink(self, A, B):
         """Verify two linked traitlets can be unlinked."""
 
-        # Create two simple classes with Int traitlets.
-        class A(t.HasTraits):
-            value = t.Int()
         a = A(value=9)
-        b = A(value=8)
+        b = B(value=8)
 
         # Connect the two classes.
         c = link_bidirectional((a, 'value'), (b, 'value'))
@@ -67,15 +75,10 @@ class TestLinkBidirectional:
         a.value = 5
         assert a.value != b.value
 
-    def test_callbacks(self):
+    @pytest.mark.parametrize("A, B", ab)
+    def test_callbacks(self, A, B):
         """Verify two linked traitlets have their callbacks called once."""
 
-        # Create two simple classes with Int traitlets.
-        class A(t.HasTraits):
-            value = t.Int()
-
-        class B(t.HasTraits):
-            count = t.Int()
         a = A(value=9)
         b = B(count=8)
 
@@ -110,14 +113,13 @@ class TestLinkBidirectional:
 
 class TestDirectionalLink:
 
-    def test_connect_same(self):
+    @pytest.mark.parametrize("A, B", ab)
+    def test_connect_same(self, A, B):
         """Verify two traitlets of the same type can be linked together using link_directional."""
 
         # Create two simple classes with Int traitlets.
-        class A(t.HasTraits):
-            value = t.Int()
         a = A(value=9)
-        b = A(value=8)
+        b = B(value=8)
 
         # Conenct the two classes.
         c = link_directional((a, 'value'), (b, 'value'))
@@ -134,14 +136,13 @@ class TestDirectionalLink:
         b.value = 6
         assert a.value == 5
 
-    def test_tranform(self):
+    @pytest.mark.parametrize("A, B", ab)
+    def test_tranform(self, A, B):
         """Test transform link."""
 
         # Create two simple classes with Int traitlets.
-        class A(t.HasTraits):
-            value = t.Int()
         a = A(value=9)
-        b = A(value=8)
+        b = B(value=8)
 
         # Conenct the two classes.
         c = link_directional((a, 'value'), (b, 'value'), lambda x: 2 * x)
@@ -158,15 +159,10 @@ class TestDirectionalLink:
         b.value = 6
         assert a.value == 5
 
-    def test_link_different(self):
+    @pytest.mark.parametrize("A, B", ab)
+    def test_link_different(self, A, B):
         """Verify two traitlets of different types can be linked together using link."""
 
-        # Create two simple classes with Int traitlets.
-        class A(t.HasTraits):
-            value = t.Int()
-
-        class B(t.HasTraits):
-            count = t.Int()
         a = A(value=9)
         b = B(count=8)
 
@@ -185,14 +181,12 @@ class TestDirectionalLink:
         b.value = 6
         assert a.value == 5
 
-    def test_unlink(self):
+    @pytest.mark.parametrize("A, B", ab)
+    def test_unlink(self, A, B):
         """Verify two linked traitlets can be unlinked."""
 
-        # Create two simple classes with Int traitlets.
-        class A(t.HasTraits):
-            value = t.Int()
         a = A(value=9)
-        b = A(value=8)
+        b = B(value=8)
 
         # Connect the two classes.
         c = link_directional((a, 'value'), (b, 'value'))

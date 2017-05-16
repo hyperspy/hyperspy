@@ -210,4 +210,4 @@ class link_directional:
             self.source[0].on_trait_change(
                 self._update_traits, name=self.source[1], remove=True)
         else:
-            self.source[0].unobserve(self._update_target, names=self.source[1])
+            self.source[0].unobserve(self._update, names=self.source[1])
