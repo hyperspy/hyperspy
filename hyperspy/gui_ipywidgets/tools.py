@@ -167,10 +167,10 @@ def smooth_savitzky_golay_ipy(obj, **kwargs):
     link((obj, "polynomial_order"), (polynomial_order, "value"))
     link((obj, "window_length"), (window_length, "value"))
     link((obj, "differential_order"),
-                       (differential_order, "value"))
+         (differential_order, "value"))
     # Differential order must be less or equal to polynomial_order
     link((polynomial_order, "value"),
-                       (differential_order, "max"))
+         (differential_order, "max"))
     link((obj, "line_color_ipy"), (color, "value"))
     box = ipywidgets.VBox([
         labelme("Window length", window_length),
@@ -215,9 +215,9 @@ def smooth_lowess_ipy(obj, **kwargs):
         description="Apply",
         tooltip="Perform the operation using the selected range.")
     link((obj, "smoothing_parameter"),
-                       (smoothing_parameter, "value"))
+         (smoothing_parameter, "value"))
     link((obj, "number_of_iterations"),
-                       (number_of_iterations, "value"))
+         (number_of_iterations, "value"))
     link((obj, "line_color_ipy"), (color, "value"))
     box = ipywidgets.VBox([
         labelme("Smoothing parameter", smoothing_parameter),
@@ -260,9 +260,9 @@ def smooth_tv_ipy(obj, **kwargs):
         description="Apply",
         tooltip="Perform the operation using the selected range.")
     link((obj, "smoothing_parameter"),
-                       (smoothing_parameter, "value"))
+         (smoothing_parameter, "value"))
     link((smoothing_parameter_max, "value"),
-                       (smoothing_parameter, "max"))
+         (smoothing_parameter, "max"))
     link((obj, "line_color_ipy"), (color, "value"))
     wdict["smoothing_parameter"] = smoothing_parameter
     wdict["smoothing_parameter_max"] = smoothing_parameter_max
@@ -534,11 +534,11 @@ def spikes_removal_ipy(obj, **kwargs):
                 child.layout.display = "none"
     interpolator_kind.observe(enable_interpolator_kind, "value")
     link((obj, "interpolator_kind"),
-                       (interpolator_kind, "value"))
+         (interpolator_kind, "value"))
     link((obj, "threshold"), (threshold, "value"))
     link((obj, "add_noise"), (add_noise, "value"))
     link((obj, "default_spike_width"),
-                       (default_spike_width, "value"))
+         (default_spike_width, "value"))
     link((obj, "spline_order"), (spline_order, "value"))
     link((obj, "index"), (progress_bar, "value"))
     # Trigger the function that controls the visibility  as

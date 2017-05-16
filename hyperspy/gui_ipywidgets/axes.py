@@ -23,7 +23,7 @@ def ipy_navigation_sliders(obj, **kwargs):
             description="index"
         )
         link((continuous_update, "value"),
-                           (iwidget, "continuous_update"))
+             (iwidget, "continuous_update"))
         link((axis, "index"), (iwidget, "value"))
         vwidget = ipywidgets.BoundedFloatText(
             min=axis.low_value,
@@ -33,7 +33,7 @@ def ipy_navigation_sliders(obj, **kwargs):
             # readout_format=".lf"
         )
         link((continuous_update, "value"),
-                           (vwidget, "continuous_update"))
+             (vwidget, "continuous_update"))
         link((axis, "value"), (vwidget, "value"))
         link((axis, "high_value"), (vwidget, "max"))
         link((axis, "low_value"), (vwidget, "min"))

@@ -209,9 +209,9 @@ def get_eelscl_widget(obj, **kwargs):
                                value=obj.fine_structure_smoothing)
     link((obj, "active"), (active, "value"))
     link((obj, "fine_structure_active"),
-                       (fine_structure, "value"))
+         (fine_structure, "value"))
     link((obj, "fine_structure_smoothing"),
-                       (fs_smoothing, "value"))
+         (fs_smoothing, "value"))
     container = VBox([active, fine_structure, fs_smoothing])
     wdict["active"] = active
     wdict["fine_structure"] = fine_structure
