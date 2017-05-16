@@ -206,8 +206,8 @@ class link_directional:
             setattr(self.target[0], self.target[1], self._transform(new))
 
     def unlink(self):
-        if isinstance(self.source[0], t.HasTraits):
+        if has_traits(self.source[0]):
             self.source[0].on_trait_change(
-                self._update_target_traits, name=self.source[1], remove=True)
+                self._update_traits, name=self.source[1], remove=True)
         else:
             self.source[0].unobserve(self._update_target, names=self.source[1])
