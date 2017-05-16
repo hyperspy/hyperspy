@@ -1,5 +1,5 @@
 import traits.api as t
-from hyperspy.misc.link_traits import link_directional, link_bidirectional
+from hyperspy.link_traits.link_traits import link_directional, link_bidirectional
 
 
 class TestLinkBidirectional:

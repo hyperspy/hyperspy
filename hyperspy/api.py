@@ -78,7 +78,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.utils import *
 from hyperspy import datasets
 from hyperspy.logger import set_log_level
-from hyperspy.misc.link_traits import (
+from hyperspy.link_traits.link_traits import (
     link_directional, link_bidirectional)
 set_log_level(preferences.General.logging_level)
 import logging
