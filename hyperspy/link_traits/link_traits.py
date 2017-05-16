@@ -140,7 +140,7 @@ class link:
             self.target[0].unobserve(self._update_source, names=self.target[1])
 
 
-class link:
+class dlink:
     """Link the trait of a source object with traits of target objects.
 
     This is a sublclass of traitlets.link that adds support for
