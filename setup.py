@@ -68,7 +68,7 @@ install_req = ['scipy>=0.15',
 extras_require = {
     "learning": ['scikit-learn'],
     "bcf": ['lxml'],
-    "gui-jupyter": ["ipywidgets"],
+    "gui-jupyter": ["ipywidgets", "link_traits"],
     "gui-traitsui": ["traitsui>=5.0"],
 }
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))

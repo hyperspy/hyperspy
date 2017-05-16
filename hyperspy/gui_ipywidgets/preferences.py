@@ -3,7 +3,7 @@ import traits.api as t
 import traits
 import ipywidgets
 
-from hyperspy.link_traits.link_traits import link
+from link_traits import link
 from hyperspy.gui_ipywidgets.utils import (
     labelme, register_ipy_widget, add_display_arg, float2floattext, get_label)
 

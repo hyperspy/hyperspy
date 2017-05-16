@@ -4,7 +4,7 @@ import ipywidgets
 from hyperspy.gui_ipywidgets.utils import (
     labelme, register_ipy_widget, add_display_arg, float2floattext, get_label)
 
-from hyperspy.link_traits.link_traits import link
+from link_traits import link
 
 
 def _set_microscope_parameters(obj, **kwargs):

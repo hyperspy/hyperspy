@@ -4,7 +4,7 @@ import traitlets
 from hyperspy.gui_ipywidgets.utils import (
     labelme, labelme_sandwich, enum2dropdown, add_display_arg,
     register_ipy_widget)
-from hyperspy.link_traits.link_traits import link
+from link_traits import link
 
 
 @register_ipy_widget(toolkey="SpanROI")
