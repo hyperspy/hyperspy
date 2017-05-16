@@ -7,7 +7,7 @@ from ipywidgets import (
     Button)
 import numpy as np
 
-from hyperspy.link_traits.link_traits import link_bidirectional, link_directional
+from hyperspy.link_traits.link_traits import link, dlink
 from hyperspy.gui_ipywidgets.utils import (
     add_display_arg, register_ipy_widget, labelme)
 
@@ -79,8 +79,8 @@ def _get_value_widget(obj, index=None):
     thismax.observe(on_max_change, names='value')
     # We store the link in the widget so that they are not deleted by the
     # garbage collector
-    thismin._link = link_directional((obj, "bmin"), (thismin, "value"))
-    thismax._link = link_directional((obj, "bmax"), (thismax, "value"))
+    thismin._link = dlink((obj, "bmin"), (thismin, "value"))
+    thismax._link = dlink((obj, "bmax"), (thismax, "value"))
     if index is not None:  # value is tuple, expanding
         def _interactive_tuple_update(value):
             """Callback function for the widgets, to update the value
@@ -89,7 +89,7 @@ def _get_value_widget(obj, index=None):
                 obj.value[index + 1:]
         widget.observe(_interactive_tuple_update, names='value')
     else:
-        link_bidirectional((obj, "value"), (widget, "value"))
+        link((obj, "value"), (widget, "value"))
 
     container = HBox((thismin, widget, thismax))
     wdict["value"] = widget
@@ -157,7 +157,7 @@ def get_component_widget(obj, **kwargs):
     wdict = {}
     active = Checkbox(description='active', value=obj.active)
     wdict["active"] = active
-    link_bidirectional((obj, "active"), (active, "value"))
+    link((obj, "active"), (active, "value"))
     container = VBox([active])
     for parameter in obj.parameters:
         pardict = parameter.gui(
@@ -207,10 +207,10 @@ def get_eelscl_widget(obj, **kwargs):
     fs_smoothing = FloatSlider(description='Fine structure smoothing',
                                min=0, max=1, step=0.001,
                                value=obj.fine_structure_smoothing)
-    link_bidirectional((obj, "active"), (active, "value"))
-    link_bidirectional((obj, "fine_structure_active"),
+    link((obj, "active"), (active, "value"))
+    link((obj, "fine_structure_active"),
                        (fine_structure, "value"))
-    link_bidirectional((obj, "fine_structure_smoothing"),
+    link((obj, "fine_structure_smoothing"),
                        (fs_smoothing, "value"))
     container = VBox([active, fine_structure, fs_smoothing])
     wdict["active"] = active
@@ -237,7 +237,7 @@ def get_scalable_fixed_patter_widget(obj, **kwargs):
     interpolate = Checkbox(description='interpolate',
                            value=obj.interpolate)
     wdict["interpolate"] = interpolate
-    link_bidirectional((obj, "interpolate"), (interpolate, "value"))
+    link((obj, "interpolate"), (interpolate, "value"))
     container.children = (container.children[0], interpolate) + \
         container.children[1:]
     return {
@@ -260,7 +260,7 @@ def fit_component_ipy(obj, **kwargs):
     wdict["help"] = only_current
     help = Accordion(children=[help])
     help.set_title(0, "Help")
-    link_bidirectional((obj, "only_current"), (only_current, "value"))
+    link((obj, "only_current"), (only_current, "value"))
     fit = Button(
         description="Fit",
         tooltip="Fit in the selected signal range")

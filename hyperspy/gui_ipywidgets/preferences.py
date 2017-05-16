@@ -3,7 +3,7 @@ import traits.api as t
 import traits
 import ipywidgets
 
-from hyperspy.link_traits.link_traits import link_bidirectional
+from hyperspy.link_traits.link_traits import link
 from hyperspy.gui_ipywidgets.utils import (
     labelme, register_ipy_widget, add_display_arg, float2floattext, get_label)
 
@@ -66,7 +66,7 @@ def show_preferences_widget(obj, **kwargs):
                 trait, get_label(trait, trait_name))
             ipytab.append(widget)
             tabdict[trait_name] = widget.children[1]
-            link_bidirectional((getattr(obj, tab), trait_name),
+            link((getattr(obj, tab), trait_name),
                                (widget.children[1], "value"))
         ipytabs[tab] = ipywidgets.VBox(ipytab)
     titles = ["General", "Plot", "Model", "EELS", "EDS", "Machine Learning"]

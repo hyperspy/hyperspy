@@ -4,7 +4,7 @@
 import traits.api as t
 import pytest
 
-from hyperspy.link_traits.link_traits import link_directional, link_bidirectional
+from hyperspy.link_traits.link_traits import dlink, link
 
 
 class _A(t.HasTraits):
@@ -31,7 +31,7 @@ class TestLinkBidirectional:
         b = B(value=8)
 
         # Conenct the two classes.
-        c = link_bidirectional((a, 'value'), (b, 'value'))
+        c = link((a, 'value'), (b, 'value'))
 
         # Make sure the values are the same at the point of linking.
         assert a.value == b.value
@@ -50,7 +50,7 @@ class TestLinkBidirectional:
         b = B(count=8)
 
         # Conenct the two classes.
-        c = link_bidirectional((a, 'value'), (b, 'count'))
+        c = link((a, 'value'), (b, 'count'))
 
         # Make sure the values are the same at the point of linking.
         assert a.value == b.count
@@ -69,7 +69,7 @@ class TestLinkBidirectional:
         b = B(value=8)
 
         # Connect the two classes.
-        c = link_bidirectional((a, 'value'), (b, 'value'))
+        c = link((a, 'value'), (b, 'value'))
         a.value = 4
         c.unlink()
 
@@ -96,7 +96,7 @@ class TestLinkBidirectional:
         b.on_trait_change(b_callback, 'count')
 
         # Connect the two classes.
-        c = link_bidirectional((a, 'value'), (b, 'count'))
+        c = link((a, 'value'), (b, 'count'))
 
         # Make sure b's count was set to a's value once.
         assert ''.join(callback_count) == 'b'
@@ -117,14 +117,14 @@ class TestDirectionalLink:
 
     @pytest.mark.parametrize("A, B", ab)
     def test_connect_same(self, A, B):
-        """Verify two traitlets of the same type can be linked together using link_directional."""
+        """Verify two traitlets of the same type can be linked together using dlink."""
 
         # Create two simple classes with Int traitlets.
         a = A(value=9)
         b = B(value=8)
 
         # Conenct the two classes.
-        c = link_directional((a, 'value'), (b, 'value'))
+        c = dlink((a, 'value'), (b, 'value'))
 
         # Make sure the values are the same at the point of linking.
         assert a.value == b.value
@@ -147,7 +147,7 @@ class TestDirectionalLink:
         b = B(value=8)
 
         # Conenct the two classes.
-        c = link_directional((a, 'value'), (b, 'value'), lambda x: 2 * x)
+        c = dlink((a, 'value'), (b, 'value'), lambda x: 2 * x)
 
         # Make sure the values are correct at the point of linking.
         assert b.value == 2 * a.value
@@ -169,7 +169,7 @@ class TestDirectionalLink:
         b = B(count=8)
 
         # Conenct the two classes.
-        c = link_directional((a, 'value'), (b, 'count'))
+        c = dlink((a, 'value'), (b, 'count'))
 
         # Make sure the values are the same at the point of linking.
         assert a.value == b.count
@@ -191,7 +191,7 @@ class TestDirectionalLink:
         b = B(value=8)
 
         # Connect the two classes.
-        c = link_directional((a, 'value'), (b, 'value'))
+        c = dlink((a, 'value'), (b, 'value'))
         a.value = 4
         c.unlink()
 

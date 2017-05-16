@@ -23,7 +23,7 @@ def has_traits(obj):
     return isinstance(obj, t.HasTraits)
 
 
-class link_bidirectional:
+class link:
     """Link traits from different objects together so they remain in sync.
 
     This is a sublclass of traitlets.links that adds support for linking
@@ -42,7 +42,7 @@ class link_bidirectional:
 
     See Also
     --------
-    link_directional
+    link
 
     """
     updating = False
@@ -140,10 +140,10 @@ class link_bidirectional:
             self.target[0].unobserve(self._update_source, names=self.target[1])
 
 
-class link_directional:
+class link:
     """Link the trait of a source object with traits of target objects.
 
-    This is a sublclass of traitlets.link_directional that adds support for
+    This is a sublclass of traitlets.link that adds support for
     linking traitlets traits and enthought traits.
 
     Parameters
@@ -154,7 +154,7 @@ class link_directional:
         Data transformation between source and target.
     Examples
     --------
-    >>> c = link_directional((src, 'value'), (tgt, 'value'))
+    >>> c = link((src, 'value'), (tgt, 'value'))
     >>> src.value = 5  # updates target objects
     >>> tgt.value = 6  # does not update source object
 

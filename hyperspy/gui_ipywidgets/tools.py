@@ -4,7 +4,7 @@ import traitlets
 from hyperspy.gui_ipywidgets.utils import (
     labelme, labelme_sandwich, enum2dropdown, add_display_arg,
     register_ipy_widget)
-from hyperspy.link_traits.link_traits import link_bidirectional
+from hyperspy.link_traits.link_traits import link
 from hyperspy.gui_ipywidgets.custom_widgets import OddIntSlider
 from hyperspy.signal_tools import SPIKES_REMOVAL_INSTRUCTIONS
 
@@ -37,9 +37,9 @@ def interactive_range_ipy(obj, **kwargs):
     wdict["apply_button"] = apply
 
     # Connect
-    link_bidirectional((obj, "ss_left_value"), (left, "value"))
-    link_bidirectional((obj, "ss_right_value"), (right, "value"))
-    link_bidirectional((axis, "units"), (units, "value"))
+    link((obj, "ss_left_value"), (left, "value"))
+    link((obj, "ss_right_value"), (right, "value"))
+    link((axis, "units"), (units, "value"))
 
     def on_apply_clicked(b):
         obj = obj
@@ -97,14 +97,14 @@ def calibrate_ipy(obj, **kwargs):
         "above.")
 
     # Connect
-    link_bidirectional((obj, "ss_left_value"), (left, "value"))
-    link_bidirectional((obj, "ss_right_value"), (right, "value"))
-    link_bidirectional((obj, "left_value"), (new_left, "value"))
-    link_bidirectional((obj, "right_value"), (new_right, "value"))
-    link_bidirectional((obj, "units"), (units, "value"))
-    link_bidirectional((obj, "units"), (unitsl, "value"))
-    link_bidirectional((obj, "offset"), (offset, "value"))
-    link_bidirectional((obj, "scale"), (scale, "value"))
+    link((obj, "ss_left_value"), (left, "value"))
+    link((obj, "ss_right_value"), (right, "value"))
+    link((obj, "left_value"), (new_left, "value"))
+    link((obj, "right_value"), (new_right, "value"))
+    link((obj, "units"), (units, "value"))
+    link((obj, "units"), (unitsl, "value"))
+    link((obj, "offset"), (offset, "value"))
+    link((obj, "scale"), (scale, "value"))
 
     def on_apply_clicked(b):
         obj.apply()
@@ -164,14 +164,14 @@ def smooth_savitzky_golay_ipy(obj, **kwargs):
     apply = ipywidgets.Button(
         description="Apply",
         tooltip="Perform the operation using the selected range.")
-    link_bidirectional((obj, "polynomial_order"), (polynomial_order, "value"))
-    link_bidirectional((obj, "window_length"), (window_length, "value"))
-    link_bidirectional((obj, "differential_order"),
+    link((obj, "polynomial_order"), (polynomial_order, "value"))
+    link((obj, "window_length"), (window_length, "value"))
+    link((obj, "differential_order"),
                        (differential_order, "value"))
     # Differential order must be less or equal to polynomial_order
-    link_bidirectional((polynomial_order, "value"),
+    link((polynomial_order, "value"),
                        (differential_order, "max"))
-    link_bidirectional((obj, "line_color_ipy"), (color, "value"))
+    link((obj, "line_color_ipy"), (color, "value"))
     box = ipywidgets.VBox([
         labelme("Window length", window_length),
         labelme("polynomial order", polynomial_order),
@@ -214,11 +214,11 @@ def smooth_lowess_ipy(obj, **kwargs):
     apply = ipywidgets.Button(
         description="Apply",
         tooltip="Perform the operation using the selected range.")
-    link_bidirectional((obj, "smoothing_parameter"),
+    link((obj, "smoothing_parameter"),
                        (smoothing_parameter, "value"))
-    link_bidirectional((obj, "number_of_iterations"),
+    link((obj, "number_of_iterations"),
                        (number_of_iterations, "value"))
-    link_bidirectional((obj, "line_color_ipy"), (color, "value"))
+    link((obj, "line_color_ipy"), (color, "value"))
     box = ipywidgets.VBox([
         labelme("Smoothing parameter", smoothing_parameter),
         labelme("Number of iterations", number_of_iterations),
@@ -259,11 +259,11 @@ def smooth_tv_ipy(obj, **kwargs):
     apply = ipywidgets.Button(
         description="Apply",
         tooltip="Perform the operation using the selected range.")
-    link_bidirectional((obj, "smoothing_parameter"),
+    link((obj, "smoothing_parameter"),
                        (smoothing_parameter, "value"))
-    link_bidirectional((smoothing_parameter_max, "value"),
+    link((smoothing_parameter_max, "value"),
                        (smoothing_parameter, "max"))
-    link_bidirectional((obj, "line_color_ipy"), (color, "value"))
+    link((obj, "line_color_ipy"), (color, "value"))
     wdict["smoothing_parameter"] = smoothing_parameter
     wdict["smoothing_parameter_max"] = smoothing_parameter_max
     wdict["color"] = color
@@ -304,9 +304,9 @@ def smooth_butterworth(obj, **kwargs):
     apply = ipywidgets.Button(
         description="Apply",
         tooltip="Perform the operation using the selected range.")
-    link_bidirectional((obj, "cutoff_frequency_ratio"), (cutoff, "value"))
-    link_bidirectional((obj, "type"), (type_, "value"))
-    link_bidirectional((obj, "order"), (order, "value"))
+    link((obj, "cutoff_frequency_ratio"), (cutoff, "value"))
+    link((obj, "type"), (type_, "value"))
+    link((obj, "order"), (order, "value"))
     wdict["cutoff"] = cutoff
     wdict["order"] = order
     wdict["type"] = type_
@@ -363,8 +363,8 @@ def image_constast_editor_ipy(obj, **kwargs):
     wdict["reset_button"] = reset
 
     # Connect
-    link_bidirectional((obj, "ss_left_value"), (left, "value"))
-    link_bidirectional((obj, "ss_right_value"), (right, "value"))
+    link((obj, "ss_left_value"), (left, "value"))
+    link((obj, "ss_right_value"), (right, "value"))
 
     def on_apply_clicked(b):
         obj.apply()
@@ -397,8 +397,8 @@ def remove_background_ipy(obj, **kwargs):
     wdict = {}
     left = ipywidgets.FloatText(disabled=True, description="Left")
     right = ipywidgets.FloatText(disabled=True, description="Right")
-    link_bidirectional((obj, "ss_left_value"), (left, "value"))
-    link_bidirectional((obj, "ss_right_value"), (right, "value"))
+    link((obj, "ss_left_value"), (left, "value"))
+    link((obj, "ss_right_value"), (right, "value"))
     fast = ipywidgets.Checkbox(description="Fast")
     help = ipywidgets.HTML(
         "Click on the signal figure and drag to the right to select a"
@@ -426,15 +426,15 @@ def remove_background_ipy(obj, **kwargs):
         else:
             polynomial_order.layout.display = "none"
     background_type.observe(enable_poly_order, "value")
-    link_bidirectional((obj, "background_type"), (background_type, "value"))
+    link((obj, "background_type"), (background_type, "value"))
     # Trigger the function that controls the visibility of poly order as
     # setting the default value doesn't trigger it.
 
     class Dummy:
         new = background_type.value
     enable_poly_order(change=Dummy())
-    link_bidirectional((obj, "polynomial_order"), (polynomial_order, "value"))
-    link_bidirectional((obj, "fast"), (fast, "value"))
+    link((obj, "polynomial_order"), (polynomial_order, "value"))
+    link((obj, "fast"), (fast, "value"))
     wdict["left"] = left
     wdict["right"] = right
     wdict["fast"] = fast
@@ -533,14 +533,14 @@ def spikes_removal_ipy(obj, **kwargs):
             for child in labeled_spline_order.children:
                 child.layout.display = "none"
     interpolator_kind.observe(enable_interpolator_kind, "value")
-    link_bidirectional((obj, "interpolator_kind"),
+    link((obj, "interpolator_kind"),
                        (interpolator_kind, "value"))
-    link_bidirectional((obj, "threshold"), (threshold, "value"))
-    link_bidirectional((obj, "add_noise"), (add_noise, "value"))
-    link_bidirectional((obj, "default_spike_width"),
+    link((obj, "threshold"), (threshold, "value"))
+    link((obj, "add_noise"), (add_noise, "value"))
+    link((obj, "default_spike_width"),
                        (default_spike_width, "value"))
-    link_bidirectional((obj, "spline_order"), (spline_order, "value"))
-    link_bidirectional((obj, "index"), (progress_bar, "value"))
+    link((obj, "spline_order"), (spline_order, "value"))
+    link((obj, "index"), (progress_bar, "value"))
     # Trigger the function that controls the visibility  as
     # setting the default value doesn't trigger it.
 
