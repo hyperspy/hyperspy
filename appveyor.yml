@@ -132,6 +132,13 @@ before_deploy:
   - "%CMD_IN_ENV% %WP_INSTDIR%/scripts/env.bat"
   # Give info about python vesion and compiler used to compile the python
   - "%CMD_IN_ENV% python.exe -c \"import sys; print(sys.version)\""
+  # Install scikit-image from Christoph Gohlke binaries repository
+  - cinst wget
+  - ps: Add-AppveyorMessage "Downloading scikit-image..."
+  - ps: if($Env:PYTHON_ARCH -eq "64") {$Env:SCIKIT_IMAGE="scikit_image-0.13.0-cp35-cp35m-win_amd64.whl"} else {$Env:SCIKIT_IMAGE="scikit_image‑0.13.0‑cp35‑cp35m‑win32.whl"}
+  - "ECHO %SCIKIT_IMAGE%"
+  - "%CMD_IN_ENV% wget http://www.lfd.uci.edu/~gohlke/pythonlibs/tuoh5y4k/%SCIKIT_IMAGE% --header User-Agent:Chrome/23.0.1271.97"
+  - "%CMD_IN_ENV% pip install %SCIKIT_IMAGE%"
   - "%CMD_IN_ENV% pip install --upgrade tqdm notebook cython ipython configobj start_jupyter_cm ipywidgets ipyparallel sympy pytest"
   # uninstall and reinstall matplotlib to get the 2.0 version without using --upgrade option (to avoid upgrading numpy and breaking scipy...)
   - "%CMD_IN_ENV% pip uninstall -y matplotlib"
@@ -143,11 +150,15 @@ before_deploy:
   # setting back the config:
   - "ren %WP_INSTDIR%\\settings\\pydistutils_bak.cfg pydistutils.cfg"
   # Custom installer step
-  # TODO: Re-run tests in WinPython environment
   - ps: Add-AppveyorMessage "Creating installer..."
   - "%PYTHON%/python.exe -m hspy_bundle.configure_installer %APPDATA%/wpdir %PYTHON_ARCH% %APPVEYOR_REPO_TAG_NAME%"
   - "\"%NSIS_DIR%/makensis.exe\" /V3 NSIS_installer_script-%PYTHON_ARCH%bit.nsi"
-  - ps: Add-AppveyorMessage "Installer created! Pushing to GitHub..."
+  - ps: Add-AppveyorMessage "Installer created! Re-run tests in Winpython environment..."
+  # Re-run tests in WinPython environment
+  - ps: if($Env:PYTHON_ARCH -eq "64") {$Env:PYTHON_DIR_NAME="python-3.5.1.amd64"} else {$Env:PYTHON_DIR_NAME="python-3.5.1"}
+  - "SET HYPERSPY_DIR=%WP_INSTDIR%\\%PYTHON_DIR_NAME%\\Lib\\site-packages\\hyperspy"
+  - ps: py.test --mpl $Env:HYPERSPY_DIR
+  - ps: Add-AppveyorMessage "Tests finished! Pushing to GitHub..."
   - "appveyor PushArtifact HyperSpy-%APPVEYOR_REPO_TAG_NAME%-Bundle-Windows-%PYTHON_ARCH%bit.exe"
 
 deploy:
@@ -159,6 +170,8 @@ deploy:
     #secure: KwAfARhGEqOnZHltPB6kKu8xmnoiGSk7NMYJBIEbWvFCuVnepoPV7ZcIjUN3pUpK
     #   sem-geologist:
     #secure: RRqUkx9H5VuFNITmm+YzgB0qnqgVGPH1yrPVxb4oCD+FAjcTch2WZAiPEKn4L6w6
+    #   ericpre:
+    #secure: ae8XsPI+vKJI9AWm0r9+ec71CIkXcnCHlNIQ57v+87hh5k1xuAAxIOi1CFKEmmZv
   artifact: /.*\.exe/, win_wheels  # upload all exe installers and wheels to release assets
   draft: false
   prerelease: false

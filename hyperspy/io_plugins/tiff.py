@@ -681,9 +681,8 @@ class Metadata:
 
     def _get_additional_metadata_TVIPS(self):
         if 'tem_stage_position' in self.original_metadata['tvips_metadata']:
-            stage = self.original_metadata[
-                'tvips_metadata']['tem_stage_position']
-            # Guess on what is x, y, z, tilt_a and tilt_b...
+            stage = self.original_metadata['tvips_metadata']['tem_stage_position']
+            # Guess on what is x, y, z, tilt_alpha and tilt_beta...
             self.md.set_item(
                 "Acquisition_instrument.TEM.Stage.x", stage[0] * 1E3)
             self.md.set_item(
@@ -691,6 +690,6 @@ class Metadata:
             self.md.set_item(
                 "Acquisition_instrument.TEM.Stage.z", stage[2] * 1E3)
             self.md.set_item(
-                "Acquisition_instrument.TEM.Stage.tilt_a", stage[3])
+                "Acquisition_instrument.TEM.Stage.tilt_alpha", stage[3])
             self.md.set_item(
-                "Acquisition_instrument.TEM.Stage.tilt_b", stage[4])
+                "Acquisition_instrument.TEM.Stage.tilt_beta", stage[4])
