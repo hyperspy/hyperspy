@@ -68,7 +68,7 @@ install_req = ['scipy>=0.15',
 extras_require = {
     "learning": ['scikit-learn'],
     "bcf": ['lxml'],
-    "gui-jupyter": ["ipywidgets", "link_traits"],
+    "gui-jupyter": ["hyperspy_gui_ipywidgets"],
     "gui-traitsui": ["traitsui>=5.0"],
 }
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
@@ -312,8 +312,6 @@ with update_version_when_dev() as version:
                   'hyperspy.drawing._widgets',
                   'hyperspy.learn',
                   'hyperspy._signals',
-                  'hyperspy.gui_ipywidgets',
-                  'hyperspy.gui_ipywidgets.tests',
                   'hyperspy.gui_traitsui',
                   'hyperspy.utils',
                   'hyperspy.tests',

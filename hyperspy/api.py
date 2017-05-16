@@ -83,11 +83,11 @@ import logging
 _logger = logging.getLogger(__name__)
 try:
     # Register ipywidgets by importing the module
-    import hyperspy.gui_ipywidgets
+    import hyperspy_gui_ipywidgets
 except ImportError:
     _logger.warning(
         "ipywidgets GUI elements not available because the "
-        "ipywidgets package is not installed.")
+        "hyperspy_gui_ipywidgets package does not seem to be installed.")
 try:
     # Register traitui UI elements by importing the module
     import hyperspy.gui_traitsui
