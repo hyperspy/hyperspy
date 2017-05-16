@@ -104,7 +104,7 @@ def test_hyperspy_wrap():
                                                                       'azimuth_angle': 90.0,
                                                                       'real_time': 328.8}},
                                                  'magnification': 131.1433,
-                                                 'Stage': {'tilt_a': 0.5,
+                                                 'Stage': {'tilt_alpha': 0.5,
                                                            'rotation': 329.49719,
                                                            'x': 62409.2,
                                                            'y': 36517.61,

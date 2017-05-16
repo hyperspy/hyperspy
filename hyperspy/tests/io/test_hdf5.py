@@ -314,9 +314,9 @@ class TestSavingMetadataContainers:
         assert l.metadata.Signal.quantity == quantity
 
     def test_metadata_update_to_v3_0(self):
-        md = {'Acquisition_instrument': {'SEM': {'Stage': {'tilt_a': 5.0}},
+        md = {'Acquisition_instrument': {'SEM': {'Stage': {'tilt_alpha': 5.0}},
                                          'TEM': {'Detector': {'Camera': {'exposure': 0.20000000000000001}},
-                                                 'Stage': {'tilt_a': 10.0},
+                                                 'Stage': {'tilt_alpha': 10.0},
                                                  'acquisition_mode': 'TEM',
                                                  'beam_current': 0.0,
                                                  'beam_energy': 200.0,

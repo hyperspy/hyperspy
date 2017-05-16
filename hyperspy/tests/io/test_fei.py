@@ -437,7 +437,7 @@ class TestFEIReader():
         assert (
             s.metadata.Acquisition_instrument.TEM.microscope ==
             "Tecnai 200 kV D2267 SuperTwin")
-        assert_allclose(s.metadata.Acquisition_instrument.TEM.Stage.tilt_a,
+        assert_allclose(s.metadata.Acquisition_instrument.TEM.Stage.tilt_alpha,
                         0.0, atol=1E-6)
         
     def test_metadata_STEM(self):
@@ -453,9 +453,9 @@ class TestFEIReader():
         assert (
             s.metadata.Acquisition_instrument.TEM.microscope ==
             "Tecnai 200 kV D2267 SuperTwin")
-        assert_allclose(s.metadata.Acquisition_instrument.TEM.Stage.tilt_a,
+        assert_allclose(s.metadata.Acquisition_instrument.TEM.Stage.tilt_alpha,
                         0.0, atol=1E-6)
-        assert_allclose(s.metadata.Acquisition_instrument.TEM.Stage.tilt_b,
+        assert_allclose(s.metadata.Acquisition_instrument.TEM.Stage.tilt_beta,
                         0.0, atol=1E-6)
         assert_allclose(s.metadata.Acquisition_instrument.TEM.Stage.x,
                         -0.000158, atol=1E-6)
