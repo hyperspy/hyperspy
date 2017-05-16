@@ -7,12 +7,12 @@ try:
     import hyperspy_gui_ipywidgets
 except ImportError:
     _logger.warning(
-        "ipywidgets GUI elements not available because the "
-        "hyperspy_gui_ipywidgets package does not seem to be installed.")
+        "The ipywidgets GUI elements are not available, probably because the "
+        "hyperspy_gui_ipywidgets package is not installed.")
 try:
     # Register traitui UI elements by importing the module
     import hyperspy_gui_traitsui
 except ImportError:
     _logger.warning(
-        "traitsui GUI elements not available because the "
-        "traitsui package is not installed.")
+        "The traitsui GUI elements are noot available, probably because the "
+        "hyperspy_gui_traitui package is not installed.")
