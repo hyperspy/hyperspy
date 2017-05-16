@@ -11,7 +11,7 @@ except ImportError:
         "hyperspy_gui_ipywidgets package does not seem to be installed.")
 try:
     # Register traitui UI elements by importing the module
-    import hyperspy.gui_traitsui
+    import hyperspy_gui_traitsui
 except ImportError:
     _logger.warning(
         "traitsui GUI elements not available because the "
