@@ -6,11 +6,13 @@ import pytest
 
 from hyperspy.link_traits.link_traits import link_directional, link_bidirectional
 
+
 class _A(t.HasTraits):
     value = t.Int()
     count = t.Int()
 try:
     import traitlets
+
     class _B(traitlets.HasTraits):
         value = traitlets.Int()
         count = traitlets.Int()
