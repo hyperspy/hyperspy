@@ -46,10 +46,16 @@ Next, import two useful modules: numpy and matplotlib.pyplot, as follows:
    >>> import numpy as np
    >>> import matplotlib.pyplot as plt
 
-The rest of the documentation will assume you have done this. Now you are ready to load your data (see below).
+The rest of the documentation will assume you have done this. It also assumes
+that you have installed at least one of HyperSpy's GUI packages:
+hyperspy_gui_traitsui and hyperspy_gui_ipywidgets.
 
-**Notes for experienced users:** We also fully support the wx backend. Other backends are supported for plotting
-but some features such as navigation sliders may be missing.
+Now you are ready to load
+your data (see below).
+
+.. versionchanged:: v1.3
+    HyperSpy works with all matplotlib backends, including the nbagg backend
+    that enables interactive plotting embedded in the jupyter notebook.
 
 .. warning::
         When using the qt4 backend in Python 2 the matplotlib magic must be
@@ -318,7 +324,14 @@ name e.g.:
 
 
 It is also possible to set the axes properties using a GUI by calling the
-:py:meth:`~.axes.AxesManager.gui` method of the :py:class:`~.axes.AxesManager`.
+:py:meth:`~.axes.AxesManager.gui` method of the :py:class:`~.axes.AxesManager`
+or the :py:class:`~.axes.DataAxis`, e.g:
+
+.. code-block:: python
+
+    >>> s.axes_manager.gui()
+    >>> s.axes)manager["X"].gui()
+
 
 .. _saving:
 

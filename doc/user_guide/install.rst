@@ -64,7 +64,7 @@ MKL libraries) and the easiest installation. The academic license is free.
        $ conda config --add channels conda-forge
        $ conda install hyperspy
 
-#.  Since HyperSpy v1.3 the
+#.  (optional) Since HyperSpy v1.3 the
     `traitsui GUI elements <https://github.com/hyperspy/hyperspy_gui_traitsui>`_
     are not installed automatically (but the
     `Jupyter GUI elements <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_
