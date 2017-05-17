@@ -69,14 +69,14 @@ set when making the :py:class:`~.signal.BaseSignal` object.
 .. code-block:: python
 
     >>> dict0 = {'size': 10, 'name':'Ax0', 'units':'A', 'scale':0.2, 'offset':1}
-    >>> dict1 = {'size': 20, 'name':'Ax1', 'units':'B', 'scale':0.1, 'offset':2} 
+    >>> dict1 = {'size': 20, 'name':'Ax1', 'units':'B', 'scale':0.1, 'offset':2}
     >>> s = hs.signals.BaseSignal(np.random.random((10,20)), axes=[dict0, dict1])
     >>> s.axes_manager
     <Axes manager, axes: (|20, 10)>
-		Name |   size |  index |  offset |   scale |  units 
-    ================ | ====== | ====== | ======= | ======= | ====== 
-    ---------------- | ------ | ------ | ------- | ------- | ------ 
-	       Axes1 |     20 |        |       2 |     0.1 |      B 
+		Name |   size |  index |  offset |   scale |  units
+    ================ | ====== | ====== | ======= | ======= | ======
+    ---------------- | ------ | ------ | ------- | ------- | ------
+	       Axes1 |     20 |        |       2 |     0.1 |      B
 	       Axes0 |     10 |        |       1 |     0.2 |      A
 
 This also applies to the :py:attr:`~.signal.BaseSignal.metadata`.
@@ -1458,6 +1458,24 @@ order to increase responsiveness.
 .. figure::  images/roi_hist.png
   :align:   center
   :width:   500
+
+.. versionadded:: 1.3
+    ROIs can be used in place of slices when indexing and to define a
+    signal range in functions taken a ``signal_range`` argument.
+
+
+ROIs can be used in place of slices when indexing and to define a
+signal range in functions taken a ``signal_range`` argument. For example:
+
+.. code-block:: python
+
+    >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+    >>> roi = hs.roi.SpanROI(left=5, right=15)
+    >>> sc = s.isig[roi]
+    >>> s.remove_background(signal_range=roi, background_type="Polynomial")
+    >>> im = hs.datasets.example_signals.object_hologram()
+    >>> roi = hs.roi.RectangularROI(left=120, right=460., top=300, bottom=560)
+    >>> imc = im.isig[roi]
 
 
 
