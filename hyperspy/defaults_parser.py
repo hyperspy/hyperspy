@@ -110,7 +110,7 @@ class GeneralConfig(t.HasTraits):
         "Requires installing traitsui.")
     logger_on = t.CBool(
         False,
-        label='Automatic logging',
+        label='Automatic logging (it requires IPython)',
         desc='If enabled, HyperSpy will store a log in the current directory '
         'of all the commands typed')
 

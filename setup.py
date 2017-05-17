@@ -47,7 +47,6 @@ setup_path = os.path.dirname(__file__)
 import hyperspy.Release as Release
 
 install_req = ['scipy>=0.15',
-               'ipython>=2.0',
                'matplotlib>=1.2',
                'numpy>=1.10',
                'traits>=4.5.0',
@@ -70,6 +69,7 @@ extras_require = {
     "bcf": ['lxml'],
     "gui-jupyter": ["hyperspy_gui_ipywidgets"],
     "gui-traitsui": ["hyperspy_gui_traitsui"],
+    "test": ["pytest>=3", "pytest-mpl"],
 }
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 

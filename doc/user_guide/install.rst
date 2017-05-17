@@ -120,7 +120,12 @@ Alternatively you can select that extra functionality required:
 
 * ``bcf`` to install required libraries to read Brucker files.
 * ``learning`` to install required libraries for some machine learning features.
-* ``gui-jupyter`` to install required libraries for Jupyter widgets
+* ``gui-jupyter`` to install required libraries to use the
+  `Jupyter widgets <http://ipywidgets.readthedocs.io/en/stable/>`_
+  GUI elements.
+* ``gui-traitsui`` to install required libraries to use the GUI elements based
+  on `traitsui <http://docs.enthought.com/traitsui/>`_
+* ``test`` to install required libraries to run HyperSpy's unittests.
 
 For example:
 
@@ -239,15 +244,11 @@ Installing the required libraries
 ---------------------------------
 
 
-When installing HyperSpy using Python installers or from source the Python
-programming language and the following libraries must be installed in the
-system: numpy, scipy, matplotlib (>= 1.2), h5py, scikit-image, ipython, natsort,
-tqdm, ipyparallel, python-dateutil, traits and traitsui.
-For full functionality it is recommended to also install scikit-learn and lxml.
-If HyperSpy is going to be installed from  source, cython is also required.
-In addition, since version 0.7.2 the lowess filter requires statsmodels.
-In Windows HyperSpy uses the Ipython's QtConsole and therefore Qt and PyQt or
-PySide are also required.
+In addition to the libraries that are automatically installed when installing
+HyperSpy using ``pip`` (see :ref:`install-with-python-installers`), if HyperSpy
+is going to be installed from  source, cython is also required. Also, to
+compile the documentation sphinxcontrib-napoleon and sphinx_rtd_theme are
+required.
 
 .. _known-issues:
 
