@@ -202,7 +202,7 @@ the *navigation* dimensions an the energy-loss is the *signal* dimension. To
 make this distinction more explicit the representation of the object includes
 a separator ``|`` between the navigaton and signal dimensions e.g.
 
-In Hyperpsy a spectrum image has signal dimension 1 and navigation dimension 2
+In HyperSpy a spectrum image has signal dimension 1 and navigation dimension 2
 and is stored in the Signal1D subclass.
 
 .. code-block:: python
