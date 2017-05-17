@@ -16,12 +16,36 @@ alignment functionality, including subpixel alignment.
 
 Cropping an image
 -----------------
+.. deprecated:: 1.3
+    :py:meth:`~._signals.signal2d.Signal2DTools.crop_image`. It will be removed in 2.0.
 
-In addition to cropping using the powerful and compact :ref:`signal.indexing`
-the following method is available to crop spectra the familiar top, bottom,
-left, right syntax.
+Cropping in HyperSpy is performed using the :ref:`Signal indexing
+<signal.indexing>` syntax. For example, to crop an image:
 
-* :py:meth:`~._signals.signal2d.Signal2DTools.crop_image`
+.. code-block:: python
+
+    im = hs.datasets.example_signals.object_hologram()
+    imc = im.isig[120.:, 300.:560.]
+
+
+It is possible to crop interactively using :ref:`roi-label`. For example:
+
+.. code-block:: python
+
+    im = hs.datasets.example_signals.object_hologram()
+    roi = hs.roi.RectangularROI(left=120, right=460., top=300, bottom=560)
+    im.plot()
+    imc = roi.interactive(im)
+    imc.plot()
+
+
+.. _interactive_signal2d_cropping_image:
+
+.. figure::  images/interactive_signal2d_cropping.png
+   :align:   center
+
+   Interactive image cropping using a ROI.
+
 
 
 Add a linear ramp

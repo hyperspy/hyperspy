@@ -48,7 +48,9 @@ Next, import two useful modules: numpy and matplotlib.pyplot, as follows:
 
 The rest of the documentation will assume you have done this. It also assumes
 that you have installed at least one of HyperSpy's GUI packages:
-hyperspy_gui_traitsui and hyperspy_gui_ipywidgets.
+`jupyter widgets GUI <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_
+and the
+`traitsui GUI <https://github.com/hyperspy/hyperspy_gui_traitsui>`_.
 
 Now you are ready to load
 your data (see below).
@@ -319,18 +321,51 @@ name e.g.:
     >>> s.axes_manager["X"]
     <X axis, size: 20, index: 0>
     >>> s.axes_manager["X"].scale = 0.2
-    >>> s.axes_manager["X"].units = nm
+    >>> s.axes_manager["X"].units = "nm"
     >>> s.axes_manager["X"].offset = 100
 
 
 It is also possible to set the axes properties using a GUI by calling the
 :py:meth:`~.axes.AxesManager.gui` method of the :py:class:`~.axes.AxesManager`
-or the :py:class:`~.axes.DataAxis`, e.g:
 
 .. code-block:: python
 
     >>> s.axes_manager.gui()
-    >>> s.axes)manager["X"].gui()
+
+.. _axes_manager_gui_image:
+
+.. figure::  images/axes_manager_gui_ipywidgets.png
+   :align:   center
+
+   AxesManager ipywidgets GUI.
+
+or the :py:class:`~.axes.DataAxis`, e.g:
+
+.. code-block:: python
+
+    >>> s.axes_manager["X"].gui()
+
+.. _data_axis_gui_image:
+
+.. figure::  images/data_axis_gui_ipywidgets.png
+   :align:   center
+
+   DataAxis ipywidgets GUI.
+
+To simply change the "current position" (i.e. the indices of the navigation
+axes) you could use the navigation sliders:
+
+.. code-block:: python
+
+    >>> s.axes_manager.gui_navigation_sliders()
+
+.. _navigation_sliders_image:
+
+.. figure::  images/axes_manager_navigation_sliders_ipywidgets.png
+   :align:   center
+
+   Navigation sliders ipywidgets GUI.
+
 
 
 .. _saving:

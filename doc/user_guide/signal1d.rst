@@ -10,13 +10,34 @@ signals in the Signal1D class.
 Cropping
 --------
 
-In addition to cropping using the powerful and compact :ref:`Signal indexing
-<signal.indexing>` syntax the following method is available to crop spectra
-using a GUI:
+.. deprecated:: 1.3
+    :py:meth:`~.signal.Signal1D.crop_signal1D`. It will be removed in 2.0.
 
-The :py:meth:`~.signal.Signal1D.crop_signal1D`, method is used to crop the
-spectral energy range. If no parameter is passed, a user interface appears in
-which to crop the one dimensional signal.
+Cropping in HyperSpy is performed using the :ref:`Signal indexing
+<signal.indexing>` syntax. For example, the following crops a spectrum to
+the 5 keV-15 keV region:
+
+.. code-block:: python
+
+    s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+    sc = s.isig[5.:15.]
+
+It is possible to crop interactively using :ref:`roi-label`. For example:
+
+.. code-block:: python
+
+    s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+    roi = hs.roi.SpanROI(left=5, right=15)
+    s.plot()
+    sc = roi.interactive(s)
+
+.. _interactive_signal1d_cropping_image:
+
+.. figure::  images/interactive_signal1d_cropping.png
+   :align:   center
+
+   Interactive spectrum cropping using a ROI.
+
 
 Background removal
 ------------------
@@ -48,9 +69,13 @@ files.
 Integration
 -----------
 
-The :py:meth:`~._signals.signal1d.Signal1D.integrate_in_range` method
-provides a GUI and a CLI to integrate the 1D signal dimension in a given range
-using Simpson's rule.
+.. deprecated:: 1.3
+    :py:meth:`~._signals.signal1d.Signal1D.integrate_in_range`.
+    It will be removed in 2.0. Use :py:meth:`~.signal.BaseSignal.integrate1D`
+    instead, possibly in combination with a :ref:`ROI-label` if interactivity
+    is required.
+
+
 
 Data smoothing
 --------------
@@ -58,7 +83,7 @@ Data smoothing
 The following methods (that include user interfaces when no arguments are
 passed) can perform data smoothing with different algorithms:
 
-* :py:meth:`~._signals.signal1d.Signal1D.smooth_lowess`
+* :py:meth:`~._signals.signal1d.Signal1D.smooth_lowess` (requires install statsmodels)
 * :py:meth:`~._signals.signal1d.Signal1D.smooth_tv`
 * :py:meth:`~._signals.signal1d.Signal1D.smooth_savitzky_golay`
 
