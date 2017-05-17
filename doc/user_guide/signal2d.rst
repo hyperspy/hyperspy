@@ -24,19 +24,19 @@ Cropping in HyperSpy is performed using the :ref:`Signal indexing
 
 .. code-block:: python
 
-    im = hs.datasets.example_signals.object_hologram()
-    imc = im.isig[120.:, 300.:560.]
+    >>> im = hs.datasets.example_signals.object_hologram()
+    >>> imc = im.isig[120.:, 300.:560.]
 
 
 It is possible to crop interactively using :ref:`roi-label`. For example:
 
 .. code-block:: python
 
-    im = hs.datasets.example_signals.object_hologram()
-    roi = hs.roi.RectangularROI(left=120, right=460., top=300, bottom=560)
-    im.plot()
-    imc = roi.interactive(im)
-    imc.plot()
+    >>> im = hs.datasets.example_signals.object_hologram()
+    >>> roi = hs.roi.RectangularROI(left=120, right=460., top=300, bottom=560)
+    >>> im.plot()
+    >>> imc = roi.interactive(im)
+    >>> imc.plot()
 
 
 .. _interactive_signal2d_cropping_image:
