@@ -64,6 +64,30 @@ MKL libraries) and the easiest installation. The academic license is free.
        $ conda config --add channels conda-forge
        $ conda install hyperspy
 
+#.  Since HyperSpy v1.3 the
+    `traitsui GUI elements <https://github.com/hyperspy/hyperspy_gui_traitsui>`_
+    are not installed automatically (but the
+    `Jupyter GUI elements <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_
+    are). To install them:
+
+    .. code-block:: bash
+
+        $ conda install hyperspy_gui_traitsui
+
+
+    .. note::
+        As of traitsui v5.1.0, traitsui does not support Qt5 and, therefore,
+        in order to use the Qt backend it is necessary to
+        downgrade pyqt. With the standard Anaconda installation this causes
+        a conflict with the anaconda-navigator package and, therefore,
+        it is necessary to remove it in order to install hyperspy_gui_traitsui
+        as follows:
+
+        .. code-block:: bash
+
+            $ conda uninstall anaconda-navigator -y
+            $ conda install hyperspy_gui_traitsui
+
 
 .. note::
     Since version 0.8.4 HyperSpy only supports Python 3. If you need to
@@ -246,7 +270,7 @@ Installing the required libraries
 
 In addition to the libraries that are automatically installed when installing
 HyperSpy using ``pip`` (see :ref:`install-with-python-installers`), if HyperSpy
-is going to be installed from  source, cython is also required. Also, to
+is going to be installed from  source, Cython is also required. Also, to
 compile the documentation sphinxcontrib-napoleon and sphinx_rtd_theme are
 required.
 
