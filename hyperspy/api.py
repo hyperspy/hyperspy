@@ -1,4 +1,6 @@
 from hyperspy.api_nogui import *
+import logging
+_logger = logging.getLogger(__name__)
 
 __doc__ = hyperspy.api_nogui.__doc__
 
