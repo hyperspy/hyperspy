@@ -756,7 +756,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
 
 
 SPIKES_REMOVAL_INSTRUCTIONS = (
-    "\nTo remove spikes from the data:\n\n"
+    "To remove spikes from the data:\n\n"
 
     "   1. Click \"Show derivative histogram\" to "
     "determine at what magnitude the spikes are present.\n"
