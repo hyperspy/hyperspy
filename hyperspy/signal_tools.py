@@ -169,8 +169,8 @@ class LineInSignal1D(t.HasTraits):
 
 @add_gui_method(toolkey="Signal1D.calibrate")
 class Signal1DCalibration(SpanSelectorInSignal1D):
-    left_value = t.Float(label='New left value')
-    right_value = t.Float(label='New right value')
+    left_value = t.Float(t.Undefined, label='New left value')
+    right_value = t.Float(t.Undefined, label='New right value')
     offset = t.Float()
     scale = t.Float()
     units = t.Unicode()
@@ -197,7 +197,10 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
             self._update_calibration()
 
     def _update_calibration(self, *args, **kwargs):
-        if self.left_value == self.right_value:
+        # If the span selector or the new range values are not defined do
+        # nothing
+        if np.isnan(self.ss_left_value) or np.isnan(self.ss_right_value) or\
+                t.Undefined in (self.left_value, self.right_value):
             return
         lc = self.axis.value2index(self.ss_left_value)
         rc = self.axis.value2index(self.ss_right_value)
@@ -206,6 +209,14 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
             modify_calibration=False)
 
     def apply(self):
+        if np.isnan(self.ss_left_value) or np.isnan(self.ss_right_value):
+            _logger.warn("Select a range by clicking on the signal figure "
+                         "and dragging before pressing Apply.")
+            return
+        elif self.left_value is t.Undefined or self.right_value is t.Undefined:
+            _logger.warn("Select the new left and right values before "
+                         "pressing apply.")
+            return
         axis = self.axis
         axis.scale = self.scale
         axis.offset = self.offset
