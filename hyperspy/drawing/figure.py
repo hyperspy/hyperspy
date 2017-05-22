@@ -17,11 +17,17 @@ class BlittedFigure(object):
                     The instance that triggered the event.
             """, arguments=["obj"])
 
-    def _on_draw(self, *args):
+    def _set_background(self):
         if self.figure:
             canvas = self.figure.canvas
             if canvas.supports_blit:
                 self._background = canvas.copy_from_bbox(self.figure.bbox)
+
+    def _on_draw(self, *args):
+        if self.figure:
+            canvas = self.figure.canvas
+            if canvas.supports_blit:
+                self._set_background()
                 self._draw_animated()
             else:
                 canvas.draw_idle()

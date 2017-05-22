@@ -110,6 +110,7 @@ class Signal1DFigure(BlittedFigure):
         self.ax.set_title(self.title)
         x_axis_upper_lims = []
         x_axis_lower_lims = []
+        self._set_background()
         for line in self.ax_lines:
             line.plot()
             x_axis_lower_lims.append(line.axis.axis[0])
@@ -307,7 +308,7 @@ class Signal1DLine(object):
                                      fontsize=12,
                                      color=self.line.get_color(),
                                      animated=self.ax.figure.canvas.supports_blit)
-        self.ax.figure.canvas.draw()
+        self.ax.figure.canvas.draw_idle()
 
     def update(self, force_replot=False):
         """Update the current spectrum figure"""
