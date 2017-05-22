@@ -468,9 +468,6 @@ class Model1D(BaseModel):
         E1 : None or float
         E2 : None or float
 
-        Notes
-        -----
-        To use the full energy range call the function without arguments.
         """
         try:
             x1, x2 = signal_range_from_roi(x1)
