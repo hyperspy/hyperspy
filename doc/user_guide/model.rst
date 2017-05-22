@@ -33,9 +33,9 @@ model depends on this parameter. See :ref:`signal.binned` for more details.
 .. Warning::
 
    When importing data that have been binned using other software, in particular Gatan's DM,
-   the stored values may be the averages of the binned channels or pixels, instead of their sum, 
-   as would be required for proper statistical analysis. We therefore cannot guarantee 
-   that the statistics will be valid. We therefore strongly recommend that all 
+   the stored values may be the averages of the binned channels or pixels, instead of their sum,
+   as would be required for proper statistical analysis. We therefore cannot guarantee
+   that the statistics will be valid. We therefore strongly recommend that all
    pre-fitting binning should be done using Hyperspy.
 
 Creating a model
@@ -234,7 +234,7 @@ mailing list <http://groups.google.com/group/hyperspy-users>`.
 
 .. versionchanged:: 0.8.1 printing current model components
 
-To print the current components in a model use :py:attr:`components`. A 
+To print the current components in a model use :py:attr:`components`. A
 table with component number, attribute name, component name and
 component type will be printed:
 
@@ -626,6 +626,8 @@ optimizers. For more information on the local and global optimization algorithms
 .. versionchanged:: 1.1 `leastsq` supports bound constraints. `fmin_XXX` methods
                   changed to the `scipy.optimze.minimize()` notation.
 
+.. _optimizers-table:
+
 .. table:: Features of curve fitting optimizers.
 
     +--------------------------+--------+------------------+------------+--------+
@@ -741,10 +743,11 @@ To do so, we use a general optimizer called "Nelder-Mead".
    (1.0030718094185611, -0.63590210946134107)
 
 Problems of ill-conditioning and divergence can be ameliorated by using bounded
-optimization. Currently, not all optimizers support bounds - see table above. In the
-following example a gaussian histogram is fitted using a
-:class:`~._components.gaussian.Gaussian` component using mpfit and bounds on
-the ``centre`` parameter.
+optimization. Currently, not all optimizers support bounds - see the
+:ref:`table above <optimizers-table>`. In the following example a gaussian histogram is fitted
+
+using a :class:`~._components.gaussian.Gaussian` component using mpfit and
+bounds on the ``centre`` parameter.
 
 .. code-block:: python
 
