@@ -6,7 +6,7 @@ two-dimensional signals (images) in n-dimensional data sets. Models can be
 created as a linear combination of predefined components and multiple
 optimisation algorithms can be used to fit the model to experimental data.
 Bounds and weights are supported. The syntax for creating both kinds of model
-is essentially the same as in this documentation any method referred to in
+is essentially the same, as in this documentation any method referred to in
 the :py:class`~.model.BaseModel` class is available for both kinds.
 
 .. _2D_model-label:
@@ -29,6 +29,14 @@ provided for the :py:class:`~.models.model2D.Model2D` class.
 Before creating a model verify that the ``Signal.binned`` metadata
 attribute of the signal is set to the correct value because the resulting
 model depends on this parameter. See :ref:`signal.binned` for more details.
+
+.. Warning::
+
+   When importing data that have been binned using other software, in particular Gatan's DM,
+   the stored values may be the averages of the binned channels or pixels, instead of their sum,
+   as would be required for proper statistical analysis. We therefore cannot guarantee
+   that the statistics will be valid. We therefore strongly recommend that all
+   pre-fitting binning should be done using Hyperspy.
 
 Creating a model
 ----------------
@@ -127,7 +135,7 @@ parameters for spectroscopy than the one that ships with HyperSpy:
     ... module="numpy")
 
 If the expression is inconvenient to write out in full (e.g. it's long and/or
-complicated), multiple substitutions can be given, separated by semicolumns.
+complicated), multiple substitutions can be given, separated by semicolons.
 Both symbolic and numerical substitutions are allowed:
 
 .. code-block:: python
@@ -226,8 +234,8 @@ mailing list <http://groups.google.com/group/hyperspy-users>`.
 
 .. versionchanged:: 0.8.1 printing current model components
 
-To print the current components in a model use :py:attr:`components` of the
-variable. A table with component number, attribute name, component name and
+To print the current components in a model use :py:attr:`components`. A
+table with component number, attribute name, component name and
 component type will be printed:
 
 .. code-block:: python
@@ -339,7 +347,7 @@ enables tab completion.
 
 
 It is possible to "switch off" a component by setting its
-:py:attr:`~.component.Component.active` to `False`. When a components is
+:py:attr:`~.component.Component.active` to `False`. When a component is
 switched off, to all effects it is as if it was not part of the model. To
 switch it on simply set the :py:attr:`~.component.Component.active` attribute
 back to `True`.
@@ -376,7 +384,7 @@ To enable this feature for a given component set the
 
 .. _model_indexing-label:
 
-Indexing model
+Indexing the model
 --------------
 
 .. versionadded:: 1.0 model indexing
@@ -618,6 +626,8 @@ optimizers. For more information on the local and global optimization algorithms
 .. versionchanged:: 1.1 `leastsq` supports bound constraints. `fmin_XXX` methods
                   changed to the `scipy.optimze.minimize()` notation.
 
+.. _optimizers-table:
+
 .. table:: Features of curve fitting optimizers.
 
     +--------------------------+--------+------------------+------------+--------+
@@ -733,10 +743,11 @@ To do so, we use a general optimizer called "Nelder-Mead".
    (1.0030718094185611, -0.63590210946134107)
 
 Problems of ill-conditioning and divergence can be ameliorated by using bounded
-optimization. Currently, only the "mpfit" optimizer supports bounds. In the
-following example a gaussian histogram is fitted using a
-:class:`~._components.gaussian.Gaussian` component using mpfit and bounds on
-the ``centre`` parameter.
+optimization. Currently, not all optimizers support bounds - see the
+:ref:`table above <optimizers-table>`. In the following example a gaussian histogram is fitted
+
+using a :class:`~._components.gaussian.Gaussian` component using mpfit and
+bounds on the ``centre`` parameter.
 
 .. code-block:: python
 
@@ -849,7 +860,7 @@ conveniently adjust the parameter values by running
     :py:meth:`~.model.Model.disable_adjust_position`
 
 Also, :py:meth:`~.model.BaseModel.enable_adjust_position` provides an interactive
-way of setting the position of the components with a well define position.
+way of setting the position of the components with a well-defined position.
 :py:meth:`~.model.BaseModel.disable_adjust_position` disables the tool.
 
 
