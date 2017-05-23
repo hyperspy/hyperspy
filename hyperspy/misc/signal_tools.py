@@ -37,6 +37,7 @@ def _get_shapes(am, ignore_axis):
                   else 1 for axis in am.navigation_axes) if am.navigation_dimension != 0 else ()
     return sigsh, navsh
 
+
 def are_signals_aligned(*args, ignore_axis=None):
     if len(args) < 2:
         raise ValueError(

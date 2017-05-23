@@ -1048,6 +1048,7 @@ def signal_range_from_roi(signal_range):
 def deprecation_warning(msg):
     warnings.warn(msg, VisibleDeprecationWarning)
 
+
 def add_scalar_axis(signal):
     am = signal.axes_manager
     from hyperspy.signal import BaseSignal

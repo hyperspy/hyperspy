@@ -1181,13 +1181,13 @@ _spikes_diagnosis,
             else:
                 nav_shape = shp[:-1]
                 nav_chunks = dc.chunks[:-1]
-            zeros = da.zeros(nav_shape+(offset,),
-                             chunks=nav_chunks+((offset,),))
+            zeros = da.zeros(nav_shape + (offset,),
+                             chunks=nav_chunks + ((offset,),))
         if side == 'left' or side == 'both':
             if self._lazy:
                 tapered = dc[..., offset:channels + offset]
-                tapered *= np.hanning(2*channels)[:channels]
-                therest = dc[..., channels+offset:]
+                tapered *= np.hanning(2 * channels)[:channels]
+                therest = dc[..., channels + offset:]
                 thelist = [] if offset == 0 else [zeros]
                 thelist.extend([tapered, therest])
                 dc = da.concatenate(thelist, axis=-1)
@@ -1196,13 +1196,13 @@ _spikes_diagnosis,
                     np.hanning(2 * channels)[:channels])
                 dc[..., :offset] *= 0.
         if side == 'right' or side == 'both':
-            rl = None if offset==0 else -offset
+            rl = None if offset == 0 else -offset
             if self._lazy:
-                therest = dc[..., :-channels-offset]
-                tapered = dc[..., -channels-offset:rl]
-                tapered *= np.hanning(2*channels)[-channels:]
+                therest = dc[..., :-channels - offset]
+                tapered = dc[..., -channels - offset:rl]
+                tapered *= np.hanning(2 * channels)[-channels:]
                 thelist = [therest, tapered]
-                if offset !=0:
+                if offset != 0:
                     thelist.append(zeros)
                 dc = da.concatenate(thelist, axis=-1)
             else:
