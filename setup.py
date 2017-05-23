@@ -61,7 +61,7 @@ install_req = ['scipy>=0.15',
                'h5py',
                'python-dateutil',
                'ipyparallel',
-               'dask[array]>=0.13, !=0.14',
+               'dask[array]>=0.14.3',
                'scikit-image']
 
 extras_require = {
