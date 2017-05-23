@@ -10,17 +10,23 @@ signals in the Signal1D class.
 Cropping
 --------
 
-.. deprecated:: 1.3
-    :py:meth:`~.signal.Signal1D.crop_signal1D`. It will be removed in 2.0.
-
-Cropping in HyperSpy is performed using the :ref:`Signal indexing
-<signal.indexing>` syntax. For example, the following crops a spectrum to
-the 5 keV-15 keV region:
+The :py:meth:`~.signal.Signal1D.crop_signal1D` crops the
+spectral energy range *in-place*. If no parameter is passed, a user interface
+appears in which to crop the one dimensional signal. For example:
 
 .. code-block:: python
 
     s = hs.datasets.example_signals.EDS_TEM_Spectrum()
-    sc = s.isig[5.:15.]
+    s.crop_signal1D(5, 15) # s is cropped in place
+
+Additionally, cropping in HyperSpy can be performed using the :ref:`Signal
+indexing <signal.indexing>` syntax. For example, the following crops a spectrum
+to the 5 keV-15 keV region:
+
+.. code-block:: python
+
+    s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+    sc = s.isig[5.:15.] # s is not cropped, sc is a "cropped view" of s
 
 It is possible to crop interactively using :ref:`roi-label`. For example:
 

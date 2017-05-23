@@ -755,7 +755,7 @@ class MVATools(object):
                                    per_row=3,
                                    title=None):
         """Plot factors from a decomposition. In case of 1D signal axis, each
-        factors line can be toggled on and off by clicking on their 
+        factors line can be toggled on and off by clicking on their
         corresponding line in the legend.
 
         Parameters
@@ -819,7 +819,7 @@ class MVATools(object):
                          same_window=None, comp_label=None,
                          per_row=3, title=None):
         """Plot factors from blind source separation results. In case of 1D
-        signal axis, each factors line can be toggled on and off by clicking 
+        signal axis, each factors line can be toggled on and off by clicking
         on their corresponding line in the legend.
 
         Parameters
@@ -978,8 +978,8 @@ class MVATools(object):
                           with_factors=False, cmap=plt.cm.gray,
                           no_nans=False, per_row=3, axes_decor='all',
                           title=None):
-        """Plot loadings from blind source separation results. In case of 1D 
-        navigation axis, each loading line can be toggled on and off by 
+        """Plot loadings from blind source separation results. In case of 1D
+        navigation axis, each loading line can be toggled on and off by
         clicking on their corresponding line in the legend.
 
         Parameters
@@ -2156,13 +2156,6 @@ class BaseSignal(FancySlicing,
             None crop from/to the low/high end of the axis.
 
         """
-        from hyperspy.exceptions import VisibleDeprecationWarning
-        msg = (
-            "The `crop` method is deprecated and will be "
-            "removed in v2.0. Crop by slicing using `isig` instead."
-            "for example: s_cropped = s.isig[2.:10.]")
-        warnings.warn(msg, VisibleDeprecationWarning)
-        self._check_signal_dimension_equals_one()
         axis = self.axes_manager[axis]
         i1, i2 = axis._get_index(start), axis._get_index(end)
         if i1 is not None:
