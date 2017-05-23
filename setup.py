@@ -60,7 +60,7 @@ install_req = ['scipy>=0.15',
                'h5py',
                'python-dateutil',
                'ipyparallel',
-               'dask[array]>=0.13, !=0.14',
+               'dask[array]>=0.14.3',
                'scikit-image>=0.13',
                'pint>0.7']
 
@@ -110,6 +110,7 @@ for leftover in raw_extensions:
                     setup_path,
                     path +
                     '.cpython-*.so'))
+
 
 def count_c_extensions(extensions):
     c_num = 0
@@ -200,7 +201,7 @@ def find_post_checkout_cleanup_line():
 # after changing branches:
 if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
     exec_str = sys.executable
-    recythonize_str = ' '.join(['"%s"'%exec_str,'"%s"'%
+    recythonize_str = ' '.join(['"%s"' % exec_str, '"%s"' %
                                 os.path.join(setup_path, 'setup.py'),
                                 'clean --all build_ext --inplace\n'])
     if os.name == 'nt':
@@ -212,7 +213,8 @@ if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
         with open(post_checkout_hook_file, 'w') as pchook:
             pchook.write('#!/bin/sh\n')
             pchook.write('#cleanup_cythonized_and_compiled:\n')
-            pchook.write('rm ' + ' '.join(['"%s"' % i for i in cleanup_list]) + '\n')
+            pchook.write(
+                'rm ' + ' '.join(['"%s"' % i for i in cleanup_list]) + '\n')
             pchook.write(recythonize_str)
         hook_mode = 0o777  # make it executable
         os.chmod(post_checkout_hook_file, hook_mode)

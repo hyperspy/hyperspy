@@ -416,7 +416,8 @@ def test_read_FEI_SEM_scale_metadata_16bits():
     assert_allclose(s.axes_manager[0].scale, 3.3724e-06, atol=1E-12)
     assert_allclose(s.axes_manager[1].scale, 3.3724e-06, atol=1E-12)
     assert s.data.dtype == 'uint16'
-    FEI_Helios_metadata['General']['original_filename'] = 'FEI-Helios-Ebeam-16bits.tif'
+    FEI_Helios_metadata['General'][
+        'original_filename'] = 'FEI-Helios-Ebeam-16bits.tif'
     assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
 
 

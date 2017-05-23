@@ -1097,23 +1097,24 @@ class MVA():
             index_offset = 1
 
         if n_signal_pcs == n:
-            ax.scatter(range(index_offset, index_offset+n),
+            ax.scatter(range(index_offset, index_offset + n),
                        s.isig[:n].data,
                        **signal_fmt)
         elif n_signal_pcs > 0:
-            ax.scatter(range(index_offset, index_offset+n_signal_pcs),
+            ax.scatter(range(index_offset, index_offset + n_signal_pcs),
                        s.isig[:n_signal_pcs].data,
                        **signal_fmt)
-            ax.scatter(range(index_offset+n_signal_pcs, index_offset+n),
+            ax.scatter(range(index_offset + n_signal_pcs, index_offset + n),
                        s.isig[n_signal_pcs:n].data,
                        **noise_fmt)
         else:
-            ax.scatter(range(index_offset, index_offset+n),
+            ax.scatter(range(index_offset, index_offset + n),
                        s.isig[:n].data,
                        **noise_fmt)
 
         if xaxis_labeling == 'cardinal':
-            ax.xaxis.set_major_formatter(FuncFormatter(lambda x, p: ordinal(x)))
+            ax.xaxis.set_major_formatter(
+                FuncFormatter(lambda x, p: ordinal(x)))
 
         ax.set_ylabel(axes_titles['y'])
         ax.set_xlabel(axes_titles['x'])

@@ -439,7 +439,7 @@ class TestFEIReader():
             "Tecnai 200 kV D2267 SuperTwin")
         assert_allclose(s.metadata.Acquisition_instrument.TEM.Stage.tilt_alpha,
                         0.0, atol=1E-6)
-        
+
     def test_metadata_STEM(self):
         fname0 = os.path.join(self.dirpathold, '16x16_STEM_BF_DF_acquire.emi')
         s = load(fname0)[0]

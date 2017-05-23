@@ -2,7 +2,7 @@
 from traits.etsconfig.api import ETSConfig
 ETSConfig.toolkit = "null"
 
-# pytest-mpl 0.7 already import pyplot, so setting the matplotlib backend to 
+# pytest-mpl 0.7 already import pyplot, so setting the matplotlib backend to
 # 'agg' as early as we can is useless for testing.
 import matplotlib.pyplot as plt
 

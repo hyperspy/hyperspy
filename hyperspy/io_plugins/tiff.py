@@ -345,7 +345,8 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
     # for TVIPS tiff files:
     elif 'tvips_metadata' in op:
         _logger.debug("Reading TVIPS tif metadata")
-        if 'pixel_size_x' in op['tvips_metadata'] and 'pixel_size_y' in op['tvips_metadata']:
+        if 'pixel_size_x' in op[
+                'tvips_metadata'] and 'pixel_size_y' in op['tvips_metadata']:
             scales['x'] = op['tvips_metadata']['pixel_size_x']
             scales['y'] = op['tvips_metadata']['pixel_size_y']
 
@@ -646,7 +647,8 @@ class Metadata:
 
     def _get_additional_metadata_TVIPS(self):
         if 'tem_stage_position' in self.original_metadata['tvips_metadata']:
-            stage = self.original_metadata['tvips_metadata']['tem_stage_position']
+            stage = self.original_metadata[
+                'tvips_metadata']['tem_stage_position']
             # Guess on what is x, y, z, tilt_alpha and tilt_beta...
             self.md.set_item(
                 "Acquisition_instrument.TEM.Stage.x", stage[0] * 1E3)

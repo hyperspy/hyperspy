@@ -380,7 +380,7 @@ def hdfgroup2signaldict(group, lazy=False):
                     exposure = "exposure_time"
                 if exposure is not None:
                     if "Detector" not in tem:
-                        tem["Detector"] = {"Camera":{
+                        tem["Detector"] = {"Camera": {
                             "exposure": tem[exposure]}}
                     tem["Detector"]["Camera"] = {"exposure": tem[exposure]}
                     del tem[exposure]
