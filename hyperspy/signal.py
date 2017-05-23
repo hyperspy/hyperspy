@@ -753,7 +753,7 @@ class MVATools(object):
                                    per_row=3,
                                    title=None):
         """Plot factors from a decomposition. In case of 1D signal axis, each
-        factors line can be toggled on and off by clicking on their 
+        factors line can be toggled on and off by clicking on their
         corresponding line in the legend.
 
         Parameters
@@ -817,7 +817,7 @@ class MVATools(object):
                          same_window=None, comp_label=None,
                          per_row=3, title=None):
         """Plot factors from blind source separation results. In case of 1D
-        signal axis, each factors line can be toggled on and off by clicking 
+        signal axis, each factors line can be toggled on and off by clicking
         on their corresponding line in the legend.
 
         Parameters
@@ -976,8 +976,8 @@ class MVATools(object):
                           with_factors=False, cmap=plt.cm.gray,
                           no_nans=False, per_row=3, axes_decor='all',
                           title=None):
-        """Plot loadings from blind source separation results. In case of 1D 
-        navigation axis, each loading line can be toggled on and off by 
+        """Plot loadings from blind source separation results. In case of 1D
+        navigation axis, each loading line can be toggled on and off by
         clicking on their corresponding line in the legend.
 
         Parameters
@@ -1898,7 +1898,7 @@ class BaseSignal(FancySlicing,
             self.data.__getitem__(axes_manager._getitem_tuple))
 
     def plot(self, navigator="auto", axes_manager=None,
-             plot_markers=False, **kwargs):
+             plot_markers=True, **kwargs):
         """%s
         %s
 
@@ -2670,13 +2670,8 @@ class BaseSignal(FancySlicing,
         else:
             # Create a "Scalar" axis because the axis is the last one left and
             # HyperSpy does not # support 0 dimensions
-            am.remove(axes)
-            am._append_axis(
-                size=1,
-                scale=1,
-                offset=0,
-                name="Scalar",
-                navigate=False,)
+            from hyperspy.misc.utils import add_scalar_axis
+            add_scalar_axis(self)
 
     def _ma_workaround(self, s, function, axes, ar_axes, out):
         # TODO: Remove if and when numpy.ma accepts tuple `axis`

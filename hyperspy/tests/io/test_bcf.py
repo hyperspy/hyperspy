@@ -108,7 +108,7 @@ def test_hyperspy_wrap():
                                                            'rotation': 329.49719,
                                                            'x': 62409.2,
                                                            'y': 36517.61,
-                                                           'z': 40234.7}},},
+                                                           'z': 40234.7}}, },
               'General': {'title': 'EDX',
                           'time': '17:05:03',
                           'original_filename': 'P45_instructively_packed_16bit_compressed.bcf',

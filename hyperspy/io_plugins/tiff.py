@@ -18,11 +18,10 @@
 
 import os
 import logging
-import warnings
-from distutils.version import LooseVersion
 from datetime import datetime, timedelta
 from dateutil import parser
 import pint
+from skimage.external.tifffile import imsave, TiffFile
 
 import numpy as np
 import traits.api as t
@@ -67,33 +66,6 @@ axes_label_codes = {
 ureg = pint.UnitRegistry()
 
 
-def _import_tifffile_library(import_local_tifffile_if_necessary=False,
-                             loading=False):
-    def import_local_tifffile(loading=False):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            from hyperspy.external.tifffile import imsave, TiffFile
-            if loading:
-                # when we don't use skimage tifffile
-                warnings.warn(
-                    "Loading of some compressed images will be slow.\n")
-        return imsave, TiffFile
-
-    try:  # in case skimage is not available, import local tifffile.py
-        import skimage
-    except ImportError:
-        return import_local_tifffile(loading=loading)
-
-    # import local tifffile.py only if the skimage version too old
-    skimage_version = LooseVersion(skimage.__version__)
-    if import_local_tifffile_if_necessary and skimage_version <= LooseVersion(
-            '0.12.3'):
-        return import_local_tifffile(loading=loading)
-    else:
-        from skimage.external.tifffile import imsave, TiffFile
-        return imsave, TiffFile
-
-
 def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
     """Writes data to tif using Christoph Gohlke's tifffile library
 
@@ -109,7 +81,6 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
         tifffile library to allow exporting the scale and the unit.
     """
     _logger.debug('************* Saving *************')
-    imsave, TiffFile = _import_tifffile_library(export_scale)
     data = signal.data
     if signal.is_rgbx is True:
         data = rgb_tools.rgbx2regular_array(data)
@@ -118,10 +89,9 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
         photometric = "minisblack"
     if 'description' in kwds and export_scale:
         kwds.pop('description')
-        # Comment this warning, since it was not passing the test online...
-#        warnings.warn(
-#            "Description and export scale cannot be used at the same time, "
-#            "because of incompability with the 'ImageJ' format")
+        _logger.warning(
+            "Description and export scale cannot be used at the same time, "
+            "because it is incompability with the 'ImageJ' tiff format")
     if export_scale:
         kwds.update(_get_tags_dict(signal, extratags=extratags))
         _logger.debug("kwargs passed to tifffile.py imsave: {0}".format(kwds))
@@ -161,11 +131,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
 
     _logger.debug('************* Loading *************')
     # For testing the use of local and skimage tifffile library
-    import_local_tifffile = False
-    if 'import_local_tifffile' in kwds:
-        import_local_tifffile = kwds.pop('import_local_tifffile')
 
-    imsave, TiffFile = _import_tifffile_library(import_local_tifffile)
     lazy = kwds.pop('lazy', False)
     memmap = kwds.pop('memmap', False)
     with TiffFile(filename, **kwds) as tiff:
@@ -379,7 +345,8 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
     # for TVIPS tiff files:
     elif 'tvips_metadata' in op:
         _logger.debug("Reading TVIPS tif metadata")
-        if 'pixel_size_x' in op['tvips_metadata'] and 'pixel_size_y' in op['tvips_metadata']:
+        if 'pixel_size_x' in op[
+                'tvips_metadata'] and 'pixel_size_y' in op['tvips_metadata']:
             scales['x'] = op['tvips_metadata']['pixel_size_x']
             scales['y'] = op['tvips_metadata']['pixel_size_y']
 
@@ -680,7 +647,8 @@ class Metadata:
 
     def _get_additional_metadata_TVIPS(self):
         if 'tem_stage_position' in self.original_metadata['tvips_metadata']:
-            stage = self.original_metadata['tvips_metadata']['tem_stage_position']
+            stage = self.original_metadata[
+                'tvips_metadata']['tem_stage_position']
             # Guess on what is x, y, z, tilt_alpha and tilt_beta...
             self.md.set_item(
                 "Acquisition_instrument.TEM.Stage.x", stage[0] * 1E3)
