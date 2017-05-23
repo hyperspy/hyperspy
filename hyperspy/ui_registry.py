@@ -86,8 +86,10 @@ def _toolkits_to_string(toolkits):
 def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
     if not TOOLKIT_REGISTRY:
         raise ImportError(
-            "No toolkit installed. Install hyperspy_gui_ipywidgets or "
-            "hyperspy_gui_traitsui GUI elements."
+            "No toolkit registered. Install hyperspy_gui_ipywidgets or "
+            "hyperspy_gui_traitsui GUI elements. If hyperspy_gui_traits"
+            "is installed, initialize a toolkit supported by traitsui "
+            "before importing HyperSpy."
         )
     from hyperspy.defaults_parser import preferences
     if isinstance(toolkit, str):
