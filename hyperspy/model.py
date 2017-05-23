@@ -27,8 +27,10 @@ import numpy as np
 import scipy
 import scipy.odr as odr
 from scipy.optimize import (leastsq, least_squares,
-                            minimize, differential_evolution)
+                            minimize, differential_evolution, nnls)
 from scipy.linalg import svd
+from numpy.linalg import lstsq as linear
+
 from contextlib import contextmanager
 
 from hyperspy.external.progressbar import progressbar
@@ -910,6 +912,13 @@ class BaseModel(list):
                 "odr" performs the optimization using the orthogonal distance
                 regression algorithm. It does not support bounds.
 
+                "linear" performs least-squares fitting using linear regression. It does
+                not support bounds, but should be very fast.
+
+                "non_negative_linear" performs least-squares fitting using linear
+                regression (like "linear") under the constraint that none of the
+                solutions can be negative.
+
                 "Nelder-Mead", "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B"
                 and "TNC" are wrappers for scipy.optimize.minimize(). Only
                 "L-BFGS-B" and "TNC" support bounds.
@@ -928,7 +937,7 @@ class BaseModel(list):
         method : {'ls', 'ml'}
             Choose 'ls' (default) for least-squares and 'ml' for Poisson
             maximum likelihood estimation. The latter is not available when
-            'fitter' is "leastsq", "odr" or "mpfit".
+            'fitter' is "leastsq", "odr", "mpfit", "linear" or "non_negative_linear".
         grad : bool
             If True, the analytical gradient is used if defined to
             speed up the optimization.
@@ -1012,10 +1021,10 @@ class BaseModel(list):
 
             if method == 'ml':
                 weights = None
-                if fitter in ("leastsq", "odr", "mpfit"):
+                if fitter in ("leastsq", "odr", "mpfit", "linear", "non_negative_linear"):
                     raise NotImplementedError(
                         "Maximum likelihood estimation is not supported "
-                        'for the "leastsq", "mpfit" or "odr" optimizers')
+                        'for the "leastsq", "mpfit", "odr", "linear" or "non_negative_linear" optimizers')
             elif method == "ls":
                 metadata = self.signal.metadata
                 if "Signal.Noise_properties.variance" not in metadata:
@@ -1129,6 +1138,25 @@ class BaseModel(list):
                         (self._errfunc(self.p0, *args) ** 2).sum() /
                         (len(args[0]) - len(self.p0)))
                 self.fit_output = m
+
+            elif fitter == "linear":
+                signal_axis = self.axis.axis[np.where(self.channel_switches)]
+                component_data = np.array([component.function(signal_axis) \
+                                           for component in self if len(component.free_parameters) > 0])
+                output = linear(component_data.T, self.signal()[np.where(self.channel_switches)], **kwargs)
+
+                self.p0 = tuple([oldp0*factor for oldp0, factor in zip(self.p0, output[0])])
+                self.fit_output = output
+
+            elif fitter == "non_negative_linear":
+                signal_axis = self.axis.axis[np.where(self.channel_switches)]
+                component_data = np.array([component.function(signal_axis) \
+                                           for component in self if len(component.free_parameters) > 0])
+                output = nnls(component_data.T, self.signal()[np.where(self.channel_switches)], **kwargs)
+
+                self.p0 = tuple([oldp0*factor for oldp0, factor in zip(self.p0, output[0])])
+                self.fit_output = output
+
             else:
                 # General optimizers
                 # Least squares or maximum likelihood
