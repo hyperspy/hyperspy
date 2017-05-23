@@ -185,7 +185,11 @@ class LazySignal(BaseSignal):
             if self.data.chunks != new_chunks and rechunk:
                 res = self.data.rechunk(new_chunks)
         else:
-            res = da.from_array(self.data, chunks=new_chunks)
+            if isinstance(self.data, np.ma.masked_array):
+                data = np.where(self.data.mask, np.nan, self.data)
+            else:
+                data = self.data
+            res = da.from_array(data, chunks=new_chunks)
         assert isinstance(res, da.Array)
         return res
 
@@ -819,6 +823,7 @@ class LazySignal(BaseSignal):
         res._make_lazy(rechunk=True)
         return res
     transpose.__doc__ = BaseSignal.transpose.__doc__
+
 
 def _reshuffle_mixed_blocks(array, ndim, sshape, nav_chunks):
     """Reshuffles dask block-shuffled array

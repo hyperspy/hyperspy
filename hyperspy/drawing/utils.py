@@ -850,7 +850,6 @@ def plot_images(images,
             # Set axes decorations based on user input
             set_axes_decor(ax, axes_decor)
 
-
             # If using independent colorbars, add them
             if colorbar is 'multi' and not isrgb[i]:
                 div = make_axes_locatable(ax)
