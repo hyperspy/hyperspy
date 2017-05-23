@@ -181,6 +181,8 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
             raise SignalDimensionError(
                 signal.axes_manager.signal_dimension, 1)
         self.units = self.axis.units
+        self.scale = self.axis.scale
+        self.offset = self.axis.offset
         self.last_calibration_stored = True
 
     def _left_value_changed(self, old, new):
