@@ -186,7 +186,9 @@ class EDSSEM_mixin:
                 "Acquisition_instrument.SEM.Detector.EDS.live_time",
                 live_time)
         if tilt_stage is not None:
-            md.set_item("Acquisition_instrument.SEM.Stage.tilt_alpha", tilt_stage)
+            md.set_item(
+                "Acquisition_instrument.SEM.Stage.tilt_alpha",
+                tilt_stage)
         if azimuth_angle is not None:
             md.set_item(
                 "Acquisition_instrument.SEM.Detector.EDS.azimuth_angle",
