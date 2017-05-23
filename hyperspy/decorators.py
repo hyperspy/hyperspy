@@ -27,7 +27,7 @@ import types
 
 def lazify(func, **kwargs):
     from hyperspy.signal import BaseSignal
-
+    from hyperspy.model import BaseModel
     @wraps(func)
     def lazified_func(self, *args, **kwds):
         for k in self.__dict__.keys():
@@ -36,6 +36,13 @@ def lazify(func, **kwargs):
                 if isinstance(v, BaseSignal):
                     v = v.as_lazy()
                     setattr(self, k, v)
+                elif isinstance(v, BaseModel):
+                    if hasattr(v, "signal"):
+                        am = v.signal.axes_manager
+                        v.signal = v.signal.as_lazy()
+                        # Keep the axes_manager from the original signal that
+                        # the model assigns to the components
+                        v.signal.axes_manager = am
         self.__dict__.update(kwargs)
         return func(self, *args, **kwds)
     return lazified_func

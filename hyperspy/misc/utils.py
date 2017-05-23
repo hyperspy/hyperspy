@@ -986,7 +986,8 @@ def map_result_construction(signal,
                             ragged,
                             sig_shape=None,
                             lazy=False):
-    from hyperspy.signals import (BaseSignal, LazySignal)
+    from hyperspy.signals import BaseSignal
+    from hyperspy._lazy_signals import LazySignal
     res = None
     if inplace:
         sig = signal

@@ -227,7 +227,9 @@ class TestInterpolateInBetween:
         print(s.data[8:12])
         np.testing.assert_allclose(
             s.data[8:12], np.array([45.09388598, 104.16170809,
-                                    155.48258721, 170.33564422]))
+                                    155.48258721, 170.33564422]),
+            atol=1,
+        )
 
 
 @lazifyTestClass

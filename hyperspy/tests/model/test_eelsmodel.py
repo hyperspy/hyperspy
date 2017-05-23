@@ -4,8 +4,10 @@ import pytest
 from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class TestCreateEELSModel:
 
     def setup_method(self, method):
@@ -67,6 +69,7 @@ class TestCreateEELSModel:
             m = self.s.create_model(ll=ll)
 
 
+@lazifyTestClass
 class TestEELSModel:
 
     def setup_method(self, method):
@@ -159,6 +162,7 @@ class TestEELSModel:
                 150)
 
 
+@lazifyTestClass
 class TestFitBackground:
 
     def setup_method(self, method):

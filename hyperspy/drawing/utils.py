@@ -138,45 +138,10 @@ def on_figure_window_close(figure, function):
     function : function
 
     """
-    backend = plt.get_backend()
-    if backend not in ("GTKAgg", "WXAgg", "TkAgg", "Qt4Agg"):
-        return
+    def function_wrapper(evt):
+        function()
 
-    window = figure.canvas.manager.window
-    if not hasattr(figure, '_on_window_close'):
-        figure._on_window_close = list()
-    if function not in figure._on_window_close:
-        figure._on_window_close.append(function)
-
-    if backend == 'GTKAgg':
-        def function_wrapper(*args):
-            function()
-        window.connect('destroy', function_wrapper)
-
-    elif backend == 'WXAgg':
-        # In linux the following code produces a segmentation fault
-        # so it is enabled only for Windows
-        import wx
-
-        def function_wrapper(event):
-            # When using WX window.connect does not supports multiple functions
-            for f in figure._on_window_close:
-                f()
-            plt.close(figure)
-        window.Bind(wx.EVT_CLOSE, function_wrapper)
-
-    elif backend == 'TkAgg':
-        def function_wrapper(*args):
-            # When using TK window.connect does not supports multiple functions
-            for f in figure._on_window_close:
-                f()
-        figure.canvas.manager.window.bind("<Destroy>", function_wrapper)
-
-    elif backend == 'Qt4Agg':
-        # PyQt
-        # In PyQt window.connect supports multiple functions
-        from IPython.external.qt_for_kernel import QtCore
-        window.connect(window, QtCore.SIGNAL('closing()'), function)
+    figure.canvas.mpl_connect('close_event', function_wrapper)
 
 
 def plot_RGB_map(im_list, normalization='single', dont_plot=False):
@@ -883,18 +848,8 @@ def plot_images(images,
                 ax.set_title(textwrap.fill(title, labelwrap))
 
             # Set axes decorations based on user input
-            if axes_decor is 'off':
-                ax.axis('off')
-            elif axes_decor is 'ticks':
-                ax.set_xlabel('')
-                ax.set_ylabel('')
-            elif axes_decor is 'all':
-                pass
-            elif axes_decor is None:
-                ax.set_xlabel('')
-                ax.set_ylabel('')
-                ax.set_xticklabels([])
-                ax.set_yticklabels([])
+            set_axes_decor(ax, axes_decor)
+
 
             # If using independent colorbars, add them
             if colorbar is 'multi' and not isrgb[i]:
@@ -955,6 +910,21 @@ def plot_images(images,
         plt.subplots_adjust(**padding)
 
     return axes_list
+
+
+def set_axes_decor(ax, axes_decor):
+    if axes_decor is 'off':
+        ax.axis('off')
+    elif axes_decor is 'ticks':
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+    elif axes_decor is 'all':
+        pass
+    elif axes_decor is None:
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
 
 
 def plot_spectra(
@@ -1177,8 +1147,6 @@ def animate_legend(figure='last'):
         figure.canvas.draw()
 
     figure.canvas.mpl_connect('pick_event', onpick)
-
-    plt.show()
 
 
 def plot_histograms(signal_list,

@@ -25,13 +25,13 @@ import numpy as np
 from natsort import natsorted
 from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 
-from .misc.io.tools import ensure_directory
-from .misc.io.tools import overwrite as overwrite_method
-from .misc.utils import (strlist2enumeration, find_subclasses)
-from .misc.utils import stack as stack_method
-from .io_plugins import io_plugins, default_write_ext
-from .exceptions import VisibleDeprecationWarning
-from .defaults_parser import preferences
+from hyperspy.misc.io.tools import ensure_directory
+from hyperspy.misc.io.tools import overwrite as overwrite_method
+from hyperspy.misc.utils import (strlist2enumeration, find_subclasses)
+from hyperspy.misc.utils import stack as stack_method
+from hyperspy.io_plugins import io_plugins, default_write_ext
+from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.defaults_parser import preferences
 
 _logger = logging.getLogger(__name__)
 
