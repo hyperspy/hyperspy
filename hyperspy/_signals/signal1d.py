@@ -812,27 +812,28 @@ _spikes_diagnosis,
         calibration = Signal1DCalibration(self)
         return calibration.gui(display=display, toolkit=toolkit)
     calibrate.__doc__ = \
-        """Calibrate the spectral dimension using a gui.
-It displays a window where the new calibration can be set by:
-* Setting the offset, units and scale directly
-* Selection a range by dragging the mouse on the spectrum figure
- and
-setting the new values for the given range limits
+        """
+        Calibrate the spectral dimension using a gui.
+        It displays a window where the new calibration can be set by:
+        * Setting the offset, units and scale directly
+        * Selection a range by dragging the mouse on the spectrum figure
+         and
+        setting the new values for the given range limits
 
-Parameters
-----------
-%s
-%s
+        Parameters
+        ----------
+        %s
+        %s
 
-Notes
------
-For this method to work the output_dimension must be 1. Set the
-view
-accordingly
-Raises
-------
-SignalDimensionError if the signal dimension is not 1.
-""" % (DISPLAY_DT, TOOLKIT_DT)
+        Notes
+        -----
+        For this method to work the output_dimension must be 1. Set the
+        view
+        accordingly
+        Raises
+        ------
+        SignalDimensionError if the signal dimension is not 1.
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
     def smooth_savitzky_golay(self,
                               polynomial_order=None,
@@ -856,29 +857,30 @@ SignalDimensionError if the signal dimension is not 1.
                 smoother.window_length = window_length
             return smoother.gui(display=display, toolkit=toolkit)
     smooth_savitzky_golay.__doc__ = \
-        """Apply a Savitzky-Golay filter to the data in place.
-If `polynomial_order` or `window_length` or `differential_order` are
-None the method is run in interactive mode.
-Parameters
-----------
-window_length : int
-    The length of the filter window (i.e. the number of coefficients).
-    `window_length` must be a positive odd integer.
-polynomial_order : int
-    The order of the polynomial used to fit the samples.
-    `polyorder` must be less than `window_length`.
-differential_order: int, optional
-    The order of the derivative to compute.  This must be a
-    nonnegative integer.  The default is 0, which means to filter
-    the data without differentiating.
-parallel : {bool, None}
-    Perform the operation in a threaded manner (parallely).
-%s
-%s
-Notes
------
-More information about the filter in `scipy.signal.savgol_filter`.
-""" % (DISPLAY_DT, TOOLKIT_DT)
+        """
+        Apply a Savitzky-Golay filter to the data in place.
+        If `polynomial_order` or `window_length` or `differential_order` are
+        None the method is run in interactive mode.
+        Parameters
+        ----------
+        window_length : int
+            The length of the filter window (i.e. the number of coefficients).
+            `window_length` must be a positive odd integer.
+        polynomial_order : int
+            The order of the polynomial used to fit the samples.
+            `polyorder` must be less than `window_length`.
+        differential_order: int, optional
+            The order of the derivative to compute.  This must be a
+            nonnegative integer.  The default is 0, which means to filter
+            the data without differentiating.
+        parallel : {bool, None}
+            Perform the operation in a threaded manner (parallely).
+        %s
+        %s
+        Notes
+        -----
+        More information about the filter in `scipy.signal.savgol_filter`.
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
     def smooth_lowess(self,
                       smoothing_parameter=None,
@@ -907,34 +909,35 @@ More information about the filter in `scipy.signal.savgol_filter`.
                      ragged=False,
                      parallel=parallel)
     smooth_lowess.__doc__ = \
-        """Lowess data smoothing in place.
-If `smoothing_parameter` or `number_of_iterations` are None the method
-is run in interactive mode.
-Parameters
-----------
-smoothing_parameter: float or None
-    Between 0 and 1. The fraction of the data used
-    when estimating each y-value.
-number_of_iterations: int or None
-    The number of residual-based reweightings
-    to perform.
-show_progressbar : None or bool
-    If True, display a progress bar. If None the default is set in
-    `preferences`.
-parallel : {Bool, None, int}
-    Perform the operation parallel
-%s
-%s
+        """
+        Lowess data smoothing in place.
+        If `smoothing_parameter` or `number_of_iterations` are None the method
+        is run in interactive mode.
+        Parameters
+        ----------
+        smoothing_parameter: float or None
+            Between 0 and 1. The fraction of the data used
+            when estimating each y-value.
+        number_of_iterations: int or None
+            The number of residual-based reweightings
+            to perform.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
+        parallel : {Bool, None, int}
+            Perform the operation parallel
+        %s
+        %s
 
-Raises
-------
-SignalDimensionError if the signal dimension is not 1.
-ImportError if statsmodels is not installed.
-Notes
------
-This method uses the lowess algorithm from statsmodels. statsmodels
-is required for this method.
-""" % (DISPLAY_DT, TOOLKIT_DT)
+        Raises
+        ------
+        SignalDimensionError if the signal dimension is not 1.
+        ImportError if statsmodels is not installed.
+        Notes
+        -----
+        This method uses the lowess algorithm from statsmodels. statsmodels
+        is required for this method.
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
     def smooth_tv(self, smoothing_parameter=None, show_progressbar=None,
                   parallel=None, display=True, toolkit=None):
@@ -948,24 +951,25 @@ is required for this method.
                      show_progressbar=show_progressbar,
                      parallel=parallel)
     smooth_tv.__doc__ = \
-        """Total variation data smoothing in place.
-Parameters
-----------
-smoothing_parameter: float or None
-   Denoising weight relative to L2 minimization. If None the method
-   is run in interactive mode.
-show_progressbar : None or bool
-    If True, display a progress bar. If None the default is set in
-    `preferences`.
-parallel : {Bool, None, int}
-    Perform the operation parallely
-%s
-%s
-Raises
-------
-SignalDimensionError if the signal dimension is not 1.
+        """
+        Total variation data smoothing in place.
+        Parameters
+        ----------
+        smoothing_parameter: float or None
+           Denoising weight relative to L2 minimization. If None the method
+           is run in interactive mode.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
+        parallel : {Bool, None, int}
+            Perform the operation parallely
+        %s
+        %s
+        Raises
+        ------
+        SignalDimensionError if the signal dimension is not 1.
 
-""" % (DISPLAY_DT, TOOLKIT_DT)
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
     def filter_butterworth(self,
                            cutoff_frequency_ratio=None,
@@ -981,17 +985,18 @@ SignalDimensionError if the signal dimension is not 1.
         else:
             return smoother.gui(display=display, toolkit=toolkit)
     filter_butterworth.__doc__ = \
-        """Butterworth filter in place.
+        """
+        Butterworth filter in place.
 
-Parameters
-----------
-%s
-%s
-Raises
-------
-SignalDimensionError if the signal dimension is not 1.
+        Parameters
+        ----------
+        %s
+        %s
+        Raises
+        ------
+        SignalDimensionError if the signal dimension is not 1.
 
-""" % (DISPLAY_DT, TOOLKIT_DT)
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
     def _remove_background_cli(
             self, signal_range, background_estimator, fast=True,
@@ -1044,46 +1049,47 @@ SignalDimensionError if the signal dimension is not 1.
                 show_progressbar=show_progressbar)
             return spectra
     remove_background.__doc__ = \
-        """Remove the background, either in place using a gui or returned as a new
-spectrum using the command line.
-Parameters
-----------
-signal_range : tuple, optional
-    If this argument is not specified, the signal range has to be
-    selected using a GUI. And the original spectrum will be replaced.
-    If tuple is given, the a spectrum will be returned.
-background_type : string
-    The type of component which should be used to fit the background.
-    Possible components: PowerLaw, Gaussian, Offset, Polynomial
-    If Polynomial is used, the polynomial order can be specified
-polynomial_order : int, default 2
-    Specify the polynomial order if a Polynomial background is used.
-fast : bool
-    If True, perform an approximative estimation of the parameters.
-    If False, the signal is fitted using non-linear least squares
-    afterwards.This is slower compared to the estimation but
-    possibly more accurate.
-show_progressbar : None or bool
-    If True, display a progress bar. If None the default is set in
-    `preferences`.
-%s
-%s
-Examples
---------
-Using gui, replaces spectrum s
->>> s = hs.signals.Signal1D(range(1000))
->>> s.remove_background() #doctest: +SKIP
+        """
+        Remove the background, either in place using a gui or returned as a new
+        spectrum using the command line.
+        Parameters
+        ----------
+        signal_range : tuple, optional
+            If this argument is not specified, the signal range has to be
+            selected using a GUI. And the original spectrum will be replaced.
+            If tuple is given, the a spectrum will be returned.
+        background_type : string
+            The type of component which should be used to fit the background.
+            Possible components: PowerLaw, Gaussian, Offset, Polynomial
+            If Polynomial is used, the polynomial order can be specified
+        polynomial_order : int, default 2
+            Specify the polynomial order if a Polynomial background is used.
+        fast : bool
+            If True, perform an approximative estimation of the parameters.
+            If False, the signal is fitted using non-linear least squares
+            afterwards.This is slower compared to the estimation but
+            possibly more accurate.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
+        %s
+        %s
+        Examples
+        --------
+        Using gui, replaces spectrum s
+        >>> s = hs.signals.Signal1D(range(1000))
+        >>> s.remove_background() #doctest: +SKIP
 
-Using command line, returns a spectrum
->>> s1 = s.remove_background(signal_range=(400,450), background_type='PowerLaw')
+        Using command line, returns a spectrum
+        >>> s1 = s.remove_background(signal_range=(400,450), background_type='PowerLaw')
 
-Using a full model to fit the background
->>> s1 = s.remove_background(signal_range=(400,450), fast=False)
+        Using a full model to fit the background
+        >>> s1 = s.remove_background(signal_range=(400,450), fast=False)
 
-Raises
-------
-SignalDimensionError if the signal dimension is not 1.
-""" % (DISPLAY_DT, TOOLKIT_DT)
+        Raises
+        ------
+        SignalDimensionError if the signal dimension is not 1.
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
     @interactive_range_selector
     def crop_signal1D(self, left_value=None, right_value=None,):

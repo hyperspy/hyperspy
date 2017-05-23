@@ -208,42 +208,43 @@ class EDSSEM_mixin:
                 "energy_resolution_MnKa",
                 energy_resolution_MnKa)
     set_microscope_parameters.__doc__ = \
-        """Set the microscope parameters.
+        """
+        Set the microscope parameters.
 
-If no arguments are given, raises an interactive mode to fill
-the values.
+        If no arguments are given, raises an interactive mode to fill
+        the values.
 
-Parameters
-----------
-beam_energy: float
-    The energy of the electron beam in keV
-live_time : float
-    In second
-tilt_stage : float
-    In degree
-azimuth_angle : float
-    In degree
-elevation_angle : float
-    In degree
-energy_resolution_MnKa : float
-    In eV
-{}
-{}
+        Parameters
+        ----------
+        beam_energy: float
+            The energy of the electron beam in keV
+        live_time : float
+            In second
+        tilt_stage : float
+            In degree
+        azimuth_angle : float
+            In degree
+        elevation_angle : float
+            In degree
+        energy_resolution_MnKa : float
+            In eV
+        {}
+        {}
 
-Examples
---------
->>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
->>> print('Default value %s eV' %
->>>       s.metadata.Acquisition_instrument.
->>>       SEM.Detector.EDS.energy_resolution_MnKa)
->>> s.set_microscope_parameters(energy_resolution_MnKa=135.)
->>> print('Now set to %s eV' %
->>>       s.metadata.Acquisition_instrument.
->>>       SEM.Detector.EDS.energy_resolution_MnKa)
-Default value 130.0 eV
-Now set to 135.0 eV
+        Examples
+        --------
+        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+        >>> print('Default value %s eV' %
+        >>>       s.metadata.Acquisition_instrument.
+        >>>       SEM.Detector.EDS.energy_resolution_MnKa)
+        >>> s.set_microscope_parameters(energy_resolution_MnKa=135.)
+        >>> print('Now set to %s eV' %
+        >>>       s.metadata.Acquisition_instrument.
+        >>>       SEM.Detector.EDS.energy_resolution_MnKa)
+        Default value 130.0 eV
+        Now set to 135.0 eV
 
-""".format(DISPLAY_DT, TOOLKIT_DT)
+        """.format(DISPLAY_DT, TOOLKIT_DT)
 
     def _are_microscope_parameters_missing(self):
         """Check if the EDS parameters necessary for quantification

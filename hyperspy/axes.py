@@ -1175,11 +1175,12 @@ class AxesManager(t.HasTraits):
                        toolkit=toolkit,
                        title=title)
     gui_navigation_sliders.__doc__ = \
-        """Navigation sliders to control the index of the navigation axes.
+        """
+        Navigation sliders to control the index of the navigation axes.
 
-Parameters
-----------
-title: str
-%s
-%s
-"""
+        Parameters
+        ----------
+        title: str
+        %s
+        %s
+        """

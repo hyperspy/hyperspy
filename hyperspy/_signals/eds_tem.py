@@ -167,46 +167,47 @@ class EDSTEM_mixin:
                 "Acquisition_instrument.TEM.Detector.EDS.real_time",
                 real_time)
     set_microscope_parameters.__doc__ = \
-        """Set the microscope parameters.
+        """
+        Set the microscope parameters.
 
-If no arguments are given, raises an interactive mode to fill
-the values.
+        If no arguments are given, raises an interactive mode to fill
+        the values.
 
-Parameters
-----------
-beam_energy: float
-    The energy of the electron beam in keV
-live_time : float
-    In seconds
-tilt_stage : float
-    In degree
-azimuth_angle : float
-    In degree
-elevation_angle : float
-    In degree
-energy_resolution_MnKa : float
-    In eV
-beam_current: float
-    In nA
-probe_area: float
-    In nm^2
-real_time: float
-    In seconds
-{}
-{}
+        Parameters
+        ----------
+        beam_energy: float
+            The energy of the electron beam in keV
+        live_time : float
+            In seconds
+        tilt_stage : float
+            In degree
+        azimuth_angle : float
+            In degree
+        elevation_angle : float
+            In degree
+        energy_resolution_MnKa : float
+            In eV
+        beam_current: float
+            In nA
+        probe_area: float
+            In nm^2
+        real_time: float
+            In seconds
+        {}
+        {}
 
-Examples
---------
->>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
->>> print(s.metadata.Acquisition_instrument.
->>>       TEM.Detector.EDS.energy_resolution_MnKa)
->>> s.set_microscope_parameters(energy_resolution_MnKa=135.)
->>> print(s.metadata.Acquisition_instrument.
->>>       TEM.Detector.EDS.energy_resolution_MnKa)
-133.312296
-135.0
+        Examples
+        --------
+        >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+        >>> print(s.metadata.Acquisition_instrument.
+        >>>       TEM.Detector.EDS.energy_resolution_MnKa)
+        >>> s.set_microscope_parameters(energy_resolution_MnKa=135.)
+        >>> print(s.metadata.Acquisition_instrument.
+        >>>       TEM.Detector.EDS.energy_resolution_MnKa)
+        133.312296
+        135.0
 
-""".format(DISPLAY_DT, TOOLKIT_DT)
+        """.format(DISPLAY_DT, TOOLKIT_DT)
 
     def _are_microscope_parameters_missing(self):
         """Check if the EDS parameters necessary for quantification

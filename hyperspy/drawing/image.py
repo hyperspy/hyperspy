@@ -386,13 +386,14 @@ class ImagePlot(BlittedFigure):
         ceditor = ImageContrastEditor(self)
         return ceditor.gui(display=display, toolkit=toolkit)
     gui_adjust_contrast.__doc__ = \
-        """Display widgets to adjust image contrast if available.
-Parameters
-----------
-%s
-%s
+        """
+        Display widgets to adjust image contrast if available.
+        Parameters
+        ----------
+        %s
+        %s
 
-""" % (DISPLAY_DT, TOOLKIT_DT)
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
     def connect(self):
         self.figure.canvas.mpl_connect('key_press_event',

@@ -873,21 +873,22 @@ class EELSSpectrum_mixin:
                 "Acquisition_instrument.TEM.Detector.EELS.collection_angle",
                 collection_angle)
     set_microscope_parameters.__doc__ = \
-        """Set the microscope parameters that are necessary to calculate
-the GOS.
+        """
+        Set the microscope parameters that are necessary to calculate
+        the GOS.
 
-If not all of them are defined, in interactive mode
-raises an UI item to fill the values
+        If not all of them are defined, in interactive mode
+        raises an UI item to fill the values
 
-beam_energy: float
-    The energy of the electron beam in keV
-convengence_angle : float
-    The microscope convergence semi-angle in mrad.
-collection_angle : float
-    The collection semi-angle in mrad.
-{}
-{}
-""".format(TOOLKIT_DT, DISPLAY_DT)
+        beam_energy: float
+            The energy of the electron beam in keV
+        convengence_angle : float
+            The microscope convergence semi-angle in mrad.
+        collection_angle : float
+            The collection semi-angle in mrad.
+        {}
+        {}
+        """.format(TOOLKIT_DT, DISPLAY_DT)
 
     def power_law_extrapolation(self,
                                 window_size=20,
