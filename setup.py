@@ -265,8 +265,7 @@ class update_version_when_dev:
         # Get the hash from the git repository if available
         self.restore_version = False
         git_master_path = ".git/refs/heads/master"
-        if "+dev" in self.release_version and \
-                os.path.isfile(git_master_path):
+        if self.release_version.endswith(".dev"):
             p = subprocess.Popen(["git", "describe",
                                   "--tags", "--dirty", "--always"],
                                  stdout=subprocess.PIPE)
@@ -278,8 +277,8 @@ class update_version_when_dev:
                 gd = stdout[1:].strip().decode()
                 # Remove the tag
                 gd = gd[gd.index("-") + 1:]
-                self.version = self.release_version.replace("+dev", "-git-")
-                self.version += gd
+                self.version = self.release_version + "+git."
+                self.version += gd.replace("-", ".")
                 update_version(self.version)
                 self.restore_version = True
         else:
