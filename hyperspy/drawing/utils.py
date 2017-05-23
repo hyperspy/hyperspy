@@ -848,18 +848,8 @@ def plot_images(images,
                 ax.set_title(textwrap.fill(title, labelwrap))
 
             # Set axes decorations based on user input
-            if axes_decor is 'off':
-                ax.axis('off')
-            elif axes_decor is 'ticks':
-                ax.set_xlabel('')
-                ax.set_ylabel('')
-            elif axes_decor is 'all':
-                pass
-            elif axes_decor is None:
-                ax.set_xlabel('')
-                ax.set_ylabel('')
-                ax.set_xticklabels([])
-                ax.set_yticklabels([])
+            set_axes_decor(ax, axes_decor)
+
 
             # If using independent colorbars, add them
             if colorbar is 'multi' and not isrgb[i]:
@@ -920,6 +910,21 @@ def plot_images(images,
         plt.subplots_adjust(**padding)
 
     return axes_list
+
+
+def set_axes_decor(ax, axes_decor):
+    if axes_decor is 'off':
+        ax.axis('off')
+    elif axes_decor is 'ticks':
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+    elif axes_decor is 'all':
+        pass
+    elif axes_decor is None:
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
 
 
 def plot_spectra(

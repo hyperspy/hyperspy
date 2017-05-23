@@ -19,7 +19,6 @@
 import copy
 import os.path
 import warnings
-import math
 import inspect
 from contextlib import contextmanager
 from datetime import datetime
@@ -60,7 +59,7 @@ from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
                                         broadcast_signals)
 
-import warnings
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 _logger = logging.getLogger(__name__)
 
@@ -255,10 +254,8 @@ class MVATools(object):
                                 vector_scale=1,
                                 per_row=3, ax=None):
         """Plot components from PCA or ICA, or peak characteristics
-
         Parameters
         ----------
-
         comp_ids : None, int, or list of ints
             if None, returns maps of all components.
             if int, returns maps of components with ids from 0 to given
@@ -272,28 +269,21 @@ class MVATools(object):
         same_window : bool
             if True, plots each factor to the same window.  They are
             not scaled.
-        comp_label : string, the label that is either the plot title
-        (if plotting in
-            separate windows) or the label in the legend (if plotting
-            in the
-            same window)
+        comp_label : string
+            Title of the plot
         cmap : a matplotlib colormap
             The colormap used for factor images or
             any peak characteristic scatter map
             overlay.
-
         Parameters only valid for peak characteristics (or pk char factors):
         --------------------------------------------------------------------
-
         img_data - 2D numpy array,
             The array to overlay peak characteristics onto.  If None,
             defaults to the average image of your stack.
-
         plot_shifts - bool, default is True
             If true, plots a quiver (arrow) plot showing the shifts for
             each
             peak present in the component being plotted.
-
         plot_char - None or int
             If int, the id of the characteristic to plot as the colored
             scatter plot.
@@ -301,11 +291,9 @@ class MVATools(object):
                4: peak height
                5: peak orientation
                6: peak eccentricity
-
        quiver_color : any color recognized by matplotlib
            Determines the color of vectors drawn for
            plotting peak shifts.
-
        vector_scale : integer or None
            Scales the quiver plot arrows.  The vector
            is defined as one data unit along the X axis.
@@ -313,7 +301,6 @@ class MVATools(object):
            that when they are multiplied by vector_scale,
            they are on the scale of the image plot.
            If None, uses matplotlib's autoscaling.
-
         """
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
@@ -336,6 +323,7 @@ class MVATools(object):
             f = plt.figure(figsize=(4 * per_row, 3 * rows))
         else:
             f = plt.figure()
+
         for i in range(len(comp_ids)):
             if self.axes_manager.signal_dimension == 1:
                 if same_window:
@@ -343,6 +331,7 @@ class MVATools(object):
                 else:
                     if i > 0:
                         f = plt.figure()
+                        plt.title('%s' % comp_label)
                     ax = f.add_subplot(111)
                 ax = sigdraw._plot_1D_component(
                     factors=factors,
@@ -360,6 +349,7 @@ class MVATools(object):
                 else:
                     if i > 0:
                         f = plt.figure()
+                        plt.title('%s' % comp_label)
                     ax = f.add_subplot(111)
 
                 sigdraw._plot_2D_component(factors=factors,
@@ -369,6 +359,13 @@ class MVATools(object):
                                            cmap=cmap, comp_label=comp_label)
             if not same_window:
                 fig_list.append(f)
+        if same_window:  # Main title for same window
+            title = '%s' % comp_label
+            if self.axes_manager.signal_dimension == 1:
+                plt.title(title)
+            else:
+                plt.suptitle(title)
+            animate_legend(f)
         try:
             plt.tight_layout()
         except:
@@ -381,7 +378,8 @@ class MVATools(object):
     def _plot_loadings(self, loadings, comp_ids, calibrate=True,
                        same_window=None, comp_label=None,
                        with_factors=False, factors=None,
-                       cmap=plt.cm.gray, no_nans=False, per_row=3):
+                       cmap=plt.cm.gray, no_nans=False, per_row=3,
+                       axes_decor='all'):
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         if comp_ids is None:
@@ -411,6 +409,7 @@ class MVATools(object):
                 else:
                     if i > 0:
                         f = plt.figure()
+                        plt.title('%s' % comp_label)
                     ax = f.add_subplot(111)
             elif self.axes_manager.navigation_dimension == 2:
                 if same_window:
@@ -418,13 +417,21 @@ class MVATools(object):
                 else:
                     if i > 0:
                         f = plt.figure()
+                        plt.title('%s' % comp_label)
                     ax = f.add_subplot(111)
             sigdraw._plot_loading(
                 loadings, idx=comp_ids[i], axes_manager=self.axes_manager,
                 no_nans=no_nans, calibrate=calibrate, cmap=cmap,
-                comp_label=comp_label, ax=ax, same_window=same_window)
+                comp_label=comp_label, ax=ax, same_window=same_window,
+                axes_decor=axes_decor)
             if not same_window:
                 fig_list.append(f)
+        if same_window:  # Main title for same window
+            title = '%s' % comp_label
+            if self.axes_manager.navigation_dimension == 1:
+                plt.title(title)
+            else:
+                plt.suptitle(title)
         try:
             plt.tight_layout()
         except:
@@ -440,7 +447,7 @@ class MVATools(object):
         else:
             if self.axes_manager.navigation_dimension == 1:
                 plt.legend(ncol=loadings.shape[0] // 2, loc='best')
-                animate_legend()
+                animate_legend(f)
             if with_factors:
                 return f, self._plot_factors_or_pchars(factors,
                                                        comp_ids=comp_ids,
@@ -743,10 +750,13 @@ class MVATools(object):
                                    comp_ids,
                                    calibrate=True,
                                    same_window=None,
-                                   comp_label='Decomposition factor',
+                                   comp_label=None,
                                    cmap=plt.cm.gray,
-                                   per_row=3):
-        """Plot factors from a decomposition.
+                                   per_row=3,
+                                   title=None):
+        """Plot factors from a decomposition. In case of 1D signal axis, each
+        factors line can be toggled on and off by clicking on their 
+        corresponding line in the legend.
 
         Parameters
         ----------
@@ -767,11 +777,9 @@ class MVATools(object):
             if True, plots each factor to the same window.  They are
             not scaled.
 
-        comp_label : string, the label that is either the plot title
-        (if plotting in
-            separate windows) or the label in the legend (if plotting
-            in the
-            same window)
+        title : string
+            Title of the plot.
+
         cmap : The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
@@ -794,19 +802,25 @@ class MVATools(object):
         factors = self.learning_results.factors
         if comp_ids is None:
             comp_ids = self.learning_results.output_dimension
+        title = self._change_API_comp_label(title, comp_label)
+        if title is None:
+            title = self._get_plot_title('Decomposition factors of',
+                                         same_window)
 
         return self._plot_factors_or_pchars(factors,
                                             comp_ids=comp_ids,
                                             calibrate=calibrate,
                                             same_window=same_window,
-                                            comp_label=comp_label,
+                                            comp_label=title,
                                             cmap=cmap,
                                             per_row=per_row)
 
     def plot_bss_factors(self, comp_ids=None, calibrate=True,
-                         same_window=None, comp_label='BSS factor',
-                         per_row=3):
-        """Plot factors from blind source separation results.
+                         same_window=None, comp_label=None,
+                         per_row=3, title=None):
+        """Plot factors from blind source separation results. In case of 1D
+        signal axis, each factors line can be toggled on and off by clicking 
+        on their corresponding line in the legend.
 
         Parameters
         ----------
@@ -827,11 +841,8 @@ class MVATools(object):
             if True, plots each factor to the same window.  They are
             not scaled.
 
-        comp_label : string, the label that is either the plot title
-        (if plotting in
-            separate windows) or the label in the legend (if plotting
-            in the
-            same window)
+        title : string
+            Title of the plot.
 
         cmap : The colormap used for the factor image, or for peak
             characteristics, the colormap used for the scatter plot of
@@ -855,23 +866,31 @@ class MVATools(object):
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
         factors = self.learning_results.bss_factors
+        title = self._change_API_comp_label(title, comp_label)
+        if title is None:
+            title = self._get_plot_title('BSS factors of', same_window)
+
         return self._plot_factors_or_pchars(factors,
                                             comp_ids=comp_ids,
                                             calibrate=calibrate,
                                             same_window=same_window,
-                                            comp_label=comp_label,
+                                            comp_label=title,
                                             per_row=per_row)
 
     def plot_decomposition_loadings(self,
                                     comp_ids,
                                     calibrate=True,
                                     same_window=None,
-                                    comp_label='Decomposition loading',
+                                    comp_label=None,
                                     with_factors=False,
                                     cmap=plt.cm.gray,
                                     no_nans=False,
-                                    per_row=3):
-        """Plot loadings from PCA.
+                                    per_row=3,
+                                    axes_decor='all',
+                                    title=None):
+        """Plot loadings from a decomposition. In case of 1D navigation axis,
+        each loading line can be toggled on and off by clicking on the legended
+        line.
 
         Parameters
         ----------
@@ -885,18 +904,14 @@ class MVATools(object):
 
         calibrate : bool
             if True, calibrates plots where calibration is available
-            from
-            the axes_manager.  If False, plots are in pixels/channels.
+            from the axes_manager. If False, plots are in pixels/channels.
 
         same_window : bool
             if True, plots each factor to the same window.  They are
             not scaled.
 
-        comp_label : string,
-            The label that is either the plot title (if plotting in
-            separate windows) or the label in the legend (if plotting
-            in the same window). In this case, each loading line can be
-            toggled on and off by clicking on the legended line.
+        title : string
+            Title of the plot.
 
         with_factors : bool
             If True, also returns figure(s) with the factors for the
@@ -913,6 +928,13 @@ class MVATools(object):
         per_row : int
             the number of plots in each row, when the same_window
             parameter is True.
+
+        axes_decor : {'all', 'ticks', 'off', None}, optional
+            Controls how the axes are displayed on each image; default is 'all'
+            If 'all', both ticks and axis labels will be shown
+            If 'ticks', no axis labels will be shown, but ticks/labels will
+            If 'off', all decorations and frame will be disabled
+            If None, no axis decorations will be shown, but ticks/frame will
 
         See Also
         --------
@@ -934,22 +956,31 @@ class MVATools(object):
 
         if comp_ids is None:
             comp_ids = self.learning_results.output_dimension
+        title = self._change_API_comp_label(title, comp_label)
+        if title is None:
+            title = self._get_plot_title('Decomposition loadings of',
+                                         same_window)
+
         return self._plot_loadings(
             loadings,
             comp_ids=comp_ids,
             with_factors=with_factors,
             factors=factors,
             same_window=same_window,
-            comp_label=comp_label,
+            comp_label=title,
             cmap=cmap,
             no_nans=no_nans,
-            per_row=per_row)
+            per_row=per_row,
+            axes_decor=axes_decor)
 
     def plot_bss_loadings(self, comp_ids=None, calibrate=True,
-                          same_window=None, comp_label='BSS loading',
+                          same_window=None, comp_label=None,
                           with_factors=False, cmap=plt.cm.gray,
-                          no_nans=False, per_row=3):
-        """Plot loadings from ICA
+                          no_nans=False, per_row=3, axes_decor='all',
+                          title=None):
+        """Plot loadings from blind source separation results. In case of 1D 
+        navigation axis, each loading line can be toggled on and off by 
+        clicking on their corresponding line in the legend.
 
         Parameters
         ----------
@@ -970,11 +1001,8 @@ class MVATools(object):
             if True, plots each factor to the same window.  They are
             not scaled.
 
-        comp_label : string,
-            The label that is either the plot title (if plotting in
-            separate windows) or the label in the legend (if plotting
-            in the same window). In this case, each loading line can be
-            toggled on and off by clicking on the legended line.
+        title : string
+            Title of the plot.
 
         with_factors : bool
             If True, also returns figure(s) with the factors for the
@@ -992,6 +1020,13 @@ class MVATools(object):
             the number of plots in each row, when the same_window
             parameter is True.
 
+        axes_decor : {'all', 'ticks', 'off', None}, optional
+            Controls how the axes are displayed on each image; default is 'all'
+            If 'all', both ticks and axis labels will be shown
+            If 'ticks', no axis labels will be shown, but ticks / labels will
+            If 'off', all decorations and frame will be disabled
+            If None, no axis decorations will be shown, but ticks/frame will
+
         See Also
         --------
         plot_bss_factors, plot_bss_results.
@@ -1004,6 +1039,10 @@ class MVATools(object):
                                       "`plot_bss_results` instead.")
         if same_window is None:
             same_window = preferences.MachineLearning.same_window
+        title = self._change_API_comp_label(title, comp_label)
+        if title is None:
+            title = self._get_plot_title('BSS loadings of',
+                                         same_window)
         loadings = self.learning_results.bss_loadings.T
         if with_factors:
             factors = self.learning_results.bss_factors
@@ -1015,10 +1054,20 @@ class MVATools(object):
             with_factors=with_factors,
             factors=factors,
             same_window=same_window,
-            comp_label=comp_label,
+            comp_label=title,
             cmap=cmap,
             no_nans=no_nans,
-            per_row=per_row)
+            per_row=per_row,
+            axes_decor=axes_decor)
+
+    def _get_plot_title(self, base_title='Loadings', same_window=True):
+        title_md = self.metadata.General.title
+        title = "%s %s" % (base_title, title_md)
+        if title_md == '':  # remove the 'of' if 'title' is a empty string
+            title = title.replace(' of ', '')
+        if not same_window:
+            title = title.replace('loadings', 'loading')
+        return title
 
     def export_decomposition_results(self, comp_ids=None,
                                      folder=None,
@@ -1438,6 +1487,20 @@ class MVATools(object):
             factors.axes_manager.set_signal_dimension(factors_dim)
         loadings.plot(navigator=loadings_navigator)
         factors.plot(navigator=factors_navigator)
+
+    def _change_API_comp_label(self, title, comp_label):
+        if comp_label is not None:
+            if title is None:
+                title = comp_label
+                warnings.warn("The 'comp_label' argument will be deprecated",
+                              "in 2.0, please use 'title' instead",
+                              VisibleDeprecationWarning)
+            else:
+                warnings.warn("The 'comp_label' argument will be deprecated",
+                              "in 2.0, Since you are already using the 'title'",
+                              "argument, 'comp_label' is ignored.",
+                              VisibleDeprecationWarning)
+        return title
 
 
 class SpecialSlicersSignal(SpecialSlicers):
