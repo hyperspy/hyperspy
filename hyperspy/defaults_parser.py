@@ -80,25 +80,11 @@ else:
 
 
 class GeneralConfig(t.HasTraits):
-    default_file_format = t.Enum(
-        'hdf5',
-        'rpl',
-        desc='Using the hdf5 format is highly reccomended because is the '
-        'only one fully supported. The Ripple (rpl) format it is useful '
-        'tk is provided for when none of the other toolkits are'
-        ' available. However, when using this toolkit the '
-        'user interface elements are not available. '
-        'to export data to other software that do not support hdf5')
     default_export_format = t.Enum(
         *default_write_ext,
-        desc='Using the hdf5 format is highly reccomended because is the '
+        desc='Using the hspy format is highly reccomended because is the '
         'only one fully supported. The Ripple (rpl) format it is useful '
-        'to export data to other software that do not support hdf5')
-    hspy_extension = t.CBool(
-        False,
-        desc='If enabled, HyperSpy will use the "hspy" extension when saving '
-        'to HDF5 instead of the "hdf5" extension. "hspy" will be the default'
-        'extension from HyperSpy v1.3')
+        'to export data to other software that do not support hspy')
     interactive = t.CBool(
         True,
         desc='If enabled, HyperSpy will prompt the user when options are '
@@ -147,8 +133,6 @@ class ModelConfig(t.HasTraits):
 
 
 class MachineLearningConfig(t.HasTraits):
-    export_factors_default_file_format = t.Enum(*default_write_ext)
-    export_loadings_default_file_format = t.Enum(*default_write_ext)
     multiple_files = t.Bool(
         True,
         label='Export to multiple files',
@@ -249,9 +233,6 @@ template = {
     'Plot': PlotConfig(), }
 
 # Set the enums defaults
-template['MachineLearning'].export_factors_default_file_format = 'rpl'
-template['MachineLearning'].export_loadings_default_file_format = 'rpl'
-template['General'].default_export_format = 'rpl'
 template['General'].logging_level = 'WARNING'
 
 # Defaults template definition ends ######################################

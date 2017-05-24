@@ -483,8 +483,7 @@ class MVATools(object):
             multiple_files = preferences.MachineLearning.multiple_files
 
         if factor_format is None:
-            factor_format = preferences.MachineLearning.\
-                export_factors_default_file_format
+            factor_format = 'hspy'
 
         # Select the desired factors
         if comp_ids is None:
@@ -614,7 +613,7 @@ class MVATools(object):
                          comp_ids=None,
                          multiple_files=None,
                          loading_prefix=None,
-                         loading_format=None,
+                         loading_format="hspy",
                          save_figures_format='png',
                          comp_label=None,
                          cmap=plt.cm.gray,
@@ -631,8 +630,7 @@ class MVATools(object):
             multiple_files = preferences.MachineLearning.multiple_files
 
         if loading_format is None:
-            loading_format = preferences.MachineLearning.\
-                export_loadings_default_file_format
+            loading_format = 'hspy'
 
         if comp_ids is None:
             comp_ids = range(loadings.shape[0])
@@ -1071,9 +1069,9 @@ class MVATools(object):
                                      folder=None,
                                      calibrate=True,
                                      factor_prefix='factor',
-                                     factor_format=None,
+                                     factor_format="hspy",
                                      loading_prefix='loading',
-                                     loading_format=None,
+                                     loading_format="hspy",
                                      comp_label=None,
                                      cmap=plt.cm.gray,
                                      same_window=False,
@@ -1102,38 +1100,30 @@ class MVATools(object):
             factors/components
             begin with
         factor_format : string
-            The extension of the format that you wish to save to.
+            The extension of the format that you wish to save to. Default is
+            "hspy". See `loading format` for more details.
         loading_prefix : string
             The prefix that any exported filenames for
             factors/components
             begin with
         loading_format : string
-            The extension of the format that you wish to save to.
-            Determines
-            the kind of output.
-                - For image formats (tif, png, jpg, etc.), plots are
-                created
-                  using the plotting flags as below, and saved at
-                  600 dpi.
-                  One plot per loading is saved.
-                - For multidimensional formats (rpl, hdf5), arrays are
-                saved
-                  in single files.  All loadings are contained in the
-                  one
-                  file.
-                - For spectral formats (msa), each loading is saved to a
-                  separate file.
-        multiple_files : Bool
+            The extension of the format that you wish to save to. default
+            is "hspy". The format determines the kind of output.
+            - For image formats (tif, png, jpg, etc.), plots are
+              created using the plotting flags as below, and saved at
+              600 dpi. One plot per loading is saved.
+            - For multidimensional formats ("rpl", "hspy"), arrays are
+              saved in single files.  All loadings are contained in the
+              one file.
+            - For spectral formats (msa), each loading is saved to a
+              separate file.
+        multiple_files : bool
             If True, on exporting a file per factor and per loading will
-             be
-            created. Otherwise only two files will be created, one for
-            the
-            factors and another for the loadings. The default value can
-            be
-            chosen in the preferences.
-        save_figures : Bool
-            If True the same figures that are obtained when using the
-            plot
+            be created. Otherwise only two files will be created, one for
+            the factors and another for the loadings. The default value can
+            be chosen in the preferences.
+        save_figures : bool
+            If True the same figures that are obtained when using the plot
             methods will be saved with 600 dpi resolution
 
         Plotting options (for save_figures = True ONLY)
@@ -1202,9 +1192,9 @@ class MVATools(object):
                            multiple_files=None,
                            save_figures=False,
                            factor_prefix='bss_factor',
-                           factor_format=None,
+                           factor_format="hspy",
                            loading_prefix='bss_loading',
-                           loading_format=None,
+                           loading_format="hspy",
                            comp_label=None, cmap=plt.cm.gray,
                            same_window=False,
                            no_nans=True,
@@ -1229,27 +1219,23 @@ class MVATools(object):
             factors/components
             begin with
         factor_format : string
-            The extension of the format that you wish to save to.
-            Determines
-            the kind of output.
-                - For image formats (tif, png, jpg, etc.), plots are
-                created
-                  using the plotting flags as below, and saved at
-                  600 dpi.
-                  One plot per factor is saved.
-                - For multidimensional formats (rpl, hdf5), arrays are
-                saved
-                  in single files.  All factors are contained in the one
-                  file.
-                - For spectral formats (msa), each factor is saved to a
-                  separate file.
-
+            The extension of the format that you wish to save to. Default is
+            "hspy". See `loading format` for more details.
         loading_prefix : string
             The prefix that any exported filenames for
             factors/components
             begin with
         loading_format : string
-            The extension of the format that you wish to save to.
+            The extension of the format that you wish to save to. default
+            is "hspy". The format determines the kind of output.
+            - For image formats (tif, png, jpg, etc.), plots are
+              created using the plotting flags as below, and saved at
+              600 dpi. One plot per loading is saved.
+            - For multidimensional formats ("rpl", "hspy"), arrays are
+              saved in single files.  All loadings are contained in the
+              one file.
+            - For spectral formats (msa), each loading is saved to a
+              separate file.
         multiple_files : Bool
             If True, on exporting a file per factor and per loading
             will be
@@ -2047,7 +2033,7 @@ class BaseSignal(FancySlicing,
         """Saves the signal in the specified format.
 
         The function gets the format from the extension.:
-            - hdf5 for HDF5
+            - hspy for HyperSpy's HDF5 specification
             - rpl for Ripple (useful to export to Digital Micrograph)
             - msa for EMSA/MSA single spectrum saving.
             - unf for SEMPER unf binary format.
@@ -2073,14 +2059,16 @@ class BaseSignal(FancySlicing,
         overwrite : None, bool
             If None, if the file exists it will query the user. If
             True(False) it (does not) overwrites the file if it exists.
-        extension : {None, 'hdf5', 'rpl', 'msa', 'unf', 'blo', common image
-                     extensions e.g. 'tiff', 'png'}
+        extension : {None, 'hspy', 'hdf5', 'rpl', 'msa', 'unf', 'blo',
+                     'emd', common image extensions e.g. 'tiff', 'png'}
             The extension of the file that defines the file format.
-            If None, the extension is taken from the first not None in the
-            following list:
+            'hspy' and 'hdf5' are equivalent. Use 'hdf5' if compatibility with
+            HyperSpy versions older than 1.2 is required.
+            If None, the extension is determined from the following list in
+            this order:
             i) the filename
-            ii)  `tmp_parameters.extension`
-            iii) `preferences.General.default_file_format` in this order.
+            ii)  `Signal.tmp_parameters.extension`
+            iii) `hspy` (the default extension)
 
         """
         if filename is None:

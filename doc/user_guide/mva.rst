@@ -53,7 +53,7 @@ One of the most popular decomposition methods is principal component analysis (P
 
 Note that the `s` variable must contain either a :class:`~.signal.BaseSignal`  class
 or its subclasses, which will most likely have been loaded with the
-:func:`~.io.load` function, e.g. ``s = hs.load('my_file.hdf5')``. Also, the signal must be
+:func:`~.io.load` function, e.g. ``s = hs.load('my_file.hspy')``. Also, the signal must be
 multi-dimensional, that is ``s.axes_manager.navigation_size`` must be greater than
 one.
 
@@ -367,7 +367,7 @@ Saving in the main file
 -------------------------
 
 If you save the dataset on which you've performed machine learning analysis in
-the :ref:`hdf5-format` format (the default in HyperSpy) (see
+the :ref:`hspy-format` format (the default in HyperSpy) (see
 :ref:`saving_files`), the result of the analysis is also saved in the same
 file automatically, and it is loaded along with the rest of the data when you
 next open the file.
