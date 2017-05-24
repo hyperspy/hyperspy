@@ -2250,7 +2250,8 @@ class BaseSignal(FancySlicing,
             return data
 
     def rebin(self, new_shape=None, scale=None, crop=True, out=None):
-        """Rebin array.
+        """
+        Rebin array.
 
         Rebin the signal into a smaller or larger shape, based on linear
         interpolation. Specify **either** new_shape or scale.
@@ -2282,6 +2283,7 @@ class BaseSignal(FancySlicing,
             over. It can be removed but has been left to preserve total counts
             before and after binning.*
 
+        %s
         Returns
         -------
         s : Signal subclass

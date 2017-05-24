@@ -180,58 +180,10 @@ class EDS_mixin:
     sum.__doc__ = Signal1D.sum.__doc__
 
     def rebin(self, new_shape=None, scale=None, crop=True, out=None):
-        """Rebin array.
-
-        Rebin the signal into a smaller or larger shape, based on linear
-        interpolation. Specify **either** new_shape or scale.
-
-        Parameters
-        ----------
-        new_shape : a list of floats or integer, default None
-            For each dimension specify the new_shape. This will
-            then be converted into a scale.
-        scale : a list of floats or integer, default None
-            For each dimension specify the new:old pixel ratio, e.g. a ratio of 1
-            is no binning and a ratio of 2 means that each pixel in the new
-            spectrum is twice the size of the pixels in the old spectrum.
-            The length of the list should match the dimension of the numpy array.
-            ***Note : Only one of scale or new_shape should be specified otherwise
-            the function will not run***
-        crop: bool, default True
-            When binning by a non-integer number of pixels it is likely that
-            the final row in each dimension contains less than the full quota to
-            fill one pixel.
-
-            e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
-            pixels and one row containing only 0.8 pixels worth. Selection of
-            crop='True' or crop='False' determines whether or not this
-            'black' line is cropped from the final binned array or not.
-
-            *Please note that if crop=False is used, the final row in each
-            dimension may appear black, if a fractional number of pixels are left
-            over. It can be removed but has been left to preserve total counts
-            before and after binning.*
-
-        Returns
-        -------
-        s : Signal subclass
-
-        Examples
-        --------
-        >>> spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
-        >>> spectrum.data[1, 2, 9] = 5
-        >>> print(spectrum)
-        <EDXTEMSpectrum, title: dimensions: (4, 4|10)>
-        >>> print ('Sum = ', sum(sum(sum(spectrum.data))))
-        Sum = 164.0
-        >>> scale = [2, 2, 5]
-        >>> test = spectrum.rebin(scale)
-        >>> print(test)
-        <EDSTEMSpectrum, title: dimensions (2, 2|2)>
-        >>> print('Sum = ', sum(sum(sum(test.data))))
-        Sum =  164.0
         """
-        
+        %s
+        """
+
     #Series of if statements to check that only one out of new_shape or scale
     #has been given. New_shape is then converted to scale. If both or neither
     #are given the function raises and error and wont run.
