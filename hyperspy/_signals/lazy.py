@@ -230,8 +230,6 @@ class LazySignal(BaseSignal):
     def swap_axes(self, *args):
         raise lazyerror
 
-    rebin.__doc__ = BaseSignal.rebin.__doc__
-
     def __array__(self, dtype=None):
         return self.data.__array__(dtype=dtype)
 

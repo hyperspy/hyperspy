@@ -2344,7 +2344,7 @@ class BaseSignal(FancySlicing,
                           BaseSignal):
                 var = s.metadata.Signal.Noise_properties.variance
                 s.metadata.Signal.Noise_properties.variance = var.rebin(
-                    scale, crop=crop, out=out)
+                    new_shape=new_shape, scale=factors, crop=crop, out=out)
         if out is None:
             return s
         else:
