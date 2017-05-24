@@ -121,40 +121,6 @@ class EELSConfig(t.HasTraits):
         guess_gos_path(),
         label='GOS directory',
         desc='The GOS files are required to create the EELS edge components')
-    fine_structure_width = t.CFloat(
-        30,
-        label='Fine structure length',
-        desc='The default length of the fine structure from the edge onset')
-    fine_structure_active = t.CBool(
-        False,
-        label='Enable fine structure',
-        desc="If enabled, the regions of the EELS spectrum defined as fine "
-        "structure will be fitted with a spline. Please note that it "
-        "enabling this feature only makes sense when the model is "
-        "convolved to account for multiple scattering")
-    fine_structure_smoothing = t.Range(
-        0.,
-        1.,
-        value=0.3,
-        label='Fine structure smoothing factor',
-        desc='The lower the value the smoother the fine structure spline fit')
-    synchronize_cl_with_ll = t.CBool(False)
-    preedge_safe_window_width = t.CFloat(
-        2,
-        label='Pre-onset region (in eV)',
-        desc='Some functions needs to define the regions between two '
-        'ionisation edges. Due to limited energy resolution or chemical '
-        'shift, the region is limited on its higher energy side by '
-        'the next ionisation edge onset minus an offset defined by this '
-        'parameters')
-    min_distance_between_edges_for_fine_structure = t.CFloat(
-        0,
-        label='Minimum distance between edges',
-        desc='When automatically setting the fine structure energy regions, '
-        'the fine structure of an EELS edge component is automatically '
-        'disable if the next ionisation edge onset distance to the '
-        'higher energy side of the fine structure region is lower that '
-        'the value of this parameter')
 
 
 class EDSConfig(t.HasTraits):

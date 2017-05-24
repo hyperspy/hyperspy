@@ -29,6 +29,13 @@ from hyperspy._signals.eels import EELSSpectrum
 
 _logger = logging.getLogger(__name__)
 
+# When automatically setting the fine structure energy regions,
+# the fine structure of an EELS edge component is automatically
+# disable if the next ionisation edge onset distance to the
+# higher energy side of the fine structure region is lower that
+# the value of this parameter
+_MIN_DISTANCE_BETWEEN_EDGES_FOR_FINE_STRUCTURE = 0
+
 
 class EELSModel(Model1D):
 
@@ -213,8 +220,7 @@ class EELSModel(Model1D):
 
     def resolve_fine_structure(
             self,
-            preedge_safe_window_width=preferences.EELS.
-            preedge_safe_window_width,
+            preedge_safe_window_width=2,
             i1=0):
         """Adjust the fine structure of all edges to avoid overlapping
 
@@ -225,7 +231,8 @@ class EELSModel(Model1D):
         ----------
         preedge_safe_window_width : float
             minimum distance between the fine structure of an ionization edge
-            and that of the following one.
+            and that of the following one. Default 2 (eV).
+
         """
 
         if self._suspend_auto_fine_structure_width is True:
@@ -248,8 +255,7 @@ class EELSModel(Model1D):
                     self._active_edges[i1].onset_energy.value)
                 if (self._active_edges[i1].fine_structure_width >
                         distance_between_edges - preedge_safe_window_width):
-                    min_d = preferences.EELS.\
-                        min_distance_between_edges_for_fine_structure
+                    min_d = _MIN_DISTANCE_BETWEEN_EDGES_FOR_FINE_STRUCTURE
                     if (distance_between_edges -
                             preedge_safe_window_width) <= min_d:
                         _logger.info((
