@@ -1477,6 +1477,15 @@ signal range in functions taken a ``signal_range`` argument. For example:
     >>> roi = hs.roi.RectangularROI(left=120, right=460., top=300, bottom=560)
     >>> imc = im.isig[roi]
 
+.. versionadded:: 1.3
+    :meth:`gui` method.
+
+
+All ROIs have a :meth:`gui` method that displays an user interface if
+any hyperspy GUI is installed (e.g. hyperspy_gui_ipywidgets or
+hyperspy_gui_traitsui).
+
+
 
 
 .. _complex_data-label:
