@@ -1260,7 +1260,7 @@ def get_mapping(mode):
         'Stage.Rotation':
         ("Acquisition_instrument.%s.Stage.rotation" % mode, None),
         'Stage.Tilt':
-        ("Acquisition_instrument.%s.Stage.tilt_a" % mode, None),
+        ("Acquisition_instrument.%s.Stage.tilt_alpha" % mode, None),
         'Stage.X':
         ("Acquisition_instrument.%s.Stage.x" % mode, None),
         'Stage.Y':

@@ -7,6 +7,7 @@ from hyperspy.events import Event, Events
 class BlittedFigure(object):
 
     def __init__(self):
+        self._background = None
         self.events = Events()
         self.events.closed = Event("""
             Event that triggers when the figure window is closed.
@@ -16,16 +17,26 @@ class BlittedFigure(object):
                     The instance that triggered the event.
             """, arguments=["obj"])
 
+    def _set_background(self):
+        if self.figure:
+            canvas = self.figure.canvas
+            if canvas.supports_blit:
+                self._background = canvas.copy_from_bbox(self.figure.bbox)
+
     def _on_draw(self, *args):
         if self.figure:
             canvas = self.figure.canvas
-            self._background = canvas.copy_from_bbox(self.figure.bbox)
-            self._draw_animated()
+            if canvas.supports_blit:
+                self._set_background()
+                self._draw_animated()
+            else:
+                canvas.draw_idle()
 
     def _draw_animated(self):
-        if self.ax.figure:
+        if self.ax.figure and self.figure.axes:
             canvas = self.ax.figure.canvas
-            canvas.restore_region(self._background)
+            if canvas.supports_blit:
+                canvas.restore_region(self._background)
             for ax in self.figure.axes:
                 artists = []
                 artists.extend(ax.images)
@@ -38,7 +49,7 @@ class BlittedFigure(object):
                 artists.append(ax.get_xaxis())
                 [ax.draw_artist(a) for a in artists if
                  a.get_animated() is True]
-            if self.figure:
+            if canvas.supports_blit:
                 canvas.blit(self.figure.bbox)
 
     def add_marker(self, marker):

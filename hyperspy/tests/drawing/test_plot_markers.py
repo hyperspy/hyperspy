@@ -29,6 +29,7 @@ baseline_dir = 'plot_markers'
 style_pytest_mpl = 'default'
  
 
+
 class TestMarkers:
 
     def test_get_data(self):

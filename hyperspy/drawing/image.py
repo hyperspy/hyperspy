@@ -24,10 +24,11 @@ from traits.api import Undefined
 
 from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
-from hyperspy.gui.tools import ImageContrastEditor
+from hyperspy.signal_tools import ImageContrastEditor
 from hyperspy.misc import math_tools
 from hyperspy.misc import rgb_tools
 from hyperspy.drawing.figure import BlittedFigure
+from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 
 
 class ImagePlot(BlittedFigure):
@@ -263,7 +264,7 @@ class ImagePlot(BlittedFigure):
                 transform=self.ax.transAxes,
                 fontsize=12,
                 color='red',
-                animated=True)
+                animated=self.figure.canvas.supports_blit)
         for marker in self.ax_markers:
             marker.plot()
         self.update(**kwargs)
@@ -272,7 +273,7 @@ class ImagePlot(BlittedFigure):
                 self.ax.scalebar = widgets.ScaleBar(
                     ax=self.ax,
                     units=self.pixel_units,
-                    animated=True,
+                    animated=self.figure.canvas.supports_blit,
                     color=self.scalebar_color,
                 )
 
@@ -280,9 +281,11 @@ class ImagePlot(BlittedFigure):
             self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
             self._colorbar.set_label(
                 self.quantity_label, rotation=-90, va='bottom')
-            self._colorbar.ax.yaxis.set_animated(True)
+            self._colorbar.ax.yaxis.set_animated(
+                self.figure.canvas.supports_blit)
 
-        self.figure.canvas.draw()
+        self._set_background()
+        self.figure.canvas.draw_idle()
         if hasattr(self.figure, 'tight_layout'):
             try:
                 if self.axes_ticks == 'off' and not self.colorbar:
@@ -367,26 +370,31 @@ class ImagePlot(BlittedFigure):
             if redraw_colorbar is True:
                 # ims[0].autoscale()
                 self._colorbar.draw_all()
-                self._colorbar.solids.set_animated(True)
+                self._colorbar.solids.set_animated(
+                    self.figure.canvas.supports_blit
+                )
             else:
                 ims[0].changed()
-            self._draw_animated()
-            # It seems that nans they're simply not drawn, so simply replacing
-            # the data does not update the value of the nan pixels to the
-            # background color. We redraw everything as a workaround.
-            if np.isnan(data).any():
-                self.figure.canvas.draw()
+            if self.figure.canvas.supports_blit:
+                self._draw_animated()
+                # It seems that nans they're simply not drawn, so simply replacing
+                # the data does not update the value of the nan pixels to the
+                # background color. We redraw everything as a workaround.
+                if np.isnan(data).any():
+                    self.figure.canvas.draw_idle()
+            else:
+                self.figure.canvas.draw_idle()
         else:
             new_args = {'interpolation': 'nearest',
                         'vmin': vmin,
                         'vmax': vmax,
                         'extent': self._extent,
                         'aspect': self._aspect,
-                        'animated': True}
+                        'animated': self.figure.canvas.supports_blit}
             new_args.update(kwargs)
             self.ax.imshow(data,
                            **new_args)
-            self.figure.canvas.draw()
+            self.figure.canvas.draw_idle()
 
         if self.axes_ticks == 'off':
             self.ax.set_axis_off()
@@ -396,15 +404,23 @@ class ImagePlot(BlittedFigure):
         # method arguments and auto contrast does not work then
         self.update()
 
-    def adjust_contrast(self):
+    def gui_adjust_contrast(self, display=True, toolkit=None):
         ceditor = ImageContrastEditor(self)
-        ceditor.edit_traits()
-        return ceditor
+        return ceditor.gui(display=display, toolkit=toolkit)
+    gui_adjust_contrast.__doc__ = \
+        """
+        Display widgets to adjust image contrast if available.
+        Parameters
+        ----------
+        %s
+        %s
+
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
     def connect(self):
         self.figure.canvas.mpl_connect('key_press_event',
                                        self.on_key_press)
-        self.figure.canvas.draw()
+        self.figure.canvas.draw_idle()
         if self.axes_manager:
             self.axes_manager.events.indices_changed.connect(self.update, [])
             self.events.closed.connect(
@@ -413,7 +429,7 @@ class ImagePlot(BlittedFigure):
 
     def on_key_press(self, event):
         if event.key == 'h':
-            self.adjust_contrast()
+            self.gui_adjust_contrast()
 
     def set_contrast(self, vmin, vmax):
         self.vmin, self.vmax = vmin, vmax

@@ -28,6 +28,14 @@ hyperspy.tests.drawing.test_plot_markers module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.drawing.test_plot_mva module
+-------------------------------------------
+
+.. automodule:: hyperspy.tests.drawing.test_plot_mva
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.drawing.test_plot_signal module
 ----------------------------------------------
 

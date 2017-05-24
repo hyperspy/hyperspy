@@ -60,10 +60,10 @@ hyperspy.io_plugins.fei module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.io_plugins.hdf5 module
+hyperspy.io_plugins.hspy module
 -------------------------------
 
-.. automodule:: hyperspy.io_plugins.hdf5
+.. automodule:: hyperspy.io_plugins.hspy
     :members:
     :undoc-members:
     :show-inheritance:

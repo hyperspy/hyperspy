@@ -178,7 +178,7 @@ def plot_RGB_map(im_list, normalization='single', dont_plot=False):
         ax.set_axis_off()
         ax.imshow(rgb, interpolation='nearest')
 #        cursors.set_mpl_ax(ax)
-        figure.canvas.draw()
+        figure.canvas.draw_idle()
     else:
         return rgb
 
@@ -848,18 +848,7 @@ def plot_images(images,
                 ax.set_title(textwrap.fill(title, labelwrap))
 
             # Set axes decorations based on user input
-            if axes_decor is 'off':
-                ax.axis('off')
-            elif axes_decor is 'ticks':
-                ax.set_xlabel('')
-                ax.set_ylabel('')
-            elif axes_decor is 'all':
-                pass
-            elif axes_decor is None:
-                ax.set_xlabel('')
-                ax.set_ylabel('')
-                ax.set_xticklabels([])
-                ax.set_yticklabels([])
+            set_axes_decor(ax, axes_decor)
 
             # If using independent colorbars, add them
             if colorbar is 'multi' and not isrgb[i]:
@@ -922,9 +911,24 @@ def plot_images(images,
     return axes_list
 
 
+def set_axes_decor(ax, axes_decor):
+    if axes_decor is 'off':
+        ax.axis('off')
+    elif axes_decor is 'ticks':
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+    elif axes_decor is 'all':
+        pass
+    elif axes_decor is None:
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+
+
 def plot_spectra(
         spectra,
-        style='default',
+        style='overlap',
         color=None,
         line_style=None,
         padding=1.,
@@ -943,9 +947,8 @@ def plot_spectra(
     spectra : iterable object
         Ordered spectra list to plot. If `style` is "cascade" or "mosaic"
         the spectra can have different size and axes.
-    style : {'default', 'overlap', 'cascade', 'mosaic', 'heatmap'}
-        The style of the plot. The default is "overlap" and can be
-        customized in `preferences`.
+    style : {'overlap', 'cascade', 'mosaic', 'heatmap'}
+        The style of the plot.
     color : matplotlib color or a list of them or `None`
         Sets the color of the lines of the plots (no action on 'heatmap').
         If a list, if its length is less than the number of spectra to plot,
@@ -1000,8 +1003,9 @@ def plot_spectra(
     """
     import hyperspy.signal
 
+    # Before v1.3 default would read the value from prefereces.
     if style == "default":
-        style = preferences.Plot.default_style_to_compare_spectra
+        style = "overlap"
 
     if color is not None:
         if isinstance(color, str):
@@ -1139,7 +1143,7 @@ def animate_legend(figure='last'):
             legline.set_alpha(1.0)
         else:
             legline.set_alpha(0.2)
-        figure.canvas.draw()
+        figure.canvas.draw_idle()
 
     figure.canvas.mpl_connect('pick_event', onpick)
 

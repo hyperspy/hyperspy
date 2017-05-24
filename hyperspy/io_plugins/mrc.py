@@ -213,15 +213,15 @@ def file_reader(filename, endianess='<', **kwds):
                   'axes': axes,
                   'metadata': metadata,
                   'original_metadata': original_metadata,
-                  'mapping':mapping}
+                  'mapping': mapping}
 
     return [dictionary, ]
 
 mapping = {
     'fei_header.a_tilt':
-    ("Acquisition_instrument.TEM.Stage.tilt_a", None),
+    ("Acquisition_instrument.TEM.Stage.tilt_alpha", None),
     'fei_header.b_tilt':
-    ("Acquisition_instrument.TEM.Stage.tilt_b", None),
+    ("Acquisition_instrument.TEM.Stage.tilt_beta", None),
     'fei_header.x_stage':
     ("Acquisition_instrument.TEM.Stage.x", None),
     'fei_header.y_stage':
@@ -232,4 +232,4 @@ mapping = {
     ("Acquisition_instrument.TEM.Detector.Camera.exposure", None),
     'fei_header.magnification':
     ("Acquisition_instrument.TEM.magnification", None),
-   }
+}
