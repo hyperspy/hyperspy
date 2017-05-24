@@ -336,12 +336,12 @@ the extension of the filename.
     >>> d.save("example_processed.tif")
     >>> # save the data as a png
     >>> d.save("example_processed.png")
-    >>> # save the data as an hdf5 file
-    >>> d.save("example_processed.hdf5")
+    >>> # save the data as an hspy file
+    >>> d.save("example_processed.hspy")
 
 Some file formats are much better at maintaining the information about
-how you processed your data.  The preferred format in HyperSpy is hdf5,
-the hierarchical data format.  This format keeps the most information
+how you processed your data.  The preferred format in HyperSpy is hspy, which is
+based on the HDF5 format.  This format keeps the most information
 possible.
 
 There are optional flags that may be passed to the save function. See

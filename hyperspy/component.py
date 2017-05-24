@@ -625,7 +625,7 @@ class Parameter(t.HasTraits):
         """
         self.as_signal().plot(**kwargs)
 
-    def export(self, folder=None, name=None, format=None,
+    def export(self, folder=None, name=None, format="hspy",
                save_std=False):
         """Save the data to a file.
 
@@ -643,6 +643,8 @@ class Parameter(t.HasTraits):
               modified by appending a number to the file path.
         save_std : bool
             If True, also the standard deviation will be saved
+        format: str
+            The extension of any file format supported by HyperSpy, default hspy
 
         """
         if format is None:
@@ -1057,7 +1059,7 @@ class Component(t.HasTraits):
         for parameter in parameters:
             parameter.plot()
 
-    def export(self, folder=None, format=None, save_std=False,
+    def export(self, folder=None, format="hspy", save_std=False,
                only_free=True):
         """Plot the value of the parameters of the model
 
@@ -1068,12 +1070,7 @@ class Component(t.HasTraits):
             `None` the
             current folder is used by default.
         format : str
-            The format to which the data will be exported. It must be
-            the
-            extension of any format supported by HyperSpy. If None, the
-            default
-            format for exporting as defined in the `Preferences` will be
-             used.
+            The extension of the file format, default "hspy".
         save_std : bool
             If True, also the standard deviation will be saved.
         only_free : bool

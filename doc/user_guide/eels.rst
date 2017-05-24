@@ -31,7 +31,7 @@ this information.  The elemental composition of the sample can be declared
 using :py:meth:`~._signals.eels.EELSSpectrum.add_elements`. The information is
 stored in the :py:attr:`~.signal.BaseSignal.metadata` attribute (see
 :ref:`metadata_structure`). This information is saved to file when saving in
-the hdf5 format.
+the hspy format (HyperSpy's HDF5 specification).
 
 Thickness estimation
 ^^^^^^^^^^^^^^^^^^^^

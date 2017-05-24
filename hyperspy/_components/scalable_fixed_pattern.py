@@ -44,7 +44,7 @@ class ScalableFixedPattern(Component):
 
     .. code-block:: ipython
 
-        In [1]: s = load('my_spectrum.hdf5')
+        In [1]: s = load('my_spectrum.hspy')
         In [2]: my_fixed_pattern = components.ScalableFixedPattern(s))
 
     Attributes

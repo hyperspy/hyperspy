@@ -375,6 +375,7 @@ with update_version_when_dev() as version:
                 'tests/io/FEI_old/*.npy',
                 'tests/io/msa_files/*.msa',
                 'tests/io/hdf5_files/*.hdf5',
+                'tests/io/hdf5_files/*.hspy',
                 'tests/io/tiff_files/*.tif',
                 'tests/io/tiff_files/*.dm3',
                 'tests/io/npy_files/*.npy',
