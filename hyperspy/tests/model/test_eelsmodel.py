@@ -93,8 +93,7 @@ class TestEELSModel:
         m.suspend_auto_fine_structure_width()
         m.resume_auto_fine_structure_width()
         window = (m["C_K"].onset_energy.value -
-                  m["B_K"].onset_energy.value -
-                  hs.preferences.EELS.preedge_safe_window_width)
+                  m["B_K"].onset_energy.value - m._preedge_safe_window_width)
         m.enable_fine_structure()
         m.resolve_fine_structure()
         assert window == m["B_K"].fine_structure_width

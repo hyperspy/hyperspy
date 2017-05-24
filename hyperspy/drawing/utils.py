@@ -928,7 +928,7 @@ def set_axes_decor(ax, axes_decor):
 
 def plot_spectra(
         spectra,
-        style='default',
+        style='overlap',
         color=None,
         line_style=None,
         padding=1.,
@@ -947,9 +947,8 @@ def plot_spectra(
     spectra : iterable object
         Ordered spectra list to plot. If `style` is "cascade" or "mosaic"
         the spectra can have different size and axes.
-    style : {'default', 'overlap', 'cascade', 'mosaic', 'heatmap'}
-        The style of the plot. The default is "overlap" and can be
-        customized in `preferences`.
+    style : {'overlap', 'cascade', 'mosaic', 'heatmap'}
+        The style of the plot.
     color : matplotlib color or a list of them or `None`
         Sets the color of the lines of the plots (no action on 'heatmap').
         If a list, if its length is less than the number of spectra to plot,
@@ -1004,8 +1003,9 @@ def plot_spectra(
     """
     import hyperspy.signal
 
+    # Before v1.3 default would read the value from prefereces.
     if style == "default":
-        style = preferences.Plot.default_style_to_compare_spectra
+        style = "overlap"
 
     if color is not None:
         if isinstance(color, str):

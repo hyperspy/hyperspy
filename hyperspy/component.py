@@ -648,7 +648,7 @@ class Parameter(t.HasTraits):
 
         """
         if format is None:
-            format = preferences.General.default_export_format
+            format = "hspy"
         if name is None:
             name = self.component.name + '_' + self.name
         filename = incremental_filename(slugify(name) + '.' + format)
