@@ -144,23 +144,11 @@ class EDSConfig(t.HasTraits):
         desc='default value for the elevation angle in degree.')
 
 
-class PlotConfig(t.HasTraits):
-    default_style_to_compare_spectra = t.Enum(
-        'overlap',
-        'cascade',
-        'mosaic',
-        'heatmap',
-        desc=' the default style use to compare spectra with the'
-        ' function utils.plot.plot_spectra')
-    plot_on_load = t.CBool(
-        False,
-        desc='If enabled, the object will be plot automatically on loading')
-
 template = {
     'General': GeneralConfig(),
     'EELS': EELSConfig(),
     'EDS': EDSConfig(),
-    'Plot': PlotConfig(), }
+    }
 
 # Set the enums defaults
 template['General'].logging_level = 'WARNING'
@@ -228,7 +216,6 @@ class Preferences(t.HasTraits):
     EELS = t.Instance(EELSConfig)
     EDS = t.Instance(EDSConfig)
     General = t.Instance(GeneralConfig)
-    Plot = t.Instance(PlotConfig)
 
     def gui(self):
         import hyperspy.gui.preferences
@@ -244,8 +231,7 @@ class Preferences(t.HasTraits):
 preferences = Preferences(
     EELS=template['EELS'],
     EDS=template['EDS'],
-    General=template['General'],
-    Plot=template['Plot'])
+    General=template['General'],)
 
 if preferences.General.logger_on:
     turn_logging_on(verbose=0)

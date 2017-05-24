@@ -227,9 +227,6 @@ def load(filenames=None,
                                         **kwds)
                        for filename in filenames]
 
-        if preferences.Plot.plot_on_load:
-            for obj in objects:
-                obj.plot()
         if len(objects) == 1:
             objects = objects[0]
     return objects
