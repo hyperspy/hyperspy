@@ -116,11 +116,6 @@ class GeneralConfig(t.HasTraits):
             turn_logging_off()
 
 
-class ModelConfig(t.HasTraits):
-    default_fitter = t.Enum('leastsq', 'mpfit',
-                            desc='Choose leastsq if no bounding is required. '
-                            'Otherwise choose mpfit')
-
 
 class MachineLearningConfig(t.HasTraits):
     multiple_files = t.Bool(
@@ -216,7 +211,6 @@ class PlotConfig(t.HasTraits):
 
 template = {
     'General': GeneralConfig(),
-    'Model': ModelConfig(),
     'EELS': EELSConfig(),
     'EDS': EDSConfig(),
     'MachineLearning': MachineLearningConfig(),
@@ -287,7 +281,6 @@ config2template(template, config)
 class Preferences(t.HasTraits):
     EELS = t.Instance(EELSConfig)
     EDS = t.Instance(EDSConfig)
-    Model = t.Instance(ModelConfig)
     General = t.Instance(GeneralConfig)
     MachineLearning = t.Instance(MachineLearningConfig)
     Plot = t.Instance(PlotConfig)
