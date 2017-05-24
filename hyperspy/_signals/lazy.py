@@ -230,6 +230,39 @@ class LazySignal(BaseSignal):
     def swap_axes(self, *args):
         raise lazyerror
 
+    def rebin(self, new_shape=None, scale=None, crop=False, out=None):
+        #Series of if statements to check that only one out of new_shape or scale
+        #has been given. New_shape is then converted to scale. If both or neither
+        #are given the function raises and error and wont run.
+        if new_shape == None and scale == None:
+            raise ValueError("One of new_shape, or scale must be specified")
+        elif new_shape != None and scale != None:
+            raise ValueError("Only one out of new_shape or scale should be specified.\
+                            Not both.")
+        elif new_shape != None:
+            scale = []
+            for i, axis in enumerate(a.shape):
+                scale.append(a.shape[i]/new_shape[i])
+        else:
+            new_shape = new_shape
+            scale = scale
+
+        new_shape_in_array = []
+        new_shape = np.zeros_like(scale)
+        for axis, s in enumerate(scale):
+            dim = (math.floor(self.data.shape[axis] / s) if crop
+            else math.ceil(self.data.shape[axis] / s))
+            new_shape[axis] = dim
+        for axis in self.axes_manager._axes:
+            new_shape_in_array.append(new_shape[axis.index_in_axes_manager])
+        factors = np.asarray(scale)
+        axis = {ax.index_in_array: ax
+                for ax in self.axes_manager._axes}[factors.argmax()]
+        self._make_lazy(axis=axis)
+        return super().rebin(scale=scale, crop=crop, out=out)
+
+    rebin.__doc__ = BaseSignal.rebin.__doc__
+
     def __array__(self, dtype=None):
         return self.data.__array__(dtype=dtype)
 
