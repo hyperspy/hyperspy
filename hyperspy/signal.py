@@ -460,7 +460,7 @@ class MVATools(object):
                         factors,
                         folder=None,
                         comp_ids=None,
-                        multiple_files=None,
+                        multiple_files=True,
                         save_figures=False,
                         save_figures_format='png',
                         factor_prefix=None,
@@ -480,7 +480,7 @@ class MVATools(object):
         from hyperspy._signals.signal1d import Signal1D
 
         if multiple_files is None:
-            multiple_files = preferences.MachineLearning.multiple_files
+            multiple_files = True
 
         if factor_format is None:
             factor_format = 'hspy'
@@ -611,7 +611,7 @@ class MVATools(object):
                          loadings,
                          folder=None,
                          comp_ids=None,
-                         multiple_files=None,
+                         multiple_files=True,
                          loading_prefix=None,
                          loading_format="hspy",
                          save_figures_format='png',
@@ -627,7 +627,7 @@ class MVATools(object):
         from hyperspy._signals.signal1d import Signal1D
 
         if multiple_files is None:
-            multiple_files = preferences.MachineLearning.multiple_files
+            multiple_files = True
 
         if loading_format is None:
             loading_format = 'hspy'
@@ -1075,7 +1075,7 @@ class MVATools(object):
                                      comp_label=None,
                                      cmap=plt.cm.gray,
                                      same_window=False,
-                                     multiple_files=None,
+                                     multiple_files=True,
                                      no_nans=True,
                                      per_row=3,
                                      save_figures=False,
@@ -1189,7 +1189,7 @@ class MVATools(object):
                            comp_ids=None,
                            folder=None,
                            calibrate=True,
-                           multiple_files=None,
+                           multiple_files=True,
                            save_figures=False,
                            factor_prefix='bss_factor',
                            factor_format="hspy",
@@ -1238,12 +1238,8 @@ class MVATools(object):
               separate file.
         multiple_files : Bool
             If True, on exporting a file per factor and per loading
-            will be
-            created. Otherwise only two files will be created, one
-            for the
-            factors and another for the loadings. The default value
-            can be
-            chosen in the preferences.
+            will be created. Otherwise only two files will be created, one
+            for the factors and another for the loadings. Default is True.
         save_figures : Bool
             If True the same figures that are obtained when using the
             plot

@@ -117,12 +117,6 @@ class GeneralConfig(t.HasTraits):
 
 
 class MachineLearningConfig(t.HasTraits):
-    multiple_files = t.Bool(
-        True,
-        label='Export to multiple files',
-        desc='If enabled, on exporting the PCA or ICA results one file'
-        'per factor and loading will be created. Otherwise only two files'
-        'will contain the factors and loadings')
     same_window = t.Bool(
         True,
         label='Plot components in the same window',
