@@ -907,17 +907,27 @@ Rebinning
 ^^^^^^^^^
 
 Rebinning of the spectral data will be carried out by two methods.
-The fast method will run if the new shape is a divisor of the original shape.
+The fast method will run if the new_shape is a divisor of the original shape.
 Otherwise a slower linear interpolation method will be applied. Both methods are incorporated into the :py:meth:`~.signals.eds.rebin` function.
-Example using fast binning:
+Either a new_shape or a scale can be specified, see examples below for details.
+Examples using fast binning:
 
 .. code-block:: python
 
     >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
     >>> print(s)
     <EDSSEMSpectrum, title: EDS SEM Signal1D, dimensions: (|1024)>
-    >>> print(s.rebin([2]))
+    >>> print(s.rebin(scale=[2]))
     <EDSSEMSpectrum, title: EDS SEM Signal1D, dimensions: (|512)>
+
+.. code-block:: python
+
+    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
+    >>> print(s)
+    <EDSSEMSpectrum, title: EDS SEM Signal1D, dimensions: (|1024)>
+    >>> print(s.rebin(new_shape=[512]))
+    <EDSSEMSpectrum, title: EDS SEM Signal1D, dimensions: (|512)>
+
 
 Example of binning using linear interpolation:
 
@@ -930,7 +940,22 @@ Example of binning using linear interpolation:
     >>> print ('Sum = ', sum(sum(sum(spectrum.data))))
     Sum =  164.0
     >>> scale = [0.5, 0.5, 5]
-    >>> test = spectrum.rebin(scale)
+    >>> test = spectrum.rebin(scale=scale)
+    >>> print(test)
+    <EDSTEMSpectrum, title: , dimensions: (8, 8|2)>
+    >>> print('Sum =', sum(sum(sum(test.data))))
+    Sum =  164.0
+
+.. code-block:: python
+
+    >>> spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
+    >>> spectrum.data[1, 2, 9] = 5
+    >>> print(spectrum)
+    <EDSTEMSpectrum, title: , dimensions: (4, 4|10)>
+    >>> print ('Sum = ', sum(sum(sum(spectrum.data))))
+    Sum =  164.0
+    >>> new_shape = [8, 8, 2]
+    >>> test = spectrum.rebin(new_shape)
     >>> print(test)
     <EDSTEMSpectrum, title: , dimensions: (8, 8|2)>
     >>> print('Sum =', sum(sum(sum(test.data))))
