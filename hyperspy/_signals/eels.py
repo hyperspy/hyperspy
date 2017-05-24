@@ -1137,8 +1137,10 @@ class EELSSpectrum_mixin:
                 raise ValueError('The ZLP signal dimensions are not '
                                  'compatible with the dimensions of the '
                                  'low-loss signal')
-            i0 = i0.reshape(
-                np.insert(i0.shape, axis.index_in_array, 1))
+            # The following prevents errors if the signal is a single spectrum
+            if len(i0) != 1:
+                i0 = i0.reshape(
+                    np.insert(i0.shape, axis.index_in_array, 1))
         elif isinstance(zlp, numbers.Number):
             i0 = zlp
         else:

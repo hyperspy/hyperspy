@@ -106,6 +106,11 @@ class GeneralConfig(t.HasTraits):
         desc='Use parallel threads for computations by default.'
     )
 
+    nb_progressbar = t.CBool(
+        True,
+        desc='Attempt to use ipywidgets progressbar'
+    )
+
     def _logger_on_changed(self, old, new):
         if new is True:
             turn_logging_on()
