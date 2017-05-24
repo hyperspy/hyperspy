@@ -243,10 +243,10 @@ class LazySignal(BaseSignal):
         axis = {ax.index_in_array: ax
                 for ax in self.axes_manager._axes}[factors.argmax()]
         self._make_lazy(axis=axis)
-        return super().rebin(scale, crop=crop, out=out)
+        return super().rebin(scale=scale, crop=crop, out=out)
 
     rebin.__doc__ = BaseSignal.rebin.__doc__
-    
+
     def __array__(self, dtype=None):
         return self.data.__array__(dtype=dtype)
 
