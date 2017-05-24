@@ -749,6 +749,10 @@ def plot_images(images,
     ax_im_list = [0] * len(isrgb)
     # Loop through each image, adding subplot for each one
     for i, ims in enumerate(images):
+        # Get handles for the signal axes and axes_manager
+        axes_manager = ims.axes_manager
+        if axes_manager.navigation_dimension > 0:
+            ims = ims._deepcopy_with_new_data(ims.data)
         for j, im in enumerate(ims):
             idx += 1
             ax = f.add_subplot(rows, per_row, idx)
