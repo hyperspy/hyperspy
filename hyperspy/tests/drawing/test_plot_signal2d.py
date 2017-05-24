@@ -112,10 +112,10 @@ def _generate_parameter_plot_images():
 
 
 @pytest.mark.parametrize(("vmin", "vmax"), (_generate_parameter_plot_images(),
-                                           (None, None)))
+                                            (None, None)))
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_multiple_images_list(mpl_cleanup):
+def test_plot_multiple_images_list(mpl_cleanup, vmin, vmax):
     # load red channel of raccoon as an image
     image0 = hs.signals.Signal2D(scipy.misc.face()[:, :, 0])
     image0.metadata.General.title = 'Rocky Raccoon - R'
