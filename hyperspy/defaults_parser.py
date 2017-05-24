@@ -148,7 +148,7 @@ template = {
     'General': GeneralConfig(),
     'EELS': EELSConfig(),
     'EDS': EDSConfig(),
-    }
+}
 
 # Set the enums defaults
 template['General'].logging_level = 'WARNING'
