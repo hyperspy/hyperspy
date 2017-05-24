@@ -325,25 +325,25 @@ class Test_linear_bin:
 
     def test_linear_bin1(self):
         spectrum = EDSTEMSpectrum(np.ones([3, 3, 1]))
-        res = spectrum.rebin([1.5, 1.5, 1])
+        res = spectrum.rebin(scale=[1.5, 1.5, 1])
         np.testing.assert_allclose(res.data[1], [[2.25], [2.25]], atol=1e-3)
 
     def test_linear_bin2(self):
         spectrum = EDSTEMSpectrum(np.ones([3, 3, 1]))
-        spectrum2 = spectrum.rebin([1.5, 1.5, 1])
+        spectrum2 = spectrum.rebin(scale=[1.5, 1.5, 1])
         np.testing.assert_allclose(np.sum(spectrum.data),
                                    np.sum(spectrum2.data))
 
     def test_linear_bin3(self):
         spectrum = EDSTEMSpectrum(np.ones([4, 4, 10]))
-        res = spectrum.rebin([0.2, 0.2, 5])
+        res = spectrum.rebin(scale=[0.2, 0.2, 5])
         np.testing.assert_allclose(res.data.shape,
                                    (20, 20, 2))
 
     def test_linear_bin4(self):
         spectrum = EDSTEMSpectrum(np.ones([4, 1, 1]))
         spectrum.data[2][0] = 5
-        res = spectrum.rebin([0.4, 1, 1])
+        res = spectrum.rebin(scale=[0.4, 1, 1])
         np.testing.assert_allclose(res.data, [[[ 0.4]],
                 [[ 0.4]],[[ 0.4]],[[ 0.4]],[[ 0.4]],[[ 2. ]],
                 [[ 2. ]],[[ 1.2]],[[ 0.4]],[[ 0.4]]], atol=1e-3)
@@ -352,7 +352,7 @@ class Test_linear_bin:
         spectrum = EDSTEMSpectrum(np.ones([4, 1, 1]))
         spectrum.data[2][0] = 5
         res = EDSTEMSpectrum(np.zeros([10, 1, 1]))
-        spectrum.rebin([0.4, 1, 1], out=res)
+        spectrum.rebin(scale=[0.4, 1, 1], out=res)
         np.testing.assert_allclose(res.data, [[[ 0.4]],
                 [[ 0.4]],[[ 0.4]],[[ 0.4]],[[ 0.4]],[[ 2. ]],
                 [[ 2. ]],[[ 1.2]],[[ 0.4]],[[ 0.4]]], atol=1e-3)
@@ -360,6 +360,6 @@ class Test_linear_bin:
     def test_linear_bin_axis(self):
         spectrum = EDSTEMSpectrum(np.ones([4, 4, 10]))
         scale = [0.2, 0.2, 5]
-        test = spectrum.rebin(scale)
+        test = spectrum.rebin(scale=scale)
         np.testing.assert_allclose((test.axes_manager[0].scale/0.2),
                                     spectrum.axes_manager[0].scale)
