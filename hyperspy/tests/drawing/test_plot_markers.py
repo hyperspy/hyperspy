@@ -27,7 +27,6 @@ from hyperspy.drawing.marker import dict2marker
 default_tol = 2.0
 baseline_dir = 'plot_markers'
 style_pytest_mpl = 'default'
- 
 
 
 class TestMarkers:
