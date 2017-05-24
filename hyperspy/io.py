@@ -48,7 +48,7 @@ def load(filenames=None,
          stack=False,
          stack_axis=None,
          new_axis_name="stack_element",
-         lazy=None,
+         lazy=False,
          **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure
@@ -105,9 +105,8 @@ def load(filenames=None,
         until it finds a name that is not yet in use.
     lazy : {None, bool}
         Open the data lazily - i.e. without actually reading the data from the
-        disk until required. Allows opening arbitrary-sized datasets.
-        If None, default from preferences is used.
-
+        disk until required. Allows opening arbitrary-sized datasets. default
+        is `False`.
     print_info: bool
         For SEMPER unf- and EMD (Berkley)-files, if True (default is False)
         additional information read during loading is printed for a quick
@@ -143,8 +142,6 @@ def load(filenames=None,
             lazy = True
             warnings.warn(warn_str.format(k), VisibleDeprecationWarning)
             del kwds[k]
-    if lazy is None:
-        lazy = preferences.General.lazy
     kwds['signal_type'] = signal_type
 
     if filenames is None:

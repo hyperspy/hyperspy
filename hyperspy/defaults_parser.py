@@ -109,11 +109,6 @@ class GeneralConfig(t.HasTraits):
         desc='Use parallel threads for computations by default.'
     )
 
-    lazy = t.CBool(
-        False,
-        desc='Load data lazily by default.'
-    )
-
     def _logger_on_changed(self, old, new):
         if new is True:
             turn_logging_on()
