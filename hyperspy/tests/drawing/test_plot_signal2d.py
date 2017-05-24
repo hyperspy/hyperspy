@@ -29,6 +29,7 @@ from hyperspy.tests.drawing.test_plot_signal import _TestPlot
 scalebar_color = 'blue'
 default_tol = 2.0
 baseline_dir = 'plot_signal2d'
+style_pytest_mpl = 'default'
 
 
 def _generate_image_stack_signal():
@@ -64,11 +65,10 @@ def _set_signal_axes(axes_manager, name=t.Undefined, units=t.Undefined,
     return axes_manager
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.parametrize("normalization", ['single', 'global'])
 @pytest.mark.mpl_image_compare(
-    baseline_dir=baseline_dir, tolerance=default_tol)
-def test_rgb_image(normalization):
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_rgb_image(mpl_cleanup, normalization):
     w = 20
     data = np.arange(1, w * w + 1).reshape(w, w)
     ch1 = hs.signals.Signal2D(data)
@@ -94,8 +94,8 @@ def _generate_parameter():
                           "centre_colormap"),
                          _generate_parameter())
 @pytest.mark.mpl_image_compare(
-    baseline_dir=baseline_dir, tolerance=default_tol)
-def test_plot(scalebar, colorbar, axes_ticks, centre_colormap):
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot(mpl_cleanup, scalebar, colorbar, axes_ticks, centre_colormap):
     test_plot = _TestPlot(ndim=0, sdim=2)
     test_plot.signal.plot(scalebar=scalebar,
                           colorbar=colorbar,
@@ -105,8 +105,8 @@ def test_plot(scalebar, colorbar, axes_ticks, centre_colormap):
 
 
 @pytest.mark.mpl_image_compare(
-    baseline_dir=baseline_dir, tolerance=default_tol)
-def test_plot_multiple_images_list():
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_multiple_images_list(mpl_cleanup):
     # load red channel of raccoon as an image
     image0 = hs.signals.Signal2D(scipy.misc.face()[:, :, 0])
 

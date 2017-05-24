@@ -77,7 +77,9 @@ class HologramImage(Signal2D):
             md.set_item("Acquisition_instrument.TEM.Biprism.voltage",
                         biprism_voltage)
         if tilt_stage is not None:
-            md.set_item("Acquisition_instrument.TEM.tilt_stage", tilt_stage)
+            md.set_item(
+                "Acquisition_instrument.TEM.Stage.tilt_alpha",
+                tilt_stage)
 
     def estimate_sideband_position(self,
                                    ap_cb_radius=None,

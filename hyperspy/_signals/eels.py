@@ -1332,6 +1332,7 @@ class EELSSpectrum_mixin:
                           dictionary=dictionary)
         return model
 
+<<<<<<< HEAD
     def rebin(self, new_shape=None, scale=None, crop=True, out=None):
         """
         %s
@@ -1376,6 +1377,8 @@ class EELSSpectrum_mixin:
 
     rebin.__doc__ = hyperspy.signal.BaseSignal.rebin.__doc__
 
+=======
+>>>>>>> hyperspy/RELEASE_next_minor
 
 class EELSSpectrum(EELSSpectrum_mixin, Signal1D):
 
