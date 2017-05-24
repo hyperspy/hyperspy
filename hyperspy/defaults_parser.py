@@ -119,6 +119,7 @@ class EELSConfig(t.HasTraits):
         label='GOS directory',
         desc='The GOS files are required to create the EELS edge components')
 
+
 class GUIs(t.HasTraits):
     enable_ipywidgets_gui = t.CBool(
         True,
@@ -237,7 +238,7 @@ preferences = Preferences(
     EDS=template['EDS'],
     General=template['General'],
     GUIs=template['GUIs'],
-    )
+)
 
 if preferences.General.logger_on:
     turn_logging_on(verbose=0)
