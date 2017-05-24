@@ -116,14 +116,6 @@ class GeneralConfig(t.HasTraits):
             turn_logging_off()
 
 
-class MachineLearningConfig(t.HasTraits):
-    same_window = t.Bool(
-        True,
-        label='Plot components in the same window',
-        desc='If enabled the principal and independent components will all'
-        ' be plotted in the same window')
-
-
 class EELSConfig(t.HasTraits):
     eels_gos_files_path = t.Directory(
         guess_gos_path(),
@@ -202,7 +194,6 @@ template = {
     'General': GeneralConfig(),
     'EELS': EELSConfig(),
     'EDS': EDSConfig(),
-    'MachineLearning': MachineLearningConfig(),
     'Plot': PlotConfig(), }
 
 # Set the enums defaults
@@ -271,7 +262,6 @@ class Preferences(t.HasTraits):
     EELS = t.Instance(EELSConfig)
     EDS = t.Instance(EDSConfig)
     General = t.Instance(GeneralConfig)
-    MachineLearning = t.Instance(MachineLearningConfig)
     Plot = t.Instance(PlotConfig)
 
     def gui(self):
@@ -289,8 +279,6 @@ preferences = Preferences(
     EELS=template['EELS'],
     EDS=template['EDS'],
     General=template['General'],
-    Model=template['Model'],
-    MachineLearning=template['MachineLearning'],
     Plot=template['Plot'])
 
 if preferences.General.logger_on:

@@ -245,7 +245,7 @@ class MVATools(object):
 
     def _plot_factors_or_pchars(self, factors, comp_ids=None,
                                 calibrate=True, avg_char=False,
-                                same_window=None, comp_label='PC',
+                                same_window=True, comp_label='PC',
                                 img_data=None,
                                 plot_shifts=True, plot_char=4,
                                 cmap=plt.cm.gray, quiver_color='white',
@@ -266,7 +266,7 @@ class MVATools(object):
             manager.
         same_window : bool
             if True, plots each factor to the same window.  They are
-            not scaled.
+            not scaled. Default True.
         comp_label : string
             Title of the plot
         cmap : a matplotlib colormap
@@ -301,7 +301,7 @@ class MVATools(object):
            If None, uses matplotlib's autoscaling.
         """
         if same_window is None:
-            same_window = preferences.MachineLearning.same_window
+            same_window = True
         if comp_ids is None:
             comp_ids = range(factors.shape[1])
 
@@ -374,12 +374,12 @@ class MVATools(object):
             return f
 
     def _plot_loadings(self, loadings, comp_ids, calibrate=True,
-                       same_window=None, comp_label=None,
+                       same_window=True, comp_label=None,
                        with_factors=False, factors=None,
                        cmap=plt.cm.gray, no_nans=False, per_row=3,
                        axes_decor='all'):
         if same_window is None:
-            same_window = preferences.MachineLearning.same_window
+            same_window = True
         if comp_ids is None:
             comp_ids = range(loadings.shape[0])
 
@@ -745,7 +745,7 @@ class MVATools(object):
     def plot_decomposition_factors(self,
                                    comp_ids,
                                    calibrate=True,
-                                   same_window=None,
+                                   same_window=True,
                                    comp_label=None,
                                    cmap=plt.cm.gray,
                                    per_row=3,
@@ -771,7 +771,7 @@ class MVATools(object):
 
         same_window : bool
             if True, plots each factor to the same window.  They are
-            not scaled.
+            not scaled. Default is True.
 
         title : string
             Title of the plot.
@@ -780,8 +780,7 @@ class MVATools(object):
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
         per_row : int, the number of plots in each row, when the
-        same_window
-            parameter is True.
+        same_window parameter is True.
 
         See Also
         --------
@@ -794,7 +793,7 @@ class MVATools(object):
                                       "You can use "
                                       "`plot_decomposition_results` instead.")
         if same_window is None:
-            same_window = preferences.MachineLearning.same_window
+            same_window = True
         factors = self.learning_results.factors
         if comp_ids is None:
             comp_ids = self.learning_results.output_dimension
@@ -812,7 +811,7 @@ class MVATools(object):
                                             per_row=per_row)
 
     def plot_bss_factors(self, comp_ids=None, calibrate=True,
-                         same_window=None, comp_label=None,
+                         same_window=True, comp_label=None,
                          per_row=3, title=None):
         """Plot factors from blind source separation results. In case of 1D
         signal axis, each factors line can be toggled on and off by clicking
@@ -835,7 +834,7 @@ class MVATools(object):
 
         same_window : bool
             if True, plots each factor to the same window.  They are
-            not scaled.
+            not scaled. Default is True.
 
         title : string
             Title of the plot.
@@ -860,7 +859,7 @@ class MVATools(object):
                                       "`plot_decomposition_results` instead.")
 
         if same_window is None:
-            same_window = preferences.MachineLearning.same_window
+            same_window = True
         factors = self.learning_results.bss_factors
         title = self._change_API_comp_label(title, comp_label)
         if title is None:
@@ -876,7 +875,7 @@ class MVATools(object):
     def plot_decomposition_loadings(self,
                                     comp_ids,
                                     calibrate=True,
-                                    same_window=None,
+                                    same_window=True,
                                     comp_label=None,
                                     with_factors=False,
                                     cmap=plt.cm.gray,
@@ -904,7 +903,7 @@ class MVATools(object):
 
         same_window : bool
             if True, plots each factor to the same window.  They are
-            not scaled.
+            not scaled. Default is True.
 
         title : string
             Title of the plot.
@@ -943,7 +942,7 @@ class MVATools(object):
                                       "You can use "
                                       "`plot_decomposition_results` instead.")
         if same_window is None:
-            same_window = preferences.MachineLearning.same_window
+            same_window = True
         loadings = self.learning_results.loadings.T
         if with_factors:
             factors = self.learning_results.factors
@@ -970,7 +969,7 @@ class MVATools(object):
             axes_decor=axes_decor)
 
     def plot_bss_loadings(self, comp_ids=None, calibrate=True,
-                          same_window=None, comp_label=None,
+                          same_window=True, comp_label=None,
                           with_factors=False, cmap=plt.cm.gray,
                           no_nans=False, per_row=3, axes_decor='all',
                           title=None):
@@ -995,7 +994,7 @@ class MVATools(object):
 
         same_window : bool
             if True, plots each factor to the same window.  They are
-            not scaled.
+            not scaled. Default is True.
 
         title : string
             Title of the plot.
@@ -1034,7 +1033,7 @@ class MVATools(object):
                                       "You can use "
                                       "`plot_bss_results` instead.")
         if same_window is None:
-            same_window = preferences.MachineLearning.same_window
+            same_window = True
         title = self._change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('BSS loadings of',
