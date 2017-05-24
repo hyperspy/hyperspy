@@ -19,7 +19,8 @@ from hyperspy.misc.utils import isiterable
 
 UI_REGISTRY = {}
 
-toolkit_registry = set()
+TOOLKIT_REGISTRY = set()
+KNOWN_TOOLKITS = set(("ipywidgets", "traitsui"))
 
 
 def register_widget(toolkit, toolkey):
@@ -45,7 +46,7 @@ def register_widget(toolkit, toolkey):
     """
     if not toolkey in UI_REGISTRY:
         raise NameError("%s is not a registered toolkey" % toolkey)
-    toolkit_registry.add(toolkit)
+    TOOLKIT_REGISTRY.add(toolkit)
 
     def decorator(f):
         UI_REGISTRY[toolkey][toolkit] = f
@@ -67,28 +68,82 @@ def register_toolkey(toolkey):
     UI_REGISTRY[toolkey] = {}
 
 
+def _toolkits_to_string(toolkits):
+    if isinstance(toolkits, str):
+        return "{} toolkit".format(toolkits)
+    else:
+        toolkits = tuple(toolkits)
+        if len(toolkits) == 1:
+            return "{} toolkit".format(toolkits[0])
+
+        elif len(toolkits) == 2:
+            return " and ".join(toolkits) + " toolkits"
+        else:  # > 2
+            txt = ", ".join(toolkits[:-1])
+            return txt + " and {}".format(toolkits[-1]) + " toolkits"
+
+
 def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
-    from hyperspy.ui_registry import UI_REGISTRY
+    if not TOOLKIT_REGISTRY:
+        raise ImportError(
+            "No toolkit registered. Install hyperspy_gui_ipywidgets or "
+            "hyperspy_gui_traitsui GUI elements. If hyperspy_gui_traits"
+            "is installed, initialize a toolkit supported by traitsui "
+            "before importing HyperSpy."
+        )
     from hyperspy.defaults_parser import preferences
     if isinstance(toolkit, str):
-        toolkits = (toolkit,)
-    elif isiterable(toolkit):
-        toolkits = toolkit
+        toolkit = (toolkit,)
+    if isiterable(toolkit):
+        toolkits = set()
+        for tk in toolkit:
+            if tk in TOOLKIT_REGISTRY:
+                toolkits.add(tk)
+            else:
+                raise ValueError(
+                    "{} is not a registered toolkit.".format(tk)
+                )
     elif toolkit is None:
-        toolkits = []
-        if preferences.General.enable_ipywidgets_gui:
-            toolkits.append("ipywidgets")
-        if preferences.General.enable_traitsui_gui:
-            toolkits.append("traitsui")
-        if not toolkits:
-            return
+        toolkits = set()
+        available_disabled_toolkits = set()
+        if "ipywidgets" in TOOLKIT_REGISTRY:
+            if preferences.GUIs.enable_ipywidgets_gui:
+                toolkits.add("ipywidgets")
+            else:
+                available_disabled_toolkits.add("ipywidgets")
+        if "traitsui" in TOOLKIT_REGISTRY:
+            if preferences.GUIs.enable_traitsui_gui:
+                toolkits.add("traitsui")
+            else:
+                available_disabled_toolkits.add("traitsui")
+        if not toolkits and available_disabled_toolkits:
+            is_or_are = "is" if len(
+                available_disabled_toolkits) == 1 else "are"
+            them_or_it = ("it" if len(available_disabled_toolkits) == 1
+                          else "them")
+            raise ValueError(
+                "No toolkit available. The {} {} installed but "
+                "disabled in `preferences`. Enable them in `preferences` or "
+                "manually select a toolkit with the `toolkit` argument.".format(
+                    _toolkits_to_string(available_disabled_toolkits),
+                    is_or_are, them_or_it)
+            )
+
     else:
         raise ValueError(
             "`toolkit` must be a string, an iterable of strings or None.")
     if toolkey not in UI_REGISTRY or not UI_REGISTRY[toolkey]:
+        propose = KNOWN_TOOLKITS - TOOLKIT_REGISTRY
+        if propose:
+            propose = ["hyperspy_gui_{}".format(tk) for tk in propose]
+            if len(propose) > 1:
+                propose_ = ", ".join(propose[:-1])
+                propose = propose_ + " and/or {}".format(propose[-1])
+            else:
+                propose = propose.pop()
         raise NotImplementedError(
             "There is no user interface registered for this feature."
-            "Try installing ipywidgets or traitsui.")
+            "Try installing {}.".format(propose))
     if not display:
         widgets = {}
     available_toolkits = set()
@@ -102,9 +157,13 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
         else:
             available_toolkits.add(toolkit)
     if not used_toolkits and available_toolkits:
+        is_or_are = "is" if len(toolkits) == 1 else "are"
         raise NotImplementedError(
-            "The %s toolkits are not available for this functionality, "
-            "try %s" % (toolkits, available_toolkits))
+            "The {} {} not available for this functionality,try with "
+            "the {}.".format(
+                _toolkits_to_string(toolkits),
+                is_or_are,
+                _toolkits_to_string(available_toolkits)))
     if not display:
         return widgets
 

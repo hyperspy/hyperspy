@@ -106,10 +106,12 @@ class LineInSignal1D(t.HasTraits):
     position = t.Float()
     is_ok = t.Bool(False)
     on = t.Bool(False)
-    try:
-        color = t.Color("black")
-    except ModuleNotFoundError:  # traitsui is not installed
-        pass
+    # The following is disabled because as of traits 4.6 the Color trait
+    # imports traitsui (!)
+    # try:
+    #     color = t.Color("black")
+    # except ModuleNotFoundError:  # traitsui is not installed
+    #     pass
     color_str = t.Str("black")
 
     def __init__(self, signal):
@@ -131,7 +133,7 @@ class LineInSignal1D(t.HasTraits):
         self.on_trait_change(self.switch_on_off, 'on')
 
     def draw(self):
-        self.signal._plot.signal_plot.figure.canvas.draw()
+        self.signal._plot.signal_plot.figure.canvas.draw_idle()
 
     def switch_on_off(self, obj, trait_name, old, new):
         if not self.signal._plot.is_active():
@@ -167,8 +169,8 @@ class LineInSignal1D(t.HasTraits):
 
 @add_gui_method(toolkey="Signal1D.calibrate")
 class Signal1DCalibration(SpanSelectorInSignal1D):
-    left_value = t.Float(label='New left value')
-    right_value = t.Float(label='New right value')
+    left_value = t.Float(t.Undefined, label='New left value')
+    right_value = t.Float(t.Undefined, label='New right value')
     offset = t.Float()
     scale = t.Float()
     units = t.Unicode()
@@ -179,6 +181,8 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
             raise SignalDimensionError(
                 signal.axes_manager.signal_dimension, 1)
         self.units = self.axis.units
+        self.scale = self.axis.scale
+        self.offset = self.axis.offset
         self.last_calibration_stored = True
 
     def _left_value_changed(self, old, new):
@@ -195,7 +199,10 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
             self._update_calibration()
 
     def _update_calibration(self, *args, **kwargs):
-        if self.left_value == self.right_value:
+        # If the span selector or the new range values are not defined do
+        # nothing
+        if np.isnan(self.ss_left_value) or np.isnan(self.ss_right_value) or\
+                t.Undefined in (self.left_value, self.right_value):
             return
         lc = self.axis.value2index(self.ss_left_value)
         rc = self.axis.value2index(self.ss_right_value)
@@ -203,18 +210,38 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
             (self.left_value, self.right_value), (lc, rc),
             modify_calibration=False)
 
+    def apply(self):
+        if np.isnan(self.ss_left_value) or np.isnan(self.ss_right_value):
+            _logger.warn("Select a range by clicking on the signal figure "
+                         "and dragging before pressing Apply.")
+            return
+        elif self.left_value is t.Undefined or self.right_value is t.Undefined:
+            _logger.warn("Select the new left and right values before "
+                         "pressing apply.")
+            return
+        axis = self.axis
+        axis.scale = self.scale
+        axis.offset = self.offset
+        axis.units = self.units
+        self.span_selector_switch(on=False)
+        self.signal._replot()
+        self.span_selector_switch(on=True)
+        self.last_calibration_stored = True
+
 
 class Signal1DRangeSelector(SpanSelectorInSignal1D):
     on_close = t.List()
 
 
 class Smoothing(t.HasTraits):
-    try:
-        line_color = t.Color("blue")
-    except ModuleNotFoundError:
-        # traitsui is required to define this trait so it is not defined when
-        # traitsui is not installed.
-        pass
+    # The following is disabled because as of traits 4.6 the Color trait
+    # imports traitsui (!)
+    # try:
+    #     line_color = t.Color("blue")
+    # except ModuleNotFoundError:
+    #     # traitsui is required to define this trait so it is not defined when
+    #     # traitsui is not installed.
+    #     pass
     line_color_ipy = t.Str("blue")
     differential_order = t.Int(0)
 
@@ -544,7 +571,7 @@ class ImageContrastEditor(t.HasTraits):
         self.ax.set_xticks([])
         self.ax.set_yticks([])
         self.ax.set_xlim(vmin, vmax)
-        self.ax.figure.canvas.draw()
+        self.ax.figure.canvas.draw_idle()
 
     def reset(self):
         data = self.image.data_function().ravel()
@@ -730,9 +757,11 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             plot = True
         else:
             plot = False
-        new_spectra = self.signal._remove_background_cli(
-            (self.ss_left_value, self.ss_right_value),
-            self.background_estimator, fast=self.fast)
+        new_spectra = self.signal.remove_background(
+            signal_range=(self.ss_left_value, self.ss_right_value),
+            background_type=self.background_type,
+            fast=self.fast,
+            polynomial_order=self.polynomial_order)
         self.signal.data = new_spectra.data
         self.signal.events.data_changed.trigger(self)
         if plot:
@@ -740,7 +769,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
 
 
 SPIKES_REMOVAL_INSTRUCTIONS = (
-    "\nTo remove spikes from the data:\n\n"
+    "To remove spikes from the data:\n\n"
 
     "   1. Click \"Show derivative histogram\" to "
     "determine at what magnitude the spikes are present.\n"
@@ -896,7 +925,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
             m.text = 'End of dataset reached'
             try:
                 m.gui()
-            except NotImplementedError:
+            except (NotImplementedError, ImportError):
                 # This is only available for traitsui, ipywidgets has a
                 # progress bar instead.
                 pass
@@ -1000,25 +1029,29 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         if self.kind == 'linear':
             pad = 1
         else:
-            pad = 10
+            pad = self.spline_order
         ileft = left - pad
         iright = right + pad
         ileft = np.clip(ileft, 0, len(data))
         iright = np.clip(iright, 0, len(data))
         left = int(np.clip(left, 0, len(data)))
         right = int(np.clip(right, 0, len(data)))
-        x = np.hstack((axis.axis[ileft:left], axis.axis[right:iright]))
-        y = np.hstack((data[ileft:left], data[right:iright]))
         if ileft == 0:
             # Extrapolate to the left
-            data[left:right] = data[right + 1]
+            if right == iright:
+                right -= 1
+            data[:right] = data[right:iright].mean()
 
-        elif iright == (len(data) - 1):
+        elif iright == len(data):
             # Extrapolate to the right
-            data[left:right] = data[left - 1]
+            if left == ileft:
+                left += 1
+            data[left:] = data[ileft:left].mean()
 
         else:
             # Interpolate
+            x = np.hstack((axis.axis[ileft:left], axis.axis[right:iright]))
+            y = np.hstack((data[ileft:left], data[right:iright]))
             intp = sp.interpolate.interp1d(x, y, kind=self.kind)
             data[left:right] = intp(axis.axis[left:right])
 
@@ -1047,6 +1080,8 @@ class SpikesRemoval(SpanSelectorInSignal1D):
             self.interpolated_line.update()
 
     def apply(self):
+        if not self.interpolated_line:  # No spike selected
+            return
         self.signal()[:] = self.get_interpolated_spectrum()
         self.signal.events.data_changed.trigger(obj=self.signal)
         self.update_spectrum_line()

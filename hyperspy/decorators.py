@@ -98,19 +98,9 @@ def simple_decorator(decorator):
 
 
 @simple_decorator
-def only_interactive(cm):
-    def wrapper(*args, **kwargs):
-        if preferences.General.interactive is True:
-            return cm(*args, **kwargs)
-        else:
-            raise NoInteractiveError
-    return wrapper
-
-
-@simple_decorator
 def interactive_range_selector(cm):
     def wrapper(self, *args, **kwargs):
-        if preferences.General.interactive is True and not args and not kwargs:
+        if not args and not kwargs:
             range_selector = Signal1DRangeSelector(self)
             range_selector.on_close.append((cm, self))
             get_gui(range_selector, toolkey="interactive_range_selector")

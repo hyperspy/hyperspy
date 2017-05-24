@@ -1010,6 +1010,8 @@ def map_result_construction(signal,
                 len(sig_shape) - sig.axes_manager.signal_dimension, 0, -1):
             sig.axes_manager._append_axis(sig_shape[-ind], navigate=False)
     sig.get_dimensions_from_data()
+    if not sig.axes_manager._axes:
+        add_scalar_axis(sig)
     return res
 
 
@@ -1041,3 +1043,19 @@ def signal_range_from_roi(signal_range):
         return (signal_range.left, signal_range.right)
     else:
         return signal_range
+
+
+def deprecation_warning(msg):
+    warnings.warn(msg, VisibleDeprecationWarning)
+
+
+def add_scalar_axis(signal):
+    am = signal.axes_manager
+    from hyperspy.signal import BaseSignal
+    signal.__class__ = BaseSignal
+    am.remove(am._axes)
+    am._append_axis(size=1,
+                    scale=1,
+                    offset=0,
+                    name="Scalar",
+                    navigate=False)

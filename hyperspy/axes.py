@@ -26,7 +26,7 @@ from traits.trait_errors import TraitError
 from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
-from hyperspy.ui_registry import add_gui_method
+from hyperspy.ui_registry import add_gui_method, get_gui, DISPLAY_DT, TOOLKIT_DT
 
 import warnings
 
@@ -961,6 +961,11 @@ class AxesManager(t.HasTraits):
                 self.navigation_axes[::-1]]
 
     def show(self):
+        from hyperspy.exceptions import VisibleDeprecationWarning
+        msg = (
+            "The `AxesManager.show` method is deprecated and will be removed "
+            "in v2.0. Use `gui` instead.")
+        warnings.warn(msg, VisibleDeprecationWarning)
         self.gui()
 
     def _get_dimension_str(self):
@@ -1162,3 +1167,20 @@ class AxesManager(t.HasTraits):
         am = self
         new_axes = am.navigation_axes[::-1] + am.signal_axes[::-1]
         self._axes = list(new_axes)
+
+    def gui_navigation_sliders(self, title="", display=True, toolkit=None):
+        return get_gui(self=self.navigation_axes,
+                       toolkey="navigation_sliders",
+                       display=display,
+                       toolkit=toolkit,
+                       title=title)
+    gui_navigation_sliders.__doc__ = \
+        """
+        Navigation sliders to control the index of the navigation axes.
+
+        Parameters
+        ----------
+        title: str
+        %s
+        %s
+        """

@@ -706,9 +706,27 @@ mapping = {
     "ObjectInfo.ExperimentalDescription.Magnification_x": (
         "Acquisition_instrument.TEM.magnification",
         None),
-    "ObjectInfo.ExperimentalConditions.MicroscopeConditions.Tilt1": (
-        "Acquisition_instrument.TEM.tilt_stage",
+    "ObjectInfo.AcquireInfo.CameraNamePath": (
+        "Acquisition_instrument.TEM.Detector.Camera.Name",
+        None),
+    "ObjectInfo.AcquireInfo.DwellTimePath": (
+        "Acquisition_instrument.TEM.Detector.Camera.exposure",
+        None),
+    "ObjectInfo.ExperimentalDescription.Stage_A_deg": (
+        "Acquisition_instrument.TEM.Stage.tilt_alpha",
         _get_degree),
+    "ObjectInfo.ExperimentalDescription.Stage_B_deg": (
+        "Acquisition_instrument.TEM.Stage.tilt_beta",
+        _get_degree),
+    "ObjectInfo.ExperimentalDescription.Stage_X_um": (
+        "Acquisition_instrument.TEM.Stage.x",
+        lambda x: x * 1e-3),
+    "ObjectInfo.ExperimentalDescription.Stage_Y_um": (
+        "Acquisition_instrument.TEM.Stage.y",
+        lambda x: x * 1e-3),
+    "ObjectInfo.ExperimentalDescription.Stage_Z_um": (
+        "Acquisition_instrument.TEM.Stage.z",
+        lambda x: x * 1e-3),
     "ObjectInfo.ExperimentalDescription.User": (
         "General.authors",
         None),

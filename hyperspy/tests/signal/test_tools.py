@@ -1,12 +1,14 @@
 from unittest import mock
 
 import numpy as np
+import numpy.random
+import dask.array as da
 from numpy.testing import assert_array_equal, assert_allclose
-
 import pytest
 
 from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.signal_tools import SpikesRemoval
 
 
 def _verify_test_sum_x_E(self, s):
@@ -814,3 +816,66 @@ class TestTranspose:
 
         t = self.s.transpose(signal_axes=['f', 'a', 'b'], optimize=True)
         assert t.data.base is not self.s.data
+
+
+def test_lazy_transpose_rechunks():
+    ar = da.ones((50, 50, 256, 256), chunks=(5, 5, 256, 256))
+    s = signals.Signal2D(ar).as_lazy()
+    s1 = s.T
+    chunks = s1.data.chunks
+    assert len(chunks[0]) != 1
+    assert len(chunks[1]) != 1
+    assert len(chunks[2]) == 1
+    assert len(chunks[3]) == 1
+
+
+def test_lazy_changetype_rechunk():
+    ar = da.ones((50, 50, 256, 256), chunks=(5, 5, 256, 256), dtype='uint8')
+    s = signals.Signal2D(ar).as_lazy()
+    s._make_lazy(rechunk=True)
+    assert s.data.dtype is np.dtype('uint8')
+    chunks_old = s.data.chunks
+    s.change_dtype('float')
+    assert s.data.dtype is np.dtype('float')
+    chunks_new = s.data.chunks
+    assert (len(chunks_old[0]) * len(chunks_old[1]) <
+            len(chunks_new[0]) * len(chunks_new[1]))
+    s.change_dtype('uint8')
+    assert s.data.dtype is np.dtype('uint8')
+    chunks_newest = s.data.chunks
+    assert chunks_newest == chunks_new
+
+
+def test_spikes_removal_tool():
+    s = signals.Signal1D(np.ones((2, 3, 30)))
+    # Add three spikes
+    s.data[1, 0, 1] += 2
+    s.data[0, 2, 29] += 1
+    s.data[1, 2, 14] += 1
+
+    sr = SpikesRemoval(s)
+    sr.threshold = 1.5
+    sr.find()
+    assert s.axes_manager.indices == (0, 1)
+    sr.threshold = 0.5
+    assert s.axes_manager.indices == (0, 0)
+    sr.find()
+    assert s.axes_manager.indices == (2, 0)
+    sr.find()
+    assert s.axes_manager.indices == (0, 1)
+    sr.find(back=True)
+    assert s.axes_manager.indices == (2, 0)
+    sr.add_noise = False
+    sr.apply()
+    assert s.data[0, 2, 29] == 1
+    assert s.axes_manager.indices == (0, 1)
+    sr.apply()
+    assert s.data[1, 0, 1] == 1
+    assert s.axes_manager.indices == (2, 1)
+    np.random.seed(1)
+    sr.add_noise = True
+    sr.interpolator_kind = "Spline"
+    sr.spline_order = 3
+    sr.apply()
+    assert s.data[1, 2, 14] == 0
+    assert s.axes_manager.indices == (0, 0)

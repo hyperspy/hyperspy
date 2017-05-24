@@ -790,7 +790,9 @@ class CircleROI(BaseInteractiveROI):
 
     def is_valid(self):
         return (t.Undefined not in (self.cx, self.cy, self.r,) and
-                self.r_inner == t.Undefined or self.r >= self.r_inner)
+                (self.r_inner is t.Undefined or
+                 t.Undefined not in (self.r, self.r_inner) and
+                 self.r >= self.r_inner))
 
     def _cx_changed(self, old, new):
         self.update()

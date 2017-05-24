@@ -20,14 +20,6 @@ hyperspy.external.progressbar module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.external.tifffile module
----------------------------------
-
-.. automodule:: hyperspy.external.tifffile
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 
 Module contents
 ---------------
