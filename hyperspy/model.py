@@ -1414,7 +1414,7 @@ class BaseModel(list):
             The path to the folder where the file will be saved. If `None` the
             current folder is used by default.
         format : str
-            The extension of the file format. It must be one of the 
+            The extension of the file format. It must be one of the
             fileformats supported by HyperSpy. The default is "hspy".
         save_std : bool
             If True, also the standard deviation will be saved.

@@ -193,7 +193,6 @@ def tmpfilepath():
         gc.collect()        # Make sure any memmaps are closed first!
 
 
-
 class TestSavingMetadataContainers:
 
     def setup_method(self, method):
