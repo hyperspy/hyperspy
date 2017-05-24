@@ -684,6 +684,22 @@ class AxesManager(t.HasTraits):
                      else tuple())
         return nav_shape + sig_shape
 
+    @property
+    def signal_extent(self):
+        signal_extent = []
+        for signal_axis in self.signal_axes:
+            signal_extent.append(signal_axis.low_value)
+            signal_extent.append(signal_axis.high_value)
+        return tuple(signal_extent)
+
+    @property
+    def navigation_extent(self):
+        navigation_extent = []
+        for navigation_axis in self.navigation_axes:
+            navigation_extent.append(navigation_axis.low_value)
+            navigation_extent.append(navigation_axis.high_value)
+        return tuple(navigation_extent)
+
     def remove(self, axes):
         """Remove one or more axes
         """
