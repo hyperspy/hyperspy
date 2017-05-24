@@ -71,14 +71,6 @@ hyperspy.misc.ipython_tools module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.misc.link_traits module
---------------------------------
-
-.. automodule:: hyperspy.misc.link_traits
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 hyperspy.misc.material module
 -----------------------------
 

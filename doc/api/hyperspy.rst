@@ -12,8 +12,6 @@ Subpackages
     hyperspy.docstrings
     hyperspy.drawing
     hyperspy.external
-    hyperspy.gui_ipywidgets
-    hyperspy.gui_traitsui
     hyperspy.io_plugins
     hyperspy.learn
     hyperspy.misc
@@ -45,6 +43,14 @@ hyperspy.api module
 -------------------
 
 .. automodule:: hyperspy.api
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.api_nogui module
+-------------------------
+
+.. automodule:: hyperspy.api_nogui
     :members:
     :undoc-members:
     :show-inheritance:
