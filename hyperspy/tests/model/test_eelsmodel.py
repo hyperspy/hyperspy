@@ -5,6 +5,7 @@ from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.models.eelsmodel import _PREEDGE_SAFE_WINDOW_WIDTH
 
 
 @lazifyTestClass
@@ -93,8 +94,7 @@ class TestEELSModel:
         m.suspend_auto_fine_structure_width()
         m.resume_auto_fine_structure_width()
         window = (m["C_K"].onset_energy.value -
-                  m["B_K"].onset_energy.value -
-                  hs.preferences.EELS.preedge_safe_window_width)
+                  m["B_K"].onset_energy.value - _PREEDGE_SAFE_WINDOW_WIDTH)
         m.enable_fine_structure()
         m.resolve_fine_structure()
         assert window == m["B_K"].fine_structure_width
