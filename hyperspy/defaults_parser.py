@@ -197,10 +197,6 @@ class PlotConfig(t.HasTraits):
     plot_on_load = t.CBool(
         False,
         desc='If enabled, the object will be plot automatically on loading')
-    pylab_inline = t.CBool(
-        False,
-        desc="If True the figure are displayed inline."
-        "HyperSpy must be restarted for changes to take effect")
 
 template = {
     'General': GeneralConfig(),
