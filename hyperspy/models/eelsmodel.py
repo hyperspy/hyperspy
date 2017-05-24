@@ -30,8 +30,6 @@ from hyperspy._signals.eels import EELSSpectrum
 _logger = logging.getLogger(__name__)
 
 
-
-
 class EELSModel(Model1D):
 
     """Build an EELS model
