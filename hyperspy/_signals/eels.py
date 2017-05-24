@@ -1332,7 +1332,6 @@ class EELSSpectrum_mixin:
                           dictionary=dictionary)
         return model
 
-<<<<<<< HEAD
     def rebin(self, new_shape=None, scale=None, crop=True, out=None):
         """
         %s
@@ -1340,7 +1339,7 @@ class EELSSpectrum_mixin:
     #Series of if statements to check that only one out of new_shape or scale
     #has been given. New_shape is then converted to scale. If both or neither
     #are given the function raises and error and wont run.
-    
+
         if new_shape == None and scale == None:
             raise ValueError("One of new_shape, or scale must be specified")
         elif new_shape != None and scale != None:
@@ -1376,9 +1375,6 @@ class EELSSpectrum_mixin:
         return m
 
     rebin.__doc__ = hyperspy.signal.BaseSignal.rebin.__doc__
-
-=======
->>>>>>> hyperspy/RELEASE_next_minor
 
 class EELSSpectrum(EELSSpectrum_mixin, Signal1D):
 

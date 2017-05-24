@@ -55,10 +55,7 @@ from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
                                         broadcast_signals)
 
-<<<<<<< HEAD
-=======
 from hyperspy.exceptions import VisibleDeprecationWarning
->>>>>>> hyperspy/RELEASE_next_minor
 
 _logger = logging.getLogger(__name__)
 
