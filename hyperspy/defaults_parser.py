@@ -95,7 +95,7 @@ class GeneralConfig(t.HasTraits):
         'only one fully supported. The Ripple (rpl) format it is useful '
         'to export data to other software that do not support hdf5')
     hspy_extension = t.CBool(
-        False,
+        True,
         desc='If enabled, HyperSpy will use the "hspy" extension when saving '
         'to HDF5 instead of the "hdf5" extension. "hspy" will be the default'
         'extension from HyperSpy v1.3')
