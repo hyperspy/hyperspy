@@ -116,7 +116,6 @@ class GeneralConfig(t.HasTraits):
             turn_logging_off()
 
 
-
 class MachineLearningConfig(t.HasTraits):
     multiple_files = t.Bool(
         True,

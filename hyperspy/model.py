@@ -954,7 +954,7 @@ class BaseModel(list):
 
         """
 
-        if fitter is None: # None meant "from preferences" before v1.3
+        if fitter is None:  # None meant "from preferences" before v1.3
             fitter = "leastsq"
         switch_aap = (update_plot != self._plot_active)
         if switch_aap is True and update_plot is False:
