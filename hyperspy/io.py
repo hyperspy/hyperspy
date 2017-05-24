@@ -32,6 +32,7 @@ from hyperspy.misc.utils import stack as stack_method
 from hyperspy.io_plugins import io_plugins, default_write_ext
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.defaults_parser import preferences
+from hyperspy.ui_registry import get_gui
 
 _logger = logging.getLogger(__name__)
 
@@ -48,13 +49,13 @@ def load(filenames=None,
          stack=False,
          stack_axis=None,
          new_axis_name="stack_element",
-         lazy=None,
+         lazy=False,
          **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure
 
-    Supported formats: HDF5, msa, Gatan dm3, Ripple (rpl+raw), Bruker bcf,
-    FEI ser and emi, hdf5, SEMPER unf, EMD, EDAX spd/spc, tif, and a number
+    Supported formats: hspy (HDF5), msa, Gatan dm3, Ripple (rpl+raw), Bruker bcf,
+    FEI ser and emi, SEMPER unf, EMD, EDAX spd/spc, tif, and a number
     of image formats.
 
     Any extra keyword is passed to the corresponding reader. For
@@ -105,9 +106,8 @@ def load(filenames=None,
         until it finds a name that is not yet in use.
     lazy : {None, bool}
         Open the data lazily - i.e. without actually reading the data from the
-        disk until required. Allows opening arbitrary-sized datasets.
-        If None, default from preferences is used.
-
+        disk until required. Allows opening arbitrary-sized datasets. default
+        is `False`.
     print_info: bool
         For SEMPER unf- and EMD (Berkley)-files, if True (default is False)
         additional information read during loading is printed for a quick
@@ -143,20 +143,15 @@ def load(filenames=None,
             lazy = True
             warnings.warn(warn_str.format(k), VisibleDeprecationWarning)
             del kwds[k]
-    if lazy is None:
-        lazy = preferences.General.lazy
     kwds['signal_type'] = signal_type
 
     if filenames is None:
-        if preferences.General.interactive is True:
-            from hyperspy.gui.tools import Load
-            load_ui = Load()
-            load_ui.edit_traits()
-            if load_ui.filename:
-                filenames = load_ui.filename
-        else:
-            raise ValueError("No file provided to reader and "
-                             "interactive mode is disabled")
+        from hyperspy.signal_tools import Load
+        load_ui = Load()
+        get_gui(load_ui, toolkey="load")
+        if load_ui.filename:
+            filenames = load_ui.filename
+            lazy = load_ui.lazy
         if filenames is None:
             raise ValueError("No file provided to reader")
 
@@ -230,9 +225,6 @@ def load(filenames=None,
                                         **kwds)
                        for filename in filenames]
 
-        if preferences.Plot.plot_on_load:
-            for obj in objects:
-                obj.plot()
         if len(objects) == 1:
             objects = objects[0]
     return objects
@@ -244,7 +236,7 @@ def load_single_file(filename,
     """
     Load any supported file into an HyperSpy structure
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw),
-    Bruker bcf, FEI ser and emi, EDAX spc and spd, hdf5, and SEMPER unf.
+    Bruker bcf, FEI ser and emi, EDAX spc and spd, hspy (HDF5), and SEMPER unf.
 
     Parameters
     ----------
@@ -437,10 +429,7 @@ def dict2signal(signal_dict, lazy=False):
 def save(filename, signal, overwrite=None, **kwds):
     extension = os.path.splitext(filename)[1][1:]
     if extension == '':
-        extension = \
-            preferences.General.default_file_format
-        if preferences.General.hspy_extension:
-            extension = extension if extension != "hdf5" else "hspy"
+        extension = "hspy"
         filename = filename + '.' + extension
     writer = None
     for plugin in io_plugins:
