@@ -34,14 +34,14 @@ _logger = logging.getLogger(__name__)
 
 # Plugin characteristics
 # ----------------------
-format_name = 'HDF5'
+format_name = 'HSPY'
 description = \
     'The default file format for HyperSpy based on the HDF5 standard'
 
 full_support = False
 # Recognised file extension
-file_extensions = ['hdf', 'h4', 'hdf4', 'h5', 'hdf5', 'he4', 'he5', "hspy"]
-default_extension = 7
+file_extensions = ['hspy', 'hdf5']
+default_extension = 0
 
 # Writing capabilities
 writes = True

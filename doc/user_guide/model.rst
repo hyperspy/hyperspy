@@ -993,7 +993,7 @@ one signal.
     >>> m = s.create_model()
     >>> # analysis and fitting goes here
     >>> m.save('my_filename', 'model_name')
-    >>> l = hs.load('my_filename.hdf5')
+    >>> l = hs.load('my_filename.hspy')
     >>> m = l.models.restore('model_name') # or l.models.model_name.restore()
 
 For older versions of HyperSpy (before 0.9), the instructions were as follows:

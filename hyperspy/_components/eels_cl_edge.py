@@ -83,12 +83,10 @@ class EELSCLEdge(Component):
         Decreasing the value increases the level of smoothing.
 
     fine_structure_active : bool
-        Activates/deactivates the fine structure feature. Its
-        default value can be choosen in the preferences.
+        Activates/deactivates the fine structure feature.
 
     """
-    _fine_structure_smoothing = \
-        preferences.EELS.fine_structure_smoothing
+    _fine_structure_smoothing = 0.3
 
     def __init__(self, element_subshell, GOS=None):
         # Declare the parameters
@@ -105,8 +103,8 @@ class EELSCLEdge(Component):
         self.name = "_".join([self.element, self.subshell])
         self.energy_scale = None
         self.effective_angle.free = False
-        self.fine_structure_active = preferences.EELS.fine_structure_active
-        self.fine_structure_width = preferences.EELS.fine_structure_width
+        self.fine_structure_active = False
+        self.fine_structure_width = 30.
         self.fine_structure_coeff.ext_force_positive = False
         self.GOS = None
         # Set initial actions

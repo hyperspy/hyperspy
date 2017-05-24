@@ -882,7 +882,7 @@ class BaseModel(list):
             ' reduced chi-squared'
         return tmp
 
-    def fit(self, fitter=None, method='ls', grad=False,
+    def fit(self, fitter="leastsq", method='ls', grad=False,
             bounded=False, ext_bounding=False, update_plot=False,
             **kwargs):
         """Fits the model to the experimental data.
@@ -897,11 +897,11 @@ class BaseModel(list):
 
         Parameters
         ----------
-        fitter : {None, "leastsq", "mpfit", "odr", "Nelder-Mead",
+        fitter : {"leastsq", "mpfit", "odr", "Nelder-Mead",
                  "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B", "TNC",
                  "Differential Evolution"}
-            The optimization algorithm used to perform the fitting. If None the
-            fitter defined in `preferences.Model.default_fitter` is used.
+            The optimization algorithm used to perform the fitting. Deafault
+            is "leastsq".
 
                 "leastsq" performs least-squares optimization, and supports
                 bounds on parameters.
@@ -956,8 +956,8 @@ class BaseModel(list):
 
         """
 
-        if fitter is None:
-            fitter = preferences.Model.default_fitter
+        if fitter is None:  # None meant "from preferences" before v1.3
+            fitter = "leastsq"
         switch_aap = (update_plot != self._plot_active)
         if switch_aap is True and update_plot is False:
             cm = self.suspend_update
@@ -1405,7 +1405,7 @@ class BaseModel(list):
             for parameter in component.parameters:
                 parameter.ext_bounded = False
 
-    def export_results(self, folder=None, format=None, save_std=False,
+    def export_results(self, folder=None, format="hspy", save_std=False,
                        only_free=True, only_active=True):
         """Export the results of the parameters of the model to the desired
         folder.
@@ -1416,9 +1416,8 @@ class BaseModel(list):
             The path to the folder where the file will be saved. If `None` the
             current folder is used by default.
         format : str
-            The format to which the data will be exported. It must be the
-            extension of any format supported by HyperSpy. If None, the default
-            format for exporting as defined in the `Preferences` will be used.
+            The extension of the file format. It must be one of the
+            fileformats supported by HyperSpy. The default is "hspy".
         save_std : bool
             If True, also the standard deviation will be saved.
         only_free : bool
