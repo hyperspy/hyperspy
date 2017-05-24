@@ -27,6 +27,7 @@ import logging
 import numpy as np
 import scipy as sp
 from matplotlib import pyplot as plt
+import traits.api as t
 import numbers
 
 from hyperspy.axes import AxesManager
@@ -38,6 +39,7 @@ from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.drawing import signal as sigdraw
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.io.tools import ensure_directory
+from hyperspy.misc.utils import iterable_not_string
 from hyperspy.external.progressbar import progressbar
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import array_tools
@@ -1494,6 +1496,20 @@ class SpecialSlicersSignal(SpecialSlicers):
 
     def __len__(self):
         return self.obj.axes_manager.signal_shape[0]
+
+
+class BaseSetMetadataItems(t.HasTraits):
+
+    def __init__(self, signal):
+        for key, value in self.mapping.items():
+            if signal.metadata.has_item(key):
+                setattr(self, value, signal.metadata.get_item(key))
+        self.signal = signal
+
+    def store(self, *args, **kwargs):
+        for key, value in self.mapping.items():
+            if getattr(self, value) != t.Undefined:
+                self.signal.metadata.set_item(key, getattr(self, value))
 
 
 class BaseSignal(FancySlicing,
@@ -4377,11 +4393,7 @@ class BaseSignal(FancySlicing,
         <BaseSignal, title: , dimensions: (8, 7, 6, 5, 4, 1|9, 3, 2)>
 
         """
-        from collections import Iterable
 
-        def iterable_not_string(thing):
-            return isinstance(thing, Iterable) and \
-                not isinstance(thing, str)
         am = self.axes_manager
         ns = self.axes_manager.navigation_axes + self.axes_manager.signal_axes
         ax_list = am._axes

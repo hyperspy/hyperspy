@@ -46,10 +46,18 @@ Next, import two useful modules: numpy and matplotlib.pyplot, as follows:
    >>> import numpy as np
    >>> import matplotlib.pyplot as plt
 
-The rest of the documentation will assume you have done this. Now you are ready to load your data (see below).
+The rest of the documentation will assume you have done this. It also assumes
+that you have installed at least one of HyperSpy's GUI packages:
+`jupyter widgets GUI <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_
+and the
+`traitsui GUI <https://github.com/hyperspy/hyperspy_gui_traitsui>`_.
 
-**Notes for experienced users:** We also fully support the wx backend. Other backends are supported for plotting
-but some features such as navigation sliders may be missing.
+Now you are ready to load
+your data (see below).
+
+.. versionchanged:: v1.3
+    HyperSpy works with all matplotlib backends, including the nbagg backend
+    that enables interactive plotting embedded in the jupyter notebook.
 
 .. warning::
         When using the qt4 backend in Python 2 the matplotlib magic must be
@@ -202,7 +210,7 @@ the *navigation* dimensions an the energy-loss is the *signal* dimension. To
 make this distinction more explicit the representation of the object includes
 a separator ``|`` between the navigaton and signal dimensions e.g.
 
-In Hyperpsy a spectrum image has signal dimension 1 and navigation dimension 2
+In HyperSpy a spectrum image has signal dimension 1 and navigation dimension 2
 and is stored in the Signal1D subclass.
 
 .. code-block:: python
@@ -313,12 +321,52 @@ name e.g.:
     >>> s.axes_manager["X"]
     <X axis, size: 20, index: 0>
     >>> s.axes_manager["X"].scale = 0.2
-    >>> s.axes_manager["X"].units = nm
+    >>> s.axes_manager["X"].units = "nm"
     >>> s.axes_manager["X"].offset = 100
 
 
 It is also possible to set the axes properties using a GUI by calling the
-:py:meth:`~.axes.AxesManager.gui` method of the :py:class:`~.axes.AxesManager`.
+:py:meth:`~.axes.AxesManager.gui` method of the :py:class:`~.axes.AxesManager`
+
+.. code-block:: python
+
+    >>> s.axes_manager.gui()
+
+.. _axes_manager_gui_image:
+
+.. figure::  images/axes_manager_gui_ipywidgets.png
+   :align:   center
+
+   AxesManager ipywidgets GUI.
+
+or the :py:class:`~.axes.DataAxis`, e.g:
+
+.. code-block:: python
+
+    >>> s.axes_manager["X"].gui()
+
+.. _data_axis_gui_image:
+
+.. figure::  images/data_axis_gui_ipywidgets.png
+   :align:   center
+
+   DataAxis ipywidgets GUI.
+
+To simply change the "current position" (i.e. the indices of the navigation
+axes) you could use the navigation sliders:
+
+.. code-block:: python
+
+    >>> s.axes_manager.gui_navigation_sliders()
+
+.. _navigation_sliders_image:
+
+.. figure::  images/axes_manager_navigation_sliders_ipywidgets.png
+   :align:   center
+
+   Navigation sliders ipywidgets GUI.
+
+
 
 .. _saving:
 
@@ -420,7 +468,8 @@ calling the :meth:`gui` method:
 
     >>> hs.preferences.gui()
 
-This command should raise the Preferences user interface:
+This command should raise the Preferences user interface if one of the
+hyperspy gui packages are installed and enabled:
 
 .. _preferences_image:
 
@@ -428,6 +477,29 @@ This command should raise the Preferences user interface:
    :align:   center
 
    Preferences user interface.
+
+.. versionadded:: 1.3
+    Possibility to enable/disable GUIs in the
+
+It is also possible to set the preferences programmatically. For example,
+to disable the traitsui GUI elements and save the changes to disk:
+
+.. code-block:: python
+
+    >>> hs.preferences.GUIs.enable_traitsui_gui = False
+    >>> hs.preferences.save()
+
+.. versionchanged:: 1.3
+
+   The following items were removed from prerences:
+   ``General.default_export_format``, ``General.lazy``,
+   ``Model.default_fitter``, ``Machine_learning.multiple_files``,
+   ``Machine_learning.same_window``, ``Plot.default_style_to_compare_spectra``,
+   ``Plot.plot_on_load``, ``Plot.pylab_inline``, ``EELS.fine_structure_width``,
+   ``EELS.fine_structure_active``, ``EELS.fine_structure_smoothing``,
+   ``EELS.synchronize_cl_with_ll``, ``EELS.preedge_safe_window_width``,
+   ``EELS.min_distance_between_edges_for_fine_structure``.
+
 
 
 .. _logger-label:

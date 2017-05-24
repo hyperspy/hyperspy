@@ -47,11 +47,9 @@ setup_path = os.path.dirname(__file__)
 import hyperspy.Release as Release
 
 install_req = ['scipy>=0.15',
-               'ipython>=2.0',
                'matplotlib>=1.2',
                'numpy>=1.10',
                'traits>=4.5.0',
-               'traitsui>=5.0',
                'natsort',
                'requests',
                'tqdm>=0.4.9',
@@ -62,12 +60,16 @@ install_req = ['scipy>=0.15',
                'ipyparallel',
                'dask[array]>=0.14.3',
                'scikit-image>=0.13',
-               'pint>0.7']
+               'pint>0.7',
+               'statsmodels',
+               ]
 
 extras_require = {
     "learning": ['scikit-learn'],
     "bcf": ['lxml'],
-    "gui-jupyter": ["ipywidgets"],
+    "gui-jupyter": ["hyperspy_gui_ipywidgets"],
+    "gui-traitsui": ["hyperspy_gui_traitsui"],
+    "test": ["pytest>=3", "pytest-mpl"],
 }
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
@@ -310,7 +312,6 @@ with update_version_when_dev() as version:
                   'hyperspy.drawing._widgets',
                   'hyperspy.learn',
                   'hyperspy._signals',
-                  'hyperspy.gui',
                   'hyperspy.utils',
                   'hyperspy.tests',
                   'hyperspy.tests.axes',

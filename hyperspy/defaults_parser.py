@@ -27,6 +27,7 @@ import traits.api as t
 from hyperspy.misc.config_dir import config_path, os_name, data_path
 from hyperspy.misc.ipython_tools import turn_logging_on, turn_logging_off
 from hyperspy.io_plugins import default_write_ext
+from hyperspy.ui_registry import add_gui_method
 
 defaults_file = os.path.join(config_path, 'hyperspyrc')
 eels_gos_files = os.path.join(data_path, 'EELS_GOS.tar.gz')
@@ -80,13 +81,9 @@ else:
 
 
 class GeneralConfig(t.HasTraits):
-    interactive = t.CBool(
-        True,
-        desc='If enabled, HyperSpy will prompt the user when options are '
-        'available, otherwise it will use the default values if possible')
     logger_on = t.CBool(
         False,
-        label='Automatic logging',
+        label='Automatic logging (requires IPython)',
         desc='If enabled, HyperSpy will store a log in the current directory '
         'of all the commands typed')
 
@@ -123,6 +120,17 @@ class EELSConfig(t.HasTraits):
         desc='The GOS files are required to create the EELS edge components')
 
 
+class GUIs(t.HasTraits):
+    enable_ipywidgets_gui = t.CBool(
+        True,
+        desc="Display ipywidgets in the Jupyter Notebook. "
+        "Requires installing hyperspy_gui_ipywidgets.")
+    enable_traitsui_gui = t.CBool(
+        True,
+        desc="Display traitsui user interface elements. "
+        "Requires installing hyperspy_gui_traitsui.")
+
+
 class EDSConfig(t.HasTraits):
     eds_mn_ka = t.CFloat(130.,
                          label='Energy resolution at Mn Ka (eV)',
@@ -146,6 +154,7 @@ class EDSConfig(t.HasTraits):
 
 template = {
     'General': GeneralConfig(),
+    'GUIs': GUIs(),
     'EELS': EELSConfig(),
     'EDS': EDSConfig(),
 }
@@ -212,16 +221,12 @@ if not defaults_file_exists or rewrite is True:
 config2template(template, config)
 
 
+@add_gui_method(toolkey="Preferences")
 class Preferences(t.HasTraits):
     EELS = t.Instance(EELSConfig)
     EDS = t.Instance(EDSConfig)
     General = t.Instance(GeneralConfig)
-
-    def gui(self):
-        import hyperspy.gui.preferences
-        self.EELS.trait_view("traits_view",
-                             hyperspy.gui.preferences.eels_view)
-        self.edit_traits(view=hyperspy.gui.preferences.preferences_view)
+    GUIs = t.Instance(GUIs)
 
     def save(self):
         config = configparser.ConfigParser(allow_no_value=True)
@@ -231,7 +236,9 @@ class Preferences(t.HasTraits):
 preferences = Preferences(
     EELS=template['EELS'],
     EDS=template['EDS'],
-    General=template['General'],)
+    General=template['General'],
+    GUIs=template['GUIs'],
+)
 
 if preferences.General.logger_on:
     turn_logging_on(verbose=0)

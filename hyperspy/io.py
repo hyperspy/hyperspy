@@ -32,6 +32,7 @@ from hyperspy.misc.utils import stack as stack_method
 from hyperspy.io_plugins import io_plugins, default_write_ext
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.defaults_parser import preferences
+from hyperspy.ui_registry import get_gui
 
 _logger = logging.getLogger(__name__)
 
@@ -145,15 +146,12 @@ def load(filenames=None,
     kwds['signal_type'] = signal_type
 
     if filenames is None:
-        if preferences.General.interactive is True:
-            from hyperspy.gui.tools import Load
-            load_ui = Load()
-            load_ui.edit_traits()
-            if load_ui.filename:
-                filenames = load_ui.filename
-        else:
-            raise ValueError("No file provided to reader and "
-                             "interactive mode is disabled")
+        from hyperspy.signal_tools import Load
+        load_ui = Load()
+        get_gui(load_ui, toolkey="load")
+        if load_ui.filename:
+            filenames = load_ui.filename
+            lazy = load_ui.lazy
         if filenames is None:
             raise ValueError("No file provided to reader")
 
