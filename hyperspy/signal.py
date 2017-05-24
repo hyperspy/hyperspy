@@ -2252,15 +2252,13 @@ class BaseSignal(FancySlicing,
     def rebin(self, new_shape=None, scale=None, crop=True, out=None):
         """Rebin array.
 
-        rebin ndarray data into a smaller or larger array based on a linear
-        interpolation. Specify either a new_shape or a scale. Scale of 1== no
-        binning. Scale less than one results in up-sampling.
+        Rebin the signal into a smaller or larger shape, based on linear
+        interpolation. Specify **either** new_shape or scale.
 
         Parameters
         ----------
-        a : numpy array
         new_shape : a list of floats or integer, default None
-            For each dimension specify the new_shape of the np.array. This will
+            For each dimension specify the new_shape. This will
             then be converted into a scale.
         scale : a list of floats or integer, default None
             For each dimension specify the new:old pixel ratio, e.g. a ratio of 1
@@ -2283,8 +2281,6 @@ class BaseSignal(FancySlicing,
             dimension may appear black, if a fractional number of pixels are left
             over. It can be removed but has been left to preserve total counts
             before and after binning.*
-
-            %s
 
         Returns
         -------
