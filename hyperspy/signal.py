@@ -2073,14 +2073,16 @@ class BaseSignal(FancySlicing,
         overwrite : None, bool
             If None, if the file exists it will query the user. If
             True(False) it (does not) overwrites the file if it exists.
-        extension : {None, 'hdf5', 'rpl', 'msa', 'unf', 'blo', common image
-                     extensions e.g. 'tiff', 'png'}
+        extension : {None, 'hspy', 'hdf5', 'rpl', 'msa', 'unf', 'blo',
+                     'emd', common image extensions e.g. 'tiff', 'png'}
             The extension of the file that defines the file format.
-            If None, the extension is taken from the first not None in the
-            following list:
+            'hspy' and 'hdf5' are equivalent. Use 'hdf5' if compatibility with
+            HyperSpy versions older than 1.2 is required.
+            If None, the extension is determined from the following list in
+            this order:
             i) the filename
-            ii)  `tmp_parameters.extension`
-            iii) `preferences.General.default_file_format` in this order.
+            ii)  `Signal.tmp_parameters.extension`
+            iii) `hspy` (the default extension)
 
         """
         if filename is None:

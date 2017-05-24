@@ -437,10 +437,7 @@ def dict2signal(signal_dict, lazy=False):
 def save(filename, signal, overwrite=None, **kwds):
     extension = os.path.splitext(filename)[1][1:]
     if extension == '':
-        extension = \
-            preferences.General.default_file_format
-        if preferences.General.hspy_extension:
-            extension = extension if extension != "hdf5" else "hspy"
+        extension = "hspy"
         filename = filename + '.' + extension
     writer = None
     for plugin in io_plugins:
