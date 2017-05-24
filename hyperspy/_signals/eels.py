@@ -1332,12 +1332,30 @@ class EELSSpectrum_mixin:
                           dictionary=dictionary)
         return model
 
-    def rebin(self, scale, crop=True, out=None):
+    def rebin(self, new_shape=None, scale=None, crop=True, out=None):
         """
         %s
         """
+    #Series of if statements to check that only one out of new_shape or scale
+    #has been given. New_shape is then converted to scale. If both or neither
+    #are given the function raises and error and wont run.
+    
+        if new_shape == None and scale == None:
+            raise ValueError("One of new_shape, or scale must be specified")
+        elif new_shape != None and scale != None:
+            raise ValueError("Only one out of new_shape or scale should be specified.\
+                            Not both.")
+        elif new_shape != None:
+            for axis in self.axes_manager._axis:
+                new_shape_in_array.append(
+                    new_shape[axis.index_in_axis_manager])
+                scale = (np.array(self.data.shape)/
+                         np.array(new_shape_in_array))
+        else:
+            new_shape = new_shape
+            scale = scale
 
-        m = super().rebin(scale, crop=crop, out=out)
+        m = super().rebin(scale=scale, crop=crop, out=out)
         m = out or m
 
         m.get_dimensions_from_data()

@@ -2185,18 +2185,27 @@ class BaseSignal(FancySlicing,
             data = self.data.transpose(nav_iia_r + sig_iia_r)
             return data
 
-    def rebin(self, scale, crop=True, out=None):
-        """
-        Binning of the spectrum image by a integer or a float pixel value.
+    def rebin(a, new_shape=None, scale=None, crop=True):
+        """Rebin array.
+
+        rebin ndarray data into a smaller or larger array based on a linear
+        interpolation. Specify either a new_shape or a scale. Scale of 1== no
+        binning. Scale less than one results in up-sampling.
 
         Parameters
         ----------
-        scale : a list of floats or integers
+        a : numpy array
+        new_shape : a list of floats or integer, default None
+            For each dimension specify the new_shape of the np.array. This will
+            then be converted into a scale.
+        scale : a list of floats or integer, default None
             For each dimension specify the new:old pixel ratio, e.g. a ratio of 1
             is no binning and a ratio of 2 means that each pixel in the new
             spectrum is twice the size of the pixels in the old spectrum.
-            The length of the list should match the dimension of the data.
-        crop : bool, default True
+            The length of the list should match the dimension of the numpy array.
+            ***Note : Only one of scale or new_shape should be specified otherwise
+            the function will not run***
+        crop: bool, default True
             When binning by a non-integer number of pixels it is likely that
             the final row in each dimension contains less than the full quota to
             fill one pixel.
@@ -2210,7 +2219,8 @@ class BaseSignal(FancySlicing,
             dimension may appear black, if a fractional number of pixels are left
             over. It can be removed but has been left to preserve total counts
             before and after binning.*
-        %s
+
+            %s
 
         Returns
         -------
@@ -2232,13 +2242,31 @@ class BaseSignal(FancySlicing,
         Sum =  164.0
 
         """
+        #Series of if statements to check that only one out of new_shape or scale
+        #has been given. New_shape is then converted to scale. If both or neither
+        #are given the function raises and error and wont run.
+        if new_shape == None and scale == None:
+            raise ValueError("One of new_shape, or scale must be specified")
+        elif new_shape != None and scale != None:
+            raise ValueError("Only one out of new_shape or scale should be specified.\
+                            Not both.")
+        elif new_shape != None:
+            for axis in self.axes_manager._axis:
+                new_shape_in_array.append(
+                    new_shape[axis.index_in_axis_manager])
+                scale = (np.array(self.data.shape)/
+                         np.array(new_shape_in_array))
+        else:
+            new_shape = new_shape
+            scale = scale
+
         spectrum = self.data
         signal_dimension = self.axes_manager.signal_dimension
         # The following reverses the order of binning factors for the signal
         # dimensions, as is necessary for signal2Ds
         factors = scale[0:-signal_dimension] + scale[::-1][0:signal_dimension]
         s = out or self._deepcopy_with_new_data(None, copy_variance=True)
-        data = hyperspy.misc.array_tools.rebin(spectrum, factors, crop=crop)
+        data = hyperspy.misc.array_tools.rebin(spectrum, scale=factors, crop=crop)
 
         if out:
             if out._lazy:
@@ -2250,7 +2278,7 @@ class BaseSignal(FancySlicing,
         s.get_dimensions_from_data()
         for axis, axis_src in zip(s.axes_manager._axes,
                                   self.axes_manager._axes):
-            axis.scale = axis_src.scale * factors[axis.index_in_array]
+            axis.scale = axis_src.scale * scale[axis.index_in_array]
         if s.metadata.has_item('Signal.Noise_properties.variance'):
             if isinstance(s.metadata.Signal.Noise_properties.variance,
                           BaseSignal):

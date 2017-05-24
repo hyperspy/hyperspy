@@ -68,21 +68,26 @@ def homogenize_ndim(*args):
             for ary in args]
 
 
-def rebin(a, scale, crop=True):
+def rebin(a, new_shape=None, scale=None, crop=True):
     """Rebin array.
 
-    rebin ndarray data into a smaller ndarray of the same rank whose dimensions
-    are factors of the original dimensions. eg. An array with 6 columns and 4
-    rows can be reduced to have 6,3,2 or 1 columns and 4,2 or 1 rows.
+    rebin ndarray data into a smaller or larger array based on a linear
+    interpolation. Specify either a new_shape or a scale. Scale of 1== no
+    binning. Scale less than one results in up-sampling.
 
     Parameters
     ----------
     a : numpy array
-    scale : a list of floats or integer
+    new_shape : a list of floats or integer, default None
+        For each dimension specify the new_shape of the np.array. This will
+        then be converted into a scale.
+    scale : a list of floats or integer, default None
         For each dimension specify the new:old pixel ratio, e.g. a ratio of 1
         is no binning and a ratio of 2 means that each pixel in the new
         spectrum is twice the size of the pixels in the old spectrum.
         The length of the list should match the dimension of the numpy array.
+        ***Note : Only one of scale or new_shape should be specified otherwise
+        the function will not run***
     crop: bool, default True
         When binning by a non-integer number of pixels it is likely that
         the final row in each dimension contains less than the full quota to
@@ -104,14 +109,32 @@ def rebin(a, scale, crop=True):
 
     Examples
     --------
-    >>> a=rand(6,4); b=rebin(a,(3,2))
-    >>> a=rand(6); b=rebin(a,(2,))
+    >>> a=rand(6,4); b=rebin(a,scale=(3,2))
+    >>> a=rand(6); b=rebin(a,scale=(2,))
 
     Notes
     -----
     Fast re_bin function Adapted from scipy cookbook
 
     """
+    #Series of if statements to check that only one out of new_shape or scale
+    #has been given. New_shape is then converted to scale. If both or neither
+    #are given the function raises and error and wont run.
+    if new_shape == None and scale == None:
+        raise ValueError("One of new_shape, or scale must be specified")
+    elif new_shape != None and scale != None:
+        raise ValueError("Only one out of new_shape or scale should be specified.\
+                        Not both.")
+    elif new_shape != None:
+        for axis in self.axes_manager._axis:
+            new_shape_in_array.append(
+                new_shape[axis.index_in_axis_manager])
+            scale = (np.array(self.data.shape)/
+                     np.array(new_shape_in_array))
+    else:
+        new_shape = new_shape
+        scale = scale
+
     lenShape = len(a.shape)
 
     #check whether or not interpolation is needed.
