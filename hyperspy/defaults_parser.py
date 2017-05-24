@@ -80,11 +80,6 @@ else:
 
 
 class GeneralConfig(t.HasTraits):
-    default_export_format = t.Enum(
-        *default_write_ext,
-        desc='Using the hspy format is highly reccomended because is the '
-        'only one fully supported. The Ripple (rpl) format it is useful '
-        'to export data to other software that do not support hspy')
     interactive = t.CBool(
         True,
         desc='If enabled, HyperSpy will prompt the user when options are '
