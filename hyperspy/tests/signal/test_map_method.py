@@ -239,8 +239,9 @@ def test_new_axes(parallel):
     assert not 'b' in ax_names
     assert 0 == sl.axes_manager.navigation_dimension
 
+
 def test_singleton():
-    sig = hs.signals.Signal2D(np.empty((3,2)))
+    sig = hs.signals.Signal2D(np.empty((3, 2)))
     sig.axes_manager[0].name = 'x'
     sig.axes_manager[1].name = 'y'
 

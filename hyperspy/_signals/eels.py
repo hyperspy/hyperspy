@@ -24,19 +24,37 @@ import dask.array as da
 import traits.api as t
 from scipy import constants
 
+from hyperspy.signal import BaseSetMetadataItems
 from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
 from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
-from hyperspy.decorators import only_interactive
-from hyperspy.gui.eels import TEMParametersUI
 from hyperspy.defaults_parser import preferences
-import hyperspy.gui.messages as messagesui
 from hyperspy.external.progressbar import progressbar
 from hyperspy.components1d import PowerLaw
-from hyperspy.misc.utils import isiterable, closest_power_of_two, underline
-from hyperspy.misc.utils import without_nans
+from hyperspy.misc.utils import (
+    isiterable, closest_power_of_two, underline, without_nans,
+    signal_range_from_roi)
+from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 
 _logger = logging.getLogger(__name__)
+
+
+@add_gui_method(toolkey="microscope_parameters_EELS")
+class EELSTEMParametersUI(BaseSetMetadataItems):
+    convergence_angle = t.Float(t.Undefined,
+                                label='Convergence semi-angle (mrad)')
+    beam_energy = t.Float(t.Undefined,
+                          label='Beam energy (keV)')
+    collection_angle = t.Float(t.Undefined,
+                               label='Collection semi-angle (mrad)')
+    mapping = {
+        'Acquisition_instrument.TEM.convergence_angle':
+        'convergence_angle',
+        'Acquisition_instrument.TEM.beam_energy':
+        'beam_energy',
+        'Acquisition_instrument.TEM.Detector.EELS.collection_angle':
+        'collection_angle',
+    }
 
 
 class EELSSpectrum_mixin:
@@ -250,6 +268,8 @@ class EELSSpectrum_mixin:
         more information read its docstring.
 
         """
+        signal_range = signal_range_from_roi(signal_range)
+
         def substract_from_offset(value, signals):
             if isinstance(value, da.Array):
                 value = value.compute()
@@ -827,39 +847,20 @@ class EELSSpectrum_mixin:
             if exists is False:
                 missing_parameters.append(item)
         if missing_parameters:
-            if preferences.General.interactive is True:
-                par_str = "The following parameters are missing:\n"
-                for par in missing_parameters:
-                    par_str += '%s\n' % par
-                par_str += 'Please set them in the following wizard'
-                is_ok = messagesui.information(par_str)
-                if is_ok:
-                    self._set_microscope_parameters()
-                else:
-                    return True
-            else:
-                return True
+            _logger.info("Missing parameters {}".format(missing_parameters))
+            return True
         else:
             return False
 
     def set_microscope_parameters(self,
                                   beam_energy=None,
                                   convergence_angle=None,
-                                  collection_angle=None):
-        """Set the microscope parameters that are necessary to calculate
-        the GOS.
-
-        If not all of them are defined, raises in interactive mode
-        raises an UI item to fill the values
-
-        beam_energy: float
-            The energy of the electron beam in keV
-        convengence_angle : float
-            The microscope convergence semi-angle in mrad.
-        collection_angle : float
-            The collection semi-angle in mrad.
-        """
-
+                                  collection_angle=None,
+                                  toolkit=None,
+                                  display=True):
+        if set((beam_energy, convergence_angle, collection_angle)) == {None}:
+            tem_par = EELSTEMParametersUI(self)
+            return tem_par.gui(toolkit=toolkit, display=display)
         mp = self.metadata
         if beam_energy is not None:
             mp.set_item("Acquisition_instrument.TEM.beam_energy", beam_energy)
@@ -871,36 +872,23 @@ class EELSSpectrum_mixin:
             mp.set_item(
                 "Acquisition_instrument.TEM.Detector.EELS.collection_angle",
                 collection_angle)
+    set_microscope_parameters.__doc__ = \
+        """
+        Set the microscope parameters that are necessary to calculate
+        the GOS.
 
-        self._are_microscope_parameters_missing()
+        If not all of them are defined, in interactive mode
+        raises an UI item to fill the values
 
-    @only_interactive
-    def _set_microscope_parameters(self):
-        tem_par = TEMParametersUI()
-        mapping = {
-            'Acquisition_instrument.TEM.convergence_angle':
-            'tem_par.convergence_angle',
-            'Acquisition_instrument.TEM.beam_energy':
-            'tem_par.beam_energy',
-            'Acquisition_instrument.TEM.Detector.EELS.collection_angle':
-            'tem_par.collection_angle',
-        }
-        for key, value in mapping.items():
-            if self.metadata.has_item(key):
-                exec('%s = self.metadata.%s' % (value, key))
-        tem_par.edit_traits()
-        mapping = {
-            'Acquisition_instrument.TEM.convergence_angle':
-            tem_par.convergence_angle,
-            'Acquisition_instrument.TEM.beam_energy':
-            tem_par.beam_energy,
-            'Acquisition_instrument.TEM.Detector.EELS.collection_angle':
-            tem_par.collection_angle,
-        }
-        for key, value in mapping.items():
-            if value != t.Undefined:
-                self.metadata.set_item(key, value)
-        self._are_microscope_parameters_missing()
+        beam_energy: float
+            The energy of the electron beam in keV
+        convengence_angle : float
+            The microscope convergence semi-angle in mrad.
+        collection_angle : float
+            The collection semi-angle in mrad.
+        {}
+        {}
+        """.format(TOOLKIT_DT, DISPLAY_DT)
 
     def power_law_extrapolation(self,
                                 window_size=20,

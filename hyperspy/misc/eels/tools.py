@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 from scipy import constants
 
 from hyperspy.misc.array_tools import rebin
-from hyperspy.gui import messages as messagesui
 import hyperspy.defaults_parser
 
 _logger = logging.getLogger(__name__)
@@ -88,7 +87,8 @@ def estimate_variance_parameters(
         higher_than=None,
         return_results=False,
         plot_results=True,
-        weighted=False):
+        weighted=False,
+        store_results="ask"):
     """Find the scale and offset of the Poissonian noise
 
     By comparing an SI with its denoised version (i.e. by PCA),
@@ -106,10 +106,10 @@ def estimate_variance_parameters(
         The order of the polynomy.
     higher_than: float
         To restrict the fit to counts over the given value.
-
     return_results : Bool
-
     plot_results : Bool
+    store_results: {True, False, "ask"}, default "ask"
+        If True, it stores the result in the signal metadata
 
     Returns
     -------
@@ -149,11 +149,14 @@ def estimate_variance_parameters(
         message = ("Gain factor: %.2f\n" % results0['fit'][0] +
                    "Gain offset: %.2f\n" % results0['fit'][1] +
                    "Correlation factor: %.2f\n" % c)
-        is_ok = True
-        if hyperspy.defaults_parser.preferences.General.interactive is True:
-            is_ok = messagesui.information(
-                message + "Would you like to store the results?")
+        if store_results == "ask":
+            while is_ok not in ("Yes", "No"):
+                is_ok = input(
+                    message +
+                    "Would you like to store the results (Yes/No)?")
+            is_ok = is_ok == "Yes"
         else:
+            is_ok = store_results
             _logger.info(message)
         if is_ok:
             noisy_signal.metadata.set_item(

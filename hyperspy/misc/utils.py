@@ -27,8 +27,8 @@ import collections
 import tempfile
 import unicodedata
 from contextlib import contextmanager
-from ..misc.signal_tools import broadcast_signals
-from ..exceptions import VisibleDeprecationWarning
+from hyperspy.misc.signal_tools import broadcast_signals
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 import numpy as np
 
@@ -681,10 +681,7 @@ def find_subclasses(mod, cls):
 
 
 def isiterable(obj):
-    if isinstance(obj, collections.Iterable):
-        return True
-    else:
-        return False
+    return isinstance(obj, collections.Iterable)
 
 
 def ordinal(value):
@@ -1033,6 +1030,24 @@ def multiply(iterable):
     for i in iterable:
         prod *= i
     return prod
+
+
+def iterable_not_string(thing):
+    return isinstance(thing, collections.Iterable) and \
+        not isinstance(thing, str)
+
+
+def signal_range_from_roi(signal_range):
+    from hyperspy.roi import SpanROI
+    if isinstance(signal_range, SpanROI):
+        return (signal_range.left, signal_range.right)
+    else:
+        return signal_range
+
+
+def deprecation_warning(msg):
+    warnings.warn(msg, VisibleDeprecationWarning)
+
 
 def add_scalar_axis(signal):
     am = signal.axes_manager
