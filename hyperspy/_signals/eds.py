@@ -186,18 +186,16 @@ class EDS_mixin:
     #Series of if statements to check that only one out of new_shape or scale
     #has been given. New_shape is then converted to scale. If both or neither
     #are given the function raises and error and wont run.
-    
+
         if new_shape == None and scale == None:
             raise ValueError("One of new_shape, or scale must be specified")
         elif new_shape != None and scale != None:
             raise ValueError("Only one out of new_shape or scale should be specified.\
                             Not both.")
         elif new_shape != None:
-            for axis in self.axes_manager._axis:
-                new_shape_in_array.append(
-                    new_shape[axis.index_in_axis_manager])
-                scale = (np.array(self.data.shape)/
-                         np.array(new_shape_in_array))
+            scale = []
+            for i, axis in enumerate(self.data.shape):
+                scale.append(self.data.shape[i]/new_shape[i])
         else:
             new_shape = new_shape
             scale = scale

@@ -2249,7 +2249,7 @@ class BaseSignal(FancySlicing,
             data = self.data.transpose(nav_iia_r + sig_iia_r)
             return data
 
-    def rebin(a, new_shape=None, scale=None, crop=True):
+    def rebin(self, new_shape=None, scale=None, crop=True, out=None):
         """Rebin array.
 
         rebin ndarray data into a smaller or larger array based on a linear
@@ -2315,20 +2315,18 @@ class BaseSignal(FancySlicing,
             raise ValueError("Only one out of new_shape or scale should be specified.\
                             Not both.")
         elif new_shape != None:
-            for axis in self.axes_manager._axis:
-                new_shape_in_array.append(
-                    new_shape[axis.index_in_axis_manager])
-                scale = (np.array(self.data.shape)/
-                         np.array(new_shape_in_array))
+            scale = []
+            for i, axis in enumerate(self.data.shape):
+                scale.append(self.data.shape[i]/new_shape[i])
         else:
             new_shape = new_shape
             scale = scale
-
         spectrum = self.data
         signal_dimension = self.axes_manager.signal_dimension
         # The following reverses the order of binning factors for the signal
         # dimensions, as is necessary for signal2Ds
         factors = scale[0:-signal_dimension] + scale[::-1][0:signal_dimension]
+
         s = out or self._deepcopy_with_new_data(None, copy_variance=True)
         data = hyperspy.misc.array_tools.rebin(spectrum, scale=factors, crop=crop)
 

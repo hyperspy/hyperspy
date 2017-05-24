@@ -1346,11 +1346,9 @@ class EELSSpectrum_mixin:
             raise ValueError("Only one out of new_shape or scale should be specified.\
                             Not both.")
         elif new_shape != None:
-            for axis in self.axes_manager._axis:
-                new_shape_in_array.append(
-                    new_shape[axis.index_in_axis_manager])
-                scale = (np.array(self.data.shape)/
-                         np.array(new_shape_in_array))
+            scale = []
+            for i, axis in enumerate(self.axes_manager.shape):
+                scale.append(self.data.shape[i]/new_shape[i])
         else:
             new_shape = new_shape
             scale = scale
