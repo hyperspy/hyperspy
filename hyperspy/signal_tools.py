@@ -818,7 +818,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         default='Linear',
         desc="the type of interpolation to use when\n"
              "replacing the signal where a spike has been replaced")
-    threshold = t.Float(desc="the derivative magnitude threshold above\n"
+    threshold = t.Float(400, desc="the derivative magnitude threshold above\n"
                         "which to find spikes")
     click_to_show_instructions = t.Button()
     show_derivative_histogram = t.Button()
@@ -852,7 +852,6 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         signal._plot.auto_update_plot = False
         if len(self.coordinates) > 1:
             signal.axes_manager.indices = self.coordinates[0]
-        self.threshold = 400
         self.index = 0
         self.argmax = None
         self.derivmax = None
