@@ -189,6 +189,7 @@ class ImagePlot(BlittedFigure):
                 self._auto_scalebar = False
                 self._auto_axes_ticks = True
         self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
+        # print(self._aspect)
 
     def optimize_contrast(self, data):
         if (self._vmin_user is not None and self._vmax_user is not None):
@@ -202,33 +203,15 @@ class ImagePlot(BlittedFigure):
         else:
             wfactor = 1
 
-#        height = abs(self._extent[3] - self._extent[2]) * self._aspect
-#        width = abs(self._extent[1] - self._extent[0])
-#        figsize = np.array((width * wfactor, height)) * \
-#            max(plt.rcParams['figure.figsize']) / max(width * wfactor, height)
-#        self.figure = utils.create_figure(
-#            window_title=("Figure " + self.title
-#                          if self.title
-#                          else None),
-#            figsize=figsize.clip(min_size, max_size))
-
-        # get the aspect_ratio we want to display
-        aspect_ratio_image = self.xaxis.size / self.yaxis.size * self._aspect
-        clipped_rcParams_figsize = np.array(
-            plt.rcParams["figure.figsize"]).clip(min_size, max_size)
-        # Find which direction should be limited by rcParams
-        if aspect_ratio_image < wfactor:  # max size defined by height
-            max_size = clipped_rcParams_figsize[1]
-            figsize = (max_size * aspect_ratio_image, max_size)
-        else:  # max size defined by width
-            max_size = clipped_rcParams_figsize[0]
-            figsize = (max_size, max_size / aspect_ratio_image)
-
+        height = abs(self._extent[3] - self._extent[2]) * self._aspect
+        width = abs(self._extent[1] - self._extent[0])
+        figsize = np.array((width * wfactor, height)) * \
+           max(plt.rcParams['figure.figsize']) / max(width * wfactor, height)
         self.figure = utils.create_figure(
-            window_title=("Figure " + self.title
-                          if self.title
-                          else None),
-            figsize=figsize)
+           window_title=("Figure " + self.title
+                         if self.title
+                         else None),
+           figsize=figsize.clip(min_size, max_size))
         self.figure.canvas.mpl_connect('draw_event', self._on_draw)
         utils.on_figure_window_close(self.figure, self._on_close)
 
