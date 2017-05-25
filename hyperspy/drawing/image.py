@@ -197,7 +197,7 @@ class ImagePlot(BlittedFigure):
         self._vmin_auto, self._vmax_auto = utils.contrast_stretching(
             data, self.saturated_pixels)
 
-    def create_figure(self, max_size=8, min_size=2):
+    def create_figure(self, max_size=None, min_size=2):
         if self.scalebar is True:
             wfactor = 1.0 + plt.rcParams['font.size'] / 100
         else:
