@@ -822,29 +822,27 @@ class ImageObject(object):
         is_scanning = "DigiScan" in self.imdict.ImageTags.keys()
         mapping = {
             "ImageList.TagGroup0.ImageTags.DataBar.Acquisition Date": (
-                "General.date",
-                self._get_date),
+                "General.date", self._get_date),
             "ImageList.TagGroup0.ImageTags.DataBar.Acquisition Time": (
-                "General.time",
-                self._get_time),
+                "General.time", self._get_time),
             "ImageList.TagGroup0.ImageTags.Microscope Info.Voltage": (
-                "Acquisition_instrument.TEM.beam_energy",
-                lambda x: x / 1e3),
+                "Acquisition_instrument.TEM.beam_energy", lambda x: x / 1e3),
             "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage Alpha": (
-                "Acquisition_instrument.TEM.tilt_stage",
-                None),
+                "Acquisition_instrument.TEM.Stage.tilt_alpha", None),
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage X": (
+                "Acquisition_instrument.TEM.Stage.x", lambda x: x * 1e-3),
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage Y": (
+                "Acquisition_instrument.TEM.Stage.y", lambda x: x * 1e-3),
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage Z": (
+                "Acquisition_instrument.TEM.Stage.z", lambda x: x * 1e-3),
             "ImageList.TagGroup0.ImageTags.Microscope Info.Illumination Mode": (
-                "Acquisition_instrument.TEM.acquisition_mode",
-                self._get_mode),
+                "Acquisition_instrument.TEM.acquisition_mode", self._get_mode),
             "ImageList.TagGroup0.ImageTags.Microscope Info.Probe Current (nA)": (
-                "Acquisition_instrument.TEM.beam_current",
-                None),
+                "Acquisition_instrument.TEM.beam_current", None),
             "ImageList.TagGroup0.ImageTags.Session Info.Operator": (
-                "General.authors",
-                self._parse_string),
+                "General.authors", self._parse_string),
             "ImageList.TagGroup0.ImageTags.Session Info.Specimen": (
-                "Sample.description",
-                self._parse_string),
+                "Sample.description", self._parse_string),
         }
 
         if "Microscope_Info" in self.imdict.ImageTags.keys():
@@ -885,15 +883,6 @@ class ImageObject(object):
                 "ImageList.TagGroup0.ImageTags": (
                     "Acquisition_instrument.TEM.microscope",
                     self._get_microscope_name),
-                "ImageList.TagGroup0.ImageData.Calibrations.Brightness.Units": (
-                    "Signal.quantity",
-                    self._get_quantity),
-                "ImageList.TagGroup0.ImageData.Calibrations.Brightness.Scale": (
-                    "Signal.Noise_properties.Variance_linear_model.gain_factor",
-                    None),
-                "ImageList.TagGroup0.ImageData.Calibrations.Brightness.Origin": (
-                    "Signal.Noise_properties.Variance_linear_model.gain_offset",
-                    None),
             })
 
         if self.signal_type == "EELS":
@@ -963,9 +952,20 @@ class ImageObject(object):
             mapping.update({
                 "ImageList.TagGroup0.ImageTags.Acquisition.Parameters.Detector." +
                 "exposure_s": (
-                    "Acquisition_instrument.TEM.exposure_time",
+                    "Acquisition_instrument.TEM.Camera.exposure",
                     None),
             })
+        mapping.update({
+            "ImageList.TagGroup0.ImageData.Calibrations.Brightness.Units": (
+                "Signal.quantity",
+                self._get_quantity),
+            "ImageList.TagGroup0.ImageData.Calibrations.Brightness.Scale": (
+                "Signal.Noise_properties.Variance_linear_model.gain_factor",
+                None),
+            "ImageList.TagGroup0.ImageData.Calibrations.Brightness.Origin": (
+                "Signal.Noise_properties.Variance_linear_model.gain_offset",
+                None),
+        })
         return mapping
 
 

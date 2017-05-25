@@ -142,9 +142,10 @@ class WidgetBase(object):
         """Create and add the matplotlib patches to 'ax'
         """
         self._set_patch()
+        self.blit = hasattr(ax, 'hspy_fig') and ax.figure.canvas.supports_blit
         for p in self.patch:
             ax.add_artist(p)
-            p.set_animated(hasattr(ax, 'hspy_fig'))
+            p.set_animated(self.blit)
         if hasattr(super(WidgetBase, self), '_add_patch_to'):
             super(WidgetBase, self)._add_patch_to(ax)
 
@@ -163,7 +164,7 @@ class WidgetBase(object):
         if self.is_on() is True:
             self._add_patch_to(ax)
             self.connect(ax)
-            canvas.draw()
+            canvas.draw_idle()
             self.select()
 
     def select(self):
@@ -232,7 +233,7 @@ class WidgetBase(object):
         """Update the patch drawing.
         """
         try:
-            if hasattr(self.ax, 'hspy_fig'):
+            if self.blit and hasattr(self.ax, 'hspy_fig'):
                 self.ax.hspy_fig._draw_animated()
             elif self.ax.figure is not None:
                 self.ax.figure.canvas.draw_idle()
@@ -843,7 +844,7 @@ class ResizersMixin(object):
             if value:
                 for r in self._resizer_handles:
                     ax.add_artist(r)
-                    r.set_animated(hasattr(ax, 'hspy_fig'))
+                    r.set_animated(self.blit)
             else:
                 for container in [
                         ax.patches,

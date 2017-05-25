@@ -1,4 +1,4 @@
-﻿
+
 Tools: the Signal class
 ***********************
 
@@ -28,8 +28,8 @@ currently available specialised :py:class:`~.signal.BaseSignal` subclasses.
 
 .. versionchanged:: 1.0
 
-    The :py:class:`~._signals.signal1D.Signal1D`,
-    :py:class:`~._signals.image.Signal2D` and :py:class:`~.signal.BaseSignal`
+    The :py:class:`~._signals.signal1d.Signal1D`,
+    :py:class:`~._signals.signal2d.Signal2D` and :py:class:`~.signal.BaseSignal`
     classes deprecated the old `Spectrum` `Image` and `Signal` classes.
 
 .. versionadded:: 1.0
@@ -42,7 +42,7 @@ currently available specialised :py:class:`~.signal.BaseSignal` subclasses.
 
 
 The :py:mod:`~.signals` module, which contains all available signal subclasses,
-is imported in the user namespace when loading hyperspy. In the following
+is imported in the user namespace when loading HyperSpy. In the following
 example we create a Signal2D instance from a 2D numpy array:
 
 .. code-block:: python
@@ -58,25 +58,25 @@ examples, the data is stored in a numpy array in the
 :py:attr:`~.signal.BaseSignal.original_metadata` attribute, the mapped parameters
 in the :py:attr:`~.signal.BaseSignal.metadata` attribute and the axes
 information (including calibration) can be accessed (and modified) in the
-:py:attr:`~.signal.BaseSignal.axes_manager` attribute.
+:py:class:`~.axes.AxesManager` attribute.
 
 Signal initialization
 ---------------------
 
-Many of the values in the :py:attr:`~.signal.BaseSignal.axes_manager` can be
+Many of the values in the :py:class:`~.axes.AxesManager` can be
 set when making the :py:class:`~.signal.BaseSignal` object.
 
 .. code-block:: python
 
     >>> dict0 = {'size': 10, 'name':'Ax0', 'units':'A', 'scale':0.2, 'offset':1}
-    >>> dict1 = {'size': 20, 'name':'Ax1', 'units':'B', 'scale':0.1, 'offset':2} 
+    >>> dict1 = {'size': 20, 'name':'Ax1', 'units':'B', 'scale':0.1, 'offset':2}
     >>> s = hs.signals.BaseSignal(np.random.random((10,20)), axes=[dict0, dict1])
     >>> s.axes_manager
     <Axes manager, axes: (|20, 10)>
-		Name |   size |  index |  offset |   scale |  units 
-    ================ | ====== | ====== | ======= | ======= | ====== 
-    ---------------- | ------ | ------ | ------- | ------- | ------ 
-	       Axes1 |     20 |        |       2 |     0.1 |      B 
+		Name |   size |  index |  offset |   scale |  units
+    ================ | ====== | ====== | ======= | ======= | ======
+    ---------------- | ------ | ------ | ------- | ------- | ------
+	       Axes1 |     20 |        |       2 |     0.1 |      B
 	       Axes0 |     10 |        |       1 |     0.2 |      A
 
 This also applies to the :py:attr:`~.signal.BaseSignal.metadata`.
@@ -106,7 +106,7 @@ The concept is probably best understood with an example: let's imagine a three
 dimensional dataset e.g. a numpy array with dimensions `(10, 20, 30)`. This
 dataset could be an spectrum image acquired by scanning over a sample in two
 dimensions. As in this case the signal is one-dimensional we use a
-:py:class:`~._signals.signal1D.Signal1D` subclass for this data e.g.:
+:py:class:`~._signals.signal1d.Signal1D` subclass for this data e.g.:
 
 .. code-block:: python
 
@@ -124,7 +124,7 @@ stack instead.  Actually it could has been acquired by capturing two
 dimensional images at different wavelengths. Then it would be natural to
 identify the two spatial dimensions as the signal dimensions and the wavelength
 dimension as the navigation dimension. To view the data in this way we could
-have used a :py:class:`~._signals.signal2D.Signal2D` instead e.g.:
+have used a :py:class:`~._signals.signal2d.Signal2D` instead e.g.:
 
 .. code-block:: python
 
@@ -353,13 +353,13 @@ Example:
     >>> s = hs.signals.BaseSignal(np.random.random((2,4,6)))
     >>> s.axes_manager[0].name = 'E'
     >>> s
-    <BaseSignal, title: , dimensions: (4, 2|6)>
+    <BaseSignal, title: , dimensions: (|6, 4, 2)>
     >>> # by default perform operation over all navigation axes
     >>> s.sum()
-    <BaseSignal, title: , dimensions: (|6)>
+    <BaseSignal, title: , dimensions: (|6, 4, 2)>
     >>> # can also pass axes individually
     >>> s.sum('E')
-    <BaseSignal, title: , dimensions: (2|6)>
+    <Signal2D, title: , dimensions: (|4, 2)>
     >>> # or a tuple of axes to operate on, with duplicates, by index or directly
     >>> ans = s.sum((-1, s.axes_manager[1], 'E', 0))
     >>> ans
@@ -454,7 +454,7 @@ features differ from numpy):
 
   + Allow independent indexing of signal and navigation dimensions
   + Support indexing with decimal numbers.
-  + Use the image order for indexing i.e. [x, y, z,...] (hyperspy) vs
+  + Use the image order for indexing i.e. [x, y, z,...] (HyperSpy) vs
     [...,z,y,x] (numpy)
 
 * HyperSpy indexing does not:
@@ -549,7 +549,7 @@ data treating navigation axes using ``inav`` and signal axes using ``isig``.
 
     >>> s = hs.signals.Signal1D(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
-    <Signal1D, title: , dimensions: (10, 10, 10)>
+    <Signal1D, title: , dimensions: (3, 2|4)>
     >>> s.data
     array([[[ 0,  1,  2,  3],
         [ 4,  5,  6,  7],
@@ -568,13 +568,22 @@ data treating navigation axes using ``inav`` and signal axes using ``isig``.
     >>> s.inav[0,0].data
     array([0, 1, 2, 3])
     >>> s.inav[0,0].axes_manager
-    <Axes manager, axes: (<t axis, size: 4>,)>
+    <Axes manager, axes: (|4)>
+                Name |   size |  index |  offset |   scale |  units
+    ================ | ====== | ====== | ======= | ======= | ======
+    ---------------- | ------ | ------ | ------- | ------- | ------
+                   t |      4 |        |       0 |       1 | <undefined>
     >>> s.inav[0,0].isig[::-1].data
     array([3, 2, 1, 0])
     >>> s.isig[0]
-    <Signal1D, title: , dimensions: (2, 3)>
+    <BaseSignal, title: , dimensions: (3, 2)>
     >>> s.isig[0].axes_manager
-    <Axes manager, axes: (<x axis, size: 3, index: 0>, <y axis, size: 2, index: 0>)>
+    <Axes manager, axes: (3, 2|)>
+                Name |   size |  index |  offset |   scale |  units
+    ================ | ====== | ====== | ======= | ======= | ======
+                   x |      3 |      0 |       0 |       1 | <undefined>
+                   y |      2 |      0 |       0 |       1 | <undefined>
+    ---------------- | ------ | ------ | ------- | ------- | ------
     >>> s.isig[0].data
     array([[ 0,  4,  8],
        [12, 16, 20]])
@@ -586,7 +595,7 @@ further in the following:
 
     >>> s = hs.signals.Signal1D(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
-    <Signal1D, title: , dimensions: (10, 10, 10)>
+    <Signal1D, title: , dimensions: (3, 2|4)>
     >>> s.data
     array([[[ 0,  1,  2,  3],
         [ 4,  5,  6,  7],
@@ -605,11 +614,20 @@ further in the following:
     >>> s.inav[0,0].data
     array([0, 1, 2, 3])
     >>> s.inav[0,0].axes_manager
-    <Axes manager, axes: (<t axis, size: 4>,)>
+    <Axes manager, axes: (|4)>
+                Name |   size |  index |  offset |   scale |  units
+    ================ | ====== | ====== | ======= | ======= | ======
+    ---------------- | ------ | ------ | ------- | ------- | ------
+                   t |      4 |        |       0 |       1 | <undefined>
     >>> s.isig[0]
-    <Signal1D, title: , dimensions: (2, 3)>
+    <BaseSignal, title: , dimensions: (2, 3)>
     >>> s.isig[0].axes_manager
-    <Axes manager, axes: (<x axis, size: 3, index: 0>, <y axis, size: 2, index: 0>)>
+    <Axes manager, axes: (3, 2|)>
+                Name |   size |  index |  offset |   scale |  units
+    ================ | ====== | ====== | ======= | ======= | ======
+                   x |      3 |      0 |       0 |       1 | <undefined>
+                   y |      2 |      0 |       0 |       1 | <undefined>
+    ---------------- | ------ | ------ | ------- | ------- | ------
     >>> s.isig[0].data
     array([[ 0,  4,  8],
        [12, 16, 20]])
@@ -622,7 +640,7 @@ dimensions respectively:
 
     >>> s = hs.signals.Signal1D(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
-    <Signal1D, title: , dimensions: (10, 10, 10)>
+    <Signal1D, title: , dimensions: (3, 2|4)>
     >>> s.data
     array([[[ 0,  1,  2,  3],
         [ 4,  5,  6,  7],
@@ -636,7 +654,7 @@ dimensions respectively:
     >>> s.inav[0,0] = 1
     >>> s.inav[0,0].data
     array([1, 1, 1, 1])
-    >>> s.inav[0,0] = s[1,1]
+    >>> s.inav[0,0] = s.inav[1,1]
     >>> s.inav[0,0].data
     array([16, 17, 18, 19])
 
@@ -659,6 +677,10 @@ These operations are performed element-wise. When the dimensions of the signals
 are not equal `numpy broadcasting rules apply
 <http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html>`_ independently
 for the navigation and signal axes.
+
+.. WARNING::
+
+    Hyperspy does not check if the calibration of the signals matches.
 
 In the following example `s2` has only one navigation axis while `s` has two.
 However, because the size of their first navigation axis is the same, their
@@ -764,7 +786,7 @@ to make a horizontal "collage" of the image stack:
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.lena()]*5))
+    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.ascent()]*5))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> for image, angle in zip(image_stack, (0, 45, 90, 135, 180)):
@@ -793,7 +815,7 @@ using an external function can be more easily accomplished using the
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.lena()]*4))
+    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.ascent()]*4))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> image_stack.map(scipy.ndimage.rotate,
@@ -814,7 +836,7 @@ arguments as in the following example.
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.lena()]*4))
+    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.ascent()]*4))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> angles = hs.signals.BaseSignal(np.array([0, 45, 90, 135]))
@@ -936,7 +958,7 @@ with same dimension.
 
 .. code-block:: python
 
-    >>> image = hs.signals.Signal2D(scipy.misc.lena())
+    >>> image = hs.signals.Signal2D(scipy.misc.ascent())
     >>> image = hs.stack([hs.stack([image]*3,axis=0)]*3,axis=1)
     >>> image.plot()
 
@@ -993,14 +1015,19 @@ type in place, e.g.:
 .. versionadded:: 0.7
    Support for RGB signals.
 
-In addition to all standard numpy dtypes, HyperSpy supports four extra
-dtypes for RGB images: rgb8, rgba8, rgb16 and rgba16. The requirements for changing
-from and to any rgbx dtype are more strict than for most other dtype
-conversions. To change to a rgbx dtype the `signal_dimension` must be 1 and its size 3(4) 3(4) for rgb(rgba) dtypes and the
-dtype must be uint8(uint16) for rgbx8(rgbx16).  After conversion
-the `signal_dimension` becomes 2. The dtype
-of images of dtype rgbx8(rgbx16) can only be changed to uint8(uint16) and
-the `signal_dimension` becomes 1.
+In addition to all standard numpy dtypes, HyperSpy supports four extra dtypes
+for RGB images **for visualization purposes only**: rgb8, rgba8, rgb16 and
+rgba16. This includes of course multi-dimensional RGB images.
+
+The requirements for changing from and to any rgbx dtype are more strict
+than for most other dtype conversions. To change to a rgbx dtype the
+`signal_dimension` must be 1 and its size 3(4) 3(4) for rgb(rgba) dtypes and the
+dtype must be uint8(uint16) for rgbx8(rgbx16).  After conversion the
+`signal_dimension` becomes 2.
+
+Most operations on signals with RGB dytpes will fail. For processing simply
+change their dtype to uint8(uint16).The dtype of images of dtype rgbx8(rgbx16)
+can only be changed to uint8(uint16) and the `signal_dimension` becomes 1.
 
 In the following example we create a 1D signal with signal size 3 and with
 `dtype` `"uint16"` and change its dtype to `"rgb16"` for plotting.
@@ -1188,10 +1215,10 @@ set this attribute as in the following example where we set the variance to be
     s.metadata.Signal.set_item("Noise_properties.variance", 10)
 
 For heterocedastic noise the ``variance`` attribute must be a
-:class:`~.signal_base.BaseSignal`.  Poissonian noise is a common case  of
+:class:`~.signal.BaseSignal`.  Poissonian noise is a common case  of
 heterocedastic noise where the variance is equal to the expected value. The
-:meth:`~.signal_base.BaseSignal.estimate_poissonian_noise_variance`
-:class:`~.signal_base.BaseSignal` method can help setting the variance of data with
+:meth:`~.signal.BaseSignal.estimate_poissonian_noise_variance`
+:class:`~.signal.BaseSignal` method can help setting the variance of data with
 semi-poissonian noise. With the default arguments, this method simply sets the
 variance attribute to the given ``expected_value``. However, more generally
 (although then noise is not strictly poissonian), the variance may be proportional
@@ -1261,13 +1288,13 @@ operation.
 
 .. code-block:: python
 
-    >>> s = signals.Signal1D(np.arange(10))
+    >>> s = hs.signals.Signal1D(np.arange(10))
     >>> s_sum = s.sum(0)
     >>> s_sum.data
-    array(45)
+    array([45])
     >>> s.isig[:5].sum(0, out=s_sum)
     >>> s_sum.data
-    array(10)
+    array([10])
     >>> s_roi = s.isig[:3]
     >>> s_roi
     <Signal1D, title: , dimensions: (|3)>
@@ -1294,11 +1321,11 @@ signal changes.
     >>> s = hs.signals.Signal1D(np.arange(10.))
     >>> ssum = hs.interactive(s.sum, axis=0)
     >>> ssum.data
-    array(45.0)
+    array([45.0])
     >>> s.data /= 10
-    >>> s.events.data_changed.trigger()
+    >>> s.events.data_changed.trigger(s)
     >>> ssum.data
-    4.5
+    array([ 4.5])
 
 The interactive operations can be chained.
 
@@ -1436,6 +1463,33 @@ order to increase responsiveness.
 .. figure::  images/roi_hist.png
   :align:   center
   :width:   500
+
+.. versionadded:: 1.3
+    ROIs can be used in place of slices when indexing and to define a
+    signal range in functions taken a ``signal_range`` argument.
+
+
+ROIs can be used in place of slices when indexing and to define a
+signal range in functions taken a ``signal_range`` argument. For example:
+
+.. code-block:: python
+
+    >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+    >>> roi = hs.roi.SpanROI(left=5, right=15)
+    >>> sc = s.isig[roi]
+    >>> s.remove_background(signal_range=roi, background_type="Polynomial")
+    >>> im = hs.datasets.example_signals.object_hologram()
+    >>> roi = hs.roi.RectangularROI(left=120, right=460., top=300, bottom=560)
+    >>> imc = im.isig[roi]
+
+.. versionadded:: 1.3
+    :meth:`gui` method.
+
+
+All ROIs have a :meth:`gui` method that displays an user interface if
+any hyperspy GUI is installed (e.g. hyperspy_gui_ipywidgets or
+hyperspy_gui_traitsui).
+
 
 
 

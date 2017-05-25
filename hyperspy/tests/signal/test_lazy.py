@@ -6,14 +6,15 @@ from dask.threaded import get
 import hyperspy.api as hs
 from hyperspy._signals.lazy import (_reshuffle_mixed_blocks,
                                     to_array)
+from hyperspy import _lazy_signals
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture
 def signal():
     ar = da.from_array(np.arange(6. * 9 * 7 * 11).reshape((6, 9, 7, 11)),
                        chunks=((2, 1, 3), (4, 5), (7,), (11,))
                        )
-    return hs.signals.LazySignal2D(ar)
+    return _lazy_signals.LazySignal2D(ar)
 
 
 @pytest.mark.parametrize("sl", [(0, 0),
@@ -50,7 +51,8 @@ sig_mask[0, :] = True
 def test_blockiter_bothmasks(signal, flat, dtype, nm, sm):
     real_first = get(signal.data.dask, (signal.data.name, 0, 0, 0, 0)).copy()
     real_second = get(signal.data.dask, (signal.data.name, 0, 1, 0, 0)).copy()
-    signal.change_dtype(dtype)
+    # Don't want to rechunk, so change dtype manually
+    signal.data = signal.data.astype(dtype)
     it = signal._block_iterator(flat_signal=flat,
                                 navigation_mask=nm,
                                 signal_mask=sm,
@@ -103,3 +105,15 @@ def test_as_array_dask(sig):
 def test_as_array_fail():
     with pytest.raises(ValueError):
         to_array('asd', chunks=None)
+
+
+def test_ma_lazify():
+    s = hs.signals.BaseSignal(
+        np.ma.masked_array(
+            data=[
+                1, 2, 3], mask=[
+                0, 1, 0]))
+    l = s.as_lazy()
+    assert np.isnan(l.data[1].compute())
+    ss = hs.stack([s, s])
+    assert np.isnan(ss.data[:, 1]).all()

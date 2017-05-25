@@ -29,6 +29,7 @@ from hyperspy.tests.drawing.test_plot_signal import _TestPlot
 scalebar_color = 'blue'
 default_tol = 2.0
 baseline_dir = 'plot_signal2d'
+style_pytest_mpl = 'default'
 
 
 def _generate_image_stack_signal():
@@ -64,11 +65,10 @@ def _set_signal_axes(axes_manager, name=t.Undefined, units=t.Undefined,
     return axes_manager
 
 
-@pytest.mark.skipif("sys.platform == 'darwin'")
 @pytest.mark.parametrize("normalization", ['single', 'global'])
 @pytest.mark.mpl_image_compare(
-    baseline_dir=baseline_dir, tolerance=default_tol)
-def test_rgb_image(normalization):
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_rgb_image(mpl_cleanup, normalization):
     w = 20
     data = np.arange(1, w * w + 1).reshape(w, w)
     ch1 = hs.signals.Signal2D(data)
@@ -94,8 +94,8 @@ def _generate_parameter():
                           "centre_colormap"),
                          _generate_parameter())
 @pytest.mark.mpl_image_compare(
-    baseline_dir=baseline_dir, tolerance=default_tol)
-def test_plot(scalebar, colorbar, axes_ticks, centre_colormap):
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot(mpl_cleanup, scalebar, colorbar, axes_ticks, centre_colormap):
     test_plot = _TestPlot(ndim=0, sdim=2)
     test_plot.signal.plot(scalebar=scalebar,
                           colorbar=colorbar,
@@ -104,12 +104,20 @@ def test_plot(scalebar, colorbar, axes_ticks, centre_colormap):
     return test_plot.signal._plot.signal_plot.figure
 
 
+def _generate_parameter_plot_images():
+    # There are 9 images in total
+    vmin, vmax = [None] * 9, [None] * 9
+    vmin[1], vmax[2] = 30, 200
+    return vmin, vmax
+
+
+@pytest.mark.parametrize(("vmin", "vmax"), (_generate_parameter_plot_images(),
+                                            (None, None)))
 @pytest.mark.mpl_image_compare(
-    baseline_dir=baseline_dir, tolerance=default_tol)
-def test_plot_multiple_images_list():
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_multiple_images_list(mpl_cleanup, vmin, vmax):
     # load red channel of raccoon as an image
     image0 = hs.signals.Signal2D(scipy.misc.face()[:, :, 0])
-
     image0.metadata.General.title = 'Rocky Raccoon - R'
     axes0 = image0.axes_manager
     axes0[0].name = "x"
@@ -119,11 +127,6 @@ def test_plot_multiple_images_list():
 
     # load lena into 2x3 hyperimage
     image1 = _generate_image_stack_signal()
-    axes1 = image1.axes_manager
-    axes1[2].name = "x"
-    axes1[3].name = "y"
-    axes1[2].units = "nm"
-    axes1[3].units = "nm"
 
     # load green channel of raccoon as an image
     image2 = hs.signals.Signal2D(scipy.misc.face()[:, :, 1])
@@ -146,5 +149,5 @@ def test_plot_multiple_images_list():
 
     hs.plot.plot_images([image0, image1, image2, rgb], tight_layout=True,
                         # colorbar='single',
-                        labelwrap=20)
+                        labelwrap=20, vmin=vmin, vmax=vmax)
     return plt.gcf()

@@ -1234,6 +1234,7 @@ For more information, check the 'Installing HyperSpy' section in the documentati
                                       cutoff_at_kV=cutoff_at_kV, lazy=lazy)
     eds_metadata = obj_bcf.header.get_spectra_metadata(index=index)
     mode = obj_bcf.header.mode
+    mapping = get_mapping(mode)
     hyperspectra = [{'data': obj_bcf.hypermap[index].hypermap,
                      'axes': [{'name': 'height',
                                'size': obj_bcf.hypermap[index].hypermap.shape[0],
@@ -1277,6 +1278,7 @@ For more information, check the 'Installing HyperSpy' section in the documentati
                               'Line counter': obj_bcf.header.line_counter,
                               'Stage': obj_bcf.header.stage_metadata,
                               'Microscope': obj_bcf.header.sem_metadata}
+        'mapping': mapping,
     }]
     return hyperspectra
 
@@ -1296,3 +1298,18 @@ def parse_line(line_string):
     elif len(line_string) > 2:
         line_string = line_string[:2]
     return line_string.capitalize()
+
+
+def get_mapping(mode):
+    return {
+        'Stage.Rotation':
+        ("Acquisition_instrument.%s.Stage.rotation" % mode, None),
+        'Stage.Tilt':
+        ("Acquisition_instrument.%s.Stage.tilt_alpha" % mode, None),
+        'Stage.X':
+        ("Acquisition_instrument.%s.Stage.x" % mode, None),
+        'Stage.Y':
+        ("Acquisition_instrument.%s.Stage.y" % mode, None),
+        'Stage.Z':
+        ("Acquisition_instrument.%s.Stage.z" % mode, None),
+    }
