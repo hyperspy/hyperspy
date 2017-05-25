@@ -2306,26 +2306,32 @@ class BaseSignal(FancySlicing,
         #Series of if statements to check that only one out of new_shape or scale
         #has been given. New_shape is then converted to scale. If both or neither
         #are given the function raises and error and wont run.
-        if new_shape == None and scale == None:
+        if new_shape is None and scale is None:
             raise ValueError("One of new_shape, or scale must be specified")
-        elif new_shape != None and scale != None:
+        elif new_shape is None and scale is None:
             raise ValueError("Only one out of new_shape or scale should be specified.\
                             Not both.")
-        elif new_shape != None:
-            scale = []
-            for i, axis in enumerate(self.data.shape):
-                scale.append(self.data.shape[i]/new_shape[i])
+        elif new_shape:
+            if len(new_shape) != len(self.data.shape):
+                raise ValueError("Wrong new_shape size")
+            new_shape_in_array = []
+            for axis in self.axes_manager._axes:
+                new_shape_in_array.append(
+                    new_shape[axis.index_in_axes_manager])
+            factors = (
+                np.array(
+                    self.data.shape) /
+                np.array(new_shape_in_array))
         else:
-            new_shape = new_shape
-            scale = scale
-        spectrum = self.data
-        signal_dimension = self.axes_manager.signal_dimension
-        # The following reverses the order of binning factors for the signal
-        # dimensions, as is necessary for signal2Ds
-        factors = scale[0:-signal_dimension] + scale[::-1][0:signal_dimension]
+            if len(scale) != len(self.data.shape):
+                raise ValueError("Wrong shape size")
+            factors = []
+            for axis in self.axes_manager._axes:
+                factors.append(scale[axis.index_in_axes_manager])
+            factors = np.array(factors)
 
         s = out or self._deepcopy_with_new_data(None, copy_variance=True)
-        data = hyperspy.misc.array_tools.rebin(spectrum, scale=factors, crop=crop)
+        data = hyperspy.misc.array_tools.rebin(self.data, scale=factors, crop=crop)
 
         if out:
             if out._lazy:
