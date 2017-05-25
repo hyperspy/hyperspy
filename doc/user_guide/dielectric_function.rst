@@ -33,7 +33,7 @@ The Bethe f-sum rule gives rise to two definitions of the effective number (see
 
 where :math:`n_a` is the number of atoms (or molecules) per unit volume of the
 sample, :math:`\epsilon_0` is the vacuum permittivity, :math:`m_0` is the
-elecron mass and :math:`e` is the electron charge.
+electron mass and :math:`e` is the electron charge.
 
 The
 :py:meth:`~._signals.dielectric_function.DielectricFunction.get_number_of_effective_electrons`

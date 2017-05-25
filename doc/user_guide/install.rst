@@ -149,7 +149,7 @@ Alternatively you can select that extra functionality required:
   GUI elements.
 * ``gui-traitsui`` to install required libraries to use the GUI elements based
   on `traitsui <http://docs.enthought.com/traitsui/>`_
-* ``test`` to install required libraries to run HyperSpy's unittests.
+* ``test`` to install required libraries to run HyperSpy's unit tests.
 
 For example:
 
@@ -226,7 +226,7 @@ development mode:
     $ pip install -e ./
 
 All required dependencies are automatically installed by pip. However, for extra
-functonality you may need to install some extra dependencies, see
+functionality you may need to install some extra dependencies, see
 :ref:`install-dependencies`. Note the pip installer requires root to install,
 so for Ubuntu:
 
