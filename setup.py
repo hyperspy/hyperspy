@@ -69,7 +69,7 @@ extras_require = {
     "bcf": ['lxml'],
     "gui-jupyter": ["hyperspy_gui_ipywidgets"],
     "gui-traitsui": ["hyperspy_gui_traitsui"],
-    "test": ["pytest>=3", "pytest-mpl"],
+    "test": ["pytest>=3", "pytest-mpl", "matplotlib>=2.0.2"],
 }
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
