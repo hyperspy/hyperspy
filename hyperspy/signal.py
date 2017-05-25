@@ -2303,9 +2303,9 @@ class BaseSignal(FancySlicing,
         Sum =  164.0
 
         """
-        #Series of if statements to check that only one out of new_shape or scale
-        #has been given. New_shape is then converted to scale. If both or neither
-        #are given the function raises and error and wont run.
+        # Series of if statements to check that only one out of new_shape or scale
+        # has been given. New_shape is then converted to scale. If both or neither
+        # are given the function raises and error and wont run.
         if new_shape is None and scale is None:
             raise ValueError("One of new_shape, or scale must be specified")
         elif new_shape is None and scale is None:
@@ -2331,7 +2331,8 @@ class BaseSignal(FancySlicing,
             factors = np.array(factors)
 
         s = out or self._deepcopy_with_new_data(None, copy_variance=True)
-        data = hyperspy.misc.array_tools.rebin(self.data, scale=factors, crop=crop)
+        data = hyperspy.misc.array_tools.rebin(
+            self.data, scale=factors, crop=crop)
 
         if out:
             if out._lazy:
