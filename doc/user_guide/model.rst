@@ -830,19 +830,23 @@ by hand.
 
 
 .. versionadded:: 0.8.5
-    :py:meth:`~.model.Model.notebook_interaction`,
+    :py:meth:`~.model.Model.gui`,
+
+.. versionchanged:: 1.3
+    All :meth:`notebook_interaction` methods renamed to :meth:`gui`. The
+    :meth:`notebook_interaction` methods will be removed in 2.0
 
 .. _notebook_interaction-label:
 
 If running in a Jupyter Notebook, interactive widgets can be used to
 conveniently adjust the parameter values by running
-:py:meth:`~.model.Model.notebook_interaction` for :py:class:`~.model.Model`,
+:py:meth:`~.model.Model.gui` for :py:class:`~.model.Model`,
 :py:class:`~.component.Component` and
 :py:class:`~.component.Parameter`.
 
 .. Warning::
 
-    :py:meth:`~.model.Model.notebook_interaction` functions require
+    :py:meth:`~.model.Model.gui` functions require
     ``ipywidgets``, which is an optional dependency of HyperSpy.
 
 
@@ -989,7 +993,7 @@ one signal.
     >>> m = s.create_model()
     >>> # analysis and fitting goes here
     >>> m.save('my_filename', 'model_name')
-    >>> l = hs.load('my_filename.hdf5')
+    >>> l = hs.load('my_filename.hspy')
     >>> m = l.models.restore('model_name') # or l.models.model_name.restore()
 
 For older versions of HyperSpy (before 0.9), the instructions were as follows:

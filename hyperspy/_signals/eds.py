@@ -121,10 +121,8 @@ class EDS_mixin:
             beam_energy = self.metadata.Acquisition_instrument.TEM.beam_energy
         else:
             raise AttributeError(
-                "To use this method the beam energy "
-                "`Acquisition_instrument.TEM.beam_energy` or "
-                "`Acquisition_instrument.SEM.beam_energy` must be defined in "
-                "`metadata`.")
+                "The beam energy is not defined in `metadata`. "
+                "Use `set_microscope_parameters` to set it.")
 
         units_name = self.axes_manager.signal_axes[0].units
 

@@ -27,6 +27,7 @@ import logging
 import numpy as np
 import scipy as sp
 from matplotlib import pyplot as plt
+import traits.api as t
 import numbers
 
 from hyperspy.axes import AxesManager
@@ -38,6 +39,7 @@ from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.drawing import signal as sigdraw
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.io.tools import ensure_directory
+from hyperspy.misc.utils import iterable_not_string
 from hyperspy.external.progressbar import progressbar
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import rgb_tools
@@ -243,7 +245,7 @@ class MVATools(object):
 
     def _plot_factors_or_pchars(self, factors, comp_ids=None,
                                 calibrate=True, avg_char=False,
-                                same_window=None, comp_label='PC',
+                                same_window=True, comp_label='PC',
                                 img_data=None,
                                 plot_shifts=True, plot_char=4,
                                 cmap=plt.cm.gray, quiver_color='white',
@@ -264,7 +266,7 @@ class MVATools(object):
             manager.
         same_window : bool
             if True, plots each factor to the same window.  They are
-            not scaled.
+            not scaled. Default True.
         comp_label : string
             Title of the plot
         cmap : a matplotlib colormap
@@ -299,7 +301,7 @@ class MVATools(object):
            If None, uses matplotlib's autoscaling.
         """
         if same_window is None:
-            same_window = preferences.MachineLearning.same_window
+            same_window = True
         if comp_ids is None:
             comp_ids = range(factors.shape[1])
 
@@ -372,12 +374,12 @@ class MVATools(object):
             return f
 
     def _plot_loadings(self, loadings, comp_ids, calibrate=True,
-                       same_window=None, comp_label=None,
+                       same_window=True, comp_label=None,
                        with_factors=False, factors=None,
                        cmap=plt.cm.gray, no_nans=False, per_row=3,
                        axes_decor='all'):
         if same_window is None:
-            same_window = preferences.MachineLearning.same_window
+            same_window = True
         if comp_ids is None:
             comp_ids = range(loadings.shape[0])
 
@@ -458,7 +460,7 @@ class MVATools(object):
                         factors,
                         folder=None,
                         comp_ids=None,
-                        multiple_files=None,
+                        multiple_files=True,
                         save_figures=False,
                         save_figures_format='png',
                         factor_prefix=None,
@@ -478,11 +480,10 @@ class MVATools(object):
         from hyperspy._signals.signal1d import Signal1D
 
         if multiple_files is None:
-            multiple_files = preferences.MachineLearning.multiple_files
+            multiple_files = True
 
         if factor_format is None:
-            factor_format = preferences.MachineLearning.\
-                export_factors_default_file_format
+            factor_format = 'hspy'
 
         # Select the desired factors
         if comp_ids is None:
@@ -610,9 +611,9 @@ class MVATools(object):
                          loadings,
                          folder=None,
                          comp_ids=None,
-                         multiple_files=None,
+                         multiple_files=True,
                          loading_prefix=None,
-                         loading_format=None,
+                         loading_format="hspy",
                          save_figures_format='png',
                          comp_label=None,
                          cmap=plt.cm.gray,
@@ -626,11 +627,10 @@ class MVATools(object):
         from hyperspy._signals.signal1d import Signal1D
 
         if multiple_files is None:
-            multiple_files = preferences.MachineLearning.multiple_files
+            multiple_files = True
 
         if loading_format is None:
-            loading_format = preferences.MachineLearning.\
-                export_loadings_default_file_format
+            loading_format = 'hspy'
 
         if comp_ids is None:
             comp_ids = range(loadings.shape[0])
@@ -745,7 +745,7 @@ class MVATools(object):
     def plot_decomposition_factors(self,
                                    comp_ids,
                                    calibrate=True,
-                                   same_window=None,
+                                   same_window=True,
                                    comp_label=None,
                                    cmap=plt.cm.gray,
                                    per_row=3,
@@ -771,7 +771,7 @@ class MVATools(object):
 
         same_window : bool
             if True, plots each factor to the same window.  They are
-            not scaled.
+            not scaled. Default is True.
 
         title : string
             Title of the plot.
@@ -780,8 +780,7 @@ class MVATools(object):
             characteristics, the colormap used for the scatter plot of
             some peak characteristic.
         per_row : int, the number of plots in each row, when the
-        same_window
-            parameter is True.
+        same_window parameter is True.
 
         See Also
         --------
@@ -794,7 +793,7 @@ class MVATools(object):
                                       "You can use "
                                       "`plot_decomposition_results` instead.")
         if same_window is None:
-            same_window = preferences.MachineLearning.same_window
+            same_window = True
         factors = self.learning_results.factors
         if comp_ids is None:
             comp_ids = self.learning_results.output_dimension
@@ -812,7 +811,7 @@ class MVATools(object):
                                             per_row=per_row)
 
     def plot_bss_factors(self, comp_ids=None, calibrate=True,
-                         same_window=None, comp_label=None,
+                         same_window=True, comp_label=None,
                          per_row=3, title=None):
         """Plot factors from blind source separation results. In case of 1D
         signal axis, each factors line can be toggled on and off by clicking
@@ -835,7 +834,7 @@ class MVATools(object):
 
         same_window : bool
             if True, plots each factor to the same window.  They are
-            not scaled.
+            not scaled. Default is True.
 
         title : string
             Title of the plot.
@@ -860,7 +859,7 @@ class MVATools(object):
                                       "`plot_decomposition_results` instead.")
 
         if same_window is None:
-            same_window = preferences.MachineLearning.same_window
+            same_window = True
         factors = self.learning_results.bss_factors
         title = self._change_API_comp_label(title, comp_label)
         if title is None:
@@ -876,7 +875,7 @@ class MVATools(object):
     def plot_decomposition_loadings(self,
                                     comp_ids,
                                     calibrate=True,
-                                    same_window=None,
+                                    same_window=True,
                                     comp_label=None,
                                     with_factors=False,
                                     cmap=plt.cm.gray,
@@ -904,7 +903,7 @@ class MVATools(object):
 
         same_window : bool
             if True, plots each factor to the same window.  They are
-            not scaled.
+            not scaled. Default is True.
 
         title : string
             Title of the plot.
@@ -943,7 +942,7 @@ class MVATools(object):
                                       "You can use "
                                       "`plot_decomposition_results` instead.")
         if same_window is None:
-            same_window = preferences.MachineLearning.same_window
+            same_window = True
         loadings = self.learning_results.loadings.T
         if with_factors:
             factors = self.learning_results.factors
@@ -970,7 +969,7 @@ class MVATools(object):
             axes_decor=axes_decor)
 
     def plot_bss_loadings(self, comp_ids=None, calibrate=True,
-                          same_window=None, comp_label=None,
+                          same_window=True, comp_label=None,
                           with_factors=False, cmap=plt.cm.gray,
                           no_nans=False, per_row=3, axes_decor='all',
                           title=None):
@@ -995,7 +994,7 @@ class MVATools(object):
 
         same_window : bool
             if True, plots each factor to the same window.  They are
-            not scaled.
+            not scaled. Default is True.
 
         title : string
             Title of the plot.
@@ -1034,7 +1033,7 @@ class MVATools(object):
                                       "You can use "
                                       "`plot_bss_results` instead.")
         if same_window is None:
-            same_window = preferences.MachineLearning.same_window
+            same_window = True
         title = self._change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('BSS loadings of',
@@ -1069,13 +1068,13 @@ class MVATools(object):
                                      folder=None,
                                      calibrate=True,
                                      factor_prefix='factor',
-                                     factor_format=None,
+                                     factor_format="hspy",
                                      loading_prefix='loading',
-                                     loading_format=None,
+                                     loading_format="hspy",
                                      comp_label=None,
                                      cmap=plt.cm.gray,
                                      same_window=False,
-                                     multiple_files=None,
+                                     multiple_files=True,
                                      no_nans=True,
                                      per_row=3,
                                      save_figures=False,
@@ -1100,38 +1099,30 @@ class MVATools(object):
             factors/components
             begin with
         factor_format : string
-            The extension of the format that you wish to save to.
+            The extension of the format that you wish to save to. Default is
+            "hspy". See `loading format` for more details.
         loading_prefix : string
             The prefix that any exported filenames for
             factors/components
             begin with
         loading_format : string
-            The extension of the format that you wish to save to.
-            Determines
-            the kind of output.
-                - For image formats (tif, png, jpg, etc.), plots are
-                created
-                  using the plotting flags as below, and saved at
-                  600 dpi.
-                  One plot per loading is saved.
-                - For multidimensional formats (rpl, hdf5), arrays are
-                saved
-                  in single files.  All loadings are contained in the
-                  one
-                  file.
-                - For spectral formats (msa), each loading is saved to a
-                  separate file.
-        multiple_files : Bool
+            The extension of the format that you wish to save to. default
+            is "hspy". The format determines the kind of output.
+            - For image formats (tif, png, jpg, etc.), plots are
+              created using the plotting flags as below, and saved at
+              600 dpi. One plot per loading is saved.
+            - For multidimensional formats ("rpl", "hspy"), arrays are
+              saved in single files.  All loadings are contained in the
+              one file.
+            - For spectral formats (msa), each loading is saved to a
+              separate file.
+        multiple_files : bool
             If True, on exporting a file per factor and per loading will
-             be
-            created. Otherwise only two files will be created, one for
-            the
-            factors and another for the loadings. The default value can
-            be
-            chosen in the preferences.
-        save_figures : Bool
-            If True the same figures that are obtained when using the
-            plot
+            be created. Otherwise only two files will be created, one for
+            the factors and another for the loadings. The default value can
+            be chosen in the preferences.
+        save_figures : bool
+            If True the same figures that are obtained when using the plot
             methods will be saved with 600 dpi resolution
 
         Plotting options (for save_figures = True ONLY)
@@ -1197,12 +1188,12 @@ class MVATools(object):
                            comp_ids=None,
                            folder=None,
                            calibrate=True,
-                           multiple_files=None,
+                           multiple_files=True,
                            save_figures=False,
                            factor_prefix='bss_factor',
-                           factor_format=None,
+                           factor_format="hspy",
                            loading_prefix='bss_loading',
-                           loading_format=None,
+                           loading_format="hspy",
                            comp_label=None, cmap=plt.cm.gray,
                            same_window=False,
                            no_nans=True,
@@ -1227,35 +1218,27 @@ class MVATools(object):
             factors/components
             begin with
         factor_format : string
-            The extension of the format that you wish to save to.
-            Determines
-            the kind of output.
-                - For image formats (tif, png, jpg, etc.), plots are
-                created
-                  using the plotting flags as below, and saved at
-                  600 dpi.
-                  One plot per factor is saved.
-                - For multidimensional formats (rpl, hdf5), arrays are
-                saved
-                  in single files.  All factors are contained in the one
-                  file.
-                - For spectral formats (msa), each factor is saved to a
-                  separate file.
-
+            The extension of the format that you wish to save to. Default is
+            "hspy". See `loading format` for more details.
         loading_prefix : string
             The prefix that any exported filenames for
             factors/components
             begin with
         loading_format : string
-            The extension of the format that you wish to save to.
+            The extension of the format that you wish to save to. default
+            is "hspy". The format determines the kind of output.
+            - For image formats (tif, png, jpg, etc.), plots are
+              created using the plotting flags as below, and saved at
+              600 dpi. One plot per loading is saved.
+            - For multidimensional formats ("rpl", "hspy"), arrays are
+              saved in single files.  All loadings are contained in the
+              one file.
+            - For spectral formats (msa), each loading is saved to a
+              separate file.
         multiple_files : Bool
             If True, on exporting a file per factor and per loading
-            will be
-            created. Otherwise only two files will be created, one
-            for the
-            factors and another for the loadings. The default value
-            can be
-            chosen in the preferences.
+            will be created. Otherwise only two files will be created, one
+            for the factors and another for the loadings. Default is True.
         save_figures : Bool
             If True the same figures that are obtained when using the
             plot
@@ -1511,6 +1494,20 @@ class SpecialSlicersSignal(SpecialSlicers):
 
     def __len__(self):
         return self.obj.axes_manager.signal_shape[0]
+
+
+class BaseSetMetadataItems(t.HasTraits):
+
+    def __init__(self, signal):
+        for key, value in self.mapping.items():
+            if signal.metadata.has_item(key):
+                setattr(self, value, signal.metadata.get_item(key))
+        self.signal = signal
+
+    def store(self, *args, **kwargs):
+        for key, value in self.mapping.items():
+            if getattr(self, value) != t.Undefined:
+                self.signal.metadata.set_item(key, getattr(self, value))
 
 
 class BaseSignal(FancySlicing,
@@ -2045,7 +2042,7 @@ class BaseSignal(FancySlicing,
         """Saves the signal in the specified format.
 
         The function gets the format from the extension.:
-            - hdf5 for HDF5
+            - hspy for HyperSpy's HDF5 specification
             - rpl for Ripple (useful to export to Digital Micrograph)
             - msa for EMSA/MSA single spectrum saving.
             - unf for SEMPER unf binary format.
@@ -2071,14 +2068,16 @@ class BaseSignal(FancySlicing,
         overwrite : None, bool
             If None, if the file exists it will query the user. If
             True(False) it (does not) overwrites the file if it exists.
-        extension : {None, 'hdf5', 'rpl', 'msa', 'unf', 'blo', common image
-                     extensions e.g. 'tiff', 'png'}
+        extension : {None, 'hspy', 'hdf5', 'rpl', 'msa', 'unf', 'blo',
+                     'emd', common image extensions e.g. 'tiff', 'png'}
             The extension of the file that defines the file format.
-            If None, the extension is taken from the first not None in the
-            following list:
+            'hspy' and 'hdf5' are equivalent. Use 'hdf5' if compatibility with
+            HyperSpy versions older than 1.2 is required.
+            If None, the extension is determined from the following list in
+            this order:
             i) the filename
-            ii)  `tmp_parameters.extension`
-            iii) `preferences.General.default_file_format` in this order.
+            ii)  `Signal.tmp_parameters.extension`
+            iii) `hspy` (the default extension)
 
         """
         if filename is None:
@@ -4434,11 +4433,7 @@ class BaseSignal(FancySlicing,
         <BaseSignal, title: , dimensions: (8, 7, 6, 5, 4, 1|9, 3, 2)>
 
         """
-        from collections import Iterable
 
-        def iterable_not_string(thing):
-            return isinstance(thing, Iterable) and \
-                not isinstance(thing, str)
         am = self.axes_manager
         ns = self.axes_manager.navigation_axes + self.axes_manager.signal_axes
         ax_list = am._axes

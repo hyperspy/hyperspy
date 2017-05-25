@@ -85,11 +85,10 @@ class MarkerBase(object):
                 self._marker_properties[key] = item
         if self.marker is not None:
             plt.setp(self.marker, **self.marker_properties)
-            try:
-                # self.ax.figure.canvas.draw()
+            if self.ax.figure.canvas.supports_blit:
                 self.ax.hspy_fig._draw_animated()
-            except:
-                pass
+            else:
+                self.ax.figure.canvas.draw_idle()
 
     def _to_dictionary(self):
         marker_dict = {
@@ -191,12 +190,13 @@ class MarkerBase(object):
                 "figure using `s._plot.signal_plot.add_marker(m)` or " +
                 "`s._plot.navigator_plot.add_marker(m)`")
         self._plot_marker()
-        self.marker.set_animated(True)
+        animated = self.ax.figure.canvas.supports_blit
+        self.marker.set_animated(animated)
         if update_plot:
-            try:
+            if animated:
                 self.ax.hspy_fig._draw_animated()
-            except:
-                pass
+            else:
+                self.ax.figure.canvas.draw_idle()
 
     def close(self, update_plot=True):
         """Remove and disconnect the marker.
@@ -213,16 +213,15 @@ class MarkerBase(object):
         if self._closing:
             return
         self._closing = True
-        try:
-            self.marker.remove()
-            self.events.closed.trigger(obj=self)
-            for f in self.events.closed.connected:
-                self.events.closed.disconnect(f)
-            # m.ax.figure.canvas.draw()
-            if update_plot:
+        self.marker.remove()
+        self.events.closed.trigger(obj=self)
+        for f in self.events.closed.connected:
+            self.events.closed.disconnect(f)
+        if update_plot:
+            if self.ax.figure.canvas.supports_blit:
                 self.ax.hspy_fig._draw_animated()
-        except:
-            pass
+            else:
+                self.ax.figure.canvas.draw_idle()
 
 
 def dict2marker(marker_dict, marker_name):
