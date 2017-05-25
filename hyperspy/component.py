@@ -1329,13 +1329,10 @@ class Component(t.HasTraits):
     @property
     def is_linear(self):
         "Loops through the component's free parameters, checks that they are linear"
-        linear = True
-        if len(self.free_parameters) > 1:
+        if len(self.free_parameters) == 1:
+            return self.free_parameters[0]._is_linear
+        else:
             return False
-        for para in self.free_parameters:
-            if not para._is_linear:
-                linear = False
-        return linear
     
     @property
     def independent_parameters(self):
@@ -1349,20 +1346,4 @@ class Component(t.HasTraits):
 
     def _independent_term(self):
         return 0
-
-    def _check_only_one_linear_parameter(self):
-        """
-        Linear fitters can only work with one linear parameter per component.
-        Checks that this is the case for a given component.
-        """
-        n_free = 0
-        for para in self.free_parameters:
-            if para._is_linear:
-                n_free += 1
         
-        #if n_free > 1:
-        #    raise AttributeError("Component " + str(self) + " has more than one linear component.")
-        if n_free == 1:
-            return True
-        else:
-            return False
