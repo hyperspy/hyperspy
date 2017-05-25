@@ -163,7 +163,16 @@ def file_reader(filename, endianess='<', mmap_mode=None,
                       "Will attempt to read, but correcteness not guaranteed!")
     header = sarray2dict(header)
     note = f.read(header['Data_offset_1'] - f.tell())
-    header['Note'] = note.decode("latin1")
+    # It seems it uses "\x00" for padding, so we remove it
+    try:
+        header['Note'] = note.decode("latin1").strip("\x00")
+    except:
+        # Not sure about the encoding so, if it fails, we carry on
+        _logger.warn(
+            "Reading the Note metadata of this file failed. "
+            "You can help improving "
+            "HyperSpy by reporting the issue in "
+            "https://github.com/hyperspy/hyperspy")
     _logger.debug("File header: " + str(header))
     NX, NY = int(header['NX']), int(header['NY'])
     DP_SZ = int(header['DP_SZ'])

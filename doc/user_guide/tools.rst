@@ -1015,14 +1015,19 @@ type in place, e.g.:
 .. versionadded:: 0.7
    Support for RGB signals.
 
-In addition to all standard numpy dtypes, HyperSpy supports four extra
-dtypes for RGB images: rgb8, rgba8, rgb16 and rgba16. The requirements for changing
-from and to any rgbx dtype are more strict than for most other dtype
-conversions. To change to a rgbx dtype the `signal_dimension` must be 1 and its size 3(4) 3(4) for rgb(rgba) dtypes and the
-dtype must be uint8(uint16) for rgbx8(rgbx16).  After conversion
-the `signal_dimension` becomes 2. The dtype
-of images of dtype rgbx8(rgbx16) can only be changed to uint8(uint16) and
-the `signal_dimension` becomes 1.
+In addition to all standard numpy dtypes, HyperSpy supports four extra dtypes
+for RGB images **for visualization purposes only**: rgb8, rgba8, rgb16 and
+rgba16. This includes of course multi-dimensional RGB images.
+
+The requirements for changing from and to any rgbx dtype are more strict
+than for most other dtype conversions. To change to a rgbx dtype the
+`signal_dimension` must be 1 and its size 3(4) 3(4) for rgb(rgba) dtypes and the
+dtype must be uint8(uint16) for rgbx8(rgbx16).  After conversion the
+`signal_dimension` becomes 2.
+
+Most operations on signals with RGB dytpes will fail. For processing simply
+change their dtype to uint8(uint16).The dtype of images of dtype rgbx8(rgbx16)
+can only be changed to uint8(uint16) and the `signal_dimension` becomes 1.
 
 In the following example we create a 1D signal with signal size 3 and with
 `dtype` `"uint16"` and change its dtype to `"rgb16"` for plotting.

@@ -757,9 +757,11 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             plot = True
         else:
             plot = False
+        background_type = ("PowerLaw" if self.background_type == "Power Law"
+                           else self.background_type)
         new_spectra = self.signal.remove_background(
             signal_range=(self.ss_left_value, self.ss_right_value),
-            background_type=self.background_type,
+            background_type=background_type,
             fast=self.fast,
             polynomial_order=self.polynomial_order)
         self.signal.data = new_spectra.data
