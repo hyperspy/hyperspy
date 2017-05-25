@@ -206,12 +206,12 @@ class ImagePlot(BlittedFigure):
         height = abs(self._extent[3] - self._extent[2]) * self._aspect
         width = abs(self._extent[1] - self._extent[0])
         figsize = np.array((width * wfactor, height)) * \
-           max(plt.rcParams['figure.figsize']) / max(width * wfactor, height)
+            max(plt.rcParams['figure.figsize']) / max(width * wfactor, height)
         self.figure = utils.create_figure(
-           window_title=("Figure " + self.title
-                         if self.title
-                         else None),
-           figsize=figsize.clip(min_size, max_size))
+            window_title=("Figure " + self.title
+                          if self.title
+                          else None),
+            figsize=figsize.clip(min_size, max_size))
         self.figure.canvas.mpl_connect('draw_event', self._on_draw)
         utils.on_figure_window_close(self.figure, self._on_close)
 
