@@ -241,17 +241,22 @@ class LazySignal(BaseSignal):
                 raise ValueError("Wrong new_shape size")
             new_shape_in_array = []
             for axis in self.axes_manager._axes:
-                new_shape_in_array.append(new_shape[axis.index_in_axes_manager])
-            if (np.array(self.data.shape) % np.array(new_shape_in_array)).any():
+                new_shape_in_array.append(
+                    new_shape[axis.index_in_axes_manager])
+            if (np.array(self.data.shape) %
+                    np.array(new_shape_in_array)).any():
                 raise NotImplementedError(
                     "Lazy rebin requires that the new shape is a divisor "
                     "of the original signal shape e.g. if original shape "
                     "(10| 6), new_shape=(5| 3) is valid, (3 | 4) is not.")
-            factors = (np.array(self.data.shape) / np.array(new_shape_in_array))
+            factors = (
+                np.array(
+                    self.data.shape) /
+                np.array(new_shape_in_array))
         else:
             if len(scale) != len(self.data.shape):
                 raise ValueError("Wrong shape size")
-            factors  = []
+            factors = []
             for axis in self.axes_manager._axes:
                 factors.append(scale[axis.index_in_axes_manager])
             factors = np.array(factors)
