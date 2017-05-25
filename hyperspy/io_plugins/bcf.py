@@ -587,14 +587,14 @@ class HyperHeader(object):
     def _set_microscope(self, root):
         """set microscope metadata from objectified xml part (TRTSEMData,
         TRTSEMStageData, TRTDSPConfiguration).
-        
+
         BCF can contain basic parameters of SEM column, and optionaly
         the stage. This metadata can be not fully or at all availbale to
         Esprit and saved into bcf file as it depends from license and
         the link and implementation state between the microscope's
         software and Bruker system.
         """
-        
+
         semData = root.xpath("ClassInstance[@Type='TRTSEMData']")[0]
         self.sem_metadata = dictionarize(semData)
         # parse values for use in hspy metadata:
@@ -636,8 +636,6 @@ class HyperHeader(object):
         acq_inst = {'beam_energy': self.hv}
         if 'Mag' in self.sem_metadata:
             acq_inst['magnification'] = self.sem_metadata['Mag']
-        if 'Tilt' in self.stage_metadata:
-            acq_inst['tilt_stage'] = self.stage_metadata['Tilt']
         if detector:
             eds_metadata = self.get_spectra_metadata(**kwargs)
             acq_inst['Detector'] = {'EDS': {
@@ -1277,7 +1275,7 @@ For more information, check the 'Installing HyperSpy' section in the documentati
                               'DSP Configuration': obj_bcf.header.dsp_metadata,
                               'Line counter': obj_bcf.header.line_counter,
                               'Stage': obj_bcf.header.stage_metadata,
-                              'Microscope': obj_bcf.header.sem_metadata}
+                              'Microscope': obj_bcf.header.sem_metadata},
         'mapping': mapping,
     }]
     return hyperspectra

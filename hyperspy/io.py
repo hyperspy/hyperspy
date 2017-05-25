@@ -112,7 +112,7 @@ def load(filenames=None,
         For SEMPER unf- and EMD (Berkley)-files, if True (default is False)
         additional information read during loading is printed for a quick
         overview.
-        
+
     downsample : int (1–4095)
         For Bruker bcf files, if set to integer (>=2) (default 1)
         bcf is parsed into down-sampled size array by given integer factor,
@@ -127,8 +127,8 @@ def load(filenames=None,
     select_type: {'spectrum', 'image', None}
        For Bruker bcf files, if one of 'spectrum' or 'image' (default is None)
        the loader returns either only hypermap or only SEM/TEM electron images.
-    
-    
+
+
 
     Returns
     -------
