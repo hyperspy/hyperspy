@@ -50,11 +50,3 @@ def test_independent_from_expression3():
         d = 2.0,
         e = 20.0)
     assert g.independent_term == 10**5 + 20
-
-def test_independent_after_fit():
-    s = example_signals.EDS_SEM_Spectrum()
-    m = s.create_model(auto_background=False)
-    comp = Expression("a * b * x + c+d", "test")
-    m.append(comp)
-    m.fit(fitter="leastsq")
-    assert comp.independent_term == comp.c.value + comp.d.value
