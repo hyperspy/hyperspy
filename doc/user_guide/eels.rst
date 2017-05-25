@@ -26,7 +26,7 @@ Elemental composition of the sample
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 It can be useful to define the elemental composition of the sample for
-archiving purposes or to use some feature (e.g. curve fitting) that requieres
+archiving purposes or to use some feature (e.g. curve fitting) that requires
 this information.  The elemental composition of the sample can be declared
 using :py:meth:`~._signals.eels.EELSSpectrum.add_elements`. The information is
 stored in the :py:attr:`~.signal.BaseSignal.metadata` attribute (see
@@ -94,8 +94,8 @@ Kramers-Kronig Analysis
 The single-scattering EEL spectrum is approximately related to the complex
 permittivity of the sample and can be estimated by Kramers-Kronig analysis.
 The :py:meth:`~._signals.eels.EELSSpectrum.kramers_kronig_analysis` method
-inplements the Kramers-Kronig FFT method as in [Egerton2011]_ to estimate the
-complex dielectric funtion from a low-loss EELS spectrum. In addition, it can
+implements the Kramers-Kronig FFT method as in [Egerton2011]_ to estimate the
+complex dielectric function from a low-loss EELS spectrum. In addition, it can
 estimate the thickness if the refractive index is known and approximately
 correct for surface plasmon excitations in layers.
 

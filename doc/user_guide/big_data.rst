@@ -95,7 +95,7 @@ Practical tips
 --------------
 
 Despite the limitations detailed below, most HyperSpy operations can be
-performed lazily. Importand points of note are:
+performed lazily. Important points of note are:
 
 Computing lazy signals
 ^^^^^^^^^^^^^^^^^^^^^^

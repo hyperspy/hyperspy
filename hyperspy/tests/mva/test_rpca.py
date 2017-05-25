@@ -1,7 +1,9 @@
 import numpy as np
 import scipy.linalg
+import pytest
 
 from hyperspy.learn.rpca import rpca_godec, orpca
+from hyperspy.misc.machine_learning.import_sklearn import fast_svd
 
 
 class TestRPCA:
@@ -107,6 +109,9 @@ class TestORPCA:
         normX = np.linalg.norm(X - self.A) / (self.m * self.n)
         assert normX < self.tol
 
+    @pytest.mark.skipif(
+        fast_svd is None,
+        reason="fastsvd required sklearn which is not installed")
     def test_fast(self):
         X, E, U, S, V = orpca(self.X, rank=self.rank, fast=True)
         # Only check shapes
