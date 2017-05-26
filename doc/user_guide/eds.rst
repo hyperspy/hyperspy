@@ -22,8 +22,12 @@ downloaded using:
 
 .. code-block:: python
 
-    >>> from urllib import urlretrieve
-    >>> url = 'http://cook.msm.cam.ac.uk//~hyperspy//EDS_tutorial//'
+    >>> #Download the data (130MB)
+    >>> from urllib.request import urlretrieve, urlopen
+    >>> from zipfile import ZipFile
+    >>> files = urlretrieve("https://www.dropbox.com/s/s7cx92mfh2zvt3x/HyperSpy_demos_EDX_SEM_files.zip?raw=1", "./HyperSpy_demos_EDX_SEM_files.zip")
+    >>> with ZipFile("HyperSpy_demos_EDX_SEM_files.zip") as z:
+    >>>     z.extractall()
     >>> urlretrieve(url + 'Ni_superalloy_1pix.msa', 'Ni_superalloy_1pix.msa')
     >>> urlretrieve(url + 'Ni_superalloy_010.rpl', 'Ni_superalloy_010.rpl')
     >>> urlretrieve(url + 'Ni_superalloy_010.raw', 'Ni_superalloy_010.raw')
@@ -446,9 +450,12 @@ can be downloaded using:
 
 .. code-block:: python
 
-    >>> from urllib import urlretrieve
-    >>> url = 'http://cook.msm.cam.ac.uk//~hyperspy//EDS_tutorial//'
-    >>> urlretrieve(url + 'core_shell.hdf5', 'core_shell.hdf5')
+    >>> #Download the data (1MB)
+    >>> from urllib.request import urlretrieve, urlopen
+    >>> from zipfile import ZipFile
+    >>> files = urlretrieve("https://www.dropbox.com/s/ecdlgwxjq04m5mx/HyperSpy_demos_EDS_TEM_files.zip?raw=1", "./HyperSpy_demos_EDX_TEM_files.zip")
+    >>> with ZipFile("HyperSpy_demos_EDX_TEM_files.zip") as z:
+    >>>     z.extractall()
 
 The width of integration is defined by extending the energy resolution of
 Mn Ka to the peak energy ("energy_resolution_MnKa" in metadata):
@@ -479,7 +486,7 @@ Finally, the windows of integration can be visualised using :py:meth:`~._signals
 
 .. code-block:: python
 
-    >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()[5.:13.]
+    >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum().isig[5.:13.]
     >>> s.add_lines()
     >>> s.plot(integration_windows='auto')
 
@@ -506,7 +513,7 @@ can be plotted using :py:meth:`~._signals.eds.EDSSpectrum.plot`:
 
 .. code-block:: python
 
-    >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()[5.:13.]
+    >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum().isig[5.:13.]
     >>> s.add_lines()
     >>> bw = s.estimate_background_windows(line_width=[5.0, 2.0])
     >>> s.plot(background_windows=bw)
@@ -563,7 +570,7 @@ Using the Cliff-Lorimer method as an example, quantification can be carried out 
     >>> kfactors = [1.450226, 5.075602] #For Fe Ka and Pt La
     >>> bw = s.estimate_background_windows(line_width=[5.0, 2.0])
     >>> intensities = s.get_lines_intensity(background_windows=bw)
-    >>> atomic_percent = s.quantification(intensities, method='CL', kfactors)
+    >>> atomic_percent = s.quantification(intensities, method='CL', factors=kfactors)
     Fe (Fe_Ka): Composition = 15.41 atomic percent
     Pt (Pt_La): Composition = 84.59 atomic percent
 
@@ -573,7 +580,7 @@ transformed into weight percent either with the option :py:meth:`~._signals.eds_
 .. code-block:: python
 
     >>> # With s, intensities and kfactors from before
-    >>> s.quantification(intensities, method='CL',kfactors,
+    >>> s.quantification(intensities, method='CL', factors=kfactors,
     >>>                  composition_units='weight')
     Fe (Fe_Ka): Composition = 4.96 weight percent
     Pt (Pt_La): Composition = 95.04 weight percent

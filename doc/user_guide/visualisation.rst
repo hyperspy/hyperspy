@@ -85,7 +85,8 @@ To close all the figures run the following command:
 
 .. code-block:: python
 
-    close('all')
+    >>> import matplotlib.pyplot as plt
+    >>> plt.close('all')
 
 .. NOTE::
 
@@ -167,7 +168,7 @@ them as a dictionary in ``navigator_kwds`` argument when plotting:
     >>>                              scalebar_color='red',
     >>>                              cmap='Blues',
     >>>                              axes_ticks=False)
-    >>>         )
+    >>>          )
 
 .. figure::  images/custom_nav_opts.png
    :align:   center
@@ -192,9 +193,9 @@ The following example shows the effect of centering the color map:
     >>> x = np.linspace(-2 * np.pi, 2 * np.pi, 128)
     >>> xx, yy = np.meshgrid(x, x)
     >>> data1 = np.sin(xx * yy)
-    >>> data2 = data.copy()
+    >>> data2 = data1.copy()
     >>> data2[data2 < 0] /= 4
-    >>> im = hs.signals.Signal2D([data1, data])
+    >>> im = hs.signals.Signal2D([data1, data2])
     >>> hs.plot.plot_images(im, cmap="RdBu", tight_layout=True)
 
 
@@ -212,9 +213,9 @@ The same example with the feature disabled:
     >>> x = np.linspace(-2 * np.pi, 2 * np.pi, 128)
     >>> xx, yy = np.meshgrid(x, x)
     >>> data1 = np.sin(xx * yy)
-    >>> data2 = data.copy()
+    >>> data2 = data1.copy()
     >>> data2[data2 < 0] /= 4
-    >>> im = hs.signals.Signal2D([data1, data])
+    >>> im = hs.signals.Signal2D([data1, data2])
     >>> hs.plot.plot_images(im, centre_colormap=False, cmap="RdBu", tight_layout=True)
 
 
@@ -232,14 +233,12 @@ Data files used in the following examples can be downloaded using
 
 .. code-block:: python
 
-    >>> from urllib import urlretrieve
-    >>> url = 'http://cook.msm.cam.ac.uk//~hyperspy//EDS_tutorial//'
-    >>> urlretrieve(url + 'TiFeNi_010.rpl', 'Ni_superalloy_010.rpl')
-    >>> urlretrieve(url + 'TiFeNi_010.raw', 'TiFeNi_010.raw')
-    >>> urlretrieve(url + 'TiFeNi_012.rpl', 'TiFeNi_012.rpl')
-    >>> urlretrieve(url + 'TiFeNi_011.raw', 'TiFeNi_011.raw')
-    >>> urlretrieve(url + 'image010.tif', 'image010.tif')
-    >>> urlretrieve(url + 'image011.tif', 'image011.tif')
+    >>> #Download the data (130MB)
+    >>> from urllib.request import urlretrieve, urlopen
+    >>> from zipfile import ZipFile
+    >>> files = urlretrieve("https://www.dropbox.com/s/s7cx92mfh2zvt3x/HyperSpy_demos_EDX_SEM_files.zip?raw=1", "./HyperSpy_demos_EDX_SEM_files.zip")
+    >>> with ZipFile("HyperSpy_demos_EDX_SEM_files.zip") as z:
+    >>>     z.extractall()
 
 .. NOTE::
     See also the `SEM EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-demos/blob/master/electron_microscopy/EDS/>`_ .
@@ -255,7 +254,7 @@ instead of the 2D navigator as in the previous example.
 
 .. code-block:: python
 
-    >>> img = hs.load('image*.tif', stack=True)
+    >>> img = hs.load('Ni_superalloy_0*.tif', stack=True)
     >>> img.plot(navigator='slider')
 
 
@@ -271,7 +270,7 @@ plotted with sliders.
 
 .. code-block:: python
 
-    >>> s = hs.load('TiFeNi_0*.rpl', stack=True).as_signal1D(0)
+    >>> s = hs.load('Ni_superalloy_0*.rpl', stack=True).as_signal1D(0)
     >>> s.plot()
 
 
@@ -287,8 +286,8 @@ can be used as an external signal for the navigator.
 
 .. code-block:: python
 
-    >>> im = hs.load('image*.tif', stack=True)
-    >>> s = hs.load('TiFeNi_0*.rpl', stack=True).as_signal1D(0)
+    >>> im = hs.load('Ni_superalloy_0*.tif', stack=True) 
+    >>> s = hs.load('Ni_superalloy_0*.rpl', stack=True).as_signal1D(0)
     >>> dim = s.axes_manager.navigation_shape
     >>> #Rebin the image
     >>> im = im.rebin([dim[2], dim[0], dim[1]])
@@ -306,7 +305,7 @@ alternative display.
 
 .. code-block:: python
 
-    >>> imgSpec = hs.load('TiFeNi_0*.rpl', stack=True)
+    >>> imgSpec = hs.load('Ni_superalloy_0*.rpl', stack=True)
     >>> imgSpec.plot(navigator='spectrum')
 
 
@@ -321,7 +320,7 @@ the "maximum spectrum" for which each channel is the maximum of all pixels.
 
 .. code-block:: python
 
-    >>> imgSpec = hs.load('TiFeNi_0*.rpl', stack=True)
+    >>> imgSpec = hs.load('Ni_superalloy_0*.rpl', stack=True)
     >>> specMax = imgSpec.max(-1).max(-1).max(-1).as_signal1D(0)
     >>> imgSpec.plot(navigator=specMax)
 
@@ -491,9 +490,12 @@ Data files used in the following example can be downloaded using (These data are
 
 .. code-block:: python
 
-    >>> from urllib import urlretrieve
-    >>> url = 'http://cook.msm.cam.ac.uk//~hyperspy//EDS_tutorial//'
-    >>> urlretrieve(url + 'core_shell.hdf5', 'core_shell.hdf5')
+    >>> #Download the data (1MB)
+    >>> from urllib.request import urlretrieve, urlopen
+    >>> from zipfile import ZipFile
+    >>> files = urlretrieve("https://www.dropbox.com/s/ecdlgwxjq04m5mx/HyperSpy_demos_EDS_TEM_files.zip?raw=1", "./HyperSpy_demos_EDX_TEM_files.zip")
+    >>> with ZipFile("HyperSpy_demos_EDX_TEM_files.zip") as z:
+    >>>     z.extractall()
 
 Another example for this function is plotting EDS line intensities see :ref:`EDS chapter <get_lines_intensity>`. One can use the following commands
 to get a representative figure of the X-ray line intensities of an EDS spectrum image.
@@ -507,7 +509,7 @@ which is used to call subplots_adjust method of matplotlib
 
     >>> si_EDS = hs.load("core_shell.hdf5")
     >>> im = si_EDS.get_lines_intensity()
-    >>> hs.plot.plot_images(hs.transpose(im, signal_axes=2),
+    >>> hs.plot.plot_images(hs.transpose(im[0], im[1]),
     >>>     tight_layout=True, cmap='RdYlBu_r', axes_decor='off',
     >>>     colorbar='single', saturated_pixels=2, scalebar='all',
     >>>     scalebar_color='black', suptitle_fontsize=16,
@@ -550,7 +552,7 @@ legended line, a spectrum can be toggled on and off.
      >>> s.axes_manager[0].offset = -10
      >>> s.axes_manager[0].scale = 0.1
      >>> m = s.create_model()
-     >>> g = hs.components1D.Gaussian()
+     >>> g = hs.model.components1D.Gaussian()
      >>> m.append(g)
      >>> gaussians = []
      >>> labels = []
@@ -766,7 +768,7 @@ signals must have the same dimensions. To plot two spectra at the same time:
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0)[:,:3]
+    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0).inav[:,:3]
     >>> s2 = s1.deepcopy()*-1
     >>> hs.plot.plot_signals([s1, s2])
 
@@ -786,7 +788,7 @@ To specify the navigator:
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0)[:,:3]
+    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0).inav[:,:3]
     >>> s2 = s1.deepcopy()*-1
     >>> hs.plot.plot_signals([s1, s2], navigator="slider")
 
@@ -804,7 +806,7 @@ For example:
 .. code-block:: python
 
     >>> import scipy.misc
-    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0)[:,:3]
+    >>> s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0).inav[:,:3]
     >>> s2 = s1.deepcopy()*-1
     >>> s3 = hs.signals.Signal1D(np.linspace(0,9,9).reshape([3,3]))
     >>> hs.plot.plot_signals([s1, s2], navigator_list=["slider", s3])
@@ -864,12 +866,12 @@ for each R, G and B channel of a colour image.
 
     >>> from skimage.feature import peak_local_max
     >>> import scipy.misc
-    >>> ims = hs.signals.BaseSignal(scipy.misc.face()).as_signal2D([0,1])
-    >>> index = array([peak_local_max(im.data, min_distance=100, num_peaks=4)
-    >>>                for im in ims])
+    >>> ims = hs.signals.BaseSignal(scipy.misc.face()).as_signal2D([1,2])
+    >>> index = np.array([peak_local_max(im.data, min_distance=100, num_peaks=4)
+    >>>                  for im in ims])
     >>> for i in range(4):
     >>>     m = hs.plot.markers.point(x=index[:, i, 1],
-    >>>                                  y=index[:, i, 0], color='red')
+    >>>                               y=index[:, i, 0], color='red')
     >>>     ims.add_marker(m)
 
 
@@ -889,11 +891,11 @@ Each slice is indicated with the same text on the navigator.
     >>> s.plot(navigator='spectrum')
     >>> for i in range(s.axes_manager.shape[0]):
     >>>     m = hs.plot.markers.text(y=s.sum(-1).data[i]+5,
-    >>>                                 x=i, text='abcdefghij'[i])
+    >>>                              x=i, text='abcdefghij'[i])
     >>>     s.add_marker(m, plot_on_signal=False)
     >>> x = s.axes_manager.shape[-1]/2 #middle of signal plot
-    >>> m = hs.plot.markers.text(x=x, y=s[:, x].data+2,
-    >>>                             text=[i for i in 'abcdefghij'])
+    >>> m = hs.plot.markers.text(x=x, y=s.isig[x].data+2,
+    >>>                          text=[i for i in 'abcdefghij'])
     >>> s.add_marker(m)
 
 
