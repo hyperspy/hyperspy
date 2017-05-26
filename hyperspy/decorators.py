@@ -107,3 +107,19 @@ def interactive_range_selector(cm):
         else:
             cm(self, *args, **kwargs)
     return wrapper
+
+
+@simple_decorator
+def set_ui(function):
+    def wrapper():
+        old_enable_ipywidgets_gui = preferences.GUIs.enable_ipywidgets_gui
+        old_enable_traitsui_gui = preferences.GUIs.enable_traitsui_gui
+        preferences.GUIs.enable_ipywidgets_gui = True
+        preferences.GUIs.enable_traitsui_gui = False
+
+        function()
+
+        preferences.GUIs.enable_ipywidgets_gui = old_enable_ipywidgets_gui
+        preferences.GUIs.enable_traitsui_gui = old_enable_traitsui_gui
+
+    return wrapper

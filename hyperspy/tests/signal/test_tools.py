@@ -7,7 +7,7 @@ from numpy.testing import assert_array_equal, assert_allclose
 import pytest
 
 from hyperspy import signals
-from hyperspy.decorators import lazifyTestClass
+from hyperspy.decorators import lazifyTestClass, set_ui
 from hyperspy.signal_tools import SpikesRemoval
 
 
@@ -846,6 +846,7 @@ def test_lazy_changetype_rechunk():
     assert chunks_newest == chunks_new
 
 
+@set_ui
 def test_spikes_removal_tool():
     s = signals.Signal1D(np.ones((2, 3, 30)))
     # Add three spikes
