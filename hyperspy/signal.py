@@ -743,7 +743,7 @@ class MVATools(object):
                     s.save(filename)
 
     def plot_decomposition_factors(self,
-                                   comp_ids,
+                                   comp_ids=None,
                                    calibrate=True,
                                    same_window=True,
                                    comp_label=None,
@@ -758,9 +758,10 @@ class MVATools(object):
         ----------
 
         comp_ids : None, int, or list of ints
-            if None, returns maps of all components.
-            if int, returns maps of components with ids from 0 to given
-            int.
+            if None (default), returns maps of all components if the output_dimension was defined when
+            executing ``decomposition``. Otherwise it raises a ValueError.
+            if int, returns maps of components with ids from 0 to
+            given int.
             if list of ints, returns maps of components with ids in
             given list.
 
@@ -796,7 +797,12 @@ class MVATools(object):
             same_window = True
         factors = self.learning_results.factors
         if comp_ids is None:
-            comp_ids = self.learning_results.output_dimension
+            if self.learning_results.output_dimension:
+                comp_ids = self.learning_results.output_dimension
+            else:
+                raise ValueError(
+                    "Please provide the number of components to plot via the "
+                    "``comp_ids`` argument")
         title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('Decomposition factors of',
@@ -873,7 +879,7 @@ class MVATools(object):
                                             per_row=per_row)
 
     def plot_decomposition_loadings(self,
-                                    comp_ids,
+                                    comp_ids=None,
                                     calibrate=True,
                                     same_window=True,
                                     comp_label=None,
@@ -891,7 +897,8 @@ class MVATools(object):
         ----------
 
         comp_ids : None, int, or list of ints
-            if None, returns maps of all components.
+            if None (default), returns maps of all components if the output_dimension was defined when
+            executing ``decomposition``. Otherwise it raises a ValueError.
             if int, returns maps of components with ids from 0 to
             given int.
             if list of ints, returns maps of components with ids in
@@ -950,7 +957,12 @@ class MVATools(object):
             factors = None
 
         if comp_ids is None:
-            comp_ids = self.learning_results.output_dimension
+            if self.learning_results.output_dimension:
+                comp_ids = self.learning_results.output_dimension
+            else:
+                raise ValueError(
+                    "Please provide the number of components to plot via the "
+                    "``comp_ids`` argument")
         title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('Decomposition loadings of',
