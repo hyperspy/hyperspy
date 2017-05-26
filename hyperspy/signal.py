@@ -1467,6 +1467,7 @@ class MVATools(object):
         loadings.plot(navigator=loadings_navigator)
         factors.plot(navigator=factors_navigator)
 
+
 def _change_API_comp_label(title, comp_label):
     if comp_label is not None:
         if title is None:
