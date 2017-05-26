@@ -2260,7 +2260,7 @@ class BaseSignal(FancySlicing,
             if len(new_shape) != len(self.data.shape):
                 raise ValueError("Wrong new_shape size")
             new_shape_in_array = np.array([new_shape[axis.index_in_axes_manager]
-                                          for axis in self.axes_manager._axes])
+                                           for axis in self.axes_manager._axes])
             factors = np.array(self.data.shape) / new_shape_in_array
         else:
             if len(scale) != len(self.data.shape):
