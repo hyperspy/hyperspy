@@ -797,7 +797,7 @@ class MVATools(object):
         factors = self.learning_results.factors
         if comp_ids is None:
             comp_ids = self.learning_results.output_dimension
-        title = self._change_API_comp_label(title, comp_label)
+        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('Decomposition factors of',
                                          same_window)
@@ -861,7 +861,7 @@ class MVATools(object):
         if same_window is None:
             same_window = True
         factors = self.learning_results.bss_factors
-        title = self._change_API_comp_label(title, comp_label)
+        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('BSS factors of', same_window)
 
@@ -951,7 +951,7 @@ class MVATools(object):
 
         if comp_ids is None:
             comp_ids = self.learning_results.output_dimension
-        title = self._change_API_comp_label(title, comp_label)
+        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('Decomposition loadings of',
                                          same_window)
@@ -1034,7 +1034,7 @@ class MVATools(object):
                                       "`plot_bss_results` instead.")
         if same_window is None:
             same_window = True
-        title = self._change_API_comp_label(title, comp_label)
+        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('BSS loadings of',
                                          same_window)
@@ -1386,8 +1386,8 @@ class MVATools(object):
         return signal
 
     def plot_bss_results(self,
-                         factors_navigator="auto",
-                         loadings_navigator="auto",
+                         factors_navigator="smart_auto",
+                         loadings_navigator="smart_auto",
                          factors_dim=2,
                          loadings_dim=2,):
         """Plot the blind source separation factors and loadings.
@@ -1401,9 +1401,11 @@ class MVATools(object):
 
         Parameters
         ----------
-        factor_navigator, loadings_navigator : {"auto", None, "spectrum",
+        factors_navigator, loadings_navigator : {"smart_auto", "auto", None, "spectrum",
         Signal}
-            See `plot` documentation for details.
+            "smart_auto" (default) displays sliders if the navigation
+            dimension is less than 3. For a description of the other options
+            see `plot` documentation for details.
         factors_dim, loadings_dim: int
             Currently HyperSpy cannot plot signals of dimension higher than
             two. Therefore, to visualize the BSS results when the
@@ -1418,17 +1420,15 @@ class MVATools(object):
         """
         factors = self.get_bss_factors()
         loadings = self.get_bss_loadings()
-        factors.axes_manager._axes[0] = loadings.axes_manager._axes[0]
-        if loadings.axes_manager.signal_dimension > 2:
-            loadings.axes_manager.set_signal_dimension(loadings_dim)
-        if factors.axes_manager.signal_dimension > 2:
-            factors.axes_manager.set_signal_dimension(factors_dim)
-        loadings.plot(navigator=loadings_navigator)
-        factors.plot(navigator=factors_navigator)
+        _plot_x_results(factors=factors, loadings=loadings,
+                        factors_navigator=factors_navigator,
+                        loadings_navigator=loadings_navigator,
+                        factors_dim=factors_dim,
+                        loadings_dim=loadings_dim)
 
     def plot_decomposition_results(self,
-                                   factors_navigator="auto",
-                                   loadings_navigator="auto",
+                                   factors_navigator="smart_auto",
+                                   loadings_navigator="smart_auto",
                                    factors_dim=2,
                                    loadings_dim=2):
         """Plot the decompostion factors and loadings.
@@ -1442,9 +1442,11 @@ class MVATools(object):
 
         Parameters
         ----------
-        factor_navigator, loadings_navigator : {"auto", None, "spectrum",
+        factors_navigator, loadings_navigator : {"smart_auto", "auto", None, "spectrum",
         Signal}
-            See `plot` documentation for details.
+            "smart_auto" (default) displays sliders if the navigation
+            dimension is less than 3. For a description of the other options
+            see `plot` documentation for details.
         factors_dim, loadings_dim : int
             Currently HyperSpy cannot plot signals of dimension higher than
             two. Therefore, to visualize the BSS results when the
@@ -1459,27 +1461,48 @@ class MVATools(object):
         """
         factors = self.get_decomposition_factors()
         loadings = self.get_decomposition_loadings()
-        factors.axes_manager._axes[0] = loadings.axes_manager._axes[0]
-        if loadings.axes_manager.signal_dimension > 2:
-            loadings.axes_manager.set_signal_dimension(loadings_dim)
-        if factors.axes_manager.signal_dimension > 2:
-            factors.axes_manager.set_signal_dimension(factors_dim)
-        loadings.plot(navigator=loadings_navigator)
-        factors.plot(navigator=factors_navigator)
+        _plot_x_results(factors=factors, loadings=loadings,
+                        factors_navigator=factors_navigator,
+                        loadings_navigator=loadings_navigator,
+                        factors_dim=factors_dim,
+                        loadings_dim=loadings_dim)
 
-    def _change_API_comp_label(self, title, comp_label):
-        if comp_label is not None:
-            if title is None:
-                title = comp_label
-                warnings.warn("The 'comp_label' argument will be deprecated",
-                              "in 2.0, please use 'title' instead",
-                              VisibleDeprecationWarning)
-            else:
-                warnings.warn("The 'comp_label' argument will be deprecated",
-                              "in 2.0, Since you are already using the 'title'",
-                              "argument, 'comp_label' is ignored.",
-                              VisibleDeprecationWarning)
-        return title
+
+def _plot_x_results(factors, loadings, factors_navigator, loadings_navigator,
+                    factors_dim, loadings_dim):
+    factors.axes_manager._axes[0] = loadings.axes_manager._axes[0]
+    if loadings.axes_manager.signal_dimension > 2:
+        loadings.axes_manager.set_signal_dimension(loadings_dim)
+    if factors.axes_manager.signal_dimension > 2:
+        factors.axes_manager.set_signal_dimension(factors_dim)
+    if (loadings_navigator == "smart_auto" and
+            loadings.axes_manager.navigation_dimension < 3):
+        loadings_navigator = "slider"
+    else:
+        loadings_navigator = "auto"
+    if (factors_navigator == "smart_auto" and
+        (factors.axes_manager.navigation_dimension < 3 or
+         loadings_navigator is not None)):
+        factors_navigator = None
+    else:
+        factors_navigator = "auto"
+    loadings.plot(navigator=loadings_navigator)
+    factors.plot(navigator=factors_navigator)
+
+
+def _change_API_comp_label(title, comp_label):
+    if comp_label is not None:
+        if title is None:
+            title = comp_label
+            warnings.warn("The 'comp_label' argument will be deprecated "
+                          "in 2.0, please use 'title' instead",
+                          VisibleDeprecationWarning)
+        else:
+            warnings.warn("The 'comp_label' argument will be deprecated "
+                          "in 2.0, Since you are already using the 'title'",
+                          "argument, 'comp_label' is ignored.",
+                          VisibleDeprecationWarning)
+    return title
 
 
 class SpecialSlicersSignal(SpecialSlicers):
@@ -1994,8 +2017,7 @@ class BaseSignal(FancySlicing,
                 if (axes_manager.navigation_shape ==
                         navigator.axes_manager.signal_shape +
                         navigator.axes_manager.navigation_shape):
-                    self._plot.navigator_data_function = \
-                        get_dynamic_explorer_wrapper
+                    self._plot.navigator_data_function = get_dynamic_explorer_wrapper
 
                 elif (axes_manager.navigation_shape ==
                         navigator.axes_manager.signal_shape or
@@ -2003,22 +2025,19 @@ class BaseSignal(FancySlicing,
                         navigator.axes_manager.signal_shape or
                         (axes_manager.navigation_shape[0],) ==
                         navigator.axes_manager.signal_shape):
-                    self._plot.navigator_data_function = \
-                        get_static_explorer_wrapper
+                    self._plot.navigator_data_function = get_static_explorer_wrapper
                 else:
                     raise ValueError(
                         "The navigator dimensions are not compatible with "
                         "those of self.")
             elif navigator == "data":
                 if np.issubdtype(self.data.dtype, complex):
-                    self._plot.navigator_data_function = \
-                        lambda axes_manager=None: np.abs(self.data)
+                    self._plot.navigator_data_function = lambda axes_manager=None: np.abs(
+                        self.data)
                 else:
-                    self._plot.navigator_data_function = \
-                        lambda axes_manager=None: self.data
+                    self._plot.navigator_data_function = lambda axes_manager=None: self.data
             elif navigator == "spectrum":
-                self._plot.navigator_data_function = \
-                    get_1D_sum_explorer_wrapper
+                self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
             else:
                 raise ValueError(
                     "navigator must be one of \"spectrum\",\"auto\","
@@ -2419,8 +2438,8 @@ class BaseSignal(FancySlicing,
                 axis_in_manager = stack_history.axis
                 step_sizes = stack_history.step_sizes
             else:
-                axis_in_manager = \
-                    self.axes_manager[-1 + 1j].index_in_axes_manager
+                axis_in_manager = self.axes_manager[-1 +
+                                                    1j].index_in_axes_manager
         else:
             mode = 'manual'
             axis_in_manager = self.axes_manager[axis].index_in_axes_manager
@@ -2452,8 +2471,8 @@ class BaseSignal(FancySlicing,
 
         axes_dict = signal_dict['axes']
         for i in range(len(cut_index) - 1):
-            axes_dict[axis]['offset'] = \
-                self.axes_manager._axes[axis].index2value(cut_index[i])
+            axes_dict[axis]['offset'] = self.axes_manager._axes[
+                axis].index2value(cut_index[i])
             axes_dict[axis]['size'] = cut_index[i + 1] - cut_index[i]
             data = self.data[
                 (slice(None), ) * axis +
@@ -2657,9 +2676,8 @@ class BaseSignal(FancySlicing,
     def _make_sure_data_is_contiguous(self, log=False):
         if self.data.flags['C_CONTIGUOUS'] is False:
             if log:
-                _warn_string = \
-                    "{0!r} data is replaced by its optimized copy".format(
-                        self)
+                _warn_string = "{0!r} data is replaced by its optimized copy".format(
+                    self)
                 _logger.warning(_warn_string)
             self.data = np.ascontiguousarray(self.data)
 
@@ -3483,8 +3501,7 @@ class BaseSignal(FancySlicing,
 
         if not ndkwargs and (self.axes_manager.signal_dimension == 1 and
                              "axis" in fargs):
-            kwargs['axis'] = \
-                self.axes_manager.signal_axes[-1].index_in_array
+            kwargs['axis'] = self.axes_manager.signal_axes[-1].index_in_array
 
             res = self._map_all(function, inplace=inplace, **kwargs)
         # If the function has an axes argument
@@ -4421,10 +4438,12 @@ class BaseSignal(FancySlicing,
         >>> s.T # a shortcut for no arguments
         <BaseSignal, title: , dimensions: (9, 8, 7, 6, 5, 4, 3, 2, 1|)>
 
-        >>> s.transpose(signal_axes=5) # roll to leave 5 axes in navigation space
+        # roll to leave 5 axes in navigation space
+        >>> s.transpose(signal_axes=5)
         <BaseSignal, title: , dimensions: (4, 3, 2, 1|9, 8, 7, 6, 5)>
 
-        >>> s.transpose(navigation_axes=3) # roll leave 3 axes in navigation space
+        # roll leave 3 axes in navigation space
+        >>> s.transpose(navigation_axes=3)
         <BaseSignal, title: , dimensions: (3, 2, 1|9, 8, 7, 6, 5, 4)>
 
         >>> # 3 explicitly defined axes in signal space
