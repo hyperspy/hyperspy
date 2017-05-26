@@ -81,7 +81,10 @@ def _requires_linear_rebin(arr, scale):
         rebinning factors
     """
 
-    return (np.asarray(arr.shape) % np.asarray(scale)).any() or anyfloatin(scale)
+    return (np.asarray(arr.shape) %
+            np.asarray(scale)).any() or anyfloatin(scale)
+
+
 def rebin(a, new_shape=None, scale=None, crop=True):
     """Rebin array.
 
