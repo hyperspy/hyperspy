@@ -32,7 +32,7 @@ from dateutil import tz
 from datetime import datetime
 
 from hyperspy.io import load
-from hyperspy.signals import BaseSignal, Signal2D, Signal1D
+from hyperspy.signals import BaseSignal, Signal2D, Signal1D, EDSTEMSpectrum
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
@@ -240,6 +240,63 @@ class TestFeiEMD():
         fei_si = np.load(os.path.join(self.fei_files_path, 'fei_emd_si.npy'))
         np.testing.assert_equal(signal[1].data, fei_si)
         assert isinstance(signal[1], Signal1D)
+
+    def test_fei_emd_si_non_square_10frames(self):
+        s = load(os.path.join(self.fei_files_path,
+                              'fei_SI_SuperX-HAADF_10frames_10x50.emd'))
+        signal = s[1]
+        assert isinstance(signal, EDSTEMSpectrum)
+        assert signal.axes_manager[0].name == 'x'
+        assert signal.axes_manager[0].size == 10
+        assert signal.axes_manager[0].units == 'nm'
+        assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        assert signal.axes_manager[1].name == 'y'
+        assert signal.axes_manager[1].size == 50
+        assert signal.axes_manager[1].units == 'nm'
+        assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        assert signal.axes_manager[2].name == 'X-ray energy'
+        assert signal.axes_manager[2].size == 4096
+        assert signal.axes_manager[2].units == 'keV'
+        assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
+        assert signal.metadata.Acquisition_instrument.TEM.Detector.EDS.frame_number == 10
+
+    def test_fei_emd_si_non_square_20frames(self):
+        s = load(os.path.join(self.fei_files_path,
+                              'fei_SI_SuperX-HAADF_20frames_10x50.emd'))
+        signal = s[1]
+        assert isinstance(signal, EDSTEMSpectrum)
+        assert signal.axes_manager[0].name == 'x'
+        assert signal.axes_manager[0].size == 10
+        assert signal.axes_manager[0].units == 'nm'
+        assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        assert signal.axes_manager[1].name == 'y'
+        assert signal.axes_manager[1].size == 50
+        assert signal.axes_manager[1].units == 'nm'
+        assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        assert signal.axes_manager[2].name == 'X-ray energy'
+        assert signal.axes_manager[2].size == 4096
+        assert signal.axes_manager[2].units == 'keV'
+        assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
+        assert signal.metadata.Acquisition_instrument.TEM.Detector.EDS.frame_number == 20
+
+    def test_fei_emd_si_non_square_20frames_2eV(self):
+        s = load(os.path.join(self.fei_files_path,
+                              'fei_SI_SuperX-HAADF_20frames_10x50_2ev.emd'))
+        signal = s[1]
+        assert isinstance(signal, EDSTEMSpectrum)
+        assert signal.axes_manager[0].name == 'x'
+        assert signal.axes_manager[0].size == 10
+        assert signal.axes_manager[0].units == 'nm'
+        assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        assert signal.axes_manager[1].name == 'y'
+        assert signal.axes_manager[1].size == 50
+        assert signal.axes_manager[1].units == 'nm'
+        assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        assert signal.axes_manager[2].name == 'X-ray energy'
+        assert signal.axes_manager[2].size == 4096
+        assert signal.axes_manager[2].units == 'keV'
+        assert_allclose(signal.axes_manager[2].scale, 0.002, atol=1E-5)
+        assert signal.metadata.Acquisition_instrument.TEM.Detector.EDS.frame_number == 20
 
     def test_fei_emd_si_frame_range(self):
         signal = load(os.path.join(self.fei_files_path, 'fei_emd_si.emd'),
