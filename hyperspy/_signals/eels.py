@@ -1323,17 +1323,14 @@ class EELSSpectrum_mixin:
         return model
 
     def rebin(self, new_shape=None, scale=None, crop=True, out=None):
-        factors = self._rebin_validate_and_get_factors(
+        factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
-            scale=scale,
-            crop=crop,
-            out=out)
+            scale=scale)
         m = super().rebin(new_shape=new_shape, scale=scale, crop=crop, out=out)
         m = out or m
         time_factor = np.prod([factors[axis.index_in_array]
                                for axis in m.axes_manager.navigation_axes])
         mdeels = m.metadata.Acquisition_instrument.TEM.Detector.EELS
-        aimd = m.metadata.Acquisition_instrument
         m.get_dimensions_from_data()
         if "Acquisition_instrument.TEM.Detector.EELS.dwell_time" in m.metadata:
             mdeels.dwell_time *= time_factor

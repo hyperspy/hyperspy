@@ -12,6 +12,9 @@ import numbers
 
 import numpy as np
 
+from hyperspy.misc.math_tools import anyfloatin
+
+
 _logger = logging.getLogger(__name__)
 
 
@@ -68,6 +71,17 @@ def homogenize_ndim(*args):
             for ary in args]
 
 
+def _requires_linear_rebin(arr, scale):
+    """Returns True if linear_rebin is required.
+    Parameters
+    ----------
+    arr: array
+        numpy array to rebin
+    scale: tuple
+        rebinning factors
+    """
+
+    return (np.asarray(arr.shape) % np.asarray(scale)).any() or anyfloatin(scale)
 def rebin(a, new_shape=None, scale=None, crop=True):
     """Rebin array.
 
@@ -132,16 +146,15 @@ def rebin(a, new_shape=None, scale=None, crop=True):
     else:
         new_shape = new_shape
         scale = scale
-
-    lenShape = len(a.shape)
-
     # check whether or not interpolation is needed.
-    if (np.count_nonzero(np.asarray(a.shape) % np.asarray(scale)) != 0
-            or (all(isinstance(item, int) for item in scale)) is not True):
+    if _requires_linear_rebin(arr=a, scale=scale):
+        _logger.debug("Using linear_bin")
         return _linear_bin(a, scale, crop)
     else:
+        _logger.debug("Using standard rebin with lazy support")
         # if interpolation is not needed run fast re_bin function.
         # Adapted from scipy cookbook.
+        lenShape = len(a.shape)
         new_shape = np.asarray(a.shape) // np.asarray(scale)
         # ensure the new shape is integers
         new_shape = tuple(int(ns) for ns in new_shape)

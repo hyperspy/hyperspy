@@ -33,6 +33,7 @@ from ..external.progressbar import progressbar
 from ..external.astroML.histtools import dasky_histogram
 from ..defaults_parser import preferences
 from ..docstrings.signal import (ONE_AXIS_PARAMETER, OUT_ARG)
+from hyperspy.misc.array_tools import _requires_linear_rebin
 
 _logger = logging.getLogger(__name__)
 
@@ -231,42 +232,18 @@ class LazySignal(BaseSignal):
         raise lazyerror
 
     def rebin(self, new_shape=None, scale=None, crop=False, out=None):
-        if new_shape is None and scale is None:
-            raise ValueError("One of new_shape, or scale must be specified")
-        elif new_shape is None and scale is None:
-            raise ValueError("Only one out of new_shape or scale should be specified.\
-                            Not both.")
-        elif new_shape:
-            if len(new_shape) != len(self.data.shape):
-                raise ValueError("Wrong new_shape size")
-            new_shape_in_array = []
-            for axis in self.axes_manager._axes:
-                new_shape_in_array.append(
-                    new_shape[axis.index_in_axes_manager])
-            if (np.array(self.data.shape) %
-                    np.array(new_shape_in_array)).any():
+        factors = self._validate_rebin_args_and_get_factors(
+            new_shape=new_shape,
+            scale=scale)
+        if _requires_linear_rebin(arr=self.data, scale=factors):
+            if new_shape:
                 raise NotImplementedError(
                     "Lazy rebin requires that the new shape is a divisor "
                     "of the original signal shape e.g. if original shape "
                     "(10| 6), new_shape=(5| 3) is valid, (3 | 4) is not.")
-            factors = (
-                np.array(
-                    self.data.shape) /
-                np.array(new_shape_in_array))
-        else:
-            if len(scale) != len(self.data.shape):
-                raise ValueError("Wrong scale size")
-            factors = []
-            for axis in self.axes_manager._axes:
-                factors.append(scale[axis.index_in_axes_manager])
-            factors = np.array(factors)
-            if (factors < 1).any():
+            else:
                 raise NotImplementedError(
-                    "Lazy rebin requires scale to be > 1 and divisor of the "
-                    "original signal shape")
-            elif (np.array(self.data.shape) % factors).any():
-                raise NotImplementedError(
-                    "Lazy rebin requires scale to divisor of the "
+                    "Lazy rebin requires scale to be integer and divisor of the "
                     "original signal shape")
         axis = {ax.index_in_array: ax
                 for ax in self.axes_manager._axes}[factors.argmax()]

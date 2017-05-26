@@ -178,11 +178,9 @@ class EDS_mixin:
     sum.__doc__ = Signal1D.sum.__doc__
 
     def rebin(self, new_shape=None, scale=None, crop=True, out=None):
-        factors = self._rebin_validate_and_get_factors(
+        factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
-            scale=scale,
-            crop=crop,
-            out=out)
+            scale=scale,)
         m = super().rebin(new_shape=new_shape, scale=scale, crop=crop, out=out)
         m = out or m
         time_factor = np.prod([factors[axis.index_in_array]

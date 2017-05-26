@@ -2248,14 +2248,14 @@ class BaseSignal(FancySlicing,
             data = self.data.transpose(nav_iia_r + sig_iia_r)
             return data
 
-    def _rebin_validate_and_get_factors(self, new_shape=None, scale=None,
-                                        crop=True, out=None):
+    def _validate_rebin_args_and_get_factors(self, new_shape=None, scale=None):
 
         if new_shape is None and scale is None:
             raise ValueError("One of new_shape, or scale must be specified")
         elif new_shape is None and scale is None:
-            raise ValueError("Only one out of new_shape or scale should be specified.\
-                            Not both.")
+            raise ValueError(
+                "Only one out of new_shape or scale should be specified. "
+                "Not both.")
         elif new_shape:
             if len(new_shape) != len(self.data.shape):
                 raise ValueError("Wrong new_shape size")
@@ -2324,11 +2324,9 @@ class BaseSignal(FancySlicing,
         Sum =  164.0
 
         """
-        factors = self._rebin_validate_and_get_factors(
+        factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
-            scale=scale,
-            crop=crop,
-            out=out)
+            scale=scale,)
         s = out or self._deepcopy_with_new_data(None, copy_variance=True)
         data = hyperspy.misc.array_tools.rebin(
             self.data, scale=factors, crop=crop)
