@@ -23,6 +23,7 @@
 
 import os.path
 from os import remove
+import shutil
 import tempfile
 from numpy.testing import assert_allclose
 import numpy as np
@@ -178,16 +179,29 @@ class TestCaseSaveAndRead():
 
 class TestFeiEMD():
 
+    fei_files_path = os.path.join(my_path, "emd_files", "fei_emd_files")
+
+    @classmethod
+    def setup_class(cls):
+        import zipfile
+        zipf = os.path.join(my_path, "emd_files", "fei_emd_files.zip")
+        with zipfile.ZipFile(zipf, 'r') as zipped:
+            zipped.extractall(cls.fei_files_path)
+
+    @classmethod
+    def teardown_class(cls):
+        shutil.rmtree(cls.fei_files_path)
+
     def test_fei_emd_image(self):
         md = {'Acquisition_instrument': {'TEM': {'beam_energy': 200.0,
                                                  'camera_length': 98.0,
                                                  'magnification': 40000.0,
                                                  'microscope': 'Talos',
                                                  'tilt_stage': '0.00'}},
-              'General': {'original_filename': 'example_fei_emd_image.emd',
+              'General': {'original_filename': 'fei_emd_image.emd',
                           'time': '2017-03-06T09:56:41',
                           'time_zone': 'BST',
-                          'title': 'example_fei_emd_image'},
+                          'title': 'fei_emd_image'},
               'Signal': {'binned': False, 'signal_type': 'image'},
               '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                         'original_shape': None,
@@ -200,10 +214,9 @@ class TestFeiEMD():
         md['General']['time'] = dt.astimezone(
             tz.tzlocal()).isoformat().split('+')[0]
 
-        signal = load(os.path.join(my_path, 'emd_files',
-                                   'example_fei_emd_image.emd'))
-        fei_image = np.load(os.path.join(
-            my_path, 'emd_files', 'fei_emd_image.npy'))
+        signal = load(os.path.join(self.fei_files_path, 'fei_emd_image.emd'))
+        fei_image = np.load(os.path.join(self.fei_files_path,
+                                         'fei_emd_image.npy'))
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].units == 'nm'
         assert_allclose(signal.axes_manager[0].scale, 5.302414, atol=1E-5)
@@ -215,25 +228,23 @@ class TestFeiEMD():
         assert isinstance(signal, Signal2D)
 
     def test_fei_emd_spectrum(self):
-        signal = load(os.path.join(my_path, 'emd_files',
-                                   'example_fei_emd_spectrum.emd'))
-        fei_spectrum = np.load(os.path.join(
-            my_path, 'emd_files', 'fei_emd_spectrum.npy'))
+        signal = load(os.path.join(
+            self.fei_files_path, 'fei_emd_spectrum.emd'))
+        fei_spectrum = np.load(os.path.join(self.fei_files_path,
+                                            'fei_emd_spectrum.npy'))
         np.testing.assert_equal(signal.data, fei_spectrum)
         assert isinstance(signal, Signal1D)
 
     def test_fei_emd_si(self):
-        signal = load(os.path.join(
-            my_path, 'emd_files', 'example_fei_emd_si.emd'))
-        fei_si = np.load(os.path.join(my_path, 'emd_files', 'fei_emd_si.npy'))
+        signal = load(os.path.join(self.fei_files_path, 'fei_emd_si.emd'))
+        fei_si = np.load(os.path.join(self.fei_files_path, 'fei_emd_si.npy'))
         np.testing.assert_equal(signal[1].data, fei_si)
         assert isinstance(signal[1], Signal1D)
 
     def test_fei_emd_si_frame_range(self):
-        signal = load(os.path.join(
-            my_path, 'emd_files', 'example_fei_emd_si.emd'), first_frame=2,
-            last_frame=4)
-        fei_si = np.load(os.path.join(my_path, 'emd_files',
+        signal = load(os.path.join(self.fei_files_path, 'fei_emd_si.emd'),
+                      first_frame=2, last_frame=4)
+        fei_si = np.load(os.path.join(self.fei_files_path,
                                       'fei_emd_si_frame.npy'))
         np.testing.assert_equal(signal[1].data, fei_si)
         assert isinstance(signal[1], Signal1D)
