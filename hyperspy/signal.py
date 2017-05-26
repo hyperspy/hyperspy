@@ -797,7 +797,7 @@ class MVATools(object):
         factors = self.learning_results.factors
         if comp_ids is None:
             comp_ids = self.learning_results.output_dimension
-        title = self._change_API_comp_label(title, comp_label)
+        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('Decomposition factors of',
                                          same_window)
@@ -861,7 +861,7 @@ class MVATools(object):
         if same_window is None:
             same_window = True
         factors = self.learning_results.bss_factors
-        title = self._change_API_comp_label(title, comp_label)
+        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('BSS factors of', same_window)
 
@@ -951,7 +951,7 @@ class MVATools(object):
 
         if comp_ids is None:
             comp_ids = self.learning_results.output_dimension
-        title = self._change_API_comp_label(title, comp_label)
+        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('Decomposition loadings of',
                                          same_window)
@@ -1034,7 +1034,7 @@ class MVATools(object):
                                       "`plot_bss_results` instead.")
         if same_window is None:
             same_window = True
-        title = self._change_API_comp_label(title, comp_label)
+        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('BSS loadings of',
                                          same_window)
@@ -1467,19 +1467,20 @@ class MVATools(object):
         loadings.plot(navigator=loadings_navigator)
         factors.plot(navigator=factors_navigator)
 
-    def _change_API_comp_label(self, title, comp_label):
-        if comp_label is not None:
-            if title is None:
-                title = comp_label
-                warnings.warn("The 'comp_label' argument will be deprecated",
-                              "in 2.0, please use 'title' instead",
-                              VisibleDeprecationWarning)
-            else:
-                warnings.warn("The 'comp_label' argument will be deprecated",
-                              "in 2.0, Since you are already using the 'title'",
-                              "argument, 'comp_label' is ignored.",
-                              VisibleDeprecationWarning)
-        return title
+
+def _change_API_comp_label(title, comp_label):
+    if comp_label is not None:
+        if title is None:
+            title = comp_label
+            warnings.warn("The 'comp_label' argument will be deprecated "
+                          "in 2.0, please use 'title' instead",
+                          VisibleDeprecationWarning)
+        else:
+            warnings.warn("The 'comp_label' argument will be deprecated "
+                          "in 2.0, Since you are already using the 'title'",
+                          "argument, 'comp_label' is ignored.",
+                          VisibleDeprecationWarning)
+    return title
 
 
 class SpecialSlicersSignal(SpecialSlicers):
