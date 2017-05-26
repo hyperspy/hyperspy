@@ -2259,21 +2259,14 @@ class BaseSignal(FancySlicing,
         elif new_shape:
             if len(new_shape) != len(self.data.shape):
                 raise ValueError("Wrong new_shape size")
-            new_shape_in_array = []
-            for axis in self.axes_manager._axes:
-                new_shape_in_array.append(
-                    new_shape[axis.index_in_axes_manager])
-            factors = (
-                np.array(
-                    self.data.shape) /
-                np.array(new_shape_in_array))
+            new_shape_in_array = np.array([new_shape[axis.index_in_axes_manager]
+                                          for axis in self.axes_manager._axes])
+            factors = np.array(self.data.shape) / new_shape_in_array
         else:
             if len(scale) != len(self.data.shape):
                 raise ValueError("Wrong scale size")
-            factors = []
-            for axis in self.axes_manager._axes:
-                factors.append(scale[axis.index_in_axes_manager])
-            factors = np.array(factors)
+            factors = np.array([scale[axis.index_in_axes_manager]
+                                for axis in self.axes_manager._axes])
         return factors  # Factors are in array order
 
     def rebin(self, new_shape=None, scale=None, crop=True, out=None):
