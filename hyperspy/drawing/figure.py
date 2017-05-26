@@ -47,8 +47,14 @@ class BlittedFigure(object):
                 artists.extend(ax.artists)
                 artists.append(ax.get_yaxis())
                 artists.append(ax.get_xaxis())
-                [ax.draw_artist(a) for a in artists if
-                 a.get_animated() is True]
+                try:
+                    [ax.draw_artist(a) for a in artists if
+                     a.get_animated() is True]
+                except AttributeError:
+                     # The method was called before draw. This is a quick
+                     # fix. Properly fixing the issue involves avoiding
+                     # calling this method too early in the code.
+                    pass
             if canvas.supports_blit:
                 canvas.blit(self.figure.bbox)
 
