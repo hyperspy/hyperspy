@@ -36,6 +36,7 @@ from hyperspy.misc.utils import (
     signal_range_from_roi)
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 
+
 _logger = logging.getLogger(__name__)
 
 
@@ -1038,9 +1039,9 @@ class EELSSpectrum_mixin:
             The sample thickness in nm. Used for normalization of the
             SSD to obtain the energy loss function. It is only required when
             `n` is None. If the thickness is the same for all spectra it can be
-            given by a number. Otherwise, it can be provided as a BaseSignal with
-            signal dimension 0 and navigation_dimension equal to the current
-            signal.
+            given by a number. Otherwise, it can be provided as a BaseSignal
+            with signal dimension 0 and navigation_dimension equal to the
+            current signal.
         delta : float
             A small number (0.1-0.5 eV) added to the energy axis in
             specific steps of the calculation the surface loss correction to
@@ -1320,6 +1321,27 @@ class EELSSpectrum_mixin:
                           GOS=GOS,
                           dictionary=dictionary)
         return model
+
+    def rebin(self, new_shape=None, scale=None, crop=True, out=None):
+        factors = self._validate_rebin_args_and_get_factors(
+            new_shape=new_shape,
+            scale=scale)
+        m = super().rebin(new_shape=new_shape, scale=scale, crop=crop, out=out)
+        m = out or m
+        time_factor = np.prod([factors[axis.index_in_array]
+                               for axis in m.axes_manager.navigation_axes])
+        mdeels = m.metadata.Acquisition_instrument.TEM.Detector.EELS
+        m.get_dimensions_from_data()
+        if "Acquisition_instrument.TEM.Detector.EELS.dwell_time" in m.metadata:
+            mdeels.dwell_time *= time_factor
+        if "Acquisition_instrument.TEM.Detector.EELS.exposure" in m.metadata:
+            mdeels.exposure *= time_factor
+        if out is None:
+            return m
+        else:
+            out.events.data_changed.trigger(obj=out)
+        return m
+    rebin.__doc__ = hyperspy.signal.BaseSignal.rebin.__doc__
 
 
 class EELSSpectrum(EELSSpectrum_mixin, Signal1D):

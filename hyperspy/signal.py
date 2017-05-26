@@ -42,7 +42,6 @@ from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.utils import iterable_not_string
 from hyperspy.external.progressbar import progressbar
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
-from hyperspy.misc import array_tools
 from hyperspy.misc import rgb_tools
 from hyperspy.misc.utils import underline, isiterable
 from hyperspy.external.astroML.histtools import histogram
@@ -52,8 +51,7 @@ from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC)
-from hyperspy.docstrings.plot import (
-    BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
+from hyperspy.docstrings.plot import BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
@@ -2250,48 +2248,89 @@ class BaseSignal(FancySlicing,
             data = self.data.transpose(nav_iia_r + sig_iia_r)
             return data
 
-    def rebin(self, new_shape, out=None):
-        """Returns the object with the data rebinned.
+    def _validate_rebin_args_and_get_factors(self, new_shape=None, scale=None):
+
+        if new_shape is None and scale is None:
+            raise ValueError("One of new_shape, or scale must be specified")
+        elif new_shape is None and scale is None:
+            raise ValueError(
+                "Only one out of new_shape or scale should be specified. "
+                "Not both.")
+        elif new_shape:
+            if len(new_shape) != len(self.data.shape):
+                raise ValueError("Wrong new_shape size")
+            new_shape_in_array = np.array([new_shape[axis.index_in_axes_manager]
+                                           for axis in self.axes_manager._axes])
+            factors = np.array(self.data.shape) / new_shape_in_array
+        else:
+            if len(scale) != len(self.data.shape):
+                raise ValueError("Wrong scale size")
+            factors = np.array([scale[axis.index_in_axes_manager]
+                                for axis in self.axes_manager._axes])
+        return factors  # Factors are in array order
+
+    def rebin(self, new_shape=None, scale=None, crop=True, out=None):
+        """
+        Rebin array.
+
+        Rebin the signal into a smaller or larger shape, based on linear
+        interpolation. Specify **either** new_shape or scale.
 
         Parameters
         ----------
-        new_shape: tuple of ints
-            The new shape elements must be divisors of the original shape
-            elements.
-        %s
+        new_shape : a list of floats or integer, default None
+            For each dimension specify the new_shape. This will
+            then be converted into a scale.
+        scale : a list of floats or integer, default None
+            For each dimension specify the new:old pixel ratio, e.g. a ratio of 1
+            is no binning and a ratio of 2 means that each pixel in the new
+            spectrum is twice the size of the pixels in the old spectrum.
+            The length of the list should match the dimension of the numpy array.
+            ***Note : Only one of scale or new_shape should be specified otherwise
+            the function will not run***
+        crop: bool, default True
+            When binning by a non-integer number of pixels it is likely that
+            the final row in each dimension contains less than the full quota to
+            fill one pixel.
 
+            e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
+            pixels and one row containing only 0.8 pixels worth. Selection of
+            crop='True' or crop='False' determines whether or not this
+            'black' line is cropped from the final binned array or not.
+
+            *Please note that if crop=False is used, the final row in each
+            dimension may appear black, if a fractional number of pixels are left
+            over. It can be removed but has been left to preserve total counts
+            before and after binning.*
+
+        %s
         Returns
         -------
         s : Signal subclass
 
-        Raises
-        ------
-        ValueError
-            When there is a mismatch between the number of elements in the
-            signal shape and `new_shape` or `new_shape` elements are not
-            divisors of the original signal shape.
-
-
         Examples
         --------
-        >>> import hyperspy.api as hs
-        >>> s = hs.signals.Signal1D(np.zeros((10, 100)))
-        >>> s
-        <Signal1D, title: , dimensions: (10|100)>
-        >>> s.rebin((5, 100))
-        <Signal1D, title: , dimensions: (5|100)>
-        I
+        >>> spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
+        >>> spectrum.data[1, 2, 9] = 5
+        >>> print(spectrum)
+        <EDXTEMSpectrum, title: dimensions: (4, 4|10)>
+        >>> print ('Sum = ', sum(sum(sum(spectrum.data))))
+        Sum = 164.0
+        >>> scale = [2, 2, 5]
+        >>> test = spectrum.rebin(scale)
+        >>> print(test)
+        <EDSTEMSpectrum, title: dimensions (2, 2|2)>
+        >>> print('Sum = ', sum(sum(sum(test.data))))
+        Sum =  164.0
+
         """
-        if len(new_shape) != len(self.data.shape):
-            raise ValueError("Wrong shape size")
-        new_shape_in_array = []
-        for axis in self.axes_manager._axes:
-            new_shape_in_array.append(
-                new_shape[axis.index_in_axes_manager])
-        factors = (np.array(self.data.shape) /
-                   np.array(new_shape_in_array))
+        factors = self._validate_rebin_args_and_get_factors(
+            new_shape=new_shape,
+            scale=scale,)
         s = out or self._deepcopy_with_new_data(None, copy_variance=True)
-        data = array_tools.rebin(self.data, new_shape_in_array)
+        data = hyperspy.misc.array_tools.rebin(
+            self.data, scale=factors, crop=crop)
+
         if out:
             if out._lazy:
                 out.data = data
@@ -2299,22 +2338,22 @@ class BaseSignal(FancySlicing,
                 out.data[:] = data
         else:
             s.data = data
+        s.get_dimensions_from_data()
         for axis, axis_src in zip(s.axes_manager._axes,
                                   self.axes_manager._axes):
             axis.scale = axis_src.scale * factors[axis.index_in_array]
-        s.get_dimensions_from_data()
         if s.metadata.has_item('Signal.Noise_properties.variance'):
             if isinstance(s.metadata.Signal.Noise_properties.variance,
                           BaseSignal):
                 var = s.metadata.Signal.Noise_properties.variance
                 s.metadata.Signal.Noise_properties.variance = var.rebin(
-                    new_shape)
+                    new_shape=new_shape, scale=scale, crop=crop, out=out)
         if out is None:
             return s
         else:
             out.events.data_changed.trigger(obj=out)
 
-    rebin.__doc__ %= OUT_ARG
+    rebin.__doc__ %= (OUT_ARG)
 
     def split(self,
               axis='auto',
@@ -4208,12 +4247,14 @@ class BaseSignal(FancySlicing,
 
         Adding to a 1D signal, where the point will change
         when the navigation index is changed
+
         >>> s = hs.signals.Signal1D(np.random.random((3, 100)))
         >>> marker = hs.markers.point((19, 10, 60), (0.2, 0.5, 0.9))
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
         >>> s.plot(plot_markers=True) #doctest: +SKIP
 
         Add permanent marker
+
         >>> s = hs.signals.Signal2D(np.random.random((100, 100)))
         >>> marker = hs.markers.point(50, 60)
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
@@ -4221,12 +4262,14 @@ class BaseSignal(FancySlicing,
 
         Add permanent marker which changes with navigation position, and
         do not add it to a current plot
+
         >>> s = hs.signals.Signal2D(np.random.randint(10, size=(3, 100, 100)))
         >>> marker = hs.markers.point((10, 30, 50), (30, 50, 60), color='red')
         >>> s.add_marker(marker, permanent=True, plot_marker=False)
         >>> s.plot(plot_markers=True) #doctest: +SKIP
 
         Removing a permanent marker
+
         >>> s = hs.signals.Signal2D(np.random.randint(10, size=(100, 100)))
         >>> marker = hs.markers.point(10, 60, color='red')
         >>> marker.name = "point_marker"
@@ -4234,6 +4277,7 @@ class BaseSignal(FancySlicing,
         >>> del s.metadata.Markers.point_marker
 
         Adding many markers as a list
+
         >>> from numpy.random import random
         >>> s = hs.signals.Signal2D(np.random.randint(10, size=(100, 100)))
         >>> marker_list = []
