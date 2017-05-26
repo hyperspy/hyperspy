@@ -876,6 +876,7 @@ def test_spikes_removal_tool():
 
 
 class TestLinearRebin:
+
     def test_linear_downsize(self):
         spectrum = signals.EDSTEMSpectrum(np.ones([3, 5, 1]))
         scale = (1.5, 2.5, 1)
@@ -888,7 +889,7 @@ class TestLinearRebin:
 
     def test_linear_upsize(self):
         spectrum = signals.EDSTEMSpectrum(np.ones([4, 5, 10]))
-        scale=[0.3, 0.2, .5]
+        scale = [0.3, 0.2, .5]
         res = spectrum.rebin(scale=scale)
         np.testing.assert_allclose(res.data, 0.03 * np.ones((20, 16, 20)))
         for axis in res.axes_manager._axes:
@@ -902,9 +903,10 @@ class TestLinearRebin:
         res = spectrum.rebin(scale=scale)
         spectrum.data[2][0] = 5
         spectrum.rebin(scale=scale, out=res)
-        np.testing.assert_allclose(res.data, [[[ 0.4]],
-                [[ 0.4]],[[ 0.4]],[[ 0.4]],[[ 0.4]],[[ 2. ]],
-                [[ 2. ]],[[ 1.2]],[[ 0.4]],[[ 0.4]]])
+        np.testing.assert_allclose(res.data, [[[0.4]],
+                                              [[0.4]], [[0.4]], [
+                                                  [0.4]], [[0.4]], [[2.]],
+                                              [[2.]], [[1.2]], [[0.4]], [[0.4]]])
         for axis in res.axes_manager._axes:
             assert scale[axis.index_in_axes_manager] == axis.scale
 
@@ -914,8 +916,9 @@ class TestLinearRebin:
         res = spectrum.rebin(scale=scale)
         spectrum.data[2][0] = 5
         spectrum.rebin(scale=scale, out=res)
-        np.testing.assert_allclose(res.data, [[[ 0.4]],
-                [[ 0.4]],[[ 0.4]],[[ 0.4]],[[ 0.4]],[[ 2. ]],
-                [[ 2. ]],[[ 1.2]],[[ 0.4]],[[ 0.4]]], atol=1e-3)
+        np.testing.assert_allclose(res.data, [[[0.4]],
+                                              [[0.4]], [[0.4]], [
+                                                  [0.4]], [[0.4]], [[2.]],
+                                              [[2.]], [[1.2]], [[0.4]], [[0.4]]], atol=1e-3)
         for axis in res.axes_manager._axes:
             assert scale[axis.index_in_axes_manager] == axis.scale

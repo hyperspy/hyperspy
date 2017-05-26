@@ -117,9 +117,9 @@ def rebin(a, new_shape=None, scale=None, crop=True):
     Fast re_bin function Adapted from scipy cookbook
 
     """
-    #Series of if statements to check that only one out of new_shape or scale
-    #has been given. New_shape is then converted to scale. If both or neither
-    #are given the function raises and error and wont run.
+    # Series of if statements to check that only one out of new_shape or scale
+    # has been given. New_shape is then converted to scale. If both or neither
+    # are given the function raises and error and wont run.
     if new_shape is None and scale is None:
         raise ValueError("One of new_shape, or scale must be specified")
     elif new_shape is not None and scale is not None:
@@ -128,24 +128,24 @@ def rebin(a, new_shape=None, scale=None, crop=True):
     elif new_shape is not None:
         scale = []
         for i, axis in enumerate(a.shape):
-            scale.append(a.shape[i]/new_shape[i])
+            scale.append(a.shape[i] / new_shape[i])
     else:
         new_shape = new_shape
         scale = scale
 
     lenShape = len(a.shape)
 
-    #check whether or not interpolation is needed.
-    if (np.count_nonzero(np.asarray(a.shape)%np.asarray(scale)) != 0\
-       or (all(isinstance(item, int) for item in scale)) is not True):
+    # check whether or not interpolation is needed.
+    if (np.count_nonzero(np.asarray(a.shape) % np.asarray(scale)) != 0
+            or (all(isinstance(item, int) for item in scale)) is not True):
         return _linear_bin(a, scale, crop)
     else:
-        #if interpolation is not needed run fast re_bin function.
-        #Adapted from scipy cookbook.
-        new_shape = np.asarray(a.shape)//np.asarray(scale)
+        # if interpolation is not needed run fast re_bin function.
+        # Adapted from scipy cookbook.
+        new_shape = np.asarray(a.shape) // np.asarray(scale)
         # ensure the new shape is integers
         new_shape = tuple(int(ns) for ns in new_shape)
-        #check function wont bin to zero.
+        # check function wont bin to zero.
         for item in new_shape:
             if item == 0:
                 raise ValueError("One of your dimensions collapses to zero.\
@@ -184,43 +184,44 @@ def jit_ifnumba(func):
 @jit_ifnumba
 def _linear_bin_loop(result, data, scale):
     for j in range(result.shape[0]):
-        #Begin by determining the upper and lower limits of a given new pixel.
+        # Begin by determining the upper and lower limits of a given new pixel.
         x1 = j * scale
         x2 = min((1 + j) * scale, data.shape[0])
         value = result[j:j + 1]
 
         if (x2 - x1) >= 1:
-            #When binning, the first part is to deal with the fractional pixel
-            #left over from it being non-integer binning e.g. when x1=1.4
+            # When binning, the first part is to deal with the fractional pixel
+            # left over from it being non-integer binning e.g. when x1=1.4
             cx1 = math.ceil(x1)
             rem = cx1 - x1
-            #This will add a value of fractional pixel to the bin, eg if x1=1.4,
+            # This will add a value of fractional pixel to the bin, eg if x1=1.4,
             # the fist step will be to add 0.6*data[1]
             value += data[math.floor(x1)] * rem
-            #Update x1 to remove the part of the bin we have just added.
+            # Update x1 to remove the part of the bin we have just added.
             x1 = cx1
             while (x2 - x1) >= 1:
-                #Main binning function to add full pixel values to the data.
+                # Main binning function to add full pixel values to the data.
                 value += data[x1]
-                #Update x1 each time.
+                # Update x1 each time.
                 x1 += 1
             if x2 > x1:
-                #Finally take into account the fractional pixel left over.
-                value+= data[math.floor(x1)]*(x2-x1)
+                # Finally take into account the fractional pixel left over.
+                value += data[math.floor(x1)] * (x2 - x1)
         else:
-            #When step < 1, so we are upsampling
+            # When step < 1, so we are upsampling
             fx1 = math.floor(x1)
             cx1 = math.ceil(x1)
             if scale > (cx1 - x1) > 0:
-                #If our step is smaller than rounding up to the nearest whole
-                #number.
+                # If our step is smaller than rounding up to the nearest whole
+                # number.
                 value += data[fx1] * (cx1 - x1)
-                x1 = cx1 #This step is needed when this particular bin straddes
-                #two neighbouring pixels.
+                x1 = cx1  # This step is needed when this particular bin straddes
+                # two neighbouring pixels.
             if x1 < x2:
-            #The standard upsampling function where each new pixel is a
-            #fraction of the original pixel.
-                value += data[math.floor(x1)]*(x2-x1)
+                # The standard upsampling function where each new pixel is a
+                # fraction of the original pixel.
+                value += data[math.floor(x1)] * (x2 - x1)
+
 
 def _linear_bin(dat, scale, crop=True):
     """
@@ -267,26 +268,27 @@ def _linear_bin(dat, scale, crop=True):
              else "float")
 
     for axis, s in enumerate(scale):
-        #For each iteration of linear_bin the axis being interated over has to
-        #be switched to axis[0] in order to carry out the interation loop.
+        # For each iteration of linear_bin the axis being interated over has to
+        # be switched to axis[0] in order to carry out the interation loop.
         dat = np.swapaxes(dat, 0, axis)
         # The new dimension size is old_size/step, this is rounded down normally
-        #but if crop is switched off it is rounded up to the nearest whole
-        #number.
+        # but if crop is switched off it is rounded up to the nearest whole
+        # number.
         dim = (math.floor(dat.shape[0] / s) if crop
                else math.ceil(dat.shape[0] / s))
-        #check function wont bin to zero.
+        # check function wont bin to zero.
         if dim == 0:
             raise ValueError("One of your dimensions collapses to zero.\
             Re-adjust your scale values or run code with crop=False to\
             avoid this.")
-        #Set up the result np.array to have a new axis[0] size for after cropping.
+        # Set up the result np.array to have a new axis[0] size for after
+        # cropping.
         result = np.zeros((dim,) + dat.shape[1:], dtype=dtype)
-        #Carry out binning over axis[0]
+        # Carry out binning over axis[0]
         _linear_bin_loop(result=result, data=dat, scale=s)
-        #Swap axis[0] back to the original axis location.
+        # Swap axis[0] back to the original axis location.
         result = result.swapaxes(0, axis)
-        #Update the np.array reading of iterating over the next axis.
+        # Update the np.array reading of iterating over the next axis.
         dat = result
 
     return result

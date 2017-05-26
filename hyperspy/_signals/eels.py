@@ -1331,7 +1331,7 @@ class EELSSpectrum_mixin:
         m = super().rebin(new_shape=new_shape, scale=scale, crop=crop, out=out)
         m = out or m
         time_factor = np.prod([factors[axis.index_in_array]
-                       for axis in m.axes_manager.navigation_axes])
+                               for axis in m.axes_manager.navigation_axes])
         mdeels = m.metadata.Acquisition_instrument.TEM.Detector.EELS
         aimd = m.metadata.Acquisition_instrument
         m.get_dimensions_from_data()
@@ -1345,6 +1345,7 @@ class EELSSpectrum_mixin:
             out.events.data_changed.trigger(obj=out)
         return m
     rebin.__doc__ = hyperspy.signal.BaseSignal.rebin.__doc__
+
 
 class EELSSpectrum(EELSSpectrum_mixin, Signal1D):
 

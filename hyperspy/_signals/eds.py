@@ -186,7 +186,7 @@ class EDS_mixin:
         m = super().rebin(new_shape=new_shape, scale=scale, crop=crop, out=out)
         m = out or m
         time_factor = np.prod([factors[axis.index_in_array]
-                       for axis in m.axes_manager.navigation_axes])
+                               for axis in m.axes_manager.navigation_axes])
         aimd = m.metadata.Acquisition_instrument
         if "Acquisition_instrument.SEM.Detector.EDS.real_time" in m.metadata:
             aimd.SEM.Detector.EDS.real_time *= time_factor
