@@ -1323,45 +1323,27 @@ class EELSSpectrum_mixin:
         return model
 
     def rebin(self, new_shape=None, scale=None, crop=True, out=None):
-        """
-        %s
-        """
-    #Series of if statements to check that only one out of new_shape or scale
-    #has been given. New_shape is then converted to scale. If both or neither
-    #are given the function raises and error and wont run.
-
-        if new_shape == None and scale == None:
-            raise ValueError("One of new_shape, or scale must be specified")
-        elif new_shape != None and scale != None:
-            raise ValueError("Only one out of new_shape or scale should be specified.\
-                            Not both.")
-        elif new_shape != None:
-            scale = []
-            for i, axis in enumerate(self.axes_manager.shape):
-                scale.append(self.data.shape[i]/new_shape[i])
-        else:
-            new_shape = new_shape
-            scale = scale
-
-        m = super().rebin(scale=scale, crop=crop, out=out)
+        factors = self._rebin_validate_and_get_factors(
+            new_shape=new_shape,
+            scale=scale,
+            crop=crop,
+            out=out)
+        m = super().rebin(new_shape=new_shape, scale=scale, crop=crop, out=out)
         m = out or m
-
+        time_factor = np.prod([factors[axis.index_in_array]
+                       for axis in m.axes_manager.navigation_axes])
+        mdeels = m.metadata.Acquisition_instrument.TEM.Detector.EELS
+        aimd = m.metadata.Acquisition_instrument
         m.get_dimensions_from_data()
         if "Acquisition_instrument.TEM.Detector.EELS.dwell_time" in m.metadata:
-            for i, t in enumerate(m.axes_manager.navigation_axes):
-                m.metadata.Acquisition_instrument.TEM.Detector.EELS.dwell_time\
-                    *= scale[i]
+            mdeels.dwell_time *= time_factor
         if "Acquisition_instrument.TEM.Detector.EELS.exposure" in m.metadata:
-            for i, t in enumerate(m.axes_manager.navigation_axes):
-                m.metadata.Acquisition_instrument.TEM.Detector.EELS.dwell_time\
-                    *= scale[i]
+            mdeels.exposure *= time_factor
         if out is None:
             return m
         else:
             out.events.data_changed.trigger(obj=out)
-
         return m
-
     rebin.__doc__ = hyperspy.signal.BaseSignal.rebin.__doc__
 
 class EELSSpectrum(EELSSpectrum_mixin, Signal1D):

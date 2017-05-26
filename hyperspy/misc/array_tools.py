@@ -120,12 +120,12 @@ def rebin(a, new_shape=None, scale=None, crop=True):
     #Series of if statements to check that only one out of new_shape or scale
     #has been given. New_shape is then converted to scale. If both or neither
     #are given the function raises and error and wont run.
-    if new_shape == None and scale == None:
+    if new_shape is None and scale is None:
         raise ValueError("One of new_shape, or scale must be specified")
-    elif new_shape != None and scale != None:
+    elif new_shape is not None and scale is not None:
         raise ValueError("Only one out of new_shape or scale should be specified.\
                         Not both.")
-    elif new_shape != None:
+    elif new_shape is not None:
         scale = []
         for i, axis in enumerate(a.shape):
             scale.append(a.shape[i]/new_shape[i])

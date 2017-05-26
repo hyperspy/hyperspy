@@ -2248,6 +2248,34 @@ class BaseSignal(FancySlicing,
             data = self.data.transpose(nav_iia_r + sig_iia_r)
             return data
 
+    def _rebin_validate_and_get_factors(self, new_shape=None, scale=None,
+                                        crop=True, out=None):
+
+        if new_shape is None and scale is None:
+            raise ValueError("One of new_shape, or scale must be specified")
+        elif new_shape is None and scale is None:
+            raise ValueError("Only one out of new_shape or scale should be specified.\
+                            Not both.")
+        elif new_shape:
+            if len(new_shape) != len(self.data.shape):
+                raise ValueError("Wrong new_shape size")
+            new_shape_in_array = []
+            for axis in self.axes_manager._axes:
+                new_shape_in_array.append(
+                    new_shape[axis.index_in_axes_manager])
+            factors = (
+                np.array(
+                    self.data.shape) /
+                np.array(new_shape_in_array))
+        else:
+            if len(scale) != len(self.data.shape):
+                raise ValueError("Wrong scale size")
+            factors = []
+            for axis in self.axes_manager._axes:
+                factors.append(scale[axis.index_in_axes_manager])
+            factors = np.array(factors)
+        return factors  # Factors are in array order
+
     def rebin(self, new_shape=None, scale=None, crop=True, out=None):
         """
         Rebin array.
@@ -2303,33 +2331,11 @@ class BaseSignal(FancySlicing,
         Sum =  164.0
 
         """
-        # Series of if statements to check that only one out of new_shape or scale
-        # has been given. New_shape is then converted to scale. If both or neither
-        # are given the function raises and error and wont run.
-        if new_shape is None and scale is None:
-            raise ValueError("One of new_shape, or scale must be specified")
-        elif new_shape is None and scale is None:
-            raise ValueError("Only one out of new_shape or scale should be specified.\
-                            Not both.")
-        elif new_shape:
-            if len(new_shape) != len(self.data.shape):
-                raise ValueError("Wrong new_shape size")
-            new_shape_in_array = []
-            for axis in self.axes_manager._axes:
-                new_shape_in_array.append(
-                    new_shape[axis.index_in_axes_manager])
-            factors = (
-                np.array(
-                    self.data.shape) /
-                np.array(new_shape_in_array))
-        else:
-            if len(scale) != len(self.data.shape):
-                raise ValueError("Wrong shape size")
-            factors = []
-            for axis in self.axes_manager._axes:
-                factors.append(scale[axis.index_in_axes_manager])
-            factors = np.array(factors)
-
+        factors = self._rebin_validate_and_get_factors(
+            new_shape=new_shape,
+            scale=scale,
+            crop=crop,
+            out=out)
         s = out or self._deepcopy_with_new_data(None, copy_variance=True)
         data = hyperspy.misc.array_tools.rebin(
             self.data, scale=factors, crop=crop)
@@ -2344,13 +2350,13 @@ class BaseSignal(FancySlicing,
         s.get_dimensions_from_data()
         for axis, axis_src in zip(s.axes_manager._axes,
                                   self.axes_manager._axes):
-            axis.scale = axis_src.scale * scale[axis.index_in_array]
+            axis.scale = axis_src.scale * factors[axis.index_in_array]
         if s.metadata.has_item('Signal.Noise_properties.variance'):
             if isinstance(s.metadata.Signal.Noise_properties.variance,
                           BaseSignal):
                 var = s.metadata.Signal.Noise_properties.variance
                 s.metadata.Signal.Noise_properties.variance = var.rebin(
-                    new_shape=new_shape, scale=factors, crop=crop, out=out)
+                    new_shape=new_shape, scale=scale, crop=crop, out=out)
         if out is None:
             return s
         else:

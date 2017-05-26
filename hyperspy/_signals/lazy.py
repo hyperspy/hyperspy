@@ -255,7 +255,7 @@ class LazySignal(BaseSignal):
                 np.array(new_shape_in_array))
         else:
             if len(scale) != len(self.data.shape):
-                raise ValueError("Wrong shape size")
+                raise ValueError("Wrong scale size")
             factors = []
             for axis in self.axes_manager._axes:
                 factors.append(scale[axis.index_in_axes_manager])
