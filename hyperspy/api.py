@@ -16,5 +16,5 @@ try:
     import hyperspy_gui_traitsui
 except ImportError:
     _logger.warning(
-        "The traitsui GUI elements are noot available, probably because the "
+        "The traitsui GUI elements are not available, probably because the "
         "hyperspy_gui_traitui package is not installed.")

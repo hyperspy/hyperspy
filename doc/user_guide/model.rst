@@ -47,7 +47,7 @@ A :py:class:`~.models.model1D.Model1D` can be created for data in the
 
 .. code-block:: python
 
-    >>> s = hs.signals.Signal1D('SomeDataHere') # or load the data from a file
+    >>> s = hs.signals.Signal1D(np.arange(300).reshape(30, 10)) # or load the data from a file
     >>> m = s.create_model() # Creates the 1D-Model and asign it to the variable m
 
 Similarly A :py:class:`~.models.model2D.Model2D` can be created for data in the
@@ -56,7 +56,7 @@ Similarly A :py:class:`~.models.model2D.Model2D` can be created for data in the
 
 .. code-block:: python
 
-    >>> im = hs.signals.Signal2D('SomeDataHere') # Load the data from a file
+    >>> im = hs.signals.Signal2D(np.arange(300).reshape(3, 10, 10)) # Load the data from a file
     >>> mod = im.create_model() # Create the 2D-Model and asign it to the variable mod
 
 The syntax for creating both one-dimensional and two-dimensional models is thus
@@ -158,10 +158,10 @@ we create a 2D gaussian that rotates around its center:
 
 .. code-block:: python
 
-    g = hs.model.components2D.Expression(
-        "k * exp(-((x-x0)**2 / (2 * sx ** 2) + (y-y0)**2 / (2 * sy ** 2)))",
-        "Gaussian2d", add_rotation=True, position=("x0", "y0"),
-        module="numpy", )
+    >>> g = hs.model.components2D.Expression(
+    ... "k * exp(-((x-x0)**2 / (2 * sx ** 2) + (y-y0)**2 / (2 * sy ** 2)))",
+    ... "Gaussian2d", add_rotation=True, position=("x0", "y0"),
+    ... module="numpy", )
 
 
 Of course :py:class:`~._components.expression.Expression` is only useful for analytical
@@ -184,26 +184,26 @@ a component is very easy, just modify the following template to suit your needs:
             Component.__init__(self, ('parameter_1', 'parameter_2'))
 
             # Optionally we can set the initial values
-             self.parameter_1.value = parameter_1
-             self.parameter_1.value = parameter_1
+            self.parameter_1.value = parameter_1
+            self.parameter_1.value = parameter_1
 
             # The units (optional)
-             self.parameter_1.units = 'Tesla'
-             self.parameter_2.units = 'Kociak'
+            self.parameter_1.units = 'Tesla'
+            self.parameter_2.units = 'Kociak'
 
             # Once defined we can give default values to the attribute is we want
             # For example we fix the attribure_1 (optional)
-             self.parameter_1.attribute_1.free = False
+            self.parameter_1.attribute_1.free = False
 
             # And we set the boundaries (optional)
-             self.parameter_1.bmin = 0.
-             self.parameter_1.bmax = None
+            self.parameter_1.bmin = 0.
+            self.parameter_1.bmax = None
 
             # Optionally, to boost the optimization speed we can define also define
             # the gradients of the function we the syntax:
             # self.parameter.grad = function
-             self.parameter_1.grad = self.grad_parameter_1
-             self.parameter_2.grad = self.grad_parameter_2
+            self.parameter_1.grad = self.grad_parameter_1
+            self.parameter_2.grad = self.grad_parameter_2
 
         # Define the function as a function of the already defined parameters, x
         # being the independent variable value
@@ -213,17 +213,17 @@ a component is very easy, just modify the following template to suit your needs:
             return p1 + x * p2
 
         # Optionally define the gradients of each parameter
-         def grad_parameter_1(self, x):
-             """
-             Returns d(function)/d(parameter_1)
-             """
-             return 0
+        def grad_parameter_1(self, x):
+            """
+            Returns d(function)/d(parameter_1)
+            """
+            return 0
 
-         def grad_parameter_2(self, x):
-             """
-             Returns d(function)/d(parameter_2)
-             """
-             return x
+        def grad_parameter_2(self, x):
+            """
+            Returns d(function)/d(parameter_2)
+            """
+            return x
 
 
 If you need help with the task please submit your question to the :ref:`users
@@ -404,7 +404,7 @@ recomputed for the resulting slices.
     >>> m.append(hs.model.components1D.Gaussian())
     >>> # select first three navigation pixels and last five signal channels
     >>> m1 = m.inav[:3].isig[-5:]
-    >>> m1.signal1D
+    >>> m1.signal
     <Signal1D, title: , dimensions: (3|5)>
 
 
@@ -574,6 +574,8 @@ possible to set a different coupling function by setting the
 :py:attr:`~.component.Parameter.twin_inverse_function_expr` attributes.  For
 example:
 
+.. code-block:: python
+
     >>> gaussian2.A.twin_function_expr = "x**2"
     >>> gaussian2.A.twin_inverse_function_expr = "sqrt(abs(x))"
     >>> gaussian2.A.value = 4
@@ -591,6 +593,8 @@ example:
             sigma	1.000000
             A	2.000000
             centre	0.000000
+
+.. code-block:: python
 
     >>> gaussian3.A.value = 4
     >>> m.print_current_values()
@@ -664,7 +668,7 @@ and ``b = 100`` and we add white noise to it:
 
 .. code-block:: python
 
-    >>> s = hs.signals.SpectrumSimulation(
+    >>> s = hs.signals.Signal1D(
     ...     np.arange(100, 300))
     >>> s.add_gaussian_noise(std=100)
 
@@ -706,7 +710,7 @@ gaussian noise and proceed to fit as in the previous example.
 
 .. code-block:: python
 
-    >>> s = hs.signals.SpectrumSimulation(
+    >>> s = hs.signals.Signal1D(
     ...     np.arange(300))
     >>> s.add_poissonian_noise()
     >>> m = s.create_model()
@@ -752,7 +756,7 @@ bounds on the ``centre`` parameter.
 .. code-block:: python
 
     >>> s = hs.signals.BaseSignal(np.random.normal(loc=10, scale=0.01,
-    size=1e5)).get_histogram()
+    ... size=1e5)).get_histogram()
     >>> s.metadata.Signal.binned = True
     >>> m = s.create_model()
     >>> g1 = hs.model.components1D.Gaussian()
@@ -843,11 +847,6 @@ conveniently adjust the parameter values by running
 :py:meth:`~.model.Model.gui` for :py:class:`~.model.Model`,
 :py:class:`~.component.Component` and
 :py:class:`~.component.Parameter`.
-
-.. Warning::
-
-    :py:meth:`~.model.Model.gui` functions require
-    ``ipywidgets``, which is an optional dependency of HyperSpy.
 
 
 .. figure::  images/notebook_widgets.png

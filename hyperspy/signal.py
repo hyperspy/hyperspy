@@ -42,7 +42,6 @@ from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.utils import iterable_not_string
 from hyperspy.external.progressbar import progressbar
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
-from hyperspy.misc import array_tools
 from hyperspy.misc import rgb_tools
 from hyperspy.misc.utils import underline, isiterable
 from hyperspy.external.astroML.histtools import histogram
@@ -52,8 +51,7 @@ from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC)
-from hyperspy.docstrings.plot import (
-    BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
+from hyperspy.docstrings.plot import BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
@@ -745,7 +743,7 @@ class MVATools(object):
                     s.save(filename)
 
     def plot_decomposition_factors(self,
-                                   comp_ids,
+                                   comp_ids=None,
                                    calibrate=True,
                                    same_window=True,
                                    comp_label=None,
@@ -760,9 +758,10 @@ class MVATools(object):
         ----------
 
         comp_ids : None, int, or list of ints
-            if None, returns maps of all components.
-            if int, returns maps of components with ids from 0 to given
-            int.
+            if None (default), returns maps of all components if the output_dimension was defined when
+            executing ``decomposition``. Otherwise it raises a ValueError.
+            if int, returns maps of components with ids from 0 to
+            given int.
             if list of ints, returns maps of components with ids in
             given list.
 
@@ -798,8 +797,13 @@ class MVATools(object):
             same_window = True
         factors = self.learning_results.factors
         if comp_ids is None:
-            comp_ids = self.learning_results.output_dimension
-        title = self._change_API_comp_label(title, comp_label)
+            if self.learning_results.output_dimension:
+                comp_ids = self.learning_results.output_dimension
+            else:
+                raise ValueError(
+                    "Please provide the number of components to plot via the "
+                    "``comp_ids`` argument")
+        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('Decomposition factors of',
                                          same_window)
@@ -863,7 +867,7 @@ class MVATools(object):
         if same_window is None:
             same_window = True
         factors = self.learning_results.bss_factors
-        title = self._change_API_comp_label(title, comp_label)
+        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('BSS factors of', same_window)
 
@@ -875,7 +879,7 @@ class MVATools(object):
                                             per_row=per_row)
 
     def plot_decomposition_loadings(self,
-                                    comp_ids,
+                                    comp_ids=None,
                                     calibrate=True,
                                     same_window=True,
                                     comp_label=None,
@@ -893,7 +897,8 @@ class MVATools(object):
         ----------
 
         comp_ids : None, int, or list of ints
-            if None, returns maps of all components.
+            if None (default), returns maps of all components if the output_dimension was defined when
+            executing ``decomposition``. Otherwise it raises a ValueError.
             if int, returns maps of components with ids from 0 to
             given int.
             if list of ints, returns maps of components with ids in
@@ -952,8 +957,13 @@ class MVATools(object):
             factors = None
 
         if comp_ids is None:
-            comp_ids = self.learning_results.output_dimension
-        title = self._change_API_comp_label(title, comp_label)
+            if self.learning_results.output_dimension:
+                comp_ids = self.learning_results.output_dimension
+            else:
+                raise ValueError(
+                    "Please provide the number of components to plot via the "
+                    "``comp_ids`` argument")
+        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('Decomposition loadings of',
                                          same_window)
@@ -1036,7 +1046,7 @@ class MVATools(object):
                                       "`plot_bss_results` instead.")
         if same_window is None:
             same_window = True
-        title = self._change_API_comp_label(title, comp_label)
+        title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('BSS loadings of',
                                          same_window)
@@ -1388,8 +1398,8 @@ class MVATools(object):
         return signal
 
     def plot_bss_results(self,
-                         factors_navigator="auto",
-                         loadings_navigator="auto",
+                         factors_navigator="smart_auto",
+                         loadings_navigator="smart_auto",
                          factors_dim=2,
                          loadings_dim=2,):
         """Plot the blind source separation factors and loadings.
@@ -1403,9 +1413,11 @@ class MVATools(object):
 
         Parameters
         ----------
-        factor_navigator, loadings_navigator : {"auto", None, "spectrum",
+        factors_navigator, loadings_navigator : {"smart_auto", "auto", None, "spectrum",
         Signal}
-            See `plot` documentation for details.
+            "smart_auto" (default) displays sliders if the navigation
+            dimension is less than 3. For a description of the other options
+            see `plot` documentation for details.
         factors_dim, loadings_dim: int
             Currently HyperSpy cannot plot signals of dimension higher than
             two. Therefore, to visualize the BSS results when the
@@ -1420,17 +1432,15 @@ class MVATools(object):
         """
         factors = self.get_bss_factors()
         loadings = self.get_bss_loadings()
-        factors.axes_manager._axes[0] = loadings.axes_manager._axes[0]
-        if loadings.axes_manager.signal_dimension > 2:
-            loadings.axes_manager.set_signal_dimension(loadings_dim)
-        if factors.axes_manager.signal_dimension > 2:
-            factors.axes_manager.set_signal_dimension(factors_dim)
-        loadings.plot(navigator=loadings_navigator)
-        factors.plot(navigator=factors_navigator)
+        _plot_x_results(factors=factors, loadings=loadings,
+                        factors_navigator=factors_navigator,
+                        loadings_navigator=loadings_navigator,
+                        factors_dim=factors_dim,
+                        loadings_dim=loadings_dim)
 
     def plot_decomposition_results(self,
-                                   factors_navigator="auto",
-                                   loadings_navigator="auto",
+                                   factors_navigator="smart_auto",
+                                   loadings_navigator="smart_auto",
                                    factors_dim=2,
                                    loadings_dim=2):
         """Plot the decompostion factors and loadings.
@@ -1444,9 +1454,11 @@ class MVATools(object):
 
         Parameters
         ----------
-        factor_navigator, loadings_navigator : {"auto", None, "spectrum",
+        factors_navigator, loadings_navigator : {"smart_auto", "auto", None, "spectrum",
         Signal}
-            See `plot` documentation for details.
+            "smart_auto" (default) displays sliders if the navigation
+            dimension is less than 3. For a description of the other options
+            see `plot` documentation for details.
         factors_dim, loadings_dim : int
             Currently HyperSpy cannot plot signals of dimension higher than
             two. Therefore, to visualize the BSS results when the
@@ -1461,27 +1473,48 @@ class MVATools(object):
         """
         factors = self.get_decomposition_factors()
         loadings = self.get_decomposition_loadings()
-        factors.axes_manager._axes[0] = loadings.axes_manager._axes[0]
-        if loadings.axes_manager.signal_dimension > 2:
-            loadings.axes_manager.set_signal_dimension(loadings_dim)
-        if factors.axes_manager.signal_dimension > 2:
-            factors.axes_manager.set_signal_dimension(factors_dim)
-        loadings.plot(navigator=loadings_navigator)
-        factors.plot(navigator=factors_navigator)
+        _plot_x_results(factors=factors, loadings=loadings,
+                        factors_navigator=factors_navigator,
+                        loadings_navigator=loadings_navigator,
+                        factors_dim=factors_dim,
+                        loadings_dim=loadings_dim)
 
-    def _change_API_comp_label(self, title, comp_label):
-        if comp_label is not None:
-            if title is None:
-                title = comp_label
-                warnings.warn("The 'comp_label' argument will be deprecated",
-                              "in 2.0, please use 'title' instead",
-                              VisibleDeprecationWarning)
-            else:
-                warnings.warn("The 'comp_label' argument will be deprecated",
-                              "in 2.0, Since you are already using the 'title'",
-                              "argument, 'comp_label' is ignored.",
-                              VisibleDeprecationWarning)
-        return title
+
+def _plot_x_results(factors, loadings, factors_navigator, loadings_navigator,
+                    factors_dim, loadings_dim):
+    factors.axes_manager._axes[0] = loadings.axes_manager._axes[0]
+    if loadings.axes_manager.signal_dimension > 2:
+        loadings.axes_manager.set_signal_dimension(loadings_dim)
+    if factors.axes_manager.signal_dimension > 2:
+        factors.axes_manager.set_signal_dimension(factors_dim)
+    if (loadings_navigator == "smart_auto" and
+            loadings.axes_manager.navigation_dimension < 3):
+        loadings_navigator = "slider"
+    else:
+        loadings_navigator = "auto"
+    if (factors_navigator == "smart_auto" and
+        (factors.axes_manager.navigation_dimension < 3 or
+         loadings_navigator is not None)):
+        factors_navigator = None
+    else:
+        factors_navigator = "auto"
+    loadings.plot(navigator=loadings_navigator)
+    factors.plot(navigator=factors_navigator)
+
+
+def _change_API_comp_label(title, comp_label):
+    if comp_label is not None:
+        if title is None:
+            title = comp_label
+            warnings.warn("The 'comp_label' argument will be deprecated "
+                          "in 2.0, please use 'title' instead",
+                          VisibleDeprecationWarning)
+        else:
+            warnings.warn("The 'comp_label' argument will be deprecated "
+                          "in 2.0, Since you are already using the 'title'",
+                          "argument, 'comp_label' is ignored.",
+                          VisibleDeprecationWarning)
+    return title
 
 
 class SpecialSlicersSignal(SpecialSlicers):
@@ -1996,8 +2029,7 @@ class BaseSignal(FancySlicing,
                 if (axes_manager.navigation_shape ==
                         navigator.axes_manager.signal_shape +
                         navigator.axes_manager.navigation_shape):
-                    self._plot.navigator_data_function = \
-                        get_dynamic_explorer_wrapper
+                    self._plot.navigator_data_function = get_dynamic_explorer_wrapper
 
                 elif (axes_manager.navigation_shape ==
                         navigator.axes_manager.signal_shape or
@@ -2005,22 +2037,19 @@ class BaseSignal(FancySlicing,
                         navigator.axes_manager.signal_shape or
                         (axes_manager.navigation_shape[0],) ==
                         navigator.axes_manager.signal_shape):
-                    self._plot.navigator_data_function = \
-                        get_static_explorer_wrapper
+                    self._plot.navigator_data_function = get_static_explorer_wrapper
                 else:
                     raise ValueError(
                         "The navigator dimensions are not compatible with "
                         "those of self.")
             elif navigator == "data":
                 if np.issubdtype(self.data.dtype, complex):
-                    self._plot.navigator_data_function = \
-                        lambda axes_manager=None: np.abs(self.data)
+                    self._plot.navigator_data_function = lambda axes_manager=None: np.abs(
+                        self.data)
                 else:
-                    self._plot.navigator_data_function = \
-                        lambda axes_manager=None: self.data
+                    self._plot.navigator_data_function = lambda axes_manager=None: self.data
             elif navigator == "spectrum":
-                self._plot.navigator_data_function = \
-                    get_1D_sum_explorer_wrapper
+                self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
             else:
                 raise ValueError(
                     "navigator must be one of \"spectrum\",\"auto\","
@@ -2250,48 +2279,89 @@ class BaseSignal(FancySlicing,
             data = self.data.transpose(nav_iia_r + sig_iia_r)
             return data
 
-    def rebin(self, new_shape, out=None):
-        """Returns the object with the data rebinned.
+    def _validate_rebin_args_and_get_factors(self, new_shape=None, scale=None):
+
+        if new_shape is None and scale is None:
+            raise ValueError("One of new_shape, or scale must be specified")
+        elif new_shape is None and scale is None:
+            raise ValueError(
+                "Only one out of new_shape or scale should be specified. "
+                "Not both.")
+        elif new_shape:
+            if len(new_shape) != len(self.data.shape):
+                raise ValueError("Wrong new_shape size")
+            new_shape_in_array = np.array([new_shape[axis.index_in_axes_manager]
+                                           for axis in self.axes_manager._axes])
+            factors = np.array(self.data.shape) / new_shape_in_array
+        else:
+            if len(scale) != len(self.data.shape):
+                raise ValueError("Wrong scale size")
+            factors = np.array([scale[axis.index_in_axes_manager]
+                                for axis in self.axes_manager._axes])
+        return factors  # Factors are in array order
+
+    def rebin(self, new_shape=None, scale=None, crop=True, out=None):
+        """
+        Rebin array.
+
+        Rebin the signal into a smaller or larger shape, based on linear
+        interpolation. Specify **either** new_shape or scale.
 
         Parameters
         ----------
-        new_shape: tuple of ints
-            The new shape elements must be divisors of the original shape
-            elements.
-        %s
+        new_shape : a list of floats or integer, default None
+            For each dimension specify the new_shape. This will
+            then be converted into a scale.
+        scale : a list of floats or integer, default None
+            For each dimension specify the new:old pixel ratio, e.g. a ratio of 1
+            is no binning and a ratio of 2 means that each pixel in the new
+            spectrum is twice the size of the pixels in the old spectrum.
+            The length of the list should match the dimension of the numpy array.
+            ***Note : Only one of scale or new_shape should be specified otherwise
+            the function will not run***
+        crop: bool, default True
+            When binning by a non-integer number of pixels it is likely that
+            the final row in each dimension contains less than the full quota to
+            fill one pixel.
 
+            e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
+            pixels and one row containing only 0.8 pixels worth. Selection of
+            crop='True' or crop='False' determines whether or not this
+            'black' line is cropped from the final binned array or not.
+
+            *Please note that if crop=False is used, the final row in each
+            dimension may appear black, if a fractional number of pixels are left
+            over. It can be removed but has been left to preserve total counts
+            before and after binning.*
+
+        %s
         Returns
         -------
         s : Signal subclass
 
-        Raises
-        ------
-        ValueError
-            When there is a mismatch between the number of elements in the
-            signal shape and `new_shape` or `new_shape` elements are not
-            divisors of the original signal shape.
-
-
         Examples
         --------
-        >>> import hyperspy.api as hs
-        >>> s = hs.signals.Signal1D(np.zeros((10, 100)))
-        >>> s
-        <Signal1D, title: , dimensions: (10|100)>
-        >>> s.rebin((5, 100))
-        <Signal1D, title: , dimensions: (5|100)>
-        I
+        >>> spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
+        >>> spectrum.data[1, 2, 9] = 5
+        >>> print(spectrum)
+        <EDXTEMSpectrum, title: dimensions: (4, 4|10)>
+        >>> print ('Sum = ', sum(sum(sum(spectrum.data))))
+        Sum = 164.0
+        >>> scale = [2, 2, 5]
+        >>> test = spectrum.rebin(scale)
+        >>> print(test)
+        <EDSTEMSpectrum, title: dimensions (2, 2|2)>
+        >>> print('Sum = ', sum(sum(sum(test.data))))
+        Sum =  164.0
+
         """
-        if len(new_shape) != len(self.data.shape):
-            raise ValueError("Wrong shape size")
-        new_shape_in_array = []
-        for axis in self.axes_manager._axes:
-            new_shape_in_array.append(
-                new_shape[axis.index_in_axes_manager])
-        factors = (np.array(self.data.shape) /
-                   np.array(new_shape_in_array))
+        factors = self._validate_rebin_args_and_get_factors(
+            new_shape=new_shape,
+            scale=scale,)
         s = out or self._deepcopy_with_new_data(None, copy_variance=True)
-        data = array_tools.rebin(self.data, new_shape_in_array)
+        data = hyperspy.misc.array_tools.rebin(
+            self.data, scale=factors, crop=crop)
+
         if out:
             if out._lazy:
                 out.data = data
@@ -2299,22 +2369,22 @@ class BaseSignal(FancySlicing,
                 out.data[:] = data
         else:
             s.data = data
+        s.get_dimensions_from_data()
         for axis, axis_src in zip(s.axes_manager._axes,
                                   self.axes_manager._axes):
             axis.scale = axis_src.scale * factors[axis.index_in_array]
-        s.get_dimensions_from_data()
         if s.metadata.has_item('Signal.Noise_properties.variance'):
             if isinstance(s.metadata.Signal.Noise_properties.variance,
                           BaseSignal):
                 var = s.metadata.Signal.Noise_properties.variance
                 s.metadata.Signal.Noise_properties.variance = var.rebin(
-                    new_shape)
+                    new_shape=new_shape, scale=scale, crop=crop, out=out)
         if out is None:
             return s
         else:
             out.events.data_changed.trigger(obj=out)
 
-    rebin.__doc__ %= OUT_ARG
+    rebin.__doc__ %= (OUT_ARG)
 
     def split(self,
               axis='auto',
@@ -2380,8 +2450,8 @@ class BaseSignal(FancySlicing,
                 axis_in_manager = stack_history.axis
                 step_sizes = stack_history.step_sizes
             else:
-                axis_in_manager = \
-                    self.axes_manager[-1 + 1j].index_in_axes_manager
+                axis_in_manager = self.axes_manager[-1 +
+                                                    1j].index_in_axes_manager
         else:
             mode = 'manual'
             axis_in_manager = self.axes_manager[axis].index_in_axes_manager
@@ -2413,8 +2483,8 @@ class BaseSignal(FancySlicing,
 
         axes_dict = signal_dict['axes']
         for i in range(len(cut_index) - 1):
-            axes_dict[axis]['offset'] = \
-                self.axes_manager._axes[axis].index2value(cut_index[i])
+            axes_dict[axis]['offset'] = self.axes_manager._axes[
+                axis].index2value(cut_index[i])
             axes_dict[axis]['size'] = cut_index[i + 1] - cut_index[i]
             data = self.data[
                 (slice(None), ) * axis +
@@ -2618,9 +2688,8 @@ class BaseSignal(FancySlicing,
     def _make_sure_data_is_contiguous(self, log=False):
         if self.data.flags['C_CONTIGUOUS'] is False:
             if log:
-                _warn_string = \
-                    "{0!r} data is replaced by its optimized copy".format(
-                        self)
+                _warn_string = "{0!r} data is replaced by its optimized copy".format(
+                    self)
                 _logger.warning(_warn_string)
             self.data = np.ascontiguousarray(self.data)
 
@@ -3444,8 +3513,7 @@ class BaseSignal(FancySlicing,
 
         if not ndkwargs and (self.axes_manager.signal_dimension == 1 and
                              "axis" in fargs):
-            kwargs['axis'] = \
-                self.axes_manager.signal_axes[-1].index_in_array
+            kwargs['axis'] = self.axes_manager.signal_axes[-1].index_in_array
 
             res = self._map_all(function, inplace=inplace, **kwargs)
         # If the function has an axes argument
@@ -4208,12 +4276,14 @@ class BaseSignal(FancySlicing,
 
         Adding to a 1D signal, where the point will change
         when the navigation index is changed
+
         >>> s = hs.signals.Signal1D(np.random.random((3, 100)))
         >>> marker = hs.markers.point((19, 10, 60), (0.2, 0.5, 0.9))
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
         >>> s.plot(plot_markers=True) #doctest: +SKIP
 
         Add permanent marker
+
         >>> s = hs.signals.Signal2D(np.random.random((100, 100)))
         >>> marker = hs.markers.point(50, 60)
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
@@ -4221,12 +4291,14 @@ class BaseSignal(FancySlicing,
 
         Add permanent marker which changes with navigation position, and
         do not add it to a current plot
+
         >>> s = hs.signals.Signal2D(np.random.randint(10, size=(3, 100, 100)))
         >>> marker = hs.markers.point((10, 30, 50), (30, 50, 60), color='red')
         >>> s.add_marker(marker, permanent=True, plot_marker=False)
         >>> s.plot(plot_markers=True) #doctest: +SKIP
 
         Removing a permanent marker
+
         >>> s = hs.signals.Signal2D(np.random.randint(10, size=(100, 100)))
         >>> marker = hs.markers.point(10, 60, color='red')
         >>> marker.name = "point_marker"
@@ -4234,6 +4306,7 @@ class BaseSignal(FancySlicing,
         >>> del s.metadata.Markers.point_marker
 
         Adding many markers as a list
+
         >>> from numpy.random import random
         >>> s = hs.signals.Signal2D(np.random.randint(10, size=(100, 100)))
         >>> marker_list = []
@@ -4377,10 +4450,12 @@ class BaseSignal(FancySlicing,
         >>> s.T # a shortcut for no arguments
         <BaseSignal, title: , dimensions: (9, 8, 7, 6, 5, 4, 3, 2, 1|)>
 
-        >>> s.transpose(signal_axes=5) # roll to leave 5 axes in navigation space
+        # roll to leave 5 axes in navigation space
+        >>> s.transpose(signal_axes=5)
         <BaseSignal, title: , dimensions: (4, 3, 2, 1|9, 8, 7, 6, 5)>
 
-        >>> s.transpose(navigation_axes=3) # roll leave 3 axes in navigation space
+        # roll leave 3 axes in navigation space
+        >>> s.transpose(navigation_axes=3)
         <BaseSignal, title: , dimensions: (3, 2, 1|9, 8, 7, 6, 5, 4)>
 
         >>> # 3 explicitly defined axes in signal space

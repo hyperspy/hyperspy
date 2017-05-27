@@ -1,19 +1,19 @@
-hyperspy.docstrings package
-===========================
+hyperspy\.docstrings package
+============================
 
 Submodules
 ----------
 
-hyperspy.docstrings.plot module
--------------------------------
+hyperspy\.docstrings\.plot module
+---------------------------------
 
 .. automodule:: hyperspy.docstrings.plot
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.docstrings.signal module
----------------------------------
+hyperspy\.docstrings\.signal module
+-----------------------------------
 
 .. automodule:: hyperspy.docstrings.signal
     :members:
