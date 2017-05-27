@@ -34,7 +34,7 @@ currently available specialised :py:class:`~.signal.BaseSignal` subclasses.
 
 .. versionadded:: 1.0
 
-    New :py:class:`~._signals.complex_signal.ComplexSignal`,
+    New :py:class:`~._signals.complex_signal.ComplexSignal_mixin`,
     :py:class:`~._signals.complex_signal1d.ComplexSignal1D` and
     :py:class:`~._signals.complex_signal2d.ComplexSignal2D`
     :py:class:`~.signal.BaseSignal` subclasses specialised in complex data.
@@ -219,7 +219,7 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |           :py:class:`~._signals.dielectric_function.DielectricFunction` |        1         |    DielectricFunction |  complex |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
-    |      :py:class:`~._signals.complex_signal.ComplexSignal`                |        -         |       -               | complex  |
+    |      :py:class:`~._signals.complex_signal.ComplexSignal_mixin`                |        -         |       -               | complex  |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |    :py:class:`~._signals.complex_signal1d.ComplexSignal1D`              |        1         |       -               | complex  |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
@@ -289,7 +289,7 @@ following table:
     +---------------------------------------------------------------+--------+
     |              :py:class:`~._signals.signal2d.Signal2D`         | False  |
     +---------------------------------------------------------------+--------+
-    |      :py:class:`~._signals.complex_signal.ComplexSignal`      | False  |
+    |      :py:class:`~._signals.complex_signal.ComplexSignal_mixin`      | False  |
     +---------------------------------------------------------------+--------+
     |    :py:class:`~._signals.complex_signal1d.ComplexSignal1D`    | False  |
     +---------------------------------------------------------------+--------+
@@ -1573,7 +1573,7 @@ as follows:
   >>> s.imag = new_imag  # new_imag can be an array or signal
 
 It is important to note that `data` passed to the constructor of a
-:py:class:`~._signals.complex_signal.ComplexSignal` (or to a subclass), which is not already
+:py:class:`~._signals.complex_signal.ComplexSignal_mixin` (or to a subclass), which is not already
 complex, will be converted to the numpy standard of `np.complex`/`np.complex128`. `data` which
 is already complex will be passed as is.
 
