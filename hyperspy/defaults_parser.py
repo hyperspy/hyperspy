@@ -27,6 +27,7 @@ import traits.api as t
 from hyperspy.misc.config_dir import config_path, os_name, data_path
 from hyperspy.misc.ipython_tools import turn_logging_on, turn_logging_off
 from hyperspy.io_plugins import default_write_ext
+from hyperspy.ui_registry import add_gui_method
 
 defaults_file = os.path.join(config_path, 'hyperspyrc')
 eels_gos_files = os.path.join(data_path, 'EELS_GOS.tar.gz')
@@ -80,32 +81,9 @@ else:
 
 
 class GeneralConfig(t.HasTraits):
-    default_file_format = t.Enum(
-        'hdf5',
-        'rpl',
-        desc='Using the hdf5 format is highly reccomended because is the '
-        'only one fully supported. The Ripple (rpl) format it is useful '
-        'tk is provided for when none of the other toolkits are'
-        ' available. However, when using this toolkit the '
-        'user interface elements are not available. '
-        'to export data to other software that do not support hdf5')
-    default_export_format = t.Enum(
-        *default_write_ext,
-        desc='Using the hdf5 format is highly reccomended because is the '
-        'only one fully supported. The Ripple (rpl) format it is useful '
-        'to export data to other software that do not support hdf5')
-    hspy_extension = t.CBool(
-        False,
-        desc='If enabled, HyperSpy will use the "hspy" extension when saving '
-        'to HDF5 instead of the "hdf5" extension. "hspy" will be the default'
-        'extension from HyperSpy v1.3')
-    interactive = t.CBool(
-        True,
-        desc='If enabled, HyperSpy will prompt the user when options are '
-        'available, otherwise it will use the default values if possible')
     logger_on = t.CBool(
         False,
-        label='Automatic logging',
+        label='Automatic logging (requires IPython)',
         desc='If enabled, HyperSpy will store a log in the current directory '
         'of all the commands typed')
 
@@ -128,9 +106,9 @@ class GeneralConfig(t.HasTraits):
         desc='Use parallel threads for computations by default.'
     )
 
-    lazy = t.CBool(
-        False,
-        desc='Load data lazily by default.'
+    nb_progressbar = t.CBool(
+        True,
+        desc='Attempt to use ipywidgets progressbar'
     )
 
     def _logger_on_changed(self, old, new):
@@ -140,67 +118,22 @@ class GeneralConfig(t.HasTraits):
             turn_logging_off()
 
 
-class ModelConfig(t.HasTraits):
-    default_fitter = t.Enum('leastsq', 'mpfit',
-                            desc='Choose leastsq if no bounding is required. '
-                            'Otherwise choose mpfit')
-
-
-class MachineLearningConfig(t.HasTraits):
-    export_factors_default_file_format = t.Enum(*default_write_ext)
-    export_loadings_default_file_format = t.Enum(*default_write_ext)
-    multiple_files = t.Bool(
-        True,
-        label='Export to multiple files',
-        desc='If enabled, on exporting the PCA or ICA results one file'
-        'per factor and loading will be created. Otherwise only two files'
-        'will contain the factors and loadings')
-    same_window = t.Bool(
-        True,
-        label='Plot components in the same window',
-        desc='If enabled the principal and independent components will all'
-        ' be plotted in the same window')
-
-
 class EELSConfig(t.HasTraits):
     eels_gos_files_path = t.Directory(
         guess_gos_path(),
         label='GOS directory',
         desc='The GOS files are required to create the EELS edge components')
-    fine_structure_width = t.CFloat(
-        30,
-        label='Fine structure length',
-        desc='The default length of the fine structure from the edge onset')
-    fine_structure_active = t.CBool(
-        False,
-        label='Enable fine structure',
-        desc="If enabled, the regions of the EELS spectrum defined as fine "
-        "structure will be fitted with a spline. Please note that it "
-        "enabling this feature only makes sense when the model is "
-        "convolved to account for multiple scattering")
-    fine_structure_smoothing = t.Range(
-        0.,
-        1.,
-        value=0.3,
-        label='Fine structure smoothing factor',
-        desc='The lower the value the smoother the fine structure spline fit')
-    synchronize_cl_with_ll = t.CBool(False)
-    preedge_safe_window_width = t.CFloat(
-        2,
-        label='Pre-onset region (in eV)',
-        desc='Some functions needs to define the regions between two '
-        'ionisation edges. Due to limited energy resolution or chemical '
-        'shift, the region is limited on its higher energy side by '
-        'the next ionisation edge onset minus an offset defined by this '
-        'parameters')
-    min_distance_between_edges_for_fine_structure = t.CFloat(
-        0,
-        label='Minimum distance between edges',
-        desc='When automatically setting the fine structure energy regions, '
-        'the fine structure of an EELS edge component is automatically '
-        'disable if the next ionisation edge onset distance to the '
-        'higher energy side of the fine structure region is lower that '
-        'the value of this parameter')
+
+
+class GUIs(t.HasTraits):
+    enable_ipywidgets_gui = t.CBool(
+        True,
+        desc="Display ipywidgets in the Jupyter Notebook. "
+        "Requires installing hyperspy_gui_ipywidgets.")
+    enable_traitsui_gui = t.CBool(
+        True,
+        desc="Display traitsui user interface elements. "
+        "Requires installing hyperspy_gui_traitsui.")
 
 
 class EDSConfig(t.HasTraits):
@@ -224,34 +157,14 @@ class EDSConfig(t.HasTraits):
         desc='default value for the elevation angle in degree.')
 
 
-class PlotConfig(t.HasTraits):
-    default_style_to_compare_spectra = t.Enum(
-        'overlap',
-        'cascade',
-        'mosaic',
-        'heatmap',
-        desc=' the default style use to compare spectra with the'
-        ' function utils.plot.plot_spectra')
-    plot_on_load = t.CBool(
-        False,
-        desc='If enabled, the object will be plot automatically on loading')
-    pylab_inline = t.CBool(
-        False,
-        desc="If True the figure are displayed inline."
-        "HyperSpy must be restarted for changes to take effect")
-
 template = {
     'General': GeneralConfig(),
-    'Model': ModelConfig(),
+    'GUIs': GUIs(),
     'EELS': EELSConfig(),
     'EDS': EDSConfig(),
-    'MachineLearning': MachineLearningConfig(),
-    'Plot': PlotConfig(), }
+}
 
 # Set the enums defaults
-template['MachineLearning'].export_factors_default_file_format = 'rpl'
-template['MachineLearning'].export_loadings_default_file_format = 'rpl'
-template['General'].default_export_format = 'rpl'
 template['General'].logging_level = 'WARNING'
 
 # Defaults template definition ends ######################################
@@ -313,19 +226,12 @@ if not defaults_file_exists or rewrite is True:
 config2template(template, config)
 
 
+@add_gui_method(toolkey="Preferences")
 class Preferences(t.HasTraits):
     EELS = t.Instance(EELSConfig)
     EDS = t.Instance(EDSConfig)
-    Model = t.Instance(ModelConfig)
     General = t.Instance(GeneralConfig)
-    MachineLearning = t.Instance(MachineLearningConfig)
-    Plot = t.Instance(PlotConfig)
-
-    def gui(self):
-        import hyperspy.gui.preferences
-        self.EELS.trait_view("traits_view",
-                             hyperspy.gui.preferences.eels_view)
-        self.edit_traits(view=hyperspy.gui.preferences.preferences_view)
+    GUIs = t.Instance(GUIs)
 
     def save(self):
         config = configparser.ConfigParser(allow_no_value=True)
@@ -336,9 +242,8 @@ preferences = Preferences(
     EELS=template['EELS'],
     EDS=template['EDS'],
     General=template['General'],
-    Model=template['Model'],
-    MachineLearning=template['MachineLearning'],
-    Plot=template['Plot'])
+    GUIs=template['GUIs'],
+)
 
 if preferences.General.logger_on:
     turn_logging_on(verbose=0)

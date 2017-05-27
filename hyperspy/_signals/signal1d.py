@@ -17,44 +17,42 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import math
+
 import matplotlib.pyplot as plt
 import numpy as np
 import dask.array as da
-
-from hyperspy.signal import BaseSignal
-from hyperspy._signals.common_signal1d import CommonSignal1D
-from hyperspy.gui.egerton_quantification import SpikesRemoval
-import math
-
 import scipy.interpolate
-try:
-    from scipy.signal import savgol_filter
-    savgol_imported = True
-except ImportError:
-    savgol_imported = False
 import scipy as sp
+from scipy.signal import savgol_filter
+from scipy.ndimage.filters import gaussian_filter1d
 try:
     from statsmodels.nonparametric.smoothers_lowess import lowess
     statsmodels_installed = True
 except:
     statsmodels_installed = False
 
-from hyperspy.misc.utils import stack
+from hyperspy.signal import BaseSignal
+from hyperspy._signals.common_signal1d import CommonSignal1D
+from hyperspy.signal_tools import SpikesRemoval
+from hyperspy.models.model1d import Model1D
+
+
+from hyperspy.misc.utils import stack, signal_range_from_roi
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
 from hyperspy._signals.lazy import lazyerror
-from hyperspy.gui.tools import (
+from hyperspy.signal_tools import (
     Signal1DCalibration,
     SmoothingSavitzkyGolay,
     SmoothingLowess,
     SmoothingTV,
     ButterworthFilter)
+from hyperspy.ui_registry import get_gui, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
-from hyperspy.gui.egerton_quantification import BackgroundRemoval
-from hyperspy.decorators import only_interactive
+from hyperspy.signal_tools import BackgroundRemoval
 from hyperspy.decorators import interactive_range_selector
-from scipy.ndimage.filters import gaussian_filter1d
-from hyperspy.gui.tools import IntegrateArea
+from hyperspy.signal_tools import IntegrateArea
 from hyperspy import components1d
 from hyperspy._signals.lazy import LazySignal
 
@@ -323,7 +321,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         plt.draw()
 
     def spikes_removal_tool(self, signal_mask=None,
-                            navigation_mask=None):
+                            navigation_mask=None, display=True, toolkit=None):
         """Graphical interface to remove spikes from EELS spectra.
 
         Parameters
@@ -344,8 +342,25 @@ class Signal1D(BaseSignal, CommonSignal1D):
         sr = SpikesRemoval(self,
                            navigation_mask=navigation_mask,
                            signal_mask=signal_mask)
-        sr.configure_traits()
-        return sr
+        return sr.gui(display=display, toolkit=toolkit)
+    spikes_removal_tool.__doc__ =\
+        """Graphical interface to remove spikes from EELS spectra.
+
+Parameters
+----------
+signal_mask: boolean array
+    Restricts the operation to the signal locations not marked
+    as True (masked)
+navigation_mask: boolean array
+    Restricts the operation to the navigation locations not
+    marked as True (masked)
+%s
+%s
+See also
+--------
+_spikes_diagnosis,
+
+""" % (DISPLAY_DT, TOOLKIT_DT)
 
     def create_model(self, dictionary=None):
         """Create a model for the current data.
@@ -356,7 +371,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         """
 
-        from hyperspy.models.model1d import Model1D
         model = Model1D(self, dictionary=dictionary)
         return model
 
@@ -730,7 +744,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
                            expand=expand,
                            show_progressbar=show_progressbar)
 
-    def integrate_in_range(self, signal_range='interactive'):
+    def integrate_in_range(self, signal_range='interactive',
+                           display=True, toolkit=None):
         """ Sums the spectrum over an energy range, giving the integrated
         area.
         The energy range can either be selected through a GUI or the command
@@ -767,11 +782,18 @@ class Signal1D(BaseSignal, CommonSignal1D):
         signal range with integers.
         >>> s_int = s.integrate_in_range(signal_range=(100,120))
         """
+        from hyperspy.misc.utils import deprecation_warning
+        msg = (
+            "The `Signal1D.integrate_in_range` method is deprecated and will "
+            "be removed in v2.0. Use a `roi.SpanRoi` followed by `integrate1D` "
+            "instead.")
+        deprecation_warning(msg)
+        signal_range = signal_range_from_roi(signal_range)
 
         if signal_range == 'interactive':
             self_copy = self.deepcopy()
             ia = IntegrateArea(self_copy, signal_range)
-            ia.edit_traits()
+            ia.gui(display=display, toolkit=toolkit)
             integrated_signal1D = self_copy
         else:
             integrated_signal1D = self._integrate_in_range_commandline(
@@ -779,19 +801,30 @@ class Signal1D(BaseSignal, CommonSignal1D):
         return integrated_signal1D
 
     def _integrate_in_range_commandline(self, signal_range):
+        signal_range = signal_range_from_roi(signal_range)
         e1 = signal_range[0]
         e2 = signal_range[1]
         integrated_signal1D = self.isig[e1:e2].integrate1D(-1)
         return integrated_signal1D
 
-    @only_interactive
-    def calibrate(self):
-        """Calibrate the spectral dimension using a gui.
+    def calibrate(self, display=True, toolkit=None):
+        self._check_signal_dimension_equals_one()
+        calibration = Signal1DCalibration(self)
+        return calibration.gui(display=display, toolkit=toolkit)
+    calibrate.__doc__ = \
+        """
+        Calibrate the spectral dimension using a gui.
         It displays a window where the new calibration can be set by:
         * Setting the offset, units and scale directly
         * Selection a range by dragging the mouse on the spectrum figure
          and
         setting the new values for the given range limits
+
+        Parameters
+        ----------
+        %s
+        %s
+
         Notes
         -----
         For this method to work the output_dimension must be 1. Set the
@@ -800,17 +833,32 @@ class Signal1D(BaseSignal, CommonSignal1D):
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
-        """
-        self._check_signal_dimension_equals_one()
-        calibration = Signal1DCalibration(self)
-        calibration.edit_traits()
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
     def smooth_savitzky_golay(self,
                               polynomial_order=None,
                               window_length=None,
                               differential_order=0,
-                              parallel=None):
-        """Apply a Savitzky-Golay filter to the data in place.
+                              parallel=None, display=True, toolkit=None):
+        self._check_signal_dimension_equals_one()
+        if (polynomial_order is not None and
+                window_length is not None):
+            axis = self.axes_manager.signal_axes[0]
+            self.map(savgol_filter, window_length=window_length,
+                     polyorder=polynomial_order, deriv=differential_order,
+                     delta=axis.scale, ragged=False, parallel=parallel)
+        else:
+            # Interactive mode
+            smoother = SmoothingSavitzkyGolay(self)
+            smoother.differential_order = differential_order
+            if polynomial_order is not None:
+                smoother.polynomial_order = polynomial_order
+            if window_length is not None:
+                smoother.window_length = window_length
+            return smoother.gui(display=display, toolkit=toolkit)
+    smooth_savitzky_golay.__doc__ = \
+        """
+        Apply a Savitzky-Golay filter to the data in place.
         If `polynomial_order` or `window_length` or `differential_order` are
         None the method is run in interactive mode.
         Parameters
@@ -827,36 +875,42 @@ class Signal1D(BaseSignal, CommonSignal1D):
             the data without differentiating.
         parallel : {bool, None}
             Perform the operation in a threaded manner (parallely).
+        %s
+        %s
         Notes
         -----
         More information about the filter in `scipy.signal.savgol_filter`.
-        """
-        if not savgol_imported:
-            raise ImportError("scipy >= 0.14 needs to be installed to use"
-                              "this feature.")
-        self._check_signal_dimension_equals_one()
-        if (polynomial_order is not None and
-                window_length is not None):
-            axis = self.axes_manager.signal_axes[0]
-            self.map(savgol_filter, window_length=window_length,
-                     polyorder=polynomial_order, deriv=differential_order,
-                     delta=axis.scale, ragged=False, parallel=parallel)
-        else:
-            # Interactive mode
-            smoother = SmoothingSavitzkyGolay(self)
-            smoother.differential_order = differential_order
-            if polynomial_order is not None:
-                smoother.polynomial_order = polynomial_order
-            if window_length is not None:
-                smoother.window_length = window_length
-            smoother.edit_traits()
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
     def smooth_lowess(self,
                       smoothing_parameter=None,
                       number_of_iterations=None,
                       show_progressbar=None,
-                      parallel=None):
-        """Lowess data smoothing in place.
+                      parallel=None, display=True, toolkit=None):
+        if not statsmodels_installed:
+            raise ImportError("statsmodels is not installed. This package is "
+                              "required for this feature.")
+        self._check_signal_dimension_equals_one()
+        if smoothing_parameter is None or number_of_iterations is None:
+            smoother = SmoothingLowess(self)
+            if smoothing_parameter is not None:
+                smoother.smoothing_parameter = smoothing_parameter
+            if number_of_iterations is not None:
+                smoother.number_of_iterations = number_of_iterations
+            return smoother.gui(display=display, toolkit=toolkit)
+        else:
+            self.map(lowess,
+                     exog=self.axes_manager[-1].axis,
+                     frac=smoothing_parameter,
+                     it=number_of_iterations,
+                     is_sorted=True,
+                     return_sorted=False,
+                     show_progressbar=show_progressbar,
+                     ragged=False,
+                     parallel=parallel)
+    smooth_lowess.__doc__ = \
+        """
+        Lowess data smoothing in place.
         If `smoothing_parameter` or `number_of_iterations` are None the method
         is run in interactive mode.
         Parameters
@@ -871,7 +925,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
             If True, display a progress bar. If None the default is set in
             `preferences`.
         parallel : {Bool, None, int}
-            Perform the operation parallely
+            Perform the operation parallel
+        %s
+        %s
+
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
@@ -880,32 +937,22 @@ class Signal1D(BaseSignal, CommonSignal1D):
         -----
         This method uses the lowess algorithm from statsmodels. statsmodels
         is required for this method.
-        """
-        if not statsmodels_installed:
-            raise ImportError("statsmodels is not installed. This package is "
-                              "required for this feature.")
-        self._check_signal_dimension_equals_one()
-        if smoothing_parameter is None or number_of_iterations is None:
-            smoother = SmoothingLowess(self)
-            if smoothing_parameter is not None:
-                smoother.smoothing_parameter = smoothing_parameter
-            if number_of_iterations is not None:
-                smoother.number_of_iterations = number_of_iterations
-            smoother.edit_traits()
-        else:
-            self.map(lowess,
-                     exog=self.axes_manager[-1].axis,
-                     frac=smoothing_parameter,
-                     it=number_of_iterations,
-                     is_sorted=True,
-                     return_sorted=False,
-                     show_progressbar=show_progressbar,
-                     ragged=False,
-                     parallel=parallel)
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
     def smooth_tv(self, smoothing_parameter=None, show_progressbar=None,
-                  parallel=None):
-        """Total variation data smoothing in place.
+                  parallel=None, display=True, toolkit=None):
+        self._check_signal_dimension_equals_one()
+        if smoothing_parameter is None:
+            smoother = SmoothingTV(self)
+            return smoother.gui(display=display, toolkit=toolkit)
+        else:
+            self.map(_tv_denoise_1d, weight=smoothing_parameter,
+                     ragged=False,
+                     show_progressbar=show_progressbar,
+                     parallel=parallel)
+    smooth_tv.__doc__ = \
+        """
+        Total variation data smoothing in place.
         Parameters
         ----------
         smoothing_parameter: float or None
@@ -916,40 +963,45 @@ class Signal1D(BaseSignal, CommonSignal1D):
             `preferences`.
         parallel : {Bool, None, int}
             Perform the operation parallely
+        %s
+        %s
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
-        """
-        self._check_signal_dimension_equals_one()
-        if smoothing_parameter is None:
-            smoother = SmoothingTV(self)
-            smoother.edit_traits()
-        else:
-            self.map(_tv_denoise_1d, weight=smoothing_parameter,
-                     ragged=False,
-                     show_progressbar=show_progressbar,
-                     parallel=parallel)
+
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
     def filter_butterworth(self,
                            cutoff_frequency_ratio=None,
                            type='low',
-                           order=2):
-        """Butterworth filter in place.
-        Raises
-        ------
-        SignalDimensionError if the signal dimension is not 1.
-        """
+                           order=2, display=True, toolkit=None):
         self._check_signal_dimension_equals_one()
         smoother = ButterworthFilter(self)
         if cutoff_frequency_ratio is not None:
             smoother.cutoff_frequency_ratio = cutoff_frequency_ratio
+            smoother.type = type
+            smoother.order = order
             smoother.apply()
         else:
-            smoother.edit_traits()
+            return smoother.gui(display=display, toolkit=toolkit)
+    filter_butterworth.__doc__ = \
+        """
+        Butterworth filter in place.
+
+        Parameters
+        ----------
+        %s
+        %s
+        Raises
+        ------
+        SignalDimensionError if the signal dimension is not 1.
+
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
     def _remove_background_cli(
             self, signal_range, background_estimator, fast=True,
             show_progressbar=None):
+        signal_range = signal_range_from_roi(signal_range)
         from hyperspy.models.model1d import Model1D
         model = Model1D(self)
         model.append(background_estimator)
@@ -969,8 +1021,36 @@ class Signal1D(BaseSignal, CommonSignal1D):
             background_type='PowerLaw',
             polynomial_order=2,
             fast=True,
-            show_progressbar=None):
-        """Remove the background, either in place using a gui or returned as a new
+            show_progressbar=None, display=True, toolkit=None):
+        signal_range = signal_range_from_roi(signal_range)
+        self._check_signal_dimension_equals_one()
+        if signal_range == 'interactive':
+            br = BackgroundRemoval(self)
+            return br.gui(display=display, toolkit=toolkit)
+        else:
+            if background_type == 'PowerLaw':
+                background_estimator = components1d.PowerLaw()
+            elif background_type == 'Gaussian':
+                background_estimator = components1d.Gaussian()
+            elif background_type == 'Offset':
+                background_estimator = components1d.Offset()
+            elif background_type == 'Polynomial':
+                background_estimator = components1d.Polynomial(
+                    polynomial_order)
+            else:
+                raise ValueError(
+                    "Background type: " +
+                    background_type +
+                    " not recognized")
+            spectra = self._remove_background_cli(
+                signal_range=signal_range,
+                background_estimator=background_estimator,
+                fast=fast,
+                show_progressbar=show_progressbar)
+            return spectra
+    remove_background.__doc__ = \
+        """
+        Remove the background, either in place using a gui or returned as a new
         spectrum using the command line.
         Parameters
         ----------
@@ -992,6 +1072,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        %s
+        %s
         Examples
         --------
         Using gui, replaces spectrum s
@@ -1007,33 +1089,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
-        """
-        self._check_signal_dimension_equals_one()
-        if signal_range == 'interactive':
-            br = BackgroundRemoval(self)
-            br.edit_traits()
-        else:
-            if background_type == 'PowerLaw':
-                background_estimator = components1d.PowerLaw()
-            elif background_type == 'Gaussian':
-                background_estimator = components1d.Gaussian()
-            elif background_type == 'Offset':
-                background_estimator = components1d.Offset()
-            elif background_type == 'Polynomial':
-                background_estimator = components1d.Polynomial(
-                    polynomial_order)
-            else:
-                raise ValueError(
-                    "Background type: " +
-                    background_type +
-                    " not recognized")
-
-            spectra = self._remove_background_cli(
-                signal_range=signal_range,
-                background_estimator=background_estimator,
-                fast=fast,
-                show_progressbar=show_progressbar)
-            return spectra
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
     @interactive_range_selector
     def crop_signal1D(self, left_value=None, right_value=None,):
@@ -1058,6 +1114,11 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         """
         self._check_signal_dimension_equals_one()
+        try:
+            left_value, right_value = signal_range_from_roi(left_value)
+        except TypeError:
+            # It was not a ROI, we carry on
+            pass
         self.crop(axis=self.axes_manager.signal_axes[0].index_in_axes_manager,
                   start=left_value, end=right_value)
 
@@ -1106,27 +1167,51 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         """
         # TODO: generalize it
-        if self._lazy:
-            raise lazyerror
         self._check_signal_dimension_equals_one()
         if channels is None:
             channels = int(round(len(self()) * 0.02))
             if channels < 20:
                 channels = 20
-        dc = self.data
-        if side == 'left' or side == 'both':
-            dc[..., offset:channels + offset] *= (
-                np.hanning(2 * channels)[:channels])
-            dc[..., :offset] *= 0.
-        if side == 'right' or side == 'both':
-            if offset == 0:
-                rl = None
+        dc = self._data_aligned_with_axes
+        if self._lazy and offset != 0:
+            shp = dc.shape
+            if len(shp) == 1:
+                nav_shape = ()
+                nav_chunks = ()
             else:
-                rl = -offset
-            dc[..., -channels - offset:rl] *= (
-                np.hanning(2 * channels)[-channels:])
-            if offset != 0:
-                dc[..., -offset:] *= 0.
+                nav_shape = shp[:-1]
+                nav_chunks = dc.chunks[:-1]
+            zeros = da.zeros(nav_shape + (offset,),
+                             chunks=nav_chunks + ((offset,),))
+        if side == 'left' or side == 'both':
+            if self._lazy:
+                tapered = dc[..., offset:channels + offset]
+                tapered *= np.hanning(2 * channels)[:channels]
+                therest = dc[..., channels + offset:]
+                thelist = [] if offset == 0 else [zeros]
+                thelist.extend([tapered, therest])
+                dc = da.concatenate(thelist, axis=-1)
+            else:
+                dc[..., offset:channels + offset] *= (
+                    np.hanning(2 * channels)[:channels])
+                dc[..., :offset] *= 0.
+        if side == 'right' or side == 'both':
+            rl = None if offset == 0 else -offset
+            if self._lazy:
+                therest = dc[..., :-channels - offset]
+                tapered = dc[..., -channels - offset:rl]
+                tapered *= np.hanning(2 * channels)[-channels:]
+                thelist = [therest, tapered]
+                if offset != 0:
+                    thelist.append(zeros)
+                dc = da.concatenate(thelist, axis=-1)
+            else:
+                dc[..., -channels - offset:rl] *= (
+                    np.hanning(2 * channels)[-channels:])
+                if offset != 0:
+                    dc[..., -offset:] *= 0.
+        if self._lazy:
+            self.data = dc
         self.events.data_changed.trigger(obj=self)
         return channels
 

@@ -30,7 +30,7 @@ import pytest
 from distutils.version import LooseVersion
 
 from hyperspy.io import load
-from hyperspy.io_plugins.hdf5 import get_signal_chunks
+from hyperspy.io_plugins.hspy import get_signal_chunks
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
@@ -193,35 +193,6 @@ def tmpfilepath():
         gc.collect()        # Make sure any memmaps are closed first!
 
 
-def get_ext():
-    if preferences.General.hspy_extension:
-        return ".hspy"
-    else:
-        return ".hdf5"
-
-
-def test_hspy_extension(tmpfilepath):
-    try:
-        hspy_extension = preferences.General.hspy_extension
-        preferences.General.hspy_extension = True
-        s = BaseSignal([0])
-        s.save(tmpfilepath)
-        assert os.path.exists(tmpfilepath + ".hspy")
-    finally:
-        preferences.General.hspy_extension = hspy_extension
-
-
-def test_hdf5_extension(tmpfilepath):
-    try:
-        hspy_extension = preferences.General.hspy_extension
-        preferences.General.hspy_extension = False
-        s = BaseSignal([0])
-        s.save(tmpfilepath)
-        assert os.path.exists(tmpfilepath + ".hdf5")
-    finally:
-        preferences.General.hspy_extension = hspy_extension
-
-
 class TestSavingMetadataContainers:
 
     def setup_method(self, method):
@@ -231,7 +202,7 @@ class TestSavingMetadataContainers:
         s = self.s
         s.metadata.set_item('test', ['a', 'b', '\u6f22\u5b57'])
         s.save(tmpfilepath)
-        l = load(tmpfilepath + get_ext())
+        l = load(tmpfilepath + ".hspy")
         assert isinstance(l.metadata.test[0], str)
         assert isinstance(l.metadata.test[1], str)
         assert isinstance(l.metadata.test[2], str)
@@ -249,7 +220,7 @@ class TestSavingMetadataContainers:
         s = self.s
         s.metadata.set_item('test', [[1., 2], ('3', 4)])
         s.save(tmpfilepath)
-        l = load(tmpfilepath + get_ext())
+        l = load(tmpfilepath + ".hspy")
         assert isinstance(l.metadata.test, list)
         assert isinstance(l.metadata.test[0], list)
         assert isinstance(l.metadata.test[1], tuple)
@@ -258,7 +229,7 @@ class TestSavingMetadataContainers:
         s = self.s
         s.metadata.set_item('test', [[1., 2], ['3', 4]])
         s.save(tmpfilepath)
-        l = load(tmpfilepath + get_ext())
+        l = load(tmpfilepath + ".hspy")
         assert isinstance(l.metadata.test[0][0], float)
         assert isinstance(l.metadata.test[0][1], float)
         assert isinstance(l.metadata.test[1][0], str)
@@ -268,7 +239,7 @@ class TestSavingMetadataContainers:
         s = self.s
         s.metadata.set_item('test', (BaseSignal([1]), 0.1, 'test_string'))
         s.save(tmpfilepath)
-        l = load(tmpfilepath + get_ext())
+        l = load(tmpfilepath + ".hspy")
         assert isinstance(l.metadata.test, tuple)
         assert isinstance(l.metadata.test[0], Signal1D)
         assert isinstance(l.metadata.test[1], float)
@@ -278,7 +249,7 @@ class TestSavingMetadataContainers:
         s = self.s
         s.metadata.set_item('test', Point2DROI(1, 2))
         s.save(tmpfilepath)
-        l = load(tmpfilepath + get_ext())
+        l = load(tmpfilepath + ".hspy")
         assert 'test' not in l.metadata
 
     def test_date_time(self, tmpfilepath):
@@ -287,7 +258,7 @@ class TestSavingMetadataContainers:
         s.metadata.General.date = date
         s.metadata.General.time = time
         s.save(tmpfilepath)
-        l = load(tmpfilepath + get_ext())
+        l = load(tmpfilepath + ".hspy")
         assert l.metadata.General.date == date
         assert l.metadata.General.time == time
 
@@ -300,7 +271,7 @@ class TestSavingMetadataContainers:
         s.metadata.General.authors = authors
         s.metadata.General.doi = doi
         s.save(tmpfilepath)
-        l = load(tmpfilepath + get_ext())
+        l = load(tmpfilepath + ".hspy")
         assert l.metadata.General.notes == notes
         assert l.metadata.General.authors == authors
         assert l.metadata.General.doi == doi
@@ -310,13 +281,13 @@ class TestSavingMetadataContainers:
         quantity = "Intensity (electron)"
         s.metadata.Signal.quantity = quantity
         s.save(tmpfilepath)
-        l = load(tmpfilepath + get_ext())
+        l = load(tmpfilepath + ".hspy")
         assert l.metadata.Signal.quantity == quantity
 
     def test_metadata_update_to_v3_0(self):
-        md = {'Acquisition_instrument': {'SEM': {'Stage': {'tilt_a': 5.0}},
+        md = {'Acquisition_instrument': {'SEM': {'Stage': {'tilt_alpha': 5.0}},
                                          'TEM': {'Detector': {'Camera': {'exposure': 0.20000000000000001}},
-                                                 'Stage': {'tilt_a': 10.0},
+                                                 'Stage': {'tilt_alpha': 10.0},
                                                  'acquisition_mode': 'TEM',
                                                  'beam_current': 0.0,
                                                  'beam_energy': 200.0,
@@ -690,7 +661,7 @@ def test_lazy_metadata_arrays(tmpfilepath):
     s = BaseSignal([1, 2, 3])
     s.metadata.array = np.arange(10.)
     s.save(tmpfilepath)
-    l = load(tmpfilepath + get_ext(), lazy=True)
+    l = load(tmpfilepath + ".hspy", lazy=True)
     # Can't deepcopy open hdf5 file handles
     with pytest.raises(TypeError):
         l.deepcopy()

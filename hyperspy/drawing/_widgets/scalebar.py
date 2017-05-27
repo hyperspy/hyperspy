@@ -121,7 +121,7 @@ class ScaleBar(object):
                                  animated=self.animated)
         self.ax.set_xlim(self.xmin, self.xmax)
         self.ax.set_ylim(self.ymin, self.ymax)
-        self.ax.figure.canvas.draw()
+        self.ax.figure.canvas.draw_idle()
 
     def _set_position(self, x, y):
         self.position = x, y

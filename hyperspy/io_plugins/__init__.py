@@ -37,8 +37,8 @@ except ImportError:
     # old EELSLab files. Therefore, we silenly ignore if missing.
 
 try:
-    from hyperspy.io_plugins import hdf5
-    io_plugins.append(hdf5)
+    from hyperspy.io_plugins import hspy
+    io_plugins.append(hspy)
     from hyperspy.io_plugins import emd
     io_plugins.append(emd)
 except ImportError:
