@@ -83,7 +83,8 @@ API changes
     * :py:meth:`~._signals.signal1d.Signal1D.integrate_in_range`.
       Use :py:meth:`~._signals.signal1d.Signal1D.integrate1D` instead.
 
-* The following items have been removed from ``Preferences``:
+* The following items have been removed from
+  :ref:`preferences <configuring-hyperspy-label>`:
 
     * ``General.default_export_format``
     * ``General.lazy``

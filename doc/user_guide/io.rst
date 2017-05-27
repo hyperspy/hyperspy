@@ -204,8 +204,8 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
 
 .. _hspy-format:
 
-HSpy - HyperSpy HDF5 Specification
-----------------------------------
+HSpy - HyperSpy's HDF5 Specification
+------------------------------------
 
 This is the default format and it is the only one that guarantees that no
 information will be lost in the writing process and that supports saving data
@@ -213,26 +213,23 @@ of arbitrary dimensions. It is based on the `HDF5 open standard
 <http://www.hdfgroup.org/HDF5/>`_. The HDF5 file format is supported by `many
 applications
 <http://www.hdfgroup.org/products/hdf5_tools/SWSummarybyName.htm>`_.
+Part of the specification is documented in :ref:`metadata_structure`.
 
 .. versionadded:: 1.2
-    Saving hdf5 files with extension ``.hspy``.
+    Enable saving HSpy files with the ``.hspy`` extension. Preveously only the
+    ``.hdf5`` extension was recognised.
 
 .. versionchanged:: 1.3
     The default extension for the HyperSpy HDF5 specification is now ``.hspy``.
     The option to change the default is no longer present in ``preferences``.
 
 Only loading of HDF5 files following the HyperSpy specification are supported.
-Usually they come with the "hspy" extension, but older versions of HyperSpy
-would save them with the "hdf5" extension too. Both extensions are recognised
-by HyperSpy since version 1.2.
-
-
-The default extension is ``.hdf5`` but, in order to make it explicit that the
-HDF5 follows the HyperSpy specification, it is possible to save it with the
-``.hspy`` extension as follows.
-
-HyperSpy versions older than 1.2 won't recognise the ``.hspy`` extension. To
-workaround the issue simply change the extension manually to ``.hdf5`` or
+Usually their extension is ``.hspy`` extension, but older versions of HyperSpy
+would save them with the ``.hdf5`` extension. Both extensions are recognised
+by HyperSpy since version 1.2. However, HyperSpy versions older than 1.2
+won't recognise the ``.hspy`` extension. To
+workaround the issue when using old HyperSpy installations simply change the
+extension manually to ``.hdf5`` or
 save directly the file using this extension by explicitly adding it to the
 filename e.g.:
 
