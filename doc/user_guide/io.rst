@@ -204,8 +204,8 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
 
 .. _hspy-format:
 
-HDF5
-----
+HSpy - HyperSpy HDF5 Specification
+----------------------------------
 
 This is the default format and it is the only one that guarantees that no
 information will be lost in the writing process and that supports saving data

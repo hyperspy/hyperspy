@@ -924,6 +924,9 @@ method or GUIs if cropping :ref:`signal1D <signal1D.crop>` or :ref:`signal2D
 <signal2D.crop>`. There is also a general :py:meth:`~.signal.BaseSignal.crop`
 method that operates *in place*.
 
+
+.. _rebin-label:
+
 Rebinning
 ^^^^^^^^^
 .. versionadded:: 1.3
