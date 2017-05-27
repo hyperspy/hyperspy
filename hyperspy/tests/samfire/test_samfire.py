@@ -309,8 +309,9 @@ class TestSamfireMain:
     def setup_method(self, method):
         self.model, self.lor1, self.g, self.lor2 = generate_test_model()
         self.shape = (7, 15)
-    @pytest.mark.xfail(reason=
-                       "Sometimes it fails in CirCleCI for no know reason.")
+
+    @pytest.mark.xfail(
+        reason="Sometimes it fails in CirCleCI for no know reason.")
     def test_multiprocessed(self, mpl_cleanup):
         self.model.fit()
         samf = self.model.create_samfire(ipyparallel=False)
