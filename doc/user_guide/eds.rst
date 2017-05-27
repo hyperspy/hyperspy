@@ -5,7 +5,7 @@ Energy-Dispersive X-ray Spectrometry (EDS)
 
 The methods described in this chapter are specific to the following signals:
 
-* :py:class:`~._signals.eds_tem.EDSTEM_mixin`
+* :py:class:`~._signals.eds_tem.EDSTEM`
 * :py:class:`~._signals.eds_sem.EDSSEMSpectrum`
 
 This chapter describes step-by-step the analysis of an EDS

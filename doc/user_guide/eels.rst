@@ -8,16 +8,16 @@ Tools for EELS data analysis
 ----------------------------
 
 The functions described in this chapter are only available for the
-:py:class:`~._signals.eels.EELSSpectrum_mixin` class. To transform a
+:py:class:`~._signals.eels.EELSSpectrum` class. To transform a
 :py:class:`~.signal.BaseSignal` (or subclass) into a
-:py:class:`~._signals.eels.EELSSpectrum_mixin`:
+:py:class:`~._signals.eels.EELSSpectrum`:
 
 .. code-block:: python
 
     >>> s.set_signal_type("EELS")
 
 Note these chapter discusses features that are available only for
-:py:class:`~._signals.eels.EELSSpectrum_mixin` class. However, this class inherits
+:py:class:`~._signals.eels.EELSSpectrum` class. However, this class inherits
 many useful feature from its parent class that are documented in previous
 chapters.
 

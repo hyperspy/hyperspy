@@ -18,7 +18,7 @@ class contains general functionality that is available to all the subclasses.
 The subclasses provide functionality that is normally specific to a particular
 type of data, e.g. the :py:class:`~._signals.signal1d.Signal1D` class provides
 common functionality to deal with one-dimensional (e.g. spectral) data and
-:py:class:`~._signals.eels.EELSSpectrum_mixin` (which is a subclass of
+:py:class:`~._signals.eels.EELSSpectrum` (which is a subclass of
 :py:class:`~._signals.signal1d.Signal1D`) adds extra functionality to the
 :py:class:`~._signals.signal1d.Signal1D` class for electron energy-loss
 spectroscopy data analysis.
@@ -34,9 +34,9 @@ currently available specialised :py:class:`~.signal.BaseSignal` subclasses.
 
 .. versionadded:: 1.0
 
-    New :py:class:`~._signals.complex_signal.ComplexSignal_mixin`,
+    New :py:class:`~._signals.complex_signal.ComplexSignal`,
     :py:class:`~._signals.complex_signal1d.ComplexSignal1D` and
-    :py:class:`~._signals.complex_signal2d.Complex2Dmixin`
+    :py:class:`~._signals.complex_signal2d.Complex2D`
     :py:class:`~.signal.BaseSignal` subclasses specialised in complex data.
 
 
@@ -207,11 +207,11 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |           :py:class:`~._signals.signal1d.Signal1D`                      |        1         |       -               |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
-    |           :py:class:`~._signals.eels.EELSSpectrum_mixin`                      |        1         |     EELS              |  real    |
+    |           :py:class:`~._signals.eels.EELSSpectrum`                      |        1         |     EELS              |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`                 |        1         |    EDS_SEM            |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
-    |           :py:class:`~._signals.eds_tem.EDSTEM_mixin`                 |        1         |    EDS_TEM            |  real    |
+    |           :py:class:`~._signals.eds_tem.EDSTEM`                 |        1         |    EDS_TEM            |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |              :py:class:`~._signals.signal2d.Signal2D`                   |        2         |       -               |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
@@ -219,7 +219,7 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |           :py:class:`~._signals.dielectric_function.DielectricFunction` |        1         |    DielectricFunction |  complex |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
-    |      :py:class:`~._signals.complex_signal.ComplexSignal_mixin`                |        -         |       -               | complex  |
+    |      :py:class:`~._signals.complex_signal.ComplexSignal`                |        -         |       -               | complex  |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |    :py:class:`~._signals.complex_signal1d.ComplexSignal1D`              |        1         |       -               | complex  |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
@@ -281,15 +281,15 @@ following table:
     +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.signal1d.Signal1D`            | False  |
     +---------------------------------------------------------------+--------+
-    |           :py:class:`~._signals.eels.EELSSpectrum_mixin`            | True   |
+    |           :py:class:`~._signals.eels.EELSSpectrum`            | True   |
     +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | True   |
     +---------------------------------------------------------------+--------+
-    |           :py:class:`~._signals.eds_tem.EDSTEM_mixin`       | True   |
+    |           :py:class:`~._signals.eds_tem.EDSTEM`       | True   |
     +---------------------------------------------------------------+--------+
     |              :py:class:`~._signals.signal2d.Signal2D`         | False  |
     +---------------------------------------------------------------+--------+
-    |      :py:class:`~._signals.complex_signal.ComplexSignal_mixin`      | False  |
+    |      :py:class:`~._signals.complex_signal.ComplexSignal`      | False  |
     +---------------------------------------------------------------+--------+
     |    :py:class:`~._signals.complex_signal1d.ComplexSignal1D`    | False  |
     +---------------------------------------------------------------+--------+
@@ -1573,7 +1573,7 @@ as follows:
   >>> s.imag = new_imag  # new_imag can be an array or signal
 
 It is important to note that `data` passed to the constructor of a
-:py:class:`~._signals.complex_signal.ComplexSignal_mixin` (or to a subclass), which is not already
+:py:class:`~._signals.complex_signal.ComplexSignal` (or to a subclass), which is not already
 complex, will be converted to the numpy standard of `np.complex`/`np.complex128`. `data` which
 is already complex will be passed as is.
 
