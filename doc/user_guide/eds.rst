@@ -14,7 +14,7 @@ spectrum (SEM or TEM).
 .. NOTE::
     See also the `EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-	demos/blob/master/electron_microscopy/EDS/>`_ .
 
-Signal1D loading and parameters
+Spectrum loading and parameters
 -------------------------------
 
 The sample and  data used in this section are described in [Burdet2013]_, and can be
