@@ -108,15 +108,15 @@ EELS curve fitting
 HyperSpy makes it really easy to quantify EELS core-loss spectra by curve
 fitting as it is shown in the next example of quantification of a boron nitride
 EELS spectrum from the `The EELS Data Base
-<https://eelsdb.eu/>`_.
+<https://eelsdb.eu/>`_ (see :ref:`example-data-label`).
 
 Load the core-loss and low-loss spectra
 
 
 .. code-block:: python
 
-    >>> s = hs.load("BN_(hex)_B_K_Giovanni_Bertoni_100.msa")
-    >>> ll = hs.load("BN_(hex)_LowLoss_Giovanni_Bertoni_96.msa")
+    >>> s = hs.datasets.eelsdb(title="Hexagonal Boron Nitride", spectrum_type="coreloss")[0]
+    >>> ll = hs.datasets.eelsdb(title="Hexagonal Boron Nitride", spectrum_type="lowloss")[0]
 
 
 Set some important experimental information that is missing from the original
