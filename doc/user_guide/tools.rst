@@ -18,7 +18,7 @@ class contains general functionality that is available to all the subclasses.
 The subclasses provide functionality that is normally specific to a particular
 type of data, e.g. the :py:class:`~._signals.signal1d.Signal1D` class provides
 common functionality to deal with one-dimensional (e.g. spectral) data and
-:py:class:`~._signals.eels.EELSSpectrum` (which is a subclass of
+:py:class:`~._signals.eels.EELSSpectrum_mixin` (which is a subclass of
 :py:class:`~._signals.signal1d.Signal1D`) adds extra functionality to the
 :py:class:`~._signals.signal1d.Signal1D` class for electron energy-loss
 spectroscopy data analysis.
@@ -207,7 +207,7 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |           :py:class:`~._signals.signal1d.Signal1D`                      |        1         |       -               |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
-    |           :py:class:`~._signals.eels.EELSSpectrum`                      |        1         |     EELS              |  real    |
+    |           :py:class:`~._signals.eels.EELSSpectrum_mixin`                      |        1         |     EELS              |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`                 |        1         |    EDS_SEM            |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
@@ -281,7 +281,7 @@ following table:
     +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.signal1d.Signal1D`            | False  |
     +---------------------------------------------------------------+--------+
-    |           :py:class:`~._signals.eels.EELSSpectrum`            | True   |
+    |           :py:class:`~._signals.eels.EELSSpectrum_mixin`            | True   |
     +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | True   |
     +---------------------------------------------------------------+--------+
