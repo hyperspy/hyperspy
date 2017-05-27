@@ -1,4 +1,5 @@
 from unittest import mock
+import sys
 
 import numpy as np
 import numpy.random
@@ -593,6 +594,8 @@ class TestOutArg:
     def test_valuemax(self):
         self._run_single(self.s.valuemax, self.s, dict(axis=0))
 
+    @pytest.mark.xfail(sys.platform == 'win32',
+                       reason="sometimes it does not run lazily on windows")
     def test_rebin(self):
         s = self.s
         scale = (1, 2, 1, 2)

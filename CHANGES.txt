@@ -12,11 +12,11 @@ v1.2
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3Abug+is%3Aclosed+milestone%3Av1.2>`_,
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.2>`_,
 `enhancements
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.2+label%3Aenhancement>`_
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.2+label%3A"type%3A+enhancement">`_
 and `new features
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.2+label%3Anew>`_.
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.2+label%3A"type%3A+New+feature">`_.
 
 NEW
 ---
@@ -58,14 +58,14 @@ For developers
 
 
 
-.. _changes_1.1.2: 
+.. _changes_1.1.2:
 v1.1.2
 ======
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3Abug+is%3Aclosed+milestone%3Av1.1.2>`_
-and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.1.2+label%3Aenhancement>`_.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.1.2>`_
+and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.1.2+label%3A"type%3A+enhancement">`_.
 
 
 .. _changes_1.1.1:
@@ -74,7 +74,7 @@ v1.1.1
 
 This is a maintenance release. Follow the following link for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3Abug+is%3Aclosed+milestone%3A1.1.1>`_.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3A1.1.1>`_.
 
 Enhancements
 ------------
@@ -95,7 +95,7 @@ v1.1
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3Abug+is%3Aclosed+milestone%3A1.1>`_.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3A1.1>`_.
 
 NEW
 ---
@@ -121,7 +121,7 @@ v1.0.1
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3Abug+is%3Aclosed+milestone%3A1.0.1>`_.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3A1.0.1>`_.
 
 
 v1.0
@@ -203,8 +203,8 @@ v0.8.5
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aissue+milestone%3A0.8.5+label%3Abug+is%3Aclosed>`_,
-`feature <https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=milestone%3A0.8.5+is%3Aclosed++label%3Aenhancement+>`_
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aissue+milestone%3A0.8.5+label%3A"type%3A+bug"+is%3Aclosed>`_,
+`feature <https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=milestone%3A0.8.5+is%3Aclosed++label%3A"type%3A+enhancement"+>`_
 and `documentation
 <https://github.com/hyperspy/hyperspy/pulls?utf8=%E2%9C%93&q=milestone%3A0.8.5+label%3Adocumentation+is%3Aclosed+>`_ enhancements.
 
@@ -252,11 +252,11 @@ The broadcasting rules have also changed. See :ref:`signal.operations`
 for details.
 
 Follow the following links for details on all the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?page=1&q=is%3Aclosed+milestone%3A0.8.3+label%3Abug&utf8=%E2%9C%93>`_,
+<https://github.com/hyperspy/hyperspy/issues?page=1&q=is%3Aclosed+milestone%3A0.8.3+label%3A"type%3A+bug"&utf8=%E2%9C%93>`_,
 `documentation enhancements
 <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3Adocumentation>`_,
 `enhancements
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3Aenhancement>`_,
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3A"type%3A+enhancement">`_,
 `new features
 <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3ANew>`_
 `and API changes
@@ -277,9 +277,9 @@ v0.8.1
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?page=1&q=is%3Aclosed+milestone%3A0.8.1+label%3Abug&utf8=%E2%9C%93>`_,
+<https://github.com/hyperspy/hyperspy/issues?page=1&q=is%3Aclosed+milestone%3A0.8.1+label%3A"type%3A+bug"&utf8=%E2%9C%93>`_,
 `feature
-<https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3A0.8.1++label%3Aenhancement+>`_
+<https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3A0.8.1++label%3A"type%3A+enhancement"+>`_
 and `documentation
 <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.1+label%3Adocumentation>`_ enhancements.
 
