@@ -109,7 +109,7 @@ For developers
   been splitted into a separate package. See the new
   `hyperspy_gui_traitsui <https://github.com/hyperspy/hyperspy_gui_traitsui>`_
   package.
-* The new :py:module:`~.ui_registry` enables easy connection of external
+* The new :py:mod:`~.ui_registry` enables easy connection of external
   GUI elements to HyperSpy. This is the mechanism used to split the traitsui
   and ipywidgets GUI elements.
 
