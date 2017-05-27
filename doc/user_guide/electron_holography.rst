@@ -78,7 +78,7 @@ Using reconstructed wave one can access its amplitude and phase (also unwrapped 
 .. figure:: images/holography_unwrapped_phase.png
     :align: center
 
-Preferences user interface.
+Unwrapped phase image.
 
 Additionally, it is possible to change the smoothness of the sideband filter edge (which is by default set to 5% of the
 filter radius) using parameter `sb_smoothness`.
