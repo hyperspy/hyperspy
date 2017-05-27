@@ -36,7 +36,7 @@ currently available specialised :py:class:`~.signal.BaseSignal` subclasses.
 
     New :py:class:`~._signals.complex_signal.ComplexSignal_mixin`,
     :py:class:`~._signals.complex_signal1d.ComplexSignal1D` and
-    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`
+    :py:class:`~._signals.complex_signal2d.Complex2Dmixin`
     :py:class:`~.signal.BaseSignal` subclasses specialised in complex data.
 
 
@@ -223,7 +223,7 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |    :py:class:`~._signals.complex_signal1d.ComplexSignal1D`              |        1         |       -               | complex  |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
-    |    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`              |        2         |       -               | complex  |
+    |    :py:class:`~._signals.complex_signal2d.Complex2Dmixin`              |        2         |       -               | complex  |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
 
 The following example shows how to transform between different subclasses.
@@ -293,7 +293,7 @@ following table:
     +---------------------------------------------------------------+--------+
     |    :py:class:`~._signals.complex_signal1d.ComplexSignal1D`    | False  |
     +---------------------------------------------------------------+--------+
-    |    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`    | False  |
+    |    :py:class:`~._signals.complex_signal2d.Complex2Dmixin`    | False  |
     +---------------------------------------------------------------+--------+
 
 
@@ -1615,7 +1615,7 @@ Add a linear phase ramp
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 For 2-dimensional complex images, a linear phase ramp can be added to the signal via the
-:py:func:`~._signals.complex_signal2d.ComplexSignal2D.add_phase_ramp` method. The parameters
+:py:func:`~._signals.complex_signal2d.Complex2Dmixin.add_phase_ramp` method. The parameters
 `ramp_x` and `ramp_y` dictate the slope of the ramp in `x`- and `y` direction, while the offset
 is determined by the `offset` parameter. The fulcrum of the linear ramp is at the origin
 and the slopes are given in units of the axis with the according scale taken into account.

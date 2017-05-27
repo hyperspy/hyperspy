@@ -381,7 +381,7 @@ A mass absorption coefficient database [Chantler2005]_ is available:
 Plotting
 --------
 
-You can visualize an EDS spectrum using the :py:meth:`~.signals.eds.EDSSpectrum.plot`
+You can visualize an EDS spectrum using the :py:meth:`~._signals.eds.EDSSpectrum.plot`
 method (see :ref:`visualisation<visualization-label>`). For example:
 
 .. code-block:: python
@@ -406,7 +406,7 @@ Plotting X-ray lines
 
 .. versionadded:: 0.8
 
-X-ray lines can be added as plot labels with :py:meth:`~.signals.eds.EDSSpectrum.plot`.
+X-ray lines can be added as plot labels with :py:meth:`~._signals.eds.EDSSpectrum.plot`.
 The lines are either retrieved from "metadata.Sample.Xray_lines",
 or selected with the same method as :py:meth:`~._signals.eds.EDS_mixin.add_lines`
 using the elements in "metadata.Sample.elements".
