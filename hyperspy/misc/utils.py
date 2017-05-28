@@ -411,7 +411,7 @@ class DictionaryTreeBrowser(object):
                             continue
 
                 if isinstance(value, DictionaryTreeBrowser):
-                    string += '''<ul style="margin: 0px;">
+                    string += '''<ul style="margin: 0px; list-style-position: outside;">
                     <details open>
                     <summary>
                     <li style="display: inline;">
@@ -422,7 +422,7 @@ class DictionaryTreeBrowser(object):
                 else:
                     _, strvalue = check_long_string(value, max_len)
                     strvalue = replace_html_symbols(strvalue)
-                    string += "<li style='margin-left:2.2em;'>%s = %s</li>" % (
+                    string += "<li style='margin-left:3em; padding-left: 0.5em'>%s = %s</li>" % (
                         key, strvalue)
         string += ""
         return string
