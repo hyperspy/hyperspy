@@ -23,6 +23,7 @@
 
 import os.path
 from os import remove
+import shutil
 import tempfile
 from numpy.testing import assert_allclose
 import numpy as np
@@ -31,7 +32,7 @@ from dateutil import tz
 from datetime import datetime
 
 from hyperspy.io import load
-from hyperspy.signals import BaseSignal, Signal2D, Signal1D
+from hyperspy.signals import BaseSignal, Signal2D, Signal1D, EDSTEMSpectrum
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
@@ -178,16 +179,29 @@ class TestCaseSaveAndRead():
 
 class TestFeiEMD():
 
+    fei_files_path = os.path.join(my_path, "emd_files", "fei_emd_files")
+
+    @classmethod
+    def setup_class(cls):
+        import zipfile
+        zipf = os.path.join(my_path, "emd_files", "fei_emd_files.zip")
+        with zipfile.ZipFile(zipf, 'r') as zipped:
+            zipped.extractall(cls.fei_files_path)
+
+    @classmethod
+    def teardown_class(cls):
+        shutil.rmtree(cls.fei_files_path)
+
     def test_fei_emd_image(self):
         md = {'Acquisition_instrument': {'TEM': {'beam_energy': 200.0,
                                                  'camera_length': 98.0,
                                                  'magnification': 40000.0,
                                                  'microscope': 'Talos',
                                                  'tilt_stage': '0.00'}},
-              'General': {'original_filename': 'example_fei_emd_image.emd',
+              'General': {'original_filename': 'fei_emd_image.emd',
                           'time': '2017-03-06T09:56:41',
                           'time_zone': 'BST',
-                          'title': 'example_fei_emd_image'},
+                          'title': 'fei_emd_image'},
               'Signal': {'binned': False, 'signal_type': 'image'},
               '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                         'original_shape': None,
@@ -200,10 +214,9 @@ class TestFeiEMD():
         md['General']['time'] = dt.astimezone(
             tz.tzlocal()).isoformat().split('+')[0]
 
-        signal = load(os.path.join(my_path, 'emd_files',
-                                   'example_fei_emd_image.emd'))
-        fei_image = np.load(os.path.join(
-            my_path, 'emd_files', 'fei_emd_image.npy'))
+        signal = load(os.path.join(self.fei_files_path, 'fei_emd_image.emd'))
+        fei_image = np.load(os.path.join(self.fei_files_path,
+                                         'fei_emd_image.npy'))
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].units == 'nm'
         assert_allclose(signal.axes_manager[0].scale, 5.302414, atol=1E-5)
@@ -215,25 +228,80 @@ class TestFeiEMD():
         assert isinstance(signal, Signal2D)
 
     def test_fei_emd_spectrum(self):
-        signal = load(os.path.join(my_path, 'emd_files',
-                                   'example_fei_emd_spectrum.emd'))
-        fei_spectrum = np.load(os.path.join(
-            my_path, 'emd_files', 'fei_emd_spectrum.npy'))
+        signal = load(os.path.join(
+            self.fei_files_path, 'fei_emd_spectrum.emd'))
+        fei_spectrum = np.load(os.path.join(self.fei_files_path,
+                                            'fei_emd_spectrum.npy'))
         np.testing.assert_equal(signal.data, fei_spectrum)
         assert isinstance(signal, Signal1D)
 
     def test_fei_emd_si(self):
-        signal = load(os.path.join(
-            my_path, 'emd_files', 'example_fei_emd_si.emd'))
-        fei_si = np.load(os.path.join(my_path, 'emd_files', 'fei_emd_si.npy'))
+        signal = load(os.path.join(self.fei_files_path, 'fei_emd_si.emd'))
+        fei_si = np.load(os.path.join(self.fei_files_path, 'fei_emd_si.npy'))
         np.testing.assert_equal(signal[1].data, fei_si)
         assert isinstance(signal[1], Signal1D)
 
+    def test_fei_emd_si_non_square_10frames(self):
+        s = load(os.path.join(self.fei_files_path,
+                              'fei_SI_SuperX-HAADF_10frames_10x50.emd'))
+        signal = s[1]
+        assert isinstance(signal, EDSTEMSpectrum)
+        assert signal.axes_manager[0].name == 'x'
+        assert signal.axes_manager[0].size == 10
+        assert signal.axes_manager[0].units == 'nm'
+        assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        assert signal.axes_manager[1].name == 'y'
+        assert signal.axes_manager[1].size == 50
+        assert signal.axes_manager[1].units == 'nm'
+        assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        assert signal.axes_manager[2].name == 'X-ray energy'
+        assert signal.axes_manager[2].size == 4096
+        assert signal.axes_manager[2].units == 'keV'
+        assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
+        assert signal.metadata.Acquisition_instrument.TEM.Detector.EDS.frame_number == 10
+
+    def test_fei_emd_si_non_square_20frames(self):
+        s = load(os.path.join(self.fei_files_path,
+                              'fei_SI_SuperX-HAADF_20frames_10x50.emd'))
+        signal = s[1]
+        assert isinstance(signal, EDSTEMSpectrum)
+        assert signal.axes_manager[0].name == 'x'
+        assert signal.axes_manager[0].size == 10
+        assert signal.axes_manager[0].units == 'nm'
+        assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        assert signal.axes_manager[1].name == 'y'
+        assert signal.axes_manager[1].size == 50
+        assert signal.axes_manager[1].units == 'nm'
+        assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        assert signal.axes_manager[2].name == 'X-ray energy'
+        assert signal.axes_manager[2].size == 4096
+        assert signal.axes_manager[2].units == 'keV'
+        assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
+        assert signal.metadata.Acquisition_instrument.TEM.Detector.EDS.frame_number == 20
+
+    def test_fei_emd_si_non_square_20frames_2eV(self):
+        s = load(os.path.join(self.fei_files_path,
+                              'fei_SI_SuperX-HAADF_20frames_10x50_2ev.emd'))
+        signal = s[1]
+        assert isinstance(signal, EDSTEMSpectrum)
+        assert signal.axes_manager[0].name == 'x'
+        assert signal.axes_manager[0].size == 10
+        assert signal.axes_manager[0].units == 'nm'
+        assert_allclose(signal.axes_manager[0].scale, 1.234009, atol=1E-5)
+        assert signal.axes_manager[1].name == 'y'
+        assert signal.axes_manager[1].size == 50
+        assert signal.axes_manager[1].units == 'nm'
+        assert_allclose(signal.axes_manager[1].scale, 1.234009, atol=1E-5)
+        assert signal.axes_manager[2].name == 'X-ray energy'
+        assert signal.axes_manager[2].size == 4096
+        assert signal.axes_manager[2].units == 'keV'
+        assert_allclose(signal.axes_manager[2].scale, 0.002, atol=1E-5)
+        assert signal.metadata.Acquisition_instrument.TEM.Detector.EDS.frame_number == 20
+
     def test_fei_emd_si_frame_range(self):
-        signal = load(os.path.join(
-            my_path, 'emd_files', 'example_fei_emd_si.emd'), first_frame=2,
-            last_frame=4)
-        fei_si = np.load(os.path.join(my_path, 'emd_files',
+        signal = load(os.path.join(self.fei_files_path, 'fei_emd_si.emd'),
+                      first_frame=2, last_frame=4)
+        fei_si = np.load(os.path.join(self.fei_files_path,
                                       'fei_emd_si_frame.npy'))
         np.testing.assert_equal(signal[1].data, fei_si)
         assert isinstance(signal[1], Signal1D)

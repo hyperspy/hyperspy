@@ -735,7 +735,6 @@ class FeiSpectrumStream(object):
         self.first_frame = first_frame
         self.last_frame = frame_number
         self.frame_number = self.last_frame - self.first_frame
-        print(self.first_frame, self.last_frame, self.frame_number)
 
 
 @jit_ifnumba
