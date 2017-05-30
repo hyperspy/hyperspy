@@ -406,23 +406,31 @@ class DictionaryTreeBrowser(object):
                                 {'[%d]' % i: v for i, v in enumerate(value)},
                                 double_lines=True)
                         else:
-                            string += "<li>%s = %s</li>" % (
+                            string += """
+                            <ul style="margin: 0px; list-style-position: outside;">
+                            <li style='margin-left:1em; padding-left: 0.5em'>%s = %s</li></ul>""" % (
                                 key, strvalue)
                             continue
 
                 if isinstance(value, DictionaryTreeBrowser):
-                    string += '''<ul style="margin: 0px; list-style-position: outside;">
-                    <details open>
-                    <summary>
-                    <li style="display: inline;">
-                    %s
-                    </li></summary>''' % (key)
-                    string += value._get_html_print_items()
-                    string += '</details></ul>'
+                    if value.keys():
+                        string += """<ul style="margin: 0px; list-style-position: outside;">
+                        <details closed>
+                        <summary>
+                        <li style="display: inline;">
+                        %s
+                        </li></summary>""" % (key)
+                        string += value._get_html_print_items()
+                        string += '</details></ul>'
+                    else:
+                        string += """<ul style="margin: 0px; list-style-position: outside;">
+                        <li style='margin-left:1em; padding-left: 0.5em'>%s</li></ul>""" % (
+                        key)
                 else:
                     _, strvalue = check_long_string(value, max_len)
                     strvalue = replace_html_symbols(strvalue)
-                    string += "<li style='margin-left:3em; padding-left: 0.5em'>%s = %s</li>" % (
+                    string += """<ul style="margin: 0px; list-style-position: outside;">
+                    <li style='margin-left:1em; padding-left: 0.5em'>%s = %s</li></ul>""" % (
                         key, strvalue)
         string += ""
         return string
