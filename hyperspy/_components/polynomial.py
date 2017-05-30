@@ -112,7 +112,7 @@ class Polynomial(Component):
                 # For polyfit the spectrum goes in the first axis
                 if axis.index_in_array > 0:
                     dc = dc.T             # Unfolded, so simply transpose
-                cmaps = np.polyfit(axis.axis[i1:i2], dc[i1:i2, :],
+                cmaps = np.polyfit(axis.axis[i1:i2], dc[i1:i2, ...],
                                    self.get_polynomial_order())
                 if axis.index_in_array > 0:
                     cmaps = cmaps.T       # Transpose back if needed

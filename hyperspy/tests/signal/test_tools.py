@@ -1,13 +1,14 @@
 from unittest import mock
 
 import numpy as np
+import numpy.random
 import dask.array as da
 from numpy.testing import assert_array_equal, assert_allclose
-
 import pytest
 
 from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.signal_tools import SpikesRemoval
 
 
 def _verify_test_sum_x_E(self, s):
@@ -238,7 +239,7 @@ class Test3D:
 
     def test_rebin(self):
         self.signal.estimate_poissonian_noise_variance()
-        new_s = self.signal.rebin((2, 1, 6))
+        new_s = self.signal.rebin(scale=(2, 2, 1))
         var = new_s.metadata.Signal.Noise_properties.variance
         assert new_s.data.shape == (1, 2, 6)
         assert var.data.shape == (1, 2, 6)
@@ -251,20 +252,20 @@ class Test3D:
                LooseVersion(dask.__version__) <= "0.13.0":
                 pytest.skip("Dask not up to date with new numpy")
 
-        np.testing.assert_array_equal(rebin(self.signal.data, (1, 2, 6)),
+        np.testing.assert_array_equal(rebin(self.signal.data, scale=(2, 2, 1)),
                                       var.data)
-        np.testing.assert_array_equal(rebin(self.signal.data, (1, 2, 6)),
+        np.testing.assert_array_equal(rebin(self.signal.data, scale=(2, 2, 1)),
                                       new_s.data)
 
     def test_rebin_no_variance(self):
-        new_s = self.signal.rebin((2, 1, 6))
+        new_s = self.signal.rebin(scale=(2, 2, 1))
         with pytest.raises(AttributeError):
             _ = new_s.metadata.Signal.Noise_properties
 
     def test_rebin_const_variance(self):
         self.signal.metadata.set_item(
             'Signal.Noise_properties.variance', 0.3)
-        new_s = self.signal.rebin((2, 1, 6))
+        new_s = self.signal.rebin(scale=(2, 2, 1))
         assert new_s.metadata.Signal.Noise_properties.variance == 0.3
 
     def test_swap_axes_simple(self):
@@ -594,14 +595,8 @@ class TestOutArg:
 
     def test_rebin(self):
         s = self.s
-        new_shape = (3, 2, 1, 3)
-        if self.s._lazy:
-            from distutils.version import LooseVersion
-            import dask
-            if LooseVersion(np.__version__) >= "1.12.0" and \
-               LooseVersion(dask.__version__) <= "0.13.0":
-                pytest.skip("Dask not up to date with new numpy")
-        self._run_single(s.rebin, s, dict(new_shape=new_shape))
+        scale = (1, 2, 1, 2)
+        self._run_single(s.rebin, s, dict(scale=scale))
 
     def test_as_spectrum(self):
         s = self.s
@@ -843,3 +838,87 @@ def test_lazy_changetype_rechunk():
     assert s.data.dtype is np.dtype('uint8')
     chunks_newest = s.data.chunks
     assert chunks_newest == chunks_new
+
+
+def test_spikes_removal_tool():
+    s = signals.Signal1D(np.ones((2, 3, 30)))
+    # Add three spikes
+    s.data[1, 0, 1] += 2
+    s.data[0, 2, 29] += 1
+    s.data[1, 2, 14] += 1
+
+    sr = SpikesRemoval(s)
+    sr.threshold = 1.5
+    sr.find()
+    assert s.axes_manager.indices == (0, 1)
+    sr.threshold = 0.5
+    assert s.axes_manager.indices == (0, 0)
+    sr.find()
+    assert s.axes_manager.indices == (2, 0)
+    sr.find()
+    assert s.axes_manager.indices == (0, 1)
+    sr.find(back=True)
+    assert s.axes_manager.indices == (2, 0)
+    sr.add_noise = False
+    sr.apply()
+    assert s.data[0, 2, 29] == 1
+    assert s.axes_manager.indices == (0, 1)
+    sr.apply()
+    assert s.data[1, 0, 1] == 1
+    assert s.axes_manager.indices == (2, 1)
+    np.random.seed(1)
+    sr.add_noise = True
+    sr.interpolator_kind = "Spline"
+    sr.spline_order = 3
+    sr.apply()
+    assert s.data[1, 2, 14] == 0
+    assert s.axes_manager.indices == (0, 0)
+
+
+class TestLinearRebin:
+
+    def test_linear_downsize(self):
+        spectrum = signals.EDSTEMSpectrum(np.ones([3, 5, 1]))
+        scale = (1.5, 2.5, 1)
+        res = spectrum.rebin(scale=scale, crop=True)
+        np.testing.assert_allclose(res.data, 3.75 * np.ones((1, 3, 1)))
+        for axis in res.axes_manager._axes:
+            assert scale[axis.index_in_axes_manager] == axis.scale
+        res = spectrum.rebin(scale=scale, crop=False)
+        np.testing.assert_allclose(res.data.sum(), spectrum.data.sum())
+
+    def test_linear_upsize(self):
+        spectrum = signals.EDSTEMSpectrum(np.ones([4, 5, 10]))
+        scale = [0.3, 0.2, .5]
+        res = spectrum.rebin(scale=scale)
+        np.testing.assert_allclose(res.data, 0.03 * np.ones((20, 16, 20)))
+        for axis in res.axes_manager._axes:
+            assert scale[axis.index_in_axes_manager] == axis.scale
+        res = spectrum.rebin(scale=scale, crop=False)
+        np.testing.assert_allclose(res.data.sum(), spectrum.data.sum())
+
+    def test_linear_downscale_out(self):
+        spectrum = signals.EDSTEMSpectrum(np.ones([4, 1, 1]))
+        scale = [1, 0.4, 1]
+        res = spectrum.rebin(scale=scale)
+        spectrum.data[2][0] = 5
+        spectrum.rebin(scale=scale, out=res)
+        np.testing.assert_allclose(res.data, [[[0.4]],
+                                              [[0.4]], [[0.4]], [
+                                                  [0.4]], [[0.4]], [[2.]],
+                                              [[2.]], [[1.2]], [[0.4]], [[0.4]]])
+        for axis in res.axes_manager._axes:
+            assert scale[axis.index_in_axes_manager] == axis.scale
+
+    def test_linear_upscale_out(self):
+        spectrum = signals.EDSTEMSpectrum(np.ones([4, 1, 1]))
+        scale = [1, 0.4, 1]
+        res = spectrum.rebin(scale=scale)
+        spectrum.data[2][0] = 5
+        spectrum.rebin(scale=scale, out=res)
+        np.testing.assert_allclose(res.data, [[[0.4]],
+                                              [[0.4]], [[0.4]], [
+                                                  [0.4]], [[0.4]], [[2.]],
+                                              [[2.]], [[1.2]], [[0.4]], [[0.4]]], atol=1e-3)
+        for axis in res.axes_manager._axes:
+            assert scale[axis.index_in_axes_manager] == axis.scale

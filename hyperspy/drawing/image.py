@@ -24,10 +24,11 @@ from traits.api import Undefined
 
 from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
-from hyperspy.gui.tools import ImageContrastEditor
+from hyperspy.signal_tools import ImageContrastEditor
 from hyperspy.misc import math_tools
 from hyperspy.misc import rgb_tools
 from hyperspy.drawing.figure import BlittedFigure
+from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 
 
 class ImagePlot(BlittedFigure):
@@ -157,8 +158,7 @@ class ImagePlot(BlittedFigure):
         if yaxis.units is not Undefined:
             self._ylabel += ' (%s)' % yaxis.units
 
-        if (xaxis.units == yaxis.units) and (
-                xaxis.scale == yaxis.scale):
+        if (xaxis.units == yaxis.units) and (xaxis.scale == yaxis.scale):
             self._auto_scalebar = True
             self._auto_axes_ticks = False
             self.pixel_units = xaxis.units
@@ -176,6 +176,7 @@ class ImagePlot(BlittedFigure):
     def _calculate_aspect(self):
         xaxis = self.xaxis
         yaxis = self.yaxis
+        factor = 1
         # Apply aspect ratio constraint
         if self.min_aspect:
             min_asp = self.min_aspect
@@ -187,9 +188,8 @@ class ImagePlot(BlittedFigure):
                 factor = min_asp ** -1 * xaxis.size / yaxis.size
                 self._auto_scalebar = False
                 self._auto_axes_ticks = True
-            else:
-                factor = 1
         self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
+        # print(self._aspect)
 
     def optimize_contrast(self, data):
         if (self._vmin_user is not None and self._vmax_user is not None):
@@ -197,16 +197,16 @@ class ImagePlot(BlittedFigure):
         self._vmin_auto, self._vmax_auto = utils.contrast_stretching(
             data, self.saturated_pixels)
 
-    def create_figure(self, max_size=8, min_size=2):
+    def create_figure(self, max_size=None, min_size=2):
         if self.scalebar is True:
-
-            wfactor = 1.1
+            wfactor = 1.0 + plt.rcParams['font.size'] / 100
         else:
             wfactor = 1
+
         height = abs(self._extent[3] - self._extent[2]) * self._aspect
         width = abs(self._extent[1] - self._extent[0])
-        figsize = np.array((width * wfactor, height)) * max_size / max(
-            (width * wfactor, height))
+        figsize = np.array((width * wfactor, height)) * \
+            max(plt.rcParams['figure.figsize']) / max(width * wfactor, height)
         self.figure = utils.create_figure(
             window_title=("Figure " + self.title
                           if self.title
@@ -247,7 +247,7 @@ class ImagePlot(BlittedFigure):
                 transform=self.ax.transAxes,
                 fontsize=12,
                 color='red',
-                animated=True)
+                animated=self.figure.canvas.supports_blit)
         for marker in self.ax_markers:
             marker.plot()
         self.update(**kwargs)
@@ -256,7 +256,7 @@ class ImagePlot(BlittedFigure):
                 self.ax.scalebar = widgets.ScaleBar(
                     ax=self.ax,
                     units=self.pixel_units,
-                    animated=True,
+                    animated=self.figure.canvas.supports_blit,
                     color=self.scalebar_color,
                 )
 
@@ -264,12 +264,17 @@ class ImagePlot(BlittedFigure):
             self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
             self._colorbar.set_label(
                 self.quantity_label, rotation=-90, va='bottom')
-            self._colorbar.ax.yaxis.set_animated(True)
+            self._colorbar.ax.yaxis.set_animated(
+                self.figure.canvas.supports_blit)
 
-        self.figure.canvas.draw()
+        self._set_background()
+        self.figure.canvas.draw_idle()
         if hasattr(self.figure, 'tight_layout'):
             try:
-                self.figure.tight_layout()
+                if self.axes_ticks == 'off' and not self.colorbar:
+                    plt.subplots_adjust(0, 0, 1, 1)
+                else:
+                    self.figure.tight_layout()
             except:
                 # tight_layout is a bit brittle, we do this just in case it
                 # complains
@@ -348,41 +353,57 @@ class ImagePlot(BlittedFigure):
             if redraw_colorbar is True:
                 # ims[0].autoscale()
                 self._colorbar.draw_all()
-                self._colorbar.solids.set_animated(True)
+                self._colorbar.solids.set_animated(
+                    self.figure.canvas.supports_blit
+                )
             else:
                 ims[0].changed()
-            self._draw_animated()
-            # It seems that nans they're simply not drawn, so simply replacing
-            # the data does not update the value of the nan pixels to the
-            # background color. We redraw everything as a workaround.
-            if np.isnan(data).any():
-                self.figure.canvas.draw()
+            if self.figure.canvas.supports_blit:
+                self._draw_animated()
+                # It seems that nans they're simply not drawn, so simply replacing
+                # the data does not update the value of the nan pixels to the
+                # background color. We redraw everything as a workaround.
+                if np.isnan(data).any():
+                    self.figure.canvas.draw_idle()
+            else:
+                self.figure.canvas.draw_idle()
         else:
             new_args = {'interpolation': 'nearest',
                         'vmin': vmin,
                         'vmax': vmax,
                         'extent': self._extent,
                         'aspect': self._aspect,
-                        'animated': True}
+                        'animated': self.figure.canvas.supports_blit}
             new_args.update(kwargs)
             self.ax.imshow(data,
                            **new_args)
-            self.figure.canvas.draw()
+            self.figure.canvas.draw_idle()
+
+        if self.axes_ticks == 'off':
+            self.ax.set_axis_off()
 
     def _update(self):
         # This "wrapper" because on_trait_change fiddles with the
         # method arguments and auto contrast does not work then
         self.update()
 
-    def adjust_contrast(self):
+    def gui_adjust_contrast(self, display=True, toolkit=None):
         ceditor = ImageContrastEditor(self)
-        ceditor.edit_traits()
-        return ceditor
+        return ceditor.gui(display=display, toolkit=toolkit)
+    gui_adjust_contrast.__doc__ = \
+        """
+        Display widgets to adjust image contrast if available.
+        Parameters
+        ----------
+        %s
+        %s
+
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
     def connect(self):
         self.figure.canvas.mpl_connect('key_press_event',
                                        self.on_key_press)
-        self.figure.canvas.draw()
+        self.figure.canvas.draw_idle()
         if self.axes_manager:
             self.axes_manager.events.indices_changed.connect(self.update, [])
             self.events.closed.connect(
@@ -391,7 +412,7 @@ class ImagePlot(BlittedFigure):
 
     def on_key_press(self, event):
         if event.key == 'h':
-            self.adjust_contrast()
+            self.gui_adjust_contrast()
 
     def set_contrast(self, vmin, vmax):
         self.vmin, self.vmax = vmin, vmax
