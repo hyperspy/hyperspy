@@ -483,7 +483,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
         mp.set_item('Acquisition_instrument.TEM.convergence_angle',
                     rpl_info['convergence-angle'])
     if 'tilt-stage' in rpl_info:
-        mp.set_item('Acquisition_instrument.TEM.tilt_stage',
+        mp.set_item('Acquisition_instrument.TEM.Stage.tilt_a',
                     rpl_info['tilt-stage'])
     if 'collection-angle' in rpl_info:
         mp.set_item('Acquisition_instrument.TEM.Detector.EELS.' +
@@ -654,8 +654,8 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
         if mp.has_item('Detector.EDS.elevation_angle'):
             keys_dictionary[
                 'elevation-angle'] = mp.Detector.EDS.elevation_angle
-        if mp.has_item('tilt_stage'):
-            keys_dictionary['tilt-stage'] = mp.tilt_stage
+        if mp.has_item('Stage.tilt_a'):
+            keys_dictionary['tilt-stage'] = mp.Stage.tilt_a
         if mp.has_item('Detector.EDS.azimuth_angle'):
             keys_dictionary['azimuth-angle'] = mp.Detector.EDS.azimuth_angle
         if mp.has_item('Detector.EDS.live_time'):

@@ -1,10 +1,11 @@
 import os
 import tempfile
+from distutils.version import LooseVersion
 
 import numpy as np
-
 import traits.api as t
 from numpy.testing import assert_allclose
+import pytest
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import assert_deep_almost_equal
@@ -34,6 +35,8 @@ def _test_rgba16(import_local_tifffile=False):
     assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-5)
     assert_allclose(s.axes_manager[2].scale, 1.0, atol=1E-5)
+    assert s.metadata.General.date == '2014-03-31'
+    assert s.metadata.General.time == '16:35:46'
 
 
 def _compare_signal_shape_data(s0, s1):
@@ -48,6 +51,8 @@ def test_read_unit_um():
     assert s.axes_manager[1].units == 'µm'
     assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
+    assert s.metadata.General.date == '2015-07-20'
+    assert s.metadata.General.time == '18:48:25'
     with tempfile.TemporaryDirectory() as tmpdir:
         fname = os.path.join(tmpdir, 'tiff_files', 'test_export_um_unit.tif')
         s.save(fname, overwrite=True, export_scale=True)
@@ -57,6 +62,8 @@ def test_read_unit_um():
         assert s.axes_manager[1].units == 'µm'
         assert_allclose(s2.axes_manager[0].scale, 0.16867, atol=1E-5)
         assert_allclose(s2.axes_manager[1].scale, 0.16867, atol=1E-5)
+        assert s2.metadata.General.date == s.metadata.General.date
+        assert s2.metadata.General.time == s.metadata.General.time
 
 
 def test_write_read_intensity_axes_DM():
@@ -398,6 +405,29 @@ def test_saving_loading_stack_no_scale():
         _compare_signal_shape_data(s0, s1)
 
 
+FEI_Helios_metadata = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': -2.3611,
+                                                                    'tilt': 6.54498e-06,
+                                                                    'x': 2.576e-05,
+                                                                    'y': -0.000194177,
+                                                                    'z': 0.007965},
+                                                          'beam_current': 0.00625,
+                                                          'beam_energy': 5.0,
+                                                          'dwell_time': 1e-05,
+                                                          'microscope': 'Helios NanoLab" 660',
+                                                          'working_distance': 4.03466}},
+                       'General': {'original_filename': 'FEI-Helios-Ebeam-8bits.tif',
+                                   'title': '',
+                                   'authors': 'supervisor',
+                                   'date': '2016-06-13',
+                                   'time': '17:06:40'},
+                       'Signal': {'binned': False,
+                                  'signal_type': ''},
+                       '_HyperSpy': {'Folding': {'original_axes_manager': None,
+                                                 'original_shape': None,
+                                                 'signal_unfolded': False,
+                                                 'unfolded': False}}}
+
+
 def test_read_FEI_SEM_scale_metadata_8bits():
     fname = os.path.join(MY_PATH2, 'FEI-Helios-Ebeam-8bits.tif')
     s = hs.load(fname)
@@ -406,6 +436,7 @@ def test_read_FEI_SEM_scale_metadata_8bits():
     assert_allclose(s.axes_manager[0].scale, 3.3724e-06, atol=1E-12)
     assert_allclose(s.axes_manager[1].scale, 3.3724e-06, atol=1E-12)
     assert s.data.dtype == 'uint8'
+    assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
 
 
 def test_read_FEI_SEM_scale_metadata_16bits():
@@ -416,26 +447,39 @@ def test_read_FEI_SEM_scale_metadata_16bits():
     assert_allclose(s.axes_manager[0].scale, 3.3724e-06, atol=1E-12)
     assert_allclose(s.axes_manager[1].scale, 3.3724e-06, atol=1E-12)
     assert s.data.dtype == 'uint16'
+    FEI_Helios_metadata['General']['original_filename'] = 'FEI-Helios-Ebeam-16bits.tif'
+    assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
 
 
 def test_read_Zeiss_SEM_scale_metadata_1k_image():
+    md = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 10.2,
+                                                       'tilt': -0.0,
+                                                       'x': 75.6442,
+                                                       'y': 60.4901,
+                                                       'z': 25.193},
+                                             'beam_current': 80000.0,
+                                             'beam_energy': 25.0,
+                                             'dwell_time': 5e-08,
+                                             'magnification': 105.0,
+                                             'microscope': 'Merlin-61-08',
+                                             'working_distance': 14.8}},
+          'General': {'authors': 'LIM',
+                      'original_filename': 'test_tiff_Zeiss_SEM_1k.tif',
+                      'title': ''},
+          'Signal': {'binned': False, 'signal_type': ''},
+          '_HyperSpy': {'Folding': {'original_axes_manager': None,
+                                    'original_shape': None,
+                                    'signal_unfolded': False,
+                                    'unfolded': False}}}
+
     fname = os.path.join(MY_PATH2, 'test_tiff_Zeiss_SEM_1k.tif')
     s = hs.load(fname)
-    assert s.axes_manager[0].units == 'm'
-    assert s.axes_manager[1].units == 'm'
-    assert_allclose(s.axes_manager[0].scale, 2.614514e-06, atol=1E-12)
-    assert_allclose(s.axes_manager[1].scale, 2.614514e-06, atol=1E-12)
+    assert s.axes_manager[0].units == 'µm'
+    assert s.axes_manager[1].units == 'µm'
+    assert_allclose(s.axes_manager[0].scale, 2.615, atol=1E-3)
+    assert_allclose(s.axes_manager[1].scale, 2.615, atol=1E-3)
     assert s.data.dtype == 'uint16'
-
-
-def test_read_Zeiss_SEM_scale_metadata_512_image():
-    fname = os.path.join(MY_PATH2, 'test_tiff_Zeiss_SEM_512.tif')
-    s = hs.load(fname)
-    assert s.axes_manager[0].units == 'm'
-    assert s.axes_manager[1].units == 'm'
-    assert_allclose(s.axes_manager[0].scale, 7.4240e-08, atol=1E-12)
-    assert_allclose(s.axes_manager[1].scale, 7.4240e-08, atol=1E-12)
-    assert s.data.dtype == 'uint16'
+    assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
 
 def test_read_RGB_Zeiss_optical_scale_metadata():
@@ -448,6 +492,8 @@ def test_read_RGB_Zeiss_optical_scale_metadata():
     assert s.axes_manager[1].units == t.Undefined
     assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-3)
     assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-3)
+    assert s.metadata.General.date == '2016-06-13'
+    assert s.metadata.General.time == '15:59:52'
 
 
 def test_read_BW_Zeiss_optical_scale_metadata():
@@ -459,6 +505,8 @@ def test_read_BW_Zeiss_optical_scale_metadata():
     assert s.axes_manager[1].units == 'µm'
     assert_allclose(s.axes_manager[0].scale, 169.3333, atol=1E-3)
     assert_allclose(s.axes_manager[1].scale, 169.3333, atol=1E-3)
+    assert s.metadata.General.date == '2016-06-13'
+    assert s.metadata.General.time == '16:08:49'
 
 
 def test_read_BW_Zeiss_optical_scale_metadata2():
@@ -470,6 +518,8 @@ def test_read_BW_Zeiss_optical_scale_metadata2():
     assert s.axes_manager[1].units == 'µm'
     assert_allclose(s.axes_manager[0].scale, 169.3333, atol=1E-3)
     assert_allclose(s.axes_manager[1].scale, 169.3333, atol=1E-3)
+    assert s.metadata.General.date == '2016-06-13'
+    assert s.metadata.General.time == '16:08:49'
 
 
 def test_read_BW_Zeiss_optical_scale_metadata3():
@@ -481,3 +531,34 @@ def test_read_BW_Zeiss_optical_scale_metadata3():
     assert s.axes_manager[1].units == t.Undefined
     assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-3)
     assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-3)
+    assert s.metadata.General.date == '2016-06-13'
+    assert s.metadata.General.time == '16:08:49'
+
+
+def test_read_TVIPS_metadata():
+    md = {'Acquisition_instrument': {'TEM': {'Detector': {'Camera': {'exposure': 0.4,
+                                                                     'name': 'F416'}},
+                                             'Stage': {'tilt_a': -0.0070000002,
+                                                       'tilt_b': -0.055,
+                                                       'x': 0.0,
+                                                       'y': -9.2000000506686774e-05,
+                                                       'z': 7.0000001350933871e-06},
+                                             'beam_energy': 99.0,
+                                             'magnification': 32000.0}},
+          'General': {'original_filename': 'TVIPS_bin4.tif',
+                      'time': '9:01:17',
+                      'title': ''},
+          'Signal': {'binned': False, 'signal_type': ''},
+          '_HyperSpy': {'Folding': {'original_axes_manager': None,
+                                    'original_shape': None,
+                                    'signal_unfolded': False,
+                                    'unfolded': False}}}
+    fname = os.path.join(MY_PATH2, 'TVIPS_bin4.tif')
+    s = hs.load(fname)
+    assert s.data.dtype == np.uint8
+    assert s.data.shape == (1024, 1024)
+    assert s.axes_manager[0].units == 'm'
+    assert s.axes_manager[1].units == 'm'
+    assert_allclose(s.axes_manager[0].scale, 1.420e-09, atol=1E-12)
+    assert_allclose(s.axes_manager[1].scale, 1.420e-09, atol=1E-12)
+    assert_deep_almost_equal(s.metadata.as_dictionary(), md)
