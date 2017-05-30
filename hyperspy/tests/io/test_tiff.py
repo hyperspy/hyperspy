@@ -15,18 +15,7 @@ MY_PATH2 = os.path.join(MY_PATH, "tiff_files")
 
 
 def test_rgba16():
-    """ Use skimage tifffile.py library """
-    _test_rgba16(import_local_tifffile=False)
-
-
-def test_rgba16_local_tifffile():
-    """ Use local tifffile.py library """
-    _test_rgba16(import_local_tifffile=True)
-
-
-def _test_rgba16(import_local_tifffile=False):
-    s = hs.load(os.path.join(MY_PATH2, "test_rgba16.tif"),
-                import_local_tifffile=import_local_tifffile)
+    s = hs.load(os.path.join(MY_PATH2, "test_rgba16.tif"))
     data = np.load(os.path.join(MY_PATH, "npy_files", "test_rgba16.npy"))
     assert (s.data == data).all()
     assert s.axes_manager[0].units == t.Undefined
@@ -57,7 +46,7 @@ def test_read_unit_um():
         fname = os.path.join(tmpdir, 'tiff_files', 'test_export_um_unit.tif')
         s.save(fname, overwrite=True, export_scale=True)
         # load tif file
-        s2 = hs.load(fname, import_local_tifffile=True)
+        s2 = hs.load(fname)
         assert s.axes_manager[0].units == 'µm'
         assert s.axes_manager[1].units == 'µm'
         assert_allclose(s2.axes_manager[0].scale, 0.16867, atol=1E-5)
@@ -75,35 +64,25 @@ def test_write_read_intensity_axes_DM():
     with tempfile.TemporaryDirectory() as tmpdir:
         fname = os.path.join(tmpdir, 'tiff_files', 'test_export_um_unit2.tif')
         s.save(fname, overwrite=True, export_scale=True)
-        s2 = hs.load(fname, import_local_tifffile=True)
+        s2 = hs.load(fname)
         assert_deep_almost_equal(s.metadata.Signal.as_dictionary(),
                                  s2.metadata.Signal.as_dictionary())
 
 
 def test_read_unit_from_imagej():
-    """ Use skimage tifffile.py library """
-    _test_read_unit_from_imagej(import_local_tifffile=False)
-
-
-def test_read_unit_from_imagej_local_tifffile():
-    """ Use local tifffile.py library """
-    _test_read_unit_from_imagej(import_local_tifffile=True)
-
-
-def _test_read_unit_from_imagej(import_local_tifffile=False):
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ.tif')
-    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    s = hs.load(fname)
     assert s.axes_manager[0].units == 'micron'
     assert s.axes_manager[1].units == 'micron'
     assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
 
 
-def test_read_unit_from_imagej_stack(import_local_tifffile=False):
+def test_read_unit_from_imagej_stack():
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ_stack.tif')
-    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    s = hs.load(fname)
     assert s.data.shape == (2, 68, 68)
     assert s.axes_manager[0].units == t.Undefined
     assert s.axes_manager[1].units == 'micron'
@@ -113,10 +92,10 @@ def test_read_unit_from_imagej_stack(import_local_tifffile=False):
     assert_allclose(s.axes_manager[2].scale, 0.16867, atol=1E-5)
 
 
-def test_read_unit_from_DM_stack(import_local_tifffile=False):
+def test_read_unit_from_DM_stack():
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_DM_stack.tif')
-    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    s = hs.load(fname)
     assert s.data.shape == (2, 68, 68)
     assert s.axes_manager[0].units == 's'
     assert s.axes_manager[1].units == 'µm'
@@ -147,10 +126,10 @@ def test_read_unit_from_DM_stack(import_local_tifffile=False):
             s2.axes_manager[2].offset, s.axes_manager[2].offset, atol=1E-5)
 
 
-def test_read_unit_from_imagej_stack_no_scale(import_local_tifffile=False):
+def test_read_unit_from_imagej_stack_no_scale():
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ_stack_no_scale.tif')
-    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    s = hs.load(fname)
     assert s.data.shape == (2, 68, 68)
     assert s.axes_manager[0].units == t.Undefined
     assert s.axes_manager[1].units == t.Undefined
@@ -160,36 +139,36 @@ def test_read_unit_from_imagej_stack_no_scale(import_local_tifffile=False):
     assert_allclose(s.axes_manager[2].scale, 1.0, atol=1E-5)
 
 
-def test_read_unit_from_imagej_no_scale(import_local_tifffile=False):
+def test_read_unit_from_imagej_no_scale():
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ_no_scale.tif')
-    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    s = hs.load(fname)
     assert s.axes_manager[0].units == t.Undefined
     assert s.axes_manager[1].units == t.Undefined
     assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-5)
 
 
-def test_write_read_unit_imagej(import_local_tifffile=True):
+def test_write_read_unit_imagej():
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ.tif')
-    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    s = hs.load(fname)
     s.axes_manager[0].units = 'µm'
     s.axes_manager[1].units = 'µm'
     with tempfile.TemporaryDirectory() as tmpdir:
         fname2 = os.path.join(
             tmpdir, 'test_loading_image_saved_with_imageJ2.tif')
         s.save(fname2, export_scale=True, overwrite=True)
-        s2 = hs.load(fname2, import_local_tifffile=import_local_tifffile)
+        s2 = hs.load(fname2)
         assert s2.axes_manager[0].units == 'micron'
         assert s2.axes_manager[1].units == 'micron'
         assert s.data.shape == s.data.shape
 
 
-def test_write_read_unit_imagej_with_description(import_local_tifffile=True):
+def test_write_read_unit_imagej_with_description():
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ.tif')
-    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    s = hs.load(fname)
     s.axes_manager[0].units = 'µm'
     s.axes_manager[1].units = 'µm'
     assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
@@ -197,7 +176,7 @@ def test_write_read_unit_imagej_with_description(import_local_tifffile=True):
     with tempfile.TemporaryDirectory() as tmpdir:
         fname2 = os.path.join(tmpdir, 'description.tif')
         s.save(fname2, export_scale=False, overwrite=True, description='test')
-        s2 = hs.load(fname2, import_local_tifffile=import_local_tifffile)
+        s2 = hs.load(fname2)
         assert s2.axes_manager[0].units == t.Undefined
         assert s2.axes_manager[1].units == t.Undefined
         assert_allclose(s2.axes_manager[0].scale, 1.0, atol=1E-5)
@@ -205,7 +184,7 @@ def test_write_read_unit_imagej_with_description(import_local_tifffile=True):
 
         fname3 = os.path.join(tmpdir, 'description2.tif')
         s.save(fname3, export_scale=True, overwrite=True, description='test')
-        s3 = hs.load(fname3, import_local_tifffile=import_local_tifffile)
+        s3 = hs.load(fname3)
         assert s3.axes_manager[0].units == 'micron'
         assert s3.axes_manager[1].units == 'micron'
         assert_allclose(s3.axes_manager[0].scale, 0.16867, atol=1E-5)
@@ -228,19 +207,9 @@ def test_saving_with_custom_tag():
                 b"Random metadata")
 
 
-def test_read_unit_from_dm():
-    """ Use skimage tifffile.py library """
-    _test_read_unit_from_dm(import_local_tifffile=False)
-
-
-def test_read_unit_from_dm_local_tifffile():
-    """ Use local tifffile.py library """
-    _test_read_unit_from_dm(import_local_tifffile=True)
-
-
-def _test_read_unit_from_dm(import_local_tifffile=False):
+def _test_read_unit_from_dm():
     fname = os.path.join(MY_PATH2, 'test_loading_image_saved_with_DM.tif')
-    s = hs.load(fname, import_local_tifffile=import_local_tifffile)
+    s = hs.load(fname)
     assert s.axes_manager[0].units == 'µm'
     assert s.axes_manager[1].units == 'µm'
     assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
@@ -447,7 +416,8 @@ def test_read_FEI_SEM_scale_metadata_16bits():
     assert_allclose(s.axes_manager[0].scale, 3.3724e-06, atol=1E-12)
     assert_allclose(s.axes_manager[1].scale, 3.3724e-06, atol=1E-12)
     assert s.data.dtype == 'uint16'
-    FEI_Helios_metadata['General']['original_filename'] = 'FEI-Helios-Ebeam-16bits.tif'
+    FEI_Helios_metadata['General'][
+        'original_filename'] = 'FEI-Helios-Ebeam-16bits.tif'
     assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
 
 
@@ -484,7 +454,7 @@ def test_read_Zeiss_SEM_scale_metadata_1k_image():
 
 def test_read_RGB_Zeiss_optical_scale_metadata():
     fname = os.path.join(MY_PATH2, 'optical_Zeiss_AxioVision_RGB.tif')
-    s = hs.load(fname, import_local_tifffile=True)
+    s = hs.load(fname, )
     dtype = np.dtype([('R', 'u1'), ('G', 'u1'), ('B', 'u1')])
     assert s.data.dtype == dtype
     assert s.data.shape == (10, 13)
@@ -498,7 +468,7 @@ def test_read_RGB_Zeiss_optical_scale_metadata():
 
 def test_read_BW_Zeiss_optical_scale_metadata():
     fname = os.path.join(MY_PATH2, 'optical_Zeiss_AxioVision_BW.tif')
-    s = hs.load(fname, force_read_resolution=True, import_local_tifffile=True)
+    s = hs.load(fname, force_read_resolution=True)
     assert s.data.dtype == np.uint16
     assert s.data.shape == (10, 13)
     assert s.axes_manager[0].units == 'µm'
@@ -538,8 +508,8 @@ def test_read_BW_Zeiss_optical_scale_metadata3():
 def test_read_TVIPS_metadata():
     md = {'Acquisition_instrument': {'TEM': {'Detector': {'Camera': {'exposure': 0.4,
                                                                      'name': 'F416'}},
-                                             'Stage': {'tilt_a': -0.0070000002,
-                                                       'tilt_b': -0.055,
+                                             'Stage': {'tilt_alpha': -0.0070000002,
+                                                       'tilt_beta': -0.055,
                                                        'x': 0.0,
                                                        'y': -9.2000000506686774e-05,
                                                        'z': 7.0000001350933871e-06},

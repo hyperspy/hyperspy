@@ -18,9 +18,11 @@
 
 import numpy as np
 import numpy.testing
+from numpy.testing import assert_array_equal
 import pytest
 
 from hyperspy import signals
+from hyperspy import roi
 
 
 class Test1D:
@@ -336,3 +338,32 @@ class TestEllipsis:
         self.signal.axes_manager._axes[-3].navigate = False
         s = self.signal.isig[..., 0]
         np.testing.assert_array_equal(s.data, self.data[:, :, 0, ...])
+
+
+class TestROISlicing:
+
+    def setup_method(self, method):
+        s = signals.Signal1D(np.random.random((10, 20, 1)))
+        s.axes_manager[0].scale = 0.5
+        s.axes_manager[1].scale = 2
+        self.s = s
+
+    def test_span_roi(self):
+        s = self.s
+        srx = roi.SpanROI(left=1.5, right=10)
+        sry = roi.SpanROI(left=-1000, right=2)
+        assert_array_equal(s.inav[srx, :].data, s.inav[1.5:10., ].data)
+        assert_array_equal(
+            s.inav[
+                srx, sry].data, s.inav[
+                1.5:10., -1000.:2.].data)
+
+    def test_rectangular_roi(self):
+        s = self.s
+        sr = roi.RectangularROI(left=1.5, right=10, top=-1000, bottom=2)
+        assert_array_equal(s.inav[sr].data, s.inav[1.5:10., -1000.:2.].data)
+
+    def test_point2D_roi(self):
+        s = self.s
+        sr = roi.Point2DROI(x=1.5, y=10)
+        assert_array_equal(s.inav[sr].data, s.inav[1.5, 10.].data)

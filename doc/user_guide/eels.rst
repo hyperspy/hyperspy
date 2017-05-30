@@ -26,25 +26,25 @@ Elemental composition of the sample
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 It can be useful to define the elemental composition of the sample for
-archiving purposes or to use some feature (e.g. curve fitting) that requieres
+archiving purposes or to use some feature (e.g. curve fitting) that requires
 this information.  The elemental composition of the sample can be declared
-using :py:meth:`~._signals.eels.EELSSpectrum.add_elements`. The information is
+using :py:meth:`~._signals.eels.EELSSpectrum_mixin.add_elements`. The information is
 stored in the :py:attr:`~.signal.BaseSignal.metadata` attribute (see
 :ref:`metadata_structure`). This information is saved to file when saving in
-the hdf5 format.
+the hspy format (HyperSpy's HDF5 specification).
 
 Thickness estimation
 ^^^^^^^^^^^^^^^^^^^^
 
-The :py:meth:`~._signals.eels.EELSSpectrum.estimate_thickness` can estimate the
+The :py:meth:`~._signals.eels.EELSSpectrum_mixin.estimate_thickness` can estimate the
 thickness from a low-loss EELS spectrum using the Log-Ratio method.
 
 Zero-loss peak centre and alignment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :py:meth:`~._signals.eels.EELSSpectrum.estimate_zero_loss_peak_centre` can be used to estimate the position of the zero-loss peak. The method assumes that the ZLP is the most intense feature in the spectra. For a more general approach see :py:meth:`~.signal.Signal1DTools.find_peaks1D_ohaver`.
+The :py:meth:`~._signals.eels.EELSSpectrum_mixin.estimate_zero_loss_peak_centre` can be used to estimate the position of the zero-loss peak. The method assumes that the ZLP is the most intense feature in the spectra. For a more general approach see :py:meth:`~.signal.Signal1DTools.find_peaks1D_ohaver`.
 
-The :py:meth:`~._signals.eels.EELSSpectrum.align_zero_loss_peak` can
+The :py:meth:`~._signals.eels.EELSSpectrum_mixin.align_zero_loss_peak` can
 align the ZLP with subpixel accuracy. It is more robust and easy to use than
 :py:meth:`~.signal.Signal1DTools.align1D` for the task. Note that it is
 possible to apply the same alignment to other spectra using the `also_align`
@@ -58,23 +58,23 @@ Deconvolutions
 
 Three deconvolution methods are currently available:
 
-* :py:meth:`~._signals.eels.EELSSpectrum.fourier_log_deconvolution`
-* :py:meth:`~._signals.eels.EELSSpectrum.fourier_ratio_deconvolution`
-* :py:meth:`~._signals.eels.EELSSpectrum.richardson_lucy_deconvolution`
+* :py:meth:`~._signals.eels.EELSSpectrum_mixin.fourier_log_deconvolution`
+* :py:meth:`~._signals.eels.EELSSpectrum_mixin.fourier_ratio_deconvolution`
+* :py:meth:`~._signals.eels.EELSSpectrum_mixin.richardson_lucy_deconvolution`
 
 Estimate elastic scattering intensity
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The
-:py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_intensity`
+:py:meth:`~._signals.eels.EELSSpectrum_mixin.estimate_elastic_scattering_intensity`
 can be used to calculate the integral of the zero loss peak (elastic intensity)
 from EELS low-loss spectra containing the zero loss peak using the
 (rudimentary) threshold method. The threshold can be global or spectrum-wise.
 If no threshold is provided it is automatically calculated using
-:py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold`
+:py:meth:`~._signals.eels.EELSSpectrum_mixin.estimate_elastic_scattering_threshold`
 with default values.
 
-:py:meth:`~._signals.eels.EELSSpectrum.estimate_elastic_scattering_threshold`
+:py:meth:`~._signals.eels.EELSSpectrum_mixin.estimate_elastic_scattering_threshold`
 can be used to  calculate separation point between elastic and inelastic
 scattering on EELS low-loss spectra. This algorithm calculates the derivative
 of the signal and assigns the inflexion point to the first point below a
@@ -93,9 +93,9 @@ Kramers-Kronig Analysis
 
 The single-scattering EEL spectrum is approximately related to the complex
 permittivity of the sample and can be estimated by Kramers-Kronig analysis.
-The :py:meth:`~._signals.eels.EELSSpectrum.kramers_kronig_analysis` method
-inplements the Kramers-Kronig FFT method as in [Egerton2011]_ to estimate the
-complex dielectric funtion from a low-loss EELS spectrum. In addition, it can
+The :py:meth:`~._signals.eels.EELSSpectrum_mixin.kramers_kronig_analysis` method
+implements the Kramers-Kronig FFT method as in [Egerton2011]_ to estimate the
+complex dielectric function from a low-loss EELS spectrum. In addition, it can
 estimate the thickness if the refractive index is known and approximately
 correct for surface plasmon excitations in layers.
 
@@ -108,15 +108,15 @@ EELS curve fitting
 HyperSpy makes it really easy to quantify EELS core-loss spectra by curve
 fitting as it is shown in the next example of quantification of a boron nitride
 EELS spectrum from the `The EELS Data Base
-<https://eelsdb.eu/>`_.
+<https://eelsdb.eu/>`_ (see :ref:`example-data-label`).
 
 Load the core-loss and low-loss spectra
 
 
 .. code-block:: python
 
-    >>> s = hs.load("BN_(hex)_B_K_Giovanni_Bertoni_100.msa")
-    >>> ll = hs.load("BN_(hex)_LowLoss_Giovanni_Bertoni_96.msa")
+    >>> s = hs.datasets.eelsdb(title="Hexagonal Boron Nitride", spectrum_type="coreloss")[0]
+    >>> ll = hs.datasets.eelsdb(title="Hexagonal Boron Nitride", spectrum_type="lowloss")[0]
 
 
 Set some important experimental information that is missing from the original
@@ -139,7 +139,7 @@ Define the chemical composition of the sample
     >>> s.add_elements(('B', 'N'))
 
 
-In order to include the effect of plural scattering we provide the low-loss spectrum to :py:meth:`~._signals.eels.EELSSpectrum.create_model`:
+In order to include the effect of plural scattering we provide the low-loss spectrum to :py:meth:`~._signals.eels.EELSSpectrum_mixin.create_model`:
 
 .. code-block:: python
 

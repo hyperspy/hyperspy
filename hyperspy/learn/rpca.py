@@ -550,6 +550,7 @@ def orpca(X, rank, fast=False,
        algorithms", arXiv:1609.04747, (2016), http://arxiv.org/abs/1609.04747.
 
     """
+    X = X.T
     _orpca = ORPCA(rank, fast=fast, lambda1=lambda1,
                    lambda2=lambda2, method=method,
                    learning_rate=learning_rate, init=init,
@@ -557,4 +558,5 @@ def orpca(X, rank, fast=False,
                    momentum=momentum)
     _orpca._setup(X, normalize=True)
     _orpca.fit(X)
-    return _orpca.finish()
+    Xhat, Ehat, U, S, V = _orpca.finish()
+    return Xhat.T, Ehat, U, S, V
