@@ -55,3 +55,11 @@ def test_plotting_test_working(mpl_cleanup):
 # ax.plot([1, 2, 3, 4]) # Uncomment this line to make sure the test is
 # properly failing
     return fig
+
+
+@pytest.mark.mpl_image_compare(baseline_dir='', tolerance=2)
+def test_plot_fail(mpl_cleanup):
+    fig = matplotlib.pyplot.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    ax.plot([1, 2, 2])
+    return fig

@@ -97,6 +97,10 @@ artifacts:
   - path: dist\*.whl
     name: win_wheels
 
+on_failure:
+  - ps: 7z a image_comparison_failures.zip C:\Users\appveyor\AppData\Local\Temp\1\*
+  - ps: Push-AppveyorArtifact image_comparison_failures.zip
+
   #Auto-deployment of bundle installer for tags:
 before_deploy:
   - ps: Add-AppveyorMessage "Running deployment step..."
@@ -109,7 +113,7 @@ before_deploy:
   - "mkdir %APPDATA%\\wpdir"
   - ps: appveyor DownloadFile $Env:WP_URL -FileName $Env:WP_EXE
   - ps: Write-Output (Get-FileHash $Env:WP_EXE)
-  - ps: if ((Get-FileHash $Env:WP_EXE).Hash -ne $Env:WP_CRC) { exit(1) }
+  - ps: if ((Get-FileHash $Env:WP_EXE).Hash -ne $Env:WPll_CRC) { exit(1) }
   - ps: (& $Env:WP_EXE /S /D=$Env:WP_INSTDIR | Out-Null )
   - "ls %APPDATA%/wpdir"
   - "ls %WP_INSTDIR%"
