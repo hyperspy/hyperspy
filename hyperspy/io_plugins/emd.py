@@ -537,27 +537,52 @@ class FeiEMDReader(object):
 
     def _read_image(self, data_sub_group):
         # Return a dictionary ready to parse of return to io module
-        dataset = data_sub_group['Data']
-        data = dataset[:, :, 0]
-        self.image_shape = data.shape
+        data = np.rollaxis(np.array(data_sub_group['Data']), axis=2)
+        # Get the scanning area shape of the SI from the images
+        self.SI_shape = data.shape[1:]
 
         pix_scale = self.original_metadata['BinaryResult']['PixelSize']
         offsets = self.original_metadata['BinaryResult']['Offset']
         original_units = self.original_metadata['BinaryResult']['PixelUnitX']
 
-        axes = [{'index_in_array': 0,
-                 'name': 'y',
-                 'offset': self._convert_scale_units(offsets['x'], original_units)[0],
-                 'scale': self._convert_scale_units(pix_scale['height'], original_units)[0],
-                 'size': data.shape[0],
-                 'units': self._convert_scale_units(pix_scale['height'], original_units)[1]},
-                {'index_in_array': 1,
-                 'name': 'x',
-                 'offset': self._convert_scale_units(offsets['y'], original_units)[0],
-                 'scale': self._convert_scale_units(pix_scale['width'], original_units)[0],
-                 'size': data.shape[1],
-                 'units': self._convert_scale_units(pix_scale['width'], original_units)[1]}
-                ]
+        axes = []
+        # stack of images
+        if data.shape[0] > 1:
+            frame_time = self.original_metadata['Scan']['FrameTime']
+            scale_time = self._convert_scale_units(
+                frame_time, 's', 2 * data.shape[0])
+            axes.append({'index_in_array': 0,
+                         'name': 'Time',
+                         'offset': 0,
+                         'scale': scale_time[0],
+                         'size': data.shape[0],
+                         'units': scale_time[1]})
+            i = 1
+        else:
+            # since there is only one image, need to remove the first axis
+            data = data.squeeze(axis=0)
+            i = 0
+        scale_x = self._convert_scale_units(
+            pix_scale['width'], original_units, data.shape[i + 1])
+        scale_y = self._convert_scale_units(
+            pix_scale['height'], original_units, data.shape[i])
+        offset_x = self._convert_scale_units(
+            offsets['x'], original_units, data.shape[i + 1])
+        offset_y = self._convert_scale_units(
+            offsets['y'], original_units, data.shape[i])
+        axes.extend([{'index_in_array': i,
+                      'name': 'y',
+                      'offset': offset_y[0],
+                      'scale': scale_y[0],
+                      'size': data.shape[i],
+                      'units': scale_y[1]},
+                     {'index_in_array': i + 1,
+                      'name': 'x',
+                      'offset': offset_x[0],
+                      'scale': scale_x[0],
+                      'size': data.shape[i + 1],
+                      'units': scale_x[1]}
+                     ])
 
         md = self._get_metadata_dict()
         md['Signal']['signal_type'] = 'image'
@@ -578,7 +603,7 @@ class FeiEMDReader(object):
 
         self.si_grp = si_grp
 
-        stream.get_spectrum_image(self.image_shape, self.first_frame,
+        stream.get_spectrum_image(self.SI_shape, self.first_frame,
                                   self.last_frame)
         self.original_metadata['AcquisitionSettings'] = stream.acquisition_settings
         self.original_metadata['ImportedDataParameter'] = {'First_frame': stream.first_frame,
@@ -591,18 +616,27 @@ class FeiEMDReader(object):
 
         dispersion, offset = self._get_dispersion_offset()
 
+        scale_x = self._convert_scale_units(
+            pix_scale['width'], original_units, stream.spectrum_image.shape[1])
+        scale_y = self._convert_scale_units(
+            pix_scale['height'], original_units, stream.spectrum_image.shape[0])
+        offset_x = self._convert_scale_units(
+            offsets['x'], original_units, stream.spectrum_image.shape[1])
+        offset_y = self._convert_scale_units(
+            offsets['y'], original_units, stream.spectrum_image.shape[0])
+
         axes = [{'index_in_array': 0,
                  'name': 'y',
-                 'offset': self._convert_scale_units(offsets['y'], original_units)[0],
-                 'scale': self._convert_scale_units(pix_scale['height'], original_units)[0],
+                 'offset': offset_y[0],
+                 'scale': scale_y[0],
                  'size': stream.spectrum_image.shape[0],
-                 'units': self._convert_scale_units(pix_scale['height'], original_units)[1]},
+                 'units': scale_y[1]},
                 {'index_in_array': 1,
                  'name': 'x',
-                 'offset': self._convert_scale_units(offsets['x'], original_units)[0],
-                 'scale': self._convert_scale_units(pix_scale['width'], original_units)[0],
+                 'offset': offset_x[0],
+                 'scale': scale_x[0],
                  'size': stream.spectrum_image.shape[1],
-                 'units': self._convert_scale_units(pix_scale['width'], original_units)[1]},
+                 'units': scale_x[1]},
                 {'index_in_array': 2,
                  'name': 'X-ray energy',
                  'offset': offset,
@@ -629,10 +663,11 @@ class FeiEMDReader(object):
 
         return dispersion, offset
 
-    def _convert_scale_units(self, value, units):
+    def _convert_scale_units(self, value, units, factor=1):
+        factor /= 2
         v = np.float(value) * self.ureg(units)
-        converted_v = v.to('nm')
-        converted_value = float(converted_v.magnitude)
+        converted_v = (factor * v).to_compact()
+        converted_value = float(converted_v.magnitude / factor)
         converted_units = '{:~}'.format(converted_v.units)
         return converted_value, converted_units
 
