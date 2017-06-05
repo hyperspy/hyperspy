@@ -57,6 +57,10 @@ script:
   - pip install coverage coveralls pytest pytest-cov pytest-mpl;
     py.test --mpl --cov=hyperspy --pyargs hyperspy;
 
+after_failure: # run only on failure in case there is a need to check matplotlib image comparison
+  -  zip -r image_comparison_failure.zip /tmp/
+  - travis-artifacts upload image_comparison_failure.zip
+
 after_success:
 - coveralls
 - if [[ $MINIMAL_ENV == 'False' ]]; then
