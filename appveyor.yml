@@ -98,7 +98,7 @@ artifacts:
     name: win_wheels
 
 on_failure:
-  - ps: 7z a image_comparison_failures.zip C:\Users\appveyor\AppData\Local\Temp\1\*
+  - ps: 7z a -r image_comparison_failures.zip C:\Users\appveyor\AppData\Local\Temp\1\*png
   - ps: Push-AppveyorArtifact image_comparison_failures.zip
 
   #Auto-deployment of bundle installer for tags:
