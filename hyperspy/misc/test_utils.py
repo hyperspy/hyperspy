@@ -1,16 +1,25 @@
-# -*- coding: utf-8 -*-
-"""
-"""
+# Copyright 2007-2016 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 from contextlib import contextmanager
 import warnings
 import re
-import sys
-import inspect
-import matplotlib
-from distutils.version import LooseVersion
 import numpy as np
-import numpy.testing as nt
 from numpy.testing import assert_allclose
 
 from hyperspy.decorators import simple_decorator
@@ -168,38 +177,6 @@ def assert_warns(message=None, category=None):
             raise ValueError(msg)
 
 
-def get_matplotlib_version_label():
-    """ Return a string describing the matplotlib version installed. The string
-    is used to label the references images for plot testing. """
-    version = LooseVersion(matplotlib.__version__)
-    if version >= LooseVersion('2.0.0'):
-        return 'mpl2'
-    else:
-        return 'mpl1'
-
-
-def reset_rcParams_default():
-    import matplotlib.pyplot as plt
-    plt.rcParams.clear()
-    plt.rcParams.update(plt.rcParamsDefault)
-
-
-@simple_decorator
-def switch_backend_mpl(function):
-    def wrapper(*args, **kwargs):
-        # if necessary, change the backend to display a figure and to be able to
-        # close it.
-        original_backend = matplotlib.get_backend()
-        if original_backend == 'agg':
-            matplotlib.pyplot.switch_backend('TkAgg')
-
-        function(*args, **kwargs)
-
-        if original_backend == 'agg':  # switch back to the original backend
-            matplotlib.pyplot.switch_backend(original_backend)
-    return wrapper
-
-
 @simple_decorator
 def update_close_figure(function):
     def wrapper():
@@ -254,3 +231,18 @@ def assert_deep_almost_equal(actual, expected, *args, **kwargs):
             trace = ' -> '.join(reversed(exc.traces))
             exc = AssertionError("%s\nTRACE: %s" % (exc, trace))
         raise exc
+
+
+def sanitize_dict(dictionary):
+    new_dictionary = {}
+    for key, value in dictionary.items():
+        if isinstance(value, dict):
+            new_dictionary[key] = sanitize_dict(value)
+        elif value is not None:
+            new_dictionary[key] = value
+    return new_dictionary
+
+
+def check_running_tests_in_CI():
+    if 'CI' in os.environ:
+        return os.environ.get('CI')

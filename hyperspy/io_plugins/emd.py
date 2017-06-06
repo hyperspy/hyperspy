@@ -17,7 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 # The EMD format is a hdf5 standard proposed at Lawrence Berkeley
-# National Lab (see http://emdatasets.lbl.gov/ for more information).
+# National Lab (see http://emdatasets.com/ for more information).
 # NOT to be confused with the FEI EMD format which was developed later.
 
 

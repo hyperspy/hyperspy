@@ -21,20 +21,25 @@ from hyperspy.drawing.marker import MarkerBase
 
 class Point(MarkerBase):
 
-    """Point marker that can be added to the signal figure
+    """Point marker that can be added to the signal figure.
+
+    If the signal has one or several navigation axes, the point marker
+    can change as a function of the navigation position. This done by
+    using an array for the x and y parameters. This array must have
+    the same shape as the navigation axes of the signal.
 
     Parameters
-    ---------
-    x: array or float
+    ----------
+    x : array or float
         The position of the point in x. If float, the marker is fixed.
         If array, the marker will be updated when navigating. The array should
-        have the same dimensions in the nagivation axes.
-    y: array or float
+        have the same dimensions in the navigation axes.
+    y : array or float
         The position of the point in y. see x arguments
-    size: array or float
+    size : array or float, optional, default 20
         The size of the point. see x arguments
-    kwargs:
-        Kewywords argument of axvline valid properties (i.e. recognized by
+    kwargs :
+        Keywords argument of axvline valid properties (i.e. recognized by
         mpl.plot).
 
     Example
@@ -44,7 +49,12 @@ class Point(MarkerBase):
                                      color='red')
     >>> im.add_marker(m)
 
-    #Markers on local maxima
+    Adding a marker permanently to a signal
+    >>> im = hs.signals.Signal2D(np.random.random([10, 50, 50]))
+    >>> m = hs.plot.markers.point(10, 30, color='blue', size=50)
+    >>> im.add_marker(m, permanent=True)
+
+    Markers on local maxima
     >>> from skimage.feature import peak_local_max
     >>> import scipy.misc
     >>> im = hs.signals.Signal2D(scipy.misc.ascent()).as_signal2D([2,0])
@@ -62,6 +72,18 @@ class Point(MarkerBase):
         self.marker_properties = lp
         self.set_data(x1=x, y1=y, size=size)
         self.set_marker_properties(**kwargs)
+        self.name = 'point'
+
+    def __repr__(self):
+        string = "<marker.{}, {} (x={},y={},color={},size={})>".format(
+            self.__class__.__name__,
+            self.name,
+            self.get_data_position('x1'),
+            self.get_data_position('y1'),
+            self.marker_properties['color'],
+            self.get_data_position('size'),
+        )
+        return(string)
 
     def update(self):
         if self.auto_update is False:
@@ -70,18 +92,8 @@ class Point(MarkerBase):
                                  self.get_data_position('y1')])
         self.marker._sizes = [self.get_data_position('size')]
 
-    def plot(self):
-        if self.ax is None:
-            raise AttributeError(
-                "To use this method the marker needs to be first add to a " +
-                "figure using `s._plot.signal_plot.add_marker(m)` or " +
-                "`s._plot.navigator_plot.add_marker(m)`")
+    def _plot_marker(self):
         self.marker = self.ax.scatter(self.get_data_position('x1'),
                                       self.get_data_position('y1'),
                                       **self.marker_properties)
         self.marker._sizes = [self.get_data_position('size')]
-        self.marker.set_animated(True)
-        try:
-            self.ax.hspy_fig._draw_animated()
-        except:
-            pass

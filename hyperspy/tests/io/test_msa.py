@@ -93,8 +93,8 @@ example2_TEM = {'Detector': {'EDS': {'EDS_det': "SIWLS",
                 'beam_current_units': "nA",
                 'beam_energy': 120.0,
                 'beam_energy_units': "kV",
-                'tilt_stage': 45.0,
-                'tilt_stage_units': "dg"}
+                'Stage': {'tilt_alpha': 45.0,
+                          'tilt_alpha_units': "dg"}}
 
 example2_metadata = {'Acquisition_instrument': {'TEM': example2_TEM},
                      'General': {'original_filename': "example2.msa",

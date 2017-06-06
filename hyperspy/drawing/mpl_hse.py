@@ -92,7 +92,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         sf.axes_manager = self.axes_manager
         self.signal_plot = sf
         # Create a line to the left axis with the default indices
-        is_complex = any(np.iscomplex(self.signal_data_function()))
+        is_complex = np.iscomplex(self.signal_data_function()).any()
         sl = signal1d.Signal1DLine()
         sl.autoscale = True if not is_complex else False
         sl.data_function = self.signal_data_function
@@ -118,18 +118,20 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
 
         self.signal_plot = sf
         sf.plot()
-        if self.navigator_plot is not None and sf.figure is not None:
-            self.navigator_plot.events.closed.connect(
-                self._on_navigator_plot_closing, [])
-            sf.events.closed.connect(self.close_navigator_plot, [])
-            self.signal_plot.figure.canvas.mpl_connect(
-                'key_press_event', self.axes_manager.key_navigator)
-            self.navigator_plot.figure.canvas.mpl_connect(
-                'key_press_event', self.axes_manager.key_navigator)
-            self.signal_plot.figure.canvas.mpl_connect(
-                'key_press_event', self.key2switch_right_pointer)
-            self.navigator_plot.figure.canvas.mpl_connect(
-                'key_press_event', self.key2switch_right_pointer)
+        if sf.figure is not None:
+            if self.axes_manager.navigation_axes:
+                self.signal_plot.figure.canvas.mpl_connect(
+                    'key_press_event', self.axes_manager.key_navigator)
+            if self.navigator_plot is not None:
+                self.navigator_plot.events.closed.connect(
+                    self._on_navigator_plot_closing, [])
+                sf.events.closed.connect(self.close_navigator_plot, [])
+                self.signal_plot.figure.canvas.mpl_connect(
+                    'key_press_event', self.key2switch_right_pointer)
+                self.navigator_plot.figure.canvas.mpl_connect(
+                    'key_press_event', self.key2switch_right_pointer)
+                self.navigator_plot.figure.canvas.mpl_connect(
+                    'key_press_event', self.axes_manager.key_navigator)
 
     def key2switch_right_pointer(self, event):
         if event.key == "e":

@@ -47,9 +47,9 @@ class Complex2Dmixin:
             Offset of the ramp at the fulcrum.
         Notes
         -----
-            The fulcrum of the linear ramp is at the origin and the slopes are given in units of
-            the axis with the according scale taken into account. Both are available via the
-            `axes_manager` of the signal.
+            The fulcrum of the linear ramp is at the origin and the slopes are
+            given in units of the axis with the according scale taken into
+            account. Both are available via the `axes_manager` of the signal.
 
         """
         phase = self.phase
@@ -96,7 +96,7 @@ class ComplexSignal2D(Complex2Dmixin, ComplexSignal, CommonSignal2D):
     pass
 
 
-class LazyComplexSignal2D(Complex2Dmixin, LazyComplexSignal, CommonSignal2D):
+class LazyComplexSignal2D(ComplexSignal2D, LazyComplexSignal):
 
     """BaseSignal subclass for lazy complex 2-dimensional data."""
     pass
