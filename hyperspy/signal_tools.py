@@ -839,8 +839,11 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                        "in the Signal metadata are used if present,"
                             "otherwise\nshot noise is used as a default")
 
-    def __init__(self, signal, navigation_mask=None, signal_mask=None):
+    def __init__(self, signal, navigation_mask=None, signal_mask=None,
+                 threshold=400):
         super(SpikesRemoval, self).__init__(signal)
+        self.signal_mask = signal_mask
+        self.navigation_mask = navigation_mask
         self.interpolated_line = None
         self.coordinates = [coordinate for coordinate in
                             signal.axes_manager._am_indices_generator()
@@ -849,16 +852,17 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self.signal = signal
         self.line = signal._plot.signal_plot.ax_lines[0]
         self.ax = signal._plot.signal_plot.ax
+        self.axis = self.signal.axes_manager.signal_axes[0]
         signal._plot.auto_update_plot = False
         if len(self.coordinates) > 1:
             signal.axes_manager.indices = self.coordinates[0]
+        self.threshold = threshold
         self.index = 0
         self.argmax = None
         self.derivmax = None
         self.kind = "linear"
         self._temp_mask = np.zeros(self.signal().shape, dtype='bool')
-        self.signal_mask = signal_mask
-        self.navigation_mask = navigation_mask
+        self.update_signal_mask()
         md = self.signal.metadata
         from hyperspy.signal import BaseSignal
 
@@ -948,6 +952,8 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                     minimum),
                 self.signal.axes_manager.signal_axes[0].index2value(
                     maximum))
+            self.signal._plot.pointer._set_indices(
+                self.coordinates[self.index])
             self.update_plot()
             self.create_interpolation_line()
 
@@ -957,8 +963,19 @@ class SpikesRemoval(SpanSelectorInSignal1D):
             self.interpolated_line = None
         self.reset_span_selector()
         self.update_spectrum_line()
+        self.update_signal_mask()
         if len(self.coordinates) > 1:
             self.signal._plot.pointer._update_patch_position()
+
+    def update_signal_mask(self):
+        if hasattr(self, 'mask_filling'):
+            self.mask_filling.remove()
+        if self.signal_mask is not None:
+            self.mask_filling = self.ax.fill_between(self.axis.axis,
+                                                     self.signal(), 0,
+                                                     where=self.signal_mask,
+                                                     facecolor='blue',
+                                                     alpha=0.5)
 
     def update_spectrum_line(self):
         self.line.auto_update = True
