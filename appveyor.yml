@@ -114,7 +114,7 @@ before_deploy:
   - "mkdir %APPDATA%\\wpdir"
   - ps: appveyor DownloadFile $Env:WP_URL -FileName $Env:WP_EXE
   - ps: Write-Output (Get-FileHash $Env:WP_EXE)
-  - ps: if ((Get-FileHash $Env:WP_EXE).Hash -ne $Env:WPll_CRC) { exit(1) }
+  - ps: if ((Get-FileHash $Env:WP_EXE).Hash -ne $Env:WP_CRC) { exit(1) }
   - ps: (& $Env:WP_EXE /S /D=$Env:WP_INSTDIR | Out-Null )
   - "ls %APPDATA%/wpdir"
   - "ls %WP_INSTDIR%"
