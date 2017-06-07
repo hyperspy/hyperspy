@@ -172,7 +172,7 @@ def test_data(pdict):
                     )
                 elif "EDS" in s.metadata.Signal.signal_type and metadata:
                     mdpaths += (
-                        "Acquisition_instrument.TEM.tilt_stage",
+                        "Acquisition_instrument.TEM.Stage.tilt_alpha",
                         "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
                         "Acquisition_instrument.TEM.Detector.EDS.elevation_angle",
                         "Acquisition_instrument.TEM.Detector."

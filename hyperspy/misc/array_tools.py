@@ -6,8 +6,16 @@ except ImportError:
     ordict = False
 
 import warnings
+import math as math
+import logging
+import numbers
 
 import numpy as np
+
+from hyperspy.misc.math_tools import anyfloatin
+
+
+_logger = logging.getLogger(__name__)
 
 
 def get_array_memory_size_in_GiB(shape, dtype):
@@ -63,18 +71,54 @@ def homogenize_ndim(*args):
             for ary in args]
 
 
-def rebin(a, new_shape):
+def _requires_linear_rebin(arr, scale):
+    """Returns True if linear_rebin is required.
+    Parameters
+    ----------
+    arr: array
+        numpy array to rebin
+    scale: tuple
+        rebinning factors
+    """
+
+    return (np.asarray(arr.shape) %
+            np.asarray(scale)).any() or anyfloatin(scale)
+
+
+def rebin(a, new_shape=None, scale=None, crop=True):
     """Rebin array.
 
-    rebin ndarray data into a smaller ndarray of the same rank whose dimensions
-    are factors of the original dimensions. eg. An array with 6 columns and 4
-    rows can be reduced to have 6,3,2 or 1 columns and 4,2 or 1 rows.
+    rebin ndarray data into a smaller or larger array based on a linear
+    interpolation. Specify either a new_shape or a scale. Scale of 1== no
+    binning. Scale less than one results in up-sampling.
 
     Parameters
     ----------
     a : numpy array
-    new_shape : tuple
-        shape after binning
+    new_shape : a list of floats or integer, default None
+        For each dimension specify the new_shape of the np.array. This will
+        then be converted into a scale.
+    scale : a list of floats or integer, default None
+        For each dimension specify the new:old pixel ratio, e.g. a ratio of 1
+        is no binning and a ratio of 2 means that each pixel in the new
+        spectrum is twice the size of the pixels in the old spectrum.
+        The length of the list should match the dimension of the numpy array.
+        ***Note : Only one of scale or new_shape should be specified otherwise
+        the function will not run***
+    crop: bool, default True
+        When binning by a non-integer number of pixels it is likely that
+        the final row in each dimension contains less than the full quota to
+        fill one pixel.
+
+        e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
+        pixels and one row containing only 0.8 pixels worth. Selection of
+        crop='True' or crop='False' determines whether or not this
+        'black' line is cropped from the final binned array or not.
+
+        *Please note that if crop=False is used, the final row in each
+        dimension may appear black, if a fractional number of pixels are left
+        over. It can be removed but has been left to preserve total counts
+        before and after binning.*
 
     Returns
     -------
@@ -82,37 +126,188 @@ def rebin(a, new_shape):
 
     Examples
     --------
-    >>> a=rand(6,4); b=rebin(a,(3,2))
-    >>> a=rand(6); b=rebin(a,(2,))
+    >>> a=rand(6,4); b=rebin(a,scale=(3,2))
+    >>> a=rand(6); b=rebin(a,scale=(2,))
 
     Notes
     -----
-    Adapted from scipy cookbook
+    Fast re_bin function Adapted from scipy cookbook
 
     """
-    lenShape = len(a.shape)
-    # ensure the new shape is integers
-    new_shape = tuple(int(ns) for ns in new_shape)
-    factor = np.asarray(a.shape) // np.asarray(new_shape)
-    if factor.max() < 2:
-        return a.copy()
-    if isinstance(a, np.ndarray):
-        # most of the operations will fall here and dask is not imported
-        rshape = ()
-        for athing in zip(new_shape, factor):
-            rshape += athing
-        return a.reshape(rshape).sum(axis=tuple(
-            2 * i + 1 for i in range(lenShape)))
+    # Series of if statements to check that only one out of new_shape or scale
+    # has been given. New_shape is then converted to scale. If both or neither
+    # are given the function raises and error and wont run.
+    if new_shape is None and scale is None:
+        raise ValueError("One of new_shape, or scale must be specified")
+    elif new_shape is not None and scale is not None:
+        raise ValueError("Only one out of new_shape or scale should be specified.\
+                        Not both.")
+    elif new_shape is not None:
+        scale = []
+        for i, axis in enumerate(a.shape):
+            scale.append(a.shape[i] / new_shape[i])
     else:
-        import dask.array as da
-        try:
-            return da.coarsen(np.sum, a, {i: int(f)
-                                          for i, f in enumerate(factor)})
-        # we provide slightly better error message in hypersy context
-        except ValueError:
-            raise ValueError("Rebinning does not allign with data dask chunks."
-                             " Rebin fewer dimensions at a time to avoid this"
-                             " error")
+        new_shape = new_shape
+        scale = scale
+    # check whether or not interpolation is needed.
+    if _requires_linear_rebin(arr=a, scale=scale):
+        _logger.debug("Using linear_bin")
+        return _linear_bin(a, scale, crop)
+    else:
+        _logger.debug("Using standard rebin with lazy support")
+        # if interpolation is not needed run fast re_bin function.
+        # Adapted from scipy cookbook.
+        lenShape = len(a.shape)
+        new_shape = np.asarray(a.shape) // np.asarray(scale)
+        # ensure the new shape is integers
+        new_shape = tuple(int(ns) for ns in new_shape)
+        # check function wont bin to zero.
+        for item in new_shape:
+            if item == 0:
+                raise ValueError("One of your dimensions collapses to zero.\
+                Re-adjust your scale values or run code with crop=False to\
+                avoid this.")
+        scale = np.asarray(a.shape) // np.asarray(new_shape)
+        if scale.max() < 2:
+            return a.copy()
+        if isinstance(a, np.ndarray):
+            # most of the operations will fall here and dask is not imported
+            rshape = ()
+            for athing in zip(new_shape, scale):
+                rshape += athing
+            return a.reshape(rshape).sum(axis=tuple(
+                2 * i + 1 for i in range(lenShape)))
+        else:
+            import dask.array as da
+            try:
+                return da.coarsen(np.sum, a, {i: int(f)
+                                              for i, f in enumerate(scale)})
+            # we provide slightly better error message in hypersy context
+            except ValueError:
+                raise ValueError("Rebinning does not align with data dask chunks."
+                                 " Rebin fewer dimensions at a time to avoid this"
+                                 " error")
+
+
+def jit_ifnumba(func):
+    try:
+        import numba
+        return numba.jit(func)
+    except ImportError:
+        return func
+
+
+@jit_ifnumba
+def _linear_bin_loop(result, data, scale):
+    for j in range(result.shape[0]):
+        # Begin by determining the upper and lower limits of a given new pixel.
+        x1 = j * scale
+        x2 = min((1 + j) * scale, data.shape[0])
+        value = result[j:j + 1]
+
+        if (x2 - x1) >= 1:
+            # When binning, the first part is to deal with the fractional pixel
+            # left over from it being non-integer binning e.g. when x1=1.4
+            cx1 = math.ceil(x1)
+            rem = cx1 - x1
+            # This will add a value of fractional pixel to the bin, eg if x1=1.4,
+            # the fist step will be to add 0.6*data[1]
+            value += data[math.floor(x1)] * rem
+            # Update x1 to remove the part of the bin we have just added.
+            x1 = cx1
+            while (x2 - x1) >= 1:
+                # Main binning function to add full pixel values to the data.
+                value += data[x1]
+                # Update x1 each time.
+                x1 += 1
+            if x2 > x1:
+                # Finally take into account the fractional pixel left over.
+                value += data[math.floor(x1)] * (x2 - x1)
+        else:
+            # When step < 1, so we are upsampling
+            fx1 = math.floor(x1)
+            cx1 = math.ceil(x1)
+            if scale > (cx1 - x1) > 0:
+                # If our step is smaller than rounding up to the nearest whole
+                # number.
+                value += data[fx1] * (cx1 - x1)
+                x1 = cx1  # This step is needed when this particular bin straddes
+                # two neighbouring pixels.
+            if x1 < x2:
+                # The standard upsampling function where each new pixel is a
+                # fraction of the original pixel.
+                value += data[math.floor(x1)] * (x2 - x1)
+
+
+def _linear_bin(dat, scale, crop=True):
+    """
+    Binning of the spectrum image by a non-integer pixel value.
+
+    Parameters
+    ----------
+    originalSpectrum : numpy.array
+    scale : a list of floats
+        For each dimension specify the new:old pixel ratio,
+        e.g. a ratio of 1 is no binning; a ratio of 2 means that each pixel in
+        the new spectrum is twice the size of the pixels in the old spectrum.
+        The length of the list should match the dimensions of the data.
+    crop : bool, default True
+        When binning by a non-integer number of pixels it is likely that
+        the final row in each dimension contains less than the full quota to
+        fill one pixel.
+        e.g. 5*5 array binned by 2.1 will produce two rows containing 2.1
+        pixels and one row containing only 0.8 pixels worth. Selection of
+        crop='True' or crop='False' determines whether or not this 'black'
+        line is cropped from the final binned array or not.
+
+        *Please note that if crop=False is used, the final row in each
+        dimension may appear black, if a fractional number of pixels are left
+        over. It can be removed but has been left optional to preserve total
+        counts before and after binning.*
+
+    Returns
+    -------
+    np.array
+        with new dimensions width/scale for each dimension in the data.
+    """
+    if len(dat.shape) != len(scale):
+        raise ValueError(
+            'The list of bins must match the number of dimensions, including',
+            'the energy dimension. In order to not bin in any of these ',
+            'dimensions specifically, simply set the value in shape to 1')
+
+    if not hasattr(_linear_bin_loop, "__numba__"):
+        _logger.warning("Install numba to speed up the computation of `rebin`")
+
+    all_integer = np.all([isinstance(n, numbers.Integral) for n in scale])
+    dtype = (dat.dtype if (all_integer or "complex" in dat.dtype.name)
+             else "float")
+
+    for axis, s in enumerate(scale):
+        # For each iteration of linear_bin the axis being interated over has to
+        # be switched to axis[0] in order to carry out the interation loop.
+        dat = np.swapaxes(dat, 0, axis)
+        # The new dimension size is old_size/step, this is rounded down normally
+        # but if crop is switched off it is rounded up to the nearest whole
+        # number.
+        dim = (math.floor(dat.shape[0] / s) if crop
+               else math.ceil(dat.shape[0] / s))
+        # check function wont bin to zero.
+        if dim == 0:
+            raise ValueError("One of your dimensions collapses to zero.\
+            Re-adjust your scale values or run code with crop=False to\
+            avoid this.")
+        # Set up the result np.array to have a new axis[0] size for after
+        # cropping.
+        result = np.zeros((dim,) + dat.shape[1:], dtype=dtype)
+        # Carry out binning over axis[0]
+        _linear_bin_loop(result=result, data=dat, scale=s)
+        # Swap axis[0] back to the original axis location.
+        result = result.swapaxes(0, axis)
+        # Update the np.array reading of iterating over the next axis.
+        dat = result
+
+    return result
 
 
 def sarray2dict(sarray, dictionary=None):

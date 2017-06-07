@@ -47,11 +47,9 @@ setup_path = os.path.dirname(__file__)
 import hyperspy.Release as Release
 
 install_req = ['scipy>=0.15',
-               'ipython>=2.0',
                'matplotlib>=1.2',
                'numpy>=1.10',
                'traits>=4.5.0',
-               'traitsui>=5.0',
                'natsort',
                'requests',
                'tqdm>=0.4.9',
@@ -60,13 +58,18 @@ install_req = ['scipy>=0.15',
                'h5py',
                'python-dateutil',
                'ipyparallel',
-               'dask[array]>=0.13, !=0.14',
-               'scikit-image']
+               'dask[array]>=0.14.3',
+               'scikit-image>=0.13',
+               'pint>0.7',
+               'statsmodels',
+               ]
 
 extras_require = {
     "learning": ['scikit-learn'],
     "bcf": ['lxml'],
-    "gui-jupyter": ["ipywidgets"],
+    "gui-jupyter": ["hyperspy_gui_ipywidgets"],
+    "gui-traitsui": ["hyperspy_gui_traitsui"],
+    "test": ["pytest>=3", "pytest-mpl", "matplotlib>=2.0.2"],
 }
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
@@ -109,6 +112,7 @@ for leftover in raw_extensions:
                     setup_path,
                     path +
                     '.cpython-*.so'))
+
 
 def count_c_extensions(extensions):
     c_num = 0
@@ -199,7 +203,7 @@ def find_post_checkout_cleanup_line():
 # after changing branches:
 if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
     exec_str = sys.executable
-    recythonize_str = ' '.join(['"%s"'%exec_str,'"%s"'%
+    recythonize_str = ' '.join(['"%s"' % exec_str, '"%s"' %
                                 os.path.join(setup_path, 'setup.py'),
                                 'clean --all build_ext --inplace\n'])
     if os.name == 'nt':
@@ -211,7 +215,8 @@ if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
         with open(post_checkout_hook_file, 'w') as pchook:
             pchook.write('#!/bin/sh\n')
             pchook.write('#cleanup_cythonized_and_compiled:\n')
-            pchook.write('rm ' + ' '.join(['"%s"' % i for i in cleanup_list]) + '\n')
+            pchook.write(
+                'rm ' + ' '.join(['"%s"' % i for i in cleanup_list]) + '\n')
             pchook.write(recythonize_str)
         hook_mode = 0o777  # make it executable
         os.chmod(post_checkout_hook_file, hook_mode)
@@ -264,8 +269,7 @@ class update_version_when_dev:
         # Get the hash from the git repository if available
         self.restore_version = False
         git_master_path = ".git/refs/heads/master"
-        if "+dev" in self.release_version and \
-                os.path.isfile(git_master_path):
+        if self.release_version.endswith(".dev"):
             p = subprocess.Popen(["git", "describe",
                                   "--tags", "--dirty", "--always"],
                                  stdout=subprocess.PIPE)
@@ -273,12 +277,13 @@ class update_version_when_dev:
             if p.returncode != 0:
                 # Git is not available, we keep the version as is
                 self.restore_version = False
+                self.version = self.release_version
             else:
                 gd = stdout[1:].strip().decode()
                 # Remove the tag
                 gd = gd[gd.index("-") + 1:]
-                self.version = self.release_version.replace("+dev", "-git-")
-                self.version += gd
+                self.version = self.release_version + "+git."
+                self.version += gd.replace("-", ".")
                 update_version(self.version)
                 self.restore_version = True
         else:
@@ -307,7 +312,6 @@ with update_version_when_dev() as version:
                   'hyperspy.drawing._widgets',
                   'hyperspy.learn',
                   'hyperspy._signals',
-                  'hyperspy.gui',
                   'hyperspy.utils',
                   'hyperspy.tests',
                   'hyperspy.tests.axes',
@@ -348,6 +352,11 @@ with update_version_when_dev() as version:
                 'tests/drawing/plot_signal2d/*.png',
                 'tests/drawing/plot_markers/*.png',
                 'misc/eds/example_signals/*.hdf5',
+                'tests/drawing/plot_mva/*.png',
+                'tests/drawing/plot_signal/*.png',
+                'tests/drawing/plot_signal1d/*.png',
+                'tests/drawing/plot_signal2d/*.png',
+                'tests/drawing/plot_markers/*.png',
                 'tests/io/blockfile_data/*.blo',
                 'tests/io/dens_data/*.dens',
                 'tests/io/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3',
@@ -367,6 +376,7 @@ with update_version_when_dev() as version:
                 'tests/io/FEI_old/*.npy',
                 'tests/io/msa_files/*.msa',
                 'tests/io/hdf5_files/*.hdf5',
+                'tests/io/hdf5_files/*.hspy',
                 'tests/io/tiff_files/*.tif',
                 'tests/io/tiff_files/*.dm3',
                 'tests/io/npy_files/*.npy',

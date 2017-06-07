@@ -28,8 +28,11 @@ class Gaussian2D(Component):
     """Normalized 2D elliptical gaussian function component
 
     .. math::
-        f(x,y) = \\frac{A}{2\pi s_x s_y}}}e^{-\\frac{\left(x-x0\\right)
-        ^{2}}{2s_{x}^{2}}\\frac{\left(y-y0\\right)^{2}}{2s_{y}^{2}}}
+
+        f(x,y) = \\frac{A}{2\\pi s_x s_y}e^{-\\frac{\\left(x-x0\\right)
+        ^{2}}{2s_{x}^{2}}\\frac{\\left(y-y0\\right)^{2}}{2s_{y}^{2}}}
+
+
     +------------+-----------+
     | Parameter  | Attribute |
     +------------+-----------+

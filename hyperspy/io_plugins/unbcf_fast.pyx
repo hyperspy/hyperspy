@@ -144,8 +144,8 @@ cdef bin_to_numpy(DataStream data_stream,
                   int downsample):
 
     cdef uint32_t height, width, pix_in_line, pixel_x, add_pulse_size
-    cdef uint32_t dummy1, line_cnt
-    cdef uint16_t chan1, chan2, flag, data_size1, n_of_pulses, data_size2
+    cdef uint32_t dummy1, line_cnt, data_size2
+    cdef uint16_t chan1, chan2, flag, data_size1, n_of_pulses
     cdef uint16_t add_val, j
 
     height = data_stream.read_32()
@@ -161,9 +161,15 @@ cdef bin_to_numpy(DataStream data_stream,
             flag = data_stream.read_16()
             data_size1 = data_stream.read_16()
             n_of_pulses = data_stream.read_16()
-            data_size2 = data_stream.read_16()
-            data_stream.skip(2)  # skip to data
-            if flag == 1:
+            data_size2 = data_stream.read_32()
+            if flag == 0:
+                unpack16bit(hypermap,
+                            pixel_x // downsample,
+                            line_cnt // downsample,
+                            data_stream.ptr_to(data_size2),
+                            n_of_pulses,
+                            max_chan)
+            elif flag == 1:
                 unpack12bit(hypermap,
                             pixel_x // downsample,
                             line_cnt // downsample,
@@ -274,6 +280,21 @@ cdef void unpack12bit(channel_t[:, :, :] dest, int x, int y,
             channel = <int>(((src[6*(i//4)+5] << 8) + src[6*(i//4)+4]) & 4095)
         if channel < cutoff:
             dest[y, x, channel] += 1
+
+
+@cython.cdivision(True)
+@cython.boundscheck(False)
+cdef void unpack16bit(channel_t[:, :, :] dest, int x, int y,
+                      unsigned char * src,
+                      uint16_t no_of_pulses,
+                      int cutoff):
+    """unpack 16bit packed array into selection of memoryview"""
+    cdef int i, channel
+    for i in range(no_of_pulses):
+        channel = <int>(src[2*i] + ((src[2*i+1] << 8) & 65280))
+        if channel < cutoff:
+            dest[y, x, channel] += 1
+
 
 #the main function:
 
