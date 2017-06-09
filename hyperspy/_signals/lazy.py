@@ -20,7 +20,6 @@ import logging
 from functools import partial
 
 import numpy as np
-import math as math
 import dask.array as da
 import dask.delayed as dd
 from dask import threaded
@@ -28,11 +27,9 @@ from dask.diagnostics import ProgressBar
 from itertools import product
 
 from ..signal import BaseSignal
-from ..misc.utils import underline, multiply, dummy_context_manager
+from ..misc.utils import multiply, dummy_context_manager
 from ..external.progressbar import progressbar
 from ..external.astroML.histtools import dasky_histogram
-from ..defaults_parser import preferences
-from ..docstrings.signal import (ONE_AXIS_PARAMETER, OUT_ARG)
 from hyperspy.misc.array_tools import _requires_linear_rebin
 
 _logger = logging.getLogger(__name__)

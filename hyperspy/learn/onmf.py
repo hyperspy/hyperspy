@@ -20,7 +20,6 @@ import logging
 from itertools import chain
 
 import numpy as np
-import scipy.linalg
 from scipy.stats import halfnorm
 from hyperspy.external.progressbar import progressbar
 

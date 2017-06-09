@@ -21,7 +21,6 @@ import logging
 from traits.api import Undefined
 
 from hyperspy.drawing import widgets, signal1d, image
-from hyperspy.ui_registry import get_gui
 
 
 _logger = logging.getLogger(__name__)

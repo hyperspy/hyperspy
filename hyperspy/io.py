@@ -31,7 +31,6 @@ from hyperspy.misc.utils import (strlist2enumeration, find_subclasses)
 from hyperspy.misc.utils import stack as stack_method
 from hyperspy.io_plugins import io_plugins, default_write_ext
 from hyperspy.exceptions import VisibleDeprecationWarning
-from hyperspy.defaults_parser import preferences
 from hyperspy.ui_registry import get_gui
 
 _logger = logging.getLogger(__name__)
