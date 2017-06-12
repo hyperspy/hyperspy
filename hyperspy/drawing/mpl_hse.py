@@ -90,6 +90,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         sf.axis = self.axis
         sf.create_axis()
         sf.axes_manager = self.axes_manager
+        sf.pointer = self.pointer
         self.signal_plot = sf
         # Create a line to the left axis with the default indices
         is_complex = np.iscomplex(self.signal_data_function()).any()
@@ -166,7 +167,8 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         self.signal_plot.create_right_axis()
         self.signal_plot.add_line(rl, ax='right')
         rl.plot_indices = True
-        rl.text_position = (1., 1.05,)
+        rl.text_position = (0.95, 1.05,)
+        rl.pointer = self.right_pointer
         rl.plot()
         self.right_pointer_on = True
 

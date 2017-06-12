@@ -41,6 +41,8 @@ class Signal1DFigure(BlittedFigure):
         self.ax_markers = list()
         self.axes_manager = None
         self.right_axes_manager = None
+        self.pointer = None
+        self.right_pointer = None
 
         # Labels
         self.xlabel = ''
@@ -86,12 +88,14 @@ class Signal1DFigure(BlittedFigure):
                 line.axes_manager = self.axes_manager
             self.ax_lines.append(line)
             line.sf_lines = self.ax_lines
+            line.pointer = self.pointer
         elif ax == 'right':
             line.ax = self.right_ax
             self.right_ax_lines.append(line)
             line.sf_lines = self.right_ax_lines
             if line.axes_manager is None:
                 line.axes_manager = self.right_axes_manager
+            line.pointer = self.right_pointer
         line.axis = self.axis
         # Automatically asign the color if not defined
         if line.color is None:
@@ -195,8 +199,9 @@ class Signal1DLine(object):
         self.line = None
         self.autoscale = False
         self.plot_indices = False
+        self.pointer_size = None
         self.text = None
-        self.text_position = (-0.1, 1.05,)
+        self.text_position = (-0.085, 1.05,)
         self._line_properties = {}
         self.type = "line"
 
@@ -282,6 +287,13 @@ class Signal1DLine(object):
             plt.setp(self.line, **self.line_properties)
             self.ax.figure.canvas.draw_idle()
 
+    def _get_pointer_text(self):
+        ind = []
+        pointer_size = self.pointer.get_size_in_indices().tolist()
+        for indice, pointer_size in zip(self.axes_manager.indices, pointer_size):
+            ind.append("%i:%i"%(indice, indice + pointer_size))
+        return ", ".join(ind)
+
     def plot(self, data=1):
         f = self.data_function
         if self.get_complex is False:
@@ -303,7 +315,7 @@ class Signal1DLine(object):
             if self.text is not None:
                 self.text.remove()
             self.text = self.ax.text(*self.text_position,
-                                     s=str(self.axes_manager.indices),
+                                     s=self._get_pointer_text(),
                                      transform=self.ax.transAxes,
                                      fontsize=12,
                                      color=self.line.get_color(),
@@ -346,7 +358,7 @@ class Signal1DLine(object):
                 y_max = max(y_max, clipped_yreal.max())
             self.ax.set_ylim(y_min, y_max)
         if self.plot_indices is True:
-            self.text.set_text(self.axes_manager.indices)
+            self.text.set_text(self._get_pointer_text())
         if self.ax.figure.canvas.supports_blit:
             self.ax.hspy_fig._draw_animated()
         else:
