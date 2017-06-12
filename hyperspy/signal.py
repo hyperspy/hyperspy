@@ -1924,8 +1924,18 @@ class BaseSignal(FancySlicing,
     def __call__(self, axes_manager=None):
         if axes_manager is None:
             axes_manager = self.axes_manager
-        return np.atleast_1d(
-            self.data.__getitem__(axes_manager._getitem_tuple))
+        if getattr(self._plot, 'pointer', None) is not None:
+            indices = self._plot.pointer.indices
+            size = self._plot.pointer.get_size_in_indices()
+            array_slices = [slice(None, None, None)] * \
+                self.axes_manager.navigation_dimension
+            for i, axis in enumerate(self.axes_manager.navigation_axes[::-1]):
+                array_slices[i] = slice(indices[i], indices[i] + size[i], None)
+            data = self.data[array_slices].sum(axis=tuple(
+                self.axes_manager.navigation_indices_in_array))
+        else:
+            data = self.data.__getitem__(axes_manager._getitem_tuple)
+        return np.atleast_1d(data)
 
     def plot(self, navigator="auto", axes_manager=None,
              plot_markers=True, **kwargs):

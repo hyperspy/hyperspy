@@ -156,6 +156,7 @@ class WidgetBase(object):
             Default is 5.
             See matplotlib.artist.Artist.set_picker documentation.
         """
+        
         for p in self.patch:
             p.set_picker(picker)
 
@@ -211,7 +212,7 @@ class WidgetBase(object):
         self._navigating = True
 
     def disconnect_navigate(self):
-        """Disconnect a previous naivgation connection.
+        """Disconnect a previous navigation connection.
         """
         self.axes_manager.events.indices_changed.disconnect(self._on_navigate)
         self._navigating = False

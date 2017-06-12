@@ -23,7 +23,7 @@ import numpy as np
 from traits.api import Undefined
 
 from hyperspy.drawing.mpl_he import MPL_HyperExplorer
-from hyperspy.drawing import signal1d, utils
+from hyperspy.drawing import signal1d
 
 
 class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):

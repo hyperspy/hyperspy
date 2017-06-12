@@ -143,6 +143,7 @@ class MPL_HyperExplorer(object):
 
     def close_navigator_plot(self):
         if self.navigator_plot:
+            # self.pointer.events.resized.disconnect(self.signal_plot.update)
             self.navigator_plot.close()
 
     def is_active(self):
@@ -161,6 +162,7 @@ class MPL_HyperExplorer(object):
                 self.pointer.connect_navigate()
             self.plot_navigator(**kwargs.pop('navigator_kwds', {}))
         self.plot_signal(**kwargs)
+        # self.pointer.events.resized.connect(self.signal_plot.update)
 
     def assign_pointer(self):
         if self.navigator_data_function is None:
@@ -172,7 +174,7 @@ class MPL_HyperExplorer(object):
 
         if nav_dim == 2:  # It is an image
             if self.axes_manager.navigation_dimension > 1:
-                Pointer = widgets.SquareWidget
+                Pointer = widgets.RectangleWidget
             else:  # It is the image of a "spectrum stack"
                 Pointer = widgets.HorizontalLineWidget
         elif nav_dim == 1:  # It is a spectrum
