@@ -38,13 +38,16 @@ class RangeWidget(ResizableDraggableWidgetBase):
     ModifiablepanSelector so that it conforms to the common widget interface.
 
     For optimized changes of geometry, the class implements two methods
-    'set_bounds' and 'set_ibounds', to set the geomtry of the rectangle by
+    'set_bounds' and 'set_ibounds', to set the geometry of the rectangle by
     value and index space coordinates, respectivly.
     """
 
-    def __init__(self, axes_manager):
+    def __init__(self, axes_manager, ax=None, **SpanSelector_kwargs):
         super(RangeWidget, self).__init__(axes_manager)
         self.span = None
+        if 'direction' not in SpanSelector_kwargs.keys():
+              SpanSelector_kwargs['direction'] = 'horizontal'      
+        self._SpanSelector_kwargs = SpanSelector_kwargs
 
     def set_on(self, value):
         if value is not self.is_on() and self.ax is not None:
@@ -62,7 +65,7 @@ class RangeWidget(ResizableDraggableWidgetBase):
         self._WidgetBase__is_on = value
 
     def _add_patch_to(self, ax):
-        self.span = ModifiableSpanSelector(ax)
+        self.span = ModifiableSpanSelector(ax, **self._SpanSelector_kwargs)
         self.span.set_initial(self._get_range())
         self.span.bounds_check = True
         self.span.snap_position = self.snap_position
@@ -72,6 +75,10 @@ class RangeWidget(ResizableDraggableWidgetBase):
         self.span.step_ax = self.axes[0]
         self.span.tolerance = 5
         self.patch = [self.span.rect]
+
+    def set_picker(self, picker):
+        if self.span is not None:
+            self.span.tolerance = picker
 
     def _span_changed(self, widget):
         r = self._get_range()
@@ -184,9 +191,10 @@ class RangeWidget(ResizableDraggableWidgetBase):
 class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
 
     def __init__(self, ax, **kwargs):
-        onsel = kwargs.pop('onselect', self.dummy)
-        matplotlib.widgets.SpanSelector.__init__(
-            self, ax, onsel, direction='horizontal', useblit=False, **kwargs)
+        onselect = kwargs.pop('onselect', self.dummy)
+        useblit = kwargs.pop('useblit', False)
+        matplotlib.widgets.SpanSelector.__init__(self, ax, onselect,
+                                                 useblit=useblit, **kwargs)
         # The tolerance in points to pick the rectangle sizes
         self.tolerance = 1
         self.on_move_cid = None

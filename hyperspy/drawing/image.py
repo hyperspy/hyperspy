@@ -84,6 +84,7 @@ class ImagePlot(BlittedFigure):
         self._text = None
         self._text_position = (0, 1.05,)
         self.axes_manager = None
+        self.pointer = None
         self._aspect = 1
         self._extent = None
         self.xaxis = None
@@ -243,7 +244,7 @@ class ImagePlot(BlittedFigure):
                 self._text.remove()
             self._text = self.ax.text(
                 *self._text_position,
-                s=str(self.axes_manager.indices),
+                s=self._get_pointer_text(),
                 transform=self.ax.transAxes,
                 fontsize=12,
                 color='red',
@@ -335,7 +336,7 @@ class ImagePlot(BlittedFigure):
                 ims[0].autoscale()
         redraw_colorbar = redraw_colorbar and self.colorbar
         if self.plot_indices is True:
-            self._text.set_text(self.axes_manager.indices)
+            self._text.set_text(self._get_pointer_text())
         if self.no_nans:
             data = np.nan_to_num(data)
         if self.centre_colormap:
@@ -450,3 +451,10 @@ class ImagePlot(BlittedFigure):
         while check_tolerance() and i <= step_prec_max:
             optimize_for_oom(step_oom - i)
             i += 1
+
+    def _get_pointer_text(self):
+        ind = []
+        pointer_size = self.pointer.get_size_in_indices().tolist()
+        for indice, pointer_size in zip(self.axes_manager.indices, pointer_size):
+            ind.append("%i:%i"%(indice, indice + pointer_size))
+        return ", ".join(ind)

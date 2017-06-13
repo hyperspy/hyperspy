@@ -336,6 +336,9 @@ class DraggableWidgetBase(WidgetBase):
             idx.append(self.axes[i].value2index(self._pos[i]))
         return tuple(idx)
 
+    def get_size_in_indices(self):
+        return np.array([1])
+
     def _set_indices(self, value):
         """Sets the position of the widget (by indices). The dimensions should
         correspond to that of the 'axes' attribute. Calls _pos_changed if the
@@ -605,8 +608,9 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
             Default is 5.
             See matplotlib.artist.Artist.set_picker documentation.
         """
-        for p in self._resizer_handles:
-            p.set_picker(picker)
+        if hasattr(self, '_resizer_handles'):
+            for p in self._resizer_handles:
+                p.set_picker(picker)
         super(ResizableDraggableWidgetBase, self).set_picker(picker)
 
     def increase_size(self):

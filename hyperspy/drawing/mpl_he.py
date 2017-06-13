@@ -154,17 +154,18 @@ class MPL_HyperExplorer(object):
 
     def plot(self, **kwargs):
         if self.pointer is None:
-            pointer = self.assign_pointer()
+            pointer, param_dict = self.assign_pointer()
             if pointer is not None:
-                self.pointer = pointer(self.axes_manager)
+                self.pointer = pointer(self.axes_manager, **param_dict)
                 self.pointer.color = 'red'
                 self.pointer.set_picker(10.0)
-                self.pointer.connect_navigate()
+                self.pointer.connect_navigate()                   
             self.plot_navigator(**kwargs.pop('navigator_kwds', {}))
         self.plot_signal(**kwargs)
         # self.pointer.events.resized.connect(self.signal_plot.update)
 
     def assign_pointer(self):
+        param_dict = {}
         if self.navigator_data_function is None:
             nav_dim = 0
         elif self.navigator_data_function is "slider":
@@ -176,13 +177,16 @@ class MPL_HyperExplorer(object):
             if self.axes_manager.navigation_dimension > 1:
                 Pointer = widgets.RectangleWidget
             else:  # It is the image of a "spectrum stack"
+                # Is Matplotlib SpanSelector compatible with imshow?
                 Pointer = widgets.HorizontalLineWidget
+#                param_dict['direction'] = 'vertical'
         elif nav_dim == 1:  # It is a spectrum
-            Pointer = widgets.VerticalLineWidget
+            Pointer = widgets.RangeWidget
+            param_dict['direction'] = 'horizontal'
         else:
             Pointer = None
         self._pointer_nav_dim = nav_dim
-        return Pointer
+        return Pointer, param_dict
 
     def _on_navigator_plot_closing(self):
         self.navigator_plot = None
