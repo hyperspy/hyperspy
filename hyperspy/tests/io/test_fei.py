@@ -437,10 +437,8 @@ class TestFEIReader():
         assert (
             s.metadata.Acquisition_instrument.TEM.microscope ==
             "Tecnai 200 kV D2267 SuperTwin")
-        assert_allclose(
-            s.metadata.Acquisition_instrument.TEM.tilt_stage,
-            0.00,
-            atol=1E-2)
+        assert_allclose(s.metadata.Acquisition_instrument.TEM.Stage.tilt_alpha,
+                        0.0, atol=1E-6)
 
     def test_metadata_STEM(self):
         fname0 = os.path.join(self.dirpathold, '16x16_STEM_BF_DF_acquire.emi')
@@ -455,10 +453,16 @@ class TestFEIReader():
         assert (
             s.metadata.Acquisition_instrument.TEM.microscope ==
             "Tecnai 200 kV D2267 SuperTwin")
-        assert_allclose(
-            s.metadata.Acquisition_instrument.TEM.tilt_stage,
-            0.00,
-            atol=1E-2)
+        assert_allclose(s.metadata.Acquisition_instrument.TEM.Stage.tilt_alpha,
+                        0.0, atol=1E-6)
+        assert_allclose(s.metadata.Acquisition_instrument.TEM.Stage.tilt_beta,
+                        0.0, atol=1E-6)
+        assert_allclose(s.metadata.Acquisition_instrument.TEM.Stage.x,
+                        -0.000158, atol=1E-6)
+        assert_allclose(s.metadata.Acquisition_instrument.TEM.Stage.y,
+                        1.9e-05, atol=1E-6)
+        assert_allclose(s.metadata.Acquisition_instrument.TEM.Stage.z,
+                        0.0, atol=1E-6)
 
     def test_metadata_diffraction(self):
         fname0 = os.path.join(self.dirpathold, '64x64_diffraction_acquire.emi')
@@ -471,7 +475,3 @@ class TestFEIReader():
         assert (
             s.metadata.Acquisition_instrument.TEM.microscope ==
             "Tecnai 200 kV D2267 SuperTwin")
-        assert_allclose(
-            s.metadata.Acquisition_instrument.TEM.tilt_stage,
-            0.00,
-            atol=1E-2)

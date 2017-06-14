@@ -26,6 +26,7 @@ from traits.trait_errors import TraitError
 from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
+from hyperspy.ui_registry import add_gui_method, get_gui, DISPLAY_DT, TOOLKIT_DT
 
 import warnings
 
@@ -59,6 +60,7 @@ def generate_axis(offset, scale, size, offset_index=0):
                        size)
 
 
+@add_gui_method(toolkey="DataAxis")
 class DataAxis(t.HasTraits):
     name = t.Str()
     units = t.Str()
@@ -139,7 +141,7 @@ class DataAxis(t.HasTraits):
     def _value_changed(self, name, old, new):
         old_index = self.index
         new_index = self.value2index(new)
-        if self.continuous_value is False:  # Only values in the grid alowed
+        if self.continuous_value is False:  # Only values in the grid allowed
             if old_index != new_index:
                 self.index = new_index
                 if new == self.axis[self.index]:
@@ -156,7 +158,7 @@ class DataAxis(t.HasTraits):
                 elif new_value == new and not\
                         self._suppress_value_changed_trigger:
                     self.events.value_changed.trigger(obj=self, value=new)
-        else:  # Intergrid values are alowed. This feature is deprecated
+        else:  # Intergrid values are allowed. This feature is deprecated
             self.events.value_changed.trigger(obj=self, value=new)
             if old_index != new_index:
                 self._suppress_update_value = True
@@ -262,7 +264,7 @@ class DataAxis(t.HasTraits):
 
     def _slice_me(self, slice_):
         """Returns a slice to slice the corresponding data axis and
-        change the offset and scale of the DataAxis acordingly.
+        change the offset and scale of the DataAxis accordingly.
 
         Parameters
         ----------
@@ -457,11 +459,12 @@ class DataAxis(t.HasTraits):
         return any_changes
 
 
+@add_gui_method(toolkey="AxesManager")
 class AxesManager(t.HasTraits):
 
     """Contains and manages the data axes.
 
-    It supports indexing, slicing, subscriptins and iteration. As an iterator,
+    It supports indexing, slicing, subscripting and iteration. As an iterator,
     iterate over the navigation coordinates returning the current indices.
     It can only be indexed and sliced to access the DataAxis objects that it
     contains. Standard indexing and slicing follows the "natural order" as in
@@ -480,13 +483,10 @@ class AxesManager(t.HasTraits):
         Get and set the current coordinates if the navigation dimension
         is not 0. If the navigation dimension is 0 it raises
         AttributeError when attempting to set its value.
-
-
     indices : tuple
         Get and set the current indices if the navigation dimension
         is not 0. If the navigation dimension is 0 it raises
         AttributeError when attempting to set its value.
-
     signal_axes, navigation_axes : list
         Contain the corresponding DataAxis objects
 
@@ -567,7 +567,7 @@ class AxesManager(t.HasTraits):
         self.events.any_axis_changed = Event("""
             Event that trigger when the space defined by the axes transforms.
 
-            Specifically, it triggers when one or more of the folloing
+            Specifically, it triggers when one or more of the following
             attributes changes on one or more of the axes:
                 `offset`, `size`, `scale`
 
@@ -639,7 +639,7 @@ class AxesManager(t.HasTraits):
         elif (isfloat(y.real) and not y.real.is_integer() or
                 isfloat(y.imag) and not y.imag.is_integer()):
             raise TypeError("axesmanager indices must be integers, "
-                            "complex intergers or strings")
+                            "complex integers or strings")
         if y.imag == 0:  # Natural order
             return self._get_axes_in_natural_order()[y]
         elif y.imag == 3:  # Array order
@@ -680,6 +680,22 @@ class AxesManager(t.HasTraits):
                      if self.signal_shape != (0,)
                      else tuple())
         return nav_shape + sig_shape
+
+    @property
+    def signal_extent(self):
+        signal_extent = []
+        for signal_axis in self.signal_axes:
+            signal_extent.append(signal_axis.low_value)
+            signal_extent.append(signal_axis.high_value)
+        return tuple(signal_extent)
+
+    @property
+    def navigation_extent(self):
+        navigation_extent = []
+        for navigation_axis in self.navigation_axes:
+            navigation_extent.append(navigation_axis.low_value)
+            navigation_extent.append(navigation_axis.high_value)
+        return tuple(navigation_extent)
 
     def remove(self, axes):
         """Remove one or more axes
@@ -754,12 +770,12 @@ class AxesManager(t.HasTraits):
     def __next__(self):
         """
         Standard iterator method, updates the index and returns the
-        current coordiantes
+        current coordinates
 
         Returns
         -------
         val : tuple of ints
-            Returns a tuple containing the coordiantes of the current
+            Returns a tuple containing the coordinates of the current
             iteration.
 
         """
@@ -928,11 +944,6 @@ class AxesManager(t.HasTraits):
         except TraitError:
             pass
 
-    def gui(self):
-        from hyperspy.gui.axes import data_axis_view
-        for axis in self._axes:
-            axis.edit_traits(view=data_axis_view)
-
     def copy(self):
         return copy.copy(self)
 
@@ -963,15 +974,12 @@ class AxesManager(t.HasTraits):
                 self.navigation_axes[::-1]]
 
     def show(self):
-        from hyperspy.gui.axes import get_axis_group
-        import traitsui.api as tui
-        context = {}
-        ag = []
-        for n, axis in enumerate(self._get_axes_in_natural_order()):
-            ag.append(get_axis_group(n, str(axis)))
-            context['axis%i' % n] = axis
-        ag = tuple(ag)
-        self.edit_traits(view=tui.View(*ag), context=context)
+        from hyperspy.exceptions import VisibleDeprecationWarning
+        msg = (
+            "The `AxesManager.show` method is deprecated and will be removed "
+            "in v2.0. Use `gui` instead.")
+        warnings.warn(msg, VisibleDeprecationWarning)
+        self.gui()
 
     def _get_dimension_str(self):
         string = "("
@@ -1066,7 +1074,7 @@ class AxesManager(t.HasTraits):
         Parameters
         ----------
         coordinates : tuple
-            The len of the the tuple must coincide with the navigation
+            The len of the tuple must coincide with the navigation
             dimension
 
         """
@@ -1097,7 +1105,7 @@ class AxesManager(t.HasTraits):
         Parameters
         ----------
         indices : tuple
-            The len of the the tuple must coincide with the navigation
+            The len of the tuple must coincide with the navigation
             dimension
 
         """
@@ -1121,7 +1129,7 @@ class AxesManager(t.HasTraits):
         ----------
         attr : string
             The DataAxis attribute to set.
-        values: any
+        values : any
             If iterable, it must have the same number of items
             as axes are in this AxesManager instance. If not iterable,
             the attribute of all the axes are set to the given value.
@@ -1172,3 +1180,20 @@ class AxesManager(t.HasTraits):
         am = self
         new_axes = am.navigation_axes[::-1] + am.signal_axes[::-1]
         self._axes = list(new_axes)
+
+    def gui_navigation_sliders(self, title="", display=True, toolkit=None):
+        return get_gui(self=self.navigation_axes,
+                       toolkey="navigation_sliders",
+                       display=display,
+                       toolkit=toolkit,
+                       title=title)
+    gui_navigation_sliders.__doc__ = \
+        """
+        Navigation sliders to control the index of the navigation axes.
+
+        Parameters
+        ----------
+        title: str
+        %s
+        %s
+        """

@@ -17,16 +17,17 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 # custom exceptions
+from functools import wraps
+
 from hyperspy.exceptions import NoInteractiveError
 from hyperspy.defaults_parser import preferences
-from hyperspy.gui.tools import Signal1DRangeSelector
-
-from functools import wraps
-import types
+from hyperspy.signal_tools import Signal1DRangeSelector
+from hyperspy.ui_registry import get_gui
 
 
 def lazify(func, **kwargs):
     from hyperspy.signal import BaseSignal
+    from hyperspy.model import BaseModel
 
     @wraps(func)
     def lazified_func(self, *args, **kwds):
@@ -36,6 +37,13 @@ def lazify(func, **kwargs):
                 if isinstance(v, BaseSignal):
                     v = v.as_lazy()
                     setattr(self, k, v)
+                elif isinstance(v, BaseModel):
+                    if hasattr(v, "signal"):
+                        am = v.signal.axes_manager
+                        v.signal = v.signal.as_lazy()
+                        # Keep the axes_manager from the original signal that
+                        # the model assigns to the components
+                        v.signal.axes_manager = am
         self.__dict__.update(kwargs)
         return func(self, *args, **kwds)
     return lazified_func
@@ -90,22 +98,12 @@ def simple_decorator(decorator):
 
 
 @simple_decorator
-def only_interactive(cm):
-    def wrapper(*args, **kwargs):
-        if preferences.General.interactive is True:
-            return cm(*args, **kwargs)
-        else:
-            raise NoInteractiveError
-    return wrapper
-
-
-@simple_decorator
 def interactive_range_selector(cm):
     def wrapper(self, *args, **kwargs):
-        if preferences.General.interactive is True and not args and not kwargs:
+        if not args and not kwargs:
             range_selector = Signal1DRangeSelector(self)
             range_selector.on_close.append((cm, self))
-            range_selector.edit_traits()
+            get_gui(range_selector, toolkey="interactive_range_selector")
         else:
             cm(self, *args, **kwargs)
     return wrapper

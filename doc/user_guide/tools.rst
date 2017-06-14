@@ -1,4 +1,4 @@
-﻿
+
 Tools: the Signal class
 ***********************
 
@@ -28,21 +28,21 @@ currently available specialised :py:class:`~.signal.BaseSignal` subclasses.
 
 .. versionchanged:: 1.0
 
-    The :py:class:`~._signals.signal1D.Signal1D`,
-    :py:class:`~._signals.image.Signal2D` and :py:class:`~.signal.BaseSignal`
+    The :py:class:`~._signals.signal1d.Signal1D`,
+    :py:class:`~._signals.signal2d.Signal2D` and :py:class:`~.signal.BaseSignal`
     classes deprecated the old `Spectrum` `Image` and `Signal` classes.
 
 .. versionadded:: 1.0
 
     New :py:class:`~._signals.complex_signal.ComplexSignal`,
     :py:class:`~._signals.complex_signal1d.ComplexSignal1D` and
-    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`
+    :py:class:`~._signals.complex_signal2d.Complex2D`
     :py:class:`~.signal.BaseSignal` subclasses specialised in complex data.
 
 
 
 The :py:mod:`~.signals` module, which contains all available signal subclasses,
-is imported in the user namespace when loading hyperspy. In the following
+is imported in the user namespace when loading HyperSpy. In the following
 example we create a Signal2D instance from a 2D numpy array:
 
 .. code-block:: python
@@ -58,26 +58,25 @@ examples, the data is stored in a numpy array in the
 :py:attr:`~.signal.BaseSignal.original_metadata` attribute, the mapped parameters
 in the :py:attr:`~.signal.BaseSignal.metadata` attribute and the axes
 information (including calibration) can be accessed (and modified) in the
-:py:attr:`~.signal.BaseSignal.axes_manager` attribute.
+:py:class:`~.axes.AxesManager` attribute.
 
 Signal initialization
 ---------------------
 
-Many of the values in the :py:attr:`~.signal.BaseSignal.axes_manager` can be
+Many of the values in the :py:class:`~.axes.AxesManager` can be
 set when making the :py:class:`~.signal.BaseSignal` object.
 
 .. code-block:: python
 
-    >>> dict0 = {'size': 10, 'name':'Ax0', 'units':'A', 'scale':0.2, 'offset':1}
-    >>> dict1 = {'size': 20, 'name':'Ax1', 'units':'B', 'scale':0.1, 'offset':2} 
+    >>> dict0 = {'size': 10, 'name':'Axis0', 'units':'A', 'scale':0.2, 'offset':1}
     >>> s = hs.signals.BaseSignal(np.random.random((10,20)), axes=[dict0, dict1])
     >>> s.axes_manager
     <Axes manager, axes: (|20, 10)>
-		Name |   size |  index |  offset |   scale |  units 
-    ================ | ====== | ====== | ======= | ======= | ====== 
-    ---------------- | ------ | ------ | ------- | ------- | ------ 
-	       Axes1 |     20 |        |       2 |     0.1 |      B 
-	       Axes0 |     10 |        |       1 |     0.2 |      A
+		Name |   size |  index |  offset |   scale |  units
+    ================ | ====== | ====== | ======= | ======= | ======
+    ---------------- | ------ | ------ | ------- | ------- | ------
+	       Axis1 |     20 |        |       2 |     0.1 |      B
+	       Axis0 |     10 |        |       1 |     0.2 |      A
 
 This also applies to the :py:attr:`~.signal.BaseSignal.metadata`.
 
@@ -106,7 +105,7 @@ The concept is probably best understood with an example: let's imagine a three
 dimensional dataset e.g. a numpy array with dimensions `(10, 20, 30)`. This
 dataset could be an spectrum image acquired by scanning over a sample in two
 dimensions. As in this case the signal is one-dimensional we use a
-:py:class:`~._signals.signal1D.Signal1D` subclass for this data e.g.:
+:py:class:`~._signals.signal1d.Signal1D` subclass for this data e.g.:
 
 .. code-block:: python
 
@@ -124,7 +123,7 @@ stack instead.  Actually it could has been acquired by capturing two
 dimensional images at different wavelengths. Then it would be natural to
 identify the two spatial dimensions as the signal dimensions and the wavelength
 dimension as the navigation dimension. To view the data in this way we could
-have used a :py:class:`~._signals.signal2D.Signal2D` instead e.g.:
+have used a :py:class:`~._signals.signal2d.Signal2D` instead e.g.:
 
 .. code-block:: python
 
@@ -212,7 +211,7 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`                 |        1         |    EDS_SEM            |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
-    |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`                 |        1         |    EDS_TEM            |  real    |
+    |           :py:class:`~._signals.eds_tem.EDSTEM`                         |        1         |    EDS_TEM            |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |              :py:class:`~._signals.signal2d.Signal2D`                   |        2         |       -               |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
@@ -224,7 +223,7 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |    :py:class:`~._signals.complex_signal1d.ComplexSignal1D`              |        1         |       -               | complex  |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
-    |    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`              |        2         |       -               | complex  |
+    |    :py:class:`~._signals.complex_signal2d.Complex2D`                    |        2         |       -               | complex  |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
 
 The following example shows how to transform between different subclasses.
@@ -286,7 +285,7 @@ following table:
     +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | True   |
     +---------------------------------------------------------------+--------+
-    |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | True   |
+    |           :py:class:`~._signals.eds_tem.EDSTEM`               | True   |
     +---------------------------------------------------------------+--------+
     |              :py:class:`~._signals.signal2d.Signal2D`         | False  |
     +---------------------------------------------------------------+--------+
@@ -294,7 +293,7 @@ following table:
     +---------------------------------------------------------------+--------+
     |    :py:class:`~._signals.complex_signal1d.ComplexSignal1D`    | False  |
     +---------------------------------------------------------------+--------+
-    |    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`    | False  |
+    |    :py:class:`~._signals.complex_signal2d.Complex2Dmixin`     | False  |
     +---------------------------------------------------------------+--------+
 
 
@@ -353,13 +352,13 @@ Example:
     >>> s = hs.signals.BaseSignal(np.random.random((2,4,6)))
     >>> s.axes_manager[0].name = 'E'
     >>> s
-    <BaseSignal, title: , dimensions: (4, 2|6)>
+    <BaseSignal, title: , dimensions: (|6, 4, 2)>
     >>> # by default perform operation over all navigation axes
     >>> s.sum()
-    <BaseSignal, title: , dimensions: (|6)>
+    <BaseSignal, title: , dimensions: (|6, 4, 2)>
     >>> # can also pass axes individually
     >>> s.sum('E')
-    <BaseSignal, title: , dimensions: (2|6)>
+    <Signal2D, title: , dimensions: (|4, 2)>
     >>> # or a tuple of axes to operate on, with duplicates, by index or directly
     >>> ans = s.sum((-1, s.axes_manager[1], 'E', 0))
     >>> ans
@@ -454,7 +453,7 @@ features differ from numpy):
 
   + Allow independent indexing of signal and navigation dimensions
   + Support indexing with decimal numbers.
-  + Use the image order for indexing i.e. [x, y, z,...] (hyperspy) vs
+  + Use the image order for indexing i.e. [x, y, z,...] (HyperSpy) vs
     [...,z,y,x] (numpy)
 
 * HyperSpy indexing does not:
@@ -549,7 +548,7 @@ data treating navigation axes using ``inav`` and signal axes using ``isig``.
 
     >>> s = hs.signals.Signal1D(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
-    <Signal1D, title: , dimensions: (10, 10, 10)>
+    <Signal1D, title: , dimensions: (3, 2|4)>
     >>> s.data
     array([[[ 0,  1,  2,  3],
         [ 4,  5,  6,  7],
@@ -568,13 +567,22 @@ data treating navigation axes using ``inav`` and signal axes using ``isig``.
     >>> s.inav[0,0].data
     array([0, 1, 2, 3])
     >>> s.inav[0,0].axes_manager
-    <Axes manager, axes: (<t axis, size: 4>,)>
+    <Axes manager, axes: (|4)>
+                Name |   size |  index |  offset |   scale |  units
+    ================ | ====== | ====== | ======= | ======= | ======
+    ---------------- | ------ | ------ | ------- | ------- | ------
+                   t |      4 |        |       0 |       1 | <undefined>
     >>> s.inav[0,0].isig[::-1].data
     array([3, 2, 1, 0])
     >>> s.isig[0]
-    <Signal1D, title: , dimensions: (2, 3)>
+    <BaseSignal, title: , dimensions: (3, 2)>
     >>> s.isig[0].axes_manager
-    <Axes manager, axes: (<x axis, size: 3, index: 0>, <y axis, size: 2, index: 0>)>
+    <Axes manager, axes: (3, 2|)>
+                Name |   size |  index |  offset |   scale |  units
+    ================ | ====== | ====== | ======= | ======= | ======
+                   x |      3 |      0 |       0 |       1 | <undefined>
+                   y |      2 |      0 |       0 |       1 | <undefined>
+    ---------------- | ------ | ------ | ------- | ------- | ------
     >>> s.isig[0].data
     array([[ 0,  4,  8],
        [12, 16, 20]])
@@ -586,7 +594,7 @@ further in the following:
 
     >>> s = hs.signals.Signal1D(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
-    <Signal1D, title: , dimensions: (10, 10, 10)>
+    <Signal1D, title: , dimensions: (3, 2|4)>
     >>> s.data
     array([[[ 0,  1,  2,  3],
         [ 4,  5,  6,  7],
@@ -605,11 +613,20 @@ further in the following:
     >>> s.inav[0,0].data
     array([0, 1, 2, 3])
     >>> s.inav[0,0].axes_manager
-    <Axes manager, axes: (<t axis, size: 4>,)>
+    <Axes manager, axes: (|4)>
+                Name |   size |  index |  offset |   scale |  units
+    ================ | ====== | ====== | ======= | ======= | ======
+    ---------------- | ------ | ------ | ------- | ------- | ------
+                   t |      4 |        |       0 |       1 | <undefined>
     >>> s.isig[0]
-    <Signal1D, title: , dimensions: (2, 3)>
+    <BaseSignal, title: , dimensions: (2, 3)>
     >>> s.isig[0].axes_manager
-    <Axes manager, axes: (<x axis, size: 3, index: 0>, <y axis, size: 2, index: 0>)>
+    <Axes manager, axes: (3, 2|)>
+                Name |   size |  index |  offset |   scale |  units
+    ================ | ====== | ====== | ======= | ======= | ======
+                   x |      3 |      0 |       0 |       1 | <undefined>
+                   y |      2 |      0 |       0 |       1 | <undefined>
+    ---------------- | ------ | ------ | ------- | ------- | ------
     >>> s.isig[0].data
     array([[ 0,  4,  8],
        [12, 16, 20]])
@@ -622,7 +639,7 @@ dimensions respectively:
 
     >>> s = hs.signals.Signal1D(np.arange(2*3*4).reshape((2,3,4)))
     >>> s
-    <Signal1D, title: , dimensions: (10, 10, 10)>
+    <Signal1D, title: , dimensions: (3, 2|4)>
     >>> s.data
     array([[[ 0,  1,  2,  3],
         [ 4,  5,  6,  7],
@@ -636,7 +653,7 @@ dimensions respectively:
     >>> s.inav[0,0] = 1
     >>> s.inav[0,0].data
     array([1, 1, 1, 1])
-    >>> s.inav[0,0] = s[1,1]
+    >>> s.inav[0,0] = s.inav[1,1]
     >>> s.inav[0,0].data
     array([16, 17, 18, 19])
 
@@ -659,6 +676,10 @@ These operations are performed element-wise. When the dimensions of the signals
 are not equal `numpy broadcasting rules apply
 <http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html>`_ independently
 for the navigation and signal axes.
+
+.. WARNING::
+
+    Hyperspy does not check if the calibration of the signals matches.
 
 In the following example `s2` has only one navigation axis while `s` has two.
 However, because the size of their first navigation axis is the same, their
@@ -764,7 +785,7 @@ to make a horizontal "collage" of the image stack:
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.lena()]*5))
+    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.ascent()]*5))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> for image, angle in zip(image_stack, (0, 45, 90, 135, 180)):
@@ -793,7 +814,7 @@ using an external function can be more easily accomplished using the
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.lena()]*4))
+    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.ascent()]*4))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> image_stack.map(scipy.ndimage.rotate,
@@ -814,7 +835,7 @@ arguments as in the following example.
 .. code-block:: python
 
     >>> import scipy.ndimage
-    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.lena()]*4))
+    >>> image_stack = hs.signals.Signal2D(np.array([scipy.misc.ascent()]*4))
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> angles = hs.signals.BaseSignal(np.array([0, 45, 90, 135]))
@@ -903,11 +924,76 @@ method or GUIs if cropping :ref:`signal1D <signal1D.crop>` or :ref:`signal2D
 <signal2D.crop>`. There is also a general :py:meth:`~.signal.BaseSignal.crop`
 method that operates *in place*.
 
+
+.. _rebin-label:
+
 Rebinning
 ^^^^^^^^^
+.. versionadded:: 1.3
+    :py:meth:`~.signal.BaseSignal.rebin` generalized to remove the constrain
+    of the ``new_shape`` needing to be a divisor of ``data.shape``.
 
-The :py:meth:`~.signal.BaseSignal.rebin` method rebins data in place down to a size
-determined by the user.
+
+The :py:meth:`~.signal.BaseSignal.rebin` methods supports rebinning the data to
+arbitrary new shapes as long as the number of dimensions stays the same.
+However, internally, it uses two different algorithms to perform the task. Only
+when the new shape dimensions are divisors of the old shape's, the operation
+supports :ref:`lazy-evaluation <big-data-label>` and is usually faster.
+Otherwise, the operation requires linear interpolation and is generally slower if
+`Numba <http://numba.pydata.org/>`_ is not installed.
+
+For example, the following two equivalent rebinning operations can be  performed
+lazily:
+
+.. code-block:: python
+
+    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum().as_lazy()
+    >>> print(s)
+    <LazyEDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|1024)>
+    >>> print(s.rebin(scale=[2]))
+    <LazyEDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|512)>
+
+
+.. code-block:: python
+
+    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum().as_lazy()
+    >>> print(s.rebin(new_shape=[512]))
+    <LazyEDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|512)>
+
+
+On the other hand, the following rebining operation requires interpolation and
+cannot be peformed lazily:
+
+.. code-block:: python
+
+    >>> spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
+    >>> spectrum.data[1, 2, 9] = 5
+    >>> print(spectrum)
+    <EDSTEMSpectrum, title: , dimensions: (4, 4|10)>
+    >>> print ('Sum = ', spectrum.data.sum())
+    Sum =  164.0
+    >>> scale = [0.5, 0.5, 5]
+    >>> test = spectrum.rebin(scale=scale)
+    >>> test2 = spectrum.rebin(new_shape=(8, 8, 2)) # Equivalent to the above
+    >>> print(test)
+    <EDSTEMSpectrum, title: , dimensions: (8, 8|2)>
+    >>> print(test2)
+    <EDSTEMSpectrum, title: , dimensions: (8, 8|2)>
+    >>> print('Sum =', test.data.sum())
+    Sum = 164.0
+    >>> print('Sum =', test2.data.sum())
+    Sum = 164.0
+    >>> spectrum.as_lazy().rebin(scale=scale)
+    Traceback (most recent call last):
+      File "<ipython-input-26-49bca19ebf34>", line 1, in <module>
+        spectrum.as_lazy().rebin(scale=scale)
+      File "/home/fjd29/Python/hyperspy3/hyperspy/_signals/eds.py", line 184, in rebin
+        m = super().rebin(new_shape=new_shape, scale=scale, crop=crop, out=out)
+      File "/home/fjd29/Python/hyperspy3/hyperspy/_signals/lazy.py", line 246, in rebin
+        "Lazy rebin requires scale to be integer and divisor of the "
+    NotImplementedError: Lazy rebin requires scale to be integer and divisor of the original signal shape
+
+
 
 Folding and unfolding
 ^^^^^^^^^^^^^^^^^^^^^
@@ -936,7 +1022,7 @@ with same dimension.
 
 .. code-block:: python
 
-    >>> image = hs.signals.Signal2D(scipy.misc.lena())
+    >>> image = hs.signals.Signal2D(scipy.misc.ascent())
     >>> image = hs.stack([hs.stack([image]*3,axis=0)]*3,axis=1)
     >>> image.plot()
 
@@ -993,14 +1079,19 @@ type in place, e.g.:
 .. versionadded:: 0.7
    Support for RGB signals.
 
-In addition to all standard numpy dtypes, HyperSpy supports four extra
-dtypes for RGB images: rgb8, rgba8, rgb16 and rgba16. The requirements for changing
-from and to any rgbx dtype are more strict than for most other dtype
-conversions. To change to a rgbx dtype the `signal_dimension` must be 1 and its size 3(4) 3(4) for rgb(rgba) dtypes and the
-dtype must be uint8(uint16) for rgbx8(rgbx16).  After conversion
-the `signal_dimension` becomes 2. The dtype
-of images of dtype rgbx8(rgbx16) can only be changed to uint8(uint16) and
-the `signal_dimension` becomes 1.
+In addition to all standard numpy dtypes, HyperSpy supports four extra dtypes
+for RGB images **for visualization purposes only**: rgb8, rgba8, rgb16 and
+rgba16. This includes of course multi-dimensional RGB images.
+
+The requirements for changing from and to any rgbx dtype are more strict
+than for most other dtype conversions. To change to a rgbx dtype the
+`signal_dimension` must be 1 and its size 3(4) 3(4) for rgb(rgba) dtypes and the
+dtype must be uint8(uint16) for rgbx8(rgbx16).  After conversion the
+`signal_dimension` becomes 2.
+
+Most operations on signals with RGB dytpes will fail. For processing simply
+change their dtype to uint8(uint16).The dtype of images of dtype rgbx8(rgbx16)
+can only be changed to uint8(uint16) and the `signal_dimension` becomes 1.
 
 In the following example we create a 1D signal with signal size 3 and with
 `dtype` `"uint16"` and change its dtype to `"rgb16"` for plotting.
@@ -1188,10 +1279,10 @@ set this attribute as in the following example where we set the variance to be
     s.metadata.Signal.set_item("Noise_properties.variance", 10)
 
 For heterocedastic noise the ``variance`` attribute must be a
-:class:`~.signal_base.BaseSignal`.  Poissonian noise is a common case  of
+:class:`~.signal.BaseSignal`.  Poissonian noise is a common case  of
 heterocedastic noise where the variance is equal to the expected value. The
-:meth:`~.signal_base.BaseSignal.estimate_poissonian_noise_variance`
-:class:`~.signal_base.BaseSignal` method can help setting the variance of data with
+:meth:`~.signal.BaseSignal.estimate_poissonian_noise_variance`
+:class:`~.signal.BaseSignal` method can help setting the variance of data with
 semi-poissonian noise. With the default arguments, this method simply sets the
 variance attribute to the given ``expected_value``. However, more generally
 (although then noise is not strictly poissonian), the variance may be proportional
@@ -1261,13 +1352,13 @@ operation.
 
 .. code-block:: python
 
-    >>> s = signals.Signal1D(np.arange(10))
+    >>> s = hs.signals.Signal1D(np.arange(10))
     >>> s_sum = s.sum(0)
     >>> s_sum.data
-    array(45)
+    array([45])
     >>> s.isig[:5].sum(0, out=s_sum)
     >>> s_sum.data
-    array(10)
+    array([10])
     >>> s_roi = s.isig[:3]
     >>> s_roi
     <Signal1D, title: , dimensions: (|3)>
@@ -1294,11 +1385,11 @@ signal changes.
     >>> s = hs.signals.Signal1D(np.arange(10.))
     >>> ssum = hs.interactive(s.sum, axis=0)
     >>> ssum.data
-    array(45.0)
+    array([45.0])
     >>> s.data /= 10
-    >>> s.events.data_changed.trigger()
+    >>> s.events.data_changed.trigger(s)
     >>> ssum.data
-    4.5
+    array([ 4.5])
 
 The interactive operations can be chained.
 
@@ -1437,6 +1528,33 @@ order to increase responsiveness.
   :align:   center
   :width:   500
 
+.. versionadded:: 1.3
+    ROIs can be used in place of slices when indexing and to define a
+    signal range in functions taken a ``signal_range`` argument.
+
+
+ROIs can be used in place of slices when indexing and to define a
+signal range in functions taken a ``signal_range`` argument. For example:
+
+.. code-block:: python
+
+    >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+    >>> roi = hs.roi.SpanROI(left=5, right=15)
+    >>> sc = s.isig[roi]
+    >>> s.remove_background(signal_range=roi, background_type="Polynomial")
+    >>> im = hs.datasets.example_signals.object_hologram()
+    >>> roi = hs.roi.RectangularROI(left=120, right=460., top=300, bottom=560)
+    >>> imc = im.isig[roi]
+
+.. versionadded:: 1.3
+    :meth:`gui` method.
+
+
+All ROIs have a :meth:`gui` method that displays an user interface if
+any hyperspy GUI is installed (e.g. hyperspy_gui_ipywidgets or
+hyperspy_gui_traitsui).
+
+
 
 
 .. _complex_data-label:
@@ -1500,7 +1618,7 @@ Add a linear phase ramp
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 For 2-dimensional complex images, a linear phase ramp can be added to the signal via the
-:py:func:`~._signals.complex_signal2d.ComplexSignal2D.add_phase_ramp` method. The parameters
+:py:func:`~._signals.complex_signal2d.Complex2Dmixin.add_phase_ramp` method. The parameters
 `ramp_x` and `ramp_y` dictate the slope of the ramp in `x`- and `y` direction, while the offset
 is determined by the `offset` parameter. The fulcrum of the linear ramp is at the origin
 and the slopes are given in units of the axis with the according scale taken into account.

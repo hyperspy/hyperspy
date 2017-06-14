@@ -1,11 +1,11 @@
-hyperspy.samfire_utils.weights package
-======================================
+hyperspy\.samfire\_utils\.weights package
+=========================================
 
 Submodules
 ----------
 
-hyperspy.samfire_utils.weights.red_chisq module
------------------------------------------------
+hyperspy\.samfire\_utils\.weights\.red\_chisq module
+----------------------------------------------------
 
 .. automodule:: hyperspy.samfire_utils.weights.red_chisq
     :members:

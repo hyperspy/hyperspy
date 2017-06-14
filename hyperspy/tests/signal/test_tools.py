@@ -1,12 +1,15 @@
 from unittest import mock
+import sys
 
 import numpy as np
+import numpy.random
+import dask.array as da
 from numpy.testing import assert_array_equal, assert_allclose
-
 import pytest
 
 from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass
+from hyperspy.signal_tools import SpikesRemoval
 
 
 def _verify_test_sum_x_E(self, s):
@@ -184,7 +187,7 @@ class Test3D:
         self.signal.axes_manager[2].name = "E"
         self.signal.axes_manager[0].scale = 0.5
         self.data = self.signal.data.copy()
-        
+
     def test_indexmin(self):
         s = self.signal.indexmin('E')
         ar = self.data.argmin(2)
@@ -200,7 +203,7 @@ class Test3D:
         assert s.data.ndim == 2
         assert s.axes_manager.signal_dimension == 0
         assert s.axes_manager.navigation_dimension == 2
-        
+
     def test_valuemin(self):
         s = self.signal.valuemin('x')
         ar = self.signal.axes_manager['x'].index2value(self.data.argmin(1))
@@ -237,7 +240,7 @@ class Test3D:
 
     def test_rebin(self):
         self.signal.estimate_poissonian_noise_variance()
-        new_s = self.signal.rebin((2, 1, 6))
+        new_s = self.signal.rebin(scale=(2, 2, 1))
         var = new_s.metadata.Signal.Noise_properties.variance
         assert new_s.data.shape == (1, 2, 6)
         assert var.data.shape == (1, 2, 6)
@@ -250,20 +253,20 @@ class Test3D:
                LooseVersion(dask.__version__) <= "0.13.0":
                 pytest.skip("Dask not up to date with new numpy")
 
-        np.testing.assert_array_equal(rebin(self.signal.data, (1, 2, 6)),
+        np.testing.assert_array_equal(rebin(self.signal.data, scale=(2, 2, 1)),
                                       var.data)
-        np.testing.assert_array_equal(rebin(self.signal.data, (1, 2, 6)),
+        np.testing.assert_array_equal(rebin(self.signal.data, scale=(2, 2, 1)),
                                       new_s.data)
 
     def test_rebin_no_variance(self):
-        new_s = self.signal.rebin((2, 1, 6))
+        new_s = self.signal.rebin(scale=(2, 2, 1))
         with pytest.raises(AttributeError):
             _ = new_s.metadata.Signal.Noise_properties
 
     def test_rebin_const_variance(self):
         self.signal.metadata.set_item(
             'Signal.Noise_properties.variance', 0.3)
-        new_s = self.signal.rebin((2, 1, 6))
+        new_s = self.signal.rebin(scale=(2, 2, 1))
         assert new_s.metadata.Signal.Noise_properties.variance == 0.3
 
     def test_swap_axes_simple(self):
@@ -591,16 +594,12 @@ class TestOutArg:
     def test_valuemax(self):
         self._run_single(self.s.valuemax, self.s, dict(axis=0))
 
+    @pytest.mark.xfail(sys.platform == 'win32',
+                       reason="sometimes it does not run lazily on windows")
     def test_rebin(self):
         s = self.s
-        new_shape = (3, 2, 1, 3)
-        if self.s._lazy:
-            from distutils.version import LooseVersion
-            import dask
-            if LooseVersion(np.__version__) >= "1.12.0" and \
-               LooseVersion(dask.__version__) <= "0.13.0":
-                pytest.skip("Dask not up to date with new numpy")
-        self._run_single(s.rebin, s, dict(new_shape=new_shape))
+        scale = (1, 2, 1, 2)
+        self._run_single(s.rebin, s, dict(scale=scale))
 
     def test_as_spectrum(self):
         s = self.s
@@ -716,7 +715,9 @@ class TestTranspose:
 
     def test_signal_int_transpose(self):
         t = self.s.transpose(signal_axes=2)
+        var = t.metadata.Signal.Noise_properties.variance
         assert t.axes_manager.signal_shape == (6, 5)
+        assert var.axes_manager.signal_shape == (6, 5)
         assert ([ax.name for ax in t.axes_manager.signal_axes] ==
                 ['f', 'e'])
         assert isinstance(t, signals.Signal2D)
@@ -725,19 +726,25 @@ class TestTranspose:
 
     def test_signal_iterable_int_transpose(self):
         t = self.s.transpose(signal_axes=[0, 5, 4])
+        var = t.metadata.Signal.Noise_properties.variance
         assert t.axes_manager.signal_shape == (6, 1, 2)
+        assert var.axes_manager.signal_shape == (6, 1, 2)
         assert ([ax.name for ax in t.axes_manager.signal_axes] ==
                 ['f', 'a', 'b'])
 
     def test_signal_iterable_names_transpose(self):
         t = self.s.transpose(signal_axes=['f', 'a', 'b'])
+        var = t.metadata.Signal.Noise_properties.variance
         assert t.axes_manager.signal_shape == (6, 1, 2)
+        assert var.axes_manager.signal_shape == (6, 1, 2)
         assert ([ax.name for ax in t.axes_manager.signal_axes] ==
                 ['f', 'a', 'b'])
 
     def test_signal_iterable_axes_transpose(self):
         t = self.s.transpose(signal_axes=self.s.axes_manager.signal_axes[:2])
+        var = t.metadata.Signal.Noise_properties.variance
         assert t.axes_manager.signal_shape == (6, 5)
+        assert var.axes_manager.signal_shape == (6, 5)
         assert ([ax.name for ax in t.axes_manager.signal_axes] ==
                 ['f', 'e'])
 
@@ -751,18 +758,24 @@ class TestTranspose:
 
     def test_navigation_int_transpose(self):
         t = self.s.transpose(navigation_axes=2)
+        var = t.metadata.Signal.Noise_properties.variance
         assert t.axes_manager.navigation_shape == (2, 1)
+        assert var.axes_manager.navigation_shape == (2, 1)
         assert ([ax.name for ax in t.axes_manager.navigation_axes] ==
                 ['b', 'a'])
 
     def test_navigation_iterable_int_transpose(self):
         t = self.s.transpose(navigation_axes=[0, 5, 4])
+        var = t.metadata.Signal.Noise_properties.variance
         assert t.axes_manager.navigation_shape == (6, 1, 2)
+        assert var.axes_manager.navigation_shape == (6, 1, 2)
         assert ([ax.name for ax in t.axes_manager.navigation_axes] ==
                 ['f', 'a', 'b'])
 
     def test_navigation_iterable_names_transpose(self):
         t = self.s.transpose(navigation_axes=['f', 'a', 'b'])
+        var = t.metadata.Signal.Noise_properties.variance
+        assert var.axes_manager.navigation_shape == (6, 1, 2)
         assert t.axes_manager.navigation_shape == (6, 1, 2)
         assert ([ax.name for ax in t.axes_manager.navigation_axes] ==
                 ['f', 'a', 'b'])
@@ -771,7 +784,9 @@ class TestTranspose:
         t = self.s.transpose(
             navigation_axes=self.s.axes_manager.signal_axes[
                 :2])
+        var = t.metadata.Signal.Noise_properties.variance
         assert t.axes_manager.navigation_shape == (6, 5)
+        assert var.axes_manager.navigation_shape == (6, 5)
         assert ([ax.name for ax in t.axes_manager.navigation_axes] ==
                 ['f', 'e'])
 
@@ -798,3 +813,115 @@ class TestTranspose:
 
         t = self.s.transpose(signal_axes=['f', 'a', 'b'], optimize=True)
         assert t.data.base is not self.s.data
+
+
+def test_lazy_transpose_rechunks():
+    ar = da.ones((50, 50, 256, 256), chunks=(5, 5, 256, 256))
+    s = signals.Signal2D(ar).as_lazy()
+    s1 = s.T
+    chunks = s1.data.chunks
+    assert len(chunks[0]) != 1
+    assert len(chunks[1]) != 1
+    assert len(chunks[2]) == 1
+    assert len(chunks[3]) == 1
+
+
+def test_lazy_changetype_rechunk():
+    ar = da.ones((50, 50, 256, 256), chunks=(5, 5, 256, 256), dtype='uint8')
+    s = signals.Signal2D(ar).as_lazy()
+    s._make_lazy(rechunk=True)
+    assert s.data.dtype is np.dtype('uint8')
+    chunks_old = s.data.chunks
+    s.change_dtype('float')
+    assert s.data.dtype is np.dtype('float')
+    chunks_new = s.data.chunks
+    assert (len(chunks_old[0]) * len(chunks_old[1]) <
+            len(chunks_new[0]) * len(chunks_new[1]))
+    s.change_dtype('uint8')
+    assert s.data.dtype is np.dtype('uint8')
+    chunks_newest = s.data.chunks
+    assert chunks_newest == chunks_new
+
+
+def test_spikes_removal_tool():
+    s = signals.Signal1D(np.ones((2, 3, 30)))
+    # Add three spikes
+    s.data[1, 0, 1] += 2
+    s.data[0, 2, 29] += 1
+    s.data[1, 2, 14] += 1
+
+    sr = SpikesRemoval(s)
+    sr.threshold = 1.5
+    sr.find()
+    assert s.axes_manager.indices == (0, 1)
+    sr.threshold = 0.5
+    assert s.axes_manager.indices == (0, 0)
+    sr.find()
+    assert s.axes_manager.indices == (2, 0)
+    sr.find()
+    assert s.axes_manager.indices == (0, 1)
+    sr.find(back=True)
+    assert s.axes_manager.indices == (2, 0)
+    sr.add_noise = False
+    sr.apply()
+    assert s.data[0, 2, 29] == 1
+    assert s.axes_manager.indices == (0, 1)
+    sr.apply()
+    assert s.data[1, 0, 1] == 1
+    assert s.axes_manager.indices == (2, 1)
+    np.random.seed(1)
+    sr.add_noise = True
+    sr.interpolator_kind = "Spline"
+    sr.spline_order = 3
+    sr.apply()
+    assert s.data[1, 2, 14] == 0
+    assert s.axes_manager.indices == (0, 0)
+
+
+class TestLinearRebin:
+
+    def test_linear_downsize(self):
+        spectrum = signals.EDSTEMSpectrum(np.ones([3, 5, 1]))
+        scale = (1.5, 2.5, 1)
+        res = spectrum.rebin(scale=scale, crop=True)
+        np.testing.assert_allclose(res.data, 3.75 * np.ones((1, 3, 1)))
+        for axis in res.axes_manager._axes:
+            assert scale[axis.index_in_axes_manager] == axis.scale
+        res = spectrum.rebin(scale=scale, crop=False)
+        np.testing.assert_allclose(res.data.sum(), spectrum.data.sum())
+
+    def test_linear_upsize(self):
+        spectrum = signals.EDSTEMSpectrum(np.ones([4, 5, 10]))
+        scale = [0.3, 0.2, .5]
+        res = spectrum.rebin(scale=scale)
+        np.testing.assert_allclose(res.data, 0.03 * np.ones((20, 16, 20)))
+        for axis in res.axes_manager._axes:
+            assert scale[axis.index_in_axes_manager] == axis.scale
+        res = spectrum.rebin(scale=scale, crop=False)
+        np.testing.assert_allclose(res.data.sum(), spectrum.data.sum())
+
+    def test_linear_downscale_out(self):
+        spectrum = signals.EDSTEMSpectrum(np.ones([4, 1, 1]))
+        scale = [1, 0.4, 1]
+        res = spectrum.rebin(scale=scale)
+        spectrum.data[2][0] = 5
+        spectrum.rebin(scale=scale, out=res)
+        np.testing.assert_allclose(res.data, [[[0.4]],
+                                              [[0.4]], [[0.4]], [
+                                                  [0.4]], [[0.4]], [[2.]],
+                                              [[2.]], [[1.2]], [[0.4]], [[0.4]]])
+        for axis in res.axes_manager._axes:
+            assert scale[axis.index_in_axes_manager] == axis.scale
+
+    def test_linear_upscale_out(self):
+        spectrum = signals.EDSTEMSpectrum(np.ones([4, 1, 1]))
+        scale = [1, 0.4, 1]
+        res = spectrum.rebin(scale=scale)
+        spectrum.data[2][0] = 5
+        spectrum.rebin(scale=scale, out=res)
+        np.testing.assert_allclose(res.data, [[[0.4]],
+                                              [[0.4]], [[0.4]], [
+                                                  [0.4]], [[0.4]], [[2.]],
+                                              [[2.]], [[1.2]], [[0.4]], [[0.4]]], atol=1e-3)
+        for axis in res.axes_manager._axes:
+            assert scale[axis.index_in_axes_manager] == axis.scale

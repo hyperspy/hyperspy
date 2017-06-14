@@ -61,3 +61,11 @@ def isfloat(number):
         return np.issubdtype(number, np.float)
     else:
         return isinstance(number, float)
+
+
+def anyfloatin(things):
+    """Check if iterable contains any non integer."""
+    for n in things:
+        if isfloat(n) and not n.is_integer():
+            return True
+    return False
