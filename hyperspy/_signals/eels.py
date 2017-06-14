@@ -286,7 +286,12 @@ class EELSSpectrum_mixin:
             return zlpc
 
         zlpc = estimate_zero_loss_peak_centre(self, mask, signal_range)
-        mean_ = without_nans(zlpc.data).mean()
+        def nanmean(array):
+            if isinstance(array, da.Array):
+                return da.nanmean(array)
+            else:
+                return np.nanmean(array)
+        mean_ = nanmean(zlpc.data)
         if print_stats is True:
             print()
             print(underline("Initial ZLP position statistics"))
@@ -299,15 +304,15 @@ class EELSSpectrum_mixin:
 
         if calibrate is True:
             zlpc = estimate_zero_loss_peak_centre(self, mask, signal_range)
-            substract_from_offset(without_nans(zlpc.data).mean(),
+            substract_from_offset(nanmean(zlpc.data),
                                   also_align + [self])
 
         if subpixel is False:
             return
         left, right = -3., 3.
         if calibrate is False:
-            mean_ = without_nans(estimate_zero_loss_peak_centre(
-                self, mask, signal_range).data).mean()
+            mean_ = nanmean(estimate_zero_loss_peak_centre(
+                self, mask, signal_range).data)
             left += mean_
             right += mean_
 
@@ -324,7 +329,7 @@ class EELSSpectrum_mixin:
                 **kwargs)
         zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
         if calibrate is True:
-            substract_from_offset(without_nans(zlpc.data).mean(),
+            substract_from_offset(nanmean(zlpc.data),
                                   also_align + [self])
 
     def estimate_elastic_scattering_intensity(
