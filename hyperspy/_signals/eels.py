@@ -285,6 +285,7 @@ class EELSSpectrum_mixin:
             return zlpc
 
         zlpc = estimate_zero_loss_peak_centre(self, mask, signal_range)
+
         def nanmean(array):
             if isinstance(array, da.Array):
                 return da.nanmean(array)
