@@ -32,8 +32,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import (
-    isiterable, closest_power_of_two, underline, without_nans,
-    signal_range_from_roi)
+    isiterable, closest_power_of_two, underline, signal_range_from_roi)
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 
 
