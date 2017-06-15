@@ -936,10 +936,13 @@ class BaseModel(list):
             If `variance` is a `Signal` instance of the same `navigation_dimension`
             as the signal, and `method` is "ls", then weighted least squares
             is performed.
-        method : {'ls', 'ml'}
+        method : {'ls', 'ml', 'custom'}
             Choose 'ls' (default) for least-squares and 'ml' for Poisson
             maximum likelihood estimation. The latter is not available when
-            'fitter' is "leastsq", "odr" or "mpfit".
+            'fitter' is "leastsq", "odr" or "mpfit". 'custom' allows passing
+            your own minimisation function as a kwarg "min_function", with
+            optional gradient kwarg "min_function_grad". See User Guide for
+            details.
         grad : bool
             If True, the analytical gradient is used if defined to
             speed up the optimization.
@@ -1006,11 +1009,16 @@ class BaseModel(list):
             if min_function is None:
                 raise ValueError('Custom minimization requires "min_function" '
                                  'kwarg with a callable')
+            min_function_grad = None
             if grad is not False:
-                raise ValueError('Custom minimization does not support '
-                                 'gradient (for now).')
+                min_function_grad = kwargs.pop('min_function_grad', None)
+                if min_function_grad is None:
+                    raise ValueError('Custom gradient function should be '
+                                     'supplied with "min_function_grad" kwarg')
             from functools import partial
             min_function = partial(min_function, self)
+            if callable(min_function_grad):
+                min_function_grad = partial(min_function_grad, self)
 
         with cm(update_on_resume=True):
             self.p_std = None
@@ -1161,7 +1169,7 @@ class BaseModel(list):
                     fprime = grad_ls
                 elif method == 'custom':
                     tominimize = min_function
-                    fprime = None
+                    fprime = min_function_grad
 
                 # OPTIMIZERS
                 # Derivative-free methods
