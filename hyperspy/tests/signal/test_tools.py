@@ -7,7 +7,7 @@ from numpy.testing import assert_array_equal, assert_allclose
 import pytest
 
 from hyperspy import signals
-from hyperspy.decorators import lazifyTestClass, set_ui
+from hyperspy.decorators import lazifyTestClass
 from hyperspy.signal_tools import SpikesRemoval
 
 
