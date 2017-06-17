@@ -33,7 +33,7 @@ reconstruction of off-axis holograms (includes finding a side band in FFT,
 isolating and filtering it, recenter and calculate inverse Fourier transform)
 can be performed using
 :meth:`~._signals.hologram_image.HologramImage.reconstruct_phase` method
-which returns a :py:class:`~._signals.complex_signal2d.ComplexSignal2D` class, containing
+which returns a :py:class:`~._signals.complex_signal2d.Complex2D` class, containing
 the reconstructed electron wave. The :meth:`~._signals.hologram_image.HologramImage.reconstruct_phase` method takes sideband
 position and size as parameters:
 
@@ -68,8 +68,8 @@ To reconstruct the hologram with a vacuum reference wave, the reference hologram
     >>> reference_hologram = hs.datasets.example_signals.reference_hologram()
     >>> wave_image = im.reconstruct_phase(reference_hologram, sb_position=sb_position, sb_size=sb_sb_size)
 
-Using reconstructed wave one can access its amplitude and phase (also unwrapped phase) using :meth:`~._signals.complex_signal2d.ComplexSignal2D.amplitude` and
- :meth:`~._signals.complex_signal2d.ComplexSignal2D.phase` properties (also :meth:`~._signals.complex_signal2d.ComplexSignal2D.unwrapped_phase` method):
+Using reconstructed wave one can access its amplitude and phase (also unwrapped phase) using :meth:`~._signals.complex_signal2d.Complex2Dmixin.amplitude` and
+ :meth:`~._signals.complex_signal2d.Complex2Dmixin.phase` properties (also :meth:`~._signals.complex_signal2d.Complex2Dmixin.unwrapped_phase` method):
 
 .. code-block:: python
 
@@ -78,7 +78,7 @@ Using reconstructed wave one can access its amplitude and phase (also unwrapped 
 .. figure:: images/holography_unwrapped_phase.png
     :align: center
 
-Preferences user interface.
+Unwrapped phase image.
 
 Additionally, it is possible to change the smoothness of the sideband filter edge (which is by default set to 5% of the
 filter radius) using parameter `sb_smoothness`.

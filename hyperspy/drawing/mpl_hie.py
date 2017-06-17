@@ -81,11 +81,13 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.plot(**kwargs)
         self.signal_plot = imf
 
-        if self.navigator_plot is not None and imf.figure is not None:
-            self.navigator_plot.events.closed.connect(
-                self._on_navigator_plot_closing, [])
-            imf.events.closed.connect(self.close_navigator_plot, [])
-            self.signal_plot.figure.canvas.mpl_connect(
-                'key_press_event', self.axes_manager.key_navigator)
-            self.navigator_plot.figure.canvas.mpl_connect(
-                'key_press_event', self.axes_manager.key_navigator)
+        if imf.figure is not None:
+            if self.axes_manager.navigation_axes:
+                self.signal_plot.figure.canvas.mpl_connect(
+                    'key_press_event', self.axes_manager.key_navigator)
+            if self.navigator_plot is not None:
+                self.navigator_plot.figure.canvas.mpl_connect(
+                    'key_press_event', self.axes_manager.key_navigator)
+                self.navigator_plot.events.closed.connect(
+                    self._on_navigator_plot_closing, [])
+                imf.events.closed.connect(self.close_navigator_plot, [])
