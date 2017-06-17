@@ -846,7 +846,6 @@ def test_lazy_changetype_rechunk():
     assert chunks_newest == chunks_new
 
 
-@set_ui
 def test_spikes_removal_tool():
     s = signals.Signal1D(np.ones((2, 3, 30)))
     # Add three spikes
