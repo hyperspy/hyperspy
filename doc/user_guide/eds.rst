@@ -440,7 +440,7 @@ You can also select a subset of lines to label:
 .. _get_lines_intensity:
 
 
-Geting the intensity of an X-ray line
+Getting the intensity of an X-ray line
 -------------------
 
 .. versionadded:: 0.8
