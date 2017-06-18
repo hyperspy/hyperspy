@@ -53,6 +53,7 @@ from hyperspy.docstrings.signal import (
     ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC)
 from hyperspy.docstrings.plot import BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 from hyperspy.events import Events, Event
+import hyperspy.roi as _roi
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
                                         broadcast_signals)
@@ -2803,6 +2804,25 @@ class BaseSignal(FancySlicing,
                 function(self.data, axis=ar_axes,))
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
+
+    def _add_sum_roi(self, roi=None):
+        """ Get all the roi from the navigation plot"""
+        if roi is None:
+            roi = _roi.RectangularROI(0, 0, 1, 1)
+        else:
+            # TODO: get the roi -either tuple, list or roi instances
+            if not isinstance(roi, _roi.BaseInteractiveROI):
+                raise NotImplementedError('Only single roi is implemented')
+
+        roi.add_widget(self)
+        # initialise out signal
+        sr = self._deepcopy_with_new_data(self)
+        self._sum_roi = self._get_signal_signal(dtype=self.data.dtype)
+
+        interactive(roi, signal=self, event=roi.events.changed, out=sr)
+        interactive(sr.sum, axis=sr.axes_manager.navigation_axes[:2],
+                    out=self._sum_roi)
+        self._sum_roi.plot()
 
     def sum(self, axis=None, out=None):
         """Sum the data over the given axes.
