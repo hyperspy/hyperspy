@@ -1546,6 +1546,41 @@ class BaseSetMetadataItems(t.HasTraits):
                 self.signal.metadata.set_item(key, getattr(self, value))
 
 
+def _apply_function_on_data_and_remove_axis(signal, function, axes, out=None):
+    axes = signal.axes_manager[axes]
+    if not np.iterable(axes):
+        axes = (axes,)
+    # Use out argument in numpy function when available for operations that
+    # do not return scalars in numpy.
+    np_out = not len(signal.axes_manager._axes) == len(axes)
+    ar_axes = tuple(ax.index_in_array for ax in axes)
+    if len(ar_axes) == 1:
+        ar_axes = ar_axes[0]
+
+    s = out or signal._deepcopy_with_new_data(None)
+
+    if np.ma.is_masked(signal.data):
+        return signal._ma_workaround(s=s, function=function, axes=axes,
+                                     ar_axes=ar_axes, out=out)
+    if out:
+        if np_out:
+            function(signal.data, axis=ar_axes, out=out.data,)
+        else:
+            data = np.atleast_1d(function(signal.data, axis=ar_axes,))
+            if data.shape == out.data.shape:
+                out.data[:] = data
+            else:
+                raise ValueError(
+                    "The output shape %s does not match  the shape of "
+                    "`out` %s" % (data.shape, out.data.shape))
+        out.events.data_changed.trigger(obj=out)
+    else:
+        s.data = np.atleast_1d(
+            function(signal.data, axis=ar_axes,))
+        s._remove_axis([ax.index_in_axes_manager for ax in axes])
+        return s
+
+
 class BaseSignal(FancySlicing,
                  MVA,
                  MVATools,):
@@ -2771,60 +2806,37 @@ class BaseSignal(FancySlicing,
             return s
 
     def _apply_function_on_data_and_remove_axis(self, function, axes,
-                                                out=None):
-        axes = self.axes_manager[axes]
-        if not np.iterable(axes):
-            axes = (axes,)
-        # Use out argument in numpy function when available for operations that
-        # do not return scalars in numpy.
-        np_out = not len(self.axes_manager._axes) == len(axes)
-        ar_axes = tuple(ax.index_in_array for ax in axes)
-        if len(ar_axes) == 1:
-            ar_axes = ar_axes[0]
-
-        s = out or self._deepcopy_with_new_data(None)
-
-        if np.ma.is_masked(self.data):
-            return self._ma_workaround(s=s, function=function, axes=axes,
-                                       ar_axes=ar_axes, out=out)
-        if out:
-            if np_out:
-                function(self.data, axis=ar_axes, out=out.data,)
-            else:
-                data = np.atleast_1d(function(self.data, axis=ar_axes,))
-                if data.shape == out.data.shape:
-                    out.data[:] = data
-                else:
-                    raise ValueError(
-                        "The output shape %s does not match  the shape of "
-                        "`out` %s" % (data.shape, out.data.shape))
-            out.events.data_changed.trigger(obj=out)
-        else:
-            s.data = np.atleast_1d(
-                function(self.data, axis=ar_axes,))
-            s._remove_axis([ax.index_in_axes_manager for ax in axes])
-            return s
-
-    def _add_sum_roi(self, roi=None):
-        """ Get all the roi from the navigation plot"""
+                                                out=None, roi=None):
         if roi is None:
+            return _apply_function_on_data_and_remove_axis(signal=self,
+                                                           function=function,
+                                                           axes=axes,
+                                                           out=out)
+        elif roi is True:
             roi = _roi.RectangularROI(0, 0, 1, 1)
         else:
             # TODO: get the roi -either tuple, list or roi instances
             if not isinstance(roi, _roi.BaseInteractiveROI):
-                raise NotImplementedError('Only single roi is implemented')
+                raise NotImplementedError("Only single roi is implemented.")
+
+        if (self._plot and self._plot.signal_plot) is None:
+            raise RuntimeError("To use the roi option, the signal needs to be "
+                               "plotted first.")
+
+        # Get the axes indices
+        axes = [axis.index_in_axes_manager for axis in axes]
 
         roi.add_widget(self)
-        # initialise out signal
-        sr = self._deepcopy_with_new_data(self)
-        self._sum_roi = self._get_signal_signal(dtype=self.data.dtype)
+        self._signal_roi = interactive(
+            roi, signal=self, event=roi.events.changed)
+        # TODO: the navigation axis need to be generic
+        self._roi_operation_signal = interactive(
+            self._signal_roi._apply_function_on_data_and_remove_axis,
+            function=function,
+            axes=axes)
+        self._roi_operation_signal.plot()
 
-        interactive(roi, signal=self, event=roi.events.changed, out=sr)
-        interactive(sr.sum, axis=sr.axes_manager.navigation_axes[:2],
-                    out=self._sum_roi)
-        self._sum_roi.plot()
-
-    def sum(self, axis=None, out=None):
+    def sum(self, axis=None, out=None, roi=None):
         """Sum the data over the given axes.
 
         Parameters
@@ -2853,10 +2865,11 @@ class BaseSignal(FancySlicing,
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.sum, axis,
-                                                            out=out)
+                                                            out=out,
+                                                            roi=roi)
     sum.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
-    def max(self, axis=None, out=None):
+    def max(self, axis=None, out=None, roi=None):
         """Returns a signal with the maximum of the signal along at least one
         axis.
 
@@ -2886,10 +2899,11 @@ class BaseSignal(FancySlicing,
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.max, axis,
-                                                            out=out)
+                                                            out=out,
+                                                            roi=roi)
     max.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
-    def min(self, axis=None, out=None):
+    def min(self, axis=None, out=None, roi=None):
         """Returns a signal with the minimum of the signal along at least one
         axis.
 
@@ -2919,10 +2933,11 @@ class BaseSignal(FancySlicing,
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.min, axis,
-                                                            out=out)
+                                                            out=out,
+                                                            roi=roi)
     min.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
-    def mean(self, axis=None, out=None):
+    def mean(self, axis=None, out=None, roi=None):
         """Returns a signal with the average of the signal along at least one
         axis.
 
@@ -2952,10 +2967,11 @@ class BaseSignal(FancySlicing,
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.mean, axis,
-                                                            out=out)
+                                                            out=out,
+                                                            roi=roi)
     mean.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
-    def std(self, axis=None, out=None):
+    def std(self, axis=None, out=None, roi=None):
         """Returns a signal with the standard deviation of the signal along
         at least one axis.
 
@@ -2985,10 +3001,11 @@ class BaseSignal(FancySlicing,
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.std, axis,
-                                                            out=out)
+                                                            out=out,
+                                                            roi=roi)
     std.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
-    def var(self, axis=None, out=None):
+    def var(self, axis=None, out=None, roi=None):
         """Returns a signal with the variances of the signal along at least one
         axis.
 
@@ -3018,57 +3035,64 @@ class BaseSignal(FancySlicing,
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.var, axis,
-                                                            out=out)
+                                                            out=out,
+                                                            roi=roi)
     var.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
 
-    def nansum(self, axis=None, out=None):
+    def nansum(self, axis=None, out=None, roi=None):
         """%s
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.nansum, axis,
-                                                            out=out)
+                                                            out=out,
+                                                            roi=roi)
     nansum.__doc__ %= (NAN_FUNC.format('sum', sum.__doc__))
 
-    def nanmax(self, axis=None, out=None):
+    def nanmax(self, axis=None, out=None, roi=None):
         """%s
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.nanmax, axis,
-                                                            out=out)
+                                                            out=out,
+                                                            roi=roi)
     nanmax.__doc__ %= (NAN_FUNC.format('max', max.__doc__))
 
-    def nanmin(self, axis=None, out=None):
+    def nanmin(self, axis=None, out=None, roi=None):
         """%s"""
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.nanmin, axis,
-                                                            out=out)
+                                                            out=out,
+                                                            roi=roi)
     nanmin.__doc__ %= (NAN_FUNC.format('min', min.__doc__))
 
-    def nanmean(self, axis=None, out=None):
+    def nanmean(self, axis=None, out=None, roi=None):
         """%s """
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.nanmean, axis,
-                                                            out=out)
+                                                            out=out,
+                                                            roi=roi)
     nanmean.__doc__ %= (NAN_FUNC.format('mean', mean.__doc__))
 
-    def nanstd(self, axis=None, out=None):
+    def nanstd(self, axis=None, out=None, roi=None):
         """%s"""
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.nanstd, axis,
-                                                            out=out)
+                                                            out=out,
+                                                            roi=roi)
     nanstd.__doc__ %= (NAN_FUNC.format('std', std.__doc__))
 
-    def nanvar(self, axis=None, out=None):
+    def nanvar(self, axis=None, out=None, roi=None):
         """%s"""
         if axis is None:
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(np.nanvar, axis,
-                                                            out=out)
+                                                            out=out,
+                                                            roi=roi)
     nanvar.__doc__ %= (NAN_FUNC.format('var', var.__doc__))
 
     def diff(self, axis, order=1, out=None):
@@ -3225,7 +3249,7 @@ class BaseSignal(FancySlicing,
             return self.sum(axis=axis, out=out)
     integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def indexmin(self, axis, out=None):
+    def indexmin(self, axis, out=None, roi=None):
         """Returns a signal with the index of the minimum along an axis.
 
         Parameters
@@ -3253,9 +3277,10 @@ class BaseSignal(FancySlicing,
 
         """
         return self._apply_function_on_data_and_remove_axis(np.argmin, axis,
-                                                            out=out)
+                                                            out=out,
+                                                            roi=roi)
 
-    def indexmax(self, axis, out=None):
+    def indexmax(self, axis, out=None, roi=None):
         """Returns a signal with the index of the maximum along an axis.
 
         Parameters
@@ -3283,7 +3308,8 @@ class BaseSignal(FancySlicing,
 
         """
         return self._apply_function_on_data_and_remove_axis(np.argmax, axis,
-                                                            out=out)
+                                                            out=out,
+                                                            roi=roi)
     indexmax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
     def valuemax(self, axis, out=None):
