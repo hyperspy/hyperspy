@@ -39,7 +39,7 @@ from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.drawing import signal as sigdraw
 from hyperspy.defaults_parser import preferences
 from hyperspy.misc.io.tools import ensure_directory
-from hyperspy.misc.utils import iterable_not_string
+from hyperspy.misc.utils import iterable_not_string, stack
 from hyperspy.external.progressbar import progressbar
 from hyperspy.exceptions import SignalDimensionError, DataDimensionError
 from hyperspy.misc import rgb_tools
@@ -2812,29 +2812,47 @@ class BaseSignal(FancySlicing,
                                                            function=function,
                                                            axes=axes,
                                                            out=out)
-        elif roi is True:
-            roi = _roi.RectangularROI(0, 0, 1, 1)
-        else:
-            # TODO: get the roi -either tuple, list or roi instances
-            if not isinstance(roi, _roi.BaseInteractiveROI):
-                raise NotImplementedError("Only single roi is implemented.")
-
-        if (self._plot and self._plot.signal_plot) is None:
-            raise RuntimeError("To use the roi option, the signal needs to be "
-                               "plotted first.")
-
         # Get the axes indices
         axes = [axis.index_in_axes_manager for axis in axes]
+        if isiterable(roi):
+            self._signal_roi = []
+            self._roi_operation_signal = []
+            for r in roi:
+                self._signal_roi.append(interactive(
+                    r, signal=self, event=r.events.changed))
+                self._roi_operation_signal.append(interactive(
+                    self._signal_roi[-1]._apply_function_on_data_and_remove_axis,
+                    function=function,
+                    axes=axes))
 
-        roi.add_widget(self)
-        self._signal_roi = interactive(
-            roi, signal=self, event=roi.events.changed)
-        # TODO: the navigation axis need to be generic
-        self._roi_operation_signal = interactive(
-            self._signal_roi._apply_function_on_data_and_remove_axis,
-            function=function,
-            axes=axes)
-        self._roi_operation_signal.plot()
+            event_list = [r.events.changed for r in roi]
+            # Get stack
+            self._roi_operation_signal_stack = interactive(
+                stack, signal_list=self._roi_operation_signal,
+                event=event_list)
+            # Apply function to stack
+            self._roi_operation_signal_stack_sum = interactive(
+                self._roi_operation_signal_stack._apply_function_on_data_and_remove_axis,
+                function=function, axes=0, event=event_list)
+            self._roi_operation_signal_stack_sum.plot()
+        elif roi is True:
+            if (self._plot and self._plot.signal_plot) is None:
+                raise RuntimeError("To use the roi option, the signal needs "
+                                   "to be plotted first.")
+            roi = _roi.RectangularROI(0, 0, 1, 1)
+            roi.add_widget(self)
+        elif not isinstance(roi, _roi.BaseInteractiveROI):
+            raise TypeError("`roi` is not an InteractiveROI instance. Please "
+                            "check the type of the roi option.")
+
+        if not isiterable(roi):
+            self._signal_roi = interactive(
+                roi, signal=self, event=roi.events.changed)
+            self._roi_operation_signal = interactive(
+                self._signal_roi._apply_function_on_data_and_remove_axis,
+                function=function,
+                axes=axes)
+            self._roi_operation_signal.plot()
 
     def sum(self, axis=None, out=None, roi=None):
         """Sum the data over the given axes.
