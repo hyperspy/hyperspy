@@ -28,3 +28,10 @@ NAN_FUNC = \
 
        -------------------- {0} --------------------
         {1} """
+
+ROI_ARG = \
+    """roi : {None | True | roi | list}
+            If None, the operation is performed over the whole dataset.
+            If True, a roi is added to the plot.
+            If a roi or a list of is passed, the operation is performed only 
+            over the roi(s)."""

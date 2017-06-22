@@ -50,7 +50,7 @@ from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
-    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC)
+    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, ROI_ARG)
 from hyperspy.docstrings.plot import BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 from hyperspy.events import Events, Event
 import hyperspy.roi as _roi
@@ -2861,6 +2861,7 @@ class BaseSignal(FancySlicing,
         ----------
         axis %s
         %s
+        %s
 
         Returns
         -------
@@ -2868,7 +2869,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, mean, std, var, indexmax, valuemax, amax
+        max, min, mean, std, var, indexmax, valuemax
 
         Examples
         --------
@@ -2885,7 +2886,7 @@ class BaseSignal(FancySlicing,
         return self._apply_function_on_data_and_remove_axis(np.sum, axis,
                                                             out=out,
                                                             roi=roi)
-    sum.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+    sum.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, ROI_ARG)
 
     def max(self, axis=None, out=None, roi=None):
         """Returns a signal with the maximum of the signal along at least one
@@ -2895,6 +2896,7 @@ class BaseSignal(FancySlicing,
         ----------
         axis %s
         %s
+        %s
 
         Returns
         -------
@@ -2902,7 +2904,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        min, sum, mean, std, var, indexmax, valuemax, amax
+        min, sum, mean, std, var, indexmax, valuemax
 
         Examples
         --------
@@ -2919,7 +2921,7 @@ class BaseSignal(FancySlicing,
         return self._apply_function_on_data_and_remove_axis(np.max, axis,
                                                             out=out,
                                                             roi=roi)
-    max.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+    max.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, ROI_ARG)
 
     def min(self, axis=None, out=None, roi=None):
         """Returns a signal with the minimum of the signal along at least one
@@ -2929,6 +2931,7 @@ class BaseSignal(FancySlicing,
         ----------
         axis %s
         %s
+        %s
 
         Returns
         -------
@@ -2936,7 +2939,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, sum, mean, std, var, indexmax, valuemax, amax
+        max, sum, mean, std, var, indexmax, valuemax
 
         Examples
         --------
@@ -2953,7 +2956,7 @@ class BaseSignal(FancySlicing,
         return self._apply_function_on_data_and_remove_axis(np.min, axis,
                                                             out=out,
                                                             roi=roi)
-    min.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+    min.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, ROI_ARG)
 
     def mean(self, axis=None, out=None, roi=None):
         """Returns a signal with the average of the signal along at least one
@@ -2963,6 +2966,7 @@ class BaseSignal(FancySlicing,
         ----------
         axis %s
         %s
+        %s
 
         Returns
         -------
@@ -2970,7 +2974,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, std, var, indexmax, valuemax, amax
+        max, min, sum, std, var, indexmax, valuemax
 
         Examples
         --------
@@ -2987,7 +2991,7 @@ class BaseSignal(FancySlicing,
         return self._apply_function_on_data_and_remove_axis(np.mean, axis,
                                                             out=out,
                                                             roi=roi)
-    mean.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+    mean.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, ROI_ARG)
 
     def std(self, axis=None, out=None, roi=None):
         """Returns a signal with the standard deviation of the signal along
@@ -2997,6 +3001,7 @@ class BaseSignal(FancySlicing,
         ----------
         axis %s
         %s
+        %s
 
         Returns
         -------
@@ -3004,7 +3009,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, mean, var, indexmax, valuemax, amax
+        max, min, sum, mean, var, indexmax, valuemax
 
         Examples
         --------
@@ -3021,7 +3026,7 @@ class BaseSignal(FancySlicing,
         return self._apply_function_on_data_and_remove_axis(np.std, axis,
                                                             out=out,
                                                             roi=roi)
-    std.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+    std.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, ROI_ARG)
 
     def var(self, axis=None, out=None, roi=None):
         """Returns a signal with the variances of the signal along at least one
@@ -3031,6 +3036,7 @@ class BaseSignal(FancySlicing,
         ----------
         axis %s
         %s
+        %s
 
         Returns
         -------
@@ -3038,7 +3044,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, mean, std, indexmax, valuemax, amax
+        max, min, sum, mean, std, indexmax, valuemax
 
         Examples
         --------
@@ -3055,7 +3061,7 @@ class BaseSignal(FancySlicing,
         return self._apply_function_on_data_and_remove_axis(np.var, axis,
                                                             out=out,
                                                             roi=roi)
-    var.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+    var.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, ROI_ARG)
 
     def nansum(self, axis=None, out=None, roi=None):
         """%s
@@ -3126,7 +3132,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, mean, std, var, indexmax, valuemax, amax
+        max, min, sum, mean, std, var, indexmax, valuemax
 
         Examples
         --------
@@ -3206,7 +3212,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, mean, std, var, indexmax, valuemax, amax
+        max, min, sum, mean, std, var, indexmax, valuemax
 
         Examples
         --------
@@ -3274,6 +3280,7 @@ class BaseSignal(FancySlicing,
         ----------
         axis %s
         %s
+        %s
 
         Returns
         -------
@@ -3282,7 +3289,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, mean, std, var, valuemax, amax
+        max, min, sum, mean, std, var, valuemax
 
         Usage
         -----
@@ -3297,6 +3304,7 @@ class BaseSignal(FancySlicing,
         return self._apply_function_on_data_and_remove_axis(np.argmin, axis,
                                                             out=out,
                                                             roi=roi)
+    indexmin.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, ROI_ARG)
 
     def indexmax(self, axis, out=None, roi=None):
         """Returns a signal with the index of the maximum along an axis.
@@ -3304,6 +3312,7 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -3313,7 +3322,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, mean, std, var, valuemax, amax
+        max, min, sum, mean, std, var, valuemax
 
         Usage
         -----
@@ -3328,7 +3337,7 @@ class BaseSignal(FancySlicing,
         return self._apply_function_on_data_and_remove_axis(np.argmax, axis,
                                                             out=out,
                                                             roi=roi)
-    indexmax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+    indexmax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, ROI_ARG)
 
     def valuemax(self, axis, out=None):
         """Returns a signal with the value of coordinates of the maximum along an axis.
@@ -3344,7 +3353,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, mean, std, var, indexmax, amax
+        max, min, sum, mean, std, var, indexmax
 
         Usage
         -----
@@ -3380,7 +3389,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, mean, std, var, indexmax, amax
+        max, min, sum, mean, std, var, indexmax
 
         """
         idx = self.indexmin(axis)
