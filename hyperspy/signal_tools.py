@@ -931,13 +931,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                 # progress bar instead.
                 pass
             except ValueError as error:
-                # UI available but not selected
-                message = ("in `preferences` or manually select a",
-                           "toolkit with the `toolkit` argument.")
-                if " ".join(message) in str(error):
-                    _logger.warning(error)
-                else:
-                    raise error
+                _logger.warning(error)
             self.index = 0
             self._reset_line()
             return
