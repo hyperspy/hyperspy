@@ -803,8 +803,23 @@ class BaseModel(list):
             for component in self:
                 component.fetch_stored_values(only_fixed=only_fixed)
 
+    def fetch_values_from_array(self, array, array_std=None):
+        """Fetch the parameter values from the given array, optionally also
+        fetching the standard deviations.
+
+        Parameters
+        ----------
+        array : array
+            array with the parameter values
+        array_std : {None, array}
+            array with the standard deviations of parameters
+        """
+        self.p0 = array
+        self._fetch_values_from_p0(p_std=array_std)
+
+
     def _fetch_values_from_p0(self, p_std=None):
-        """Fetch the parameter values from the output of the optimzer `self.p0`
+        """Fetch the parameter values from the output of the optimiser `self.p0`
 
         Parameters
         ----------
