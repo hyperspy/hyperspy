@@ -196,7 +196,7 @@ class LazySignal(BaseSignal):
         return res
 
     def _apply_function_on_data_and_remove_axis(self, function, axes,
-                                                out=None):
+                                                out=None, **kwargs):
         def get_dask_function(numpy_name):
             # Translate from the default numpy to dask functions
             translations = {'amax': 'max', 'amin': 'min'}
