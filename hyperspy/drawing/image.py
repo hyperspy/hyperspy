@@ -232,7 +232,12 @@ class ImagePlot(BlittedFigure):
         if self.figure is None:
             self.create_figure()
             self.create_axis()
-        data = self.data_function(self.axes_manager, self.resizable_pointer)
+        # Not sure why is this if loop is necessary...
+        if self.resizable_pointer:
+            data = self.data_function(
+                self.axes_manager, self.resizable_pointer)
+        else:
+            data = self.data_function(self.axes_manager)
         if rgb_tools.is_rgbx(data):
             self.colorbar = False
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
@@ -305,9 +310,13 @@ class ImagePlot(BlittedFigure):
             else:
                 self.centre_colormap = False
         redraw_colorbar = False
-        data = rgb_tools.rgbx2regular_array(
-            self.data_function(self.axes_manager, self.resizable_pointer),
-            plot_friendly=True)
+        # Not sure why is this if loop is necessary...
+        if self.resizable_pointer:
+            data = self.data_function(
+                self.axes_manager, self.resizable_pointer)
+        else:
+            data = self.data_function(self.axes_manager)
+        data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
         numrows, numcols = data.shape[:2]
         for marker in self.ax_markers:
             marker.update()
