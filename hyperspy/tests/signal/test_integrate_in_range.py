@@ -17,7 +17,6 @@ class Test1D:
         self.signal = Signal1D(gaussian.function(np.arange(0, 100, 0.01)))
         self.signal.axes_manager[0].scale = 0.01
 
-    def test_integrate_in_range(self):
-        integrated_signal = self.signal.integrate_in_range(signal_range=(None,
-                                                                         None))
+    def test_integrate1D(self):
+        integrated_signal = self.signal.integrate1D(axis=0)
         assert np.allclose(integrated_signal.data, 20,)
