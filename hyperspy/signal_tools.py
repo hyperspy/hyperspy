@@ -564,7 +564,7 @@ class ImageContrastEditor(t.HasTraits):
         pad = (vmax - vmin) * 0.05
         vmin -= pad
         vmax += pad
-        data = self.image.data_function().ravel()
+        data = self.image.data_function(resizable_pointer=self.resizable_pointer).ravel()
         self.patches = self.ax.hist(data, 100, range=(vmin, vmax),
                                     color='blue')[2]
         self.ax.set_xticks([])

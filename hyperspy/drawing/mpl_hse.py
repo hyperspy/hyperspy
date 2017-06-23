@@ -91,6 +91,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         sf.create_axis()
         sf.axes_manager = self.axes_manager
         sf.pointer = self.pointer
+        sf.resizable_pointer = self._resizable_pointer
         self.signal_plot = sf
         # Create a line to the left axis with the default indices
         is_complex = np.iscomplex(self.signal_data_function()).any()

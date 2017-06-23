@@ -43,6 +43,7 @@ class Signal1DFigure(BlittedFigure):
         self.right_axes_manager = None
         self.pointer = None
         self.right_pointer = None
+        self.resizable_pointer = False
 
         # Labels
         self.xlabel = ''
@@ -89,6 +90,7 @@ class Signal1DFigure(BlittedFigure):
             self.ax_lines.append(line)
             line.sf_lines = self.ax_lines
             line.pointer = self.pointer
+            line.resizable_pointer = self.resizable_pointer
         elif ax == 'right':
             line.ax = self.right_ax
             self.right_ax_lines.append(line)
@@ -96,6 +98,7 @@ class Signal1DFigure(BlittedFigure):
             if line.axes_manager is None:
                 line.axes_manager = self.right_axes_manager
             line.pointer = self.right_pointer
+            line.resizable_pointer = self.resizable_pointer
         line.axis = self.axis
         # Automatically asign the color if not defined
         if line.color is None:
@@ -200,6 +203,7 @@ class Signal1DLine(object):
         self.autoscale = False
         self.plot_indices = False
         self.pointer_size = None
+        self.resizable_pointer = False
         self.text = None
         self.text_position = (-0.085, 1.05,)
         self._line_properties = {}
@@ -291,15 +295,15 @@ class Signal1DLine(object):
         ind = []
         pointer_size = self.pointer.get_size_in_indices().tolist()
         for indice, pointer_size in zip(self.axes_manager.indices, pointer_size):
-            ind.append("%i:%i"%(indice, indice + pointer_size))
+            ind.append("%i:%i" % (indice, indice + pointer_size))
         return ", ".join(ind)
 
     def plot(self, data=1):
         f = self.data_function
         if self.get_complex is False:
-            data = f(axes_manager=self.axes_manager).real
+            data = f(self.axes_manager, self.resizable_pointer).real
         else:
-            data = f(axes_manager=self.axes_manager).imag
+            data = f(self.axes_manager, self.resizable_pointer).imag
         if self.line is not None:
             self.line.remove()
         self.line, = self.ax.plot(self.axis.axis, data,
@@ -330,9 +334,11 @@ class Signal1DLine(object):
             self.close()
             self.plot()
         if self.get_complex is False:
-            ydata = self.data_function(axes_manager=self.axes_manager).real
+            ydata = self.data_function(
+                self.axes_manager, self.resizable_pointer).real
         else:
-            ydata = self.data_function(axes_manager=self.axes_manager).imag
+            ydata = self.data_function(
+                self.axes_manager, self.resizable_pointer).imag
 
         old_xaxis = self.line.get_xdata()
         if len(old_xaxis) != self.axis.size or \
@@ -352,7 +358,8 @@ class Signal1DLine(object):
             y_max, y_min = (np.nanmax(clipped_ydata),
                             np.nanmin(clipped_ydata))
             if self.get_complex:
-                yreal = self.data_function(axes_manager=self.axes_manager).real
+                yreal = self.data_function(
+                    self.axes_manager, self.resizable_pointer).real
                 clipped_yreal = yreal[y1:y2]
                 y_min = min(y_min, clipped_yreal.min())
                 y_max = max(y_max, clipped_yreal.max())

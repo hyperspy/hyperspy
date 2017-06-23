@@ -16,6 +16,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from functools import partial
+import numpy as np
 import logging
 
 from traits.api import Undefined
@@ -44,6 +45,8 @@ class MPL_HyperExplorer(object):
         self.axis = None
         self.pointer = None
         self._pointer_nav_dim = None
+        self._resizable_pointer = False
+        self._pointer_operation = np.sum
 
     def plot_signal(self):
         # This method should be implemented by the subclasses.
@@ -152,15 +155,17 @@ class MPL_HyperExplorer(object):
         else:
             return False
 
-    def plot(self, **kwargs):
+    def plot(self, resizable_pointer=False, pointer_operation=np.sum, **kwargs):
         if self.pointer is None:
             pointer, param_dict = self.assign_pointer()
+            self._pointer_operation = pointer_operation
             if pointer is not None:
                 self.pointer = pointer(self.axes_manager, **param_dict)
                 self.pointer.color = 'red'
                 self.pointer.set_picker(10.0)
-                self.pointer.connect_navigate()                   
+                self.pointer.connect_navigate()
             self.plot_navigator(**kwargs.pop('navigator_kwds', {}))
+        self._resizable_pointer = resizable_pointer
         self.plot_signal(**kwargs)
         # self.pointer.events.resized.connect(self.signal_plot.update)
 

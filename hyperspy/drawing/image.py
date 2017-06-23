@@ -80,11 +80,12 @@ class ImagePlot(BlittedFigure):
         self._vmax_auto = None
         self._ylabel = ''
         self._xlabel = ''
-        self.plot_indices = True
         self._text = None
         self._text_position = (0, 1.05,)
         self.axes_manager = None
         self.pointer = None
+        self.resizable_pointer = False
+        self.plot_indices = True
         self._aspect = 1
         self._extent = None
         self.xaxis = None
@@ -231,7 +232,7 @@ class ImagePlot(BlittedFigure):
         if self.figure is None:
             self.create_figure()
             self.create_axis()
-        data = self.data_function(axes_manager=self.axes_manager)
+        data = self.data_function(self.axes_manager, self.resizable_pointer)
         if rgb_tools.is_rgbx(data):
             self.colorbar = False
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
@@ -305,7 +306,7 @@ class ImagePlot(BlittedFigure):
                 self.centre_colormap = False
         redraw_colorbar = False
         data = rgb_tools.rgbx2regular_array(
-            self.data_function(axes_manager=self.axes_manager),
+            self.data_function(self.axes_manager, self.resizable_pointer),
             plot_friendly=True)
         numrows, numcols = data.shape[:2]
         for marker in self.ax_markers:
@@ -456,5 +457,5 @@ class ImagePlot(BlittedFigure):
         ind = []
         pointer_size = self.pointer.get_size_in_indices().tolist()
         for indice, pointer_size in zip(self.axes_manager.indices, pointer_size):
-            ind.append("%i:%i"%(indice, indice + pointer_size))
+            ind.append("%i:%i" % (indice, indice + pointer_size))
         return ", ".join(ind)

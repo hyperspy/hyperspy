@@ -1921,24 +1921,25 @@ class BaseSignal(FancySlicing,
             axes.append({'size': int(s), })
         return axes
 
-    def __call__(self, axes_manager=None):
+    def __call__(self, axes_manager=None, resizable_pointer=False):
         if axes_manager is None:
             axes_manager = self.axes_manager
-        if getattr(self._plot, 'pointer', None) is not None:
+        if resizable_pointer and getattr(self._plot, 'pointer', None) is not None:
             indices = self._plot.pointer.indices
             size = self._plot.pointer.get_size_in_indices()
+            pointer_operation = self._plot._pointer_operation
             array_slices = [slice(None, None, None)] * \
                 self.axes_manager.navigation_dimension
             for i, axis in enumerate(self.axes_manager.navigation_axes[::-1]):
                 array_slices[i] = slice(indices[i], indices[i] + size[i], None)
-            data = self.data[array_slices].sum(axis=tuple(
+            data = pointer_operation(self.data[array_slices], axis=tuple(
                 self.axes_manager.navigation_indices_in_array))
         else:
             data = self.data.__getitem__(axes_manager._getitem_tuple)
         return np.atleast_1d(data)
 
-    def plot(self, navigator="auto", axes_manager=None,
-             plot_markers=True, **kwargs):
+    def plot(self, navigator="auto", axes_manager=None, plot_markers=True,
+             resizable_pointer=True, **kwargs):
         """%s
         %s
 
@@ -2065,7 +2066,7 @@ class BaseSignal(FancySlicing,
                     "navigator must be one of \"spectrum\",\"auto\","
                     " \"slider\", None, a Signal instance")
 
-        self._plot.plot(**kwargs)
+        self._plot.plot(resizable_pointer=resizable_pointer, **kwargs)
         self.events.data_changed.connect(self.update_plot, [])
         if self._plot.signal_plot:
             self._plot.signal_plot.events.closed.connect(
