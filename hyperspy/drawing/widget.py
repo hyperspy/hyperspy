@@ -172,7 +172,7 @@ class WidgetBase(object):
             self.disconnect()
         self.ax = ax
         canvas = ax.figure.canvas
-        if self.is_on() is True:
+        if self.is_on():
             self._add_patch_to(ax)
             self.connect(ax)
             canvas.draw_idle()
@@ -197,8 +197,8 @@ class WidgetBase(object):
         """Connect to the matplotlib Axes' events.
         """
         on_figure_window_close(ax.figure, self.close)
-        if self._navigating:
-            self.connect_navigate()
+#        if self._navigating:
+#            self.connect_navigate()
 
     def connect_navigate(self):
         """Connect to the axes_manager such that changes in the widget or in
@@ -534,6 +534,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
             self._size = np.array([1])
         self.size_step = 1      # = one step in index space
         self._snap_size = True
+        self._previous_position = self.position
         self.events.resized = Event(doc="""
             Event that triggers when the widget was resized.
 
@@ -547,6 +548,22 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
                 obj:
                     The widget that was resized.
             """, arguments=['obj'])
+        self.events.resized_am = Event(doc="""
+            Event that triggers when the widget was resized without changing
+            the top left corner. This is designed to be compatible with the 
+            axes_manager events and avoid triggering redundant event.
+
+            The event triggers after the internal state of the widget has been
+            updated. This event does not differentiate on how the size of
+            the widget was changed, so it is the responsibility of the user
+            to suppress events as neccessary to avoid closed loops etc.
+
+            Arguments:
+            ----------
+                obj:
+                    The widget that was resized.
+            """, arguments=['obj'])
+
         self.no_events_while_dragging = False
         self._drag_store = None
 
@@ -628,9 +645,13 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
     def _size_changed(self):
         """Triggers resize and changed events, and updates the patch.
         """
+        # Trigger resized_am only if the top left corner did not moved
+        if (self.position == self._previous_position):
+            self.events.resized_am.trigger(self)
         self.events.resized.trigger(self)
         self.events.changed.trigger(self)
         self._update_patch_size()
+        self._previous_position = self.position
 
     def get_size_in_indices(self):
         """Gets the size property converted to the index space (via 'axes'
@@ -726,6 +747,9 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
                     self.events.moved.trigger(self)
                 if resized:
                     self.events.resized.trigger(self)
+                    # Trigger resized_am only if the top left corner did not moved
+                    if not moved:
+                        self.events.resized_am.trigger(self)
                 self.events.changed.trigger(self)
 
     def button_release(self, event):

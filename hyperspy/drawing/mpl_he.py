@@ -136,6 +136,7 @@ class MPL_HyperExplorer(object):
             imf.plot(**kwds)
             self.pointer.set_mpl_ax(imf.ax)
             self.navigator_plot = imf
+            self.navigator_plot.resizable_pointer = self._resizable_pointer
 
     def _get_navigation_sliders(self):
         try:
@@ -146,7 +147,6 @@ class MPL_HyperExplorer(object):
 
     def close_navigator_plot(self):
         if self.navigator_plot:
-            # self.pointer.events.resized.disconnect(self.signal_plot.update)
             self.navigator_plot.close()
 
     def is_active(self):
@@ -156,6 +156,7 @@ class MPL_HyperExplorer(object):
             return False
 
     def plot(self, resizable_pointer=False, pointer_operation=np.sum, **kwargs):
+        self._resizable_pointer = resizable_pointer
         if self.pointer is None:
             pointer, param_dict = self.assign_pointer()
             self._pointer_operation = pointer_operation
@@ -165,9 +166,9 @@ class MPL_HyperExplorer(object):
                 self.pointer.set_picker(10.0)
                 self.pointer.connect_navigate()
             self.plot_navigator(**kwargs.pop('navigator_kwds', {}))
-        self._resizable_pointer = resizable_pointer
         self.plot_signal(**kwargs)
-        # self.pointer.events.resized.connect(self.signal_plot.update)
+        if self.pointer is not None and self._resizable_pointer:
+            self.pointer.events.resized_am.connect(self.signal_plot.update, [])
 
     def assign_pointer(self):
         param_dict = {}
@@ -184,12 +185,14 @@ class MPL_HyperExplorer(object):
             else:  # It is the image of a "spectrum stack"
                 # Is Matplotlib SpanSelector compatible with imshow?
                 Pointer = widgets.HorizontalLineWidget
+                self._resizable_pointer = False
 #                param_dict['direction'] = 'vertical'
         elif nav_dim == 1:  # It is a spectrum
             Pointer = widgets.RangeWidget
             param_dict['direction'] = 'horizontal'
         else:
             Pointer = None
+            self._resizable_pointer = False
         self._pointer_nav_dim = nav_dim
         return Pointer, param_dict
 
@@ -199,5 +202,8 @@ class MPL_HyperExplorer(object):
     def close(self):
         if self.signal_plot:
             self.signal_plot.close()
+            if self.pointer is not None and self._resizable_pointer:
+                self.pointer.events.resized_am.disconnect(
+                        self.signal_plot.update)
         if self.navigator_plot:
             self.navigator_plot.close()

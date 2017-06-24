@@ -309,10 +309,10 @@ class Signal1DLine(object):
         self.line, = self.ax.plot(self.axis.axis, data,
                                   **self.line_properties)
         self.line.set_animated(self.ax.figure.canvas.supports_blit)
-        self.axes_manager.events.indices_changed.connect(self.update, [])
-        self.events.closed.connect(
-            lambda: self.axes_manager.events.indices_changed.disconnect(
-                self.update), [])
+#        self.axes_manager.events.indices_changed.connect(self.update, [])
+#        self.events.closed.connect(
+#            lambda: self.axes_manager.events.indices_changed.disconnect(
+#                self.update), [])
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
         if self.plot_indices is True:

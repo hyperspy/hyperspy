@@ -23,7 +23,6 @@ import logging
 import numpy as np
 from scipy.interpolate import splev
 
-from hyperspy.defaults_parser import preferences
 from hyperspy.component import Component
 from hyperspy.misc.eels.hartree_slater_gos import HartreeSlaterGOS
 from hyperspy.misc.eels.hydrogenic_gos import HydrogenicGOS
