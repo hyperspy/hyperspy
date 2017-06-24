@@ -120,10 +120,14 @@ class TestBSS2D:
         mask.fold()
         self.s.learning_results.factors[5, :] = np.nan
         factors = self.s.get_decomposition_factors().inav[:3]
+        mask.change_dtype("float")
+        mask_diff = mask.diff(axis="x", order=1)
+        mask.change_dtype("bool")
+        mask_diff.change_dtype("bool")
         self.s.blind_source_separation(
             3, diff_order=0, fun="exp", on_loadings=False,
             factors=factors.diff(axis="x", order=1),
-            mask=mask.diff(axis="x", order=1))
+            mask=mask_diff)
         matrix = self.s.learning_results.unmixing_matrix.copy()
         self.s.blind_source_separation(
             3, diff_order=1, fun="exp", on_loadings=False,
