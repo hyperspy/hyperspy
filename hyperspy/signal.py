@@ -1927,13 +1927,10 @@ class BaseSignal(FancySlicing,
         if resizable_pointer and getattr(self._plot, 'pointer', None) is not None:
             indices = self._plot.pointer.indices
             size = self._plot.pointer.get_size_in_indices()
-            pointer_operation = self._plot._pointer_operation
-            array_slices = [slice(None, None, None)] * \
-                self.axes_manager.navigation_dimension
-            for i, axis in enumerate(self.axes_manager.navigation_axes[::-1]):
-                array_slices[i] = slice(indices[i], indices[i] + size[i], None)
-            data = pointer_operation(self.data[array_slices], axis=tuple(
-                self.axes_manager.navigation_indices_in_array))
+            array_slices = [slice(indices[i], indices[i] + size[i], None)
+                            for i in range(len(self._plot.pointer.axes))]
+            data = self._plot._pointer_operation(self.data[array_slices],
+                axis=tuple(self.axes_manager.navigation_indices_in_array))
         else:
             data = self.data.__getitem__(axes_manager._getitem_tuple)
         return np.atleast_1d(data)
