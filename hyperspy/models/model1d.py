@@ -646,7 +646,8 @@ class Model1D(BaseModel):
             s = ns
         return s
 
-    def plot(self, plot_components=False):
+    def plot(self, plot_components=False, resizable_pointer=False,
+             pointer_operation=np.mean):
         """Plots the current spectrum to the screen and a map with a
         cursor to explore the SI.
 
@@ -654,11 +655,16 @@ class Model1D(BaseModel):
         ----------
         plot_components : bool
             If True, add a line per component to the signal figure.
-
+        resizable_pointer : bool, default True
+            If True, the pointer will be resizable.
+        pointer_operation : numpy function, default np.mean
+            Set the operation to perform over the navigation area selected by
+            the pointer.
         """
 
         # If new coordinates are assigned
-        self.signal.plot()
+        self.signal.plot(resizable_pointer=resizable_pointer,
+                         pointer_operation=pointer_operation)
         _plot = self.signal._plot
         l1 = _plot.signal_plot.ax_lines[0]
         color = l1.line.get_color()

@@ -1942,7 +1942,10 @@ class BaseSignal(FancySlicing,
 
         """
 
+        pointer_size = None
         if self._plot is not None:
+            # before recreating a he, save the pointer size to restore later
+            pointer_size = self._plot._pointer_size
             try:
                 self._plot.close()
             except:
@@ -2065,6 +2068,9 @@ class BaseSignal(FancySlicing,
 
         self._plot.plot(resizable_pointer=resizable_pointer,
                         pointer_operation=pointer_operation, **kwargs)
+        if pointer_size is not None:
+            self._plot.pointer.set_size_in_indices(pointer_size)
+            self._plot.signal_plot.update()
         self.events.data_changed.connect(self.update_plot, [])
         if self._plot.signal_plot:
             self._plot.signal_plot.events.closed.connect(

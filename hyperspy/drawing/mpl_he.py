@@ -45,6 +45,7 @@ class MPL_HyperExplorer(object):
         self.axis = None
         self.pointer = None
         self._pointer_nav_dim = None
+        self._pointer_size = None
         self._resizable_pointer = False
         self._pointer_operation = np.sum
 
@@ -204,12 +205,13 @@ class MPL_HyperExplorer(object):
 
     def _on_navigator_plot_closing(self):
         self.navigator_plot = None
+        # backup the pointer_size to restore it when the plot is reopened
+        if self.pointer is not None and self._resizable_pointer:
+            self._pointer_size = self.pointer.get_size_in_indices()
+            self.pointer.events.resized_am.disconnect(
+                    self.signal_plot.update)
 
     def close(self):
         if self.signal_plot:
             self.signal_plot.close()
-            if self.pointer is not None and self._resizable_pointer:
-                self.pointer.events.resized_am.disconnect(
-                        self.signal_plot.update)
-        if self.navigator_plot:
-            self.navigator_plot.close()
+        self.close_navigator_plot()
