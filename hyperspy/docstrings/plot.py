@@ -53,6 +53,11 @@ BASE_PLOT_DOCSTRING = \
         plot_markers : bool, default True
             Plot markers added using s.add_marker(marker, permanent=True).
             Note, a large number of markers might lead to very slow plotting.
+        resizable_pointer : bool, default True
+            If True, the pointer will be resizable.
+        pointer_operation : numpy function, default np.sum
+            Set the operation to perform over the navigation area selected by
+            the pointer.
             """
 
 PLOT2D_DOCSTRING = \

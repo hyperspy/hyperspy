@@ -181,15 +181,21 @@ class MPL_HyperExplorer(object):
 
         if nav_dim == 2:  # It is an image
             if self.axes_manager.navigation_dimension > 1:
-                Pointer = widgets.RectangleWidget
+                if self._resizable_pointer:
+                    Pointer = widgets.RectangleWidget
+                else:
+                    Pointer = widgets.SquareWidget
             else:  # It is the image of a "spectrum stack"
                 # Is Matplotlib SpanSelector compatible with imshow?
                 Pointer = widgets.HorizontalLineWidget
                 self._resizable_pointer = False
 #                param_dict['direction'] = 'vertical'
         elif nav_dim == 1:  # It is a spectrum
-            Pointer = widgets.RangeWidget
-            param_dict['direction'] = 'horizontal'
+            if self._resizable_pointer:
+                Pointer = widgets.RangeWidget
+                param_dict['direction'] = 'horizontal'
+            else:
+                Pointer = widgets.VerticalLineWidget
         else:
             Pointer = None
             self._resizable_pointer = False

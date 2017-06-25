@@ -1936,7 +1936,7 @@ class BaseSignal(FancySlicing,
         return np.atleast_1d(data)
 
     def plot(self, navigator="auto", axes_manager=None, plot_markers=True,
-             resizable_pointer=True, **kwargs):
+             resizable_pointer=True, pointer_operation=np.sum, **kwargs):
         """%s
         %s
 
@@ -2063,7 +2063,8 @@ class BaseSignal(FancySlicing,
                     "navigator must be one of \"spectrum\",\"auto\","
                     " \"slider\", None, a Signal instance")
 
-        self._plot.plot(resizable_pointer=resizable_pointer, **kwargs)
+        self._plot.plot(resizable_pointer=resizable_pointer,
+                        pointer_operation=pointer_operation, **kwargs)
         self.events.data_changed.connect(self.update_plot, [])
         if self._plot.signal_plot:
             self._plot.signal_plot.events.closed.connect(
