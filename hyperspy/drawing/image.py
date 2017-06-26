@@ -464,7 +464,11 @@ class ImagePlot(BlittedFigure):
 
     def _get_pointer_text(self):
         ind = []
-        pointer_size = self.pointer.get_size_in_indices().tolist()
+        # Temporary workaround for slider, when there is no pointer
+        try:
+            pointer_size = self.pointer.get_size_in_indices().tolist()
+        except AttributeError:
+            pointer_size = self.axes_manager.indices
         for indice, pointer_size in zip(self.axes_manager.indices, pointer_size):
             ind.append("%i:%i" % (indice, indice + pointer_size))
         return ", ".join(ind)

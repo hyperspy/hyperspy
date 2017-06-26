@@ -2068,7 +2068,9 @@ class BaseSignal(FancySlicing,
 
         self._plot.plot(resizable_pointer=resizable_pointer,
                         pointer_operation=pointer_operation, **kwargs)
-        if pointer_size is not None:
+        # need both condition: in case we replot without pointer
+        # (`pointer_size` from previous plot but `self._plot.pointer` is None)
+        if self._plot.pointer and pointer_size is not None:
             self._plot.pointer.set_size_in_indices(pointer_size)
             self._plot.signal_plot.update()
         self.events.data_changed.connect(self.update_plot, [])
@@ -3891,7 +3893,8 @@ class BaseSignal(FancySlicing,
         variance = np.clip(variance, gain_offset * correlation_factor, np.inf)
         return variance
 
-    def get_current_signal(self, auto_title=True, auto_filename=True):
+    def get_current_signal(self, auto_title=True, auto_filename=True,
+                           auto_pointer=False):
         """Returns the data at the current coordinates as a Signal subclass.
 
         The signal subclass is the same as that of the current object. All the
@@ -3907,6 +3910,12 @@ class BaseSignal(FancySlicing,
             (what is always the case when the Signal has been read from a
             file), the filename is modified by appending an underscore and a
             parenthesis containing the current indices.
+        auto_pointer : bool
+            If False, returns the signal at the current position as given by
+            the axes_manager.
+            If True, returns the plotted signal, which may depend on the 
+            position and the size of the pointer, but also on the operation 
+            performed on the navigation axes during plotting.
 
         Returns
         -------
@@ -3923,7 +3932,7 @@ class BaseSignal(FancySlicing,
 
         """
         cs = self.__class__(
-            self(),
+            self(resizable_pointer=auto_pointer),
             axes=self.axes_manager._get_signal_axes_dicts(),
             metadata=self.metadata.as_dictionary(),
             attributes={'_lazy': False})
