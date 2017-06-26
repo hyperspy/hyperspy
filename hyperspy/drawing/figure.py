@@ -88,3 +88,17 @@ class BlittedFigure(object):
     def title(self, value):
         # Wrap the title so that each line is not longer than 60 characters.
         self._title = textwrap.fill(value, 60)
+
+    def _get_pointer_text(self, pointer=None):
+        ind = []
+        # Temporary workaround for slider, when there is no pointer, needs to
+        # be fixed when range slider are implemented.
+        try:
+            if pointer is None:
+                pointer = self.pointer
+            pointer_size = pointer.get_size_in_indices().tolist()
+        except AttributeError:
+            pointer_size = [1 for i in self.axes_manager.indices]
+        for indice, pointer_size in zip(self.axes_manager.indices, pointer_size):
+            ind.append("%i:%i" % (indice, indice + pointer_size))
+        return ", ".join(ind)

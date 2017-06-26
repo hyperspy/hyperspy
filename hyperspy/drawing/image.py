@@ -461,14 +461,3 @@ class ImagePlot(BlittedFigure):
         while check_tolerance() and i <= step_prec_max:
             optimize_for_oom(step_oom - i)
             i += 1
-
-    def _get_pointer_text(self):
-        ind = []
-        # Temporary workaround for slider, when there is no pointer
-        try:
-            pointer_size = self.pointer.get_size_in_indices().tolist()
-        except AttributeError:
-            pointer_size = self.axes_manager.indices
-        for indice, pointer_size in zip(self.axes_manager.indices, pointer_size):
-            ind.append("%i:%i" % (indice, indice + pointer_size))
-        return ", ".join(ind)

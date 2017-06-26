@@ -91,6 +91,7 @@ class Signal1DFigure(BlittedFigure):
             line.sf_lines = self.ax_lines
             line.pointer = self.pointer
             line.resizable_pointer = self.resizable_pointer
+            line.hspy_figure = self
         elif ax == 'right':
             line.ax = self.right_ax
             self.right_ax_lines.append(line)
@@ -99,6 +100,7 @@ class Signal1DFigure(BlittedFigure):
                 line.axes_manager = self.right_axes_manager
             line.pointer = self.right_pointer
             line.resizable_pointer = self.resizable_pointer
+            line.hspy_figure = self
         line.axis = self.axis
         # Automatically asign the color if not defined
         if line.color is None:
@@ -203,6 +205,7 @@ class Signal1DLine(object):
         self.autoscale = False
         self.plot_indices = False
         self.pointer_size = None
+        self.hspy_figure = None
         self.resizable_pointer = False
         self.text = None
         self.text_position = (-0.085, 1.05,)
@@ -292,11 +295,7 @@ class Signal1DLine(object):
             self.ax.figure.canvas.draw_idle()
 
     def _get_pointer_text(self):
-        ind = []
-        pointer_size = self.pointer.get_size_in_indices().tolist()
-        for indice, pointer_size in zip(self.axes_manager.indices, pointer_size):
-            ind.append("%i:%i" % (indice, indice + pointer_size))
-        return ", ".join(ind)
+        return self.hspy_figure._get_pointer_text(pointer=self.pointer)
 
     def plot(self, data=1):
         f = self.data_function
