@@ -259,19 +259,19 @@ class Smoothing(t.HasTraits):
         else:
             return matplotlib.colors.to_rgb(self.line_color_ipy)
 
-    def __init__(self, signal):
+    def __init__(self, signal, pointer_operation=np.sum):
         self.ax = None
         self.data_line = None
         self.smooth_line = None
         self.signal = signal
         self.single_spectrum = self.signal.get_current_signal().deepcopy()
         self.axis = self.signal.axes_manager.signal_axes[0].axis
+        self.pointer_operation = pointer_operation
         self.plot()
 
     def plot(self):
-        if self.signal._plot is None or not \
-                self.signal._plot.is_active():
-            self.signal.plot()
+        if self.signal._plot is None or not self.signal._plot.is_active():
+            self.signal.plot(pointer_operation=self.pointer_operation)
         hse = self.signal._plot
         l1 = hse.signal_plot.ax_lines[0]
         self.original_color = l1.line.get_color()
@@ -416,8 +416,9 @@ class SmoothingSavitzkyGolay(Smoothing):
             differential_order=self.differential_order)
         return self.single_spectrum.data
 
-    def model2plot(self, axes_manager=None):
-        self.single_spectrum.data = self.signal().copy()
+    def model2plot(self, axes_manager=None, resizable_pointer=True):
+        self.single_spectrum.data = self.signal(
+                resizable_pointer=resizable_pointer).copy()
         self.single_spectrum.smooth_savitzky_golay(
             polynomial_order=self.polynomial_order,
             window_length=self.window_length,
@@ -453,8 +454,9 @@ class SmoothingLowess(Smoothing):
     def _number_of_iterations_changed(self, old, new):
         self.update_lines()
 
-    def model2plot(self, axes_manager=None):
-        self.single_spectrum.data = self.signal().copy()
+    def model2plot(self, axes_manager=None, resizable_pointer=True):
+        self.single_spectrum.data = self.signal(
+                resizable_pointer=resizable_pointer).copy()
         self.single_spectrum.smooth_lowess(
             smoothing_parameter=self.smoothing_parameter,
             number_of_iterations=self.number_of_iterations,
@@ -476,8 +478,9 @@ class SmoothingTV(Smoothing):
     def _smoothing_parameter_changed(self, old, new):
         self.update_lines()
 
-    def model2plot(self, axes_manager=None):
-        self.single_spectrum.data = self.signal().copy()
+    def model2plot(self, axes_manager=None, resizable_pointer=True):
+        self.single_spectrum.data = self.signal(
+                resizable_pointer=resizable_pointer).copy()
         self.single_spectrum.smooth_tv(
             smoothing_parameter=self.smoothing_parameter,
             show_progressbar=False)
@@ -505,7 +508,7 @@ class ButterworthFilter(Smoothing):
     def _order_changed(self, old, new):
         self.update_lines()
 
-    def model2plot(self, axes_manager=None):
+    def model2plot(self, axes_manager=None, resizable_pointer=False):
         b, a = sp.signal.butter(self.order, self.cutoff_frequency_ratio,
                                 self.type)
         smoothed = sp.signal.filtfilt(b, a, self.signal())
@@ -564,7 +567,8 @@ class ImageContrastEditor(t.HasTraits):
         pad = (vmax - vmin) * 0.05
         vmin -= pad
         vmax += pad
-        data = self.image.data_function(resizable_pointer=self.resizable_pointer).ravel()
+        data = self.image.data_function(
+                resizable_pointer=self.resizable_pointer).ravel()
         self.patches = self.ax.hist(data, 100, range=(vmin, vmax),
                                     color='blue')[2]
         self.ax.set_xticks([])

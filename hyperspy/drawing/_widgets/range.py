@@ -193,7 +193,10 @@ class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
     def __init__(self, ax, **kwargs):
         onselect = kwargs.pop('onselect', self.dummy)
         useblit = kwargs.pop('useblit', False)
+        direction = kwargs.pop('direction', 'horizontal')
+        kwargs['span_stays'] = False
         matplotlib.widgets.SpanSelector.__init__(self, ax, onselect,
+                                                 direction=direction,
                                                  useblit=useblit, **kwargs)
         # The tolerance in points to pick the rectangle sizes
         self.tolerance = 1

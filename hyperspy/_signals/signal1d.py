@@ -911,6 +911,7 @@ _spikes_diagnosis,
         Lowess data smoothing in place.
         If `smoothing_parameter` or `number_of_iterations` are None the method
         is run in interactive mode.
+        
         Parameters
         ----------
         smoothing_parameter: float or None
@@ -919,10 +920,10 @@ _spikes_diagnosis,
         number_of_iterations: int or None
             The number of residual-based reweightings
             to perform.
-        show_progressbar : None or bool
+        show_progressbar: None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
-        parallel : {Bool, None, int}
+        parallel: {Bool, None, int}
             Perform the operation parallel
         %s
         %s
