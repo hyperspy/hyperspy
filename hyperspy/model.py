@@ -1019,14 +1019,13 @@ class BaseModel(list):
                 # this has to be done before setting the p0,
                 # so moved things around
                 self.ensure_parameters_in_bounds()
+        min_function = kwargs.pop('min_function', None)
+        min_function_grad = kwargs.pop('min_function_grad', None)
         if method == 'custom':
-            min_function = kwargs.pop('min_function', None)
-            if min_function is None:
+            if not callable(min_function):
                 raise ValueError('Custom minimization requires "min_function" '
                                  'kwarg with a callable')
-            min_function_grad = None
             if grad is not False:
-                min_function_grad = kwargs.pop('min_function_grad', None)
                 if min_function_grad is None:
                     raise ValueError('Custom gradient function should be '
                                      'supplied with "min_function_grad" kwarg')
@@ -1058,8 +1057,8 @@ class BaseModel(list):
                 weights = None
                 if fitter in ("leastsq", "odr", "mpfit"):
                     raise NotImplementedError(
-                        "Maximum likelihood estimation is not supported "
-                        'for the "leastsq", "mpfit" or "odr" optimizers')
+                        '"leastsq", "mpfit" and "odr" optimizers only support'
+                        'least squares ("ls") method')
             elif method == "ls":
                 metadata = self.signal.metadata
                 if "Signal.Noise_properties.variance" not in metadata:
@@ -1085,7 +1084,7 @@ class BaseModel(list):
                 weights = 1. / np.sqrt(variance)
             else:
                 raise ValueError(
-                    'method must be "ls" or "ml" but %s given' %
+                    'method must be "ls", "ml" or "custom" but %s given' %
                     method)
             args = (self.signal()[np.where(self.channel_switches)],
                     weights)
