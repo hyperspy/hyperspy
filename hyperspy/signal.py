@@ -2813,6 +2813,15 @@ class BaseSignal(FancySlicing,
                                                            axes=axes,
                                                            out=out)
         # Get the axes indices
+        if axes == 'navigation':
+            axes = self.axes_manager.navigation_axes
+            # Since span is not supported for signal1D and navigation dim is 1
+            # (vertical span on navigator): re-plot with the spectrum navigator
+            if len(axes) == 1 and self.axes_manager.signal_dimension == 1:
+                self._plot.close()
+                self.plot(navigator='spectrum')
+        elif axes == 'signal':
+            axes = self.axes_manager.signal_axes
         axes = [axis.index_in_axes_manager for axis in axes]
         if isiterable(roi):
             self._signal_roi = []
@@ -2836,13 +2845,23 @@ class BaseSignal(FancySlicing,
                 function=function, axes=0, event=event_list)
             self._roi_operation_signal_stack_sum.plot()
         elif roi is True:
-            if (self._plot and self._plot.signal_plot) is None:
+            # check if the plot is open
+            if (self._plot and self._plot.signal_plot and self._plot.navigator_plot) is None:
                 raise RuntimeError("To use the roi option, the signal needs "
                                    "to be plotted first.")
-            roi = _roi.RectangularROI(0, 0, 1, 1)
-            roi.add_widget(self)
+
+            size = [self.axes_manager[axis].size for axis in axes]
+            if len(axes) == 1:
+                roi = _roi.SpanROI(int(size[0] / 4), int(3 * size[0] / 4))
+            elif len(axes) == 2:
+                roi = _roi.RectangularROI(int(size[0] / 4), int(size[1] / 4),
+                                          int(3 * size[0] / 4), int(3 * size[0] / 4))
+            else:
+                raise RuntimeError("Automatic creating of roi for signals of "
+                                   "dimension {} is not supported.".format(len(axes)))
+            roi.add_widget(self, axes=axes)
         elif not isinstance(roi, _roi.BaseInteractiveROI):
-            raise TypeError("`roi` is not an InteractiveROI instance. Please "
+            raise TypeError("`roi` is not an acceptable type. Please "
                             "check the type of the roi option.")
 
         if not isiterable(roi):
@@ -2852,6 +2871,9 @@ class BaseSignal(FancySlicing,
                 self._signal_roi._apply_function_on_data_and_remove_axis,
                 function=function,
                 axes=axes)
+            # something is broken when interactive on signal, possibly need to
+            # improve the way the axis is removed for a few cases (operation 
+            # performed over all signal axis, for example).
             self._roi_operation_signal.plot()
 
     def sum(self, axis=None, out=None, roi=None):
