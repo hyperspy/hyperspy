@@ -1546,7 +1546,8 @@ class BaseSetMetadataItems(t.HasTraits):
                 self.signal.metadata.set_item(key, getattr(self, value))
 
 
-def _apply_function_on_data_and_remove_axis(signal, function, axes, out=None):
+def _apply_function_on_data_and_remove_axis(signal, function, axes, out=None,
+                                            transpose=False):
     axes = signal.axes_manager[axes]
     if not np.iterable(axes):
         axes = (axes,)
@@ -1577,7 +1578,12 @@ def _apply_function_on_data_and_remove_axis(signal, function, axes, out=None):
     else:
         s.data = np.atleast_1d(
             function(signal.data, axis=ar_axes,))
+        remove_all_signal_axes = (signal.axes_manager.signal_axes == axes)
         s._remove_axis([ax.index_in_axes_manager for ax in axes])
+        # if we remove all signal dimension, transpose the signal.
+        if transpose and remove_all_signal_axes:
+            s = s.transpose()
+
         return s
 
 
@@ -2806,12 +2812,14 @@ class BaseSignal(FancySlicing,
             return s
 
     def _apply_function_on_data_and_remove_axis(self, function, axes,
-                                                out=None, roi=None):
+                                                out=None, roi=None,
+                                                transpose=False):
         if roi is None:
             return _apply_function_on_data_and_remove_axis(signal=self,
                                                            function=function,
                                                            axes=axes,
-                                                           out=out)
+                                                           out=out,
+                                                           transpose=transpose)
         # Get the axes indices
         if axes == 'navigation':
             axes = self.axes_manager.navigation_axes
@@ -2832,7 +2840,8 @@ class BaseSignal(FancySlicing,
                 self._roi_operation_signal.append(interactive(
                     self._signal_roi[-1]._apply_function_on_data_and_remove_axis,
                     function=function,
-                    axes=axes))
+                    axes=axes,
+                    transpose=transpose))
 
             event_list = [r.events.changed for r in roi]
             # Get stack
@@ -2842,7 +2851,7 @@ class BaseSignal(FancySlicing,
             # Apply function to stack
             self._roi_operation_signal_stack_sum = interactive(
                 self._roi_operation_signal_stack._apply_function_on_data_and_remove_axis,
-                function=function, axes=0, event=event_list)
+                function=function, axes=0, transpose=transpose, event=event_list)
             self._roi_operation_signal_stack_sum.plot()
         elif roi is True:
             # check if the plot is open
@@ -2870,10 +2879,8 @@ class BaseSignal(FancySlicing,
             self._roi_operation_signal = interactive(
                 self._signal_roi._apply_function_on_data_and_remove_axis,
                 function=function,
-                axes=axes)
-            # something is broken when interactive on signal, possibly need to
-            # improve the way the axis is removed for a few cases (operation 
-            # performed over all signal axis, for example).
+                axes=axes,
+                transpose=True)
             self._roi_operation_signal.plot()
 
     def sum(self, axis=None, out=None, roi=None):
