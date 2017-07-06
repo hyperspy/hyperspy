@@ -60,7 +60,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
     drawn from point to point. If 'size' is greater than 1, it will in
     principle select a rotated rectangle. If 'size' is greater than 4, the
     bounds of this rectangle will be visualized by two dashed lines along the
-    outline of this rectangle, instead of a signle line in the center.
+    outline of this rectangle, instead of a single line in the center.
 
     The widget also adds the attributes 'radius_resize', 'radius_move' and
     'radius_rotate' (defaults: 5, 5, 10), which determines the picker radius
@@ -98,7 +98,8 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         self._prev_pos = None
         self._orig_pos = None
         self.snap_all = False
-
+        self._width_indicator_patches = []
+        self._size = np.array([0])
         # Set default axes
         if self.axes_manager is not None:
             if self.axes_manager.navigation_dimension > 1:
@@ -107,12 +108,43 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 self.axes = self.axes_manager.signal_axes[0:2]
         else:
             self._pos = np.array([[0, 0], [0, 0]])
-            self._size = np.array([1])
+
+    def _set_size(self, value):
+        """Setter for the 'size' property.
+
+        Calls _size_changed to handle size change, if the value has changed.
+
+        """
+        try:
+            value = value.pop()
+        except AttributeError:
+            pass
+        if value < 0:
+            value = 0
+        elif value:
+            # The size must not be smaller than the scale
+            value = np.maximum(value, self.axes[0].scale)
+            # TODO Check the result of snap_size
+            if self.snap_size:
+                value = self._do_snap_size(value)
+        if self._size[0] != value:
+            if not value and self._size:
+                self._size = np.array((0,))
+                self._remove_size_patch()
+            elif value and not self._size:
+                self._size = np.array((value,))
+                self._set_size_patch()
+            else:
+                self._size = np.array((value,))
+            self._size_changed()
 
     def _set_axes(self, axes):
+        # _set_axes overwrites self._size so we back it up
+        size = self._size
         super(Line2DWidget, self)._set_axes(axes)
         self._pos = np.tile(self._pos, (2, 1))
-        self._size = np.array([np.min(self._size)])
+        # Restore self._size
+        self._size = size
 
     def connect_navigate(self):
         raise NotImplementedError("2D lines cannot be used to navigate (yet?)")
@@ -182,9 +214,11 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         """
         if self.is_on() and self.patch:
             self.patch[0].set_data(np.array(self._pos).T)
-            wc = self._get_width_indicator_coords()
-            for i in range(2):
-                self.patch[1 + i].set_data(wc[i].T)
+            # Update width indicator if present
+            if self._width_indicator_patches:
+                wc = self._get_width_indicator_coords()
+                for i in range(2):
+                    self.patch[1 + i].set_data(wc[i].T)
             self.draw_patch()
 
     def _set_patch(self):
@@ -206,6 +240,8 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             mew=0.1,
             mfc='lime',
             picker=max_r,)[0:1]
+
+    def _set_size_patch(self):
         wc = self._get_width_indicator_coords()
         for i in range(2):
             wi, = self.ax.plot(
@@ -216,6 +252,15 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 c=self.color,
                 picker=self.radius_move)
             self.patch.append(wi)
+            self._width_indicator_patches.append(wi)
+
+    def _remove_size_patch(self):
+        if not self._width_indicator_patches:
+            return
+        for patch in self._width_indicator_patches:
+            self.patch.remove(patch)
+            patch.remove()
+        self._width_indicator_patches = []
 
     def _get_vertex(self, event):
         """Check bitfield on self.func, and return vertex index.
@@ -374,7 +419,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         self.position = trans.inverted().transform(c + np.rot90(w2))
 
     def _width_resize(self, event):
-        if None in (event.xdata, event.ydata):
+        if None in (event.xdata, event.ydata) or self.size[0] == 0:
             return
         # Get difference in mouse pos since drag start (picked)
         dx = self._get_diff(event)

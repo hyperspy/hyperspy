@@ -548,8 +548,10 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         return tuple(self._size.tolist())
 
     def _set_size(self, value):
-        """Setter for the 'size' property. Calls _size_changed to handle size
-        change, if the value has changed.
+        """Setter for the 'size' property.
+
+        Calls _size_changed to handle size change, if the value has changed.
+
         """
         value = np.minimum(value, [ax.size * ax.scale for ax in self.axes])
         value = np.maximum(value,
