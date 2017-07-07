@@ -308,20 +308,6 @@ class TestModel1D:
         np.testing.assert_array_equal(m.convolution_axis, np.arange(7, 23))
         np.testing.assert_equal(ll_axis.value2index.call_args[0][0], 0)
 
-    @pytest.mark.parallel
-    def test_notebook_interactions(self):
-        ipywidgets = pytest.importorskip("ipywidgets", minversion="5.0")
-        ipython = pytest.importorskip("IPython")
-        from IPython import get_ipython
-        ip = get_ipython()
-        if ip is None or not getattr(ip, 'kernel', None):
-            pytest.skip("Not attached to notebook")
-        m = self.model
-        m.notebook_interaction()
-        m.append(hs.model.components1D.Offset())
-        m[0].notebook_interaction()
-        m[0].offset.notebook_interaction()
-
     def test_access_component_by_name(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()

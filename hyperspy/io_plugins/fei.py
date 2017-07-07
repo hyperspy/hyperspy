@@ -713,10 +713,10 @@ mapping = {
         "Acquisition_instrument.TEM.Detector.Camera.exposure",
         None),
     "ObjectInfo.ExperimentalDescription.Stage_A_deg": (
-        "Acquisition_instrument.TEM.Stage.tilt_a",
+        "Acquisition_instrument.TEM.Stage.tilt_alpha",
         _get_degree),
     "ObjectInfo.ExperimentalDescription.Stage_B_deg": (
-        "Acquisition_instrument.TEM.Stage.tilt_b",
+        "Acquisition_instrument.TEM.Stage.tilt_beta",
         _get_degree),
     "ObjectInfo.ExperimentalDescription.Stage_X_um": (
         "Acquisition_instrument.TEM.Stage.x",

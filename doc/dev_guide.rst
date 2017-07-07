@@ -30,7 +30,7 @@ are currently implemented as well as much information about how everything works
 -- so read it well:
 `HyperSpy User-Guide <www.hyperspy.org/hyperspy-doc/current/index.html>`_.
 
-For developing the code the home of hyperspy is on github and you'll see that
+For developing the code the home of HyperSpy is on github and you'll see that
 a lot of this guide boils down to using that platform well. so visit the
 following link and poke around the code, issues, and pull requests: `HyperSpy
 on Github <https://github.com/hyperspy/hyperspy>`_.
@@ -163,7 +163,7 @@ tests reside in the ``hyperspy.tests`` module. To run them:
 
    py.test --pyargs hyperspy
 
-Or, from hyperspy's project folder simply:
+Or, from HyperSpy's project folder simply:
 
 .. code:: bash
 
@@ -244,7 +244,9 @@ Documentation comes in two parts docstrings and user-guide documentation.
 
 Docstrings -- written at the start of a function and give essential information
 about how it should be used, such as which arguments can be passed to it and what
-the syntax should be.
+the syntax should be. The docstrings need to follow the `numpy specification 
+<https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`_, 
+as shown in `this example <https://github.com/numpy/numpy/blob/master/doc/example.py>`_.
 
 User-guide Documentation -- A description of the functionality of the code and how
 to use it with examples and links to the relevant code.

@@ -17,19 +17,122 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+from contextlib import contextmanager
 
 import numpy as np
-from contextlib import contextmanager
+import traits.api as t
 
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 import hyperspy.drawing.signal1d
-from hyperspy._signals.signal1d import Signal1D
 from hyperspy.axes import generate_axis
 from hyperspy.exceptions import WrongObjectError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.drawing.widgets import VerticalLineWidget, LabelWidget
-from hyperspy.gui.tools import ComponentFit
+from hyperspy.ui_registry import get_gui
 from hyperspy.events import EventSuppressor
+from hyperspy.signal_tools import SpanSelectorInSignal1D
+from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
+from hyperspy.misc.utils import signal_range_from_roi
+
+
+@add_gui_method(toolkey="Model1D.fit_component")
+class ComponentFit(SpanSelectorInSignal1D):
+
+    only_current = t.Bool(True)
+
+    def __init__(self, model, component, signal_range=None,
+                 estimate_parameters=True, fit_independent=False,
+                 only_current=True, **kwargs):
+        if model.signal.axes_manager.signal_dimension != 1:
+            raise SignalDimensionError(
+                model.signal.axes_manager.signal_dimension, 1)
+
+        self.signal = model.signal
+        self.axis = self.signal.axes_manager.signal_axes[0]
+        self.span_selector = None
+        self.model = model
+        self.component = component
+        self.signal_range = signal_range
+        self.estimate_parameters = estimate_parameters
+        self.fit_independent = fit_independent
+        self.fit_kwargs = kwargs
+        if signal_range == "interactive":
+            if not hasattr(self.model, '_plot'):
+                self.model.plot()
+            elif self.model._plot is None:
+                self.model.plot()
+            elif self.model._plot.is_active() is False:
+                self.model.plot()
+            self.span_selector_switch(on=True)
+
+    def _fit_fired(self):
+        if (self.signal_range != "interactive" and
+                self.signal_range is not None):
+            self.model.set_signal_range(*self.signal_range)
+        elif self.signal_range == "interactive":
+            self.model.set_signal_range(self.ss_left_value,
+                                        self.ss_right_value)
+
+        # Backup "free state" of the parameters and fix all but those
+        # of the chosen component
+        if self.fit_independent:
+            active_state = []
+            for component_ in self.model:
+                active_state.append(component_.active)
+                if component_ is not self.component:
+                    component_.active = False
+                else:
+                    component_.active = True
+        else:
+            free_state = []
+            for component_ in self.model:
+                for parameter in component_.parameters:
+                    free_state.append(parameter.free)
+                    if component_ is not self.component:
+                        parameter.free = False
+
+        # Setting reasonable initial value for parameters through
+        # the components estimate_parameters function (if it has one)
+        only_current = self.only_current
+        if self.estimate_parameters:
+            if hasattr(self.component, 'estimate_parameters'):
+                if (self.signal_range != "interactive" and
+                        self.signal_range is not None):
+                    self.component.estimate_parameters(
+                        self.signal,
+                        self.signal_range[0],
+                        self.signal_range[1],
+                        only_current=only_current)
+                elif self.signal_range == "interactive":
+                    self.component.estimate_parameters(
+                        self.signal,
+                        self.ss_left_value,
+                        self.ss_right_value,
+                        only_current=only_current)
+
+        if only_current:
+            self.model.fit(**self.fit_kwargs)
+        else:
+            self.model.multifit(**self.fit_kwargs)
+
+        # Restore the signal range
+        if self.signal_range is not None:
+            self.model.channel_switches = (
+                self.model.backup_channel_switches.copy())
+
+        self.model.update_plot()
+
+        if self.fit_independent:
+            for component_ in self.model:
+                component_.active = active_state.pop(0)
+        else:
+            # Restore the "free state" of the components
+            for component_ in self.model:
+                for parameter in component_.parameters:
+                    parameter.free = free_state.pop(0)
+
+    def apply(self):
+        self._fit_fired()
 
 
 class Model1D(BaseModel):
@@ -209,6 +312,7 @@ class Model1D(BaseModel):
 
     @signal.setter
     def signal(self, value):
+        from hyperspy._signals.signal1d import Signal1D
         if isinstance(value, Signal1D):
             self._signal = value
         else:
@@ -364,10 +468,12 @@ class Model1D(BaseModel):
         E1 : None or float
         E2 : None or float
 
-        Notes
-        -----
-        To use the full energy range call the function without arguments.
         """
+        try:
+            x1, x2 = signal_range_from_roi(x1)
+        except TypeError:
+            # It was not a ROI, we carry on
+            pass
         i1, i2 = self.axis.value_range_to_indices(x1, x2)
         self._set_signal_range_in_pixels(i1, i2)
 
@@ -394,6 +500,11 @@ class Model1D(BaseModel):
         x2 : None or float
 
         """
+        try:
+            x1, x2 = signal_range_from_roi(x1)
+        except TypeError:
+            # It was not a ROI, we carry on
+            pass
         i1, i2 = self.axis.value_range_to_indices(x1, x2)
         self._remove_signal_range_in_pixels(i1, i2)
 
@@ -424,6 +535,11 @@ class Model1D(BaseModel):
         x2 : None or float
 
         """
+        try:
+            x1, x2 = signal_range_from_roi(x1)
+        except TypeError:
+            # It was not a ROI, we carry on
+            pass
         i1, i2 = self.axis.value_range_to_indices(x1, x2)
         self._add_signal_range_in_pixels(i1, i2)
 
@@ -758,8 +874,21 @@ class Model1D(BaseModel):
             estimate_parameters=True,
             fit_independent=False,
             only_current=True,
+            display=True,
+            toolkit=None,
             **kwargs):
-        """Fit just the given component in the given signal range.
+        signal_range = signal_range_from_roi(signal_range)
+        component = self._get_component(component)
+        cf = ComponentFit(self, component, signal_range,
+                          estimate_parameters, fit_independent,
+                          only_current, **kwargs)
+        if signal_range == "interactive":
+            return cf.gui(display=display, toolkit=toolkit)
+        else:
+            cf.apply()
+    fit_component.__doc__ = \
+        """
+        Fit just the given component in the given signal range.
 
         This method is useful to obtain starting parameters for the
         components. Any keyword arguments are passed to the fit method.
@@ -781,6 +910,8 @@ class Model1D(BaseModel):
         fit_independent : bool, default False
             If True, all other components are disabled. If False, all other
             component paramemeters are fixed.
+        %s
+        %s
 
         Examples
         --------
@@ -796,12 +927,4 @@ class Model1D(BaseModel):
 
         >>> m.fit_component(g1, signal_range=(1,7))
 
-        """
-        component = self._get_component(component)
-        cf = ComponentFit(self, component, signal_range,
-                          estimate_parameters, fit_independent,
-                          only_current, **kwargs)
-        if signal_range == "interactive":
-            cf.edit_traits()
-        else:
-            cf.apply()
+        """ % (DISPLAY_DT, TOOLKIT_DT)

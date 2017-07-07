@@ -238,3 +238,19 @@ def test_new_axes(parallel):
     assert not 'a' in ax_names
     assert not 'b' in ax_names
     assert 0 == sl.axes_manager.navigation_dimension
+
+
+def test_singleton():
+    sig = hs.signals.Signal2D(np.empty((3, 2)))
+    sig.axes_manager[0].name = 'x'
+    sig.axes_manager[1].name = 'y'
+
+    # One without arguments
+    sig1 = sig.map(lambda x: 3, inplace=False)
+    sig2 = sig.map(np.sum, inplace=False)
+    sig.map(np.sum)
+    for _s in (sig1, sig2, sig):
+        assert len(_s.axes_manager._axes) == 1
+        assert _s.axes_manager[0].name == 'Scalar'
+        assert isinstance(_s, hs.signals.BaseSignal)
+        assert not isinstance(_s, hs.signals.Signal1D)
