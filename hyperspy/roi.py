@@ -1090,20 +1090,17 @@ class Line2DROI(BaseInteractiveROI):
 
         """
         import scipy.ndimage as nd
-        # Get points coordinates in pixels
+        # Convert points coordinates from axes units to pixels
         p0 = ((src[0] - axes[0].offset) / axes[0].scale,
               (src[1] - axes[1].offset) / axes[1].scale)
         p1 = ((dst[0] - axes[0].offset) / axes[0].scale,
               (dst[1] - axes[1].offset) / axes[1].scale)
-        if linewidth == 0:
-            linewidth_px = 1
-        else:
-            if linewidth < 0:
-                raise ValueError("linewidth must be positive number")
-            linewidth_px = self.linewidth / np.min([ax.scale for ax in axes])
-            linewidth_px = int(round(linewidth_px))
-            # Minimum size 1 pixel
-            linewidth_px = linewidth_px if linewidth_px >= 1 else 1
+        if linewidth < 0:
+            raise ValueError("linewidth must be positive number")
+        linewidth_px = linewidth / np.min([ax.scale for ax in axes])
+        linewidth_px = int(round(linewidth_px))
+        # Minimum size 1 pixel
+        linewidth_px = linewidth_px if linewidth_px >= 1 else 1
         perp_lines = Line2DROI._line_profile_coordinates(p0, p1,
                                                          linewidth=linewidth_px)
         if img.ndim > 2:
@@ -1167,7 +1164,7 @@ class Line2DROI(BaseInteractiveROI):
                                          (self.x1, self.y1),
                                          (self.x2, self.y2),
                                          axes=axes,
-                                         linewidth=linewidth,
+                                         linewidth=self.linewidth,
                                          order=order)
         length = np.linalg.norm(np.diff(
             np.array(((self.x1, self.y1), (self.x2, self.y2))), axis=0),

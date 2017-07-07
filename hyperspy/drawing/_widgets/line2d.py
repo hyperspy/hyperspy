@@ -115,10 +115,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         Calls _size_changed to handle size change, if the value has changed.
 
         """
-        try:
-            value = value.pop()
-        except AttributeError:
-            pass
+        value = value[0]
         if value < 0:
             value = 0
         elif value:
