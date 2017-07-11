@@ -2814,12 +2814,6 @@ class BaseSignal(FancySlicing,
     def _apply_function_on_data_and_remove_axis(self, function, axes,
                                                 out=None, roi=None,
                                                 transpose=False):
-        if roi is None:
-            return _apply_function_on_data_and_remove_axis(signal=self,
-                                                           function=function,
-                                                           axes=axes,
-                                                           out=out,
-                                                           transpose=transpose)
         # Get the axes indices
         if axes == 'navigation':
             axes = self.axes_manager.navigation_axes
@@ -2830,11 +2824,22 @@ class BaseSignal(FancySlicing,
                 self.plot(navigator='spectrum')
         elif axes == 'signal':
             axes = self.axes_manager.signal_axes
+            # if we perform the operation over all signal axes, the return
+            # signal should a signal only, therefore, we need to transpose
+            transpose = True
+        if roi is None:
+            return _apply_function_on_data_and_remove_axis(signal=self,
+                                                           function=function,
+                                                           axes=axes,
+                                                           out=out,
+                                                           transpose=transpose)
         axes = [axis.index_in_axes_manager for axis in axes]
         if isiterable(roi):
             self._signal_roi = []
             self._roi_operation_signal = []
             for r in roi:
+                if len(axes) != r.ndim:
+                    _logger.warning("Please check the dimension of the roi.")
                 self._signal_roi.append(interactive(
                     r, signal=self, event=r.events.changed))
                 self._roi_operation_signal.append(interactive(
@@ -2880,7 +2885,7 @@ class BaseSignal(FancySlicing,
                 self._signal_roi._apply_function_on_data_and_remove_axis,
                 function=function,
                 axes=axes,
-                transpose=True)
+                transpose=transpose)
             self._roi_operation_signal.plot()
 
     def sum(self, axis=None, out=None, roi=None):

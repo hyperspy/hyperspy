@@ -11,10 +11,11 @@ ONE_AXIS_PARAMETER = \
 MANY_AXIS_PARAMETER = \
     """: {int | string | axis | tuple | None}
             Either one on its own, or many axes in a tuple can be passed. In
-            both cases the axes can be passed directly, or specified using the
-            index in `axes_manager` or the name of the axis. Any duplicates are
-            removed. If None, the operation is performed over all navigation
-            axes (default)."""
+            both cases the axes can be passed directly, or specified using the 
+            index in `axes_manager` or the name of the axis.  Any duplicates 
+            are removed. If string, it can also be `signal` or `navigation` 
+            and performed over all signal or navigation axes. If None, the 
+            operation is performed over all navigation axes (default)."""
 
 OUT_ARG = \
     """out : {Signal, None}
@@ -34,4 +35,5 @@ ROI_ARG = \
             If None, the operation is performed over the whole dataset.
             If True, a roi is added to the plot.
             If a roi or a list of is passed, the operation is performed only 
-            over the roi(s)."""
+            over the roi(s). The dimension of the roi should be compatible 
+            with the axis argument (if provided)."""
