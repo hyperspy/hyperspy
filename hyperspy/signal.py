@@ -2814,6 +2814,9 @@ class BaseSignal(FancySlicing,
     def _apply_function_on_data_and_remove_axis(self, function, axes,
                                                 out=None, roi=None,
                                                 transpose=False):
+        # Is plot open?
+        not_plotted = (
+            self._plot and self._plot.signal_plot and self._plot.navigator_plot) is None
         # Get the axes indices
         if axes == 'navigation':
             axes = self.axes_manager.navigation_axes
@@ -2851,16 +2854,23 @@ class BaseSignal(FancySlicing,
             event_list = [r.events.changed for r in roi]
             # Get stack
             self._roi_operation_signal_stack = interactive(
-                stack, signal_list=self._roi_operation_signal,
+                stack,
+                signal_list=self._roi_operation_signal,
                 event=event_list)
             # Apply function to stack
             self._roi_operation_signal_stack_sum = interactive(
                 self._roi_operation_signal_stack._apply_function_on_data_and_remove_axis,
-                function=function, axes=0, transpose=transpose, event=event_list)
-            self._roi_operation_signal_stack_sum.plot()
+                function=function,
+                axes=0,
+                out=out,
+                transpose=transpose,
+                event=event_list)
+            if not not_plotted:
+                self._roi_operation_signal_stack_sum.plot()
+            return self._roi_operation_signal_stack_sum
         elif roi is True:
             # check if the plot is open
-            if (self._plot and self._plot.signal_plot and self._plot.navigator_plot) is None:
+            if not_plotted:
                 raise RuntimeError("To use the roi option, the signal needs "
                                    "to be plotted first.")
 
@@ -2886,7 +2896,9 @@ class BaseSignal(FancySlicing,
                 function=function,
                 axes=axes,
                 transpose=transpose)
-            self._roi_operation_signal.plot()
+            if not not_plotted:
+                self._roi_operation_signal.plot()
+            return self._roi_operation_signal
 
     def sum(self, axis=None, out=None, roi=None):
         """Sum the data over the given axes.
