@@ -478,9 +478,9 @@ def save(filename, signal, overwrite=None, **kwds):
         ensure_directory(filename)
         if overwrite is None:
             overwrite = overwrite_method(filename)
-		if overwrite is False:
-			if not os.path.isfile(filename):
-				overwrite = True
+        if overwrite is False:
+            if not os.path.isfile(filename):
+                overwrite = True
         if overwrite is True:
             writer.file_writer(filename, signal, **kwds)
             _logger.info('The %s file was created' % filename)
