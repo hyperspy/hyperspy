@@ -684,7 +684,7 @@ def plot_images(images,
         if len(label_list) > n:
             del label_list[n:]
         if len(label_list) < n:
-            label_list *= (n / len(label_list)) + 1
+            label_list *= (n // len(label_list)) + 1
             del label_list[n:]
 
     else:
