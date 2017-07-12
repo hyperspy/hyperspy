@@ -29,6 +29,7 @@ from hyperspy.events import Event, Events
 class Signal1DFigure(BlittedFigure):
 
     """
+    Signal1DFigure has also an 'axis' property that has to be properly defined avec initialization
     """
 
     def __init__(self, title=""):
