@@ -48,7 +48,7 @@ import hyperspy.Release as Release
 
 install_req = ['scipy>=0.15',
                'matplotlib>=1.2',
-               'numpy>=1.10',
+               'numpy>=1.10, !=1.13.0',
                'traits>=4.5.0',
                'natsort',
                'requests',
