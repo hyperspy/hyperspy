@@ -10,6 +10,7 @@ import pytest
 from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.signal_tools import SpikesRemoval
+from hyperspy.components1d import Gaussian
 
 
 def _verify_test_sum_x_E(self, s):
@@ -18,6 +19,22 @@ def _verify_test_sum_x_E(self, s):
     # Check that there is still one signal axis.
     assert s.axes_manager.signal_dimension == 1
 
+
+@lazifyTestClass
+class Test1D:
+
+    def setup_method(self, method):
+        gaussian = Gaussian()
+        gaussian.A.value = 20
+        gaussian.sigma.value = 10
+        gaussian.centre.value = 50
+        self.signal = signals.Signal1D(gaussian.function(np.arange(0, 100, 0.01)))
+        self.signal.axes_manager[0].scale = 0.01
+
+    def test_integrate1D(self):
+        integrated_signal = self.signal.integrate1D(axis=0)
+        assert np.allclose(integrated_signal.data, 20,)
+        
 
 @lazifyTestClass
 class Test2D:
