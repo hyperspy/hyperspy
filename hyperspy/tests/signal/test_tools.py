@@ -2,12 +2,11 @@ from unittest import mock
 import sys
 
 import numpy as np
-import numpy.random
 import dask.array as da
 from numpy.testing import assert_array_equal, assert_allclose
 import pytest
 
-from hyperspy import signals
+from hyperspy import signals, roi
 from hyperspy.decorators import lazifyTestClass
 from hyperspy.signal_tools import SpikesRemoval
 
@@ -168,16 +167,7 @@ class Test2D:
         np.testing.assert_array_equal(result, np.angle(self.signal.data))
 
 
-def _test_default_navigation_signal_operations_over_many_axes(self, op):
-    s = getattr(self.signal, op)()
-    ar = getattr(self.data, op)(axis=(0, 1))
-    np.testing.assert_array_equal(ar, s.data)
-    assert s.data.ndim == 1
-    assert s.axes_manager.signal_dimension == 1
-    assert s.axes_manager.navigation_dimension == 0
-
-
-@lazifyTestClass
+#@lazifyTestClass
 class Test3D:
 
     def setup_method(self, method):
@@ -186,18 +176,25 @@ class Test3D:
         self.signal.axes_manager[1].name = "y"
         self.signal.axes_manager[2].name = "E"
         self.signal.axes_manager[0].scale = 0.5
-        self.data = self.signal.data.copy()
+        # BUG?: see #1693
+        self.signal.axes_manager[1].scale = 1      
 
-    def test_indexmin(self):
-        s = self.signal.indexmin('E')
+        self.data = self.signal.data.copy()
+        self.roi_sig = roi.SpanROI(4, 6)
+        self.roi_nav = roi.RectangularROI(0, 0, 1.5, 0.5)
+
+    @pytest.mark.parametrize("axis", ('E', 'signal'))
+    def test_indexmin(self, axis):
+        s = self.signal.indexmin(axis)
         ar = self.data.argmin(2)
         np.testing.assert_array_equal(ar, s.data)
         assert s.data.ndim == 2
         assert s.axes_manager.signal_dimension == 0
         assert s.axes_manager.navigation_dimension == 2
 
-    def test_indexmax(self):
-        s = self.signal.indexmax('E')
+    @pytest.mark.parametrize("axis", ('E', 'signal'))      
+    def test_indexmax(self, axis):
+        s = self.signal.indexmax(axis)
         ar = self.data.argmax(2)
         np.testing.assert_array_equal(ar, s.data)
         assert s.data.ndim == 2
@@ -211,7 +208,7 @@ class Test3D:
         assert s.data.ndim == 2
         assert s.axes_manager.signal_dimension == 1
         assert s.axes_manager.navigation_dimension == 1
-
+   
     def test_valuemax(self):
         s = self.signal.valuemax('x')
         ar = self.signal.axes_manager['x'].index2value(self.data.argmax(1))
@@ -220,24 +217,43 @@ class Test3D:
         assert s.axes_manager.signal_dimension == 1
         assert s.axes_manager.navigation_dimension == 1
 
-    def test_default_navigation_sum(self):
-        _test_default_navigation_signal_operations_over_many_axes(self, 'sum')
+    @pytest.mark.parametrize("op", ('sum', 'max', 'min', 'mean', 'std', 'var'))
+    def test_default_op(self, op):
+        s = getattr(self.signal, op)()
+        ar = getattr(self.data, op)(axis=(0, 1))
+        np.testing.assert_array_equal(ar, s.data)
+        assert s.data.ndim == 1
+        assert s.axes_manager.signal_dimension == 1
+        assert s.axes_manager.navigation_dimension == 0
 
-    def test_default_navigation_max(self):
-        _test_default_navigation_signal_operations_over_many_axes(self, 'max')
+    @pytest.mark.parametrize("op", ('sum', 'max', 'min', 'mean', 'std', 'var'))
+    def test_op_over_signal_axes(self, op):
+        s = getattr(self.signal, op)(axis='signal')
+        ar = getattr(self.data, op)(axis=2)
+        np.testing.assert_array_equal(ar, s.data)
+        assert s.data.ndim == 2
+        assert s.axes_manager.signal_dimension == 2
+        assert s.axes_manager.navigation_dimension == 0
 
-    def test_default_navigation_min(self):
-        _test_default_navigation_signal_operations_over_many_axes(self, 'min')
+    @pytest.mark.parametrize("op", ('sum', 'max', 'min', 'mean', 'std', 'var'))
+    def test_op_over_navigation_axes(self, op):
+        s = getattr(self.signal, op)(axis='navigation')
+        ar = getattr(self.data, op)(axis=(0, 1))
+        np.testing.assert_array_equal(ar, s.data)
+        assert s.data.ndim == 1
+        assert s.axes_manager.signal_dimension == 1
+        assert s.axes_manager.navigation_dimension == 0
 
-    def test_default_navigation_mean(self):
-        _test_default_navigation_signal_operations_over_many_axes(self, 'mean')
-
-    def test_default_navigation_std(self):
-        _test_default_navigation_signal_operations_over_many_axes(self, 'std')
-
-    def test_default_navigation_var(self):
-        _test_default_navigation_signal_operations_over_many_axes(self, 'var')
-
+    @pytest.mark.parametrize("op", ('sum', 'max', 'min', 'mean', 'std', 'var'))
+    def test_op_roi(self, op):
+        self.signal.plot()
+        s = getattr(self.signal, op)(roi=self.roi_nav)
+        ar = getattr(self.data[:1, :3, :], op)(axis=(0, 1))
+        np.testing.assert_array_equal(ar, s.data)
+        assert s.data.ndim == 1
+        assert s.axes_manager.signal_dimension == 1
+        assert s.axes_manager.navigation_dimension == 0
+        
     def test_rebin(self):
         self.signal.estimate_poissonian_noise_variance()
         new_s = self.signal.rebin(scale=(2, 2, 1))

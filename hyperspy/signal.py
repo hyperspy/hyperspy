@@ -2813,7 +2813,7 @@ class BaseSignal(FancySlicing,
 
     def _apply_function_on_data_and_remove_axis(self, function, axes,
                                                 out=None, roi=None,
-                                                transpose=False):
+                                                transpose=None):
         # Is plot open?
         not_plotted = (
             self._plot and self._plot.signal_plot and self._plot.navigator_plot) is None
@@ -2827,9 +2827,10 @@ class BaseSignal(FancySlicing,
                 self.plot(navigator='spectrum')
         elif axes == 'signal':
             axes = self.axes_manager.signal_axes
-            # if we perform the operation over all signal axes, the return
-            # signal should a signal only, therefore, we need to transpose
-            transpose = True
+            if transpose is None:
+                # if we perform the operation over all signal axes, the return
+                # signal should a signal only, therefore, we need to transpose
+                transpose = True
         if roi is None:
             return _apply_function_on_data_and_remove_axis(signal=self,
                                                            function=function,
@@ -2858,7 +2859,7 @@ class BaseSignal(FancySlicing,
                 signal_list=self._roi_operation_signal,
                 event=event_list)
             # Apply function to stack
-            self._roi_operation_signal_stack_sum = interactive(
+            self._roi_operation_signal_stack_function = interactive(
                 self._roi_operation_signal_stack._apply_function_on_data_and_remove_axis,
                 function=function,
                 axes=0,
@@ -2866,8 +2867,8 @@ class BaseSignal(FancySlicing,
                 transpose=transpose,
                 event=event_list)
             if not not_plotted:
-                self._roi_operation_signal_stack_sum.plot()
-            return self._roi_operation_signal_stack_sum
+                self._roi_operation_signal_stack_function.plot()
+            return self._roi_operation_signal_stack_function
         elif roi is True:
             # check if the plot is open
             if not_plotted:
@@ -2889,8 +2890,7 @@ class BaseSignal(FancySlicing,
                             "check the type of the roi option.")
 
         if not isiterable(roi):
-            self._signal_roi = interactive(
-                roi, signal=self, event=roi.events.changed)
+            self._signal_roi = roi.interactive(signal=self)
             self._roi_operation_signal = interactive(
                 self._signal_roi._apply_function_on_data_and_remove_axis,
                 function=function,
@@ -3335,7 +3335,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, mean, std, var, valuemax
+        max, min, sum, mean, std, var, valuemin, valuemax, indexmax
 
         Usage
         -----
@@ -3349,7 +3349,8 @@ class BaseSignal(FancySlicing,
         """
         return self._apply_function_on_data_and_remove_axis(np.argmin, axis,
                                                             out=out,
-                                                            roi=roi)
+                                                            roi=roi,
+                                                            transpose=False)
     indexmin.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, ROI_ARG)
 
     def indexmax(self, axis, out=None, roi=None):
@@ -3368,7 +3369,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, mean, std, var, valuemax
+        max, min, sum, mean, std, var, valuemin, valuemax, indexmin
 
         Usage
         -----
@@ -3382,7 +3383,8 @@ class BaseSignal(FancySlicing,
         """
         return self._apply_function_on_data_and_remove_axis(np.argmax, axis,
                                                             out=out,
-                                                            roi=roi)
+                                                            roi=roi,
+                                                            transpose=False)
     indexmax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, ROI_ARG)
 
     def valuemax(self, axis, out=None):
@@ -3399,7 +3401,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, mean, std, var, indexmax
+        max, min, sum, mean, std, var, valuemin, indexmin, indexmax
 
         Usage
         -----
@@ -3435,7 +3437,7 @@ class BaseSignal(FancySlicing,
 
         See also
         --------
-        max, min, sum, mean, std, var, indexmax
+        max, min, sum, mean, std, var, valuemax, indexmin, indexmax
 
         """
         idx = self.indexmin(axis)
