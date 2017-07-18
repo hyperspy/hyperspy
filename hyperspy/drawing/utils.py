@@ -1081,6 +1081,10 @@ def plot_spectra(
                            line_style=line_style,)
         if legend is not None:
             plt.legend(legend, loc=legend_loc)
+            l = ax.get_legend()
+            labels = [lb.get_text() for lb in list(l.get_texts())]
+            handles = l.legendHandles
+            ax.legend(handles[::-1], labels[::-1], loc=legend_loc)
             if legend_picking is True:
                 animate_legend(figure=fig)
     elif style == 'cascade':
@@ -1095,6 +1099,10 @@ def plot_spectra(
                               padding=padding)
         if legend is not None:
             plt.legend(legend, loc=legend_loc)
+            l = ax.get_legend()
+            labels = [lb.get_text() for lb in list(l.get_texts())]
+            handles = l.legendHandles
+            ax.legend(handles[::-1], labels[::-1], loc=legend_loc)
     elif style == 'mosaic':
         default_fsize = plt.rcParams["figure.figsize"]
         figsize = (default_fsize[0], default_fsize[1] * len(spectra))
