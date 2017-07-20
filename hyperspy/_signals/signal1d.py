@@ -1000,7 +1000,7 @@ _spikes_diagnosis,
 
     def _remove_background_cli(
             self, signal_range, background_estimator, fast=True,
-            show_progressbar=None):
+            zero_fill=False, show_progressbar=None):
         signal_range = signal_range_from_roi(signal_range)
         from hyperspy.models.model1d import Model1D
         model = Model1D(self)
@@ -1013,7 +1013,10 @@ _spikes_diagnosis,
         if not fast:
             model.set_signal_range(signal_range[0], signal_range[1])
             model.multifit(show_progressbar=show_progressbar)
-        return self - model.as_signal(show_progressbar=show_progressbar)
+        result = self - model.as_signal(show_progressbar=show_progressbar)
+        if zero_fill:
+            result.isig[:signal_range[0]] = 0
+        return result
 
     def remove_background(
             self,
@@ -1021,6 +1024,7 @@ _spikes_diagnosis,
             background_type='PowerLaw',
             polynomial_order=2,
             fast=True,
+            zero_fill=False,
             show_progressbar=None, display=True, toolkit=None):
         signal_range = signal_range_from_roi(signal_range)
         self._check_signal_dimension_equals_one()
@@ -1046,6 +1050,7 @@ _spikes_diagnosis,
                 signal_range=signal_range,
                 background_estimator=background_estimator,
                 fast=fast,
+                zero_fill=zero_fill,
                 show_progressbar=show_progressbar)
             return spectra
     remove_background.__doc__ = \
@@ -1069,6 +1074,12 @@ _spikes_diagnosis,
             If False, the signal is fitted using non-linear least squares
             afterwards.This is slower compared to the estimation but
             possibly more accurate.
+        zero_fill : bool
+            If True, all spectral channels lower than the lower bound of the
+            fitting range will be set to zero (this is the default behavior 
+            of Gatan's DigitalMicrograph). Setting this value to False 
+            allows for inspection of the quality of background fit throughout 
+            the pre-fitting region. 
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.

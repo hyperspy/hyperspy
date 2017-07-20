@@ -646,8 +646,16 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
     polynomial_order = t.Range(1, 10)
     fast = t.Bool(True,
                   desc=("Perform a fast (analytic, but possibly less accurate)"
-                        " estimation of the background. Otherwise use "
-                        "non-linear least squares."))
+                        " estimation \nof the background. "
+                        "Otherwise use non-linear least "
+                        "squares."))
+    zero_fill = t.Bool(
+                 False,
+                 desc=("Set all spectral channels lower than the lower \n"
+                       "bound of the fitting range to zero (this is the \n"
+                       "default behavior of Gatan's DigitalMicrograph). \n"
+                       "Otherwise leave the pre-fitting region as-is \n"
+                       "(useful for inspecting quality of background fit)."))
     background_estimator = t.Instance(Component)
     bg_line_range = t.Enum('from_left_range',
                            'full',
@@ -763,6 +771,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             signal_range=(self.ss_left_value, self.ss_right_value),
             background_type=background_type,
             fast=self.fast,
+            zero_fill=self.zero_fill,
             polynomial_order=self.polynomial_order)
         self.signal.data = new_spectra.data
         self.signal.events.data_changed.trigger(self)
