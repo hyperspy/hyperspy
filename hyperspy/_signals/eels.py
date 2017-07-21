@@ -490,6 +490,8 @@ class EELSSpectrum_mixin:
             tol = np.max(np.abs(s.data).min(axis.index_in_array))
         saxis = s.axes_manager[-1]
         inflexion = (np.abs(s.data) <= tol).argmax(saxis.index_in_array)
+        if isinstance(inflexion, da.Array):
+            inflexion = inflexion.compute()
         threshold.data[:] = saxis.index2value(inflexion)
         if isinstance(inflexion, np.ndarray):
             threshold.data[inflexion == 0] = np.nan
