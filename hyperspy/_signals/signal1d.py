@@ -1015,7 +1015,13 @@ _spikes_diagnosis,
             model.multifit(show_progressbar=show_progressbar)
         result = self - model.as_signal(show_progressbar=show_progressbar)
         if zero_fill:
-            result.isig[:signal_range[0]] = 0
+            if self._lazy:
+                low_idx = result.axes_manager[-1].value2index(signal_range[0])
+                z = da.zeros(low_idx, chunks=(low_idx,))
+                cropped_da = result.data[low_idx:]
+                result.data = da.concatenate([z, cropped_da])
+            else:
+                result.isig[:signal_range[0]] = 0
         return result
 
     def remove_background(
