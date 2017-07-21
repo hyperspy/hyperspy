@@ -38,8 +38,6 @@ from hyperspy.misc.utils import signal_range_from_roi
 @add_gui_method(toolkey="Model1D.fit_component")
 class ComponentFit(SpanSelectorInSignal1D):
 
-    only_current = t.Bool(True)
-
     def __init__(self, model, component, signal_range=None,
                  estimate_parameters=True, fit_independent=False,
                  only_current=True, **kwargs):
@@ -56,6 +54,7 @@ class ComponentFit(SpanSelectorInSignal1D):
         self.estimate_parameters = estimate_parameters
         self.fit_independent = fit_independent
         self.fit_kwargs = kwargs
+        self.only_current = only_current
         if signal_range == "interactive":
             if not hasattr(self.model, '_plot'):
                 self.model.plot()
