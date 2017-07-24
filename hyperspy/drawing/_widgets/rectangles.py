@@ -144,14 +144,23 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         x, y, w, h = self._parse_bounds_args(args, kwargs)
         offset = [axis.scale for axis in self.axes]
 
-        if not (self.axes[0].low_value <= x <= self.axes[0].high_value):
-            raise ValueError('`left` value is not in range.')
-        if not (self.axes[1].low_value <= y <= self.axes[1].high_value):
-            raise ValueError('`top` value is not in range.')
-        if not (self.axes[0].low_value <= x + w <= self.axes[0].high_value + offset[0]):
-            raise ValueError('`width` or `right` value is not in range.')
-        if not (self.axes[1].low_value <= y + h <= self.axes[1].high_value + offset[1]):
-            raise ValueError('`height` or `bottom` value is not in range.')
+        l0, h0 = self.axes[0].low_value, self.axes[0].high_value
+        l1, h1 = self.axes[1].low_value, self.axes[1].high_value
+
+        if not (l0 <= x <= h0):
+            raise ValueError('`left` value is not in range. `left` is {} and '
+                             'should be in range {}-{}.'.format(x, l0, h0))
+        if not (l1 <= y <= h1):
+            raise ValueError('`top` value is not in range. `top` is {} and '
+                             'should be in range {}-{}.'.format(x, l1, h1))
+        if not (l0 <= x + w <= h0 + offset[0]):
+            raise ValueError('`width` or `right` value is not in range. The '
+                             '`width` is {} and should be in range'
+                             '{}-{}.'.format(x + w, l0, h0 + offset[0]))
+        if not (l1 <= y + h <= h1 + offset[1]):
+            raise ValueError('`height` or `bottom` value is not in range. The '
+                             '`height` is {} and should be in range '
+                             '{}-{}.'.format(y + w, l1, h1 + offset[1]))
 
         old_position, old_size = self.position, self.size
         self._pos = np.array([x, y])

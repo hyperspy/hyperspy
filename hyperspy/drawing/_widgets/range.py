@@ -142,12 +142,15 @@ class RangeWidget(ResizableDraggableWidgetBase):
         """
 
         x, w = self._parse_bounds_args(args, kwargs)
+        l0, h0 = self.axes[0].low_value, self.axes[0].high_value
 
-        if not (self.axes[0].low_value <= x <= self.axes[0].high_value):
-            raise ValueError('`left` value is not in range.')
-        if not (self.axes[0].low_value <= x + w <= self.axes[0].high_value +
-                self.axes[0].scale):
-            raise ValueError('`width` or `right` value is not in range.')
+        if not (l0 <= x <= h0):
+            raise ValueError('`left` value is not in range. `left` is {} and '
+                             'should be in range {}-{}.'.format(x, l0, h0))
+        if not (l0 <= x + w <= h0 + self.axes[0].scale):
+            raise ValueError('`width` or `right` value is not in range. The '
+                             '`width` is {} and should be in range {}-{}.'
+                             ''.format(x + w, l0, h0 + self.axes[0].scale))
 
         old_position, old_size = self.position, self.size
         self._pos = np.array([x])

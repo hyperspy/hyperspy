@@ -83,6 +83,21 @@ class TestROIs():
         np.testing.assert_equal(
             sr.data, s.data[:, int(15 / scale):int(30 // scale), ...])
 
+    def test_span_spectrum_nav_boundary_roi(self, mpl_cleanup):
+        s = Signal1D(np.random.rand(60, 4))
+        r = SpanROI(0, 60)
+        # Test adding roi to plot
+        s.plot(navigator='spectrum')
+        r.add_widget(s)
+        np.testing.assert_equal(r(s).data, s.data)
+
+        s.axes_manager[0].scale = 0.2
+        r2 = SpanROI(0, 12)
+        # Test adding roi to plot
+        s.plot()
+        r2.add_widget(s)
+        np.testing.assert_equal(r2(s).data, s.data)
+
     def test_span_spectrum_sig(self):
         s = self.s_s
         r = SpanROI(1, 3)
@@ -107,6 +122,22 @@ class TestROIs():
                 (n[0][1] - n[0][0], n[1][1] - n[1][0]))
         np.testing.assert_equal(
             sr.data, s.data[n[1][0]:n[1][1], n[0][0]:n[0][1], ...])
+
+    def test_rect_image_boundary_roi(self, mpl_cleanup):
+        s = self.s_i
+        r = RectangularROI(0, 0, 100, 100)
+        # Test adding roi to plot
+        s.plot()
+        r.add_widget(s)
+        np.testing.assert_equal(r(s).data, s.data)
+
+        s.axes_manager[0].scale = 0.2
+        s.axes_manager[1].scale = 0.8
+        r2 = RectangularROI(0, 0, 20, 80)
+        # Test adding roi to plot
+        s.plot()
+        r2.add_widget(s)
+        np.testing.assert_equal(r2(s).data, s.data)
 
     def test_circle_spec(self):
         s = self.s_s
