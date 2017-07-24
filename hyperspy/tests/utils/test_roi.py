@@ -131,25 +131,61 @@ class TestROIs():
         s.plot()
         w = r.add_widget(s)
         np.testing.assert_equal(r(s).data, s.data)
-        # width and height should range between 1 and axes shape - 1
-        w.width = 1
-        w.width = 99
-        w.height = 1
-        w.height = 99
+
+        # width and height should range between 1 and axes shape
         with pytest.raises(ValueError):
-            w.width = 0
-            w.height = 0
+            w.width = 101
         with pytest.raises(ValueError):
-            w.width = 100
-            w.height = 100
+            w.height = 101
 
         s.axes_manager[0].scale = 0.2
         s.axes_manager[1].scale = 0.8
         r2 = RectangularROI(0, 0, 20, 80)
         # Test adding roi to plot
         s.plot()
-        r2.add_widget(s)
+        w2 = r2.add_widget(s)
         np.testing.assert_equal(r2(s).data, s.data)
+
+        w2.set_bounds(x=-10)  #  below min x
+        assert w2._pos[0] == 0
+        w2.set_bounds(width=0.1)  # below min width
+        assert w2._size[0] == 0.2
+        w2.set_bounds(width=30.0)  # above max width
+        assert w2._size[0] == 20
+
+        w2.set_bounds(y=0)  # min y
+        w2.set_bounds(height=0.7)  # below min height
+        assert w2._size[1] == 0.8
+        w2.set_bounds(height=90.0)  # about max height
+        assert w2._size[1] == 80.0
+
+        # by indices
+        # width and height should range between 1 and axes shape
+        with pytest.raises(ValueError):
+            w2.width = 0
+        with pytest.raises(ValueError):
+            w2.height = 0
+        with pytest.raises(ValueError):
+            w2.width = 101
+        with pytest.raises(ValueError):
+            w2.height = 101
+
+        w2.set_bounds(x=10, width=20)
+        assert w2._pos[0] == 10
+        assert w2._size[0] == 10
+
+        w2.set_bounds(y=40, height=60)
+        assert w2._pos[1] == 40
+        assert w2._size[1] == 40
+
+        w2.set_bounds(x=10)
+        w2.set_bounds(width=20)
+        assert w2._pos[0] == 10
+        assert w2._size[0] == 10
+        w2.set_bounds(y=10)
+        w2.set_bounds(height=79.2)
+        assert w2._pos[1] == 10
+        assert w2._size[1] == 70
 
     def test_circle_spec(self):
         s = self.s_s

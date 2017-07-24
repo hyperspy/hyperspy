@@ -18,8 +18,12 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import logging
 
 from hyperspy.drawing.widgets import Widget2DBase, ResizersMixin
+
+
+_logger = logging.getLogger(__name__)
 
 
 class SquareWidget(Widget2DBase):
@@ -140,27 +144,48 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         If specifying with keywords, any unspecified dimensions will be kept
         constant (note: width/height will be kept, not right/bottom).
         """
-
         x, y, w, h = self._parse_bounds_args(args, kwargs)
-        offset = [axis.scale for axis in self.axes]
 
+        scale = [axis.scale for axis in self.axes]
         l0, h0 = self.axes[0].low_value, self.axes[0].high_value
         l1, h1 = self.axes[1].low_value, self.axes[1].high_value
 
-        if not (l0 <= x <= h0):
-            raise ValueError('`left` value is not in range. `left` is {} and '
-                             'should be in range {}-{}.'.format(x, l0, h0))
-        if not (l1 <= y <= h1):
-            raise ValueError('`top` value is not in range. `top` is {} and '
-                             'should be in range {}-{}.'.format(x, l1, h1))
-        if not (l0 <= x + w <= h0 + offset[0]):
-            raise ValueError('`width` or `right` value is not in range. The '
-                             '`width` is {} and should be in range '
-                             '{}-{}.'.format(x + w, l0, h0 + offset[0]))
-        if not (l1 <= y + h <= h1 + offset[1]):
-            raise ValueError('`height` or `bottom` value is not in range. The '
-                             '`height` is {} and should be in range '
-                             '{}-{}.'.format(y + w, l1, h1 + offset[1]))
+        if x < l0:
+            x = l0
+            _logger.warning('`x` is too small. It is therefore set to its '
+                            'minimal value of {}.'.format(x))
+        elif h0 < x:
+            x = h0 - scale[0]
+            _logger.warning('`x` is too large. It is therefore set to its '
+                            'maximal value of {}.'.format(x))
+        if y < l1:
+            y = l1
+            _logger.warning('`y` is too small. It is therefore set to its '
+                            'minimal value of {}.'.format(y))
+        elif h1 < y:
+            y = h1 - scale[1]
+            _logger.warning('`y` is too large. It is therefore set to its '
+                            'minimal value of {}.'.format(y))
+        if w < scale[0]:
+            w = scale[0]
+            _logger.warning('`width` or `right` value is too small. It is '
+                            'therefore set to its minimal value of '
+                            '{}.'.format(w))
+        elif not (l0 + scale[0] <= x + w <= h0 + scale[0]):
+            w = h0 + scale[0] - x
+            _logger.warning('`width` or `right` value is too large. It is '
+                            'therefore set to its maximal value of '
+                            '{}.'.format(w))
+        if h < scale[1]:
+            h = scale[1]
+            _logger.warning('`height` or `bottom` value is too small. It is '
+                            'therefore set to the minimal value of '
+                            '{}.'.format(h))
+        elif not (l1 + scale[1] <= y + h <= h1 + scale[1]):
+            h = h1 + scale[1] - y
+            _logger.warning('`height` or `bottom` value is too large. It is '
+                            'therefore set to its maximal value of '
+                            '{}.'.format(h))
 
         old_position, old_size = self.position, self.size
         self._pos = np.array([x, y])
@@ -202,8 +227,7 @@ class RectangleWidget(SquareWidget, ResizersMixin):
             return
         iy = self.indices[1] + value
         il1, ih1 = self.axes[1].low_index, self.axes[1].high_index
-        if value <= 0 or \
-                not (il1 < iy <= ih1):
+        if value <= 0 or not (il1 < iy <= ih1):
             raise ValueError('`height` value is not in range. The '
                              '`height` is {} and should be in range '
                              '{}-{}.'.format(iy, il1 + 1, ih1))
