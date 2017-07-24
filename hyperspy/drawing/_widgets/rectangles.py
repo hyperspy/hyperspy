@@ -155,7 +155,7 @@ class RectangleWidget(SquareWidget, ResizersMixin):
                              'should be in range {}-{}.'.format(x, l1, h1))
         if not (l0 <= x + w <= h0 + offset[0]):
             raise ValueError('`width` or `right` value is not in range. The '
-                             '`width` is {} and should be in range'
+                             '`width` is {} and should be in range '
                              '{}-{}.'.format(x + w, l0, h0 + offset[0]))
         if not (l1 <= y + h <= h1 + offset[1]):
             raise ValueError('`height` or `bottom` value is not in range. The '
@@ -185,9 +185,11 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         if value == self.width:
             return
         ix = self.indices[0] + value
-        if value <= 0 or \
-                not (self.axes[0].low_index <= ix <= self.axes[0].high_index):
-            raise ValueError('`width` not in range.')
+        il0, ih0 = self.axes[0].low_index, self.axes[0].high_index
+        if value <= 0 or not (il0 < ix <= ih0):
+            raise ValueError('`width` value is not in range. The '
+                             '`width` is {} and should be in range '
+                             '{}-{}.'.format(ix, il0 + 1, ih0))
         self._set_a_size(0, value)
 
     @property
@@ -199,9 +201,12 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         if value == self.height:
             return
         iy = self.indices[1] + value
+        il1, ih1 = self.axes[1].low_index, self.axes[1].high_index
         if value <= 0 or \
-                not (self.axes[1].low_index <= iy <= self.axes[1].high_index):
-            raise ValueError('`height` not in range.')
+                not (il1 < iy <= ih1):
+            raise ValueError('`height` value is not in range. The '
+                             '`height` is {} and should be in range '
+                             '{}-{}.'.format(iy, il1 + 1, ih1))
         self._set_a_size(1, value)
 
     # --------- Internal functions ---------

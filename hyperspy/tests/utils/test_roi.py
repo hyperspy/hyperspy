@@ -1,6 +1,7 @@
 
 
 import numpy as np
+import pytest
 
 from hyperspy.signals import Signal2D, Signal1D
 from hyperspy.roi import (Point1DROI, Point2DROI, SpanROI, RectangularROI,
@@ -128,8 +129,19 @@ class TestROIs():
         r = RectangularROI(0, 0, 100, 100)
         # Test adding roi to plot
         s.plot()
-        r.add_widget(s)
+        w = r.add_widget(s)
         np.testing.assert_equal(r(s).data, s.data)
+        # width and height should range between 1 and axes shape - 1
+        w.width = 1
+        w.width = 99
+        w.height = 1
+        w.height = 99
+        with pytest.raises(ValueError):
+            w.width = 0
+            w.height = 0
+        with pytest.raises(ValueError):
+            w.width = 100
+            w.height = 100
 
         s.axes_manager[0].scale = 0.2
         s.axes_manager[1].scale = 0.8
