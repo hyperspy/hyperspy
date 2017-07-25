@@ -807,10 +807,14 @@ class ImageObject(object):
             if ImageTags.Session_Info.Microscope != "[]":
                 return ImageTags.Session_Info.Microscope
         except AttributeError:
-            if 'Name' in ImageTags['Microscope_Info'].keys():
-                return ImageTags.Microscope_Info.Name
-            elif 'Microscope' in ImageTags['Microscope_Info'].keys():
-                return ImageTags.Microscope_Info.Microscope
+            try:
+                if 'Name' in ImageTags['Microscope_Info'].keys():
+                    return ImageTags.Microscope_Info.Name
+                elif 'Microscope' in ImageTags['Microscope_Info'].keys():
+                    return ImageTags.Microscope_Info.Microscope
+            except:
+                _logger.info("Microscope name not present")
+                return None
 
     def _parse_string(self, tag):
         if len(tag) == 0:
