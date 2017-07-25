@@ -1,4 +1,20 @@
-
+# -*- coding: utf-8 -*-
+# Copyright 2007-2016 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 import pytest
@@ -96,8 +112,24 @@ class TestROIs():
         r2 = SpanROI(0, 12)
         # Test adding roi to plot
         s.plot()
-        r2.add_widget(s)
+        w2 = r2.add_widget(s)
         np.testing.assert_equal(r2(s).data, s.data)
+
+        w2.set_bounds(x=-10)  # below min x
+        assert w2._pos[0] == 0
+        w2.set_bounds(width=0.1)  # below min width
+        assert w2._size[0] == 0.2
+        w2.set_bounds(width=30.0)  # above max width
+        assert w2._size[0] == 12
+
+        w2.set_bounds(x=10, width=20)
+        assert w2._pos[0] == 10
+        assert w2._size[0] == 2
+
+        w2.set_bounds(x=10)
+        w2.set_bounds(width=20)
+        assert w2._pos[0] == 10
+        assert w2._size[0] == 2
 
     def test_span_spectrum_sig(self):
         s = self.s_s
@@ -146,7 +178,7 @@ class TestROIs():
         w2 = r2.add_widget(s)
         np.testing.assert_equal(r2(s).data, s.data)
 
-        w2.set_bounds(x=-10)  #  below min x
+        w2.set_bounds(x=-10)  # below min x
         assert w2._pos[0] == 0
         w2.set_bounds(width=0.1)  # below min width
         assert w2._size[0] == 0.2

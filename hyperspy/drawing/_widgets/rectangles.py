@@ -154,7 +154,7 @@ class RectangleWidget(SquareWidget, ResizersMixin):
             x = l0
             _logger.warning('`x` is too small. It is therefore set to its '
                             'minimal value of {}.'.format(x))
-        elif h0 < x:
+        elif h0 <= x:
             x = h0 - scale[0]
             _logger.warning('`x` is too large. It is therefore set to its '
                             'maximal value of {}.'.format(x))
@@ -162,7 +162,7 @@ class RectangleWidget(SquareWidget, ResizersMixin):
             y = l1
             _logger.warning('`y` is too small. It is therefore set to its '
                             'minimal value of {}.'.format(y))
-        elif h1 < y:
+        elif h1 <= y:
             y = h1 - scale[1]
             _logger.warning('`y` is too large. It is therefore set to its '
                             'minimal value of {}.'.format(y))

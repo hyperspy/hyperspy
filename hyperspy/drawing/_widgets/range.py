@@ -19,9 +19,13 @@
 
 import numpy as np
 import matplotlib
+import logging
 
 from hyperspy.drawing.widgets import ResizableDraggableWidgetBase
 from hyperspy.events import Events, Event
+
+
+_logger = logging.getLogger(__name__)
 
 
 def in_interval(number, interval):
@@ -100,12 +104,11 @@ class RangeWidget(ResizableDraggableWidgetBase):
         elif len(kwargs) == 1 and 'bounds' in kwargs:
             return kwargs.values()[0]
         else:
-            x = kwargs.pop('x', kwargs.pop('left', self.indices[0]))
+            x = kwargs.pop('x', kwargs.pop('left', self._pos[0]))
             if 'right' in kwargs:
                 w = kwargs.pop('right') - x
             else:
-                w = kwargs.pop('w', kwargs.pop('width',
-                                               self.get_size_in_indices()[0]))
+                w = kwargs.pop('w', kwargs.pop('width', self._size[0]))
             return x, w
 
     def set_ibounds(self, *args, **kwargs):
@@ -145,13 +148,24 @@ class RangeWidget(ResizableDraggableWidgetBase):
         l0, h0 = self.axes[0].low_value, self.axes[0].high_value
         scale = self.axes[0].scale
 
-        if not (l0 <= x <= h0):
-            raise ValueError('`left` value is not in range. `left` is {} and '
-                             'should be in range {}-{}.'.format(x, l0, h0))
-        if not (l0 + scale <= x + w <= h0 + scale):
-            raise ValueError('`width` or `right` value is not in range. The '
-                             '`width` is {} and should be in range {}-{}.'
-                             ''.format(x + w, l0 + scale, h0 + scale))
+        if x < l0:
+            x = l0
+            _logger.warning('`x` is too small. It is therefore set to its '
+                            'minimal value of {}.'.format(x))
+        elif h0 <= x:
+            x = h0 - scale
+            _logger.warning('`x` is too large. It is therefore set to its '
+                            'maximal value of {}.'.format(x))
+        if w < scale:
+            w = scale
+            _logger.warning('`width` or `right` value is too small. It is '
+                            'therefore set to its minimal value of '
+                            '{}.'.format(w))
+        elif not (l0 + scale <= x + w <= h0 + scale):
+            w = h0 + scale - x
+            _logger.warning('`width` or `right` value is too large. It is '
+                            'therefore set to its maximal value of '
+                            '{}.'.format(w))
 
         old_position, old_size = self.position, self.size
         self._pos = np.array([x])
