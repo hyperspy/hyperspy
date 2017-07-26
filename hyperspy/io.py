@@ -476,12 +476,11 @@ def save(filename, signal, overwrite=None, **kwds):
                           'The following formats can: %s' %
                           strlist2enumeration(yes_we_can))
         ensure_directory(filename)
-        if overwrite is None:
+        if not(overwrite is True or overwrite is False):
             overwrite = overwrite_method(filename)
-        if overwrite is False:
-            if not os.path.isfile(filename):
-                overwrite = True
-        if overwrite is True:
+        if overwrite is False and os.path.isfile(filename):
+            _logger.warning(f"file {filename} exists, did not overwrite")
+        else:
             writer.file_writer(filename, signal, **kwds)
             _logger.info('The %s file was created' % filename)
             folder, filename = os.path.split(os.path.abspath(filename))
