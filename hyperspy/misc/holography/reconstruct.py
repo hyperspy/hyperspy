@@ -38,7 +38,7 @@ def estimate_sideband_position(
     central_band_mask_radius: float, optional
         The aperture radius used to mask out the centerband.
     sb : str, optional
-        Chooses which sideband is taken. 'lower' or 'upper'
+        Chooses which sideband is taken. 'lower', 'upper', 'left', or 'right'.
 
     Returns
     -------
@@ -64,17 +64,21 @@ def estimate_sideband_position(
     fft_filtered = fft_holo * aperture_central_band
 
     # Sideband position in pixels referred to unshifted FFT
+    center = (fft_filtered.shape[0] // 2, fft_filtered.shape[1] // 2)
     if sb == 'lower':
-        fft_sb = fft_filtered[:int(fft_filtered.shape[0] / 2), :]
-        sb_position = np.asarray(
-            np.unravel_index(
-                fft_sb.argmax(),
-                fft_sb.shape))
+        fft_sb = np.abs(fft_filtered[:center[0], :])
+        sb_position = np.asarray(np.unravel_index(fft_sb.argmax(), fft_sb.shape))
     elif sb == 'upper':
-        fft_sb = fft_filtered[int(fft_filtered.shape[0] / 2):, :]
+        fft_sb = np.abs(fft_filtered[center[0]:, :])
         sb_position = (np.unravel_index(fft_sb.argmax(), fft_sb.shape))
-        sb_position = np.asarray(
-            np.add(sb_position, (int(fft_filtered.shape[0] / 2), 0)))
+        sb_position = np.asarray(np.add(sb_position, (center[0], 0)))
+    elif sb == 'left':
+        fft_sb = np.abs(fft_filtered[:, :center[1]])
+        sb_position = np.asarray(np.unravel_index(fft_sb.argmax(), fft_sb.shape))
+    elif sb == 'right':
+        fft_sb = np.abs(fft_filtered[:, center[1]:])
+        sb_position = (np.unravel_index(fft_sb.argmax(), fft_sb.shape))
+        sb_position = np.asarray(np.add(sb_position, (0, center[1])))
 
     return sb_position
 
