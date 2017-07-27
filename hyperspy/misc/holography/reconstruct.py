@@ -64,21 +64,21 @@ def estimate_sideband_position(
     fft_filtered = fft_holo * aperture_central_band
 
     # Sideband position in pixels referred to unshifted FFT
-    center = (fft_filtered.shape[0] // 2, fft_filtered.shape[1] // 2)
+    cb_position = (fft_filtered.shape[0] // 2, fft_filtered.shape[1] // 2)  # cb: center band
     if sb == 'lower':
-        fft_sb = np.abs(fft_filtered[:center[0], :])
+        fft_sb = np.abs(fft_filtered[:cb_position[0], :])
         sb_position = np.asarray(np.unravel_index(fft_sb.argmax(), fft_sb.shape))
     elif sb == 'upper':
-        fft_sb = np.abs(fft_filtered[center[0]:, :])
+        fft_sb = np.abs(fft_filtered[cb_position[0]:, :])
         sb_position = (np.unravel_index(fft_sb.argmax(), fft_sb.shape))
-        sb_position = np.asarray(np.add(sb_position, (center[0], 0)))
+        sb_position = np.asarray(np.add(sb_position, (cb_position[0], 0)))
     elif sb == 'left':
-        fft_sb = np.abs(fft_filtered[:, :center[1]])
+        fft_sb = np.abs(fft_filtered[:, :cb_position[1]])
         sb_position = np.asarray(np.unravel_index(fft_sb.argmax(), fft_sb.shape))
     elif sb == 'right':
-        fft_sb = np.abs(fft_filtered[:, center[1]:])
+        fft_sb = np.abs(fft_filtered[:, cb_position[1]:])
         sb_position = (np.unravel_index(fft_sb.argmax(), fft_sb.shape))
-        sb_position = np.asarray(np.add(sb_position, (0, center[1])))
+        sb_position = np.asarray(np.add(sb_position, (0, cb_position[1])))
 
     return sb_position
 
