@@ -734,8 +734,20 @@ class FeiEMDReader(object):
             'Instrument.InstrumentClass': (
                 "Acquisition_instrument.TEM.microscope", None),
             'Stage.AlphaTilt': (
-                "Acquisition_instrument.TEM.tilt_stage",
+                "Acquisition_instrument.TEM.Stage.tilt_alpha",
                 lambda x: '{:.2f}'.format(float(x))),
+            'Stage.BetaTilt': (
+                "Acquisition_instrument.TEM.Stage.tilt_beta",
+                lambda x: '{:.2f}'.format(float(x))),
+            'Stage.Position.x': (
+                "Acquisition_instrument.TEM.Stage.x",
+                lambda x: '{:.3f}'.format(float(x))),
+            'Stage.Position.y': (
+                "Acquisition_instrument.TEM.Stage.y",
+                lambda x: '{:.3f}'.format(float(x))),
+            'Stage.Position.z': (
+                "Acquisition_instrument.TEM.Stage.z",
+                lambda x: '{:.3f}'.format(float(x))),
             'ImportedDataParameter.Frame_number': (
                 "Acquisition_instrument.TEM.Detector.EDS.frame_number", None)
         }
