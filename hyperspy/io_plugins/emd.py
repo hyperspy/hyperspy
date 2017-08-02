@@ -470,12 +470,14 @@ class FeiEMDReader(object):
     """
 
     def __init__(self, filename, first_frame=0, last_frame=None,
-                 energy_rebin=1, SI_dtype=None, read_SI_image_stack=False):
+                 individual_frame=False, energy_rebin=1, SI_dtype=None,
+                 read_SI_image_stack=False):
         self.filename = filename
         self.ureg = pint.UnitRegistry()
         self.dictionaries = []
         self.first_frame = first_frame
         self.last_frame = last_frame
+        self.individual_frame = individual_frame
         self.energy_rebin = energy_rebin
         self.SI_data_dtype = SI_dtype
         self.read_SI_image_stack = read_SI_image_stack
@@ -619,7 +621,7 @@ class FeiEMDReader(object):
         self.si_grp = si_grp
 
         stream.get_spectrum_image(self.SI_shape, self.first_frame,
-                                  self.last_frame)
+                                  self.last_frame, self.individual_frame)
         self.original_metadata['AcquisitionSettings'] = stream.acquisition_settings
         self.original_metadata['ImportedDataParameter'] = {'First_frame': stream.first_frame,
                                                            'Last_frame': stream.last_frame,
@@ -640,25 +642,36 @@ class FeiEMDReader(object):
         offset_y = self._convert_scale_units(
             offsets['y'], original_units, stream.spectrum_image.shape[0])
 
-        axes = [{'index_in_array': 0,
-                 'name': 'y',
-                 'offset': offset_y[0],
-                 'scale': scale_y[0],
-                 'size': stream.spectrum_image.shape[0],
-                 'units': scale_y[1]},
-                {'index_in_array': 1,
-                 'name': 'x',
-                 'offset': offset_x[0],
-                 'scale': scale_x[0],
-                 'size': stream.spectrum_image.shape[1],
-                 'units': scale_x[1]},
-                {'index_in_array': 2,
-                 'name': 'X-ray energy',
-                 'offset': offset,
-                 'scale': dispersion,
-                 'size': stream.spectrum_image.shape[2],
-                 'units': 'keV'}
-                ]
+        i = 0
+        axes = []
+        # add a supplementary axes when we import all frames individualy
+        if self.individual_frame:
+            frame_time = float(self.original_metadata['Scan']['FrameTime'])
+            axes.append({'index_in_array': i,
+                         'name': 'Time',
+                         'offset': 0,
+                         'scale': frame_time,
+                         'size': stream.spectrum_image.shape[i],
+                         'units': 's'})
+            i += 1
+        axes.extend([{'index_in_array': i,
+                      'name': 'y',
+                      'offset': offset_y[0],
+                      'scale': scale_y[0],
+                      'size': stream.spectrum_image.shape[i],
+                      'units': scale_y[1]},
+                     {'index_in_array': i + 1,
+                      'name': 'x',
+                      'offset': offset_x[0],
+                      'scale': scale_x[0],
+                      'size': stream.spectrum_image.shape[i + 1],
+                      'units': scale_x[1]},
+                     {'index_in_array': i + 2,
+                      'name': 'X-ray energy',
+                      'offset': offset,
+                      'scale': dispersion,
+                      'size': stream.spectrum_image.shape[i + 2],
+                      'units': 'keV'}])
 
         md = self._get_metadata_dict()
         md['Signal']['signal_type'] = 'EDS_TEM'
@@ -675,8 +688,8 @@ class FeiEMDReader(object):
             if detector['DetectorName'] == 'SuperXG21' or detector['DetectorName'] == 'SuperXG11':
                 dispersion = float(
                     detector['Dispersion']) / 1000.0 * self.energy_rebin
-                offset = float(detector['OffsetEnergy']) / \
-                    1000.0 * self.energy_rebin
+                offset = float(
+                    detector['OffsetEnergy']) / 1000.0
 
         return dispersion, offset
 
@@ -777,21 +790,27 @@ class FeiSpectrumStream(object):
 
         self.acquisition_settings = settings
 
-    def get_spectrum_image(self, shape, first_frame=0, last_frame=None):
+    def get_spectrum_image(self, shape, first_frame=0, last_frame=None,
+                           individual_frame=False):
         if last_frame is None:
-            last_frame = (self.stream == 65535).sum()
+            last_frame = int(
+                np.ceil((self.stream == 65535).sum() / (shape[0] * shape[1])))
         if self.bin_count % self.energy_rebin != 0:
             raise ValueError('The `energy_rebin` need to be a divisor of the ',
                              'total number of channels.')
-        SI = np.zeros((shape[0], shape[1],
-                       int(self.bin_count / self.energy_rebin)),
-                      dtype=self.data_dtype)
-        # frame_number is from 0 to last frame
-        self.spectrum_image, frame_number = get_spectrum_image(SI,
-                                                               self.stream,
-                                                               first_frame,
-                                                               last_frame,
-                                                               self.energy_rebin)
+        if individual_frame:
+            SI = np.zeros((last_frame, shape[0], shape[1],
+                           int(self.bin_count / self.energy_rebin)),
+                          dtype=self.data_dtype)
+            self.spectrum_image, frame_number = get_spectrum_image_individual(
+                SI, self.stream, self.energy_rebin)
+        else:
+            SI = np.zeros((shape[0], shape[1],
+                           int(self.bin_count / self.energy_rebin)),
+                          dtype=self.data_dtype)
+            # frame_number is from 0 to last frame
+            self.spectrum_image, frame_number = get_spectrum_image(
+                SI, self.stream, first_frame, last_frame, self.energy_rebin)
         self.first_frame = first_frame
         self.last_frame = frame_number
         self.frame_number = self.last_frame - self.first_frame
@@ -821,6 +840,28 @@ def get_spectrum_image(spectrum_image, stream, first_frame, last_frame,
                 spectrum_image[navigation_index // shape[1],
                                navigation_index % shape[1],
                                count_channel // energy_rebin] += 1
+        else:
+            navigation_index += 1
+
+    return spectrum_image, frame_number
+
+
+@jit_ifnumba
+def get_spectrum_image_individual(spectrum_image, stream, energy_rebin=1):
+    navigation_index = 0
+    frame_number = 0
+    shape = spectrum_image.shape
+    for count_channel in np.nditer(stream):
+        # when we reach the end of the frame, reset the navigation index to 0
+        if navigation_index == (shape[1] * shape[2]):
+            navigation_index = 0
+            frame_number += 1
+        # if different of ‘65535’, add a count to the corresponding channel
+        if count_channel != 65535:
+            spectrum_image[frame_number,
+                           navigation_index // shape[2],
+                           navigation_index % shape[2],
+                           count_channel // energy_rebin] += 1
         else:
             navigation_index += 1
 
