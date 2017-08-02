@@ -193,15 +193,20 @@ class TestFeiEMD():
         shutil.rmtree(cls.fei_files_path)
 
     def test_fei_emd_image(self):
+        stage = {'tilt_alpha': '0.00',
+                 'tilt_beta': '0.00',
+                 'x': '-0.000',
+                 'y': '0.000',
+                 'z': '0.000'}
         md = {'Acquisition_instrument': {'TEM': {'beam_energy': 200.0,
                                                  'camera_length': 98.0,
                                                  'magnification': 40000.0,
                                                  'microscope': 'Talos',
-                                                 'tilt_stage': '0.00'}},
+                                                 'Stage': stage}},
               'General': {'original_filename': 'fei_emd_image.emd',
                           'time': '2017-03-06T09:56:41',
                           'time_zone': 'BST',
-                          'title': 'fei_emd_image'},
+                          'title': 'HAADF'},
               'Signal': {'binned': False, 'signal_type': 'image'},
               '_HyperSpy': {'Folding': {'original_axes_manager': None,
                                         'original_shape': None,

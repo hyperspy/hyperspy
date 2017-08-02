@@ -492,7 +492,7 @@ class FeiEMDReader(object):
             _logger.info('Reading the images')
             self._read_images()
         elif self.im_type == 'Spectrum':
-            self._read_spectrum()
+            self._read_spectrums()
         elif self.im_type == 'SpectrumStream':
             _logger.info('Reading the spectrum image')
             self._read_images()
@@ -507,11 +507,17 @@ class FeiEMDReader(object):
         else:
             self.im_type = 'Spectrum'
 
-    def _read_spectrum(self):
+    def _read_spectrums(self):
         self.record_by = 'spectrum'
-        spec_grp = self.d_grp.get("Spectrum")
-        data_grp = spec_grp[list(spec_grp.keys())[0]]
-        dataset = data_grp['Data']
+        spectrum_grp = self.d_grp.get("Spectrum")
+        self.detector_name = 'EDS'
+        for i, data_sub_group in enumerate(_get_keys_from_group(spectrum_grp)):
+            self.original_metadata = self.original_metadata_list[i]
+            self.dictionaries.append(
+                self._read_spectrum(spectrum_grp[data_sub_group]))
+
+    def _read_spectrum(self, data_sub_group):
+        dataset = data_sub_group['Data']
         data = dataset[:, 0]
 
         dispersion, offset = self._get_dispersion_offset()
@@ -527,11 +533,11 @@ class FeiEMDReader(object):
         md = self._get_metadata_dict()
         md['Signal']['signal_type'] = 'EDS_TEM'
 
-        self.dictionaries.append({'data': data,
-                                  'axes': axes,
-                                  'metadata': md,
-                                  'original_metadata': self.original_metadata,
-                                  'mapping': self._get_mapping()})
+        return {'data': data,
+                'axes': axes,
+                'metadata': md,
+                'original_metadata': self.original_metadata,
+                'mapping': self._get_mapping()}
 
     def _read_images(self):
         self.record_by = 'image'
@@ -539,7 +545,10 @@ class FeiEMDReader(object):
         image_group = self.d_grp.get("Image")
         # Get all the subgroup of the image data group and read the image for
         # each of them
-        for data_sub_group in _get_keys_from_group(image_group):
+        for i, data_sub_group in enumerate(_get_keys_from_group(image_group)):
+            self.original_metadata = self.original_metadata_list[i]
+            self.detector_name = self.original_metadata[
+                'BinaryResult']['Detector']
             self.dictionaries.append(
                 self._read_image(image_group[data_sub_group]))
 
@@ -611,6 +620,8 @@ class FeiEMDReader(object):
 
     def _read_spectrum_image(self):
         self.record_by = 'spectrum'
+        self.original_metadata = self.original_metadata_list[-1]
+        self.detector_name = 'EDS'
         # Spectrum stream group
         si_grp = self.d_grp.get("SpectrumStream")
 
@@ -704,7 +715,7 @@ class FeiEMDReader(object):
     def _get_metadata_dict(self):
         meta_gen = {}
         meta_gen['original_filename'] = os.path.split(self.filename)[1]
-        meta_gen['title'] = meta_gen['original_filename'].rpartition('.')[0]
+        meta_gen['title'] = self.detector_name
 
         meta_sig = {}
         meta_sig['record_by'] = self.record_by
@@ -713,11 +724,22 @@ class FeiEMDReader(object):
         return {'General': meta_gen, 'Signal': meta_sig}
 
     def _read_original_metadata(self, f):
-        data_group = f['Data'][self.im_type]
-        metadata_array = data_group[list(data_group.keys())[
-            0]]['Metadata'][:, 0]
+        self.original_metadata_list = []
+        if 'Image' in self.d_grp:
+            data_group = f['Data']['Image']
+            for data_key in _get_keys_from_group(data_group):
+                self.original_metadata_list.append(
+                    self._parse_original_metadata(data_group[data_key]))
+        if self.im_type != 'Image':  # For Spectrum and SpectrumStream
+            data_group = f['Data'][self.im_type]
+            self.original_metadata_list.append(
+                self._parse_original_metadata(
+                    data_group[list(data_group.keys())[0]]))
+
+    def _parse_original_metadata(self, sub_data_group):
+        metadata_array = sub_data_group['Metadata'][:, 0]
         mdata_string = metadata_array.tostring().decode("utf-8")
-        self.original_metadata = json.loads(mdata_string.rstrip('\x00'))
+        return json.loads(mdata_string.rstrip('\x00'))
 
     def _get_mapping(self):
         mapping = {
