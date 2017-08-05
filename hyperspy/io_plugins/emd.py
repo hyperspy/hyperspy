@@ -560,7 +560,7 @@ class FeiEMDReader(object):
         # each of them
         for image_sub_group_key in _get_keys_from_group(image_group):
             self.dictionaries.append(
-                    self._read_image(image_group, image_sub_group_key))
+                self._read_image(image_group, image_sub_group_key))
 
     def _read_image(self, image_group, image_sub_group_key):
         """ Return a dictionary ready to parse of return to io module"""
@@ -705,7 +705,7 @@ class FeiEMDReader(object):
             for stream in streams.stream_list:
                 print('******************')
                 md['General']['title'] = 'EDS - {}'.format(stream.original_metadata[
-                        'BinaryResult']['Detector'])
+                    'BinaryResult']['Detector'])
                 print(md['General']['title'])
                 self.dictionaries.append({'data': stream.spectrum_image,
                                           'axes': axes,
@@ -802,9 +802,9 @@ class FeiSpectrumStreamContainer(object):
     Each detector can also be read individually, otherwise the X-rays count
     are summed over all detectors.
     """
-    
+
     def __init__(self, spectrum_stream_group, shape, energy_rebin=1,
-                 first_frame=0, last_frame=None, individual_frame=False, 
+                 first_frame=0, last_frame=None, individual_frame=False,
                  data_dtype=None):
         self.spectrum_stream_group = spectrum_stream_group
         self.shape = shape
@@ -815,26 +815,25 @@ class FeiSpectrumStreamContainer(object):
         self.data_dtype = data_dtype
         self.stream_list = []
 
-
     def read_streams(self, individual_detector=False):
         for spectrum_stream_sub_group_key in _get_keys_from_group(self.spectrum_stream_group):
             # Create each spectrum stream
             name = '{}/Data'.format(spectrum_stream_sub_group_key)
             stream = FeiSpectrumStream(
-                    self.spectrum_stream_group[name][:, 0],
-                    shape=self.shape,
-                    energy_rebin=self.energy_rebin,
-                    first_frame=self.first_frame,
-                    last_frame=self.last_frame,
-                    individual_frame=self.individual_frame,
-                    data_dtype=self.data_dtype)
+                self.spectrum_stream_group[name][:, 0],
+                shape=self.shape,
+                energy_rebin=self.energy_rebin,
+                first_frame=self.first_frame,
+                last_frame=self.last_frame,
+                individual_frame=self.individual_frame,
+                data_dtype=self.data_dtype)
             # Read acquisition settings and spectrum stream metadata
             stream.import_stream_metadata(self.spectrum_stream_group,
                                           spectrum_stream_sub_group_key)
             # Read spectrum stream
             stream.get_spectrum_image()
             self.stream_list.append(stream)
-        
+
         self.frame_number = self.stream_list[0].frame_number
         if individual_detector is False:
             self.sum_spectrum_image = self.stream_list[0].spectrum_image
@@ -844,7 +843,7 @@ class FeiSpectrumStreamContainer(object):
     def get_SI_shape(self):
         return self.stream_list[0].spectrum_image.shape
 
-    def get_pixelsize_offset_unit(self, stream_index=1):
+    def get_pixelsize_offset_unit(self, stream_index=0):
         om_br = self.stream_list[stream_index].original_metadata['BinaryResult']
         return om_br['PixelSize'], om_br['Offset'], om_br['PixelUnitX']
 
@@ -874,13 +873,13 @@ class FeiSpectrumStream(object):
     def import_stream_metadata(self, *args, **kwargs):
         self.original_metadata = _parse_metadata(*args, **kwargs)
         self.stream_acquisition_settings = self._parse_acquisition_settings(
-                *args, **kwargs)
-        
+            *args, **kwargs)
+
     def _add_imported_parameters_to_original_metadata(self):
         self.original_metadata['ImportedDataParameter'] = {
-                'First_frame': self.first_frame,
-                'Last_frame': self.last_frame,
-                'Frame_number': self.frame_number}
+            'First_frame': self.first_frame,
+            'Last_frame': self.last_frame,
+            'Frame_number': self.frame_number}
 
     def _parse_acquisition_settings(self, group, sub_group_name):
         acquisition_key = '{}/AcquisitionSettings'.format(sub_group_name)
@@ -894,17 +893,18 @@ class FeiSpectrumStream(object):
         stream = self.stream_data
         shape = self.shape
         if self.last_frame is None:
-            last_frame = int(
+            self.last_frame = int(
                 np.ceil((stream == 65535).sum() / (shape[0] * shape[1])))
         if self.bin_count % self.energy_rebin != 0:
             raise ValueError('The `energy_rebin` needs to be a divisor of the',
                              ' total number of channels.')
+        self.frame_number = self.last_frame - self.first_frame
         if self.individual_frame:
-            SI = np.zeros((last_frame, shape[0], shape[1],
+            SI = np.zeros((self.frame_number, shape[0], shape[1],
                            int(self.bin_count / self.energy_rebin)),
                           dtype=self.data_dtype)
             self.spectrum_image, frame_number = get_spectrum_image_individual(
-                SI, stream, self.energy_rebin)
+                SI, stream, self.first_frame, self.last_frame, self.energy_rebin)
         else:
             SI = np.zeros((shape[0], shape[1],
                            int(self.bin_count / self.energy_rebin)),
@@ -913,8 +913,6 @@ class FeiSpectrumStream(object):
             self.spectrum_image, frame_number = get_spectrum_image(
                 SI, stream, self.first_frame, self.last_frame,
                 self.energy_rebin)
-        self.last_frame = frame_number
-        self.frame_number = self.last_frame - self.first_frame
         self._add_imported_parameters_to_original_metadata()
 
 
@@ -946,7 +944,8 @@ def get_spectrum_image(spectrum_image, stream, first_frame, last_frame,
 
 
 @jit_ifnumba
-def get_spectrum_image_individual(spectrum_image, stream, energy_rebin=1):
+def get_spectrum_image_individual(spectrum_image, stream, first_frame,
+                                  last_frame, energy_rebin=1):
     navigation_index = 0
     frame_number = 0
     shape = spectrum_image.shape
@@ -955,12 +954,16 @@ def get_spectrum_image_individual(spectrum_image, stream, energy_rebin=1):
         if navigation_index == (shape[1] * shape[2]):
             navigation_index = 0
             frame_number += 1
+            # break the for loop when we reach the last frame we want to read
+            if frame_number == last_frame:
+                break
         # if different of ‘65535’, add a count to the corresponding channel
         if count_channel != 65535:
-            spectrum_image[frame_number,
-                           navigation_index // shape[2],
-                           navigation_index % shape[2],
-                           count_channel // energy_rebin] += 1
+            if first_frame <= frame_number:
+                spectrum_image[frame_number,
+                               navigation_index // shape[2],
+                               navigation_index % shape[2],
+                               count_channel // energy_rebin] += 1
         else:
             navigation_index += 1
 
