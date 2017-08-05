@@ -395,7 +395,7 @@ class EMD(object):
         emd_file.close()
 
     def log_info(self):
-        """Print all relevant information about the EMD instance."""
+        """( all relevant information about the EMD instance."""
         self._log.debug('Calling log_info')
         pad_string0 = '-------------------------\n'
         pad_string1 = '\n-------------------------\n'
@@ -446,6 +446,12 @@ def fei_check(filename):
 def _get_keys_from_group(group):
     # Return a list of ids of items contains in the group
     return list(group.keys())
+
+
+def _parse_sub_data_group_metadata(sub_data_group):
+    metadata_array = sub_data_group['Metadata'][:, 0]
+    mdata_string = metadata_array.tostring().decode("utf-8")
+    return json.loads(mdata_string.rstrip('\x00'))
 
 
 class FeiEMDReader(object):
@@ -633,7 +639,7 @@ class FeiEMDReader(object):
 
         stream.get_spectrum_image(self.SI_shape, self.first_frame,
                                   self.last_frame, self.individual_frame)
-        self.original_metadata['AcquisitionSettings'] = stream.acquisition_settings
+        spectrum_image_shape = stream.spectrum_image_list[0].shape
         self.original_metadata['ImportedDataParameter'] = {'First_frame': stream.first_frame,
                                                            'Last_frame': stream.last_frame,
                                                            'Frame_number': stream.frame_number}
@@ -645,13 +651,13 @@ class FeiEMDReader(object):
         dispersion, offset = self._get_dispersion_offset()
 
         scale_x = self._convert_scale_units(
-            pix_scale['width'], original_units, stream.spectrum_image.shape[1])
+            pix_scale['width'], original_units, spectrum_image_shape[1])
         scale_y = self._convert_scale_units(
-            pix_scale['height'], original_units, stream.spectrum_image.shape[0])
+            pix_scale['height'], original_units, spectrum_image_shape[0])
         offset_x = self._convert_scale_units(
-            offsets['x'], original_units, stream.spectrum_image.shape[1])
+            offsets['x'], original_units, spectrum_image_shape[1])
         offset_y = self._convert_scale_units(
-            offsets['y'], original_units, stream.spectrum_image.shape[0])
+            offsets['y'], original_units, spectrum_image_shape[0])
 
         i = 0
         axes = []
@@ -662,36 +668,43 @@ class FeiEMDReader(object):
                          'name': 'Time',
                          'offset': 0,
                          'scale': frame_time,
-                         'size': stream.spectrum_image.shape[i],
+                         'size': spectrum_image_shape[i],
                          'units': 's'})
             i += 1
         axes.extend([{'index_in_array': i,
                       'name': 'y',
                       'offset': offset_y[0],
                       'scale': scale_y[0],
-                      'size': stream.spectrum_image.shape[i],
+                      'size': spectrum_image_shape[i],
                       'units': scale_y[1]},
                      {'index_in_array': i + 1,
                       'name': 'x',
                       'offset': offset_x[0],
                       'scale': scale_x[0],
-                      'size': stream.spectrum_image.shape[i + 1],
+                      'size': spectrum_image_shape[i + 1],
                       'units': scale_x[1]},
                      {'index_in_array': i + 2,
                       'name': 'X-ray energy',
                       'offset': offset,
                       'scale': dispersion,
-                      'size': stream.spectrum_image.shape[i + 2],
+                      'size': spectrum_image_shape[i + 2],
                       'units': 'keV'}])
 
         md = self._get_metadata_dict()
         md['Signal']['signal_type'] = 'EDS_TEM'
 
-        self.dictionaries.append({'data': stream.spectrum_image,
-                                  'axes': axes,
-                                  'metadata': md,
-                                  'original_metadata': self.original_metadata,
-                                  'mapping': self._get_mapping()})
+        for i, spectrum_image in enumerate(stream.spectrum_image_list):
+            self.original_metadata[
+                    'AcquisitionSettings'] = stream.acquisition_settings_list[i]
+            self.original_metadata[
+                    'SpectrumStreamMetadata'] = stream.metadata_list[i]
+            md['General']['title'] = 'EDS - {}'.format(self.original_metadata[
+                    'SpectrumStreamMetadata']['BinaryResult']['Detector'])
+            self.dictionaries.append({'data': spectrum_image,
+                                      'axes': axes,
+                                      'metadata': md,
+                                      'original_metadata': self.original_metadata,
+                                      'mapping': self._get_mapping()})
 
     def _get_dispersion_offset(self):
         for detectorname, detector in self.original_metadata['Detectors'].items():
@@ -729,17 +742,17 @@ class FeiEMDReader(object):
             data_group = f['Data']['Image']
             for data_key in _get_keys_from_group(data_group):
                 self.original_metadata_list.append(
-                    self._parse_original_metadata(data_group[data_key]))
+                    _parse_sub_data_group_metadata(data_group[data_key]))
         if self.im_type != 'Image':  # For Spectrum and SpectrumStream
             data_group = f['Data'][self.im_type]
             self.original_metadata_list.append(
-                self._parse_original_metadata(
-                    data_group[list(data_group.keys())[0]]))
-
-    def _parse_original_metadata(self, sub_data_group):
-        metadata_array = sub_data_group['Metadata'][:, 0]
-        mdata_string = metadata_array.tostring().decode("utf-8")
-        return json.loads(mdata_string.rstrip('\x00'))
+                _parse_sub_data_group_metadata(
+                        data_group[list(data_group.keys())[0]]))
+#
+#    def _parse_original_metadata(self, sub_data_group):
+#        metadata_array = sub_data_group['Metadata'][:, 0]
+#        mdata_string = metadata_array.tostring().decode("utf-8")
+#        return json.loads(mdata_string.rstrip('\x00'))
 
     def _get_mapping(self):
         mapping = {
@@ -808,46 +821,66 @@ class FeiSpectrumStream(object):
         self.energy_rebin = energy_rebin
         self.data_dtype = data_dtype
 
-        # Find sub group name
-        sub_group_name = _get_keys_from_group(spectrum_stream_group)[0]
+        sub_group_name_list = _get_keys_from_group(spectrum_stream_group)
 
-        # Read acquisition settings
-        self.stream = spectrum_stream_group['%s/Data' % sub_group_name][:, 0]
-        self._parse_acquisition_settings(spectrum_stream_group, sub_group_name)
+        self.acquisition_settings_list = []
+        self.metadata_list = []
+        self.stream_list = []
+        for sub_group_name in sub_group_name_list:
+            self.stream_list.append(spectrum_stream_group[
+                    '{}/Data'.format(sub_group_name)][:, 0])
+            # Read acquisition settings
+            self.acquisition_settings_list.append(
+                    self._parse_acquisition_settings(
+                            spectrum_stream_group, sub_group_name))
+            # Read metadata
+            self.metadata_list.append(
+                    self._parse_metadata(spectrum_stream_group, sub_group_name))
+
+    def _parse_metadata(self, group, sub_group_name):
+        return _parse_sub_data_group_metadata(group[sub_group_name])
 
     def _parse_acquisition_settings(self, group, sub_group_name):
-        acquisition_key = '%s/AcquisitionSettings' % sub_group_name
+        acquisition_key = '{}/AcquisitionSettings'.format(sub_group_name)
         settings = json.loads(group[acquisition_key].value[0].decode('utf-8'))
         self.bin_count = int(settings['bincount'])
         if self.data_dtype is None:
             self.data_dtype = settings['StreamEncoding']
+        return settings
 
-        self.acquisition_settings = settings
+    def get_spectrum_image(self, shape, *args, **kwargs):
+        self.spectrum_image_list = []
+#        stream = self.stream_list[0]
+        for stream in self.stream_list:
+            self.spectrum_image_list.append(
+                    self._get_spectrum_image(stream, shape, *args, **kwargs))
 
-    def get_spectrum_image(self, shape, first_frame=0, last_frame=None,
-                           individual_frame=False):
+    def _get_spectrum_image(self, stream, shape, first_frame=0,
+                           last_frame=None, individual_frame=False, 
+                           individual_detector=False):
         if last_frame is None:
             last_frame = int(
-                np.ceil((self.stream == 65535).sum() / (shape[0] * shape[1])))
+                np.ceil((stream == 65535).sum() / (shape[0] * shape[1])))
         if self.bin_count % self.energy_rebin != 0:
-            raise ValueError('The `energy_rebin` need to be a divisor of the ',
-                             'total number of channels.')
+            raise ValueError('The `energy_rebin` needs to be a divisor of the',
+                             ' total number of channels.')
         if individual_frame:
             SI = np.zeros((last_frame, shape[0], shape[1],
                            int(self.bin_count / self.energy_rebin)),
                           dtype=self.data_dtype)
-            self.spectrum_image, frame_number = get_spectrum_image_individual(
-                SI, self.stream, self.energy_rebin)
+            spectrum_image, frame_number = get_spectrum_image_individual(
+                SI, stream, self.energy_rebin)
         else:
             SI = np.zeros((shape[0], shape[1],
                            int(self.bin_count / self.energy_rebin)),
                           dtype=self.data_dtype)
             # frame_number is from 0 to last frame
-            self.spectrum_image, frame_number = get_spectrum_image(
-                SI, self.stream, first_frame, last_frame, self.energy_rebin)
+            spectrum_image, frame_number = get_spectrum_image(
+                SI, stream, first_frame, last_frame, self.energy_rebin)
         self.first_frame = first_frame
         self.last_frame = frame_number
         self.frame_number = self.last_frame - self.first_frame
+        return spectrum_image
 
 
 @jit_ifnumba
