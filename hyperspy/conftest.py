@@ -12,6 +12,9 @@ import matplotlib
 import hyperspy.api as hs
 
 
+matplotlib.rcParams['figure.max_open_warning'] = 25
+
+
 @pytest.fixture(autouse=True)
 def add_np(doctest_namespace):
     doctest_namespace['np'] = np
