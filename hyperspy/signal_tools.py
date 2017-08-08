@@ -876,6 +876,7 @@ class SpikesRemoval(object):
         self._reset_line()
         ncoordinates = len(self.coordinates)
         spike = self.detect_spike()
+        index_old = self.index
         while not spike and (
                 (self.index < ncoordinates - 1 and back is False) or
                 (self.index > 0 and back is True)):
@@ -883,12 +884,12 @@ class SpikesRemoval(object):
                 self.index += 1
             else:
                 self.index -= 1
-            self._index_changed(self.index)
+            self._index_changed(index_old, self.index)
             spike = self.detect_spike()
 
         return spike
 
-    def _index_changed(self, new):
+    def _index_changed(self, old, new):
         self.signal.axes_manager.indices = self.coordinates[new]
         self.argmax = None
         self._temp_mask[:] = False
@@ -1007,6 +1008,11 @@ class SpikesRemovalInteractive(SpikesRemoval, SpanSelectorInSignal1D):
                                signal_mask=signal_mask,
                                threshold=threshold)
         self.update_signal_mask()
+
+    def _index_changed(self, old, new):
+        self.signal.axes_manager.indices = self.coordinates[new]
+        self.argmax = None
+        self._temp_mask[:] = False
 
     def _threshold_changed(self, old, new):
         self.index = 0

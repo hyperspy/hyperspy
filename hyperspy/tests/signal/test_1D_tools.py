@@ -23,7 +23,6 @@ import pytest
 
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.signal_tools import SpikesRemoval
 import hyperspy.api as hs
 
 
@@ -374,49 +373,3 @@ def test_hanning(lazy, offset):
                                          offset=offset)
     np.testing.assert_allclose(data, sig.data)
 
-
-@lazifyTestClass
-class TestSpikesRemovalTool:
-
-    def setup_method(self, method):
-        data = np.arange(5 * 10 * 20).reshape(5, 10, 20)
-        self.coordinates, values = ((1, 6, 15), (3, 5, 10)), (5, 10)
-
-        # Does not contain spikes
-        self.s = hs.signals.Signal1D(data)
-        # Does contain spikes, coordinates and values above
-        self.s2 = hs.signals.Signal1D(self._add_spikes_to_data(data,
-                                                               self.coordinates,
-                                                               values))
-        self.s.add_gaussian_noise(5)
-        self.s2.add_gaussian_noise(5)
-        self.sr = SpikesRemoval(self.s)
-        self.sr2 = SpikesRemoval(self.s2)
-
-    def _add_spikes_to_data(self, data, coordinates, values):
-        data = data.copy()
-        for coordinate, value in zip(coordinates, values):
-            data[coordinate] *= value
-        return data
-
-    def _get_index_from_coordinate(self, coordinate):
-        return self.s.data.shape[1] * coordinate[0] + coordinate[1]
-
-    def test_detect_spikes(self):
-        assert self.sr.detect_spike() == False
-
-        for coordinate in self.coordinates:
-            self.sr2.index = self._get_index_from_coordinate(coordinate)
-            assert self.sr2.detect_spike() == True
-
-    def test_find_spikes(self):
-        for coordinate in self.coordinates:
-            self.sr2.find()
-            assert self.sr2.index == self._get_index_from_coordinate(
-                coordinate)
-
-    def test_remove_spikes(self):
-        self.sr2.find()
-        for coordinate in self.coordinates:
-            self.sr2.apply()
-        assert self.sr2.detect_spike() == False

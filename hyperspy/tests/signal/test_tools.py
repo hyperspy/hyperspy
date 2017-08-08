@@ -9,7 +9,7 @@ import pytest
 
 from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.signal_tools import SpikesRemoval
+from hyperspy.signal_tools import SpikesRemoval, SpikesRemovalInteractive
 from hyperspy.components1d import Gaussian
 
 
@@ -867,7 +867,29 @@ def test_spikes_removal_tool():
     s.data[0, 2, 29] += 1
     s.data[1, 2, 14] += 1
 
-    sr = SpikesRemoval(s)
+    sr = SpikesRemoval(s, threshold=1.5)
+    sr.find()
+    assert s.axes_manager.indices == (0, 1)
+    sr.threshold = 0.5
+    sr.index = 0
+    s.axes_manager.indices = sr.coordinates[sr.index]
+    sr.find()
+    assert s.axes_manager.indices == (2, 0)
+    sr.find()
+    assert s.axes_manager.indices == (0, 1)
+    sr.find(back=True)
+    assert s.axes_manager.indices == (2, 0)
+    sr.add_noise = False
+
+
+def test_spikes_removal_tool_interactive():
+    s = signals.Signal1D(np.ones((2, 3, 30)))
+    # Add three spikes
+    s.data[1, 0, 1] += 2
+    s.data[0, 2, 29] += 1
+    s.data[1, 2, 14] += 1
+
+    sr = SpikesRemovalInteractive(s, threshold=1.5)
     sr.threshold = 1.5
     sr.find()
     assert s.axes_manager.indices == (0, 1)
