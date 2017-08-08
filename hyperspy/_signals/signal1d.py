@@ -34,7 +34,7 @@ except:
 
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.common_signal1d import CommonSignal1D
-from hyperspy.signal_tools import SpikesRemoval
+from hyperspy.signal_tools import SpikesRemoval, SpikesRemovalInteractive
 from hyperspy.models.model1d import Model1D
 
 
@@ -265,8 +265,28 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if self.axes_manager.signal_dimension != 1:
             self.axes_manager.set_signal_dimension(1)
 
-    def _spikes_diagnosis(self, signal_mask=None,
-                          navigation_mask=None):
+    def _get_spikes_diagnosis_histogram_data(self, signal_mask=None,
+                                             navigation_mask=None):
+        self._check_signal_dimension_equals_one()
+        dc = self.data
+        if signal_mask is not None:
+            dc = dc[..., ~signal_mask]
+        if navigation_mask is not None:
+            dc = dc[~navigation_mask, :]
+        der = np.abs(np.diff(dc, 1, -1))
+        n = ((~navigation_mask).sum() if navigation_mask else
+             self.axes_manager.navigation_size)
+
+        # arbitrary cutoff for number of spectra necessary before histogram
+        # data is compressed by finding maxima of each spectrum
+        tmp = BaseSignal(der) if n < 2000 else BaseSignal(
+            np.ravel(der.max(-1)))
+
+        # get histogram signal using smart binning and plot
+        return tmp.get_histogram()
+
+    def spikes_diagnosis(self, signal_mask=None,
+                         navigation_mask=None):
         """Plots a histogram to help in choosing the threshold for
         spikes removal.
 
@@ -284,23 +304,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
         spikes_removal_tool
 
         """
-        self._check_signal_dimension_equals_one()
-        dc = self.data
-        if signal_mask is not None:
-            dc = dc[..., ~signal_mask]
-        if navigation_mask is not None:
-            dc = dc[~navigation_mask, :]
-        der = np.abs(np.diff(dc, 1, -1))
-        n = ((~navigation_mask).sum() if navigation_mask else
-             self.axes_manager.navigation_size)
-
-        # arbitrary cutoff for number of spectra necessary before histogram
-        # data is compressed by finding maxima of each spectrum
-        tmp = BaseSignal(der) if n < 2000 else BaseSignal(
-            np.ravel(der.max(-1)))
-
-        # get histogram signal using smart binning and plot
-        tmph = tmp.get_histogram()
+        tmph = self._get_spikes_diagnosis_histogram_data(signal_mask,
+                                                         navigation_mask)
         tmph.plot()
 
         # Customize plot appearance
@@ -321,30 +326,21 @@ class Signal1D(BaseSignal, CommonSignal1D):
         plt.draw()
 
     def spikes_removal_tool(self, signal_mask=None,
-                            navigation_mask=None, threshold=400,
-                            display=True, toolkit=None):
-        """Graphical interface to remove spikes from EELS spectra.
-
-        Parameters
-        ----------
-        signal_mask: boolean array
-            Restricts the operation to the signal locations not marked
-            as True (masked)
-        navigation_mask: boolean array
-            Restricts the operation to the navigation locations not
-            marked as True (masked)
-
-        See also
-        --------
-        _spikes_diagnosis,
-
-        """
+                            navigation_mask=None, threshold='auto',
+                            interactive=True, display=True, toolkit=None):
         self._check_signal_dimension_equals_one()
-        sr = SpikesRemoval(self,
-                           navigation_mask=navigation_mask,
-                           signal_mask=signal_mask,
-                           threshold=threshold)
-        return sr.gui(display=display, toolkit=toolkit)
+        if interactive:
+            sr = SpikesRemovalInteractive(self,
+                                          navigation_mask=navigation_mask,
+                                          signal_mask=signal_mask,
+                                          threshold=threshold)
+            return sr.gui(display=display, toolkit=toolkit)
+        else:
+            sr = SpikesRemoval(self,
+                               navigation_mask=navigation_mask,
+                               signal_mask=signal_mask,
+                               threshold=threshold)
+            sr.remove_all_spikes()
     spikes_removal_tool.__doc__ =\
         """Graphical interface to remove spikes from EELS spectra.
 
@@ -356,11 +352,20 @@ signal_mask: boolean array
 navigation_mask: boolean array
     Restricts the operation to the navigation locations not
     marked as True (masked)
+threshold: 'auto' or int
+    if `int` set the threshold value use for the detecting the spikes. If 
+    `auto`, determine the threshold value using the `spikes_diagnosis` method.
+interactive: boolean
+    If True, remove the spikes using the graphical user interface. If False, 
+    remove the spikes automatically, which could introduce artefacts if used 
+    with signal containing peak-like features. However, this could be 
+    mitigated by it in combination with the `signal_mask` argument to mask the 
+    signal of interest.
 %s
 %s
 See also
 --------
-_spikes_diagnosis,
+spikes_diagnosis,
 
 """ % (DISPLAY_DT, TOOLKIT_DT)
 

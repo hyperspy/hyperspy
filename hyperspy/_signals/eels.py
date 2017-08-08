@@ -326,24 +326,108 @@ class EELSSpectrum_mixin:
             substract_from_offset(without_nans(zlpc.data).mean(),
                                   also_align + [self])
 
+    def get_zero_loss_peak_mask(self, zero_loss_full_width=5.0,
+                                signal_mask=None):
+        """Return boolean array with True value at the position of the zero 
+        loss peak. This mask can be used to restrict operation to the signal 
+        locations not marked as True (masked).
+
+        Parameters
+        ----------
+        zero_loss_width: float
+            Full width of the zero loss peak
+        signal_mask: boolean array
+            Signal mask to combine with the zero loss peak mask.
+
+
+        Returns
+        -------
+        boolean array
+        """
+        zlpc = self.estimate_zero_loss_peak_centre()
+        (signal_axis, ) = self.axes_manager[self.axes_manager.signal_axes]
+        axis = signal_axis.axis
+        mini_value = zlpc.data.mean() - zero_loss_full_width / 2
+        maxi_value = zlpc.data.mean() + zero_loss_full_width / 2
+        mask = (mini_value <= axis) & (axis <= maxi_value)
+        if signal_mask:
+            signal_mask = mask & signal_mask
+        else:
+            signal_mask = mask
+        return signal_mask
+
+    def spikes_diagnosis(self, signal_mask=None, navigation_mask=None,
+                         filter_zero_loss_peak=False, zero_loss_full_width=5.0):
+        """Plots a histogram to help in choosing the threshold for
+        spikes removal.
+
+        Parameters
+        ----------
+        signal_mask: boolean array
+            Restricts the operation to the signal locations not marked
+            as True (masked)
+        navigation_mask: boolean array
+            Restricts the operation to the navigation locations not
+            marked as True (masked).
+
+        See also
+        --------
+        spikes_removal_tool
+
+        """
+        if filter_zero_loss_peak:
+            signal_mask = self.get_zero_loss_peak_mask(zero_loss_full_width,
+                                                       signal_mask)
+        super().spikes_diagnosis(signal_mask=None, navigation_mask=None)
+
     def spikes_removal_tool(self, signal_mask=None,
                             navigation_mask=None,
+                            threshold='auto',
                             filter_zero_loss_peak=False,
-                            zero_loss_width=5.0,
-                            threshold=400):
+                            zero_loss_full_width=5.0,
+                            interactive=True,
+                            display=True,
+                            toolkit=None):
         if filter_zero_loss_peak:
-            zlpc = self.estimate_zero_loss_peak_centre()
-            (signal_axis, ) = self.axes_manager[self.axes_manager.signal_axes]
-            axis = signal_axis.axis
-            mini_value = zlpc.data.mean() - zero_loss_width/2
-            maxi_value = zlpc.data.mean() + zero_loss_width/2
-            mask = (mini_value <= axis) & (axis <= maxi_value)
-            if signal_mask:
-                signal_mask = mask & signal_mask
-            else:
-                signal_mask = mask
+            signal_mask = self.get_zero_loss_peak_mask(zero_loss_full_width,
+                                                       signal_mask)
         super().spikes_removal_tool(signal_mask=signal_mask,
-             navigation_mask=navigation_mask, threshold=threshold)
+                                    navigation_mask=navigation_mask,
+                                    threshold=threshold,
+                                    interactive=interactive,
+                                    display=display, toolkit=toolkit)
+
+    spikes_removal_tool.__doc__ =\
+        """Graphical interface to remove spikes from EELS spectra.
+
+Parameters
+----------
+signal_mask: boolean array
+    Restricts the operation to the signal locations not marked
+    as True (masked)
+navigation_mask: boolean array
+    Restricts the operation to the navigation locations not
+    marked as True (masked)
+threshold: 'auto' or int
+    if `int` set the threshold value use for the detecting the spikes. If 
+    `auto`, determine the threshold value using the `spikes_diagnosis` method.
+filter_zero_loss_peak: boolean
+    Mask the zero-loss peak to detect the spikes.
+zero_loss_full_width: float
+    Full width of the signal mask for the zero-loss peak.
+interactive: boolean
+    If True, remove the spikes using the graphical user interface. If False, 
+    remove the spikes automatically, which could introduce artefacts if used 
+    with signal containing peak-like features. However, this could be 
+    mitigated by it in combination with the `signal_mask` argument to mask the 
+    signal of interest.
+%s
+%s
+See also
+--------
+spikes_diagnosis,
+
+""" % (DISPLAY_DT, TOOLKIT_DT)
 
     def estimate_elastic_scattering_intensity(
             self, threshold, show_progressbar=None):
