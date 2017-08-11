@@ -354,7 +354,7 @@ used for this purpose.
 
 In the following example we also use `scikit-image <http://scikit-image.org/>`_
 for noise reduction. More details about
-:py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity` method can be
+:py:meth:`~._signals.eds.EDS_mixin.get_lines_intensity` method can be
 found in :ref:`EDS lines intensity<get_lines_intensity>`.
 
 .. code-block:: python
@@ -521,7 +521,7 @@ which is used to call subplots_adjust method of matplotlib
   :width:   500
 
   Using :py:func:`~.drawing.utils.plot_images` to plot the output of
-  :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`.
+  :py:meth:`~._signals.eds.EDS_mixin.get_lines_intensity`.
 
 .. |subplots_adjust| image:: images/plot_images_subplots.png
 

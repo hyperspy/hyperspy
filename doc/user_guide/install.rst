@@ -61,8 +61,7 @@ MKL libraries) and the easiest installation. The academic license is free.
 
    .. code-block:: bash
 
-       $ conda config --add channels conda-forge
-       $ conda install hyperspy
+       $ conda install hyperspy -c conda-forge
 
 #.  (optional) Since HyperSpy v1.3 the
     `traitsui GUI elements <https://github.com/hyperspy/hyperspy_gui_traitsui>`_
@@ -72,7 +71,7 @@ MKL libraries) and the easiest installation. The academic license is free.
 
     .. code-block:: bash
 
-        $ conda install hyperspy_gui_traitsui
+        $ conda install hyperspy-gui-traitsui -c conda-forge
 
 
     .. note::
@@ -86,7 +85,7 @@ MKL libraries) and the easiest installation. The academic license is free.
         .. code-block:: bash
 
             $ conda uninstall anaconda-navigator -y
-            $ conda install hyperspy_gui_traitsui
+            $ conda install hyperspy_gui_traitsui -c conda-forge
 
 
 .. note::
@@ -140,7 +139,7 @@ full functionality:
 
     $ pip install hyperspy[all]
 
-Alternatively you can select that extra functionality required:
+Alternatively you can select the extra functionalities required:
 
 * ``bcf`` to install required libraries to read Brucker files.
 * ``learning`` to install required libraries for some machine learning features.

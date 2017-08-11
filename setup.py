@@ -48,7 +48,7 @@ import hyperspy.Release as Release
 
 install_req = ['scipy>=0.15',
                'matplotlib>=1.2',
-               'numpy>=1.10',
+               'numpy>=1.10, !=1.13.0',
                'traits>=4.5.0',
                'natsort',
                'requests',
@@ -277,6 +277,7 @@ class update_version_when_dev:
             if p.returncode != 0:
                 # Git is not available, we keep the version as is
                 self.restore_version = False
+                self.version = self.release_version
             else:
                 gd = stdout[1:].strip().decode()
                 # Remove the tag

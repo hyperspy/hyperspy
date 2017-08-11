@@ -36,7 +36,7 @@ currently available specialised :py:class:`~.signal.BaseSignal` subclasses.
 
     New :py:class:`~._signals.complex_signal.ComplexSignal`,
     :py:class:`~._signals.complex_signal1d.ComplexSignal1D` and
-    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`
+    :py:class:`~._signals.complex_signal2d.Complex2D`
     :py:class:`~.signal.BaseSignal` subclasses specialised in complex data.
 
 
@@ -68,16 +68,15 @@ set when making the :py:class:`~.signal.BaseSignal` object.
 
 .. code-block:: python
 
-    >>> dict0 = {'size': 10, 'name':'Ax0', 'units':'A', 'scale':0.2, 'offset':1}
-    >>> dict1 = {'size': 20, 'name':'Ax1', 'units':'B', 'scale':0.1, 'offset':2}
+    >>> dict0 = {'size': 10, 'name':'Axis0', 'units':'A', 'scale':0.2, 'offset':1}
     >>> s = hs.signals.BaseSignal(np.random.random((10,20)), axes=[dict0, dict1])
     >>> s.axes_manager
     <Axes manager, axes: (|20, 10)>
 		Name |   size |  index |  offset |   scale |  units
     ================ | ====== | ====== | ======= | ======= | ======
     ---------------- | ------ | ------ | ------- | ------- | ------
-	       Axes1 |     20 |        |       2 |     0.1 |      B
-	       Axes0 |     10 |        |       1 |     0.2 |      A
+	       Axis1 |     20 |        |       2 |     0.1 |      B
+	       Axis0 |     10 |        |       1 |     0.2 |      A
 
 This also applies to the :py:attr:`~.signal.BaseSignal.metadata`.
 
@@ -212,7 +211,7 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`                 |        1         |    EDS_SEM            |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
-    |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`                 |        1         |    EDS_TEM            |  real    |
+    |           :py:class:`~._signals.eds_tem.EDSTEM`                         |        1         |    EDS_TEM            |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |              :py:class:`~._signals.signal2d.Signal2D`                   |        2         |       -               |  real    |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
@@ -224,7 +223,7 @@ e.g. specialised signal subclasses to handle complex data (see the following dia
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
     |    :py:class:`~._signals.complex_signal1d.ComplexSignal1D`              |        1         |       -               | complex  |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
-    |    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`              |        2         |       -               | complex  |
+    |    :py:class:`~._signals.complex_signal2d.Complex2D`                    |        2         |       -               | complex  |
     +-------------------------------------------------------------------------+------------------+-----------------------+----------+
 
 The following example shows how to transform between different subclasses.
@@ -286,7 +285,7 @@ following table:
     +---------------------------------------------------------------+--------+
     |           :py:class:`~._signals.eds_sem.EDSSEMSpectrum`       | True   |
     +---------------------------------------------------------------+--------+
-    |           :py:class:`~._signals.eds_tem.EDSTEMSpectrum`       | True   |
+    |           :py:class:`~._signals.eds_tem.EDSTEM`               | True   |
     +---------------------------------------------------------------+--------+
     |              :py:class:`~._signals.signal2d.Signal2D`         | False  |
     +---------------------------------------------------------------+--------+
@@ -294,7 +293,7 @@ following table:
     +---------------------------------------------------------------+--------+
     |    :py:class:`~._signals.complex_signal1d.ComplexSignal1D`    | False  |
     +---------------------------------------------------------------+--------+
-    |    :py:class:`~._signals.complex_signal2d.ComplexSignal2D`    | False  |
+    |    :py:class:`~._signals.complex_signal2d.Complex2Dmixin`     | False  |
     +---------------------------------------------------------------+--------+
 
 
@@ -925,11 +924,76 @@ method or GUIs if cropping :ref:`signal1D <signal1D.crop>` or :ref:`signal2D
 <signal2D.crop>`. There is also a general :py:meth:`~.signal.BaseSignal.crop`
 method that operates *in place*.
 
+
+.. _rebin-label:
+
 Rebinning
 ^^^^^^^^^
+.. versionadded:: 1.3
+    :py:meth:`~.signal.BaseSignal.rebin` generalized to remove the constrain
+    of the ``new_shape`` needing to be a divisor of ``data.shape``.
 
-The :py:meth:`~.signal.BaseSignal.rebin` method rebins data in place down to a size
-determined by the user.
+
+The :py:meth:`~.signal.BaseSignal.rebin` methods supports rebinning the data to
+arbitrary new shapes as long as the number of dimensions stays the same.
+However, internally, it uses two different algorithms to perform the task. Only
+when the new shape dimensions are divisors of the old shape's, the operation
+supports :ref:`lazy-evaluation <big-data-label>` and is usually faster.
+Otherwise, the operation requires linear interpolation and is generally slower if
+`Numba <http://numba.pydata.org/>`_ is not installed.
+
+For example, the following two equivalent rebinning operations can be  performed
+lazily:
+
+.. code-block:: python
+
+    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum().as_lazy()
+    >>> print(s)
+    <LazyEDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|1024)>
+    >>> print(s.rebin(scale=[2]))
+    <LazyEDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|512)>
+
+
+.. code-block:: python
+
+    >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum().as_lazy()
+    >>> print(s.rebin(new_shape=[512]))
+    <LazyEDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|512)>
+
+
+On the other hand, the following rebining operation requires interpolation and
+cannot be peformed lazily:
+
+.. code-block:: python
+
+    >>> spectrum = hs.signals.EDSTEMSpectrum(np.ones([4, 4, 10]))
+    >>> spectrum.data[1, 2, 9] = 5
+    >>> print(spectrum)
+    <EDSTEMSpectrum, title: , dimensions: (4, 4|10)>
+    >>> print ('Sum = ', spectrum.data.sum())
+    Sum =  164.0
+    >>> scale = [0.5, 0.5, 5]
+    >>> test = spectrum.rebin(scale=scale)
+    >>> test2 = spectrum.rebin(new_shape=(8, 8, 2)) # Equivalent to the above
+    >>> print(test)
+    <EDSTEMSpectrum, title: , dimensions: (8, 8|2)>
+    >>> print(test2)
+    <EDSTEMSpectrum, title: , dimensions: (8, 8|2)>
+    >>> print('Sum =', test.data.sum())
+    Sum = 164.0
+    >>> print('Sum =', test2.data.sum())
+    Sum = 164.0
+    >>> spectrum.as_lazy().rebin(scale=scale)
+    Traceback (most recent call last):
+      File "<ipython-input-26-49bca19ebf34>", line 1, in <module>
+        spectrum.as_lazy().rebin(scale=scale)
+      File "/home/fjd29/Python/hyperspy3/hyperspy/_signals/eds.py", line 184, in rebin
+        m = super().rebin(new_shape=new_shape, scale=scale, crop=crop, out=out)
+      File "/home/fjd29/Python/hyperspy3/hyperspy/_signals/lazy.py", line 246, in rebin
+        "Lazy rebin requires scale to be integer and divisor of the "
+    NotImplementedError: Lazy rebin requires scale to be integer and divisor of the original signal shape
+
+
 
 Folding and unfolding
 ^^^^^^^^^^^^^^^^^^^^^
@@ -1554,7 +1618,7 @@ Add a linear phase ramp
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 For 2-dimensional complex images, a linear phase ramp can be added to the signal via the
-:py:func:`~._signals.complex_signal2d.ComplexSignal2D.add_phase_ramp` method. The parameters
+:py:func:`~._signals.complex_signal2d.Complex2Dmixin.add_phase_ramp` method. The parameters
 `ramp_x` and `ramp_y` dictate the slope of the ramp in `x`- and `y` direction, while the offset
 is determined by the `offset` parameter. The fulcrum of the linear ramp is at the origin
 and the slopes are given in units of the axis with the according scale taken into account.
