@@ -831,8 +831,13 @@ class SpikesRemoval(object):
         if threshold == 'auto':
             # Find the first zero of the spikes diagnosis plot
             hist = signal._get_spikes_diagnosis_histogram_data()
-            index = np.where(hist.data == 0)[0][0]
+            zero_index = np.where(hist.data == 0)[0]
+            if zero_index.shape[0] > 0:
+                index = zero_index[0]
+            else:
+                index = hist.data.shape[0] - 1
             threshold = np.ceil(hist.axes_manager[0].index2value(index))
+            _logger.info('Threshold value: {}'.format(threshold))
         self.threshold = threshold
         self.index = 0
         self.argmax = None
