@@ -830,7 +830,9 @@ class SpikesRemoval(object):
             signal.axes_manager.indices = self.coordinates[0]
         if threshold == 'auto':
             # Find the first zero of the spikes diagnosis plot
-            hist = signal._get_spikes_diagnosis_histogram_data()
+            hist = signal._get_spikes_diagnosis_histogram_data(
+                    signal_mask=signal_mask,
+                    navigation_mask=navigation_mask)
             zero_index = np.where(hist.data == 0)[0]
             if zero_index.shape[0] > 0:
                 index = zero_index[0]

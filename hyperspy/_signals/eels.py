@@ -378,7 +378,7 @@ class EELSSpectrum_mixin:
         if filter_zero_loss_peak:
             signal_mask = self.get_zero_loss_peak_mask(zero_loss_full_width,
                                                        signal_mask)
-        super().spikes_diagnosis(signal_mask=None, navigation_mask=None)
+        super().spikes_diagnosis(signal_mask=signal_mask, navigation_mask=None)
 
     def spikes_removal_tool(self, signal_mask=None,
                             navigation_mask=None,
