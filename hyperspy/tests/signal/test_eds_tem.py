@@ -17,8 +17,7 @@
 
 
 import numpy as np
-import pytest
-from matplotlib.testing.decorators import cleanup
+from numpy.testing import assert_array_almost_equal
 
 from hyperspy.signals import EDSTEMSpectrum
 from hyperspy.defaults_parser import preferences
@@ -78,7 +77,7 @@ class Test_metadata:
         s = self.signal
         old_metadata = s.metadata.deepcopy()
         dim = s.axes_manager.shape
-        s = s.rebin([dim[0] / 2, dim[1] / 2, dim[2]])
+        s = s.rebin(new_shape=[dim[0] / 2, dim[1] / 2, dim[2]])
         assert (
             s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time ==
             3.1 * 2 * 2)
@@ -296,9 +295,7 @@ class Test_eds_markers:
                                        weight_percents=[50, 50])
         self.signal = s
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
-    @cleanup
-    def test_plot_auto_add(self):
+    def test_plot_auto_add(self, mpl_cleanup):
         s = self.signal
         s.plot(xray_lines=True)
         # Should contain 6 lines
@@ -306,9 +303,7 @@ class Test_eds_markers:
             sorted(s._xray_markers.keys()) ==
             ['Al_Ka', 'Al_Kb', 'Zn_Ka', 'Zn_Kb', 'Zn_La', 'Zn_Lb1'])
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
-    @cleanup
-    def test_manual_add_line(self):
+    def test_manual_add_line(self, mpl_cleanup):
         s = self.signal
         s.add_xray_lines_markers(['Zn_La'])
         assert (
@@ -318,9 +313,7 @@ class Test_eds_markers:
         # Check that the line has both a vertical line marker and text marker:
         assert len(s._xray_markers['Zn_La']) == 2
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
-    @cleanup
-    def test_manual_remove_element(self):
+    def test_manual_remove_element(self, mpl_cleanup):
         s = self.signal
         s.add_xray_lines_markers(['Zn_Ka', 'Zn_Kb', 'Zn_La'])
         s.remove_xray_lines_markers(['Zn_Kb'])

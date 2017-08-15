@@ -1,5 +1,5 @@
-hyperspy.external package
-=========================
+hyperspy\.external package
+==========================
 
 Subpackages
 -----------
@@ -12,18 +12,10 @@ Subpackages
 Submodules
 ----------
 
-hyperspy.external.progressbar module
-------------------------------------
+hyperspy\.external\.progressbar module
+--------------------------------------
 
 .. automodule:: hyperspy.external.progressbar
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-hyperspy.external.tifffile module
----------------------------------
-
-.. automodule:: hyperspy.external.tifffile
     :members:
     :undoc-members:
     :show-inheritance:

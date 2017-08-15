@@ -38,7 +38,7 @@ def test_set_microscope_parameters(lazy):
     assert (holo_image.metadata.Acquisition_instrument.TEM.beam_energy == 300.)
     assert (
         holo_image.metadata.Acquisition_instrument.TEM.Biprism.voltage == 80.5)
-    assert (holo_image.metadata.Acquisition_instrument.TEM.tilt_stage == 2.2)
+    assert (holo_image.metadata.Acquisition_instrument.TEM.Stage.tilt_alpha == 2.2)
 
 
 def calc_holo(x, y, phase_ref, FRINGE_SPACING, FRINGE_DIRECTION):

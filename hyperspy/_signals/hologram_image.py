@@ -22,7 +22,10 @@ import scipy.constants as constants
 import numpy as np
 from dask.array import Array as daArray
 
-from hyperspy.signals import (Signal2D, BaseSignal, Signal1D, LazySignal)
+from hyperspy._signals.signal2d import Signal2D
+from hyperspy.signal import BaseSignal
+from hyperspy._signals.signal1d import Signal1D
+from hyperspy._signals.lazy import LazySignal
 from hyperspy.misc.holography.reconstruct import (
     reconstruct, estimate_sideband_position, estimate_sideband_size)
 
@@ -76,11 +79,14 @@ class HologramImage(Signal2D):
             md.set_item("Acquisition_instrument.TEM.Biprism.voltage",
                         biprism_voltage)
         if tilt_stage is not None:
-            md.set_item("Acquisition_instrument.TEM.tilt_stage", tilt_stage)
+            md.set_item(
+                "Acquisition_instrument.TEM.Stage.tilt_alpha",
+                tilt_stage)
 
     def estimate_sideband_position(self,
                                    ap_cb_radius=None,
                                    sb='lower',
+                                   high_cf=False,
                                    show_progressbar=False,
                                    parallel=None):
         """
@@ -92,8 +98,12 @@ class HologramImage(Signal2D):
             The aperture radius used to mask out the centerband.
         sb : str, optional
             Chooses which sideband is taken. 'lower' or 'upper'
+        high_cf : bool, optional
+            If False, the highest carrier frequency allowed for the sideband location is equal to
+            half of the Nyquist frequency (Default: False).
         show_progressbar : boolean
-            Shows progressbar while iterating over different slices of the signal (passes the parameter to map method).
+            Shows progressbar while iterating over different slices of the signal (passes the
+            parameter to map method).
         parallel : bool
             Estimate the positions in parallel
 
@@ -118,6 +128,7 @@ class HologramImage(Signal2D):
                            self.axes_manager.signal_axes[1].scale),
             central_band_mask_radius=ap_cb_radius,
             sb=sb,
+            high_cf=high_cf,
             show_progressbar=show_progressbar,
             inplace=False,
             parallel=parallel,
@@ -176,6 +187,7 @@ class HologramImage(Signal2D):
                           sb_unit=None,
                           sb='lower',
                           sb_position=None,
+                          high_cf=False,
                           output_shape=None,
                           plotting=False,
                           show_progressbar=False,
@@ -211,6 +223,9 @@ class HologramImage(Signal2D):
         sb_position : tuple, :class:`~hyperspy.signals.Signal1D, None
             The sideband position (y, x), referred to the non-shifted FFT. If
             None, sideband is determined automatically from FFT.
+        high_cf : bool, optional
+            If False, the highest carrier frequency allowed for the sideband location is equal to
+            half of the Nyquist frequency (Default: False).
         output_shape: tuple, None
             Choose a new output shape. Default is the shape of the input
             hologram. The output shape should not be larger than the input
@@ -286,10 +301,10 @@ class HologramImage(Signal2D):
                             'wrong results.')
             if reference is None:
                 sb_position = self.estimate_sideband_position(
-                    sb=sb, parallel=parallel)
+                    sb=sb, high_cf=high_cf, parallel=parallel)
             else:
                 sb_position = reference.estimate_sideband_position(
-                    sb=sb, parallel=parallel)
+                    sb=sb, high_cf=high_cf, parallel=parallel)
 
         else:
             if isinstance(sb_position, BaseSignal) and \
@@ -433,6 +448,7 @@ class HologramImage(Signal2D):
             sb_size=sb_size_temp,
             sb_position=sb_position_temp,
             sb_smoothness=sb_smoothness_temp,
+            high_cf=high_cf,
             output_shape=output_shape,
             plotting=plotting,
             show_progressbar=show_progressbar,
@@ -478,6 +494,7 @@ class HologramImage(Signal2D):
                 sb_size=sb_size_ref,
                 sb_position=sb_position_ref,
                 sb_smoothness=sb_smoothness_ref,
+                high_cf=high_cf,
                 output_shape=output_shape,
                 plotting=plotting,
                 show_progressbar=show_progressbar,
@@ -493,6 +510,7 @@ class HologramImage(Signal2D):
                 sb_size=sb_size_temp,
                 sb_position=sb_position_temp,
                 sb_smoothness=sb_smoothness_temp,
+                high_cf=high_cf,
                 output_shape=output_shape,
                 plotting=plotting,
                 show_progressbar=show_progressbar,

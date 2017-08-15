@@ -4,8 +4,10 @@ from hyperspy.misc.test_utils import assert_warns
 
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.elements import elements as elements_db
+from hyperspy.decorators import lazifyTestClass
 
 
+@lazifyTestClass
 class TestlineFit:
 
     def setup_method(self, method):
@@ -58,12 +60,15 @@ class TestlineFit:
         s = self.s
         # Default:
         m = s.create_model()
+        m.remove(["Cr_Ka", "background_order_6"])
         m.store()
         m1 = s.models.a.restore()
         assert (
             [c.name for c in m] == [c.name for c in m1])
         assert ([c.name for c in m.xray_lines] ==
                 [c.name for c in m1.xray_lines])
+        assert "Cr_Ka" not in m1.xray_lines
+        assert "background_order_6" not in m1.background_components
 
     def test_edsmodel_store(self):
         self._check_model_store()
@@ -165,6 +170,7 @@ class TestlineFit:
             '$\\mathrm{Zn}_{\\mathrm{Ka}}$']
 
 
+@lazifyTestClass
 class TestMaps:
 
     def setup_method(self, method):

@@ -5,6 +5,115 @@ We only cover here the main highlights, for a detailed list of all the changes
 see `the commits in the GITHUB milestones
 <https://github.com/hyperspy/hyperspy/milestones?state=closed>`_.
 
+.. _changes_1.3:
+
+v1.3
+====
+
+This is a minor release. Follow the following links for details on all
+the `bugs fixed
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.3>`_,
+`feature
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3+label%3A"type%3A+enhancement">`_
+and `documentation
+<https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=is%3Aclosed%20milestone%3Av1.3%20label%3A%22affects%3A%20documentation%22%20>`_ enhancements,
+and `new features
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3+label%3A"type%3A+New+feature">`_.
+
+NEW
+---
+* :py:meth:`~.signal.BaseSignal.rebin` supports upscaling and rebinning to
+  arbitrary sizes through linear interpolation. See :ref:`rebin-label`. It also runs faster if `numba <http://numba.pydata.org/>`_ is installed.
+* :py:attr:`~.axes.AxesManager.signal_extent` and :py:attr:`~.axes.AxesManager.navigation_extent` properties to easily get the extent of each space.
+* New IPywidgets Graphical User Interface (GUI) elements for the `Jupyter Notebook <http://jupyter.org>`_.
+  See the new `hyperspy_gui_ipywidgets <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_ package.
+  It is not installed by default, see :ref:`install-label` for details.
+* All the :ref:`roi-label` now have a :meth:`gui` method to display a GUI if
+  at least one of HyperSpy's GUI packgages are installed.
+
+Enhancements
+------------
+* Creating many markers is now much faster.
+* New "Stage" metadata node. See :ref:`metadata_structure` for details.
+* The Brucker file reader now supports the new version of the format. See :ref:`bcf-format`.
+* HyperSpy is now compatible with all matplotlib backends, including the nbagg which is
+  particularly convenient for interactive data analysis in the
+  `Jupyter Notebook <http://jupyter.org>`_ in combination with the new
+  `hyperspy_gui_ipywidgets <https://github.com/hyperspy/hyperspy_gui_ipywidgets>`_ package.
+  See :ref:`importing_hyperspy-label`.
+* The ``vmin`` and ``vmax`` arguments of the
+  :py:func:`~.drawing.utils.plot_images` function now accept lists to enable
+  setting these parameters for each plot individually.
+* The :py:meth:`~.signal.MVATools.plot_decomposition_results` and
+  :py:meth:`~.signal.MVATools.plot_bss_results` methods now makes a better
+  guess of the number of navigators (if any) required to visualise the
+  components. (Previously they were always plotting four figures by default.)
+* All functions that take a signal range can now take a :py:class:`~.roi.SpanROI`.
+* The following ROIs can now be used for indexing or slicing (see :ref:`here <roi-slice-label>` for details):
+
+    * :py:class:`~.roi.Point1DROI`
+    * :py:class:`~.roi.Point2DROI`
+    * :py:class:`~.roi.SpanROI`
+    * :py:class:`~.roi.RectangularROI`
+
+
+API changes
+-----------
+* Permanent markers (if any) are now displayed when plotting by default.
+* HyperSpy no longer depends on traitsui (fixing many installation issues) and
+  ipywidgets as the GUI elements based on these packages have now been splitted
+  into separate packages and are not installed by default.
+* The following methods now raise a ``ValueError`` when not providing the
+  number of components if ``output_dimension`` was not specified when
+  performing a decomposition. (Previously they would plot as many figures
+  as available components, usually resulting in memory saturation):
+
+    * :py:meth:`~.signal.MVATools.plot_decomposition_results`.
+    * :py:meth:`~.signal.MVATools.plot_decomposition_factors`.
+
+* The default extension when saving to HDF5 following HyperSpy's specification
+  is now ``hspy`` instead of ``hdf5``. See :ref:`hspy-format`.
+
+* The following methods are deprecated and will be removed in HyperSpy 2.0
+
+    * :py:meth:`~.axes.AxesManager.show`. Use :py:meth:`~.axes.AxesManager.gui`
+      instead.
+    * All :meth:`notebook_interaction` method. Use the equivalent :meth:`gui` method
+      instead.
+    * :py:meth:`~._signals.signal1d.Signal1D.integrate_in_range`.
+      Use :py:meth:`~._signals.signal1d.Signal1D.integrate1D` instead.
+
+* The following items have been removed from
+  :ref:`preferences <configuring-hyperspy-label>`:
+
+    * ``General.default_export_format``
+    * ``General.lazy``
+    * ``Model.default_fitter``
+    * ``Machine_learning.multiple_files``
+    * ``Machine_learning.same_window``
+    * ``Plot.default_style_to_compare_spectra``
+    * ``Plot.plot_on_load``
+    * ``Plot.pylab_inline``
+    * ``EELS.fine_structure_width``
+    * ``EELS.fine_structure_active``
+    * ``EELS.fine_structure_smoothing``
+    * ``EELS.synchronize_cl_with_ll``
+    * ``EELS.preedge_safe_window_width``
+    * ``EELS.min_distance_between_edges_for_fine_structure``
+
+* New ``Preferences.GUIs`` section to enable/disable the installed GUI toolkits.
+
+For developers
+--------------
+* In addition to adding ipywidgets GUI elements, the traitsui GUI elements have
+  been splitted into a separate package. See the new
+  `hyperspy_gui_traitsui <https://github.com/hyperspy/hyperspy_gui_traitsui>`_
+  package.
+* The new :py:mod:`~.ui_registry` enables easy connection of external
+  GUI elements to HyperSpy. This is the mechanism used to split the traitsui
+  and ipywidgets GUI elements.
+
+
 .. _changes_1.2:
 
 v1.2
@@ -12,11 +121,11 @@ v1.2
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3Abug+is%3Aclosed+milestone%3Av1.2>`_,
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.2>`_,
 `enhancements
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.2+label%3Aenhancement>`_
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.2+label%3A"type%3A+enhancement">`_
 and `new features
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.2+label%3Anew>`_.
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.2+label%3A"type%3A+New+feature">`_.
 
 NEW
 ---
@@ -58,14 +167,14 @@ For developers
 
 
 
-.. _changes_1.1.2: 
+.. _changes_1.1.2:
 v1.1.2
 ======
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3Abug+is%3Aclosed+milestone%3Av1.1.2>`_
-and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.1.2+label%3Aenhancement>`_.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.1.2>`_
+and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.1.2+label%3A"type%3A+enhancement">`_.
 
 
 .. _changes_1.1.1:
@@ -74,7 +183,7 @@ v1.1.1
 
 This is a maintenance release. Follow the following link for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3Abug+is%3Aclosed+milestone%3A1.1.1>`_.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3A1.1.1>`_.
 
 Enhancements
 ------------
@@ -95,7 +204,7 @@ v1.1
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3Abug+is%3Aclosed+milestone%3A1.1>`_.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3A1.1>`_.
 
 NEW
 ---
@@ -121,7 +230,7 @@ v1.0.1
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=label%3Abug+is%3Aclosed+milestone%3A1.0.1>`_.
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3A1.0.1>`_.
 
 
 v1.0
@@ -203,8 +312,8 @@ v0.8.5
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aissue+milestone%3A0.8.5+label%3Abug+is%3Aclosed>`_,
-`feature <https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=milestone%3A0.8.5+is%3Aclosed++label%3Aenhancement+>`_
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aissue+milestone%3A0.8.5+label%3A"type%3A+bug"+is%3Aclosed>`_,
+`feature <https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=milestone%3A0.8.5+is%3Aclosed++label%3A"type%3A+enhancement"+>`_
 and `documentation
 <https://github.com/hyperspy/hyperspy/pulls?utf8=%E2%9C%93&q=milestone%3A0.8.5+label%3Adocumentation+is%3Aclosed+>`_ enhancements.
 
@@ -252,11 +361,11 @@ The broadcasting rules have also changed. See :ref:`signal.operations`
 for details.
 
 Follow the following links for details on all the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?page=1&q=is%3Aclosed+milestone%3A0.8.3+label%3Abug&utf8=%E2%9C%93>`_,
+<https://github.com/hyperspy/hyperspy/issues?page=1&q=is%3Aclosed+milestone%3A0.8.3+label%3A"type%3A+bug"&utf8=%E2%9C%93>`_,
 `documentation enhancements
 <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3Adocumentation>`_,
 `enhancements
-<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3Aenhancement>`_,
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3A"type%3A+enhancement">`_,
 `new features
 <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.3+label%3ANew>`_
 `and API changes
@@ -277,9 +386,9 @@ v0.8.1
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
-<https://github.com/hyperspy/hyperspy/issues?page=1&q=is%3Aclosed+milestone%3A0.8.1+label%3Abug&utf8=%E2%9C%93>`_,
+<https://github.com/hyperspy/hyperspy/issues?page=1&q=is%3Aclosed+milestone%3A0.8.1+label%3A"type%3A+bug"&utf8=%E2%9C%93>`_,
 `feature
-<https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3A0.8.1++label%3Aenhancement+>`_
+<https://github.com/hyperspy/hyperspy/issues?utf8=%E2%9C%93&q=is%3Aclosed+milestone%3A0.8.1++label%3A"type%3A+enhancement"+>`_
 and `documentation
 <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3A0.8.1+label%3Adocumentation>`_ enhancements.
 

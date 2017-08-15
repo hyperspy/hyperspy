@@ -20,7 +20,6 @@ from functools import wraps
 
 import numpy as np
 import dask.array as da
-import h5py
 
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.lazy import LazySignal
@@ -262,16 +261,16 @@ class ComplexSignal(ComplexSignal_mixin, BaseSignal):
     angle.__doc__ = ComplexSignal_mixin.angle.__doc__
 
 
-class LazyComplexSignal(ComplexSignal_mixin, LazySignal):
+class LazyComplexSignal(ComplexSignal, LazySignal):
 
     @format_title('absolute')
     def _get_amplitude(self):
         amplitude = da.numpy_compat.builtins.abs(self)
-        return super()._get_amplitude(amplitude)
+        return super(ComplexSignal, self)._get_amplitude(amplitude)
 
     def _get_phase(self):
         phase = self._deepcopy_with_new_data(da.angle(self.data))
-        return super()._get_phase(phase)
+        return super(ComplexSignal, self)._get_phase(phase)
 
     def _set_real(self, real):
         if isinstance(real, BaseSignal):
@@ -300,5 +299,5 @@ class LazyComplexSignal(ComplexSignal_mixin, LazySignal):
 
     def angle(self, deg=False):
         angle = self._deepcopy_with_new_data(da.angle(self.data, deg))
-        return super().angle(angle, deg=deg)
+        return super(ComplexSignal, self).angle(angle, deg=deg)
     angle.__doc__ = ComplexSignal_mixin.angle.__doc__
