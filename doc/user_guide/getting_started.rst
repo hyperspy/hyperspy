@@ -53,9 +53,9 @@ and the
 `traitsui GUI <https://github.com/hyperspy/hyperspy_gui_traitsui>`_.
 
 By default, HyperSpy warns the user if one of the GUI packages is not installed.
-These warnings can be turned off using the :py:class:`~.defaults_parser.Preferences`
-class: (see :ref:`here <configuring-hyperspy-label>` for more information), or
-directly via:
+These warnings can be turned off using the :py:class:`~.defaults_parser.Preferences` GUI
+(see :ref:`here <configuring-hyperspy-label>` for more information) or programmatically
+as follows:
 
     .. code-block:: python
 
