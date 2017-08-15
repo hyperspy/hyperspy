@@ -54,7 +54,15 @@ and the
 
 By default, HyperSpy warns the user if one of the GUI packages is not installed.
 These warnings can be turned off using the :py:class:`~.defaults_parser.Preferences`
-class (see :ref:`here <configuring-hyperspy-label>` for more information).
+class: (see :ref:`here <configuring-hyperspy-label>` for more information), or
+directly via:
+
+    .. code-block:: python
+
+       >>> import hyperspy.api as hs
+       >>> hs.preferences.GUIs.warn_if_guis_are_missing = False
+       >>> hs.preferences.save()
+
 
 Now you are ready to load
 your data (see below).
