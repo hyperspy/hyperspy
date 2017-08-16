@@ -22,7 +22,10 @@ import scipy.constants as constants
 import numpy as np
 from dask.array import Array as daArray
 
-from hyperspy.signals import (Signal2D, BaseSignal, Signal1D, LazySignal)
+from hyperspy._signals.signal2d import Signal2D
+from hyperspy.signal import BaseSignal
+from hyperspy._signals.signal1d import Signal1D
+from hyperspy._signals.lazy import LazySignal
 from hyperspy.misc.holography.reconstruct import (
     reconstruct, estimate_sideband_position, estimate_sideband_size)
 
@@ -76,7 +79,9 @@ class HologramImage(Signal2D):
             md.set_item("Acquisition_instrument.TEM.Biprism.voltage",
                         biprism_voltage)
         if tilt_stage is not None:
-            md.set_item("Acquisition_instrument.TEM.tilt_stage", tilt_stage)
+            md.set_item(
+                "Acquisition_instrument.TEM.Stage.tilt_alpha",
+                tilt_stage)
 
     def estimate_sideband_position(self,
                                    ap_cb_radius=None,

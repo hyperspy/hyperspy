@@ -124,5 +124,5 @@ class DielectricFunction(DielectricFunction_mixin, ComplexSignal1D):
     pass
 
 
-class LazyDielectricFunction(DielectricFunction_mixin, LazyComplexSignal1D):
+class LazyDielectricFunction(DielectricFunction, LazyComplexSignal1D):
     pass

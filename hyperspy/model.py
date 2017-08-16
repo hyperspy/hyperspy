@@ -47,6 +47,7 @@ from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.events import Events, Event, EventSuppressor
 import warnings
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
 
@@ -98,6 +99,7 @@ class ModelComponents(object):
         return ans
 
 
+@add_gui_method(toolkey="Model")
 class BaseModel(list):
 
     """Model and data fitting tools applicable to signals of both one and two
@@ -880,7 +882,7 @@ class BaseModel(list):
             ' reduced chi-squared'
         return tmp
 
-    def fit(self, fitter=None, method='ls', grad=False,
+    def fit(self, fitter="leastsq", method='ls', grad=False,
             bounded=False, ext_bounding=False, update_plot=False,
             **kwargs):
         """Fits the model to the experimental data.
@@ -895,11 +897,11 @@ class BaseModel(list):
 
         Parameters
         ----------
-        fitter : {None, "leastsq", "mpfit", "odr", "Nelder-Mead",
+        fitter : {"leastsq", "mpfit", "odr", "Nelder-Mead",
                  "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B", "TNC",
                  "Differential Evolution"}
-            The optimization algorithm used to perform the fitting. If None the
-            fitter defined in `preferences.Model.default_fitter` is used.
+            The optimization algorithm used to perform the fitting. Deafault
+            is "leastsq".
 
                 "leastsq" performs least-squares optimization, and supports
                 bounds on parameters.
@@ -954,8 +956,8 @@ class BaseModel(list):
 
         """
 
-        if fitter is None:
-            fitter = preferences.Model.default_fitter
+        if fitter is None:  # None meant "from preferences" before v1.3
+            fitter = "leastsq"
         switch_aap = (update_plot != self._plot_active)
         if switch_aap is True and update_plot is False:
             cm = self.suspend_update
@@ -1403,7 +1405,7 @@ class BaseModel(list):
             for parameter in component.parameters:
                 parameter.ext_bounded = False
 
-    def export_results(self, folder=None, format=None, save_std=False,
+    def export_results(self, folder=None, format="hspy", save_std=False,
                        only_free=True, only_active=True):
         """Export the results of the parameters of the model to the desired
         folder.
@@ -1414,9 +1416,8 @@ class BaseModel(list):
             The path to the folder where the file will be saved. If `None` the
             current folder is used by default.
         format : str
-            The format to which the data will be exported. It must be the
-            extension of any format supported by HyperSpy. If None, the default
-            format for exporting as defined in the `Preferences` will be used.
+            The extension of the file format. It must be one of the
+            fileformats supported by HyperSpy. The default is "hspy".
         save_std : bool
             If True, also the standard deviation will be saved.
         only_free : bool
@@ -1460,14 +1461,16 @@ class BaseModel(list):
             if only_active is False or component.active:
                 component.plot(only_free=only_free)
 
-    def print_current_values(self, only_free=True):
+    def print_current_values(self, only_free=True, skip_multi=False):
         """Print the value of each parameter of the model.
 
         Parameters
         ----------
         only_free : bool
             If True, only the value of the parameters that are free will
-             be printed.
+            be printed.
+        skip_multi : bool
+            If True, parameters with attribute "__iter__" are not printed
 
         """
         print("Components\tParameter\tValue")
@@ -1480,9 +1483,13 @@ class BaseModel(list):
                 parameters = component.free_parameters if only_free \
                     else component.parameters
                 for parameter in parameters:
-                    if not hasattr(parameter.value, '__iter__'):
-                        print("\t\t%s\t%g" % (
-                            parameter.name, parameter.value))
+                    if hasattr(parameter.value, '__iter__'):
+                        if not skip_multi:
+                            for idx in range(len(parameter.value)):
+                                print("\t\t%s[%d]\t%g" % (parameter.name, idx,
+                                                          parameter.value[idx]))
+                    else:
+                        print("\t\t%s\t%g" % (parameter.name, parameter.value))
 
     def set_parameters_not_free(self, component_list=None,
                                 parameter_name_list=None):
@@ -1747,26 +1754,6 @@ class BaseModel(list):
                     "\" not found in model")
         else:
             return list.__getitem__(self, value)
-
-    def notebook_interaction(self):
-        """Creates interactive notebook widgets for all components and
-        parameters, if available.
-        Requires `ipywidgets` to be installed.
-        """
-        from ipywidgets import Accordion
-        from traitlets import TraitError as TraitletError
-        from IPython.display import display as ip_display
-
-        try:
-            children = [component.notebook_interaction(False) for component in
-                        self]
-            accord = Accordion(children=children)
-            for i, comp in enumerate(self):
-                accord.set_title(i, comp.name)
-            ip_display(accord)
-        except TraitletError:
-            _logger.info('This function is only avialable when running in a'
-                         ' notebook')
 
     def create_samfire(self, workers=None, setup=True, **kwargs):
         """Creates a SAMFire object.

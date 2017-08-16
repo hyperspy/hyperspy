@@ -28,7 +28,7 @@
 # ----------------------
 format_name = 'bruker composite file bcf'
 description = """the proprietary format used by Bruker's
-Esprit(R) software to save hyppermaps together with 16bit SEM imagery,
+Esprit(R) software to save hypermaps together with 16bit SEM imagery,
 EDS spectra and metadata describing the dimentions of the data and
 SEM/TEM (limited) parameters"""
 full_support = False
@@ -269,7 +269,7 @@ but compression signature is missing in the header. Aborting....""")
         if self.sfs.compression == 'None':
             return self._iter_read_chunks(), self.sfs.usable_chunk,\
                 self.size_in_chunks
-        elif self.sfs.compression in ('zlib', 'bzip2'):
+        elif self.sfs.compression == 'zlib':
             return self._iter_read_compr_chunks(), self.uncompressed_blk_size,\
                 self.no_of_compr_blk
         else:
@@ -438,7 +438,7 @@ class ObjectifyJSONEncoder(json.JSONEncoder):
     """ JSON encoder that can handle simple lxml objectify types,
         Handles xml attributes, also returns all data types"""
 
-    def default(self, o):
+    def default(self, o):  # noqa
         dictionary = {}
         if hasattr(o, '__dict__') and len(o.__dict__) > 0:
             d1 = o.__dict__.copy()
@@ -464,36 +464,39 @@ class ObjectifyJSONEncoder(json.JSONEncoder):
             return dictionary
 
 
+def dictionarize(xml_node):
+    return json.loads(json.dumps(xml_node, cls=ObjectifyJSONEncoder))
+
+
 class EDXSpectrum(object):
 
     def __init__(self, spectrum):
         """
         Wrap the objectified bruker EDS spectrum xml part
-        to the python object, leaving all the xml and bruker clutter behind
+        to the python object, leaving all the xml and bruker clutter behind.
 
         Arguments:
         spectrum -- lxml objectified xml where spectrum.attrib['Type'] should
             be 'TRTSpectrum'
         """
         TRTHeader = spectrum.TRTHeaderedClass
-        #<ClassInstance Type="TRTSpectrumHardwareHeader>:
-        hardware_header = TRTHeader.ClassInstance
-        #<ClassInstance Type="TRTDetectorHeader>:
-        detector_header = TRTHeader.ClassInstance[1]
-        #<ClassInstance Type="TRTESMAHeader">:
-        esma_header = TRTHeader.ClassInstance[2]
+        hardware_header = TRTHeader.xpath(
+            "ClassInstance[@Type='TRTSpectrumHardwareHeader']")[0]
+        detector_header = TRTHeader.xpath(
+            "ClassInstance[@Type='TRTDetectorHeader']")[0]
+        esma_header = TRTHeader.xpath(
+            "ClassInstance[@Type='TRTESMAHeader']")[0]
         # what TRT means?
         # ESMA could stand for Electron Scanning Microscope Analysis
-        spectrum_header = spectrum.ClassInstance[0]
+        spectrum_header = spectrum.xpath(
+            "ClassInstance[@Type='TRTSpectrumHeader']")[0]
 
         # map stuff from harware xml branch:
-        self.hardware_metadata = json.loads(json.dumps(hardware_header,
-                                                       cls=ObjectifyJSONEncoder))
+        self.hardware_metadata = dictionarize(hardware_header)
         self.amplification = self.hardware_metadata['Amplification']  # USED
 
         # map stuff from detector xml branch
-        self.detector_metadata = json.loads(json.dumps(detector_header,
-                                                       cls=ObjectifyJSONEncoder))
+        self.detector_metadata = dictionarize(detector_header)
         self.detector_type = self.detector_metadata['Type']  # USED
 
         # decode silly hidden detector layer info:
@@ -505,21 +508,17 @@ class EDXSpectrum(object):
             self.detector_metadata['DetLayers'][i.tag] = dict(i.attrib)
 
         # map stuff from esma xml branch:
-        self.esma_metadata = json.loads(json.dumps(esma_header,
-                                                   cls=ObjectifyJSONEncoder))
+        self.esma_metadata = dictionarize(esma_header)
         # USED:
         self.hv = self.esma_metadata['PrimaryEnergy']
         self.elevationAngle = self.esma_metadata['ElevationAngle']
         #self.azimutAngle = self.esma_metadata['AzimutAngle']
 
         # map stuff from spectra xml branch:
-        self.spectrum_metadata = json.loads(json.dumps(spectrum_header,
-                                                       cls=ObjectifyJSONEncoder))
+        self.spectrum_metadata = dictionarize(spectrum_header)
         self.calibAbs = self.spectrum_metadata['CalibAbs']
         self.calibLin = self.spectrum_metadata['CalibLin']
         self.chnlCnt = self.spectrum_metadata['ChannelCount']
-        self.date = self.spectrum_metadata['Date']  # Not Used?
-        self.time = self.spectrum_metadata['Time']  # Not Used?
 
         # main data:
         self.data = np.fromstring(str(spectrum.Channels), dtype='Q', sep=",")
@@ -556,7 +555,7 @@ class HyperHeader(object):
     is throught image index.
     """
 
-    def __init__(self, xml_str):
+    def __init__(self, xml_str, instrument=None):
         # Due to Delphi(TM) xml implementation literaly shits into xml,
         # we need lxml parser to be more forgiving (recover=True):
         oparser = objectify.makeparser(recover=True)
@@ -572,13 +571,10 @@ class HyperHeader(object):
         self.date = dt.date().isoformat()
         self.time = dt.time().isoformat()
         self.version = int(root.Header.FileVersion)
-        # create containers:
-        self.sem = Container()
-        self.stage = Container()
-        self.image = Container()
         # fill the sem and stage attributes:
-        self._set_sem(root)
-        self._set_image(root)
+        self._set_microscope(root)
+        self._get_mode(instrument)
+        self._set_images(root)
         self.elements = {}
         self._set_elements(root)
         self.line_counter = interpret(root.LineCounter.text)
@@ -588,76 +584,129 @@ class HyperHeader(object):
         self.spectra_data = {}
         self._set_sum_edx(root)
 
-    def _set_sem(self, root):
-        """wrap objectified xml part to class attributes for self.sem,
-        self.stage and self.image.*_res
+    def _set_microscope(self, root):
+        """set microscope metadata from objectified xml part (TRTSEMData,
+        TRTSEMStageData, TRTDSPConfiguration).
+
+        BCF can contain basic parameters of SEM column, and optionaly
+        the stage. This metadata can be not fully or at all availbale to
+        Esprit and saved into bcf file as it depends from license and
+        the link and implementation state between the microscope's
+        software and Bruker system.
         """
+
         semData = root.xpath("ClassInstance[@Type='TRTSEMData']")[0]
-        # sem acceleration voltage, working distance, magnification:
-        self.sem.hv = semData.HV.pyval  # in kV
-        self.sem.wd = semData.WD.pyval  # in mm
-        self.sem.mag = semData.Mag.pyval  # in times
+        self.sem_metadata = dictionarize(semData)
+        # parse values for use in hspy metadata:
+        self.hv = self.sem_metadata.get('HV', 0.0)  # in kV
         # image/hypermap resolution in um/pixel:
-        try:
-            self.image.x_res = semData.DX.pyval  # in micrometers
-            self.image.y_res = semData.DY.pyval  # in micrometers
+        if 'DX' in self.sem_metadata:
             self.units = 'µm'
-        except AttributeError:
-            self.image.x_res = 1.0  # in pixels
-            self.image.y_res = 1.0  # in pixels
+        else:
             self.units = 'pix'
-        semStageData = root.xpath("ClassInstance[@Type='TRTSEMStageData']")[0]
+        self.x_res = self.sem_metadata.get('DX', 1.0)
+        self.y_res = self.sem_metadata.get('DY', 1.0)
         # stage position:
-        self.stage_metadata = json.loads(json.dumps(semStageData,
-                                                    cls=ObjectifyJSONEncoder))
+        semStageData = root.xpath("ClassInstance[@Type='TRTSEMStageData']")[0]
+        self.stage_metadata = dictionarize(semStageData)
+        # DSP configuration (always present, part of Bruker system):
         DSPConf = root.xpath("ClassInstance[@Type='TRTDSPConfiguration']")[0]
-        self.image.dsp_metadata = json.loads(json.dumps(DSPConf,
-                                                        cls=ObjectifyJSONEncoder))
+        self.dsp_metadata = dictionarize(DSPConf)
+
+    def _get_mode(self, instrument=None):
+        # where is no way to determine what kind of instrument was used:
+        # TEM or SEM (mode attribute)
+        hv = self.hv
+        if instrument is not None:
+            self.mode = instrument
+        elif hv > 30.0:  # workaround to know if TEM or SEM
+            self.mode = 'TEM'
+        else:
+            self.mode = 'SEM'
+            _logger.info(
+                "Guessing that the acquisition instrument is %s " % self.mode +
+                "because the beam energy is %i keV. If this is wrong, " % hv +
+                "please provide the right instrument using the 'instrument' " +
+                "keyword.")
 
     def get_acq_instrument_dict(self, detector=False, **kwargs):
         """return python dictionary with aquisition instrument
         mandatory data
         """
-        acq_inst = {
-            'beam_energy': self.sem.hv,
-            'magnification': self.sem.mag,
-        }
-        if 'Tilt' in self.stage_metadata:
-            acq_inst['tilt_stage'] = self.stage_metadata['Tilt']
+        acq_inst = {'beam_energy': self.hv}
+        if 'Mag' in self.sem_metadata:
+            acq_inst['magnification'] = self.sem_metadata['Mag']
         if detector:
             eds_metadata = self.get_spectra_metadata(**kwargs)
             acq_inst['Detector'] = {'EDS': {
-                #'azimuth_angle': eds_metadata.azimutAngle,
                 'elevation_angle': eds_metadata.elevationAngle,
                 'detector_type': eds_metadata.detector_type,
-                'real_time': self.calc_real_time()
-            }
-            }
+                'real_time': self.calc_real_time()}}
             if 'AzimutAngle' in eds_metadata.esma_metadata:
                 acq_inst['Detector']['EDS'][
                     'azimuth_angle'] = eds_metadata.esma_metadata['AzimutAngle']
         return acq_inst
 
-    def _set_image(self, root):
-        """Wrap objectified xml part with image to class attributes
-        for self.image.
-        """
-        imageData = root.xpath("ClassInstance[@Type='TRTImageData']")[0]
-        self.image.width = int(imageData.Width)  # in pixels
-        self.image.height = int(imageData.Height)  # # in pixels
-        self.image.plane_count = int(imageData.PlaneCount)
-        self.multi_image = int(imageData.MultiImage)
-        self.image.images = []
-        for i in range(self.image.plane_count):
-            img = imageData.xpath("Plane" + str(i))[0]
+    def _parse_image(self, xml_node, overview=False):
+        """parse image from bruker xml image node."""
+        if overview:
+            rect_node = xml_node.xpath("".join(["ChildClassInstances",
+                                                "/ClassInstance[@Type='TRTRectangleOverlayElement' and",
+                                                " @Name='Map']",
+                                                "/TRTSolidOverlayElement",
+                                                "/TRTBasicLineOverlayElement",
+                                                "/TRTOverlayElement"]))[0]
+            over_rect = rect_node.Rect
+            rect = {'y1': over_rect.Top * self.y_res,
+                    'x1': over_rect.Left * self.x_res,
+                    'y2': over_rect.Bottom * self.y_res,
+                    'x2': over_rect.Right * self.x_res}
+            over_dict = {'marker_type': 'Rectangle',
+                         'plot_on_signal': True,
+                         'data': rect,
+                         'marker_properties': {'color': 'yellow',
+                                               'linewidth': 2}}
+        image = Container()
+        image.width = int(xml_node.Width)  # in pixels
+        image.height = int(xml_node.Height)  # in pixels
+        image.plane_count = int(xml_node.PlaneCount)
+        image.images = []
+        for i in range(image.plane_count):
+            img = xml_node.xpath("Plane" + str(i))[0]
             raw = codecs.decode((img.Data.text).encode('ascii'), 'base64')
             array1 = np.fromstring(raw, dtype=np.uint16)
             if any(array1):
-                temp_img = Container()
-                temp_img.data = array1.reshape((self.image.height,
-                                                self.image.width))
-                temp_img.detector_name = str(img.Description.text)
-                self.image.images.append(temp_img)
+                item = self.gen_hspy_item_dict_basic()
+                data = array1.reshape((image.height, image.width))
+                detector_name = str(img.Description.text)
+                item['data'] = data
+                item['axes'][0]['size'] = image.height
+                item['axes'][1]['size'] = image.width
+                item['metadata']['General'] = {'title': detector_name}
+                item['metadata']['Signal'] = {'signal_type': detector_name,
+                                              'record_by': 'image'}
+                if overview:
+                    item['metadata']['Markers'] = {'overview': over_dict}
+                image.images.append(item)
+        return image
+
+    def _set_images(self, root):
+        """Wrap objectified xml part with image to class attributes
+        for self.image.
+        """
+        image_node = root.xpath(
+            "ClassInstance[@Type='TRTImageData' and not(@Name)]")[0]
+        self.image = self._parse_image(image_node)
+        if self.version == 2:
+            overview_node = root.xpath("".join([
+                "ClassInstance[@Type='TRTContainerClass']/ChildClassInstances",
+                "/ClassInstance[@Type='TRTContainerClass' ",
+                "and @Name='OverviewImages']",
+                "/ChildClassInstances",
+                "/ClassInstance[@Type='TRTImageData']"]))
+            if len(overview_node) > 0:  # in case there is no image
+                self.overview = self._parse_image(
+                    overview_node[0], overview=True)
 
     def _set_elements(self, root):
         """wrap objectified xml part with selection of elements to
@@ -696,10 +745,10 @@ class HyperHeader(object):
         optimal channel number
         """
         bruker_hv_range = self.spectra_data[index].amplification / 1000
-        if self.sem.hv >= bruker_hv_range:
+        if self.hv >= bruker_hv_range:
             return self.spectra_data[index].data.shape[0]
         else:
-            return self.spectra_data[index].energy_to_channel(self.sem.hv)
+            return self.spectra_data[index].energy_to_channel(self.hv)
 
     def estimate_map_depth(self, index=0, downsample=1, for_numpy=False):
         """estimate minimal dtype of array using cumulative spectra
@@ -767,12 +816,34 @@ class HyperHeader(object):
         in seconds
         """
         line_cnt_sum = np.sum(self.line_counter)
-        line_avg = self.image.dsp_metadata['LineAverage']
-        pix_avg = self.image.dsp_metadata['PixelAverage']
-        pix_time = self.image.dsp_metadata['PixelTime']
+        line_avg = self.dsp_metadata['LineAverage']
+        pix_avg = self.dsp_metadata['PixelAverage']
+        pix_time = self.dsp_metadata['PixelTime']
         width = self.image.width
         real_time = line_cnt_sum * line_avg * pix_avg * pix_time * width / 1000000.0
         return float(real_time)
+
+    def gen_hspy_item_dict_basic(self):
+        i = {'axes': [{'name': 'height',
+                       'offset': 0,
+                       'scale': self.y_res,
+                       'units': self.units},
+                      {'name': 'width',
+                       'offset': 0,
+                       'scale': self.x_res,
+                       'units': self.units}],
+             'metadata': {
+            'Acquisition_instrument':
+            {self.mode: self.get_acq_instrument_dict()},
+                'Sample': {'name': self.name},
+        },
+            'original_metadata': {
+                 'Microscope': self.sem_metadata,
+                 'DSP Configuration': self.dsp_metadata,
+                 'Stage': self.stage_metadata
+        }
+        }
+        return i
 
 
 class BCF_reader(SFS_reader):
@@ -796,11 +867,11 @@ class BCF_reader(SFS_reader):
     where index of the hypermap (default 0) is the key to the instance.
     """
 
-    def __init__(self, filename):
+    def __init__(self, filename, instrument=None):
         SFS_reader.__init__(self, filename)
         header_file = self.get_file('EDSDatabase/HeaderData')
         header_byte_str = header_file.get_as_BytesIO_string().getvalue()
-        self.header = HyperHeader(header_byte_str)
+        self.header = HyperHeader(header_byte_str, instrument=instrument)
         self.hypermap = {}
 
     def persistent_parse_hypermap(self, index=0, downsample=None,
@@ -860,8 +931,8 @@ class BCF_reader(SFS_reader):
             cutoff_chan = None
 
         if fast_unbcf:
-            fh = dd(self.get_file)('EDSDatabase/SpectrumData' + str(index))
-            value = dd(unbcf_fast.parse_to_numpy)(fh,
+            fh = dd(self.get_file)('EDSDatabase/SpectrumData' + str(index))  # noqa
+            value = dd(unbcf_fast.parse_to_numpy)(fh,                        # noqa
                                                   downsample=downsample,
                                                   cutoff=cutoff_chan,
                                                   description=False)
@@ -875,8 +946,6 @@ class BCF_reader(SFS_reader):
                 res = value.compute()
             return res
         else:
-            _logger.warning("""using slow python parser,
-this is going to take a while... please wait""")
             value = dd(self.py_parse_hypermap)(index=0,
                                                downsample=downsample,
                                                cutoff_at_channel=cutoff_chan,
@@ -890,7 +959,7 @@ this is going to take a while... please wait""")
                 res = value.compute()
             return res
 
-    def py_parse_hypermap(self, index=0, downsample=1, cutoff_at_channel=None,
+    def py_parse_hypermap(self, index=0, downsample=1, cutoff_at_channel=None,  # noqa
                           description=False):
         """Unpack the Delphi/Bruker binary spectral map and return
         numpy array in memory efficient way using pure python implementation.
@@ -954,19 +1023,21 @@ this is going to take a while... please wait""")
                     buffer1 = buffer1[offset:] + next(iter_data)
                     offset = 0
                 # the pixel header contains such information:
-                # x index of pixel,
-                # number of channels for whole mapping,
-                # number of channels for pixel,
-                # some dummy placehollder (same value in every known bcf),
-                # flag distinguishing 12bit packing (1) or instructed packing,
-                # value which sometimes shows the size of packed data,
-                # number of pulses if data is 12bit packed, or contains 16bit
-                #  packed additional to instructed data,
-                # packed data size - next header is after that size,
-                # dummy -- empty 2bytes
+                # x index of pixel (uint32);
+                # number of channels for whole mapping (unit16);
+                # number of channels for pixel (uint16);
+                # dummy placehollder (same value in every known bcf) (32bit);
+                # flag distinguishing packing data type (16bit):
+                #    0 - 16bit packed pulses, 1 - 12bit packed pulses,
+                #    >1 - instructively packed spectra;
+                # value which sometimes shows the size of packed data (uint16);
+                # number of pulses if pulse data are present (uint16) or
+                #      additional pulses to the instructively packed data;
+                # packed data size (32bit) (without additional pulses) \
+                #       next header is after that amount of bytes;
                 x_pix, chan1, chan2, dummy1, flag, dummy_size1, n_of_pulses,\
-                    data_size2, dummy2 = strct_unp('<IHHIHHHHH',
-                                                   buffer1[offset:offset + 22])
+                    data_size2 = strct_unp('<IHHIHHHI',
+                                           buffer1[offset:offset + 22])
                 pix_idx = (x_pix // dwn_factor) + ((-(-width // dwn_factor)) *
                                                    (line_cnt // dwn_factor))
                 offset += 22
@@ -974,7 +1045,12 @@ this is going to take a while... please wait""")
                     buffer1 = buffer1[offset:] + next(iter_data)
                     size = size_chnk + size - offset
                     offset = 0
-                if flag == 1:  # and (chan1 != chan2)
+                if flag == 0:
+                    data1 = buffer1[offset:offset + data_size2]
+                    arr16 = np.fromstring(data1, dtype=np.uint16)
+                    pixel = np.bincount(arr16, minlength=chan1 - 1)
+                    offset += data_size2
+                elif flag == 1:  # and (chan1 != chan2)
                     # Unpack packed 12-bit data to 16-bit uints:
                     data1 = buffer1[offset:offset + data_size2]
                     switched_i2 = np.fromstring(data1,
@@ -994,7 +1070,7 @@ this is going to take a while... please wait""")
                     exp16 &= np.uint16(0x0FFF)  # Mask all shorts to 12bit
                     pixel = np.bincount(exp16, minlength=chan1 - 1)
                     offset += data_size2
-                else:
+                else:  # flag > 1
                     # Unpack instructively packed data to pixel channels:
                     pixel = []
                     the_end = offset + data_size2 - 4
@@ -1068,6 +1144,10 @@ this is going to take a while... please wait""")
             vfa.dtype = new_dtype
         return vfa
 
+    def add_filename_to_general(self, item):
+        item['metadata']['General']['original_filename'] = \
+            self.filename.split('/')[-1]
+
 
 class HyperMap(object):
 
@@ -1078,13 +1158,13 @@ class HyperMap(object):
         sp_meta = parent.header.get_spectra_metadata(index=index)
         self.calib_abs = sp_meta.calibAbs  # in keV
         self.calib_lin = sp_meta.calibLin
-        self.xcalib = parent.header.image.x_res * downsample
-        self.ycalib = parent.header.image.y_res * downsample
+        self.xcalib = parent.header.x_res * downsample
+        self.ycalib = parent.header.y_res * downsample
         self.hypermap = nparray
 
 
 # wrapper functions for hyperspy:
-def file_reader(filename, select_type=None, index=0, downsample=1,
+def file_reader(filename, select_type=None, index=0, downsample=1,     # noqa
                 cutoff_at_kV=None, instrument=None, lazy=False):
     """Reads a bruker bcf file and loads the data into the appropriate class,
     then wraps it into appropriate hyperspy required list of dictionaries
@@ -1104,80 +1184,55 @@ def file_reader(filename, select_type=None, index=0, downsample=1,
       """
 
     # objectified bcf file:
-    obj_bcf = BCF_reader(filename)
+    obj_bcf = BCF_reader(filename, instrument=instrument)
     if select_type == 'image':
         return bcf_imagery(obj_bcf)
     elif select_type == 'spectrum':
         return bcf_hyperspectra(obj_bcf, index=index,
                                 downsample=downsample,
                                 cutoff_at_kV=cutoff_at_kV,
-                                instrument=instrument,
                                 lazy=lazy)
     else:
-        return bcf_imagery(obj_bcf, instrument=instrument) + bcf_hyperspectra(
+        return bcf_imagery(obj_bcf) + bcf_hyperspectra(
             obj_bcf,
             index=index,
             downsample=downsample,
             cutoff_at_kV=cutoff_at_kV,
-            instrument=instrument,
             lazy=lazy)
 
 
-def bcf_imagery(obj_bcf, instrument=None):
+def bcf_imagery(obj_bcf):
     """ return hyperspy required list of dict with sem
     imagery and metadata.
     """
     imagery_list = []
-    mode = _get_mode(obj_bcf, instrument=instrument)
     for img in obj_bcf.header.image.images:
-        imagery_list.append(
-            {'data': img.data,
-             'axes': [{'name': 'height',
-                       'size': obj_bcf.header.image.height,
-                       'offset': 0,
-                       'scale': obj_bcf.header.image.y_res,
-                       'units': obj_bcf.header.units},
-                      {'name': 'width',
-                       'size': obj_bcf.header.image.width,
-                       'offset': 0,
-                       'scale': obj_bcf.header.image.x_res,
-                       'units': obj_bcf.header.units}],
-             'metadata':
-             # where is no way to determine what kind of instrument was used:
-             # TEM or SEM (mode variable)
-             {'Acquisition_instrument': {
-                 mode: obj_bcf.header.get_acq_instrument_dict()
-             },
-                 'General': {'original_filename': obj_bcf.filename.split('/')[-1],
-                             'title': img.detector_name},
-                 'Sample': {'name': obj_bcf.header.name},
-                 'Signal': {'signal_type': img.detector_name,
-                            'record_by': 'image'},
-             },
-             'original_metadata': {
-                 'DSP Configuration': obj_bcf.header.image.dsp_metadata,
-                 'Stage': obj_bcf.header.stage_metadata
-             }
-             })
+        obj_bcf.add_filename_to_general(img)
+        imagery_list.append(img)
+    if hasattr(obj_bcf.header, 'overview'):
+        for img2 in obj_bcf.header.overview.images:
+            obj_bcf.add_filename_to_general(img2)
+            imagery_list.append(img2)
     return imagery_list
 
 
-def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,
-                     instrument=None, lazy=False):
+def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,  # noqa
+                     lazy=False):
     """ Return hyperspy required list of dict with eds
     hyperspectra and metadata.
     """
     global warn_once
     if (fast_unbcf == False) and warn_once:
         _logger.warning("""unbcf_fast library is not present...
-Parsing BCF with Python-only backend.
+Parsing BCF with Python-only backend, which is slow... please wait.
 If parsing is uncomfortably slow, first install cython, then reinstall hyperspy.
 For more information, check the 'Installing HyperSpy' section in the documentation.""")
         warn_once = False
     obj_bcf.persistent_parse_hypermap(index=index, downsample=downsample,
                                       cutoff_at_kV=cutoff_at_kV, lazy=lazy)
     eds_metadata = obj_bcf.header.get_spectra_metadata(index=index)
-    mode = _get_mode(obj_bcf, instrument=instrument)
+    mode = obj_bcf.header.mode
+    mapping = get_mapping(mode)
     hyperspectra = [{'data': obj_bcf.hypermap[index].hypermap,
                      'axes': [{'name': 'height',
                                'size': obj_bcf.hypermap[index].hypermap.shape[0],
@@ -1198,13 +1253,14 @@ For more information, check the 'Installing HyperSpy' section in the documentati
                      # where is no way to determine what kind of instrument was used:
                      # TEM or SEM
                      {'Acquisition_instrument': {
-                         mode: obj_bcf.header.get_acq_instrument_dict(detector=True,
-                                                                      index=index)
+                         mode: obj_bcf.header.get_acq_instrument_dict(
+                             detector=True,
+                             index=index)
                      },
         'General': {'original_filename': obj_bcf.filename.split('/')[-1],
                          'title': 'EDX',
                          'date': obj_bcf.header.date,
-                                  'time': obj_bcf.header.time},
+                         'time': obj_bcf.header.time},
         'Sample': {'name': obj_bcf.header.name,
                          'elements': sorted(list(obj_bcf.header.elements)),
                          'xray_lines': sorted(gen_elem_list(obj_bcf.header.elements))},
@@ -1216,39 +1272,42 @@ For more information, check the 'Installing HyperSpy' section in the documentati
                               'Detector': eds_metadata.detector_metadata,
                               'Analysis': eds_metadata.esma_metadata,
                               'Spectrum': eds_metadata.spectrum_metadata,
-                              'DSP Configuration': obj_bcf.header.image.dsp_metadata,
+                              'DSP Configuration': obj_bcf.header.dsp_metadata,
                               'Line counter': obj_bcf.header.line_counter,
-                              'Stage': obj_bcf.header.stage_metadata}
+                              'Stage': obj_bcf.header.stage_metadata,
+                              'Microscope': obj_bcf.header.sem_metadata},
+        'mapping': mapping,
     }]
     return hyperspectra
 
 
 def gen_elem_list(the_dict):
     return ['_'.join([i, parse_line(the_dict[i]['line'])]) for i in the_dict]
-#    return [z_to_element(i) for i in the_list]
 
 
 def parse_line(line_string):
     """standardize line describtion.
 
-    Bruker saves line describtion in all caps
+    Bruker saves line description in all caps
     and omits the type if only one exists instead of
     using alfa"""
     if len(line_string) == 1:
         line_string = line_string + 'a'
+    elif len(line_string) > 2:
+        line_string = line_string[:2]
     return line_string.capitalize()
 
 
-def _get_mode(obj_bcf, instrument=None):
-    if instrument is not None:
-        return instrument
-    hv = obj_bcf.header.sem.hv
-    if hv > 30.0:  # workaround to know if TEM or SEM
-        mode = 'TEM'
-    else:
-        mode = 'SEM'
-    _logger.info("Guessing that the acquisition instrument is %s " % mode +
-                 "because the beam energy is %i keV. If this is wrong, " % hv +
-                 "please provide the right instrument using the 'instrument' " +
-                 "keyword.")
-    return mode
+def get_mapping(mode):
+    return {
+        'Stage.Rotation':
+        ("Acquisition_instrument.%s.Stage.rotation" % mode, None),
+        'Stage.Tilt':
+        ("Acquisition_instrument.%s.Stage.tilt_alpha" % mode, None),
+        'Stage.X':
+        ("Acquisition_instrument.%s.Stage.x" % mode, None),
+        'Stage.Y':
+        ("Acquisition_instrument.%s.Stage.y" % mode, None),
+        'Stage.Z':
+        ("Acquisition_instrument.%s.Stage.z" % mode, None),
+    }

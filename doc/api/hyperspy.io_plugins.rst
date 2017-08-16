@@ -1,139 +1,139 @@
-hyperspy.io_plugins package
-===========================
+hyperspy\.io\_plugins package
+=============================
 
 Submodules
 ----------
 
-hyperspy.io_plugins.bcf module
-------------------------------
+hyperspy\.io\_plugins\.bcf module
+---------------------------------
 
 .. automodule:: hyperspy.io_plugins.bcf
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.io_plugins.blockfile module
-------------------------------------
+hyperspy\.io\_plugins\.blockfile module
+---------------------------------------
 
 .. automodule:: hyperspy.io_plugins.blockfile
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.io_plugins.dens module
--------------------------------
+hyperspy\.io\_plugins\.dens module
+----------------------------------
 
 .. automodule:: hyperspy.io_plugins.dens
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.io_plugins.digital_micrograph module
----------------------------------------------
+hyperspy\.io\_plugins\.digital\_micrograph module
+-------------------------------------------------
 
 .. automodule:: hyperspy.io_plugins.digital_micrograph
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.io_plugins.edax module
--------------------------------
+hyperspy\.io\_plugins\.edax module
+----------------------------------
 
 .. automodule:: hyperspy.io_plugins.edax
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.io_plugins.emd module
-------------------------------
+hyperspy\.io\_plugins\.emd module
+---------------------------------
 
 .. automodule:: hyperspy.io_plugins.emd
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.io_plugins.fei module
-------------------------------
+hyperspy\.io\_plugins\.fei module
+---------------------------------
 
 .. automodule:: hyperspy.io_plugins.fei
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.io_plugins.hdf5 module
--------------------------------
+hyperspy\.io\_plugins\.hspy module
+----------------------------------
 
-.. automodule:: hyperspy.io_plugins.hdf5
+.. automodule:: hyperspy.io_plugins.hspy
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.io_plugins.image module
---------------------------------
+hyperspy\.io\_plugins\.image module
+-----------------------------------
 
 .. automodule:: hyperspy.io_plugins.image
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.io_plugins.mrc module
-------------------------------
+hyperspy\.io\_plugins\.mrc module
+---------------------------------
 
 .. automodule:: hyperspy.io_plugins.mrc
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.io_plugins.msa module
-------------------------------
+hyperspy\.io\_plugins\.msa module
+---------------------------------
 
 .. automodule:: hyperspy.io_plugins.msa
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.io_plugins.netcdf module
----------------------------------
+hyperspy\.io\_plugins\.netcdf module
+------------------------------------
 
 .. automodule:: hyperspy.io_plugins.netcdf
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.io_plugins.protochips module
--------------------------------------
+hyperspy\.io\_plugins\.protochips module
+----------------------------------------
 
 .. automodule:: hyperspy.io_plugins.protochips
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.io_plugins.ripple module
----------------------------------
+hyperspy\.io\_plugins\.ripple module
+------------------------------------
 
 .. automodule:: hyperspy.io_plugins.ripple
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.io_plugins.semper_unf module
--------------------------------------
+hyperspy\.io\_plugins\.semper\_unf module
+-----------------------------------------
 
 .. automodule:: hyperspy.io_plugins.semper_unf
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.io_plugins.tiff module
--------------------------------
+hyperspy\.io\_plugins\.tiff module
+----------------------------------
 
 .. automodule:: hyperspy.io_plugins.tiff
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.io_plugins.unbcf_fast module
--------------------------------------
+hyperspy\.io\_plugins\.unbcf\_fast module
+-----------------------------------------
 
 .. automodule:: hyperspy.io_plugins.unbcf_fast
     :members:

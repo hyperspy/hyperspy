@@ -53,7 +53,7 @@ One of the most popular decomposition methods is principal component analysis (P
 
 Note that the `s` variable must contain either a :class:`~.signal.BaseSignal`  class
 or its subclasses, which will most likely have been loaded with the
-:func:`~.io.load` function, e.g. ``s = load('my_file.hdf5')``. Also, the signal must be
+:func:`~.io.load` function, e.g. ``s = hs.load('my_file.hspy')``. Also, the signal must be
 multi-dimensional, that is ``s.axes_manager.navigation_size`` must be greater than
 one.
 
@@ -90,6 +90,11 @@ To obtain a scree plot for your dataset, run the
    :width:   500
 
    PCA scree plot
+
+.. versionadded:: 1.2.0
+   ``log``, ``threshold``, ``hline``, ``xaxis_type``, ``xaxis_labeling``,
+   ``signal_fmt``, ``noise_fmt``, ``threshold``, ``xaxis_type`` keyword
+   arguments.
 
 The default options for this method will plot a bare scree plot, but the
 method's arguments allow for a great deal of customization. For
@@ -181,6 +186,7 @@ can greatly enhance the result.
 To perform Poissonian noise normalization:
 
 .. code-block:: python
+
      The long way:
      >>> s.decomposition(normalize_poissonian_noise=True)
 
@@ -332,7 +338,7 @@ results. All the other methods display each component in its own window. For 2
 and 3 it is wise to provide the number of factors or loadings you wish to
 visualise, since the default is to plot all of them. For BSS, the default is
 the number you included when running the :py:meth:`~.learn.mva.MVA.blind_source_separation`
-method.
+method. In case of one dimensional factors or loadings, the latters can be toggled on and off by clicking on their corresponding line in the legend.
 
 .. _mva.get_results:
 
@@ -361,7 +367,7 @@ Saving in the main file
 -------------------------
 
 If you save the dataset on which you've performed machine learning analysis in
-the :ref:`hdf5-format` format (the default in HyperSpy) (see
+the :ref:`hspy-format` format (the default in HyperSpy) (see
 :ref:`saving_files`), the result of the analysis is also saved in the same
 file automatically, and it is loaded along with the rest of the data when you
 next open the file.
