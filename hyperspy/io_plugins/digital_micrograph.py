@@ -1034,23 +1034,26 @@ def _get_markers_dict(tags_dict, offset_x=0, offset_y=0, scale_x=1, scale_y=1):
             else:
                 color = 'red'
             if 'Label' in annotation:
-                marker_label = annotation['Label']
-                label_marker_dict = {
-                    'marker_type': "Text",
-                    'plot_on_signal': True,
-                    'data': {
-                        'y1': position[0]*scale_y+offset_y,
-                        'x1': position[1]*scale_x+offset_x,
-                        'size': 20,
-                        'text': marker_label,
-                        },
-                    'marker_properties': {
-                        'color': color,
-                        'va': 'bottom',
+                # Some annotations contains an empty label, which are
+                # represented in the input dict as an empty list: []
+                if annotation['Label'] != []:
+                    marker_label = annotation['Label']
+                    label_marker_dict = {
+                        'marker_type': "Text",
+                        'plot_on_signal': True,
+                        'data': {
+                            'y1': position[0]*scale_y+offset_y,
+                            'x1': position[1]*scale_x+offset_x,
+                            'size': 20,
+                            'text': marker_label,
+                            },
+                        'marker_properties': {
+                            'color': color,
+                            'va': 'bottom',
+                            }
                         }
-                    }
-                marker_name = "Text" + str(annotation['UniqueID'])
-                markers_dict[marker_name] = label_marker_dict
+                    marker_name = "Text" + str(annotation['UniqueID'])
+                    markers_dict[marker_name] = label_marker_dict
 
             marker_properties['color'] = color
             temp_dict['plot_on_signal'] = True,
