@@ -32,7 +32,6 @@ from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import VerticalLineWidget
 from hyperspy import components1d
 from hyperspy.component import Component
-from hyperspy import drawing
 from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)

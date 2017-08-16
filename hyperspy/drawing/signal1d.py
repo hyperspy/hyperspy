@@ -118,7 +118,8 @@ class Signal1DFigure(BlittedFigure):
         for marker in self.ax_markers:
             marker.plot()
         plt.xlim(np.min(x_axis_lower_lims), np.max(x_axis_upper_lims))
-        # To be discussed
+        # Connect update (Figure + Line) here and no need to connect the
+        # Signal1DLine later
         self.axes_manager.events.indices_changed.connect(self.update, [])
         self.events.closed.connect(
             lambda: self.axes_manager.events.indices_changed.disconnect(
@@ -293,10 +294,6 @@ class Signal1DLine(object):
         self.line, = self.ax.plot(self.axis.axis, data,
                                   **self.line_properties)
         self.line.set_animated(self.ax.figure.canvas.supports_blit)
-        self.axes_manager.events.indices_changed.connect(self.update, [])
-        self.events.closed.connect(
-            lambda: self.axes_manager.events.indices_changed.disconnect(
-                self.update), [])
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
         if self.plot_indices is True:
