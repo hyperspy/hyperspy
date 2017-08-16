@@ -1122,8 +1122,15 @@ def file_reader(filename, record_by=None, order=None, lazy=False):
                 if axis['index_in_array'] == 1:
                     scale_x = axis['scale']
                     offset_x = axis['offset']
-            markers_dict = _get_markers_dict(
-                    dm.tags_dict, offset_x, offset_y, scale_x, scale_y)
+            try:
+                markers_dict = _get_markers_dict(
+                        dm.tags_dict, offset_x, offset_y, scale_x, scale_y)
+            except Exception as err:
+                _logger.warning(
+                        "Markers could not be loaded from the file"
+                        "due to: {0}".format(err))
+                marker_dict = {}
+
             if markers_dict:
                 mp['Markers'] = markers_dict
 
