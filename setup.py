@@ -352,6 +352,7 @@ with update_version_when_dev() as version:
                 'tests/drawing/plot_signal2d/*.png',
                 'tests/drawing/plot_markers/*.png',
                 'misc/eds/example_signals/*.hdf5',
+                'misc/holography/example_signals/*.hdf5',
                 'tests/drawing/plot_mva/*.png',
                 'tests/drawing/plot_signal/*.png',
                 'tests/drawing/plot_signal1d/*.png',
