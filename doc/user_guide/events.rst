@@ -27,9 +27,9 @@ The following example shows how to connect to the `index_changed` event of
    >>> nav_axis = s.axes_manager.navigation_axes[0]
    >>> nav_axis.name = "x"
    >>> def on_index_changed(obj, index):
-       print("on_index_changed_called")
-       print("Axis name: ", obj.name)
-       print("Index: ", index)
+   >>>    print("on_index_changed_called")
+   >>>    print("Axis name: ", obj.name)
+   >>>    print("Index: ", index)
    ...
    >>> nav_axis.events.index_changed.connect(on_index_changed)
    >>> s.axes_manager.indices = (3,)
@@ -48,8 +48,8 @@ passed to `on_index_changed2` and none to `on_index_changed3`:
  .. code-block:: python
 
     >>> def on_index_changed2(index):
-          print("on_index_changed2_called")
-          print("Index: ", index)
+    >>>    print("on_index_changed2_called")
+    >>>    print("Index: ", index)
     ...
     >>> nav_axis.events.index_changed.connect(on_index_changed2, ["index"])
     >>> s.axes_manager.indices = (0,)
@@ -59,7 +59,7 @@ passed to `on_index_changed2` and none to `on_index_changed3`:
     on_index_changed2_called
     ('Index: ', 0)
     >>> def on_index_changed3():
-          print("on_index_changed3_called")
+    >>>    print("on_index_changed3_called")
     ...
     >>> nav_axis.events.index_changed.connect(on_index_changed3, [])
     >>> s.axes_manager.indices = (1,)
@@ -68,10 +68,7 @@ passed to `on_index_changed2` and none to `on_index_changed3`:
     ('Index: ', 1)
     on_index_changed2_called
     ('Index: ', 1)
-    on_index_changed3_called>>> def on_index_changed2(index):
-          print("on_index_changed2_called")
-          print("Index: ", index)
-    ...
+    on_index_changed3_called
 
 It is also possible to map trigger keyword arguments to connected function
 keyword arguments as follows:
@@ -80,8 +77,8 @@ keyword arguments as follows:
 .. code-block:: python
 
     >>> def on_index_changed4(arg):
-         print("on_index_changed4_called")
-         print("Index: ", arg)
+    >>>    print("on_index_changed4_called")
+    >>>    print("Index: ", arg)
     ...
     >>> nav_axis.events.index_changed.connect(on_index_changed4, {"index" : "arg"})
     >>> s.axes_manager.indices = (4,)
@@ -103,7 +100,7 @@ a given event and all callbacks of all events of an object.
 .. code-block:: python
 
     >>> with nav_axis.events.index_changed.suppress_callback(on_index_changed2):
-        s.axes_manager.indices = (7,)
+    >>>    s.axes_manager.indices = (7,)
     ...
     on_index_changed_called
     ('Axis name: ', 'x')
@@ -112,10 +109,10 @@ a given event and all callbacks of all events of an object.
     on_index_changed4_called
     ('Index: ', 7)
     >>> with nav_axis.events.index_changed.suppress():
-        s.axes_manager.indices = (6,)
+    >>>    s.axes_manager.indices = (6,)
     ...
     >>> with nav_axis.events.suppress():
-        s.axes_manager.indices = (5,)
+    >>>    s.axes_manager.indices = (5,)
     ...
 
 Triggering events

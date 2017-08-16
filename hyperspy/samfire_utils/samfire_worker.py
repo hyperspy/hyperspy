@@ -62,7 +62,7 @@ class Worker:
                 par.map = par.map.copy()
 
         if self.model.signal.metadata.has_item(
-            'Signal.Noise_properties.variance'):
+                'Signal.Noise_properties.variance'):
             var = self.model.signal.metadata.Signal.Noise_properties.variance
             if isinstance(var, BaseSignal):
                 var.data = var.data.copy()
@@ -168,7 +168,7 @@ class Worker:
         self.model.signal.data[:] = self.value_dict.pop('signal.data')
 
         if self.model.signal.metadata.has_item(
-            'Signal.Noise_properties.variance'):
+                'Signal.Noise_properties.variance'):
             var = self.model.signal.metadata.Signal.Noise_properties.variance
             if isinstance(var, BaseSignal):
                 var.data[:] = self.value_dict.pop('variance.data')
@@ -216,7 +216,7 @@ class Worker:
         if len(self.best_values):  # i.e. we have a good result
             _logger.debug('we have a good result in worker '
                           '{}'.format(self.identity))
-            result = {k+'.data': np.array(v) for k, v in
+            result = {k + '.data': np.array(v) for k, v in
                       self.parameters.items()}
             result['components'] = self.best_values
             found_solution = True

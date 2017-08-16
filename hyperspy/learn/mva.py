@@ -22,6 +22,7 @@ import logging
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator, FuncFormatter
 try:
     import mdp
     mdp_installed = True
@@ -920,8 +921,11 @@ class MVA():
         s.axes_manager[-1].units = ''
         return s
 
-    def plot_explained_variance_ratio(self, n=None, log=True, threshold=0, hline='auto', xaxis_type='index',
-                                      xaxis_labeling=None, signal_fmt=None, noise_fmt=None, fig=None, ax=None, **kwargs):
+    def plot_explained_variance_ratio(self, n=30, log=True, threshold=0,
+                                      hline='auto', xaxis_type='index',
+                                      xaxis_labeling=None, signal_fmt=None,
+                                      noise_fmt=None, fig=None, ax=None,
+                                      **kwargs):
         """Plot the decomposition explained variance ratio vs index number
         (Scree Plot).
 
@@ -1007,8 +1011,12 @@ class MVA():
         """
         s = self.get_explained_variance_ratio()
 
+        n_max = len(self.learning_results.explained_variance_ratio)
         if n is None:
-            n = len(self.learning_results.explained_variance_ratio)
+            n = n_max
+        elif n > n_max:
+            _logger.info("n is too large, setting n to its maximal value.")
+            n = n_max
 
         # Determine right number of components for signal and cutoff value
         if isinstance(threshold, float):
@@ -1084,38 +1092,33 @@ class MVA():
                        linestyle='dashed',
                        zorder=1)
 
+        index_offset = 0
+        if xaxis_type == 'number':
+            index_offset = 1
+
         if n_signal_pcs == n:
-            ax.scatter(range(n),
+            ax.scatter(range(index_offset, index_offset + n),
                        s.isig[:n].data,
                        **signal_fmt)
         elif n_signal_pcs > 0:
-            ax.scatter(range(n_signal_pcs),
+            ax.scatter(range(index_offset, index_offset + n_signal_pcs),
                        s.isig[:n_signal_pcs].data,
                        **signal_fmt)
-            ax.scatter(range(n_signal_pcs, n),
+            ax.scatter(range(index_offset + n_signal_pcs, index_offset + n),
                        s.isig[n_signal_pcs:n].data,
                        **noise_fmt)
         else:
-            ax.scatter(range(n),
+            ax.scatter(range(index_offset, index_offset + n),
                        s.isig[:n].data,
                        **noise_fmt)
 
-        if xaxis_type == 'index':
-            locs = ax.get_xticks()
-            if xaxis_labeling == 'ordinal':
-                ax.set_xticklabels([ordinal(int(i)) for i in locs])
-            else:
-                ax.set_xticklabels([int(i) for i in locs])
-
-        if xaxis_type == 'number':
-            locs = ax.get_xticks()
-            if xaxis_labeling == 'ordinal':
-                ax.set_xticklabels([ordinal(int(i + 1)) for i in locs])
-            else:
-                ax.set_xticklabels([int(i + 1) for i in locs])
+        if xaxis_labeling == 'cardinal':
+            ax.xaxis.set_major_formatter(
+                FuncFormatter(lambda x, p: ordinal(x)))
 
         ax.set_ylabel(axes_titles['y'])
         ax.set_xlabel(axes_titles['x'])
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True, min_n_ticks=1))
         ax.margins(0.05)
         ax.autoscale()
         ax.set_title(s.metadata.General.title, y=1.01)

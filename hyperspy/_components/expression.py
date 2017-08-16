@@ -27,14 +27,15 @@ def _fill_function_args_2d(fn):
     return fn_wrapped
 
 
-def _parse_substitutions(string, simultaneous=True):
+def _parse_substitutions(string):
     import sympy
     splits = map(str.strip, string.split(';'))
     expr = sympy.sympify(next(splits))
     # We substitute one by one manually, as passing all at the same time does
     # not work as we want (subsitutions inside other substitutions do not work)
     for sub in splits:
-        expr = expr.subs(*tuple(map(str.strip, sub.split('='))))
+        t = tuple(map(str.strip, sub.split('=')))
+        expr = expr.subs(t[0], sympy.sympify(t[1]))
     return expr
 
 
