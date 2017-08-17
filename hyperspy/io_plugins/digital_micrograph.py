@@ -1020,8 +1020,18 @@ def _get_markers_dict(tags_dict, offset_x=0, offset_y=0, scale_x=1, scale_y=1):
             elif annotation_type == 31:
                 _logger.info('Scalebar marker not loaded: not implemented')
         if 'marker_type' in temp_dict:
-            if 'ForegroundColor' in annotation:
-                color_raw = annotation['ForegroundColor']
+            if ('ForegroundColor' in annotation) or ('Color' in annotation):
+                # There seems to be 3 different colors in annotations in
+                # dm3-files: Color, ForegroundColor and BackgroundColor.
+                # ForegroundColor and BackgroundColor seems to be present
+                # for all annotations. Color is present in some of them.
+                # If Color is present, it seems to override the others.
+                # Currently, BackgroundColor is not utilized, due to HyperSpy
+                # markers only supporting a single color.
+                if 'Color' in annotation:
+                    color_raw = annotation['Color']
+                else:
+                    color_raw = annotation['ForegroundColor']
                 # Colors in DM are saved as negative values
                 # Some values are also in 16-bit
                 color = []
