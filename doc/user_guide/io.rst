@@ -181,6 +181,8 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +--------------------+--------+--------+--------+
     | MRC                |    Yes |    No  |    Yes |
     +--------------------+--------+--------+--------+
+    | MRCZ               |    Yes |    Yes |    Yes |
+    +--------------------+--------+--------+--------+
     | EMSA/MSA           |    Yes |    Yes |    No  |
     +--------------------+--------+--------+--------+
     | NetCDF             |    Yes |    No  |    No  |
@@ -318,6 +320,32 @@ For mrc files ``load`` takes the ``mmap_mode`` keyword argument enabling
 loading the file using a different mode (default is copy-on-write) . However,
 note that lazy loading does not support in-place writing (i.e lazy loading and
 the "r+" mode are incompatible).
+
+.. _mrcz-format:
+
+MRCZ
+----
+
+MRCZ is an extension of the CCP-EM MRC2014 file format. `CCP-EM MRC2014
+<http://www.ccpem.ac.uk/mrc_format/mrc2014.php>`_ file format.  It uses the 
+`blosc` meta-compression library to bitshuffle and compress files in a blocked,
+multi-threaded environment.  
+
+It supports arbitrary meta-data, which is serialized into JSON. 
+
+The recommended compression codec is 'zstd' (zStandard) with `clevel=1` for 
+general use. If speed is critical, use 'lz4' (LZ4) with `clevel=9`.  `n_threads` 
+defaults to the maximum number of virtual cores (including Intel Hyperthreading)
+on your system, which is recommended for best performance.
+
+MRCZ also supports asychronous reads and writes.
+
+Repository: https://github.com/em-MRCZ
+PyPI:       https://pypi.python.org/pypi/mrcz
+Citation:   Submitted.
+
+TODO: examples
+
 
 .. _msa-format:
 
