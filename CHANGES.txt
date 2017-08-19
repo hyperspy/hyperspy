@@ -305,9 +305,12 @@ API changes
   classes deprecated the old `Spectrum` `Image` and `Signal` classes.
 
 
+Older versions
+==============
+
 
 v0.8.5
-======
+------
 
 
 This is a maintenance release. Follow the following links for details on all
@@ -322,14 +325,14 @@ It also includes a new feature and introduces an important API change that
 will be fully enforced in Hyperspy 1.0.
 
 New feature
------------
+^^^^^^^^^^^
 
 * Widgets to interact with the model components in the Jupyter Notebook.
   See :ref:`here <notebook_interaction-label>` and
   `#1007 <https://github.com/hyperspy/hyperspy/pull/1007>`_ .
 
 API changes
------------
+^^^^^^^^^^^
 
 The new :py:class:`~.signal.BaseSignal`,
 :py:class:`~._signals.signal1d.Signal1D` and
@@ -342,13 +345,13 @@ deprecate `as_signal1D`, `as_signal2D`, `to_spectrum` and `to_image`. See `#963
 
 
 v0.8.4
-======
+------
 
 This release adds support for Python 3 and drops support for Python 2. In all
 other respects it is identical to v0.8.3.
 
 v0.8.3
-======
+------
 
 This is a maintenance release that includes fixes for multiple bugs, some
 enhancements, new features and API changes. This is set to be the last HyperSpy
@@ -375,14 +378,14 @@ Follow the following links for details on all the `bugs fixed
 .. _changes_0.8.2:
 
 v0.8.2
-======
+------
 
 This is a maintenance release that fixes an issue with the Python installers. Those who have successfully installed v0.8.1 do not need to upgrade.
 
 .. _changes_0.8.1:
 
 v0.8.1
-======
+------
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -398,7 +401,7 @@ It also includes some new features and introduces important API changes that
 will be fully enforced in Hyperspy 1.0.
 
 New features
-------------
+^^^^^^^^^^^^
 * Support for IPython 3.0.
 * ``%hyperspy`` :ref:`IPython magic <magic-label>` to easily and transparently import HyperSpy, matplotlib and numpy when using IPython.
 * :py:class:`~._components.expression.Expression` model component to easily create analytical function components. More details
@@ -409,7 +412,7 @@ New features
   that includes pretty printing of the components.
 
 API changes
------------
+^^^^^^^^^^^
 
 * :py:mod:`~.hyperspy.hspy` is now deprecated in favour of the new
   :py:mod:`~.hyperspy.api`. The new API renames and/or move several modules as
@@ -437,13 +440,13 @@ API changes
 .. _changes_0.8:
 
 v0.8
-====
+----
 
 New features
-------------
+^^^^^^^^^^^^
 
 Core
-^^^^
+""""
 
 * :py:meth:`~._signals.signal1D.Signal1D.spikes_removal_tool` displays derivative max value when used with
   GUI.
@@ -451,21 +454,21 @@ Core
   it.
 
 IO
-^^
+""
 
 * HDF5 file format now supports saving lists, tuples, binary strings and signals in metadata (see
   :ref:`hdf5-format` )
 
 
 Plotting
-^^^^^^^^
+""""""""
 
 * New class,  :py:class:`~.drawing.marker.MarkerBase`, to plot markers with ``hspy.utils.plot.markers`` module.  See :ref:`plot.markers`.
 * New method to plot images with the :py:func:`~.drawing.utils.plot_images` function in  ``hspy.utils.plot.plot_images``. See :ref:`plot.images`.
 * Improved :py:meth:`~._signals.image.Signal2D.plot` method to customize the image. See :ref:`plot.customize_images`.
 
 EDS
-^^^
+"""
 
 * New method for quantifying EDS TEM spectra using Cliff-Lorimer method, :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`. See :ref:`eds_quantification-label`.
 * New method to estimate for background subtraction, :py:meth:`~._signals.eds.EDSSpectrum.estimate_background_windows`. See :ref:`eds_background_subtraction-label`.
@@ -479,7 +482,7 @@ EDS
 * New method to mask the vaccum, :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.vacuum_mask` and a specific :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.decomposition` method that incoroporate the vacuum mask
 
 API changes
------------
+^^^^^^^^^^^
 
 * :py:class:`~.component.Component` and :py:class:`~.component.Parameter` now inherit ``traits.api.HasTraits``
   that enable ``traitsui`` to modify these objects.
@@ -494,7 +497,7 @@ API changes
     + ``add_axes`` -> ``set_mpl_ax``
 
 v0.7.3
-======
+------
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.3 milestone
@@ -504,7 +507,7 @@ in the github repository.
 .. _changes_0.7.2:
 
 v0.7.2
-======
+------
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.2 milestone
@@ -514,7 +517,7 @@ in the github repository.
 .. _changes_0.7.1:
 
 v0.7.1
-======
+------
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.1 milestone
@@ -523,19 +526,19 @@ in the github repository.
 
 
 New features
-------------
+^^^^^^^^^^^^
 .. _changes_0.7.1:
 
 * Add suspend/resume model plot updating. See :ref:`model.visualization`.
 
 v0.7
-====
+----
 
 New features
-------------
+^^^^^^^^^^^^
 
 Core
-^^^^
+""""
 
 * New syntax to index the :py:class:`~.axes.AxesManager`.
 * New Signal methods to transform between Signal subclasses. More information
@@ -577,14 +580,14 @@ Core
   stacked signals into its original part. See :ref:`signal.stack_split`.
 
 IO
-^^
+""
 
 * Improved support for FEI's emi and ser files.
 * Improved support for Gatan's dm3 files.
 * Add support for reading Gatan's dm4 files.
 
 Plotting
-^^^^^^^^
+""""""""
 
 * Use the blitting capabilities of the different toolkits to
   speed up the plotting of images.
@@ -600,7 +603,7 @@ Plotting
   of several signals at the same time. See :ref:`plot.signals`.
 
 Curve fitting
-^^^^^^^^^^^^^
+"""""""""""""
 
 * The chi-squared, reduced chi-squared and the degrees of freedom are
   computed automatically when fitting. See :ref:`model.fitting`.
@@ -610,7 +613,7 @@ Curve fitting
   starting parameters. See :ref:`model.starting`.
 
 Machine learning
-^^^^^^^^^^^^^^^^
+""""""""""""""""
 
 * The PCA scree plot can now be easily obtained as a Signal. See
   :ref:`scree-plot`.
@@ -620,13 +623,13 @@ Machine learning
   that support n-dimensional loadings. See :ref:`mva.visualization`.
 
 Dielectric function
-^^^^^^^^^^^^^^^^^^^
+"""""""""""""""""""
 
 * New :class:`~.signal.Signal` subclass,
   :class:`~._signals.dielectric_function.DielectricFunction`.
 
 EELS
-^^^^
+""""
 
 * New method,
   :meth:`~._signals.eels.EELSSpectrum.kramers_kronig_analysis` to calculate
@@ -636,7 +639,7 @@ EELS
   :meth:`~._signals.eels.EELSSpectrum.align_zero_loss_peak`.
 
 EDS
-^^^
+"""
 
 * New signal, EDSSpectrum especialized in EDS data analysis, with subsignal
   for EDS with SEM and with TEM: EDSSEMSpectrum and EDSTEMSpectrum. See
@@ -653,7 +656,7 @@ EDS
   :ref:`eds_plot-label`
 
 API changes
------------
+^^^^^^^^^^^
 
 * hyperspy.misc has been reorganized. Most of the functions in misc.utils has
   been rellocated to specialized modules. misc.utils is no longer imported in
@@ -674,10 +677,10 @@ API changes
 .. _changes_0.6:
 
 v0.6
-====
+----
 
 New features
-------------
+^^^^^^^^^^^^
 
 * Signal now supports indexing and slicing. See :ref:`signal.indexing`.
 * Most arithmetic and rich arithmetic operators work with signal.
@@ -723,7 +726,7 @@ New features
 * The Ripple (rpl) reader can now read rpl files produced by INCA.
 
 API changes
------------
+^^^^^^^^^^^
 * The following functions has been renamed or removed:
 
     * components.EELSCLEdge
@@ -758,10 +761,10 @@ API changes
 .. _changes_0.5.1:
 
 v0.5.1
-======
+------
 
 New features
-------------
+^^^^^^^^^^^^
 * New Signal method `get_current_signal` proposed by magnunor.
 * New Signal `save` method keyword `extension` to easily change the saving format while keeping the same file name.
 * New EELSSpectrum methods: estimate_elastic_scattering_intensity, fourier_ratio_deconvolution, richardson_lucy_deconvolution, power_law_extrapolation.
@@ -770,7 +773,7 @@ New features
 
 
 Major bugs fixed
-----------------
+^^^^^^^^^^^^^^^^
 * The `print_current_values` Model method was raising errors when fine structure was enabled or when only_free = False.
 *  The `load` function `signal_type` keyword was not passed to the readers.
 * The spikes removal tool was unable to find the next spikes when the spike was detected close to the limits of the spectrum.
@@ -784,17 +787,17 @@ Major bugs fixed
 
 
 API changes
------------
+^^^^^^^^^^^
 * EELSSPectrum.find_low_loss_centre was renamed to estimate_zero_loss_peak_centre.
 * EELSSPectrum.calculate_FWHM was renamed to estimate_FWHM.
 
 .. _changes_0.5:
 
 v0.5
-====
+----
 
 New features
-------------
+^^^^^^^^^^^^
 * The documentation was thoroughly revised, courtesy of M. Walls.
 * New user interface to remove spikes from EELS spectra.
 * New align2D signals.Signal2D method to align image stacks.
@@ -816,7 +819,7 @@ New features
 
 
 Major bugs fixed
-----------------
+^^^^^^^^^^^^^^^^
 * The EELS core loss component had a bug in the calculation of the
   relativistic gamma that produced a gamma that was always
   approximately zero. As a consequence the GOS calculation was wrong,
@@ -831,7 +834,7 @@ Major bugs fixed
 * The constrast of the image was not automatically updated.
 
 API changes
------------
+^^^^^^^^^^^
 * spatial_mask was renamed to navigation_mask.
 * Signal1D and Signal2D are not loaded into the user namespace by default.
   The signals module is loaded instead.
@@ -853,10 +856,10 @@ API changes
 .. _changes_0.4.1:
 
 v0.4.1
-======
+------
 
 New features
-------------
+^^^^^^^^^^^^
 
  * Added TIFF 16, 32 and 64 bits support by using (and distributing) Christoph Gohlke's `tifffile library <http://www.lfd.uci.edu/~gohlke/code/tifffile.py.html>`_.
  * Improved UTF8 support.
@@ -870,24 +873,24 @@ New features
 
 
 Bugs fixed
-----------
+^^^^^^^^^^
  * Non-ascii characters breaking IO and print features fixed.
  * Loading of multiple files at once using wildcards fixed.
  * Remove broken hyperspy-gui script.
  * Remove unmantained and broken 2D peak finding and analysis features.
 
 Syntax changes
---------------
+^^^^^^^^^^^^^^
  * In EELS automatic background feature creates a PowerLaw component, adds it to the model an add it to a variable in the user namespace. The variable has been renamed from `bg` to `background`.
  * pes_gaussian Component renamed to pes_core_line_shape.
 
 .. _changes_0.4:
 
 v0.4
-====
+----
 
 New features
-------------
+^^^^^^^^^^^^
  * Add a slider to the filter ui.
  * Add auto_replot to sum.
  * Add butterworth filter.
@@ -932,7 +935,7 @@ New features
  * The free parameters are now automically updated on chaning the free attribute.
 
 Bugs fixed
-----------
+^^^^^^^^^^
  * Added missing keywords to plot_pca_factors and plot_ica_factors.
  * renamed incorrectly named exportPca and exportIca functions.
  * an error was raised when calling generate_data_from_model.
@@ -965,7 +968,7 @@ Bugs fixed
  * when using transform the data was being centered and the resulting scores were wrong.
 
 Syntax changes
---------------
+^^^^^^^^^^^^^^
 
  * in decomposition V rename to explained_variance.
  * In FixedPattern, default interpolation changed to linear.
