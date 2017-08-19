@@ -48,7 +48,8 @@ _POP_FROM_HEADER = ['compressor', 'MRCtype', 'C3', 'dimensions', 'dtype',
                  'extendedBytes', 'gain', 'maxImage', 'minImage', 'meanImage', 
                  'metaId', 'packedBytes', 'pixelsize', 'pixelunits', 'voltage']
 # Hyperspy uses an unusual mixed Fortran- and C-ordering scheme
-_HYPERSPY_ORDER = [0,2,1]
+_READ_ORDER = [1,2,0]
+_WRITE_ORDER = [0,2,1]
 
 mapping = {
     'mrcz_header.voltage':
@@ -81,23 +82,15 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
 
     # Create the axis objects for each axis
     dim = data.ndim
-    names = ['z','x','y']
+    names = ['y','x','z']
     axes = [
-        {   'size': data.shape[hsIndex],
-            'index_in_array': index,
+        {   'size': data.shape[ hsIndex ],
+            'index_in_array': hsIndex,
             'name': names[index],
             'scale': mrcz_header['pixelsize'][hsIndex],
             'offset': 0.0,
             'units': mrcz_header['pixelunits'], }
-        for index, hsIndex in enumerate(_HYPERSPY_ORDER) ]
-    # axes = [
-    #     {   'size': data.shape[i],
-    #         'index_in_array': i,
-    #         'name': names[i],
-    #         'scale': mrcz_header['pixelsize'][i],
-    #         'offset': 0.0,
-    #         'units': mrcz_header['pixelunits'], }
-    #     for i in range(len(names))  ]
+        for index, hsIndex in enumerate(_READ_ORDER) ]
 
     metadata = mrcz_header.copy()
 
@@ -126,8 +119,8 @@ def file_writer(filename, signal, do_async=False, compressor=None, clevel=1, n_t
 
     # Get pixelsize and pixelunits from the axes
     pixelunits = signal.axes_manager[-1].units
-    # This is likely wrong...
-    pixelsize = [ signal.axes_manager[I].scale for I in _HYPERSPY_ORDER ]
+    
+    pixelsize = [ signal.axes_manager[I].scale for I in _WRITE_ORDER ]
 
     # Strip out voltage from meta-data
     voltage = signal.metadata.get_item( 'Acquisition_instrument.TEM.beam_energy' )
