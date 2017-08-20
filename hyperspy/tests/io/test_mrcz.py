@@ -36,7 +36,7 @@ tmpDir = tempfile.gettempdir()
 mrcName = os.path.join( tmpDir, "testMage.mrcz" )
 MAX_ASYNC_TIME = 2.0
 
-class PythonMrczTests:
+class TestPythonMrcz:
     
     def setup_method(self, method):
         self.s = Signal2D()
@@ -76,7 +76,8 @@ class PythonMrczTests:
             sleep( 0.005 )
             while( perf_counter() < t_stop ):
                 try:
-                    open( mrcName, 'a' )
+                    fh = open( mrcName, 'a' )
+                    fh.close()
                     break
                 except IOError:
                     sleep(0.001)
@@ -143,7 +144,7 @@ class PythonMrczTests:
 
 
 if __name__ == '__main__':
-    theSuite = PythonMrczTests()
+    theSuite = TestPythonMrcz()
     theSuite.test_MRC_uncompressed()
     theSuite.test_MRCZ_lz9()
     theSuite.test_MRCZ_zstd1()
