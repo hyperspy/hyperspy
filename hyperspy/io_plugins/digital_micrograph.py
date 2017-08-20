@@ -1078,7 +1078,7 @@ def _get_markers_dict(tags_dict, offset_x=0, offset_y=0, scale_x=1, scale_y=1):
             temp_dict['marker_properties'] = marker_properties
             name = temp_dict['marker_type'] + str(annotation['UniqueID'])
             markers_dict[name] = temp_dict
-    return(markers_dict)
+    return markers_dict
 
 
 def file_reader(filename, record_by=None, order=None, lazy=False):
@@ -1139,7 +1139,7 @@ def file_reader(filename, record_by=None, order=None, lazy=False):
                 _logger.warning(
                         "Markers could not be loaded from the file"
                         "due to: {0}".format(err))
-                marker_dict = {}
+                markers_dict = {}
 
             if markers_dict:
                 mp['Markers'] = markers_dict
