@@ -20,6 +20,7 @@ import math
 
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from traits.api import Undefined
 
 from hyperspy.drawing import widgets
@@ -253,12 +254,13 @@ class ImagePlot(BlittedFigure):
         self.update(**kwargs)
         if self.scalebar is True:
             if self.pixel_units is not None:
-                self.ax.scalebar = widgets.ScaleBar(
-                    ax=self.ax,
-                    units=self.pixel_units,
-                    animated=self.figure.canvas.supports_blit,
-                    color=self.scalebar_color,
-                )
+                length = 2
+                self.ax.scalebar = AnchoredSizeBar(
+                        self.ax.transData, length, loc=3, frameon=False,
+                        label=str(length) + " " + str(self.pixel_units),
+                        size_vertical=0.3, color=self.scalebar_color)
+                self.ax.add_artist(self.ax.scalebar)
+                self.ax.scalebar._animated = True
 
         if self.colorbar is True:
             self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
