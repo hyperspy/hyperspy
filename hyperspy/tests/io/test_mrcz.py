@@ -39,7 +39,7 @@ MAX_ASYNC_TIME = 2.0
 class TestPythonMrcz:
     
     def setup_method(self, method):
-        self.s = Signal2D()
+        pass
     
     def compareSaveLoad(self, testShape, dtype='int8', compressor=None, clevel = 1, do_async=False, **kwargs ):
         # This is the main function which reads and writes from disk.
