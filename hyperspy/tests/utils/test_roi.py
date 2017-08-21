@@ -131,6 +131,15 @@ class TestROIs():
         assert w2._pos[0] == 10
         assert w2._size[0] == 2
 
+    def test_widget_initialisation(self, mpl_cleanup):
+        s = Signal1D(np.arange(2 * 4 * 6).reshape(2, 4, 6))
+        s.axes_manager[0].scale = 0.5
+        s.axes_manager[1].scale = 1.0
+
+        roi_nav = RectangularROI(0, 0, 1, 0.5)
+        s.plot()
+        roi_nav.add_widget(s)
+
     def test_span_spectrum_sig(self):
         s = self.s_s
         r = SpanROI(1, 3)

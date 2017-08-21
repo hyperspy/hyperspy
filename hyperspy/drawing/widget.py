@@ -179,7 +179,9 @@ class WidgetBase(object):
         # Simulate a pick event
         x, y = self.patch[0].get_transform().transform_point((0, 0))
         mouseevent = MouseEvent('pick_event', canvas, x, y)
-        canvas.pick_event(mouseevent, self.patch[0])
+        # when the widget is added programatically, mouseevent can be "empty"
+        if mouseevent.button:
+            canvas.pick_event(mouseevent, self.patch[0])
         self.picked = False
 
     def connect(self, ax):
