@@ -60,12 +60,15 @@ class TestlineFit:
         s = self.s
         # Default:
         m = s.create_model()
+        m.remove(["Cr_Ka", "background_order_6"])
         m.store()
         m1 = s.models.a.restore()
         assert (
             [c.name for c in m] == [c.name for c in m1])
         assert ([c.name for c in m.xray_lines] ==
                 [c.name for c in m1.xray_lines])
+        assert "Cr_Ka" not in m1.xray_lines
+        assert "background_order_6" not in m1.background_components
 
     def test_edsmodel_store(self):
         self._check_model_store()

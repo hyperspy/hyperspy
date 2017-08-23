@@ -77,7 +77,7 @@ analysing large files. To load a file without loading it to memory simply set
 
 .. code-block:: python
 
-    >>> s = hs.load("filename.hdf5", lazy=True)
+    >>> s = hs.load("filename.hspy", lazy=True)
 
 More details on lazy evaluation support in :ref:`big-data-label`.
 
@@ -92,7 +92,7 @@ functions, e.g.:
 
 .. code-block:: python
 
-    >>> s = hs.load(["file1.hdf5", "file2.hdf5"])
+    >>> s = hs.load(["file1.hspy", "file2.hspy"])
 
 or by using `shell-style wildcards <http://docs.python.org/library/glob.html>`_
 
@@ -134,10 +134,10 @@ Saving data to files
 To save data to a file use the :py:meth:`~.signal.BaseSignal.save` method. The
 first argument is the filename and the format is defined by the filename
 extension. If the filename does not contain the extension the default format
-(:ref:`hdf5-format`) is used. For example, if the :py:const:`s` variable
+(:ref:`hspy-format`) is used. For example, if the :py:const:`s` variable
 contains the :py:class:`~.signal.BaseSignal` that you want to write to a file,
-the following will write the data to a file called :file:`spectrum.hdf5` in the
-default :ref:`hdf5-format` format:
+the following will write the data to a file called :file:`spectrum.hspy` in the
+default :ref:`hspy-format` format:
 
 .. code-block:: python
 
@@ -202,10 +202,10 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     | EDAX .spc and .spd |    Yes |    No  |    Yes |
     +--------------------+--------+--------+--------+
 
-.. _hdf5-format:
+.. _hspy-format:
 
-HDF5
-----
+HSpy - HyperSpy's HDF5 Specification
+------------------------------------
 
 This is the default format and it is the only one that guarantees that no
 information will be lost in the writing process and that supports saving data
@@ -213,41 +213,41 @@ of arbitrary dimensions. It is based on the `HDF5 open standard
 <http://www.hdfgroup.org/HDF5/>`_. The HDF5 file format is supported by `many
 applications
 <http://www.hdfgroup.org/products/hdf5_tools/SWSummarybyName.htm>`_.
-
-Only loading of HDF5 files following the HyperSpy specification are supported.
+Part of the specification is documented in :ref:`metadata_structure`.
 
 .. versionadded:: 1.2
-    Saving hdf5 files with extension ``.hspy``.
+    Enable saving HSpy files with the ``.hspy`` extension. Preveously only the
+    ``.hdf5`` extension was recognised.
 
-The default extension is ``.hdf5`` but, in order to make it explicit that the
-HDF5 follows the HyperSpy specification, it is possible to save it with the
-``.hspy`` extension as follows.
+.. versionchanged:: 1.3
+    The default extension for the HyperSpy HDF5 specification is now ``.hspy``.
+    The option to change the default is no longer present in ``preferences``.
 
+Only loading of HDF5 files following the HyperSpy specification are supported.
+Usually their extension is ``.hspy`` extension, but older versions of HyperSpy
+would save them with the ``.hdf5`` extension. Both extensions are recognised
+by HyperSpy since version 1.2. However, HyperSpy versions older than 1.2
+won't recognise the ``.hspy`` extension. To
+workaround the issue when using old HyperSpy installations simply change the
+extension manually to ``.hdf5`` or
+save directly the file using this extension by explicitly adding it to the
+filename e.g.:
 
 .. code-block:: python
 
     >>> s = hs.signals.BaseSignal([0])
-    >>> s.save('test.hspy')
+    >>> s.save('test.hdf5')
 
-It is possible to use the ``.hspy`` extension by default by changing the
-value is :py:obj:`hs.preferences` using the GUI or programatically:
-
-.. code-block:: python
-
-    >>> hs.preferences.General.hspy_extension = True
-    >>> hs.save() # make the changes permanent
-
-From HyperSpy 1.3 ``.hspy`` will be the default extension.
 
 .. versionadded:: 0.8
     Saving list, tuples and signals present in :py:attr:`~.metadata`.
 
-When saving to hdf5, all supported objects in the signal's :py:attr:`~.metadata`
-is stored. This includes  lists, tuples and signals. Please note
-that in order to increase saving efficiency and speed, if possible, the
-inner-most structures are converted to numpy arrays when saved. This procedure
-homogenizes any types of the objects inside, most notably casting numbers as
-strings if any other strings are present:
+When saving to ``hspy``, all supported objects in the signal's
+:py:attr:`~.metadata` is stored. This includes  lists, tuples and signals.
+Please note that in order to increase saving efficiency and speed, if possible,
+the inner-most structures are converted to numpy arrays when saved. This
+procedure homogenizes any types of the objects inside, most notably casting
+numbers as strings if any other strings are present:
 
 .. code-block:: python
 
@@ -268,9 +268,9 @@ intensity<get_lines_intensity>`):
 
     >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
     >>> s.metadata.Sample.intensities = s.get_lines_intensity()
-    >>> s.save('EDS_spectrum.hdf5')
+    >>> s.save('EDS_spectrum.hspy')
 
-    >>> s_new = hs.load('EDS_spectrum.hdf5')
+    >>> s_new = hs.load('EDS_spectrum.hspy')
     >>> s_new.metadata.Sample.intensities
     [<BaseSignal, title: X-ray line intensity of EDS SEM Signal1D: Al_Ka at 1.49 keV, dimensions: (|)>,
      <BaseSignal, title: X-ray line intensity of EDS SEM Signal1D: C_Ka at 0.28 keV, dimensions: (|)>,
@@ -329,6 +329,10 @@ This `open standard format
 is widely used to exchange single spectrum data, but it does not support
 multidimensional data. It can be used to exchange single spectra with Gatan's
 Digital Micrograph.
+
+.. WARNING::
+    If several spectra are loaded and stacked (``hs.load('pattern', stack_signals=True``)
+    the calibration read from the first spectrum and applied to all other spectra.
 
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^

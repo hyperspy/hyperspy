@@ -20,6 +20,7 @@ import logging
 from functools import partial
 
 import numpy as np
+import math as math
 import dask.array as da
 import dask.delayed as dd
 from dask import threaded
@@ -32,6 +33,7 @@ from ..external.progressbar import progressbar
 from ..external.astroML.histtools import dasky_histogram
 from ..defaults_parser import preferences
 from ..docstrings.signal import (ONE_AXIS_PARAMETER, OUT_ARG)
+from hyperspy.misc.array_tools import _requires_linear_rebin
 
 _logger = logging.getLogger(__name__)
 
@@ -93,7 +95,7 @@ class LazySignal(BaseSignal):
         self._lazy = False
         self._assign_subclass()
 
-    def _get_dask_chunks(self, axis=None):
+    def _get_dask_chunks(self, axis=None, dtype=None):
         """Returns dask chunks
         Aims:
             - Have at least one signal (or specified axis) in a single chunk,
@@ -104,6 +106,8 @@ class LazySignal(BaseSignal):
             If axis is None (default), returns chunks for current data shape so
             that at least one signal is in the chunk. If an axis is specified,
             only that particular axis is guaranteed to be "not sliced".
+        dtype : {string, np.dtype}
+            The dtype of target chunks.
         Returns
         -------
         Tuple of tuples, dask chunks
@@ -121,7 +125,11 @@ class LazySignal(BaseSignal):
         else:
             need_axes = self.axes_manager.signal_axes
 
-        typesize = dc.dtype.itemsize
+        if dtype is None:
+            dtype = dc.dtype
+        elif not isinstance(dtype, np.dtype):
+            dtype = np.dtype(dtype)
+        typesize = max(dtype.itemsize, dc.dtype.itemsize)
         want_to_keep = multiply([ax.size for ax in need_axes]) * typesize
 
         # @mrocklin reccomends to have around 100MB chunks, so we do that:
@@ -160,17 +168,30 @@ class LazySignal(BaseSignal):
                 chunks.append((dc.shape[i], ))
         return tuple(chunks)
 
-    def _make_lazy(self, axis=None, rechunk=False):
-        self.data = self._lazy_data(axis=axis, rechunk=rechunk)
+    def _make_lazy(self, axis=None, rechunk=False, dtype=None):
+        self.data = self._lazy_data(axis=axis, rechunk=rechunk, dtype=dtype)
 
-    def _lazy_data(self, axis=None, rechunk=True):
-        new_chunks = self._get_dask_chunks(axis=axis)
+    def change_dtype(self, dtype):
+        from hyperspy.misc import rgb_tools
+        if not isinstance(dtype, np.dtype) and (dtype not in
+                                                rgb_tools.rgb_dtypes):
+            dtype = np.dtype(dtype)
+            self._make_lazy(rechunk=True, dtype=dtype)
+        super().change_dtype(dtype)
+    change_dtype.__doc__ = BaseSignal.change_dtype.__doc__
+
+    def _lazy_data(self, axis=None, rechunk=True, dtype=None):
+        new_chunks = self._get_dask_chunks(axis=axis, dtype=dtype)
         if isinstance(self.data, da.Array):
             res = self.data
             if self.data.chunks != new_chunks and rechunk:
                 res = self.data.rechunk(new_chunks)
         else:
-            res = da.from_array(self.data, chunks=new_chunks)
+            if isinstance(self.data, np.ma.masked_array):
+                data = np.where(self.data.mask, np.nan, self.data)
+            else:
+                data = self.data
+            res = da.from_array(data, chunks=new_chunks)
         assert isinstance(res, da.Array)
         return res
 
@@ -210,18 +231,25 @@ class LazySignal(BaseSignal):
     def swap_axes(self, *args):
         raise lazyerror
 
-    def rebin(self, new_shape, out=None):
-        if len(new_shape) != len(self.data.shape):
-            raise ValueError("Wrong shape size")
-        new_shape_in_array = []
-        for axis in self.axes_manager._axes:
-            new_shape_in_array.append(new_shape[axis.index_in_axes_manager])
-        factors = (np.array(self.data.shape) / np.array(new_shape_in_array))
+    def rebin(self, new_shape=None, scale=None, crop=False, out=None):
+        factors = self._validate_rebin_args_and_get_factors(
+            new_shape=new_shape,
+            scale=scale)
+        if _requires_linear_rebin(arr=self.data, scale=factors):
+            if new_shape:
+                raise NotImplementedError(
+                    "Lazy rebin requires that the new shape is a divisor "
+                    "of the original signal shape e.g. if original shape "
+                    "(10| 6), new_shape=(5| 3) is valid, (3 | 4) is not.")
+            else:
+                raise NotImplementedError(
+                    "Lazy rebin requires scale to be integer and divisor of the "
+                    "original signal shape")
         axis = {ax.index_in_array: ax
                 for ax in self.axes_manager._axes}[factors.argmax()]
         self._make_lazy(axis=axis)
-        return super().rebin(new_shape, out=out)
-
+        return super().rebin(new_shape=new_shape,
+                             scale=scale, crop=crop, out=out)
     rebin.__doc__ = BaseSignal.rebin.__doc__
 
     def __array__(self, dtype=None):
@@ -798,6 +826,12 @@ class LazySignal(BaseSignal):
         target.loadings = loadings
         target.explained_variance = explained_variance
         target.explained_variance_ratio = explained_variance_ratio
+
+    def transpose(self, *args, **kwargs):
+        res = super().transpose(*args, **kwargs)
+        res._make_lazy(rechunk=True)
+        return res
+    transpose.__doc__ = BaseSignal.transpose.__doc__
 
 
 def _reshuffle_mixed_blocks(array, ndim, sshape, nav_chunks):
