@@ -30,6 +30,8 @@ import os
 from datetime import datetime
 from dateutil import tz
 import pint
+import multiprocessing as mp
+from multiprocessing.dummy import Pool
 
 import logging
 
@@ -815,24 +817,56 @@ class FeiSpectrumStreamContainer(object):
         self.data_dtype = data_dtype
         self.stream_list = []
 
+    def _read_streams_parallel(self):
+        # Setup stream list
+        for sub_group_key in _get_keys_from_group(self.spectrum_stream_group):
+            self.stream_list.append(self._setup_single_stream(sub_group_key))
+
+        import threading
+        threads = [threading.Thread(target=_read_stream, args=(s,))
+            for s in self.stream_list]
+###        for i, stream in enumerate(self.stream_list):
+###            t = threading.Thread(target=_parse_spectrum_stream, 
+###                                 args=(stream,))
+###            t.start()
+###            threads.append(t)
+###            print('thread {} started'.format(i))
+##
+        [t.start() for t in threads]        
+        # Wait for all of them to finish
+        [t.join() for t in threads]
+        
+
+        # read spectrum stream
+
+#        # Parse spectrum stream
+#        pool = Pool()
+#        self.stream_list = pool.map(_parse_spectrum_stream,
+#                                    self.stream_list)
+#        pool.close()
+#        pool.join()
+
+        print('multi-threading finished')
+
+        
+    def _setup_single_stream(self, spectrum_stream_sub_group_key):
+        # Create each spectrum stream
+        name = '{}/Data'.format(spectrum_stream_sub_group_key)
+        stream = FeiSpectrumStream(
+            self.spectrum_stream_group[name][:, 0],
+            shape=self.shape,
+            energy_rebin=self.energy_rebin,
+            first_frame=self.first_frame,
+            last_frame=self.last_frame,
+            individual_frame=self.individual_frame,
+            data_dtype=self.data_dtype)
+        # Read acquisition settings and spectrum stream metadata
+        stream.import_stream_metadata(self.spectrum_stream_group,
+                                      spectrum_stream_sub_group_key)
+        return stream
+
     def read_streams(self, individual_detector=False):
-        for spectrum_stream_sub_group_key in _get_keys_from_group(self.spectrum_stream_group):
-            # Create each spectrum stream
-            name = '{}/Data'.format(spectrum_stream_sub_group_key)
-            stream = FeiSpectrumStream(
-                self.spectrum_stream_group[name][:, 0],
-                shape=self.shape,
-                energy_rebin=self.energy_rebin,
-                first_frame=self.first_frame,
-                last_frame=self.last_frame,
-                individual_frame=self.individual_frame,
-                data_dtype=self.data_dtype)
-            # Read acquisition settings and spectrum stream metadata
-            stream.import_stream_metadata(self.spectrum_stream_group,
-                                          spectrum_stream_sub_group_key)
-            # Read spectrum stream
-            stream.get_spectrum_image()
-            self.stream_list.append(stream)
+        self._read_streams_parallel()
 
         self.frame_number = self.stream_list[0].frame_number
         if individual_detector is False:
@@ -846,6 +880,26 @@ class FeiSpectrumStreamContainer(object):
     def get_pixelsize_offset_unit(self, stream_index=0):
         om_br = self.stream_list[stream_index].original_metadata['BinaryResult']
         return om_br['PixelSize'], om_br['Offset'], om_br['PixelUnitX']
+
+
+def _read_stream(sub_group_key, ):
+    name = '{}/Data'.format(spectrum_stream_sub_group_key)
+    stream = FeiSpectrumStream(
+        self.spectrum_stream_group[name][:, 0],
+        shape=self.shape,
+        energy_rebin=self.energy_rebin,
+        first_frame=self.first_frame,
+        last_frame=self.last_frame,
+        individual_frame=self.individual_frame,
+        data_dtype=self.data_dtype)
+    # Read acquisition settings and spectrum stream metadata
+    stream.import_stream_metadata(self.spectrum_stream_group,
+                                  spectrum_stream_sub_group_key)
+    
+    
+def _parse_spectrum_stream(stream):
+    stream.get_spectrum_image()
+    return stream
 
 
 class FeiSpectrumStream(object):
