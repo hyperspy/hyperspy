@@ -175,7 +175,7 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +--------------------+--------+--------+--------+
     | HDF5               |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
-    | Image: jpg..       |    Yes |    Yes |    Yes |
+    | Image: jpg         |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
     | TIFF               |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
@@ -195,7 +195,9 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +--------------------+--------+--------+--------+
     | Bruker's bcf       |    Yes |    No  |    Yes |
     +--------------------+--------+--------+--------+
-    | EMD (Berkley Labs) |    Yes |    Yes |    Yes |
+    | EMD (NCEM)         |    Yes |    Yes |    Yes |
+    +--------------------+--------+--------+--------+
+    | EMD (FEI)          |    Yes |    No  |    No  |
     +--------------------+--------+--------+--------+
     | Protochips log     |    Yes |    No  |    No  |
     +--------------------+--------+--------+--------+
@@ -282,9 +284,7 @@ intensity<get_lines_intensity>`):
 
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
-compression: One of None, 'gzip', 'szip', 'lzf'.
-
-'gzip' is the default
+- `compression` : One of None, 'gzip', 'szip', 'lzf' (default is 'gzip').
 
 
 .. _netcdf-format:
@@ -575,19 +575,12 @@ currently supported by HyperSpy.
 
 Extra loading arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
-select_type: One of ('spectrum', 'image'). If specified just selected type of
-data is returned. (default None)
 
-index: index of dataset in bcf v2 files, which can hold few datasets (delaut 0)
-
-downsample: the downsample ratio of hyperspectral array (hight and width only),
-can be integer >=1, where '1' results in no downsampling (default 1). The
-underlying method of downsampling is unchangeable: sum. Differently than
-block_reduce from skimage.measure it is memory efficient (does not creates
-intermediate arrays, works inplace).
-
-cutoff_at_kV: if set (can be int of float >= 0) can be used either to crop or
-enlarge energy (or channels) range at max values. (default None)
+- `select_type` : One of ('spectrum', 'image'). If specified just selected type of data is returned (default is None).
+- `index` : index of dataset in bcf v2 files, which can hold few datasets (delaut 0) 
+- `downsample` : the downsample ratio of hyperspectral array (hight and width only),
+can be integer >=1, where '1' results in no downsampling (default is 1). The underlying method of downsampling is unchangeable: sum. Differently than block_reduce from skimage.measure it is memory efficient (does not creates intermediate arrays, works inplace).
+- `cutoff_at_kV` : if set (can be int of float >= 0) can be used either to crop or enlarge energy (or channels) range at max values (default is None).
 
 Example of loading reduced (downsampled, and with energy range cropped)
 "spectrum only" data from bcf (original shape: 80keV EDS range (4096 channels),
@@ -603,8 +596,8 @@ load the same file without extra arguments:
 .. code-block:: python
 
     >>> hs.load("sample80kv.bcf")
-    [<Image, title: BSE, dimensions: (|100, 75)>,
-    <Image, title: SE, dimensions: (|100, 75)>,
+    [<Signal2D, title: BSE, dimensions: (|100, 75)>,
+    <Signal2D, title: SE, dimensions: (|100, 75)>,
     <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|1095)>]
 
 The loaded array energy dimension can by forced to be larger than the data
@@ -613,8 +606,8 @@ recorded by setting the 'cutoff_at_kV' kwarg to higher value:
 .. code-block:: python
 
     >>> hs.load("sample80kv.bcf", cutoff_at_kV=80)
-    [<Image, title: BSE, dimensions: (|100, 75)>,
-    <Image, title: SE, dimensions: (|100, 75)>,
+    [<Signal2D, title: BSE, dimensions: (|100, 75)>,
+    <Signal2D, title: SE, dimensions: (|100, 75)>,
     <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|4096)>]
 
 Note that setting downsample to >1 currently locks out using SEM imagery
@@ -623,15 +616,64 @@ as navigator in the plotting.
 
 .. _emd-format:
 
-EMD Electron Microscopy Datasets (HDF5)
----------------------------------------
+EMD
+---
 
 EMD stands for “Electron Microscopy Dataset.” It is a subset of the open source
 HDF5 wrapper format. N-dimensional data arrays of any standard type can be
-stored in an HDF5 file, as well as tags and other metadata. The EMD format was
-developed at Lawrence Berkeley National Lab (see http://emdatasets.com/ for
-more information). NOT to be confused with the FEI EMD format which was
-developed later and has a different structure.
+stored in an HDF5 file, as well as tags and other metadata. 
+
+EMD (NCEM)
+^^^^^^^^^^
+
+This EMD format was developed by Colin Ophus at the National Center for Electron Microscopy (NCEM). See http://emdatasets.com/ for more information.
+
+
+EMD (FEI)
+^^^^^^^^^
+
+This EMD format was developed by FEI for the Velox software. Although it shares similar structure than the other EMD format from NCEM, it differs in the way the data are stored. HyperSpy supports importing images, EDS spectrum and EDS spectrum image. For spectrum image, individual frame or individual EDS detector can be imported, however selecting these option will generate very large dataset. Therefore, the default is to import the sum over all frame and over all detectors. Alternatively, a specific frame range can be choosen -see the :ref:`Extra-loading-arguments-fei-emd` section below.
+Loading a spectrum image is slow if `numba <http://numba.pydata.org/>`_ is not installed.
+
+.. code-block:: python
+
+    >>> hs.load("sample.emd")
+    [<Signal2D, title: HAADF, dimensions: (|179, 161)>,
+    <EDSSEMSpectrum, title: EDS, dimensions: (179, 161|4096)>]
+
+.. warning::
+
+   This format is still not stable and files generated with the most recent version of Velox may not be supported.
+
+.. _Extra-loading-arguments-fei-emd:
+
+Extra loading arguments
++++++++++++++++++++++++
+
+- `first_frame` : integer (default is 0)
+- `last_frame` : integer (default is None)
+- `individual_frame` : boolean (default is False)
+- `individual_detector` : boolean (default is False)
+- `energy_rebin` : integer (default is 1)
+- `SI_dtype` : numpy dtype (default is None)
+- `read_SI_image_stack` : boolean (default is False)
+
+The `SI_dtype` and `energy_rebin` are particularly useful in combinasion with `individual_frame=True` to reduce the data size when one want to read the individual frame.
+
+.. code-block:: python
+
+    >>> hs.load("sample.emd", individual_detector=True)
+    [<Signal2D, title: HAADF, dimensions: (|179, 161)>,
+    <EDSSEMSpectrum, title: EDS - SuperXG21, dimensions: (179, 161|4096)>,
+    <EDSSEMSpectrum, title: EDS - SuperXG22, dimensions: (179, 161|4096)>,
+    <EDSSEMSpectrum, title: EDS - SuperXG23, dimensions: (179, 161|4096)>,
+    <EDSSEMSpectrum, title: EDS - SuperXG24, dimensions: (179, 161|4096)>]
+
+    >>> hs.load("sample.emd", individual_frame=True, read_SI_image_stack=True, SI_dtype=np.int8, energy_rebin=4)
+    [<Signal2D, title: HAADF, dimensions: (50|179, 161)>,
+    <EDSSEMSpectrum, title: EDS, dimensions: (50, 179, 161|1024)>]
+
+
 
 .. _protochips-format:
 
