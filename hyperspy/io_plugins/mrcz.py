@@ -19,14 +19,9 @@
 import mrcz as _mrcz
 
 import os
-from datetime import datetime, timedelta
-from dateutil import tz
-from traits.api import Undefined
-import numpy as np
 import logging
-import warnings
 
-# There's some sort of dynamic import that prevents us from importing 
+# There's some sort of dynamic import that prevents us from importing
 # signals here.
 # from hyperspy._signals import signal2d
 # from hyperspy.misc.array_tools import sarray2dict, dict2sarray
@@ -44,12 +39,12 @@ default_extension = 2
 # Writing capabilities:
 writes = True
 
-_POP_FROM_HEADER = ['compressor', 'MRCtype', 'C3', 'dimensions', 'dtype', 
-                 'extendedBytes', 'gain', 'maxImage', 'minImage', 'meanImage', 
-                 'metaId', 'packedBytes', 'pixelsize', 'pixelunits', 'voltage']
+_POP_FROM_HEADER = ['compressor', 'MRCtype', 'C3', 'dimensions', 'dtype',
+                    'extendedBytes', 'gain', 'maxImage', 'minImage', 'meanImage',
+                    'metaId', 'packedBytes', 'pixelsize', 'pixelunits', 'voltage']
 # Hyperspy uses an unusual mixed Fortran- and C-ordering scheme
-_READ_ORDER = [1,2,0]
-_WRITE_ORDER = [0,2,1]
+_READ_ORDER = [1, 2, 0]
+_WRITE_ORDER = [0, 2, 1]
 
 mapping = {
     'mrcz_header.voltage':
@@ -66,34 +61,31 @@ mapping = {
 def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
                 **kwds):
     _logger.debug("Reading MRCZ file: %s" % filename)
-    metadata = {}
 
     if mmap_mode != 'c':
         # Note also that MRCZ does not support memory-mapping of compressed data.
         # Perhaps we could use the zarr package for that
-        raise ValueError( 'MRCZ supports only C-ordering memory-maps' )
-    
+        raise ValueError('MRCZ supports only C-ordering memory-maps')
+
     useMemmap = not load_to_memory
-    kwds.pop('lazy') #  Not used
+    kwds.pop('lazy')  # Not used
 
     mrcz_endian = 'le' if endianess == '<' else 'be'
-    data, mrcz_header = _mrcz.readMRC( filename, endian=mrcz_endian, useMemmap=useMemmap,
-                                  **kwds )
+    data, mrcz_header = _mrcz.readMRC(filename, endian=mrcz_endian, useMemmap=useMemmap,
+                                      **kwds)
 
     # Create the axis objects for each axis
-    dim = data.ndim
-    names = ['y','x','z']
+    names = ['y', 'x', 'z']
     axes = [
-        {   'size': data.shape[ hsIndex ],
+        {'size': data.shape[hsIndex],
             'index_in_array': hsIndex,
             'name': names[index],
             'scale': mrcz_header['pixelsize'][hsIndex],
             'offset': 0.0,
             'units': mrcz_header['pixelunits'], }
-        for index, hsIndex in enumerate(_READ_ORDER) ]
+        for index, hsIndex in enumerate(_READ_ORDER)]
 
     metadata = mrcz_header.copy()
-
     # Remove non-standard fields
     for popTarget in _POP_FROM_HEADER:
         metadata.pop(popTarget)
@@ -101,7 +93,7 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
     dictionary = {'data': data,
                   'axes': axes,
                   'metadata': metadata,
-                  'original_metadata': {'mrcz_header':mrcz_header},
+                  'original_metadata': {'mrcz_header': mrcz_header},
                   'mapping': mapping, }
 
     return [dictionary, ]
@@ -119,22 +111,22 @@ def file_writer(filename, signal, do_async=False, compressor=None, clevel=1, n_t
 
     # Get pixelsize and pixelunits from the axes
     pixelunits = signal.axes_manager[-1].units
-    
-    pixelsize = [ signal.axes_manager[I].scale for I in _WRITE_ORDER ]
+
+    pixelsize = [signal.axes_manager[I].scale for I in _WRITE_ORDER]
 
     # Strip out voltage from meta-data
-    voltage = signal.metadata.get_item( 'Acquisition_instrument.TEM.beam_energy' )
+    voltage = signal.metadata.get_item(
+        'Acquisition_instrument.TEM.beam_energy')
     # There aren't hyperspy fields for spherical aberration or detector gain
     C3 = 0.0
     gain = 1.0
     if do_async:
-        _mrcz.asyncWriteMRC( signal.data, filename, meta=meta, endian=mrcz_endian,
-                    pixelsize=pixelsize, pixelunits=pixelunits,
-                    voltage=voltage, C3=C3, gain=gain,
-                    compressor=compressor, clevel=clevel, n_threads=n_threads )
+        _mrcz.asyncWriteMRC(signal.data, filename, meta=meta, endian=mrcz_endian,
+                            pixelsize=pixelsize, pixelunits=pixelunits,
+                            voltage=voltage, C3=C3, gain=gain,
+                            compressor=compressor, clevel=clevel, n_threads=n_threads)
     else:
-        _mrcz.writeMRC( signal.data, filename, meta=meta, endian=mrcz_endian,
-                    pixelsize=pixelsize, pixelunits=pixelunits,
-                    voltage=voltage, C3=C3, gain=gain,
-                    compressor=compressor, clevel=clevel, n_threads=n_threads )
-
+        _mrcz.writeMRC(signal.data, filename, meta=meta, endian=mrcz_endian,
+                       pixelsize=pixelsize, pixelunits=pixelunits,
+                       voltage=voltage, C3=C3, gain=gain,
+                       compressor=compressor, clevel=clevel, n_threads=n_threads)
