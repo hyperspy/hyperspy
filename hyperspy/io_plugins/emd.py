@@ -30,8 +30,6 @@ import os
 from datetime import datetime
 from dateutil import tz
 import pint
-import multiprocessing as mp
-from multiprocessing.dummy import Pool
 
 import logging
 
@@ -451,7 +449,7 @@ def _get_keys_from_group(group):
 
 
 def _parse_sub_data_group_metadata(sub_data_group):
-    metadata_array = sub_data_group['Metadata'][:, 0]
+    metadata_array = sub_data_group['Metadata'][:].T[0]
     mdata_string = metadata_array.tostring().decode("utf-8")
     return json.loads(mdata_string.rstrip('\x00'))
 
@@ -817,56 +815,38 @@ class FeiSpectrumStreamContainer(object):
         self.data_dtype = data_dtype
         self.stream_list = []
 
-    def _read_streams_parallel(self):
-        # Setup stream list
-        for sub_group_key in _get_keys_from_group(self.spectrum_stream_group):
-            self.stream_list.append(self._setup_single_stream(sub_group_key))
+    def _read_streams(self):
+        subgroup_keys = _get_keys_from_group(self.spectrum_stream_group)
 
-        import threading
-        threads = [threading.Thread(target=_read_stream, args=(s,))
-            for s in self.stream_list]
-###        for i, stream in enumerate(self.stream_list):
-###            t = threading.Thread(target=_parse_spectrum_stream, 
-###                                 args=(stream,))
-###            t.start()
-###            threads.append(t)
-###            print('thread {} started'.format(i))
-##
-        [t.start() for t in threads]        
-        # Wait for all of them to finish
-        [t.join() for t in threads]
-        
+        stream_data_list = [
+            self.spectrum_stream_group['{}/Data'.format(key)][:].T[0]
+            for key in subgroup_keys]
 
-        # read spectrum stream
+        kwargs = {'shape': self.shape,
+                  'energy_rebin': self.energy_rebin,
+                  'first_frame': self.first_frame,
+                  'last_frame': self.last_frame,
+                  'individual_frame': self.individual_frame,
+                  'data_dtype': self.data_dtype}
 
-#        # Parse spectrum stream
-#        pool = Pool()
-#        self.stream_list = pool.map(_parse_spectrum_stream,
-#                                    self.stream_list)
-#        pool.close()
-#        pool.join()
+        stream_list = []
+        for key, stream_data in zip(subgroup_keys, stream_data_list):
+            stream = FeiSpectrumStream(stream_data, **kwargs)
 
-        print('multi-threading finished')
+            acquisition_key = '{}/AcquisitionSettings'.format(key)
+            acquisition_settings_group = self.spectrum_stream_group[acquisition_key]
+            stream.parse_acquisition_settings(acquisition_settings_group)
 
-        
-    def _setup_single_stream(self, spectrum_stream_sub_group_key):
-        # Create each spectrum stream
-        name = '{}/Data'.format(spectrum_stream_sub_group_key)
-        stream = FeiSpectrumStream(
-            self.spectrum_stream_group[name][:, 0],
-            shape=self.shape,
-            energy_rebin=self.energy_rebin,
-            first_frame=self.first_frame,
-            last_frame=self.last_frame,
-            individual_frame=self.individual_frame,
-            data_dtype=self.data_dtype)
-        # Read acquisition settings and spectrum stream metadata
-        stream.import_stream_metadata(self.spectrum_stream_group,
-                                      spectrum_stream_sub_group_key)
-        return stream
+            metadata_group = self.spectrum_stream_group[key]
+            stream.parse_metadata(metadata_group)
+
+            stream.get_spectrum_image()
+            stream_list.append(stream)
+
+        return stream_list
 
     def read_streams(self, individual_detector=False):
-        self._read_streams_parallel()
+        self.stream_list = self._read_streams()
 
         self.frame_number = self.stream_list[0].frame_number
         if individual_detector is False:
@@ -880,26 +860,6 @@ class FeiSpectrumStreamContainer(object):
     def get_pixelsize_offset_unit(self, stream_index=0):
         om_br = self.stream_list[stream_index].original_metadata['BinaryResult']
         return om_br['PixelSize'], om_br['Offset'], om_br['PixelUnitX']
-
-
-def _read_stream(sub_group_key, ):
-    name = '{}/Data'.format(spectrum_stream_sub_group_key)
-    stream = FeiSpectrumStream(
-        self.spectrum_stream_group[name][:, 0],
-        shape=self.shape,
-        energy_rebin=self.energy_rebin,
-        first_frame=self.first_frame,
-        last_frame=self.last_frame,
-        individual_frame=self.individual_frame,
-        data_dtype=self.data_dtype)
-    # Read acquisition settings and spectrum stream metadata
-    stream.import_stream_metadata(self.spectrum_stream_group,
-                                  spectrum_stream_sub_group_key)
-    
-    
-def _parse_spectrum_stream(stream):
-    stream.get_spectrum_image()
-    return stream
 
 
 class FeiSpectrumStream(object):
@@ -924,10 +884,8 @@ class FeiSpectrumStream(object):
         self.individual_frame = individual_frame
         self.data_dtype = data_dtype
 
-    def import_stream_metadata(self, *args, **kwargs):
-        self.original_metadata = _parse_metadata(*args, **kwargs)
-        self.stream_acquisition_settings = self._parse_acquisition_settings(
-            *args, **kwargs)
+    def parse_metadata(self, stream_group):
+        self.original_metadata = _parse_sub_data_group_metadata(stream_group)
 
     def _add_imported_parameters_to_original_metadata(self):
         self.original_metadata['ImportedDataParameter'] = {
@@ -935,13 +893,13 @@ class FeiSpectrumStream(object):
             'Last_frame': self.last_frame,
             'Frame_number': self.frame_number}
 
-    def _parse_acquisition_settings(self, group, sub_group_name):
-        acquisition_key = '{}/AcquisitionSettings'.format(sub_group_name)
-        settings = json.loads(group[acquisition_key].value[0].decode('utf-8'))
-        self.bin_count = int(settings['bincount'])
+    def parse_acquisition_settings(self, acquisition_settings_group):
+        acquisition_settings = json.loads(
+            acquisition_settings_group.value[0].decode('utf-8'))
+        self.bin_count = int(acquisition_settings['bincount'])
         if self.data_dtype is None:
-            self.data_dtype = settings['StreamEncoding']
-        return settings
+            self.data_dtype = acquisition_settings['StreamEncoding']
+        return acquisition_settings
 
     def get_spectrum_image(self):
         stream = self.stream_data
