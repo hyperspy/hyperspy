@@ -376,8 +376,7 @@ class MVA():
                 print("mvsa loading size: ", loadings.shape)
             elif algorithm == 'vca':
                 _logger.info("Performing VCA Unmixing")
-                factors, indice, Rp = VCA(dc.T, **kwargs)
-                loadings = 0
+                factors, loadings = VCA(dc.T, **kwargs)
                 print("vca factor size: ", factors.shape)
             else:
                 raise ValueError('Algorithm not recognised. '

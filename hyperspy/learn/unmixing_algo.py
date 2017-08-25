@@ -407,8 +407,8 @@ def VCA(R, p, verbose = 'on', snr_input = 0):
         A[:, i-1] = y[:, indice[0][i-1]]
 
     Ae = Rp[:, indice[0]]
-
-    return Ae, indice[0], Rp
+    loadings = np.dot(np.linalg.pinv(Ae), R)
+    return Ae, loadings
 
 def estimate_snr(R, r_m, x_p):
     import math
