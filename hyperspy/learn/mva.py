@@ -38,7 +38,7 @@ from hyperspy.learn.rpca import rpca_godec, orpca
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack, ordinal
-
+from hyperspy.learn.unmixing_algo import mvsa, quadProgl, VCA, estimate_snr, computeAtransYinvLA
 _logger = logging.getLogger(__name__)
 
 
@@ -228,7 +228,7 @@ class MVA():
                 signal_mask = ~signal_mask
 
             # WARNING: signal_mask and navigation_mask values are now their
-            # negaties i.e. True -> False and viceversa. However, the
+            # negatives i.e. True -> False and vice versa. However, the
             # stored value (at the end of the method) coincides with the
             # input masks
 
@@ -369,6 +369,16 @@ class MVA():
 
                 if return_info:
                     to_return = (X, E)
+            elif algorithm == 'mvsa':
+                _logger.info("Performing MVSA Unmixing")
+                factors, loadings, Up, my, sing_values = mvsa(dc, **kwargs)
+                print("mvsa factor size: ", factors.shape)
+                print("mvsa loading size: ", loadings.shape)
+            elif algorithm == 'vca':
+                _logger.info("Performing VCA Unmixing")
+                factors, indice, Rp = VCA(dc.T, **kwargs)
+                loadings = 0
+                print("vca factor size: ", factors.shape)
             else:
                 raise ValueError('Algorithm not recognised. '
                                  'Nothing done')
@@ -382,7 +392,10 @@ class MVA():
                     explained_variance / explained_variance.sum()
 
             # Store the results in learning_results
-
+            if algorithm == 'mvsa':
+                target.mvsa_processed = True
+            if algorithm == 'vca':
+                target.vca_processed = True
             target.factors = factors
             target.loadings = loadings
             target.explained_variance = explained_variance
@@ -630,7 +643,6 @@ class MVA():
 
         # Center and scale the data
         factors, invsqcovmat = centering_and_whitening(factors)
-
         # Perform actual BSS
         if algorithm == 'orthomax':
             _, unmixing_matrix = orthomax(factors, **kwargs)
@@ -662,7 +674,8 @@ class MVA():
             unmixing_matrix = lr.bss_node.get_recmatrix()
         w = np.dot(unmixing_matrix, invsqcovmat)
         if lr.explained_variance is not None:
-            # The output of ICA is not sorted in any way what makes it
+            # The output of ICA is not sorted in any way which
+            #  makes it
             # difficult to compare results from different unmixings. The
             # following code is an experimental attempt to sort them in a
             # more predictable way
@@ -1221,6 +1234,12 @@ class LearningResults(object):
     unmixing_matrix = None
     bss_factors = None
     bss_loadings = None
+    mvsa_factors = None
+    mvsa_loadings = None
+    mvsa_processed = False
+    vca_factors = None
+    vca_loadings = None
+    vca_processed = False
     # Shape
     unfolded = None
     original_shape = None

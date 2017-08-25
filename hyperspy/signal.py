@@ -866,7 +866,12 @@ class MVATools(object):
 
         if same_window is None:
             same_window = True
-        factors = self.learning_results.bss_factors
+        if self.learning_results.mvsa_processed:
+            factors = self.learning_results.factors
+        elif self.learning_results.vca_processed:
+            factors = self.learning_results.factors
+        else:
+            factors = self.learning_results.bss_factors
         title = _change_API_comp_label(title, comp_label)
         if title is None:
             title = self._get_plot_title('BSS factors of', same_window)
@@ -1050,9 +1055,15 @@ class MVATools(object):
         if title is None:
             title = self._get_plot_title('BSS loadings of',
                                          same_window)
-        loadings = self.learning_results.bss_loadings.T
+        if self.learning_results.mvsa_processed:
+            loadings = self.learning_results.loadings
+        else:
+            loadings = self.learning_results.bss_loadings.T
         if with_factors:
-            factors = self.learning_results.bss_factors
+            if self.learning_results.mvsa_processed:
+                factors = self.learning_results.factors
+            else:
+                factors = self.learning_results.bss_factors
         else:
             factors = None
         return self._plot_loadings(
