@@ -349,9 +349,9 @@ class EELSSpectrum_mixin:
         axis = signal_axis.axis
         mini_value = zlpc.data.mean() - zero_loss_full_width / 2
         maxi_value = zlpc.data.mean() + zero_loss_full_width / 2
-        mask = (mini_value <= axis) & (axis <= maxi_value)
-        if signal_mask:
-            signal_mask = mask & signal_mask
+        mask = np.logical_and(mini_value <= axis, axis <= maxi_value)
+        if signal_mask is not None:
+            signal_mask = np.logical_or(mask, signal_mask)
         else:
             signal_mask = mask
         return signal_mask

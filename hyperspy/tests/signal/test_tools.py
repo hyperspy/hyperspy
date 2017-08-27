@@ -862,15 +862,19 @@ def test_lazy_changetype_rechunk():
 
 def test_spikes_removal_tool():
     s = signals.Signal1D(np.ones((2, 3, 30)))
+    np.random.seed(1)
+    s.add_gaussian_noise(1)
     # Add three spikes
-    s.data[1, 0, 1] += 2
-    s.data[0, 2, 29] += 1
-    s.data[1, 2, 14] += 1
+    s.data[1, 0, 1] += 20
+    s.data[0, 2, 29] += 10
+    s.data[1, 2, 14] += 10
 
-    sr = SpikesRemoval(s, threshold=1.5)
+    s._get_spikes_diagnosis_histogram_data()
+
+    sr = SpikesRemoval(s, threshold=15)
     sr.find()
     assert s.axes_manager.indices == (0, 1)
-    sr.threshold = 0.5
+    sr.threshold = 5
     sr.index = 0
     s.axes_manager.indices = sr.coordinates[sr.index]
     sr.find()

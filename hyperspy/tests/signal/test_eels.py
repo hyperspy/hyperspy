@@ -187,6 +187,72 @@ class TestAlignZLP:
 
 
 @lazifyTestClass
+class TestSpikesRemovalToolZLP:
+
+    def setup_method(self, method):
+        # Create an empty spectrum
+        s = signals.EELSSpectrum(np.zeros((2, 3, 64)))
+        energy_axis = s.axes_manager.signal_axes[0]
+        energy_axis.scale = 0.2
+        energy_axis.offset = -5
+
+        gauss = model.components1d.Gaussian()
+        gauss.centre.value = 0
+        gauss.A.value = 5000
+        gauss.sigma.value = 0.5
+        s.data = s.data + gauss.function(energy_axis.axis)
+        np.random.seed(1)
+        s.add_gaussian_noise(1)
+        self.signal = s
+
+    def _add_spikes(self):
+        self.signal.data[1, 0, 1] += 200
+        self.signal.data[0, 2, 29] += 500
+        self.signal.data[1, 2, 14] += 1000
+
+    def test_get_zero_loss_peak_mask(self):
+        mask = self.signal.get_zero_loss_peak_mask()
+        expected_mask = np.zeros(self.signal.axes_manager.signal_size,
+                                 dtype=bool)
+        expected_mask[13:38] = True
+        np.testing.assert_allclose(mask, expected_mask)
+
+    def test_get_zero_loss_peak_mask_signal_mask(self):
+        signal_mask = np.zeros(self.signal.axes_manager.signal_size,
+                               dtype=bool)
+        signal_mask[40:50] = True
+        mask = self.signal.get_zero_loss_peak_mask(signal_mask=signal_mask)
+        expected_mask = np.zeros(self.signal.axes_manager.signal_size,
+                                 dtype=bool)
+        expected_mask[13:38] = True
+        np.testing.assert_allclose(mask, np.logical_or(expected_mask,
+                                                       signal_mask))
+
+    def test_spikes_diagnosis(self, mpl_cleanup):
+        if self.signal._lazy:
+            pytest.skip("Spikes diagnosis is not supported for lazy signal")
+        self._add_spikes()
+        self.signal.spikes_diagnosis(filter_zero_loss_peak=True)
+
+        zlp_mask = self.signal.get_zero_loss_peak_mask()
+        hist_data = self.signal._get_spikes_diagnosis_histogram_data(
+            signal_mask=zlp_mask)
+        expected_data = np.zeros(543)
+        expected_data[:13] = [42, 45, 31, 32, 29, 16, 13, 4, 5, 5, 2, 1, 1]
+        expected_data[-4:] = [1, 0, 0, 1]
+        np.testing.assert_allclose(hist_data.data, expected_data)
+
+        hist_data2 = self.signal._get_spikes_diagnosis_histogram_data()
+        expected_data2 = np.array([266, 12, 0, 12, 0, 0, 0, 0, 0, 12, 0, 0, 0,
+                                   2, 0, 0, 0, 0, 0, 0, 12, 12, 1, 0, 0, 0,
+                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11,
+                                   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                   5, 7, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 12,
+                                   0, 0, 2, 0, 0, 0, 0, 1])
+        np.testing.assert_allclose(hist_data2.data, expected_data2)
+
+
+@lazifyTestClass
 class TestPowerLawExtrapolation:
 
     def setup_method(self, method):
@@ -207,6 +273,7 @@ class TestPowerLawExtrapolation:
         sc = self.s.isig[:300]
         s = sc.power_law_extrapolation(extrapolation_size=100)
         np.testing.assert_allclose(s.data, self.s.data, atol=10e-3)
+
 
 @lazifyTestClass
 class TestFourierRatioDeconvolution:
