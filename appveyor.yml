@@ -71,7 +71,7 @@ install:
   - "%CMD_IN_ENV% conda install -yq %DEPS%"
     # Having 'sip' folder on path confuses import of `sip`.
   - "%CMD_IN_ENV% conda install pip"
-  - "pip install pytest-mpl pytest-sugar"
+  - "pip install pytest-mpl"
     # Force to have the freetype font in matplotlib from pip for plot testing
   - "pip uninstall -y matplotlib"
   - "pip install matplotlib"
