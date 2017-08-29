@@ -272,7 +272,8 @@ class update_version_when_dev:
         if self.release_version.endswith(".dev"):
             p = subprocess.Popen(["git", "describe",
                                   "--tags", "--dirty", "--always"],
-                                 stdout=subprocess.PIPE)
+                                 stdout=subprocess.PIPE,
+                                 shell=True)
             stdout = p.communicate()[0]
             if p.returncode != 0:
                 # Git is not available, we keep the version as is
