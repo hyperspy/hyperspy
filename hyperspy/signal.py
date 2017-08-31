@@ -3269,7 +3269,7 @@ class BaseSignal(FancySlicing,
             if str(self.axes_manager[ax].units).endswith('$^{-1}$'):
                 axis.units = str(self.axes_manager[ax].units)[:-7]
             else:
-                axis.units = str(self.axes_manager[ax].units)
+                axis.units = str(self.axes_manager[ax].units) + '$^{-1}$'
         return im_ifft
 
     def integrate1D(self, axis, out=None):

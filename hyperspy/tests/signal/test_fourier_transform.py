@@ -19,7 +19,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 
-from hyperspy.signals import Signal1D, Signal2D, ComplexSignal1D, ComplexSignal2D
+from hyperspy.signals import Signal1D, Signal2D, ComplexSignal1D, ComplexSignal2D, BaseSignal
 
 
 @pytest.mark.parametrize('lazy', [True, False])
@@ -27,8 +27,16 @@ def test_fft_signal2d(lazy):
     im = Signal2D(np.random.random((2, 3, 4, 5)))
     if lazy:
         im = im.as_lazy()
+    im.axes_manager.signal_axes[0].units = 'nm'
+    im.axes_manager.signal_axes[1].units = 'nm'
     im_fft = im.fft()
+    assert im_fft.axes_manager.signal_axes[0].units == 'nm$^{-1}$'
+    assert im_fft.axes_manager.signal_axes[1].units == 'nm$^{-1}$'
+
     im_ifft = im_fft.ifft()
+    assert im_ifft.axes_manager.signal_axes[0].units == 'nm'
+    assert im_ifft.axes_manager.signal_axes[1].units == 'nm'
+
     assert isinstance(im_fft, ComplexSignal2D)
     assert isinstance(im_ifft, Signal2D)
     assert_allclose(im.data,  im_ifft.data, atol=1e-3)
@@ -55,7 +63,10 @@ def test_fft_signal1d(lazy):
         s = s.as_lazy()
 
     s_fft = s.fft()
+    s_fft.axes_manager.signal_axes[0].units = 'mrad'
+
     s_ifft = s_fft.ifft()
+    assert s_ifft.axes_manager.signal_axes[0].units == 'mrad$^{-1}$'
     assert isinstance(s_fft, ComplexSignal1D)
     assert isinstance(s_ifft, Signal1D)
     assert_allclose(s.data,  s_ifft.data, atol=1e-3)
@@ -77,3 +88,11 @@ def test_fft_signal1d(lazy):
     s_ifft = s_fft.ifft(shifted=False)
     assert_allclose(s.inav[0, 0, 0].data, s_ifft.data, atol=1e-3)
     assert_allclose(np.fft.fft(s.inav[0, 0, 0].data), s_fft.data)
+
+
+def test_nul_signal():
+    s = BaseSignal(np.random.random())
+    with pytest.raises(AttributeError):
+        s.T.fft()
+    with pytest.raises(AttributeError):
+        s.T.ifft()
