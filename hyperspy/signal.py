@@ -3187,7 +3187,7 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> im = hs.signals.Image(scipy.misc.lena())
+        >>> im = hs.signals.Signal2D(scipy.misc.lena())
         >>> im.fft()
         <Image, title: FFT of , dimensions: (|512, 512)>
 
@@ -3237,7 +3237,7 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> im = hs.signals.Image(scipy.misc.lena())
+        >>> im = hs.signals.Signal2D(scipy.misc.lena())
         >>> imfft = im.fft()
         >>> imfft.ifft()
         <Image, title: iFFT of FFT of , dimensions: (|512, 512)>

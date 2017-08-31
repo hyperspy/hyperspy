@@ -1050,16 +1050,23 @@ to reverse the :py:func:`~.utils.stack` function:
 FFT and iFFT
 ^^^^^^^^^^^^
 
-The Fast Fourier transform and its inverse can be applied on a signal with the :py:meth:`~.signal.Signal.fft` and the :py:meth:`~.signal.Signal.ifft` methods.
+The Fast Fourier transform and its inverse can be applied on a signal with the :py:meth:`~.signal.BaseSignal.fft` and the :py:meth:`~.signal.BaseSignal.ifft` methods.
 
 .. code-block:: python
 
-    >>> im = hs.signals.Image(scipy.misc.lena())
+    >>> im = hs.signals.Signal2D(scipy.misc.lena())
     >>> im.fft().plot()
 
 .. figure::  images/lena_fft.png
   :align:   center
-  :width:   400 
+  :width:   400
+
+By default both methods calculate FFT and IFFT with origin shifted in the centre. Use `shifted=False` option to
+calculate FFT and the inverse without shifting the origin.
+
+.. code-block:: python
+
+    >>> im_fft = im.fft(shifted=False)
 
 .. _signal.change_dtype:
 
