@@ -3169,16 +3169,21 @@ class BaseSignal(FancySlicing,
             return s
     integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def fft(self):
+    def fft(self, shifted=True):
         """Compute the discrete Fourier Transform.
 
         This function computes the discrete Fourier Transform over the signal
         axes by means of the Fast Fourier Transform (FFT) as implemented in
         numpy.
 
+        Parameters
+        ----------
+        shifted : bool, optional
+            If True, the origin of FFT will be shifted in the centre (Default: True).
+
         Return
         ------
-        signals.Signal
+        s : ComplexSignal
 
         Examples
         --------
@@ -3195,8 +3200,14 @@ class BaseSignal(FancySlicing,
             raise AttributeError("Signal dimension must be at least one.")
         ax = self.axes_manager
         axes = np.arange(ax.signal_dimension) + ax.navigation_dimension
-        im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
-            np.fft.fftn(self.data, axes=axes), axes=axes))
+
+        if shifted:
+            im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
+                np.fft.fftn(self.data, axes=axes), axes=axes))
+        else:
+            im_fft = self._deepcopy_with_new_data(np.fft.fftn(self.data, axes=axes))
+
+        im_fft.change_dtype("complex")
         shape_fft = self.axes_manager.shape
         im_fft.metadata.General.title = 'FFT of ' + \
             im_fft.metadata.General.title
@@ -3207,17 +3218,22 @@ class BaseSignal(FancySlicing,
             axis.offset = -axis.high_value / 2.
         return im_fft
 
-    def ifft(self):
+    def ifft(self, shifted=True):
         """
         Compute the inverse discrete Fourier Transform.
 
-        This function computes the inverse of the discrete
+        This function computes real part of the inverse of the discrete
         Fourier Transform over the signal axes by
         means of the Fast Fourier Transform (FFT).
 
+        Parameters
+        ----------
+        shifted : bool, optional
+            If True, the origin of FFT will be shifted in the centre (Default: True).
+
         Return
         ------
-        signals.Signal
+        s : Signal
 
         Examples
         --------
@@ -3236,10 +3252,17 @@ class BaseSignal(FancySlicing,
             raise AttributeError("Signal dimension must be at least one.")
         ax = self.axes_manager
         axes = np.arange(ax.signal_dimension) + ax.navigation_dimension
-        im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(np.fft.ifftshift(
-            self.data, axes=axes), axes=axes).real)
+
+        if shifted:
+            im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(np.fft.ifftshift(
+                self.data, axes=axes), axes=axes))
+        else:
+            im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
+                self.data, axes=axes))
+
         im_ifft.metadata.General.title = 'iFFT of ' + \
             im_ifft.metadata.General.title
+        im_ifft = im_ifft.real
         for ax, dim in zip(axes, self.axes_manager.shape):
             axis = im_ifft.axes_manager[ax]
             axis.scale = 1. / dim / self.axes_manager[ax].scale
