@@ -3219,7 +3219,8 @@ class BaseSignal(FancySlicing,
                 axis.units = '{:~}'.format(units.units)
             except UndefinedUnitError:
                 _logger.warning('Units are not set or cannot be recognized')
-            axis.offset = -axis.high_value / 2.
+            if shifted:
+                axis.offset = -axis.high_value / 2.
         return im_fft
 
     def ifft(self, shifted=True, **kwargs):
@@ -3275,6 +3276,7 @@ class BaseSignal(FancySlicing,
                 axis.units = '{:~}'.format(units.units)
             except UndefinedUnitError:
                 _logger.warning('Units are not set or cannot be recognized')
+            axis.offset = 0.
         return im_ifft
 
     def integrate1D(self, axis, out=None):
