@@ -3170,7 +3170,7 @@ class BaseSignal(FancySlicing,
             return s
     integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def fft(self, shifted=True, **kwargs):
+    def fft(self, shifted=False, **kwargs):
         """Compute the discrete Fourier Transform.
 
         This function computes the discrete Fourier Transform over the signal
@@ -3180,7 +3180,7 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         shifted : bool, optional
-            If True, the origin of FFT will be shifted in the centre (Default: True).
+            If True, the origin of FFT will be shifted in the centre (Default: False).
 
         Return
         ------
@@ -3223,7 +3223,7 @@ class BaseSignal(FancySlicing,
                 axis.offset = -axis.high_value / 2.
         return im_fft
 
-    def ifft(self, shifted=True, **kwargs):
+    def ifft(self, shifted=False, **kwargs):
         """
         Compute the inverse discrete Fourier Transform.
 
@@ -3234,7 +3234,7 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         shifted : bool, optional
-            If True, the origin of FFT will be shifted in the centre (Default: True).
+            If True, the origin of FFT will be shifted in the centre (Default: False).
 
         Return
         ------

@@ -55,12 +55,12 @@ def test_fft_signal2d(lazy):
     im_fft = im.inav[0, 0].fft()
     im_ifft = im_fft.ifft()
     assert_allclose(im.inav[0, 0].data,  im_ifft.data, atol=1e-3)
-    assert_allclose(im_fft.data, np.fft.fftshift(np.fft.fft2(im.inav[0, 0]).data))
-
-    im_fft = im.inav[0, 0].fft(shifted=False)
-    im_ifft = im_fft.ifft(shifted=False)
-    assert_allclose(im.inav[0, 0].data, im_ifft.data, atol=1e-3)
     assert_allclose(im_fft.data, np.fft.fft2(im.inav[0, 0]).data)
+
+    im_fft = im.inav[0, 0].fft(shifted=True)
+    im_ifft = im_fft.ifft(shifted=True)
+    assert_allclose(im.inav[0, 0].data, im_ifft.data, atol=1e-3)
+    assert_allclose(im_fft.data, np.fft.fftshift(np.fft.fft2(im.inav[0, 0]).data))
 
 
 @pytest.mark.parametrize('lazy', [True, False])
@@ -94,12 +94,12 @@ def test_fft_signal1d(lazy):
     s_fft = s.inav[0, 0, 0].fft()
     s_ifft = s_fft.ifft()
     assert_allclose(s.inav[0, 0, 0].data,  s_ifft.data, atol=1e-3)
-    assert_allclose(np.fft.fftshift(np.fft.fft(s.inav[0, 0, 0].data)), s_fft.data)
-
-    s_fft = s.inav[0, 0, 0].fft(shifted=False)
-    s_ifft = s_fft.ifft(shifted=False)
-    assert_allclose(s.inav[0, 0, 0].data, s_ifft.data, atol=1e-3)
     assert_allclose(np.fft.fft(s.inav[0, 0, 0].data), s_fft.data)
+
+    s_fft = s.inav[0, 0, 0].fft(shifted=True)
+    s_ifft = s_fft.ifft(shifted=True)
+    assert_allclose(s.inav[0, 0, 0].data, s_ifft.data, atol=1e-3)
+    assert_allclose(np.fft.fftshift(np.fft.fft(s.inav[0, 0, 0].data)), s_fft.data)
 
 
 def test_nul_signal():
