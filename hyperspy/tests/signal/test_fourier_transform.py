@@ -29,13 +29,20 @@ def test_fft_signal2d(lazy):
         im = im.as_lazy()
     im.axes_manager.signal_axes[0].units = 'nm'
     im.axes_manager.signal_axes[1].units = 'nm'
+    im.axes_manager.signal_axes[0].scale = 10.
+    im.axes_manager.signal_axes[1].scale = 10.
+
     im_fft = im.fft()
-    assert im_fft.axes_manager.signal_axes[0].units == 'nm$^{-1}$'
-    assert im_fft.axes_manager.signal_axes[1].units == 'nm$^{-1}$'
+    assert im_fft.axes_manager.signal_axes[0].units == '1 / nm'
+    assert im_fft.axes_manager.signal_axes[1].units == '1 / nm'
+    assert im_fft.axes_manager.signal_axes[0].scale == 1. / 5. / 10.
+    assert im_fft.axes_manager.signal_axes[1].scale == 1. / 4. / 10.
 
     im_ifft = im_fft.ifft()
     assert im_ifft.axes_manager.signal_axes[0].units == 'nm'
     assert im_ifft.axes_manager.signal_axes[1].units == 'nm'
+    assert im_ifft.axes_manager.signal_axes[0].scale == 10.
+    assert im_ifft.axes_manager.signal_axes[1].scale == 10.
 
     assert isinstance(im_fft, ComplexSignal2D)
     assert isinstance(im_ifft, Signal2D)
@@ -62,11 +69,16 @@ def test_fft_signal1d(lazy):
     if lazy:
         s = s.as_lazy()
 
+    s.axes_manager.signal_axes[0].scale = 6.
+
     s_fft = s.fft()
     s_fft.axes_manager.signal_axes[0].units = 'mrad'
 
+    assert s_fft.axes_manager.signal_axes[0].scale == 1. / 5. / 6.
+
     s_ifft = s_fft.ifft()
-    assert s_ifft.axes_manager.signal_axes[0].units == 'mrad$^{-1}$'
+    assert s_ifft.axes_manager.signal_axes[0].units == '1 / mrad'
+    assert s_ifft.axes_manager.signal_axes[0].scale == 6.
     assert isinstance(s_fft, ComplexSignal1D)
     assert isinstance(s_ifft, Signal1D)
     assert_allclose(s.data,  s_ifft.data, atol=1e-3)

@@ -23,6 +23,7 @@ import inspect
 from contextlib import contextmanager
 from datetime import datetime
 import logging
+from pint import UnitRegistry, UndefinedUnitError
 
 import numpy as np
 import scipy as sp
@@ -3169,7 +3170,7 @@ class BaseSignal(FancySlicing,
             return s
     integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def fft(self, shifted=True):
+    def fft(self, shifted=True, **kwargs):
         """Compute the discrete Fourier Transform.
 
         This function computes the discrete Fourier Transform over the signal
@@ -3199,26 +3200,29 @@ class BaseSignal(FancySlicing,
         if self.axes_manager.signal_dimension == 0:
             raise AttributeError("Signal dimension must be at least one.")
         ax = self.axes_manager
-        axes = np.arange(ax.signal_dimension) + ax.navigation_dimension
+        axes = ax.signal_indices_in_array
 
         if shifted:
             im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
-                np.fft.fftn(self.data, axes=axes), axes=axes))
+                np.fft.fftn(self.data, axes=axes, **kwargs), axes=axes))
         else:
-            im_fft = self._deepcopy_with_new_data(np.fft.fftn(self.data, axes=axes))
+            im_fft = self._deepcopy_with_new_data(np.fft.fftn(self.data, axes=axes, **kwargs))
 
         im_fft.change_dtype("complex")
-        shape_fft = self.axes_manager.shape
-        im_fft.metadata.General.title = 'FFT of ' + \
-            im_fft.metadata.General.title
-        for ax, dim in zip(axes, shape_fft):
-            axis = im_fft.axes_manager[ax]
-            axis.scale = 1. / dim / self.axes_manager[ax].scale
-            axis.units = str(self.axes_manager[ax].units) + '$^{-1}$'
+        im_fft.metadata.General.title = 'FFT of {}'.format(im_fft.metadata.General.title)
+        im_fft.metadata.Signal.signal_type = 'FFT of {}'.format(im_fft.metadata.Signal.signal_type)
+        ureg = UnitRegistry()
+        for axis in im_fft.axes_manager.signal_axes:
+            axis.scale = 1. / axis.size / axis.scale
+            try:
+                units = ureg.parse_expression(str(axis.units))**(-1)
+                axis.units = '{:~}'.format(units.units)
+            except UndefinedUnitError:
+                _logger.warning('Units are not set or cannot be recognized')
             axis.offset = -axis.high_value / 2.
         return im_fft
 
-    def ifft(self, shifted=True):
+    def ifft(self, shifted=True, **kwargs):
         """
         Compute the inverse discrete Fourier Transform.
 
@@ -3251,25 +3255,26 @@ class BaseSignal(FancySlicing,
         if self.axes_manager.signal_dimension == 0:
             raise AttributeError("Signal dimension must be at least one.")
         ax = self.axes_manager
-        axes = np.arange(ax.signal_dimension) + ax.navigation_dimension
+        axes = ax.signal_indices_in_array
 
         if shifted:
             im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(np.fft.ifftshift(
-                self.data, axes=axes), axes=axes))
+                self.data, axes=axes), axes=axes, **kwargs))
         else:
             im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
-                self.data, axes=axes))
+                self.data, axes=axes, **kwargs))
 
-        im_ifft.metadata.General.title = 'iFFT of ' + \
-            im_ifft.metadata.General.title
+        im_ifft.metadata.General.title = 'iFFT of {}'.format(im_ifft.metadata.General.title)
+        im_ifft.metadata.Signal.signal_type = 'iFFT of {}'.format(im_ifft.metadata.Signal.signal_type)
         im_ifft = im_ifft.real
-        for ax, dim in zip(axes, self.axes_manager.shape):
-            axis = im_ifft.axes_manager[ax]
-            axis.scale = 1. / dim / self.axes_manager[ax].scale
-            if str(self.axes_manager[ax].units).endswith('$^{-1}$'):
-                axis.units = str(self.axes_manager[ax].units)[:-7]
-            else:
-                axis.units = str(self.axes_manager[ax].units) + '$^{-1}$'
+        ureg = UnitRegistry()
+        for axis in im_ifft.axes_manager.signal_axes:
+            axis.scale = 1. / axis.size / axis.scale
+            try:
+                units = ureg.parse_expression(str(axis.units)) ** (-1)
+                axis.units = '{:~}'.format(units.units)
+            except UndefinedUnitError:
+                _logger.warning('Units are not set or cannot be recognized')
         return im_ifft
 
     def integrate1D(self, axis, out=None):
