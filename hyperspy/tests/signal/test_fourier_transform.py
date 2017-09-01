@@ -37,12 +37,16 @@ def test_fft_signal2d(lazy):
     assert im_fft.axes_manager.signal_axes[1].units == '1 / nm'
     assert im_fft.axes_manager.signal_axes[0].scale == 1. / 5. / 10.
     assert im_fft.axes_manager.signal_axes[1].scale == 1. / 4. / 10.
+    assert im_fft.axes_manager.signal_axes[0].offset == 0.
+    assert im_fft.axes_manager.signal_axes[1].offset == 0.
 
     im_ifft = im_fft.ifft()
     assert im_ifft.axes_manager.signal_axes[0].units == 'nm'
     assert im_ifft.axes_manager.signal_axes[1].units == 'nm'
     assert im_ifft.axes_manager.signal_axes[0].scale == 10.
     assert im_ifft.axes_manager.signal_axes[1].scale == 10.
+    assert im_ifft.axes_manager.signal_axes[0].offset == 0.
+    assert im_ifft.axes_manager.signal_axes[1].offset == 0.
 
     assert isinstance(im_fft, ComplexSignal2D)
     assert isinstance(im_ifft, Signal2D)
@@ -58,7 +62,10 @@ def test_fft_signal2d(lazy):
     assert_allclose(im_fft.data, np.fft.fft2(im.inav[0, 0]).data)
 
     im_fft = im.inav[0, 0].fft(shifted=True)
+    axis = im_fft.axes_manager.signal_axes[0]
+    assert axis.offset == -axis.high_value
     im_ifft = im_fft.ifft(shifted=True)
+    assert im_ifft.axes_manager.signal_axes[0].offset == 0.
     assert_allclose(im.inav[0, 0].data, im_ifft.data, atol=1e-3)
     assert_allclose(im_fft.data, np.fft.fftshift(np.fft.fft2(im.inav[0, 0]).data))
 
