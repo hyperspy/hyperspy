@@ -96,7 +96,7 @@ def mvsa(X, p, MMilters = 10, Spherize = 'yes', verbose = 1, Lambda = 1e-10, mu 
 
     # Initialization
     if M == 0:
-            M, indice, Rp = VCA(Y,p)  # Initialize with VCA
+            M, indice, Rp, loadings = VCA(Y,p)  # Initialize with VCA
             # expand Q
             Ym = np.mean(M, axis = 1)
             Ym  = np.tile(Ym[:, np.newaxis],p)
@@ -408,7 +408,7 @@ def VCA(R, p, verbose = 'on', snr_input = 0):
 
     Ae = Rp[:, indice[0]]
     loadings = np.dot(np.linalg.pinv(Ae), R)
-    return Ae, loadings
+    return Ae, indice, Rp, loadings
 
 def estimate_snr(R, r_m, x_p):
     import math
@@ -448,6 +448,5 @@ def computeAtransYinvLA(Y,sinvl):
                 AtransYinvLA[(i-1)*p+k-1, k+(j-1)*p - 1] = AtransYinvLAcompact[(i-1)*p+k-1, j-1]
 
     return AtransYinvLA
-
 
 

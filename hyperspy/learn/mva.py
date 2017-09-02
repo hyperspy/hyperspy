@@ -376,7 +376,7 @@ class MVA():
                 print("mvsa loading size: ", loadings.shape)
             elif algorithm == 'vca':
                 _logger.info("Performing VCA Unmixing")
-                factors, loadings = VCA(dc.T, **kwargs)
+                factors, indice, Rp, loadings = VCA(dc.T, **kwargs)
                 print("vca factor size: ", factors.shape)
             else:
                 raise ValueError('Algorithm not recognised. '
@@ -446,8 +446,13 @@ class MVA():
 
             # Rescale the results if the noise was normalized
             if normalize_poissonian_noise is True:
-                target.factors[:] *= self._root_bH.T
-                target.loadings[:] *= self._root_aG
+                if target.mvsa_processed or target.vca_processed:
+                    target.factors[:] *= self._root_bH.T
+                    loadings = target.loadings.T[:] * self._root_aG
+                    target.loadings[:] = loadings.T
+                else:
+                    target.factors[:] *= self._root_bH.T
+                    target.loadings[:] *= self._root_aG
 
             # Set the pixels that were not processed to nan
             if not isinstance(signal_mask, slice):
