@@ -1924,8 +1924,7 @@ class BaseSignal(FancySlicing,
     def __call__(self, axes_manager=None):
         if axes_manager is None:
             axes_manager = self.axes_manager
-        return np.atleast_1d(
-            self.data.__getitem__(axes_manager._getitem_tuple))
+        return np.atleast_1d(self.data.__getitem__(axes_manager._getitem_tuple))
 
     def plot(self, navigator="auto", axes_manager=None,
              plot_markers=True, **kwargs):

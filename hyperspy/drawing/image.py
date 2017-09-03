@@ -368,12 +368,18 @@ class ImagePlot(BlittedFigure):
             else:
                 self.figure.canvas.draw_idle()
         else:
+            if kwargs.pop('log_scale', False):
+                from matplotlib.colors import LogNorm
+                norm = LogNorm()
+            else:
+                norm = kwargs.pop('norm', None)
             new_args = {'interpolation': 'nearest',
                         'vmin': vmin,
                         'vmax': vmax,
                         'extent': self._extent,
                         'aspect': self._aspect,
-                        'animated': self.figure.canvas.supports_blit}
+                        'animated': self.figure.canvas.supports_blit,
+                        'norm':norm}
             new_args.update(kwargs)
             self.ax.imshow(data,
                            **new_args)

@@ -104,7 +104,7 @@ class Signal1DFigure(BlittedFigure):
                 self._color_cycles[line.type].color_cycle.remove(
                     rgba_color)
 
-    def plot(self):
+    def plot(self, **kwargs):
         self.ax.set_xlabel(self.xlabel)
         self.ax.set_ylabel(self.ylabel)
         self.ax.set_title(self.title)
@@ -112,7 +112,7 @@ class Signal1DFigure(BlittedFigure):
         x_axis_lower_lims = []
         self._set_background()
         for line in self.ax_lines:
-            line.plot()
+            line.plot(**kwargs)
             x_axis_lower_lims.append(line.axis.axis[0])
             x_axis_upper_lims.append(line.axis.axis[-1])
         for marker in self.ax_markers:

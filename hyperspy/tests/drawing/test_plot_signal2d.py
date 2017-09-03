@@ -111,6 +111,15 @@ def _generate_parameter_plot_images():
     return vmin, vmax
 
 
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_log_scale(mpl_cleanup):
+    test_plot = _TestPlot(ndim=0, sdim=2)
+    test_plot.signal += 1 # need to make 
+    test_plot.signal.plot(log_scale=True)
+    return test_plot.signal._plot.signal_plot.figure
+
+
 @pytest.mark.parametrize(("vmin", "vmax"), (_generate_parameter_plot_images(),
                                             (None, None)))
 @pytest.mark.mpl_image_compare(
