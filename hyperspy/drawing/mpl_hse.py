@@ -23,7 +23,7 @@ import numpy as np
 from traits.api import Undefined
 
 from hyperspy.drawing.mpl_he import MPL_HyperExplorer
-from hyperspy.drawing import signal1d, utils
+from hyperspy.drawing import signal1d
 
 
 class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
@@ -73,9 +73,9 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         else:
             self.remove_right_pointer()
 
-    def plot_signal(self):
+    def plot_signal(self, **kwargs):
         if self.signal_plot is not None:
-            self.signal_plot.plot()
+            self.signal_plot.plot(**kwargs)
             return
         # Create the figure
         self.xlabel = '%s' % str(self.axes_manager.signal_axes[0])
@@ -117,7 +117,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             sf.add_line(sl)
 
         self.signal_plot = sf
-        sf.plot()
+        sf.plot(**kwargs)
         if sf.figure is not None:
             if self.axes_manager.navigation_axes:
                 self.signal_plot.figure.canvas.mpl_connect(
@@ -137,7 +137,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         if event.key == "e":
             self.right_pointer_on = not self.right_pointer_on
 
-    def add_right_pointer(self):
+    def add_right_pointer(self, **kwargs):
         if self.signal_plot.right_axes_manager is None:
             self.signal_plot.right_axes_manager = \
                 copy.deepcopy(self.axes_manager)
@@ -167,8 +167,15 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         self.signal_plot.add_line(rl, ax='right')
         rl.plot_indices = True
         rl.text_position = (1., 1.05,)
-        rl.plot()
+        rl.plot(**kwargs)
         self.right_pointer_on = True
+        if hasattr(self.signal_plot.figure, 'tight_layout'):
+            try:
+                self.signal_plot.figure.tight_layout()
+            except:
+                # tight_layout is a bit brittle, we do this just in case it
+                # complains
+                pass
 
     def remove_right_pointer(self):
         for line in self.signal_plot.right_ax_lines:

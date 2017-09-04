@@ -282,7 +282,7 @@ class Signal1DLine(object):
             plt.setp(self.line, **self.line_properties)
             self.ax.figure.canvas.draw_idle()
 
-    def plot(self, data=1):
+    def plot(self, data=1, log_scale=False):
         f = self.data_function
         if self.get_complex is False:
             data = f(axes_manager=self.axes_manager).real
@@ -290,8 +290,11 @@ class Signal1DLine(object):
             data = f(axes_manager=self.axes_manager).imag
         if self.line is not None:
             self.line.remove()
-        self.line, = self.ax.plot(self.axis.axis, data,
-                                  **self.line_properties)
+        if log_scale:
+            plot = self.ax.semilogy
+        else:
+            plot = self.ax.plot
+        self.line, = plot(self.axis.axis, data, **self.line_properties)
         self.line.set_animated(self.ax.figure.canvas.supports_blit)
         self.axes_manager.events.indices_changed.connect(self.update, [])
         self.events.closed.connect(
