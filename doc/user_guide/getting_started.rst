@@ -52,6 +52,18 @@ that you have installed at least one of HyperSpy's GUI packages:
 and the
 `traitsui GUI <https://github.com/hyperspy/hyperspy_gui_traitsui>`_.
 
+By default, HyperSpy warns the user if one of the GUI packages is not installed.
+These warnings can be turned off using the :py:class:`~.defaults_parser.Preferences` GUI
+(see :ref:`here <configuring-hyperspy-label>` for more information) or programmatically
+as follows:
+
+    .. code-block:: python
+
+       >>> import hyperspy.api as hs
+       >>> hs.preferences.GUIs.warn_if_guis_are_missing = False
+       >>> hs.preferences.save()
+
+
 Now you are ready to load
 your data (see below).
 
