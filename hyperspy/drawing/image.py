@@ -66,6 +66,7 @@ class ImagePlot(BlittedFigure):
     def __init__(self):
         super(ImagePlot, self).__init__()
         self.data_function = None
+        self.data_function_kwargs = {}
         self.pixel_units = None
         self.plot_ticks = False
         self.colorbar = True
@@ -230,7 +231,12 @@ class ImagePlot(BlittedFigure):
         if self.figure is None:
             self.create_figure()
             self.create_axis()
-        data = self.data_function(axes_manager=self.axes_manager)
+        # Parse the kwargs for plotting complex data
+        for key in ['power_spectrum', 'shifted']:
+            if key in kwargs:
+                self.data_function_kwargs[key] = kwargs.pop(key)
+        data = self.data_function(axes_manager=self.axes_manager,
+                                  **self.data_function_kwargs)
         if rgb_tools.is_rgbx(data):
             self.colorbar = False
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
@@ -304,7 +310,8 @@ class ImagePlot(BlittedFigure):
                 self.centre_colormap = False
         redraw_colorbar = False
         data = rgb_tools.rgbx2regular_array(
-            self.data_function(axes_manager=self.axes_manager),
+            self.data_function(axes_manager=self.axes_manager,
+                               **self.data_function_kwargs),
             plot_friendly=True)
         numrows, numcols = data.shape[:2]
         for marker in self.ax_markers:
@@ -335,7 +342,8 @@ class ImagePlot(BlittedFigure):
                 ims[0].autoscale()
         redraw_colorbar = redraw_colorbar and self.colorbar
         if self.plot_indices is True:
-            self._text.set_text(self.axes_manager.indices)
+            self._text.set_text(self.axes_manager.indices,
+                                **self.data_function_kwargs)
         if self.no_nans:
             data = np.nan_to_num(data)
         if self.centre_colormap:

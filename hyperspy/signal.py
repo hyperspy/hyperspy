@@ -1921,10 +1921,14 @@ class BaseSignal(FancySlicing,
             axes.append({'size': int(s), })
         return axes
 
-    def __call__(self, axes_manager=None):
+    def __call__(self, axes_manager=None, shifted=False):
         if axes_manager is None:
             axes_manager = self.axes_manager
-        return np.atleast_1d(self.data.__getitem__(axes_manager._getitem_tuple))
+        value = np.atleast_1d(self.data.__getitem__(
+            axes_manager._getitem_tuple))
+        if shifted:
+            value = np.fft.fftshift(value)
+        return value
 
     def plot(self, navigator="auto", axes_manager=None,
              plot_markers=True, **kwargs):

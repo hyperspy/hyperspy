@@ -177,25 +177,39 @@ class ComplexSignal_mixin:
             phase.metadata.General.title)
         return phase  # Now unwrapped!
 
-    def plot(self, navigator="auto", axes_manager=None,
-             representation='cartesian', same_axes=True, **kwargs):
+    def __call__(self, axes_manager=None, power_spectrum=False, shifted=False):
+        value = super().__call__(axes_manager=axes_manager, shifted=shifted)
+        if power_spectrum:
+            value = np.abs(value)**2
+        return value
+
+    def plot(self, power_spectrum=None, navigator="auto", axes_manager=None,
+             representation='cartesian', log_scale=None, shifted=None,
+             same_axes=True, **kwargs):
         """%s
         %s
         %s
 
         """
+        if power_spectrum is None:
+            power_spectrum = True if 'FFT' in self.metadata.Signal.signal_type else False
+        if log_scale is None:
+            log_scale = True if power_spectrum else False
+        if shifted is None:
+            shifted = True if power_spectrum else False
+        kwargs.update({'log_scale': log_scale,
+                       'shifted': shifted,
+                       'navigator': navigator,
+                       'axes_manager': self.axes_manager})
         if representation == 'cartesian':
             if same_axes and self.axes_manager.signal_dimension == 1:
                 super().plot(**kwargs)
+            elif power_spectrum:
+                kwargs['power_spectrum'] = power_spectrum
+                super().plot(**kwargs)
             else:
-                self.real.plot(
-                    navigator=navigator,
-                    axes_manager=self.axes_manager,
-                    **kwargs)
-                self.imag.plot(
-                    navigator=navigator,
-                    axes_manager=self.axes_manager,
-                    **kwargs)
+                self.real.plot(**kwargs)
+                self.imag.plot(**kwargs)
         elif representation == 'polar':
             if same_axes and self.axes_manager.signal_dimension == 1:
                 amp = self.amplitude
@@ -203,14 +217,8 @@ class ComplexSignal_mixin:
                 amp.imag = self.phase
                 amp.plot(**kwargs)
             else:
-                self.amplitude.plot(
-                    navigator=navigator,
-                    axes_manager=self.axes_manager,
-                    **kwargs)
-                self.phase.plot(
-                    navigator=navigator,
-                    axes_manager=self.axes_manager,
-                    **kwargs)
+                self.amplitude.plot(**kwargs)
+                self.phase.plot(**kwargs)
         else:
             raise ValueError('{}'.format(representation) +
                              'is not a valid input for representation (use "cartesian" or "polar")!')
