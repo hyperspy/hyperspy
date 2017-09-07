@@ -27,6 +27,7 @@ from pint import UnitRegistry, UndefinedUnitError
 
 import numpy as np
 import scipy as sp
+import dask.array as da
 from matplotlib import pyplot as plt
 import traits.api as t
 import numbers
@@ -3204,12 +3205,18 @@ class BaseSignal(FancySlicing,
             raise AttributeError("Signal dimension must be at least one.")
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
-
-        if shifted:
-            im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
-                np.fft.fftn(self.data, axes=axes, **kwargs), axes=axes))
+        if isinstance(self.data, da.Array):
+            if shifted:
+                im_fft = self._deepcopy_with_new_data(da.fft.fftshift(
+                    da.fft.fftn(self.data, axes=axes, **kwargs), axes=axes))
+            else:
+                im_fft = self._deepcopy_with_new_data(da.fft.fftn(self.data, axes=axes, **kwargs))
         else:
-            im_fft = self._deepcopy_with_new_data(np.fft.fftn(self.data, axes=axes, **kwargs))
+            if shifted:
+                im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
+                    np.fft.fftn(self.data, axes=axes, **kwargs), axes=axes))
+            else:
+                im_fft = self._deepcopy_with_new_data(np.fft.fftn(self.data, axes=axes, **kwargs))
 
         im_fft.change_dtype("complex")
         im_fft.metadata.General.title = 'FFT of {}'.format(im_fft.metadata.General.title)
@@ -3264,12 +3271,20 @@ class BaseSignal(FancySlicing,
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
 
-        if shifted:
-            im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(np.fft.ifftshift(
-                self.data, axes=axes), axes=axes, **kwargs))
+        if isinstance(self.data, da.Array):
+            if shifted:
+                im_ifft = self._deepcopy_with_new_data(da.fft.ifftn(da.fft.ifftshift(
+                    self.data, axes=axes), axes=axes, **kwargs))
+            else:
+                im_ifft = self._deepcopy_with_new_data(da.fft.ifftn(
+                    self.data, axes=axes, **kwargs))
         else:
-            im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
-                self.data, axes=axes, **kwargs))
+            if shifted:
+                im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(np.fft.ifftshift(
+                    self.data, axes=axes), axes=axes, **kwargs))
+            else:
+                im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
+                    self.data, axes=axes, **kwargs))
 
         im_ifft.metadata.General.title = 'iFFT of {}'.format(im_ifft.metadata.General.title)
         im_ifft.metadata.Signal.signal_type = 'iFFT of {}'.format(im_ifft.metadata.Signal.signal_type)
