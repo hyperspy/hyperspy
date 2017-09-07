@@ -3182,6 +3182,9 @@ class BaseSignal(FancySlicing,
         shifted : bool, optional
             If True, the origin of FFT will be shifted in the centre (Default: False).
 
+        **kwargs
+            other keyword arguments are described in np.fft.fftn().
+
         Return
         ------
         s : ComplexSignal
@@ -3235,6 +3238,9 @@ class BaseSignal(FancySlicing,
         ----------
         shifted : bool, optional
             If True, the origin of FFT will be shifted in the centre (Default: False).
+
+        **kwargs
+            other keyword arguments are described in np.fft.ifft().
 
         Return
         ------

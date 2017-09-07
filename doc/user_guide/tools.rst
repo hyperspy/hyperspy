@@ -1055,18 +1055,18 @@ The Fast Fourier transform and its inverse can be applied on a signal with the :
 .. code-block:: python
 
     >>> im = hs.signals.Signal2D(scipy.misc.lena())
-    >>> im.fft().plot()
+    >>> im.fft(shifted=True).plot()
 
 .. figure::  images/lena_fft.png
   :align:   center
   :width:   400
 
-By default both methods calculate FFT and IFFT with origin shifted in the centre. Use `shifted=False` option to
-calculate FFT and the inverse without shifting the origin.
+By default both methods calculate FFT and IFFT with origin at (0, 0) (not in the centre of FFT). Use `shifted=True` option to
+calculate FFT and the inverse with origin shifted in the centre.
 
 .. code-block:: python
 
-    >>> im_fft = im.fft(shifted=False)
+    >>> im_ifft = im.fft(shifted=True).ifft(shifted=True)
 
 .. _signal.change_dtype:
 
