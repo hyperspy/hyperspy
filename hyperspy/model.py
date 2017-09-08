@@ -21,8 +21,10 @@ import os
 import tempfile
 import numbers
 import logging
+from distutils.version import LooseVersion
 
 import numpy as np
+import scipy
 import scipy.odr as odr
 from scipy.optimize import (leastsq, least_squares,
                             minimize, differential_evolution)
@@ -45,6 +47,7 @@ from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.events import Events, Event, EventSuppressor
 import warnings
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
 
@@ -96,6 +99,7 @@ class ModelComponents(object):
         return ans
 
 
+@add_gui_method(toolkey="Model")
 class BaseModel(list):
 
     """Model and data fitting tools applicable to signals of both one and two
@@ -387,13 +391,19 @@ class BaseModel(list):
         if not np.iterable(thing):
             thing = [thing, ]
         for athing in thing:
+            for parameter in athing.parameters:
+                # Remove the parameter from its twin _twins
+                parameter.twin = None
+                for twin in [twin for twin in parameter._twins]:
+                    twin.twin = None
+
             list.remove(self, athing)
             athing.model = None
         if self._plot_active:
             self.update_plot()
 
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
-                  show_progressbar=None):
+                  show_progressbar=None, out=None, parallel=None):
         """Returns a recreation of the dataset using the model.
         the spectral range that is not fitted is filled with nans.
 
@@ -408,6 +418,14 @@ class BaseModel(list):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        out : {None, BaseSignal}
+            The signal where to put the result into. Convenient for parallel
+            processing. If None (default), creates a new one. If passed, it is
+            assumed to be of correct shape and dtype and not checked.
+        parallel : bool, int
+            If True or more than 1, perform the recreation parallely using as
+            many threads as specified. If True, as many threads as CPU cores
+            available are used.
 
         Returns
         -------
@@ -425,6 +443,75 @@ class BaseModel(list):
         >>> s2 = m.as_signal(component_list=[l1])
 
         """
+        if parallel is None:
+            parallel = preferences.General.parallel
+        if out is None:
+            data = np.empty(self.signal.data.shape, dtype='float')
+            data.fill(np.nan)
+            signal = self.signal.__class__(
+                data,
+                axes=self.signal.axes_manager._get_axes_dicts())
+            signal.metadata.General.title = (
+                self.signal.metadata.General.title + " from fitted model")
+            signal.metadata.Signal.binned = self.signal.metadata.Signal.binned
+        else:
+            signal = out
+            data = signal.data
+
+        if parallel is True:
+            from os import cpu_count
+            parallel = cpu_count()
+        if not isinstance(parallel, int):
+            parallel = int(parallel)
+        if parallel < 2:
+            parallel = False
+        if parallel is False:
+            self._as_signal_iter(component_list=component_list,
+                                 out_of_range_to_nan=out_of_range_to_nan,
+                                 show_progressbar=show_progressbar, data=data)
+        else:
+            am = self.axes_manager
+            nav_shape = am.navigation_shape
+            if len(nav_shape):
+                ind = np.argmax(nav_shape)
+                size = nav_shape[ind]
+            if not len(nav_shape) or size < 4:
+                # no or not enough navigation, just run without threads
+                return self.as_signal(component_list=component_list,
+                                      out_of_range_to_nan=out_of_range_to_nan,
+                                      show_progressbar=show_progressbar,
+                                      out=signal, parallel=False)
+            parallel = min(parallel, size / 2)
+            splits = [len(sp) for sp in np.array_split(np.arange(size),
+                                                       parallel)]
+            models = []
+            data_slices = []
+            slices = [slice(None), ] * len(nav_shape)
+            for sp, csm in zip(splits, np.cumsum(splits)):
+                slices[ind] = slice(csm - sp, csm)
+                models.append(self.inav[tuple(slices)])
+                array_slices = self.signal._get_array_slices(tuple(slices),
+                                                             True)
+                data_slices.append(data[array_slices])
+            from concurrent.futures import ThreadPoolExecutor
+            with ThreadPoolExecutor(max_workers=parallel) as exe:
+                _map = exe.map(
+                    lambda thing: thing[0]._as_signal_iter(
+                        data=thing[1],
+                        component_list=component_list,
+                        out_of_range_to_nan=out_of_range_to_nan,
+                        show_progressbar=thing[2] + 1),
+                    zip(models, data_slices, range(int(parallel))))
+            _ = next(_map)
+        return signal
+
+    def _as_signal_iter(self, component_list=None, out_of_range_to_nan=True,
+                        show_progressbar=None, data=None):
+        # Note that show_progressbar can be an int to determine the progressbar
+        # position for a thread-friendly bars. Otherwise race conditions are
+        # ugly...
+        if data is None:
+            raise ValueError('No data supplied')
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
 
@@ -439,29 +526,21 @@ class BaseModel(list):
                             continue    # Keep active_map
                         component_.active_is_multidimensional = False
                     component_.active = active
-            data = np.empty(self.signal.data.shape, dtype='float')
-            data.fill(np.nan)
             if out_of_range_to_nan is True:
                 channel_switches_backup = copy.copy(self.channel_switches)
                 self.channel_switches[:] = True
             maxval = self.axes_manager.navigation_size
-            show_progressbar = show_progressbar and (maxval > 0)
-            for index in progressbar(self.axes_manager, total=maxval,
-                                     disable=not show_progressbar,
-                                     leave=True):
+            enabled = show_progressbar and (maxval > 0)
+            pbar = progressbar(total=maxval, disable=not enabled,
+                               position=show_progressbar, leave=True)
+            for index in self.axes_manager:
                 self.fetch_stored_values(only_fixed=False)
                 data[self.axes_manager._getitem_tuple][
                     np.where(self.channel_switches)] = self.__call__(
                     non_convolved=not self.convolved, onlyactive=True).ravel()
+                pbar.update(1)
             if out_of_range_to_nan is True:
                 self.channel_switches[:] = channel_switches_backup
-            signal = self.signal.__class__(
-                data,
-                axes=self.signal.axes_manager._get_axes_dicts())
-            signal.metadata.General.title = (
-                self.signal.metadata.General.title + " from fitted model")
-            signal.metadata.Signal.binned = self.signal.metadata.Signal.binned
-        return signal
 
     @property
     def _plot_active(self):
@@ -479,8 +558,6 @@ class BaseModel(list):
             for parameter in component.parameters:
                 parameter.events.value_changed.connect(
                     self._model_line.update, [])
-        if self._plot_components is True:
-            self._connect_component_lines()
 
     def _disconnect_parameters2update_plot(self, components):
         if self._model_line is None:
@@ -490,8 +567,6 @@ class BaseModel(list):
             for parameter in component.parameters:
                 parameter.events.value_changed.disconnect(
                     self._model_line.update)
-        if self._plot_components is True:
-            self._disconnect_component_lines()
 
     def update_plot(self, *args, **kwargs):
         """Update model plot.
@@ -545,13 +620,18 @@ class BaseModel(list):
         if update_on_resume is True:
             self.update_plot()
 
+    def _update_model_line(self):
+        if (self._plot_active is True and
+                self._model_line is not None):
+            self._model_line.update()
+
     def _close_plot(self):
         if self._plot_components is True:
             self.disable_plot_components()
         self._disconnect_parameters2update_plot(components=self)
         self._model_line = None
 
-    def _update_model_repr(self):
+    def _update_model_line(self):
         if (self._plot_active is True and
                 self._model_line is not None):
             self._model_line.update()
@@ -767,9 +847,9 @@ class BaseModel(list):
 
     def _errfunc4mpfit(self, p, fjac=None, x=None, y=None, weights=None):
         if fjac is None:
-            errfunc = self._model_function(p) - y
+            errfunc = self._model_function(p).ravel() - y
             if weights is not None:
-                errfunc *= weights
+                errfunc *= weights.ravel()
             status = 0
             return [status, errfunc]
         else:
@@ -802,7 +882,7 @@ class BaseModel(list):
             ' reduced chi-squared'
         return tmp
 
-    def fit(self, fitter=None, method='ls', grad=False,
+    def fit(self, fitter="leastsq", method='ls', grad=False,
             bounded=False, ext_bounding=False, update_plot=False,
             **kwargs):
         """Fits the model to the experimental data.
@@ -817,11 +897,11 @@ class BaseModel(list):
 
         Parameters
         ----------
-        fitter : {None, "leastsq", "mpfit", "odr", "Nelder-Mead",
+        fitter : {"leastsq", "mpfit", "odr", "Nelder-Mead",
                  "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B", "TNC",
                  "Differential Evolution"}
-            The optimization algorithm used to perform the fitting. If None the
-            fitter defined in `preferences.Model.default_fitter` is used.
+            The optimization algorithm used to perform the fitting. Deafault
+            is "leastsq".
 
                 "leastsq" performs least-squares optimization, and supports
                 bounds on parameters.
@@ -876,8 +956,8 @@ class BaseModel(list):
 
         """
 
-        if fitter is None:
-            fitter = preferences.Model.default_fitter
+        if fitter is None:  # None meant "from preferences" before v1.3
+            fitter = "leastsq"
         switch_aap = (update_plot != self._plot_active)
         if switch_aap is True and update_plot is False:
             cm = self.suspend_update
@@ -904,10 +984,10 @@ class BaseModel(list):
         if bounded is True:
             if fitter not in ("leastsq", "mpfit", "TNC",
                               "L-BFGS-B", "Differential Evolution"):
-                raise NotImplementedError("Bounded optimization is only "
-                                          "supported by 'leastsq', "
-                                          "'mpfit', 'TNC', 'L-BFGS-B' or"
-                                          "'Differential Evolution'.")
+                raise ValueError("Bounded optimization is only "
+                                 "supported by 'leastsq', "
+                                 "'mpfit', 'TNC', 'L-BFGS-B' or"
+                                 "'Differential Evolution'.")
             else:
                 # this has to be done before setting the p0,
                 # so moved things around
@@ -971,6 +1051,12 @@ class BaseModel(list):
             # Least squares "dedicated" fitters
             if fitter == "leastsq":
                 if bounded:
+                    # leastsq with bounds requires scipy >= 0.17
+                    if LooseVersion(
+                            scipy.__version__) < LooseVersion("0.17"):
+                        raise ImportError(
+                            "leastsq with bounds requires SciPy >= 0.17")
+
                     self.set_boundaries()
                     ls_b = self.free_parameters_boundaries
                     ls_b = ([a if a is not None else -np.inf for a, b in ls_b],
@@ -1038,7 +1124,9 @@ class BaseModel(list):
                           autoderivative=autoderivative,
                           quiet=1)
                 self.p0 = m.params
-                if (self.axis.size > len(self.p0)) and m.perror is not None:
+
+                if hasattr(self, 'axis') and (self.axis.size > len(self.p0)) \
+                   and m.perror is not None:
                     self.p_std = m.perror * np.sqrt(
                         (self._errfunc(self.p0, *args) ** 2).sum() /
                         (len(args[0]) - len(self.p0)))
@@ -1182,14 +1270,6 @@ class BaseModel(list):
         masked_elements = 0 if mask is None else mask.sum()
         maxval = self.axes_manager.navigation_size - masked_elements
         show_progressbar = show_progressbar and (maxval > 0)
-        if 'bounded' in kwargs and kwargs['bounded'] is True:
-            if kwargs['fitter'] not in ("leastsq", "TNC", "L_BFGS-B", "mpfit"):
-                _logger.info(
-                    "The chosen fitter does not suppport bounding."
-                    "If you require bounding please select one of the "
-                    "following fitters instead: 'leastsq', 'TNC', "
-                    "'L_BFGS-B', 'mpfit'")
-                kwargs['bounded'] = False
         i = 0
         with self.axes_manager.events.indices_changed.suppress_callback(
                 self.fetch_stored_values):
@@ -1325,7 +1405,7 @@ class BaseModel(list):
             for parameter in component.parameters:
                 parameter.ext_bounded = False
 
-    def export_results(self, folder=None, format=None, save_std=False,
+    def export_results(self, folder=None, format="hspy", save_std=False,
                        only_free=True, only_active=True):
         """Export the results of the parameters of the model to the desired
         folder.
@@ -1336,9 +1416,8 @@ class BaseModel(list):
             The path to the folder where the file will be saved. If `None` the
             current folder is used by default.
         format : str
-            The format to which the data will be exported. It must be the
-            extension of any format supported by HyperSpy. If None, the default
-            format for exporting as defined in the `Preferences` will be used.
+            The extension of the file format. It must be one of the
+            fileformats supported by HyperSpy. The default is "hspy".
         save_std : bool
             If True, also the standard deviation will be saved.
         only_free : bool
@@ -1382,14 +1461,16 @@ class BaseModel(list):
             if only_active is False or component.active:
                 component.plot(only_free=only_free)
 
-    def print_current_values(self, only_free=True):
+    def print_current_values(self, only_free=True, skip_multi=False):
         """Print the value of each parameter of the model.
 
         Parameters
         ----------
         only_free : bool
             If True, only the value of the parameters that are free will
-             be printed.
+            be printed.
+        skip_multi : bool
+            If True, parameters with attribute "__iter__" are not printed
 
         """
         print("Components\tParameter\tValue")
@@ -1402,9 +1483,13 @@ class BaseModel(list):
                 parameters = component.free_parameters if only_free \
                     else component.parameters
                 for parameter in parameters:
-                    if not hasattr(parameter.value, '__iter__'):
-                        print("\t\t%s\t%g" % (
-                            parameter.name, parameter.value))
+                    if hasattr(parameter.value, '__iter__'):
+                        if not skip_multi:
+                            for idx in range(len(parameter.value)):
+                                print("\t\t%s[%d]\t%g" % (parameter.name, idx,
+                                                          parameter.value[idx]))
+                    else:
+                        print("\t\t%s\t%g" % (parameter.name, parameter.value))
 
     def set_parameters_not_free(self, component_list=None,
                                 parameter_name_list=None):
@@ -1670,26 +1755,6 @@ class BaseModel(list):
         else:
             return list.__getitem__(self, value)
 
-    def notebook_interaction(self):
-        """Creates interactive notebook widgets for all components and
-        parameters, if available.
-        Requires `ipywidgets` to be installed.
-        """
-        from ipywidgets import Accordion
-        from traitlets import TraitError as TraitletError
-        from IPython.display import display as ip_display
-
-        try:
-            children = [component.notebook_interaction(False) for component in
-                        self]
-            accord = Accordion(children=children)
-            for i, comp in enumerate(self):
-                accord.set_title(i, comp.name)
-            ip_display(accord)
-        except TraitletError:
-            _logger.info('This function is only avialable when running in a'
-                         ' notebook')
-
     def create_samfire(self, workers=None, setup=True, **kwargs):
         """Creates a SAMFire object.
 
@@ -1721,12 +1786,13 @@ class ModelSpecialSlicers(object):
             slices,
             self.isNavigation)
         _signal = self.model.signal._slicer(slices, self.isNavigation)
-        if _signal.metadata.Signal.signal_type == 'EELS':
-            _model = _signal.create_model(
-                auto_background=False,
-                auto_add_edges=False)
-        else:
-            _model = _signal.create_model()
+        # TODO: for next major release, change model creation defaults to not
+        # automate anything. For now we explicitly look for "auto_" kwargs and
+        # disable them:
+        import inspect
+        pars = inspect.signature(_signal.create_model).parameters
+        kwargs = {key: False for key in pars.keys() if key.startswith('auto_')}
+        _model = _signal.create_model(**kwargs)
 
         dims = (self.model.axes_manager.navigation_dimension,
                 self.model.axes_manager.signal_dimension)
@@ -1760,6 +1826,9 @@ class ModelSpecialSlicers(object):
                                       dims,
                                       (slices, array_slices),
                                       self.isNavigation)
+            if _model.axes_manager.navigation_size < 2:
+                if co.active_is_multidimensional:
+                    cn.active = co._active_array[array_slices[:dims[0]]]
             for po, pn in zip(co.parameters, cn.parameters):
                 copy_slice_from_whitelist(po,
                                           pn,

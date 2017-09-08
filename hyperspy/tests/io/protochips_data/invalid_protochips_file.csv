@@ -1,0 +1,15 @@
+Time, Notes, Channel A Current, Channel A Voltage, Channel A Resistance, Channel B Current, Channel B Voltage, Channel B Resistance
+0, Date (yyyy.mm.dd) = 2014.10.08, 0, 0, NaN, 0, 0, NaN
+0, Time (hh:mm:ss.ms) = 16:26:51.738, 0, 0, NaN, 0, 0, NaN
+0, Test units = Milliseconds, 0, 0, NaN, 0, 0, NaN
+0, Temperature units = Degrees C, 0, 0, NaN, 0, 0, NaN
+0, Current units = Amps, 0, 0, NaN, 0, 0, NaN
+0, Voltage units = Volts, 0, 0, NaN, 0, 0, NaN
+0, Resistance units = Ohms, 0, 0, NaN, 0, 0, NaN
+0, User agreeing to terms = Enter User Name, 0, 0, NaN, 0, 0, NaN
+0, , -6.91414E-13, 6.14405E-05, NaN, 0, 0, NaN
+147, , 0.0179983, 40.0917, 2227.52704422084, 0, 0, NaN
+196, , 0.0179984, 39.9278, 2218.40830296026, 0, 0, NaN
+296, , 0.0179992, 39.7102, 2206.22027645673, 0, 0, NaN
+396, , Test, 39.5232, 2195.79432762021, 0, 0, NaN
+

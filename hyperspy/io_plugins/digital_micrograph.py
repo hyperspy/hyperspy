@@ -23,12 +23,13 @@
 
 import os
 import logging
+import dateutil.parser
 
 import numpy as np
 import traits.api as t
 
-from hyperspy.misc.io.utils_readfile import *
-from hyperspy.exceptions import *
+import hyperspy.misc.io.utils_readfile as iou
+from hyperspy.exceptions import DM3TagIDError, DM3DataTypeError, DM3TagTypeError
 import hyperspy.misc.io.tools
 from hyperspy.misc.utils import DictionaryTreeBrowser
 
@@ -86,15 +87,15 @@ class DigitalMicrographReader(object):
             group_dict=self.tags_dict)
 
     def parse_header(self):
-        self.dm_version = read_long(self.f, "big")
+        self.dm_version = iou.read_long(self.f, "big")
         if self.dm_version not in (3, 4):
             raise NotImplementedError(
                 "Currently we only support reading DM versions 3 and 4 but "
                 "this file "
                 "seems to be version %s " % self.dm_version)
         self.skipif4()
-        filesizeB = read_long(self.f, "big")
-        is_little_endian = read_long(self.f, "big")
+        filesizeB = iou.read_long(self.f, "big")
+        is_little_endian = iou.read_long(self.f, "big")
 
         _logger.info('DM version: %i', self.dm_version)
         _logger.info('size %i B', filesizeB)
@@ -131,16 +132,16 @@ class DigitalMicrographReader(object):
                 # Raises IOError if it is wrong
                 self.check_data_tag_delimiter()
                 self.skipif4()
-                infoarray_size = read_long(self.f, 'big')
+                infoarray_size = iou.read_long(self.f, 'big')
                 _logger.debug("Infoarray size: %s", infoarray_size)
                 self.skipif4()
                 if infoarray_size == 1:  # Simple type
                     _logger.debug("Reading simple data")
-                    etype = read_long(self.f, "big")
+                    etype = iou.read_long(self.f, "big")
                     data = self.read_simple_data(etype)
                 elif infoarray_size == 2:  # String
                     _logger.debug("Reading string")
-                    enctype = read_long(self.f, "big")
+                    enctype = iou.read_long(self.f, "big")
                     if enctype != 18:
                         raise IOError("Expected 18 (string), got %i" % enctype)
                     string_length = self.parse_string_definition()
@@ -148,13 +149,13 @@ class DigitalMicrographReader(object):
                 elif infoarray_size == 3:  # Array of simple type
                     _logger.debug("Reading simple array")
                     # Read array header
-                    enctype = read_long(self.f, "big")
+                    enctype = iou.read_long(self.f, "big")
                     if enctype != 20:  # Should be 20 if it is an array
                         raise IOError("Expected 20 (string), got %i" % enctype)
                     size, enc_eltype = self.parse_array_definition()
                     data = self.read_array(size, enc_eltype, skip=skip)
                 elif infoarray_size > 3:
-                    enctype = read_long(self.f, "big")
+                    enctype = iou.read_long(self.f, "big")
                     if enctype == 15:  # It is a struct
                         _logger.debug("Reading struct")
                         definition = self.parse_struct_definition()
@@ -166,12 +167,12 @@ class DigitalMicrographReader(object):
                         # 20 <4>, ?  <4>, enc_dtype <4>, definition <?>,
                         # size <4>
                         self.skipif4()
-                        enc_eltype = read_long(self.f, "big")
+                        enc_eltype = iou.read_long(self.f, "big")
                         if enc_eltype == 15:  # Array of structs
                             _logger.debug("Reading array of structs")
                             definition = self.parse_struct_definition()
                             self.skipif4()  # Padding?
-                            size = read_long(self.f, "big")
+                            size = iou.read_long(self.f, "big")
                             _logger.debug("Struct definition: %s", definition)
                             _logger.debug("Array size: %s", size)
                             data = self.read_array(
@@ -183,7 +184,7 @@ class DigitalMicrographReader(object):
                             _logger.debug("Reading array of strings")
                             string_length = \
                                 self.parse_string_definition()
-                            size = read_long(self.f, "big")
+                            size = iou.read_long(self.f, "big")
                             data = self.read_array(
                                 size=size,
                                 enc_eltype=enc_eltype,
@@ -193,7 +194,7 @@ class DigitalMicrographReader(object):
                             _logger.debug("Reading array of arrays")
                             el_length, enc_eltype = \
                                 self.parse_array_definition()
-                            size = read_long(self.f, "big")
+                            size = iou.read_long(self.f, "big")
                             data = self.read_array(
                                 size=size,
                                 enc_eltype=enc_eltype,
@@ -229,18 +230,18 @@ class DigitalMicrographReader(object):
         # the tuple reads: ('read bytes function', 'number of bytes', 'type')
 
         dtype_dict = {
-            2: (read_short, 2, 'h'),
-            3: (read_long, 4, 'l'),
-            4: (read_ushort, 2, 'H'),  # dm3 uses ushorts for unicode chars
-            5: (read_ulong, 4, 'L'),
-            6: (read_float, 4, 'f'),
-            7: (read_double, 8, 'd'),
-            8: (read_boolean, 1, 'B'),
+            2: (iou.read_short, 2, 'h'),
+            3: (iou.read_long, 4, 'l'),
+            4: (iou.read_ushort, 2, 'H'),  # dm3 uses ushorts for unicode chars
+            5: (iou.read_ulong, 4, 'L'),
+            6: (iou.read_float, 4, 'f'),
+            7: (iou.read_double, 8, 'd'),
+            8: (iou.read_boolean, 1, 'B'),
             # dm3 uses chars for 1-Byte signed integers
-            9: (read_char, 1, 'b'),
-            10: (read_byte, 1, 'b'),   # 0x0a
-            11: (read_double, 8, 'l'),  # Unknown, new in DM4
-            12: (read_double, 8, 'l'),  # Unknown, new in DM4
+            9: (iou.read_char, 1, 'b'),
+            10: (iou.read_byte, 1, 'b'),   # 0x0a
+            11: (iou.read_double, 8, 'l'),  # Unknown, new in DM4
+            12: (iou.read_double, 8, 'l'),  # Unknown, new in DM4
             15: (self.read_struct, None, 'struct',),  # 0x0f
             18: (self.read_string, None, 'c'),  # 0x12
             20: (self.read_array, None, 'array'),  # 0x14
@@ -259,9 +260,9 @@ class DigitalMicrographReader(object):
 
         """
         self.skipif4()
-        enc_eltype = read_long(self.f, "big")
+        enc_eltype = iou.read_long(self.f, "big")
         self.skipif4()
-        length = read_long(self.f, "big")
+        length = iou.read_long(self.f, "big")
         return length, enc_eltype
 
     def parse_string_definition(self):
@@ -271,7 +272,7 @@ class DigitalMicrographReader(object):
         string encoded dtype.
         """
         self.skipif4()
-        return read_long(self.f, "big")
+        return iou.read_long(self.f, "big")
 
     def parse_struct_definition(self):
         """Reads and returns the struct definition tuple.
@@ -282,12 +283,12 @@ class DigitalMicrographReader(object):
         """
         self.f.seek(4, 1)  # Skip the name length
         self.skipif4(2)
-        nfields = read_long(self.f, "big")
+        nfields = iou.read_long(self.f, "big")
         definition = ()
         for ifield in range(nfields):
             self.f.seek(4, 1)
             self.skipif4(2)
-            definition += (read_long(self.f, "big"),)
+            definition += (iou.read_long(self.f, "big"),)
 
         return definition
 
@@ -322,9 +323,9 @@ class DigitalMicrographReader(object):
                     'endian': self.endian, }
         data = b''
         if self.endian == 'little':
-            s = L_char
+            s = iou.L_char
         elif self.endian == 'big':
-            s = B_char
+            s = iou.B_char
         for char in range(length):
             data += s.unpack(self.f.read(1))[0]
         try:
@@ -401,18 +402,18 @@ class DigitalMicrographReader(object):
         Returns the tuple (is_sorted, is_open, n_tags).
         endian can be either 'big' or 'little'.
         """
-        is_sorted = read_byte(self.f, "big")
-        is_open = read_byte(self.f, "big")
+        is_sorted = iou.read_byte(self.f, "big")
+        is_open = iou.read_byte(self.f, "big")
         self.skipif4(n=skip4)
-        n_tags = read_long(self.f, "big")
+        n_tags = iou.read_long(self.f, "big")
         return bool(is_sorted), bool(is_open), n_tags
 
     def find_next_tag(self):
-        while read_byte(self.f, "big") not in (20, 21):
+        while iou.read_byte(self.f, "big") not in (20, 21):
             continue
         location = self.f.tell() - 1
         self.f.seek(location)
-        tag_id = read_byte(self.f, "big")
+        tag_id = iou.read_byte(self.f, "big")
         self.f.seek(location)
         tag_header = self.parse_tag_header()
         if tag_id == 20:
@@ -435,7 +436,7 @@ class DigitalMicrographReader(object):
                 self.find_next_tag()
 
     def find_next_data_tag(self):
-        while read_byte(self.f, "big") != 21:
+        while iou.read_byte(self.f, "big") != 21:
             continue
         position = self.f.tell() - 1
         self.f.seek(position)
@@ -448,8 +449,8 @@ class DigitalMicrographReader(object):
             self.find_next_data_tag()
 
     def parse_tag_header(self):
-        tag_id = read_byte(self.f, "big")
-        tag_name_length = read_short(self.f, "big")
+        tag_id = iou.read_byte(self.f, "big")
+        tag_name_length = iou.read_short(self.f, "big")
         tag_name = self.read_string(tag_name_length)
         return {'tag_id': tag_id,
                 'tag_name_length': tag_name_length,
@@ -628,13 +629,20 @@ class ImageObject(object):
             return ""
 
     def _get_data_array(self):
+        need_to_close = False
+        if self.file.closed:
+            self.file = open(self.filename, "rb")
+            need_to_close = True
         self.file.seek(self.imdict.ImageData.Data.offset)
         count = self.imdict.ImageData.Data.size
         if self.imdict.ImageData.DataType in (27, 28):  # Packed complex
             count = int(count / 2)
-        return np.fromfile(self.file,
+        data = np.fromfile(self.file,
                            dtype=self.dtype,
                            count=count)
+        if need_to_close:
+            self.file.close()
+        return data
 
     @property
     def size(self):
@@ -658,10 +666,7 @@ class ImageObject(object):
             return self.unpack_packed_complex(data)
         elif self.imdict.ImageData.DataType in (8, 23):  # ABGR
             # Reorder the fields
-            data = np.hstack((data[["B", "G", "R"]].view(("u1", 3))[..., ::-1],
-                              data["A"].reshape(-1, 1))).view(
-                {"names": ("R", "G", "B", "A"),
-                 "formats": ("u1",) * 4}).copy()
+            data = data[['R', 'G', 'B', 'A']].copy()
         return data.reshape(self.shape, order=self.order)
 
     def unpack_new_packed_complex(self, data):
@@ -764,18 +769,134 @@ class ImageObject(object):
         metadata["Signal"]['signal_type'] = self.signal_type
         return metadata
 
+    def _get_quantity(self, units):
+        quantity = "Intensity"
+        if len(units) == 0:
+            units = ""
+        elif units == 'e-':
+            units = "Counts"
+            quantity = "Electrons"
+        if self.signal_type == 'EDS_TEM':
+            quantity = "X-rays"
+        if len(units) != 0:
+            units = " (%s)" % units
+        return "%s%s" % (quantity, units)
+
+    def _get_mode(self, mode):
+        if 'STEM' in mode:
+            return 'STEM'
+        else:
+            return 'TEM'
+
+    def _get_time(self, time):
+        try:
+            dt = dateutil.parser.parse(time)
+            return dt.time().isoformat()
+        except:
+            _logger.warning("Time string, %s,  could not be parsed", time)
+
+    def _get_date(self, date):
+        try:
+            dt = dateutil.parser.parse(date)
+            return dt.date().isoformat()
+        except:
+            _logger.warning("Date string, %s,  could not be parsed", date)
+
+    def _get_microscope_name(self, ImageTags):
+        try:
+            if ImageTags.Session_Info.Microscope != "[]":
+                return ImageTags.Session_Info.Microscope
+        except AttributeError:
+            if 'Name' in ImageTags['Microscope_Info'].keys():
+                return ImageTags.Microscope_Info.Name
+            elif 'Microscope' in ImageTags['Microscope_Info'].keys():
+                return ImageTags.Microscope_Info.Microscope
+
+    def _parse_string(self, tag):
+        if len(tag) == 0:
+            return None
+        else:
+            return tag
+
     def get_mapping(self):
+        is_scanning = "DigiScan" in self.imdict.ImageTags.keys()
         mapping = {
-            "ImageList.TagGroup0.ImageTags.Microscope_Info.Voltage": (
-                "Acquisition_instrument.TEM.beam_energy",
-                lambda x: x / 1e3),
-            "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Stage_tilt": (
-                "Acquisition_instrument.TEM.tilt_stage",
-                None),
+            "ImageList.TagGroup0.ImageTags.DataBar.Acquisition Date": (
+                "General.date", self._get_date),
+            "ImageList.TagGroup0.ImageTags.DataBar.Acquisition Time": (
+                "General.time", self._get_time),
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Voltage": (
+                "Acquisition_instrument.TEM.beam_energy", lambda x: x / 1e3),
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage Alpha": (
+                "Acquisition_instrument.TEM.Stage.tilt_alpha", None),
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage X": (
+                "Acquisition_instrument.TEM.Stage.x", lambda x: x * 1e-3),
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage Y": (
+                "Acquisition_instrument.TEM.Stage.y", lambda x: x * 1e-3),
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage Z": (
+                "Acquisition_instrument.TEM.Stage.z", lambda x: x * 1e-3),
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Illumination Mode": (
+                "Acquisition_instrument.TEM.acquisition_mode", self._get_mode),
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Probe Current (nA)": (
+                "Acquisition_instrument.TEM.beam_current", None),
+            "ImageList.TagGroup0.ImageTags.Session Info.Operator": (
+                "General.authors", self._parse_string),
+            "ImageList.TagGroup0.ImageTags.Session Info.Specimen": (
+                "Sample.description", self._parse_string),
         }
 
-        if self.signal_type == "EELS":
+        if "Microscope_Info" in self.imdict.ImageTags.keys():
+            is_TEM = is_diffraction = None
+            if "Illumination_Mode" in self.imdict.ImageTags[
+                    'Microscope_Info'].keys():
+                is_TEM = (
+                    'TEM' == self.imdict.ImageTags.Microscope_Info.Illumination_Mode)
+            if "Imaging_Mode" in self.imdict.ImageTags[
+                    'Microscope_Info'].keys():
+                is_diffraction = (
+                    'DIFFRACTION' == self.imdict.ImageTags.Microscope_Info.Imaging_Mode)
+
+            if is_TEM:
+                if is_diffraction:
+                    mapping.update({
+                        "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
+                            "Acquisition_instrument.TEM.camera_length",
+                            None),
+                    })
+                else:
+                    mapping.update({
+                        "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
+                            "Acquisition_instrument.TEM.magnification",
+                            None),
+                    })
+            else:
+                mapping.update({
+                    "ImageList.TagGroup0.ImageTags.Microscope Info.STEM Camera Length": (
+                        "Acquisition_instrument.TEM.camera_length",
+                        None),
+                    "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
+                        "Acquisition_instrument.TEM.magnification",
+                        None),
+                })
+
             mapping.update({
+                "ImageList.TagGroup0.ImageTags": (
+                    "Acquisition_instrument.TEM.microscope",
+                    self._get_microscope_name),
+            })
+
+        if self.signal_type == "EELS":
+            if is_scanning:
+                mapped_attribute = 'dwell_time'
+            else:
+                mapped_attribute = 'exposure'
+            mapping.update({
+                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Date": (
+                    "General.date",
+                    self._get_date),
+                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Start time": (
+                    "General.time",
+                    self._get_time),
                 "ImageList.TagGroup0.ImageTags.EELS.Experimental Conditions." +
                 "Collection semi-angle (mrad)": (
                     "Acquisition_instrument.TEM.Detector.EELS.collection_angle",
@@ -784,11 +905,27 @@ class ImageObject(object):
                 "Convergence semi-angle (mrad)": (
                     "Acquisition_instrument.TEM.convergence_angle",
                     None),
-                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Exposure (s)":
-                ("Acquisition_instrument.TEM.dwell_time", None),
+                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Integration time (s)": (
+                    "Acquisition_instrument.TEM.Detector.EELS.%s" % mapped_attribute,
+                    None),
+                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Number_of_frames": (
+                    "Acquisition_instrument.TEM.Detector.EELS.frame_number",
+                    None),
+                "ImageList.TagGroup0.ImageTags.EELS_Spectrometer.Aperture_label": (
+                    "Acquisition_instrument.TEM.Detector.EELS.aperture_size",
+                    lambda string: float(string.replace('mm', ''))),
+                "ImageList.TagGroup0.ImageTags.EELS Spectrometer.Instrument name": (
+                    "Acquisition_instrument.TEM.Detector.EELS.spectrometer",
+                    None),
             })
         elif self.signal_type == "EDS_TEM":
             mapping.update({
+                "ImageList.TagGroup0.ImageTags.EDS.Acquisition.Date": (
+                    "General.date",
+                    self._get_date),
+                "ImageList.TagGroup0.ImageTags.EDS.Acquisition.Start time": (
+                    "General.time",
+                    self._get_time),
                 "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Azimuthal_angle": (
                     "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
                     None),
@@ -805,18 +942,34 @@ class ImageObject(object):
                     "Acquisition_instrument.TEM.Detector.EDS.real_time",
                     None),
             })
-
+        elif "DigiScan" in self.imdict.ImageTags.keys():
+            mapping.update({
+                "ImageList.TagGroup0.ImageTags.DigiScan.Sample Time": (
+                    "Acquisition_instrument.TEM.dwell_time",
+                    lambda x: x / 1e6),
+            })
         else:
             mapping.update({
                 "ImageList.TagGroup0.ImageTags.Acquisition.Parameters.Detector." +
                 "exposure_s": (
-                    "Acquisition_instrument.TEM.dwell_time",
+                    "Acquisition_instrument.TEM.Camera.exposure",
                     None),
             })
+        mapping.update({
+            "ImageList.TagGroup0.ImageData.Calibrations.Brightness.Units": (
+                "Signal.quantity",
+                self._get_quantity),
+            "ImageList.TagGroup0.ImageData.Calibrations.Brightness.Scale": (
+                "Signal.Noise_properties.Variance_linear_model.gain_factor",
+                None),
+            "ImageList.TagGroup0.ImageData.Calibrations.Brightness.Origin": (
+                "Signal.Noise_properties.Variance_linear_model.gain_offset",
+                None),
+        })
         return mapping
 
 
-def file_reader(filename, record_by=None, order=None):
+def file_reader(filename, record_by=None, order=None, lazy=False):
     """Reads a DM3 file and loads the data into the appropriate class.
     data_id can be specified to load a given image within a DM3 file that
     contains more than one dataset.
@@ -849,8 +1002,17 @@ def file_reader(filename, record_by=None, order=None):
             if image.to_spectrum is True:
                 post_process.append(lambda s: s.to_signal1D())
             post_process.append(lambda s: s.squeeze())
+            if lazy:
+                image.filename = filename
+                from dask.array import from_delayed
+                import dask.delayed as dd
+                val = dd(image.get_data, pure=True)()
+                data = from_delayed(val, shape=image.shape,
+                                    dtype=image.dtype)
+            else:
+                data = image.get_data()
             imd.append(
-                {'data': image.get_data(),
+                {'data': data,
                  'axes': axes,
                  'metadata': mp,
                  'original_metadata': dm.tags_dict,

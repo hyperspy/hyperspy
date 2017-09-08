@@ -18,10 +18,13 @@
 
 
 import os
-import nose.tools as nt
-import hyperspy.api as hs
+
 import numpy as np
-from datetime import datetime
+from numpy.testing import assert_allclose
+import pytest
+
+
+import hyperspy.api as hs
 
 
 dirpath = os.path.dirname(__file__)
@@ -37,17 +40,20 @@ ref_t = np.array([15.091, 16.828, 13.232, 50.117, 49.927, 49.986, 49.981])
 def test_read1():
     s = hs.load(file1)
     np.testing.assert_allclose(s.data, ref_T)
-    nt.assert_almost_equal(s.axes_manager[0].scale, 0.33)
-    nt.assert_almost_equal(s.axes_manager[0].offset, 50077.68)
-    ref_date = datetime(2015, 4, 16, 13, 53)
-    nt.assert_equal(s.metadata.General.time, ref_date)
+    assert_allclose(s.axes_manager[0].scale, 0.33)
+    assert_allclose(s.axes_manager[0].offset, 50077.68)
+    ref_date, ref_time = "2015-04-16", "13:53:00"
+    assert s.metadata.General.date == ref_date
+    assert s.metadata.General.time == ref_time
+    assert s.metadata.Signal.signal_type == ""
+    assert s.metadata.Signal.quantity == "Temperature (Celsius)"
 
 
-@nt.raises(AssertionError)
 def test_read2():
-    hs.load(file2)
+    with pytest.raises(AssertionError):
+        hs.load(file2)
 
 
-@nt.raises(AssertionError)
 def test_read3():
-    hs.load(file3)
+    with pytest.raises(AssertionError):
+        hs.load(file3)

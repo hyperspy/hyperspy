@@ -76,6 +76,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.xaxis, imf.yaxis = self.axes_manager.signal_axes
         imf.auto_convert_units = self.auto_convert_units
         imf.colorbar = colorbar
+        imf.quantity_label = self.quantity_label
         imf.scalebar = scalebar
         imf.axes_ticks = axes_ticks
         imf.axes_off = axes_off
@@ -88,11 +89,13 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
 #        ax.callbacks.connect('xlim_changed', callback)
         self.signal_plot = imf
 
-        if self.navigator_plot is not None and imf.figure is not None:
-            self.navigator_plot.events.closed.connect(
-                self._on_navigator_plot_closing, [])
-            imf.events.closed.connect(self.close_navigator_plot, [])
-            self.signal_plot.figure.canvas.mpl_connect(
-                'key_press_event', self.axes_manager.key_navigator)
-            self.navigator_plot.figure.canvas.mpl_connect(
-                'key_press_event', self.axes_manager.key_navigator)
+        if imf.figure is not None:
+            if self.axes_manager.navigation_axes:
+                self.signal_plot.figure.canvas.mpl_connect(
+                    'key_press_event', self.axes_manager.key_navigator)
+            if self.navigator_plot is not None:
+                self.navigator_plot.figure.canvas.mpl_connect(
+                    'key_press_event', self.axes_manager.key_navigator)
+                self.navigator_plot.events.closed.connect(
+                    self._on_navigator_plot_closing, [])
+                imf.events.closed.connect(self.close_navigator_plot, [])

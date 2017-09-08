@@ -21,7 +21,6 @@ import time
 import logging
 from multiprocessing import (cpu_count, Pool)
 from multiprocessing.pool import Pool as Pool_type
-import ipyparallel as ipp
 import numpy as np
 
 _logger = logging.getLogger(__name__)
@@ -121,6 +120,7 @@ class ParallelPool:
             self.pool._state is 0
 
     def _setup_ipyparallel(self):
+        import ipyparallel as ipp
         _logger.debug('Calling _setup_ipyparallel')
         try:
             ipyclient = ipp.Client(**self.ipython_kwargs)

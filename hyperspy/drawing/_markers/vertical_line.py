@@ -24,22 +24,25 @@ class VerticalLine(MarkerBase):
     """Vertical line marker that can be added to the signal figure
 
     Parameters
-    ---------
-    x: array or float
+    ----------
+    x : array or float
         The position of the line. If float, the marker is fixed.
         If array, the marker will be updated when navigating. The array should
-        have the same dimensions in the nagivation axes.
-    kwargs:
-        Kewywords argument of axvline valid properties (i.e. recognized by
+        have the same dimensions in the navigation axes.
+    kwargs :
+        Keywords argument of axvline valid properties (i.e. recognized by
         mpl.plot).
 
     Example
     -------
-    >>> import numpy as np
     >>> s = hs.signals.Signal1D(np.random.random([10, 100]))
     >>> m = hs.plot.markers.vertical_line(x=range(10), color='green')
     >>> s.add_marker(m)
 
+    Adding a marker permanently to a signal
+    >>> s = hs.signals.Signal1D(np.random.random((100, 100)))
+    >>> m = hs.plot.markers.vertical_line(x=30)
+    >>> s.add_marker(m, permanent=True)
     """
 
     def __init__(self, x, **kwargs):
@@ -48,22 +51,23 @@ class VerticalLine(MarkerBase):
         self.marker_properties = lp
         self.set_data(x1=x)
         self.set_marker_properties(**kwargs)
+        self.name = 'vertical_line'
+
+    def __repr__(self):
+        string = "<marker.{}, {} (x={},color={})>".format(
+            self.__class__.__name__,
+            self.name,
+            self.get_data_position('x1'),
+            self.marker_properties['color'],
+            self.get_data_position('size'),
+        )
+        return(string)
 
     def update(self):
         if self.auto_update is False:
             return
         self.marker.set_xdata(self.get_data_position('x1'))
 
-    def plot(self):
-        if self.ax is None:
-            raise AttributeError(
-                "To use this method the marker needs to be first add to a " +
-                "figure using `s._plot.signal_plot.add_marker(m)` or " +
-                "`s._plot.navigator_plot.add_marker(m)`")
+    def _plot_marker(self):
         self.marker = self.ax.axvline(self.get_data_position('x1'),
                                       **self.marker_properties)
-        self.marker.set_animated(True)
-        try:
-            self.ax.hspy_fig._draw_animated()
-        except:
-            pass

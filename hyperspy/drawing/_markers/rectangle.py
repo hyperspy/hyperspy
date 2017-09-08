@@ -26,23 +26,23 @@ class Rectangle(MarkerBase):
     """Rectangle marker that can be added to the signal figure
 
     Parameters
-    ---------
-    x1: array or float
+    ----------
+    x1 : array or float
         The position of the up left corner of the rectangle in x.
         If float, the marker is fixed.
         If array, the marker will be updated when navigating. The array should
-        have the same dimensions in the nagivation axes.
-    y1: array or float
+        have the same dimensions in the navigation axes.
+    y1 : array or float
         The position of the up left corner of the rectangle in y.
         see x1 arguments
-    x2: array or float
+    x2 : array or float
         The position of the down right corner of the rectangle in x.
         see x1 arguments
-    y2: array or float
+    y2 : array or float
         The position of the down right of the rectangle in y.
         see x1 arguments
-    kwargs:
-        Kewywords argument of axvline valid properties (i.e. recognized by
+    kwargs :
+        Keywords argument of axvline valid properties (i.e. recognized by
         mpl.plot).
 
     Example
@@ -53,6 +53,10 @@ class Rectangle(MarkerBase):
     >>>                                  color='red')
     >>> im.add_marker(m)
 
+    Adding a marker permanently to a signal
+    >>> im = hs.signals.Signal2D(np.random.random((50, 50))
+    >>> m = hs.plot.markers.rectangle(x1=20, y1=30, x2=40, y2=49)
+    >>> im.add_marker(m, permanent=True)
     """
 
     def __init__(self, x1, y1, x2, y2, **kwargs):
@@ -61,21 +65,33 @@ class Rectangle(MarkerBase):
         self.marker_properties = lp
         self.set_data(x1=x1, y1=y1, x2=x2, y2=y2)
         self.set_marker_properties(**kwargs)
+        self.name = 'rectangle'
+
+    def __repr__(self):
+        string = "<marker.{}, {} (x1={},x2={},y1={},y2={},color={})>".format(
+            self.__class__.__name__,
+            self.name,
+            self.get_data_position('x1'),
+            self.get_data_position('x2'),
+            self.get_data_position('y1'),
+            self.get_data_position('y2'),
+            self.marker_properties['color'],
+        )
+        return(string)
 
     def update(self):
         if self.auto_update is False:
             return
-        self.marker.set_xdata([self.get_data_position('x1'),
-                               self.get_data_position('x2')])
-        self.marker.set_ydata([self.get_data_position('y1'),
-                               self.get_data_position('y2')])
+        width = abs(self.get_data_position('x1') -
+                    self.get_data_position('x2'))
+        height = abs(self.get_data_position('y1') -
+                     self.get_data_position('y2'))
+        self.marker.set_xy([self.get_data_position('x1'),
+                            self.get_data_position('y1')])
+        self.marker.set_width(width)
+        self.marker.set_height(height)
 
-    def plot(self):
-        if self.ax is None:
-            raise AttributeError(
-                "To use this method the marker needs to be first add to a " +
-                "figure using `s._plot.signal_plot.add_marker(m)` or " +
-                "`s._plot.navigator_plot.add_marker(m)`")
+    def _plot_marker(self):
         width = abs(self.get_data_position('x1') -
                     self.get_data_position('x2'))
         height = abs(self.get_data_position('y1') -
@@ -83,8 +99,3 @@ class Rectangle(MarkerBase):
         self.marker = self.ax.add_patch(plt.Rectangle(
             (self.get_data_position('x1'), self.get_data_position('y1')),
             width, height, **self.marker_properties))
-        self.marker.set_animated(True)
-        try:
-            self.ax.hspy_fig._draw_animated()
-        except:
-            pass

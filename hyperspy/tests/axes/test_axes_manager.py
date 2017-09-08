@@ -19,14 +19,14 @@
 
 from unittest import mock
 
-import nose.tools as nt
-
 from hyperspy.axes import DataAxis, AxesManager
+from hyperspy.signals import BaseSignal, Signal1D, Signal2D
+from numpy import arange
 
 
 class TestAxesManager:
 
-    def setup(self):
+    def setup_method(self, method):
         axes_list = [
             {'name': 'a',
              'navigate': True,
@@ -65,15 +65,154 @@ class TestAxesManager:
         m = mock.Mock()
         am.events.any_axis_changed.connect(m.changed)
         am.update_axes_attributes_from(am2._axes)
-        nt.assert_false(m.changed.called)
+        assert not m.changed.called
         am2[0].scale = 0.5
         am2[1].units = "km"
         am2[2].offset = 50
         am2[3].size = 1
         am.update_axes_attributes_from(am2._axes,
                                        attributes=["units", "scale"])
-        nt.assert_true(m.changed.called)
-        nt.assert_equal(am2[0].scale, am[0].scale)
-        nt.assert_equal(am2[1].units, am[1].units)
-        nt.assert_not_equal(am2[2].offset, am[2].offset)
-        nt.assert_not_equal(am2[3].size, am[3].size)
+        assert m.changed.called
+        assert am2[0].scale == am[0].scale
+        assert am2[1].units == am[1].units
+        assert am2[2].offset != am[2].offset
+        assert am2[3].size != am[3].size
+
+
+class TestAxesManagerScaleOffset:
+
+    def test_low_high_value(self):
+        data = arange(11)
+        s = BaseSignal(data)
+        axes = s.axes_manager[0]
+        assert axes.low_value == data[0]
+        assert axes.high_value == data[-1]
+
+    def test_change_scale(self):
+        data = arange(132)
+        s = BaseSignal(data)
+        axes = s.axes_manager[0]
+        scale_value_list = [0.07, 76, 1]
+        for scale_value in scale_value_list:
+            axes.scale = scale_value
+            assert axes.low_value == data[0] * scale_value
+            assert axes.high_value == data[-1] * scale_value
+
+    def test_change_offset(self):
+        data = arange(81)
+        s = BaseSignal(data)
+        axes = s.axes_manager[0]
+        offset_value_list = [12, -216, 1, 0]
+        for offset_value in offset_value_list:
+            axes.offset = offset_value
+            assert axes.low_value == (data[0] + offset_value)
+            assert axes.high_value == (data[-1] + offset_value)
+
+    def test_change_offset_scale(self):
+        data = arange(11)
+        s = BaseSignal(data)
+        axes = s.axes_manager[0]
+        scale, offset = 0.123, -314
+        axes.offset = offset
+        axes.scale = scale
+        assert axes.low_value == (data[0] * scale + offset)
+        assert axes.high_value == (data[-1] * scale + offset)
+
+
+class TestAxesManagerExtent:
+
+    def test_1d_basesignal(self):
+        s = BaseSignal(arange(10))
+        assert len(s.axes_manager.signal_extent) == 2
+        signal_axis = s.axes_manager.signal_axes[0]
+        signal_extent = (signal_axis.low_value, signal_axis.high_value)
+        assert signal_extent == s.axes_manager.signal_extent
+        assert len(s.axes_manager.navigation_extent) == 0
+        assert () == s.axes_manager.navigation_extent
+
+    def test_1d_signal1d(self):
+        s = Signal1D(arange(10))
+        assert len(s.axes_manager.signal_extent) == 2
+        signal_axis = s.axes_manager.signal_axes[0]
+        signal_extent = (signal_axis.low_value, signal_axis.high_value)
+        assert signal_extent == s.axes_manager.signal_extent
+        assert len(s.axes_manager.navigation_extent) == 0
+        assert () == s.axes_manager.navigation_extent
+
+    def test_2d_signal1d(self):
+        s = Signal1D(arange(100).reshape(10, 10))
+        assert len(s.axes_manager.signal_extent) == 2
+        signal_axis = s.axes_manager.signal_axes[0]
+        signal_extent = (signal_axis.low_value, signal_axis.high_value)
+        assert signal_extent == s.axes_manager.signal_extent
+        assert len(s.axes_manager.navigation_extent) == 2
+        nav_axis = s.axes_manager.navigation_axes[0]
+        nav_extent = (nav_axis.low_value, nav_axis.high_value)
+        assert nav_extent == s.axes_manager.navigation_extent
+
+    def test_3d_signal1d(self):
+        s = Signal1D(arange(1000).reshape(10, 10, 10))
+        assert len(s.axes_manager.signal_extent) == 2
+        signal_axis = s.axes_manager.signal_axes[0]
+        signal_extent = (signal_axis.low_value, signal_axis.high_value)
+        assert signal_extent == s.axes_manager.signal_extent
+        assert len(s.axes_manager.navigation_extent) == 4
+        nav_axis0 = s.axes_manager.navigation_axes[0]
+        nav_axis1 = s.axes_manager.navigation_axes[1]
+        nav_extent = (
+            nav_axis0.low_value, nav_axis0.high_value,
+            nav_axis1.low_value, nav_axis1.high_value,
+        )
+        assert nav_extent == s.axes_manager.navigation_extent
+
+    def test_2d_signal2d(self):
+        s = Signal2D(arange(100).reshape(10, 10))
+        assert len(s.axes_manager.signal_extent) == 4
+        signal_axis0 = s.axes_manager.signal_axes[0]
+        signal_axis1 = s.axes_manager.signal_axes[1]
+        signal_extent = (
+            signal_axis0.low_value, signal_axis0.high_value,
+            signal_axis1.low_value, signal_axis1.high_value,
+        )
+        assert signal_extent == s.axes_manager.signal_extent
+        assert len(s.axes_manager.navigation_extent) == 0
+        assert () == s.axes_manager.navigation_extent
+
+    def test_3d_signal2d(self):
+        s = Signal2D(arange(1000).reshape(10, 10, 10))
+        assert len(s.axes_manager.signal_extent) == 4
+        signal_axis0 = s.axes_manager.signal_axes[0]
+        signal_axis1 = s.axes_manager.signal_axes[1]
+        signal_extent = (
+            signal_axis0.low_value, signal_axis0.high_value,
+            signal_axis1.low_value, signal_axis1.high_value,
+        )
+        assert signal_extent == s.axes_manager.signal_extent
+        assert len(s.axes_manager.navigation_extent) == 2
+        nav_axis = s.axes_manager.navigation_axes[0]
+        nav_extent = (nav_axis.low_value, nav_axis.high_value)
+        assert nav_extent == s.axes_manager.navigation_extent
+
+    def test_changing_scale_offset(self):
+        s = Signal2D(arange(100).reshape(10, 10))
+        signal_axis0 = s.axes_manager.signal_axes[0]
+        signal_axis1 = s.axes_manager.signal_axes[1]
+        signal_extent = (
+            signal_axis0.low_value, signal_axis0.high_value,
+            signal_axis1.low_value, signal_axis1.high_value,
+        )
+        assert signal_extent == s.axes_manager.signal_extent
+        signal_axis0.scale = 0.2
+        signal_axis1.scale = 0.7
+        signal_extent = (
+            signal_axis0.low_value, signal_axis0.high_value,
+            signal_axis1.low_value, signal_axis1.high_value,
+        )
+        assert signal_extent == s.axes_manager.signal_extent
+        signal_axis0.offset = -11
+        signal_axis1.scale = 23
+        signal_extent = (
+            signal_axis0.low_value, signal_axis0.high_value,
+            signal_axis1.low_value, signal_axis1.high_value,
+        )
+        assert signal_extent == s.axes_manager.signal_extent

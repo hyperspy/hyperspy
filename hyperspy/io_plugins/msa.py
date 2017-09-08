@@ -16,15 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import locale
-import time
-import datetime
-import codecs
+from datetime import datetime as dt
 import warnings
+import locale
+import codecs
 import os
 import logging
 
 import numpy as np
+from traits.api import Undefined
 
 from hyperspy.misc.config_dir import os_name
 from hyperspy import Release
@@ -85,7 +85,7 @@ keywords = {
     'THICKNESS': {'dtype': float, 'mapped_to':
                   'Sample.thickness'},
     'XTILTSTGE': {'dtype': float, 'mapped_to':
-                  'Acquisition_instrument.TEM.tilt_stage'},
+                  'Acquisition_instrument.TEM.Stage.tilt_alpha'},
     'YTILTSTGE': {'dtype': float, 'mapped_to': None},
     'XPOSITION': {'dtype': float, 'mapped_to': None},
     'YPOSITION': {'dtype': float, 'mapped_to': None},
@@ -228,19 +228,19 @@ def parse_msa_string(string, filename=None):
         elif os_name == 'windows':
             locale.setlocale(locale.LC_TIME, 'english')
         try:
-            H, M = time.strptime(parameters['TIME'], "%H:%M")[3:5]
-            mapped.set_item('General.time', datetime.time(H, M))
+            time = dt.strptime(parameters['TIME'], "%H:%M")
+            mapped.set_item('General.time', time.time().isoformat())
         except:
             if 'TIME' in parameters and parameters['TIME']:
                 _logger.warn('The time information could not be retrieved')
         try:
-            Y, M, D = time.strptime(parameters['DATE'], "%d-%b-%Y")[0:3]
-            mapped.set_item('General.date', datetime.date(Y, M, D))
+            date = dt.strptime(parameters['DATE'], "%d-%b-%Y")
+            mapped.set_item('General.date', date.date().isoformat())
         except:
             if 'DATE' in parameters and parameters['DATE']:
                 _logger.warn('The date information could not be retrieved')
     except:
-        warnings.warn("I couldn't write the date information due to"
+        warnings.warn("I couldn't read the date information due to"
                       "an unexpected error. Please report this error to "
                       "the developers")
     locale.setlocale(locale.LC_TIME, loc)  # restore saved locale
@@ -260,9 +260,31 @@ def parse_msa_string(string, filename=None):
     if mapped.has_item('Signal.signal_type'):
         if mapped.Signal.signal_type == 'ELS':
             mapped.Signal.signal_type = 'EELS'
+        if mapped.Signal.signal_type in ['EDX', 'XEDS']:
+            mapped.Signal.signal_type = 'EDS'
     else:
         # Defaulting to EELS looks reasonable
         mapped.set_item('Signal.signal_type', 'EELS')
+    if 'YUNITS' in parameters.keys():
+        yunits = "(%s)" % parameters['YUNITS']
+    else:
+        yunits = ""
+    if 'YLABEL' in parameters.keys():
+        quantity = "%s" % parameters['YLABEL']
+    else:
+        if mapped.Signal.signal_type == 'EELS':
+            quantity = 'Electrons'
+            if not yunits:
+                yunits = "(Counts)"
+        elif 'EDS' in mapped.Signal.signal_type:
+            quantity = 'X-rays'
+            if not yunits:
+                yunits = "(Counts)"
+        else:
+            quantity = ""
+    if quantity or yunits:
+        quantity_units = "%s %s" % (quantity, yunits)
+        mapped.set_item('Signal.quantity', quantity_units.strip())
 
     dictionary = {
         'data': np.array(y),
@@ -287,6 +309,7 @@ def file_writer(filename, signal, format=None, separator=', ',
                 encoding='latin-1'):
     loc_kwds = {}
     FORMAT = "EMSA/MAS Spectral Data File"
+    md = signal.metadata
     if hasattr(signal.original_metadata, 'FORMAT') and \
             signal.original_metadata.FORMAT == FORMAT:
         loc_kwds = signal.original_metadata.as_dictionary()
@@ -298,23 +321,26 @@ def file_writer(filename, signal, format=None, separator=', ',
     else:
         if format is None:
             format = 'Y'
-        if signal.metadata.has_item("General.date"):
+        if md.has_item("General.date"):
             # Setting locale can raise an exception because
             # their name depends on library versions, platform etc.
+            loc = locale.getlocale(locale.LC_TIME)
+            if os_name == 'posix':
+                locale.setlocale(locale.LC_TIME, ('en_US', 'latin-1'))
+            elif os_name == 'windows':
+                locale.setlocale(locale.LC_TIME, 'english')
             try:
-                loc = locale.getlocale(locale.LC_TIME)
-                if os_name == 'posix':
-                    locale.setlocale(locale.LC_TIME, ('en_US', 'latin-1'))
-                elif os_name == 'windows':
-                    locale.setlocale(locale.LC_TIME, 'english')
-                loc_kwds['DATE'] = signal.metadata.data.strftime(
-                    "%d-%b-%Y")
-                locale.setlocale(locale.LC_TIME, loc)  # restore saved locale
+                date = dt.strptime(md.General.date, "%Y-%m-%d")
+                loc_kwds['DATE'] = date.strftime("%d-%b-%Y")
+                if md.has_item("General.time"):
+                    time = dt.strptime(md.General.time, "%H:%M:%S")
+                    loc_kwds['TIME'] = time.strftime("%H:%M")
             except:
                 warnings.warn(
                     "I couldn't write the date information due to"
                     "an unexpected error. Please report this error to "
                     "the developers")
+            locale.setlocale(locale.LC_TIME, loc)  # restore saved locale
     keys_from_signal = {
         # Required parameters
         'FORMAT': FORMAT,
@@ -331,9 +357,14 @@ def file_writer(filename, signal, format=None, separator=', ',
         'OFFSET': signal.axes_manager._axes[0].offset,
         # Signal1D characteristics
 
-        'XLABEL': signal.axes_manager._axes[0].name,
+        'XLABEL': signal.axes_manager._axes[0].name
+        if signal.axes_manager._axes[0].name is not Undefined
+        else "",
+
         #        'YLABEL' : '',
-        'XUNITS': signal.axes_manager._axes[0].units,
+        'XUNITS': signal.axes_manager._axes[0].units
+        if signal.axes_manager._axes[0].units is not Undefined
+        else "",
         #        'YUNITS' : '',
         'COMMENT': 'File created by HyperSpy version %s' % Release.version,
         # Microscope

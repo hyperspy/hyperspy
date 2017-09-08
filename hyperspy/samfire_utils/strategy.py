@@ -463,14 +463,16 @@ class GlobalStrategy(SamfireStrategy):
         """Refreshes the database (i.e. constructs it again from scratch)
         """
         scale = self.samf._scale
+        mark = self.samf.metadata.marker
+        mark = np.where(np.isnan(mark), np.inf, mark)
         if overwrite:
             if given_pixels is None:
-                good_pixels = self.samf.metadata.marker < 0
+                good_pixels = mark < 0
             else:
                 good_pixels = given_pixels
             self.samf.metadata.marker[good_pixels] = -scale
         else:
-            good_pixels = self.samf.metadata.marker < 0
+            good_pixels = mark < 0
             if given_pixels is not None:
                 good_pixels = np.logical_and(good_pixels, given_pixels)
         self.samf.metadata.marker[~good_pixels] = scale

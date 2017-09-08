@@ -22,6 +22,7 @@ import logging
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator, FuncFormatter
 try:
     import mdp
     mdp_installed = True
@@ -36,8 +37,7 @@ from hyperspy.learn.mlpca import mlpca
 from hyperspy.learn.rpca import rpca_godec, orpca
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
-from hyperspy.misc.utils import stack
-
+from hyperspy.misc.utils import stack, ordinal
 
 _logger = logging.getLogger(__name__)
 
@@ -624,7 +624,7 @@ class MVA():
         factors.unfold()
         if mask is not None:
             mask.unfold()
-            factors = factors.data.T[~mask.data]
+            factors = factors.data.T[np.where(~mask.data)]
         else:
             factors = factors.data.T
 
@@ -675,6 +675,7 @@ class MVA():
         self._unmix_components()
         self._auto_reverse_bss_component(lr)
         lr.bss_algorithm = algorithm
+        lr.bss_node = str(lr.bss_node)
 
     def normalize_decomposition_components(self, target='factors',
                                            function=np.sum):
@@ -920,42 +921,208 @@ class MVA():
         s.axes_manager[-1].units = ''
         return s
 
-    def plot_explained_variance_ratio(self, n=50, log=True):
-        """Plot the decomposition explained variance ratio vs index number.
+    def plot_explained_variance_ratio(self, n=30, log=True, threshold=0,
+                                      hline='auto', xaxis_type='index',
+                                      xaxis_labeling=None, signal_fmt=None,
+                                      noise_fmt=None, fig=None, ax=None,
+                                      **kwargs):
+        """Plot the decomposition explained variance ratio vs index number
+        (Scree Plot).
 
         Parameters
         ----------
-        n : int
-            Number of components.
+        n : int or None
+            Number of components to plot. If None, all components will be plot
         log : bool
             If True, the y axis uses a log scale.
+        threshold : float or int
+            Threshold used to determine how many components should be
+            highlighted as signal (as opposed to noise).
+            If a float (between 0 and 1), ``threshold`` will be
+            interpreted as a cutoff value, defining the variance at which to
+            draw a line showing the cutoff between signal and noise;
+            the number of signal components will be automatically determined
+            by the cutoff value.
+            If an int, ``threshold`` is interpreted as the number of
+            components to highlight as signal (and no cutoff line will be
+            drawn)
+        hline: {'auto', True, False}
+            Whether or not to draw a horizontal line illustrating the variance
+            cutoff for signal/noise determination. Default is to draw the line
+            at the value given in ``threshold`` (if it is a float) and not
+            draw in the case  ``threshold`` is an int, or not given.
+            If True, (and ``threshold`` is an int), the line will be drawn
+            through the last component defined as signal.
+            If False, the line will not be drawn in any circumstance.
+        xaxis_type : {'index', 'number'}
+            Determines the type of labeling applied to the x-axis.
+            If ``'index'``, axis will be labeled starting at 0 (i.e.
+            "pythonic index" labeling); if ``'number'``, it will start at 1
+            (number labeling).
+        xaxis_labeling : {'ordinal', 'cardinal', None}
+            Determines the format of the x-axis tick labels. If ``'ordinal'``,
+            "1st, 2nd, ..." will be used; if ``'cardinal'``, "1, 2,
+            ..." will be used. If None, an appropriate default will be
+            selected.
+        signal_fmt : dict
+            Dictionary of matplotlib formatting values for the signal
+            components
+        noise_fmt : dict
+            Dictionary of matplotlib formatting values for the noise
+            components
+        fig : matplotlib figure or None
+            If None, a default figure will be created, otherwise will plot
+            into fig
+        ax : matplotlib ax (subplot) or None
+            If None, a default ax will be created, otherwise will plot into ax
+        **kwargs
+            remaining keyword arguments are passed to matplotlib.figure()
+
+        Example
+        --------
+        To generate a scree plot with customized symbols for signal vs.
+        noise components and a modified cutoff threshold value:
+
+        >>> s = hs.load("some_spectrum_image")
+        >>> s.decomposition()
+        >>> s.plot_explained_variance_ratio(n=40,
+        >>>                                 threshold=0.005,
+        >>>                                 signal_fmt={'marker': 'v',
+        >>>                                             's': 150,
+        >>>                                             'c': 'pink'}
+        >>>                                 noise_fmt={'marker': '*',
+        >>>                                             's': 200,
+        >>>                                             'c': 'green'})
 
         Returns
         -------
+
         ax : matplotlib.axes
 
-        See Also:
-        ---------
 
-        `get_explained_variance_ration`, `decomposition`,
-        `get_decomposition_loadings`,
-        `get_decomposition_factors`.
+        See Also
+        --------
+
+        :py:meth:`~.learn.mva.MVA.decomposition`,
+        :py:meth:`~.learn.mva.MVA.get_explained_variance_ratio`,
+        :py:meth:`~.signal.MVATools.get_decomposition_loadings`,
+        :py:meth:`~.signal.MVATools.get_decomposition_factors`
 
         """
         s = self.get_explained_variance_ratio()
+
+        n_max = len(self.learning_results.explained_variance_ratio)
+        if n is None:
+            n = n_max
+        elif n > n_max:
+            _logger.info("n is too large, setting n to its maximal value.")
+            n = n_max
+
+        # Determine right number of components for signal and cutoff value
+        if isinstance(threshold, float):
+            if not 0 < threshold < 1:
+                raise ValueError('Variance threshold should be between 0 and'
+                                 ' 1')
+            # Catch if the threshold is less than the minimum variance value:
+            if threshold < s.data.min():
+                n_signal_pcs = n
+            else:
+                n_signal_pcs = np.where((s < threshold).data)[0][0]
+        else:
+            n_signal_pcs = threshold
+            if n_signal_pcs == 0:
+                hline = False
+
+        # Handling hline logic
+        if hline == 'auto':
+            # Set cutoff to threshold if float
+            if isinstance(threshold, float):
+                cutoff = threshold
+            # Turn off the hline otherwise
+            else:
+                hline = False
+        # If hline is True and threshold is int, set cutoff at value of last
+        # signal component
+        elif hline:
+            if isinstance(threshold, float):
+                cutoff = threshold
+            elif n_signal_pcs > 0:
+                cutoff = s.data[n_signal_pcs - 1]
+        # Catches hline==False and hline==True (if threshold not given)
+        else:
+            hline = False
+
+        # Some default formatting for signal markers
+        if signal_fmt is None:
+            signal_fmt = {'c': '#C24D52',
+                          's': 100,
+                          'marker': "^",
+                          'zorder': 3}
+
+        # Some default formatting for noise markers
+        if noise_fmt is None:
+            noise_fmt = {'c': '#4A70B0',
+                         's': 100,
+                         'marker': 'o',
+                         'zorder': 3}
+
+        # Sane defaults for xaxis labeling
+        if xaxis_labeling is None:
+            xaxis_labeling = 'cardinal' if xaxis_type == 'index' else 'ordinal'
+
+        axes_titles = {'y': "Proportion of variance",
+                       'x': "Principal component {}".format(xaxis_type)}
+
         if n < s.axes_manager[-1].size:
             s = s.isig[:n]
-        s.plot()
-        ax = s._plot.signal_plot.ax
-        # ax.plot(range(n), target.explained_variance_ratio[:n], 'o',
-        #         label=label)
-        ax.set_ylabel("Explained variance ratio")
+
+        if fig is None:
+            fig = plt.figure(**kwargs)
+
+        if ax is None:
+            ax = fig.add_subplot(111)
+
+        if log:
+            ax.semilogy()
+
+        if hline:
+            ax.axhline(cutoff,
+                       linewidth=2,
+                       color='gray',
+                       linestyle='dashed',
+                       zorder=1)
+
+        index_offset = 0
+        if xaxis_type == 'number':
+            index_offset = 1
+
+        if n_signal_pcs == n:
+            ax.scatter(range(index_offset, index_offset + n),
+                       s.isig[:n].data,
+                       **signal_fmt)
+        elif n_signal_pcs > 0:
+            ax.scatter(range(index_offset, index_offset + n_signal_pcs),
+                       s.isig[:n_signal_pcs].data,
+                       **signal_fmt)
+            ax.scatter(range(index_offset + n_signal_pcs, index_offset + n),
+                       s.isig[n_signal_pcs:n].data,
+                       **noise_fmt)
+        else:
+            ax.scatter(range(index_offset, index_offset + n),
+                       s.isig[:n].data,
+                       **noise_fmt)
+
+        if xaxis_labeling == 'cardinal':
+            ax.xaxis.set_major_formatter(
+                FuncFormatter(lambda x, p: ordinal(x)))
+
+        ax.set_ylabel(axes_titles['y'])
+        ax.set_xlabel(axes_titles['x'])
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True, min_n_ticks=1))
         ax.margins(0.05)
         ax.autoscale()
-        ax.lines[0].set_marker("o")
-        ax.lines[0].set_linestyle("None")
-        if log is True:
-            ax.semilogy()
+        ax.set_title(s.metadata.General.title, y=1.01)
+
         return ax
 
     def plot_cumulative_explained_variance_ratio(self, n=50):

@@ -16,43 +16,47 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import matplotlib.pyplot as plt
-import numpy as np
-import warnings
-
-from hyperspy.signal import BaseSignal
-from hyperspy._signals.common_signal1d import CommonSignal1D
-from hyperspy.gui.egerton_quantification import SpikesRemoval
+import logging
 import math
 
+import matplotlib.pyplot as plt
+import numpy as np
+import dask.array as da
 import scipy.interpolate
-try:
-    from scipy.signal import savgol_filter
-    savgol_imported = True
-except ImportError:
-    savgol_imported = False
 import scipy as sp
+from scipy.signal import savgol_filter
+from scipy.ndimage.filters import gaussian_filter1d
 try:
     from statsmodels.nonparametric.smoothers_lowess import lowess
     statsmodels_installed = True
 except:
     statsmodels_installed = False
 
+from hyperspy.signal import BaseSignal
+from hyperspy._signals.common_signal1d import CommonSignal1D
+from hyperspy.signal_tools import SpikesRemoval
+from hyperspy.models.model1d import Model1D
+
+
+from hyperspy.misc.utils import stack, signal_range_from_roi
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
-from hyperspy.gui.tools import (
+from hyperspy._signals.lazy import lazyerror
+from hyperspy.signal_tools import (
     Signal1DCalibration,
     SmoothingSavitzkyGolay,
     SmoothingLowess,
     SmoothingTV,
     ButterworthFilter)
+from hyperspy.ui_registry import get_gui, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
-from hyperspy.gui.egerton_quantification import BackgroundRemoval
-from hyperspy.decorators import only_interactive
+from hyperspy.signal_tools import BackgroundRemoval
 from hyperspy.decorators import interactive_range_selector
-from scipy.ndimage.filters import gaussian_filter1d
-from hyperspy.gui.tools import IntegrateArea
+from hyperspy.signal_tools import IntegrateArea
 from hyperspy import components1d
+from hyperspy._signals.lazy import LazySignal
+
+_logger = logging.getLogger(__name__)
 
 
 def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
@@ -99,17 +103,10 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
         contains position, height, and width of each peak
     Examples
     --------
-    >>> x = arange(0,50,0.01)
-    >>> y = cos(x)
-    >>> one_dim_findpeaks(y, x,0,0)
-    array([[  1.68144859e-05,   9.99999943e-01,   3.57487961e+00],
-           [  6.28318614e+00,   1.00000003e+00,   3.57589018e+00],
-           [  1.25663708e+01,   1.00000002e+00,   3.57600673e+00],
-           [  1.88495565e+01,   1.00000002e+00,   3.57597295e+00],
-           [  2.51327421e+01,   1.00000003e+00,   3.57590284e+00],
-           [  3.14159267e+01,   1.00000002e+00,   3.57600856e+00],
-           [  3.76991124e+01,   1.00000002e+00,   3.57597984e+00],
-           [  4.39822980e+01,   1.00000002e+00,   3.57591479e+00]])
+    >>> x = np.arange(0,50,0.01)
+    >>> y = np.cos(x)
+    >>> peaks = find_peaks_ohaver(y, x, 0, 0)
+
     Notes
     -----
     Original code from T. C. O'Haver, 1995.
@@ -173,8 +170,10 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                         c1 = coef[2]
                         c2 = coef[1]
                         c3 = coef[0]
-                        width = np.linalg.norm(
-                            stdev * 2.35703 / (np.sqrt(2) * np.sqrt(-1 * c3)))
+                        with np.errstate(invalid='ignore'):
+                            width = np.linalg.norm(stdev * 2.35703 /
+                                                   (np.sqrt(2) * np.sqrt(-1 *
+                                                                         c3)))
                         # if the peak is too narrow for least-squares
                         # technique to work  well, just use the max value
                         # of y in the sub-group of points near peak.
@@ -217,6 +216,42 @@ def interpolate1D(number_of_interpolation_points, data):
     new_ax = np.linspace(0, 100, ch * ip - (ip - 1))
     interpolator = scipy.interpolate.interp1d(old_ax, data)
     return interpolator(new_ax)
+
+
+def _estimate_shift1D(data, **kwargs):
+    mask = kwargs.get('mask', None)
+    ref = kwargs.get('ref', None)
+    interpolate = kwargs.get('interpolate', True)
+    ip = kwargs.get('ip', 5)
+    data_slice = kwargs.get('data_slice', slice(None))
+    if bool(mask):
+        return np.nan
+    data = data[data_slice]
+    if interpolate is True:
+        data = interpolate1D(ip, data)
+    return np.argmax(np.correlate(ref, data, 'full')) - len(ref) + 1
+
+
+def _shift1D(data, **kwargs):
+    shift = kwargs.get('shift', 0.)
+    original_axis = kwargs.get('original_axis', None)
+    fill_value = kwargs.get('fill_value', np.nan)
+    kind = kwargs.get('kind', 'linear')
+    offset = kwargs.get('offset', 0.)
+    scale = kwargs.get('scale', 1.)
+    size = kwargs.get('size', 2)
+    if np.isnan(shift):
+        return data
+    axis = np.linspace(offset, offset + scale * (size - 1), size)
+
+    si = sp.interpolate.interp1d(original_axis,
+                                 data,
+                                 bounds_error=False,
+                                 fill_value=fill_value,
+                                 kind=kind)
+    offset = float(offset - shift)
+    axis = np.linspace(offset, offset + scale * (size - 1), size)
+    return si(axis)
 
 
 class Signal1D(BaseSignal, CommonSignal1D):
@@ -286,7 +321,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         plt.draw()
 
     def spikes_removal_tool(self, signal_mask=None,
-                            navigation_mask=None):
+                            navigation_mask=None, display=True, toolkit=None):
         """Graphical interface to remove spikes from EELS spectra.
 
         Parameters
@@ -307,8 +342,25 @@ class Signal1D(BaseSignal, CommonSignal1D):
         sr = SpikesRemoval(self,
                            navigation_mask=navigation_mask,
                            signal_mask=signal_mask)
-        sr.configure_traits()
-        return sr
+        return sr.gui(display=display, toolkit=toolkit)
+    spikes_removal_tool.__doc__ =\
+        """Graphical interface to remove spikes from EELS spectra.
+
+Parameters
+----------
+signal_mask: boolean array
+    Restricts the operation to the signal locations not marked
+    as True (masked)
+navigation_mask: boolean array
+    Restricts the operation to the navigation locations not
+    marked as True (masked)
+%s
+%s
+See also
+--------
+_spikes_diagnosis,
+
+""" % (DISPLAY_DT, TOOLKIT_DT)
 
     def create_model(self, dictionary=None):
         """Create a model for the current data.
@@ -319,7 +371,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         """
 
-        from hyperspy.models.model1d import Model1D
         model = Model1D(self, dictionary=dictionary)
         return model
 
@@ -329,6 +380,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 crop=True,
                 expand=False,
                 fill_value=np.nan,
+                parallel=None,
                 show_progressbar=None):
         """Shift the data in place over the signal axis by the amount specified
         by an array.
@@ -351,6 +403,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         fill_value : float
             If crop is False fill the data outside of the original
             interval with the given value where needed.
+        parallel : {None, bool}
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
@@ -380,37 +433,55 @@ class Signal1D(BaseSignal, CommonSignal1D):
         else:
             ilow = axis.low_index
         if expand:
-            padding = []
-            for i in range(self.data.ndim):
-                if i == axis.index_in_array:
-                    padding.append(
-                        (axis.high_index - ihigh + 1, ilow - axis.low_index))
-                else:
-                    padding.append((0, 0))
-            self.data = np.pad(self.data, padding, mode='constant',
-                               constant_values=(fill_value,))
+            if self._lazy:
+                ind = axis.index_in_array
+                pre_shape = list(self.data.shape)
+                post_shape = list(self.data.shape)
+                pre_chunks = list(self.data.chunks)
+                post_chunks = list(self.data.chunks)
+
+                pre_shape[ind] = axis.high_index - ihigh + 1
+                post_shape[ind] = ilow - axis.low_index
+                for chunks, shape in zip((pre_chunks, post_chunks),
+                                         (pre_shape, post_shape)):
+                    maxsize = min(np.max(chunks[ind]), shape[ind])
+                    num = np.ceil(shape[ind] / maxsize)
+                    chunks[ind] = tuple(len(ar) for ar in
+                                        np.array_split(np.arange(shape[ind]),
+                                                       num))
+                pre_array = da.full(tuple(pre_shape),
+                                    fill_value,
+                                    chunks=tuple(pre_chunks))
+
+                post_array = da.full(tuple(post_shape),
+                                     fill_value,
+                                     chunks=tuple(post_chunks))
+
+                self.data = da.concatenate((pre_array, self.data, post_array),
+                                           axis=ind)
+            else:
+                padding = []
+                for i in range(self.data.ndim):
+                    if i == axis.index_in_array:
+                        padding.append((axis.high_index - ihigh + 1,
+                                        ilow - axis.low_index))
+                    else:
+                        padding.append((0, 0))
+                self.data = np.pad(self.data, padding, mode='constant',
+                                   constant_values=(fill_value,))
             axis.offset += minimum
             axis.size += axis.high_index - ihigh + 1 + ilow - axis.low_index
-        offset = axis.offset
-        original_axis = axis.axis.copy()
-        with progressbar(total=self.axes_manager.navigation_size,
-                         disable=not show_progressbar,
-                         leave=True) as pbar:
-            for i, (dat, shift) in enumerate(zip(
-                    self._iterate_signal(),
-                    shift_array.ravel())):
-                if np.isnan(shift):
-                    continue
-                si = sp.interpolate.interp1d(original_axis,
-                                             dat,
-                                             bounds_error=False,
-                                             fill_value=fill_value,
-                                             kind=interpolation_method)
-                axis.offset = float(offset - shift)
-                dat[:] = si(axis.axis)
-                pbar.update(1)
 
-        axis.offset = offset
+        self._map_iterate(_shift1D, (('shift', shift_array.ravel()),),
+                          original_axis=axis.axis,
+                          fill_value=fill_value,
+                          kind=interpolation_method,
+                          offset=axis.offset,
+                          scale=axis.scale,
+                          size=axis.size,
+                          show_progressbar=show_progressbar,
+                          parallel=parallel,
+                          ragged=False)
 
         if crop and not expand:
             self.crop(axis.index_in_axes_manager,
@@ -419,7 +490,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         self.events.data_changed.trigger(obj=self)
 
-    def interpolate_in_between(self, start, end, delta=3,
+    def interpolate_in_between(self, start, end, delta=3, parallel=None,
                                show_progressbar=None, **kwargs):
         """Replace the data in a given range by interpolation.
         The operation is performed in place.
@@ -433,6 +504,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        parallel: {None, bool}
         All extra keyword arguments are passed to
         scipy.interpolate.interp1d. See the function documentation
         for details.
@@ -450,16 +522,16 @@ class Signal1D(BaseSignal, CommonSignal1D):
             delta = int(delta / axis.scale)
         i0 = int(np.clip(i1 - delta, 0, np.inf))
         i3 = int(np.clip(i2 + delta, 0, axis.size))
-        with progressbar(total=self.axes_manager.navigation_size,
-                         disable=not show_progressbar,
-                         leave=True) as pbar:
-            for i, dat in enumerate(self._iterate_signal()):
-                dat_int = sp.interpolate.interp1d(
-                    list(range(i0, i1)) + list(range(i2, i3)),
-                    dat[i0:i1].tolist() + dat[i2:i3].tolist(),
-                    **kwargs)
-                dat[i1:i2] = dat_int(list(range(i1, i2)))
-                pbar.update(1)
+
+        def interpolating_function(dat):
+            dat_int = sp.interpolate.interp1d(
+                list(range(i0, i1)) + list(range(i2, i3)),
+                dat[i0:i1].tolist() + dat[i2:i3].tolist(),
+                **kwargs)
+            dat[i1:i2] = dat_int(list(range(i1, i2)))
+            return dat
+        self._map_iterate(interpolating_function, ragged=False,
+                          parallel=parallel, show_progressbar=show_progressbar)
         self.events.data_changed.trigger(obj=self)
 
     def _check_navigation_mask(self, mask):
@@ -482,6 +554,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                          interpolate=True,
                          number_of_interpolation_points=5,
                          mask=None,
+                         parallel=None,
                          show_progressbar=None):
         """Estimate the shifts in the current signal axis using
          cross-correlation.
@@ -513,6 +586,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
+        parallel : {None, bool}
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
@@ -529,37 +603,40 @@ class Signal1D(BaseSignal, CommonSignal1D):
         ip = number_of_interpolation_points + 1
         axis = self.axes_manager.signal_axes[0]
         self._check_navigation_mask(mask)
+        # we compute for now
+        if isinstance(start, da.Array):
+            start = start.compute()
+        if isinstance(end, da.Array):
+            end = end.compute()
+        i1, i2 = axis._get_index(start), axis._get_index(end)
         if reference_indices is None:
             reference_indices = self.axes_manager.indices
-
-        i1, i2 = axis._get_index(start), axis._get_index(end)
-        shift_array = np.zeros(self.axes_manager._navigation_shape_in_array,
-                               dtype=float)
         ref = self.inav[reference_indices].data[i1:i2]
+
         if interpolate is True:
             ref = interpolate1D(ip, ref)
-        with progressbar(total=self.axes_manager.navigation_size,
-                         disable=not show_progressbar,
-                         leave=True) as pbar:
-            for i, (dat, indices) in enumerate(zip(
-                    self._iterate_signal(),
-                    self.axes_manager._array_indices_generator())):
-                if mask is not None and bool(mask.data[indices]) is True:
-                    shift_array[indices] = np.nan
-                else:
-                    dat = dat[i1:i2]
-                    if interpolate is True:
-                        dat = interpolate1D(ip, dat)
-                    shift_array[indices] = np.argmax(
-                        np.correlate(ref, dat, 'full')) - len(ref) + 1
-                pbar.update(1)
-
+        iterating_kwargs = ()
+        if mask is not None:
+            iterating_kwargs += (('mask', mask),)
+        shift_signal = self._map_iterate(
+            _estimate_shift1D,
+            iterating_kwargs=iterating_kwargs,
+            data_slice=slice(i1, i2),
+            mask=None,
+            ref=ref,
+            ip=ip,
+            interpolate=interpolate,
+            ragged=False,
+            parallel=parallel,
+            inplace=False,
+            show_progressbar=show_progressbar,)
+        shift_array = shift_signal.data
         if max_shift is not None:
             if interpolate is True:
                 max_shift *= ip
             shift_array.clip(-max_shift, max_shift)
         if interpolate is True:
-            shift_array /= ip
+            shift_array = shift_array / ip
         shift_array *= axis.scale
         return shift_array
 
@@ -574,7 +651,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 crop=True,
                 expand=False,
                 fill_value=np.nan,
-                also_align=[],
+                also_align=None,
                 mask=None,
                 show_progressbar=None):
         """Estimate the shifts in the signal axis using
@@ -617,7 +694,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
         fill_value : float
             If crop is False fill the data outside of the original
             interval with the given value where needed.
-        also_align : list of signals
+        also_align : list of signals, None
             A list of BaseSignal instances that has exactly the same
             dimensions as this one and that will be aligned using the shift map
             estimated using the this signal.
@@ -642,6 +719,13 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if also_align is None:
             also_align = []
         self._check_signal_dimension_equals_one()
+        if self._lazy:
+            _logger.warning('In order to properly expand, the lazy '
+                            'reference signal will be read twice (once to '
+                            'estimate shifts, and second time to shift '
+                            'appropriatelly), which might take a long time. '
+                            'Use expand=False to only pass through the data '
+                            'once.')
         shift_array = self.estimate_shift1D(
             start=start,
             end=end,
@@ -651,7 +735,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
             number_of_interpolation_points=number_of_interpolation_points,
             mask=mask,
             show_progressbar=show_progressbar)
-        for signal in also_align + [self]:
+        signals_to_shift = [self] + also_align
+        for signal in signals_to_shift:
             signal.shift1D(shift_array=shift_array,
                            interpolation_method=interpolation_method,
                            crop=crop,
@@ -659,7 +744,8 @@ class Signal1D(BaseSignal, CommonSignal1D):
                            expand=expand,
                            show_progressbar=show_progressbar)
 
-    def integrate_in_range(self, signal_range='interactive'):
+    def integrate_in_range(self, signal_range='interactive',
+                           display=True, toolkit=None):
         """ Sums the spectrum over an energy range, giving the integrated
         area.
         The energy range can either be selected through a GUI or the command
@@ -682,21 +768,32 @@ class Signal1D(BaseSignal, CommonSignal1D):
         Examples
         --------
         Using the GUI
-        >>> s.integrate_in_range()
+        >>> s = hs.signals.Signal1D(range(1000))
+        >>> s.integrate_in_range() #doctest: +SKIP
+
         Using the CLI
         >>> s_int = s.integrate_in_range(signal_range=(560,None))
+
         Selecting a range in the axis units, by specifying the
         signal range with floats.
         >>> s_int = s.integrate_in_range(signal_range=(560.,590.))
+
         Selecting a range using the index, by specifying the
         signal range with integers.
         >>> s_int = s.integrate_in_range(signal_range=(100,120))
         """
+        from hyperspy.misc.utils import deprecation_warning
+        msg = (
+            "The `Signal1D.integrate_in_range` method is deprecated and will "
+            "be removed in v2.0. Use a `roi.SpanRoi` followed by `integrate1D` "
+            "instead.")
+        deprecation_warning(msg)
+        signal_range = signal_range_from_roi(signal_range)
 
         if signal_range == 'interactive':
             self_copy = self.deepcopy()
             ia = IntegrateArea(self_copy, signal_range)
-            ia.edit_traits()
+            ia.gui(display=display, toolkit=toolkit)
             integrated_signal1D = self_copy
         else:
             integrated_signal1D = self._integrate_in_range_commandline(
@@ -704,19 +801,30 @@ class Signal1D(BaseSignal, CommonSignal1D):
         return integrated_signal1D
 
     def _integrate_in_range_commandline(self, signal_range):
+        signal_range = signal_range_from_roi(signal_range)
         e1 = signal_range[0]
         e2 = signal_range[1]
         integrated_signal1D = self.isig[e1:e2].integrate1D(-1)
         return integrated_signal1D
 
-    @only_interactive
-    def calibrate(self):
-        """Calibrate the spectral dimension using a gui.
+    def calibrate(self, display=True, toolkit=None):
+        self._check_signal_dimension_equals_one()
+        calibration = Signal1DCalibration(self)
+        return calibration.gui(display=display, toolkit=toolkit)
+    calibrate.__doc__ = \
+        """
+        Calibrate the spectral dimension using a gui.
         It displays a window where the new calibration can be set by:
         * Setting the offset, units and scale directly
         * Selection a range by dragging the mouse on the spectrum figure
          and
         setting the new values for the given range limits
+
+        Parameters
+        ----------
+        %s
+        %s
+
         Notes
         -----
         For this method to work the output_dimension must be 1. Set the
@@ -725,16 +833,32 @@ class Signal1D(BaseSignal, CommonSignal1D):
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
-        """
-        self._check_signal_dimension_equals_one()
-        calibration = Signal1DCalibration(self)
-        calibration.edit_traits()
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
     def smooth_savitzky_golay(self,
                               polynomial_order=None,
                               window_length=None,
-                              differential_order=0):
-        """Apply a Savitzky-Golay filter to the data in place.
+                              differential_order=0,
+                              parallel=None, display=True, toolkit=None):
+        self._check_signal_dimension_equals_one()
+        if (polynomial_order is not None and
+                window_length is not None):
+            axis = self.axes_manager.signal_axes[0]
+            self.map(savgol_filter, window_length=window_length,
+                     polyorder=polynomial_order, deriv=differential_order,
+                     delta=axis.scale, ragged=False, parallel=parallel)
+        else:
+            # Interactive mode
+            smoother = SmoothingSavitzkyGolay(self)
+            smoother.differential_order = differential_order
+            if polynomial_order is not None:
+                smoother.polynomial_order = polynomial_order
+            if window_length is not None:
+                smoother.window_length = window_length
+            return smoother.gui(display=display, toolkit=toolkit)
+    smooth_savitzky_golay.__doc__ = \
+        """
+        Apply a Savitzky-Golay filter to the data in place.
         If `polynomial_order` or `window_length` or `differential_order` are
         None the method is run in interactive mode.
         Parameters
@@ -749,40 +873,44 @@ class Signal1D(BaseSignal, CommonSignal1D):
             The order of the derivative to compute.  This must be a
             nonnegative integer.  The default is 0, which means to filter
             the data without differentiating.
+        parallel : {bool, None}
+            Perform the operation in a threaded manner (parallely).
+        %s
+        %s
         Notes
         -----
         More information about the filter in `scipy.signal.savgol_filter`.
-        """
-        if not savgol_imported:
-            raise ImportError("scipy >= 0.14 needs to be installed to use"
-                              "this feature.")
-        self._check_signal_dimension_equals_one()
-        if (polynomial_order is not None and
-                window_length is not None):
-            axis = self.axes_manager.signal_axes[0]
-            self.data = savgol_filter(
-                x=self.data,
-                window_length=window_length,
-                polyorder=polynomial_order,
-                deriv=differential_order,
-                delta=axis.scale,
-                axis=axis.index_in_array)
-            self.events.data_changed.trigger(obj=self)
-        else:
-            # Interactive mode
-            smoother = SmoothingSavitzkyGolay(self)
-            smoother.differential_order = differential_order
-            if polynomial_order is not None:
-                smoother.polynomial_order = polynomial_order
-            if window_length is not None:
-                smoother.window_length = window_length
-            smoother.edit_traits()
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
     def smooth_lowess(self,
                       smoothing_parameter=None,
                       number_of_iterations=None,
-                      show_progressbar=None):
-        """Lowess data smoothing in place.
+                      show_progressbar=None,
+                      parallel=None, display=True, toolkit=None):
+        if not statsmodels_installed:
+            raise ImportError("statsmodels is not installed. This package is "
+                              "required for this feature.")
+        self._check_signal_dimension_equals_one()
+        if smoothing_parameter is None or number_of_iterations is None:
+            smoother = SmoothingLowess(self)
+            if smoothing_parameter is not None:
+                smoother.smoothing_parameter = smoothing_parameter
+            if number_of_iterations is not None:
+                smoother.number_of_iterations = number_of_iterations
+            return smoother.gui(display=display, toolkit=toolkit)
+        else:
+            self.map(lowess,
+                     exog=self.axes_manager[-1].axis,
+                     frac=smoothing_parameter,
+                     it=number_of_iterations,
+                     is_sorted=True,
+                     return_sorted=False,
+                     show_progressbar=show_progressbar,
+                     ragged=False,
+                     parallel=parallel)
+    smooth_lowess.__doc__ = \
+        """
+        Lowess data smoothing in place.
         If `smoothing_parameter` or `number_of_iterations` are None the method
         is run in interactive mode.
         Parameters
@@ -796,6 +924,11 @@ class Signal1D(BaseSignal, CommonSignal1D):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        parallel : {Bool, None, int}
+            Perform the operation parallel
+        %s
+        %s
+
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
@@ -804,29 +937,22 @@ class Signal1D(BaseSignal, CommonSignal1D):
         -----
         This method uses the lowess algorithm from statsmodels. statsmodels
         is required for this method.
-        """
-        if not statsmodels_installed:
-            raise ImportError("statsmodels is not installed. This package is "
-                              "required for this feature.")
-        self._check_signal_dimension_equals_one()
-        if smoothing_parameter is None or number_of_iterations is None:
-            smoother = SmoothingLowess(self)
-            if smoothing_parameter is not None:
-                smoother.smoothing_parameter = smoothing_parameter
-            if number_of_iterations is not None:
-                smoother.number_of_iterations = number_of_iterations
-            smoother.edit_traits()
-        else:
-            self.map(lowess,
-                     exog=self.axes_manager[-1].axis,
-                     frac=smoothing_parameter,
-                     it=number_of_iterations,
-                     is_sorted=True,
-                     return_sorted=False,
-                     show_progressbar=show_progressbar)
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
-    def smooth_tv(self, smoothing_parameter=None, show_progressbar=None):
-        """Total variation data smoothing in place.
+    def smooth_tv(self, smoothing_parameter=None, show_progressbar=None,
+                  parallel=None, display=True, toolkit=None):
+        self._check_signal_dimension_equals_one()
+        if smoothing_parameter is None:
+            smoother = SmoothingTV(self)
+            return smoother.gui(display=display, toolkit=toolkit)
+        else:
+            self.map(_tv_denoise_1d, weight=smoothing_parameter,
+                     ragged=False,
+                     show_progressbar=show_progressbar,
+                     parallel=parallel)
+    smooth_tv.__doc__ = \
+        """
+        Total variation data smoothing in place.
         Parameters
         ----------
         smoothing_parameter: float or None
@@ -835,40 +961,49 @@ class Signal1D(BaseSignal, CommonSignal1D):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        parallel : {Bool, None, int}
+            Perform the operation parallely
+        %s
+        %s
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
-        """
-        self._check_signal_dimension_equals_one()
-        if smoothing_parameter is None:
-            smoother = SmoothingTV(self)
-            smoother.edit_traits()
-        else:
-            self.map(_tv_denoise_1d, weight=smoothing_parameter,
-                     show_progressbar=show_progressbar)
+
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
     def filter_butterworth(self,
                            cutoff_frequency_ratio=None,
                            type='low',
-                           order=2):
-        """Butterworth filter in place.
-        Raises
-        ------
-        SignalDimensionError if the signal dimension is not 1.
-        """
+                           order=2, display=True, toolkit=None):
         self._check_signal_dimension_equals_one()
         smoother = ButterworthFilter(self)
         if cutoff_frequency_ratio is not None:
             smoother.cutoff_frequency_ratio = cutoff_frequency_ratio
+            smoother.type = type
+            smoother.order = order
             smoother.apply()
         else:
-            smoother.edit_traits()
+            return smoother.gui(display=display, toolkit=toolkit)
+    filter_butterworth.__doc__ = \
+        """
+        Butterworth filter in place.
+
+        Parameters
+        ----------
+        %s
+        %s
+        Raises
+        ------
+        SignalDimensionError if the signal dimension is not 1.
+
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
     def _remove_background_cli(
             self, signal_range, background_estimator, fast=True,
             show_progressbar=None):
+        signal_range = signal_range_from_roi(signal_range)
         from hyperspy.models.model1d import Model1D
-        model = self.create_model()
+        model = Model1D(self)
         model.append(background_estimator)
         background_estimator.estimate_parameters(
             self,
@@ -886,8 +1021,36 @@ class Signal1D(BaseSignal, CommonSignal1D):
             background_type='PowerLaw',
             polynomial_order=2,
             fast=True,
-            show_progressbar=None):
-        """Remove the background, either in place using a gui or returned as a new
+            show_progressbar=None, display=True, toolkit=None):
+        signal_range = signal_range_from_roi(signal_range)
+        self._check_signal_dimension_equals_one()
+        if signal_range == 'interactive':
+            br = BackgroundRemoval(self)
+            return br.gui(display=display, toolkit=toolkit)
+        else:
+            if background_type == 'PowerLaw':
+                background_estimator = components1d.PowerLaw()
+            elif background_type == 'Gaussian':
+                background_estimator = components1d.Gaussian()
+            elif background_type == 'Offset':
+                background_estimator = components1d.Offset()
+            elif background_type == 'Polynomial':
+                background_estimator = components1d.Polynomial(
+                    polynomial_order)
+            else:
+                raise ValueError(
+                    "Background type: " +
+                    background_type +
+                    " not recognized")
+            spectra = self._remove_background_cli(
+                signal_range=signal_range,
+                background_estimator=background_estimator,
+                fast=fast,
+                show_progressbar=show_progressbar)
+            return spectra
+    remove_background.__doc__ = \
+        """
+        Remove the background, either in place using a gui or returned as a new
         spectrum using the command line.
         Parameters
         ----------
@@ -909,44 +1072,24 @@ class Signal1D(BaseSignal, CommonSignal1D):
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        %s
+        %s
         Examples
         --------
         Using gui, replaces spectrum s
-        >>>> s.remove_background()
+        >>> s = hs.signals.Signal1D(range(1000))
+        >>> s.remove_background() #doctest: +SKIP
+
         Using command line, returns a spectrum
-        >>>> s = s.remove_background(signal_range=(400,450), background_type='PowerLaw')
+        >>> s1 = s.remove_background(signal_range=(400,450), background_type='PowerLaw')
+
         Using a full model to fit the background
-        >>>> s = s.remove_background(signal_range=(400,450), fast=False)
+        >>> s1 = s.remove_background(signal_range=(400,450), fast=False)
+
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
-        """
-        self._check_signal_dimension_equals_one()
-        if signal_range == 'interactive':
-            br = BackgroundRemoval(self)
-            br.edit_traits()
-        else:
-            if background_type == 'PowerLaw':
-                background_estimator = components1d.PowerLaw()
-            elif background_type == 'Gaussian':
-                background_estimator = components1d.Gaussian()
-            elif background_type == 'Offset':
-                background_estimator = components1d.Offset()
-            elif background_type == 'Polynomial':
-                background_estimator = components1d.Polynomial(
-                    polynomial_order)
-            else:
-                raise ValueError(
-                    "Background type: " +
-                    background_type +
-                    " not recognized")
-
-            spectra = self._remove_background_cli(
-                signal_range=signal_range,
-                background_estimator=background_estimator,
-                fast=fast,
-                show_progressbar=show_progressbar)
-            return spectra
+        """ % (DISPLAY_DT, TOOLKIT_DT)
 
     @interactive_range_selector
     def crop_signal1D(self, left_value=None, right_value=None,):
@@ -971,6 +1114,11 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         """
         self._check_signal_dimension_equals_one()
+        try:
+            left_value, right_value = signal_range_from_roi(left_value)
+        except TypeError:
+            # It was not a ROI, we carry on
+            pass
         self.crop(axis=self.axes_manager.signal_axes[0].index_in_axes_manager,
                   start=left_value, end=right_value)
 
@@ -996,11 +1144,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 "FWHM must be greater than zero")
         axis = self.axes_manager.signal_axes[0]
         FWHM *= 1 / axis.scale
-        self.data = gaussian_filter1d(
-            self.data,
-            axis=axis.index_in_array,
-            sigma=FWHM / 2.35482)
-        self.events.data_changed.trigger(obj=self)
+        self.map(gaussian_filter1d, sigma=FWHM / 2.35482, ragged=False)
 
     def hanning_taper(self, side='both', channels=None, offset=0):
         """Apply a hanning taper to the data in place.
@@ -1028,26 +1172,52 @@ class Signal1D(BaseSignal, CommonSignal1D):
             channels = int(round(len(self()) * 0.02))
             if channels < 20:
                 channels = 20
-        dc = self.data
-        if side == 'left' or side == 'both':
-            dc[..., offset:channels + offset] *= (
-                np.hanning(2 * channels)[:channels])
-            dc[..., :offset] *= 0.
-        if side == 'right' or side == 'both':
-            if offset == 0:
-                rl = None
+        dc = self._data_aligned_with_axes
+        if self._lazy and offset != 0:
+            shp = dc.shape
+            if len(shp) == 1:
+                nav_shape = ()
+                nav_chunks = ()
             else:
-                rl = -offset
-            dc[..., -channels - offset:rl] *= (
-                np.hanning(2 * channels)[-channels:])
-            if offset != 0:
-                dc[..., -offset:] *= 0.
+                nav_shape = shp[:-1]
+                nav_chunks = dc.chunks[:-1]
+            zeros = da.zeros(nav_shape + (offset,),
+                             chunks=nav_chunks + ((offset,),))
+        if side == 'left' or side == 'both':
+            if self._lazy:
+                tapered = dc[..., offset:channels + offset]
+                tapered *= np.hanning(2 * channels)[:channels]
+                therest = dc[..., channels + offset:]
+                thelist = [] if offset == 0 else [zeros]
+                thelist.extend([tapered, therest])
+                dc = da.concatenate(thelist, axis=-1)
+            else:
+                dc[..., offset:channels + offset] *= (
+                    np.hanning(2 * channels)[:channels])
+                dc[..., :offset] *= 0.
+        if side == 'right' or side == 'both':
+            rl = None if offset == 0 else -offset
+            if self._lazy:
+                therest = dc[..., :-channels - offset]
+                tapered = dc[..., -channels - offset:rl]
+                tapered *= np.hanning(2 * channels)[-channels:]
+                thelist = [therest, tapered]
+                if offset != 0:
+                    thelist.append(zeros)
+                dc = da.concatenate(thelist, axis=-1)
+            else:
+                dc[..., -channels - offset:rl] *= (
+                    np.hanning(2 * channels)[-channels:])
+                if offset != 0:
+                    dc[..., -offset:] *= 0.
+        if self._lazy:
+            self.data = dc
         self.events.data_changed.trigger(obj=self)
         return channels
 
     def find_peaks1D_ohaver(self, xdim=None, slope_thresh=0, amp_thresh=None,
                             subchannel=True, medfilt_radius=5, maxpeakn=30000,
-                            peakgroup=10):
+                            peakgroup=10, parallel=None):
         """Find peaks along a 1D line (peaks in spectrum/spectra).
 
         Function to locate the positive peaks in a noisy x-y data set.
@@ -1097,6 +1267,9 @@ class Signal1D(BaseSignal, CommonSignal1D):
         subpix : bool (optional)
                  default is set to True
 
+        parallel : {None, bool}
+            Perform the operation in a threaded (parallel) manner.
+
         Returns
         -------
         peaks : structured array of shape _navigation_shape_in_array in which
@@ -1112,27 +1285,24 @@ class Signal1D(BaseSignal, CommonSignal1D):
         # TODO: add scipy.signal.find_peaks_cwt
         self._check_signal_dimension_equals_one()
         axis = self.axes_manager.signal_axes[0].axis
-        arr_shape = (self.axes_manager._navigation_shape_in_array
-                     if self.axes_manager.navigation_size > 0
-                     else [1, ])
-        peaks = np.zeros(arr_shape, dtype=object)
-        for y, indices in zip(self._iterate_signal(),
-                              self.axes_manager._array_indices_generator()):
-            peaks[indices] = find_peaks_ohaver(
-                y,
-                axis,
-                slope_thresh=slope_thresh,
-                amp_thresh=amp_thresh,
-                medfilt_radius=medfilt_radius,
-                maxpeakn=maxpeakn,
-                peakgroup=peakgroup,
-                subchannel=subchannel)
-        return peaks
+        peaks = self.map(find_peaks_ohaver,
+                         x=axis,
+                         slope_thresh=slope_thresh,
+                         amp_thresh=amp_thresh,
+                         medfilt_radius=medfilt_radius,
+                         maxpeakn=maxpeakn,
+                         peakgroup=peakgroup,
+                         subchannel=subchannel,
+                         ragged=True,
+                         parallel=parallel,
+                         inplace=False)
+        return peaks.data
 
     def estimate_peak_width(self,
                             factor=0.5,
                             window=None,
                             return_interval=False,
+                            parallel=None,
                             show_progressbar=None):
         """Estimate the width of the highest intensity of peak
         of the spectra at a given fraction of its maximum.
@@ -1156,6 +1326,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             If True, returns 2 extra signals with the positions of the
             desired height fraction at the left and right of the
             peak.
+        parallel : {None, bool}
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
@@ -1173,34 +1344,41 @@ class Signal1D(BaseSignal, CommonSignal1D):
         if not 0 < factor < 1:
             raise ValueError("factor must be between 0 and 1.")
 
-        left, right = (self._get_navigation_signal(),
-                       self._get_navigation_signal())
-        # The signals must be of dtype float to contain np.nan
-        left.change_dtype('float')
-        right.change_dtype('float')
         axis = self.axes_manager.signal_axes[0]
-        x = axis.axis
+        # x = axis.axis
         maxval = self.axes_manager.navigation_size
         show_progressbar = show_progressbar and maxval > 0
-        for i, spectrum in progressbar(enumerate(self),
-                                       total=maxval,
-                                       disable=not show_progressbar,
-                                       leave=True):
+
+        def estimating_function(spectrum,
+                                window=None,
+                                factor=0.5,
+                                axis=None):
+            x = axis.axis
             if window is not None:
-                vmax = axis.index2value(spectrum.data.argmax())
-                spectrum = spectrum.isig[vmax - window / 2.:vmax + window / 2.]
-                x = spectrum.axes_manager[0].axis
+                vmax = axis.index2value(spectrum.argmax())
+                slices = axis._get_array_slices(
+                    slice(vmax - window * 0.5, vmax + window * 0.5))
+                spectrum = spectrum[slices]
+                x = x[slices]
             spline = scipy.interpolate.UnivariateSpline(
                 x,
-                spectrum.data - factor * spectrum.data.max(),
+                spectrum - factor * spectrum.max(),
                 s=0)
             roots = spline.roots()
             if len(roots) == 2:
-                left.isig[self.axes_manager.indices] = roots[0]
-                right.isig[self.axes_manager.indices] = roots[1]
+                return np.array(roots)
             else:
-                left.isig[self.axes_manager.indices] = np.nan
-                right.isig[self.axes_manager.indices] = np.nan
+                return np.full((2,), np.nan)
+
+        both = self._map_iterate(estimating_function,
+                                 window=window,
+                                 factor=factor,
+                                 axis=axis,
+                                 ragged=False,
+                                 inplace=False,
+                                 parallel=parallel,
+                                 show_progressbar=show_progressbar)
+        left, right = both.T.split()
         width = right - left
         if factor == 0.5:
             width.metadata.General.title = (
@@ -1221,7 +1399,21 @@ class Signal1D(BaseSignal, CommonSignal1D):
             right.metadata.General.title = (
                 self.metadata.General.title +
                 " full-width at %.1f maximum right position" % factor)
+        for signal in (left, width, right):
+            signal.axes_manager.set_signal_dimension(0)
+            signal.set_signal_type("")
         if return_interval is True:
             return [width, left, right]
         else:
             return width
+
+
+class LazySignal1D(LazySignal, Signal1D):
+
+    """
+    """
+    _lazy = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.axes_manager.set_signal_dimension(1)

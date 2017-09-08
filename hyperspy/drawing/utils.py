@@ -26,8 +26,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import hyperspy as hs
+from distutils.version import LooseVersion
+import logging
 
 from hyperspy.defaults_parser import preferences
+
+_logger = logging.getLogger(__name__)
 
 
 def contrast_stretching(data, saturated_pixels):
@@ -137,47 +141,10 @@ def on_figure_window_close(figure, function):
     function : function
 
     """
-    backend = plt.get_backend()
-    if backend not in ("GTKAgg", "WXAgg", "TkAgg", "Qt4Agg"):
-        return
+    def function_wrapper(evt):
+        function()
 
-    window = figure.canvas.manager.window
-    if not hasattr(figure, '_on_window_close'):
-        figure._on_window_close = list()
-    if function not in figure._on_window_close:
-        figure._on_window_close.append(function)
-
-    if backend == 'GTKAgg':
-        def function_wrapper(*args):
-            function()
-        window.connect('destroy', function_wrapper)
-
-    elif backend == 'WXAgg':
-        # In linux the following code produces a segmentation fault
-        # so it is enabled only for Windows
-        import wx
-
-        def function_wrapper(event):
-            # When using WX window.connect does not supports multiple functions
-            for f in figure._on_window_close:
-                f()
-            plt.close(figure)
-        window.Bind(wx.EVT_CLOSE, function_wrapper)
-
-    elif backend == 'TkAgg':
-        def function_wrapper(*args):
-            # When using TK window.connect does not supports multiple functions
-            for f in figure._on_window_close:
-                f()
-        figure.canvas.manager.window.bind("<Destroy>", function_wrapper)
-
-    elif backend == 'Qt4Agg':
-        # PyQt
-        # In PyQt window.connect supports multiple functions
-        from IPython.external.qt_for_kernel import QtCore
-        window.connect(window, QtCore.SIGNAL('closing()'), function)
-    else:
-        raise AttributeError("The %s backend is not supported. " % backend)
+    figure.canvas.mpl_connect('close_event', function_wrapper)
 
 
 def plot_RGB_map(im_list, normalization='single', dont_plot=False):
@@ -202,7 +169,7 @@ def plot_RGB_map(im_list, normalization='single', dont_plot=False):
     if len(im_list) == 3:
         rgb[:, :, 2] = im_list[2].data.squeeze()
     if normalization == 'single':
-        for i in range(rgb.shape[2]):
+        for i in range(len(im_list)):
             rgb[:, :, i] /= rgb[:, :, i].max()
     elif normalization == 'global':
         rgb /= rgb.max()
@@ -214,7 +181,7 @@ def plot_RGB_map(im_list, normalization='single', dont_plot=False):
         ax.set_axis_off()
         ax.imshow(rgb, interpolation='nearest')
 #        cursors.set_mpl_ax(ax)
-        figure.canvas.draw()
+        figure.canvas.draw_idle()
     else:
         return rgb
 
@@ -440,6 +407,8 @@ def plot_images(images,
                 min_asp=0.1,
                 namefrac_thresh=0.4,
                 fig=None,
+                vmin=None,
+                vmax=None,
                 *args,
                 **kwargs):
     """Plot multiple images as sub-images in one figure.
@@ -538,6 +507,11 @@ def plot_images(images,
             auto-label code.
         fig : mpl figure, optional
             If set, the images will be plotted to an existing MPL figure
+        vmin, vmax : scalar or list of scalar, optional, default: None
+            If list of scalar, the length should match the number of images to
+            show.
+            A list of scalar is not compatible with a single colorbar.
+            See vmin, vmax of matplotlib.imshow() for more details.
         *args, **kwargs, optional
             Additional arguments passed to matplotlib.imshow()
 
@@ -587,16 +561,6 @@ def plot_images(images,
         else:
             centre_colormap = False
 
-    if "vmin" in kwargs:
-        user_vmin = kwargs["vmin"]
-        del kwargs["vmin"]
-    else:
-        user_vmin = None
-    if "vmax" in kwargs:
-        user_vmax = kwargs["vmax"]
-        del kwargs["vmax"]
-    else:
-        user_vmax = None
     # If input is >= 1D signal (e.g. for multi-dimensional plotting),
     # copy it and put it in a list so labeling works out as (x,y) when plotting
     if isinstance(images,
@@ -615,6 +579,23 @@ def plot_images(images,
         n += (sig.axes_manager.navigation_size
               if sig.axes_manager.navigation_size > 0
               else 1)
+
+    if isinstance(vmin, list):
+        if len(vmin) != n:
+            _logger.warning('The provided vmin values are ignored because the '
+                            'length of the list does not match the number of '
+                            'images')
+            vmin = [None] * n
+    else:
+        vmin = [vmin] * n
+    if isinstance(vmax, list):
+        if len(vmax) != n:
+            _logger.warning('The provided vmax values are ignored because the '
+                            'length of the list does not match the number of '
+                            'images')
+            vmax = [None] * n
+    else:
+        vmax = [vmax] * n
 
     # Sort out the labeling:
     div_num = 0
@@ -703,7 +684,7 @@ def plot_images(images,
         if len(label_list) > n:
             del label_list[n:]
         if len(label_list) < n:
-            label_list *= (n / len(label_list)) + 1
+            label_list *= (n // len(label_list)) + 1
             del label_list[n:]
 
     else:
@@ -744,8 +725,16 @@ def plot_images(images,
     if colorbar is 'single':
         g_vmin, g_vmax = contrast_stretching(np.concatenate(
             [i.data.flatten() for i in non_rgb]), saturated_pixels)
-        g_vmin = user_vmin if user_vmin is not None else g_vmin
-        g_vmax = user_vmax if user_vmax is not None else g_vmax
+        if isinstance(vmin, list):
+            _logger.warning('vmin have to be a scalar to be compatible with a '
+                            'single colorbar')
+        else:
+            g_vmin = vmin if vmin is not None else g_vmin
+        if isinstance(vmax, list):
+            _logger.warning('vmax have to be a scalar to be compatible with a '
+                            'single colorbar')
+        else:
+            g_vmax = vmax if vmax is not None else g_vmax
         if centre_colormap:
             g_vmin, g_vmax = centre_colormap_values(g_vmin, g_vmax)
 
@@ -778,8 +767,8 @@ def plot_images(images,
                 data = im.data
                 # Find min and max for contrast
                 l_vmin, l_vmax = contrast_stretching(data, saturated_pixels)
-                l_vmin = user_vmin if user_vmin is not None else l_vmin
-                l_vmax = user_vmax if user_vmax is not None else l_vmax
+                l_vmin = vmin[idx - 1] if vmin[idx - 1] is not None else l_vmin
+                l_vmax = vmax[idx - 1] if vmax[idx - 1] is not None else l_vmax
                 if centre_colormap:
                     l_vmin, l_vmax = centre_colormap_values(l_vmin, l_vmax)
 
@@ -884,18 +873,7 @@ def plot_images(images,
                 ax.set_title(textwrap.fill(title, labelwrap))
 
             # Set axes decorations based on user input
-            if axes_decor is 'off':
-                ax.axis('off')
-            elif axes_decor is 'ticks':
-                ax.set_xlabel('')
-                ax.set_ylabel('')
-            elif axes_decor is 'all':
-                pass
-            elif axes_decor is None:
-                ax.set_xlabel('')
-                ax.set_ylabel('')
-                ax.set_xticklabels([])
-                ax.set_yticklabels([])
+            set_axes_decor(ax, axes_decor)
 
             # If using independent colorbars, add them
             if colorbar is 'multi' and not isrgb[i]:
@@ -958,9 +936,24 @@ def plot_images(images,
     return axes_list
 
 
+def set_axes_decor(ax, axes_decor):
+    if axes_decor is 'off':
+        ax.axis('off')
+    elif axes_decor is 'ticks':
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+    elif axes_decor is 'all':
+        pass
+    elif axes_decor is None:
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+
+
 def plot_spectra(
         spectra,
-        style='default',
+        style='overlap',
         color=None,
         line_style=None,
         padding=1.,
@@ -979,9 +972,8 @@ def plot_spectra(
     spectra : iterable object
         Ordered spectra list to plot. If `style` is "cascade" or "mosaic"
         the spectra can have different size and axes.
-    style : {'default', 'overlap','cascade', 'mosaic', 'heatmap'}
-        The style of the plot. The default is "overlap" and can be
-        customized in `preferences`.
+    style : {'overlap', 'cascade', 'mosaic', 'heatmap'}
+        The style of the plot.
     color : matplotlib color or a list of them or `None`
         Sets the color of the lines of the plots (no action on 'heatmap').
         If a list, if its length is less than the number of spectra to plot,
@@ -1036,8 +1028,28 @@ def plot_spectra(
     """
     import hyperspy.signal
 
+    def _reverse_legend(ax_, legend_loc_):
+        """
+        Reverse the ordering of a matplotlib legend (to be more consistent 
+        with the default ordering of plots in the 'cascade' and 'overlap' 
+        styles
+        
+        Parameters
+        ----------
+        ax_: matplotlib axes
+        
+        legend_loc_: str or int
+            This parameter controls where the legend is placed on the 
+            figure; see the pyplot.legend docstring for valid values
+        """
+        l = ax_.get_legend()
+        labels = [lb.get_text() for lb in list(l.get_texts())]
+        handles = l.legendHandles
+        ax_.legend(handles[::-1], labels[::-1], loc=legend_loc_)
+
+    # Before v1.3 default would read the value from prefereces.
     if style == "default":
-        style = preferences.Plot.default_style_to_compare_spectra
+        style = "overlap"
 
     if color is not None:
         if isinstance(color, str):
@@ -1048,7 +1060,11 @@ def plot_spectra(
             raise ValueError("Color must be None, a valid matplotlib color "
                              "string or a list of valid matplotlib colors.")
     else:
-        color = itertools.cycle(plt.rcParams['axes.color_cycle'])
+        if LooseVersion(mpl.__version__) >= "1.5.3":
+            color = itertools.cycle(
+                plt.rcParams['axes.prop_cycle'].by_key()["color"])
+        else:
+            color = itertools.cycle(plt.rcParams['axes.color_cycle'])
 
     if line_style is not None:
         if isinstance(line_style, str):
@@ -1084,6 +1100,7 @@ def plot_spectra(
                            line_style=line_style,)
         if legend is not None:
             plt.legend(legend, loc=legend_loc)
+            _reverse_legend(ax, legend_loc)
             if legend_picking is True:
                 animate_legend(figure=fig)
     elif style == 'cascade':
@@ -1098,6 +1115,7 @@ def plot_spectra(
                               padding=padding)
         if legend is not None:
             plt.legend(legend, loc=legend_loc)
+            _reverse_legend(ax, legend_loc)
     elif style == 'mosaic':
         default_fsize = plt.rcParams["figure.figsize"]
         figsize = (default_fsize[0], default_fsize[1] * len(spectra))
@@ -1171,11 +1189,9 @@ def animate_legend(figure='last'):
             legline.set_alpha(1.0)
         else:
             legline.set_alpha(0.2)
-        figure.canvas.draw()
+        figure.canvas.draw_idle()
 
     figure.canvas.mpl_connect('pick_event', onpick)
-
-    plt.show()
 
 
 def plot_histograms(signal_list,

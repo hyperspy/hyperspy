@@ -21,16 +21,15 @@ from multiprocessing import cpu_count
 
 import dill
 import numpy as np
-from tqdm import tqdm
 
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.misc.utils import slugify
+from hyperspy.external.progressbar import progressbar
 from hyperspy.signal import BaseSignal
 from hyperspy.samfire_utils.strategy import (LocalStrategy,
                                              GlobalStrategy)
 from hyperspy.samfire_utils.local_strategies import ReducedChiSquaredStrategy
 from hyperspy.samfire_utils.global_strategies import HistogramStrategy
-from hyperspy.samfire_utils.samfire_pool import SamfirePool
 
 
 _logger = logging.getLogger(__name__)
@@ -186,7 +185,7 @@ class Samfire:
         self.update_every = max(10, workers * 2)  # some sensible number....
         from hyperspy.samfire_utils.fit_tests import red_chisq_test
         self.metadata.goodness_test = red_chisq_test(tolerance=1.0)
-        self.metadata.gt_dump = None
+        self.metadata._gt_dump = None
         from hyperspy.samfire_utils.samfire_kernel import single_kernel
         self.single_kernel = single_kernel
         self._workers = workers
@@ -205,8 +204,9 @@ class Samfire:
 
     def _setup(self, **kwargs):
         """Set up SAMFire - configure models, set up pool if necessary"""
+        from hyperspy.samfire_utils.samfire_pool import SamfirePool
         self._figure = None
-        self.metadata.gt_dump = dill.dumps(self.metadata.goodness_test)
+        self.metadata._gt_dump = dill.dumps(self.metadata.goodness_test)
         self._enable_optional_components()
 
         if hasattr(self.model, '_suspend_auto_fine_structure_width'):
@@ -233,20 +233,27 @@ class Samfire:
         """
         self._setup()
         if self._workers and self.pool is not None:
-            self.pool.update_optional_names()
+            self.pool.update_parameters()
         self._args = kwargs
         num_of_strat = len(self.strategies)
         total_size = self.model.axes_manager.navigation_size - self.pixels_done
-        self._progressbar = tqdm(total=total_size)
-
-        while True:
-            self._run_active_strategy()
-            self.plot()
-            if self._active_strategy_ind == num_of_strat - 1:
-                # last one just finished running
-                break
-
-            self.change_strategy(self._active_strategy_ind + 1)
+        self._progressbar = progressbar(total=total_size)
+        try:
+            while True:
+                self._run_active_strategy()
+                self.plot()
+                if self.pixels_done == self.model.axes_manager.navigation_size:
+                    # all pixels are done, no need to go to the next strategy
+                    break
+                if self._active_strategy_ind == num_of_strat - 1:
+                    # last one just finished running
+                    break
+                self.change_strategy(self._active_strategy_ind + 1)
+        except KeyboardInterrupt:
+            if self.pool is not None:
+                _logger.warning(
+                    'Collecting already started pixels, please wait')
+                self.pool.collect_results()
 
     def append(self, strategy):
         """appends the given strategy to the end of the strategies list
@@ -320,8 +327,8 @@ class Samfire:
             if isgood:
                 self._progressbar.update(1)
             self.active_strategy.update(ind, isgood)
-            self._plot()
-            self._save()
+            self.plot(on_count=True)
+            self.backup(on_count=True)
 
     def backup(self, filename=None, on_count=True):
         """Backs-up the samfire results in a file
@@ -457,12 +464,21 @@ class Samfire:
                 value_dict['fitting_kwargs'] = self._args
                 value_dict['signal.data'] = \
                     self.model.signal.data[ind + (...,)]
-                var = self.model.signal.metadata.Signal.Noise_properties.variance
-                if isinstance(var, BaseSignal):
-                    value_dict['variance.data'] = var.data[ind + (...,)]
-                if self.model.low_loss is not None:
-                    value_dict['low_loss.data'] = \
-                        self.model.low_loss.data[ind + (...,)]
+                if self.model.signal._lazy:
+                    value_dict['signal.data'] = value_dict[
+                        'signal.data'].compute()
+                if self.model.signal.metadata.has_item(
+                        'Signal.Noise_properties.variance'):
+                    var = self.model.signal.metadata.Signal.Noise_properties.variance
+                    if isinstance(var, BaseSignal):
+                        dat = var.data[ind + (...,)]
+                        value_dict['variance.data'] = dat.compute(
+                        ) if var._lazy else dat
+                if hasattr(self.model,
+                           'low_loss') and self.model.low_loss is not None:
+                    dat = self.model.low_loss.data[ind + (...,)]
+                    value_dict['low_loss.data'] = dat.compute(
+                    ) if self.model.low_loss._lazy else dat
 
                 self.running_pixels.append(ind)
                 self.metadata.marker[ind] = 0.
@@ -483,15 +499,16 @@ class Samfire:
                 number -= 1
         return inds
 
-    def _swap_dict_and_model(self, m_ind, dic, d_ind=None):
+    def _swap_dict_and_model(self, m_ind, dict_, d_ind=None):
         if d_ind is None:
-            d_ind = tuple([0 for _ in dic['chisq.data'].shape])
-        self.model.chisq.data[m_ind], dic['chisq.data'] = dic[
-            'chisq.data'].copy(), self.model.chisq.data[m_ind].copy()
-        self.model.dof.data[m_ind], dic['dof.data'] = dic[
-            'dof.data'].copy(), self.model.dof.data[m_ind].copy()
-
-        for comp_name, comp in dic['components'].items():
+            d_ind = tuple([0 for _ in dict_['dof.data'].shape])
+        m = self.model
+        for k in dict_.keys():
+            if k.endswith('.data'):
+                item = k[:-5]
+                getattr(m, item).data[m_ind], dict_[k] = \
+                    dict_[k].copy(), getattr(m, item).data[m_ind].copy()
+        for comp_name, comp in dict_['components'].items():
             # only active components are sent
             if self.model[comp_name].active_is_multidimensional:
                 self.model[comp_name]._active_array[m_ind] = True
@@ -504,7 +521,7 @@ class Samfire:
 
         for component in self.model:
             # switch off all that did not appear in the dictionary
-            if component.name not in dic['components'].keys():
+            if component.name not in dict_['components'].keys():
                 if component.active_is_multidimensional:
                     component._active_array[m_ind] = False
 

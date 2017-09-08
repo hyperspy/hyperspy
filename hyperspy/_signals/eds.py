@@ -20,24 +20,28 @@ import logging
 
 import numpy as np
 import warnings
+import matplotlib
 from matplotlib import pyplot as plt
+from distutils.version import LooseVersion
 
 from hyperspy import utils
-from hyperspy.signals import Signal1D
+from hyperspy.signal import BaseSignal
+from hyperspy._signals.signal1d import Signal1D, LazySignal1D
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.utils import isiterable
-from hyperspy.utils import markers
+from hyperspy.utils.plot import markers
+
 
 _logger = logging.getLogger(__name__)
 
 
-class EDSSpectrum(Signal1D):
+class EDS_mixin:
 
     _signal_type = "EDS"
 
     def __init__(self, *args, **kwards):
-        Signal1D.__init__(self, *args, **kwards)
+        super().__init__(*args, **kwards)
         if self.metadata.Signal.signal_type == 'EDS':
             warnings.warn('The microscope type is not set. Use '
                           'set_signal_type(\'EDS_TEM\')  '
@@ -117,10 +121,8 @@ class EDSSpectrum(Signal1D):
             beam_energy = self.metadata.Acquisition_instrument.TEM.beam_energy
         else:
             raise AttributeError(
-                "To use this method the beam energy "
-                "`Acquisition_instrument.TEM.beam_energy` or "
-                "`Acquisition_instrument.SEM.beam_energy` must be defined in "
-                "`metadata`.")
+                "The beam energy is not defined in `metadata`. "
+                "Use `set_microscope_parameters` to set it.")
 
         units_name = self.axes_manager.signal_axes[0].units
 
@@ -157,33 +159,10 @@ class EDSSpectrum(Signal1D):
         return xray_lines_in_range, xray_lines_not_in_range
 
     def sum(self, axis=None, out=None):
-        """Sum the data over the given axis.
-
-        Parameters
-        ----------
-        axis : {int, string}
-           The axis can be specified using the index of the axis in
-           `axes_manager` or the axis name.
-
-        Returns
-        -------
-        s : Signal1D
-
-        See also
-        --------
-        sum_in_mask, mean
-
-        Examples
-        --------
-        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
-        >>> s.sum(0).data
-        array(1000279)
-
-        """
         if axis is None:
             axis = self.axes_manager.navigation_axes
         # modify time spend per spectrum
-        s = super(EDSSpectrum, self).sum(axis=axis, out=out)
+        s = super().sum(axis=axis, out=out)
         s = out or s
         if "Acquisition_instrument.SEM" in s.metadata:
             mp = s.metadata.Acquisition_instrument.SEM
@@ -196,41 +175,32 @@ class EDSSpectrum(Signal1D):
                 self.data.size / s.data.size
         if out is None:
             return s
+    sum.__doc__ = Signal1D.sum.__doc__
 
-    def rebin(self, new_shape):
-        """Rebins the data to the new shape
+    def rebin(self, new_shape=None, scale=None, crop=True, out=None):
+        factors = self._validate_rebin_args_and_get_factors(
+            new_shape=new_shape,
+            scale=scale,)
+        m = super().rebin(new_shape=new_shape, scale=scale, crop=crop, out=out)
+        m = out or m
+        time_factor = np.prod([factors[axis.index_in_array]
+                               for axis in m.axes_manager.navigation_axes])
+        aimd = m.metadata.Acquisition_instrument
+        if "Acquisition_instrument.SEM.Detector.EDS.real_time" in m.metadata:
+            aimd.SEM.Detector.EDS.real_time *= time_factor
+        if "Acquisition_instrument.SEM.Detector.EDS.live_time" in m.metadata:
+            aimd.SEM.Detector.EDS.live_time *= time_factor
+        if "Acquisition_instrument.TEM.Detector.EDS.real_time" in m.metadata:
+            aimd.TEM.Detector.EDS.real_time *= time_factor
+        if "Acquisition_instrument.TEM.Detector.EDS.live_time" in m.metadata:
+            aimd.TEM.Detector.EDS.live_time *= time_factor
+        if out is None:
+            return m
+        else:
+            out.events.data_changed.trigger(obj=out)
+        return m
 
-        Parameters
-        ----------
-        new_shape: tuple of ints
-            The new shape must be a divisor of the original shape
-
-        Examples
-        --------
-        >>> s = hs.datasets.example_signals.EDS_SEM_Spectrum()
-        >>> print(s)
-        >>> print(s.rebin([512]))
-        <EDSSEMSpectrum, title: EDS SEM Signal1D, dimensions: (|1024)>
-        <EDSSEMSpectrum, title: EDS SEM Signal1D, dimensions: (|512)>
-
-        """
-        new_shape_in_array = []
-        for axis in self.axes_manager._axes:
-            new_shape_in_array.append(
-                new_shape[axis.index_in_axes_manager])
-        factors = (np.array(self.data.shape) /
-                   np.array(new_shape_in_array))
-        s = super(EDSSpectrum, self).rebin(new_shape)
-        # modify time per spectrum
-        if "Acquisition_instrument.SEM.Detector.EDS.live_time" in s.metadata:
-            for factor in factors:
-                s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time\
-                    *= factor
-        if "Acquisition_instrument.TEM.Detector.EDS.live_time" in s.metadata:
-            for factor in factors:
-                s.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time\
-                    *= factor
-        return s
+    rebin.__doc__ = BaseSignal.rebin.__doc__
 
     def set_elements(self, elements):
         """Erase all elements and set them.
@@ -299,11 +269,7 @@ class EDSSpectrum(Signal1D):
             else:
                 raise ValueError(
                     "%s is not a valid chemical element symbol." % element)
-
-        if not hasattr(self.metadata, 'Sample'):
-            self.metadata.add_node('Sample')
-
-        self.metadata.Sample.elements = sorted(list(elements_))
+        self.metadata.set_item('Sample.elements', sorted(list(elements_)))
 
     def _get_xray_lines(self, xray_lines=None, only_one=None,
                         only_lines=('a',)):
@@ -664,7 +630,7 @@ class EDSSpectrum(Signal1D):
                     bck2 = self.isig[bw[2]:bw[3]].integrate1D(-1)
                 corr_factor = (indexes[5] - indexes[4]) / (
                     (indexes[1] - indexes[0]) + (indexes[3] - indexes[2]))
-                img -= (bck1 + bck2) * corr_factor
+                img = img - (bck1 + bck2) * corr_factor
             img.metadata.General.title = (
                 'X-ray line intensity of %s: %s at %.2f %s' %
                 (self.metadata.General.title,
@@ -672,11 +638,8 @@ class EDSSpectrum(Signal1D):
                  line_energy,
                  self.axes_manager.signal_axes[0].units,
                  ))
-            if img.axes_manager.navigation_dimension >= 2:
-                img = img.as_signal2D([0, 1])
-            elif img.axes_manager.navigation_dimension == 1:
-                img.axes_manager.set_signal_dimension(1)
-            if plot_result and img.axes_manager.signal_size == 1:
+            img.axes_manager.set_signal_dimension(0)
+            if plot_result and img.axes_manager.navigation_size == 1:
                 print("%s at %s %s : Intensity = %.2f"
                       % (Xray_line,
                          line_energy,
@@ -685,7 +648,7 @@ class EDSSpectrum(Signal1D):
             img.metadata.set_item("Sample.elements", ([element]))
             img.metadata.set_item("Sample.xray_lines", ([Xray_line]))
             intensities.append(img)
-        if plot_result and img.axes_manager.signal_size != 1:
+        if plot_result and img.axes_manager.navigation_size != 1:
             utils.plot.plot_signals(intensities, **kwargs)
         return intensities
 
@@ -693,7 +656,7 @@ class EDSSpectrum(Signal1D):
         """Calculate the take-off-angle (TOA).
 
         TOA is the angle with which the X-rays leave the surface towards
-        the detector. Parameters are read in 'SEM.tilt_stage',
+        the detector. Parameters are read in 'SEM.Stage.tilt_alpha',
         'Acquisition_instrument.SEM.Detector.EDS.azimuth_angle' and
         'SEM.Detector.EDS.elevation_angle' in 'metadata'.
 
@@ -725,7 +688,7 @@ class EDSSpectrum(Signal1D):
         elif self.metadata.Signal.signal_type == "EDS_TEM":
             mp = self.metadata.Acquisition_instrument.TEM
 
-        tilt_stage = mp.tilt_stage
+        tilt_stage = mp.Stage.tilt_alpha
         azimuth_angle = mp.Detector.EDS.azimuth_angle
         elevation_angle = mp.Detector.EDS.elevation_angle
 
@@ -926,7 +889,7 @@ class EDSSpectrum(Signal1D):
         set_elements, add_elements, estimate_integration_windows,
         get_lines_intensity, estimate_background_windows
         """
-        super(EDSSpectrum, self).plot(**kwargs)
+        super().plot(**kwargs)
         self._plot_xray_lines(xray_lines, only_lines, only_one,
                               background_windows, integration_windows)
 
@@ -982,8 +945,12 @@ class EDSSpectrum(Signal1D):
             keywords argument for markers.vertical_line
         """
         per_xray = len(position[0])
-        colors = itertools.cycle(np.sort(
-            plt.rcParams['axes.color_cycle'] * per_xray))
+        if LooseVersion(matplotlib.__version__) >= "1.5.3":
+            colors = itertools.cycle(np.sort(
+                plt.rcParams['axes.prop_cycle'].by_key()["color"] * per_xray))
+        else:
+            colors = itertools.cycle(np.sort(
+                plt.rcParams['axes.color_cycle'] * per_xray))
         for x, color in zip(np.ravel(position), colors):
             line = markers.vertical_line(x=x, color=color, **kwargs)
             self.add_marker(line)
@@ -1012,8 +979,10 @@ class EDSSpectrum(Signal1D):
             line = markers.vertical_line_segment(
                 x=line_energy[i], y1=None, y2=intensity[i] * 0.8)
             self.add_marker(line)
+            string = (r'$\mathrm{%s}_{\mathrm{%s}}$' %
+                      utils_eds._get_element_and_line(xray_lines[i]))
             text = markers.text(
-                x=line_energy[i], y=intensity[i] * 1.1, text=xray_lines[i],
+                x=line_energy[i], y=intensity[i] * 1.1, text=string,
                 rotation=90)
             self.add_marker(text)
             self._xray_markers[xray_lines[i]] = [line, text]
@@ -1082,3 +1051,11 @@ class EDSSpectrum(Signal1D):
                 x1=(bw[0] + bw[1]) / 2., x2=(bw[2] + bw[3]) / 2.,
                 y1=y1, y2=y2, color='black')
             self.add_marker(line)
+
+
+class EDSSpectrum(EDS_mixin, Signal1D):
+    pass
+
+
+class LazyEDSSpectrum(EDSSpectrum, LazySignal1D):
+    pass

@@ -2,6 +2,8 @@
 Tools for working with distributions
 """
 import numpy as np
+import dask.array as da
+from dask.diagnostics import ProgressBar
 from hyperspy.external.astroML.bayesian_blocks import bayesian_blocks
 from scipy.special import gammaln
 from scipy import optimize
@@ -274,6 +276,10 @@ def histogram(a, bins=10, range=None, **kwargs):
     numpy.histogram
     astroML.plotting.hist
     """
+    import dask.array as da
+    if isinstance(a, da.Array):
+        return dasky_histogram(a, bins=bins, **kwargs)
+
     a = np.asarray(a)
 
     # if range is specified, we need to truncate the data for
@@ -294,3 +300,152 @@ def histogram(a, bins=10, range=None, **kwargs):
         raise ValueError("unrecognized bin code: '%s'" % bins)
 
     return np.histogram(a, bins, range, **kwargs)
+
+
+def dasky_histogram(a, bins=10, **kwargs):
+    """Enhanced histogram for dask arrays.
+    The range keyword is ignored. Reads the data at most two times - once to
+    determine best bins (if required), and second time to actually calculate
+    the histogram.
+
+    Parameters
+    ----------
+    a : array_like
+        array of data to be histogrammed
+    bins : int or list or str (optional)
+        If bins is a string, then it must be one of:
+        'scotts' : use Scott's rule to determine bins
+        'freedman' : use the Freedman-Diaconis rule to determine bins
+    other keyword arguments are described in numpy.hist().
+
+    Returns
+    -------
+    hist : array
+        The values of the histogram. See `normed` and `weights` for a
+        description of the possible semantics.
+    bin_edges : array of dtype float
+        Return the bin edges ``(length(hist)+1)``.
+
+    See Also
+    --------
+    numpy.histogram
+    astroML.plotting.hist
+    """
+    if not isinstance(a, da.Array):
+        raise TypeError('the given array has to be a dask.Array')
+    if a.ndim != 1:
+        a = a.flatten()
+
+    if bins == 'scotts':
+        _, bins = dasky_scotts_bin_width(a, True)
+    elif bins == 'freedman':
+        _, bins = dasky_freedman_bin_width(a, True)
+    elif isinstance(bins, str):
+        raise ValueError("unrecognized bin code: '%s'" % bins)
+    elif not np.iterable(bins):
+        with ProgressBar():
+            kwargs['range'] = da.compute(a.min(), a.max())
+
+    h, bins = da.histogram(a, bins=bins, **kwargs)
+    with ProgressBar():
+        return h.compute(), bins
+
+
+def dasky_scotts_bin_width(data, return_bins=True):
+    """Dask version of scotts_bin_width
+
+    Parameters
+    ----------
+    data : dask array
+    return_bins : bool (optional)
+        if True, then return the bin edges
+
+    Returns
+    -------
+    width : float
+        optimal bin width using Scott's rule
+    bins : ndarray
+        bin edges: returned if `return_bins` is True
+
+    Notes
+    -----
+    The optimal bin width is
+    .. math::
+        \Delta_b = \frac{3.5\sigma}{n^{1/3}}
+    where :math:`\sigma` is the standard deviation of the data, and
+    :math:`n` is the number of data points.
+
+    See Also
+    --------
+    knuth_bin_width
+    freedman_bin_width
+    astroML.plotting.hist
+    """
+    if not isinstance(data, da.Array):
+        raise TypeError('data has to be a dask array')
+    if data.ndim != 1:
+        data = data.flatten()
+
+    n = data.size
+    sigma = da.nanstd(data)
+
+    dx = 3.5 * sigma * 1. / (n ** (1. / 3))
+    c_dx, mx, mn = da.compute(dx, data.max(), data.min())
+
+    if return_bins:
+        Nbins = np.ceil((mx - mn) * 1. / c_dx)
+        Nbins = max(1, Nbins)
+        bins = mn + c_dx * np.arange(Nbins + 1)
+        return c_dx, bins
+    else:
+        return c_dx
+
+
+def dasky_freedman_bin_width(data, return_bins=True):
+    """Dask version of freedman_bin_width
+
+    Parameters
+    ----------
+    data : dask array
+    return_bins : bool (optional)
+        if True, then return the bin edges
+
+    Returns
+    -------
+    width : float
+        optimal bin width using Scott's rule
+    bins : ndarray
+        bin edges: returned if `return_bins` is True
+
+    Notes
+    -----
+    The optimal bin width is
+    .. math::
+        \Delta_b = \frac{2(q_{75} - q_{25})}{n^{1/3}}
+    where :math:`q_{N}` is the :math:`N` percent quartile of the data, and
+    :math:`n` is the number of data points.
+
+    See Also
+    --------
+    knuth_bin_width
+    scotts_bin_width
+    astroML.plotting.hist
+    """
+    if not isinstance(data, da.Array):
+        raise TypeError('data has to be a dask array')
+    if data.ndim != 1:
+        data = data.flatten()
+
+    n = data.size
+
+    v25, v75 = da.percentile(data, [25, 75])
+    dx = 2 * (v75 - v25) * 1. / (n ** (1. / 3))
+    c_dx, mx, mn = da.compute(dx, data.max(), data.min())
+
+    if return_bins:
+        Nbins = np.ceil((mx - mn) * 1. / c_dx)
+        Nbins = max(1, Nbins)
+        bins = mn + c_dx * np.arange(Nbins + 1)
+        return c_dx, bins
+    else:
+        return c_dx

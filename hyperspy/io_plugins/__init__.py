@@ -20,9 +20,11 @@
 import logging
 
 from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc, ripple,
-                                 tiff, semper_unf, blockfile, dens, emd)
+                                 tiff, semper_unf, blockfile, dens, emd,
+                                 protochips, edax)
+
 io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff, semper_unf,
-              blockfile, dens, emd]
+              blockfile, dens, emd, protochips, edax]
 
 _logger = logging.getLogger(__name__)
 
@@ -35,8 +37,8 @@ except ImportError:
     # old EELSLab files. Therefore, we silenly ignore if missing.
 
 try:
-    from hyperspy.io_plugins import hdf5
-    io_plugins.append(hdf5)
+    from hyperspy.io_plugins import hspy
+    io_plugins.append(hspy)
     from hyperspy.io_plugins import emd
     io_plugins.append(emd)
 except ImportError:
@@ -48,14 +50,14 @@ try:
     io_plugins.append(image)
 except ImportError:
     _logger.info('The Signal2D (PIL) IO features are not available')
-    
+
 try:
     from hyperspy.io_plugins import bcf
     io_plugins.append(bcf)
 except ImportError:
-    _logger.warning('The Bruker composite file reader cant be loaded',
-                    'due to lxml library missing. Please install lxml',
-                    'and python bindings, to enable the bcf loader.')
+    _logger.warning('The Bruker composite file reader can not be loaded '
+                    'because the lxml library is not installed. To enable it '
+                    'install the Python lxml package.')
 
 default_write_ext = set()
 for plugin in io_plugins:

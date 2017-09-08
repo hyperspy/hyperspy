@@ -15,7 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>
 
-import nose.tools as nt
+
+import pytest
 import numpy as np
 
 from hyperspy.misc.array_tools import dict2sarray
@@ -24,10 +25,10 @@ from hyperspy.misc.array_tools import dict2sarray
 dt = [('x', np.uint8), ('y', np.uint16), ('text', (bytes, 6))]
 
 
-@nt.raises(ValueError)
 def test_d2s_fail():
     d = dict(x=5, y=10, text='abcdef')
-    dict2sarray(d)
+    with pytest.raises(ValueError):
+        dict2sarray(d)
 
 
 def test_d2s_dtype():
@@ -37,7 +38,7 @@ def test_d2s_dtype():
     ref['y'] = 10
     ref['text'] = 'abcdef'
 
-    nt.assert_equal(ref, dict2sarray(d, dtype=dt))
+    assert ref == dict2sarray(d, dtype=dt)
 
 
 def test_d2s_extra_dict_ok():
@@ -47,7 +48,7 @@ def test_d2s_extra_dict_ok():
     ref['y'] = 10
     ref['text'] = 'abcdef'
 
-    nt.assert_equal(ref, dict2sarray(d, dtype=dt))
+    assert ref == dict2sarray(d, dtype=dt)
 
 
 def test_d2s_sarray():
@@ -62,7 +63,7 @@ def test_d2s_sarray():
     ref['y'] = 10
     ref['text'] = 'abcdef'
 
-    nt.assert_equal(ref, dict2sarray(d, sarray=base))
+    assert ref == dict2sarray(d, sarray=base)
 
 
 def test_d2s_partial_sarray():
@@ -77,7 +78,7 @@ def test_d2s_partial_sarray():
     ref['y'] = 0
     ref['text'] = 'abcdef'
 
-    nt.assert_equal(ref, dict2sarray(d, sarray=base))
+    assert ref == dict2sarray(d, sarray=base)
 
 
 def test_d2s_type_cast_ok():
@@ -88,19 +89,19 @@ def test_d2s_type_cast_ok():
     ref['y'] = 0
     ref['text'] = '55'
 
-    nt.assert_equal(ref, dict2sarray(d, dtype=dt))
+    assert ref == dict2sarray(d, dtype=dt)
 
 
-@nt.raises(ValueError)
 def test_d2s_type_cast_invalid():
     d = dict(x='Test')
-    dict2sarray(d, dtype=dt)
+    with pytest.raises(ValueError):
+        dict2sarray(d, dtype=dt)
 
 
 def test_d2s_string_cut():
     d = dict(text='Testerstring')
     sa = dict2sarray(d, dtype=dt)
-    nt.assert_equal(sa['text'][0], b'Tester')
+    assert sa['text'][0] == b'Tester'
 
 
 def test_d2s_array1():

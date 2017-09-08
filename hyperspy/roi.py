@@ -52,6 +52,7 @@ from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.axes import DataAxis
 from hyperspy.drawing import widgets
+from hyperspy.ui_registry import add_gui_method
 
 
 class BaseROI(t.HasTraits):
@@ -357,7 +358,8 @@ class BaseInteractiveROI(BaseROI):
             navigation_signal = signal
         if navigation_signal is not None:
             if navigation_signal not in self.signal_map:
-                self.add_widget(navigation_signal, color=color)
+                self.add_widget(navigation_signal, color=color,
+                                axes=kwargs.get("axes", None))
         if (self.update not in
                 signal.axes_manager.events.any_axis_changed.connected):
             signal.axes_manager.events.any_axis_changed.connect(
@@ -484,6 +486,7 @@ class BasePointROI(BaseInteractiveROI):
         return s
 
 
+@add_gui_method(toolkey="Point1DROI")
 class Point1DROI(BasePointROI):
 
     """Selects a single point in a 1D space. The coordinate of the point in the
@@ -540,6 +543,7 @@ class Point1DROI(BasePointROI):
             self.value)
 
 
+@add_gui_method(toolkey="Point2DROI")
 class Point2DROI(BasePointROI):
 
     """Selects a single point in a 2D space. The coordinates of the point in
@@ -580,6 +584,7 @@ class Point2DROI(BasePointROI):
             self.x, self.y)
 
 
+@add_gui_method(toolkey="SpanROI")
 class SpanROI(BaseInteractiveROI):
 
     """Selects a range in a 1D space. The coordinates of the range in
@@ -632,6 +637,7 @@ class SpanROI(BaseInteractiveROI):
             self.right)
 
 
+@add_gui_method(toolkey="RectangularROI")
 class RectangularROI(BaseInteractiveROI):
 
     """Selects a range in a 2D space. The coordinates of the range in
@@ -769,6 +775,7 @@ class RectangularROI(BaseInteractiveROI):
             self.bottom)
 
 
+@add_gui_method(toolkey="CircleROI")
 class CircleROI(BaseInteractiveROI):
 
     cx, cy, r, r_inner = (t.CFloat(t.Undefined),) * 4
@@ -783,7 +790,9 @@ class CircleROI(BaseInteractiveROI):
 
     def is_valid(self):
         return (t.Undefined not in (self.cx, self.cy, self.r,) and
-                self.r_inner == t.Undefined or self.r >= self.r_inner)
+                (self.r_inner is t.Undefined or
+                 t.Undefined not in (self.r, self.r_inner) and
+                 self.r >= self.r_inner))
 
     def _cx_changed(self, old, new):
         self.update()
@@ -866,18 +875,22 @@ class CircleROI(BaseInteractiveROI):
             mask |= gr < self.r_inner**2
         tiles = []
         shape = []
+        chunks = []
         for i in range(len(slices)):
+            if signal._lazy:
+                chunks.append(signal.data.chunks[i][0])
             if i == natax.index(axes[0]):
-                tiles.append(1)
-                shape.append(mask.shape[0])
+                thisshape = mask.shape[0]
+                tiles.append(thisshape)
+                shape.append(thisshape)
             elif i == natax.index(axes[1]):
-                tiles.append(1)
-                shape.append(mask.shape[1])
+                thisshape = mask.shape[1]
+                tiles.append(thisshape)
+                shape.append(thisshape)
             else:
-                tiles.append(signal.axes_manager.shape[i])
+                tiles.append(signal.axes_manager._axes[i].size)
                 shape.append(1)
         mask = mask.reshape(shape)
-        mask = np.tile(mask, tiles)
 
         nav_axes = [ax.navigate for ax in axes]
         nav_dim = signal.axes_manager.navigation_dimension
@@ -895,7 +908,15 @@ class CircleROI(BaseInteractiveROI):
 
         roi = slicer(slices, out=out)
         roi = out or roi
-        roi.data = np.ma.masked_array(roi.data, mask, hard_mask=True)
+        if roi._lazy:
+            import dask.array as da
+            mask = da.from_array(mask, chunks=chunks)
+            mask = da.broadcast_to(mask, tiles)
+            # By default promotes dtype to float if required
+            roi.data = da.where(mask, np.nan, roi.data)
+        else:
+            mask = np.broadcast_to(mask, tiles)
+            roi.data = np.ma.masked_array(roi.data, mask, hard_mask=True)
         if out is None:
             return roi
         else:
@@ -917,6 +938,7 @@ class CircleROI(BaseInteractiveROI):
                 self.r_inner)
 
 
+@add_gui_method(toolkey="Line2DROI")
 class Line2DROI(BaseInteractiveROI):
 
     x1, y1, x2, y2, linewidth = (t.CFloat(t.Undefined),) * 5
@@ -993,8 +1015,8 @@ class Line2DROI(BaseInteractiveROI):
         # (in contrast to standard numpy indexing)
         line_col = np.linspace(src_col, dst_col, length)
         line_row = np.linspace(src_row, dst_row, length)
-
-        data = np.zeros((2, length, int(linewidth)))
+        linewidth = int(linewidth)
+        data = np.zeros((2, length, linewidth))
         data[0, :, :] = np.tile(line_col, [linewidth, 1]).T
         data[1, :, :] = np.tile(line_row, [linewidth, 1]).T
 
@@ -1083,7 +1105,7 @@ class Line2DROI(BaseInteractiveROI):
             orig_shape = img.shape
             img = np.reshape(img, orig_shape[0:2] +
                              (np.product(orig_shape[2:]),))
-            pixels = [nd.map_coordinates(img[..., i], perp_lines,
+            pixels = [nd.map_coordinates(img[..., i].T, perp_lines,
                                          order=order, mode=mode, cval=cval)
                       for i in range(img.shape[2])]
             i0 = min(axes[0].index_in_array, axes[1].index_in_array)
@@ -1152,9 +1174,9 @@ class Line2DROI(BaseInteractiveROI):
             from hyperspy.signals import BaseSignal
             roi = BaseSignal(profile, axes=axm._get_axes_dicts(),
                              metadata=signal.metadata.deepcopy(
-                             ).as_dictionary(),
-                             original_metadata=signal.original_metadata.
-                             deepcopy().as_dictionary())
+            ).as_dictionary(),
+                original_metadata=signal.original_metadata.
+                deepcopy().as_dictionary())
             return roi
         else:
             out.data = profile
