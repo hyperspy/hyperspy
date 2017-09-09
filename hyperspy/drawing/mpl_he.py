@@ -36,6 +36,8 @@ class MPL_HyperExplorer(object):
     def __init__(self):
         self.signal_data_function = None
         self.navigator_data_function = None
+        # args to pass to `__call__`
+        self.signal_data_function_kwargs = {}
         self.axes_manager = None
         self.signal_title = ''
         self.navigator_title = ''
@@ -152,7 +154,11 @@ class MPL_HyperExplorer(object):
         else:
             return False
 
-    def plot(self, **kwargs):
+    def plot(self, **kwargs):            
+        # Parse the kwargs for plotting complex data
+        for key in ['power_spectrum', 'shifted']:
+            if key in kwargs:
+                self.signal_data_function_kwargs[key] = kwargs.pop(key)
         if self.pointer is None:
             pointer = self.assign_pointer()
             if pointer is not None:

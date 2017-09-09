@@ -104,7 +104,7 @@ class Signal1DFigure(BlittedFigure):
                 self._color_cycles[line.type].color_cycle.remove(
                     rgba_color)
 
-    def plot(self, **kwargs):
+    def plot(self, data_function_kwargs={}, **kwargs):
         self.ax.set_xlabel(self.xlabel)
         self.ax.set_ylabel(self.ylabel)
         self.ax.set_title(self.title)
@@ -112,7 +112,7 @@ class Signal1DFigure(BlittedFigure):
         x_axis_lower_lims = []
         self._set_background()
         for line in self.ax_lines:
-            line.plot(**kwargs)
+            line.plot(data_function_kwargs=data_function_kwargs, **kwargs)
             x_axis_lower_lims.append(line.axis.axis[0])
             x_axis_upper_lims.append(line.axis.axis[-1])
         for marker in self.ax_markers:
@@ -186,10 +186,13 @@ class Signal1DLine(object):
         self.ax = None
         # Data attributes
         self.data_function = None
+        # args to pass to `__call__`
+        self.data_function_kwargs = {}
         self.axis = None
         self.axes_manager = None
         self.auto_update = True
         self.get_complex = False
+        self.log_scale = False
 
         # Properties
         self.line = None
@@ -282,15 +285,13 @@ class Signal1DLine(object):
             plt.setp(self.line, **self.line_properties)
             self.ax.figure.canvas.draw_idle()
 
-    def plot(self, data=1, log_scale=False):
-        f = self.data_function
-        if self.get_complex is False:
-            data = f(axes_manager=self.axes_manager).real
-        else:
-            data = f(axes_manager=self.axes_manager).imag
+    def plot(self, data=1, data_function_kwargs={}, log_scale=False):
+        self.data_function_kwargs = data_function_kwargs
+        self.log_scale = log_scale
+        data = self._get_data()
         if self.line is not None:
             self.line.remove()
-        if log_scale:
+        if self.log_scale:
             plot = self.ax.semilogy
         else:
             plot = self.ax.plot
@@ -313,18 +314,25 @@ class Signal1DLine(object):
                                      animated=self.ax.figure.canvas.supports_blit)
         self.ax.figure.canvas.draw_idle()
 
+    def _get_data(self, force_real=False):
+        if self.get_complex and not force_real:
+            ydata = self.data_function(axes_manager=self.axes_manager, 
+                                       **self.data_function_kwargs).imag
+        else:
+            ydata = self.data_function(axes_manager=self.axes_manager,
+                                       **self.data_function_kwargs).real  
+        return ydata
+
     def update(self, force_replot=False):
-        """Update the current spectrum figure"""
+        """Update the current line"""
         if self.auto_update is False:
             return
         if force_replot is True:
             self.close()
-            self.plot()
-        if self.get_complex is False:
-            ydata = self.data_function(axes_manager=self.axes_manager).real
-        else:
-            ydata = self.data_function(axes_manager=self.axes_manager).imag
+            self.plot(data_function_kwargs=self.data_function_kwargs,
+                      log_scale=self.log_scale)
 
+        ydata = self._get_data()
         old_xaxis = self.line.get_xdata()
         if len(old_xaxis) != self.axis.size or \
                 np.any(np.not_equal(old_xaxis, self.axis.axis)):
@@ -343,7 +351,8 @@ class Signal1DLine(object):
             y_max, y_min = (np.nanmax(clipped_ydata),
                             np.nanmin(clipped_ydata))
             if self.get_complex:
-                yreal = self.data_function(axes_manager=self.axes_manager).real
+                # Add real plot
+                yreal = self._get_data(force_real=True)
                 clipped_yreal = yreal[y1:y2]
                 y_min = min(y_min, clipped_yreal.min())
                 y_max = max(y_max, clipped_yreal.max())

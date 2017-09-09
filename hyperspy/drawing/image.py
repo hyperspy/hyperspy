@@ -66,6 +66,7 @@ class ImagePlot(BlittedFigure):
     def __init__(self):
         super(ImagePlot, self).__init__()
         self.data_function = None
+        # Args to pass to `__call__`
         self.data_function_kwargs = {}
         self.pixel_units = None
         self.plot_ticks = False
@@ -226,15 +227,12 @@ class ImagePlot(BlittedFigure):
             self.ax.set_yticks([])
         self.ax.hspy_fig = self
 
-    def plot(self, **kwargs):
+    def plot(self, data_function_kwargs={}, **kwargs):
+        self.data_function_kwargs = data_function_kwargs
         self.configure()
         if self.figure is None:
             self.create_figure()
             self.create_axis()
-        # Parse the kwargs for plotting complex data
-        for key in ['power_spectrum', 'shifted']:
-            if key in kwargs:
-                self.data_function_kwargs[key] = kwargs.pop(key)
         data = self.data_function(axes_manager=self.axes_manager,
                                   **self.data_function_kwargs)
         if rgb_tools.is_rgbx(data):
@@ -342,8 +340,7 @@ class ImagePlot(BlittedFigure):
                 ims[0].autoscale()
         redraw_colorbar = redraw_colorbar and self.colorbar
         if self.plot_indices is True:
-            self._text.set_text(self.axes_manager.indices,
-                                **self.data_function_kwargs)
+            self._text.set_text(self.axes_manager.indices)
         if self.no_nans:
             data = np.nan_to_num(data)
         if self.centre_colormap:
