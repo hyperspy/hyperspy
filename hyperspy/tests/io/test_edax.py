@@ -1,8 +1,5 @@
-import gzip
-import hashlib
 import os.path
 import os
-import shutil
 import tempfile
 import gc
 
@@ -12,6 +9,8 @@ import pytest
 
 from hyperspy.io import load
 from hyperspy import signals
+from hyperspy.misc.test_utils import assert_deep_almost_equal
+
 
 TEST_FILES = ('Live Map 2_Img.ipr',
               'single_spect.spc',
@@ -158,23 +157,23 @@ class TestSpdMap:
         spd_ax_manager = {'axis-0': {'name': 'y',
                                      'navigate': True,
                                      'offset': 0.0,
-                                     'scale': 0.014227345585823059,
+                                     'scale': 14.227345585823057,
                                      'size': 200,
-                                     'units': '$\\mu m$'},
+                                     'units': 'nm'},
                           'axis-1': {'name': 'x',
                                      'navigate': True,
                                      'offset': 0.0,
-                                     'scale': 0.014235896058380604,
+                                     'scale': 14.235896058380602,
                                      'size': 256,
-                                     'units': '$\\mu m$'},
+                                     'units': 'nm'},
                           'axis-2': {'name': 'Energy',
                                      'navigate': False,
                                      'offset': 0.0,
                                      'scale': 0.0050000000000000001,
                                      'size': 2500,
                                      'units': 'keV'}}
-        assert (spd_ax_manager ==
-                spd.axes_manager.as_dictionary())
+        assert_deep_almost_equal(spd_ax_manager,
+                                 spd.axes_manager.as_dictionary())
 
     def test_ipr_reading(self, spd):
         ipr_header = spd.original_metadata['ipr_header']

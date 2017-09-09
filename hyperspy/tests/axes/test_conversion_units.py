@@ -120,8 +120,8 @@ class TestUnitConversion:
         # typical TEM diffraction
         self._set_units_scale_size('1/m', 0.01E9, 256)
         self.uc._convert_compact_scale_units()
-        assert self.uc.units == '1/nm'
-        nt.assert_almost_equal(self.uc.scale, 0.01)
+        assert self.uc.units == '1/µm'
+        nt.assert_almost_equal(self.uc.scale, 10.0)
 
         # high camera length diffraction
         self._set_units_scale_size('1/m', 0.1E9, 4096)
@@ -147,9 +147,9 @@ class TestUnitConversion:
         # typical EELS resolution
         self._set_units_scale_size('eV', 1.0, 2048, 500.0)
         self.uc._convert_compact_scale_units()
-        assert self.uc.units == 'keV'
-        nt.assert_almost_equal(self.uc.scale, 0.001)
-        nt.assert_almost_equal(self.uc.offset, 0.5)
+        assert self.uc.units == 'eV'
+        nt.assert_almost_equal(self.uc.scale, 1.0)
+        nt.assert_almost_equal(self.uc.offset, 500)
 
         # typical high resolution EELS resolution
         self._set_units_scale_size('eV', 0.05, 100)

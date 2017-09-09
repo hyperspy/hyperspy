@@ -31,7 +31,6 @@ from hyperspy.misc.utils import (strlist2enumeration, find_subclasses)
 from hyperspy.misc.utils import stack as stack_method
 from hyperspy.io_plugins import io_plugins, default_write_ext
 from hyperspy.exceptions import VisibleDeprecationWarning
-from hyperspy.defaults_parser import preferences
 from hyperspy.ui_registry import get_gui
 
 _logger = logging.getLogger(__name__)
@@ -50,7 +49,7 @@ def load(filenames=None,
          stack_axis=None,
          new_axis_name="stack_element",
          lazy=False,
-         auto_convert_units=False,
+         convert_units=True,
          **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure
@@ -108,12 +107,14 @@ def load(filenames=None,
     lazy : {None, bool}
         Open the data lazily - i.e. without actually reading the data from the
         disk until required. Allows opening arbitrary-sized datasets. default
-        is `False`.
+        is `False`.        
+    convert_units : bool
+        If True, convert the units using the `convert_to_units` method of
+        the `axes_manager`. If False, does nothing.
     print_info: bool
         For SEMPER unf- and EMD (Berkley)-files, if True (default is False)
         additional information read during loading is printed for a quick
         overview.
-
     downsample : int (1–4095)
         For Bruker bcf files, if set to integer (>=2) (default 1)
         bcf is parsed into down-sampled size array by given integer factor,
@@ -162,7 +163,7 @@ def load(filenames=None,
             warnings.warn(warn_str.format(k), VisibleDeprecationWarning)
             del kwds[k]
     kwds['signal_type'] = signal_type
-    kwds['auto_convert_units'] = auto_convert_units
+    kwds['convert_units'] = convert_units
     if filenames is None:
         from hyperspy.signal_tools import Load
         load_ui = Load()
@@ -248,10 +249,7 @@ def load(filenames=None,
     return objects
 
 
-def load_single_file(filename,
-                     signal_type=None,
-                     auto_convert_units=False,
-                     **kwds):
+def load_single_file(filename, **kwds):
     """
     Load any supported file into an HyperSpy structure
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw),
@@ -263,10 +261,10 @@ def load_single_file(filename,
     filename : string
         File name (including the extension)
 
-    signal_type : 
+    signal_type : {None, "EELS", "EDS_SEM", "EDS_TEM", "", str}
         Set the signal type of the data to be read.
         
-    auto_convert_units : bool
+    convert_units : bool
         If True, convert the units using the 'convert_to_units' method of
         the 'axes_manager'. If False, does nothing.        
         
@@ -275,8 +273,6 @@ def load_single_file(filename,
         
     """
     extension = os.path.splitext(filename)[1][1:]
-    kwds['signal_type'] = signal_type
-    kwds['auto_convert_units'] = auto_convert_units
 
     i = 0
     while extension.lower() not in io_plugins[i].file_extensions and \
@@ -296,10 +292,7 @@ def load_single_file(filename,
         return load_with_reader(filename=filename, reader=reader, **kwds)
 
 
-def load_with_reader(filename,
-                     reader,
-                     signal_type=None,
-                     auto_convert_units=False,
+def load_with_reader(filename, reader, signal_type=None, convert_units=True, 
                      **kwds):
     lazy = kwds.get('lazy', False)
     file_data_list = reader.file_reader(filename,
@@ -318,7 +311,7 @@ def load_with_reader(filename,
             objects[-1].tmp_parameters.folder = folder
             objects[-1].tmp_parameters.filename = filename
             objects[-1].tmp_parameters.extension = extension.replace('.', '')
-            if auto_convert_units:
+            if convert_units:
                 objects[-1].axes_manager.convert_units(
                     filterwarning_action="ignore")
         else:

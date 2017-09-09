@@ -99,10 +99,10 @@ axes1 = {
         'scale': 12.8, 'size': 2, 'units': 'nm'},
     'axis-2': {
         'name': 'dy', 'navigate': False, 'offset': 0.0,
-        'scale': 0.016061676839061997, 'size': 144, 'units': 'cm'},
+        'scale': 0.16061676839061997, 'size': 144, 'units': 'mm'},
     'axis-3': {
         'name': 'dx', 'navigate': False, 'offset': 0.0,
-        'scale': 0.016061676839061997, 'size': 144, 'units': 'cm'}}
+        'scale': 0.16061676839061997, 'size': 144, 'units': 'mm'}}
 
 axes2 = {
     'axis-0': {
@@ -113,10 +113,10 @@ axes2 = {
         'scale': 64.0, 'size': 3, 'units': 'nm'},
     'axis-2': {
         'name': 'dy', 'navigate': False, 'offset': 0.0,
-        'scale': 0.016061676839061997, 'size': 5, 'units': 'cm'},
+        'scale': 160.61676839061997, 'size': 5, 'units': 'µm'},
     'axis-3': {
         'name': 'dx', 'navigate': False, 'offset': 0.0,
-        'scale': 0.016061676839061997, 'size': 5, 'units': 'cm'}}
+        'scale': 160.61676839061997, 'size': 5, 'units': 'µm'}}
 
 
 def test_load1():
@@ -173,11 +173,11 @@ def test_different_x_y_scale_units(save_path):
     signal.save(save_path, overwrite=True)
     sig_reload = hs.load(save_path)
     assert_allclose(sig_reload.axes_manager[0].scale, 50.0,
-                    atol=1E-2)
+                    rtol=1E-5)
     assert_allclose(sig_reload.axes_manager[1].scale, 64.0,
-                    atol=1E-2)
-    assert_allclose(sig_reload.axes_manager[2].scale, 0.0160616,
-                    atol=1E-5)
+                    rtol=1E-5)
+    assert_allclose(sig_reload.axes_manager[2].scale, 160.616,
+                    rtol=1E-5)
 
 
 def test_default_header():

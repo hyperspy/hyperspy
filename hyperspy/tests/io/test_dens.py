@@ -40,8 +40,9 @@ ref_t = np.array([15.091, 16.828, 13.232, 50.117, 49.927, 49.986, 49.981])
 def test_read1():
     s = hs.load(file1)
     np.testing.assert_allclose(s.data, ref_T)
-    assert_allclose(s.axes_manager[0].scale, 0.33)
-    assert_allclose(s.axes_manager[0].offset, 50077.68)
+    assert_allclose(s.axes_manager[0].scale, 330.0)
+    assert_allclose(s.axes_manager[0].offset, 50077680.0)
+    assert s.axes_manager[0].units == 'ms'
     ref_date, ref_time = "2015-04-16", "13:53:00"
     assert s.metadata.General.date == ref_date
     assert s.metadata.General.time == ref_time

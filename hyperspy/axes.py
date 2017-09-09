@@ -85,7 +85,7 @@ class UnitConversion(object):
             return True
         return False
 
-    def _convert_compact_scale_units(self):
+    def _convert_compact_scale_units(self, factor=0.25):
         """ Return scale and units converted to compact, human-readable units.
             See to_compact() method of the pint library for details.
             Size is the size of the considered axes.
@@ -94,7 +94,7 @@ class UnitConversion(object):
             return
         scale = self.scale * _ureg(self.units)
         offset = self.offset * _ureg(self.units)
-        scale_size = 0.5 * scale * self.size
+        scale_size = factor * scale * self.size
         converted_scale = scale.to(scale_size.to_compact().units)
         converted_offset = offset.to(scale_size.to_compact().units)
         self.units = '{:~}'.format(converted_scale.units)
@@ -112,7 +112,8 @@ class UnitConversion(object):
         self.scale = float(scale.magnitude)
         self.offset = float(offset.magnitude)
 
-    def convert_to_units(self, units=None, filterwarning_action='always'):
+    def convert_to_units(self, units=None, factor=0.25, 
+                         filterwarning_action='always'):
         """ Convert the scale and the units of the current axis. If the units
         is not supported by the pint library, the scale and units are not
         changed.
@@ -134,7 +135,7 @@ class UnitConversion(object):
         with warnings.catch_warnings():
             warnings.filterwarnings(filterwarning_action, category=UserWarning)
             if units is None:
-                self._convert_compact_scale_units()
+                self._convert_compact_scale_units(factor)
             else:
                 self._convert_scale_units(units)
 
@@ -925,7 +926,7 @@ class AxesManager(t.HasTraits):
     def _on_offset_changed(self):
         self.events.any_axis_changed.trigger(obj=self)
 
-    def convert_units(self, axes=None, units=None,
+    def convert_units(self, axes=None, units=None, factor=0.25,
                       filterwarning_action='always'):
         """ Convert the scale and the units of the selected axes. If the units
         is not supported by the pint library, the scale and units are not
@@ -965,7 +966,7 @@ class AxesManager(t.HasTraits):
         for axis, units in zip(axes, units):
             _logger.debug(
                 'Convert axis "{0}" to units: "{1}"'.format(axis.name, units))
-            axis.convert_to_units(units,
+            axis.convert_to_units(units, factor=factor,
                                   filterwarning_action=filterwarning_action)
 
     def update_axes_attributes_from(self, axes,

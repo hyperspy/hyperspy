@@ -92,7 +92,7 @@ class Test2D:
         s.axes_manager.signal_axes[0].name = "E"
         s.axes_manager.signal_axes[0].scale = 0.05
         s.axes_manager.signal_axes[0].units = "keV"
-        s.crop('E', 0.0, 1.0, auto_convert_units=False)
+        s.crop('E', 0.0, 1.0, convert_units=False)
         nt.assert_almost_equal(s.axes_manager.signal_axes[0].scale, 0.05)
         assert s.axes_manager.signal_axes[0].units == "keV"
         nt.assert_allclose(s.data, d[:, :, :20])
@@ -102,7 +102,7 @@ class Test2D:
         s.axes_manager.signal_axes[0].name = "E"
         s.axes_manager.signal_axes[0].scale = 0.05
         s.axes_manager.signal_axes[0].units = "keV"
-        s.crop('E', 0.0, 50.0, auto_convert_units=False)
+        s.crop('E', 0.0, 50.0, convert_units=False)
         nt.assert_almost_equal(s.axes_manager.signal_axes[0].scale, 0.05)
         assert s.axes_manager.signal_axes[0].units == "keV"
         nt.assert_allclose(s.data, d[:, :, :1000])
@@ -114,7 +114,7 @@ class Test2D:
         s.axes_manager.signal_axes[0].name = "E"
         s.axes_manager.signal_axes[0].scale = 0.05
         s.axes_manager.signal_axes[0].units = "keV"
-        s.crop('E', 0.0, 1.0, auto_convert_units=True)
+        s.crop('E', 0.0, 1.0, convert_units=True)
         nt.assert_almost_equal(s.axes_manager.signal_axes[0].scale, 50.0)
         assert s.axes_manager.signal_axes[0].units == "eV"
         nt.assert_allclose(s.data, d[:, :, :20])
@@ -124,7 +124,7 @@ class Test2D:
         s.axes_manager.signal_axes[0].name = "E"
         s.axes_manager.signal_axes[0].scale = 0.05
         s.axes_manager.signal_axes[0].units = "keV"
-        s.crop('E', 0.0, 50.0, auto_convert_units=True)
+        s.crop('E', 0.0, 50.0, convert_units=True)
         nt.assert_almost_equal(s.axes_manager.signal_axes[0].scale, 0.05)
         assert s.axes_manager.signal_axes[0].units == "keV"
         nt.assert_allclose(s.data, d[:, :, :1000])
@@ -139,8 +139,8 @@ class Test2D:
         s.axes_manager[1].name = 'y'
         s.axes_manager[1].scale = 0.01
         s.axes_manager[1].units = 'µm'
-        s.crop(0, 0.0, 0.5, auto_convert_units=False)
-        s.crop(1, 0.0, 0.5, auto_convert_units=False)
+        s.crop(0, 0.0, 0.5, convert_units=False)
+        s.crop(1, 0.0, 0.5, convert_units=False)
         nt.assert_almost_equal(s.axes_manager[0].scale, 0.01)
         assert s.axes_manager[0].units == "µm"
         nt.assert_allclose(s.data, d[:50, :50])
@@ -154,8 +154,8 @@ class Test2D:
         s.axes_manager[1].name = 'y'
         s.axes_manager[1].scale = 0.01
         s.axes_manager[1].units = 'µm'
-        s.crop(0, 0.0, 5.0, auto_convert_units=False)
-        s.crop(1, 0.0, 5.0, auto_convert_units=False)
+        s.crop(0, 0.0, 5.0, convert_units=False)
+        s.crop(1, 0.0, 5.0, convert_units=False)
         nt.assert_almost_equal(s.axes_manager[0].scale, 0.01)
         assert s.axes_manager[0].units == "µm"
         nt.assert_allclose(s.data, d[:500, :500])
@@ -170,10 +170,10 @@ class Test2D:
         s.axes_manager[1].name = 'y'
         s.axes_manager[1].scale = 0.01
         s.axes_manager[1].units = 'µm'
-        s.crop(0, 0.0, 0.5, auto_convert_units=True)
-        s.crop(1, 0.0, 0.5, auto_convert_units=True)
+        s.crop(0, 0.0, 0.5, convert_units=True)
+        s.crop(1, 0.0, 0.5, convert_units=True)
         nt.assert_almost_equal(s.axes_manager[0].scale, 10.0)
-        assert s.axes_manager[0].units == "nm"
+        assert s.axes_manager[0].units == 'nm'
         nt.assert_allclose(s.data, d[:50, :50])
 
         # Should keep the unit to µm
@@ -185,8 +185,8 @@ class Test2D:
         s.axes_manager[1].name = 'y'
         s.axes_manager[1].scale = 0.01
         s.axes_manager[1].units = 'µm'
-        s.crop(0, 0.0, 5.0, auto_convert_units=True)
-        s.crop(1, 0.0, 5.0, auto_convert_units=True)
+        s.crop(0, 0.0, 5.0, convert_units=True)
+        s.crop(1, 0.0, 5.0, convert_units=True)
         nt.assert_almost_equal(s.axes_manager[0].scale, 0.01)
         assert s.axes_manager[0].units == "µm"
         nt.assert_allclose(s.data, d[:500, :500])
