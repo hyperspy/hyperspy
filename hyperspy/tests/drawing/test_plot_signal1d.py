@@ -168,7 +168,7 @@ def _generate_parameter():
                                tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_log_scale(mpl_cleanup):
     s = Signal1D(np.exp(-np.arange(100)/5.0))
-    s.plot(log_scale=True)
+    s.plot(intensity_scale='log')
     return s._plot.signal_plot.figure
 
 

@@ -53,6 +53,10 @@ BASE_PLOT_DOCSTRING = \
         plot_markers : bool, default True
             Plot markers added using s.add_marker(marker, permanent=True).
             Note, a large number of markers might lead to very slow plotting.
+        intensity_scale : {None, 'linear', 'log'}, default is None.
+            Plot the intensity scale on a linear or logarithmic scale. If None,
+            plot the intensity on a linear scale except when `power_spectrum` 
+            = True, which can be used only for compatible signal.
             """
 
 PLOT2D_DOCSTRING = \
@@ -81,14 +85,22 @@ PLOT2D_DOCSTRING = \
             (default), diverging color schemes are automatically centred."""
 
 COMPLEX_DOCSTRING = \
-    """representation : {'cartesian' or 'polar'}
+    """power_spectrum : {bool, None}, default is None.
+            If True, plot the power spectrum instead of the actual signal, if 
+            False, plot the real and imaginary parts of the complex signal.
+            If None, plot the power spectrum if the signal is in Fourier space.
+        representation : {'cartesian' or 'polar'}
             Determines if the real and imaginary part of the complex data is plotted ('cartesian',
             default), or if the amplitude and phase should be used ('polar').
         same_axes : bool, default True
             If True (default) plot the real and
             imaginary parts (or amplitude and phase) in the same figure if
             the signal is one-dimensional.
-
+        shifted : {bool, None}, default is None.
+            If True, plot the signal with the zero-frequency component shifted 
+            to the center of the spectrum. See `numpy.fft.fftshift` for more 
+            details. If None, set `shifted=True` only when the signal is in 
+            Fourier space.
         """
 
 KWARGS_DOCSTRING = \

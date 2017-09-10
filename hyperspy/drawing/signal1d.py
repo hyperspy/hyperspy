@@ -20,10 +20,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import logging
 
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.drawing import utils
 from hyperspy.events import Event, Events
+
+
+_logger = logging.getLogger(__name__)
 
 
 class Signal1DFigure(BlittedFigure):
@@ -192,7 +196,7 @@ class Signal1DLine(object):
         self.axes_manager = None
         self.auto_update = True
         self.get_complex = False
-        self.log_scale = False
+        self.intensity_scale = 'linear'
 
         # Properties
         self.line = None
@@ -285,15 +289,20 @@ class Signal1DLine(object):
             plt.setp(self.line, **self.line_properties)
             self.ax.figure.canvas.draw_idle()
 
-    def plot(self, data=1, data_function_kwargs={}, log_scale=False):
+    def plot(self, data=1, data_function_kwargs={}, intensity_scale='linear'):
         self.data_function_kwargs = data_function_kwargs
-        self.log_scale = log_scale
+        self.intensity_scale = intensity_scale
         data = self._get_data()
         if self.line is not None:
             self.line.remove()
-        if self.log_scale:
+
+        if self.intensity_scale == 'log':
             plot = self.ax.semilogy
         else:
+            if intensity_scale not in ['linear', None]:
+                _logger.warning('The `intensity_scale` is not set correctly, '
+                                'the intensity scale is set to the default '
+                                '(linear).')
             plot = self.ax.plot
         self.line, = plot(self.axis.axis, data, **self.line_properties)
         self.line.set_animated(self.ax.figure.canvas.supports_blit)
@@ -330,7 +339,7 @@ class Signal1DLine(object):
         if force_replot is True:
             self.close()
             self.plot(data_function_kwargs=self.data_function_kwargs,
-                      log_scale=self.log_scale)
+                      intensity_scale=self.intensity_scale)
 
         ydata = self._get_data()
         old_xaxis = self.line.get_xdata()

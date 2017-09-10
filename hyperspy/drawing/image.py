@@ -21,6 +21,7 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 from traits.api import Undefined
+import logging
 
 from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
@@ -29,6 +30,9 @@ from hyperspy.misc import math_tools
 from hyperspy.misc import rgb_tools
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
+
+
+_logger = logging.getLogger(__name__)
 
 
 class ImagePlot(BlittedFigure):
@@ -373,10 +377,16 @@ class ImagePlot(BlittedFigure):
             else:
                 self.figure.canvas.draw_idle()
         else:
-            if kwargs.pop('log_scale', False):
+            intensity_scale = kwargs.pop('intensity_scale', 'linear')
+            if intensity_scale == 'log':
                 from matplotlib.colors import LogNorm
                 norm = LogNorm()
             else:
+                if intensity_scale not in ['linear', None]:
+                    _logger.warning('The `intensity_scale` is not set '
+                                    'correctly, the intensity scale is set to '
+                                    'the default (linear).')
+                # if the `norm` kwargs is passed to matplotlib, we use it
                 norm = kwargs.pop('norm', None)
             new_args = {'interpolation': 'nearest',
                         'vmin': vmin,

@@ -184,7 +184,7 @@ class ComplexSignal_mixin:
         return value
 
     def plot(self, power_spectrum=None, navigator="auto", axes_manager=None,
-             representation='cartesian', log_scale=None, shifted=None,
+             representation='cartesian', intensity_scale=None, shifted=None,
              same_axes=True, **kwargs):
         """%s
         %s
@@ -193,11 +193,11 @@ class ComplexSignal_mixin:
         """
         if power_spectrum is None:
             power_spectrum = True if 'FFT' in self.metadata.Signal.signal_type else False
-        if log_scale is None:
-            log_scale = True if power_spectrum else False
+        if intensity_scale is None:
+            intensity_scale = 'log' if power_spectrum else 'linear'
         if shifted is None:
             shifted = True if power_spectrum else False
-        kwargs.update({'log_scale': log_scale,
+        kwargs.update({'intensity_scale': intensity_scale,
                        'shifted': shifted,
                        'navigator': navigator,
                        'axes_manager': self.axes_manager})
