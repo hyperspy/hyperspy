@@ -134,6 +134,9 @@ class GUIs(t.HasTraits):
         True,
         desc="Display traitsui user interface elements. "
         "Requires installing hyperspy_gui_traitsui.")
+    warn_if_guis_are_missing = t.CBool(
+        True,
+        desc="Display warnings, if hyperspy_gui_ipywidgets or hyperspy_gui_traitsui are missing.")
 
 
 class EDSConfig(t.HasTraits):
