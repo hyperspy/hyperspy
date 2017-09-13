@@ -625,8 +625,20 @@ class EDSTEM_mixin:
                 if probe_area in parameters:
                     area = parameters.TEM.probe_area
                 else:
-                    pixel1 = self.axes_manager[0].scale
-                    pixel2 = self.axes_manager[1].scale
+                    #The next series of if statements are used to check what
+                    #units the pixel scale is set in.
+                    if self.axes_manager[0].units == 'nm':
+                        pixel1 = self.axes_manager[0].scale
+                    elif self.axes_manager[0].units == 'µm':
+                        pixel1 = self.axes_manager[0].scale*1000
+                    else:
+                        raise ValueError('Pixel units must be in nm or µm for dose to be calculated.')
+                    if self.axes_manager[1].units == 'nm':
+                        pixel2 = self.axes_manager[1].scale
+                    elif self.axes_manager[0].units == 'µm':
+                        pixel2 = self.axes_manager[1].scale*1000
+                    else:
+                        raise ValueError('Pixel units must be in nm or µm for dose to be calculated.')
                     if pixel1 == 1 or pixel2 == 1:
                         warnings.warn('Please note your probe_area is set to'
                                       'the default value of 1 nm^2. The \
