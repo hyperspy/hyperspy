@@ -29,7 +29,7 @@ import logging
 from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
-from hyperspy.ui_registry import add_gui_method, get_gui, DISPLAY_DT, TOOLKIT_DT
+from hyperspy.ui_registry import add_gui_method, get_gui
 
 import warnings
 
@@ -102,6 +102,8 @@ class UnitConversion(object):
         self.offset = float(converted_offset.magnitude)
 
     def _convert_scale_units(self, converted_units):
+        # For ImageJ
+        converted_units = converted_units.replace('micron', 'µm')
         if self._ignore_conversion(converted_units) or self._ignore_conversion(self.units):
             return
         scale = self.scale * _ureg(self.units)
@@ -112,8 +114,7 @@ class UnitConversion(object):
         self.scale = float(scale.magnitude)
         self.offset = float(offset.magnitude)
 
-    def convert_to_units(self, units=None, factor=0.25, 
-                         filterwarning_action='always'):
+    def convert_to_units(self, units=None, factor=0.25):
         """ Convert the scale and the units of the current axis. If the units
         is not supported by the pint library, the scale and units are not
         changed.
@@ -126,18 +127,12 @@ class UnitConversion(object):
             If str, the navigation or signal axes will converted to the 
             provided units.
             If `None`, the scale and the units to the appropriate scale and units 
-            to avoid displaying scalebar with >3 digits or too small number.            
-        filterwarning_action : str
-            Default = 'always'
-            Controls whether warnings are ignored, displayed, or turned into
-            errors. See warnings.filterwarnings documentation for more details.
+            to avoid displaying scalebar with >3 digits or too small number.
         """
-        with warnings.catch_warnings():
-            warnings.filterwarnings(filterwarning_action, category=UserWarning)
-            if units is None:
-                self._convert_compact_scale_units(factor)
-            else:
-                self._convert_scale_units(units)
+        if units is None:
+            self._convert_compact_scale_units(factor)
+        else:
+            self._convert_scale_units(units)
 
     @property
     def units(self):
@@ -926,8 +921,8 @@ class AxesManager(t.HasTraits):
     def _on_offset_changed(self):
         self.events.any_axis_changed.trigger(obj=self)
 
-    def convert_units(self, axes=None, units=None, factor=0.25,
-                      filterwarning_action='always'):
+    def convert_units(self, axes=None, units=None, same_units=True,
+                      factor=0.25):
         """ Convert the scale and the units of the selected axes. If the units
         is not supported by the pint library, the scale and units are not
         changed.
@@ -947,27 +942,55 @@ class AxesManager(t.HasTraits):
             provided units.
             If `None`, the scale and the units to the appropriate scale and units 
             to avoid displaying scalebar with >3 digits or too small number.
-        filterwarning_action : str
-            Default = 'always'
-            Controls whether warnings are ignored, displayed, or turned into
-            errors. See warnings.filterwarnings documentation for more details.
         """
         _logger.debug('Axes manager: {}'.format(self))
+        convert_navigation = convert_signal = True
+        if units is str:
+            same_units = False
         if axes is None:
             axes = self.navigation_axes + self.signal_axes
         elif axes == 'navigation':
             axes = self.navigation_axes
+            convert_signal = False
         elif axes == 'signal':
             axes = self.signal_axes
+            convert_navigation = False
         if type(units) is str or units is None:
             units = [units] * len(axes)
         elif len(units) != len(axes):
-            _logger.error('Please provide a correct "units" argument')
-        for axis, units in zip(axes, units):
-            _logger.debug(
-                'Convert axis "{0}" to units: "{1}"'.format(axis.name, units))
-            axis.convert_to_units(units, factor=factor,
-                                  filterwarning_action=filterwarning_action)
+            _logger.error('Please check the length of the "units" argument')
+        if same_units:
+            if convert_navigation:
+                units_nav = units[:self.navigation_dimension]
+                self._convert_axes_to_same_units(self.navigation_axes,
+                                                 units_nav, factor)
+            if convert_signal:
+                offset = self.navigation_dimension if convert_navigation else 0
+                units_sig = units[offset:]
+                self._convert_axes_to_same_units(self.signal_axes,
+                                                 units_sig, factor)
+        else:
+            for axis, unit in zip(axes, units):
+                axis.convert_to_units(unit, factor=factor)
+
+    def _convert_axes_to_same_units(self, axes, units, factor=0.25):       
+        units_backup = [axis.units for axis in axes]
+        current_units = None
+        for axis, unit in zip(axes, units):
+            axis.convert_to_units(unit, factor)
+            if current_units is not None and current_units:
+                if current_units != axis.units:
+                    axes_type = 'navigation' if axes[0].navigate else 'signal'
+                    warnings.warn("The units can't be automatically converted "
+                                  "to the same units for all the {} axes."
+                                  "".format(axes_type),
+                                  UserWarning)
+                    # Restore old units and return
+                    for axis, unit in zip(axes, units_backup):
+                        axis.convert_to_units(unit, factor)
+                    return
+            else:
+                current_units = axis.units # initialisation first iteration
 
     def update_axes_attributes_from(self, axes,
                                     attributes=["scale", "offset", "units"]):

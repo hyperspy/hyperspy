@@ -71,8 +71,8 @@ def test_read_unit_from_imagej():
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ.tif')
     s = hs.load(fname)
-    assert s.axes_manager[0].units == 'micron'
-    assert s.axes_manager[1].units == 'micron'
+    assert s.axes_manager[0].units == 'µm'
+    assert s.axes_manager[1].units == 'µm'
     nt.assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
     nt.assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
 
@@ -83,8 +83,8 @@ def test_read_unit_from_imagej_stack():
     s = hs.load(fname)
     assert s.data.shape == (2, 68, 68)
     assert s.axes_manager[0].units == t.Undefined
-    assert s.axes_manager[1].units == 'micron'
-    assert s.axes_manager[2].units == 'micron'
+    assert s.axes_manager[1].units == 'µm'
+    assert s.axes_manager[2].units == 'µm'
     nt.assert_allclose(s.axes_manager[0].scale, 2.5, atol=1E-5)
     nt.assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
     nt.assert_allclose(s.axes_manager[2].scale, 0.16867, atol=1E-5)
@@ -108,8 +108,8 @@ def test_read_unit_from_DM_stack():
         s2 = hs.load(fname2)
         _compare_signal_shape_data(s, s2)
         assert s2.axes_manager[0].units == s.axes_manager[0].units
-        assert s2.axes_manager[1].units == 'micron'
-        assert s2.axes_manager[2].units == 'micron'
+        assert s2.axes_manager[1].units == 'µm'
+        assert s2.axes_manager[2].units == 'µm'
         nt.assert_allclose(
             s2.axes_manager[0].scale, s.axes_manager[0].scale, atol=1E-5)
         nt.assert_allclose(
@@ -158,8 +158,8 @@ def test_write_read_unit_imagej():
             tmpdir, 'test_loading_image_saved_with_imageJ2.tif')
         s.save(fname2, export_scale=True, overwrite=True)
         s2 = hs.load(fname2)
-        assert s2.axes_manager[0].units == 'micron'
-        assert s2.axes_manager[1].units == 'micron'
+        assert s2.axes_manager[0].units == 'µm'
+        assert s2.axes_manager[1].units == 'µm'
         assert s.data.shape == s.data.shape
 
 
@@ -183,8 +183,8 @@ def test_write_read_unit_imagej_with_description():
         fname3 = os.path.join(tmpdir, 'description2.tif')
         s.save(fname3, export_scale=True, overwrite=True, description='test')
         s3 = hs.load(fname3)
-        assert s3.axes_manager[0].units == 'micron'
-        assert s3.axes_manager[1].units == 'micron'
+        assert s3.axes_manager[0].units == 'µm'
+        assert s3.axes_manager[1].units == 'µm'
         nt.assert_allclose(s3.axes_manager[0].scale, 0.16867, atol=1E-5)
         nt.assert_allclose(s3.axes_manager[1].scale, 0.16867, atol=1E-5)
 
@@ -353,7 +353,7 @@ def test_write_scale_unit_image_stack():
         _compare_signal_shape_data(s, s1)
         assert s1.axes_manager[0].units == 'pm'
         # only one unit can be read
-        assert s1.axes_manager[1].units == 'mm'
+        assert s1.axes_manager[1].units == 'µm'
         assert s1.axes_manager[2].units == 'mm'
         nt.assert_allclose(s1.axes_manager[0].scale, 250.0)
         nt.assert_allclose(s1.axes_manager[1].scale, s.axes_manager[1].scale)

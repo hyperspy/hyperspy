@@ -1945,7 +1945,7 @@ class BaseSignal(FancySlicing,
         if axes_manager is None:
             axes_manager = self.axes_manager
         if convert_units:
-            axes_manager = axes_manager.deepcopy()
+            self.axes_manager.convert_units()
         if self.is_rgbx is True:
             if axes_manager.navigation_size < 2:
                 navigator = None
@@ -2190,7 +2190,7 @@ class BaseSignal(FancySlicing,
         self.squeeze()
         self.events.data_changed.trigger(obj=self)
         if convert_units:
-            self.axes_manager.convert_units(filterwarning_action="ignore")
+            self.axes_manager.convert_units()
         
     def swap_axes(self, axis1, axis2):
         """Swaps the axes.

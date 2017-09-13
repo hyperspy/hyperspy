@@ -13,6 +13,7 @@ import h5py
 
 from hyperspy.io import load
 from hyperspy.signals import BaseSignal, Signal2D, Signal1D
+from hyperspy.misc.test_utils import assert_warns
 
 
 my_path = os.path.dirname(__file__)
@@ -78,8 +79,12 @@ def test_metadata_with_bytes_string():
     f.close()
     assert isinstance(dim1_name, np.bytes_)
     assert isinstance(dim1_units, np.bytes_)
-    signal = load(os.path.join(my_path, 'emd_files', filename))
-
+    with assert_warns(
+            message="not supported for conversion.",
+            category=UserWarning):
+        signal = load(os.path.join(my_path, 'emd_files', filename))
+    signal = load(os.path.join(my_path, 'emd_files', filename),
+                  convert_units=False)
 
 def test_data_numpy_object_dtype():
     filename = os.path.join(
@@ -120,9 +125,9 @@ class TestCaseSaveAndRead():
         signal_ref.axes_manager[0].offset = 10
         signal_ref.axes_manager[1].offset = 20
         signal_ref.axes_manager[2].offset = 30
-        signal_ref.axes_manager[0].units = 'nmx'
-        signal_ref.axes_manager[1].units = 'nmy'
-        signal_ref.axes_manager[2].units = 'nmz'
+        signal_ref.axes_manager[0].units = 'nm'
+        signal_ref.axes_manager[1].units = 'µm'
+        signal_ref.axes_manager[2].units = 'mm'
         signal_ref.save(os.path.join(my_path, 'emd_files', 'example_temp.emd'), overwrite=True,
                         signal_metadata=sig_metadata, user=user, microscope=microscope,
                         sample=sample, comments=comments)
@@ -137,9 +142,9 @@ class TestCaseSaveAndRead():
         np.testing.assert_equal(signal.axes_manager[0].offset, 10)
         np.testing.assert_equal(signal.axes_manager[1].offset, 20)
         np.testing.assert_equal(signal.axes_manager[2].offset, 30)
-        np.testing.assert_equal(signal.axes_manager[0].units, 'nmx')
-        np.testing.assert_equal(signal.axes_manager[1].units, 'nmy')
-        np.testing.assert_equal(signal.axes_manager[2].units, 'nmz')
+        np.testing.assert_equal(signal.axes_manager[0].units, 'nm')
+        np.testing.assert_equal(signal.axes_manager[1].units, 'µm')
+        np.testing.assert_equal(signal.axes_manager[2].units, 'mm')
         np.testing.assert_equal(signal.metadata.General.title, test_title)
         np.testing.assert_equal(
             signal.metadata.General.user.as_dictionary(), user)

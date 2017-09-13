@@ -37,7 +37,6 @@ class MPL_HyperExplorer(object):
         self.signal_data_function = None
         self.navigator_data_function = None
         self.axes_manager = None
-        self.auto_convert_units = True
         self.signal_title = ''
         self.navigator_title = ''
         self.quantity_label = ''
@@ -155,9 +154,6 @@ class MPL_HyperExplorer(object):
 
     def plot(self, **kwargs):
         if self.pointer is None:
-            if self.auto_convert_units:
-                for navigation_axis in self.axes_manager.navigation_axes:
-                    navigation_axis.convert_to_units()
             pointer = self.assign_pointer()
             if pointer is not None:
                 self.pointer = pointer(self.axes_manager)

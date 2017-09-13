@@ -52,8 +52,6 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
             are never plotted.
         axes_off : bool, optional
             If True, the axes labels are not plotted.
-        auto_convert_units : bool, optional
-            if True, automatically convert the units.
         saturated_pixels: scalar
             The percentage of pixels that are left out of the bounds. For
             example, the low and high bounds of a value of 1 are the
@@ -74,7 +72,6 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.data_function = self.signal_data_function
         imf.title = self.signal_title + " Signal"
         imf.xaxis, imf.yaxis = self.axes_manager.signal_axes
-        imf.auto_convert_units = self.auto_convert_units
         imf.colorbar = colorbar
         imf.quantity_label = self.quantity_label
         imf.scalebar = scalebar

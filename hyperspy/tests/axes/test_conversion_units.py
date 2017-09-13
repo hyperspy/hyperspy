@@ -20,7 +20,7 @@ import numpy.testing as nt
 import traits.api as t
 
 from hyperspy.axes import DataAxis, AxesManager, UnitConversion
-from hyperspy.misc.test_utils import assert_warns
+from hyperspy.misc.test_utils import assert_warns, assert_deep_almost_equal
 
 
 class TestUnitConversion:
@@ -175,19 +175,10 @@ class TestDataAxis:
         assert self.axis.units == 'µm'
         nt.assert_almost_equal(self.axis.offset, 0.005)
 
-    def test_units_not_supported_by_pint_no_warning_raised(self):
-        # Suppose to do nothing, not raising a warning, not converting scale
-        self.axis.units = 'micron'
-        self.axis.convert_to_units('m', filterwarning_action="ignore")
-        nt.assert_almost_equal(self.axis.scale, 12E-12)
-        assert self.axis.units == 'micron'
-        nt.assert_almost_equal(self.axis.offset, 5E-09)
-
     def test_units_not_supported_by_pint_warning_raised(self):
         # raising a warning, not converting scale
         self.axis.units = 'micron'
         with assert_warns(
-
                 message="not supported for conversion.",
                 category=UserWarning):
             self.axis.convert_to_units('m')
@@ -202,7 +193,7 @@ class TestAxesManager:
             {'name': 'x',
              'navigate': True,
              'offset': 0.0,
-             'scale': 1E-6,
+             'scale': 1.5E-9,
              'size': 1024,
              'units': 'm'},
             {'name': 'y',
@@ -220,10 +211,31 @@ class TestAxesManager:
 
         self.am = AxesManager(self.axes_list)
 
+        self.axes_list2 = [
+            {'name': 'x',
+             'navigate': True,
+             'offset': 0.0,
+             'scale': 1.5E-9,
+             'size': 1024,
+             'units': 'm'},
+            {'name': 'energy',
+             'navigate': False,
+             'offset': 0.0,
+             'scale': 2.5,
+             'size': 4096,
+             'units': 'eV'},
+            {'name': 'energy2',
+             'navigate': False,
+             'offset': 0.0,
+             'scale': 5.0,
+             'size': 4096,
+             'units': 'eV'}]
+        self.am2 = AxesManager(self.axes_list2)
+
     def test_compact_unit(self):
         self.am.convert_units()
-        assert self.am['x'].units == 'µm'
-        nt.assert_almost_equal(self.am['x'].scale, 1.0)
+        assert self.am['x'].units == 'nm'
+        nt.assert_almost_equal(self.am['x'].scale, 1.5)
         assert self.am['y'].units == 'nm'
         nt.assert_almost_equal(self.am['y'].scale, 0.5)
         assert self.am['energy'].units == 'keV'
@@ -231,7 +243,7 @@ class TestAxesManager:
 
     def test_convert_to_navigation_units(self):
         self.am.convert_units(axes='navigation', units='mm')
-        nt.assert_almost_equal(self.am['x'].scale, 1E-3)
+        nt.assert_almost_equal(self.am['x'].scale, 1.5E-6)
         assert self.am['x'].units == 'mm'
         nt.assert_almost_equal(self.am['y'].scale, 0.5E-6)
         assert self.am['y'].units == 'mm'
@@ -239,13 +251,21 @@ class TestAxesManager:
                                self.axes_list[-1]['scale'])
 
     def test_convert_to_navigation_units_list(self):
-        self.am.convert_units(axes='navigation', units=['mm', 'nm'])
-        nt.assert_almost_equal(self.am['x'].scale, 1000.0)
+        self.am.convert_units(axes='navigation', units=['mm', 'nm'],
+                              same_units=False)
+        nt.assert_almost_equal(self.am['x'].scale, 1.5)
         assert self.am['x'].units == 'nm'
         nt.assert_almost_equal(self.am['y'].scale, 0.5E-6)
         assert self.am['y'].units == 'mm'
         nt.assert_almost_equal(self.am['energy'].scale,
                                self.axes_list[-1]['scale'])
+
+    def test_convert_to_navigation_units_list_same_units(self):
+        with assert_warns(message="same units for all the navigation axes.",
+                          category=UserWarning):
+            self.am.convert_units(axes='navigation', units=['mm', 'nm'],
+                                  same_units=True)
+        assert_deep_almost_equal(self.am._get_axes_dicts(), self.axes_list)
 
     def test_convert_to_signal_units(self):
         self.am.convert_units(axes='signal', units='keV')
@@ -255,12 +275,32 @@ class TestAxesManager:
         assert self.am['y'].units == self.axes_list[1]['units']
         nt.assert_almost_equal(self.am['energy'].scale, 0.005)
         assert self.am['energy'].units == 'keV'
-
+        
     def test_convert_to_units_list(self):
-        self.am.convert_units(units=['µm', 'nm', 'meV'])
-        nt.assert_almost_equal(self.am['x'].scale, 1000.0)
+        self.am.convert_units(units=['µm', 'nm', 'meV'], same_units=False)
+        nt.assert_almost_equal(self.am['x'].scale, 1.5)
         assert self.am['x'].units == 'nm'
         nt.assert_almost_equal(self.am['y'].scale, 0.5E-3)
         assert self.am['y'].units == 'µm'
         nt.assert_almost_equal(self.am['energy'].scale, 5E3)
         assert self.am['energy'].units == 'meV'
+
+    def test_convert_to_units_list_same_units(self):
+        with assert_warns(
+            message="same units for all the signal axes.",
+            category=UserWarning):
+            self.am2.convert_units(units=['µm', 'eV', 'meV'], same_units=True)
+        # Only the signal axis can be converted
+        assert_deep_almost_equal(self.am2._get_signal_axes_dicts(),
+                                 self.axes_list2[1:])
+        nt.assert_almost_equal(self.am2['x'].scale, 0.0015)
+        assert self.am2['x'].units == 'µm'
+        
+    def test_convert_to_units_list_signal2D(self):
+        self.am2.convert_units(units=['µm', 'eV', 'meV'], same_units=False)
+        nt.assert_almost_equal(self.am2['x'].scale, 0.0015)
+        assert self.am2['x'].units == 'µm'
+        nt.assert_almost_equal(self.am2['energy'].scale, 2500)
+        assert self.am2['energy'].units == 'meV'
+        nt.assert_almost_equal(self.am2['energy2'].scale, 5.0)
+        assert self.am2['energy2'].units == 'eV'

@@ -41,7 +41,7 @@ class ImagePlot(BlittedFigure):
     data_fuction : function or method
         A function that returns a 2D array when called without any
         arguments.
-    scalebar, plot_ticks, colorbar, plot_indices, auto_convert_units : bool
+    scalebar, plot_ticks, colorbar, plot_indices : bool
     title : str
         The title is printed at the top of the image.
     vmin, vmax : float
@@ -82,7 +82,6 @@ class ImagePlot(BlittedFigure):
         self._text = None
         self._text_position = (0, 1.05,)
         self.axes_manager = None
-        self.auto_convert_units = False
         self.axes_off = False
         self._aspect = 1
         self._extent = None
@@ -149,33 +148,6 @@ class ImagePlot(BlittedFigure):
         else:
             self._user_scalebar = None
 
-    @property
-    def pixel_units(self):
-        if self._pixel_units is None and self.scalebar:
-            return self.xaxis.units
-        else:
-            return self._pixel_units
-
-    @pixel_units.setter
-    def pixel_units(self, units):
-        if units is None:
-            self._pixel_units = None
-        elif hasattr(self, 'xaxis') and hasattr(self, 'yaxis'):
-            xunits = self.xaxis.units
-            yunits = self.yaxis.units
-            if units == 'auto':
-                units = None  # auto convert the units
-            self.xaxis.convert_to_units(units)
-            self.yaxis.convert_to_units(units)
-            if self.scalebar and self.xaxis.units != self.yaxis.units:
-                # Converting back the units, because there are not
-                # compatible with displaying a scalebar
-                self.xaxis.convert_to_units(xunits)
-                self.yaxis.convert_to_units(yunits)
-            self._pixel_units = self.xaxis.units
-        else:
-            self._pixel_units = None
-
     def configure(self):
         xaxis = self.xaxis
         yaxis = self.yaxis
@@ -183,12 +155,10 @@ class ImagePlot(BlittedFigure):
         if (xaxis.units == yaxis.units) and (xaxis.scale == yaxis.scale):
             self._auto_scalebar = True
             self._auto_axes_ticks = False
+            self.pixel_units = xaxis.units
         else:
             self._auto_scalebar = False
             self._auto_axes_ticks = True
-
-        if self.auto_convert_units:
-            self.pixel_units = 'auto'
 
         # Signal2D labels
         self._xlabel = '{}'.format(xaxis)

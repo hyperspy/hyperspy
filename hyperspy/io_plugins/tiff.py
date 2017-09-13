@@ -272,6 +272,27 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
     units = {axis: t.Undefined for axis in axes_l}
     intensity_axis = {}
 
+    # for files created with imageJ
+    if tiff[0].is_imagej:
+        image_description = _decode_string(op["image_description"])
+        if "image_description_1" in op:
+            image_description = _decode_string(op["image_description_1"])
+        _logger.debug(
+            "Image_description tag: {0}".format(image_description))
+        if 'ImageJ' in image_description:
+            _logger.debug("Reading ImageJ tif metadata")
+            # ImageJ write the unit in the image description
+            if 'unit' in image_description:
+                unit = image_description.split('unit=')[1].splitlines()[0]
+                if unit == 'micron':
+                    unit = 'µm'
+                for key in ['x', 'y']:
+                    units[key] = unit
+                scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op)
+            if 'spacing' in image_description:
+                scales['z'] = float(
+                    image_description.split('spacing=')[1].splitlines()[0])
+
     # for files created with DM
     if '65003' in op:
         _logger.debug("Reading Gatan DigitalMicrograph tif metadata")
@@ -299,25 +320,6 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
         intensity_axis['offset'] = op['65024']   # intensity offset
     if '65025' in op:
         intensity_axis['scale'] = op['65025']   # intensity scale
-
-    # for files created with imageJ
-    if tiff[0].is_imagej:
-        image_description = _decode_string(op["image_description"])
-        if "image_description_1" in op:
-            image_description = _decode_string(op["image_description_1"])
-        _logger.debug(
-            "Image_description tag: {0}".format(image_description))
-        if 'ImageJ' in image_description:
-            _logger.debug("Reading ImageJ tif metadata")
-            # ImageJ write the unit in the image description
-            if 'unit' in image_description:
-                unit = image_description.split('unit=')[1].splitlines()[0]
-                for key in ['x', 'y']:
-                    units[key] = unit
-                scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op)
-            if 'spacing' in image_description:
-                scales['z'] = float(
-                    image_description.split('spacing=')[1].splitlines()[0])
 
     # for FEI Helios tiff files (apparently, works also for Quanta):
     elif 'helios_metadata' in op or 'sfeg_metadata' in op:

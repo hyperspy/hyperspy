@@ -84,15 +84,14 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         sf.axis = self.axis
         sf.create_axis()
         sf.axes_manager = self.axes_manager
-        if self.auto_convert_units:
-            self.axes_manager.signal_axes[0].convert_to_units()
         self.xlabel = '{}'.format(self.axes_manager.signal_axes[0])
         if self.axes_manager.signal_axes[0].units is not Undefined:
-            self.xlabel += ' (%s)' % self.axes_manager.signal_axes[0].units
+            self.xlabel += ' ({})'.format(
+                self.axes_manager.signal_axes[0].units)
         self.ylabel = 'Intensity'
         sf.xlabel = self.xlabel
         sf.ylabel = self.ylabel
-        
+
         self.signal_plot = sf
         # Create a line to the left axis with the default indices
         is_complex = np.iscomplex(self.signal_data_function()).any()
