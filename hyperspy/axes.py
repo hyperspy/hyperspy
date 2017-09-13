@@ -942,6 +942,11 @@ class AxesManager(t.HasTraits):
             provided units.
             If `None`, the scale and the units to the appropriate scale and units 
             to avoid displaying scalebar with >3 digits or too small number.
+        same_units : if `True`, force to keep the same units if the units of
+            the axes differs. It only applies for the same kind of axis, 
+            `navigation` or `signal`. By default the converted units of the 
+            first axis is used for all axes. If `False`, convert all axes 
+            individually.
         """
         _logger.debug('Axes manager: {}'.format(self))
         convert_navigation = convert_signal = True
@@ -973,24 +978,18 @@ class AxesManager(t.HasTraits):
             for axis, unit in zip(axes, units):
                 axis.convert_to_units(unit, factor=factor)
 
-    def _convert_axes_to_same_units(self, axes, units, factor=0.25):       
-        units_backup = [axis.units for axis in axes]
+    def _convert_axes_to_same_units(self, axes, units, factor=0.25):
         current_units = None
         for axis, unit in zip(axes, units):
             axis.convert_to_units(unit, factor)
             if current_units is not None and current_units:
                 if current_units != axis.units:
-                    axes_type = 'navigation' if axes[0].navigate else 'signal'
-                    warnings.warn("The units can't be automatically converted "
-                                  "to the same units for all the {} axes."
-                                  "".format(axes_type),
-                                  UserWarning)
-                    # Restore old units and return
-                    for axis, unit in zip(axes, units_backup):
-                        axis.convert_to_units(unit, factor)
+                    # take units along first axis and use that one
+                    for axis in axes:
+                        axis.convert_to_units(axes[0].units, factor)
                     return
             else:
-                current_units = axis.units # initialisation first iteration
+                current_units = axis.units  # initialisation first iteration
 
     def update_axes_attributes_from(self, axes,
                                     attributes=["scale", "offset", "units"]):

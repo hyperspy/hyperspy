@@ -345,7 +345,7 @@ def test_write_scale_unit_image_stack():
     s.axes_manager[2].scale = 1.5
     s.axes_manager[0].units = 'nm'
     s.axes_manager[1].units = 'um'
-    s.axes_manager[2].units = 'mm'
+    s.axes_manager[2].units = 'um'
     with tempfile.TemporaryDirectory() as tmpdir:
         fname = os.path.join(tmpdir, 'test_export_scale_unit_stack2.tif')
         s.save(fname, overwrite=True, export_scale=True)
@@ -354,7 +354,7 @@ def test_write_scale_unit_image_stack():
         assert s1.axes_manager[0].units == 'pm'
         # only one unit can be read
         assert s1.axes_manager[1].units == 'µm'
-        assert s1.axes_manager[2].units == 'mm'
+        assert s1.axes_manager[2].units == 'µm'
         nt.assert_allclose(s1.axes_manager[0].scale, 250.0)
         nt.assert_allclose(s1.axes_manager[1].scale, s.axes_manager[1].scale)
         nt.assert_allclose(s1.axes_manager[2].scale, s.axes_manager[2].scale)

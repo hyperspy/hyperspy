@@ -261,11 +261,14 @@ class TestAxesManager:
                                self.axes_list[-1]['scale'])
 
     def test_convert_to_navigation_units_list_same_units(self):
-        with assert_warns(message="same units for all the navigation axes.",
-                          category=UserWarning):
-            self.am.convert_units(axes='navigation', units=['mm', 'nm'],
-                                  same_units=True)
-        assert_deep_almost_equal(self.am._get_axes_dicts(), self.axes_list)
+        self.am.convert_units(axes='navigation', units=['mm', 'nm'],
+                              same_units=True)
+        assert self.am['x'].units == 'mm'
+        nt.assert_almost_equal(self.am['x'].scale, 1.5e-6)
+        assert self.am['y'].units == 'mm'
+        nt.assert_almost_equal(self.am['y'].scale, 0.5e-6)
+        assert self.am['energy'].units == 'eV'
+        nt.assert_almost_equal(self.am['energy'].scale, 5)
 
     def test_convert_to_signal_units(self):
         self.am.convert_units(axes='signal', units='keV')
@@ -275,7 +278,7 @@ class TestAxesManager:
         assert self.am['y'].units == self.axes_list[1]['units']
         nt.assert_almost_equal(self.am['energy'].scale, 0.005)
         assert self.am['energy'].units == 'keV'
-        
+
     def test_convert_to_units_list(self):
         self.am.convert_units(units=['µm', 'nm', 'meV'], same_units=False)
         nt.assert_almost_equal(self.am['x'].scale, 1.5)
@@ -286,16 +289,13 @@ class TestAxesManager:
         assert self.am['energy'].units == 'meV'
 
     def test_convert_to_units_list_same_units(self):
-        with assert_warns(
-            message="same units for all the signal axes.",
-            category=UserWarning):
-            self.am2.convert_units(units=['µm', 'eV', 'meV'], same_units=True)
+        self.am2.convert_units(units=['µm', 'eV', 'meV'], same_units=True)
         # Only the signal axis can be converted
         assert_deep_almost_equal(self.am2._get_signal_axes_dicts(),
                                  self.axes_list2[1:])
         nt.assert_almost_equal(self.am2['x'].scale, 0.0015)
         assert self.am2['x'].units == 'µm'
-        
+
     def test_convert_to_units_list_signal2D(self):
         self.am2.convert_units(units=['µm', 'eV', 'meV'], same_units=False)
         nt.assert_almost_equal(self.am2['x'].scale, 0.0015)
