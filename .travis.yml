@@ -33,12 +33,13 @@ before_install:
 install:
 
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      DEPS="pip numpy scipy matplotlib>=2.0.2 ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython lxml ipyparallel dask traits traitsui";
+      DEPS="pip numpy scipy matplotlib>=2.0.2 ipython h5py sympy scikit-learn dill setuptools scikit-image cython lxml ipyparallel dask traits traitsui";
     else DEPS="pip ipython numpy scipy matplotlib>=2.0.2 h5py sympy scikit-image";
     fi
   - conda create -n testenv --yes python=$PYTHON;
     source activate testenv;
     conda install -y -c conda-forge $DEPS;
+    conda install -y natsort; # natsort from conda-forge is a bit old and some decrepation warning interfere with warning assertion
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
       pip install .[all];
     else pip install .;

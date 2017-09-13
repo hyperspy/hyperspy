@@ -83,7 +83,6 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.scalebar_color = scalebar_color
         imf.centre_colormap = centre_colormap
         imf.plot(**kwargs)
-#        ax.callbacks.connect('xlim_changed', callback)
         self.signal_plot = imf
 
         if imf.figure is not None:
