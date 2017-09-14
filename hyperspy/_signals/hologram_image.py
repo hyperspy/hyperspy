@@ -28,6 +28,7 @@ from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.misc.holography.reconstruct import (
     reconstruct, estimate_sideband_position, estimate_sideband_size)
+from hyperspy.misc.holography.tools import calculate_carrier_frequency
 
 _logger = logging.getLogger(__name__)
 
@@ -637,15 +638,43 @@ class HologramImage(Signal2D):
         # Parsing sideband size
         (sb_size, sb_size_temp) = _parse_sb_size(self, None, sb_position, sb_size, parallel)
 
-        # Convert sideband size from 1/nm or mrad to pixels
+        # Calculate carrier frequency in 1/px and fringe sampling:
+        fourier_sampling = 1./np.array(self.axes_manager.signal_shape)
+        carrier_freq_px = self.map(calculate_carrier_frequency,
+                                   sb_position=sb_position,
+                                   scale=fourier_sampling,
+                                   inplace=False,
+                                   ragged=False,
+                                   parallel=parallel)
+        fringe_sampling = 1./fourier_sampling
+        # Calculate carrier frequency in 1/nm and fringe spacing:
         f_sampling_nm = np.divide(
-            1,
+            1.,
             [a * b for a, b in
              zip(self.axes_manager.signal_shape,
                  (self.axes_manager.signal_axes[0].scale,
                   self.axes_manager.signal_axes[1].scale))]
         )
-        carrier_freq_nm = np.linalg.norm(np.multiply(sb_position_temp, f_sampling_nm))
+        carrier_freq_nm = self.map(calculate_carrier_frequency,
+                                   sb_position=sb_position,
+                                   scale=f_sampling_nm,
+                                   inplace=False,
+                                   ragged=False,
+                                   parallel=parallel)
+
+        # Calculate carrier frequency in mrad:
+        try:
+            ht = self.metadata.Acquisition_instrument.TEM.beam_energy
+        except:
+            raise AttributeError("Please define the beam energy."
+                                 "You can do this e.g. by using the "
+                                 "set_microscope_parameters method")
+
+        momentum = 2 * constants.m_e * constants.elementary_charge * ht * \
+                   1000 * (1 + constants.elementary_charge * ht *
+                           1000 / (2 * constants.m_e * constants.c ** 2))
+        wavelength = constants.h / np.sqrt(momentum) * 1e9  # in nm
+        carrier_freq_mrad = carrier_freq_nm * 1000 * wavelength
 
         if sb_unit == 'nm':
 
@@ -658,19 +687,7 @@ class HologramImage(Signal2D):
                      (self.axes_manager.signal_axes[0].scale,
                       self.axes_manager.signal_axes[1].scale))]
             )
-            try:
-                ht = self.metadata.Acquisition_instrument.TEM.beam_energy
-            except:
-                raise AttributeError("Please define the beam energy."
-                                     "You can do this e.g. by using the "
-                                     "set_microscope_parameters method")
 
-            momentum = 2 * constants.m_e * constants.elementary_charge * ht * \
-                1000 * (1 + constants.elementary_charge * ht *
-                        1000 / (2 * constants.m_e * constants.c ** 2))
-            wavelength = constants.h / np.sqrt(momentum) * 1e9  # in nm
-            sb_size_temp = sb_size_temp / (1000 * wavelength *
-                                           np.mean(f_sampling))
 
         # Logging the reconstruction parameters if appropriate:
         _logger.info('Sideband position in pixels: {}'.format(sb_position))
@@ -680,7 +697,9 @@ class HologramImage(Signal2D):
 
         # Checking if reference is a single image, which requires sideband
         # parameters as a nparray to avoid iteration trough those:
-        raise NotImplementedError
+        return {'Carrier frequency (1/px)': carrier_freq_px,
+                'Carrier frequency (1/nm)': carrier_freq_nm,
+                'Carrier frequency (mrad)': carrier_freq_mrad}
 
 
 class LazyHologramImage(LazySignal, HologramImage):
