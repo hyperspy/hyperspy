@@ -37,6 +37,76 @@ def _first_nav_pixel_data(s):
                                      s.axes_manager.navigation_dimension]
 
 
+def _parse_sb_position(s, reference, sb_position, sb, high_cf, parallel):
+
+    if sb_position is None:
+        _logger.warning('Sideband position is not specified. The sideband '
+                        'will be found automatically which may cause '
+                        'wrong results.')
+        if reference is None:
+            sb_position = s.estimate_sideband_position(
+                sb=sb, high_cf=high_cf, parallel=parallel)
+        else:
+            sb_position = reference.estimate_sideband_position(
+                sb=sb, high_cf=high_cf, parallel=parallel)
+
+    else:
+        if isinstance(sb_position, BaseSignal) and \
+                not sb_position._signal_dimension == 1:
+            raise ValueError('sb_position dimension has to be 1')
+
+        if not isinstance(sb_position, Signal1D):
+            sb_position = Signal1D(sb_position)
+            if isinstance(sb_position.data, daArray):
+                sb_position = sb_position.as_lazy()
+
+        if not sb_position.axes_manager.signal_size == 2:
+            raise ValueError('sb_position should to have signal size of 2')
+
+    if sb_position.axes_manager.navigation_size != s.axes_manager.navigation_size:
+        if sb_position.axes_manager.navigation_size:
+            raise ValueError('Sideband position dimensions do not match'
+                             ' neither reference nor hologram dimensions.')
+        # sb_position navdim=0, therefore map function should not iterate:
+        else:
+            sb_position_temp = sb_position.data
+    else:
+        sb_position_temp = sb_position.deepcopy()
+    return sb_position, sb_position_temp
+
+
+def _parse_sb_size(s, reference, sb_position, sb_size, parallel):
+    # Default value is 1/2 distance between sideband and central band
+    if sb_size is None:
+        if reference is None:
+            sb_size = s.estimate_sideband_size(
+                sb_position, parallel=parallel)
+        else:
+            sb_size = reference.estimate_sideband_size(
+                sb_position, parallel=parallel)
+    else:
+        if not isinstance(sb_size, BaseSignal):
+            if isinstance(sb_size,
+                          (np.ndarray, daArray)) and sb_size.size > 1:
+                # transpose if np.array of multiple instances
+                sb_size = BaseSignal(sb_size).T
+            else:
+                sb_size = BaseSignal(sb_size)
+            if isinstance(sb_size.data, daArray):
+                sb_size = sb_size.as_lazy()
+
+    if sb_size.axes_manager.navigation_size != s.axes_manager.navigation_size:
+        if sb_size.axes_manager.navigation_size:
+            raise ValueError('Sideband size dimensions do not match '
+                             'neither reference nor hologram dimensions.')
+        # sb_position navdim=0, therefore map function should not iterate:
+        else:
+            sb_size_temp = np.float64(sb_size.data)
+    else:
+        sb_size_temp = sb_size.deepcopy()
+    return sb_size, sb_size_temp
+
+
 class HologramImage(Signal2D):
     """Image subclass for holograms acquired via off-axis electron holography."""
 
@@ -295,70 +365,19 @@ class HologramImage(Signal2D):
                              ' holograms do not match')
 
         # Parsing sideband position:
-        if sb_position is None:
-            _logger.warning('Sideband position is not specified. The sideband '
-                            'will be found automatically which may cause '
-                            'wrong results.')
-            if reference is None:
-                sb_position = self.estimate_sideband_position(
-                    sb=sb, high_cf=high_cf, parallel=parallel)
-            else:
-                sb_position = reference.estimate_sideband_position(
-                    sb=sb, high_cf=high_cf, parallel=parallel)
+        (sb_position, sb_position_temp) = _parse_sb_position(self,
+                                                             reference,
+                                                             sb_position,
+                                                             sb,
+                                                             high_cf,
+                                                             parallel)
 
-        else:
-            if isinstance(sb_position, BaseSignal) and \
-               not sb_position._signal_dimension == 1:
-                raise ValueError('sb_position dimension has to be 1')
-
-            if not isinstance(sb_position, Signal1D):
-                sb_position = Signal1D(sb_position)
-                if isinstance(sb_position.data, daArray):
-                    sb_position = sb_position.as_lazy()
-
-            if not sb_position.axes_manager.signal_size == 2:
-                raise ValueError('sb_position should to have signal size of 2')
-
-        if sb_position.axes_manager.navigation_size != self.axes_manager.navigation_size:
-            if sb_position.axes_manager.navigation_size:
-                raise ValueError('Sideband position dimensions do not match'
-                                 ' neither reference nor hologram dimensions.')
-            # sb_position navdim=0, therefore map function should not iterate:
-            else:
-                sb_position_temp = sb_position.data
-        else:
-            sb_position_temp = sb_position.deepcopy()
-
-        # Parsing sideband size
-
-        # Default value is 1/2 distance between sideband and central band
-        if sb_size is None:
-            if reference is None:
-                sb_size = self.estimate_sideband_size(
-                    sb_position, parallel=parallel)
-            else:
-                sb_size = reference.estimate_sideband_size(
-                    sb_position, parallel=parallel)
-        else:
-            if not isinstance(sb_size, BaseSignal):
-                if isinstance(sb_size,
-                              (np.ndarray, daArray)) and sb_size.size > 1:
-                    # transpose if np.array of multiple instances
-                    sb_size = BaseSignal(sb_size).T
-                else:
-                    sb_size = BaseSignal(sb_size)
-                if isinstance(sb_size.data, daArray):
-                    sb_size = sb_size.as_lazy()
-
-        if sb_size.axes_manager.navigation_size != self.axes_manager.navigation_size:
-            if sb_size.axes_manager.navigation_size:
-                raise ValueError('Sideband size dimensions do not match '
-                                 'neither reference nor hologram dimensions.')
-            # sb_position navdim=0, therefore map function should not iterate:
-            else:
-                sb_size_temp = np.float64(sb_size.data)
-        else:
-            sb_size_temp = sb_size.deepcopy()
+        # Parsing sideband size:
+        (sb_size, sb_size_temp) = _parse_sb_size(self,
+                                                 reference,
+                                                 sb_position,
+                                                 sb_size,
+                                                 parallel)
 
         # Standard edge smoothness of sideband aperture 5% of sb_size
         if sb_smoothness is None:
@@ -545,6 +564,123 @@ class HologramImage(Signal2D):
             _logger.info('Reconstruction parameters stored in metadata')
 
         return wave_image
+
+    def statistics(self,
+                   sb_size=None,
+                   sb_unit=None,
+                   sb='lower',
+                   sb_position=None,
+                   high_cf=False,
+                   plotting=False,
+                   show_progressbar=False,
+                   store_parameters=True,
+                   parallel=None):
+        """Calculates following statistics for off-axis electron holograms:
+        1. Fringe contrast
+        2. Fringe spacing
+        3. Fringe sampling
+
+         The reconstruction parameters (sb_position, sb_size)
+         have to be 1d or to have same dimensionality as the hologram.
+
+        Parameters
+        ----------
+        sb_size : float, ndarray, :class:`~hyperspy.signals.BaseSignal, None
+            Sideband radius of the aperture in corresponding unit (see
+            'sb_unit'). If None, the radius of the aperture is set to 1/3 of
+            the distance between sideband and center band.
+        sb_unit : str, None
+            Unit of the two sideband parameters 'sb_size' and 'sb_smoothness'.
+            Default: None - Sideband size given in pixels
+            'nm': Size and smoothness of the aperture are given in 1/nm.
+            'mrad': Size and smoothness of the aperture are given in mrad.
+        sb : str, None
+            Select which sideband is selected. 'upper' or 'lower'.
+        sb_position : tuple, :class:`~hyperspy.signals.Signal1D, None
+            The sideband position (y, x), referred to the non-shifted FFT. If
+            None, sideband is determined automatically from FFT.
+        high_cf : bool, optional
+            If False, the highest carrier frequency allowed for the sideband location is equal to
+            half of the Nyquist frequency (Default: False).
+        plotting : boolean
+            Shows details of the reconstruction (i.e. SB selection).
+        show_progressbar : boolean
+            Shows progressbar while iterating over different slices of the
+            signal (passes the parameter to map method).
+        parallel : bool
+            Run the reconstruction in parallel
+        store_parameters : boolean
+            Store reconstruction parameters in metadata
+
+        Returns
+        -------
+        statistics_dict :
+            Dictionary with the statistics
+
+        Examples
+        --------
+        >>> import hyperspy.api as hs
+        >>> s = hs.datasets.example_signals.reference_hologram()
+        >>> sb_position = s.estimate_sideband_position()
+        >>> sb_size = s.estimate_sideband_size(sb_position)
+        >>> sb_size.data
+        >>> statistics_dict = s.statistics(sb_position=sb_position, sb_size=sb_size)
+
+        """
+
+        # Testing match of navigation axes of reference and self
+        # (exception: reference nav_dim=1):
+
+        # Parsing sideband position:
+        (sb_position, sb_position_temp) = _parse_sb_position(self, None, sb_position, sb, high_cf, parallel)
+
+        # Parsing sideband size
+        (sb_size, sb_size_temp) = _parse_sb_size(self, None, sb_position, sb_size, parallel)
+
+        # Convert sideband size from 1/nm or mrad to pixels
+        f_sampling_nm = np.divide(
+            1,
+            [a * b for a, b in
+             zip(self.axes_manager.signal_shape,
+                 (self.axes_manager.signal_axes[0].scale,
+                  self.axes_manager.signal_axes[1].scale))]
+        )
+        carrier_freq_nm = np.linalg.norm(np.multiply(sb_position_temp, f_sampling_nm))
+
+        if sb_unit == 'nm':
+
+            sb_size_temp = sb_size_temp / np.mean(f_sampling)
+        elif sb_unit == 'mrad':
+            f_sampling = np.divide(
+                1,
+                [a * b for a, b in
+                 zip(self.axes_manager.signal_shape,
+                     (self.axes_manager.signal_axes[0].scale,
+                      self.axes_manager.signal_axes[1].scale))]
+            )
+            try:
+                ht = self.metadata.Acquisition_instrument.TEM.beam_energy
+            except:
+                raise AttributeError("Please define the beam energy."
+                                     "You can do this e.g. by using the "
+                                     "set_microscope_parameters method")
+
+            momentum = 2 * constants.m_e * constants.elementary_charge * ht * \
+                1000 * (1 + constants.elementary_charge * ht *
+                        1000 / (2 * constants.m_e * constants.c ** 2))
+            wavelength = constants.h / np.sqrt(momentum) * 1e9  # in nm
+            sb_size_temp = sb_size_temp / (1000 * wavelength *
+                                           np.mean(f_sampling))
+
+        # Logging the reconstruction parameters if appropriate:
+        _logger.info('Sideband position in pixels: {}'.format(sb_position))
+        _logger.info('Sideband aperture radius in pixels: {}'.format(sb_size))
+
+        # Reconstructing object electron wave:
+
+        # Checking if reference is a single image, which requires sideband
+        # parameters as a nparray to avoid iteration trough those:
+        raise NotImplementedError
 
 
 class LazyHologramImage(LazySignal, HologramImage):
