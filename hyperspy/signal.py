@@ -2173,7 +2173,7 @@ class BaseSignal(FancySlicing,
             Default is False
             If True, convert the units using the 'convert_to_units' method of
             the 'axes_manager'. If False, does nothing.
-            
+
         """
         axis = self.axes_manager[axis]
         i1, i2 = axis._get_index(start), axis._get_index(end)
@@ -2190,8 +2190,8 @@ class BaseSignal(FancySlicing,
         self.squeeze()
         self.events.data_changed.trigger(obj=self)
         if convert_units:
-            self.axes_manager.convert_units()
-        
+            self.axes_manager.convert_units(axis)
+
     def swap_axes(self, axis1, axis2):
         """Swaps the axes.
 

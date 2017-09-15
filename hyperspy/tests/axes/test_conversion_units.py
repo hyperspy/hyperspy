@@ -18,6 +18,7 @@
 
 import numpy.testing as nt
 import traits.api as t
+import pytest
 
 from hyperspy.axes import DataAxis, AxesManager, UnitConversion
 from hyperspy.misc.test_utils import assert_warns, assert_deep_almost_equal
@@ -185,6 +186,16 @@ class TestDataAxis:
         nt.assert_almost_equal(self.axis.scale, 12E-12)
         assert self.axis.units == 'micron'
 
+    def test_units_not_supported_by_pint_warning_raised2(self):
+        # raising a warning, not converting scale
+        self.axis.units = 'µm'
+        with assert_warns(
+                message="not supported for conversion.",
+                category=UserWarning):
+            self.axis.convert_to_units('toto')
+        nt.assert_almost_equal(self.axis.scale, 12E-12)
+        assert self.axis.units == 'µm'
+
 
 class TestAxesManager:
 
@@ -250,6 +261,16 @@ class TestAxesManager:
         nt.assert_almost_equal(self.am['energy'].scale,
                                self.axes_list[-1]['scale'])
 
+    def test_convert_units_axes_integer(self):
+        # convert only the first axis
+        self.am.convert_units(axes=0, units='nm')
+        nt.assert_almost_equal(self.am[0].scale, 0.5)
+        assert self.am[0].units == 'nm'
+        nt.assert_almost_equal(self.am['x'].scale, 1.5E-9)
+        assert self.am['x'].units == 'm'
+        nt.assert_almost_equal(self.am['energy'].scale,
+                               self.axes_list[-1]['scale'])
+
     def test_convert_to_navigation_units_list(self):
         self.am.convert_units(axes='navigation', units=['mm', 'nm'],
                               same_units=False)
@@ -304,3 +325,13 @@ class TestAxesManager:
         assert self.am2['energy'].units == 'meV'
         nt.assert_almost_equal(self.am2['energy2'].scale, 5.0)
         assert self.am2['energy2'].units == 'eV'
+
+    @pytest.mark.parametrize("same_units", (True, False))
+    def test_convert_to_units_unsupported_units(self, same_units):
+        with assert_warns(
+                message="not supported for conversion.",
+                category=UserWarning):
+            self.am.convert_units('navigation', units='toto',
+                                  same_units=same_units)
+        assert_deep_almost_equal(self.am._get_axes_dicts(),
+                                 self.axes_list)

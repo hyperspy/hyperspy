@@ -171,10 +171,10 @@ class Test2D:
         s.axes_manager[1].scale = 0.01
         s.axes_manager[1].units = 'µm'
         s.crop(0, 0.0, 0.5, convert_units=True)
-        s.crop(1, 0.0, 3000.0, convert_units=True)
+        s.crop(1, 0.0, 0.5, convert_units=True)
         nt.assert_almost_equal(s.axes_manager[0].scale, 10.0)
         assert s.axes_manager[0].units == 'nm'
-        nt.assert_allclose(s.data, d[:300, :50])
+        nt.assert_allclose(s.data, d[:50, :50])
 
         # Should keep the unit to µm
         d = np.arange(512 * 512).reshape(512, 512)

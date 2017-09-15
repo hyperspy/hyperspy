@@ -80,7 +80,8 @@ class UnitConversion(object):
         try:
             _ureg(units)
         except pint.errors.UndefinedUnitError:
-            warnings.warn('Unit "{}" not supported for conversion.'.format(units),
+            warnings.warn('Unit "{}" not supported for conversion. Nothing '
+                          'done.'.format(units),
                           UserWarning)
             return True
         return False
@@ -121,13 +122,14 @@ class UnitConversion(object):
 
         Parameters
         ----------
-        units : list of string of the same length than axes, str or None.
+        units : {str | None}
             Default = None
-            If list, the selected axes will be converted to the provided units.
-            If str, the navigation or signal axes will converted to the 
-            provided units.
-            If `None`, the scale and the units to the appropriate scale and units 
-            to avoid displaying scalebar with >3 digits or too small number.
+            If str, the axis will converted to the provided units.
+            If `None`, the scale and the units are converted to the appropriate 
+            scale and units to avoid displaying scalebar with >3 digits or too 
+            small number. This can be tweaked by the `factor` argument.
+        factor : float
+            Factor used to determine the prefix of the units.
         """
         if units is None:
             self._convert_compact_scale_units(factor)
@@ -929,29 +931,33 @@ class AxesManager(t.HasTraits):
 
         Parameters
         ----------
-        axes : iterable of `DataAxis` instances, str or None.
+        axes : {int | string | iterable of `DataAxis` | None}
             Default = None
             Convert to the convenient scale and units on the specified axis.
+            If int, the axis can be specified using the index of the
+            axis in `axes_manager`.
             If string, argument can be `navigation` or `signal` to select the
-            navigation or signal axes.
+            navigation or signal axes. The axis name can also be provided.
             If `None`, convert all axes.
-        units : list of string of the same length than axes, str or None.
+        units : {list of string of the same length than axes | str | None}
             Default = None
             If list, the selected axes will be converted to the provided units.
             If str, the navigation or signal axes will converted to the 
             provided units.
-            If `None`, the scale and the units to the appropriate scale and units 
-            to avoid displaying scalebar with >3 digits or too small number.
-        same_units : if `True`, force to keep the same units if the units of
+            If `None`, the scale and the units are converted to the appropriate 
+            scale and units to avoid displaying scalebar with >3 digits or too 
+            small number. This can be tweaked by the `factor` argument.
+        same_units : bool
+            If `True`, force to keep the same units if the units of
             the axes differs. It only applies for the same kind of axis, 
             `navigation` or `signal`. By default the converted units of the 
             first axis is used for all axes. If `False`, convert all axes 
             individually.
+        factor : float
+            Factor used to determine the prefix of the units.
         """
-        _logger.debug('Axes manager: {}'.format(self))
         convert_navigation = convert_signal = True
-        if units is str:
-            same_units = False
+
         if axes is None:
             axes = self.navigation_axes + self.signal_axes
         elif axes == 'navigation':
@@ -960,10 +966,26 @@ class AxesManager(t.HasTraits):
         elif axes == 'signal':
             axes = self.signal_axes
             convert_navigation = False
+        elif isinstance(axes, DataAxis) or type(axes) is int or type(axes) is str:
+            if not isinstance(axes, DataAxis):
+                axes = self[axes]
+            axes = (axes, )
+            convert_navigation = axes[0].navigate
+            convert_signal = not axes[0].navigate
+        else:
+            raise ValueError('Please check the type of the "axes" argument.'
+                             '"axes" type is {}'.format(type(axes)))
+
         if type(units) is str or units is None:
             units = [units] * len(axes)
-        elif len(units) != len(axes):
-            _logger.error('Please check the length of the "units" argument')
+        elif type(units) is list:
+            if len(units) != len(axes):
+                raise ValueError('Please check the length of the "units" '
+                                 'argument.')
+        else:
+            raise ValueError('Please check the type of the "units" argument.'
+                             '"units" type is {}'.format(type(units)))
+
         if same_units:
             if convert_navigation:
                 units_nav = units[:self.navigation_dimension]
