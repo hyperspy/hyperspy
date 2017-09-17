@@ -160,7 +160,7 @@ class SpecialSlicers(object):
 
     def __init__(self, obj, isNavigation):
         """Create a slice of the signal. The indexing supports integer, 
-        decimal numbers or strings with a units.
+        decimal numbers or strings (containing a decimal number and an units).
 
         >>> s = hs.signals.Signal1D(np.arange(10))
         >>> s
@@ -177,7 +177,8 @@ class SpecialSlicers(object):
         >>> s.isig[0.5:4:2].data
         array([1, 3])
         >>> s.axes_manager[0].units = 'µm'
-        >>> s.isig[:'2000 nm']
+        >>> s.isig[:'2000 nm'].data
+        array([0, 1, 2, 3])
         """
         self.isNavigation = isNavigation
         self.obj = obj

@@ -453,6 +453,7 @@ features differ from numpy):
 
   + Allow independent indexing of signal and navigation dimensions
   + Support indexing with decimal numbers.
+  + Support indexing with units.
   + Use the image order for indexing i.e. [x, y, z,...] (HyperSpy) vs
     [...,z,y,x] (numpy)
 
@@ -494,8 +495,8 @@ First consider indexing a single spectrum, which has only one signal dimension
     >>> s.isig[5::2].data
     array([5, 7, 9])
 
-
-Unlike numpy, HyperSpy supports indexing using decimal numbers, in which case
+Unlike numpy, HyperSpy supports indexing using decimal numbers or string 
+(containing a decimal number and an units), in which case
 HyperSpy indexes using the axis scales instead of the indices.
 
 .. code-block:: python
@@ -514,7 +515,9 @@ HyperSpy indexes using the axis scales instead of the indices.
     array([1, 2, 3])
     >>> s.isig[0.5:4:2].data
     array([1, 3])
-
+    >>> s.axes_manager[0].units = 'µm'
+    >>> s.isig[:'2000 nm'].data
+    array([0, 1, 2, 3])
 
 Importantly the original :py:class:`~.signal.BaseSignal` and its "indexed self"
 share their data and, therefore, modifying the value of the data in one
@@ -829,7 +832,7 @@ using an external function can be more easily accomplished using the
 
   Rotation of images by the same amount using :py:meth:`~.signal.BaseSignal.map`.
 
-The :py:meth:`~.signal.BaseSignal.map` method can also take variable
+The :py:meth:`~.signal.Bfancy inaseSignal.map` method can also take variable
 arguments as in the following example.
 
 .. code-block:: python
