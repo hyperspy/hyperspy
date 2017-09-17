@@ -17,7 +17,6 @@
 
 
 import numpy as np
-import numpy.testing
 from numpy.testing import assert_array_equal
 import pytest
 
@@ -122,6 +121,20 @@ class Test1D:
     def test_minus_one_index(self):
         s = self.signal.isig[-1]
         assert s.data == self.data[-1]
+
+    def test_units(self):
+        self.signal.axes_manager[0].scale = 0.5
+        self.signal.axes_manager[0].units = 'µm'
+        s = self.signal.isig[:'4000.0 nm']
+        assert_array_equal(s.data, self.data[:8])
+        s = self.signal.isig[:'4 µm']
+        assert_array_equal(s.data, self.data[:8])
+
+    def test_units_error(self):
+        self.signal.axes_manager[0].scale = 0.5
+        self.signal.axes_manager[0].units = 'µm'
+        with pytest.raises(ValueError, message='should contains an units'):
+            s = self.signal.isig[:'4000.0']
 
 
 class Test2D:

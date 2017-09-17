@@ -102,6 +102,12 @@ class UnitConversion(object):
         self.scale = float(converted_scale.magnitude)
         self.offset = float(converted_offset.magnitude)
 
+    def _get_index_from_value_with_units(self, value):
+        value = _ureg.parse_expression(value)
+        if not hasattr(value, 'units'):
+            raise ValueError('"{}" should contains an units.'.format(value))
+        return self.value2index(value.to(self.units).magnitude) 
+
     def _convert_scale_units(self, converted_units):
         # For ImageJ
         converted_units = converted_units.replace('micron', 'µm')
@@ -287,6 +293,11 @@ class DataAxis(t.HasTraits, UnitConversion):
         else:
             return value
 
+    def _parse_string_for_slice(self, value):
+        if type(value) is str:
+            value = self._get_index_from_value_with_units(value)
+        return value
+
     def _get_array_slices(self, slice_):
         """Returns a slice to slice the corresponding data axis without
         changing the offset and scale of the DataAxis.
@@ -313,6 +324,10 @@ class DataAxis(t.HasTraits, UnitConversion):
                 start = self._get_positive_index(slice_)
             stop = start + 1
             step = None
+
+        start = self._parse_string_for_slice(start)
+        stop = self._parse_string_for_slice(stop)
+        step = self._parse_string_for_slice(step)
 
         if isfloat(step):
             step = int(round(step / self.scale))
@@ -973,18 +988,19 @@ class AxesManager(t.HasTraits):
             convert_navigation = axes[0].navigate
             convert_signal = not axes[0].navigate
         else:
-            raise ValueError('Please check the type of the "axes" argument.'
-                             '"axes" type is {}'.format(type(axes)))
+            raise TypeError('Axes type `{}` is not correct.'.format(type(axes)))
 
         if type(units) is str or units is None:
             units = [units] * len(axes)
         elif type(units) is list:
             if len(units) != len(axes):
-                raise ValueError('Please check the length of the "units" '
-                                 'argument.')
+                raise ValueError('Length of the provided units list {} should '
+                                 'be the same than the length of the provided '
+                                 'axes {}.'.format(units, axes))
         else:
-            raise ValueError('Please check the type of the "units" argument.'
-                             '"units" type is {}'.format(type(units)))
+            raise TypeError('Units type `{}` is not correct. It can be a '
+                            '`string`, a `list` of string or `None`.'
+                            ''.format(type(units)))
 
         if same_units:
             if convert_navigation:
