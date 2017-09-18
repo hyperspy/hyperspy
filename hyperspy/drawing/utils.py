@@ -338,7 +338,7 @@ def _make_heatmap_subplot(spectra):
     return im._plot.signal_plot.ax
 
 
-def _make_overlap_plot(spectra, ax, color="blue", line_style='-', line_width=2.0):
+def _make_overlap_plot(spectra, ax, color="blue", line_style='-', line_width=1.0):
     if isinstance(color, str):
         color = [color] * len(spectra)
     if isinstance(line_style, str):
@@ -354,7 +354,7 @@ def _make_overlap_plot(spectra, ax, color="blue", line_style='-', line_width=2.0
 
 
 def _make_cascade_subplot(
-        spectra, ax, color="blue", line_style='-', padding=1, line_width=2.0):
+        spectra, ax, color="blue", line_style='-', padding=1, line_width=1.0):
     max_value = 0
     for spectrum in spectra:
         spectrum_yrange = (np.nanmax(spectrum.data) -
@@ -377,7 +377,7 @@ def _make_cascade_subplot(
     ax.autoscale(tight=True)
 
 
-def _plot_spectrum(spectrum, ax, color="blue", line_style='-', line_width=2.0):
+def _plot_spectrum(spectrum, ax, color="blue", line_style='-', line_width=1.0):
     x_axis = spectrum.axes_manager.signal_axes[0]
     ax.plot(x_axis.axis, spectrum.data, color=color, ls=line_style, lw=line_width)
 
@@ -956,7 +956,7 @@ def plot_spectra(
         style='overlap',
         color=None,
         line_style=None,
-	line_width=2.0,
+	line_width=1.0,
         padding=1.,
         legend=None,
         legend_picking=True,
