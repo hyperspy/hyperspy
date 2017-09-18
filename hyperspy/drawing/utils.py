@@ -338,7 +338,7 @@ def _make_heatmap_subplot(spectra):
     return im._plot.signal_plot.ax
 
 
-def _make_overlap_plot(spectra, ax, color="blue", line_style='-'):
+def _make_overlap_plot(spectra, ax, color="blue", line_style='-', line_width=2.0):
     if isinstance(color, str):
         color = [color] * len(spectra)
     if isinstance(line_style, str):
@@ -346,7 +346,7 @@ def _make_overlap_plot(spectra, ax, color="blue", line_style='-'):
     for spectrum_index, (spectrum, color, line_style) in enumerate(
             zip(spectra, color, line_style)):
         x_axis = spectrum.axes_manager.signal_axes[0]
-        ax.plot(x_axis.axis, spectrum.data, color=color, ls=line_style)
+        ax.plot(x_axis.axis, spectrum.data, color=color, ls=line_style, lw=line_width)
     _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.BaseSignal)
                          else spectra[-1], ax)
     ax.set_ylabel('Intensity')
@@ -354,7 +354,7 @@ def _make_overlap_plot(spectra, ax, color="blue", line_style='-'):
 
 
 def _make_cascade_subplot(
-        spectra, ax, color="blue", line_style='-', padding=1):
+        spectra, ax, color="blue", line_style='-', padding=1, line_width=2.0):
     max_value = 0
     for spectrum in spectra:
         spectrum_yrange = (np.nanmax(spectrum.data) -
@@ -370,16 +370,16 @@ def _make_cascade_subplot(
         x_axis = spectrum.axes_manager.signal_axes[0]
         data_to_plot = ((spectrum.data - spectrum.data.min()) /
                         float(max_value) + spectrum_index * padding)
-        ax.plot(x_axis.axis, data_to_plot, color=color, ls=line_style)
+        ax.plot(x_axis.axis, data_to_plot, color=color, ls=line_style, lw=line_width)
     _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.BaseSignal)
                          else spectra[-1], ax)
     ax.set_yticks([])
     ax.autoscale(tight=True)
 
 
-def _plot_spectrum(spectrum, ax, color="blue", line_style='-'):
+def _plot_spectrum(spectrum, ax, color="blue", line_style='-', line_width=2.0):
     x_axis = spectrum.axes_manager.signal_axes[0]
-    ax.plot(x_axis.axis, spectrum.data, color=color, ls=line_style)
+    ax.plot(x_axis.axis, spectrum.data, color=color, ls=line_style, lw=line_width)
 
 
 def _set_spectrum_xlabel(spectrum, ax):
@@ -956,6 +956,7 @@ def plot_spectra(
         style='overlap',
         color=None,
         line_style=None,
+	line_width=2.0,
         padding=1.,
         legend=None,
         legend_picking=True,
@@ -985,6 +986,8 @@ def plot_spectra(
         If a list, if its length is less than the number of
         spectra to plot, line_style will be cycled. If
         If `None`, use continuous lines, eg: ('-','--','steps','-.',':')
+    line_width: float, to set the width of the lines of the 'mosaic, 'cascade' 
+	and overlap' plots.
     padding : float, optional, default 0.1
         Option for "cascade". 1 guarantees that there is not overlapping.
         However, in many cases a value between 0 and 1 can produce a tighter
@@ -1097,7 +1100,8 @@ def plot_spectra(
         _make_overlap_plot(spectra,
                            ax,
                            color=color,
-                           line_style=line_style,)
+                           line_style=line_style,
+			   line_width=line_width)
         if legend is not None:
             plt.legend(legend, loc=legend_loc)
             _reverse_legend(ax, legend_loc)
@@ -1112,7 +1116,8 @@ def plot_spectra(
                               ax,
                               color=color,
                               line_style=line_style,
-                              padding=padding)
+                              padding=padding,
+			      line_width=line_width)
         if legend is not None:
             plt.legend(legend, loc=legend_loc)
             _reverse_legend(ax, legend_loc)
@@ -1125,7 +1130,7 @@ def plot_spectra(
             legend = [legend] * len(spectra)
         for spectrum, ax, color, line_style, legend in zip(
                 spectra, subplots, color, line_style, legend):
-            _plot_spectrum(spectrum, ax, color=color, line_style=line_style)
+            _plot_spectrum(spectrum, ax, color=color, line_style=line_style, line_width=line_width)
             ax.set_ylabel('Intensity')
             if legend is not None:
                 ax.set_title(legend)
