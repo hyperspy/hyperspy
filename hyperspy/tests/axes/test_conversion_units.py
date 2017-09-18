@@ -20,7 +20,7 @@ import numpy.testing as nt
 import traits.api as t
 import pytest
 
-from hyperspy.axes import DataAxis, AxesManager, UnitConversion
+from hyperspy.axes import DataAxis, AxesManager, UnitConversion, _ureg
 from hyperspy.misc.test_utils import assert_warns, assert_deep_almost_equal
 
 
@@ -163,6 +163,37 @@ class TestDataAxis:
 
     def setup_method(self, method):
         self.axis = DataAxis(size=2048, scale=12E-12, units='m', offset=5E-9)
+
+    def test_scale_offset_as_quantity_property(self):
+        assert self.axis.scale_as_quantity == 12E-12*_ureg('m')
+        assert self.axis.offset_as_quantity == 5E-9*_ureg('m')
+
+    def test_scale_offset_as_quantity_setter_string(self):
+        self.axis.offset_as_quantity = '5e-3'
+        assert self.axis.offset == 5e-3
+        assert self.axis.units == 'm'
+        
+        self.axis.scale_as_quantity = '2.5 nm'
+        assert self.axis.scale == 2.5
+        assert self.axis.units == 'nm'
+
+        self.axis.offset_as_quantity = '5e-3 mm'
+        assert self.axis.offset == 5e-3
+        assert self.axis.units == 'mm'
+
+    def test_scale_offset_as_quantity_setter_float(self):
+        self.axis.scale_as_quantity = 2.5e-9
+        assert self.axis.scale == 2.5e-9
+        assert self.axis.units == 'm'
+
+    def test_scale_offset_as_quantity_setter_pint_quantity(self):
+        self.axis.scale_as_quantity = _ureg.parse_expression('2.5 nm')
+        assert self.axis.scale == 2.5
+        assert self.axis.units == 'nm'
+
+        self.axis.offset_as_quantity = _ureg.parse_expression('5e-3 mm')
+        assert self.axis.offset == 5e-3
+        assert self.axis.units == 'mm'
 
     def test_convert_to_compact_units(self):
         self.axis.convert_to_units(units=None)

@@ -106,12 +106,13 @@ class UnitConversion(object):
         value = _ureg.parse_expression(value)
         if not hasattr(value, 'units'):
             raise ValueError('"{}" should contains an units.'.format(value))
-        return self.value2index(value.to(self.units).magnitude) 
+        return self.value2index(value.to(self.units).magnitude)
 
     def _convert_scale_units(self, converted_units):
         # For ImageJ
         converted_units = converted_units.replace('micron', 'µm')
-        if self._ignore_conversion(converted_units) or self._ignore_conversion(self.units):
+        if self._ignore_conversion(converted_units) or \
+                self._ignore_conversion(self.units):
             return
         scale = self.scale * _ureg(self.units)
         offset = self.offset * _ureg(self.units)
@@ -142,6 +143,31 @@ class UnitConversion(object):
         else:
             self._convert_scale_units(units)
 
+    def _get_quantity(self, attribute='scale'):
+        if attribute == 'scale' or attribute == 'offset':
+            units = self.units
+            if units == t.Undefined:
+                units = ''
+            return self.__dict__[attribute] * _ureg(units)
+        else:
+            raise ValueError('`attribute` argument can only take the `scale` '
+                             'or the `offset` value.')
+
+    def _set_quantity(self, value, attribute='scale'):
+        if attribute == 'scale' or attribute == 'offset':
+            if type(value) is str:
+                value = _ureg.parse_expression(value)
+            if type(value) is float:
+                units = '' if self.units == t.Undefined else self.units
+                print(units)
+                value = value * _ureg(units)
+
+            self.units = '{:~}'.format(value.units)
+            self.__dict__[attribute] = float(value.magnitude)
+        else:
+            raise ValueError('`attribute` argument can only take the `scale` '
+                             'or the `offset` value.')
+
     @property
     def units(self):
         return self._units
@@ -150,6 +176,8 @@ class UnitConversion(object):
     def units(self, s):
         if s == t.Undefined:
             self._units = s
+        elif s == '':
+            self._units = t.Undefined
         else:
             self._units = s.replace('um', 'µm').replace(' ', '')
 
@@ -564,6 +592,22 @@ class DataAxis(t.HasTraits, UnitConversion):
         return any_changes
 
     @property
+    def scale_as_quantity(self):
+        return self._get_quantity('scale')
+
+    @scale_as_quantity.setter
+    def scale_as_quantity(self, value):
+        self._set_quantity(value, 'scale')
+
+    @property
+    def offset_as_quantity(self):
+        return self._get_quantity('offset')
+
+    @offset_as_quantity.setter
+    def offset_as_quantity(self, value):
+        self._set_quantity(value, 'offset')
+
+    @property
     def units(self):
         return self._units
 
@@ -571,6 +615,8 @@ class DataAxis(t.HasTraits, UnitConversion):
     def units(self, s):
         if s == t.Undefined:
             self._units = s
+        elif s == '':
+            self._units = t.Undefined
         else:
             self._units = s.replace('um', 'µm').replace(' ', '')
 
@@ -988,7 +1034,8 @@ class AxesManager(t.HasTraits):
             convert_navigation = axes[0].navigate
             convert_signal = not axes[0].navigate
         else:
-            raise TypeError('Axes type `{}` is not correct.'.format(type(axes)))
+            raise TypeError(
+                'Axes type `{}` is not correct.'.format(type(axes)))
 
         if type(units) is str or units is None:
             units = [units] * len(axes)
