@@ -155,15 +155,15 @@ class UnitConversion(object):
 
     def _set_quantity(self, value, attribute='scale'):
         if attribute == 'scale' or attribute == 'offset':
+            units = '' if self.units == t.Undefined else self.units
             if type(value) is str:
                 value = _ureg.parse_expression(value)
             if type(value) is float:
-                units = '' if self.units == t.Undefined else self.units
                 value = value * _ureg(units)
 
-            # to be consistent, we also need ot convert the other one
-            # (scale or offset) when the units differ.
-            if value.units != self.units and value.units != '':
+            # to be consistent, we also need to convert the other one
+            # (scale or offset) when both units differ.
+            if value.units != units and value.units != '' and units != '':
                 other = 'offset' if attribute == 'scale' else 'scale'
                 other_quantity = self._get_quantity(other).to(value.units)
                 self.__dict__[other] = float(other_quantity.magnitude)

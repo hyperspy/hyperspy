@@ -174,6 +174,14 @@ class TestDataAxis:
         nt.assert_almost_equal(self.axis.offset, 5.0)
         assert self.axis.units == 'nm'
 
+    def test_scale_as_quantity_setter_string_no_previous_units(self):
+        axis = DataAxis(size=2048, scale=12E-12, offset=5.0)
+        axis.scale_as_quantity = '2.5 nm'
+        assert axis.scale == 2.5
+        # the units haven't been set previously, so the offset is not converted
+        nt.assert_almost_equal(axis.offset, 5.0)
+        assert axis.units == 'nm'
+
     def test_offset_as_quantity_setter_string(self):
         self.axis.offset_as_quantity = '5e-3 mm'
         assert self.axis.scale == 12e-9
