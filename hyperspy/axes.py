@@ -159,8 +159,14 @@ class UnitConversion(object):
                 value = _ureg.parse_expression(value)
             if type(value) is float:
                 units = '' if self.units == t.Undefined else self.units
-                print(units)
                 value = value * _ureg(units)
+
+            # to be consistent, we also need ot convert the other one
+            # (scale or offset) when the units differ.
+            if value.units != self.units and value.units != '':
+                other = 'offset' if attribute == 'scale' else 'scale'
+                other_quantity = self._get_quantity(other).to(value.units)
+                self.__dict__[other] = float(other_quantity.magnitude)
 
             self.units = '{:~}'.format(value.units)
             self.__dict__[attribute] = float(value.magnitude)

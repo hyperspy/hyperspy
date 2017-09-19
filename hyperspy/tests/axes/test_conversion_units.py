@@ -165,21 +165,26 @@ class TestDataAxis:
         self.axis = DataAxis(size=2048, scale=12E-12, units='m', offset=5E-9)
 
     def test_scale_offset_as_quantity_property(self):
-        assert self.axis.scale_as_quantity == 12E-12*_ureg('m')
-        assert self.axis.offset_as_quantity == 5E-9*_ureg('m')
+        assert self.axis.scale_as_quantity == 12E-12 * _ureg('m')
+        assert self.axis.offset_as_quantity == 5E-9 * _ureg('m')
 
-    def test_scale_offset_as_quantity_setter_string(self):
-        self.axis.offset_as_quantity = '5e-3'
-        assert self.axis.offset == 5e-3
-        assert self.axis.units == 'm'
-        
+    def test_scale_as_quantity_setter_string(self):
         self.axis.scale_as_quantity = '2.5 nm'
         assert self.axis.scale == 2.5
+        nt.assert_almost_equal(self.axis.offset, 5.0)
         assert self.axis.units == 'nm'
 
+    def test_offset_as_quantity_setter_string(self):
         self.axis.offset_as_quantity = '5e-3 mm'
+        assert self.axis.scale == 12e-9
         assert self.axis.offset == 5e-3
         assert self.axis.units == 'mm'
+
+    def test_offset_as_quantity_setter_string_no_units(self):
+        self.axis.offset_as_quantity = '5e-3'
+        assert self.axis.offset == 5e-3
+        assert self.axis.scale == 12E-12
+        assert self.axis.units == 'm'
 
     def test_scale_offset_as_quantity_setter_float(self):
         self.axis.scale_as_quantity = 2.5e-9
