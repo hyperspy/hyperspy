@@ -33,12 +33,14 @@ default_extension = 2
 # Writing capabilities:
 writes = True
 
+
 _POP_FROM_HEADER = ['compressor', 'MRCtype', 'C3', 'dimensions', 'dtype',
                     'extendedBytes', 'gain', 'maxImage', 'minImage', 'meanImage',
                     'metaId', 'packedBytes', 'pixelsize', 'pixelunits', 'voltage']
 # Hyperspy uses an unusual mixed Fortran- and C-ordering scheme
 _READ_ORDER = [1, 2, 0]
 _WRITE_ORDER = [0, 2, 1]
+
 
 mapping = {
     'mrcz_header.voltage':
@@ -52,7 +54,7 @@ mapping = {
 }
 
 
-def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
+def file_reader(filename, endianess='<', lazy=False, mmap_mode='c',
                 **kwds):
     _logger.debug("Reading MRCZ file: %s" % filename)
 
@@ -61,25 +63,24 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
         # Perhaps we could use the zarr package for that
         raise ValueError('MRCZ supports only C-ordering memory-maps')
 
-    useMemmap = not load_to_memory
-    kwds.pop('lazy')  # Not used
-
     mrcz_endian = 'le' if endianess == '<' else 'be'
     data, mrcz_header = _mrcz.readMRC(filename, endian=mrcz_endian,
-                                      useMemmap=useMemmap,
+                                      useMemmap=lazy,
                                       pixelunits='nm',
                                       **kwds)
 
     # Create the axis objects for each axis
     names = ['y', 'x', 'z']
-    axes = [
-        {'size': data.shape[hsIndex],
-            'index_in_array': hsIndex,
-            'name': names[index],
-            'scale': mrcz_header['pixelsize'][hsIndex],
-            'offset': 0.0,
-            'units': mrcz_header['pixelunits'], }
-        for index, hsIndex in enumerate(_READ_ORDER)]
+    navigate = [False, False, True]
+    axes = [{'size': data.shape[hsIndex],
+             'index_in_array': hsIndex,
+             'name': names[index],
+             'scale': mrcz_header['pixelsize'][hsIndex],
+             'offset': 0.0,
+             'units': mrcz_header['pixelunits'],
+             'navigate': nav}
+            for index, (hsIndex, nav) in enumerate(zip(_READ_ORDER, navigate))]
+    axes.insert(0, axes.pop(2))  # re-order the axes
 
     metadata = mrcz_header.copy()
     # Remove non-standard fields

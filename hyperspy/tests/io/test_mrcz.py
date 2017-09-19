@@ -24,7 +24,8 @@ import pytest
 from time import perf_counter, sleep
 
 from hyperspy.io import load, save
-from hyperspy.signals import Signal2D
+from hyperspy import signals
+from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 #==============================================================================
 # MRCZ Test
@@ -39,7 +40,7 @@ dtype_list = ['float32', 'int8', 'int16', 'uint16', 'complex64']
 
 def _generate_parameters():
     parameters = []
-    for dtype in ['float32', 'int8', 'int16', 'uint16', 'complex64']:
+    for dtype in dtype_list:
         for compressor in [None, 'zstd', 'lz4']:
             for clevel in [1, 9]:
                 parameters.append([dtype, compressor, clevel])
@@ -63,7 +64,7 @@ class TestPythonMrcz:
         else:  # integers
             testData = np.random.randint(10, size=testShape).astype(dtype)
 
-        testSignal = Signal2D(testData)
+        testSignal = signals.Signal2D(testData)
         # Unfortunately one cannot iterate over axes_manager in a Pythonic way
         # for axis in testSignal.axes_manager:
         testSignal.axes_manager[0].name = 'z'
@@ -114,13 +115,7 @@ class TestPythonMrcz:
         npt.assert_almost_equal(
             testSignal.metadata.Acquisition_instrument.TEM.magnification,
             reSignal.metadata.Acquisition_instrument.TEM.magnification)
-        # Comparing axes is a bit difficult, due to the mixed format ordering
-        # print( testSignal.axes_manager )
-        # print( reSignal.axes_manager )
-        # for I in range(3):
-        #     print( "Test #{}  name: {}, scale: {:.3f}".format(I, testSignal.axes_manager[I].name, testSignal.axes_manager[I].scale ) )
-        # print( "Re   #{}  name: {}, scale: {:.3f}".format(I,
-        # reSignal.axes_manager[I].name, reSignal.axes_manager[I].scale ) )
+
         for aName in ['x', 'y', 'z']:
             npt.assert_equal(
                 testSignal.axes_manager[aName].size,
@@ -129,8 +124,12 @@ class TestPythonMrcz:
                 testSignal.axes_manager[aName].scale,
                 reSignal.axes_manager[aName].scale)
 
-        # These assertions need to be True
-#        assert testSignal.axes_manager.as_dictionary() == reSignal.axes_manager.as_dictionary()
+        if dtype == 'complex64':
+            assert isinstance(reSignal, signals.ComplexSignal2D)
+        else:
+            assert isinstance(reSignal, signals.Signal2D)
+        assert_deep_almost_equal(testSignal.axes_manager.as_dictionary(),
+                                 reSignal.axes_manager.as_dictionary())
 
         return reSignal
 
