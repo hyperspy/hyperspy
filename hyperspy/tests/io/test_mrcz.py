@@ -68,13 +68,13 @@ class TestPythonMrcz:
         # for axis in testSignal.axes_manager:
         testSignal.axes_manager[0].name = 'z'
         testSignal.axes_manager[0].scale = np.random.uniform(low=0.0, high=1.0)
-        testSignal.axes_manager[0].units = '\AA'
+        testSignal.axes_manager[0].units = 'nm'
         testSignal.axes_manager[1].name = 'x'
         testSignal.axes_manager[1].scale = np.random.uniform(low=0.0, high=1.0)
-        testSignal.axes_manager[1].units = '\AA'
+        testSignal.axes_manager[1].units = 'nm'
         testSignal.axes_manager[2].name = 'y'
         testSignal.axes_manager[2].scale = np.random.uniform(low=0.0, high=1.0)
-        testSignal.axes_manager[2].units = '\AA'
+        testSignal.axes_manager[2].units = 'nm'
 
         # Meta-data that goes into MRC fixed header
         testSignal.metadata.set_item(

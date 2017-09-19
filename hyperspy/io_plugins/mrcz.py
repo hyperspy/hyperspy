@@ -17,14 +17,8 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import mrcz as _mrcz
-
-import os
 import logging
 
-# There's some sort of dynamic import that prevents us from importing
-# signals here.
-# from hyperspy._signals import signal2d
-# from hyperspy.misc.array_tools import sarray2dict, dict2sarray
 
 _logger = logging.getLogger(__name__)
 # Plugin characteristics
@@ -71,7 +65,9 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
     kwds.pop('lazy')  # Not used
 
     mrcz_endian = 'le' if endianess == '<' else 'be'
-    data, mrcz_header = _mrcz.readMRC(filename, endian=mrcz_endian, useMemmap=useMemmap,
+    data, mrcz_header = _mrcz.readMRC(filename, endian=mrcz_endian,
+                                      useMemmap=useMemmap,
+                                      pixelunits='nm',
                                       **kwds)
 
     # Create the axis objects for each axis
@@ -99,10 +95,12 @@ def file_reader(filename, endianess='<', load_to_memory=True, mmap_mode='c',
     return [dictionary, ]
 
 
-def file_writer(filename, signal, do_async=False, compressor=None, clevel=1, n_threads=None, **kwds):
-    # Importing signals seems to cause some circular import problem
-    # if isinstance(signal, signal2d.Signal2D ):
-    #    raise TypeError( "MRCZ supports 2D and 3D data only. type(signal) is {}".format(type(signal)) )
+def file_writer(filename, signal, do_async=False, compressor=None, clevel=1,
+                n_threads=None, **kwds):
+    import hyperspy.signals
+    if not isinstance(signal, hyperspy.signals.Signal2D):
+        raise TypeError("MRCZ supports 2D and 3D data only. type(signal) is "
+                        "{}".format(type(signal)))
 
     endianess = kwds.pop('endianess', '<')
     mrcz_endian = 'le' if endianess == '<' else 'be'
@@ -124,9 +122,11 @@ def file_writer(filename, signal, do_async=False, compressor=None, clevel=1, n_t
         _mrcz.asyncWriteMRC(signal.data, filename, meta=meta, endian=mrcz_endian,
                             pixelsize=pixelsize, pixelunits=pixelunits,
                             voltage=voltage, C3=C3, gain=gain,
-                            compressor=compressor, clevel=clevel, n_threads=n_threads)
+                            compressor=compressor, clevel=clevel,
+                            n_threads=n_threads)
     else:
         _mrcz.writeMRC(signal.data, filename, meta=meta, endian=mrcz_endian,
                        pixelsize=pixelsize, pixelunits=pixelunits,
                        voltage=voltage, C3=C3, gain=gain,
-                       compressor=compressor, clevel=clevel, n_threads=n_threads)
+                       compressor=compressor, clevel=clevel,
+                       n_threads=n_threads)
