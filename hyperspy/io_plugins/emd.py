@@ -31,7 +31,10 @@ from datetime import datetime
 from dateutil import tz
 import pint
 import time
+import psutil
+import functools
 import logging
+import gc
 
 
 # Plugin characteristics
@@ -510,8 +513,8 @@ class FeiEMDReader(object):
             t1 = time.time()
             self._read_spectrum_image()
             t2 = time.time()
-            _logger.info('Time to load images: {} s.'.format(t1-t0))
-            _logger.info('Time to load spectrum image: {} s.'.format(t2-t1))
+            _logger.info('Time to load images: {} s.'.format(t1 - t0))
+            _logger.info('Time to load spectrum image: {} s.'.format(t2 - t1))
 
     def _check_im_type(self):
         if 'Image' in self.d_grp:
@@ -653,7 +656,7 @@ class FeiEMDReader(object):
 
         streams.read_streams(self.individual_detector)
         spectrum_image_shape = streams.get_SI_shape()
-        original_metadata = streams.stream_list[0].original_metadata
+        original_metadata = streams.streams[0].original_metadata
 
         pixel_size, offsets, original_units = streams.get_pixelsize_offset_unit()
         dispersion, offset = self._get_dispersion_offset(original_metadata)
@@ -712,7 +715,7 @@ class FeiEMDReader(object):
                                       'original_metadata': original_metadata,
                                       'mapping': self._get_mapping()})
         else:
-            for stream in streams.stream_list:
+            for stream in streams.streams:
                 self.dictionaries.append({'data': stream.spectrum_image,
                                           'axes': axes,
                                           'metadata': md,
@@ -818,52 +821,65 @@ class FeiSpectrumStreamContainer(object):
         self.last_frame = last_frame
         self.individual_frame = individual_frame
         self.data_dtype = data_dtype
-        self.stream_list = []
 
-    def _read_streams(self):
-        subgroup_keys = _get_keys_from_group(self.spectrum_stream_group)
+    def _read_all_streams(self, subgroup_keys):
 
         stream_data_list = [
             self.spectrum_stream_group['{}/Data'.format(key)][:].T[0]
             for key in subgroup_keys]
 
-        kwargs = {'shape': self.shape,
-                  'energy_rebin': self.energy_rebin,
-                  'first_frame': self.first_frame,
-                  'last_frame': self.last_frame,
-                  'individual_frame': self.individual_frame,
-                  'data_dtype': self.data_dtype}
+        streams = [self._read_individual_stream(stream_data, key)
+                   for key, stream_data in zip(subgroup_keys, stream_data_list)]
 
-        stream_list = []
-        for key, stream_data in zip(subgroup_keys, stream_data_list):
-            stream = FeiSpectrumStream(stream_data, **kwargs)
+        return streams
 
-            acquisition_key = '{}/AcquisitionSettings'.format(key)
-            acquisition_settings_group = self.spectrum_stream_group[acquisition_key]
-            stream.parse_acquisition_settings(acquisition_settings_group)
+    def _read_individual_stream(self, stream_data, key):
+        stream = FeiSpectrumStream(stream_data, **self.kwargs)
 
-            metadata_group = self.spectrum_stream_group[key]
-            stream.parse_metadata(metadata_group)
+        acquisition_key = '{}/AcquisitionSettings'.format(key)
+        acquisition_settings_group = self.spectrum_stream_group[acquisition_key]
+        stream.parse_acquisition_settings(acquisition_settings_group)
 
-            stream.get_spectrum_image()
-            stream_list.append(stream)
+        metadata_group = self.spectrum_stream_group[key]
+        stream.parse_metadata(metadata_group)
+#        stream._memory_check()
 
-        return stream_list
+        stream.get_spectrum_image()
+        return stream
 
     def read_streams(self, individual_detector=False):
-        self.stream_list = self._read_streams()
+        subgroup_keys = _get_keys_from_group(self.spectrum_stream_group)
 
-        self.frame_number = self.stream_list[0].frame_number
-        if individual_detector is False:
-            self.sum_spectrum_image = self.stream_list[0].spectrum_image
-            for stream in self.stream_list[1:]:
-                self.sum_spectrum_image += stream.spectrum_image
+        self.kwargs = {'shape': self.shape,
+                       'energy_rebin': self.energy_rebin,
+                       'first_frame': self.first_frame,
+                       'last_frame': self.last_frame,
+                       'individual_frame': self.individual_frame,
+                       'data_dtype': self.data_dtype}
+
+        if individual_detector:
+            self.streams = self._read_all_streams(subgroup_keys)
+            self.frame_number = self.streams.frame_number
+        else:
+            stream_data_list = [
+                self.spectrum_stream_group['{}/Data'.format(key)][:].T[0]
+                for key in subgroup_keys]
+            # Read the first stream
+            self.streams = [self._read_individual_stream(stream_data_list[0],
+                                                         subgroup_keys[0])]
+            self.sum_spectrum_image = self.streams[0].spectrum_image
+            # add other stream
+            if len(stream_data_list) > 1:
+                for key, stream_data in zip(subgroup_keys[1:], stream_data_list[1:]):
+                    self.streams = [self._read_individual_stream(
+                        stream_data, key)]
+                    self.sum_spectrum_image += self.streams[0].spectrum_image
 
     def get_SI_shape(self):
-        return self.stream_list[0].spectrum_image.shape
+        return self.streams[0].spectrum_image.shape
 
     def get_pixelsize_offset_unit(self, stream_index=0):
-        om_br = self.stream_list[stream_index].original_metadata['BinaryResult']
+        om_br = self.streams[stream_index].original_metadata['BinaryResult']
         return om_br['PixelSize'], om_br['Offset'], om_br['PixelUnitX']
 
 
@@ -888,6 +904,17 @@ class FeiSpectrumStream(object):
         self.last_frame = last_frame
         self.individual_frame = individual_frame
         self.data_dtype = data_dtype
+
+    def _memory_check(self):
+        gc.collect()
+        # Estimate the memory necessary and check if there is enough
+        available_memory = psutil.virtual_memory()[1]
+        dtype_size = np.dtype(self.data_dtype).itemsize
+        array_size = functools.reduce(lambda x, y: x * y, self.shape)
+        channel_number = self.bin_count / self.energy_rebin
+        if available_memory < array_size * dtype_size * channel_number:
+            raise MemoryError('Change `data dtype` or use the `energy_rebin` '
+                              'argument.')
 
     def parse_metadata(self, stream_group):
         self.original_metadata = _parse_sub_data_group_metadata(stream_group)
