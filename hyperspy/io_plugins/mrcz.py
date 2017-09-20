@@ -44,9 +44,11 @@ _WRITE_ORDER = [0, 2, 1]
 
 mapping = {
     'mrcz_header.voltage':
-    ("Acquisition_instrument.TEM.beam_energy", None),
+        ("Acquisition_instrument.TEM.beam_energy",
+         lambda x: x[0]),
     'mrcz_header.gain':
-    ("Signal.Noise_properties.Variance_linear_model.gain_factor", None),
+        ("Signal.Noise_properties.Variance_linear_model.gain_factor",
+         lambda x: x[0]),
     # There is no metadata field for spherical aberration
     #'mrcz_header.C3':
     #("Acquisition_instrument.TEM.C3", lambda x: x),
@@ -113,7 +115,8 @@ def file_writer(filename, signal, do_async=False, compressor=None, clevel=1,
     pixelsize = [signal.axes_manager[I].scale for I in _WRITE_ORDER]
 
     # Strip out voltage from meta-data
-    voltage = signal.metadata.get_item('Acquisition_instrument.TEM.beam_energy')
+    voltage = signal.metadata.get_item(
+        'Acquisition_instrument.TEM.beam_energy')
     # There aren't hyperspy fields for spherical aberration or detector gain
     C3 = 0.0
     gain = signal.metadata.get_item("Signal.Noise_properties."

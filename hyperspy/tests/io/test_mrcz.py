@@ -83,6 +83,8 @@ class TestPythonMrcz:
         # Meta-data that goes into JSON extended header
         testSignal.metadata.set_item(
             'Acquisition_instrument.TEM.magnification', 25000)
+        testSignal.metadata.set_item(
+            'Signal.Noise_properties.Variance_linear_model.gain_factor', 1.0)
 
         save(mrcName, testSignal, compressor=compressor,
              clevel=clevel, do_async=do_async, **kwargs)
@@ -130,6 +132,8 @@ class TestPythonMrcz:
             assert isinstance(reSignal, signals.Signal2D)
         assert_deep_almost_equal(testSignal.axes_manager.as_dictionary(),
                                  reSignal.axes_manager.as_dictionary())
+        assert_deep_almost_equal(testSignal.metadata.as_dictionary(),
+                                 reSignal.metadata.as_dictionary())
 
         return reSignal
 
