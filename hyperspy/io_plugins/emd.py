@@ -30,7 +30,7 @@ import os
 from datetime import datetime
 from dateutil import tz
 import pint
-
+import time
 import logging
 
 
@@ -499,14 +499,19 @@ class FeiEMDReader(object):
 
     def _read_data(self):
         if self.im_type == 'Image':
-            _logger.info('Reading the images')
+            _logger.info('Reading the images.')
             self._read_images()
         elif self.im_type == 'Spectrum':
             self._read_spectrums()
         elif self.im_type == 'SpectrumStream':
-            _logger.info('Reading the spectrum image')
+            _logger.info('Reading the spectrum image.')
+            t0 = time.time()
             self._read_images()
+            t1 = time.time()
             self._read_spectrum_image()
+            t2 = time.time()
+            _logger.info('Time to load images: {} s.'.format(t1-t0))
+            _logger.info('Time to load spectrum image: {} s.'.format(t2-t1))
 
     def _check_im_type(self):
         if 'Image' in self.d_grp:
@@ -518,7 +523,6 @@ class FeiEMDReader(object):
             self.im_type = 'Spectrum'
 
     def _read_spectrums(self):
-        self.record_by = 'spectrum'
         spectrum_grp = self.d_grp.get("Spectrum")
         self.detector_name = 'EDS'
         for spectrum_sub_group_key in _get_keys_from_group(spectrum_grp):
@@ -540,7 +544,8 @@ class FeiEMDReader(object):
                  'offset': offset,
                  'scale': dispersion,
                  'size': data.shape[0],
-                 'units': 'keV'}
+                 'units': 'keV',
+                 'navigate': False}
                 ]
 
         md = self._get_metadata_dict()
@@ -553,7 +558,6 @@ class FeiEMDReader(object):
                 'mapping': self._get_mapping()}
 
     def _read_images(self):
-        self.record_by = 'image'
         # Get the image data group
         image_group = self.d_grp.get("Image")
         # Get all the subgroup of the image data group and read the image for
@@ -593,7 +597,8 @@ class FeiEMDReader(object):
                          'offset': 0,
                          'scale': scale_time[0],
                          'size': data.shape[0],
-                         'units': scale_time[1]})
+                         'units': scale_time[1],
+                         'navigate': True})
             i = 1
         else:
             if read_stack:
@@ -613,13 +618,15 @@ class FeiEMDReader(object):
                       'offset': offset_y[0],
                       'scale': scale_y[0],
                       'size': data.shape[i],
-                      'units': scale_y[1]},
+                      'units': scale_y[1],
+                      'navigate': False},
                      {'index_in_array': i + 1,
                       'name': 'x',
                       'offset': offset_x[0],
                       'scale': scale_x[0],
                       'size': data.shape[i + 1],
-                      'units': scale_x[1]}
+                      'units': scale_x[1],
+                      'navigate': False}
                      ])
 
         md = self._get_metadata_dict()
@@ -632,7 +639,6 @@ class FeiEMDReader(object):
                 'mapping': self._get_mapping()}
 
     def _read_spectrum_image(self):
-        self.record_by = 'spectrum'
         self.detector_name = 'EDS'
         # Spectrum stream group
         spectrum_stream_grp = self.d_grp.get("SpectrumStream")
@@ -671,26 +677,30 @@ class FeiEMDReader(object):
                          'offset': 0,
                          'scale': frame_time,
                          'size': spectrum_image_shape[i],
-                         'units': 's'})
+                         'units': 's',
+                         'navigate': True})
             i += 1
         axes.extend([{'index_in_array': i,
                       'name': 'y',
                       'offset': offset_y[0],
                       'scale': scale_y[0],
                       'size': spectrum_image_shape[i],
-                      'units': scale_y[1]},
+                      'units': scale_y[1],
+                      'navigate': True},
                      {'index_in_array': i + 1,
                       'name': 'x',
                       'offset': offset_x[0],
                       'scale': scale_x[0],
                       'size': spectrum_image_shape[i + 1],
-                      'units': scale_x[1]},
+                      'units': scale_x[1],
+                      'navigate': True},
                      {'index_in_array': i + 2,
                       'name': 'X-ray energy',
                       'offset': offset,
                       'scale': dispersion,
                       'size': spectrum_image_shape[i + 2],
-                      'units': 'keV'}])
+                      'units': 'keV',
+                      'navigate': False}])
 
         md = self._get_metadata_dict()
         md['Signal']['signal_type'] = 'EDS_TEM'
@@ -703,10 +713,6 @@ class FeiEMDReader(object):
                                       'mapping': self._get_mapping()})
         else:
             for stream in streams.stream_list:
-                print('******************')
-                md['General']['title'] = 'EDS - {}'.format(stream.original_metadata[
-                    'BinaryResult']['Detector'])
-                print(md['General']['title'])
                 self.dictionaries.append({'data': stream.spectrum_image,
                                           'axes': axes,
                                           'metadata': md,
@@ -738,7 +744,6 @@ class FeiEMDReader(object):
         meta_gen['title'] = self.detector_name
 
         meta_sig = {}
-        meta_sig['record_by'] = self.record_by
         meta_sig['signal_type'] = ''
 
         return {'General': meta_gen, 'Signal': meta_sig}

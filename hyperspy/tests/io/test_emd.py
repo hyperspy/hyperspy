@@ -265,6 +265,16 @@ class TestFeiEMD():
         assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
         assert signal.metadata.Acquisition_instrument.TEM.Detector.EDS.frame_number == 10
 
+        signal0 = s[0]
+        assert isinstance(signal0, Signal2D)
+        assert signal0.axes_manager[0].name == 'x'
+        assert signal0.axes_manager[0].size == 10
+        assert signal0.axes_manager[0].units == 'nm'
+        assert_allclose(signal0.axes_manager[0].scale, 1.234009, atol=1E-5)
+        assert signal0.axes_manager[1].name == 'y'
+        assert signal0.axes_manager[1].size == 50
+        assert signal0.axes_manager[1].units == 'nm'
+
     def test_fei_emd_si_non_square_20frames(self):
         s = load(os.path.join(self.fei_files_path,
                               'fei_SI_SuperX-HAADF_20frames_10x50.emd'))
