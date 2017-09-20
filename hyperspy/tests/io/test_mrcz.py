@@ -33,7 +33,7 @@ from hyperspy.misc.test_utils import assert_deep_almost_equal
 # Internal python-only test. Build a random image and save and re-load it.
 #==============================================================================
 tmpDir = tempfile.gettempdir()
-mrcName = os.path.join(tmpDir, "testMage.mrcz")
+
 MAX_ASYNC_TIME = 2.0
 dtype_list = ['float32', 'int8', 'int16', 'uint16', 'complex64']
 
@@ -55,6 +55,8 @@ class TestPythonMrcz:
     def compareSaveLoad(self, testShape, dtype='int8', compressor=None,
                         clevel=1, do_async=False, **kwargs):
         # This is the main function which reads and writes from disk.
+        mrcName = os.path.join(tmpDir, "testMage_{}.mrcz".format(dtype) )
+
         dtype = np.dtype(dtype)
         if dtype == 'float32' or dtype == 'float64':
             testData = np.random.normal(size=testShape).astype(dtype)
