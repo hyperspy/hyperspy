@@ -132,6 +132,15 @@ def test_reconstruct_phase_nonstandard(parallel, lazy):
 
     sb_position2 = ref_image2.estimate_sideband_position(
         sb='upper', parallel=parallel)
+    sb_position2_lower = ref_image2.estimate_sideband_position(
+        sb='lower', parallel=parallel)
+    sb_position2_left = ref_image2.estimate_sideband_position(
+        sb='left', parallel=parallel)
+    sb_position2_right = ref_image2.estimate_sideband_position(
+        sb='right', parallel=parallel)
+    assert sb_position2 == sb_position2_left
+    assert sb_position2_lower == sb_position2_right
+
     sb_size2 = ref_image2.estimate_sideband_size(
         sb_position2, parallel=parallel)
     output_shape = (np.int(sb_size2.inav[0].data * 2),
