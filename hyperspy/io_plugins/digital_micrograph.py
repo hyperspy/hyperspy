@@ -888,14 +888,8 @@ class ImageObject(object):
 
     def get_markers_dict(self, tags_dict):
         axes = self.get_axes_dict()
-        offset_x, offset_y, scale_x, scale_y = 0, 0, 1, 1
-        for axis in axes:
-            if axis['index_in_array'] == 0:
-                scale_y = axis['scale']
-                offset_y = axis['offset']
-            if axis['index_in_array'] == 1:
-                scale_x = axis['scale']
-                offset_x = axis['offset']
+        scale_y, scale_x = self.scales[-2], self.scales[-1]
+        offset_y, offset_x = self.offsets[-2], self.offsets[-1]
 
         markers_dict = {}
         annotations_dict = tags_dict[
