@@ -579,7 +579,7 @@ class HologramImage(Signal2D):
         2. Fringe spacing
         3. Fringe sampling
 
-         The reconstruction parameters (sb_position, sb_size)
+         The reconstruction parameters (sb_position)
          have to be 1d or to have same dimensionality as the hologram.
 
         Parameters
