@@ -1198,7 +1198,6 @@ _spikes_diagnosis,
                             casting="unsafe")
                 np.multiply(dc[..., :offset], 0,
                             out=dc[..., :offset], casting="unsafe")
-                dc[..., :offset] *= 0.
         if side == 'right' or side == 'both':
             rl = None if offset == 0 else -offset
             if self._lazy:
