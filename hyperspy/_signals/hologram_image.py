@@ -28,7 +28,7 @@ from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.misc.holography.reconstruct import (
     reconstruct, estimate_sideband_position, estimate_sideband_size)
-from hyperspy.misc.holography.tools import calculate_carrier_frequency
+from hyperspy.misc.holography.tools import calculate_carrier_frequency, estimate_fringe_contrast
 
 _logger = logging.getLogger(__name__)
 
@@ -567,14 +567,12 @@ class HologramImage(Signal2D):
         return wave_image
 
     def statistics(self,
-                   sb_size=None,
-                   sb_unit=None,
                    sb='lower',
                    sb_position=None,
                    high_cf=False,
-                   plotting=False,
+                   apodization='hanning',
+                   single_values=True,
                    show_progressbar=False,
-                   store_parameters=True,
                    parallel=None):
         """Calculates following statistics for off-axis electron holograms:
         1. Fringe contrast
@@ -586,32 +584,27 @@ class HologramImage(Signal2D):
 
         Parameters
         ----------
-        sb_size : float, ndarray, :class:`~hyperspy.signals.BaseSignal, None
-            Sideband radius of the aperture in corresponding unit (see
-            'sb_unit'). If None, the radius of the aperture is set to 1/3 of
-            the distance between sideband and center band.
-        sb_unit : str, None
-            Unit of the two sideband parameters 'sb_size' and 'sb_smoothness'.
-            Default: None - Sideband size given in pixels
-            'nm': Size and smoothness of the aperture are given in 1/nm.
-            'mrad': Size and smoothness of the aperture are given in mrad.
         sb : str, None
-            Select which sideband is selected. 'upper' or 'lower'.
+            Select which sideband is selected. 'upper', 'lower', 'left' or 'right'.
         sb_position : tuple, :class:`~hyperspy.signals.Signal1D, None
             The sideband position (y, x), referred to the non-shifted FFT. If
             None, sideband is determined automatically from FFT.
         high_cf : bool, optional
             If False, the highest carrier frequency allowed for the sideband location is equal to
             half of the Nyquist frequency (Default: False).
-        plotting : boolean
-            Shows details of the reconstruction (i.e. SB selection).
-        show_progressbar : boolean
+        apodization: string, None, optional
+            Use 'hanning', 'hamming' or None to apply apodization window in real space before FFT
+            for estimation of fringe contrast. Apodization is typically needed to suppress
+            striking  due to sharp edges of the image which often results in underestimation
+            of the fringe contrast. (Default: 'hanning')
+        single_values : bool, optional
+            If True calculates statistics only for the first navigation pixels and
+            returns the values as single floats (Default: True)
+        show_progressbar : bool, optional
             Shows progressbar while iterating over different slices of the
-            signal (passes the parameter to map method).
-        parallel : bool
+            signal (passes the parameter to map method). (Default: False)
+        parallel : bool, None, optional
             Run the reconstruction in parallel
-        store_parameters : boolean
-            Store reconstruction parameters in metadata
 
         Returns
         -------
@@ -622,10 +615,8 @@ class HologramImage(Signal2D):
         --------
         >>> import hyperspy.api as hs
         >>> s = hs.datasets.example_signals.reference_hologram()
-        >>> sb_position = s.estimate_sideband_position()
-        >>> sb_size = s.estimate_sideband_size(sb_position)
-        >>> sb_size.data
-        >>> statistics_dict = s.statistics(sb_position=sb_position, sb_size=sb_size)
+        >>> sb_position = s.estimate_sideband_position(high_cf=True)
+        >>> statistics_dict = s.statistics(sb_position=sb_position)
 
         """
 
@@ -635,19 +626,23 @@ class HologramImage(Signal2D):
         # Parsing sideband position:
         (sb_position, sb_position_temp) = _parse_sb_position(self, None, sb_position, sb, high_cf, parallel)
 
-        # Parsing sideband size
-        (sb_size, sb_size_temp) = _parse_sb_size(self, None, sb_position, sb_size, parallel)
-
         # Calculate carrier frequency in 1/px and fringe sampling:
         fourier_sampling = 1./np.array(self.axes_manager.signal_shape)
-        carrier_freq_px = self.map(calculate_carrier_frequency,
-                                   sb_position=sb_position,
-                                   scale=fourier_sampling,
-                                   inplace=False,
-                                   ragged=False,
-                                   parallel=parallel)
-        fringe_sampling = 1./fourier_sampling
-        # Calculate carrier frequency in 1/nm and fringe spacing:
+        if single_values:
+            carrier_freq_px = calculate_carrier_frequency(_first_nav_pixel_data(self),
+                                                          sb_position=_first_nav_pixel_data(sb_position),
+                                                          scale=fourier_sampling)
+        else:
+            carrier_freq_px = self.map(calculate_carrier_frequency,
+                                       sb_position=sb_position,
+                                       scale=fourier_sampling,
+                                       inplace=False,
+                                       ragged=False,
+                                       show_progressbar=show_progressbar,
+                                       parallel=parallel)
+        fringe_sampling = np.divide(1., carrier_freq_px)
+
+        # Calculate carrier frequency in 1/nm and fringe spacing in nm:
         f_sampling_nm = np.divide(
             1.,
             [a * b for a, b in
@@ -655,12 +650,19 @@ class HologramImage(Signal2D):
                  (self.axes_manager.signal_axes[0].scale,
                   self.axes_manager.signal_axes[1].scale))]
         )
-        carrier_freq_nm = self.map(calculate_carrier_frequency,
-                                   sb_position=sb_position,
-                                   scale=f_sampling_nm,
-                                   inplace=False,
-                                   ragged=False,
-                                   parallel=parallel)
+        if single_values:
+            carrier_freq_nm = calculate_carrier_frequency(_first_nav_pixel_data(self),
+                                                          sb_position=_first_nav_pixel_data(sb_position),
+                                                          scale=f_sampling_nm)
+        else:
+            carrier_freq_nm = self.map(calculate_carrier_frequency,
+                                       sb_position=sb_position,
+                                       scale=f_sampling_nm,
+                                       inplace=False,
+                                       ragged=False,
+                                       show_progressbar=show_progressbar,
+                                       parallel=parallel)
+        fringe_spacing = np.divide(1., carrier_freq_nm)
 
         # Calculate carrier frequency in mrad:
         try:
@@ -676,28 +678,24 @@ class HologramImage(Signal2D):
         wavelength = constants.h / np.sqrt(momentum) * 1e9  # in nm
         carrier_freq_mrad = carrier_freq_nm * 1000 * wavelength
 
-        if sb_unit == 'nm':
+        # Calculate fringe contrast:
+        if single_values:
+            fringe_contrast = estimate_fringe_contrast(_first_nav_pixel_data(self),
+                                                       sb_position=_first_nav_pixel_data(sb_position),
+                                                       apodization=apodization)
+        else:
+            fringe_contrast = self.map(estimate_fringe_contrast,
+                                       sb_position=sb_position,
+                                       apodization=apodization,
+                                       inplace=False,
+                                       ragged=False,
+                                       show_progressbar=show_progressbar,
+                                       parallel=parallel)
 
-            sb_size_temp = sb_size_temp / np.mean(f_sampling)
-        elif sb_unit == 'mrad':
-            f_sampling = np.divide(
-                1,
-                [a * b for a, b in
-                 zip(self.axes_manager.signal_shape,
-                     (self.axes_manager.signal_axes[0].scale,
-                      self.axes_manager.signal_axes[1].scale))]
-            )
-
-
-        # Logging the reconstruction parameters if appropriate:
-        _logger.info('Sideband position in pixels: {}'.format(sb_position))
-        _logger.info('Sideband aperture radius in pixels: {}'.format(sb_size))
-
-        # Reconstructing object electron wave:
-
-        # Checking if reference is a single image, which requires sideband
-        # parameters as a nparray to avoid iteration trough those:
-        return {'Carrier frequency (1/px)': carrier_freq_px,
+        return {'Fringe contrast': fringe_contrast,
+                'Fringe sampling (px)': fringe_sampling,
+                'Fringe spacing (nm)': fringe_spacing,
+                'Carrier frequency (1/px)': carrier_freq_px,
                 'Carrier frequency (1/nm)': carrier_freq_nm,
                 'Carrier frequency (mrad)': carrier_freq_mrad}
 

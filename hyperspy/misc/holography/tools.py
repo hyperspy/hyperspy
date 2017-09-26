@@ -17,8 +17,8 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from scipy.fftpack import fft2, ifft2, fftshift
 import matplotlib.pyplot as plt
+from scipy.fftpack import fft2, fftshift
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -49,3 +49,43 @@ def calculate_carrier_frequency(holo_data, sb_position, scale):
                np.array((shape[0], 0))]
     origin_index = np.argmin([np.linalg.norm(origin-sb_position) for origin in origins])
     return np.linalg.norm(np.multiply(origins[origin_index]-sb_position, scale))
+
+
+def estimate_fringe_contrast(holo_data, sb_position, apodization='hanning'):
+    """
+    Estimates average fringe contrast of a hologram using by dividing amplitude
+    of maximum pixel of sideband by amplitude of FFT's origin.
+
+    Parameters
+    ----------
+    holo_data: ndarray
+        The data of the hologram.
+    sb_position: tuple
+        Position of the sideband with the reference to non-shifted FFT
+    apodization: string, None
+        Use 'hanning', 'hamming' or None to apply apodization window in real space before FFT
+        Apodization is typically needed to suppress the striking  due to sharp edges
+        of the which often results in underestimation of the fringe contrast. (Default: 'hanning')
+
+    Returns
+    -------
+    Fringe contrast as a float
+    """
+
+    holo_data.dtype = 'float64'
+    holo_shape = holo_data.shape
+
+    if apodization:
+        if apodization == 'hanning':
+            window_x = np.hanning(holo_shape[0])
+            window_y = np.hanning(holo_shape[1])
+        elif apodization == 'hamming':
+            window_x = np.hamming(holo_shape[0])
+            window_y = np.hamming(holo_shape[1])
+        window_2d = np.sqrt(np.outer(window_x, window_y))
+        holo_data *= window_2d
+
+    fft_exp = fft2(holo_data)
+
+    return 2 * np.abs(fft_exp[tuple(sb_position)]) / np.abs(fft_exp[0, 0])
+
