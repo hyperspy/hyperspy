@@ -1192,8 +1192,12 @@ _spikes_diagnosis,
                 thelist.extend([tapered, therest])
                 dc = da.concatenate(thelist, axis=-1)
             else:
-                dc[..., offset:channels + offset] *= (
-                    np.hanning(2 * channels)[:channels])
+                np.multiply(dc[..., offset:channels + offset],
+                            (np.hanning(2 * channels)[:channels]),
+                            out=dc[..., offset:channels + offset],
+                            casting="unsafe")
+                np.multiply(dc[..., :offset], 0,
+                            out=dc[..., :offset], casting="unsafe")
                 dc[..., :offset] *= 0.
         if side == 'right' or side == 'both':
             rl = None if offset == 0 else -offset
