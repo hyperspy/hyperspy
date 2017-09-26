@@ -335,7 +335,7 @@ def test_statistics(parallel, lazy, single_values):
 
         assert_allclose(stats['Fringe sampling (px)'], REF_FRINGE_SAMPLING, rtol=RTOL)
         assert_allclose(stats['Fringe spacing (nm)'], REF_FRINGE_SPACING, rtol=RTOL)
-        assert_allclose(stats['Carrier frequency (1/nm)'], ref_carrier_freq_nm, rtol=RTOL)
+        assert_allclose(stats['Carrier frequency (1 / nm)'], ref_carrier_freq_nm, rtol=RTOL)
         assert_allclose(stats['Carrier frequency (1/px)'], ref_carrier_freq, rtol=RTOL)
         assert_allclose(stats['Carrier frequency (mrad)'], ref_carrier_freq_mrad, rtol=RTOL)
     else:
@@ -351,7 +351,7 @@ def test_statistics(parallel, lazy, single_values):
 
         assert_allclose(stats['Fringe sampling (px)'].data, ref_fringe_sampling_stack, rtol=RTOL)
         assert_allclose(stats['Fringe spacing (nm)'].data, ref_fringe_spacing_stack, rtol=RTOL)
-        assert_allclose(stats['Carrier frequency (1/nm)'].data, ref_carrier_freq_nm_stack, rtol=RTOL)
+        assert_allclose(stats['Carrier frequency (1 / nm)'].data, ref_carrier_freq_nm_stack, rtol=RTOL)
         assert_allclose(stats['Carrier frequency (1/px)'].data, ref_carrier_freq_stack, rtol=RTOL)
         assert_allclose(stats['Carrier frequency (mrad)'].data, ref_carrier_freq_mrad_stack, rtol=RTOL)
 

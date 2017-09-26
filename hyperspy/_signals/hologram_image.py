@@ -21,6 +21,7 @@ from collections import OrderedDict
 import scipy.constants as constants
 import numpy as np
 from dask.array import Array as daArray
+from pint import UnitRegistry, UndefinedUnitError
 
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.signal import BaseSignal
@@ -642,8 +643,14 @@ class HologramImage(Signal2D):
                                        parallel=parallel)
         fringe_sampling = np.divide(1., carrier_freq_px)
 
-        # Calculate carrier frequency in 1/nm and fringe spacing in nm:
-        f_sampling_nm = np.divide(
+        ureg = UnitRegistry()
+        try:
+            units = ureg.parse_expression(str(self.axes_manager.signal_axes[0].units))
+        except UndefinedUnitError:
+            raise ValueError('Signal axes units should be defined')
+
+        # Calculate carrier frequency in 1/units and fringe spacing in units:
+        f_sampling_units = np.divide(
             1.,
             [a * b for a, b in
              zip(self.axes_manager.signal_shape,
@@ -651,18 +658,18 @@ class HologramImage(Signal2D):
                   self.axes_manager.signal_axes[1].scale))]
         )
         if single_values:
-            carrier_freq_nm = calculate_carrier_frequency(_first_nav_pixel_data(self),
+            carrier_freq_units = calculate_carrier_frequency(_first_nav_pixel_data(self),
                                                           sb_position=_first_nav_pixel_data(sb_position),
-                                                          scale=f_sampling_nm)
+                                                          scale=f_sampling_units)
         else:
-            carrier_freq_nm = self.map(calculate_carrier_frequency,
+            carrier_freq_units = self.map(calculate_carrier_frequency,
                                        sb_position=sb_position,
-                                       scale=f_sampling_nm,
+                                       scale=f_sampling_units,
                                        inplace=False,
                                        ragged=False,
                                        show_progressbar=show_progressbar,
                                        parallel=parallel)
-        fringe_spacing = np.divide(1., carrier_freq_nm)
+        fringe_spacing = np.divide(1., carrier_freq_units)
 
         # Calculate carrier frequency in mrad:
         try:
@@ -676,7 +683,8 @@ class HologramImage(Signal2D):
                    1000 * (1 + constants.elementary_charge * ht *
                            1000 / (2 * constants.m_e * constants.c ** 2))
         wavelength = constants.h / np.sqrt(momentum) * 1e9  # in nm
-        carrier_freq_mrad = carrier_freq_nm * 1000 * wavelength
+        carrier_freq_quantity = wavelength * ureg('nm') * carrier_freq_units / units * ureg('rad')
+        carrier_freq_mrad = carrier_freq_quantity.to('mrad').magnitude
 
         # Calculate fringe contrast:
         if single_values:
@@ -694,9 +702,9 @@ class HologramImage(Signal2D):
 
         return {'Fringe contrast': fringe_contrast,
                 'Fringe sampling (px)': fringe_sampling,
-                'Fringe spacing (nm)': fringe_spacing,
+                'Fringe spacing ({:~})'.format(units.units): fringe_spacing,
                 'Carrier frequency (1/px)': carrier_freq_px,
-                'Carrier frequency (1/nm)': carrier_freq_nm,
+                'Carrier frequency ({:~})'.format((1. / units).units): carrier_freq_units,
                 'Carrier frequency (mrad)': carrier_freq_mrad}
 
 
