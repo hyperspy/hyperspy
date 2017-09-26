@@ -1209,10 +1209,13 @@ _spikes_diagnosis,
                     thelist.append(zeros)
                 dc = da.concatenate(thelist, axis=-1)
             else:
-                dc[..., -channels - offset:rl] *= (
-                    np.hanning(2 * channels)[-channels:])
+                np.multiply(dc[..., -channels - offset:rl],
+                            (np.hanning(2 * channels)[-channels:]),
+                            out=dc[..., -channels - offset:rl],
+                            casting="unsafe")
                 if offset != 0:
-                    dc[..., -offset:] *= 0.
+                    np.multiply(dc[..., -offset:], 0,
+                                out=dc[..., -offset:], casting="unsafe")
         if self._lazy:
             self.data = dc
         self.events.data_changed.trigger(obj=self)
