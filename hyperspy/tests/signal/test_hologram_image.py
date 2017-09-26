@@ -296,8 +296,12 @@ def test_reconstruct_phase_multi(parallel, lazy):
             sb_size=40, sb_unit='mrad')
 
 
-@pytest.mark.parametrize('parallel,lazy, single_values',
-                         [(False, False, True), (False, False, False)])
+@pytest.mark.parametrize('parallel, lazy, single_values',
+                         [(False, False, True),
+                          (False, False, False),
+                          (True, False, True),
+                          (True, True, True),
+                          ])
 def test_statistics(parallel, lazy, single_values):
     # Parameters measured using Gatan HoloWorks:
     REF_FRINGE_SPACING = 3.48604
