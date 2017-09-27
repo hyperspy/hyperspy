@@ -1186,17 +1186,18 @@ _spikes_diagnosis,
         if side == 'left' or side == 'both':
             if self._lazy:
                 tapered = dc[..., offset:channels + offset]
-                print(tapered.dtype)
                 tapered *= np.hanning(2 * channels)[:channels]
-                print(tapered.dtype)
                 therest = dc[..., channels + offset:]
                 thelist = [] if offset == 0 else [zeros]
                 thelist.extend([tapered, therest])
                 dc = da.concatenate(thelist, axis=-1)
             else:
-                dc[..., offset:channels + offset] *= (
-                    np.hanning(2 * channels)[:channels])
-                dc[..., :offset] *= 0.
+                np.multiply(dc[..., offset:channels + offset],
+                            (np.hanning(2 * channels)[:channels]),
+                            out=dc[..., offset:channels + offset],
+                            casting="safe")
+                np.multiply(dc[..., :offset], 0,
+                            out=dc[..., :offset], casting="safe")
         if side == 'right' or side == 'both':
             rl = None if offset == 0 else -offset
             if self._lazy:
@@ -1208,39 +1209,18 @@ _spikes_diagnosis,
                     thelist.append(zeros)
                 dc = da.concatenate(thelist, axis=-1)
             else:
-                dc[..., -channels - offset:rl] *= (
-                    np.hanning(2 * channels)[-channels:])
+                np.multiply(dc[..., -channels - offset:rl],
+                            (np.hanning(2 * channels)[-channels:]),
+                            out=dc[..., -channels - offset:rl],
+                            casting="safe")
                 if offset != 0:
-                    dc[..., -offset:] *= 0.
+                    np.multiply(dc[..., -offset:], 0,
+                                out=dc[..., -offset:], casting="safe")
         if self._lazy:
             self.data = dc
         self.events.data_changed.trigger(obj=self)
         return channels
-#else:
-#                np.multiply(dc[..., offset:channels + offset],
-#                            (np.hanning(2 * channels)[:channels]),
-#                            out=dc[..., offset:channels + offset],
-#                            casting="safe")
-#                np.multiply(dc[..., :offset], 0,
-#                            out=dc[..., :offset], casting="safe")
-#        if side == 'right' or side == 'both':
-#            rl = None if offset == 0 else -offset
-#            if self._lazy:
-#                therest = dc[..., :-channels - offset]
-#                tapered = dc[..., -channels - offset:rl]
-#                tapered *= np.hanning(2 * channels)[-channels:]
-#                thelist = [therest, tapered]
-#                if offset != 0:
-#                    thelist.append(zeros)
-#                dc = da.concatenate(thelist, axis=-1)
-#            else:
-#                np.multiply(dc[..., -channels - offset:rl],
-#                            (np.hanning(2 * channels)[-channels:]),
-#                            out=dc[..., -channels - offset:rl],
-#                            casting="safe")
-#                if offset != 0:
-#                    np.multiply(dc[..., -offset:], 0,
-#                                out=dc[..., -offset:], casting="safe")
+
     def find_peaks1D_ohaver(self, xdim=None, slope_thresh=0, amp_thresh=None,
                             subchannel=True, medfilt_radius=5, maxpeakn=30000,
                             peakgroup=10, parallel=None):
