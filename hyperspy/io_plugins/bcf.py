@@ -92,7 +92,7 @@ def set_NUM_FORMAT(t_sep, d_sep):
             r'^(\d|'+NUM_FORMAT[0]+')*'+NUM_FORMAT[1]+'{1}\d*$')
     else:
         raise ValueError(
-            """thousand and decimal separator should be entered as strings""")
+            """thousand and decimal separators should be entered as the strings""")
 
 
 class Container(object):
