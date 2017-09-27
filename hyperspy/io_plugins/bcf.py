@@ -75,6 +75,25 @@ except ImportError:  # pragma: no cover
     _logger.info("""unbcf_fast library is not present...
 Falling back to slow python only backend.""")
 
+# default thousand and decimal point separators:
+NUM_FORMAT = ('','.')
+
+def set_NUM_FORMAT(t_sep, d_sep):
+    """set thousand and decimal separators and enable hack around the Bruker's
+    neglection of XML standard of serialsing decimals.
+    The hack is needed when bcf was produced on the system with locale set
+    not to C or en_US."""
+    global NUM_FORMAT
+    global decimal_regex
+    if type(t_sep) == type(d_sep) == str:
+        NUM_FORMAT = (t_sep, d_sep)
+        import re
+        decimal_regex = re.compile(
+            r'^(\d|'+NUM_FORMAT[0]+')*'+NUM_FORMAT[1]+'{1}\d*$')
+    else:
+        raise ValueError(
+            """thousand and decimal separator should be entered as strings""")
+
 
 class Container(object):
     pass
@@ -426,6 +445,10 @@ def interpret(string):
     """interpret any string and return casted to appropriate
     dtype python object
     """
+    if NUM_FORMAT != ('', '.'):  # if not default decimal separators
+        if decimal_regex.match(string) is not None:
+            string = string.replace(NUM_FORMAT[0], '')
+            string = string.replace(NUM_FORMAT[1], '.')
     try:
         return literal_eval(string)
     except (ValueError, SyntaxError):
