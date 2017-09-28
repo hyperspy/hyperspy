@@ -311,20 +311,19 @@ def load_with_reader(filename,
 This could be caused by a non-compliance of pascal implementation
 used by Bruker Esprit to decimal/float type data serialisation
 standards of XML. It can be hacked around by temporary setting
-the hint of decimal and thousand separator, before loading the file,
-by following function:
+the decimal and thousand separators, before loading the file,
+with a following function:
 
 >>> hs.hyperspy.io_plugins.bcf.set_NUM_FORMAT(t_sep, d_sep)
 
-e.g. when locale with Esprit is German:
+e.g. when locale with Esprit is German or Polish:
 >>> hs.hyperspy.io_plugins.bcf.set_NUM_FORMAT('', ',')
 e.g. for French:
 >>> hs.hyperspy.io_plugins.bcf.set_NUM_FORMAT('.', ',')
 
 To prevent this error in the future, please, consider of
 setting the locale to en_US on OS with Esprit.""")
-                else:
-                    raise
+                raise
             folder, filename = os.path.split(os.path.abspath(filename))
             filename, extension = os.path.splitext(filename)
             objects[-1].tmp_parameters.folder = folder
