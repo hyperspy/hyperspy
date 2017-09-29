@@ -62,8 +62,7 @@ install_req = ['scipy>=0.15',
                'scikit-image>=0.13',
                'pint>0.7',
                'statsmodels',
-               'mrcz>=0.2.3',
-               'blosc>=1.5',
+               'mrcz>=0.2.5',
                ]
 
 extras_require = {
@@ -71,6 +70,7 @@ extras_require = {
     "bcf": ['lxml'],
     "gui-jupyter": ["hyperspy_gui_ipywidgets"],
     "gui-traitsui": ["hyperspy_gui_traitsui"],
+    "mrcz-blosc": ["blosc>=1.5"],
     "test": ["pytest>=3", "pytest-mpl", "matplotlib>=2.0.2"],
 }
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
