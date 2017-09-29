@@ -832,7 +832,7 @@ using an external function can be more easily accomplished using the
 
   Rotation of images by the same amount using :py:meth:`~.signal.BaseSignal.map`.
 
-The :py:meth:`~.signal.Bfancy inaseSignal.map` method can also take variable
+The :py:meth:`~.signal.BaseSignal.map` method can also take variable
 arguments as in the following example.
 
 .. code-block:: python

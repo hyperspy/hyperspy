@@ -156,9 +156,9 @@ class UnitConversion(object):
     def _set_quantity(self, value, attribute='scale'):
         if attribute == 'scale' or attribute == 'offset':
             units = '' if self.units == t.Undefined else self.units
-            if type(value) is str:
+            if isinstance(value, str):
                 value = _ureg.parse_expression(value)
-            if type(value) is float:
+            if isinstance(value, float):
                 value = value * _ureg(units)
 
             # to be consistent, we also need to convert the other one
@@ -328,7 +328,7 @@ class DataAxis(t.HasTraits, UnitConversion):
             return value
 
     def _parse_string_for_slice(self, value):
-        if type(value) is str:
+        if isinstance(value, str):
             value = self._get_index_from_value_with_units(value)
         return value
 
@@ -1033,19 +1033,19 @@ class AxesManager(t.HasTraits):
         elif axes == 'signal':
             axes = self.signal_axes
             convert_navigation = False
-        elif isinstance(axes, DataAxis) or type(axes) is int or type(axes) is str:
+        elif isinstance(axes, (DataAxis, int, str)):
             if not isinstance(axes, DataAxis):
                 axes = self[axes]
             axes = (axes, )
             convert_navigation = axes[0].navigate
-            convert_signal = not axes[0].navigate
+            convert_signal = not convert_navigation
         else:
             raise TypeError(
                 'Axes type `{}` is not correct.'.format(type(axes)))
 
-        if type(units) is str or units is None:
+        if isinstance(units, str) or units is None:
             units = [units] * len(axes)
-        elif type(units) is list:
+        elif isinstance(units, list):
             if len(units) != len(axes):
                 raise ValueError('Length of the provided units list {} should '
                                  'be the same than the length of the provided '
@@ -1063,24 +1063,21 @@ class AxesManager(t.HasTraits):
             if convert_signal:
                 offset = self.navigation_dimension if convert_navigation else 0
                 units_sig = units[offset:]
-                self._convert_axes_to_same_units(self.signal_axes,
+                self._convert_axes_to_same_units(self.signal_axes[::-1],
                                                  units_sig, factor)
         else:
             for axis, unit in zip(axes, units):
                 axis.convert_to_units(unit, factor=factor)
 
     def _convert_axes_to_same_units(self, axes, units, factor=0.25):
-        current_units = None
-        for axis, unit in zip(axes, units):
+        # Set the same units for all axes, use the unit of the first axis
+        # as reference
+        axes[0].convert_to_units(units[0], factor)
+        for axis, unit in zip(axes[1:], units[1:]):
             axis.convert_to_units(unit, factor)
-            if current_units is not None and current_units:
-                if current_units != axis.units:
-                    # take units along first axis and use that one
-                    for axis in axes:
-                        axis.convert_to_units(axes[0].units, factor)
-                    return
-            else:
-                current_units = axis.units  # initialisation first iteration
+            # in case it converts to a different units, keep the first one
+            if axis.units != axes[0].units:
+                axis.convert_to_units(axes[0].units, factor)
 
     def update_axes_attributes_from(self, axes,
                                     attributes=["scale", "offset", "units"]):

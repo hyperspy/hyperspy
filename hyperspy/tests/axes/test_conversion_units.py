@@ -355,11 +355,14 @@ class TestAxesManager:
 
     def test_convert_to_units_list_same_units(self):
         self.am2.convert_units(units=['µm', 'eV', 'meV'], same_units=True)
-        # Only the signal axis can be converted
-        assert_deep_almost_equal(self.am2._get_signal_axes_dicts(),
-                                 self.axes_list2[1:])
         nt.assert_almost_equal(self.am2['x'].scale, 0.0015)
         assert self.am2['x'].units == 'µm'
+        nt.assert_almost_equal(self.am2['energy'].scale,
+                               self.axes_list2[1]['scale'])
+        assert self.am2['energy'].units == self.axes_list2[1]['units']
+        nt.assert_almost_equal(self.am2['energy2'].scale,
+                               self.axes_list2[2]['scale'])
+        assert self.am2['energy2'].units == self.axes_list2[2]['units']
 
     def test_convert_to_units_list_signal2D(self):
         self.am2.convert_units(units=['µm', 'eV', 'meV'], same_units=False)
