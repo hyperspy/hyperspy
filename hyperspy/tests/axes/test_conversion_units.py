@@ -307,13 +307,19 @@ class TestAxesManager:
 
     def test_convert_units_axes_integer(self):
         # convert only the first axis
-        self.am.convert_units(axes=0, units='nm')
+        self.am.convert_units(axes=0, units='nm', same_units=False)
         nt.assert_almost_equal(self.am[0].scale, 0.5)
         assert self.am[0].units == 'nm'
         nt.assert_almost_equal(self.am['x'].scale, 1.5E-9)
         assert self.am['x'].units == 'm'
         nt.assert_almost_equal(self.am['energy'].scale,
                                self.axes_list[-1]['scale'])
+
+        self.am.convert_units(axes=0, units='nm', same_units=True)
+        nt.assert_almost_equal(self.am[0].scale, 0.5)
+        assert self.am[0].units == 'nm'
+        nt.assert_almost_equal(self.am['x'].scale, 1.5)
+        assert self.am['x'].units == 'nm'
 
     def test_convert_to_navigation_units_list(self):
         self.am.convert_units(axes='navigation', units=['mm', 'nm'],

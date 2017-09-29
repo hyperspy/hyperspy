@@ -1073,11 +1073,8 @@ class AxesManager(t.HasTraits):
         # Set the same units for all axes, use the unit of the first axis
         # as reference
         axes[0].convert_to_units(units[0], factor)
-        for axis, unit in zip(axes[1:], units[1:]):
-            axis.convert_to_units(unit, factor)
-            # in case it converts to a different units, keep the first one
-            if axis.units != axes[0].units:
-                axis.convert_to_units(axes[0].units, factor)
+        for axis in axes[1:]:
+            axis.convert_to_units(units[0], factor)
 
     def update_axes_attributes_from(self, axes,
                                     attributes=["scale", "offset", "units"]):
