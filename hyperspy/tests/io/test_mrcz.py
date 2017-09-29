@@ -43,7 +43,8 @@ def _generate_parameters():
     for dtype in dtype_list:
         for compressor in [None, 'zstd', 'lz4']:
             for clevel in [1, 9]:
-                parameters.append([dtype, compressor, clevel])
+                for lazy in [True, False]:
+                    parameters.append([dtype, compressor, clevel, lazy])
     return parameters
 
 
@@ -53,9 +54,10 @@ class TestPythonMrcz:
         pass
 
     def compareSaveLoad(self, testShape, dtype='int8', compressor=None,
-                        clevel=1, do_async=False, **kwargs):
+                        clevel=1, lazy=False, do_async=False, **kwargs):
         # This is the main function which reads and writes from disk.
-        mrcName = os.path.join(tmpDir, "testMage_{}.mrcz".format(dtype) )
+        mrcName = os.path.join(
+            tmpDir, "testMage_{}_lazy_{}.mrcz".format(dtype, lazy))
 
         dtype = np.dtype(dtype)
         if dtype == 'float32' or dtype == 'float64':
@@ -67,6 +69,8 @@ class TestPythonMrcz:
             testData = np.random.randint(10, size=testShape).astype(dtype)
 
         testSignal = signals.Signal2D(testData)
+        if lazy:
+            testSignal = testSignal.as_lazy()
         # Unfortunately one cannot iterate over axes_manager in a Pythonic way
         # for axis in testSignal.axes_manager:
         testSignal.axes_manager[0].name = 'z'
@@ -139,15 +143,14 @@ class TestPythonMrcz:
 
         return reSignal
 
-    @pytest.mark.parametrize(("dtype", "compressor", "clevel"),
+    @pytest.mark.parametrize(("dtype", "compressor", "clevel", "lazy"),
                              _generate_parameters())
-    def test_MRC_uncompressed(self, dtype, compressor, clevel):
-        t_start = perf_counter()
+    def test_MRC(self, dtype, compressor, clevel, lazy):
         t_start = perf_counter()
         self.compareSaveLoad([2, 64, 32], dtype=dtype, compressor=compressor,
-                             clevel=clevel)
-        print("MRCZ test ({}, {} {}) finished in {} s".format(
-            dtype, compressor, clevel, perf_counter() - t_start))
+                             clevel=clevel, lazy=lazy)
+        print("MRCZ test ({}, {}, {}, lazy:{}) finished in {} s".format(
+            dtype, compressor, clevel, lazy, perf_counter() - t_start))
 
     @pytest.mark.parametrize("dtype", dtype_list)
     def test_Async(self, dtype):
@@ -162,5 +165,5 @@ if __name__ == '__main__':
     theSuite = TestPythonMrcz()
     parameters = _generate_parameters()
     for parameter in parameters:
-        theSuite.test_MRC_uncompressed(*parameter)
+        theSuite.test_MRC(*parameter)
     theSuite.test_Async(parameter[0])
