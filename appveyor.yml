@@ -69,10 +69,10 @@ install:
   - ps: Add-AppveyorMessage "Installing conda packages..."
   - "%CMD_IN_ENV% conda install -yq %TEST_DEPS%"
   - "%CMD_IN_ENV% conda install -yq %DEPS%"
-    # Having 'sip' folder on path confuses import of `sip`.
-  - "%CMD_IN_ENV% conda install -yq pip"
+  # Having 'sip' folder on path confuses import of `sip`.
+  #- "%CMD_IN_ENV% conda install -yq pip"
   - "pip install pytest-mpl"
-    # Force to have the freetype font in matplotlib from pip for plot testing
+  # Force to have the freetype font in matplotlib from pip for plot testing
   - "pip uninstall -y matplotlib"
   - "pip install matplotlib"
   # TODO: Remove once anaconda taitsui package is at v5:
