@@ -170,10 +170,12 @@ class Test2D:
         s.axes_manager[1].name = 'y'
         s.axes_manager[1].scale = 0.01
         s.axes_manager[1].units = 'µm'
-        s.crop(0, 0.0, 0.5, convert_units=True)
-        s.crop(1, 0.0, 0.5, convert_units=True)
+        s.crop(0, 0.0, 0.5, convert_units=True) # also convert the other axis
+        s.crop(1, 0.0, 500.0, convert_units=True)
         nt.assert_almost_equal(s.axes_manager[0].scale, 10.0)
+        nt.assert_almost_equal(s.axes_manager[1].scale, 10.0)
         assert s.axes_manager[0].units == 'nm'
+        assert s.axes_manager[1].units == 'nm'
         nt.assert_allclose(s.data, d[:50, :50])
 
         # Should keep the unit to µm
@@ -188,7 +190,58 @@ class Test2D:
         s.crop(0, 0.0, 5.0, convert_units=True)
         s.crop(1, 0.0, 5.0, convert_units=True)
         nt.assert_almost_equal(s.axes_manager[0].scale, 0.01)
+        nt.assert_almost_equal(s.axes_manager[1].scale, 0.01)
         assert s.axes_manager[0].units == "µm"
+        assert s.axes_manager[1].units == "µm"
+        nt.assert_allclose(s.data, d[:500, :500])
+
+    def test_crop_image_unit_convertion_signal2D(self):
+        # Should not convert the unit
+        d = np.arange(512 * 512).reshape(512, 512)
+        s = signals.Signal2D(d)
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[0].scale = 0.01
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].name = 'y'
+        s.axes_manager[1].scale = 0.01
+        s.axes_manager[1].units = 'µm'
+        s.crop_image(0, 0.5, 0.0, 0.5)
+        nt.assert_almost_equal(s.axes_manager[0].scale, 0.01)
+        nt.assert_almost_equal(s.axes_manager[1].scale, 0.01)
+        assert s.axes_manager[0].units == 'µm'
+        assert s.axes_manager[1].units == 'µm'
+        nt.assert_allclose(s.data, d[:50, :50])
+        
+        # Should convert the unit to nm
+        d = np.arange(512 * 512).reshape(512, 512)
+        s = signals.Signal2D(d)
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[0].scale = 0.01
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].name = 'y'
+        s.axes_manager[1].scale = 0.01
+        s.axes_manager[1].units = 'µm'
+        s.crop_image(0, 0.5, 0.0, 0.5, convert_units=True)
+        nt.assert_almost_equal(s.axes_manager[0].scale, 10.0)
+        nt.assert_almost_equal(s.axes_manager[1].scale, 10.0)
+        assert s.axes_manager[0].units == 'nm'
+        assert s.axes_manager[1].units == 'nm'
+        nt.assert_allclose(s.data, d[:50, :50])
+
+        # Should keep the unit to µm
+        d = np.arange(512 * 512).reshape(512, 512)
+        s = signals.Signal2D(d)
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[0].scale = 0.01
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].name = 'y'
+        s.axes_manager[1].scale = 0.01
+        s.axes_manager[1].units = 'µm'
+        s.crop_image(0, 5.0, 0.0, 5.0, convert_units=True)
+        nt.assert_almost_equal(s.axes_manager[0].scale, 0.01)
+        nt.assert_almost_equal(s.axes_manager[1].scale, 0.01)
+        assert s.axes_manager[0].units == "µm"
+        assert s.axes_manager[1].units == "µm"
         nt.assert_allclose(s.data, d[:500, :500])
 
     def test_split_axis0(self):

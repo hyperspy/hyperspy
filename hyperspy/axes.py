@@ -110,10 +110,10 @@ class UnitConversion(object):
 
     def _convert_scale_units(self, converted_units):
         # For ImageJ
-        converted_units = converted_units.replace('micron', 'µm')
         if self._ignore_conversion(converted_units) or \
                 self._ignore_conversion(self.units):
             return
+        converted_units = converted_units.replace('micron', 'µm')
         scale = self.scale * _ureg(self.units)
         offset = self.offset * _ureg(self.units)
         scale = scale.to(_ureg(converted_units))
@@ -1027,9 +1027,11 @@ class AxesManager(t.HasTraits):
 
         if axes is None:
             axes = self.navigation_axes + self.signal_axes
+            convert_navigation = (len(self.navigation_axes) > 0)
         elif axes == 'navigation':
             axes = self.navigation_axes
             convert_signal = False
+            convert_navigation = (len(self.navigation_axes) > 0)
         elif axes == 'signal':
             axes = self.signal_axes
             convert_navigation = False
@@ -1063,7 +1065,7 @@ class AxesManager(t.HasTraits):
             if convert_signal:
                 offset = self.navigation_dimension if convert_navigation else 0
                 units_sig = units[offset:]
-                self._convert_axes_to_same_units(self.signal_axes[::-1],
+                self._convert_axes_to_same_units(self.signal_axes,
                                                  units_sig, factor)
         else:
             for axis, unit in zip(axes, units):
@@ -1073,8 +1075,9 @@ class AxesManager(t.HasTraits):
         # Set the same units for all axes, use the unit of the first axis
         # as reference
         axes[0].convert_to_units(units[0], factor)
+        unit = axes[0].units # after conversion, in case units[0] was None.
         for axis in axes[1:]:
-            axis.convert_to_units(units[0], factor)
+            axis.convert_to_units(unit, factor)
 
     def update_axes_attributes_from(self, axes,
                                     attributes=["scale", "offset", "units"]):
