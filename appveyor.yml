@@ -4,7 +4,7 @@ shallow_clone: true
 environment:
 
   global:
-    TEST_DEPS: "pytest pytest-cov wheel pip"
+    TEST_DEPS: "pytest pytest-cov wheel"
     NSIS_DIR: "%PROGRAMFILES(x86)%/NSIS"
     MPLBACKEND: "agg"
 
@@ -68,8 +68,9 @@ install:
   # Install the dependencies of the project.
   - ps: Add-AppveyorMessage "Installing conda packages..."
   - "%CMD_IN_ENV% conda install -yq %TEST_DEPS%"
-  - "%CMD_IN_ENV% conda install -yq %DEPS% pip"
+  - "%CMD_IN_ENV% conda install -yq %DEPS%"
     # Having 'sip' folder on path confuses import of `sip`.
+  - "%CMD_IN_ENV% conda install -yq pip"
   - "pip install pytest-mpl"
     # Force to have the freetype font in matplotlib from pip for plot testing
   - "pip uninstall -y matplotlib"
