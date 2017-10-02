@@ -60,53 +60,80 @@ class TestUnitConversion:
         with assert_warns(
                 message="not supported for conversion.",
                 category=UserWarning):
-            self.uc._convert_compact_scale_units()
+            self.uc._convert_compact_units()
         assert self.uc.units == 'micron'
         nt.assert_almost_equal(self.uc.scale, 1.0E-3)
 
     def test_convert_to_units(self):
         self._set_units_scale_size(t.Undefined, 1.0)
-        self.uc._convert_scale_units('nm')
+        out = self.uc._convert_units('nm')
+        assert out is None
         assert self.uc.units == t.Undefined
         nt.assert_almost_equal(self.uc.scale, 1.0)
 
         self._set_units_scale_size('m', 1.0E-3)
-        self.uc._convert_scale_units('µm')
+        out = self.uc._convert_units('µm')
+        assert out is None
         assert self.uc.units == 'µm'
         nt.assert_almost_equal(self.uc.scale, 1E3)
 
         self._set_units_scale_size('µm', 0.5)
-        self.uc._convert_scale_units('nm')
+        out = self.uc._convert_units('nm')
+        assert out is None
         assert self.uc.units == 'nm'
         nt.assert_almost_equal(self.uc.scale, 500)
 
         self._set_units_scale_size('µm', 5)
-        self.uc._convert_scale_units('cm')
+        out = self.uc._convert_units('cm')
+        assert out is None
         assert self.uc.units == 'cm'
         nt.assert_almost_equal(self.uc.scale, 0.0005)
 
         self._set_units_scale_size('1/µm', 5)
-        self.uc._convert_scale_units('1/nm')
+        out = self.uc._convert_units('1/nm')
+        assert out is None
         assert self.uc.units == '1/nm'
         nt.assert_almost_equal(self.uc.scale, 0.005)
 
         self._set_units_scale_size('eV', 5)
-        self.uc._convert_scale_units('keV')
+        out = self.uc._convert_units('keV')
+        assert out is None
         assert self.uc.units == 'keV'
         nt.assert_almost_equal(self.uc.scale, 0.005)
+
+    def test_convert_to_units_not_in_place(self):
+        self._set_units_scale_size(t.Undefined, 1.0)
+        out = self.uc.convert_to_units('nm', inplace=False)
+        assert out == None  # unit conversion is ignored
+        assert self.uc.units == t.Undefined
+        nt.assert_almost_equal(self.uc.scale, 1.0)
+
+        self._set_units_scale_size('m', 1.0E-3)
+        out = self.uc.convert_to_units('µm', inplace=False)
+        assert out == (1E3, 0.0, 'um')
+        assert self.uc.units == 'm'
+        nt.assert_almost_equal(self.uc.scale, 1.0E-3)
+        nt.assert_almost_equal(self.uc.offset, 0.0)
+
+        self._set_units_scale_size('µm', 0.5)
+        out = self.uc.convert_to_units('nm', inplace=False)
+        assert out[1:] == (0.0, 'nm')
+        nt.assert_almost_equal(out[0], 500.0)
+        assert self.uc.units == 'µm'
+        nt.assert_almost_equal(self.uc.scale, 0.5)
 
     def test_get_compact_unit(self):
         ##### Imaging #####
         # typical setting for high resolution image
         self._set_units_scale_size('m', 12E-12, 2048, 2E-9)
-        self.uc._convert_compact_scale_units()
+        self.uc._convert_compact_units()
         assert self.uc.units == 'nm'
         nt.assert_almost_equal(self.uc.scale, 0.012)
         nt.assert_almost_equal(self.uc.offset, 2.0)
 
         # typical setting for nm resolution image
         self._set_units_scale_size('m', 0.5E-9, 1024)
-        self.uc._convert_compact_scale_units()
+        self.uc._convert_compact_units()
         assert self.uc.units == 'nm'
         nt.assert_almost_equal(self.uc.scale, 0.5)
         nt.assert_almost_equal(self.uc.offset, 0.0)
@@ -114,25 +141,25 @@ class TestUnitConversion:
         ##### Diffraction #####
         # typical TEM diffraction
         self._set_units_scale_size('1/m', 0.1E9, 1024)
-        self.uc._convert_compact_scale_units()
+        self.uc._convert_compact_units()
         assert self.uc.units == '1/nm'
         nt.assert_almost_equal(self.uc.scale, 0.1)
 
         # typical TEM diffraction
         self._set_units_scale_size('1/m', 0.01E9, 256)
-        self.uc._convert_compact_scale_units()
+        self.uc._convert_compact_units()
         assert self.uc.units == '1/µm'
         nt.assert_almost_equal(self.uc.scale, 10.0)
 
         # high camera length diffraction
         self._set_units_scale_size('1/m', 0.1E9, 4096)
-        self.uc._convert_compact_scale_units()
+        self.uc._convert_compact_units()
         assert self.uc.units == '1/nm'
         nt.assert_almost_equal(self.uc.scale, 0.1)
 
         # typical EDS resolution
         self._set_units_scale_size('eV', 50, 4096, 0.0)
-        self.uc._convert_compact_scale_units()
+        self.uc._convert_compact_units()
         assert self.uc.units == 'keV'
         nt.assert_almost_equal(self.uc.scale, 0.05)
         nt.assert_almost_equal(self.uc.offset, 0.0)
@@ -140,21 +167,21 @@ class TestUnitConversion:
         ##### Spectroscopy #####
         # typical EELS resolution
         self._set_units_scale_size('eV', 0.2, 2048, 200.0)
-        self.uc._convert_compact_scale_units()
+        self.uc._convert_compact_units()
         assert self.uc.units == 'eV'
         nt.assert_almost_equal(self.uc.scale, 0.2)
         nt.assert_almost_equal(self.uc.offset, 200.0)
 
         # typical EELS resolution
         self._set_units_scale_size('eV', 1.0, 2048, 500.0)
-        self.uc._convert_compact_scale_units()
+        self.uc._convert_compact_units()
         assert self.uc.units == 'eV'
         nt.assert_almost_equal(self.uc.scale, 1.0)
         nt.assert_almost_equal(self.uc.offset, 500)
 
         # typical high resolution EELS resolution
         self._set_units_scale_size('eV', 0.05, 100)
-        self.uc._convert_compact_scale_units()
+        self.uc._convert_compact_units()
         assert self.uc.units == 'eV'
         assert self.uc.scale == 0.05
 

@@ -86,21 +86,18 @@ class UnitConversion(object):
             return True
         return False
 
-    def _convert_compact_scale_units(self, factor=0.25):
-        """ Return scale and units converted to compact, human-readable units.
-            See to_compact() method of the pint library for details.
-            Size is the size of the considered axes.
+    def _convert_compact_units(self, factor=0.25, inplace=True):
+        """ Convert units to "human-readable" units, which means with a 
+            convenient prefix. `factor` is a adjustage factor used to 
+            determine the prefix of the units (in combinaison with the size of 
+            the axis). See to_compact() method of the pint library for details.
         """
         if self._ignore_conversion(self.units):
             return
         scale = self.scale * _ureg(self.units)
-        offset = self.offset * _ureg(self.units)
         scale_size = factor * scale * self.size
-        converted_scale = scale.to(scale_size.to_compact().units)
-        converted_offset = offset.to(scale_size.to_compact().units)
-        self.units = '{:~}'.format(converted_scale.units)
-        self.scale = float(converted_scale.magnitude)
-        self.offset = float(converted_offset.magnitude)
+        converted_units = '{:~}'.format(scale_size.to_compact().units)
+        return self._convert_units(converted_units, inplace=inplace)
 
     def _get_index_from_value_with_units(self, value):
         value = _ureg.parse_expression(value)
@@ -108,21 +105,26 @@ class UnitConversion(object):
             raise ValueError('"{}" should contains an units.'.format(value))
         return self.value2index(value.to(self.units).magnitude)
 
-    def _convert_scale_units(self, converted_units):
+    def _convert_units(self, converted_units, inplace=True):
         # For ImageJ
+        if isinstance(converted_units, str):
+            converted_units = converted_units.replace('micron', 'µm')
         if self._ignore_conversion(converted_units) or \
                 self._ignore_conversion(self.units):
             return
-        converted_units = converted_units.replace('micron', 'µm')
-        scale = self.scale * _ureg(self.units)
-        offset = self.offset * _ureg(self.units)
-        scale = scale.to(_ureg(converted_units))
-        offset = offset.to(_ureg(converted_units))
-        self.units = '{:~}'.format(scale.units)
-        self.scale = float(scale.magnitude)
-        self.offset = float(offset.magnitude)
+        scale_pint = self.scale * _ureg(self.units)
+        offset_pint = self.offset * _ureg(self.units)
+        scale = float(scale_pint.to(_ureg(converted_units)).magnitude)
+        offset = float(offset_pint.to(_ureg(converted_units)).magnitude)
+        units = '{:~}'.format(scale_pint.to(_ureg(converted_units)).units)
+        if inplace:
+            self.scale = scale
+            self.offset = offset
+            self.units = units
+        else:
+            return scale, offset, units
 
-    def convert_to_units(self, units=None, factor=0.25):
+    def convert_to_units(self, units=None, inplace=True, factor=0.25):
         """ Convert the scale and the units of the current axis. If the units
         is not supported by the pint library, the scale and units are not
         changed.
@@ -135,13 +137,18 @@ class UnitConversion(object):
             If `None`, the scale and the units are converted to the appropriate 
             scale and units to avoid displaying scalebar with >3 digits or too 
             small number. This can be tweaked by the `factor` argument.
+        inplace : bool
+            If `True`, convert the axis in place. if `False` return the  
+            `scale`, `offset` and `units`.
         factor : float
-            Factor used to determine the prefix of the units.
+            `factor` is a adjustage factor used to determine the prefix of the 
+            units (in combinaison with the size of the axis).
         """
         if units is None:
-            self._convert_compact_scale_units(factor)
+            out = self._convert_compact_units(factor, inplace=inplace)
         else:
-            self._convert_scale_units(units)
+            out = self._convert_units(units, inplace=inplace)
+        return out
 
     def _get_quantity(self, attribute='scale'):
         if attribute == 'scale' or attribute == 'offset':
@@ -1021,7 +1028,8 @@ class AxesManager(t.HasTraits):
             first axis is used for all axes. If `False`, convert all axes 
             individually.
         factor : float
-            Factor used to determine the prefix of the units.
+            `factor` is a adjustage factor used to determine the prefix of the 
+            units (in combinaison with the size of each axis).
         """
         convert_navigation = convert_signal = True
 
@@ -1075,7 +1083,7 @@ class AxesManager(t.HasTraits):
         # Set the same units for all axes, use the unit of the first axis
         # as reference
         axes[0].convert_to_units(units[0], factor)
-        unit = axes[0].units # after conversion, in case units[0] was None.
+        unit = axes[0].units  # after conversion, in case units[0] was None.
         for axis in axes[1:]:
             axis.convert_to_units(unit, factor)
 
