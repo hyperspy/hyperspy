@@ -61,6 +61,7 @@ import dask.delayed as dd
 from struct import unpack as strct_unp
 from zlib import decompress as unzip_block
 import logging
+import re
 
 _logger = logging.getLogger(__name__)
 
@@ -75,24 +76,7 @@ except ImportError:  # pragma: no cover
     _logger.info("""unbcf_fast library is not present...
 Falling back to slow python only backend.""")
 
-# default thousand and decimal point separators:
-NUM_FORMAT = ('','.')
-
-def set_NUM_FORMAT(t_sep, d_sep):
-    """set thousand and decimal separators and enable hack around the Bruker's
-    neglection of XML standard of serialsing decimals.
-    The hack is needed when bcf was produced on the system with locale set
-    not to C or en_US."""
-    global NUM_FORMAT
-    global decimal_regex
-    if type(t_sep) == type(d_sep) == str:
-        NUM_FORMAT = (t_sep, d_sep)
-        import re
-        decimal_regex = re.compile(
-            r'^(\d|'+NUM_FORMAT[0]+')*'+NUM_FORMAT[1]+'{1}\d*$')
-    else:
-        raise ValueError(
-            """thousand and decimal separators should be entered as the strings""")
+fix_dec_patterns = re.compile(b'(>-?\d+),(\d*<)')
 
 
 class Container(object):
@@ -445,10 +429,6 @@ def interpret(string):
     """interpret any string and return casted to appropriate
     dtype python object
     """
-    if NUM_FORMAT != ('', '.'):  # if not default decimal separators
-        if decimal_regex.match(string) is not None:
-            string = string.replace(NUM_FORMAT[0], '')
-            string = string.replace(NUM_FORMAT[1], '.')
     try:
         return literal_eval(string)
     except (ValueError, SyntaxError):
@@ -894,7 +874,8 @@ class BCF_reader(SFS_reader):
         SFS_reader.__init__(self, filename)
         header_file = self.get_file('EDSDatabase/HeaderData')
         header_byte_str = header_file.get_as_BytesIO_string().getvalue()
-        self.header = HyperHeader(header_byte_str, instrument=instrument)
+        hd_bt_str = fix_dec_patterns.sub(b'\\1.\\2', header_byte_str)
+        self.header = HyperHeader(hd_bt_str, instrument=instrument)
         self.hypermap = {}
 
     def persistent_parse_hypermap(self, index=0, downsample=None,
