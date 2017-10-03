@@ -31,7 +31,6 @@ from hyperspy.misc.utils import (strlist2enumeration, find_subclasses)
 from hyperspy.misc.utils import stack as stack_method
 from hyperspy.io_plugins import io_plugins, default_write_ext
 from hyperspy.exceptions import VisibleDeprecationWarning
-from traits.trait_errors import TraitError
 from hyperspy.defaults_parser import preferences
 from hyperspy.ui_registry import get_gui
 
@@ -302,28 +301,7 @@ def load_with_reader(filename,
                 signal_dict["metadata"]["Signal"] = {}
             if signal_type is not None:
                 signal_dict['metadata']["Signal"]['signal_type'] = signal_type
-            try:
-                objects.append(dict2signal(signal_dict, lazy=lazy))
-            except TraitError:
-                if reader.short_name == 'bcf':
-                    print(
-"""The BCF reader can't read the badly formated file.
-This could be caused by a non-compliance of pascal implementation
-used by Bruker Esprit to decimal/float type data serialisation
-standards of XML. It can be hacked around by temporary setting
-the decimal and thousand separators, before loading the file,
-with a following function:
-
->>> hs.hyperspy.io_plugins.bcf.set_NUM_FORMAT(t_sep, d_sep)
-
-e.g. when locale with Esprit is German or Polish:
->>> hs.hyperspy.io_plugins.bcf.set_NUM_FORMAT('', ',')
-e.g. for French:
->>> hs.hyperspy.io_plugins.bcf.set_NUM_FORMAT('.', ',')
-
-To prevent this error in the future, please, consider of
-setting the locale to en_US on OS with Esprit.""")
-                raise
+            objects.append(dict2signal(signal_dict, lazy=lazy))
             folder, filename = os.path.split(os.path.abspath(filename))
             filename, extension = os.path.splitext(filename)
             objects[-1].tmp_parameters.folder = folder
