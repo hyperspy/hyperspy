@@ -200,6 +200,6 @@ def test_decimal_regex():
     from hyperspy.io_plugins.bcf import fix_dec_patterns
     dummy_xml_positive = b'<dummy_tag>85,658<\\dummy_tag>'
     dummy_xml_negative = b'<dum_tag>12,25,23,45,56,12,45<\\dum_tag>'
-    assert '85.658' in fix_dec_patterns.sub(b'\\1.\\2', dummy_xml_positive)
-    assert '.' not in fix_dec_patterns.sub(b'\\1.\\2', dummy_xml_negative)
+    assert b'85.658' in fix_dec_patterns.sub(b'\\1.\\2', dummy_xml_positive)
+    assert b'.' not in fix_dec_patterns.sub(b'\\1.\\2', dummy_xml_negative)
     
