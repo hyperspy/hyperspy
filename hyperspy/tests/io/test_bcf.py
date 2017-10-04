@@ -193,7 +193,7 @@ def test_wrong_file():
     lxml = pytest.importorskip("lxml")
     filename = os.path.join(my_path, 'bcf_data', 'Nope.bcf')
     with pytest.raises(TypeError):
-        load(filename)fix_dec_patterns = re.compile(b'(>-?\d+),(\d*<)')
+        load(filename)
 
 def test_decimal_regex():
     lxml = pytest.importorskip("lxml")
