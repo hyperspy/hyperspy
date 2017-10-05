@@ -21,7 +21,7 @@ import logging
 
 from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc, ripple,
                                  tiff, semper_unf, blockfile, dens, emd,
-                                 protochips, edax)
+                                 protochips, edax, bcf)
 
 io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff, semper_unf,
               blockfile, dens, emd, protochips, edax, bcf]
