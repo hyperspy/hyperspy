@@ -23,7 +23,6 @@ my_path = os.path.dirname(__file__)
 
 
 def test_load_16bit():
-    lxml = pytest.importorskip("lxml")
     # test bcf from hyperspy load function level
     # some of functions can be not covered
     # it cant use cython parsing implementation, as it is not compiled
@@ -42,7 +41,6 @@ def test_load_16bit():
 
 
 def test_load_16bit_reduced():
-    lxml = pytest.importorskip("lxml")
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     print('testing downsampled 16bit bcf...')
     s = load(filename, downsample=4, cutoff_at_kV=10)
@@ -61,7 +59,6 @@ def test_load_16bit_reduced():
 
 
 def test_load_8bit():
-    lxml = pytest.importorskip("lxml")
     for bcffile in test_files[1:3]:
         filename = os.path.join(my_path, 'bcf_data', bcffile)
         print('testing simple 8bit bcf...')
@@ -75,7 +72,6 @@ def test_load_8bit():
 
 
 def test_hyperspy_wrap():
-    lxml = pytest.importorskip("lxml")
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     print('testing bcf wrap to hyperspy signal...')
     hype = load(filename, select_type='spectrum')
@@ -135,7 +131,6 @@ def test_hyperspy_wrap():
 
 
 def test_hyperspy_wrap_downsampled():
-    lxml = pytest.importorskip("lxml")
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     print('testing bcf wrap to hyperspy signal...')
     hype = load(filename, select_type='spectrum', downsample=5)
@@ -151,7 +146,6 @@ def test_hyperspy_wrap_downsampled():
 
 
 def test_fast_bcf():
-    lxml = pytest.importorskip("lxml")
     from hyperspy.io_plugins import bcf
 
     for bcffile in test_files:
@@ -167,7 +161,6 @@ def test_fast_bcf():
 
 
 def test_get_mode():
-    lxml = pytest.importorskip("lxml")
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     s = load(filename, select_type='spectrum', instrument='SEM')
     assert s.metadata.Signal.signal_type == "EDS_SEM"
