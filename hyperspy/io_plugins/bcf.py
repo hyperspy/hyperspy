@@ -27,7 +27,6 @@
 # Plugin characteristics
 # ----------------------
 format_name = 'bruker composite file bcf'
-short_name = 'bcf'
 description = """the proprietary format used by Bruker's
 Esprit(R) software to save hypermaps together with 16bit SEM imagery,
 EDS spectra and metadata describing the dimentions of the data and
