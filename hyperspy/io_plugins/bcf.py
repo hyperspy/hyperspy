@@ -45,6 +45,8 @@ writes = False
 
 import io
 
+from collections import defaultdict
+import xml.etree.ElementTree as ET
 import codecs
 from ast import literal_eval
 from datetime import datetime, timedelta
@@ -54,9 +56,6 @@ import dask.delayed as dd
 from struct import unpack as strct_unp
 from zlib import decompress as unzip_block
 import logging
-import re
-from collections import defaultdict
-import xml.etree.ElementTree as ET
 
 _logger = logging.getLogger(__name__)
 
@@ -70,8 +69,6 @@ except ImportError:  # pragma: no cover
     fast_unbcf = False
     _logger.info("""unbcf_fast library is not present...
 Falling back to slow python only backend.""")
-
-fix_dec_patterns = re.compile(b'(>-?\d+),(\d*<)')
 
 
 class Container(object):
@@ -863,8 +860,7 @@ class BCF_reader(SFS_reader):
         SFS_reader.__init__(self, filename)
         header_file = self.get_file('EDSDatabase/HeaderData')
         header_byte_str = header_file.get_as_BytesIO_string().getvalue()
-        hd_bt_str = fix_dec_patterns.sub(b'\\1.\\2', header_byte_str)
-        self.header = HyperHeader(hd_bt_str, instrument=instrument)
+        self.header = HyperHeader(header_byte_str, instrument=instrument)
         self.hypermap = {}
 
     def persistent_parse_hypermap(self, index=0, downsample=None,
