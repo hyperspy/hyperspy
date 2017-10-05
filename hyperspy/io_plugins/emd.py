@@ -24,7 +24,8 @@
 import re
 import h5py
 import numpy as np
-from dask.array import from_array
+import dask.array as da
+from dask import delayed
 import json
 import os
 from datetime import datetime
@@ -35,6 +36,8 @@ import psutil
 import functools
 import logging
 import gc
+from tempfile import mkdtemp
+import os.path as path
 
 
 # Plugin characteristics
@@ -179,7 +182,7 @@ class EMD(object):
         # Extract essential data:
         data = group.get('data')
         if lazy:
-            data = from_array(data, chunks=data.chunks)
+            data = da.from_array(data, chunks=data.chunks)
         else:
             data = np.asanyarray(data)
         # EMD does not have a standard way to describe the signal axis.
@@ -484,7 +487,8 @@ class FeiEMDReader(object):
 
     def __init__(self, filename, first_frame=0, last_frame=None,
                  individual_frame=False, individual_detector=False,
-                 energy_rebin=1, SI_dtype=None, read_SI_image_stack=False):
+                 energy_rebin=1, SI_dtype=None, read_SI_image_stack=False,
+                 lazy=False):
         self.filename = filename
         self.ureg = pint.UnitRegistry()
         self.dictionaries = []
@@ -495,6 +499,7 @@ class FeiEMDReader(object):
         self.energy_rebin = energy_rebin
         self.SI_data_dtype = SI_dtype
         self.read_SI_image_stack = read_SI_image_stack
+        self.lazy = lazy
         with h5py.File(filename, 'r') as f:
             self.d_grp = f.get('Data')
             self._check_im_type()
@@ -652,7 +657,8 @@ class FeiEMDReader(object):
                                              first_frame=self.first_frame,
                                              last_frame=self.last_frame,
                                              individual_frame=self.individual_frame,
-                                             data_dtype=self.SI_data_dtype)
+                                             data_dtype=self.SI_data_dtype,
+                                             lazy=self.lazy)
 
         streams.read_streams(self.individual_detector)
         spectrum_image_shape = streams.get_SI_shape()
@@ -802,18 +808,18 @@ class FeiEMDReader(object):
 class FeiSpectrumStreamContainer(object):
 
     """
-    Container class to manage the different SpectrumStream
+    Container class to manage the different SpectrumStreams
 
     When we read the array, we could add an option to import only X-rays
-    acquire within a "frame range" (specific scanning passes) or reading all
+    acquired within a "frame range" (specific scanning passes) or reading all
     frames individually.
-    Each detector can also be read individually, otherwise the X-rays count
+    Each detector can also be read individually, otherwise the X-ray counts
     are summed over all detectors.
     """
 
     def __init__(self, spectrum_stream_group, shape, energy_rebin=1,
                  first_frame=0, last_frame=None, individual_frame=False,
-                 data_dtype=None):
+                 data_dtype=None, lazy=False):
         self.spectrum_stream_group = spectrum_stream_group
         self.shape = shape
         self.energy_rebin = energy_rebin
@@ -821,6 +827,7 @@ class FeiSpectrumStreamContainer(object):
         self.last_frame = last_frame
         self.individual_frame = individual_frame
         self.data_dtype = data_dtype
+        self.lazy = lazy
 
     def _read_all_streams(self, subgroup_keys):
 
@@ -859,7 +866,7 @@ class FeiSpectrumStreamContainer(object):
 
         if individual_detector:
             self.streams = self._read_all_streams(subgroup_keys)
-            self.frame_number = self.streams.frame_number
+            #self.frame_number = self.streams.frame_number
         else:
             stream_data_list = [
                 self.spectrum_stream_group['{}/Data'.format(key)][:].T[0]
@@ -896,7 +903,8 @@ class FeiSpectrumStream(object):
     """
 
     def __init__(self, stream_data, shape, energy_rebin=1, first_frame=0,
-                 last_frame=None, individual_frame=False, data_dtype=None):
+                 last_frame=None, individual_frame=False, data_dtype=None,
+                 lazy=False):
         self.stream_data = stream_data
         self.shape = shape
         self.energy_rebin = energy_rebin
@@ -904,6 +912,7 @@ class FeiSpectrumStream(object):
         self.last_frame = last_frame
         self.individual_frame = individual_frame
         self.data_dtype = data_dtype
+        self.lazy = lazy
 
     def _memory_check(self):
         gc.collect()
@@ -947,22 +956,33 @@ class FeiSpectrumStream(object):
             SI = np.zeros((self.frame_number, shape[0], shape[1],
                            int(self.bin_count / self.energy_rebin)),
                           dtype=self.data_dtype)
-            self.spectrum_image, frame_number = get_spectrum_image_individual(
+            self.spectrum_image = get_spectrum_image_individual(
                 SI, stream, self.first_frame, self.last_frame, self.energy_rebin)
         else:
-            SI = np.zeros((shape[0], shape[1],
-                           int(self.bin_count / self.energy_rebin)),
-                          dtype=self.data_dtype)
-            # frame_number is from 0 to last frame
-            self.spectrum_image, frame_number = get_spectrum_image(
-                SI, stream, self.first_frame, self.last_frame,
-                self.energy_rebin)
+            if self.lazy:
+                memmap_fname = path.join(mkdtemp(), 'newfile.dat')
+                spectrum_image = np.memmap(memmap_fname, dtype=self.data_dtype, 
+                                           mode='w+', shape = (shape[0], shape[1], 
+                                                               int(self.bin_count / self.energy_rebin)))
+                
+                spectrum_image = delayed(get_spectrum_image)(spectrum_image,
+                stream, self.shape, self.first_frame, self.last_frame, self.energy_rebin)
+                
+                self.spectrum_image = da.from_delayed(spectrum_image, shape=shape, 
+                                                      dtype=self.data_dtype)
+            else:
+                spectrum_image = np.zeros((shape[0], shape[1],
+                           int(self.bin_count / self.energy_rebin)), dtype=self.data_dtype)
+                self.spectrum_image = get_spectrum_image(spectrum_image,
+                stream, self.shape, self.first_frame, self.last_frame, self.energy_rebin)
+                
         self._add_imported_parameters_to_original_metadata()
 
 
 @jit_ifnumba
-def get_spectrum_image(spectrum_image, stream, first_frame, last_frame,
-                       energy_rebin=1):
+def get_spectrum_image(spectrum_image, stream, shape,
+                       first_frame, last_frame, energy_rebin=1):
+    
     # jit speeds up this function by a factor of ~ 30
     navigation_index = 0
     frame_number = 0
@@ -984,7 +1004,7 @@ def get_spectrum_image(spectrum_image, stream, first_frame, last_frame,
         else:
             navigation_index += 1
 
-    return spectrum_image, frame_number
+    return spectrum_image
 
 
 @jit_ifnumba
@@ -1011,7 +1031,7 @@ def get_spectrum_image_individual(spectrum_image, stream, first_frame,
         else:
             navigation_index += 1
 
-    return spectrum_image, frame_number
+    return spectrum_image
 
 
 def file_reader(filename, log_info=False,
@@ -1019,7 +1039,7 @@ def file_reader(filename, log_info=False,
     dictionaries = []
     if fei_check(filename) == True:
         _logger.debug('EMD is FEI format')
-        emd = FeiEMDReader(filename, **kwds)
+        emd = FeiEMDReader(filename, lazy=lazy, **kwds)
         dictionaries = emd.dictionaries
     else:
         emd = EMD.load_from_emd(filename, lazy)
