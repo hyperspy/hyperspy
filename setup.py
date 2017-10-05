@@ -66,7 +66,6 @@ install_req = ['scipy>=0.15',
 
 extras_require = {
     "learning": ['scikit-learn'],
-    "bcf": ['lxml'],
     "gui-jupyter": ["hyperspy_gui_ipywidgets"],
     "gui-traitsui": ["hyperspy_gui_traitsui"],
     "test": ["pytest>=3", "pytest-mpl", "matplotlib>=2.0.2"],
