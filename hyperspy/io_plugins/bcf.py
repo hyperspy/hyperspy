@@ -438,7 +438,7 @@ def dictionarize(t):
                 dd[k].append(v)
         d = {t.tag: {k:interpret(v[0]) if len(v) == 1 else v for k, v in dd.items()}}
     if t.attrib:
-        d[t.tag].update(('@' + k, interpret(v)) for k, v in t.attrib.items())
+        d[t.tag].update(('XmlClass' + k if list(t) else k, interpret(v)) for k, v in t.attrib.items())
     if t.text:
         text = t.text.strip()
         if children or t.attrib:
@@ -635,10 +635,11 @@ class HyperHeader(object):
         """parse image from bruker xml image node."""
         if overview:
             rect_node = xml_node.findall("./ChildClassInstances"
-                "/ClassInstance[@Type='TRTRectangleOverlayElement' and"
-                " @Name='Map']/TRTSolidOverlayElement/"
+                "/ClassInstance["
+                #"@Type='TRTRectangleOverlayElement' and "
+                "@Name='Map']/TRTSolidOverlayElement/"
                 "TRTBasicLineOverlayElement/TRTOverlayElement")[0]
-            over_rect = dictionarize(rect_node)['Rect']
+            over_rect = dictionarize(rect_node)['TRTOverlayElement']['Rect']
             rect = {'y1': over_rect['Top'] * self.y_res,
                     'x1': over_rect['Left'] * self.x_res,
                     'y2': over_rect['Bottom'] * self.y_res,
@@ -685,8 +686,9 @@ class HyperHeader(object):
             overview_node = root.findall(
                 "./ClassInstance[@Type='TRTContainerClass']"
                 "/ChildClassInstances"
-                "/ClassInstance[@Type='TRTContainerClass' "
-                "and @Name='OverviewImages']"
+                "/ClassInstance["
+                #"@Type='TRTContainerClass' and "
+                "@Name='OverviewImages']"
                 "/ChildClassInstances"
                 "/ClassInstance[@Type='TRTImageData']")
             if len(overview_node) > 0:  # in case there is no image
@@ -707,7 +709,7 @@ class HyperHeader(object):
             for j in elements.findall(
                     "./ClassInstance[@Type='TRTSpectrumRegion']"):
                 tmp_d = dictionarize(j)
-                self.elements[tmp_d['@Name']] = {'line': tmp_d['Line'],
+                self.elements[tmp_d['XmlClassName']] = {'line': tmp_d['Line'],
                                                  'energy': tmp_d['Energy'],
                                                  'width': tmp_d['Width']}
         except IndexError:
