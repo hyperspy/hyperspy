@@ -145,21 +145,6 @@ def test_hyperspy_wrap_downsampled():
     assert hype.axes_manager[1].units == 'µm'
 
 
-def test_fast_bcf():
-    from hyperspy.io_plugins import bcf
-
-    for bcffile in test_files:
-        filename = os.path.join(my_path, 'bcf_data', bcffile)
-        thingy = bcf.BCF_reader(filename)
-        for j in range(2, 5, 1):
-            print('downsampling:', j)
-            bcf.fast_unbcf = True              # manually enabling fast parsing
-            hmap1 = thingy.parse_hypermap(downsample=j)    # using cython
-            bcf.fast_unbcf = False            # manually disabling fast parsing
-            hmap2 = thingy.parse_hypermap(downsample=j)    # py implementation
-            np.testing.assert_array_equal(hmap1, hmap2)
-
-
 def test_get_mode():
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     s = load(filename, select_type='spectrum', instrument='SEM')
@@ -183,7 +168,21 @@ def test_get_mode():
 
 
 def test_wrong_file():
-    lxml = pytest.importorskip("lxml")
     filename = os.path.join(my_path, 'bcf_data', 'Nope.bcf')
     with pytest.raises(TypeError):
         load(filename)
+
+
+def test_fast_bcf():
+    thingy = pytest.importorskip("hyperspy.io_plugins.unbcf_fast")
+    from hyperspy.io_plugins import bcf
+    for bcffile in test_files:
+        filename = os.path.join(my_path, 'bcf_data', bcffile)
+        thingy = bcf.BCF_reader(filename)
+        for j in range(2, 5, 1):
+            print('downsampling:', j)
+            bcf.fast_unbcf = True              # manually enabling fast parsing
+            hmap1 = thingy.parse_hypermap(downsample=j)    # using cython
+            bcf.fast_unbcf = False            # manually disabling fast parsing
+            hmap2 = thingy.parse_hypermap(downsample=j)    # py implementation
+            np.testing.assert_array_equal(hmap1, hmap2)
