@@ -5,7 +5,7 @@
         "Z": 40234.7,
         "X": 62409.2,
         "Tilt": 0.5,
-        "@Type": "TRTSEMStageData",
+        "XmlClassType": "TRTSEMStageData",
         "Rotation": 329.49719
     },
     "Detector": {
@@ -534,7 +534,7 @@
         "Type": "XFlash 6|10",
         "SiDeadLayerThickness": 0.029,
         "WindowType": "slew AP3.3",
-        "@Type": "TRTDetectorHeader",
+        "XmlClassType": "TRTDetectorHeader",
         "DetectorThickness": 0.45,
         "ShiftFactor2": -0.982,
         "TailFactor": 1,
@@ -547,7 +547,7 @@
     },
     "Microscope": {
         "DX": 8.73678506197784,
-        "@Type": "TRTSEMData",
+        "XmlClassType": "TRTSEMData",
         "Flags": 16776960,
         "HV": 20,
         "WD": 7.69044,
@@ -562,7 +562,7 @@
             "Type": "RTESMA"
         },
         "AzimutAngle": 90.0,
-        "@Type": "TRTESMAHeader",
+        "XmlClassType": "TRTESMAHeader",
         "PrimaryEnergy": 20.0,
         "ReferenceFactor": -1,
         "BaseRefStdDev": 0.001917334934,
@@ -571,7 +571,7 @@
     "Spectrum": {
         "SigmaLin": 0.0004466391048,
         "Time": "17:5:2",
-        "@Type": "TRTSpectrumHeader",
+        "XmlClassType": "TRTSpectrumHeader",
         "ChannelCount": 2048,
         "SigmaAbs": 0.0002286813269,
         "Date": "1.4.2016",
@@ -664,7 +664,7 @@
         "ZeroPeakPosition": 95,
         "ZeroPeakFrequency": 33332,
         "ShapingTime": 130000,
-        "@Type": "TRTSpectrumHardwareHeader",
+        "XmlClassType": "TRTSpectrumHardwareHeader",
         "Amplification": 20000.0
     },
     "DSP Configuration": {
@@ -675,7 +675,7 @@
         "PixelAverage": 16,
         "ChannelCount": 2,
         "ImageWidth": 100,
-        "@Type": "TRTDSPConfiguration",
+        "XmlClassType": "TRTDSPConfiguration",
         "ChannelName0": "BSE",
         "PixelTime": 2,
         "Channel1": 1,
