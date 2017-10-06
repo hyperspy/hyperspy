@@ -463,17 +463,17 @@ class EDXSpectrum(object):
         spectrum -- etree xml object, where spectrum.attrib['Type'] should
             be 'TRTSpectrum'
         """
-        TRTHeader = spectrum.findall('./TRTHeaderedClass')[0]
-        hardware_header = TRTHeader.findall(
-            "./ClassInstance[@Type='TRTSpectrumHardwareHeader']")[0]
-        detector_header = TRTHeader.findall(
-            "./ClassInstance[@Type='TRTDetectorHeader']")[0]
-        esma_header = TRTHeader.findall(
-            "./ClassInstance[@Type='TRTESMAHeader']")[0]
+        TRTHeader = spectrum.find('./TRTHeaderedClass')
+        hardware_header = TRTHeader.find(
+            "./ClassInstance[@Type='TRTSpectrumHardwareHeader']")
+        detector_header = TRTHeader.find(
+            "./ClassInstance[@Type='TRTDetectorHeader']")
+        esma_header = TRTHeader.find(
+            "./ClassInstance[@Type='TRTESMAHeader']")
         # what TRT means?
         # ESMA could stand for Electron Scanning Microscope Analysis
-        spectrum_header = spectrum.findall(
-            "./ClassInstance[@Type='TRTSpectrumHeader']")[0]
+        spectrum_header = spectrum.find(
+            "./ClassInstance[@Type='TRTSpectrumHeader']")
 
         # map stuff from harware xml branch:
         self.hardware_metadata = dictionarize(hardware_header)
@@ -505,7 +505,7 @@ class EDXSpectrum(object):
         self.chnlCnt = self.spectrum_metadata['ChannelCount']
 
         # main data:
-        self.data = np.fromstring(spectrum.findall('./Channels')[0].text,
+        self.data = np.fromstring(spectrum.find('./Channels').text,
                                   dtype='Q', sep=",")
         self.energy = np.arange(self.calibAbs,
                                 self.calibLin * self.chnlCnt + self.calibAbs,
@@ -542,28 +542,28 @@ class HyperHeader(object):
 
     def __init__(self, xml_str, instrument=None):
         root = ET.fromstring(xml_str)
-        root = root.findall("./ClassInstance[@Type='TRTSpectrumDatabase']")[0]
+        root = root.find("./ClassInstance[@Type='TRTSpectrumDatabase']")
         try:
             self.name = str(root.attrib['Name'])
         except KeyError:
             self.name = 'Undefinded'
             _logger.info("hypermap have no name. Giving it 'Undefined' name")
-        hd = root.findall("./Header")[0]
-        dt = datetime.strptime(' '.join([str(hd.findall('./Date')[0].text),
-                                         str(hd.findall('./Time')[0].text)]),
+        hd = root.find("./Header")
+        dt = datetime.strptime(' '.join([str(hd.find('./Date').text),
+                                         str(hd.find('./Time').text)]),
                                "%d.%m.%Y %H:%M:%S")
         self.date = dt.date().isoformat()
         self.time = dt.time().isoformat()
-        self.version = int(hd.findall('./FileVersion')[0].text)
+        self.version = int(hd.find('./FileVersion').text)
         # fill the sem and stage attributes:
         self._set_microscope(root)
         self._get_mode(instrument)
         self._set_images(root)
         self.elements = {}
         self._set_elements(root)
-        self.line_counter = interpret(root.findall('./LineCounter')[0].text)
-        self.channel_count = int(root.findall('./ChCount')[0].text)
-        self.mapping_count = int(root.findall('./DetectorCount')[0].text)
+        self.line_counter = interpret(root.find('./LineCounter').text)
+        self.channel_count = int(root.find('./ChCount').text)
+        self.mapping_count = int(root.find('./DetectorCount').text)
         #self.channel_factors = {}
         self.spectra_data = {}
         self._set_sum_edx(root)
@@ -579,7 +579,7 @@ class HyperHeader(object):
         software and Bruker system.
         """
 
-        semData = root.findall("./ClassInstance[@Type='TRTSEMData']")[0]
+        semData = root.find("./ClassInstance[@Type='TRTSEMData']")
         self.sem_metadata = dictionarize(semData)
         # parse values for use in hspy metadata:
         self.hv = self.sem_metadata.get('HV', 0.0)  # in kV
@@ -591,10 +591,10 @@ class HyperHeader(object):
         self.x_res = self.sem_metadata.get('DX', 1.0)
         self.y_res = self.sem_metadata.get('DY', 1.0)
         # stage position:
-        semStageData = root.findall("./ClassInstance[@Type='TRTSEMStageData']")[0]
+        semStageData = root.find("./ClassInstance[@Type='TRTSEMStageData']")
         self.stage_metadata = dictionarize(semStageData)
         # DSP configuration (always present, part of Bruker system):
-        DSPConf = root.findall("./ClassInstance[@Type='TRTDSPConfiguration']")[0]
+        DSPConf = root.find("./ClassInstance[@Type='TRTDSPConfiguration']")
         self.dsp_metadata = dictionarize(DSPConf)
 
     def _get_mode(self, instrument=None):
@@ -634,11 +634,11 @@ class HyperHeader(object):
     def _parse_image(self, xml_node, overview=False):
         """parse image from bruker xml image node."""
         if overview:
-            rect_node = xml_node.findall("./ChildClassInstances"
+            rect_node = xml_node.find("./ChildClassInstances"
                 "/ClassInstance["
                 #"@Type='TRTRectangleOverlayElement' and "
                 "@Name='Map']/TRTSolidOverlayElement/"
-                "TRTBasicLineOverlayElement/TRTOverlayElement")[0]
+                "TRTBasicLineOverlayElement/TRTOverlayElement")
             over_rect = dictionarize(rect_node)['TRTOverlayElement']['Rect']
             rect = {'y1': over_rect['Top'] * self.y_res,
                     'x1': over_rect['Left'] * self.x_res,
@@ -650,18 +650,18 @@ class HyperHeader(object):
                          'marker_properties': {'color': 'yellow',
                                                'linewidth': 2}}
         image = Container()
-        image.width = int(xml_node.findall('./Width')[0].text)  # in pixels
-        image.height = int(xml_node.findall('./Height')[0].text)  # in pixels
-        image.plane_count = int(xml_node.findall('./PlaneCount')[0].text)
+        image.width = int(xml_node.find('./Width').text)  # in pixels
+        image.height = int(xml_node.find('./Height').text)  # in pixels
+        image.plane_count = int(xml_node.find('./PlaneCount').text)
         image.images = []
         for i in range(image.plane_count):
-            img = xml_node.findall("./Plane" + str(i))[0]
-            raw = codecs.decode((img.findall('./Data')[0].text).encode('ascii'),'base64')
+            img = xml_node.find("./Plane" + str(i))
+            raw = codecs.decode((img.find('./Data').text).encode('ascii'),'base64')
             array1 = np.fromstring(raw, dtype=np.uint16)
             if any(array1):
                 item = self.gen_hspy_item_dict_basic()
                 data = array1.reshape((image.height, image.width))
-                detector_name = str(img.findall('./Description')[0].text)
+                detector_name = str(img.find('./Description').text)
                 item['data'] = data
                 item['axes'][0]['size'] = image.height
                 item['axes'][1]['size'] = image.width
@@ -700,25 +700,25 @@ class HyperHeader(object):
         self.elements list
         """
         try:
-            elements = root.findall(
+            elements = root.find(
                 "./ClassInstance[@Type='TRTContainerClass']"
                 "/ChildClassInstances"
                 "/ClassInstance[@Type='TRTElementInformationList']"
                 "/ClassInstance[@Type='TRTSpectrumRegionList']"
-                "/ChildClassInstances")[0]
+                "/ChildClassInstances")
             for j in elements.findall(
                     "./ClassInstance[@Type='TRTSpectrumRegion']"):
                 tmp_d = dictionarize(j)
                 self.elements[tmp_d['XmlClassName']] = {'line': tmp_d['Line'],
                                                  'energy': tmp_d['Energy'],
                                                  'width': tmp_d['Width']}
-        except IndexError:
+        except AttributeError:
             _logger.info('no element selection present in the spectra..')
 
     def _set_sum_edx(self, root):
         for i in range(self.mapping_count):
-            spec_node = root.findall(
-                "./SpectrumData{0}/ClassInstance".format(str(i)))[0]
+            spec_node = root.find(
+                "./SpectrumData{0}/ClassInstance".format(str(i)))
             self.spectra_data[i] = EDXSpectrum(spec_node)
 
     def estimate_map_channels(self, index=0):
