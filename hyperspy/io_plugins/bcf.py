@@ -79,9 +79,10 @@ Falling back to slow python only backend.""")
 # define re with two capturing groups with comma in between
 # firstgroup looks for numeric value after <tag> (the '>' char) with or
 # without minus sign, second group looks for numeric value with following
-# closing <\tag> (the '<' char); pattern is binary, as raw xml string
+# closing <\tag> (the '<' char); '([Ee]-?\d*)' part checks for scientific
+# notation (e.g. 8,843E-7); pattern is binary, as raw xml string
 # is binary: 
-fix_dec_patterns = re.compile(b'(>-?\d+),(\d*<)')
+fix_dec_patterns = re.compile(b'(>-?\d+),(\d*([Ee]-?\d*)?<)')
 
 
 class Container(object):
