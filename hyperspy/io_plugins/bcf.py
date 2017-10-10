@@ -868,7 +868,6 @@ class BCF_reader(SFS_reader):
         header_byte_str = header_file.get_as_BytesIO_string().getvalue()
         self.header = HyperHeader(header_byte_str, self.available_indexes, instrument=instrument)
         self.hypermap = {}
-        print(self.def_index)
     
     def check_index_valid(self, index):
         """check and return if index is valid""" 
@@ -1009,8 +1008,6 @@ class BCF_reader(SFS_reader):
         if isinstance(cutoff_at_channel, int):
             max_chan = cutoff_at_channel
         else:
-            print(str(index))
-            print(self.def_index)
             max_chan = self.header.estimate_map_channels(index=index)
         depth = self.header.estimate_map_depth(index=index,
                                                downsample=downsample,
@@ -1246,8 +1243,6 @@ Parsing BCF with Python-only backend, which is slow... please wait.
 If parsing is uncomfortably slow, first install cython, then reinstall hyperspy.
 For more information, check the 'Installing HyperSpy' section in the documentation.""")
         warn_once = False
-    obj_bcf.persistent_parse_hypermap(index=index, downsample=downsample,
-                                      cutoff_at_kV=cutoff_at_kV, lazy=lazy)
     if index is None:
         indexes = [obj_bcf.def_index]
     elif index == 'all':
@@ -1258,6 +1253,8 @@ For more information, check the 'Installing HyperSpy' section in the documentati
     mode = obj_bcf.header.mode
     mapping = get_mapping(mode)
     for index in indexes:
+        obj_bcf.persistent_parse_hypermap(index=index, downsample=downsample,
+                                      cutoff_at_kV=cutoff_at_kV, lazy=lazy)
         eds_metadata = obj_bcf.header.get_spectra_metadata(index=index)
         hyperspectra.append({'data': obj_bcf.hypermap[index].hypermap,
                      'axes': [{'name': 'height',

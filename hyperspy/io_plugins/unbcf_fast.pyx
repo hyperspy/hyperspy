@@ -303,7 +303,7 @@ def parse_to_numpy(bcf, downsample=1, cutoff=None, description=False, index=0):
     map_depth = bcf.sfs.header.estimate_map_channels(index)
     if type(cutoff) == int:
         map_depth = cutoff
-    dtype = bcf.sfs.header.estimate_map_depth(downsample=downsample)
+    dtype = bcf.sfs.header.estimate_map_depth(index, downsample=downsample)
     shape = (-(-bcf.sfs.header.image.height // downsample),
              -(-bcf.sfs.header.image.width // downsample),
              map_depth)
