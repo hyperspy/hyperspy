@@ -44,14 +44,8 @@ writes = False
 
 import io
 
-try:
-    from lxml import objectify
-except ImportError:
-    raise ImportError("""The lxml or/and python-lxml bindings are missing
-required to read Bruker bcf files.
-Try to install python-lxml package with pip or other python packaging system""")
-
-import json
+from collections import defaultdict
+import xml.etree.ElementTree as ET
 import codecs
 from ast import literal_eval
 from datetime import datetime, timedelta
@@ -434,38 +428,28 @@ def interpret(string):
         return string
 
 
-class ObjectifyJSONEncoder(json.JSONEncoder):
-    """ JSON encoder that can handle simple lxml objectify types,
-        Handles xml attributes, also returns all data types"""
-
-    def default(self, o):  # noqa
-        dictionary = {}
-        if hasattr(o, '__dict__') and len(o.__dict__) > 0:
-            d1 = o.__dict__.copy()
-            for k in d1.keys():
-                if len(d1[k]) > 1:
-                    d1[k] = [interpret(i.text) for i in d1[k]]
-            dictionary.update(d1)
-        if len(o.attrib) > 0:
-            d2 = dict(o.attrib)
-            for j in d2.keys():
-                if j in dictionary.keys() or j == 'Type':
-                    d2['XmlClass' + j] = interpret(d2[j])
-                    del d2[j]
-                else:
-                    d2[j] = interpret(d2[j])
-            dictionary.update(d2)
-        if o.text is not None:
-            if len(dictionary) > 0:
-                dictionary.update({'value': o.pyval})
-            else:
-                return interpret(o.text)
-        if len(dictionary) > 0:
-            return dictionary
-
-
-def dictionarize(xml_node):
-    return json.loads(json.dumps(xml_node, cls=ObjectifyJSONEncoder))
+def dictionarize(t):
+    d = {t.tag: {} if t.attrib else None}
+    children = list(t)
+    if children:
+        dd = defaultdict(list)
+        for dc in map(dictionarize, children):
+            for k, v in dc.items():
+                dd[k].append(v)
+        d = {t.tag: {k:interpret(v[0]) if len(v) == 1 else v for k, v in dd.items()}}
+    if t.attrib:
+        d[t.tag].update(('XmlClass' + k if list(t) else k, interpret(v)) for k, v in t.attrib.items())
+    if t.text:
+        text = t.text.strip()
+        if children or t.attrib:
+            if text:
+              d[t.tag]['#text'] = interpret(text)
+        else:
+            d[t.tag] = interpret(text)
+    if 'ClassInstance' in d:
+        return d['ClassInstance']
+    else:
+        return d
 
 
 class EDXSpectrum(object):
@@ -476,20 +460,20 @@ class EDXSpectrum(object):
         to the python object, leaving all the xml and bruker clutter behind.
 
         Arguments:
-        spectrum -- lxml objectified xml where spectrum.attrib['Type'] should
+        spectrum -- etree xml object, where spectrum.attrib['Type'] should
             be 'TRTSpectrum'
         """
-        TRTHeader = spectrum.TRTHeaderedClass
-        hardware_header = TRTHeader.xpath(
-            "ClassInstance[@Type='TRTSpectrumHardwareHeader']")[0]
-        detector_header = TRTHeader.xpath(
-            "ClassInstance[@Type='TRTDetectorHeader']")[0]
-        esma_header = TRTHeader.xpath(
-            "ClassInstance[@Type='TRTESMAHeader']")[0]
+        TRTHeader = spectrum.find('./TRTHeaderedClass')
+        hardware_header = TRTHeader.find(
+            "./ClassInstance[@Type='TRTSpectrumHardwareHeader']")
+        detector_header = TRTHeader.find(
+            "./ClassInstance[@Type='TRTDetectorHeader']")
+        esma_header = TRTHeader.find(
+            "./ClassInstance[@Type='TRTESMAHeader']")
         # what TRT means?
         # ESMA could stand for Electron Scanning Microscope Analysis
-        spectrum_header = spectrum.xpath(
-            "ClassInstance[@Type='TRTSpectrumHeader']")[0]
+        spectrum_header = spectrum.find(
+            "./ClassInstance[@Type='TRTSpectrumHeader']")
 
         # map stuff from harware xml branch:
         self.hardware_metadata = dictionarize(hardware_header)
@@ -502,7 +486,7 @@ class EDXSpectrum(object):
         # decode silly hidden detector layer info:
         det_l_str = self.detector_metadata['DetLayers']
         dec_det_l_str = codecs.decode(det_l_str.encode('ascii'), 'base64')
-        mini_xml = objectify.fromstring(unzip_block(dec_det_l_str))
+        mini_xml = ET.fromstring(unzip_block(dec_det_l_str))
         self.detector_metadata['DetLayers'] = {}  # Overwrite with dict
         for i in mini_xml.getchildren():
             self.detector_metadata['DetLayers'][i.tag] = dict(i.attrib)
@@ -521,7 +505,8 @@ class EDXSpectrum(object):
         self.chnlCnt = self.spectrum_metadata['ChannelCount']
 
         # main data:
-        self.data = np.fromstring(str(spectrum.Channels), dtype='Q', sep=",")
+        self.data = np.fromstring(spectrum.find('./Channels').text,
+                                  dtype='Q', sep=",")
         self.energy = np.arange(self.calibAbs,
                                 self.calibLin * self.chnlCnt + self.calibAbs,
                                 self.calibLin)  # the x axis for ploting spectra
@@ -556,30 +541,29 @@ class HyperHeader(object):
     """
 
     def __init__(self, xml_str, instrument=None):
-        # Due to Delphi(TM) xml implementation literaly shits into xml,
-        # we need lxml parser to be more forgiving (recover=True):
-        oparser = objectify.makeparser(recover=True)
-        root = objectify.fromstring(xml_str, parser=oparser).ClassInstance
+        root = ET.fromstring(xml_str)
+        root = root.find("./ClassInstance[@Type='TRTSpectrumDatabase']")
         try:
             self.name = str(root.attrib['Name'])
         except KeyError:
             self.name = 'Undefinded'
             _logger.info("hypermap have no name. Giving it 'Undefined' name")
-        dt = datetime.strptime(' '.join([str(root.Header.Date),
-                                         str(root.Header.Time)]),
+        hd = root.find("./Header")
+        dt = datetime.strptime(' '.join([str(hd.find('./Date').text),
+                                         str(hd.find('./Time').text)]),
                                "%d.%m.%Y %H:%M:%S")
         self.date = dt.date().isoformat()
         self.time = dt.time().isoformat()
-        self.version = int(root.Header.FileVersion)
+        self.version = int(hd.find('./FileVersion').text)
         # fill the sem and stage attributes:
         self._set_microscope(root)
         self._get_mode(instrument)
         self._set_images(root)
         self.elements = {}
         self._set_elements(root)
-        self.line_counter = interpret(root.LineCounter.text)
-        self.channel_count = int(root.ChCount)
-        self.mapping_count = int(root.DetectorCount)
+        self.line_counter = interpret(root.find('./LineCounter').text)
+        self.channel_count = int(root.find('./ChCount').text)
+        self.mapping_count = int(root.find('./DetectorCount').text)
         #self.channel_factors = {}
         self.spectra_data = {}
         self._set_sum_edx(root)
@@ -595,7 +579,7 @@ class HyperHeader(object):
         software and Bruker system.
         """
 
-        semData = root.xpath("ClassInstance[@Type='TRTSEMData']")[0]
+        semData = root.find("./ClassInstance[@Type='TRTSEMData']")
         self.sem_metadata = dictionarize(semData)
         # parse values for use in hspy metadata:
         self.hv = self.sem_metadata.get('HV', 0.0)  # in kV
@@ -607,10 +591,10 @@ class HyperHeader(object):
         self.x_res = self.sem_metadata.get('DX', 1.0)
         self.y_res = self.sem_metadata.get('DY', 1.0)
         # stage position:
-        semStageData = root.xpath("ClassInstance[@Type='TRTSEMStageData']")[0]
+        semStageData = root.find("./ClassInstance[@Type='TRTSEMStageData']")
         self.stage_metadata = dictionarize(semStageData)
         # DSP configuration (always present, part of Bruker system):
-        DSPConf = root.xpath("ClassInstance[@Type='TRTDSPConfiguration']")[0]
+        DSPConf = root.find("./ClassInstance[@Type='TRTDSPConfiguration']")
         self.dsp_metadata = dictionarize(DSPConf)
 
     def _get_mode(self, instrument=None):
@@ -650,35 +634,34 @@ class HyperHeader(object):
     def _parse_image(self, xml_node, overview=False):
         """parse image from bruker xml image node."""
         if overview:
-            rect_node = xml_node.xpath("".join(["ChildClassInstances",
-                                                "/ClassInstance[@Type='TRTRectangleOverlayElement' and",
-                                                " @Name='Map']",
-                                                "/TRTSolidOverlayElement",
-                                                "/TRTBasicLineOverlayElement",
-                                                "/TRTOverlayElement"]))[0]
-            over_rect = rect_node.Rect
-            rect = {'y1': over_rect.Top * self.y_res,
-                    'x1': over_rect.Left * self.x_res,
-                    'y2': over_rect.Bottom * self.y_res,
-                    'x2': over_rect.Right * self.x_res}
+            rect_node = xml_node.find("./ChildClassInstances"
+                "/ClassInstance["
+                #"@Type='TRTRectangleOverlayElement' and "
+                "@Name='Map']/TRTSolidOverlayElement/"
+                "TRTBasicLineOverlayElement/TRTOverlayElement")
+            over_rect = dictionarize(rect_node)['TRTOverlayElement']['Rect']
+            rect = {'y1': over_rect['Top'] * self.y_res,
+                    'x1': over_rect['Left'] * self.x_res,
+                    'y2': over_rect['Bottom'] * self.y_res,
+                    'x2': over_rect['Right'] * self.x_res}
             over_dict = {'marker_type': 'Rectangle',
                          'plot_on_signal': True,
                          'data': rect,
                          'marker_properties': {'color': 'yellow',
                                                'linewidth': 2}}
         image = Container()
-        image.width = int(xml_node.Width)  # in pixels
-        image.height = int(xml_node.Height)  # in pixels
-        image.plane_count = int(xml_node.PlaneCount)
+        image.width = int(xml_node.find('./Width').text)  # in pixels
+        image.height = int(xml_node.find('./Height').text)  # in pixels
+        image.plane_count = int(xml_node.find('./PlaneCount').text)
         image.images = []
         for i in range(image.plane_count):
-            img = xml_node.xpath("Plane" + str(i))[0]
-            raw = codecs.decode((img.Data.text).encode('ascii'), 'base64')
+            img = xml_node.find("./Plane" + str(i))
+            raw = codecs.decode((img.find('./Data').text).encode('ascii'),'base64')
             array1 = np.fromstring(raw, dtype=np.uint16)
             if any(array1):
                 item = self.gen_hspy_item_dict_basic()
                 data = array1.reshape((image.height, image.width))
-                detector_name = str(img.Description.text)
+                detector_name = str(img.find('./Description').text)
                 item['data'] = data
                 item['axes'][0]['size'] = image.height
                 item['axes'][1]['size'] = image.width
@@ -694,16 +677,20 @@ class HyperHeader(object):
         """Wrap objectified xml part with image to class attributes
         for self.image.
         """
-        image_node = root.xpath(
-            "ClassInstance[@Type='TRTImageData' and not(@Name)]")[0]
+        image_nodes = root.findall("./ClassInstance[@Type='TRTImageData']")
+        for n in image_nodes:
+            if not(n.get('Name')):
+                image_node = n
         self.image = self._parse_image(image_node)
         if self.version == 2:
-            overview_node = root.xpath("".join([
-                "ClassInstance[@Type='TRTContainerClass']/ChildClassInstances",
-                "/ClassInstance[@Type='TRTContainerClass' ",
-                "and @Name='OverviewImages']",
-                "/ChildClassInstances",
-                "/ClassInstance[@Type='TRTImageData']"]))
+            overview_node = root.findall(
+                "./ClassInstance[@Type='TRTContainerClass']"
+                "/ChildClassInstances"
+                "/ClassInstance["
+                #"@Type='TRTContainerClass' and "
+                "@Name='OverviewImages']"
+                "/ChildClassInstances"
+                "/ClassInstance[@Type='TRTImageData']")
             if len(overview_node) > 0:  # in case there is no image
                 self.overview = self._parse_image(
                     overview_node[0], overview=True)
@@ -713,25 +700,26 @@ class HyperHeader(object):
         self.elements list
         """
         try:
-            elements = root.xpath("".join([
-                "ClassInstance[@Type='TRTContainerClass']/ChildClassInstances",
-                "/ClassInstance[@Type='TRTElementInformationList']",
-                "/ClassInstance[@Type='TRTSpectrumRegionList']",
-                "/ChildClassInstances"]))[0]
-            for j in elements.xpath(
-                    "ClassInstance[@Type='TRTSpectrumRegion']"):
-                self.elements[j.attrib['Name']] = {'line': j.Line.pyval,
-                                                   'energy': j.Energy.pyval,
-                                                   'width': j.Width.pyval}
-        except IndexError:
+            elements = root.find(
+                "./ClassInstance[@Type='TRTContainerClass']"
+                "/ChildClassInstances"
+                "/ClassInstance[@Type='TRTElementInformationList']"
+                "/ClassInstance[@Type='TRTSpectrumRegionList']"
+                "/ChildClassInstances")
+            for j in elements.findall(
+                    "./ClassInstance[@Type='TRTSpectrumRegion']"):
+                tmp_d = dictionarize(j)
+                self.elements[tmp_d['XmlClassName']] = {'line': tmp_d['Line'],
+                                                 'energy': tmp_d['Energy'],
+                                                 'width': tmp_d['Width']}
+        except AttributeError:
             _logger.info('no element selection present in the spectra..')
 
     def _set_sum_edx(self, root):
         for i in range(self.mapping_count):
-            # self.channel_factors[i] = int(root.xpath("ChannelFactor" +
-            #                                         str(i))[0])
-            self.spectra_data[i] = EDXSpectrum(root.xpath("SpectrumData" +
-                                                          str(i))[0].ClassInstance)
+            spec_node = root.find(
+                "./SpectrumData{0}/ClassInstance".format(str(i)))
+            self.spectra_data[i] = EDXSpectrum(spec_node)
 
     def estimate_map_channels(self, index=0):
         """estimate minimal size of energy axis so any spectra from any pixel
@@ -758,10 +746,12 @@ class HyperHeader(object):
         index -- index of the hypermap if multiply hypermaps are
         present in the same bcf. (default 0)
         downsample -- downsample factor (should be integer; default 1)
-        for_numpy -- if estimation will be used in parsing using oure python
-            and numpy inplace integer addition will be used, so the dtype
-            should be signed; if cython implementation will be used (default),
-            then any returned dtypes can be safely unsigned. (default False)
+        for_numpy -- False produce unsigned, True signed (or unsigned) types:
+        if hypermap will be loaded using the pure python
+        function where numpy's inplace integer addition will be used --
+        the dtype should be signed; if cython implementation will
+        be used (default), then any returned dtypes can be safely
+        unsigned. (default False)
 
         Returns:
         numpy dtype large enought to use in final hypermap numpy array.
@@ -1033,7 +1023,7 @@ class BCF_reader(SFS_reader):
                 # value which sometimes shows the size of packed data (uint16);
                 # number of pulses if pulse data are present (uint16) or
                 #      additional pulses to the instructively packed data;
-                # packed data size (32bit) (without additional pulses) \
+                # packed data size (32bit) (without additional pulses)
                 #       next header is after that amount of bytes;
                 x_pix, chan1, chan2, dummy1, flag, dummy_size1, n_of_pulses,\
                     data_size2 = strct_unp('<IHHIHHHI',
