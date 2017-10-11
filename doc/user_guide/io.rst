@@ -578,7 +578,9 @@ Extra loading arguments
 select_type: One of ('spectrum', 'image'). If specified just selected type of
 data is returned. (default None)
 
-index: index of dataset in bcf v2 files, which can hold few datasets (delaut 0)
+index: One of (None, int, "all"). Index of dataset in bcf file, which can hold few datasets.
+Default None value result in first or the only dataset returned (the lowest index available).
+When set to 'all' it result in loading all available datasets.
 
 downsample: the downsample ratio of hyperspectral array (hight and width only),
 can be integer >=1, where '1' results in no downsampling (default 1). The
@@ -586,7 +588,7 @@ underlying method of downsampling is unchangeable: sum. Differently than
 block_reduce from skimage.measure it is memory efficient (does not creates
 intermediate arrays, works inplace).
 
-cutoff_at_kV: if set (can be int of float >= 0) can be used either to crop or
+cutoff_at_kV: if set (can be int or float >= 0) can be used either to crop or
 enlarge energy (or channels) range at max values. (default None)
 
 Example of loading reduced (downsampled, and with energy range cropped)
