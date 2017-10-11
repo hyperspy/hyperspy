@@ -540,7 +540,7 @@ class HyperHeader(object):
     is throught image index.
     """
 
-    def __init__(self, xml_str, instrument=None):
+    def __init__(self, xml_str, indexes, instrument=None):
         root = ET.fromstring(xml_str)
         root = root.find("./ClassInstance[@Type='TRTSpectrumDatabase']")
         try:
@@ -566,7 +566,7 @@ class HyperHeader(object):
         self.mapping_count = int(root.find('./DetectorCount').text)
         #self.channel_factors = {}
         self.spectra_data = {}
-        self._set_sum_edx(root)
+        self._set_sum_edx(root, indexes)
 
     def _set_microscope(self, root):
         """set microscope metadata from objectified xml part (TRTSEMData,
@@ -715,8 +715,8 @@ class HyperHeader(object):
         except AttributeError:
             _logger.info('no element selection present in the spectra..')
 
-    def _set_sum_edx(self, root):
-        for i in range(self.mapping_count):
+    def _set_sum_edx(self, root, indexes):
+        for i in indexes:
             spec_node = root.find(
                 "./SpectrumData{0}/ClassInstance".format(str(i)))
             self.spectra_data[i] = EDXSpectrum(spec_node)
@@ -860,11 +860,25 @@ class BCF_reader(SFS_reader):
     def __init__(self, filename, instrument=None):
         SFS_reader.__init__(self, filename)
         header_file = self.get_file('EDSDatabase/HeaderData')
+        self.available_indexes = []
+        for i in self.vfs['EDSDatabase'].keys():
+            if 'SpectrumData' in i:
+                self.available_indexes.append(int(i[-1]))
+        self.def_index = min(self.available_indexes)
         header_byte_str = header_file.get_as_BytesIO_string().getvalue()
-        self.header = HyperHeader(header_byte_str, instrument=instrument)
+        self.header = HyperHeader(header_byte_str, self.available_indexes, instrument=instrument)
         self.hypermap = {}
-
-    def persistent_parse_hypermap(self, index=0, downsample=None,
+    
+    def check_index_valid(self, index):
+        """check and return if index is valid""" 
+        if type(index) != int:
+            raise TypeError("provided index should be integer")
+        if index not in self.available_indexes:
+            raise IndexError("requisted index is not in the list of available indexes. "
+                "Available maps are under indexes: {0}".format(str(self.available_indexes)))
+        return index
+    
+    def persistent_parse_hypermap(self, index=None, downsample=None,
                                   cutoff_at_kV=None,
                                   lazy=False):
         """Parse and assign the hypermap to the HyperMap instance.
@@ -880,6 +894,8 @@ class BCF_reader(SFS_reader):
         See also:
         HyperMap, parse_hypermap
         """
+        if index is None:
+            index = self.def_index
         dwn = downsample
         hypermap = self.parse_hypermap(index=index,
                                        downsample=dwn,
@@ -890,12 +906,13 @@ class BCF_reader(SFS_reader):
                                         index=index,
                                         downsample=dwn)
 
-    def parse_hypermap(self, index=0, downsample=1, cutoff_at_kV=None,
+    def parse_hypermap(self, index=None,
+                       downsample=1, cutoff_at_kV=None,
                        lazy=False):
         """Unpack the Delphi/Bruker binary spectral map and return
         numpy array in memory efficient way.
 
-        Pure python/numpy implimentation -- slow, or
+        Pure python/numpy implementation -- slow, or
         cython/memoryview/numpy implimentation if compilied and present
         (fast) is used.
 
@@ -913,9 +930,10 @@ class BCF_reader(SFS_reader):
         Returns:
         numpy or dask array of bruker hypermap, with (y,x,E) shape.
         """
-
+        if index is None:
+            index = self.def_index
         if type(cutoff_at_kV) in (int, float):
-            eds = self.header.get_spectra_metadata()
+            eds = self.header.get_spectra_metadata(index)
             cutoff_chan = eds.energy_to_channel(cutoff_at_kV)
         else:
             cutoff_chan = None
@@ -925,31 +943,33 @@ class BCF_reader(SFS_reader):
             value = dd(unbcf_fast.parse_to_numpy)(fh,                        # noqa
                                                   downsample=downsample,
                                                   cutoff=cutoff_chan,
-                                                  description=False)
+                                                  description=False,
+                                                  index=index)
             if lazy:
                 shape, dtype = unbcf_fast.parse_to_numpy(fh.compute(),
                                                          downsample=downsample,
                                                          cutoff=cutoff_chan,
-                                                         description=True)
+                                                         description=True,
+                                                         index=index)
                 res = da.from_delayed(value, shape=shape, dtype=dtype)
             else:
                 res = value.compute()
             return res
         else:
-            value = dd(self.py_parse_hypermap)(index=0,
+            value = dd(self.py_parse_hypermap)(index=index,
                                                downsample=downsample,
                                                cutoff_at_channel=cutoff_chan,
                                                description=False)
             if lazy:
                 shape, dtype = self.py_parse_hypermap(
-                    index=0, downsample=downsample,
+                    index=index, downsample=downsample,
                     cutoff_at_channel=cutoff_chan, description=True)
                 res = da.from_delayed(value, shape=shape, dtype=dtype)
             else:
                 res = value.compute()
             return res
 
-    def py_parse_hypermap(self, index=0, downsample=1, cutoff_at_channel=None,  # noqa
+    def py_parse_hypermap(self, index=None, downsample=1, cutoff_at_channel=None,  # noqa
                           description=False):
         """Unpack the Delphi/Bruker binary spectral map and return
         numpy array in memory efficient way using pure python implementation.
@@ -979,6 +999,8 @@ class BCF_reader(SFS_reader):
         ---------
         numpy array of bruker hypermap, with (y,x,E) shape.
         """
+        if index is None:
+            index = self.def_index
         # dict of nibbles to struct notation for reading:
         st = {1: 'B', 2: 'B', 4: 'H', 8: 'I', 16: 'Q'}
         spectrum_file = self.get_file('EDSDatabase/SpectrumData' + str(index))
@@ -1154,7 +1176,7 @@ class HyperMap(object):
 
 
 # wrapper functions for hyperspy:
-def file_reader(filename, select_type=None, index=0, downsample=1,     # noqa
+def file_reader(filename, select_type=None, index=None, downsample=1,     # noqa
                 cutoff_at_kV=None, instrument=None, lazy=False):
     """Reads a bruker bcf file and loads the data into the appropriate class,
     then wraps it into appropriate hyperspy required list of dictionaries
@@ -1163,8 +1185,11 @@ def file_reader(filename, select_type=None, index=0, downsample=1,     # noqa
     Keyword arguments:
     select_type -- One of: spectrum, image. If none specified, then function
       loads everything, else if specified, loads either just sem imagery,
-      or just hyper spectral mapping data. (default None)
-    index -- index of dataset in bcf v2 (delaut 0)
+      or just hyper spectral mapping data (default None).
+    index -- index of dataset in bcf v2 can be None integer and 'all'
+      (default None); None will select first available mapping if more than one.
+      'all' will return all maps if more than one present;
+      integer will return only selected map.
     downsample -- the downsample ratio of hyperspectral array (downsampling
       height and width only), can be integer from 1 to inf, where '1' means
       no downsampling will be applied (default 1).
@@ -1206,7 +1231,7 @@ def bcf_imagery(obj_bcf):
     return imagery_list
 
 
-def bcf_hyperspectra(obj_bcf, index=0, downsample=None, cutoff_at_kV=None,  # noqa
+def bcf_hyperspectra(obj_bcf, index=None, downsample=None, cutoff_at_kV=None,  # noqa
                      lazy=False):
     """ Return hyperspy required list of dict with eds
     hyperspectra and metadata.
@@ -1218,12 +1243,20 @@ Parsing BCF with Python-only backend, which is slow... please wait.
 If parsing is uncomfortably slow, first install cython, then reinstall hyperspy.
 For more information, check the 'Installing HyperSpy' section in the documentation.""")
         warn_once = False
-    obj_bcf.persistent_parse_hypermap(index=index, downsample=downsample,
-                                      cutoff_at_kV=cutoff_at_kV, lazy=lazy)
-    eds_metadata = obj_bcf.header.get_spectra_metadata(index=index)
+    if index is None:
+        indexes = [obj_bcf.def_index]
+    elif index == 'all':
+        indexes = obj_bcf.available_indexes
+    else:
+        indexes = [obj_bcf.check_index_valid(index)]
+    hyperspectra = []
     mode = obj_bcf.header.mode
     mapping = get_mapping(mode)
-    hyperspectra = [{'data': obj_bcf.hypermap[index].hypermap,
+    for index in indexes:
+        obj_bcf.persistent_parse_hypermap(index=index, downsample=downsample,
+                                      cutoff_at_kV=cutoff_at_kV, lazy=lazy)
+        eds_metadata = obj_bcf.header.get_spectra_metadata(index=index)
+        hyperspectra.append({'data': obj_bcf.hypermap[index].hypermap,
                      'axes': [{'name': 'height',
                                'size': obj_bcf.hypermap[index].hypermap.shape[0],
                                'offset': 0,
@@ -1267,7 +1300,7 @@ For more information, check the 'Installing HyperSpy' section in the documentati
                               'Stage': obj_bcf.header.stage_metadata,
                               'Microscope': obj_bcf.header.sem_metadata},
         'mapping': mapping,
-    }]
+    })
     return hyperspectra
 
 
