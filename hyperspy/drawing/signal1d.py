@@ -363,10 +363,10 @@ class Signal1DLine(object):
         self.events.closed.trigger(obj=self)
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)
-#        try:
-#            self.ax.figure.canvas.draw_idle()
-#        except:
-#            pass
+        try:
+            self.ax.figure.canvas.draw_idle()
+        except:
+            pass
 
 
 def _plot_component(factors, idx, ax=None, cal_axis=None,
