@@ -26,11 +26,14 @@ class BlittedFigure(object):
     def _on_draw(self, *args):
         if self.figure:
             canvas = self.figure.canvas
+            canvas.mpl_disconnect(self.draw_event_cid)
             if canvas.supports_blit:
                 self._set_background()
                 self._draw_animated()
             else:
                 canvas.draw_idle()
+            self.draw_event_cid = canvas.mpl_connect(
+                'draw_event', self._on_draw)
 
     def _draw_animated(self):
         if self.ax.figure and self.figure.axes:
@@ -73,6 +76,7 @@ class BlittedFigure(object):
         self.events.closed.trigger(obj=self)
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)
+        self.figure.canvas.mpl_disconnect(self.draw_event_cid)
         self.figure = None
 
     def close(self):

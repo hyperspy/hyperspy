@@ -212,7 +212,8 @@ class ImagePlot(BlittedFigure):
                           if self.title
                           else None),
             figsize=figsize.clip(min_size, max_size))
-        self.figure.canvas.mpl_connect('draw_event', self._on_draw)
+        self.draw_event_cid = self.figure.canvas.mpl_connect(
+            'draw_event', self._on_draw)
         utils.on_figure_window_close(self.figure, self._on_close)
 
     def create_axis(self):
