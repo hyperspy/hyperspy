@@ -43,7 +43,7 @@ class ImagePlot(BlittedFigure):
         arguments.
     pixel_units : {None, string}
         The pixel units for the scale bar. Normally
-    scalebar, plot_ticks, colorbar, plot_indices : bool
+    scalebar, colorbar, plot_indices : bool
     title : str
         The title is printed at the top of the image.
     vmin, vmax : float
@@ -67,7 +67,6 @@ class ImagePlot(BlittedFigure):
         super(ImagePlot, self).__init__()
         self.data_function = None
         self.pixel_units = None
-        self.plot_ticks = False
         self.colorbar = True
         self._colorbar = None
         self.quantity_label = ''
