@@ -500,7 +500,7 @@ class BaseModel(list):
                         data=thing[1],
                         component_list=component_list,
                         out_of_range_to_nan=out_of_range_to_nan,
-                        show_progressbar=thing[2] + 1),
+                        show_progressbar=thing[2] + 1 if show_progressbar else False),
                     zip(models, data_slices, range(int(parallel))))
             _ = next(_map)
         return signal
