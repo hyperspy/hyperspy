@@ -528,6 +528,7 @@ class HyperHeader(object):
     Arguments:
     xml_str -- the uncompressed to be provided with extracted Header xml
     from bcf.
+    indexes -- list of indexes of available datasets
 
     Methods:
     estimate_map_channels, estimate_map_depth
@@ -744,14 +745,14 @@ class HyperHeader(object):
 
         Arguments:
         index -- index of the hypermap if multiply hypermaps are
-        present in the same bcf. (default 0)
+          present in the same bcf. (default 0)
         downsample -- downsample factor (should be integer; default 1)
         for_numpy -- False produce unsigned, True signed (or unsigned) types:
-        if hypermap will be loaded using the pure python
-        function where numpy's inplace integer addition will be used --
-        the dtype should be signed; if cython implementation will
-        be used (default), then any returned dtypes can be safely
-        unsigned. (default False)
+          if hypermap will be loaded using the pure python
+          function where numpy's inplace integer addition will be used --
+          the dtype should be signed; if cython implementation will
+          be used (default), then any returned dtypes can be safely
+          unsigned. (default False)
 
         Returns:
         numpy dtype large enought to use in final hypermap numpy array.
@@ -861,6 +862,8 @@ class BCF_reader(SFS_reader):
         SFS_reader.__init__(self, filename)
         header_file = self.get_file('EDSDatabase/HeaderData')
         self.available_indexes = []
+        # get list of presented indexes from file tree of binary sfs container
+        # while looking for file names containg the hypercube data:
         for i in self.vfs['EDSDatabase'].keys():
             if 'SpectrumData' in i:
                 self.available_indexes.append(int(i[-1]))
