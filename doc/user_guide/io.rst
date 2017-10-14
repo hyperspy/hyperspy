@@ -575,14 +575,14 @@ currently supported by HyperSpy.
 
 Extra loading arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
-select_type: One of ('spectrum', 'image'). If specified just selected type of
-data is returned. (default None)
+select_type: one of (None, 'spectrum', 'image'). If specified, only the corresponding
+type of data, either spectrum or image, is returned. By default (None), all data are loaded.
 
-index: One of (None, int, "all"). Index of dataset in bcf file, which can hold few datasets.
-Default None value result in first or the only dataset returned (the lowest index available).
-When set to 'all' it result in loading all available datasets.
+index: one of (None, int, "all"). Allow to select the index of the dataset in the bcf file,
+which can contains several datasets. Default None value result in loading the first dataset.
+When set to 'all', all available datasets will be loaded and returned as separate signals.
 
-downsample: the downsample ratio of hyperspectral array (hight and width only),
+downsample: the downsample ratio of hyperspectral array (height and width only),
 can be integer >=1, where '1' results in no downsampling (default 1). The
 underlying method of downsampling is unchangeable: sum. Differently than
 block_reduce from skimage.measure it is memory efficient (does not creates
