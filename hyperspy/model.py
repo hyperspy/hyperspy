@@ -443,6 +443,8 @@ class BaseModel(list):
         >>> s2 = m.as_signal(component_list=[l1])
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         if parallel is None:
             parallel = preferences.General.parallel
         if out is None:
