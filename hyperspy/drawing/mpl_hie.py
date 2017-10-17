@@ -32,6 +32,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
                     vmax=None,
                     no_nans=False,
                     centre_colormap="auto",
+                    intensity_scale=None,
                     **kwargs
                     ):
         """Plot image.
@@ -78,6 +79,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.no_nans = no_nans
         imf.scalebar_color = scalebar_color
         imf.centre_colormap = centre_colormap
+        imf.intensity_scale = intensity_scale
         imf.plot(**kwargs)
         self.signal_plot = imf
 

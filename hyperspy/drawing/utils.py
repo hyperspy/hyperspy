@@ -20,16 +20,16 @@ import copy
 import itertools
 import textwrap
 from traits import trait_base
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-import warnings
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.backend_bases import key_press_handler
+import warnings
+import numpy as np
 import hyperspy as hs
 from distutils.version import LooseVersion
 import logging
 
-from hyperspy.defaults_parser import preferences
 
 _logger = logging.getLogger(__name__)
 
@@ -104,6 +104,7 @@ def centre_colormap_values(vmin, vmax):
 
 
 def create_figure(window_title=None,
+                  disable_xyscale_keys=False,
                   _on_figure_window_close=None,
                   **kwargs):
     """Create a matplotlib figure.
@@ -126,9 +127,21 @@ def create_figure(window_title=None,
     fig = plt.figure(**kwargs)
     if window_title is not None:
         fig.canvas.set_window_title(window_title)
+    if disable_xyscale_keys and hasattr(fig.canvas, 'toolbar'):
+        # hack the `key_press_handler` to disable the `k`, `l`, `L` shortcuts
+        manager = fig.canvas.manager
+        fig.canvas.mpl_disconnect(manager.key_press_handler_id)
+        manager.key_press_handler_id = manager.canvas.mpl_connect(
+            'key_press_event',
+            lambda event: key_press_handler_custom(event, manager.canvas))
     if _on_figure_window_close is not None:
         on_figure_window_close(fig, _on_figure_window_close)
     return fig
+
+
+def key_press_handler_custom(event, canvas):
+    if event.key not in ['k', 'l', 'L']:
+        key_press_handler(event, canvas, canvas.manager.toolbar)
 
 
 def on_figure_window_close(figure, function):
@@ -1033,11 +1046,11 @@ def plot_spectra(
         Reverse the ordering of a matplotlib legend (to be more consistent 
         with the default ordering of plots in the 'cascade' and 'overlap' 
         styles
-        
+
         Parameters
         ----------
         ax_: matplotlib axes
-        
+
         legend_loc_: str or int
             This parameter controls where the legend is placed on the 
             figure; see the pyplot.legend docstring for valid values

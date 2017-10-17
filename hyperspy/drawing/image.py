@@ -30,6 +30,7 @@ from hyperspy.misc import math_tools
 from hyperspy.misc import rgb_tools
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
+from hyperspy.docstrings.plot import PLOT2D_DOCSTRING
 
 
 _logger = logging.getLogger(__name__)
@@ -45,27 +46,14 @@ class ImagePlot(BlittedFigure):
     data_fuction : function or method
         A function that returns a 2D array when called without any
         arguments.
+    %s
     pixel_units : {None, string}
-        The pixel units for the scale bar. Normally
-    scalebar, plot_ticks, colorbar, plot_indices : bool
+        The pixel units for the scale bar.
+    plot_indices : bool
     title : str
         The title is printed at the top of the image.
-    vmin, vmax : float
-        Limit the range of the color map scale to the given values.
-    min_aspect : float
-        Set the minimum aspect ratio of the image and the figure. To
-        keep the image in the aspect limit the pixels are made
-        rectangular.
-    saturated_pixels: scalar
-        The percentage of pixels that are left out of the bounds.  For example,
-        the low and high bounds of a value of 1 are the 0.5% and 99.5%
-        percentiles. It must be in the [0, 100] range.
-    centre_colormap : {"auto", True, False}
-        If True the centre of the color scheme is set to zero. This is
-        specially useful when using diverging color schemes. If "auto"
-        (default), diverging color schemes are automatically centred.
 
-    """
+    """ % PLOT2D_DOCSTRING
 
     def __init__(self):
         super(ImagePlot, self).__init__()
@@ -73,7 +61,6 @@ class ImagePlot(BlittedFigure):
         # Args to pass to `__call__`
         self.data_function_kwargs = {}
         self.pixel_units = None
-        self.plot_ticks = False
         self.colorbar = True
         self._colorbar = None
         self.quantity_label = ''
@@ -104,6 +91,7 @@ class ImagePlot(BlittedFigure):
         self._auto_axes_ticks = True
         self.no_nans = False
         self.centre_colormap = "auto"
+        self.intensity_scale = None
 
     @property
     def vmax(self):
@@ -217,6 +205,7 @@ class ImagePlot(BlittedFigure):
             window_title=("Figure " + self.title
                           if self.title
                           else None),
+            disable_xyscale_keys=True,
             figsize=figsize.clip(min_size, max_size))
         self.figure.canvas.mpl_connect('draw_event', self._on_draw)
         utils.on_figure_window_close(self.figure, self._on_close)
@@ -268,12 +257,8 @@ class ImagePlot(BlittedFigure):
                     color=self.scalebar_color,
                 )
 
-        if self.colorbar is True:
-            self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
-            self._colorbar.set_label(
-                self.quantity_label, rotation=-90, va='bottom')
-            self._colorbar.ax.yaxis.set_animated(
-                self.figure.canvas.supports_blit)
+        if self.colorbar:
+            self._add_colorbar()
 
         self._set_background()
         self.figure.canvas.draw_idle()
@@ -289,6 +274,13 @@ class ImagePlot(BlittedFigure):
                 pass
 
         self.connect()
+
+    def _add_colorbar(self):
+        self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
+        self._colorbar.set_label(
+            self.quantity_label, rotation=-90, va='bottom')
+        self._colorbar.ax.yaxis.set_animated(
+            self.figure.canvas.supports_blit)
 
     def update(self, **kwargs):
         ims = self.ax.images
@@ -351,15 +343,29 @@ class ImagePlot(BlittedFigure):
             vmin, vmax = utils.centre_colormap_values(self.vmin, self.vmax)
         else:
             vmin, vmax = self.vmin, self.vmax
-        if ims:
+
+        # set the image normalisation
+        if self.intensity_scale == 'log':
+            from matplotlib.colors import LogNorm
+            norm = LogNorm(vmin=self.vmin, vmax=self.vmax)
+        else:
+            if self.intensity_scale not in ['linear', None]:
+                _logger.warning('The provided `intensity_scale` argument is '
+                                'not supported, falling back to the default '
+                                '(linear).')
+            # if the `norm` kwargs is passed to matplotlib, we use it
+            norm = kwargs.pop('norm', None)
+
+        if ims:  # the images has already been drawn previously
             ims[0].set_data(data)
             self.ax.set_xlim(self._extent[:2])
             self.ax.set_ylim(self._extent[2:])
             ims[0].set_extent(self._extent)
             self._calculate_aspect()
             self.ax.set_aspect(self._aspect)
+            ims[0].set_norm(norm)
             ims[0].norm.vmax, ims[0].norm.vmin = vmax, vmin
-            if redraw_colorbar is True:
+            if redraw_colorbar:
                 # ims[0].autoscale()
                 self._colorbar.draw_all()
                 self._colorbar.solids.set_animated(
@@ -376,25 +382,14 @@ class ImagePlot(BlittedFigure):
                     self.figure.canvas.draw_idle()
             else:
                 self.figure.canvas.draw_idle()
-        else:
-            intensity_scale = kwargs.pop('intensity_scale', 'linear')
-            if intensity_scale == 'log':
-                from matplotlib.colors import LogNorm
-                norm = LogNorm()
-            else:
-                if intensity_scale not in ['linear', None]:
-                    _logger.warning('The `intensity_scale` is not set '
-                                    'correctly, the intensity scale is set to '
-                                    'the default (linear).')
-                # if the `norm` kwargs is passed to matplotlib, we use it
-                norm = kwargs.pop('norm', None)
+        else:  # no signal have been drawn yet
             new_args = {'interpolation': 'nearest',
                         'vmin': vmin,
                         'vmax': vmax,
                         'extent': self._extent,
                         'aspect': self._aspect,
                         'animated': self.figure.canvas.supports_blit,
-                        'norm':norm}
+                        'norm': norm}
             new_args.update(kwargs)
             self.ax.imshow(data,
                            **new_args)
@@ -434,6 +429,16 @@ class ImagePlot(BlittedFigure):
     def on_key_press(self, event):
         if event.key == 'h':
             self.gui_adjust_contrast()
+        if event.key == 'l':
+            self.set_intensity_scale(event)
+
+    def set_intensity_scale(self, event):
+        self.intensity_scale = 'linear' if self.intensity_scale == 'log' else 'log'
+        self.update()
+        if self.colorbar:
+            self._colorbar.remove()
+            self._add_colorbar()
+            self.figure.canvas.draw_idle()
 
     def set_contrast(self, vmin, vmax):
         self.vmin, self.vmax = vmin, vmax

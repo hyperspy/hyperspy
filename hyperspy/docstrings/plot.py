@@ -82,7 +82,11 @@ PLOT2D_DOCSTRING = \
         centre_colormap : {"auto", True, False}
             If True the centre of the color scheme is set to zero. This is
             specially useful when using diverging color schemes. If "auto"
-            (default), diverging color schemes are automatically centred."""
+            (default), diverging color schemes are automatically centred.
+        min_aspect : float
+            Set the minimum aspect ratio of the image and the figure. To
+            keep the image in the aspect limit the pixels are made
+            rectangular."""
 
 COMPLEX_DOCSTRING = \
     """power_spectrum : {bool, None}, default is None.
