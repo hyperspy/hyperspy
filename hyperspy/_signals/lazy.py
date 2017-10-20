@@ -255,9 +255,6 @@ class LazySignal(BaseSignal):
     def __array__(self, dtype=None):
         return self.data.__array__(dtype=dtype)
 
-    def _unfold(self, *args):
-        raise lazyerror
-
     def _make_sure_data_is_contiguous(self, log=None):
         self._make_lazy(rechunk=True)
 
