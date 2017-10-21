@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -52,17 +52,15 @@ class Polynomial(Component):
     def function(self, x):
         return np.polyval(self.coefficients.value, x)
 
-    def compute_grad_coefficients(self):
-        to_mult = np.arange(self.get_polynomial_order(), -1, -1)
-        coeff = self.coefficients.value * to_mult
-        self.diff_coefficients = coeff[:-1]
+    def grad_one_coefficient(self, x, index):
+        """Returns the gradient of one coefficient"""
+        values = np.array(self.coefficients.value)
+        values[index] = 1
+        return np.polyval(values, x)
 
     def grad_coefficients(self, x):
-        self.compute_grad_coefficients()
-        if self.diff_coefficients is not None:
-            return np.polyval(self.diff_coefficients, x)
-        else:
-            return x * 0
+        return np.vstack([self.grad_one_coefficient(x, i) for i in
+                          range(self.coefficients._number_of_elements)])
 
     def __repr__(self):
         text = "%s order Polynomial component" % ordinal(
@@ -76,7 +74,7 @@ class Polynomial(Component):
 
         Parameters
         ----------
-        signal : Signal instance
+        signal : Signal1D instance
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -92,6 +90,7 @@ class Polynomial(Component):
         bool
 
         """
+        super(Polynomial, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         binned = signal.metadata.Signal.binned
         i1, i2 = axis.value_range_to_indices(x1, x2)
@@ -113,7 +112,7 @@ class Polynomial(Component):
                 # For polyfit the spectrum goes in the first axis
                 if axis.index_in_array > 0:
                     dc = dc.T             # Unfolded, so simply transpose
-                cmaps = np.polyfit(axis.axis[i1:i2], dc[i1:i2, :],
+                cmaps = np.polyfit(axis.axis[i1:i2], dc[i1:i2, ...],
                                    self.get_polynomial_order())
                 if axis.index_in_array > 0:
                     cmaps = cmaps.T       # Transpose back if needed

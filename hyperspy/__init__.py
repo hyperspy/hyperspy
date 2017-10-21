@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import logging
+
+_logger = logging.getLogger(__name__)
+
+
 from hyperspy import docstrings
 
 __doc__ = """
@@ -18,10 +23,6 @@ needed for data analysis.
 More details in the :mod:`~hyperspy.api` docstring.
 
 """ % docstrings.START_HSPY
-
-import os
-
-os.environ['QT_API'] = "pyqt"
 
 
 from . import Release

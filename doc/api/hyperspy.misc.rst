@@ -1,5 +1,5 @@
-hyperspy.misc package
-=====================
+hyperspy\.misc package
+======================
 
 Subpackages
 -----------
@@ -8,142 +8,143 @@ Subpackages
 
     hyperspy.misc.eds
     hyperspy.misc.eels
+    hyperspy.misc.holography
     hyperspy.misc.io
     hyperspy.misc.machine_learning
 
 Submodules
 ----------
 
-hyperspy.misc.array_tools module
---------------------------------
+hyperspy\.misc\.array\_tools module
+-----------------------------------
 
 .. automodule:: hyperspy.misc.array_tools
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.misc.config_dir module
--------------------------------
+hyperspy\.misc\.config\_dir module
+----------------------------------
 
 .. automodule:: hyperspy.misc.config_dir
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.misc.elements module
------------------------------
+hyperspy\.misc\.date\_time\_tools module
+----------------------------------------
+
+.. automodule:: hyperspy.misc.date_time_tools
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy\.misc\.elements module
+-------------------------------
 
 .. automodule:: hyperspy.misc.elements
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.misc.example_signals_loading module
---------------------------------------------
+hyperspy\.misc\.example\_signals\_loading module
+------------------------------------------------
 
 .. automodule:: hyperspy.misc.example_signals_loading
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.misc.hspy_warnings module
-----------------------------------
+hyperspy\.misc\.export\_dictionary module
+-----------------------------------------
 
-.. automodule:: hyperspy.misc.hspy_warnings
+.. automodule:: hyperspy.misc.export_dictionary
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.misc.hyperspy_magics module
-------------------------------------
-
-.. automodule:: hyperspy.misc.hyperspy_magics
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-hyperspy.misc.image_tools module
---------------------------------
-
-.. automodule:: hyperspy.misc.image_tools
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-hyperspy.misc.ipython_tools module
-----------------------------------
+hyperspy\.misc\.ipython\_tools module
+-------------------------------------
 
 .. automodule:: hyperspy.misc.ipython_tools
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.misc.material module
------------------------------
+hyperspy\.misc\.material module
+-------------------------------
 
 .. automodule:: hyperspy.misc.material
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.misc.math_tools module
--------------------------------
+hyperspy\.misc\.math\_tools module
+----------------------------------
 
 .. automodule:: hyperspy.misc.math_tools
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.misc.natsort module
-----------------------------
-
-.. automodule:: hyperspy.misc.natsort
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-hyperspy.misc.physical_constants module
----------------------------------------
+hyperspy\.misc\.physical\_constants module
+------------------------------------------
 
 .. automodule:: hyperspy.misc.physical_constants
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.misc.physics_tools module
-----------------------------------
+hyperspy\.misc\.physics\_tools module
+-------------------------------------
 
 .. automodule:: hyperspy.misc.physics_tools
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.misc.rgb_tools module
-------------------------------
+hyperspy\.misc\.rgb\_tools module
+---------------------------------
 
 .. automodule:: hyperspy.misc.rgb_tools
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.misc.spectrum_tools module
------------------------------------
+hyperspy\.misc\.signal\_tools module
+------------------------------------
 
-.. automodule:: hyperspy.misc.spectrum_tools
+.. automodule:: hyperspy.misc.signal_tools
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.misc.tv_denoise module
--------------------------------
+hyperspy\.misc\.slicing module
+------------------------------
+
+.. automodule:: hyperspy.misc.slicing
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy\.misc\.test\_utils module
+----------------------------------
+
+.. automodule:: hyperspy.misc.test_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy\.misc\.tv\_denoise module
+----------------------------------
 
 .. automodule:: hyperspy.misc.tv_denoise
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.misc.utils module
---------------------------
+hyperspy\.misc\.utils module
+----------------------------
 
 .. automodule:: hyperspy.misc.utils
     :members:

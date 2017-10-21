@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of HyperSpy.
 #
@@ -25,7 +25,7 @@ from hyperspy.component import Component
 
 class Arctan(Component):
 
-    """Arctan function components
+    """Arctan function component
 
     f(x) = A*arctan{k*(x-x0)}
 

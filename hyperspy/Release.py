@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -16,17 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-
 name = 'hyperspy'
 
 # The commit following to a release must update the version number
-# to the version number of the release followed by "+dev", e.g.
+# to the version number of the release followed by ".dev", e.g.
 # if the version of the last release is 0.4.1 the version of the
-# next development version afterwards must be 0.4.1+dev.
-# When running setup.py the "+dev" string will be replaced (if possible)
+# next development version afterwards must be 0.4.1.dev.
+# When running setup.py the ".dev" string will be replaced (if possible)
 # by the output of "git describe" if git is available or the git
 # hash if .git is present.
-version = "0.9+dev"
+version = "1.4.dev"
 description = "Multidimensional data analysis toolbox"
 license = 'GPL v3'
 
@@ -74,7 +73,7 @@ keywords = ['EDX',
             'spectroscopy',
             'spectrum image']
 
-info = u"""
+info = """
     H y p e r S p y
     Version %s
 

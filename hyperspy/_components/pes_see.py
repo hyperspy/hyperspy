@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -64,7 +64,7 @@ class SEE(Component):
         self.gaussian.A.value = 1.
 
     def __repr__(self):
-        return u'SEE'
+        return 'SEE'
 
     def function(self, x):
         """

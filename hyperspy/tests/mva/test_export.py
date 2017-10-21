@@ -1,13 +1,12 @@
 import numpy as np
-from nose.tools import assert_equal
 
 from hyperspy import signals
 
 
 class TestMVAExport:
 
-    def setUp(self):
-        s = signals.Spectrum(np.random.random((2, 3, 4, 5)))
+    def setup_method(self, method):
+        s = signals.Signal1D(np.random.random((2, 3, 4, 5)))
         sa = s.axes_manager[-1]
         na = s.axes_manager[0]
         sa.offset = 100
@@ -22,13 +21,13 @@ class TestMVAExport:
 
     def test_get_bss_factor(self):
         bss_factors = self.s.get_bss_factors()
-        assert_equal(bss_factors.axes_manager[-1].scale, self.sa.scale)
-        assert_equal(bss_factors.axes_manager[-1].offset, self.sa.offset)
-        assert_equal(bss_factors.axes_manager.signal_shape,
-                     self.s.axes_manager.signal_shape)
+        assert bss_factors.axes_manager[-1].scale == self.sa.scale
+        assert bss_factors.axes_manager[-1].offset == self.sa.offset
+        assert (bss_factors.axes_manager.signal_shape ==
+                self.s.axes_manager.signal_shape)
 
     def test_get_bss_loadings(self):
         bss_loadings = self.s.get_bss_loadings()
-        assert_equal(bss_loadings.axes_manager.navigation_dimension, 1)
-        assert_equal(bss_loadings.axes_manager.signal_shape,
-                     self.s.axes_manager.navigation_shape)
+        assert bss_loadings.axes_manager.navigation_dimension == 1
+        assert (bss_loadings.axes_manager.signal_shape ==
+                self.s.axes_manager.navigation_shape)

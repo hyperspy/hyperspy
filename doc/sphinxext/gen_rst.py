@@ -151,7 +151,7 @@ HyperSpy Examples
 
             # indent the contents
             contents = '\n'.join(['    %s' % row.rstrip()
-                                 for row in contents.split('\n')])
+                                  for row in contents.split('\n')])
             fh.write(contents)
 
             fh.write(
@@ -162,7 +162,7 @@ HyperSpy Examples
 
     fhindex.close()
 
-    print
+    print()
 
 
 def setup(app):

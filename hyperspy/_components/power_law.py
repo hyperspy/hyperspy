@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -15,8 +15,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
-
-import math
 
 import numpy as np
 
@@ -80,12 +78,13 @@ class PowerLaw(Component):
                         (x - self.origin.value) ** (-self.r.value - 1) *
                         self.A.value, 0)
 
-    def estimate_parameters(self, signal, x1, x2, only_current=False):
+    def estimate_parameters(self, signal, x1, x2, only_current=False,
+                            out=False):
         """Estimate the parameters by the two area method
 
         Parameters
         ----------
-        signal : Signal instance
+        signal : Signal1D instance
         x1 : float
             Defines the left limit of the spectral range to use for the
             estimation.
@@ -94,21 +93,24 @@ class PowerLaw(Component):
             estimation.
 
         only_current : bool
-            If False estimates the parameters for the full dataset.
+            If False, estimates the parameters for the full dataset.
+        out : bool
+            If True, returns the result arrays directly without storing in the
+            parameter maps/values. The returned order is (A, r).
 
         Returns
         -------
-        bool
+        {bool, tuple of values}
 
         """
-
+        super(PowerLaw, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         i1, i2 = axis.value_range_to_indices(x1, x2)
         if not (i2 + i1) % 2 == 0:
             i2 -= 1
         if i2 == i1:
             i2 += 2
-        i3 = (i2 + i1) / 2
+        i3 = (i2 + i1) // 2
         x1 = axis.index2value(i1)
         x2 = axis.index2value(i2)
         x3 = axis.index2value(i3)
@@ -118,18 +120,29 @@ class PowerLaw(Component):
             s = signal
         I1 = s.isig[i1:i3].integrate1D(2j).data.astype("float")
         I2 = s.isig[i3:i2].integrate1D(2j).data.astype("float")
+        if s._lazy:
+            import dask.array as da
+            log = da.log
+        else:
+            log = np.log
         try:
-            r = 2 * np.log(I1 / I2) / math.log(x2 / x1)
+            r = 2 * log(I1 / I2) / log(x2 / x1)
             k = 1 - r
             A = k * I2 / (x2 ** k - x3 ** k)
-            r = np.nan_to_num(r)
-            A = np.nan_to_num(A)
+            if s._lazy:
+                r = r.map_blocks(np.nan_to_num)
+                A = A.map_blocks(np.nan_to_num)
+            else:
+                r = np.nan_to_num(r)
+                A = np.nan_to_num(A)
         except:
             return False
         if only_current is True:
             self.r.value = r
             self.A.value = A
             return True
+        if out:
+            return A, r
         else:
             if self.A.map is None:
                 self._create_arrays()

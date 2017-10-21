@@ -1,0 +1,27 @@
+;File created by HyperSpy version 1.1.2+dev
+key	value
+azimuth-angle	0.0
+byte-order	dont-care
+data-length	8
+data-type	float
+date	
+depth	3
+depth-name	2
+depth-origin	1.0
+depth-scale	200.0
+depth-units	eV
+detector-peak-width-ev	130.0
+elevation-angle	35.0
+ev-per-chan	200
+height	1
+offset	0
+record-by	vector
+signal	EDS_TEM
+tilt-stage	0.0
+time	
+title	
+width	2
+width-name	1
+width-origin	0.5
+width-scale	100.0
+width-units	m

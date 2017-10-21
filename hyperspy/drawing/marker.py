@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2007-2015 The HyperSpy developers
+# Copyright 2007-2016 The HyperSpy developers
 #
 # This file is part of  HyperSpy.
 #
@@ -18,6 +18,11 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from hyperspy.events import Event, Events
+import hyperspy.drawing._markers as markers
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 class MarkerBase(object):
@@ -43,6 +48,28 @@ class MarkerBase(object):
         # Properties
         self.marker = None
         self._marker_properties = {}
+        self.signal = None
+        self._plot_on_signal = True
+        self.name = ''
+        self.plot_marker = True
+
+        # Events
+        self.events = Events()
+        self.events.closed = Event("""
+            Event triggered when a marker is closed.
+
+            Arguments
+            ---------
+            marker : Marker
+                The marker that was closed.
+            """, arguments=['obj'])
+        self._closing = False
+
+    def __deepcopy__(self, memo):
+        new_marker = dict2marker(
+            self._to_dictionary(),
+            self.name)
+        return new_marker
 
     @property
     def marker_properties(self):
@@ -51,18 +78,39 @@ class MarkerBase(object):
     @marker_properties.setter
     def marker_properties(self, kwargs):
 
-        for key, item in kwargs.iteritems():
+        for key, item in kwargs.items():
             if item is None and key in self._marker_properties:
                 del self._marker_properties[key]
             else:
                 self._marker_properties[key] = item
         if self.marker is not None:
             plt.setp(self.marker, **self.marker_properties)
-            try:
-                # self.ax.figure.canvas.draw()
+            if self.ax.figure.canvas.supports_blit:
                 self.ax.hspy_fig._draw_animated()
-            except:
-                pass
+            else:
+                self.ax.figure.canvas.draw_idle()
+
+    def _to_dictionary(self):
+        marker_dict = {
+            'marker_properties': self.marker_properties,
+            'marker_type': self.__class__.__name__,
+            'plot_on_signal': self._plot_on_signal,
+            'data': {k: self.data[k][()].tolist() for k in (
+                'x1', 'x2', 'y1', 'y2', 'text', 'size')}
+        }
+        return marker_dict
+
+    def _get_data_shape(self):
+        data_shape = None
+        for key in ('x1', 'x2', 'y1', 'y2'):
+            ar = self.data[key][()]
+            if next(ar.flat) is not None:
+                data_shape = ar.shape
+                break
+        if data_shape is None:
+            raise ValueError("None of the coordinates have value")
+        else:
+            return data_shape
 
     def set_marker_properties(self, **kwargs):
         """
@@ -75,7 +123,7 @@ class MarkerBase(object):
                  x2=None, y2=None, text=None, size=None):
         """
         Set data to the structured array. Each field of data should have
-        the same dimensions than the nagivation axes. The other fields are
+        the same dimensions than the navigation axes. The other fields are
         overwritten.
         """
         self.data = np.array((np.array(x1), np.array(y1),
@@ -89,7 +137,7 @@ class MarkerBase(object):
     def add_data(self, **kwargs):
         """
         Add data to the structured array. Each field of data should have
-        the same dimensions than the nagivation axes. The other fields are
+        the same dimensions than the navigation axes. The other fields are
         not changed.
         """
         if self.data is None:
@@ -99,9 +147,14 @@ class MarkerBase(object):
                 self.data[key][()] = np.array(kwargs[key])
         self._is_marker_static()
 
+    def isiterable(self, obj):
+        return not isinstance(obj, (str, bytes)) and hasattr(obj, '__iter__')
+
     def _is_marker_static(self):
-        if np.alltrue([hasattr(self.data[key].item()[()], "__iter__") is False
-                       for key in self.data.dtype.names]):
+
+        test = [self.isiterable(self.data[key].item()[()]) is False
+                for key in self.data.dtype.names]
+        if np.alltrue(test):
             self.auto_update = False
         else:
             self.auto_update = True
@@ -110,17 +163,108 @@ class MarkerBase(object):
         data = self.data
         if data[ind].item()[()] is None:
             return None
-        elif hasattr(data[ind].item()[()], "__iter__") and \
-                self.auto_update:
+        elif self.isiterable(data[ind].item()[()]) and self.auto_update:
+            if self.axes_manager is None:
+                return self.data['x1'].item().flatten()[0]
             indices = self.axes_manager.indices[::-1]
             return data[ind].item()[indices]
         else:
             return data[ind].item()[()]
 
-    def close(self):
+    def plot(self, update_plot=True):
+        """
+        Plot a marker which has been added to a signal.
+
+        Parameters
+        ----------
+        update_plot : bool, optional, default True
+            If True, will update the plot after adding the marker.
+            If False, the marker will be added to the plot, but will not
+            be visualized until the plot is updated. This is useful when
+            plotting many markers, since updating the plot after adding
+            each marker will slow things down.
+        """
+        if self.ax is None:
+            raise AttributeError(
+                "To use this method the marker needs to be first add to a " +
+                "figure using `s._plot.signal_plot.add_marker(m)` or " +
+                "`s._plot.navigator_plot.add_marker(m)`")
+        self._plot_marker()
+        animated = self.ax.figure.canvas.supports_blit
+        self.marker.set_animated(animated)
+        if update_plot:
+            if animated:
+                self.ax.hspy_fig._draw_animated()
+            else:
+                self.ax.figure.canvas.draw_idle()
+
+    def close(self, update_plot=True):
+        """Remove and disconnect the marker.
+
+        Parameters
+        ----------
+        update_plot : bool, optional, default True
+            If True, the figure is updated after removing the marker.
+            If False, the figure is not updated after removing the marker.
+            This is useful when many markers are added to a figure,
+            since updating the plot after removing each marker will slow
+            things down.
+        """
+        if self._closing:
+            return
+        self._closing = True
+        self.marker.remove()
+        self.events.closed.trigger(obj=self)
+        for f in self.events.closed.connected:
+            self.events.closed.disconnect(f)
+        if update_plot:
+            if self.ax.figure.canvas.supports_blit:
+                self.ax.hspy_fig._draw_animated()
+            else:
+                self.ax.figure.canvas.draw_idle()
+
+
+def dict2marker(marker_dict, marker_name):
+    marker_type = marker_dict['marker_type']
+    if marker_type == 'Point':
+        marker = markers.point.Point(0, 0)
+    elif marker_type == 'HorizontalLine':
+        marker = markers.horizontal_line.HorizontalLine(0)
+    elif marker_type == 'HorizontalLineSegment':
+        marker = markers.horizontal_line_segment.HorizontalLineSegment(0, 0, 0)
+    elif marker_type == 'LineSegment':
+        marker = markers.line_segment.LineSegment(0, 0, 0, 0)
+    elif marker_type == 'Rectangle':
+        marker = markers.rectangle.Rectangle(0, 0, 0, 0)
+    elif marker_type == 'Text':
+        marker = markers.text.Text(0, 0, "")
+    elif marker_type == 'VerticalLine':
+        marker = markers.vertical_line.VerticalLine(0)
+    elif marker_type == 'VerticalLineSegment':
+        marker = markers.vertical_line_segment.VerticalLineSegment(0, 0, 0)
+    else:
+        _log = logging.getLogger(__name__)
+        _log.warning(
+            "Marker {} with marker type {} "
+            "not recognized".format(marker_name, marker_type))
+        return(False)
+    marker.set_data(**marker_dict['data'])
+    marker.set_marker_properties(**marker_dict['marker_properties'])
+    marker._plot_on_signal = marker_dict['plot_on_signal']
+    marker.name = marker_name
+    return(marker)
+
+
+def markers_metadata_dict_to_markers(metadata_markers_dict, axes_manager):
+    markers_dict = {}
+    for marker_name, m_dict in metadata_markers_dict.items():
         try:
-            self.marker.remove()
-            # m.ax.figure.canvas.draw()
-            self.ax.hspy_fig._draw_animated()
-        except:
-            pass
+            marker = dict2marker(m_dict, marker_name)
+            if marker is not False:
+                marker.axes_manager = axes_manager
+                markers_dict[marker_name] = marker
+        except Exception as expt:
+            _logger.warning(
+                "Marker {} could not be loaded, skipping it. "
+                "Error: {}".format(marker_name, expt))
+    return(markers_dict)

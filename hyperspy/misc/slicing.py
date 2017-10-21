@@ -1,8 +1,9 @@
 from operator import attrgetter
+import numpy as np
+from dask.array import Array as dArray
 from hyperspy.misc.utils import attrsetter
 from hyperspy.misc.export_dictionary import parse_flag_string
-
-import numpy as np
+from hyperspy import roi
 
 
 def _slice_target(target, dims, both_slices, slice_nav=None, issignal=False):
@@ -35,18 +36,20 @@ def _slice_target(target, dims, both_slices, slice_nav=None, issignal=False):
         if isinstance(target, np.ndarray):
             return np.atleast_1d(target[tuple(array_slices[:nav_dims])])
         raise ValueError(
-            'tried to slice with navigation dimensions, but was neither a signal nor an array')
+            'tried to slice with navigation dimensions, but was neither a '
+            'signal nor an array')
     if slice_nav is False:  # check explicitly
         if issignal:
             return target.isig[slices]
         if isinstance(target, np.ndarray):
             return np.atleast_1d(target[tuple(array_slices[-sig_dims:])])
         raise ValueError(
-            'tried to slice with signal dimensions, but was neither a signal nor an array')
-    # return thing
+            'tried to slice with navigation dimensions, but was neither a '
+            'signal nor an array')
 
 
-def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
+def copy_slice_from_whitelist(
+        _from, _to, dims, both_slices, isNav, order=None):
     """Copies things from one object to another, according to whitelist, slicing
     where required.
 
@@ -64,6 +67,10 @@ def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
     isNav : bool
         if the slicing operation is performed on navigation dimensions of the
         object
+    order : tuple, None
+        if given, performs the copying in the order given. If not all attributes
+        given, the rest is random (the order a whitelist.keys() returns them).
+        If given in the object, _slicing_order is looked up.
     """
 
     def make_slice_navigation_decision(flags, isnav):
@@ -79,12 +86,20 @@ def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
     if hasattr(_from, '_slicing_whitelist'):
         swl = _from._slicing_whitelist
 
-    for key, val in _from._whitelist.iteritems():
-        if key == 'self':
-            target = None
-        else:
-            target = attrgetter(key)(_from)
+    if order is not None and not isinstance(order, tuple):
+        raise ValueError('order argument has to be None or a tuple of strings')
 
+    if order is None:
+        order = ()
+    if hasattr(_from, '_slicing_order'):
+        order = order + \
+            tuple(k for k in _from._slicing_order if k not in order)
+
+    keys = order + tuple(k for k in _from._whitelist.keys() if k not in
+                         order)
+
+    for key in keys:
+        val = _from._whitelist[key]
         if val is None:
             # attrsetter(_to, key, attrgetter(key)(_from))
             # continue
@@ -100,6 +115,12 @@ def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
             continue
         if 'id' in flags:
             continue
+
+        if key == 'self':
+            target = None
+        else:
+            target = attrgetter(key)(_from)
+
         if 'inav' in flags or 'isig' in flags:
             slice_nav = make_slice_navigation_decision(flags, isNav)
             result = _slice_target(
@@ -111,7 +132,7 @@ def copy_slice_from_whitelist(_from, _to, dims, both_slices, isNav):
             attrsetter(_to, key, result)
             continue
         else:
-# 'fn' in flag or no flags at all
+            # 'fn' in flag or no flags at all
             attrsetter(_to, key, target)
             continue
 
@@ -122,8 +143,8 @@ class SpecialSlicers(object):
         self.isNavigation = isNavigation
         self.obj = obj
 
-    def __getitem__(self, slices):
-        return self.obj._slicer(slices, self.isNavigation)
+    def __getitem__(self, slices, out=None):
+        return self.obj._slicer(slices, self.isNavigation, out=out)
 
 
 class FancySlicing(object):
@@ -133,6 +154,25 @@ class FancySlicing(object):
             len(slices)
         except TypeError:
             slices = (slices,)
+
+        slices_ = tuple()
+        for sl in slices:
+            if isinstance(sl, roi.BaseROI):
+                if isinstance(sl, roi.SpanROI):
+                    slices_ += (slice(float(sl.left), float(sl.right), None),)
+                elif isinstance(sl, roi.Point1DROI):
+                    slices_ += (float(sl.value),)
+                elif isinstance(sl, roi.Point2DROI):
+                    slices_ += (float(sl.x), float(sl.y))
+                elif isinstance(sl, roi.RectangularROI):
+                    slices_ += (
+                        slice(float(sl.left), float(sl.right), None),
+                        slice(float(sl.top), float(sl.bottom), None),
+                    )
+            else:
+                slices_ += (sl,)
+        slices = slices_
+        del slices_
         _orig_slices = slices
 
         has_nav = True if isNavigation is None else isNavigation
@@ -184,32 +224,71 @@ class FancySlicing(object):
                 if isinstance(slice_, float):
                     slice_ = axis.value2index(slice_)
                 array_slices.append(slice_)
-        return array_slices
+        return tuple(array_slices)
 
-    def _slicer(self, slices, isNavigation=None):
+    def _slicer(self, slices, isNavigation=None, out=None):
         array_slices = self._get_array_slices(slices, isNavigation)
-        _obj = self._deepcopy_with_new_data(self.data[array_slices])
-        for slice_, axis in zip(array_slices, _obj.axes_manager._axes):
-            if (isinstance(slice_, slice) or
-                    len(self.axes_manager._axes) < 2):
-                axis._slice_me(slice_)
+        new_data = self.data[array_slices]
+        if new_data.size == 1 and new_data.dtype is np.dtype('O'):
+            if isinstance(new_data[0], (np.ndarray, dArray)):
+                return self.__class__(new_data[0]).transpose(navigation_axes=0)
             else:
-                _obj._remove_axis(axis.index_in_axes_manager)
+                return new_data[0]
+
+        if out is None:
+            _obj = self._deepcopy_with_new_data(new_data,
+                                                copy_variance=True)
+            _to_remove = []
+            for slice_, axis in zip(array_slices, _obj.axes_manager._axes):
+                if (isinstance(slice_, slice) or
+                        len(self.axes_manager._axes) < 2):
+                    axis._slice_me(slice_)
+                else:
+                    _to_remove.append(axis.index_in_axes_manager)
+            for _ind in reversed(sorted(_to_remove)):
+                _obj._remove_axis(_ind)
+        else:
+            out.data = new_data
+            _obj = out
+            i = 0
+            for slice_, axis_src in zip(array_slices, self.axes_manager._axes):
+                axis_src = axis_src.copy()
+                if (isinstance(slice_, slice) or
+                        len(self.axes_manager._axes) < 2):
+                    axis_src._slice_me(slice_)
+                    axis_dst = out.axes_manager._axes[i]
+                    i += 1
+                    axis_dst.update_from(axis_src, attributes=(
+                        "scale", "offset", "size"))
+
         if hasattr(self, "_additional_slicing_targets"):
             for ta in self._additional_slicing_targets:
                 try:
                     t = attrgetter(ta)(self)
-                    if hasattr(t, '_slicer'):
-                        attrsetter(
-                            _obj,
-                            ta,
-                            t._slicer(
-                                slices,
-                                isNavigation))
+                    if out is None:
+                        if hasattr(t, '_slicer'):
+                            attrsetter(
+                                _obj,
+                                ta,
+                                t._slicer(
+                                    slices,
+                                    isNavigation))
+                    else:
+                        target = attrgetter(ta)(_obj)
+                        t._slicer(
+                            slices,
+                            isNavigation,
+                            out=target)
+
                 except AttributeError:
                     pass
-        _obj.get_dimensions_from_data()
-
-        return _obj
+        # _obj.get_dimensions_from_data() # replots, so we do it manually:
+        dc = _obj.data
+        for axis in _obj.axes_manager._axes:
+            axis.size = int(dc.shape[axis.index_in_array])
+        if out is None:
+            return _obj
+        else:
+            out.events.data_changed.trigger(obj=out)
 
 # vim: textwidth=80

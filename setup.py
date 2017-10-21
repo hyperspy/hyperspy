@@ -16,69 +16,248 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
 
-from distutils.core import setup
+import sys
 
-import distutils.dir_util
+v = sys.version_info
+if v[0] != 3:
+    error = "ERROR: From version 0.8.4 HyperSpy requires Python 3. " \
+            "For Python 2.7 install Hyperspy 0.8.3 e.g. " \
+            "$ pip install --upgrade hyperspy==0.8.3"
+    print(error, file=sys.stderr)
+    sys.exit(1)
+
+from setuptools import setup, Extension, Command
+
+import warnings
 
 import os
 import subprocess
-import sys
-import fileinput
+import itertools
+import re
+
+# stuff to check presence of compiler:
+import distutils.sysconfig
+import distutils.ccompiler
+from distutils.errors import CompileError, DistutilsPlatformError
+
+setup_path = os.path.dirname(__file__)
 
 import hyperspy.Release as Release
-# clean the build directory so we aren't mixing Windows and Linux
-# installations carelessly.
-if os.path.exists('build'):
-    distutils.dir_util.remove_tree('build')
 
-install_req = ['scipy',
-               'ipython (>= 2.0)',
-               'matplotlib (>= 1.2)',
-               'numpy',
-               'traits',
-               'traitsui',
-               'sympy']
+install_req = ['scipy>=0.15',
+               'matplotlib>=1.2',
+               'numpy>=1.10, !=1.13.0',
+               'traits>=4.5.0',
+               'natsort',
+               'requests',
+               'tqdm>=0.4.9',
+               'sympy',
+               'dill',
+               'h5py',
+               'python-dateutil',
+               'ipyparallel',
+               'dask[array]>=0.14.3',
+               'scikit-image>=0.13',
+               'pint>0.7',
+               'statsmodels',
+               ]
+
+extras_require = {
+    "learning": ['scikit-learn'],
+    "gui-jupyter": ["hyperspy_gui_ipywidgets"],
+    "gui-traitsui": ["hyperspy_gui_traitsui"],
+    "test": ["pytest>=3", "pytest-mpl", "matplotlib>=2.0.2"],
+}
+extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
+
+# the hack to deal with setuptools + installing the package in ReadTheDoc:
+if 'readthedocs.org' in sys.executable:
+    install_req = []
 
 
-def are_we_building4windows():
-    for arg in sys.argv:
-        if 'wininst' in arg:
-            return True
+def update_version(version):
+    release_path = "hyperspy/Release.py"
+    lines = []
+    with open(release_path, "r") as f:
+        for line in f:
+            if line.startswith("version = "):
+                line = "version = \"%s\"\n" % version
+            lines.append(line)
+    with open(release_path, "w") as f:
+        f.writelines(lines)
 
-scripts = ['bin/hyperspy', ]
 
-if are_we_building4windows() or os.name in ['nt', 'dos']:
-    # In the Windows command prompt we can't execute Python scripts
-    # without a .py extension. A solution is to create batch files
-    # that runs the different scripts.
-    # (code adapted from scitools)
-    scripts.extend(('bin/win_post_installation.py',
-                    'bin/install_hyperspy_here.py',
-                    'bin/uninstall_hyperspy_here.py'))
-    batch_files = []
-    for script in scripts:
-        batch_file = os.path.splitext(script)[0] + '.bat'
-        f = open(batch_file, "w")
-        f.write('set path=%~dp0;%~dp0\..\;%PATH%\n')
-        f.write('python "%%~dp0\%s" %%*\n' % os.path.split(script)[1])
-        f.close()
-        batch_files.append(batch_file)
-        if script in ('bin/hyperspy'):
-            for env in ('qtconsole', 'notebook'):
-                batch_file = os.path.splitext(script)[0] + '_%s' % env + '.bat'
-                f = open(batch_file, "w")
-                f.write('set path=%~dp0;%~dp0\..\;%PATH%\n')
-                f.write('cd %1\n')
-                if env == "qtconsole":
-                    f.write('start pythonw "%%~dp0\%s " %s \n' % (
-                        os.path.split(script)[1], env))
+# Extensions. Add your extension here:
+raw_extensions = [Extension("hyperspy.io_plugins.unbcf_fast",
+                            ['hyperspy/io_plugins/unbcf_fast.pyx']),
+                  ]
+
+cleanup_list = []
+for leftover in raw_extensions:
+    path, ext = os.path.splitext(leftover.sources[0])
+    if ext in ('.pyx', '.py'):
+        cleanup_list.append(os.path.join(setup_path, path + '.c*'))
+        if os.name == 'nt':
+            cleanup_list.append(
+                os.path.join(
+                    setup_path,
+                    path +
+                    '.cpython-*.pyd'))
+        else:
+            cleanup_list.append(
+                os.path.join(
+                    setup_path,
+                    path +
+                    '.cpython-*.so'))
+
+
+def count_c_extensions(extensions):
+    c_num = 0
+    for extension in extensions:
+        # if first source file with extension *.c or *.cpp exists
+        # it is cythonised or pure c/c++ extension:
+        sfile = extension.sources[0]
+        path, ext = os.path.splitext(sfile)
+        if os.path.exists(path + '.c') or os.path.exists(path + '.cpp'):
+            c_num += 1
+    return c_num
+
+
+def cythonize_extensions(extensions):
+    try:
+        from Cython.Build import cythonize
+        return cythonize(extensions)
+    except ImportError:
+        warnings.warn("""WARNING: cython required to generate fast c code is not found on this system.
+Only slow pure python alternative functions will be available.
+To use fast implementation of some functions writen in cython either:
+a) install cython and re-run the installation,
+b) try alternative source distribution containing cythonized C versions of fast code,
+c) use binary distribution (i.e. wheels, egg).""")
+        return []
+
+
+def no_cythonize(extensions):
+    for extension in extensions:
+        sources = []
+        for sfile in extension.sources:
+            path, ext = os.path.splitext(sfile)
+            if ext in ('.pyx', '.py'):
+                if extension.language == 'c++':
+                    ext = '.cpp'
                 else:
-                    f.write('python "%%~dp0\%s" %s \n' %
-                            (os.path.split(script)[1], env))
+                    ext = '.c'
+                sfile = path + ext
+            sources.append(sfile)
+        extension.sources[:] = sources
+    return extensions
 
-                batch_files.append(batch_file)
-    scripts.extend(batch_files)
+
+# to cythonize, or not to cythonize... :
+if len(raw_extensions) > count_c_extensions(raw_extensions):
+    extensions = cythonize_extensions(raw_extensions)
+else:
+    extensions = no_cythonize(raw_extensions)
+
+
+# to compile or not to compile... depends if compiler is present:
+compiler = distutils.ccompiler.new_compiler()
+assert isinstance(compiler, distutils.ccompiler.CCompiler)
+distutils.sysconfig.customize_compiler(compiler)
+try:
+    compiler.compile([os.path.join(setup_path,
+                                   'hyperspy/misc/etc/test_compilers.c')])
+except (CompileError, DistutilsPlatformError):
+    warnings.warn("""WARNING: C compiler can't be found.
+Only slow pure python alternative functions will be available.
+To use fast implementation of some functions writen in cython/c either:
+a) check that you have compiler (EXACTLY SAME as your python
+distribution was compiled with) installed,
+b) use binary distribution of hyperspy (i.e. wheels, egg, (only osx and win)).
+Installation will continue in 5 sec...""")
+    extensions = []
+    from time import sleep
+    sleep(5)  # wait 5 secs for user to notice the message
+
+
+# HOOKS ######
+post_checkout_hook_file = os.path.join(setup_path, '.git/hooks/post-checkout')
+git_dir = os.path.join(setup_path, '.git')
+hook_ignorer = os.path.join(setup_path, '.hook_ignore')
+
+
+def find_post_checkout_cleanup_line():
+    """find the line index in the git post-checkout hooks
+    'rm extension1 extension2 ...'"""
+    with open(post_checkout_hook_file, 'r') as pchook:
+        hook_lines = pchook.readlines()
+        for i in range(1, len(hook_lines), 1):
+            if re.search('#cleanup_cythonized_and_compiled:',
+                         hook_lines[i]) is not None:
+                return i + 1
+
+# generate some git hook to clean up and re-build_ext --inplace
+# after changing branches:
+if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
+    exec_str = sys.executable
+    recythonize_str = ' '.join(['"%s"' % exec_str, '"%s"' %
+                                os.path.join(setup_path, 'setup.py'),
+                                'clean --all build_ext --inplace\n'])
+    if os.name == 'nt':
+        exec_str = exec_str.replace('\\', '/')
+        recythonize_str = recythonize_str.replace('\\', '/')
+        for i in range(len(cleanup_list)):
+            cleanup_list[i] = cleanup_list[i].replace('\\', '/')
+    if (not os.path.exists(post_checkout_hook_file)):
+        with open(post_checkout_hook_file, 'w') as pchook:
+            pchook.write('#!/bin/sh\n')
+            pchook.write('#cleanup_cythonized_and_compiled:\n')
+            pchook.write(
+                'rm ' + ' '.join(['"%s"' % i for i in cleanup_list]) + '\n')
+            pchook.write(recythonize_str)
+        hook_mode = 0o777  # make it executable
+        os.chmod(post_checkout_hook_file, hook_mode)
+    else:
+        with open(post_checkout_hook_file, 'r') as pchook:
+            hook_lines = pchook.readlines()
+        if re.search(r'#!/bin/.*?sh', hook_lines[0]) is not None:
+            line_n = find_post_checkout_cleanup_line()
+            if line_n is not None:
+                hook_lines[line_n] = 'rm ' + \
+                    ' '.join(['"%s"' % i for i in cleanup_list]) + '\n'
+                hook_lines[line_n + 1] = recythonize_str
+            else:
+                hook_lines.append('\n#cleanup_cythonized_and_compiled:\n')
+                hook_lines.append(
+                    'rm ' + ' '.join(['"%s"' % i for i in cleanup_list]) + '\n')
+                hook_lines.append(recythonize_str)
+            with open(post_checkout_hook_file, 'w') as pchook:
+                pchook.writelines(hook_lines)
+
+
+class Recythonize(Command):
+
+    """cythonize all extensions"""
+    description = "(re-)cythonize all changed cython extensions"
+
+    user_options = []
+
+    def initialize_options(self):
+        """init options"""
+        pass
+
+    def finalize_options(self):
+        """finalize options"""
+        pass
+
+    def run(self):
+        # if there is no cython it is supposed to fail:
+        from Cython.Build import cythonize
+        global raw_extensions
+        global extensions
+        cythonize(extensions)
 
 
 class update_version_when_dev:
@@ -89,48 +268,30 @@ class update_version_when_dev:
         # Get the hash from the git repository if available
         self.restore_version = False
         git_master_path = ".git/refs/heads/master"
-        if "+dev" in self.release_version and \
-                os.path.isfile(git_master_path):
-            try:
-                p = subprocess.Popen(["git", "describe",
-                                      "--tags", "--dirty", "--always"],
-                                     stdout=subprocess.PIPE)
-                stdout = p.communicate()[0]
-                if p.returncode != 0:
-                    raise EnvironmentError
-                else:
-                    version = stdout[1:].strip()
-                    if str(self.release_version[:-4] + '-') in version:
-                        version = version.replace(
-                            self.release_version[:-4] + '-',
-                            self.release_version[:-4] + '+git')
-                    self.version = version
-            except EnvironmentError:
-                # Git is not available, but the .git directory exists
-                # Therefore we can get just the master hash
-                with open(git_master_path) as f:
-                    masterhash = f.readline()
-                self.version = self.release_version.replace(
-                    "+dev", "+git-%s" % masterhash[:7])
-            for line in fileinput.FileInput("hyperspy/Release.py",
-                                            inplace=1):
-                if line.startswith('version = '):
-                    print "version = \"%s\"" % self.version
-                else:
-                    print line,
-            self.restore_version = True
+        if self.release_version.endswith(".dev"):
+            p = subprocess.Popen(["git", "describe",
+                                  "--tags", "--dirty", "--always"],
+                                 stdout=subprocess.PIPE)
+            stdout = p.communicate()[0]
+            if p.returncode != 0:
+                # Git is not available, we keep the version as is
+                self.restore_version = False
+                self.version = self.release_version
+            else:
+                gd = stdout[1:].strip().decode()
+                # Remove the tag
+                gd = gd[gd.index("-") + 1:]
+                self.version = self.release_version + "+git."
+                self.version += gd.replace("-", ".")
+                update_version(self.version)
+                self.restore_version = True
         else:
             self.version = self.release_version
         return self.version
 
     def __exit__(self, type, value, traceback):
         if self.restore_version is True:
-            for line in fileinput.FileInput("hyperspy/Release.py",
-                                            inplace=1):
-                if line.startswith('version = '):
-                    print "version = \"%s\"" % self.release_version
-                else:
-                    print line,
+            update_version(self.release_version)
 
 
 with update_version_when_dev() as version:
@@ -138,24 +299,28 @@ with update_version_when_dev() as version:
         name="hyperspy",
         package_dir={'hyperspy': 'hyperspy'},
         version=version,
+        ext_modules=extensions,
         packages=['hyperspy',
+                  'hyperspy.datasets',
                   'hyperspy._components',
                   'hyperspy.datasets',
                   'hyperspy.io_plugins',
                   'hyperspy.docstrings',
                   'hyperspy.drawing',
                   'hyperspy.drawing._markers',
+                  'hyperspy.drawing._widgets',
                   'hyperspy.learn',
                   'hyperspy._signals',
-                  'hyperspy.gui',
                   'hyperspy.utils',
                   'hyperspy.tests',
                   'hyperspy.tests.axes',
                   'hyperspy.tests.component',
+                  'hyperspy.tests.datasets',
                   'hyperspy.tests.drawing',
                   'hyperspy.tests.io',
                   'hyperspy.tests.model',
                   'hyperspy.tests.mva',
+                  'hyperspy.tests.samfire',
                   'hyperspy.tests.signal',
                   'hyperspy.tests.utils',
                   'hyperspy.tests.misc',
@@ -164,33 +329,68 @@ with update_version_when_dev() as version:
                   'hyperspy.misc.eels',
                   'hyperspy.misc.eds',
                   'hyperspy.misc.io',
+                  'hyperspy.misc.holography',
                   'hyperspy.misc.machine_learning',
                   'hyperspy.external',
                   'hyperspy.external.mpfit',
-                  'hyperspy.external.mpfit.tests',
                   'hyperspy.external.astroML',
+                  'hyperspy.samfire_utils',
+                  'hyperspy.samfire_utils.segmenters',
+                  'hyperspy.samfire_utils.weights',
+                  'hyperspy.samfire_utils.goodness_of_fit_tests',
                   ],
-        requires=install_req,
-        scripts=scripts,
+        install_requires=install_req,
+        test_require=["pytest>=3.0.2"],
+        extras_require=extras_require,
         package_data={
             'hyperspy':
-            ['bin/*.py',
-             'ipython_profile/*',
-             'data/*.ico',
-             'misc/eds/example_signals/*.hdf5',
-             'tests/io/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3',
-             'tests/io/dm3_1D_data/*.dm3',
-             'tests/io/dm3_2D_data/*.dm3',
-             'tests/io/dm3_3D_data/*.dm3',
-             'tests/io/dm4_1D_data/*.dm4',
-             'tests/io/dm4_2D_data/*.dm4',
-             'tests/io/dm4_3D_data/*.dm4',
-             'tests/io/msa_files/*.msa',
-             'tests/io/hdf5_files/*.hdf5',
-             'tests/io/tiff_files/*.tif',
-             'tests/io/npy_files/*.npy',
-             'tests/drawing/*.ipynb',
-             ],
+            [
+                'tests/drawing/*.png',
+                'tests/drawing/plot_signal/*.png',
+                'tests/drawing/plot_signal1d/*.png',
+                'tests/drawing/plot_signal2d/*.png',
+                'tests/drawing/plot_markers/*.png',
+                'misc/eds/example_signals/*.hdf5',
+                'misc/holography/example_signals/*.hdf5',
+                'tests/drawing/plot_mva/*.png',
+                'tests/drawing/plot_signal/*.png',
+                'tests/drawing/plot_signal1d/*.png',
+                'tests/drawing/plot_signal2d/*.png',
+                'tests/drawing/plot_markers/*.png',
+                'tests/io/blockfile_data/*.blo',
+                'tests/io/dens_data/*.dens',
+                'tests/io/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3',
+                'tests/io/dm3_1D_data/*.dm3',
+                'tests/io/dm3_2D_data/*.dm3',
+                'tests/io/dm3_3D_data/*.dm3',
+                'tests/io/dm4_1D_data/*.dm4',
+                'tests/io/dm4_2D_data/*.dm4',
+                'tests/io/dm4_3D_data/*.dm4',
+                'tests/io/dm3_locale/*.dm3',
+                'tests/io/edax_files.zip',
+                'tests/io/FEI_new/*.emi',
+                'tests/io/FEI_new/*.ser',
+                'tests/io/FEI_new/*.npy',
+                'tests/io/FEI_old/*.emi',
+                'tests/io/FEI_old/*.ser',
+                'tests/io/FEI_old/*.npy',
+                'tests/io/msa_files/*.msa',
+                'tests/io/hdf5_files/*.hdf5',
+                'tests/io/hdf5_files/*.hspy',
+                'tests/io/tiff_files/*.tif',
+                'tests/io/tiff_files/*.dm3',
+                'tests/io/npy_files/*.npy',
+                'tests/io/unf_files/*.unf',
+                'tests/io/bcf_data/*.bcf',
+                'tests/io/bcf_data/*.json',
+                'tests/io/bcf_data/*.npy',
+                'tests/io/ripple_files/*.rpl',
+                'tests/io/ripple_files/*.raw',
+                'tests/io/emd_files/*.emd',
+                'tests/io/protochips_data/*.npy',
+                'tests/io/protochips_data/*.csv',
+                'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
+            ],
         },
         author=Release.authors['all'][0],
         author_email=Release.authors['all'][1],
@@ -201,10 +401,12 @@ with update_version_when_dev() as version:
         license=Release.license,
         platforms=Release.platforms,
         url=Release.url,
-        #~ test_suite = 'nose.collector',
         keywords=Release.keywords,
+        cmdclass={
+            'recythonize': Recythonize,
+        },
         classifiers=[
-            "Programming Language :: Python :: 2.7",
+            "Programming Language :: Python :: 3",
             "Development Status :: 4 - Beta",
             "Environment :: Console",
             "Intended Audience :: Science/Research",

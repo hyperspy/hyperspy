@@ -4,6 +4,7 @@ import textwrap
 import pydoc
 import sphinx
 from docscrape import NumpyDocString, FunctionDoc, ClassDoc
+import collections
 
 
 class SphinxDocString(NumpyDocString):
@@ -132,7 +133,7 @@ class SphinxDocString(NumpyDocString):
             return out
 
         out += ['.. index:: %s' % idx.get('default', '')]
-        for section, references in idx.iteritems():
+        for section, references in idx.items():
             if section == 'default':
                 continue
             elif section == 'refguide':
@@ -224,7 +225,7 @@ def get_doc_object(obj, what=None, doc=None, config={}):
             what = 'class'
         elif inspect.ismodule(obj):
             what = 'module'
-        elif callable(obj):
+        elif isinstance(obj, collections.Callable):
             what = 'function'
         else:
             what = 'object'

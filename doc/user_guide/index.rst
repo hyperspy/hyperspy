@@ -9,22 +9,25 @@ HyperSpy User Guide (DRAFT)
 
 .. toctree::
     :maxdepth: 2
-    
+
     intro.rst
     what_is_new.rst
     install.rst
     getting_started.rst
     tools.rst
-    spectrum.rst
-    image.rst
+    signal1d.rst
+    signal2d.rst
     visualisation.rst
     mva.rst
     model.rst
+    samfire.rst
     eels.rst
     eds.rst
     dielectric_function.rst
+    electron_holography.rst
     io.rst
+    events.rst
+    big_data.rst
     metadata_structure.rst
     credits.rst
     bibliography.rst
-

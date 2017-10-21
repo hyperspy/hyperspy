@@ -3,9 +3,13 @@
 
 The :mod:`~hyperspy.api.model` module contains the following submodules:
 
-components
-    Components for HyperSpy model.
+components1D
+    1D components for HyperSpy model.
+
+components2D
+    2D components for HyperSpy model.
 
 """
 
-import hyperspy.components as components
+import hyperspy.components1d as components1D
+import hyperspy.components2d as components2D

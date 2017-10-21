@@ -1,0 +1,26 @@
+;File created by HyperSpy version 1.1.2+dev
+key	value
+byte-order	dont-care
+data-length	8
+data-type	float
+date	
+depth	2
+depth-name	1
+depth-origin	0.5
+depth-scale	100.0
+depth-units	m
+height	3
+height-name	2
+height-origin	1.0
+height-scale	200.0
+height-units	eV
+offset	0
+record-by	image
+signal	
+time	
+title	
+width	4
+width-name	3
+width-origin	1.5
+width-scale	300.0
+width-units	eV
