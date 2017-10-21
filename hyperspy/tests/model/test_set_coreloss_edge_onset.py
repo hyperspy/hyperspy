@@ -15,11 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-
 import numpy as np
-
-import nose.tools
-from nose.tools import assert_true
 from hyperspy.signals import EELSSpectrum
 from hyperspy.hspy import create_model
 from hyperspy.components import Gaussian
@@ -35,8 +31,8 @@ class TestSetOnset:
         axis = np.arange(10000)
         s = EELSSpectrum(g.function(axis))
         s.set_microscope_parameters(
-                beam_energy=100, 
-                convergence_angle=10, 
+                beam_energy=100,
+                convergence_angle=10,
                 collection_angle=10)
         s.add_elements(('O',))
         m = create_model(s, auto_background=False)
@@ -52,59 +48,50 @@ class TestSetOnset:
         percent_position = 1.0
 
         m.set_coreloss_edge_onset(
-                m[0], 
-                signal_range=(1000,5500), 
+                m[0], signal_range=(1000, 5500),
                 percent_position=percent_position)
-        assert_true(
-            np.allclose(
+        np.testing.assert_allclose(
                 g.function(m[0].onset_energy.value),
                 top_point*percent_position,
-                rtol=self.rtol))
+                rtol=self.rtol)
 
     def test_set_onset_50_percent(self):
         m = self.model
         g = self.g
         top_point = self.top_point
-        percent_position = 0.5 
-
+        percent_position = 0.5
         m.set_coreloss_edge_onset(
-                m[0], 
-                signal_range=(1000,5500), 
+                m[0], signal_range=(1000, 5500),
                 percent_position=percent_position)
-        assert_true(
-            np.allclose(
+        np.testing.assert_allclose(
                 g.function(m[0].onset_energy.value),
                 top_point*percent_position,
-                rtol=self.rtol))
+                rtol=self.rtol)
 
     def test_set_onset_10_percent(self):
         m = self.model
         g = self.g
         top_point = self.top_point
-        percent_position = 0.1 
+        percent_position = 0.1
 
         m.set_coreloss_edge_onset(
-                m[0], 
-                signal_range=(1000,5500), 
+                m[0], signal_range=(1000, 5500),
                 percent_position=percent_position)
-        assert_true(
-            np.allclose(
+        np.testing.assert_allclose(
                 g.function(m[0].onset_energy.value),
                 top_point*percent_position,
-                rtol=self.rtol))
+                rtol=self.rtol)
 
     def test_set_onset_1_percent(self):
         m = self.model
         g = self.g
         top_point = self.top_point
-        percent_position = 0.01 
+        percent_position = 0.01
 
         m.set_coreloss_edge_onset(
-                m[0], 
-                signal_range=(1000,5500), 
+                m[0], signal_range=(1000, 5500),
                 percent_position=percent_position)
-        assert_true(
-            np.allclose(
+        np.testing.assert_allclose(
                 g.function(m[0].onset_energy.value),
                 top_point*percent_position,
-                rtol=self.rtol))
+                rtol=self.rtol)

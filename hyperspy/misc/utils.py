@@ -31,7 +31,7 @@ from hyperspy.misc.signal_tools import broadcast_signals
 from hyperspy.exceptions import VisibleDeprecationWarning
 
 import numpy as np
-import scipy 
+from scipy.interpolate import interp1d
 
 
 def attrsetter(target, attrs, value):
@@ -908,51 +908,66 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
 
     return signal
 
-def get_edge_onset(data, start, end, energy_range, percent_position):
-    start_index = find_nearest_index(energy_range, start)
-    end_index = find_nearest_index(energy_range, end)
 
-    data = data[start_index:end_index]
-    energy_range = energy_range[start_index:end_index]
+def get_edge_onset(data, start, end, energy_range, percent_position):
+    start_i = find_nearest_index(energy_range, start)
+    end_i = find_nearest_index(energy_range, end)
+
+    data = data[start_i:end_i]
+    energy_range = energy_range[start_i:end_i]
 
     data_max = data.max()
     data_min = data.min()
-    data_onset_value = (data_max-data_min)*percent_position + data_min
-    
-    interpolate = scipy.interpolate.interp1d(energy_range, data)
-    large_energy_array = np.arange(energy_range[0],energy_range[-1],0.0001)
+    data_onset_value = (data_max - data_min) * percent_position + data_min
+
+    interpolate = interp1d(energy_range, data)
+    large_energy_array = np.arange(energy_range[0], energy_range[-1], 0.0001)
     data_interpolated = interpolate(large_energy_array)
-    data_max_index = data_interpolated.argmax()
-    data_min_index = data_interpolated.argmin()
-    
-    if data_max_index < data_min_index:
-        temp_index = data_max_index
-        data_max_index = data_min_index
-        data_min_index = temp_index
-    
-    data_onset_index = find_nearest_index_from_right(
-            data_interpolated[data_min_index:data_max_index],
-            data_onset_value,
-            threshold = 0.0001*(data_max-data_min))
-    onset_energy = large_energy_array[data_min_index:data_max_index][data_onset_index]
-    return(onset_energy)
+    data_max_i = data_interpolated.argmax()
+    data_min_i = data_interpolated.argmin()
 
-def find_nearest_index(array,value):
+    if data_max_i < data_min_i:
+        temp_i = data_max_i
+        data_max_i = data_min_i
+        data_min_i = temp_i
+
+    data_onset_i = find_nearest_index_from_right(
+            data_interpolated[data_min_i:data_max_i],
+            data_onset_value, threshold = 0.0001 * (data_max - data_min))
+    onset_energy = large_energy_array[data_min_i:data_max_i][data_onset_i]
+    return onset_energy
+
+
+def find_nearest_index(array, value):
     idx = (np.abs(array-value)).argmin()
-    return(idx)
+    return idx
 
-def find_nearest_index_from_right(array,value,threshold=0.1):
-    # This function returns the index in array which is closest to value, 
-    # within the specified threshold. If several values in the array 
-    # are within this threshold the one with the highest index is chosen. 
-    # If none of the values in the array  are within the threshold, 
-    # the index of the value closest to value in returned.
+
+def find_nearest_index_from_right(array, value, threshold=0.1):
+    """Returns the index in an array closest to a value, within a threshold.
+
+    If several values in the array are within this threshold the one with
+    the highest index is chosen. If none of the values in the array are
+    within the threshold, the index of the value closest to value in returned.
+
+    Parameters
+    ----------
+    array : Numpy array
+    value : float
+    threshold : float, default 0.1
+
+    Returns
+    -------
+    closest_index : int
+
+    """
     index_within_threshold = np.where(
             (array > value-threshold) & (array < value+threshold))[0]
     if len(index_within_threshold):
-        return(index_within_threshold[-1])
+        return index_within_threshold[-1]
     else:
-        return(find_nearest_index(array, value))
+        return find_nearest_index(array, value)
+
 
 def shorten_name(name, req_l):
     if len(name) > req_l:
