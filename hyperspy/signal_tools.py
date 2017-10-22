@@ -1092,48 +1092,6 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self.find()
 
 
-#class SetCorelossEdgeOnset(SpanSelectorInSpectrum):
-#    fit = t.Button()
-#
-#    view = tu.View(
-#        tu.Item('fit', show_label=False),
-#        buttons=[OKButton, CancelButton],
-#        title='Fit single component',
-#        handler=SpanSelectorInSpectrumHandler,
-#    )
-#
-#    def __init__(self, model, component, only_current=False, percent_position=0.1):
-#        if model.spectrum.axes_manager.signal_dimension != 1:
-#            raise SignalDimensionError(
-#                model.spectrum.axes_manager.signal_dimension, 1)
-#
-#        self.signal = model.spectrum
-#        self.span_selector = None
-#        self.model = model
-#        self.component = component
-#        self.percent_position = percent_position
-#        self.only_current = only_current
-#        if not hasattr(self.model, '_plot'):
-#            self.model.plot()
-#        elif self.model._plot is None:
-#            self.model.plot()
-#        elif self.model._plot.is_active() is False:
-#            self.model.plot()
-#        self.span_selector_switch(on=True)
-#
-#    def _fit_fired(self):
-#        signal_range = (self.ss_left_value, self.ss_right_value)
-#
-#        self.model._set_coreloss_edge_onset(
-#                self.component, 
-#                signal_range,
-#                self.only_current, 
-#                self.percent_position) 
-#            
-#    def apply(self):
-#        self._fit_fired()
-
-
 # For creating a text handler in legend (to label derivative magnitude)
 class DerivativeTextParameters(object):
 
