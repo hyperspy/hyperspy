@@ -17,13 +17,12 @@
 
 import numpy as np
 from hyperspy.signals import EELSSpectrum
-from hyperspy.hspy import create_model
-from hyperspy.components import Gaussian
+from hyperspy.components1d import Gaussian
 
 
 class TestSetOnset:
 
-    def setUp(self):
+    def setup_method(self, method):
         g = Gaussian()
         g.A.value = 10000.0
         g.centre.value = 5000.0
@@ -35,7 +34,7 @@ class TestSetOnset:
                 convergence_angle=10,
                 collection_angle=10)
         s.add_elements(('O',))
-        m = create_model(s, auto_background=False)
+        m = s.create_model(auto_background=False)
         self.model = m
         self.g = g
         self.top_point = s.data.max()

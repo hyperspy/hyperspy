@@ -26,7 +26,7 @@ from hyperspy.components1d import PowerLaw
 from hyperspy.defaults_parser import preferences
 from hyperspy import components1d
 from hyperspy._signals.eels import EELSSpectrum
-from hyperspy.gui.tools import SetCorelossEdgeOnset
+#from hyperspy.gui.tools import SetCorelossEdgeOnset
 from hyperspy.misc.utils import get_edge_onset
 
 _logger = logging.getLogger(__name__)
