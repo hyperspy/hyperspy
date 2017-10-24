@@ -1,2 +1,7 @@
-# Auto detect text files and perform LF normalization
+# Set default behaviour, in case users don't have core.autocrlf set.
 * text=auto
+*.py diff=python
+*.bat        eol=crlf
+*.msa        eol=crlf
+*.nsi        eol=crlf		
+
