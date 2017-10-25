@@ -216,3 +216,39 @@ class TestAxesManagerExtent:
             signal_axis1.low_value, signal_axis1.high_value,
         )
         assert signal_extent == s.axes_manager.signal_extent
+
+
+class CallCounter:
+
+    def __init__(self):
+        self.count = 0
+
+    def call(self):
+        self.count += 1
+
+
+def test_setting_indices():
+    s = Signal1D(arange(1000).reshape(10, 10, 10))
+
+    call_count = CallCounter()
+    s.axes_manager.events.indices_changed.connect(call_count.call, [])
+
+    # both indices are changed but the event is triggered only once
+    s.axes_manager.indices = (5, 5)
+    assert s.axes_manager.indices == (5, 5)
+    assert call_count.count == 1
+
+    # indices not changed, so the event is not triggered
+    s.axes_manager.indices == (5, 5)
+    assert s.axes_manager.indices == (5, 5)
+    assert call_count.count == 1
+
+    # both indices changed again, call only once
+    s.axes_manager.indices = (2, 3)
+    assert s.axes_manager.indices == (2, 3)
+    assert call_count.count == 2
+
+    # single index changed, call only once
+    s.axes_manager.indices = (2, 2)
+    assert s.axes_manager.indices == (2, 2)
+    assert call_count.count == 3
