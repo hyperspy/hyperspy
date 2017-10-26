@@ -22,7 +22,10 @@ import scipy.constants as constants
 import numpy as np
 from dask.array import Array as daArray
 
-from hyperspy.signals import (Signal2D, BaseSignal, Signal1D, LazySignal)
+from hyperspy._signals.signal2d import Signal2D
+from hyperspy.signal import BaseSignal
+from hyperspy._signals.signal1d import Signal1D
+from hyperspy._signals.lazy import LazySignal
 from hyperspy.misc.holography.reconstruct import (
     reconstruct, estimate_sideband_position, estimate_sideband_size)
 
@@ -76,11 +79,14 @@ class HologramImage(Signal2D):
             md.set_item("Acquisition_instrument.TEM.Biprism.voltage",
                         biprism_voltage)
         if tilt_stage is not None:
-            md.set_item("Acquisition_instrument.TEM.tilt_stage", tilt_stage)
+            md.set_item(
+                "Acquisition_instrument.TEM.Stage.tilt_alpha",
+                tilt_stage)
 
     def estimate_sideband_position(self,
                                    ap_cb_radius=None,
                                    sb='lower',
+                                   high_cf=True,
                                    show_progressbar=False,
                                    parallel=None):
         """
@@ -92,8 +98,12 @@ class HologramImage(Signal2D):
             The aperture radius used to mask out the centerband.
         sb : str, optional
             Chooses which sideband is taken. 'lower' or 'upper'
+        high_cf : bool, optional
+            If False, the highest carrier frequency allowed for the sideband location is equal to
+            half of the Nyquist frequency (Default: True).
         show_progressbar : boolean
-            Shows progressbar while iterating over different slices of the signal (passes the parameter to map method).
+            Shows progressbar while iterating over different slices of the signal (passes the
+            parameter to map method).
         parallel : bool
             Estimate the positions in parallel
 
@@ -118,6 +128,7 @@ class HologramImage(Signal2D):
                            self.axes_manager.signal_axes[1].scale),
             central_band_mask_radius=ap_cb_radius,
             sb=sb,
+            high_cf=high_cf,
             show_progressbar=show_progressbar,
             inplace=False,
             parallel=parallel,
@@ -176,6 +187,7 @@ class HologramImage(Signal2D):
                           sb_unit=None,
                           sb='lower',
                           sb_position=None,
+                          high_cf=True,
                           output_shape=None,
                           plotting=False,
                           show_progressbar=False,
@@ -211,6 +223,9 @@ class HologramImage(Signal2D):
         sb_position : tuple, :class:`~hyperspy.signals.Signal1D, None
             The sideband position (y, x), referred to the non-shifted FFT. If
             None, sideband is determined automatically from FFT.
+        high_cf : bool, optional
+            If False, the highest carrier frequency allowed for the sideband location is equal to
+            half of the Nyquist frequency (Default: True).
         output_shape: tuple, None
             Choose a new output shape. Default is the shape of the input
             hologram. The output shape should not be larger than the input
@@ -265,7 +280,7 @@ class HologramImage(Signal2D):
                 if isinstance(reference.data, daArray):
                     reference = reference.as_lazy()
 
-        # Testing match of navigation axes of reference and self 
+        # Testing match of navigation axes of reference and self
         # (exception: reference nav_dim=1):
         if (reference and not reference.axes_manager.navigation_shape ==
                 self.axes_manager.navigation_shape and
@@ -286,10 +301,10 @@ class HologramImage(Signal2D):
                             'wrong results.')
             if reference is None:
                 sb_position = self.estimate_sideband_position(
-                    sb=sb, parallel=parallel)
+                    sb=sb, high_cf=high_cf, parallel=parallel)
             else:
                 sb_position = reference.estimate_sideband_position(
-                    sb=sb, parallel=parallel)
+                    sb=sb, high_cf=high_cf, parallel=parallel)
 
         else:
             if isinstance(sb_position, BaseSignal) and \
@@ -314,7 +329,7 @@ class HologramImage(Signal2D):
         else:
             sb_position_temp = sb_position.deepcopy()
 
-        ## Parsing sideband size
+        # Parsing sideband size
 
         # Default value is 1/2 distance between sideband and central band
         if sb_size is None:
@@ -351,8 +366,8 @@ class HologramImage(Signal2D):
         else:
             if not isinstance(sb_smoothness, BaseSignal):
                 if isinstance(
-                        sb_smoothness,
-                    (np.ndarray, daArray)) and sb_smoothness.size > 1:
+                    sb_smoothness,
+                        (np.ndarray, daArray)) and sb_smoothness.size > 1:
                     sb_smoothness = BaseSignal(sb_smoothness).T
                 else:
                     sb_smoothness = BaseSignal(sb_smoothness)
@@ -364,7 +379,8 @@ class HologramImage(Signal2D):
                 raise ValueError('Sideband smoothness dimensions do not match'
                                  ' neither reference nor hologram '
                                  'dimensions.')
-            # sb_position navdim=0, therefore map function should not iterate it:
+            # sb_position navdim=0, therefore map function should not iterate
+            # it:
             else:
                 sb_smoothness_temp = np.float64(sb_smoothness.data)
         else:
@@ -374,7 +390,7 @@ class HologramImage(Signal2D):
         if sb_unit == 'nm':
             f_sampling = np.divide(
                 1,
-                [a * b for a, b in \
+                [a * b for a, b in
                  zip(self.axes_manager.signal_shape,
                      (self.axes_manager.signal_axes[0].scale,
                       self.axes_manager.signal_axes[1].scale))]
@@ -384,7 +400,7 @@ class HologramImage(Signal2D):
         elif sb_unit == 'mrad':
             f_sampling = np.divide(
                 1,
-                [a * b for a, b in \
+                [a * b for a, b in
                  zip(self.axes_manager.signal_shape,
                      (self.axes_manager.signal_axes[0].scale,
                       self.axes_manager.signal_axes[1].scale))]
@@ -397,8 +413,8 @@ class HologramImage(Signal2D):
                                      "set_microscope_parameters method")
 
             momentum = 2 * constants.m_e * constants.elementary_charge * ht * \
-                    1000 * (1 + constants.elementary_charge * ht * \
-                            1000 / (2 * constants.m_e * constants.c ** 2))
+                1000 * (1 + constants.elementary_charge * ht *
+                        1000 / (2 * constants.m_e * constants.c ** 2))
             wavelength = constants.h / np.sqrt(momentum) * 1e9  # in nm
             sb_size_temp = sb_size_temp / (1000 * wavelength *
                                            np.mean(f_sampling))
@@ -407,8 +423,8 @@ class HologramImage(Signal2D):
 
         # Find output shape:
         if output_shape is None:
-            ##  Future improvement will give a possibility to choose
-            # if sb_size.axes_manager.navigation_size > 0: 
+            # Future improvement will give a possibility to choose
+            # if sb_size.axes_manager.navigation_size > 0:
             #     output_shape = (np.int(sb_size.inav[0].data*2), np.int(sb_size.inav[0].data*2))
             # else:
             #     output_shape = (np.int(sb_size.data*2), np.int(sb_size.data*2))
@@ -505,13 +521,14 @@ class HologramImage(Signal2D):
         wave_image.set_signal_type('complex_signal2d')
 
         wave_image.axes_manager.signal_axes[0].scale = \
-                self.axes_manager.signal_axes[0].scale * \
-                self.axes_manager.signal_shape[0] / output_shape[1]
+            self.axes_manager.signal_axes[0].scale * \
+            self.axes_manager.signal_shape[0] / output_shape[1]
         wave_image.axes_manager.signal_axes[1].scale = \
-                self.axes_manager.signal_axes[1].scale * \
-                self.axes_manager.signal_shape[1] / output_shape[0]
+            self.axes_manager.signal_axes[1].scale * \
+            self.axes_manager.signal_shape[1] / output_shape[0]
 
-        # Reconstruction parameters are stored in holo_reconstruction_parameters:
+        # Reconstruction parameters are stored in
+        # holo_reconstruction_parameters:
 
         if store_parameters:
             rec_param_dict = OrderedDict(

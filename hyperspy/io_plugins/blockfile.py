@@ -50,7 +50,7 @@ mapping = {
     'blockfile_header.Camera_length':
     ("Acquisition_instrument.TEM.camera_length", lambda x: x * 1e-4),
     'blockfile_header.Scan_rotation':
-    ("Acquisition_instrument.TEM.scan_rotation", lambda x: x * 1e-2),
+    ("Acquisition_instrument.TEM.rotation", lambda x: x * 1e-2),
 }
 
 
@@ -140,10 +140,12 @@ def get_header_from_signal(signal, endianess='<'):
     return header, note
 
 
-def file_reader(filename, endianess='<',  mmap_mode='c',
+def file_reader(filename, endianess='<', mmap_mode=None,
                 lazy=False, **kwds):
     _logger.debug("Reading blockfile: %s" % filename)
     metadata = {}
+    if mmap_mode is None:
+        mmap_mode = 'r' if lazy else 'c'
     # Makes sure we open in right mode:
     if '+' in mmap_mode or ('write' in mmap_mode and
                             'copyonwrite' != mmap_mode):
@@ -161,8 +163,16 @@ def file_reader(filename, endianess='<',  mmap_mode='c',
                       "Will attempt to read, but correcteness not guaranteed!")
     header = sarray2dict(header)
     note = f.read(header['Data_offset_1'] - f.tell())
-    note = note.strip(b'\x00')
-    header['Note'] = note.decode()
+    # It seems it uses "\x00" for padding, so we remove it
+    try:
+        header['Note'] = note.decode("latin1").strip("\x00")
+    except:
+        # Not sure about the encoding so, if it fails, we carry on
+        _logger.warn(
+            "Reading the Note metadata of this file failed. "
+            "You can help improving "
+            "HyperSpy by reporting the issue in "
+            "https://github.com/hyperspy/hyperspy")
     _logger.debug("File header: " + str(header))
     NX, NY = int(header['NX']), int(header['NY'])
     DP_SZ = int(header['DP_SZ'])
@@ -207,7 +217,8 @@ def file_reader(filename, endianess='<',  mmap_mode='c',
     units = ['nm', 'nm', 'cm', 'cm']
     names = ['y', 'x', 'dy', 'dx']
     scales = [header['SY'], header['SX'], SDP, SDP]
-    date, time, time_zone = serial_date_to_ISO_format(header['Acquisition_time'])
+    date, time, time_zone = serial_date_to_ISO_format(
+        header['Acquisition_time'])
     metadata = {'General': {'original_filename': os.path.split(filename)[1],
                             'date': date,
                             'time': time,

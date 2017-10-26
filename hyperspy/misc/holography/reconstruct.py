@@ -24,7 +24,8 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-def estimate_sideband_position(holo_data, holo_sampling, central_band_mask_radius=None, sb='lower'):
+def estimate_sideband_position(
+        holo_data, holo_sampling, central_band_mask_radius=None, sb='lower', high_cf=True):
     """
     Finds the position of the sideband and returns its position.
 
@@ -37,38 +38,44 @@ def estimate_sideband_position(holo_data, holo_sampling, central_band_mask_radiu
     central_band_mask_radius: float, optional
         The aperture radius used to mask out the centerband.
     sb : str, optional
-        Chooses which sideband is taken. 'lower' or 'upper'
+        Chooses which sideband is taken. 'lower', 'upper', 'left', or 'right'.
+    high_cf : bool, optional
+        If False, the highest carrier frequency allowed for the sideband location is equal to
+        half of the Nyquist frequency (Default: True).
 
     Returns
     -------
     Tuple of the sideband position (y, x), referred to the unshifted FFT.
     """
-
     sb_position = (0, 0)
-
     f_freq = freq_array(holo_data.shape, holo_sampling)
-
-    # If aperture radius of centerband is not given, it will be set to 5 % of the Nyquist
-    # frequency.
+    # If aperture radius of centerband is not given, it will be set to 5 % of the Nyquist frequ.:
     if central_band_mask_radius is None:
-        central_band_mask_radius = 1 / 20. * np.max(f_freq)
-
+        central_band_mask_radius = 0.05 * np.max(f_freq)
     # A small aperture masking out the centerband.
-    aperture_central_band = np.subtract(1.0, aperture_function(f_freq, central_band_mask_radius, 1e-6))  # 1e-6
-    # imitates 0
-
+    ap_cb = 1.0 - aperture_function(f_freq, central_band_mask_radius, 1e-6)
+    if not high_cf:  # Cut out higher frequencies, if necessary:
+        ap_cb *= aperture_function(f_freq, np.max(f_freq) / (2 * np.sqrt(2)), 1e-6)
+    # Imitates 0:
     fft_holo = fft2(holo_data) / np.prod(holo_data.shape)
-    fft_filtered = fft_holo * aperture_central_band
-
+    fft_filtered = fft_holo * ap_cb
     # Sideband position in pixels referred to unshifted FFT
+    cb_position = (fft_filtered.shape[0] // 2, fft_filtered.shape[1] // 2)  # cb: center band
     if sb == 'lower':
-        fft_sb = fft_filtered[:int(fft_filtered.shape[0] / 2), :]
+        fft_sb = np.abs(fft_filtered[:cb_position[0], :])
         sb_position = np.asarray(np.unravel_index(fft_sb.argmax(), fft_sb.shape))
     elif sb == 'upper':
-        fft_sb = fft_filtered[int(fft_filtered.shape[0] / 2):, :]
+        fft_sb = np.abs(fft_filtered[cb_position[0]:, :])
         sb_position = (np.unravel_index(fft_sb.argmax(), fft_sb.shape))
-        sb_position = np.asarray(np.add(sb_position, (int(fft_filtered.shape[0] / 2), 0)))
-
+        sb_position = np.asarray(np.add(sb_position, (cb_position[0], 0)))
+    elif sb == 'left':
+        fft_sb = np.abs(fft_filtered[:, :cb_position[1]])
+        sb_position = np.asarray(np.unravel_index(fft_sb.argmax(), fft_sb.shape))
+    elif sb == 'right':
+        fft_sb = np.abs(fft_filtered[:, cb_position[1]:])
+        sb_position = (np.unravel_index(fft_sb.argmax(), fft_sb.shape))
+        sb_position = np.asarray(np.add(sb_position, (0, cb_position[1])))
+    # Return sideband position:
     return sb_position
 
 
@@ -99,8 +106,8 @@ def estimate_sideband_size(sb_position, holo_shape, sb_size_ratio=0.5):
     return np.min(np.linalg.norm(h, axis=1))
 
 
-def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness, output_shape=None,
-                plotting=False):
+def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness,
+                output_shape=None, plotting=False):
     """Core function for holographic reconstruction.
 
     Parameters
@@ -128,7 +135,8 @@ def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness, o
     """
 
     holo_size = holo_data.shape
-    f_sampling = np.divide(1, [a * b for a, b in zip(holo_size, holo_sampling)])
+    f_sampling = np.divide(
+        1, [a * b for a, b in zip(holo_size, holo_sampling)])
 
     fft_exp = fft2(holo_data) / np.prod(holo_size)
 
@@ -146,11 +154,16 @@ def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness, o
     if plotting:
         _, axs = plt.subplots(1, 1, figsize=(4, 4))
         axs.imshow(np.abs(fftshift(fft_aperture)), clim=(0, 0.1))
-        axs.scatter(sb_position[1], sb_position[0], s=10, color='red', marker='x')
-        axs.set_xlim(int(holo_size[0]/2) - sb_size/np.mean(f_sampling), int(holo_size[0]/2) +
-                     sb_size/np.mean(f_sampling))
-        axs.set_ylim(int(holo_size[1]/2) - sb_size/np.mean(f_sampling), int(holo_size[1]/2) +
-                     sb_size/np.mean(f_sampling))
+        axs.scatter(
+            sb_position[1],
+            sb_position[0],
+            s=10,
+            color='red',
+            marker='x')
+        axs.set_xlim(int(holo_size[0] / 2) - sb_size / np.mean(f_sampling), int(holo_size[0] / 2) +
+                     sb_size / np.mean(f_sampling))
+        axs.set_ylim(int(holo_size[1] / 2) - sb_size / np.mean(f_sampling), int(holo_size[1] / 2) +
+                     sb_size / np.mean(f_sampling))
         plt.show()
 
     if output_shape is not None:
@@ -159,7 +172,9 @@ def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness, o
         x_min = int(holo_size[1] / 2 - output_shape[1] / 2)
         x_max = int(holo_size[1] / 2 + output_shape[1] / 2)
 
-        fft_aperture = fftshift(fftshift(fft_aperture)[y_min:y_max, x_min:x_max])
+        fft_aperture = fftshift(
+            fftshift(fft_aperture)[
+                y_min:y_max, x_min:x_max])
 
     wav = ifft2(fft_aperture) * np.prod(holo_data.shape)
 

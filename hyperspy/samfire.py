@@ -251,7 +251,8 @@ class Samfire:
                 self.change_strategy(self._active_strategy_ind + 1)
         except KeyboardInterrupt:
             if self.pool is not None:
-                _logger.warning('Collecting already started pixels, please wait')
+                _logger.warning(
+                    'Collecting already started pixels, please wait')
                 self.pool.collect_results()
 
     def append(self, strategy):
@@ -471,10 +472,13 @@ class Samfire:
                     var = self.model.signal.metadata.Signal.Noise_properties.variance
                     if isinstance(var, BaseSignal):
                         dat = var.data[ind + (...,)]
-                        value_dict['variance.data'] = dat.compute() if var._lazy else dat
-                if hasattr(self.model, 'low_loss') and self.model.low_loss is not None:
+                        value_dict['variance.data'] = dat.compute(
+                        ) if var._lazy else dat
+                if hasattr(self.model,
+                           'low_loss') and self.model.low_loss is not None:
                     dat = self.model.low_loss.data[ind + (...,)]
-                    value_dict['low_loss.data'] = dat.compute() if self.model.low_loss._lazy else dat
+                    value_dict['low_loss.data'] = dat.compute(
+                    ) if self.model.low_loss._lazy else dat
 
                 self.running_pixels.append(ind)
                 self.metadata.marker[ind] = 0.

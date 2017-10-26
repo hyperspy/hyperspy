@@ -1,27 +1,19 @@
-hyperspy.misc.io package
-========================
+hyperspy\.misc\.io package
+==========================
 
 Submodules
 ----------
 
-hyperspy.misc.io.tools module
------------------------------
+hyperspy\.misc\.io\.tools module
+--------------------------------
 
 .. automodule:: hyperspy.misc.io.tools
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy.misc.io.ttols module
------------------------------
-
-.. automodule:: hyperspy.misc.io.ttols
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-hyperspy.misc.io.utils_readfile module
---------------------------------------
+hyperspy\.misc\.io\.utils\_readfile module
+------------------------------------------
 
 .. automodule:: hyperspy.misc.io.utils_readfile
     :members:

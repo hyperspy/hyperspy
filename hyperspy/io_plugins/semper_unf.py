@@ -415,7 +415,7 @@ class SemperFormat(object):
                     warnings.warn(warning)
             # Read picture data:
             pos = f.tell()
-            shape = metadata['NLAY'], metadata[ 'NROW'], metadata['NCOL']
+            shape = metadata['NLAY'], metadata['NROW'], metadata['NCOL']
             if lazy:
                 from dask.array import from_delayed
                 from dask import delayed
@@ -677,6 +677,7 @@ def pack_to_intbytes(fmt, value):
     """
     return [int(c) for c in struct.pack(fmt, value)]
 
+
 def _read_data(fobj, fname, position, data_format, shape):
     if fobj.closed:
         fobj = open(fname, 'rb')
@@ -697,6 +698,7 @@ def _read_data(fobj, fname, position, data_format, shape):
             test = np.fromfile(fobj, dtype='<i4', count=1)[0]
             assert test == rec_length
     return data
+
 
 def file_reader(filename, **kwds):
     lazy = kwds.get('lazy', False)

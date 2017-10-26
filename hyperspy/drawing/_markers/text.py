@@ -24,17 +24,17 @@ class Text(MarkerBase):
     """Text marker that can be added to the signal figure
 
     Parameters
-    ---------
-    x: array or float
+    ----------
+    x : array or float
         The position of the text in x. If float, the marker is fixed.
         If array, the marker will be updated when navigating. The array should
-        have the same dimensions in the nagivation axes.
-    y: array or float
+        have the same dimensions in the navigation axes.
+    y : array or float
         The position of the text in y. see x arguments
-    text: array or str
+    text : array or str
         The text. see x arguments
-    kwargs:
-        Kewywords argument of axvline valid properties (i.e. recognized by
+    kwargs :
+        Keywords argument of axvline valid properties (i.e. recognized by
         mpl.plot).
 
     Example
@@ -49,6 +49,10 @@ class Text(MarkerBase):
     >>>                             text=[i for i in 'abcdefghij'])
     >>> s.add_marker(m)
 
+    Add a marker permanently to a signal
+    >>> s = hs.signals.Signal1D(np.arange(100).reshape([10,10]))
+    >>> m = hs.plot.markers.text(5, 5, "a_text")
+    >>> s.add_marker(m, permanent=True)
     """
 
     def __init__(self, x, y, text, **kwargs):
@@ -57,6 +61,18 @@ class Text(MarkerBase):
         self.marker_properties = lp
         self.set_data(x1=x, y1=y, text=text)
         self.set_marker_properties(**kwargs)
+        self.name = 'text'
+
+    def __repr__(self):
+        string = "<marker.{}, {} (x={},y={},text={},color={})>".format(
+            self.__class__.__name__,
+            self.name,
+            self.get_data_position('x1'),
+            self.get_data_position('y1'),
+            self.get_data_position('text'),
+            self.marker_properties['color'],
+        )
+        return(string)
 
     def update(self):
         if self.auto_update is False:
@@ -65,17 +81,7 @@ class Text(MarkerBase):
                                   self.get_data_position('y1')])
         self.marker.set_text(self.get_data_position('text'))
 
-    def plot(self):
-        if self.ax is None:
-            raise AttributeError(
-                "To use this method the marker needs to be first add to a " +
-                "figure using `s._plot.signal_plot.add_marker(m)` or " +
-                "`s._plot.navigator_plot.add_marker(m)`")
+    def _plot_marker(self):
         self.marker = self.ax.text(
             self.get_data_position('x1'), self.get_data_position('y1'),
             self.get_data_position('text'), **self.marker_properties)
-        self.marker.set_animated(True)
-        try:
-            self.ax.hspy_fig._draw_animated()
-        except:
-            pass

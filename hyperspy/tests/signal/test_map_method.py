@@ -13,7 +13,7 @@ class TestImage:
 
     def setup_method(self, method):
         self.im = hs.signals.Signal2D(np.arange(0., 18).reshape((2, 3, 3)))
-        self.ragged=None
+        self.ragged = None
 
     @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
     def test_constant_sigma(self, parallel):
@@ -101,7 +101,7 @@ class TestSignal1D:
 
     def setup_method(self, method):
         self.s = hs.signals.Signal1D(np.arange(0., 6).reshape((2, 3)))
-        self.ragged=None
+        self.ragged = None
 
     @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
     def test_constant_sigma(self, parallel):
@@ -123,13 +123,14 @@ class TestSignal1D:
               parallel=parallel, ragged=self.ragged)
         assert s.data.dtype is np.dtype('complex128')
 
+
 @lazifyTestClass(ragged=False)
 class TestSignal0D:
 
     def setup_method(self, method):
         self.s = hs.signals.BaseSignal(np.arange(0., 6).reshape((2, 3)))
         self.s.axes_manager.set_signal_dimension(0)
-        self.ragged=None
+        self.ragged = None
 
     @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
     def test(self, parallel):
@@ -161,7 +162,7 @@ class TestChangingAxes:
 
     def setup_method(self, method):
         self.base = hs.signals.BaseSignal(np.empty((2, 3, 4, 5, 6, 7)))
-        self.ragged=None
+        self.ragged = None
         for ax, name in zip(self.base.axes_manager._axes, _alphabet):
             ax.name = name
 
@@ -237,3 +238,19 @@ def test_new_axes(parallel):
     assert not 'a' in ax_names
     assert not 'b' in ax_names
     assert 0 == sl.axes_manager.navigation_dimension
+
+
+def test_singleton():
+    sig = hs.signals.Signal2D(np.empty((3, 2)))
+    sig.axes_manager[0].name = 'x'
+    sig.axes_manager[1].name = 'y'
+
+    # One without arguments
+    sig1 = sig.map(lambda x: 3, inplace=False)
+    sig2 = sig.map(np.sum, inplace=False)
+    sig.map(np.sum)
+    for _s in (sig1, sig2, sig):
+        assert len(_s.axes_manager._axes) == 1
+        assert _s.axes_manager[0].name == 'Scalar'
+        assert isinstance(_s, hs.signals.BaseSignal)
+        assert not isinstance(_s, hs.signals.Signal1D)

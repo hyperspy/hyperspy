@@ -85,7 +85,7 @@ keywords = {
     'THICKNESS': {'dtype': float, 'mapped_to':
                   'Sample.thickness'},
     'XTILTSTGE': {'dtype': float, 'mapped_to':
-                  'Acquisition_instrument.TEM.tilt_stage'},
+                  'Acquisition_instrument.TEM.Stage.tilt_alpha'},
     'YTILTSTGE': {'dtype': float, 'mapped_to': None},
     'XPOSITION': {'dtype': float, 'mapped_to': None},
     'YPOSITION': {'dtype': float, 'mapped_to': None},

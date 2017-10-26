@@ -52,11 +52,11 @@ def get_date_time_from_metadata(metadata, formatting='ISO'):
 
         >>> s = get_date_time_from_metadata(s.metadata)
         '1991-10-01T12:00:00'
-        >>> s = get_date_time_from_metadata(s.metadata, format='ISO')
+        >>> s = get_date_time_from_metadata(s.metadata, formatting='ISO')
         '1991-10-01T12:00:00'
-        >>> s = get_date_time_from_metadata(s.metadata, format='datetime')
+        >>> s = get_date_time_from_metadata(s.metadata, formatting='datetime')
 
-        >>> s = get_date_time_from_metadata(s.metadata, format='datetime64')
+        >>> s = get_date_time_from_metadata(s.metadata, formatting='datetime64')
 
     """
     date = metadata.get_item('General.date')
@@ -152,7 +152,10 @@ def ISO_format_to_serial_date(date, time, timezone='UTC'):
     """ Convert ISO format to a serial date. """
     if timezone is None or timezone == 'Coordinated Universal Time':
         timezone = 'UTC'
-    dt = parser.parse('%sT%s' % (date, time)).replace(tzinfo=tz.gettz(timezone))
+    dt = parser.parse(
+        '%sT%s' %
+        (date, time)).replace(
+        tzinfo=tz.gettz(timezone))
     return datetime_to_serial_date(dt)
 
 

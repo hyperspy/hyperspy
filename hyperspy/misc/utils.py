@@ -27,8 +27,8 @@ import collections
 import tempfile
 import unicodedata
 from contextlib import contextmanager
-from ..misc.signal_tools import broadcast_signals
-from ..exceptions import VisibleDeprecationWarning
+from hyperspy.misc.signal_tools import broadcast_signals
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 import numpy as np
 
@@ -388,6 +388,8 @@ class DictionaryTreeBrowser(object):
                 elif isinstance(item_['_dtb_value_'], BaseSignal):
                     item = item_['_dtb_value_']._to_dictionary()
                     key = '_sig_' + key
+                elif hasattr(item_['_dtb_value_'], '_to_dictionary'):
+                    item = item_['_dtb_value_']._to_dictionary()
                 else:
                     item = item_['_dtb_value_']
                 par_dict.__setitem__(key, item)
@@ -679,10 +681,7 @@ def find_subclasses(mod, cls):
 
 
 def isiterable(obj):
-    if isinstance(obj, collections.Iterable):
-        return True
-    else:
-        return False
+    return isinstance(obj, collections.Iterable)
 
 
 def ordinal(value):
@@ -806,7 +805,7 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     warn_str = "'{}' argument is deprecated, please use 'lazy' instead"
     for k in deprecated:
         if k in kwargs:
-            lazy=True
+            lazy = True
             warnings.warn(warn_str.format(k), VisibleDeprecationWarning)
 
     axis_input = copy.deepcopy(axis)
@@ -848,9 +847,12 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
             signal = first.__class__(newdata)
             signal._lazy = True
             signal._assign_subclass()
-            signal.axes_manager._axes[1:] = copy.deepcopy(newlist[0].axes_manager._axes)
+            signal.axes_manager._axes[1:] = copy.deepcopy(
+                newlist[0].axes_manager._axes)
             axis_name = new_axis_name
-            axis_names = [axis_.name for axis_ in signal.axes_manager._axes[1:]]
+            axis_names = [
+                axis_.name for axis_ in signal.axes_manager._axes[
+                    1:]]
             j = 1
             while axis_name in axis_names:
                 axis_name = new_axis_name + "_%i" % j
@@ -892,7 +894,8 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
             variance = stack([
                 s.metadata.Signal.Noise_properties.variance for s in signal_list
             ], axis)
-            signal.metadata.set_item('Signal.Noise_properties.variance', variance)
+            signal.metadata.set_item(
+                'Signal.Noise_properties.variance', variance)
     else:
         signal = signal_list[0]
 
@@ -939,6 +942,7 @@ def transpose(*args, signal_axes=None, navigation_axes=None, optimize=False):
                           navigation_axes=navigation_axes,
                           optimize=optimize) for sig in args]
 
+
 def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
     """To be used in _map_iterate of BaseSignal and LazySignal.
 
@@ -972,13 +976,15 @@ def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
 
     return func, iterators
 
+
 def map_result_construction(signal,
                             inplace,
                             result,
                             ragged,
                             sig_shape=None,
                             lazy=False):
-    from hyperspy.signals import (BaseSignal, LazySignal)
+    from hyperspy.signals import BaseSignal
+    from hyperspy._lazy_signals import LazySignal
     res = None
     if inplace:
         sig = signal
@@ -1004,7 +1010,10 @@ def map_result_construction(signal,
                 len(sig_shape) - sig.axes_manager.signal_dimension, 0, -1):
             sig.axes_manager._append_axis(sig_shape[-ind], navigate=False)
     sig.get_dimensions_from_data()
+    if not sig.axes_manager._axes:
+        add_scalar_axis(sig)
     return res
+
 
 def multiply(iterable):
     """Return product of sequence of numbers.
@@ -1021,3 +1030,32 @@ def multiply(iterable):
     for i in iterable:
         prod *= i
     return prod
+
+
+def iterable_not_string(thing):
+    return isinstance(thing, collections.Iterable) and \
+        not isinstance(thing, str)
+
+
+def signal_range_from_roi(signal_range):
+    from hyperspy.roi import SpanROI
+    if isinstance(signal_range, SpanROI):
+        return (signal_range.left, signal_range.right)
+    else:
+        return signal_range
+
+
+def deprecation_warning(msg):
+    warnings.warn(msg, VisibleDeprecationWarning)
+
+
+def add_scalar_axis(signal):
+    am = signal.axes_manager
+    from hyperspy.signal import BaseSignal
+    signal.__class__ = BaseSignal
+    am.remove(am._axes)
+    am._append_axis(size=1,
+                    scale=1,
+                    offset=0,
+                    name="Scalar",
+                    navigate=False)

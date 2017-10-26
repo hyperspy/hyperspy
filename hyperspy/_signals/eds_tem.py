@@ -17,17 +17,59 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import warnings
+import logging
+
 import traits.api as t
 import numpy as np
 from scipy import constants
+
+from hyperspy.signal import BaseSetMetadataItems
 from hyperspy import utils
 from hyperspy._signals.eds import (EDSSpectrum, LazyEDSSpectrum)
-from hyperspy.decorators import only_interactive
-from hyperspy.gui.eds import TEMParametersUI
 from hyperspy.defaults_parser import preferences
-import hyperspy.gui.messages as messagesui
 from hyperspy.misc.eds import utils as utils_eds
-import warnings
+from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
+
+_logger = logging.getLogger(__name__)
+
+
+@add_gui_method(toolkey="microscope_parameters_EDS_TEM")
+class EDSTEMParametersUI(BaseSetMetadataItems):
+    beam_energy = t.Float(t.Undefined,
+                          label='Beam energy (keV)')
+    real_time = t.Float(t.Undefined,
+                        label='Real time (s)')
+    tilt_stage = t.Float(t.Undefined,
+                         label='Stage tilt (degree)')
+    live_time = t.Float(t.Undefined,
+                        label='Live time (s)')
+    probe_area = t.Float(t.Undefined,
+                         label='Beam/probe area (nm^2)')
+    azimuth_angle = t.Float(t.Undefined,
+                            label='Azimuth angle (degree)')
+    elevation_angle = t.Float(t.Undefined,
+                              label='Elevation angle (degree)')
+    energy_resolution_MnKa = t.Float(t.Undefined,
+                                     label='Energy resolution MnKa (eV)')
+    beam_current = t.Float(t.Undefined,
+                           label='Beam current (nA)')
+    mapping = {
+        'Acquisition_instrument.TEM.beam_energy': 'beam_energy',
+        'Acquisition_instrument.TEM.Stage.tilt_alpha': 'tilt_stage',
+        'Acquisition_instrument.TEM.Detector.EDS.live_time': 'live_time',
+        'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
+        'azimuth_angle',
+        'Acquisition_instrument.TEM.Detector.EDS.elevation_angle':
+        'elevation_angle',
+        'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
+        'energy_resolution_MnKa',
+        'Acquisition_instrument.TEM.beam_current':
+        'beam_current',
+        'Acquisition_instrument.TEM.probe_area':
+        'probe_area',
+        'Acquisition_instrument.TEM.Detector.EDS.real_time':
+        'real_time', }
 
 
 class EDSTEM_mixin:
@@ -53,9 +95,9 @@ class EDSTEM_mixin:
         mp.Signal.signal_type = "EDS_TEM"
 
         mp = self.metadata
-        if "Acquisition_instrument.TEM.tilt_stage" not in mp:
+        if "Acquisition_instrument.TEM.Stage.tilt_alpha" not in mp:
             mp.set_item(
-                "Acquisition_instrument.TEM.tilt_stage",
+                "Acquisition_instrument.TEM.Stage.tilt_alpha",
                 preferences.EDS.eds_tilt_stage)
         if "Acquisition_instrument.TEM.Detector.EDS.elevation_angle" not in mp:
             mp.set_item(
@@ -80,47 +122,15 @@ class EDSTEM_mixin:
                                   energy_resolution_MnKa=None,
                                   beam_current=None,
                                   probe_area=None,
-                                  real_time=None):
-        """Set the microscope parameters.
+                                  real_time=None,
+                                  display=True,
+                                  toolkit=None):
+        if set([beam_energy, live_time, tilt_stage, azimuth_angle,
+                elevation_angle, energy_resolution_MnKa]) == {None}:
+            tem_par = EDSTEMParametersUI(self)
+            return tem_par.gui(display=display, toolkit=toolkit)
 
-        If no arguments are given, raises an interactive mode to fill
-        the values.
-
-        Parameters
-        ----------
-        beam_energy: float
-            The energy of the electron beam in keV
-        live_time : float
-            In seconds
-        tilt_stage : float
-            In degree
-        azimuth_angle : float
-            In degree
-        elevation_angle : float
-            In degree
-        energy_resolution_MnKa : float
-            In eV
-        beam_current: float
-            In nA
-        probe_area: float
-            In nm^2
-        real_time: float
-            In seconds
-
-        Examples
-        --------
-        >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
-        >>> print(s.metadata.Acquisition_instrument.
-        >>>       TEM.Detector.EDS.energy_resolution_MnKa)
-        >>> s.set_microscope_parameters(energy_resolution_MnKa=135.)
-        >>> print(s.metadata.Acquisition_instrument.
-        >>>       TEM.Detector.EDS.energy_resolution_MnKa)
-        133.312296
-        135.0
-
-        """
         md = self.metadata
-
         if beam_energy is not None:
             md.set_item("Acquisition_instrument.TEM.beam_energy ", beam_energy)
         if live_time is not None:
@@ -128,7 +138,9 @@ class EDSTEM_mixin:
                 "Acquisition_instrument.TEM.Detector.EDS.live_time",
                 live_time)
         if tilt_stage is not None:
-            md.set_item("Acquisition_instrument.TEM.tilt_stage", tilt_stage)
+            md.set_item(
+                "Acquisition_instrument.TEM.Stage.tilt_alpha",
+                tilt_stage)
         if azimuth_angle is not None:
             md.set_item(
                 "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
@@ -154,62 +166,48 @@ class EDSTEM_mixin:
             md.set_item(
                 "Acquisition_instrument.TEM.Detector.EDS.real_time",
                 real_time)
+    set_microscope_parameters.__doc__ = \
+        """
+        Set the microscope parameters.
 
-        if set([beam_energy, live_time, tilt_stage, azimuth_angle,
-                elevation_angle, energy_resolution_MnKa]) == {None}:
-            self._are_microscope_parameters_missing()
+        If no arguments are given, raises an interactive mode to fill
+        the values.
 
-    @only_interactive
-    def _set_microscope_parameters(self):
-        tem_par = TEMParametersUI()
-        mapping = {
-            'Acquisition_instrument.TEM.beam_energy':
-            'tem_par.beam_energy',
-            'Acquisition_instrument.TEM.tilt_stage':
-            'tem_par.tilt_stage',
-            'Acquisition_instrument.TEM.Detector.EDS.live_time':
-            'tem_par.live_time',
-            'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
-            'tem_par.azimuth_angle',
-            'Acquisition_instrument.TEM.Detector.EDS.elevation_angle':
-            'tem_par.elevation_angle',
-            'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
-            'tem_par.energy_resolution_MnKa',
-            'Acquisition_instrument.TEM.beam_current':
-            'tem_par.beam_current',
-            'Acquisition_instrument.TEM.probe_area':
-            'tem_par.probe_area',
-            'Acquisition_instrument.TEM.Detector.EDS.real_time':
-            'tem_par.real_time', }
-        for key, value in mapping.items():
-            if self.metadata.has_item(key):
-                exec('%s = self.metadata.%s' % (value, key))
-        tem_par.edit_traits()
+        Parameters
+        ----------
+        beam_energy: float
+            The energy of the electron beam in keV
+        live_time : float
+            In seconds
+        tilt_stage : float
+            In degree
+        azimuth_angle : float
+            In degree
+        elevation_angle : float
+            In degree
+        energy_resolution_MnKa : float
+            In eV
+        beam_current: float
+            In nA
+        probe_area: float
+            In nm^2
+        real_time: float
+            In seconds
+        {}
+        {}
 
-        mapping = {
-            'Acquisition_instrument.TEM.beam_energy':
-            tem_par.beam_energy,
-            'Acquisition_instrument.TEM.tilt_stage':
-            tem_par.tilt_stage,
-            'Acquisition_instrument.TEM.Detector.EDS.live_time':
-            tem_par.live_time,
-            'Acquisition_instrument.TEM.Detector.EDS.azimuth_angle':
-            tem_par.azimuth_angle,
-            'Acquisition_instrument.TEM.Detector.EDS.elevation_angle':
-            tem_par.elevation_angle,
-            'Acquisition_instrument.TEM.Detector.EDS.energy_resolution_MnKa':
-            tem_par.energy_resolution_MnKa,
-            'Acquisition_instrument.TEM.beam_current':
-            tem_par.beam_current,
-            'Acquisition_instrument.TEM.probe_area':
-            tem_par.probe_area,
-            'Acquisition_instrument.TEM.Detector.EDS.real_time':
-            tem_par.real_time, }
+        Examples
+        --------
+        >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()
+        >>> print(s.metadata.Acquisition_instrument.
+        >>>       TEM.Detector.EDS.energy_resolution_MnKa)
+        >>> s.set_microscope_parameters(energy_resolution_MnKa=135.)
+        >>> print(s.metadata.Acquisition_instrument.
+        >>>       TEM.Detector.EDS.energy_resolution_MnKa)
+        133.312296
+        135.0
 
-        for key, value in mapping.items():
-            if value != t.Undefined:
-                self.metadata.set_item(key, value)
-        self._are_microscope_parameters_missing()
+        """.format(DISPLAY_DT, TOOLKIT_DT)
 
     def _are_microscope_parameters_missing(self):
         """Check if the EDS parameters necessary for quantification
@@ -225,18 +223,8 @@ class EDSTEM_mixin:
             if exists is False:
                 missing_parameters.append(item)
         if missing_parameters:
-            if preferences.General.interactive is True:
-                par_str = "The following parameters are missing:\n"
-                for par in missing_parameters:
-                    par_str += '%s\n' % par
-                par_str += 'Please set them in the following wizard'
-                is_ok = messagesui.information(par_str)
-                if is_ok:
-                    self._set_microscope_parameters()
-                else:
-                    return True
-            else:
-                return True
+            _logger.info("Missing parameters {}".format(missing_parameters))
+            return True
         else:
             return False
 
@@ -659,5 +647,5 @@ class EDSTEMSpectrum(EDSTEM_mixin, EDSSpectrum):
     pass
 
 
-class LazyEDSTEMSpectrum(EDSTEM_mixin, LazyEDSSpectrum):
+class LazyEDSTEMSpectrum(EDSTEMSpectrum, LazyEDSSpectrum):
     pass
