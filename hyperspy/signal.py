@@ -3192,7 +3192,7 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> im = hs.signals.Signal2D(scipy.misc.lena())
+        >>> im = hs.signals.Signal2D(scipy.misc.ascent())
         >>> im.fft()
         <Image, title: FFT of , dimensions: (|512, 512)>
 
@@ -3238,8 +3238,9 @@ class BaseSignal(FancySlicing,
         Compute the inverse discrete Fourier Transform.
 
         This function computes real part of the inverse of the discrete
-        Fourier Transform over the signal axes by
-        means of the Fast Fourier Transform (FFT).
+        Fourier Transform over the signal axes by means of the
+        Fast Fourier Transform (FFT) as implemented in
+        numpy.
 
         Parameters
         ----------
@@ -3247,7 +3248,7 @@ class BaseSignal(FancySlicing,
             If True, the origin of FFT will be shifted in the centre (Default: False).
 
         **kwargs
-            other keyword arguments are described in np.fft.ifft().
+            other keyword arguments are described in np.fft.ifftn().
 
         Return
         ------
@@ -3255,7 +3256,8 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        >>> im = hs.signals.Signal2D(scipy.misc.lena())
+        >>> import scipy
+        >>> im = hs.signals.Signal2D(scipy.misc.ascent())
         >>> imfft = im.fft()
         >>> imfft.ifft()
         <Image, title: iFFT of FFT of , dimensions: (|512, 512)>
