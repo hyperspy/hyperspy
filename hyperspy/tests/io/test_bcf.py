@@ -14,7 +14,9 @@ test_files = ['P45_instructively_packed_16bit_compressed.bcf',
               'P45_12bit_packed_8bit.bcf',
               'P45_the_default_job.bcf',
               'test_TEM.bcf',
-              'Hitachi_TM3030Plus.bcf']
+              'Hitachi_TM3030Plus.bcf',
+              'over16bit.bcf',
+              'bcf_v2_50x50px.bcf']
 np_file = ['P45_16bit.npy', 'P45_16bit_ds.npy']
 
 my_path = os.path.dirname(__file__)
@@ -104,7 +106,11 @@ def test_hyperspy_wrap():
                                                                       'azimuth_angle': 90.0,
                                                                       'real_time': 328.8}},
                                                  'magnification': 131.1433,
-                                                 'tilt_stage': 0.5}},
+                                                 'Stage': {'tilt_alpha': 0.5,
+                                                           'rotation': 329.49719,
+                                                           'x': 62409.2,
+                                                           'y': 36517.61,
+                                                           'z': 40234.7}}, },
               'General': {'title': 'EDX',
                           'time': '17:05:03',
                           'original_filename': 'P45_instructively_packed_16bit_compressed.bcf',
@@ -120,6 +126,7 @@ def test_hyperspy_wrap():
     with open(filename_omd) as fn:
         # original_metadata:
         omd_ref = json.load(fn)
+    print(hype.metadata)
     assert_deep_almost_equal(hype.metadata.as_dictionary(), md_ref)
     assert_deep_almost_equal(hype.original_metadata.as_dictionary(), omd_ref)
     assert hype.metadata.General.date == "2016-04-01"
@@ -187,3 +194,19 @@ def test_wrong_file():
     filename = os.path.join(my_path, 'bcf_data', 'Nope.bcf')
     with pytest.raises(TypeError):
         load(filename)
+
+def test_decimal_regex():
+    lxml = pytest.importorskip("lxml")
+    from hyperspy.io_plugins.bcf import fix_dec_patterns
+    dummy_xml_positive = [b'<dummy_tag>85,658</dummy_tag>',
+                          b'<dummy_tag>85,658E-8</dummy_tag>',
+                          b'<dummy_tag>-85,658E-8</dummy_tag>',
+                          b'<dum_tag>-85.658</dum_tag>',  # negative check
+                          b'<dum_tag>85.658E-8</dum_tag>']  # negative check
+    dummy_xml_negative = [b'<dum_tag>12,25,23,45,56,12,45</dum_tag>',
+                          b'<dum_tag>12e1,23,-24E-5</dum_tag>']
+    for i in dummy_xml_positive:
+        assert b'85.658' in fix_dec_patterns.sub(b'\\1.\\2', i)
+    for j in dummy_xml_negative:
+        assert b'.' not in fix_dec_patterns.sub(b'\\1.\\2', j)
+    

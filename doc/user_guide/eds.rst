@@ -5,7 +5,7 @@ Energy-Dispersive X-ray Spectrometry (EDS)
 
 The methods described in this chapter are specific to the following signals:
 
-* :py:class:`~._signals.eds_tem.EDSTEMSpectrum`
+* :py:class:`~._signals.eds_tem.EDSTEM`
 * :py:class:`~._signals.eds_sem.EDSSEMSpectrum`
 
 This chapter describes step-by-step the analysis of an EDS
@@ -14,7 +14,7 @@ spectrum (SEM or TEM).
 .. NOTE::
     See also the `EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-	demos/blob/master/electron_microscopy/EDS/>`_ .
 
-Signal1D loading and parameters
+Spectrum loading and parameters
 -------------------------------
 
 The sample and  data used in this section are described in [Burdet2013]_, and can be
@@ -22,8 +22,12 @@ downloaded using:
 
 .. code-block:: python
 
-    >>> from urllib import urlretrieve
-    >>> url = 'http://cook.msm.cam.ac.uk//~hyperspy//EDS_tutorial//'
+    >>> #Download the data (130MB)
+    >>> from urllib.request import urlretrieve, urlopen
+    >>> from zipfile import ZipFile
+    >>> files = urlretrieve("https://www.dropbox.com/s/s7cx92mfh2zvt3x/HyperSpy_demos_EDX_SEM_files.zip?raw=1", "./HyperSpy_demos_EDX_SEM_files.zip")
+    >>> with ZipFile("HyperSpy_demos_EDX_SEM_files.zip") as z:
+    >>>     z.extractall()
     >>> urlretrieve(url + 'Ni_superalloy_1pix.msa', 'Ni_superalloy_1pix.msa')
     >>> urlretrieve(url + 'Ni_superalloy_010.rpl', 'Ni_superalloy_010.rpl')
     >>> urlretrieve(url + 'Ni_superalloy_010.raw', 'Ni_superalloy_010.raw')
@@ -117,7 +121,7 @@ You can also set these parameters directly:
     >>> s.metadata.Acquisition_instrument.SEM.beam_energy = 30
 
 or by using the
-:py:meth:`~._signals.eds_tem.EDSTEMSpectrum.set_microscope_parameters` method:
+:py:meth:`~._signals.eds_tem.EDSTEM_mixin.set_microscope_parameters` method:
 
 .. code-block:: python
 
@@ -191,7 +195,7 @@ Copying spectrum calibration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 All of the above parameters can be copied from one spectrum to another
-with the :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.get_calibration_from`
+with the :py:meth:`~._signals.eds_tem.EDSTEM_mixin.get_calibration_from`
 method.
 
 .. code-block:: python
@@ -234,8 +238,8 @@ Elements
 ^^^^^^^^
 
 The elements present in the sample can be defined using the
-:py:meth:`~._signals.eds.EDSSpectrum.set_elements`  and
-:py:meth:`~._signals.eds.EDSSpectrum.add_elements` methods.  Only element
+:py:meth:`~._signals.eds.EDS_mixin.set_elements`  and
+:py:meth:`~._signals.eds.EDS_mixin.add_elements` methods.  Only element
 abbreviations are accepted:
 
 .. code-block:: python
@@ -250,8 +254,8 @@ X-ray lines
 ^^^^^^^^^^^
 
 Similarly, the X-ray lines can be defined using the
-:py:meth:`~._signals.eds.EDSSpectrum.set_lines` and
-:py:meth:`~._signals.eds.EDSSpectrum.add_lines` methods. The corresponding
+:py:meth:`~._signals.eds.EDS_mixin.set_lines` and
+:py:meth:`~._signals.eds.EDS_mixin.add_lines` methods. The corresponding
 elements will be added automatically.
 Several lines per element can be defined at once.
 
@@ -338,7 +342,7 @@ Finding elements from energy
 ^^^^^^^^^^^^^^^^
 
 To find the nearest X-ray line for a given energy, use the utility function
-:py:meth:`~.utils.eds.get_xray_lines_near_energy` to search the elemental
+:py:func:`~.misc.eds.utils.get_xray_lines_near_energy` to search the elemental
 database:
 
 .. code-block:: python
@@ -377,7 +381,7 @@ A mass absorption coefficient database [Chantler2005]_ is available:
 Plotting
 --------
 
-You can visualize an EDS spectrum using the :py:meth:`~.signals.eds.EDSSpectrum.plot`
+You can visualize an EDS spectrum using the :py:meth:`~._signals.eds.EDSSpectrum.plot`
 method (see :ref:`visualisation<visualization-label>`). For example:
 
 .. code-block:: python
@@ -402,9 +406,9 @@ Plotting X-ray lines
 
 .. versionadded:: 0.8
 
-X-ray lines can be added as plot labels with :py:meth:`~.signals.eds.EDSSpectrum.plot`.
+X-ray lines can be added as plot labels with :py:meth:`~._signals.eds.EDSSpectrum.plot`.
 The lines are either retrieved from "metadata.Sample.Xray_lines",
-or selected with the same method as :py:meth:`~._signals.eds.EDSSpectrum.add_lines`
+or selected with the same method as :py:meth:`~._signals.eds.EDS_mixin.add_lines`
 using the elements in "metadata.Sample.elements".
 
 .. code-block:: python
@@ -446,9 +450,12 @@ can be downloaded using:
 
 .. code-block:: python
 
-    >>> from urllib import urlretrieve
-    >>> url = 'http://cook.msm.cam.ac.uk//~hyperspy//EDS_tutorial//'
-    >>> urlretrieve(url + 'core_shell.hdf5', 'core_shell.hdf5')
+    >>> #Download the data (1MB)
+    >>> from urllib.request import urlretrieve, urlopen
+    >>> from zipfile import ZipFile
+    >>> files = urlretrieve("https://www.dropbox.com/s/ecdlgwxjq04m5mx/HyperSpy_demos_EDS_TEM_files.zip?raw=1", "./HyperSpy_demos_EDX_TEM_files.zip")
+    >>> with ZipFile("HyperSpy_demos_EDX_TEM_files.zip") as z:
+    >>>     z.extractall()
 
 The width of integration is defined by extending the energy resolution of
 Mn Ka to the peak energy ("energy_resolution_MnKa" in metadata):
@@ -475,11 +482,11 @@ are used by default:
     [<Signal2D, title: X-ray line intensity of Core shell: Fe_Ka at 6.40 keV, dimensions: (|64, 64)>,
     <Signal2D, title: X-ray line intensity of Core shell: Pt_La at 9.44 keV, dimensions: (|64, 64)>]
 
-Finally, the windows of integration can be visualised using :py:meth:`~._signals.eds.EDSSpectrum.plot` method:
+Finally, the windows of integration can be visualised using :py:meth:`~._signals.eds.EDS_mixin.plot` method:
 
 .. code-block:: python
 
-    >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()[5.:13.]
+    >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum().isig[5.:13.]
     >>> s.add_lines()
     >>> s.plot(integration_windows='auto')
 
@@ -497,16 +504,16 @@ Background subtraction
 .. versionadded:: 0.8
 
 The background can be subtracted from the X-ray intensities with
-:py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`.
+:py:meth:`~._signals.eds.EDS_mixin.get_lines_intensity`.
 The background value is obtained by averaging the intensity in two
 windows on each side of the X-ray line.
 The position of the windows can be estimated using
-:py:meth:`~._signals.eds.EDSSpectrum.estimate_background_windows`, and
-can be plotted using :py:meth:`~._signals.eds.EDSSpectrum.plot`:
+:py:meth:`~._signals.eds.EDS_mixin.estimate_background_windows`, and
+can be plotted using :py:meth:`~._signals.eds.EDS_mixin.plot`:
 
 .. code-block:: python
 
-    >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum()[5.:13.]
+    >>> s = hs.datasets.example_signals.EDS_TEM_Spectrum().isig[5.:13.]
     >>> s.add_lines()
     >>> bw = s.estimate_background_windows(line_width=[5.0, 2.0])
     >>> s.plot(background_windows=bw)
@@ -534,15 +541,15 @@ HyperSpy now includes three methods for EDS quantification:
 * Ionization cross sections
 
 Quantification must be applied to the background-subtracted intensities, which can
-be found using :py:meth:`~._signals.eds.EDSSpectrum.get_lines_intensity`.
+be found using :py:meth:`~._signals.eds.EDS_mixin.get_lines_intensity`.
 The quantification of these intensities can then be calculated using
-:py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`.
+:py:meth:`~._signals.eds_tem.EDSTEM_mixin.quantification`.
 
 The quantification method needs be specified as either 'CL', 'zeta', or 'cross_section'.
 If no method is specified, the function will raise an exception.
 
 A list of factors or cross sections should be supplied in the same order as the listed intensities
-(please note that HyperSpy intensities in :py:meth:~._signals.eds.EDSSpectrum.get_lines_intensity
+(please note that HyperSpy intensities in :py:meth:`~._signals.eds.EDS_mixin.get_lines_intensity`
 are in alphabetical order).
 
 A set of k-factors can be usually found in the EDS manufacturer software
@@ -550,9 +557,12 @@ although determination from standard samples for the particular instrument used
 is usually preferable. In the case of zeta-factors and cross sections, these must
 be determined experimentally using standards.
 
-Zeta-factors should be provided in units of kg/m^2. The method is described further in [Watanabe1996]_ and [Watanabe2006]_ .
-Cross sections should be provided in units of barns (b). Further details on the cross section method can be found in [MacArthur2016]_ .
-Conversion between zeta-factors and cross sections is possible using :py:meth:~._misc.eds.util.edx_cross_section_to_zeta or :py:meth:~._misc.eds.util.zeta_to_edx_cross_section .
+Zeta-factors should be provided in units of kg/m^2. The method is described
+further in [Watanabe1996]_ and [Watanabe2006]_ . Cross sections should be
+provided in units of barns (b). Further details on the cross section method can
+be found in [MacArthur2016]_ . Conversion between zeta-factors and cross
+sections is possible using :py:func:`~.misc.eds.utils.edx_cross_section_to_zeta`
+or :py:func:`~.misc.eds.utils.zeta_to_edx_cross_section`.
 
 Using the Cliff-Lorimer method as an example, quantification can be carried out as follows:
 
@@ -563,17 +573,17 @@ Using the Cliff-Lorimer method as an example, quantification can be carried out 
     >>> kfactors = [1.450226, 5.075602] #For Fe Ka and Pt La
     >>> bw = s.estimate_background_windows(line_width=[5.0, 2.0])
     >>> intensities = s.get_lines_intensity(background_windows=bw)
-    >>> atomic_percent = s.quantification(intensities, method='CL', kfactors)
+    >>> atomic_percent = s.quantification(intensities, method='CL', factors=kfactors)
     Fe (Fe_Ka): Composition = 15.41 atomic percent
     Pt (Pt_La): Composition = 84.59 atomic percent
 
 The obtained composition is in atomic percent, by default. However, it can be
-transformed into weight percent either with the option :py:meth:`~._signals.eds_tem.EDSTEMSpectrum.quantification`:
+transformed into weight percent either with the option :py:meth:`~._signals.eds_tem.EDSTEM_mixin.quantification`:
 
 .. code-block:: python
 
     >>> # With s, intensities and kfactors from before
-    >>> s.quantification(intensities, method='CL',kfactors,
+    >>> s.quantification(intensities, method='CL', factors=kfactors,
     >>>                  composition_units='weight')
     Fe (Fe_Ka): Composition = 4.96 weight percent
     Pt (Pt_La): Composition = 95.04 weight percent
@@ -653,9 +663,10 @@ set the beam energy:
     >>> s.add_elements(['Al', 'Ar', 'C', 'Cu', 'Mn', 'Zr'])
     >>> s.set_microscope_parameters(beam_energy=10)
 
-Next, the model is created with :py:func:`~._signals.eds_sem.create_model`. One
-Gaussian is automatically created per X-ray line, along with a polynomial for
-the background.
+Next, the model is created with
+:py:meth:`~._signals.eds_sem.EDSSEM_mixin.create_model`. One Gaussian is
+automatically created per X-ray line, along with a polynomial for the
+background.
 
 .. code-block:: python
 

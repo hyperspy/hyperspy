@@ -638,7 +638,7 @@ def _add_spc_metadata(metadata, spc_header):
                       'energy_resolution_MnKa': spc_header['detReso'],
                       'live_time': spc_header['liveTime']}},
              'beam_energy': spc_header['kV'],
-             'tilt_stage': spc_header['tilt']}
+             'Stage': {'tilt_alpha': spc_header['tilt']}}
     }
 
     # Get elements stored in spectrum:
@@ -869,7 +869,7 @@ def spd_reader(filename,
         if nav_units not in [None, 'um']:
             _logger.warning("Did not understand nav_units input \"{}\". "
                             "Defaulting to microns.\n".format(nav_units))
-        nav_units = '$\mu m$'
+        nav_units = r'$\mu m$'
 
     # Create navigation axes dictionaries:
     x_axis = {

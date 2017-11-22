@@ -36,7 +36,7 @@ class VolumePlasmonDrude(Component):
     +------------+-----------------+
     |    E_p     |  plasmon_energy |
     +------------+-----------------+
-    | delta_E_p  |fwhm|
+    | delta_E_p  |      fwhm       |
     +------------+-----------------+
     | intensity  |   intensity     |
     +------------+-----------------+
@@ -50,13 +50,13 @@ class VolumePlasmonDrude(Component):
 
     """
 
-    def __init__(self):
+    def __init__(self, intensity=1., plasmon_energy=15., fwhm=1.5):
         Component.__init__(self, ['intensity', 'plasmon_energy',
                                   'fwhm'])
         self._position = self.plasmon_energy
-        self.intensity.value = 1
-        self.plasmon_energy.value = 7.1
-        self.fwhm.value = 2.3
+        self.intensity.value = intensity
+        self.plasmon_energy.value = plasmon_energy
+        self.fwhm.value = fwhm
         self.plasmon_energy.grad = self.grad_plasmon_energy
         self.fwhm.grad = self.grad_fwhm
         self.intensity.grad = self.grad_intensity

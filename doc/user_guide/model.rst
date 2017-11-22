@@ -6,7 +6,7 @@ two-dimensional signals (images) in n-dimensional data sets. Models can be
 created as a linear combination of predefined components and multiple
 optimisation algorithms can be used to fit the model to experimental data.
 Bounds and weights are supported. The syntax for creating both kinds of model
-is essentially the same as in this documentation any method referred to in
+is essentially the same, as in this documentation any method referred to in
 the :py:class`~.model.BaseModel` class is available for both kinds.
 
 .. _2D_model-label:
@@ -30,6 +30,14 @@ Before creating a model verify that the ``Signal.binned`` metadata
 attribute of the signal is set to the correct value because the resulting
 model depends on this parameter. See :ref:`signal.binned` for more details.
 
+.. Warning::
+
+   When importing data that have been binned using other software, in particular Gatan's DM,
+   the stored values may be the averages of the binned channels or pixels, instead of their sum,
+   as would be required for proper statistical analysis. We therefore cannot guarantee
+   that the statistics will be valid. We therefore strongly recommend that all
+   pre-fitting binning should be done using Hyperspy.
+
 Creating a model
 ----------------
 
@@ -39,7 +47,7 @@ A :py:class:`~.models.model1D.Model1D` can be created for data in the
 
 .. code-block:: python
 
-    >>> s = hs.signals.Signal1D('SomeDataHere') # or load the data from a file
+    >>> s = hs.signals.Signal1D(np.arange(300).reshape(30, 10)) # or load the data from a file
     >>> m = s.create_model() # Creates the 1D-Model and asign it to the variable m
 
 Similarly A :py:class:`~.models.model2D.Model2D` can be created for data in the
@@ -48,7 +56,7 @@ Similarly A :py:class:`~.models.model2D.Model2D` can be created for data in the
 
 .. code-block:: python
 
-    >>> im = hs.signals.Signal2D('SomeDataHere') # Load the data from a file
+    >>> im = hs.signals.Signal2D(np.arange(300).reshape(3, 10, 10)) # Load the data from a file
     >>> mod = im.create_model() # Create the 2D-Model and asign it to the variable mod
 
 The syntax for creating both one-dimensional and two-dimensional models is thus
@@ -123,11 +131,11 @@ parameters for spectroscopy than the one that ships with HyperSpy:
     ... position="x0",
     ... height=1,
     ... fwhm=1,
-    ... centre=0,
+    ... x0=0,
     ... module="numpy")
 
 If the expression is inconvenient to write out in full (e.g. it's long and/or
-complicated), multiple substitutions can be given, separated by semicolumns.
+complicated), multiple substitutions can be given, separated by semicolons.
 Both symbolic and numerical substitutions are allowed:
 
 .. code-block:: python
@@ -150,10 +158,10 @@ we create a 2D gaussian that rotates around its center:
 
 .. code-block:: python
 
-    g = hs.model.components2D.Expression(
-        "k * exp(-((x-x0)**2 / (2 * sx ** 2) + (y-y0)**2 / (2 * sy ** 2)))",
-        "Gaussian2d", add_rotation=True, position=("x0", "y0"),
-        module="numpy", )
+    >>> g = hs.model.components2D.Expression(
+    ... "k * exp(-((x-x0)**2 / (2 * sx ** 2) + (y-y0)**2 / (2 * sy ** 2)))",
+    ... "Gaussian2d", add_rotation=True, position=("x0", "y0"),
+    ... module="numpy", )
 
 
 Of course :py:class:`~._components.expression.Expression` is only useful for analytical
@@ -176,26 +184,26 @@ a component is very easy, just modify the following template to suit your needs:
             Component.__init__(self, ('parameter_1', 'parameter_2'))
 
             # Optionally we can set the initial values
-             self.parameter_1.value = parameter_1
-             self.parameter_1.value = parameter_1
+            self.parameter_1.value = parameter_1
+            self.parameter_1.value = parameter_1
 
             # The units (optional)
-             self.parameter_1.units = 'Tesla'
-             self.parameter_2.units = 'Kociak'
+            self.parameter_1.units = 'Tesla'
+            self.parameter_2.units = 'Kociak'
 
             # Once defined we can give default values to the attribute is we want
             # For example we fix the attribure_1 (optional)
-             self.parameter_1.attribute_1.free = False
+            self.parameter_1.attribute_1.free = False
 
             # And we set the boundaries (optional)
-             self.parameter_1.bmin = 0.
-             self.parameter_1.bmax = None
+            self.parameter_1.bmin = 0.
+            self.parameter_1.bmax = None
 
             # Optionally, to boost the optimization speed we can define also define
             # the gradients of the function we the syntax:
             # self.parameter.grad = function
-             self.parameter_1.grad = self.grad_parameter_1
-             self.parameter_2.grad = self.grad_parameter_2
+            self.parameter_1.grad = self.grad_parameter_1
+            self.parameter_2.grad = self.grad_parameter_2
 
         # Define the function as a function of the already defined parameters, x
         # being the independent variable value
@@ -205,17 +213,17 @@ a component is very easy, just modify the following template to suit your needs:
             return p1 + x * p2
 
         # Optionally define the gradients of each parameter
-         def grad_parameter_1(self, x):
-             """
-             Returns d(function)/d(parameter_1)
-             """
-             return 0
+        def grad_parameter_1(self, x):
+            """
+            Returns d(function)/d(parameter_1)
+            """
+            return 0
 
-         def grad_parameter_2(self, x):
-             """
-             Returns d(function)/d(parameter_2)
-             """
-             return x
+        def grad_parameter_2(self, x):
+            """
+            Returns d(function)/d(parameter_2)
+            """
+            return x
 
 
 If you need help with the task please submit your question to the :ref:`users
@@ -226,8 +234,8 @@ mailing list <http://groups.google.com/group/hyperspy-users>`.
 
 .. versionchanged:: 0.8.1 printing current model components
 
-To print the current components in a model use :py:attr:`components` of the
-variable. A table with component number, attribute name, component name and
+To print the current components in a model use :py:attr:`components`. A
+table with component number, attribute name, component name and
 component type will be printed:
 
 .. code-block:: python
@@ -339,7 +347,7 @@ enables tab completion.
 
 
 It is possible to "switch off" a component by setting its
-:py:attr:`~.component.Component.active` to `False`. When a components is
+:py:attr:`~.component.Component.active` to `False`. When a component is
 switched off, to all effects it is as if it was not part of the model. To
 switch it on simply set the :py:attr:`~.component.Component.active` attribute
 back to `True`.
@@ -376,7 +384,7 @@ To enable this feature for a given component set the
 
 .. _model_indexing-label:
 
-Indexing model
+Indexing the model
 --------------
 
 .. versionadded:: 1.0 model indexing
@@ -396,7 +404,7 @@ recomputed for the resulting slices.
     >>> m.append(hs.model.components1D.Gaussian())
     >>> # select first three navigation pixels and last five signal channels
     >>> m1 = m.inav[:3].isig[-5:]
-    >>> m1.signal1D
+    >>> m1.signal
     <Signal1D, title: , dimensions: (3|5)>
 
 
@@ -566,6 +574,8 @@ possible to set a different coupling function by setting the
 :py:attr:`~.component.Parameter.twin_inverse_function_expr` attributes.  For
 example:
 
+.. code-block:: python
+
     >>> gaussian2.A.twin_function_expr = "x**2"
     >>> gaussian2.A.twin_inverse_function_expr = "sqrt(abs(x))"
     >>> gaussian2.A.value = 4
@@ -583,6 +593,8 @@ example:
             sigma	1.000000
             A	2.000000
             centre	0.000000
+
+.. code-block:: python
 
     >>> gaussian3.A.value = 4
     >>> m.print_current_values()
@@ -617,6 +629,8 @@ optimizers. For more information on the local and global optimization algorithms
 
 .. versionchanged:: 1.1 `leastsq` supports bound constraints. `fmin_XXX` methods
                   changed to the `scipy.optimze.minimize()` notation.
+
+.. _optimizers-table:
 
 .. table:: Features of curve fitting optimizers.
 
@@ -654,7 +668,7 @@ and ``b = 100`` and we add white noise to it:
 
 .. code-block:: python
 
-    >>> s = hs.signals.SpectrumSimulation(
+    >>> s = hs.signals.Signal1D(
     ...     np.arange(100, 300))
     >>> s.add_gaussian_noise(std=100)
 
@@ -696,7 +710,7 @@ gaussian noise and proceed to fit as in the previous example.
 
 .. code-block:: python
 
-    >>> s = hs.signals.SpectrumSimulation(
+    >>> s = hs.signals.Signal1D(
     ...     np.arange(300))
     >>> s.add_poissonian_noise()
     >>> m = s.create_model()
@@ -733,15 +747,16 @@ To do so, we use a general optimizer called "Nelder-Mead".
    (1.0030718094185611, -0.63590210946134107)
 
 Problems of ill-conditioning and divergence can be ameliorated by using bounded
-optimization. Currently, only the "mpfit" optimizer supports bounds. In the
-following example a gaussian histogram is fitted using a
-:class:`~._components.gaussian.Gaussian` component using mpfit and bounds on
-the ``centre`` parameter.
+optimization. Currently, not all optimizers support bounds - see the
+:ref:`table above <optimizers-table>`. In the following example a gaussian histogram is fitted
+
+using a :class:`~._components.gaussian.Gaussian` component using mpfit and
+bounds on the ``centre`` parameter.
 
 .. code-block:: python
 
     >>> s = hs.signals.BaseSignal(np.random.normal(loc=10, scale=0.01,
-    size=1e5)).get_histogram()
+    ... size=1e5)).get_histogram()
     >>> s.metadata.Signal.binned = True
     >>> m = s.create_model()
     >>> g1 = hs.model.components1D.Gaussian()
@@ -819,20 +834,19 @@ by hand.
 
 
 .. versionadded:: 0.8.5
-    :py:meth:`~.model.Model.notebook_interaction`,
+    :py:meth:`~.model.Model.gui`,
+
+.. versionchanged:: 1.3
+    All :meth:`notebook_interaction` methods renamed to :meth:`gui`. The
+    :meth:`notebook_interaction` methods will be removed in 2.0
 
 .. _notebook_interaction-label:
 
 If running in a Jupyter Notebook, interactive widgets can be used to
 conveniently adjust the parameter values by running
-:py:meth:`~.model.Model.notebook_interaction` for :py:class:`~.model.Model`,
+:py:meth:`~.model.Model.gui` for :py:class:`~.model.Model`,
 :py:class:`~.component.Component` and
 :py:class:`~.component.Parameter`.
-
-.. Warning::
-
-    :py:meth:`~.model.Model.notebook_interaction` functions require
-    ``ipywidgets``, which is an optional dependency of HyperSpy.
 
 
 .. figure::  images/notebook_widgets.png
@@ -849,7 +863,7 @@ conveniently adjust the parameter values by running
     :py:meth:`~.model.Model.disable_adjust_position`
 
 Also, :py:meth:`~.model.BaseModel.enable_adjust_position` provides an interactive
-way of setting the position of the components with a well define position.
+way of setting the position of the components with a well-defined position.
 :py:meth:`~.model.BaseModel.disable_adjust_position` disables the tool.
 
 
@@ -978,7 +992,7 @@ one signal.
     >>> m = s.create_model()
     >>> # analysis and fitting goes here
     >>> m.save('my_filename', 'model_name')
-    >>> l = hs.load('my_filename.hdf5')
+    >>> l = hs.load('my_filename.hspy')
     >>> m = l.models.restore('model_name') # or l.models.model_name.restore()
 
 For older versions of HyperSpy (before 0.9), the instructions were as follows:

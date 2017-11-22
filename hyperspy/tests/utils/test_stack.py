@@ -41,17 +41,23 @@ class TestUtilsStack:
 
     def test_stack_not_default(self):
         s = self.signal
-        s1 = s.deepcopy() + 1
-        s2 = s.deepcopy() * 4
+        s1 = s.inav[:, :-1] + 1
+        s2 = s.inav[:, ::2] * 4
         result_signal = utils.stack([s, s1, s2], axis=1)
         axis_size = s.axes_manager[1].size
+        axs1 = s1.axes_manager[1].size
+        axs2 = s2.axes_manager[1].size
         result_list = result_signal.split()
         assert len(result_list) == 3
-        np.testing.assert_array_almost_equal(
-            result_list[0].data, result_signal.inav[:, :axis_size].data)
-        result_signal = utils.stack([s, s1, s2], axis='y')
-        np.testing.assert_array_almost_equal(
-            result_list[0].data, result_signal.inav[:, :axis_size].data)
+        for rs in [result_signal, utils.stack([s, s1, s2], axis='y')]:
+            np.testing.assert_array_almost_equal(
+                result_list[0].data, rs.inav[:, :axis_size].data)
+            np.testing.assert_array_almost_equal(
+                s.data, rs.inav[:, :axis_size].data)
+            np.testing.assert_array_almost_equal(
+                s1.data, rs.inav[:, axis_size:axis_size + axs1].data)
+            np.testing.assert_array_almost_equal(
+                s2.data, rs.inav[:, axis_size + axs1:].data)
 
     def test_stack_bigger_than_ten(self):
         s = self.signal

@@ -1,15 +1,21 @@
 language: python
 
+
+env:
+  global:
+    - DISPLAY=99.0
+    - MPLBACKEND="agg"
+
 matrix:
   include:
   - env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
-  - env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'; MPLBACKEND="agg"
+  - env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
     os: osx
     language: generic
   - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
   - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
   - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='True'
-  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'; MPLBACKEND="agg"
+  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
     os: osx
     language: generic
   allow_failures:
@@ -27,8 +33,8 @@ before_install:
 install:
 
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      DEPS="pip numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython lxml ipyparallel dask traits traitsui";
-    else DEPS="pip ipython numpy scipy matplotlib h5py sympy scikit-image";
+      DEPS="pip numpy scipy matplotlib>=2.0.2 ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython lxml ipyparallel dask traits traitsui";
+    else DEPS="pip ipython numpy scipy matplotlib>=2.0.2 h5py sympy scikit-image";
     fi
   - conda create -n testenv --yes python=$PYTHON;
     source activate testenv;
@@ -40,11 +46,14 @@ install:
   - python setup.py build_ext --inplace;
 
 before_script: # configure a headless display to test plot generation
-  - "export DISPLAY=:99.0"
-  - if [[ $TRAVIS_OS_NAME == 'linux' ]]; then sh -e /etc/init.d/xvfb start; fi
+  - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then sh -e /etc/init.d/xvfb start; fi
+  # from http://afitnerd.com/2011/09/06/headless-browser-testing-on-mac/
+  # and https://github.com/travis-ci/travis-ci/issues/7313#issuecomment-279914149
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then ( sudo Xvfb :99 -ac -screen 0 1024x768x8; echo ok ) & fi
   - sleep 3 # give xvfb some time to start
 
 script:
+  - python -c 'import matplotlib.pyplot as plt; print(plt.get_backend())';
   - pip install coverage coveralls pytest pytest-cov pytest-mpl;
     py.test --mpl --cov=hyperspy --pyargs hyperspy;
 
