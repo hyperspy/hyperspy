@@ -789,8 +789,8 @@ class MVA():
     def _auto_reverse_bss_component(self, target):
         n_components = target.bss_factors.shape[1]
         for i in range(n_components):
-            minimum = np.nanmin(target.bss_loadings[:, i])
-            maximum = np.nanmax(target.bss_loadings[:, i])
+            minimum = np.nanmin(target.bss_factors[:, i])
+            maximum = np.nanmax(target.bss_factors[:, i])
             if minimum < 0 and -minimum > maximum:
                 self.reverse_bss_component(i)
                 _logger.info("IC %i reversed" % i)
