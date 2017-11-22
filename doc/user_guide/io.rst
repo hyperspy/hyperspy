@@ -337,7 +337,7 @@ Digital Micrograph.
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-For the MSA format the msa_format argument is used to specify whether the
+For the MSA format the `format` argument is used to specify whether the
 energy axis should also be saved with the data.  The default, 'Y' omits the
 energy axis in the file.  The alternative, 'XY', saves a second column with the
 calibrated energy data. It  is possible to personalise the separator with the

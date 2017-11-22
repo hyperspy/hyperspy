@@ -55,6 +55,7 @@ import dask.delayed as dd
 from struct import unpack as strct_unp
 from zlib import decompress as unzip_block
 import logging
+import re
 
 _logger = logging.getLogger(__name__)
 
@@ -68,6 +69,14 @@ except ImportError:  # pragma: no cover
     fast_unbcf = False
     _logger.info("""unbcf_fast library is not present...
 Falling back to slow python only backend.""")
+
+# define re with two capturing groups with comma in between
+# firstgroup looks for numeric value after <tag> (the '>' char) with or
+# without minus sign, second group looks for numeric value with following
+# closing <\tag> (the '<' char); '([Ee]-?\d*)' part (optionally a third group)
+# checks for scientific notation (e.g. 8,843E-7 -> 'E-7');
+# compiled pattern is binary, as raw xml string is binary.: 
+fix_dec_patterns = re.compile(b'(>-?\\d+),(\\d*([Ee]-?\\d*)?<)')
 
 
 class Container(object):
@@ -869,6 +878,7 @@ class BCF_reader(SFS_reader):
                 self.available_indexes.append(int(i[-1]))
         self.def_index = min(self.available_indexes)
         header_byte_str = header_file.get_as_BytesIO_string().getvalue()
+        hd_bt_str = fix_dec_patterns.sub(b'\\1.\\2', header_byte_str)
         self.header = HyperHeader(header_byte_str, self.available_indexes, instrument=instrument)
         self.hypermap = {}
     

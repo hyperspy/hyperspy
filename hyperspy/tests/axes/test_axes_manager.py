@@ -19,7 +19,7 @@
 
 from unittest import mock
 
-from hyperspy.axes import DataAxis, AxesManager
+from hyperspy.axes import AxesManager
 from hyperspy.signals import BaseSignal, Signal1D, Signal2D
 from numpy import arange
 
@@ -216,3 +216,50 @@ class TestAxesManagerExtent:
             signal_axis1.low_value, signal_axis1.high_value,
         )
         assert signal_extent == s.axes_manager.signal_extent
+
+
+def test_setting_indices_coordinates():
+    s = Signal1D(arange(1000).reshape(10, 10, 10))
+
+    m = mock.Mock()
+    s.axes_manager.events.indices_changed.connect(m, [])
+
+    # both indices are changed but the event is triggered only once
+    s.axes_manager.indices = (5, 5)
+    assert s.axes_manager.indices == (5, 5)
+    assert m.call_count == 1
+
+    # indices not changed, so the event is not triggered
+    s.axes_manager.indices == (5, 5)
+    assert s.axes_manager.indices == (5, 5)
+    assert m.call_count == 1
+
+    # both indices changed again, call only once
+    s.axes_manager.indices = (2, 3)
+    assert s.axes_manager.indices == (2, 3)
+    assert m.call_count == 2
+
+    # single index changed, call only once
+    s.axes_manager.indices = (2, 2)
+    assert s.axes_manager.indices == (2, 2)
+    assert m.call_count == 3
+
+    # both coordinates are changed but the event is triggered only once
+    s.axes_manager.coordinates = (5, 5)
+    assert s.axes_manager.coordinates == (5, 5)
+    assert m.call_count == 4
+
+    # coordinates not changed, so the event is not triggered
+    s.axes_manager.indices == (5, 5)
+    assert s.axes_manager.indices == (5, 5)
+    assert m.call_count == 4
+
+    # both coordinates changed again, call only once
+    s.axes_manager.coordinates = (2, 3)
+    assert s.axes_manager.coordinates == (2, 3)
+    assert m.call_count == 5
+
+    # single coordinate changed, call only once
+    s.axes_manager.indices = (2, 2)
+    assert s.axes_manager.indices == (2, 2)
+    assert m.call_count == 6

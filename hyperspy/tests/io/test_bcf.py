@@ -186,3 +186,18 @@ def test_fast_bcf():
             bcf.fast_unbcf = False            # manually disabling fast parsing
             hmap2 = thingy.parse_hypermap(downsample=j)    # py implementation
             np.testing.assert_array_equal(hmap1, hmap2)
+def test_decimal_regex():
+    lxml = pytest.importorskip("lxml")
+    from hyperspy.io_plugins.bcf import fix_dec_patterns
+    dummy_xml_positive = [b'<dummy_tag>85,658</dummy_tag>',
+                          b'<dummy_tag>85,658E-8</dummy_tag>',
+                          b'<dummy_tag>-85,658E-8</dummy_tag>',
+                          b'<dum_tag>-85.658</dum_tag>',  # negative check
+                          b'<dum_tag>85.658E-8</dum_tag>']  # negative check
+    dummy_xml_negative = [b'<dum_tag>12,25,23,45,56,12,45</dum_tag>',
+                          b'<dum_tag>12e1,23,-24E-5</dum_tag>']
+    for i in dummy_xml_positive:
+        assert b'85.658' in fix_dec_patterns.sub(b'\\1.\\2', i)
+    for j in dummy_xml_negative:
+        assert b'.' not in fix_dec_patterns.sub(b'\\1.\\2', j)
+    
