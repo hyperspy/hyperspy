@@ -32,6 +32,8 @@ import hyperspy.misc.io.utils_readfile as iou
 from hyperspy.exceptions import DM3TagIDError, DM3DataTypeError, DM3TagTypeError
 import hyperspy.misc.io.tools
 from hyperspy.misc.utils import DictionaryTreeBrowser
+from hyperspy.docstrings.signal import OPTIMIZE_ARG
+
 
 _logger = logging.getLogger(__name__)
 
@@ -969,7 +971,8 @@ class ImageObject(object):
         return mapping
 
 
-def file_reader(filename, record_by=None, order=None, lazy=False):
+def file_reader(filename, record_by=None, order=None, lazy=False,
+                optimize=True):
     """Reads a DM3 file and loads the data into the appropriate class.
     data_id can be specified to load a given image within a DM3 file that
     contains more than one dataset.
@@ -978,9 +981,11 @@ def file_reader(filename, record_by=None, order=None, lazy=False):
     ----------
     record_by: Str
         One of: SI, Signal2D
-    order: Str
+    order : Str
         One of 'C' or 'F'
-
+    lazy : bool, default False
+        Load the signal lazily.
+    %s
     """
 
     with open(filename, "rb") as f:
@@ -1000,7 +1005,7 @@ def file_reader(filename, record_by=None, order=None, lazy=False):
             mp['General']['original_filename'] = os.path.split(filename)[1]
             post_process = []
             if image.to_spectrum is True:
-                post_process.append(lambda s: s.to_signal1D())
+                post_process.append(lambda s: s.to_signal1D(optimize=optimize))
             post_process.append(lambda s: s.squeeze())
             if lazy:
                 image.filename = filename
@@ -1021,3 +1026,4 @@ def file_reader(filename, record_by=None, order=None, lazy=False):
                  })
 
     return imd
+    file_reader.__doc__ %= (OPTIMIZE_ARG.replace('False', 'True'))

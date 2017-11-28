@@ -28,3 +28,9 @@ NAN_FUNC = \
 
        -------------------- {0} --------------------
         {1} """
+
+OPTIMIZE_ARG = \
+    """optimize : bool, default is False
+            If the data should be re-ordered in memory, most likely making a
+            copy. Ensures the fastest available iteration at the expense of
+            memory."""
