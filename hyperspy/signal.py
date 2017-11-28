@@ -2687,7 +2687,7 @@ class BaseSignal(FancySlicing,
 
     def _make_sure_data_is_contiguous(self):
         if self.data.flags['C_CONTIGUOUS'] is False:
-            _logger.warning("{0!r} data is replaced by its optimized copy, "
+            _logger.info("{0!r} data is replaced by its optimized copy, "
                          "see optimize parameter of ``Basesignal.transpose`` "
                          "for more information.".format(self))
             self.data = np.ascontiguousarray(self.data)
