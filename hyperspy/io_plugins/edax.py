@@ -50,8 +50,8 @@ default_extension = 0
 # Writing capabilities
 writes = False
 
-spd_extensions = ('spd', 'SPD')
-spc_extensions = ('spc', 'SPC')
+spd_extensions = ('spd', 'SPD', 'Spd')
+spc_extensions = ('spc', 'SPC', 'Spc')
 
 # read dictionary of atomic numbers from HyperSpy, and add the elements that
 # do not currently exist in the database (in case anyone is doing EDS on
@@ -114,7 +114,7 @@ def get_spd_dtype_list(endianess='<'):
     return dtype_list
 
 
-def get_spc_dtype_list(load_all=False, endianess='<'):
+def get_spc_dtype_list(load_all=False, endianess='<', version=0.7):
     """
     Get the data type list for an SPC spectrum.
     Further information about the file format is available `here
@@ -125,6 +125,10 @@ def get_spc_dtype_list(load_all=False, endianess='<'):
     load_all : bool
         Switch to control if all the data is loaded, or if just the
         important pieces of the signal will be read (speeds up loading time)
+    endianess : char
+        byte-order used to read the data
+    version : float
+        version of spc file to read (only 0.61 and 0.70 have been tested)
 
     Table of header tags:
         - fVersion: 4 byte float; *File format Version*
@@ -286,16 +290,13 @@ def get_spc_dtype_list(load_all=False, endianess='<'):
         - longImageFileName: 256 array of 1 byte char; *Associated long image file name*
         - ADCTimeConstantNew: 4 byte float; *Time constant: 2.5… 100 OR 1.6… 102.4 us*
 
+        # the following datatypes are only included for version 0.70:
+
         - filler9: 60 byte;
 
         - numZElements: 2 byte short; *number of Z List elements for quant*
         - zAtoms: 48 array of 2 byte short; *Z List Atomic numbers*
         - zShells: 48 array of 2 byte short; *Z List Shell numbers*
-
-
-    Parameters
-    ----------
-    endianess : byte-order used to read the data
 
     Returns
     -------
@@ -465,6 +466,10 @@ def get_spc_dtype_list(load_all=False, endianess='<'):
                 ('s', end + '4096i4'),  # 3840
                 ('longFileName', end + '256i1'),  # 20224
                 ('longImageFileName', end + '256i1'),  # 20480
+            ]
+
+        if version == 0.7:
+            dtype_list.extend([
                 ('ADCTimeConstantNew', end + 'f4'),  # 20736
 
                 ('filler9', 'V60'),  # 20740
@@ -472,7 +477,8 @@ def get_spc_dtype_list(load_all=False, endianess='<'):
                 ('numZElements', end + 'i2'),  # 20800
                 ('zAtoms', end + '48i2'),  # 20802
                 ('zShells', end + '48i2'),  # 20898
-            ]
+                ])
+
     else:
         dtype_list = \
             [
@@ -510,7 +516,7 @@ def get_spc_dtype_list(load_all=False, endianess='<'):
                 ('numElem', end + 'i2'),  # 638 **
                 ('at', end + '48u2'),  # 640 **
 
-                ('filler7', 'V20258'),  # 736
+                ('filler7', 'V20004'),  # 736
 
             ]
     return dtype_list
@@ -556,6 +562,9 @@ def get_ipr_dtype_list(endianess='<'):
         -  reserved3: 4 byte float; *Not used*
         -  nOverlayElements: 2 byte unsigned short; *No. of overlay elements*
         -  overlayColors: 16 array of 2 byte unsigned short; *Overlay colors*
+
+        # These two are specific to V334 of the file format, and are omitted
+        # for compatibility with V333 of the IPR format
         -  timeConstantNew: 4 byte float; *Amplifier time constant [usec]*
         -  reserved4: 2 array of 4 byte float; *Not used*
 
@@ -606,8 +615,8 @@ def get_ipr_dtype_list(endianess='<'):
             ('reserved3', end + '4f4'),
             ('nOverlayElements', end + 'u2'),
             ('overlayColors', end + '16u2'),
-            ('timeConstantNew', end + 'f4'),
-            ('reserved4', end + '2f4'),
+            #('timeConstantNew', end + 'f4'),
+            #('reserved4', end + '2f4'),
         ]
     return dtype_list
 
@@ -680,6 +689,11 @@ def spc_reader(filename,
         hyperspy.io.load_with_reader
     """
     with open(filename, 'rb') as f:
+        # Get version information from the file, and then seek to the beginning
+        version = np.fromfile(f, dtype=[('version',
+                                         '{}f4'.format(endianess))])
+        f.seek(0)
+
         spc_header = np.fromfile(f,
                                  dtype=get_spc_dtype_list(
                                      load_all=load_all_spc,
