@@ -54,6 +54,7 @@ from hyperspy.docstrings.signal import (
 from hyperspy.docstrings.plot import BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
+from hyperspy.roi import Line2DROI
 from hyperspy.misc.signal_tools import (are_signals_aligned,
                                         broadcast_signals)
 
@@ -4413,6 +4414,85 @@ class BaseSignal(FancySlicing,
                 noise.dtype) +
             noise).astype(original_dtype)
         self.events.data_changed.trigger(obj=self)
+
+    def get_line_profile(
+            self, x1=None, y1=None, x2=None, y2=None, linewidth=None,
+            interactive=True, axes=None, axes_type=None):
+        """Get a line profile from the signal.
+
+        Parameters
+        ----------
+        x1, y1, x2, y2 : scalar, optional
+            Position of the line profile.
+        linewidth : scalar, optional
+        interactive : bool, default True
+            If True, will show an interactive line profile tool in the plot.
+        axes : list of Axes objects, optional
+        axes_type : string or None, optional
+            Has to be either sig, nav or None.
+
+        Returns
+        -------
+        line_profile_signal : HyperSpy signal
+
+        Examples
+        --------
+        >>> s = hs.signals.Signal2D(np.random.random((100, 50)))
+        >>> s_line = s.get_line_profile()
+        >>> s_line.plot()
+
+        Non-interactive
+
+        >>> s_line = s.get_line_profile(
+        ...     x1=20, y1=10, x2=40, y2=90, interactive=False)
+        >>> s_line.plot()
+
+        """
+        if axes is None:
+            if axes_type is None:
+                if len(self.axes_manager.signal_axes) > 1:
+                    axes_type = 'sig'
+                elif len(self.axes_manager.navigation_axes) > 1:
+                    axes_type = 'nav'
+                else:
+                    raise ValueError(
+                            "Neither the signal or navigation axes has enough "
+                            "dimensions for using a Line2DRoi")
+            if axes_type == 'sig':
+                    axes = self.axes_manager.signal_axes
+            elif axes_type == 'nav':
+                    axes = self.axes_manager.navigation_axes
+            else:
+                raise ValueError(
+                        "axes_type {} not recognized:"
+                        "need to be sig, nav or None".format(axes_type))
+        if len(axes) < 2:
+            raise ValueError(
+                    "Not enough axes for using a for using a Line2DRoi")
+        elif len(axes) > 2:
+            axes = axes[0:2]
+
+        xD = (axes[0].high_value + axes[0].low_value)/2
+        if x1 is None:
+            x1 = axes[0].low_value + xD*0.25
+        if x2 is None:
+            x2 = axes[0].high_value - xD*0.25
+        yD = (axes[1].high_value + axes[1].low_value)/2
+        if y1 is None:
+            y1 = axes[1].low_value + yD*0.25
+        if y2 is None:
+            y2 = axes[1].high_value - yD*0.25
+        if linewidth is None:
+            linewidth = max(axes[0].scale, axes[1].scale)*3
+
+        line_roi = Line2DROI(x1=x1, y1=y1, x2=x2, y2=y2, linewidth=linewidth)
+        if interactive:
+            self.plot()
+            roi1d = line_roi.interactive(self, axes=axes)
+            roi1d.plot()
+        else:
+            roi1d = line_roi(self)
+        return roi1d
 
     def transpose(self, signal_axes=None,
                   navigation_axes=None, optimize=False):
