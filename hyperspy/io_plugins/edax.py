@@ -509,7 +509,7 @@ def get_spc_dtype_list(load_all=False, endianess='<', version=0.61):
                 ('longImageFileName', end + '256i1'),  # 20480
             ]
 
-        if version == 0.7:
+        if version >= 0.7:
             dtype_list.extend([
                 ('ADCTimeConstantNew', end + 'f4'),  # 20736
 
@@ -696,7 +696,7 @@ def get_ipr_dtype_list(endianess='<', version=333):
             ('nOverlayElements', end + 'u2'),
             ('overlayColors', end + '16u2')]
 
-    if version == 334:
+    if version >= 334:
         dtype_list.extend([
             ('timeConstantNew', end + 'f4'),
             ('reserved4', end + '2f4'),
