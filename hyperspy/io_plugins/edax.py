@@ -114,7 +114,45 @@ def get_spd_dtype_list(endianess='<'):
     return dtype_list
 
 
-def get_spc_dtype_list(load_all=False, endianess='<', version=0.7):
+def __get_spc_header(f, endianess, load_all_spc):
+    """
+    Get the header of an spc file, checking for the file version as necessary
+
+    Parameters
+    ----------
+    f : file
+        A file object for the .spc file to be read (i.e. file should be
+        already opened with ``open()``)
+    endianess : char
+        Byte-order of data to read
+    load_all_spc : bool
+        Switch to control if all of the .spc header is read, or just the parts
+        relevant to HyperSpy
+
+    Returns
+    -------
+    spc_header : np.ndarray
+        Array containing the binary information read from the .spc file
+    """
+    version = np.fromfile(f,
+                          dtype=[('version', '{}f4'.format(endianess))],
+                          count=1)
+    version = round(np.asscalar(version)[0], 2)  # convert to scalar
+    f.seek(0)
+
+    spc_header = np.fromfile(f,
+                             dtype=get_spc_dtype_list(
+                                 load_all=load_all_spc,
+                                 endianess=endianess,
+                                 version=version),
+                             count=1)
+
+    _logger.debug(' .spc version is {}'.format(version))
+
+    return spc_header
+
+
+def get_spc_dtype_list(load_all=False, endianess='<', version=0.61):
     """
     Get the data type list for an SPC spectrum.
     Further information about the file format is available `here
@@ -129,6 +167,9 @@ def get_spc_dtype_list(load_all=False, endianess='<', version=0.7):
         byte-order used to read the data
     version : float
         version of spc file to read (only 0.61 and 0.70 have been tested)
+        Default is 0.61 to be as backwards-compatible as possible, but the
+        file version can be read from the file anyway, so this parameter
+        should always be set programmatically
 
     Table of header tags:
         - fVersion: 4 byte float; *File format Version*
@@ -522,7 +563,40 @@ def get_spc_dtype_list(load_all=False, endianess='<', version=0.7):
     return dtype_list
 
 
-def get_ipr_dtype_list(endianess='<'):
+def __get_ipr_header(f, endianess):
+    """
+    Get the header of an spc file, checking for the file version as necessary
+
+    Parameters
+    ----------
+    f : file
+        A file object for the .spc file to be read (i.e. file should be
+        already opened with ``open()``)
+    endianess : char
+        Byte-order of data to read
+
+    Returns
+    -------
+    ipr_header : np.ndarray
+        Array containing the binary information read from the .ipr file
+    """
+    version = np.fromfile(f,
+                          dtype=[('version', '{}i2'.format(endianess))],
+                          count=1)
+    version = np.asscalar(version)[0]  # convert to scalar
+    f.seek(0)
+    _logger.debug(' .ipr version is {}'.format(version))
+
+    ipr_header = np.fromfile(f,
+                             dtype=get_ipr_dtype_list(
+                                 endianess=endianess,
+                                 version=version),
+                             count=1)
+
+    return ipr_header
+
+
+def get_ipr_dtype_list(endianess='<', version=333):
     """
     Get the data type list for an IPR image description file.
     Further information about the file format is available `here
@@ -571,7 +645,13 @@ def get_ipr_dtype_list(endianess='<'):
 
     Parameters
     ----------
-    endianess : byte-order used to read the data
+    endianess : char
+        byte-order used to read the data
+    version : float
+        version of .ipr file to read (only 333 and 334 have been tested)
+        Default is 333 to be as backwards-compatible as possible, but the
+        file version can be read from the file anyway, so this parameter
+        should always be set programmatically
 
     Returns
     -------
@@ -614,10 +694,14 @@ def get_ipr_dtype_list(endianess='<'):
             ('charText', end + '4a32'),
             ('reserved3', end + '4f4'),
             ('nOverlayElements', end + 'u2'),
-            ('overlayColors', end + '16u2'),
-            #('timeConstantNew', end + 'f4'),
-            #('reserved4', end + '2f4'),
-        ]
+            ('overlayColors', end + '16u2')]
+
+    if version == 334:
+        dtype_list.extend([
+            ('timeConstantNew', end + 'f4'),
+            ('reserved4', end + '2f4'),
+        ])
+
     return dtype_list
 
 
@@ -656,7 +740,7 @@ def _add_spc_metadata(metadata, spc_header):
         element_list = sorted([atomic_num_dict[i] for
                                i in spc_header['at'][:num_elem]])
         metadata['Sample'] = {'elements': element_list}
-        _logger.info("Elemental information found in the spectral metadata "
+        _logger.info(" Elemental information found in the spectral metadata "
                      "was added to the signal.\n"
                      "Elements found were: {}\n".format(element_list))
 
@@ -689,16 +773,8 @@ def spc_reader(filename,
         hyperspy.io.load_with_reader
     """
     with open(filename, 'rb') as f:
-        # Get version information from the file, and then seek to the beginning
-        version = np.fromfile(f, dtype=[('version',
-                                         '{}f4'.format(endianess))])
-        f.seek(0)
-
-        spc_header = np.fromfile(f,
-                                 dtype=get_spc_dtype_list(
-                                     load_all=load_all_spc,
-                                     endianess=endianess),
-                                 count=1)
+        _logger.debug(' Reading {}'.format(filename))
+        spc_header = __get_spc_header(f, endianess, load_all_spc)
 
         spc_dict = sarray2dict(spc_header)
         original_metadata = {'spc_header': spc_dict}
@@ -841,9 +917,9 @@ def spd_reader(filename,
     # Read the .ipr header (if possible)
     if read_ipr:
         with open(ipr_fname, 'rb') as f:
-            ipr_header = np.fromfile(f,
-                                     dtype=get_ipr_dtype_list(endianess),
-                                     count=1)
+            _logger.debug(' From .spd reader - '
+                          'reading .ipr {}'.format(ipr_fname))
+            ipr_header = __get_ipr_header(f, endianess)
             original_metadata['ipr_header'] = sarray2dict(ipr_header)
     else:
         _logger.warning('Could not find .ipr file named {}.\n'
@@ -853,11 +929,9 @@ def spd_reader(filename,
     # Read the .spc header (if possible)
     if read_spc:
         with open(spc_fname, 'rb') as f:
-            spc_header = np.fromfile(f,
-                                     dtype=get_spc_dtype_list(
-                                         load_all=load_all_spc,
-                                         endianess=endianess),
-                                     count=1)
+            _logger.debug(' From .spd reader - '
+                          'reading .spc {}'.format(spc_fname))
+            spc_header = __get_spc_header(f, endianess, load_all_spc)
             spc_dict = sarray2dict(spc_header)
             original_metadata['spc_header'] = spc_dict
     else:
