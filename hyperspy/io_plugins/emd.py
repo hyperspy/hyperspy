@@ -18,7 +18,10 @@
 
 # The EMD format is a hdf5 standard proposed at Lawrence Berkeley
 # National Lab (see http://emdatasets.com/ for more information).
-# NOT to be confused with the FEI EMD format which was developed later.
+# FEI later developed another EMD format, also based on the hdf5 standard. This
+# reader first checked if the file have been saved by Velox (FEI EMD format) 
+# and use either the EMD class or the FEIEMDReader class to read the file.
+# Writing file is only supported for EMD Berkeley file. 
 
 
 import re
@@ -578,7 +581,7 @@ class FeiEMDReader(object):
         """ Return a dictionary ready to parse of return to io module"""
         image_sub_group = image_group[image_sub_group_key]
         original_metadata = _parse_metadata(image_group, image_sub_group_key)
-        self.detector_name = original_metadata['BinaryResult']['Detector']
+        self.detector_name = original_metadata['BinaryResult'].get('Detector')
 
         read_stack = (self.read_SI_image_stack or self.im_type == 'Image')
         if read_stack:
@@ -590,9 +593,9 @@ class FeiEMDReader(object):
             # Get the scanning area shape of the SI from the images
             self.SI_shape = data.shape
 
-        pix_scale = original_metadata['BinaryResult']['PixelSize']
-        offsets = original_metadata['BinaryResult']['Offset']
-        original_units = original_metadata['BinaryResult']['PixelUnitX']
+        pix_scale = original_metadata['BinaryResult'].get('PixelSize', {'height': 1.0, 'width': 1.0})
+        offsets = original_metadata['BinaryResult'].get('Offset',  {'x': 0.0, 'y': 0.0})
+        original_units = original_metadata['BinaryResult'].get('PixelUnitX', '')
 
         axes = []
         # stack of images
