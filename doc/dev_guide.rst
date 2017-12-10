@@ -195,6 +195,9 @@ Useful hints on testing:
   your PR. There should be a link to it at the bottom of your PR on the github
   PR page. This service can help you to find how well your code is being tested
   and exactly which part is not currently tested.
+* `pytest-sugar <https://pypi.python.org/pypi/pytest-sugar>`_ can be installed
+  to have a nicer look and feel of py.test in the console (encoding issue have
+  been reported in the Windows console).
 
 
 .. _plot-test-label:
