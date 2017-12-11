@@ -4448,29 +4448,39 @@ class BaseSignal(FancySlicing,
         >>> s_line.plot()
 
         """
+        am = self.axes_manager
         if axes is None:
             if axes_type is None:
-                if len(self.axes_manager.signal_axes) > 1:
-                    axes_type = 'sig'
-                elif len(self.axes_manager.navigation_axes) > 1:
+                if len(am.navigation_axes) > 1:
                     axes_type = 'nav'
+                elif len(am.signal_axes) > 1:
+                    axes_type = 'sig'
                 else:
                     raise ValueError(
                             "Neither the signal or navigation axes has enough "
                             "dimensions for using a Line2DRoi")
             if axes_type == 'sig':
-                    axes = self.axes_manager.signal_axes
+                    axes = am.signal_axes
             elif axes_type == 'nav':
-                    axes = self.axes_manager.navigation_axes
+                    axes = am.navigation_axes
             else:
                 raise ValueError(
                         "axes_type {} not recognized:"
                         "need to be sig, nav or None".format(axes_type))
+
         if len(axes) < 2:
             raise ValueError(
                     "Not enough axes for using a for using a Line2DRoi")
         elif len(axes) > 2:
             axes = axes[0:2]
+
+        if (axes_type == 'sig') and (len(am.navigation_axes) != 0):
+            raise ValueError(
+                    "Can not use axes_type sig on signal with navigation "
+                    "dimensions")
+        elif len(axes) > 2:
+            axes = axes[0:2]
+
 
         xD = (axes[0].high_value + axes[0].low_value)/2
         if x1 is None:
@@ -4488,11 +4498,13 @@ class BaseSignal(FancySlicing,
         line_roi = Line2DROI(x1=x1, y1=y1, x2=x2, y2=y2, linewidth=linewidth)
         if interactive:
             self.plot()
-            roi1d = line_roi.interactive(self, axes=axes)
-            roi1d.plot()
+            s_roi1d = line_roi.interactive(self, axes=axes)
+            title = 'Line profile, ' + self.metadata.General.title
+            s_roi1d.plot()
         else:
-            roi1d = line_roi(self)
-        return roi1d
+            s_roi1d = line_roi(self)
+        s_roi1d.metadata.General.title = title
+        return s_roi1d
 
     def transpose(self, signal_axes=None,
                   navigation_axes=None, optimize=False):
