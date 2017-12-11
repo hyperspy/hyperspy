@@ -17,8 +17,8 @@ TEST_FILES = ('Live Map 2_Img.ipr',
               'single_spect.spc',
               'spd_map.spc',
               'spd_map.spd',
-              'Garnet1_Img.IPR',
-              'spc0_61-ipr333.SPC',
+              'Garnet1_Img.ipr',
+              'spc0_61-ipr333.spc',
               'spc0_61-ipr333.spd')
 MY_PATH = os.path.dirname(__file__)
 
@@ -65,12 +65,12 @@ def spd_061_xrf(tmpdir):
 @pytest.fixture(scope="module")
 def spc_061_xrf(tmpdir):
     os.listdir(tmpdir)
-    return load(os.path.join(tmpdir, "spc0_61-ipr333_xrf.SPC"))
+    return load(os.path.join(tmpdir, "spc0_61-ipr333_xrf.spc"))
 
 @pytest.fixture(scope="module")
 def spc_061_xrf_loadAllMetadata(tmpdir):
     os.listdir(tmpdir)
-    return load(os.path.join(tmpdir, "spc0_61-ipr333_xrf.SPC"),
+    return load(os.path.join(tmpdir, "spc0_61-ipr333_xrf.spc"),
                 load_all_spc=True)
 
 
