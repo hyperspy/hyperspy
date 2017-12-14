@@ -18,51 +18,48 @@ TEST_FILES = ('Live Map 2_Img.ipr',
               'spd_map.spc',
               'spd_map.spd')
 MY_PATH = os.path.dirname(__file__)
+TMP_DIR = tempfile.TemporaryDirectory()
 
 
-@pytest.fixture(scope="module")
-def tmpdir():
+def setup_module():
     import zipfile
     zipf = os.path.join(MY_PATH, "edax_files.zip")
     with zipfile.ZipFile(zipf, 'r') as zipped:
-        with tempfile.TemporaryDirectory() as tmp:
-            zipped.extractall(tmp)
-            # spd_fname = os.path.join(tmp, TEST_FILES[3])
-            # print(os.listdir(tmpdir))
-            # print(spd_fname)
-            yield tmp
-            # Force files release (required in Windows)
-            gc.collect()
+        zipped.extractall(TMP_DIR.name)
+        # print(TMP_DIR.name)
+        # spd_fname = os.path.join(tmp, TEST_FILES[3])
+        # print(os.listdir(TMP_DIR.name))
+        # print(spd_fname)
 
 
-@pytest.fixture(scope="module")
-def spd(tmpdir):
-    signal = load(os.path.join(tmpdir, 'spd_map.spd'))
-    yield signal
-    signal.data._mmap.close()
-
-
-@pytest.fixture(scope="module")
-def spc(tmpdir):
-    os.listdir(tmpdir)
-    return load(os.path.join(tmpdir, "single_spect.spc"))
+def teardown_module():
+    TMP_DIR.cleanup()
 
 
 class TestSpcSpectrum:
 
-    def test_data(self, spc):
-        assert np.uint32 == spc.data.dtype     # test datatype
-        assert (4096,) == spc.data.shape       # test data shape
+    @classmethod
+    def setup_class(cls):
+        cls.spc = load(os.path.join(TMP_DIR.name, "single_spect.spc"))
+
+    @classmethod
+    def teardown_class(cls):
+        del cls.spc
+        gc.collect()
+
+    def test_data(self):
+        assert np.uint32 == TestSpcSpectrum.spc.data.dtype     # test datatype
+        assert (4096,) == TestSpcSpectrum.spc.data.shape       # test data shape
         assert (
             [0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 10, 4, 10, 10, 45, 87, 146, 236,
-             312, 342] == spc.data[:20].tolist())   # test 1st 20 datapoints
+             312, 342] == TestSpcSpectrum.spc.data[:20].tolist()) # test 1st 20 datapoints
 
-    def test_parameters(self, spc):
-        elements = spc.metadata.as_dictionary()['Sample']['elements']
-        sem_dict = spc.metadata.as_dictionary()[
+    def test_parameters(self):
+        elements = TestSpcSpectrum.spc.metadata.as_dictionary()['Sample']['elements']
+        sem_dict = TestSpcSpectrum.spc.metadata.as_dictionary()[
             'Acquisition_instrument']['SEM']
         eds_dict = sem_dict['Detector']['EDS']
-        signal_dict = spc.metadata.as_dictionary()['Signal']
+        signal_dict = TestSpcSpectrum.spc.metadata.as_dictionary()['Signal']
 
         # Testing SEM parameters
         assert_allclose(22, sem_dict['beam_energy'])
@@ -82,9 +79,9 @@ class TestSpcSpectrum:
         # Testing HyperSpy parameters
         assert True == signal_dict['binned']
         assert 'EDS_SEM' == signal_dict['signal_type']
-        assert isinstance(spc, signals.EDSSEMSpectrum)
+        assert isinstance(TestSpcSpectrum.spc, signals.EDSSEMSpectrum)
 
-    def test_axes(self, spc):
+    def test_axes(self):
         spc_ax_manager = {'axis-0': {'name': 'Energy',
                                      'navigate': False,
                                      'offset': 0.0,
@@ -92,14 +89,23 @@ class TestSpcSpectrum:
                                      'size': 4096,
                                      'units': 'keV'}}
         assert (spc_ax_manager ==
-                spc.axes_manager.as_dictionary())
+                TestSpcSpectrum.spc.axes_manager.as_dictionary())
 
 
 class TestSpdMap:
 
-    def test_data(self, spd):
-        assert np.uint16 == spd.data.dtype     # test d_type
-        assert (200, 256, 2500) == spd.data.shape  # test d_shape
+    @classmethod
+    def setup_class(cls):
+        cls.spd = load(os.path.join(TMP_DIR.name, "spd_map.spd"))
+
+    @classmethod
+    def teardown_class(cls):
+        del cls.spd
+        gc.collect()
+
+    def test_data(self):
+        assert np.uint16 == TestSpdMap.spd.data.dtype     # test d_type
+        assert (200, 256, 2500) == TestSpdMap.spd.data.shape  # test d_shape
         assert ([[[0, 0, 0, 0, 0],              # test random data
                   [0, 0, 1, 0, 1],
                   [0, 0, 0, 0, 0],
@@ -125,14 +131,14 @@ class TestSpdMap:
                   [0, 0, 1, 0, 1],
                   [0, 0, 0, 1, 0],
                   [0, 0, 0, 0, 0]]] ==
-                spd.data[15:20, 15:20, 15:20].tolist())
+                TestSpdMap.spd.data[15:20, 15:20, 15:20].tolist())
 
-    def test_parameters(self, spd):
-        elements = spd.metadata.as_dictionary()['Sample']['elements']
-        sem_dict = spd.metadata.as_dictionary()[
+    def test_parameters(self):
+        elements = TestSpdMap.spd.metadata.as_dictionary()['Sample']['elements']
+        sem_dict = TestSpdMap.spd.metadata.as_dictionary()[
             'Acquisition_instrument']['SEM']
         eds_dict = sem_dict['Detector']['EDS']
-        signal_dict = spd.metadata.as_dictionary()['Signal']
+        signal_dict = TestSpdMap.spd.metadata.as_dictionary()['Signal']
 
         # Testing SEM parameters
         assert_allclose(22, sem_dict['beam_energy'])
@@ -152,9 +158,9 @@ class TestSpdMap:
         # Testing HyperSpy parameters
         assert True == signal_dict['binned']
         assert 'EDS_SEM' == signal_dict['signal_type']
-        assert isinstance(spd, signals.EDSSEMSpectrum)
+        assert isinstance(TestSpdMap.spd, signals.EDSSEMSpectrum)
 
-    def test_axes(self, spd):
+    def test_axes(self):
         spd_ax_manager = {'axis-0': {'name': 'y',
                                      'navigate': True,
                                      'offset': 0.0,
@@ -174,19 +180,19 @@ class TestSpdMap:
                                      'size': 2500,
                                      'units': 'keV'}}
         assert (spd_ax_manager ==
-                spd.axes_manager.as_dictionary())
+                TestSpdMap.spd.axes_manager.as_dictionary())
 
-    def test_ipr_reading(self, spd):
-        ipr_header = spd.original_metadata['ipr_header']
+    def test_ipr_reading(self):
+        ipr_header = TestSpdMap.spd.original_metadata['ipr_header']
         assert_allclose(0.014235896, ipr_header['mppX'])
         assert_allclose(0.014227346, ipr_header['mppY'])
 
-    def test_spc_reading(self, spd):
+    def test_spc_reading(self):
         # Test to make sure that spc metadata matches spd metadata
-        spc_header = spd.original_metadata['spc_header']
+        spc_header = TestSpdMap.spd.original_metadata['spc_header']
 
-        elements = spd.metadata.as_dictionary()['Sample']['elements']
-        sem_dict = spd.metadata.as_dictionary()[
+        elements = TestSpdMap.spd.metadata.as_dictionary()['Sample']['elements']
+        sem_dict = TestSpdMap.spd.metadata.as_dictionary()[
             'Acquisition_instrument']['SEM']
         eds_dict = sem_dict['Detector']['EDS']
 
@@ -199,7 +205,7 @@ class TestSpdMap:
         assert_allclose(spc_header.liveTime,
                         eds_dict['live_time'])
         assert_allclose(spc_header.evPerChan,
-                        spd.axes_manager[2].scale * 1000)
+                        TestSpdMap.spd.axes_manager[2].scale * 1000)
         assert_allclose(spc_header.kV,
                         sem_dict['beam_energy'])
         assert_allclose(spc_header.numElem,
