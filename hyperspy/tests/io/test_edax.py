@@ -5,18 +5,10 @@ import gc
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
-import pytest
 
 from hyperspy.io import load
 from hyperspy import signals
 
-TEST_FILES = ('Live Map 2_Img.ipr',
-              'single_spect.spc',
-              'spd_map.spc',
-              'spd_map.spd',
-              'Garnet1_Img.ipr',
-              'spc0_61-ipr333.spc',
-              'spc0_61-ipr333.spd')
 MY_PATH = os.path.dirname(__file__)
 TMP_DIR = tempfile.TemporaryDirectory()
 
@@ -27,7 +19,6 @@ def setup_module():
     with zipfile.ZipFile(zipf, 'r') as zipped:
         zipped.extractall(TMP_DIR.name)
         # print(TMP_DIR.name)
-        # spd_fname = os.path.join(tmp, TEST_FILES[3])
         # print(os.listdir(TMP_DIR.name))
         # print(spd_fname)
 
@@ -36,20 +27,13 @@ def teardown_module():
     TMP_DIR.cleanup()
 
 
-@pytest.fixture(scope="module")
-def spd_061_xrf(tmpdir):
-    signal = load(os.path.join(tmpdir, 'spc0_61-ipr333_xrf.spd'))
-    yield signal
-    signal.data._mmap.close()
-
-
 class TestSpcSpectrum_v061_xrf:
 
     @classmethod
     def setup_class(cls):
-        cls.spc = load(os.path.join(TMP_DIR.name, "spc0_61-ipr333.spc"))
+        cls.spc = load(os.path.join(TMP_DIR.name, "spc0_61-ipr333_xrf.spc"))
         cls.spc_loadAll = load(os.path.join(TMP_DIR.name,
-                                            "spc0_61-ipr333.spc"),
+                                            "spc0_61-ipr333_xrf.spc"),
                                load_all_spc=True)
 
     @classmethod
@@ -329,16 +313,18 @@ class TestSpdMap_061_xrf:
 
     @classmethod
     def setup_class(cls):
-        cls.spd = load(os.path.join(TMP_DIR.name, "spc0_61-ipr333.spd"))
+        cls.spd = load(os.path.join(TMP_DIR.name, "spc0_61-ipr333_xrf.spd"))
 
     @classmethod
     def teardown_class(cls):
         del cls.spd
         gc.collect()
-        
+
     def test_data(self):
-        assert np.uint16 == TestSpdMap_061_xrf.spd.data.dtype     # test d_type
-        assert (200, 256, 2000) == TestSpdMap_061_xrf.spd.data.shape  # test d_shape
+        # test d_type
+        assert np.uint16 == TestSpdMap_061_xrf.spd.data.dtype
+        # test d_shape
+        assert (200, 256, 2000) == TestSpdMap_061_xrf.spd.data.shape
         assert ([[[0, 0, 0, 0, 0],
                   [0, 0, 0, 0, 0],
                   [0, 0, 0, 0, 0],
@@ -367,7 +353,8 @@ class TestSpdMap_061_xrf:
                 TestSpdMap_061_xrf.spd.data[15:20, 15:20, 15:20].tolist())
 
     def test_parameters(self):
-        elements = TestSpdMap_061_xrf.spd.metadata.as_dictionary()['Sample']['elements']
+        elements = TestSpdMap_061_xrf.spd.metadata.as_dictionary()['Sample'][
+            'elements']
         sem_dict = TestSpdMap_061_xrf.spd.metadata.as_dictionary()[
             'Acquisition_instrument']['SEM']
         eds_dict = sem_dict['Detector']['EDS']
@@ -424,7 +411,8 @@ class TestSpdMap_061_xrf:
         # Test to make sure that spc metadata matches spd_061_xrf metadata
         spc_header = TestSpdMap_061_xrf.spd.original_metadata['spc_header']
 
-        elements = TestSpdMap_061_xrf.spd.metadata.as_dictionary()['Sample']['elements']
+        elements = TestSpdMap_061_xrf.spd.metadata.as_dictionary()['Sample'][
+            'elements']
         sem_dict = TestSpdMap_061_xrf.spd.metadata.as_dictionary()[
             'Acquisition_instrument']['SEM']
         eds_dict = sem_dict['Detector']['EDS']
