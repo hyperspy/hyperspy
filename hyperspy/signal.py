@@ -4420,6 +4420,25 @@ class BaseSignal(FancySlicing,
             interactive=True, axes=None, axes_type=None):
         """Get a line profile from the signal.
 
+        Can be used interactively, which allows for the line to be moved
+        in the plot window. Alternatively, the line position can be specified
+        using the x1, y1, x2 and y2 parameters.
+
+        If no parameters are given, the two first navigation axes will be used,
+        unless the signal has two signal dimensions, and no navigation
+        dimensions.
+
+        Note that there are some limitations in which axes can be used:
+        - If the signal has any navigation dimensions, the line profile can
+        not be used on the signal dimensions.
+        - Exactly two dimensions needs to be specified
+        - The two specified axes needs to both be signal or both be navigation
+        axes
+
+        So this means that this method will not work on a Signal1D with one
+        navigation dimension, but the method will work with a Signal1D with
+        2 navigation dimensions.
+
         Parameters
         ----------
         x1, y1, x2, y2 : scalar, optional
@@ -4445,6 +4464,11 @@ class BaseSignal(FancySlicing,
         >>> s_line = s.get_line_profile(
         ...     x1=20, y1=10, x2=40, y2=90, interactive=False)
         >>> s_line.plot()
+
+        Specifying the axes
+
+        >>> s = hs.signals.Signal2D(np.random.random((9, 5, 10, 6, 8)))
+        >>> s_line = s.get_line_profile(axes=(0, 1))
 
         """
         am = self.axes_manager
