@@ -4492,6 +4492,7 @@ class BaseSignal(FancySlicing,
                         "need to be sig, nav or None".format(axes_type))
             axes = axes[0:2]
         else:
+            axes_list = []
             axes_type_set = set()
             for axis in axes:
                 try:
@@ -4499,6 +4500,7 @@ class BaseSignal(FancySlicing,
                 except AttributeError:
                     raise ValueError(
                             "Axis {} not found in this signal".format(axis))
+                axes_list.append(axis_object)
                 if am[axis] in am.navigation_axes:
                     axes_type_set.add('nav')
                 elif am[axis] in am.signal_axes:
@@ -4507,7 +4509,7 @@ class BaseSignal(FancySlicing,
                 raise ValueError(
                         "Axes need to either be all signal axes, or all"
                         " navigation axes")
-            axes = [am[axes[0]], am[axes[1]]]
+            axes = axes_list
             axes_type = axes_type_set.pop()
 
         if len(axes) < 2:
