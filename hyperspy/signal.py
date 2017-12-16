@@ -4427,7 +4427,7 @@ class BaseSignal(FancySlicing,
         linewidth : scalar, optional
         interactive : bool, default True
             If True, will show an interactive line profile tool in the plot.
-        axes : list of Axes objects, optional
+        axes : list of Axes objects, list of ints or list of strings , optional
         axes_type : string or None, optional
             Has to be either sig, nav or None.
 
@@ -4439,7 +4439,6 @@ class BaseSignal(FancySlicing,
         --------
         >>> s = hs.signals.Signal2D(np.random.random((100, 50)))
         >>> s_line = s.get_line_profile()
-        >>> s_line.plot()
 
         Non-interactive
 
@@ -4459,28 +4458,44 @@ class BaseSignal(FancySlicing,
                     raise ValueError(
                             "Neither the signal or navigation axes has enough "
                             "dimensions for using a Line2DRoi")
-            if axes_type == 'sig':
-                    axes = am.signal_axes
-            elif axes_type == 'nav':
+            if axes_type == 'nav':
                     axes = am.navigation_axes
+            elif axes_type == 'sig':
+                    axes = am.signal_axes
             else:
                 raise ValueError(
                         "axes_type {} not recognized:"
                         "need to be sig, nav or None".format(axes_type))
+            axes = axes[0:2]
+        else:
+            axes_type_set = set()
+            for axis in axes:
+                try:
+                    axis_object = am[axis]
+                except AttributeError:
+                    raise ValueError(
+                            "Axis {} not found in this signal".format(axis))
+                if am[axis] in am.navigation_axes:
+                    axes_type_set.add('nav')
+                elif am[axis] in am.signal_axes:
+                    axes_type_set.add('sig')
+            if len(axes_type_set) != 1:
+                raise ValueError(
+                        "Axes need to either be all signal axes, or all"
+                        " navigation axes")
+            axes = [am[axes[0]], am[axes[1]]]
+            axes_type = axes_type_set.pop()
 
         if len(axes) < 2:
             raise ValueError(
                     "Not enough axes for using a for using a Line2DRoi")
         elif len(axes) > 2:
-            axes = axes[0:2]
+            raise ValueError("axes needs to have exactly 2 values")
 
         if (axes_type == 'sig') and (len(am.navigation_axes) != 0):
             raise ValueError(
                     "Can not use axes_type sig on signal with navigation "
                     "dimensions")
-        elif len(axes) > 2:
-            axes = axes[0:2]
-
 
         xD = (axes[0].high_value + axes[0].low_value)/2
         if x1 is None:
@@ -4499,10 +4514,10 @@ class BaseSignal(FancySlicing,
         if interactive:
             self.plot()
             s_roi1d = line_roi.interactive(self, axes=axes)
-            title = 'Line profile, ' + self.metadata.General.title
             s_roi1d.plot()
         else:
             s_roi1d = line_roi(self)
+        title = 'Line profile, ' + self.metadata.General.title
         s_roi1d.metadata.General.title = title
         return s_roi1d
 
