@@ -4,19 +4,19 @@ from hyperspy.signals import EELSSpectrum
 
 
 def get_core_loss_eel_signal():
-    """Get an artifical core loss electron energy loss spectrum.
+    """Get an artificial core loss electron energy loss spectrum.
 
     Similar to a Mn-L32 edge from a perovskite oxide.
 
     Returns
     -------
-    artifical_core_loss_signal : HyperSpy EELSSpectrum
+    artificial_core_loss_signal : HyperSpy EELSSpectrum
 
     Example
     -------
-    >>> s = hs.datasets.artifical_data.get_core_loss_eel_signal()
+    >>> s = hs.datasets.artificial_data.get_core_loss_eel_signal()
     >>> s.plot()
-
+artifical
     See also
     --------
     get_core_loss_eel_model : get a model instead of a signal
@@ -44,17 +44,17 @@ def get_core_loss_eel_signal():
 
 
 def get_core_loss_eel_model():
-    """Get an artifical core loss electron energy loss model.
+    """Get an artificial core loss electron energy loss model.
 
     Similar to a Mn-L32 edge from a perovskite oxide.
 
     Returns
     -------
-    artifical_core_loss_model : HyperSpy EELSModel
+    artificial_core_loss_model : HyperSpy EELSModel
 
     Example
     -------
-    >>> s = hs.datasets.artifical_data.get_core_loss_eel_model()
+    >>> s = hs.datasets.artificial_data.get_core_loss_eel_model()
     >>> s.plot()
 
     See also
