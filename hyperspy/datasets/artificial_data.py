@@ -1,6 +1,6 @@
 import numpy as np
-from hyperspy import components1d
-from hyperspy.signals import EELSSpectrum
+from hyperspy import components1d, components2d
+from hyperspy.signals import EELSSpectrum, Signal2D
 
 
 def get_core_loss_eel_signal():
@@ -66,3 +66,29 @@ def get_core_loss_eel_model():
     m = s.create_model(auto_background=False, GOS='hydrogenic')
     m.fit()
     return m
+
+
+def get_atomic_resolution_tem_signal2d():
+    """Get an artificial atomic resolution TEM Signal2D.
+
+    Returns
+    -------
+    artificial_tem_image : HyperSpy Signal2D
+
+    Example
+    -------
+    >>> s = hs.datasets.artificial_data.get_atomic_resolution_tem_signal2d()
+    >>> s.plot()
+
+    """
+    sX, sY = 2, 2
+    x_array, y_array = np.mgrid[0:200, 0:200]
+    image = np.zeros_like(x_array, dtype=np.float32)
+    gaussian2d = components2d.Gaussian2D(sigma_x=sX, sigma_y=sY)
+    for x in range(10, 195, 20):
+        for y in range(10, 195, 20):
+            gaussian2d.centre_x.value = x
+            gaussian2d.centre_y.value = y
+            image += gaussian2d.function(x_array, y_array)
+    s = Signal2D(image)
+    return s
