@@ -326,7 +326,7 @@ A number of mathematical operations are available
 in :py:class:`~.signal.BaseSignal`. Most of them are just wrapped numpy
 functions.
 
-The methods that perform mathematical opearation over one or more axis at a
+The methods that perform mathematical operation over one or more axis at a
 time are:
 
 * :py:meth:`~.signal.BaseSignal.sum`
@@ -667,7 +667,7 @@ Signal operations
 .. versionadded:: 0.8.3
 
 :py:class:`~.signal.BaseSignal` supports all the Python binary arithmetic
-opearations (+, -, \*, //, %, divmod(), pow(), \*\*, <<, >>, &, ^, \|),
+operations (+, -, \*, //, %, divmod(), pow(), \*\*, <<, >>, &, ^, \|),
 augmented binary assignments (+=, -=, \*=, /=, //=, %=, \*\*=, <<=, >>=, &=,
 ^=, \|=), unary operations (-, +, abs() and ~) and rich comparisons operations
 (<, <=, ==, x!=y, <>, >, >=).
@@ -684,7 +684,7 @@ for the navigation and signal axes.
 In the following example `s2` has only one navigation axis while `s` has two.
 However, because the size of their first navigation axis is the same, their
 dimensions are compatible and `s2` is
-broacasted to match `s`'s dimensions.
+broadcasted to match `s`'s dimensions.
 
 .. code-block:: python
 
@@ -718,7 +718,7 @@ is raised.
     ValueError: Invalid dimensions for this operation
 
 
-Broacasting operates exactly in the same way for the signal axes:
+Broadcasting operates exactly in the same way for the signal axes:
 
 .. code-block:: python
 
@@ -962,7 +962,7 @@ lazily:
 
 
 On the other hand, the following rebining operation requires interpolation and
-cannot be peformed lazily:
+cannot be performed lazily:
 
 .. code-block:: python
 
@@ -1032,7 +1032,7 @@ with same dimension.
 
   Stacking example.
 
-An object can be splitted into several objects
+An object can be split into several objects
 with the :py:meth:`~.signal.BaseSignal.split` method. This function can be used
 to reverse the :py:func:`~.utils.stack` function:
 
