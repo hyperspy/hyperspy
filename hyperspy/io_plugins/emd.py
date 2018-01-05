@@ -1042,6 +1042,8 @@ def file_reader(filename, log_info=False,
     dictionaries = []
     if fei_check(filename) == True:
         _logger.debug('EMD is FEI format')
+        if lazy:
+            raise ValueError('Lazy loading is not supported for FEI EMD file.')
         emd = FeiEMDReader(filename, lazy=lazy, **kwds)
         dictionaries = emd.dictionaries
     else:
