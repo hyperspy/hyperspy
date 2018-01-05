@@ -488,9 +488,9 @@ class FeiEMDReader(object):
 
     """
 
-    def __init__(self, filename, first_frame=0, last_frame=None,
+    def __init__(self, filename, load='all', first_frame=0, last_frame=None,
                  individual_frame=False, individual_detector=False,
-                 energy_rebin=1, SI_dtype=None, read_SI_image_stack=False,
+                 energy_rebin=1, SI_dtype=None, load_SI_image_stack=False,
                  lazy=False):
         self.filename = filename
         self.ureg = pint.UnitRegistry()
@@ -501,20 +501,38 @@ class FeiEMDReader(object):
         self.individual_detector = individual_detector
         self.energy_rebin = energy_rebin
         self.SI_data_dtype = SI_dtype
-        self.read_SI_image_stack = read_SI_image_stack
+        self.load_SI_image_stack = load_SI_image_stack
         self.lazy = lazy
         with h5py.File(filename, 'r') as f:
             self.d_grp = f.get('Data')
             self._check_im_type()
-            self._read_data()
+            if self.im_type == 'SpectrumStream':
+                self.p_grp = f.get('Presentation')
+                self._parse_image_display()
+            self._read_data(load)
 
-    def _read_data(self):
+    def _read_data(self, load):
+        self.load_images = self.load_SI = self.load_spectrums = True
+        if load == 'spectrums':
+            self.load_images = self.load_SI = False
+        elif load == 'images':
+            self.load_SI = self.load_spectrums = False
+        elif load == 'spectrum_image':
+            self.load_images = self.load_spectrums = False
+        elif load == 'all':
+            pass
+        else:
+            raise ValueError('`load` argument takes only: `all`, `spectrums`, '
+                             '`images` or `spectrum_image`.')
+
         if self.im_type == 'Image':
             _logger.info('Reading the images.')
             self._read_images()
         elif self.im_type == 'Spectrum':
             self._read_spectrums()
+            self._read_images()
         elif self.im_type == 'SpectrumStream':
+            self._read_spectrums()
             _logger.info('Reading the spectrum image.')
             t0 = time.time()
             self._read_images()
@@ -534,7 +552,11 @@ class FeiEMDReader(object):
             self.im_type = 'Spectrum'
 
     def _read_spectrums(self):
+        if not self.load_spectrums:
+            return
         spectrum_grp = self.d_grp.get("Spectrum")
+        if spectrum_grp is None:
+            return  # No spectrums in the file
         self.detector_name = 'EDS'
         for spectrum_sub_group_key in _get_keys_from_group(spectrum_grp):
             self.dictionaries.append(
@@ -569,13 +591,21 @@ class FeiEMDReader(object):
                 'mapping': self._get_mapping()}
 
     def _read_images(self):
+        # We need to read the image to get the shape of the spectrum image
+        if not self.load_images and not self.load_SI:
+            return
         # Get the image data group
         image_group = self.d_grp.get("Image")
+        if image_group is None:
+            return  # No images in the file
         # Get all the subgroup of the image data group and read the image for
         # each of them
         for image_sub_group_key in _get_keys_from_group(image_group):
-            self.dictionaries.append(
-                self._read_image(image_group, image_sub_group_key))
+            image = self._read_image(image_group, image_sub_group_key)
+            if not self.load_images:
+                # If we don't want to load the images, we stop here
+                return
+            self.dictionaries.append(image)
 
     def _read_image(self, image_group, image_sub_group_key):
         """ Return a dictionary ready to parse of return to io module"""
@@ -588,7 +618,7 @@ class FeiEMDReader(object):
             # only one detector in `Detectors`
             self.detector_name = original_metadata['Detectors']['Detector-01']['DetectorName']
 
-        read_stack = (self.read_SI_image_stack or self.im_type == 'Image')
+        read_stack = (self.load_SI_image_stack or self.im_type == 'Image')
         if read_stack:
             data = np.rollaxis(np.array(image_sub_group['Data']), axis=2)
             # Get the scanning area shape of the SI from the images
@@ -650,6 +680,9 @@ class FeiEMDReader(object):
 
         md = self._get_metadata_dict()
         md['Signal']['signal_type'] = 'image'
+        if hasattr(self, 'map_label_dict'):
+            if image_sub_group_key in self.map_label_dict:
+                md['General']['title'] = self.map_label_dict[image_sub_group_key]
 
         return {'data': data,
                 'axes': axes,
@@ -657,7 +690,18 @@ class FeiEMDReader(object):
                 'original_metadata': original_metadata,
                 'mapping': self._get_mapping()}
 
+    def _parse_image_display(self):
+        image_display_group = self.p_grp.get('Displays/ImageDisplay')
+        key_list = _get_keys_from_group(image_display_group)
+        self.map_label_dict = {}
+        for key in key_list:
+            v = json.loads(image_display_group[key].value[0].decode('utf-8'))
+            data_key = v['dataPath'].split('/')[-1]  # key in data group
+            self.map_label_dict[data_key] = v['display']['label']
+
     def _read_spectrum_image(self):
+        if not self.load_SI:
+            return
         self.detector_name = 'EDS'
         # Spectrum stream group
         spectrum_stream_grp = self.d_grp.get("SpectrumStream")
@@ -765,9 +809,6 @@ class FeiEMDReader(object):
         meta_sig['signal_type'] = ''
 
         return {'General': meta_gen, 'Signal': meta_sig}
-
-    def _read_original_metadata(self, data_group, data_key):
-        return _parse_sub_data_group_metadata(data_group[data_key])
 
     def _get_mapping(self):
         mapping = {

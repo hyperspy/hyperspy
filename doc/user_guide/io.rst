@@ -660,6 +660,7 @@ Loading a spectrum image is slow if `numba <http://numba.pydata.org/>`_ is not i
 Extra loading arguments
 +++++++++++++++++++++++
 
+- `load` : one of {'all', 'images', 'spectrums', 'spectrum_image'} (default is 'all')
 - `first_frame` : integer (default is 0)
 - `last_frame` : integer (default is None)
 - `individual_frame` : boolean (default is False)
@@ -668,7 +669,7 @@ Extra loading arguments
 - `SI_dtype` : numpy dtype (default is None)
 - `read_SI_image_stack` : boolean (default is False)
 
-The `SI_dtype` and `energy_rebin` are particularly useful in combination with `individual_frame=True` to reduce the data size when one want to read the individual frame.
+The `load` specifies the type of data to load. The `SI_dtype` and `energy_rebin` are particularly useful in combination with `individual_frame=True` to reduce the data size when one want to read the individual frame.
 
 .. code-block:: python
 
