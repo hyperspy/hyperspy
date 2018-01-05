@@ -19,9 +19,9 @@
 # The EMD format is a hdf5 standard proposed at Lawrence Berkeley
 # National Lab (see http://emdatasets.com/ for more information).
 # FEI later developed another EMD format, also based on the hdf5 standard. This
-# reader first checked if the file have been saved by Velox (FEI EMD format) 
+# reader first checked if the file have been saved by Velox (FEI EMD format)
 # and use either the EMD class or the FEIEMDReader class to read the file.
-# Writing file is only supported for EMD Berkeley file. 
+# Writing file is only supported for EMD Berkeley file.
 
 
 import re
@@ -206,7 +206,7 @@ class EMD(object):
             axis_units = dim.attrs.get('units', '')
             if isinstance(axis_units, bytes):
                 axis_units = axis_units.decode('utf-8')
-            units = re.findall('[^_\W]+', axis_units)
+            units = re.findall(r'[^_\W]+', axis_units)
             axis.units = ''.join(units)
             try:
                 if len(dim) == 1:
@@ -585,7 +585,7 @@ class FeiEMDReader(object):
             self.detector_name = original_metadata['BinaryResult']['Detector']
         except KeyError:
             # if the `BinaryResult/Detector` is not available, there should be
-            # only one detector in `Detectors` 
+            # only one detector in `Detectors`
             self.detector_name = original_metadata['Detectors']['Detector-01']['DetectorName']
 
         read_stack = (self.read_SI_image_stack or self.im_type == 'Image')
@@ -598,9 +598,12 @@ class FeiEMDReader(object):
             # Get the scanning area shape of the SI from the images
             self.SI_shape = data.shape
 
-        pix_scale = original_metadata['BinaryResult'].get('PixelSize', {'height': 1.0, 'width': 1.0})
-        offsets = original_metadata['BinaryResult'].get('Offset',  {'x': 0.0, 'y': 0.0})
-        original_units = original_metadata['BinaryResult'].get('PixelUnitX', '')
+        pix_scale = original_metadata['BinaryResult'].get(
+            'PixelSize', {'height': 1.0, 'width': 1.0})
+        offsets = original_metadata['BinaryResult'].get(
+            'Offset',  {'x': 0.0, 'y': 0.0})
+        original_units = original_metadata['BinaryResult'].get(
+            'PixelUnitX', '')
 
         axes = []
         # stack of images
@@ -738,14 +741,12 @@ class FeiEMDReader(object):
 
     def _get_dispersion_offset(self, original_metadata):
         for detectorname, detector in original_metadata['Detectors'].items():
-            _logger.debug('Detector: %s' % detector['DetectorName'])
-            if detector['DetectorName'] == 'SuperXG21' or detector['DetectorName'] == 'SuperXG11':
+            if original_metadata['BinaryResult']['Detector'] in detector['DetectorName']:
                 dispersion = float(
                     detector['Dispersion']) / 1000.0 * self.energy_rebin
                 offset = float(
                     detector['OffsetEnergy']) / 1000.0
-
-        return dispersion, offset
+                return dispersion, offset
 
     def _convert_scale_units(self, value, units, factor=1):
         factor /= 2
@@ -902,8 +903,9 @@ class FeiSpectrumStream(object):
 
     """
     Below some information we have got from FEI:
-    'The SI data is stored as a spectrum stream, ‘65535’ means next pixel,
-    other numbers mean a spectrum count in that bin for that pixel.
+    'The SI data is stored as a spectrum stream, ‘65535’ means next pixel 
+    (these markers are also called `Gate pulse`), other numbers mean a spectrum
+    count in that bin for that pixel.
     For the size of the spectrum image and dispersion you have to look in
     AcquisitionSettings.
     The spectrum image cube itself stored in a compressed format, that is
@@ -969,28 +971,28 @@ class FeiSpectrumStream(object):
         else:
             if self.lazy:
                 memmap_fname = path.join(mkdtemp(), 'newfile.dat')
-                spectrum_image = np.memmap(memmap_fname, dtype=self.data_dtype, 
-                                           mode='w+', shape = (shape[0], shape[1], 
-                                                               int(self.bin_count / self.energy_rebin)))
-                
+                spectrum_image = np.memmap(memmap_fname, dtype=self.data_dtype,
+                                           mode='w+', shape=(shape[0], shape[1],
+                                                             int(self.bin_count / self.energy_rebin)))
+
                 spectrum_image = delayed(get_spectrum_image)(spectrum_image,
-                stream, self.shape, self.first_frame, self.last_frame, self.energy_rebin)
-                
-                self.spectrum_image = da.from_delayed(spectrum_image, shape=shape, 
+                                                             stream, self.shape, self.first_frame, self.last_frame, self.energy_rebin)
+
+                self.spectrum_image = da.from_delayed(spectrum_image, shape=shape,
                                                       dtype=self.data_dtype)
             else:
                 spectrum_image = np.zeros((shape[0], shape[1],
-                           int(self.bin_count / self.energy_rebin)), dtype=self.data_dtype)
+                                           int(self.bin_count / self.energy_rebin)), dtype=self.data_dtype)
                 self.spectrum_image = get_spectrum_image(spectrum_image,
-                stream, self.shape, self.first_frame, self.last_frame, self.energy_rebin)
-                
+                                                         stream, self.shape, self.first_frame, self.last_frame, self.energy_rebin)
+
         self._add_imported_parameters_to_original_metadata()
 
 
 @jit_ifnumba
 def get_spectrum_image(spectrum_image, stream, shape,
                        first_frame, last_frame, energy_rebin=1):
-    
+
     # jit speeds up this function by a factor of ~ 30
     navigation_index = 0
     frame_number = 0
