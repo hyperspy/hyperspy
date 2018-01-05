@@ -581,7 +581,12 @@ class FeiEMDReader(object):
         """ Return a dictionary ready to parse of return to io module"""
         image_sub_group = image_group[image_sub_group_key]
         original_metadata = _parse_metadata(image_group, image_sub_group_key)
-        self.detector_name = original_metadata['BinaryResult'].get('Detector')
+        try:
+            self.detector_name = original_metadata['BinaryResult']['Detector']
+        except KeyError:
+            # if the `BinaryResult/Detector` is not available, there should be
+            # only one detector in `Detectors` 
+            self.detector_name = original_metadata['Detectors']['Detector-01']['DetectorName']
 
         read_stack = (self.read_SI_image_stack or self.im_type == 'Image')
         if read_stack:
