@@ -1018,7 +1018,6 @@ def make_cmap(colors, name='my_colormap', position=None,
         switch to control whether or not to register the custom colormap
         with matplotlib in order to enable use by just the name string
     """
-
     def _html_color_to_rgb(color_string):
         """ convert #RRGGBB to an (R, G, B) tuple """
         color_string = color_string.strip()
@@ -1027,7 +1026,7 @@ def make_cmap(colors, name='my_colormap', position=None,
             raise ValueError(
                 "input #{} is not in #RRGGBB format".format(color_string))
         r, g, b = color_string[:2], color_string[2:4], color_string[4:]
-        r, g, b = [int(n, 16) / (1 if bit else 255) for n in (r, g, b)]
+        r, g, b = [int(n, 16) / 255 for n in (r, g, b)]
         return r, g, b
 
     bit_rgb = np.linspace(0, 1, 256)
@@ -1040,16 +1039,17 @@ def make_cmap(colors, name='my_colormap', position=None,
         elif position[0] != 0 or position[-1] != 1:
             raise ValueError("position must start with 0 and end with 1")
 
-    if bit:
-        for i in range(len(colors)):
-            colors[i] = (bit_rgb[colors[i][0]],
-                         bit_rgb[colors[i][1]],
-                         bit_rgb[colors[i][2]])
     cdict = {'red': [], 'green': [], 'blue': []}
 
     for pos, color in zip(position, colors):
         if isinstance(color, str):
             color = _html_color_to_rgb(color)
+
+        elif bit:
+            color = (bit_rgb[color[0]],
+                     bit_rgb[color[1]],
+                     bit_rgb[color[2]])
+
         cdict['red'].append((pos, color[0], color[0]))
         cdict['green'].append((pos, color[1], color[1]))
         cdict['blue'].append((pos, color[2], color[2]))
@@ -1058,7 +1058,6 @@ def make_cmap(colors, name='my_colormap', position=None,
 
     if register:
         mpl.cm.register_cmap(name, cmap)
-
     return cmap
 
 
