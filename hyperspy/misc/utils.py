@@ -159,7 +159,7 @@ def slugify(value, valid_variable_name=False):
     value = value.translate(None, _slugify_strip_re_data).decode().strip()
     value = value.replace(' ', '_')
     if valid_variable_name is True:
-        if value[:1].isdigit():
+        if value.isdigit():
             value = 'Number_' + value
     return value
 

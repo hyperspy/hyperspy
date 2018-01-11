@@ -42,6 +42,8 @@ import gc
 from tempfile import mkdtemp
 import os.path as path
 
+from hyperspy.misc.elements import atomic_number2name
+
 
 # Plugin characteristics
 # ----------------------
@@ -482,10 +484,6 @@ class FeiEMDReader(object):
         String specifying whether the data is an image, spectrum or 
         spectrum image.
 
-    Methods
-    ----------
-    get_metadata_dict, get_original_metadata
-
     """
 
     def __init__(self, filename, load='all', first_frame=0, last_frame=None,
@@ -503,9 +501,12 @@ class FeiEMDReader(object):
         self.SI_data_dtype = SI_dtype
         self.load_SI_image_stack = load_SI_image_stack
         self.lazy = lazy
+
+        self.original_metadata = {}
         with h5py.File(filename, 'r') as f:
             self.d_grp = f.get('Data')
             self._check_im_type()
+            self._parse_metadata_group(f.get('Operations'), 'Operations')
             if self.im_type == 'SpectrumStream':
                 self.p_grp = f.get('Presentation')
                 self._parse_image_display()
@@ -569,6 +570,7 @@ class FeiEMDReader(object):
 
         original_metadata = _parse_metadata(spectrum_group,
                                             spectrum_sub_group_key)
+        original_metadata.update(self.original_metadata)
 
         dispersion, offset = self._get_dispersion_offset(original_metadata)
 
@@ -611,6 +613,7 @@ class FeiEMDReader(object):
         """ Return a dictionary ready to parse of return to io module"""
         image_sub_group = image_group[image_sub_group_key]
         original_metadata = _parse_metadata(image_group, image_sub_group_key)
+        original_metadata.update(self.original_metadata)
         try:
             self.detector_name = original_metadata['BinaryResult']['Detector']
         except KeyError:
@@ -688,7 +691,7 @@ class FeiEMDReader(object):
                 'axes': axes,
                 'metadata': md,
                 'original_metadata': original_metadata,
-                'mapping': self._get_mapping()}
+                'mapping': self._get_mapping(map_selected_element=False)}
 
     def _parse_image_display(self):
         image_display_group = self.p_grp.get('Displays/ImageDisplay')
@@ -698,6 +701,21 @@ class FeiEMDReader(object):
             v = json.loads(image_display_group[key].value[0].decode('utf-8'))
             data_key = v['dataPath'].split('/')[-1]  # key in data group
             self.map_label_dict[data_key] = v['display']['label']
+
+    def _parse_metadata_group(self, group, group_name):
+        d = {}
+        for group_key in _get_keys_from_group(group):
+            subgroup = group.get(group_key)
+            if hasattr(subgroup, 'keys'):
+                sub_dict = {}
+                for subgroup_key in _get_keys_from_group(subgroup):
+                    v = json.loads(
+                        subgroup[subgroup_key].value[0].decode('utf-8'))
+                    sub_dict[subgroup_key] = v
+            else:
+                sub_dict = json.loads(subgroup.value[0].decode('utf-8'))
+            d[group_key] = sub_dict
+        self.original_metadata.update({group_name: d})
 
     def _read_spectrum_image(self):
         if not self.load_SI:
@@ -718,6 +736,7 @@ class FeiEMDReader(object):
         streams.read_streams(self.individual_detector)
         spectrum_image_shape = streams.get_SI_shape()
         original_metadata = streams.streams[0].original_metadata
+        original_metadata.update(self.original_metadata)
 
         pixel_size, offsets, original_units = streams.get_pixelsize_offset_unit()
         dispersion, offset = self._get_dispersion_offset(original_metadata)
@@ -777,10 +796,12 @@ class FeiEMDReader(object):
                                       'mapping': self._get_mapping()})
         else:
             for stream in streams.streams:
+                original_metadata = stream.original_metadata
+                original_metadata.update(self.original_metadata)
                 self.dictionaries.append({'data': stream.spectrum_image,
                                           'axes': axes,
                                           'metadata': md,
-                                          'original_metadata': stream.original_metadata,
+                                          'original_metadata': original_metadata,
                                           'mapping': self._get_mapping()})
 
     def _get_dispersion_offset(self, original_metadata):
@@ -810,7 +831,7 @@ class FeiEMDReader(object):
 
         return {'General': meta_gen, 'Signal': meta_sig}
 
-    def _get_mapping(self):
+    def _get_mapping(self, map_selected_element=True):
         mapping = {
             'Acquisition.AcquisitionStartDatetime.DateTime': (
                 "General.time", self._convert_time),
@@ -843,7 +864,18 @@ class FeiEMDReader(object):
                 "Acquisition_instrument.TEM.Detector.EDS.frame_number", None)
         }
 
+        # Add selected element
+        if map_selected_element:
+            mapping.update({'Operations.ImageQuantificationOperation': (
+                            'Sample.elements',
+                            self._convert_element_list),
+                            })
+
         return mapping
+
+    def _convert_element_list(self, d):
+        atomic_number_list = d[d.keys()[0]]['elementSelection']
+        return [atomic_number2name[int(atomic_number)] for atomic_number in atomic_number_list]
 
     def _convert_time(self, unix_time):
         # Since we don't know the actual time zone of where the data have been
