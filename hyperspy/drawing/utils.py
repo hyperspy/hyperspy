@@ -421,12 +421,12 @@ def plot_images(images,
             multi-dimensional images will have each plane plotted as a separate
             image
         cmap : matplotlib colormap, list, or ``'mpl_colors'``, *optional*
-            The colormap used for the images, by default read from pyplot
+            The colormap used for the images, by default read from ``pyplot``.
             A list of colormaps can also be provided, and the images will
-            cycle through them.
-            Optionally, the value ``'mpl_colors'`` will cause the cmap to loop
-            through the default matplotlib colors (to match with the default
-            output of the :py:meth:`~.drawing.utils.plot_spectra` method.
+            cycle through them. Optionally, the value ``'mpl_colors'`` will
+            cause the cmap to loop through the default ``matplotlib``
+            colors (to match with the default output of the
+            :py:func:`~.drawing.utils.plot_spectra` method.
             Note: if using more than one colormap, using the ``'single'``
             option for ``colorbar`` will use only the last colormap for the
             bar, so it is recommended to always use ``'multi'`` or ``None``.
