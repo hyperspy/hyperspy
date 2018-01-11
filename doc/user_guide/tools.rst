@@ -1054,12 +1054,16 @@ The Fast Fourier transform and its inverse can be applied on a signal with the :
 
 .. code-block:: python
 
-    >>> im = hs.signals.Signal2D(scipy.misc.lena())
-    >>> im.fft(shifted=True).plot()
+    >>> import numpy as np
+    >>> im = hs.datasets.example_signals.object_hologram()
+    >>> np.log(im.fft(shifted=True).amplitude).plot()
 
-.. figure::  images/lena_fft.png
+.. figure::  images/hologram_fft.png
   :align:   center
   :width:   400
+
+Note that for visual inspection of FFT it is common to plot logarithm of amplitude rather than FFT itself as it is done
+    in the example above.
 
 By default both methods calculate FFT and IFFT with origin at (0, 0) (not in the centre of FFT). Use `shifted=True` option to
 calculate FFT and the inverse with origin shifted in the centre.
