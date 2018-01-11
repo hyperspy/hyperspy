@@ -600,21 +600,21 @@ def plot_images(images,
     # If any of the cmaps given are diverging, and auto-centering, set the
     # appropriate flag:
     if centre_colormap == "auto":
-        centre_colormap = []
+        centre_colormaps = []
         for c in cmap:
             if c in MPL_DIVERGING_COLORMAPS:
-                centre_colormap.append(True)
+                centre_colormaps.append(True)
             else:
-                centre_colormap.append(False)
+                centre_colormaps.append(False)
     # if it was True, just convert to list
     elif centre_colormap:
-        centre_colormap = [True]
+        centre_colormaps = [True]
     # likewise for false
     elif not centre_colormap:
-        centre_colormap = [False]
+        centre_colormaps = [False]
 
     # finally, convert lists to cycle generators for adaptive length:
-    centre_colormap = itertools.cycle(centre_colormap)
+    centre_colormaps = itertools.cycle(centre_colormaps)
     cmap = itertools.cycle(cmap)
 
     if isinstance(vmin, list):
@@ -795,7 +795,7 @@ def plot_images(images,
             ax = f.add_subplot(rows, per_row, idx)
             axes_list.append(ax)
             data = im.data
-            centre = next(centre_colormap)   # get next value for centreing
+            centre = next(centre_colormaps)   # get next value for centreing
 
             # Enable RGB plotting
             if rgb_tools.is_rgbx(data):
