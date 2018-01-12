@@ -445,9 +445,9 @@ axes labels and the ticks are also disabled with `axes_decor`:
     >>> angles = hs.signals.BaseSignal(range(10,70,10))
     >>> image.map(scipy.ndimage.rotate, angle=angles.T, reshape=False)
     >>> hs.plot.plot_images(
-    >>>     image, suptitle='Turning Lena', axes_decor='off',
-    >>>     label=['Rotation ' + str(angle.data[0]) +
-    >>>            '$^\degree$' for angle in angles], colorbar=None)
+    ...     image, suptitle='Turning Ascent', axes_decor='off',
+    ...     label=['Rotation {}$^\degree$'.format(angles.data[i]) for
+    ...            i in range(angles.data.shape[0])], colorbar=None)
 
 .. figure::  images/plot_images_custom-labels.png
   :align:   center
@@ -456,24 +456,28 @@ axes labels and the ticks are also disabled with `axes_decor`:
   Figure generated with :py:func:`~.drawing.utils.plot_images` with customised
   labels.
 
-:py:func:`~.drawing.utils.plot_images` can also be used to easily plot a list of `Images`, comparing
-different `Signals`, including RGB images.
-This example also demonstrates how to wrap labels using `labelwrap` (for preventing overlap) and using a single
-`colorbar` for all the Images, as opposed to multiple individual ones:
+:py:func:`~.drawing.utils.plot_images` can also be used to easily plot a list
+of `Images`, comparing different `Signals`, including RGB images. This
+example also demonstrates how to wrap labels using `labelwrap` (for preventing
+overlap) and using a single `colorbar` for all the Images, as opposed to
+multiple individual ones:
 
 .. code-block:: python
 
     >>> import scipy
-
+    >>> import numpy as np
+    >>>
     >>> # load red channel of raccoon as an image
     >>> image0 = hs.signals.Signal2D(scipy.misc.face()[:,:,0])
     >>> image0.metadata.General.title = 'Rocky Raccoon - R'
-
-    >>> # load lena into 6 hyperimage
+    >>>
+    >>> # load ascent into a length 6 hyper-image
     >>> image1 = hs.signals.Signal2D([scipy.misc.ascent()]*6)
     >>> angles = hs.signals.BaseSignal(np.arange(10,70,10)).T
-    >>> image1.map(scipy.ndimage.rotate, angle=angles, reshape=False)
-
+    >>> image1.map(scipy.ndimage.rotate, angle=angles,
+    ...            show_progressbar=False, reshape=False)
+    >>> image1.data = np.clip(image1.data, 0, 255)  # clip data to int range
+    >>>
     >>> # load green channel of raccoon as an image
     >>> image2 = hs.signals.Signal2D(scipy.misc.face()[:,:,1])
     >>> image2.metadata.General.title = 'Rocky Raccoon - G'

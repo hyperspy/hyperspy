@@ -791,10 +791,12 @@ to make a horizontal "collage" of the image stack:
     >>> for image, angle in zip(image_stack, (0, 45, 90, 135, 180)):
     ...    image.data[:] = scipy.ndimage.rotate(image.data, angle=angle,
     ...    reshape=False)
+    >>> # clip data to integer range:
+    >>> image_stack.data = np.clip(image_stack.data, 0, 255)
     >>> collage = hs.stack([image for image in image_stack], axis=0)
-    >>> collage.plot()
+    >>> collage.plot(scalebar=False)
 
-.. figure::  images/rotate_lena.png
+.. figure::  images/rotate_ascent.png
   :align:   center
   :width:   500
 
@@ -820,10 +822,12 @@ using an external function can be more easily accomplished using the
     >>> image_stack.map(scipy.ndimage.rotate,
     ...                            angle=45,
     ...                            reshape=False)
+    >>> # clip data to integer range
+    >>> image_stack.data = np.clip(image_stack.data, 0, 255)
     >>> collage = hs.stack([image for image in image_stack], axis=0)
     >>> collage.plot()
 
-.. figure::  images/rotate_lena_apply_simple.png
+.. figure::  images/rotate_ascent_apply_simple.png
   :align:   center
   :width:   500
 
@@ -839,14 +843,11 @@ arguments as in the following example.
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> angles = hs.signals.BaseSignal(np.array([0, 45, 90, 135]))
-    >>> modes = hs.signals.BaseSignal(np.array(['constant', 'nearest', 'reflect', 'wrap']))
     >>> image_stack.map(scipy.ndimage.rotate,
     ...                            angle=angles.T,
-    ...                            reshape=False,
-    ...                            mode=modes.T)
-    calculating 100% |#############################################| ETA:  00:00:00Cropping
+    ...                            reshape=False)
 
-.. figure::  images/rotate_lena_apply_ndkwargs.png
+.. figure::  images/rotate_ascent_apply_ndkwargs.png
   :align:   center
   :width:   500
 
@@ -1026,7 +1027,7 @@ with same dimension.
     >>> image = hs.stack([hs.stack([image]*3,axis=0)]*3,axis=1)
     >>> image.plot()
 
-.. figure::  images/stack_lena_3_3.png
+.. figure::  images/stack_ascent_3_3.png
   :align:   center
   :width:   500
 
@@ -1041,7 +1042,7 @@ to reverse the :py:func:`~.utils.stack` function:
     >>> image = image.split()[0].split()[0]
     >>> image.plot()
 
-.. figure::  images/split_lena_3_3.png
+.. figure::  images/split_ascent_3_3.png
   :align:   center
   :width:   400
 
