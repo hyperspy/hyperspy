@@ -118,7 +118,9 @@ original_filename
 time_zone
     type: Str
 
-    The time zone as supported by the python-dateutil library, e.g. "UTC", "Europe/London", etc. It can also be a time offset, e.g. "+03:00" or "-05:00".
+    The time zone as supported by the python-dateutil library, e.g. "UTC",
+    "Europe/London", etc. It can also be a time offset, e.g. "+03:00" or
+    "-05:00".
 
 time
     type: Str
@@ -134,7 +136,8 @@ date
 authors
     type: Str
 
-    The authors of the data, in Latex format: Surname1, Name1 and Surname2, Name2, etc.
+    The authors of the data, in Latex format: Surname1, Name1 and Surname2,
+    Name2, etc.
 
 doi
     type: Str
@@ -325,8 +328,8 @@ azimuth_angle
 elevation_angle
     type: Float
 
-    The elevation angle of the detector in degree. The detector is perpendicular
-    to the surface with an angle of 90.
+    The elevation angle of the detector in degree. The detector is
+    perpendicular to the surface with an angle of 90.
 
 energy_resolution_MnKa
     type: Float
@@ -359,7 +362,8 @@ azimuth_angle (º)
 position
     type: Str
 
-    Position of the biprism in microscope column, e.g. Selected area aperture plane
+    Position of the biprism in microscope column, e.g. Selected area aperture
+    plane
 
 voltage
     type: Float
@@ -408,8 +412,8 @@ signal_type
     can be used by HyperSpy to load the file as a specific signal class and
     therefore the naming should be standarised. Currently HyperSpy provides
     special signal class for photoemission spectroscopy, electron energy
-    loss spectroscopy and energy dispersive spectroscopy. The signal_type in these cases should be respectively
-    PES, EELS and EDS_TEM (EDS_SEM).
+    loss spectroscopy and energy dispersive spectroscopy. The signal_type in
+    these cases should be respectively PES, EELS and EDS_TEM (EDS_SEM).
 
 signal_origin
     type: Str
@@ -426,7 +430,8 @@ record_by
 quantity
     type: Str
 
-    The name of the quantity of the "intensity axis" with the units in round brackets if required, for example Temperature (K).
+    The name of the quantity of the "intensity axis" with the units in round
+    brackets if required, for example Temperature (K).
 
 Noise_properties
 ----------------
@@ -435,14 +440,16 @@ variance
     type: float or BaseSignal instance.
 
     The variance of the data. It can be a float when the noise is Gaussian or a
-    :class:`~.signal.BaseSignal` instance if the noise is heteroscedastic, in which
-    case it must have the same dimensions as :attr:`~.signal.BaseSignal.data`.
+    :class:`~.signal.BaseSignal` instance if the noise is heteroscedastic,
+    in which case it must have the same dimensions as
+    :attr:`~.signal.BaseSignal.data`.
 
 Variance_linear_model
 ^^^^^^^^^^^^^^^^^^^^^
 
-In some cases the variance can be calculated from the data using a simple linear
-model: ``variance = (gain_factor * data + gain_offset) * correlation_factor``.
+In some cases the variance can be calculated from the data using a simple
+linear model: ``variance = (gain_factor * data + gain_offset) *
+correlation_factor``.
 
 gain_factor
     type: Float
