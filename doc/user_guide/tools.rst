@@ -1571,6 +1571,11 @@ profile, where the line profile can be changed interactively.
   >>> s = hs.signals.BaseSignal(np.arange(10000).reshape((100, 100)))
   >>> s_line = s.get_line_profile()
 
+.. image::  images/get_line_profile_2d_signal_0.png
+  :scale: 50 %
+
+.. image::  images/get_line_profile_2d_signal_1.png
+  :scale: 50 %
 
 Note that this only works for signals with at least two signal dimensions, or two navigation
 dimensions.
@@ -1584,6 +1589,17 @@ AxesManager axes, list of numbers, or list of strings (the names of the axes).
   >>> s = hs.signals.Signal1D(np.arange(10000).reshape((10, 10, 10, 10)))
   >>> s_line = s.get_line_profile(axes=(0, 2))
 
+.. image::  images/get_line_profile_4d_signal_0_nav.png
+  :scale: 50 %
+
+.. image::  images/get_line_profile_4d_signal_0_sig.png
+  :scale: 50 %
+
+.. image::  images/get_line_profile_4d_signal_1_nav.png
+  :scale: 50 %
+
+.. image::  images/get_line_profile_4d_signal_1_sig.png
+  :scale: 50 %
 
 The method can also be run non-interactively, where the position and width of the
 line profile should be specified.
