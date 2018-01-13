@@ -66,7 +66,6 @@ install_req = ['scipy>=0.15',
 
 extras_require = {
     "learning": ['scikit-learn'],
-    "bcf": ['lxml'],
     "gui-jupyter": ["hyperspy_gui_ipywidgets"],
     "gui-traitsui": ["hyperspy_gui_traitsui"],
     "test": ["pytest>=3", "pytest-mpl", "matplotlib>=2.0.2"],
@@ -352,6 +351,7 @@ with update_version_when_dev() as version:
                 'tests/drawing/plot_signal2d/*.png',
                 'tests/drawing/plot_markers/*.png',
                 'misc/eds/example_signals/*.hdf5',
+                'misc/holography/example_signals/*.hdf5',
                 'tests/drawing/plot_mva/*.png',
                 'tests/drawing/plot_signal/*.png',
                 'tests/drawing/plot_signal1d/*.png',
