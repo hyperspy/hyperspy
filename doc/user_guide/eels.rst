@@ -99,10 +99,11 @@ Kramers-Kronig Analysis
 The single-scattering EEL spectrum is approximately related to the complex
 permittivity of the sample and can be estimated by Kramers-Kronig analysis.
 The :py:meth:`~._signals.eels.EELSSpectrum_mixin.kramers_kronig_analysis`
-method implements the Kramers-Kronig FFT method as in [Egerton2011]_ to
-estimate the complex dielectric function from a low-loss EELS spectrum. In
-addition, it can estimate the thickness if the refractive index is known and
-approximately correct for surface plasmon excitations in layers.
+method implements the Kramers-Kronig FFT method as in
+:ref:`[Egerton2011] <Egerton2011>` to estimate the complex dielectric function
+from a low-loss EELS spectrum. In addition, it can estimate the thickness if
+the refractive index is known and approximately correct for surface
+plasmon excitations in layers.
 
 
 

@@ -194,7 +194,8 @@ To perform Poissonian noise normalization:
      >>> # Because it is the first argument we could have simply written:
      >>> s.decomposition(True)
 
-More details about the scaling procedure can be found in [Keenan2004]_.
+More details about the scaling procedure can be found in
+:ref:`[Keenan2004] <Keenan2004>`.
 
 .. _rpca-label:
 
@@ -206,11 +207,11 @@ outliers can be the result of missing or dead pixels, X-ray spikes, or very
 low count data. If one assumes a dataset to consist of a low-rank component
 **L** corrupted by a sparse error component **S**, then Robust PCA (RPCA)
 can be used to recover the low-rank component for subsequent processing
-[Candes2011]_.
+:ref:`[Candes2011] <Candes2011>`.
 
-The default RPCA algorithm is GoDec [Zhou2011]_. In HyperSpy it returns the
-factors and loadings of **L**, and can be accessed with the following code.
-You must set the ``output_dimension`` when using RPCA.
+The default RPCA algorithm is GoDec :ref:`[Zhou2011] <Zhou2011>`. In HyperSpy
+it returns the factors and loadings of **L**, and can be accessed with the
+following code. You must set the ``output_dimension`` when using RPCA.
 
 .. code-block:: python
 
@@ -218,8 +219,9 @@ You must set the ``output_dimension`` when using RPCA.
    ...                 output_dimension=3)
 
 HyperSpy also implements an *online* algorithm for RPCA developed by Feng et
-al. [Feng2013]_. This minimizes memory usage, making it suitable for large
-datasets, and can often be faster than the default algorithm.
+al. :ref:`[Feng2013] <Feng2013>`. This minimizes memory usage, making it
+suitable for large datasets, and can often be faster than the default
+algorithm.
 
 .. code-block:: python
 
@@ -287,7 +289,8 @@ Another popular decomposition method is non-negative matrix factorization
 
 Unlike PCA, NMF forces the components to be strictly non-negative, which can
 aid the physical interpretation of components for count data such as images,
-EELS or EDS. For an example of NMF in EELS processing, see [Nicoletti2013]_.
+EELS or EDS. For an example of NMF in EELS processing, see
+:ref:`[Nicoletti2013] <[Nicoletti2013]>`.
 
 NMF takes the optional argument "output_dimension", which determines the number
 of components to keep. Setting this to a small number is recommended to keep
@@ -300,8 +303,8 @@ Blind Source Separation
 In some cases (it largely depends on the particular application) it is possible
 to obtain more physically interpretable set of components using a process
 called Blind Source Separation (BSS). For more information about blind source
-separation please see [Hyvarinen2000]_, and for an example application to
-EELS analysis, see [Pena2010]_.
+separation please see :ref:`[Hyvarinen2000] <Hyvarinen2000>`, and for an
+example application to EELS analysis, see :ref:`[Pena2010] <Pena2010>`.
 
 To perform BSS on the result of a decomposition, run the
 :py:meth:`~.learn.mva.MVA.blind_source_separation` method, e.g.:

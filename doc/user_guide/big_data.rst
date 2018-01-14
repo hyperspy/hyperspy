@@ -214,7 +214,7 @@ implementations:
 * **ORPCA** (``algorithm='ORPCA'``): performs Online Robust PCA.
   (It is also available for regular signals.)
 * **NMF** (``algorithm='ONMF'``): performs Online Robust NMF, as per "OPGD"
-  algorithm in [Zhao2016]_.
+  algorithm in :ref:`[Zhao2016] <Zhao2016>`.
 
 Other minor differences
 ^^^^^^^^^^^^^^^^^^^^^^^

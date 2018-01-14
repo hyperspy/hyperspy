@@ -1629,7 +1629,7 @@ Phase unwrapping
 With the :py:func:`~hyperspy.signals.ComplexSignal.unwrapped_phase` method the
 complex phase of a signal can be unwrapped and returned as a new signal. The
 underlying method is :py:func:`~skimage.restoration.unwrap`, which uses the
-algorithm described in [Herraez]_.
+algorithm described in :ref:`[Herraez] <Herraez>`.
 
 
 Add a linear phase ramp

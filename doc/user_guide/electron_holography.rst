@@ -30,8 +30,11 @@ To transform a :py:class:`~._signals.signal2d.Signal2D` (or subclass) into a
 Reconstruction of holograms
 ---------------------------
 The detailed description of electron holography and reconstruction of holograms
-can be found in literature [Gabor1948]_, [Tonomura1999]_, [McCartney2007]_
-and [Joy1993]_. Fourier based reconstruction of off-axis holograms (includes
+can be found in literature :ref:`[Gabor1948] <Gabor1948>`,
+:ref:`[Tonomura1999] <Tonomura1999>`,
+:ref:`[McCartney2007] <McCartney2007>`,
+and :ref:`[Joy1993] <Joy1993>`.
+Fourier based reconstruction of off-axis holograms (includes
 finding a side band in FFT, isolating and filtering it, recenter and
 calculate inverse Fourier transform) can be performed using the
 :meth:`~._signals.hologram_image.HologramImage.reconstruct_phase` method

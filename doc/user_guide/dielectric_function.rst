@@ -25,7 +25,7 @@ Number of effective electrons
 .. versionadded:: 0.7
 
 The Bethe f-sum rule gives rise to two definitions of the effective number (see
-[Egerton2011]_):
+:ref:`[Egerton2011] <Egerton2011>`):
 
 .. math::
 

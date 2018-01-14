@@ -503,7 +503,7 @@ multiple individual ones:
   images.
 
 Data files used in the following example can be downloaded using (These data
-are described in [Rossouw2015]_.
+are described in :ref:`[Rossouw2015] <Rossouw2015>`.
 
 .. code-block:: python
 

@@ -17,7 +17,8 @@ spectrum (SEM or TEM).
 Spectrum loading and parameters
 -------------------------------
 
-The sample and  data used in this section are described in [Burdet2013]_,
+The sample and  data used in this section are described in
+:ref:`[Burdet2013] <[Burdet2013]>`,
 and can be downloaded using:
 
 .. code-block:: python
@@ -366,7 +367,8 @@ be limited by additional, optional arguments.
 Mass absorption coefficient database
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A mass absorption coefficient database [Chantler2005]_ is available:
+A mass absorption coefficient database :ref:`[Chantler2005] <Chantler2005>`
+is available:
 
 .. code-block:: python
 
@@ -451,8 +453,8 @@ Geting the intensity of an X-ray line
 
 .. versionadded:: 0.8
 
-The sample and data used in this section are described in [Rossouw2015]_, and
-can be downloaded using:
+The sample and data used in this section are described in
+:ref:`[Rossouw2015] <Rossouw2015>`, and can be downloaded using:
 
 .. code-block:: python
 
@@ -549,8 +551,8 @@ HyperSpy now includes three methods for EDS quantification:
 * Zeta-factors
 * Ionization cross sections
 
-Quantification must be applied to the background-subtracted intensities, which can
-be found using :py:meth:`~._signals.eds.EDS_mixin.get_lines_intensity`.
+Quantification must be applied to the background-subtracted intensities, which
+can be found using :py:meth:`~._signals.eds.EDS_mixin.get_lines_intensity`.
 The quantification of these intensities can then be calculated using
 :py:meth:`~._signals.eds_tem.EDSTEM_mixin.quantification`.
 
@@ -569,10 +571,11 @@ is usually preferable. In the case of zeta-factors and cross sections, these
 must be determined experimentally using standards.
 
 Zeta-factors should be provided in units of kg/m^2. The method is described
-further in [Watanabe1996]_ and [Watanabe2006]_ . Cross sections should be
+further in :ref:`[Watanabe1996] <Watanabe1996>`
+and :ref:`[Watanabe2006] <Watanabe2006>`. Cross sections should be
 provided in units of barns (b). Further details on the cross section method can
-be found in [MacArthur2016]_ . Conversion between zeta-factors and cross
-sections is possible using
+be found in :ref:`[MacArthur2016] <MacArthur2016>`. Conversion between
+zeta-factors and cross sections is possible using
 :py:func:`~.misc.eds.utils.edx_cross_section_to_zeta` or
 :py:func:`~.misc.eds.utils.zeta_to_edx_cross_section`.
 
