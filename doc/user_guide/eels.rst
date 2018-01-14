@@ -161,11 +161,11 @@ HyperSpy has created the model and configured it automatically:
 .. code-block:: python
 
     >>> m.components
-       # |            Attribute Name |            Component Name |            Component Type
-    ---- | ------------------------- | ------------------------- | -------------------------
-       0 |                  PowerLaw |                  PowerLaw |                  PowerLaw
-       1 |                       N_K |                       N_K |                EELSCLEdge
-       2 |                       B_K |                       B_K |                EELSCLEdge
+       # |       Attribute Name |       Component Name |       Component Type
+    ---- | -------------------- | -------------------- | --------------------
+       0 |             PowerLaw |             PowerLaw |             PowerLaw
+       1 |                  N_K |                  N_K |           EELSCLEdge
+       2 |                  B_K |                  B_K |           EELSCLEdge
 
 Conveniently, all the EELS core-loss components of the added elements are added
 automatically, names after its element symbol.

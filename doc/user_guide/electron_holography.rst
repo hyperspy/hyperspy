@@ -44,13 +44,15 @@ takes sideband position and size as parameters:
 
     >>> import hyperspy.api as hs
     >>> im =  hs.datasets.example_signals.object_hologram()
-    >>> wave_image = im.reconstruct_phase(sb_position=(<y>, <x>), sb_size=sb_radius)
+    >>> wave_image = im.reconstruct_phase(sb_position=(<y>, <x>),
+    ...                                   sb_size=sb_radius)
 
 The parameters can be found automatically by calling following methods:
 
 .. code-block:: python
 
-    >>> sb_position = im.estimate_sideband_position(ap_cb_radius=None, sb='lower')
+    >>> sb_position = im.estimate_sideband_position(ap_cb_radius=None,
+    ...                                             sb='lower')
     >>> sb_size = im.estimate_sideband_size(sb_position)
 
 :meth:`~._signals.hologram_image.HologramImage.estimate_sideband_position`
@@ -74,7 +76,9 @@ hologram should be provided to the method either as Hyperspy's
 .. code-block:: python
 
     >>> reference_hologram = hs.datasets.example_signals.reference_hologram()
-    >>> wave_image = im.reconstruct_phase(reference_hologram, sb_position=sb_position, sb_size=sb_sb_size)
+    >>> wave_image = im.reconstruct_phase(reference_hologram,
+    ...                                   sb_position=sb_position,
+    ...                                   sb_size=sb_sb_size)
 
 Using the reconstructed wave, one can access its amplitude and phase (also
 unwrapped phase) using
@@ -101,8 +105,9 @@ than pixels (by default) by setting ``sb_unit`` value either to ``mrad`` or
 
 .. code-block:: python
 
-    >>> wave_image = im.reconstruct_phase(reference_hologram, sb_position=sb_position, sb_size=30,
-                                          sb_smoothness=0.05*30,sb_unit='mrad')
+    >>> wave_image = im.reconstruct_phase(reference_hologram,
+    ...                                   sb_position=sb_position, sb_size=30,
+    ...                                   sb_smoothness=0.05*30,sb_unit='mrad')
 
 Also the :py:meth:`~._signals.hologram_image.HologramImage.reconstruct_phase`
 method can output wave images with desired size (shape). By default the shape
@@ -113,8 +118,10 @@ diameter of the sideband as follows:
 
 .. code-block:: python
 
-    >>> wave_image = im.reconstruct_phase(reference_hologram, sb_position=sb_position,
-                                          sb_size=sb_sb_size, output_shape=(2*sb_size, 2*sb_size))
+    >>> wave_image = im.reconstruct_phase(reference_hologram,
+    ...                                   sb_position=sb_position,
+    ...                                   sb_size=sb_sb_size,
+    ...                                   output_shape=(2*sb_size, 2*sb_size))
 
 Note that the
 :py:meth:`~._signals.hologram_image.HologramImage.reconstruct_phase`
