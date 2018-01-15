@@ -82,7 +82,7 @@ for some new feature or tool that you want to work on.
 3. Pick your battles
 --------------------
 
-Work out what you want to contribute and break it down in to managable chunks.
+Work out what you want to contribute and break it down in to manageable chunks.
 
 You may have a very clear idea of what you want to contribute but if you're
 not sure where to start you can always look through the issues and pull
@@ -102,12 +102,12 @@ same direction.
 ------------------
 
 There are 3 key points to get right when starting out as a contributor - keep
-work separated in managable sections, make sure that your code style is good,
+work separated in manageable sections, make sure that your code style is good,
 and bear in mind that every new function you write will need a test and user
 documentation!
 
-Use git and work in managable branches
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Use git and work in manageable branches
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By now you'll have had a look around GitHub - but why's it so important?
 
@@ -132,7 +132,7 @@ may want to use a few branches together. You can do that but just make sure
 each new thing has it's own branch! You can merge some together for your
 personal use.
 
-Diagramatically you should be aiming for something like this:
+Diagrammatically you should be aiming for something like this:
 
 .. figure:: user_guide/images/branching_schematic.png
 
@@ -152,7 +152,7 @@ You can check your code with the `pep8 Code Checker
 Write tests
 ^^^^^^^^^^^
 
-Every new function that is writen in to HyperSpy needs to be tested and
+Every new function that is written in to HyperSpy needs to be tested and
 documented.
 
 Tests are short functions found in hyperspy/tests that call your functions
@@ -160,7 +160,7 @@ under some known conditions and check the outputs against known values. They
 should depend on as few other features as possible so that when they break
 we know exactly what caused it. Ideally, the tests should be written at the
 same time than the code itself, as they are very convenient to run to check
-outputs when coding. Writing tests can seem laborious but you'll probaby
+outputs when coding. Writing tests can seem laborious but you'll probably
 soon find that they're very important as they force you to sanity check all
 you do.
 
@@ -191,7 +191,7 @@ Useful hints on testing:
   code, which is often error-prone. See `pytest documentation for more details
   <http://doc.pytest.org/en/latest/parametrize.html>`_.
 * It is good to check that the tests does not use too much of memory after
-  creating new tests. If you need to explicitely delete your objects and free
+  creating new tests. If you need to explicitly delete your objects and free
   memory, you can do the following to release the memory associated to the
   ``s`` object, for example:
 
@@ -212,10 +212,10 @@ Useful hints on testing:
 
 Plot testing
 ^^^^^^^^^^^^
-Ploting is tested using the ``@pytest.mark.mpl_image_compare`` decorator of the
-`pytest mpl plugin <https://pypi.python.org/pypi/pytest-mpl>`_.  This decorator
-uses reference images to compare with the generated output during the tests.
-The references images are located in the folder defined by the argument
+Plotting is tested using the ``@pytest.mark.mpl_image_compare`` decorator of
+the `pytest mpl plugin <https://pypi.python.org/pypi/pytest-mpl>`_.  This
+decorator uses reference images to compare with the generated output during the
+tests. The references images are located in the folder defined by the argument
 ``baseline_dir`` of the ``@pytest.mark.mpl_image_compare`` decorator.
 
 To run plotting tests, you simply need to add the option ``--mpl``:
