@@ -26,7 +26,7 @@ from matplotlib.ticker import MaxNLocator, FuncFormatter
 try:
     import mdp
     mdp_installed = True
-except:
+except BaseException:
     mdp_installed = False
 
 
@@ -327,7 +327,7 @@ class MVA():
                             var_array = np.polyval(
                                 polyfit, dc[
                                     signal_mask, navigation_mask])
-                        except:
+                        except BaseException:
                             raise ValueError(
                                 'var_func must be either a function or an '
                                 'array defining the coefficients of a polynom')
@@ -421,7 +421,8 @@ class MVA():
             if reproject in ('signal', 'both'):
                 if algorithm not in ('nmf', 'sparse_pca',
                                      'mini_batch_sparse_pca'):
-                    factors = (np.linalg.pinv(loadings) @ (dc[navigation_mask, :] - mean)).T
+                    factors = (np.linalg.pinv(loadings) @ (
+                        dc[navigation_mask, :] - mean)).T
                     target.factors = factors
                 else:
                     _logger.info("Reprojecting the signal is not yet "
@@ -667,7 +668,7 @@ class MVA():
             # more predictable way
             sorting_indices = np.argsort(
                 lr.explained_variance[:number_of_components] @ np.abs(w.T)
-                )[::-1]
+            )[::-1]
             w[:] = w[sorting_indices, :]
         lr.unmixing_matrix = w
         lr.on_loadings = on_loadings
