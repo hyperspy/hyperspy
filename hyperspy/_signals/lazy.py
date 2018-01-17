@@ -255,6 +255,9 @@ class LazySignal(BaseSignal):
     def __array__(self, dtype=None):
         return self.data.__array__(dtype=dtype)
 
+    # def _unfold(self, *args):
+    #     raise lazyerror
+
     def _make_sure_data_is_contiguous(self, log=None):
         self._make_lazy(rechunk=True)
 
@@ -771,17 +774,14 @@ class LazySignal(BaseSignal):
             if reproject:
                 if algorithm == 'PCA':
                     method = obj.transform
-
-                    def post(a): return np.concatenate(a, axis=0)
+                    post = lambda a: np.concatenate(a, axis=0)
                 elif algorithm == 'ORPCA':
                     method = obj.project
                     obj.R = []
-
-                    def post(a): return obj.finish()[4]
+                    post = lambda a: obj.finish()[4]
                 elif algorithm == 'ONMF':
                     method = obj.project
-
-                    def post(a): return np.concatenate(a, axis=1).T
+                    post = lambda a: np.concatenate(a, axis=1).T
 
                 _map = map(lambda thing: method(thing),
                            self._block_iterator(
