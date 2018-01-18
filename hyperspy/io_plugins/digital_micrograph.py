@@ -666,7 +666,8 @@ class ImageObject(object):
             return self.unpack_packed_complex(data)
         elif self.imdict.ImageData.DataType in (8, 23):  # ABGR
             # Reorder the fields
-            data = data[['R', 'G', 'B', 'A']].copy()
+            data = data[['R', 'G', 'B', 'A']].astype(
+                    [('R', 'u1'), ('G', 'u1'), ('B', 'u1'), ('A', 'u1')])
         return data.reshape(self.shape, order=self.order)
 
     def unpack_new_packed_complex(self, data):

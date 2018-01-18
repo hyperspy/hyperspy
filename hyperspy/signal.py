@@ -1987,7 +1987,7 @@ class BaseSignal(FancySlicing,
             navigator.axes_manager.indices = self.axes_manager.indices[
                 navigator.axes_manager.signal_dimension:]
             navigator.axes_manager._update_attributes()
-            if np.issubdtype(navigator().dtype, complex):
+            if np.issubdtype(navigator().dtype, np.complexfloating):
                 return np.abs(navigator())
             else:
                 return navigator()
@@ -2043,7 +2043,7 @@ class BaseSignal(FancySlicing,
                         "The navigator dimensions are not compatible with "
                         "those of self.")
             elif navigator == "data":
-                if np.issubdtype(self.data.dtype, complex):
+                if np.issubdtype(self.data.dtype, np.complexfloating):
                     self._plot.navigator_data_function = lambda axes_manager=None: np.abs(
                         self.data)
                 else:
