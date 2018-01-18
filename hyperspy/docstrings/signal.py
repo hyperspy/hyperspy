@@ -31,7 +31,9 @@ NAN_FUNC = \
 
 OPTIMIZE_ARG = \
     """optimize : bool, default is False
-            If the data should be re-ordered in memory, most likely making a
-            copy. Ensures the fastest available iteration at the expense of
-            memory. See the `transposing` section of the HyperSpy user guide 
+            If True, the location of the data in memory is optimised for the 
+            fastest iteration over the navigation axes. This operation can 
+            cause a peak of memory usage and requires considerable procession 
+            times for large datasets and/or low specification hardware.
+            See the `transposing` section of the HyperSpy user guide 
             for more information."""

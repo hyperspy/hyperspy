@@ -4042,8 +4042,10 @@ class BaseSignal(FancySlicing,
         """Return the Signal as a spectrum.
 
         The chosen spectral axis is moved to the last index in the
-        array and the data is made contiguous for effecient
-        iteration over spectra.
+        array and the data is made contiguous for efficient iteration over 
+        spectra. By default ensures the data is stored optimally, hence often 
+        making a copy of the data. See `transpose` for a more general method 
+        with more options.
 
 
         Parameters

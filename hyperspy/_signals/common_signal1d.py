@@ -28,8 +28,8 @@ class CommonSignal1D(object):
     def to_signal2D(self, optimize=True):
         """Returns the one dimensional signal as a two dimensional signal.
 
-        Always ensures the data is stored optimally, hence often making a copy
-        of the data. See `transpose` for a more general method with more
+        By default ensures the data is stored optimally, hence often making a 
+        copy of the data. See `transpose` for a more general method with more
         options.
 
         %s
