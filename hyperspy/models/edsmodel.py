@@ -290,6 +290,23 @@ class EDSModel(Model1D):
         self.append(background)
         self.background_components.append(background)
 
+    def add_physical_background(self, E0):
+        """
+        Add a background based on physical property of the interraction e-/mater
+    
+        the background is added to self.background_components
+
+        Parameters
+        ----------
+        E0: int
+            The Beam energy
+        """
+        background = create_component.Physical_background(model=self,E0=E0)
+        background.name = "Bremsstrahlung"
+        background.isbackground = True
+        self.append(background)
+        self.background_components.append(background)
+
     def free_background(self):
         """
         Free the yscale of the background components.
