@@ -416,7 +416,7 @@ class DictionaryTreeBrowser(object):
                     if value.keys():
                         string += """<ul style="margin: 0px; list-style-position: outside;">
                         <details closed>
-                        <summary>
+                        <summary style="display: list-item;">
                         <li style="display: inline;">
                         %s
                         </li></summary>""" % (key)
