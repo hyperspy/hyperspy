@@ -1555,6 +1555,59 @@ any hyperspy GUI is installed (e.g. hyperspy_gui_ipywidgets or
 hyperspy_gui_traitsui).
 
 
+Convenience function
+^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 1.4
+
+There is also a convenience function to simplify the process of extracting
+line profiles: :py:meth:`~.signal.BaseSignal.get_line_profile`. This method
+uses the ROI functionality explained earlier, using some sensible default values.
+This opens up plotting windows, with both the original signal, and the resulting line
+profile, where the line profile can be changed interactively.
+
+.. code-block:: python
+
+  >>> s = hs.signals.BaseSignal(np.arange(10000).reshape((100, 100)))
+  >>> s_line = s.get_line_profile()
+
+.. image::  images/get_line_profile_2d_signal_0.png
+  :scale: 50 %
+
+.. image::  images/get_line_profile_2d_signal_1.png
+  :scale: 50 %
+
+Note that this only works for signals with at least two signal dimensions, or two navigation
+dimensions.
+
+For signals with more than two dimensions, the `axes` argument is used to select
+which dimensions should be used for the line profile. This can either be a list of
+AxesManager axes, list of numbers, or list of strings (the names of the axes).
+
+.. code-block:: python
+
+  >>> s = hs.signals.Signal1D(np.arange(10000).reshape((10, 10, 10, 10)))
+  >>> s_line = s.get_line_profile(axes=(0, 2))
+
+.. image::  images/get_line_profile_4d_signal_0_nav.png
+  :scale: 50 %
+
+.. image::  images/get_line_profile_4d_signal_0_sig.png
+  :scale: 50 %
+
+.. image::  images/get_line_profile_4d_signal_1_nav.png
+  :scale: 50 %
+
+.. image::  images/get_line_profile_4d_signal_1_sig.png
+  :scale: 50 %
+
+The method can also be run non-interactively, where the position and width of the
+line profile should be specified.
+
+.. code-block:: python
+
+  >>> s = hs.signals.BaseSignal(np.arange(10000).reshape((100, 100)))
+  >>> s_line = s.get_line_profile(x1=50, y1=10, x2=50, y2=80, interactive=False)
 
 
 .. _complex_data-label:
