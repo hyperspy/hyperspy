@@ -683,7 +683,7 @@ class HyperHeader(object):
         for i in range(image.plane_count):
             img = xml_node.xpath("Plane" + str(i))[0]
             raw = codecs.decode((img.Data.text).encode('ascii'), 'base64')
-            array1 = np.fromstring(raw, dtype=np.uint16)
+            array1 = np.frombuffer(raw, dtype=np.uint16)
             if any(array1):
                 item = self.gen_hspy_item_dict_basic()
                 data = array1.reshape((image.height, image.width))
