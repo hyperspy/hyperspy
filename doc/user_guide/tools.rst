@@ -1195,6 +1195,8 @@ trivially:
     >>> s4 = hs.signals.BaseSignal(np.random.rand(4, 4, 4, 4)) # 4D signal
     >>> hs.plot.plot_images(hs.transpose(s2, s3, s4, signal_axes=2))
 
+.. _signal.transpose_optimize:
+
 The :py:meth:`~.signal.BaseSignal.transpose` method accepts keyword argument
 ``optimize``, which is ``False`` by default, meaning modifying the output
 signal data **always modifies the original data** i.e. the data is just a view
