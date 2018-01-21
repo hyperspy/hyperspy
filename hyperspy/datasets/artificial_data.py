@@ -16,7 +16,7 @@ def get_core_loss_eel_signal():
     -------
     >>> s = hs.datasets.artificial_data.get_core_loss_eel_signal()
     >>> s.plot()
-artifical
+
     See also
     --------
     get_core_loss_eel_model : get a model instead of a signal
