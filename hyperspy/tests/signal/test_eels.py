@@ -168,8 +168,6 @@ class TestAlignZLP:
         np.testing.assert_allclose(np.nanstd(zlpc.data), 0,
                                    atol=np.finfo(float).eps)
 
-
-
     def test_align_zero_loss_peak_calibrate_false(self):
         s = self.signal
         s.align_zero_loss_peak(
@@ -226,6 +224,7 @@ class TestPowerLawExtrapolation:
         sc = self.s.isig[:300]
         s = sc.power_law_extrapolation(extrapolation_size=100)
         np.testing.assert_allclose(s.data, self.s.data, atol=10e-3)
+
 
 @lazifyTestClass
 class TestFourierRatioDeconvolution:
