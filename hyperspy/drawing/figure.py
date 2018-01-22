@@ -80,14 +80,11 @@ class BlittedFigure(object):
                     # fix. Properly fixing the issue involves avoiding
                     # calling this method too early in the code.
                     _logger.warning('Please report this warning to the '
-                                    'developpers: `_draw_animated` was called '
-                                    '`draw`.')
+                                    'developers: `_draw_animated` was called '
+                                    'before `draw`.')
                     pass
             if canvas.supports_blit:
-                if hasattr(canvas, 'update'):
-                    canvas.update()
-                else:
-                    canvas.blit(self.figure.bbox)
+                canvas.blit(self.figure.bbox)
 
     def add_marker(self, marker):
         marker.ax = self.ax
