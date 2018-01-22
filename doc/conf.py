@@ -40,7 +40,7 @@ extensions = [
 try:
     import sphinxcontrib.spelling
     extensions.append('sphinxcontrib.spelling')
-except:
+except BaseException:
     pass
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -56,7 +56,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'HyperSpy'
-copyright = '2011-2016, The HyperSpy development team'
+copyright = '2011-2018, The HyperSpy development team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -130,7 +130,7 @@ html_logo = '_static/hyperspy_logo.png'
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-html_favicon = 'hyperspy_logo.ico'
+html_favicon = 'hyperspy.ico'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

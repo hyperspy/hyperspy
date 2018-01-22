@@ -75,7 +75,7 @@ Falling back to slow python only backend.""")
 # without minus sign, second group looks for numeric value with following
 # closing <\tag> (the '<' char); '([Ee]-?\d*)' part (optionally a third group)
 # checks for scientific notation (e.g. 8,843E-7 -> 'E-7');
-# compiled pattern is binary, as raw xml string is binary.: 
+# compiled pattern is binary, as raw xml string is binary.:
 fix_dec_patterns = re.compile(b'(>-?\\d+),(\\d*([Ee]-?\\d*)?<)')
 
 
@@ -153,7 +153,7 @@ class SFSTreeItem(object):
                 fn.seek(self.sfs.chunksize *
                         self._pointer_to_pointer_table + 0x138)
                 temp_table = fn.read(self.sfs.usable_chunk)
-            self.pointers = np.fromstring(temp_table[:self.size_in_chunks * 4],
+            self.pointers = np.frombuffer(temp_table[:self.size_in_chunks * 4],
                                           dtype='uint32').astype(np.int64) *\
                 self.sfs.chunksize + 0x138
 
@@ -445,14 +445,19 @@ def dictionarize(t):
         for dc in map(dictionarize, children):
             for k, v in dc.items():
                 dd[k].append(v)
-        d = {t.tag: {k:interpret(v[0]) if len(v) == 1 else v for k, v in dd.items()}}
+        d = {
+            t.tag: {
+                k: interpret(
+                    v[0]) if len(v) == 1 else v for k,
+                v in dd.items()}}
     if t.attrib:
-        d[t.tag].update(('XmlClass' + k if list(t) else k, interpret(v)) for k, v in t.attrib.items())
+        d[t.tag].update(('XmlClass' + k if list(t) else k, interpret(v))
+                        for k, v in t.attrib.items())
     if t.text:
         text = t.text.strip()
         if children or t.attrib:
             if text:
-              d[t.tag]['#text'] = interpret(text)
+                d[t.tag]['#text'] = interpret(text)
         else:
             d[t.tag] = interpret(text)
     if 'ClassInstance' in d:
@@ -645,10 +650,10 @@ class HyperHeader(object):
         """parse image from bruker xml image node."""
         if overview:
             rect_node = xml_node.find("./ChildClassInstances"
-                "/ClassInstance["
-                #"@Type='TRTRectangleOverlayElement' and "
-                "@Name='Map']/TRTSolidOverlayElement/"
-                "TRTBasicLineOverlayElement/TRTOverlayElement")
+                                      "/ClassInstance["
+                                      #"@Type='TRTRectangleOverlayElement' and "
+                                      "@Name='Map']/TRTSolidOverlayElement/"
+                                      "TRTBasicLineOverlayElement/TRTOverlayElement")
             over_rect = dictionarize(rect_node)['TRTOverlayElement']['Rect']
             rect = {'y1': over_rect['Top'] * self.y_res,
                     'x1': over_rect['Left'] * self.x_res,
@@ -666,8 +671,9 @@ class HyperHeader(object):
         image.images = []
         for i in range(image.plane_count):
             img = xml_node.find("./Plane" + str(i))
-            raw = codecs.decode((img.find('./Data').text).encode('ascii'),'base64')
-            array1 = np.fromstring(raw, dtype=np.uint16)
+            raw = codecs.decode(
+                (img.find('./Data').text).encode('ascii'), 'base64')
+            array1 = np.frombuffer(raw, dtype=np.uint16)
             if any(array1):
                 item = self.gen_hspy_item_dict_basic()
                 data = array1.reshape((image.height, image.width))
@@ -720,8 +726,8 @@ class HyperHeader(object):
                     "./ClassInstance[@Type='TRTSpectrumRegion']"):
                 tmp_d = dictionarize(j)
                 self.elements[tmp_d['XmlClassName']] = {'line': tmp_d['Line'],
-                                                 'energy': tmp_d['Energy'],
-                                                 'width': tmp_d['Width']}
+                                                        'energy': tmp_d['Energy'],
+                                                        'width': tmp_d['Width']}
         except AttributeError:
             _logger.info('no element selection present in the spectra..')
 
@@ -879,18 +885,21 @@ class BCF_reader(SFS_reader):
         self.def_index = min(self.available_indexes)
         header_byte_str = header_file.get_as_BytesIO_string().getvalue()
         hd_bt_str = fix_dec_patterns.sub(b'\\1.\\2', header_byte_str)
-        self.header = HyperHeader(header_byte_str, self.available_indexes, instrument=instrument)
+        self.header = HyperHeader(
+            header_byte_str,
+            self.available_indexes,
+            instrument=instrument)
         self.hypermap = {}
-    
+
     def check_index_valid(self, index):
-        """check and return if index is valid""" 
-        if type(index) != int:
+        """check and return if index is valid"""
+        if not isinstance(index, int):
             raise TypeError("provided index should be integer")
         if index not in self.available_indexes:
             raise IndexError("requisted index is not in the list of available indexes. "
-                "Available maps are under indexes: {0}".format(str(self.available_indexes)))
+                             "Available maps are under indexes: {0}".format(str(self.available_indexes)))
         return index
-    
+
     def persistent_parse_hypermap(self, index=None, downsample=None,
                                   cutoff_at_kV=None,
                                   lazy=False):
@@ -1078,10 +1087,9 @@ class BCF_reader(SFS_reader):
                 elif flag == 1:  # and (chan1 != chan2)
                     # Unpack packed 12-bit data to 16-bit uints:
                     data1 = buffer1[offset:offset + data_size2]
-                    switched_i2 = np.fromstring(data1,
-                                                dtype='<u2'
-                                                ).byteswap(True)
-                    data2 = np.fromstring(switched_i2.tostring(),
+                    switched_i2 = np.frombuffer(data1, dtype='<u2'
+                                                ).byteswap(False)
+                    data2 = np.frombuffer(switched_i2.tostring(),
                                           dtype=np.uint8
                                           ).repeat(2)
                     mask = np.ones_like(data2, dtype=bool)
@@ -1089,8 +1097,8 @@ class BCF_reader(SFS_reader):
                     # Reinterpret expanded as 16-bit:
                     # string representation of array after switch will have
                     # always BE independently from endianess of machine
-                    exp16 = np.fromstring(data2[mask].tostring(),
-                                          dtype='>u2', count=n_of_pulses)
+                    exp16 = np.frombuffer(data2[mask].tostring(),
+                                          dtype='>u2', count=n_of_pulses).copy()
                     exp16[0::2] >>= 4           # Shift every second short by 4
                     exp16 &= np.uint16(0x0FFF)  # Mask all shorts to 12bit
                     pixel = np.bincount(exp16, minlength=chan1 - 1)
@@ -1267,53 +1275,53 @@ For more information, check the 'Installing HyperSpy' section in the documentati
     mapping = get_mapping(mode)
     for index in indexes:
         obj_bcf.persistent_parse_hypermap(index=index, downsample=downsample,
-                                      cutoff_at_kV=cutoff_at_kV, lazy=lazy)
+                                          cutoff_at_kV=cutoff_at_kV, lazy=lazy)
         eds_metadata = obj_bcf.header.get_spectra_metadata(index=index)
         hyperspectra.append({'data': obj_bcf.hypermap[index].hypermap,
-                     'axes': [{'name': 'height',
-                               'size': obj_bcf.hypermap[index].hypermap.shape[0],
-                               'offset': 0,
-                               'scale': obj_bcf.hypermap[index].ycalib,
-                               'units': obj_bcf.header.units},
-                              {'name': 'width',
-                               'size': obj_bcf.hypermap[index].hypermap.shape[1],
-                               'offset': 0,
-                               'scale': obj_bcf.hypermap[index].xcalib,
-                               'units': obj_bcf.header.units},
-                              {'name': 'Energy',
-                               'size': obj_bcf.hypermap[index].hypermap.shape[2],
-                               'offset': obj_bcf.hypermap[index].calib_abs,
-                               'scale': obj_bcf.hypermap[index].calib_lin,
-                               'units': 'keV'}],
-                     'metadata':
-                     # where is no way to determine what kind of instrument was used:
-                     # TEM or SEM
-                     {'Acquisition_instrument': {
-                         mode: obj_bcf.header.get_acq_instrument_dict(
-                             detector=True,
-                             index=index)
-                     },
-        'General': {'original_filename': obj_bcf.filename.split('/')[-1],
-                         'title': 'EDX',
-                         'date': obj_bcf.header.date,
-                         'time': obj_bcf.header.time},
-        'Sample': {'name': obj_bcf.header.name,
-                         'elements': sorted(list(obj_bcf.header.elements)),
-                         'xray_lines': sorted(gen_elem_list(obj_bcf.header.elements))},
-        'Signal': {'signal_type': 'EDS_%s' % mode,
-                         'record_by': 'spectrum',
-                         'quantity': 'X-rays (Counts)'}
-    },
-        'original_metadata': {'Hardware': eds_metadata.hardware_metadata,
-                              'Detector': eds_metadata.detector_metadata,
-                              'Analysis': eds_metadata.esma_metadata,
-                              'Spectrum': eds_metadata.spectrum_metadata,
-                              'DSP Configuration': obj_bcf.header.dsp_metadata,
-                              'Line counter': obj_bcf.header.line_counter,
-                              'Stage': obj_bcf.header.stage_metadata,
-                              'Microscope': obj_bcf.header.sem_metadata},
-        'mapping': mapping,
-    })
+                             'axes': [{'name': 'height',
+                                       'size': obj_bcf.hypermap[index].hypermap.shape[0],
+                                       'offset': 0,
+                                       'scale': obj_bcf.hypermap[index].ycalib,
+                                       'units': obj_bcf.header.units},
+                                      {'name': 'width',
+                                       'size': obj_bcf.hypermap[index].hypermap.shape[1],
+                                       'offset': 0,
+                                       'scale': obj_bcf.hypermap[index].xcalib,
+                                       'units': obj_bcf.header.units},
+                                      {'name': 'Energy',
+                                       'size': obj_bcf.hypermap[index].hypermap.shape[2],
+                                       'offset': obj_bcf.hypermap[index].calib_abs,
+                                       'scale': obj_bcf.hypermap[index].calib_lin,
+                                       'units': 'keV'}],
+                             'metadata':
+                             # where is no way to determine what kind of instrument was used:
+                             # TEM or SEM
+                             {'Acquisition_instrument': {
+                                 mode: obj_bcf.header.get_acq_instrument_dict(
+                                     detector=True,
+                                     index=index)
+                             },
+            'General': {'original_filename': obj_bcf.filename.split('/')[-1],
+                                 'title': 'EDX',
+                                 'date': obj_bcf.header.date,
+                                 'time': obj_bcf.header.time},
+            'Sample': {'name': obj_bcf.header.name,
+                                 'elements': sorted(list(obj_bcf.header.elements)),
+                                 'xray_lines': sorted(gen_elem_list(obj_bcf.header.elements))},
+            'Signal': {'signal_type': 'EDS_%s' % mode,
+                                 'record_by': 'spectrum',
+                                 'quantity': 'X-rays (Counts)'}
+        },
+            'original_metadata': {'Hardware': eds_metadata.hardware_metadata,
+                                  'Detector': eds_metadata.detector_metadata,
+                                  'Analysis': eds_metadata.esma_metadata,
+                                  'Spectrum': eds_metadata.spectrum_metadata,
+                                  'DSP Configuration': obj_bcf.header.dsp_metadata,
+                                  'Line counter': obj_bcf.header.line_counter,
+                                  'Stage': obj_bcf.header.stage_metadata,
+                                  'Microscope': obj_bcf.header.sem_metadata},
+            'mapping': mapping,
+        })
     return hyperspectra
 
 

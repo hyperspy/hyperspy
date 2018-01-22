@@ -50,7 +50,7 @@ from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
-    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC)
+    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG)
 from hyperspy.docstrings.plot import BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
@@ -366,7 +366,7 @@ class MVATools(object):
             animate_legend(f)
         try:
             plt.tight_layout()
-        except:
+        except BaseException:
             pass
         if not same_window:
             return fig_list
@@ -432,7 +432,7 @@ class MVATools(object):
                 plt.suptitle(title)
         try:
             plt.tight_layout()
-        except:
+        except BaseException:
             pass
         if not same_window:
             if with_factors:
@@ -1937,7 +1937,7 @@ class BaseSignal(FancySlicing,
         if self._plot is not None:
             try:
                 self._plot.close()
-            except:
+            except BaseException:
                 # If it was already closed it will raise an exception,
                 # but we want to carry on...
                 pass
@@ -1987,7 +1987,7 @@ class BaseSignal(FancySlicing,
             navigator.axes_manager.indices = self.axes_manager.indices[
                 navigator.axes_manager.signal_dimension:]
             navigator.axes_manager._update_attributes()
-            if np.issubdtype(navigator().dtype, complex):
+            if np.issubdtype(navigator().dtype, np.complexfloating):
                 return np.abs(navigator())
             else:
                 return navigator()
@@ -2043,7 +2043,7 @@ class BaseSignal(FancySlicing,
                         "The navigator dimensions are not compatible with "
                         "those of self.")
             elif navigator == "data":
-                if np.issubdtype(self.data.dtype, complex):
+                if np.issubdtype(self.data.dtype, np.complexfloating):
                     self._plot.navigator_data_function = lambda axes_manager=None: np.abs(
                         self.data)
                 else:
@@ -2685,12 +2685,13 @@ class BaseSignal(FancySlicing,
                 if isinstance(variance, BaseSignal):
                     variance.fold()
 
-    def _make_sure_data_is_contiguous(self, log=False):
+    def _make_sure_data_is_contiguous(self, log=None):
         if self.data.flags['C_CONTIGUOUS'] is False:
             if log:
-                _warn_string = "{0!r} data is replaced by its optimized copy".format(
-                    self)
-                _logger.warning(_warn_string)
+                _logger.warning("{0!r} data is replaced by its optimized copy "
+                                ", see optimize parameter of "
+                                "``Basesignal.transpose`` for more "
+                                "information.".format(self))
             self.data = np.ascontiguousarray(self.data)
 
     def _iterate_signal(self):
@@ -4039,17 +4040,20 @@ class BaseSignal(FancySlicing,
         nitem = nitem if nitem > 0 else 1
         return nitem
 
-    def as_signal1D(self, spectral_axis, out=None):
+    def as_signal1D(self, spectral_axis, out=None, optimize=True):
         """Return the Signal as a spectrum.
 
         The chosen spectral axis is moved to the last index in the
-        array and the data is made contiguous for effecient
-        iteration over spectra.
+        array and the data is made contiguous for efficient iteration over
+        spectra. By default ensures the data is stored optimally, hence often
+        making a copy of the data. See `transpose` for a more general method
+        with more options.
 
 
         Parameters
         ----------
         spectral_axis %s
+        %s
         %s
 
         See Also
@@ -4066,7 +4070,7 @@ class BaseSignal(FancySlicing,
         <Signal1D, title: , dimensions: (6, 5, 3, 4)>
 
         """
-        sp = self.transpose(signal_axes=[spectral_axis], optimize=True)
+        sp = self.transpose(signal_axes=[spectral_axis], optimize=optimize)
         if out is None:
             return sp
         else:
@@ -4075,9 +4079,10 @@ class BaseSignal(FancySlicing,
             else:
                 out.data[:] = sp.data
             out.events.data_changed.trigger(obj=out)
-    as_signal1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+    as_signal1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG,
+                            OPTIMIZE_ARG.replace('False', 'True'))
 
-    def as_signal2D(self, image_axes, out=None):
+    def as_signal2D(self, image_axes, out=None, optimize=True):
         """Convert signal to image.
 
         The chosen image axes are moved to the last indices in the
@@ -4089,6 +4094,7 @@ class BaseSignal(FancySlicing,
         image_axes : tuple of {int | str | axis}
             Select the image axes. Note that the order of the axes matters
             and it is given in the "natural" i.e. X, Y, Z... order.
+        %s
         %s
 
         Raises
@@ -4116,7 +4122,7 @@ class BaseSignal(FancySlicing,
         if self.data.ndim < 2:
             raise DataDimensionError(
                 "A Signal dimension must be >= 2 to be converted to a Signal2D")
-        im = self.transpose(signal_axes=image_axes, optimize=True)
+        im = self.transpose(signal_axes=image_axes, optimize=optimize)
         if out is None:
             return im
         else:
@@ -4125,7 +4131,7 @@ class BaseSignal(FancySlicing,
             else:
                 out.data[:] = im.data
             out.events.data_changed.trigger(obj=out)
-    as_signal2D.__doc__ %= OUT_ARG
+    as_signal2D.__doc__ %= (OUT_ARG, OPTIMIZE_ARG.replace('False', 'True'))
 
     def _assign_subclass(self):
         mp = self.metadata
@@ -4428,10 +4434,7 @@ class BaseSignal(FancySlicing,
             corresponding space.
             If both are iterables, full control is given as long as all axes
             are assigned to one space only.
-        optimize : bool [False]
-            If the data should be re-ordered in memory, most likely making a
-            copy. Ensures the fastest available iteration at the expense of
-            memory.
+        %s
 
         See also
         --------
@@ -4470,7 +4473,6 @@ class BaseSignal(FancySlicing,
         """
 
         am = self.axes_manager
-        ns = self.axes_manager.navigation_axes + self.axes_manager.signal_axes
         ax_list = am._axes
         if isinstance(signal_axes, int):
             if navigation_axes is not None:
@@ -4573,6 +4575,7 @@ class BaseSignal(FancySlicing,
             del res.metadata.Markers
 
         return res
+    transpose.__doc__ %= (OPTIMIZE_ARG)
 
     @property
     def T(self):
