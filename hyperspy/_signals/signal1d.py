@@ -238,7 +238,7 @@ def _shift1D(data, **kwargs):
     offset = kwargs.get('offset', 0.)
     scale = kwargs.get('scale', 1.)
     size = kwargs.get('size', 2)
-    if np.isnan(shift):
+    if np.isnan(shift) or shift == 0:
         return data
     axis = np.linspace(offset, offset + scale * (size - 1), size)
 
