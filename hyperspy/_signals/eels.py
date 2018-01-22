@@ -296,6 +296,8 @@ class EELSSpectrum_mixin:
 
         for signal in also_align + [self]:
             shift_array = -zlpc.data + mean_
+            if zlpc._lazy:
+                shift_array = shift_array.compute()
             signal.shift1D(shift_array, show_progressbar=show_progressbar)
 
         if calibrate is True:
@@ -1119,14 +1121,14 @@ class EELSSpectrum_mixin:
         # Mapped parameters
         try:
             e0 = s.metadata.Acquisition_instrument.TEM.beam_energy
-        except BaseException:
+        except:
             raise AttributeError("Please define the beam energy."
                                  "You can do this e.g. by using the "
                                  "set_microscope_parameters method")
         try:
             beta = s.metadata.Acquisition_instrument.TEM.Detector.\
                 EELS.collection_angle
-        except BaseException:
+        except:
             raise AttributeError("Please define the collection semi-angle. "
                                  "You can do this e.g. by using the "
                                  "set_microscope_parameters method")
