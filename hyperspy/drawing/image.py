@@ -268,7 +268,6 @@ class ImagePlot(BlittedFigure):
                 self.figure.canvas.supports_blit)
 
         self._set_background()
-        self.figure.canvas.draw_idle()
         if hasattr(self.figure, 'tight_layout'):
             try:
                 if self.axes_ticks == 'off' and not self.colorbar:
@@ -281,6 +280,11 @@ class ImagePlot(BlittedFigure):
                 pass
 
         self.connect()
+        self.figure.canvas.draw_idle()
+        try:
+            self.figure.canvas.flush_events()
+        except NotImplementedError:
+            pass
 
     def update(self, **kwargs):
         ims = self.ax.images
@@ -403,7 +407,6 @@ class ImagePlot(BlittedFigure):
     def connect(self):
         self.figure.canvas.mpl_connect('key_press_event',
                                        self.on_key_press)
-        self.figure.canvas.draw_idle()
         if self.axes_manager:
             self.axes_manager.events.indices_changed.connect(self.update, [])
             self.events.closed.connect(
