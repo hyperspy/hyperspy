@@ -60,7 +60,7 @@ def _protochips_log_reader(csv_file):
     for key in csv_file.logged_quantity_name_list:
         try:
             csvs.append(csv_file.get_dictionary(key))
-        except:
+        except BaseException:
             raise IOError(invalid_file_error)
     return csvs
 
@@ -138,7 +138,8 @@ class ProtochipsCSV(object):
     def _read_data(self, header_line_number):
         names = [name.replace(' ', '_') for name in self.column_name]
         # Necessary for numpy >= 1.14
-        kwargs = {'encoding':'latin1'} if np.__version__ >= LooseVersion("1.14") else {}
+        kwargs = {'encoding': 'latin1'} if np.__version__ >= LooseVersion("1.14") else {
+        }
         data = np.genfromtxt(self.filename, delimiter=',', dtype=None,
                              names=names,
                              skip_header=header_line_number,

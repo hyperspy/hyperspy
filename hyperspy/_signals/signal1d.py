@@ -29,7 +29,7 @@ from scipy.ndimage.filters import gaussian_filter1d
 try:
     from statsmodels.nonparametric.smoothers_lowess import lowess
     statsmodels_installed = True
-except:
+except BaseException:
     statsmodels_installed = False
 
 from hyperspy.signal import BaseSignal

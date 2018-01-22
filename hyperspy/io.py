@@ -275,7 +275,7 @@ def load_single_file(filename,
             reader = image
             return load_with_reader(filename, reader,
                                     signal_type=signal_type, **kwds)
-        except:
+        except BaseException:
             raise IOError('If the file format is supported'
                           ' please report this error')
     else:

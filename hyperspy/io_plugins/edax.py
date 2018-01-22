@@ -518,7 +518,7 @@ def get_spc_dtype_list(load_all=False, endianess='<', version=0.61):
                 ('numZElements', end + 'i2'),  # 20800
                 ('zAtoms', end + '48i2'),  # 20802
                 ('zShells', end + '48i2'),  # 20898
-                ])
+            ])
 
     else:
         dtype_list = \
