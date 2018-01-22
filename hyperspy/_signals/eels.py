@@ -326,7 +326,7 @@ class EELSSpectrum_mixin:
                 right,
                 also_align=also_align,
                 show_progressbar=show_progressbar,
-                # mask=mask,
+                mask=mask,
                 **kwargs)
         if calibrate is True:
             zlpc = estimate_zero_loss_peak_centre(
@@ -1121,14 +1121,14 @@ class EELSSpectrum_mixin:
         # Mapped parameters
         try:
             e0 = s.metadata.Acquisition_instrument.TEM.beam_energy
-        except BaseException:
+        except:
             raise AttributeError("Please define the beam energy."
                                  "You can do this e.g. by using the "
                                  "set_microscope_parameters method")
         try:
             beta = s.metadata.Acquisition_instrument.TEM.Detector.\
                 EELS.collection_angle
-        except BaseException:
+        except:
             raise AttributeError("Please define the collection semi-angle. "
                                  "You can do this e.g. by using the "
                                  "set_microscope_parameters method")

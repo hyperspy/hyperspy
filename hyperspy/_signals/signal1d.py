@@ -29,7 +29,7 @@ from scipy.ndimage.filters import gaussian_filter1d
 try:
     from statsmodels.nonparametric.smoothers_lowess import lowess
     statsmodels_installed = True
-except BaseException:
+except:
     statsmodels_installed = False
 
 from hyperspy.signal import BaseSignal
@@ -620,7 +620,6 @@ _spikes_diagnosis,
             _estimate_shift1D,
             iterating_kwargs=iterating_kwargs,
             data_slice=slice(i1, i2),
-            mask=None,
             ref=ref,
             ip=ip,
             interpolate=interpolate,
@@ -636,6 +635,8 @@ _spikes_diagnosis,
         if interpolate is True:
             shift_array = shift_array / ip
         shift_array *= axis.scale
+        if self._lazy:
+            shift_array = shift_array.compute()
         return shift_array
 
     def align1D(self,
