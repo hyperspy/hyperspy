@@ -153,7 +153,7 @@ class SFSTreeItem(object):
                 fn.seek(self.sfs.chunksize *
                         self._pointer_to_pointer_table + 0x138)
                 temp_table = fn.read(self.sfs.usable_chunk)
-            self.pointers = np.fromstring(temp_table[:self.size_in_chunks * 4],
+            self.pointers = np.frombuffer(temp_table[:self.size_in_chunks * 4],
                                           dtype='uint32').astype(np.int64) *\
                 self.sfs.chunksize + 0x138
 
@@ -667,7 +667,7 @@ class HyperHeader(object):
         for i in range(image.plane_count):
             img = xml_node.find("./Plane" + str(i))
             raw = codecs.decode((img.find('./Data').text).encode('ascii'),'base64')
-            array1 = np.fromstring(raw, dtype=np.uint16)
+            array1 = np.frombuffer(raw, dtype=np.uint16)
             if any(array1):
                 item = self.gen_hspy_item_dict_basic()
                 data = array1.reshape((image.height, image.width))
@@ -1078,10 +1078,9 @@ class BCF_reader(SFS_reader):
                 elif flag == 1:  # and (chan1 != chan2)
                     # Unpack packed 12-bit data to 16-bit uints:
                     data1 = buffer1[offset:offset + data_size2]
-                    switched_i2 = np.fromstring(data1,
-                                                dtype='<u2'
-                                                ).byteswap(True)
-                    data2 = np.fromstring(switched_i2.tostring(),
+                    switched_i2 = np.frombuffer(data1, dtype='<u2'
+                                                ).byteswap(False)
+                    data2 = np.frombuffer(switched_i2.tostring(),
                                           dtype=np.uint8
                                           ).repeat(2)
                     mask = np.ones_like(data2, dtype=bool)
@@ -1089,8 +1088,8 @@ class BCF_reader(SFS_reader):
                     # Reinterpret expanded as 16-bit:
                     # string representation of array after switch will have
                     # always BE independently from endianess of machine
-                    exp16 = np.fromstring(data2[mask].tostring(),
-                                          dtype='>u2', count=n_of_pulses)
+                    exp16 = np.frombuffer(data2[mask].tostring(),
+                                          dtype='>u2', count=n_of_pulses).copy()
                     exp16[0::2] >>= 4           # Shift every second short by 4
                     exp16 &= np.uint16(0x0FFF)  # Mask all shorts to 12bit
                     pixel = np.bincount(exp16, minlength=chan1 - 1)
