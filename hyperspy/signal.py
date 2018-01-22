@@ -366,7 +366,7 @@ class MVATools(object):
             animate_legend(f)
         try:
             plt.tight_layout()
-        except:
+        except BaseException:
             pass
         if not same_window:
             return fig_list
@@ -432,7 +432,7 @@ class MVATools(object):
                 plt.suptitle(title)
         try:
             plt.tight_layout()
-        except:
+        except BaseException:
             pass
         if not same_window:
             if with_factors:
@@ -1937,7 +1937,7 @@ class BaseSignal(FancySlicing,
         if self._plot is not None:
             try:
                 self._plot.close()
-            except:
+            except BaseException:
                 # If it was already closed it will raise an exception,
                 # but we want to carry on...
                 pass
