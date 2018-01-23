@@ -49,5 +49,5 @@ Cite
 
 |DOI|_
 
-.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.345099.svg
-.. _DOI: http://dx.doi.org/10.5281/zenodo.345099
+.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.583693.svg
+.. _DOI: http://dx.doi.org/10.5281/zenodo.583693
