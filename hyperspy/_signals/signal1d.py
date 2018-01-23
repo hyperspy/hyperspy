@@ -493,7 +493,6 @@ _spikes_diagnosis,
         self.events.data_changed.trigger(obj=self)
     shift1D.__doc__ %= CROP_PARAMETER_DOC
 
-
     def interpolate_in_between(self, start, end, delta=3, parallel=None,
                                show_progressbar=None, **kwargs):
         """Replace the data in a given range by interpolation.
