@@ -17,10 +17,9 @@
 
 
 import numpy as np
-import numpy.testing
+import pytest
 
-
-import hyperspy.api as hs
+from hyperspy import signals, model
 from hyperspy.decorators import lazifyTestClass
 
 
@@ -29,16 +28,16 @@ class Test_Estimate_Elastic_Scattering_Threshold:
 
     def setup_method(self, method):
         # Create an empty spectrum
-        s = hs.signals.EELSSpectrum(np.zeros((3, 2, 1024)))
+        s = signals.EELSSpectrum(np.zeros((3, 2, 1024)))
         energy_axis = s.axes_manager.signal_axes[0]
         energy_axis.scale = 0.02
         energy_axis.offset = -5
 
-        gauss = hs.model.components1D.Gaussian()
+        gauss = model.components1d.Gaussian()
         gauss.centre.value = 0
         gauss.A.value = 5000
         gauss.sigma.value = 0.5
-        gauss2 = hs.model.components1D.Gaussian()
+        gauss2 = model.components1d.Gaussian()
         gauss2.sigma.value = 0.5
         # Inflexion point 1.5
         gauss2.A.value = 5000
@@ -107,7 +106,7 @@ class Test_Estimate_Elastic_Scattering_Threshold:
 class TestEstimateZLPCentre:
 
     def setup_method(self, method):
-        s = hs.signals.EELSSpectrum(np.diag(np.arange(1, 11)))
+        s = signals.EELSSpectrum(np.diag(np.arange(1, 11)))
         s.axes_manager[-1].scale = 0.1
         s.axes_manager[-1].offset = 100
         self.signal = s
@@ -127,7 +126,7 @@ class TestEstimateZLPCentre:
 class TestAlignZLP:
 
     def setup_method(self, method):
-        s = hs.signals.EELSSpectrum(np.zeros((10, 100)))
+        s = signals.EELSSpectrum(np.zeros((10, 100)))
         self.scale = 0.1
         self.offset = -2
         eaxis = s.axes_manager.signal_axes[0]
@@ -191,7 +190,7 @@ class TestAlignZLP:
 class TestPowerLawExtrapolation:
 
     def setup_method(self, method):
-        s = hs.signals.EELSSpectrum(0.1 * np.arange(50, 250, 0.5) ** -3.)
+        s = signals.EELSSpectrum(0.1 * np.arange(50, 250, 0.5) ** -3.)
         s.metadata.Signal.binned = False
         s.axes_manager[-1].offset = 50
         s.axes_manager[-1].scale = 0.5
@@ -213,9 +212,14 @@ class TestPowerLawExtrapolation:
 @lazifyTestClass
 class TestFourierRatioDeconvolution:
 
-    def test_running(self):
-        s = hs.signals.EELSSpectrum(np.arange(200))
-        s_ll = hs.signals.EELSSpectrum(np.zeros(100))
-        s_ll.data[18:23] = [3, 10, 20, 10, 3]
-        s_ll.axes_manager[0].offset = -20
-        s.fourier_ratio_deconvolution(s_ll)
+    @pytest.mark.parametrize(('extrapolate_lowloss'), [True, False])
+    def test_running(self, extrapolate_lowloss):
+        s = signals.EELSSpectrum(np.arange(200))
+        gaussian = model.components1d.Gaussian()
+        gaussian.A.value = 50
+        gaussian.sigma.value = 10
+        gaussian.centre.value = 20
+        s_ll = signals.EELSSpectrum(gaussian.function(np.arange(0, 200, 1)))
+        s_ll.axes_manager[0].offset = -50
+        s.fourier_ratio_deconvolution(s_ll,
+                                      extrapolate_lowloss=extrapolate_lowloss)
