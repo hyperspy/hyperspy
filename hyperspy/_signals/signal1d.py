@@ -385,6 +385,7 @@ _spikes_diagnosis,
                 show_progressbar=None):
         """Shift the data in place over the signal axis by the amount specified
         by an array.
+
         Parameters
         ----------
         shift_array : numpy array
@@ -493,6 +494,7 @@ _spikes_diagnosis,
         self.events.data_changed.trigger(obj=self)
     shift1D.__doc__ %= CROP_PARAMETER_DOC
 
+
     def interpolate_in_between(self, start, end, delta=3, parallel=None,
                                show_progressbar=None, **kwargs):
         """Replace the data in a given range by interpolation.
@@ -595,10 +597,15 @@ _spikes_diagnosis,
             `preferences`.
         Returns
         -------
-        An array with the result of the estimation in the axis units.
+        An array with the result of the estimation in the axis units. although
+        the computation is performed in batches if the signal is lazy, the
+        result is computed in memory because it depends on the current state
+        of the axes that could change later on in the workflow.
+
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
+        
         """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
@@ -666,10 +673,12 @@ _spikes_diagnosis,
         This method can only estimate the shift by comparing
         unidimensional
         features that should not change the position.
+
         To decrease memory usage, time of computation and improve
         accuracy it is convenient to select the feature of interest
         setting the `start` and `end` keywords. By default interpolation is
         used to obtain subpixel precision.
+
         Parameters
         ----------
         start, end : {int | float | None}
