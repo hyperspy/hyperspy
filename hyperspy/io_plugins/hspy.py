@@ -475,7 +475,7 @@ def dict2hdfgroup(dictionary, group, **kwds):
         else:
             try:
                 group.attrs[key] = value
-            except:
+            except BaseException:
                 _logger.exception(
                     "The hdf5 writer could not write the following "
                     "information in the file: %s : %s", key, value)
@@ -729,7 +729,7 @@ def file_writer(filename,
             smd.record_by = ""
         try:
             write_signal(signal, expg, **kwds)
-        except:
+        except BaseException:
             raise
         finally:
             del smd.record_by

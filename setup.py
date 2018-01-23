@@ -199,7 +199,7 @@ def find_post_checkout_cleanup_line():
 if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
     exec_str = sys.executable
     recythonize_str = '"{}" "{}" clean --all build_ext --inplace\n'.format(
-            exec_str, os.path.join(setup_path, 'setup.py'))
+        exec_str, os.path.join(setup_path, 'setup.py'))
     if (not os.path.exists(post_checkout_hook_file)):
         with open(post_checkout_hook_file, 'w') as pchook:
             pchook.write('#!/bin/sh\n')
