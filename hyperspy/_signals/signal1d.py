@@ -484,6 +484,8 @@ _spikes_diagnosis,
                           ragged=False)
 
         if crop and not expand:
+            _logger.debug("Cropping %s from index %i to %i"
+                          % (self, ilow, ihigh))
             self.crop(axis.index_in_axes_manager,
                       ilow,
                       ihigh)
@@ -638,6 +640,9 @@ _spikes_diagnosis,
             shift_array = shift_array / ip
         shift_array *= axis.scale
         if self._lazy:
+            # We must compute right now because otherwise any changes to the
+            # axes_manager of the signal later in the workflow may result in
+            # a wrong shift_array
             shift_array = shift_array.compute()
         return shift_array
 

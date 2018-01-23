@@ -297,6 +297,9 @@ class EELSSpectrum_mixin:
         for signal in also_align + [self]:
             shift_array = -zlpc.data + mean_
             if zlpc._lazy:
+                # We must compute right now because otherwise any changes to the
+                # axes_manager of the signal later in the workflow may result in
+                # a wrong shift_array
                 shift_array = shift_array.compute()
             signal.shift1D(shift_array, show_progressbar=show_progressbar)
 
