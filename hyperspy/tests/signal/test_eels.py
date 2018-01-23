@@ -210,7 +210,6 @@ class TestAlignZLP:
         assert original_size == s.axes_manager.signal_axes[0].size
 
 
-
 @lazifyTestClass
 class TestPowerLawExtrapolation:
 
