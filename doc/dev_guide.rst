@@ -243,8 +243,7 @@ as the first argument of the tests.
 
 The plotting tests need matplotlib > 2.0.0, since the matplotlib `style change
 <http://matplotlib.org/style_changes.html>`_ between matplotlib 1.x and 2.x is
-enough to make the test failed. Currently, the test are not run in travis on
-mac os x, because travis does not support emulating display on mac os x.
+enough to make the test failed. Freetype==2.6 is also required to pass the plotting tests.
 
 In travis and appveyor, the matplotlib backend is set to ``agg`` by setting
 the ``MPLBACKEND`` environment variable to ``agg``. At the first import of

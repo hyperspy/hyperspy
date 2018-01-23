@@ -43,7 +43,7 @@ class ImagePlot(BlittedFigure):
         arguments.
     pixel_units : {None, string}
         The pixel units for the scale bar. Normally
-    scalebar, plot_ticks, colorbar, plot_indices : bool
+    scalebar, colorbar, plot_indices : bool
     title : str
         The title is printed at the top of the image.
     vmin, vmax : float
@@ -67,7 +67,6 @@ class ImagePlot(BlittedFigure):
         super(ImagePlot, self).__init__()
         self.data_function = None
         self.pixel_units = None
-        self.plot_ticks = False
         self.colorbar = True
         self._colorbar = None
         self.quantity_label = ''
@@ -212,7 +211,8 @@ class ImagePlot(BlittedFigure):
                           if self.title
                           else None),
             figsize=figsize.clip(min_size, max_size))
-        self.figure.canvas.mpl_connect('draw_event', self._on_draw)
+        self.draw_event_cid = self.figure.canvas.mpl_connect(
+            'draw_event', self._on_draw)
         utils.on_figure_window_close(self.figure, self._on_close)
 
     def create_axis(self):
@@ -268,7 +268,6 @@ class ImagePlot(BlittedFigure):
                 self.figure.canvas.supports_blit)
 
         self._set_background()
-        self.figure.canvas.draw_idle()
         if hasattr(self.figure, 'tight_layout'):
             try:
                 if self.axes_ticks == 'off' and not self.colorbar:
@@ -281,6 +280,19 @@ class ImagePlot(BlittedFigure):
                 pass
 
         self.connect()
+        # ask the canvas to re-draw itself the next time it
+        # has a chance.
+        # For most of the GUI backends this adds an event to the queue
+        # of the GUI frameworks event loop.
+        self.figure.canvas.draw_idle()
+        try:
+            # make sure that the GUI framework has a chance to run its event loop
+            # and clear any GUI events.  This needs to be in a try/except block
+            # because the default implementation of this method is to raise
+            # NotImplementedError
+            self.figure.canvas.flush_events()
+        except NotImplementedError:
+            pass
 
     def update(self, **kwargs):
         ims = self.ax.images
@@ -403,7 +415,6 @@ class ImagePlot(BlittedFigure):
     def connect(self):
         self.figure.canvas.mpl_connect('key_press_event',
                                        self.on_key_press)
-        self.figure.canvas.draw_idle()
         if self.axes_manager:
             self.axes_manager.events.indices_changed.connect(self.update, [])
             self.events.closed.connect(

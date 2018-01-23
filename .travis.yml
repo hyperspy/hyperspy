@@ -39,6 +39,7 @@ install:
   - conda create -n testenv --yes python=$PYTHON;
     source activate testenv;
     conda install -y -c conda-forge $DEPS;
+    conda install -y -c conda-forge --no-deps freetype=2.6;
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
       pip install .[all];
     else pip install .;
