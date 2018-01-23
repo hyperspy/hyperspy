@@ -3654,7 +3654,7 @@ class BaseSignal(FancySlicing,
             res_data.flat[ind] = res
             if ragged is False:
                 # to be able to break quickly and not waste time / resources
-                shapes.add(res.shape)
+                shapes.add(np.asarray(res).shape)
                 if len(shapes) != 1:
                     raise ValueError('The result shapes are not identical, but'
                                      'ragged=False')
