@@ -34,6 +34,7 @@ from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import (
     isiterable, closest_power_of_two, underline, signal_range_from_roi)
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
+from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 
 
 _logger = logging.getLogger(__name__)
@@ -206,6 +207,7 @@ class EELSSpectrum_mixin:
             mask=None,
             signal_range=None,
             show_progressbar=None,
+            crop=True,
             **kwargs):
         """Align the zero-loss peak.
 
@@ -243,6 +245,7 @@ class EELSSpectrum_mixin:
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        %s
 
         Examples
         --------
@@ -301,7 +304,8 @@ class EELSSpectrum_mixin:
                 # axes_manager of the signal later in the workflow may result in
                 # a wrong shift_array
                 shift_array = shift_array.compute()
-            signal.shift1D(shift_array, show_progressbar=show_progressbar)
+            signal.shift1D(
+                shift_array, crop=crop, show_progressbar=show_progressbar)
 
         if calibrate is True:
             zlpc = estimate_zero_loss_peak_centre(
@@ -328,12 +332,14 @@ class EELSSpectrum_mixin:
                 also_align=also_align,
                 show_progressbar=show_progressbar,
                 mask=mask,
+                crop=crop,
                 **kwargs)
         if calibrate is True:
             zlpc = estimate_zero_loss_peak_centre(
                 self, mask=mask, signal_range=signal_range)
             substract_from_offset(np.nanmean(zlpc.data),
                                   also_align + [self])
+    align_zero_loss_peak.__doc__ %= CROP_PARAMETER_DOC
 
     def estimate_elastic_scattering_intensity(
             self, threshold, show_progressbar=None):

@@ -53,6 +53,7 @@ from hyperspy.decorators import interactive_range_selector
 from hyperspy.signal_tools import IntegrateArea
 from hyperspy import components1d
 from hyperspy._signals.lazy import LazySignal
+from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 
 _logger = logging.getLogger(__name__)
 
@@ -394,9 +395,7 @@ _spikes_diagnosis,
             'nearest', 'zero', 'slinear', 'quadratic, 'cubic') or as an
             integer specifying the order of the spline interpolator to
             use.
-        crop : bool
-            If True automatically crop the signal axis at both ends if
-            needed.
+        %s
         expand : bool
             If True, the data will be expanded to fit all data after alignment.
             Overrides `crop`.
@@ -410,6 +409,7 @@ _spikes_diagnosis,
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
+
         """
         if not np.any(shift_array):
             # Nothing to do, the shift array if filled with zeros
@@ -491,6 +491,8 @@ _spikes_diagnosis,
                       ihigh)
 
         self.events.data_changed.trigger(obj=self)
+    shift1D.__doc__ %= CROP_PARAMETER_DOC
+
 
     def interpolate_in_between(self, start, end, delta=3, parallel=None,
                                show_progressbar=None, **kwargs):
@@ -691,9 +693,7 @@ _spikes_diagnosis,
             'nearest', 'zero', 'slinear', 'quadratic, 'cubic') or as an
             integer specifying the order of the spline interpolator to
             use.
-        crop : bool
-            If True automatically crop the signal axis at both ends if
-            needed.
+        %s
         expand : bool
             If True, the data will be expanded to fit all data after alignment.
             Overrides `crop`.
@@ -749,6 +749,7 @@ _spikes_diagnosis,
                            fill_value=fill_value,
                            expand=expand,
                            show_progressbar=show_progressbar)
+    align1D.__doc__ %= CROP_PARAMETER_DOC
 
     def integrate_in_range(self, signal_range='interactive',
                            display=True, toolkit=None):
