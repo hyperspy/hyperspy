@@ -200,6 +200,16 @@ class TestAlignZLP:
         # maximum value for the aligned spectrum
         assert np.allclose(zlp_max, 8)
 
+    def test_align_zero_loss_peak_crop_false(self):
+        s = self.signal
+        original_size = s.axes_manager.signal_axes[0].size
+        s.align_zero_loss_peak(
+            crop=False,
+            print_stats=False,
+            show_progressbar=None)
+        assert original_size == s.axes_manager.signal_axes[0].size
+
+
 
 @lazifyTestClass
 class TestPowerLawExtrapolation:
