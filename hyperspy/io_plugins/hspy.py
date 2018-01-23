@@ -558,8 +558,10 @@ def overwrite_dataset(group, data, key, signal_axes=None, **kwds):
     else:
         if isinstance(data, da.Array):
             da.store(data.rechunk(dset.chunks), dset)
+        elif data.flags.c_contiguous:
+            dset.write_direct(data)
         else:
-            da.store(da.from_array(data, chunks=dset.chunks), dset)
+            dset[:] = data
 
 
 def hdfgroup2dict(group, dictionary=None, lazy=False):
