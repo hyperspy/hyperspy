@@ -822,12 +822,12 @@ class ImageObject(object):
         if 'source' in self.imdict.ImageTags.keys():
             # For stack created with the stack builder plugin
             tags_path = 'ImageList.TagGroup0.ImageTags.source.Tags at creation'
-            ImageTags_dict = self.imdict.ImageTags.source['Tags at creation']
+            image_tags_dict = self.imdict.ImageTags.source['Tags at creation']
         else:
             # Standard tags
             tags_path = 'ImageList.TagGroup0.ImageTags'
-            ImageTags_dict = self.imdict.ImageTags
-        is_scanning = "DigiScan" in ImageTags_dict.keys()
+            image_tags_dict = self.imdict.ImageTags
+        is_scanning = "DigiScan" in image_tags_dict.keys()
         mapping = {
             "{}.DataBar.Acquisition Date".format(tags_path): (
                 "General.date", self._get_date),
@@ -853,14 +853,14 @@ class ImageObject(object):
                 "Sample.description", self._parse_string),
         }
 
-        if "Microscope_Info" in ImageTags_dict.keys():
+        if "Microscope_Info" in image_tags_dict.keys():
             is_TEM = is_diffraction = None
-            if "Illumination_Mode" in ImageTags_dict['Microscope_Info'].keys():
+            if "Illumination_Mode" in image_tags_dict['Microscope_Info'].keys():
                 is_TEM = (
-                    'TEM' == ImageTags_dict.Microscope_Info.Illumination_Mode)
-            if "Imaging_Mode" in ImageTags_dict['Microscope_Info'].keys():
+                    'TEM' == image_tags_dict.Microscope_Info.Illumination_Mode)
+            if "Imaging_Mode" in image_tags_dict['Microscope_Info'].keys():
                 is_diffraction = (
-                    'DIFFRACTION' == ImageTags_dict.Microscope_Info.Imaging_Mode)
+                    'DIFFRACTION' == image_tags_dict.Microscope_Info.Imaging_Mode)
 
             if is_TEM:
                 if is_diffraction:
@@ -948,7 +948,7 @@ class ImageObject(object):
                     "Acquisition_instrument.TEM.Detector.EDS.real_time",
                     None),
             })
-        elif "DigiScan" in ImageTags_dict.keys():
+        elif "DigiScan" in image_tags_dict.keys():
             mapping.update({
                 "{}.DigiScan.Sample Time".format(tags_path): (
                     "Acquisition_instrument.TEM.dwell_time",
