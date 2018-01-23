@@ -310,8 +310,6 @@ class EELSSpectrum_mixin:
             return
         left, right = -3., 3.
         if calibrate is False:
-            mean_ = np.nanmean(estimate_zero_loss_peak_centre(
-                self, mask, signal_range).data)
             left += mean_
             right += mean_
 
