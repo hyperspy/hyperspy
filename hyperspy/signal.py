@@ -3651,10 +3651,13 @@ class BaseSignal(FancySlicing,
                            show_progressbar)
         for ind, res in zip(range(res_data.size),
                             thismap(func, zip(*iterators))):
+            # In what follows we assume that res is a numpy scalar or array
+            # The following line guarantees that that's the case.
+            res = np.asarray(res)
             res_data.flat[ind] = res
             if ragged is False:
                 # to be able to break quickly and not waste time / resources
-                shapes.add(np.asarray(res).shape)
+                shapes.add(res.shape)
                 if len(shapes) != 1:
                     raise ValueError('The result shapes are not identical, but'
                                      'ragged=False')
