@@ -332,7 +332,7 @@ class DigitalMicrographReader(object):
             data += s.unpack(self.f.read(1))[0]
         try:
             data = data.decode('utf8')
-        except:
+        except BaseException:
             # Sometimes the dm3 file strings are encoded in latin-1
             # instead of utf8
             data = data.decode('latin-1', errors='ignore')
@@ -669,7 +669,7 @@ class ImageObject(object):
         elif self.imdict.ImageData.DataType in (8, 23):  # ABGR
             # Reorder the fields
             data = data[['R', 'G', 'B', 'A']].astype(
-                    [('R', 'u1'), ('G', 'u1'), ('B', 'u1'), ('A', 'u1')])
+                [('R', 'u1'), ('G', 'u1'), ('B', 'u1'), ('A', 'u1')])
         return data.reshape(self.shape, order=self.order)
 
     def unpack_new_packed_complex(self, data):
@@ -795,14 +795,14 @@ class ImageObject(object):
         try:
             dt = dateutil.parser.parse(time)
             return dt.time().isoformat()
-        except:
+        except BaseException:
             _logger.warning("Time string, %s,  could not be parsed", time)
 
     def _get_date(self, date):
         try:
             dt = dateutil.parser.parse(date)
             return dt.date().isoformat()
-        except:
+        except BaseException:
             _logger.warning("Date string, %s,  could not be parsed", date)
 
     def _get_microscope_name(self, ImageTags):
@@ -858,7 +858,8 @@ class ImageObject(object):
 
         if "Microscope_Info" in image_tags_dict.keys():
             is_TEM = is_diffraction = None
-            if "Illumination_Mode" in image_tags_dict['Microscope_Info'].keys():
+            if "Illumination_Mode" in image_tags_dict['Microscope_Info'].keys(
+            ):
                 is_TEM = (
                     'TEM' == image_tags_dict.Microscope_Info.Illumination_Mode)
             if "Imaging_Mode" in image_tags_dict['Microscope_Info'].keys():
