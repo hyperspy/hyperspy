@@ -63,6 +63,9 @@ class SEE(Component):
         self.gaussian.sigma.free = True
         self.gaussian.A.value = 1.
 
+        # Linearity
+        self.A._is_linear = True
+
     def __repr__(self):
         return 'SEE'
 

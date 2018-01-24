@@ -26,7 +26,7 @@ class Offset(Component):
 
     """Component to add a constant value in the y-axis
 
-    f(x) = k + x
+    f(x) = k
 
     +------------+-----------+
     | Parameter  | Attribute |
@@ -47,6 +47,9 @@ class Offset(Component):
 
         # Gradients
         self.offset.grad = self.grad_offset
+
+        # Linearity
+        self.offset._is_linear = True
 
     def function(self, x):
         return np.ones((len(x))) * self.offset.value

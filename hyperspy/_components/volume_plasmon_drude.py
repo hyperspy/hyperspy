@@ -38,7 +38,7 @@ class VolumePlasmonDrude(Component):
     +------------+-----------------+
     | delta_E_p  |      fwhm       |
     +------------+-----------------+
-    | intensity  |   intensity     |
+    | intensity  |    intensity    |
     +------------+-----------------+
 
     Notes
@@ -60,6 +60,9 @@ class VolumePlasmonDrude(Component):
         self.plasmon_energy.grad = self.grad_plasmon_energy
         self.fwhm.grad = self.grad_fwhm
         self.intensity.grad = self.grad_intensity
+
+        # Linearity
+        self.intensity._is_linear = True
 
     def function(self, x):
         plasmon_energy = self.plasmon_energy.value

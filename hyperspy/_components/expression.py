@@ -1,5 +1,6 @@
 from functools import wraps
 from hyperspy.component import Component
+import sympy
 
 _CLASS_DOC = \
     """%s component (created with Expression).
@@ -148,8 +149,12 @@ class Expression(Component):
             self.__doc__ = _CLASS_DOC % (
                 name, sympy.latex(_parse_substitutions(expression)))
 
+        for para in self.parameters:
+            para._is_independent = para in self.independent_parameters
+            para._is_linear = self.check_parameter_linearity(para)
+            
+
     def compile_function(self, module="numpy", position=False):
-        import sympy
         from sympy.utilities.lambdify import lambdify
         expr = _parse_substitutions(self._str_expression)
         # Extract x
@@ -216,3 +221,45 @@ class Expression(Component):
                         self,
                         Expression)
                     )
+   
+    def _independent_term(self):
+        "Get value of the part of expression not changing with 'x'"
+        # First get expression of currently constant parameters
+        independent_expr, _ = self._extract_independent_part_of_expression()
+
+        # Then replace symbols with value of each parameter
+        free_symbols = [str(free) for free in independent_expr.free_symbols]
+        for para in self.parameters:
+            if para.name in free_symbols:
+                independent_expr = independent_expr.subs(para.name, para.value)
+        return independent_expr
+
+    def _extract_independent_part_of_expression(self):
+        """
+        Extract constant part of expression given independent variables *args.
+        Given no arguments, only x is assumed to change.
+        """
+        expr = sympy.sympify(self._str_expression)
+        constant, not_constant = expr.as_independent("x", as_Add=True)
+        return constant, not_constant
+
+    @property
+    def independent_parameters(self):
+        """Parameters that are independent of x"""
+        independent_expr, _ = self._extract_independent_part_of_expression()
+        free_symbols = [str(free) for free in independent_expr.free_symbols]
+        return [para for para in self.parameters if para.name in free_symbols]
+            
+    def check_parameter_linearity(self, para):
+        "Check whether expression is linear for a given parameter"
+        expr = self._str_expression
+        if para in self.independent_parameters:
+            return False
+
+        try:
+            if not sympy.Eq(sympy.diff(expr, para.name, 2), 0):
+                return False
+        except TypeError:
+            return False
+        return True
+

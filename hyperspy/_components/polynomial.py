@@ -124,3 +124,9 @@ class Polynomial(Component):
                 self.coefficients.map['is_set'][:] = True
             self.fetch_stored_values()
             return True
+    
+    @property
+    def constant_term(self):
+        "Get value of constant term of component"
+        # First get currently constant parameters
+        return self.coefficients.value[-1]

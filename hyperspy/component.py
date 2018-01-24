@@ -180,6 +180,8 @@ class Parameter(t.HasTraits):
                            'self': ('id', None),
                            }
         self._slicing_whitelist = {'map': 'inav'}
+        self._is_linear = False
+        self._is_independent = False
 
     def _load_dictionary(self, dictionary):
         """Load data from dictionary
@@ -1185,3 +1187,57 @@ class Component(t.HasTraits):
         else:
             raise ValueError( "_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
                     \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
+
+    def notebook_interaction(self, display=True):
+        """Creates interactive notebook widgets for all component parameters,
+        if available.
+        Requires `ipywidgets` to be installed.
+        Parameters
+        ----------
+        display : bool
+            if True (default), attempts to display the widgets.
+            Otherwise returns the formatted widget object.
+        """
+        from ipywidgets import (Checkbox, VBox)
+        from traitlets import TraitError as TraitletError
+        from IPython.display import display as ip_display
+        try:
+            active = Checkbox(description='active', value=self.active)
+
+            def on_active_change(change):
+                self.active = change['new']
+            active.observe(on_active_change, names='value')
+
+            container = VBox([active])
+            for parameter in self.parameters:
+                container.children += parameter.notebook_interaction(False),
+
+            if not display:
+                return container
+            ip_display(container)
+        except TraitletError:
+            if display:
+                _logger.info('This function is only avialable when running in'
+                             ' a notebook')
+            else:
+                raise
+    @property
+    def is_linear(self):
+        "Loops through the component's free parameters, checks that they are linear"
+        if len(self.free_parameters) == 1:
+            return self.free_parameters[0]._is_linear
+        else:
+            return False
+    
+    @property
+    def independent_parameters(self):
+        """Lists all parameters that are independent"""
+        return [para for para in self.parameters if para._is_independent]
+
+    @property
+    def independent_term(self):
+        "Get value of the independent term of the component at current indices. Returns 0 for most components."
+        return self._independent_term()
+
+    def _independent_term(self):
+        return 0
