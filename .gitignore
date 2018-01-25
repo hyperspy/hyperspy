@@ -51,3 +51,5 @@ doc/api/hyperspy._signals.rst
 doc/api/hyperspy._components.rst
 doc/api/hyperspy._components.rst
 *.rst
+test/Polymer_window.msa
+test/Polymer_window.txt
