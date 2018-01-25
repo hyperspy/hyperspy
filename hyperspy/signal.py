@@ -3279,12 +3279,7 @@ class BaseSignal(FancySlicing,
         if isinstance(self.data, da.Array):
             if shifted:
                 fft_data_shifted = da.fft.ifftshift(self.data, axes=axes)
-                try:
-                    im_ifft = self._deepcopy_with_new_data(da.fft.ifftn(fft_data_shifted, axes=axes, **kwargs))
-                except ValueError:
-                    chunks = self.data.chunks
-                    fft_data_shifted = fft_data_shifted.rechunk(chunks=chunks)
-                    im_ifft = self._deepcopy_with_new_data(da.fft.ifftn(fft_data_shifted, axes=axes, **kwargs))
+                im_ifft = self._deepcopy_with_new_data(da.fft.ifftn(fft_data_shifted, axes=axes, **kwargs))
             else:
                 im_ifft = self._deepcopy_with_new_data(da.fft.ifftn(
                     self.data, axes=axes, **kwargs))
