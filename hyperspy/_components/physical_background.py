@@ -39,7 +39,7 @@ def Wpercent(model):
         for i in range (0,len(model._signal.metadata.Sample.elements)):
             g[:,:,i] =(u[:,:,i]/(np.sum(u,axis=2))) *100          
                 
-    elif len(np.shape(w[0]))>1 and np.shape(w[0])[1]==1 :
+    elif len(np.shape(w[0]))==1 and np.shape(w[0])[0]>1 :
         u=np.ones([np.shape(w[0])[0], len(model._signal.metadata.Sample.elements)] )
         for i in range (0,len(w)):
             if "Ka" in w [i].metadata.General.title :
@@ -91,13 +91,17 @@ def Mucoef(model):
     return Ac
 
 def Cabsorption(model): 
-    t=np.linspace(model._signal.axes_manager[0].offset,model._signal.axes_manager[0].size*model._signal.axes_manager[0].scale,model._signal.axes_manager[0].size)-0.05
+    t=np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size)-0.05
     Acc=mass_absorption_mixture(elements=['C'],weight_percent=[100], energies=t)
     return Acc
 
 def Windowabsorption(model): 
-    t=np.linspace(model._signal.axes_manager[0].offset,model._signal.axes_manager[0].size*model._signal.axes_manager[0].scale,model._signal.axes_manager[0].size)-0.05
-    Accc=mass_absorption_mixture(elements=['C','O'],weight_percent=[60,40], energies=t)
+    from scipy.interpolate import interp1d
+    a=np.loadtxt('Polymer_window.txt', skiprows=0)
+    b=np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size)-0.05
+    x =a[:,0]
+    y = a[:,1]
+    Accc=np.interp(b, x, y)
     return Accc
 
 def emissionlaw(model,E0):
@@ -105,7 +109,7 @@ def emissionlaw(model,E0):
 
     axis = model._signal.axes_manager.signal_axes[0]
     if E0<20:
-        i1, i2 = axis.value_range_to_indices(E0/2,E0)
+        i1, i2 = axis.value_range_to_indices(E0/3,E0)
     else :
         i1, i2 = axis.value_range_to_indices(max(axis.axis)/3,max(axis.axis))
     def myfunc(p, fjac=None, x=None, y=None, err=None):
@@ -147,18 +151,17 @@ class Physical_background(Component):
 
     """
 
-    def __init__(self,model, E0, coefficients=3, Z=15,Mu=0,e=1.30,f=2.25,a=0):
+    def __init__(self,model, E0, coefficients=3, Mu=0,e=1.30,f=2.25,a=0):
         Component.__init__(self,['coefficients','E0','Mu','C','Window','e','f','a'])
         self.coefficients.value=coefficients
         self.e.value=e
         self.f.value=f
         self.a.value=a
         self.E0.value=E0
-        
-        
+                
         self.Mu._number_of_elements=model.axis.axis.shape[0]
-        self.Mu.value=Mucoef(model)
-        self.C._number_of_elements=model.axis.axis.shape[0]
+        self.Mu.value=np.ones(model.axis.axis.shape[0])
+        self.C._number_of_elements=model.axis.axis.shape[-1]
         self.C.value=Cabsorption(model)
         self.Window._number_of_elements=model.axis.axis.shape[0]
         self.Window.value=Windowabsorption(model)
@@ -185,7 +188,7 @@ class Physical_background(Component):
         e=self.e.value
         f=self.f.value
                      
-        Mu=self.Mu.value
+        Mu=Mucoef(self.model)
         self.Mu._create_array()
         Mu=np.array(Mu,dtype=float)
         Mu=Mu[self.model.channel_switches]
@@ -210,5 +213,5 @@ class Physical_background(Component):
             
         else: a=self.a.value
         
-        return np.where((x>0.05) & (x<(E0+0.05)),((a*100*((E0-x)/x))*((1-np.exp(-2*Mu*b*10**-5 ))/((2*Mu*b*10**-5)))*((1-np.exp(-2*C*e*10**-6 ))/((2*C*e*10**-6)))*((1-np.exp(-2*Window*f*10**-5 ))/((2*Window*f*10**-5)))),0) #implement choice for coating correction and detector window correction
+        return np.where((x>0.05) & (x<(E0+0.05)),((a*100*((E0-x)/x))*((1-np.exp(-2*Mu*b*10**-5 ))/((2*Mu*b*10**-5))) *((1-np.exp(-2*C*e*10**-6 ))/((2*C*e*10**-6)))*Window),0) #implement choice for coating correction and detector window correction
    
