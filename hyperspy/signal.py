@@ -3222,7 +3222,8 @@ class BaseSignal(FancySlicing,
 
         im_fft.change_dtype("complex")
         im_fft.metadata.General.title = 'FFT of {}'.format(im_fft.metadata.General.title)
-        im_fft.metadata.Signal.signal_type = 'FFT of {}'.format(im_fft.metadata.Signal.signal_type)
+        im_fft.metadata.set_item('Signal.FFT.shifted', shifted)
+
         ureg = UnitRegistry()
         for axis in im_fft.axes_manager.signal_axes:
             axis.scale = 1. / axis.size / axis.scale
@@ -3296,8 +3297,9 @@ class BaseSignal(FancySlicing,
                     self.data, axes=axes, **kwargs))
 
         im_ifft.metadata.General.title = 'iFFT of {}'.format(im_ifft.metadata.General.title)
-        im_ifft.metadata.Signal.signal_type = 'iFFT of {}'.format(im_ifft.metadata.Signal.signal_type)
+        im_ifft.metadata.Signal.__delattr__('FFT')
         im_ifft = im_ifft.real
+
         ureg = UnitRegistry()
         for axis in im_ifft.axes_manager.signal_axes:
             axis.scale = 1. / axis.size / axis.scale

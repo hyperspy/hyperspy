@@ -48,8 +48,12 @@ def test_fft_signal2d(lazy):
     assert im_ifft.axes_manager.signal_axes[0].offset == 0.
     assert im_ifft.axes_manager.signal_axes[1].offset == 0.
 
+    assert im_fft.metadata.Signal.FFT.shifted is False
+    assert im_ifft.metadata.has_item('Signal.FFT') is False
+
     assert isinstance(im_fft, ComplexSignal2D)
     assert isinstance(im_ifft, Signal2D)
+
     assert_allclose(im.data,  im_ifft.data, atol=1e-3)
 
     im_fft = im.inav[0].fft()
@@ -64,8 +68,13 @@ def test_fft_signal2d(lazy):
     im_fft = im.inav[0, 0].fft(shifted=True)
     axis = im_fft.axes_manager.signal_axes[0]
     assert axis.offset == -axis.high_value
+
     im_ifft = im_fft.ifft(shifted=True)
     assert im_ifft.axes_manager.signal_axes[0].offset == 0.
+
+    assert im_fft.metadata.Signal.FFT.shifted is True
+    assert im_ifft.metadata.has_item('Signal.FFT') is False
+
     assert_allclose(im.inav[0, 0].data, im_ifft.data, atol=1e-3)
     assert_allclose(im_fft.data, np.fft.fftshift(np.fft.fft2(im.inav[0, 0]).data))
 
