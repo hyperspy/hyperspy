@@ -1144,7 +1144,6 @@ class MVA():
         ax.set_xlabel('Principal component')
         ax.set_ylabel('Cumulative explained variance ratio')
         plt.draw()
-        plt.show()
         return ax
 
     def normalize_poissonian_noise(self, navigation_mask=None,

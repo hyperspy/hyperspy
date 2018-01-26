@@ -751,10 +751,6 @@ def closest_power_of_two(n):
     return int(2 ** np.ceil(np.log2(n)))
 
 
-def without_nans(data):
-    return data[~np.isnan(data)]
-
-
 def stack(signal_list, axis=None, new_axis_name='stack_element',
           lazy=None, **kwargs):
     """Concatenate the signals in the list over a given axis or a new axis.

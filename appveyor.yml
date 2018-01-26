@@ -70,12 +70,11 @@ install:
   - ps: Add-AppveyorMessage "Installing conda packages..."
   - "%CMD_IN_ENV% conda install -yq %TEST_DEPS%"
   - "%CMD_IN_ENV% conda install -yq %DEPS%"
+  # install freetype=2.6 from conda-forge to pass the plotting tests
+  - "%CMD_IN_ENV% conda install -yq -c conda-forge --no-deps freetype=2.6"
   # Having 'sip' folder on path confuses import of `sip`.
   #- "%CMD_IN_ENV% conda install -yq pip"
   - "pip install pytest-mpl"
-  # Force to have the freetype font in matplotlib from pip for plot testing
-  - "pip uninstall -y matplotlib"
-  - "pip install matplotlib"
   # TODO: Remove once anaconda taitsui package is at v5:
   - "IF \"%PYTHON_MAJOR%\" EQU \"3\" pip install --upgrade traitsui tqdm"
   - ps: Add-AppveyorMessage "Installing hyperspy..."
@@ -97,6 +96,11 @@ after_test:
 artifacts:
   - path: dist\*.whl
     name: win_wheels
+
+on_failure:
+  - ps: $Env:image_comparison_filename = 'image_comparison_' + $Env:PYTHON_VERSION + '_' + $Env:PYTHON_ARCH + 'bits.zip'
+  - ps: 7z a -r $Env:image_comparison_filename C:\Users\appveyor\AppData\Local\Temp\1\*png
+  - ps: Push-AppveyorArtifact $Env:image_comparison_filename
 
   #Auto-deployment of bundle installer for tags:
 before_deploy:

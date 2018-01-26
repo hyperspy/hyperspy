@@ -1,7 +1,29 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2016 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 import textwrap
 import matplotlib.pyplot as plt
+import logging
 
 from hyperspy.events import Event, Events
+
+
+_logger = logging.getLogger(__name__)
 
 
 class BlittedFigure(object):
@@ -26,11 +48,14 @@ class BlittedFigure(object):
     def _on_draw(self, *args):
         if self.figure:
             canvas = self.figure.canvas
+            canvas.mpl_disconnect(self.draw_event_cid)
             if canvas.supports_blit:
                 self._set_background()
                 self._draw_animated()
             else:
                 canvas.draw_idle()
+            self.draw_event_cid = canvas.mpl_connect(
+                'draw_event', self._on_draw)
 
     def _draw_animated(self):
         if self.ax.figure and self.figure.axes:
@@ -51,9 +76,12 @@ class BlittedFigure(object):
                     [ax.draw_artist(a) for a in artists if
                      a.get_animated() is True]
                 except AttributeError:
-                     # The method was called before draw. This is a quick
-                     # fix. Properly fixing the issue involves avoiding
-                     # calling this method too early in the code.
+                    # The method was called before draw. This is a quick
+                    # fix. Properly fixing the issue involves avoiding
+                    # calling this method too early in the code.
+                    _logger.warning('Please report this warning to the '
+                                    'developers: `_draw_animated` was called '
+                                    'before `draw`.')
                     pass
             if canvas.supports_blit:
                 canvas.blit(self.figure.bbox)
@@ -73,6 +101,7 @@ class BlittedFigure(object):
         self.events.closed.trigger(obj=self)
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)
+        self.figure.canvas.mpl_disconnect(self.draw_event_cid)
         self.figure = None
 
     def close(self):

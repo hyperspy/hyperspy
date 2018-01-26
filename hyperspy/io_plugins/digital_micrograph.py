@@ -32,6 +32,8 @@ import hyperspy.misc.io.utils_readfile as iou
 from hyperspy.exceptions import DM3TagIDError, DM3DataTypeError, DM3TagTypeError
 import hyperspy.misc.io.tools
 from hyperspy.misc.utils import DictionaryTreeBrowser
+from hyperspy.docstrings.signal import OPTIMIZE_ARG
+
 
 _logger = logging.getLogger(__name__)
 
@@ -330,7 +332,7 @@ class DigitalMicrographReader(object):
             data += s.unpack(self.f.read(1))[0]
         try:
             data = data.decode('utf8')
-        except:
+        except BaseException:
             # Sometimes the dm3 file strings are encoded in latin-1
             # instead of utf8
             data = data.decode('latin-1', errors='ignore')
@@ -666,7 +668,8 @@ class ImageObject(object):
             return self.unpack_packed_complex(data)
         elif self.imdict.ImageData.DataType in (8, 23):  # ABGR
             # Reorder the fields
-            data = data[['R', 'G', 'B', 'A']].copy()
+            data = data[['R', 'G', 'B', 'A']].astype(
+                [('R', 'u1'), ('G', 'u1'), ('B', 'u1'), ('A', 'u1')])
         return data.reshape(self.shape, order=self.order)
 
     def unpack_new_packed_complex(self, data):
@@ -792,14 +795,14 @@ class ImageObject(object):
         try:
             dt = dateutil.parser.parse(time)
             return dt.time().isoformat()
-        except:
+        except BaseException:
             _logger.warning("Time string, %s,  could not be parsed", time)
 
     def _get_date(self, date):
         try:
             dt = dateutil.parser.parse(date)
             return dt.date().isoformat()
-        except:
+        except BaseException:
             _logger.warning("Date string, %s,  could not be parsed", date)
 
     def _get_microscope_name(self, ImageTags):
@@ -969,7 +972,8 @@ class ImageObject(object):
         return mapping
 
 
-def file_reader(filename, record_by=None, order=None, lazy=False):
+def file_reader(filename, record_by=None, order=None, lazy=False,
+                optimize=True):
     """Reads a DM3 file and loads the data into the appropriate class.
     data_id can be specified to load a given image within a DM3 file that
     contains more than one dataset.
@@ -978,9 +982,11 @@ def file_reader(filename, record_by=None, order=None, lazy=False):
     ----------
     record_by: Str
         One of: SI, Signal2D
-    order: Str
+    order : Str
         One of 'C' or 'F'
-
+    lazy : bool, default False
+        Load the signal lazily.
+    %s
     """
 
     with open(filename, "rb") as f:
@@ -1000,7 +1006,7 @@ def file_reader(filename, record_by=None, order=None, lazy=False):
             mp['General']['original_filename'] = os.path.split(filename)[1]
             post_process = []
             if image.to_spectrum is True:
-                post_process.append(lambda s: s.to_signal1D())
+                post_process.append(lambda s: s.to_signal1D(optimize=optimize))
             post_process.append(lambda s: s.squeeze())
             if lazy:
                 image.filename = filename
@@ -1021,3 +1027,4 @@ def file_reader(filename, record_by=None, order=None, lazy=False):
                  })
 
     return imd
+    file_reader.__doc__ %= (OPTIMIZE_ARG.replace('False', 'True'))
