@@ -69,8 +69,6 @@ install:
   - ps: Add-AppveyorMessage "Installing conda packages..."
   - "%CMD_IN_ENV% conda install -yq %TEST_DEPS%"
   - "%CMD_IN_ENV% conda install -yq %DEPS%"
-  # install freetype=2.6 from conda-forge to pass the plotting tests
-  - "%CMD_IN_ENV% conda install -yq -c conda-forge --no-deps freetype=2.6"
   # Having 'sip' folder on path confuses import of `sip`.
   #- "%CMD_IN_ENV% conda install -yq pip"
   - "pip install pytest-mpl"
