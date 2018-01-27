@@ -35,10 +35,7 @@ from datetime import datetime
 from dateutil import tz
 import pint
 import time
-import psutil
-import functools
 import logging
-import gc
 from tempfile import mkdtemp
 import os.path as path
 
@@ -487,7 +484,7 @@ class FeiEMDReader(object):
     """
 
     def __init__(self, filename, load='all', first_frame=0, last_frame=None,
-                 individual_frame=False, individual_detector=False,
+                 individual_frame=False, sum_EDS_detectors=True,
                  energy_rebin=1, SI_dtype=None, load_SI_image_stack=False,
                  lazy=False):
         self.filename = filename
@@ -496,7 +493,7 @@ class FeiEMDReader(object):
         self.first_frame = first_frame
         self.last_frame = last_frame
         self.individual_frame = individual_frame
-        self.individual_detector = individual_detector
+        self.sum_EDS_detectors = sum_EDS_detectors
         self.energy_rebin = energy_rebin
         self.SI_data_dtype = SI_dtype
         self.load_SI_image_stack = load_SI_image_stack
@@ -733,7 +730,7 @@ class FeiEMDReader(object):
                                              data_dtype=self.SI_data_dtype,
                                              lazy=self.lazy)
 
-        streams.read_streams(self.individual_detector)
+        streams.read_streams(self.sum_EDS_detectors)
         spectrum_image_shape = streams.get_SI_shape()
         original_metadata = streams.streams[0].original_metadata
         original_metadata.update(self.original_metadata)
@@ -788,8 +785,8 @@ class FeiEMDReader(object):
         md = self._get_metadata_dict()
         md['Signal']['signal_type'] = 'EDS_TEM'
 
-        if self.individual_detector is False:
-            self.dictionaries.append({'data': streams.sum_spectrum_image,
+        if self.sum_EDS_detectors:
+            self.dictionaries.append({'data': streams.summed_spectrum_image,
                                       'axes': axes,
                                       'metadata': md,
                                       'original_metadata': original_metadata,
@@ -931,12 +928,11 @@ class FeiSpectrumStreamContainer(object):
 
         metadata_group = self.spectrum_stream_group[key]
         stream.parse_metadata(metadata_group)
-#        stream._memory_check()
 
-        stream.get_spectrum_image()
+        stream.compute_spectrum_image()
         return stream
 
-    def read_streams(self, individual_detector=False):
+    def read_streams(self, sum_EDS_detectors=True):
         subgroup_keys = _get_keys_from_group(self.spectrum_stream_group)
 
         self.kwargs = {'shape': self.shape,
@@ -946,23 +942,22 @@ class FeiSpectrumStreamContainer(object):
                        'individual_frame': self.individual_frame,
                        'data_dtype': self.data_dtype}
 
-        if individual_detector:
-            self.streams = self._read_all_streams(subgroup_keys)
-            #self.number_of_frames = self.streams.number_of_frames
-        else:
+        if sum_EDS_detectors:
             stream_data_list = [
                 self.spectrum_stream_group['{}/Data'.format(key)][:].T[0]
                 for key in subgroup_keys]
             # Read the first stream
             self.streams = [self._read_individual_stream(stream_data_list[0],
                                                          subgroup_keys[0])]
-            self.sum_spectrum_image = self.streams[0].spectrum_image
+            self.summed_spectrum_image = self.streams[0].spectrum_image
             # add other stream
             if len(stream_data_list) > 1:
                 for key, stream_data in zip(subgroup_keys[1:], stream_data_list[1:]):
                     self.streams = [self._read_individual_stream(
                         stream_data, key)]
-                    self.sum_spectrum_image += self.streams[0].spectrum_image
+                    self.summed_spectrum_image += self.streams[0].spectrum_image
+        else:
+            self.streams = self._read_all_streams(subgroup_keys)
 
     def get_SI_shape(self):
         return self.streams[0].spectrum_image.shape
@@ -997,17 +992,6 @@ class FeiSpectrumStream(object):
         self.data_dtype = data_dtype
         self.lazy = lazy
 
-    def _memory_check(self):
-        gc.collect()
-        # Estimate the memory necessary and check if there is enough
-        available_memory = psutil.virtual_memory()[1]
-        dtype_size = np.dtype(self.data_dtype).itemsize
-        array_size = functools.reduce(lambda x, y: x * y, self.shape)
-        channel_number = self.bin_count / self.energy_rebin
-        if available_memory < array_size * dtype_size * channel_number:
-            raise MemoryError('Change `data dtype` or use the `energy_rebin` '
-                              'argument.')
-
     def parse_metadata(self, stream_group):
         self.original_metadata = _parse_sub_data_group_metadata(stream_group)
 
@@ -1025,7 +1009,7 @@ class FeiSpectrumStream(object):
             self.data_dtype = acquisition_settings['StreamEncoding']
         return acquisition_settings
 
-    def get_spectrum_image(self):
+    def compute_spectrum_image(self):
         stream = self.stream_data
         shape = self.shape
         if self.last_frame is None:
@@ -1039,7 +1023,7 @@ class FeiSpectrumStream(object):
             SI = np.zeros((self.number_of_frames, shape[0], shape[1],
                            int(self.bin_count / self.energy_rebin)),
                           dtype=self.data_dtype)
-            self.spectrum_image = get_spectrum_image_individual(
+            self.spectrum_image = compute_spectrum_image_individual_frame(
                 SI, stream, self.first_frame, self.last_frame, self.energy_rebin)
         else:
             if self.lazy:
@@ -1048,7 +1032,7 @@ class FeiSpectrumStream(object):
                                            mode='w+', shape=(shape[0], shape[1],
                                                              int(self.bin_count / self.energy_rebin)))
 
-                spectrum_image = delayed(get_spectrum_image)(spectrum_image,
+                spectrum_image = delayed(compute_spectrum_image)(spectrum_image,
                                                              stream, self.shape, self.first_frame, self.last_frame, self.energy_rebin)
 
                 self.spectrum_image = da.from_delayed(spectrum_image, shape=shape,
@@ -1056,14 +1040,14 @@ class FeiSpectrumStream(object):
             else:
                 spectrum_image = np.zeros((shape[0], shape[1],
                                            int(self.bin_count / self.energy_rebin)), dtype=self.data_dtype)
-                self.spectrum_image = get_spectrum_image(spectrum_image,
+                self.spectrum_image = compute_spectrum_image(spectrum_image,
                                                          stream, self.shape, self.first_frame, self.last_frame, self.energy_rebin)
 
         self._add_imported_parameters_to_original_metadata()
 
 
 @jit_ifnumba
-def get_spectrum_image(spectrum_image, stream, shape,
+def compute_spectrum_image(spectrum_image, stream, shape,
                        first_frame, last_frame, energy_rebin=1):
 
     # jit speeds up this function by a factor of ~ 30
@@ -1091,7 +1075,7 @@ def get_spectrum_image(spectrum_image, stream, shape,
 
 
 @jit_ifnumba
-def get_spectrum_image_individual(spectrum_image, stream, first_frame,
+def compute_spectrum_image_individual_frame(spectrum_image, stream, first_frame,
                                   last_frame, energy_rebin=1):
     navigation_index = 0
     frame_number = 0
