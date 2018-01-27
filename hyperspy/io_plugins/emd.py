@@ -487,8 +487,9 @@ class FeiEMDReader(object):
                  last_frame=None, individual_frame=False, sum_EDS_detectors=True,
                  rebin_energy=1, SI_dtype=None, load_SI_image_stack=False,
                  lazy=False):
-        #TODO: Finish lazy implementation using the `FrameLocationTable`
+        # TODO: Finish lazy implementation using the `FrameLocationTable`
         # Parallelise streams reading
+        # Parse properly the date and time
         self.filename = filename
         self.ureg = pint.UnitRegistry()
         self.dictionaries = []
@@ -717,8 +718,6 @@ class FeiEMDReader(object):
         self.original_metadata.update({group_name: d})
 
     def _read_spectrum_image(self):
-        if not self.load_SI:
-            return
         self.detector_name = 'EDS'
         # Spectrum stream group
         spectrum_stream_grp = self.d_grp.get("SpectrumStream")
@@ -1035,7 +1034,7 @@ class FeiSpectrumStream(object):
                                                              int(self.bin_count / self.rebin_energy)))
 
                 spectrum_image = delayed(compute_spectrum_image)(spectrum_image,
-                                                             stream, self.shape, self.first_frame, self.last_frame, self.rebin_energy)
+                                                                 stream, self.shape, self.first_frame, self.last_frame, self.rebin_energy)
 
                 self.spectrum_image = da.from_delayed(spectrum_image, shape=shape,
                                                       dtype=self.data_dtype)
@@ -1043,14 +1042,14 @@ class FeiSpectrumStream(object):
                 spectrum_image = np.zeros((shape[0], shape[1],
                                            int(self.bin_count / self.rebin_energy)), dtype=self.data_dtype)
                 self.spectrum_image = compute_spectrum_image(spectrum_image,
-                                                         stream, self.shape, self.first_frame, self.last_frame, self.rebin_energy)
+                                                             stream, self.shape, self.first_frame, self.last_frame, self.rebin_energy)
 
         self._add_imported_parameters_to_original_metadata()
 
 
 @jit_ifnumba
 def compute_spectrum_image(spectrum_image, stream, shape,
-                       first_frame, last_frame, rebin_energy=1):
+                           first_frame, last_frame, rebin_energy=1):
 
     # jit speeds up this function by a factor of ~ 30
     navigation_index = 0
@@ -1078,7 +1077,7 @@ def compute_spectrum_image(spectrum_image, stream, shape,
 
 @jit_ifnumba
 def compute_spectrum_image_individual_frame(spectrum_image, stream, first_frame,
-                                  last_frame, rebin_energy=1):
+                                            last_frame, rebin_energy=1):
     navigation_index = 0
     frame_number = 0
     shape = spectrum_image.shape
