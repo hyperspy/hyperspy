@@ -678,17 +678,17 @@ version of Velox may not be supported.
 Extra loading arguments
 +++++++++++++++++++++++
 
-- `load` : one of {'all', 'images', 'single_spectra', 'spectrum_image'} (default is 'all'). 
+- `select_type` : one of {None, 'image', 'single_spectrum', 'spectrum_image'} (default is None). 
 - `first_frame` : integer (default is 0).
 - `last_frame` : integer (default is None)
 - `individual_frame` : boolean (default is False)
 - `sum_EDS_detectors` : boolean (default is True)
 - `rebin_energy` : integer (default is 1)
 - `SI_dtype` : numpy dtype (default is None)
-- `read_SI_image_stack` : boolean (default is False)
+- `load_SI_image_stack` : boolean (default is False)
 
-The ``load`` parameter specifies the type of data to load: if `images` is selected, 
-only images (including EDS maps) are loaded, if `single_spectra` is selected, only 
+The ``select_type`` parameter specifies the type of data to load: if `image` is selected, 
+only images (including EDS maps) are loaded, if `single_spectrum` is selected, only 
 single spectra are loaded and if `spectrum_image` is selected, only the spectrum 
 image will be loaded. The ``first_frame`` and ``last_frame`` parameters can be used 
 to select the frame range of the EDS spectrum image to load. To load each individual 
@@ -701,8 +701,8 @@ EDS signal as a sum over the signals from each EDS detectors.  The ``rebin_energ
 and ``SI_dtype`` parameters are particularly useful in combination with 
 ``individual_frame=True`` to reduce the data size when one want to read the 
 individual frames of the spectrum image. If ``SI_dtype=None`` (default), the dtype 
-of the data in the emd file is used. The ``read_SI_image_stack`` parameter allows 
-loading the STEM acquired simultaneously as the EDS spectrum image. 
+of the data in the emd file is used. The ``load_SI_image_stack`` parameter allows 
+loading the stack of STEM images acquired simultaneously as the EDS spectrum image. 
 This can be useful to monitor any specimen changes during the acquisition or to 
 correct the spatial drift in the spectrum image by using the STEM images.
 
@@ -715,7 +715,7 @@ correct the spatial drift in the spectrum image by using the STEM images.
     <EDSSEMSpectrum, title: EDS - SuperXG23, dimensions: (179, 161|4096)>,
     <EDSSEMSpectrum, title: EDS - SuperXG24, dimensions: (179, 161|4096)>]
 
-    >>> hs.load("sample.emd", individual_frame=True, read_SI_image_stack=True, SI_dtype=np.int8, rebin_energy=4)
+    >>> hs.load("sample.emd", individual_frame=True, load_SI_image_stack=True, SI_dtype=np.int8, rebin_energy=4)
     [<Signal2D, title: HAADF, dimensions: (50|179, 161)>,
     <EDSSEMSpectrum, title: EDS, dimensions: (50, 179, 161|1024)>]
 

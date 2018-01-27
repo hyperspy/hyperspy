@@ -74,7 +74,10 @@ def test_load_8bit():
 def test_hyperspy_wrap():
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     print('testing bcf wrap to hyperspy signal...')
-    hype = load(filename, select_type='spectrum')
+    from hyperspy.exceptions import VisibleDeprecationWarning
+    with pytest.warns(VisibleDeprecationWarning):
+        hype = load(filename, select_type='spectrum')
+    hype = load(filename, select_type='spectrum_image')
     assert_allclose(
         hype.axes_manager[0].scale,
         8.7367850619778,
@@ -133,7 +136,7 @@ def test_hyperspy_wrap():
 def test_hyperspy_wrap_downsampled():
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
     print('testing bcf wrap to hyperspy signal...')
-    hype = load(filename, select_type='spectrum', downsample=5)
+    hype = load(filename, select_type='spectrum_image', downsample=5)
     assert_allclose(
         hype.axes_manager[0].scale,
         43.683925309889,
@@ -147,22 +150,22 @@ def test_hyperspy_wrap_downsampled():
 
 def test_get_mode():
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
-    s = load(filename, select_type='spectrum', instrument='SEM')
+    s = load(filename, select_type='spectrum_image', instrument='SEM')
     assert s.metadata.Signal.signal_type == "EDS_SEM"
     assert isinstance(s, signals.EDSSEMSpectrum)
 
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
-    s = load(filename, select_type='spectrum', instrument='TEM')
+    s = load(filename, select_type='spectrum_image', instrument='TEM')
     assert s.metadata.Signal.signal_type == "EDS_TEM"
     assert isinstance(s, signals.EDSTEMSpectrum)
 
     filename = os.path.join(my_path, 'bcf_data', test_files[0])
-    s = load(filename, select_type='spectrum')
+    s = load(filename, select_type='spectrum_image')
     assert s.metadata.Signal.signal_type == "EDS_SEM"
     assert isinstance(s, signals.EDSSEMSpectrum)
 
     filename = os.path.join(my_path, 'bcf_data', test_files[3])
-    s = load(filename, select_type='spectrum')
+    s = load(filename, select_type='spectrum_image')
     assert s.metadata.Signal.signal_type == "EDS_TEM"
     assert isinstance(s, signals.EDSTEMSpectrum)
 

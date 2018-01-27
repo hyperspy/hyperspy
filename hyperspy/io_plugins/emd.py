@@ -483,8 +483,8 @@ class FeiEMDReader(object):
 
     """
 
-    def __init__(self, filename, load='all', first_frame=0, last_frame=None,
-                 individual_frame=False, sum_EDS_detectors=True,
+    def __init__(self, filename, select_type=None, first_frame=0,
+                 last_frame=None, individual_frame=False, sum_EDS_detectors=True,
                  rebin_energy=1, SI_dtype=None, load_SI_image_stack=False,
                  lazy=False):
         #TODO: Finish lazy implementation using the `FrameLocationTable`
@@ -509,30 +509,30 @@ class FeiEMDReader(object):
             if self.im_type == 'SpectrumStream':
                 self.p_grp = f.get('Presentation')
                 self._parse_image_display()
-            self._read_data(load)
+            self._read_data(select_type)
 
-    def _read_data(self, load):
-        self.load_images = self.load_SI = self.load_spectra = True
-        if load == 'single_spectra':
+    def _read_data(self, select_type):
+        self.load_images = self.load_SI = self.load_single_spectrum = True
+        if select_type == 'single_spectrum':
             self.load_images = self.load_SI = False
-        elif load == 'images':
-            self.load_SI = self.load_spectra = False
-        elif load == 'spectrum_image':
-            self.load_images = self.load_spectra = False
-        elif load == 'all':
+        elif select_type == 'images':
+            self.load_SI = self.load_single_spectrum = False
+        elif select_type == 'spectrum_image':
+            self.load_images = self.load_single_spectrum = False
+        elif select_type is None:
             pass
         else:
-            raise ValueError('`load` argument takes only: `all`, ',
-                             '`single_spectra`, `images` or `spectrum_image`.')
+            raise ValueError("`select_type` parameter takes only: `None`, ",
+                             "'single_spectrum', 'images' or 'spectrum_image'.")
 
         if self.im_type == 'Image':
             _logger.info('Reading the images.')
             self._read_images()
         elif self.im_type == 'Spectrum':
-            self._read_spectrums()
+            self._read_single_spectrum()
             self._read_images()
         elif self.im_type == 'SpectrumStream':
-            self._read_spectrums()
+            self._read_single_spectrum()
             _logger.info('Reading the spectrum image.')
             t0 = time.time()
             self._read_images()
@@ -551,8 +551,8 @@ class FeiEMDReader(object):
         else:
             self.im_type = 'Spectrum'
 
-    def _read_spectrums(self):
-        if not self.load_spectra:
+    def _read_single_spectrum(self):
+        if not self.load_single_spectrum:
             return
         spectrum_grp = self.d_grp.get("Spectrum")
         if spectrum_grp is None:
