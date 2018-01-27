@@ -263,7 +263,7 @@ class TestFeiEMD():
         assert signal.axes_manager[2].size == 4096
         assert signal.axes_manager[2].units == 'keV'
         assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
-        assert signal.metadata.Acquisition_instrument.TEM.Detector.EDS.frame_number == 10
+        assert signal.metadata.Acquisition_instrument.TEM.Detector.EDS.number_of_frames == 10
 
         signal0 = s[0]
         assert isinstance(signal0, Signal2D)
@@ -292,7 +292,7 @@ class TestFeiEMD():
         assert signal.axes_manager[2].size == 4096
         assert signal.axes_manager[2].units == 'keV'
         assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
-        assert signal.metadata.Acquisition_instrument.TEM.Detector.EDS.frame_number == 20
+        assert signal.metadata.Acquisition_instrument.TEM.Detector.EDS.number_of_frames == 20
 
     def test_fei_emd_si_non_square_20frames_2eV(self):
         s = load(os.path.join(self.fei_files_path,
@@ -311,7 +311,7 @@ class TestFeiEMD():
         assert signal.axes_manager[2].size == 4096
         assert signal.axes_manager[2].units == 'keV'
         assert_allclose(signal.axes_manager[2].scale, 0.002, atol=1E-5)
-        assert signal.metadata.Acquisition_instrument.TEM.Detector.EDS.frame_number == 20
+        assert signal.metadata.Acquisition_instrument.TEM.Detector.EDS.number_of_frames == 20
 
     def test_fei_emd_si_frame_range(self):
         signal = load(os.path.join(self.fei_files_path, 'fei_emd_si.emd'),
@@ -321,7 +321,7 @@ class TestFeiEMD():
         np.testing.assert_equal(signal[1].data, fei_si)
         assert isinstance(signal[1], Signal1D)
         md = signal[1].metadata
-        assert md['Acquisition_instrument']['TEM']['Detector']['EDS']['frame_number'] == 2
+        assert md['Acquisition_instrument']['TEM']['Detector']['EDS']['number_of_frames'] == 2
 
     def time_loading_frame(self):
         # Run this function to check the loading time when loading EDS data

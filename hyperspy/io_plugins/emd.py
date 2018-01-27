@@ -762,7 +762,7 @@ class FeiEMDReader(object):
                          'size': spectrum_image_shape[i],
                          'units': 's',
                          'navigate': True})
-            i += 1
+            i = 1
         axes.extend([{'index_in_array': i,
                       'name': 'y',
                       'offset': offset_y[0],
@@ -860,8 +860,8 @@ class FeiEMDReader(object):
             'Stage.Position.z': (
                 "Acquisition_instrument.TEM.Stage.z",
                 lambda x: '{:.3f}'.format(float(x))),
-            'ImportedDataParameter.Frame_number': (
-                "Acquisition_instrument.TEM.Detector.EDS.frame_number", None)
+            'ImportedDataParameter.Number_of_frames': (
+                "Acquisition_instrument.TEM.Detector.EDS.number_of_frames", None)
         }
 
         # Add selected element
@@ -948,7 +948,7 @@ class FeiSpectrumStreamContainer(object):
 
         if individual_detector:
             self.streams = self._read_all_streams(subgroup_keys)
-            #self.frame_number = self.streams.frame_number
+            #self.number_of_frames = self.streams.number_of_frames
         else:
             stream_data_list = [
                 self.spectrum_stream_group['{}/Data'.format(key)][:].T[0]
@@ -1015,7 +1015,7 @@ class FeiSpectrumStream(object):
         self.original_metadata['ImportedDataParameter'] = {
             'First_frame': self.first_frame,
             'Last_frame': self.last_frame,
-            'Frame_number': self.frame_number}
+            'Number_of_frames': self.number_of_frames}
 
     def parse_acquisition_settings(self, acquisition_settings_group):
         acquisition_settings = json.loads(
@@ -1034,9 +1034,9 @@ class FeiSpectrumStream(object):
         if self.bin_count % self.energy_rebin != 0:
             raise ValueError('The `energy_rebin` needs to be a divisor of the',
                              ' total number of channels.')
-        self.frame_number = self.last_frame - self.first_frame
+        self.number_of_frames = self.last_frame - self.first_frame
         if self.individual_frame:
-            SI = np.zeros((self.frame_number, shape[0], shape[1],
+            SI = np.zeros((self.number_of_frames, shape[0], shape[1],
                            int(self.bin_count / self.energy_rebin)),
                           dtype=self.data_dtype)
             self.spectrum_image = get_spectrum_image_individual(
@@ -1123,7 +1123,8 @@ def file_reader(filename, log_info=False,
     if fei_check(filename) == True:
         _logger.debug('EMD is FEI format')
         if lazy:
-            raise ValueError('Lazy loading is not supported for FEI EMD file.')
+            raise NotImplementedError('Lazy loading is not supported for FEI '
+                                      'EMD file.')
         emd = FeiEMDReader(filename, lazy=lazy, **kwds)
         dictionaries = emd.dictionaries
     else:
