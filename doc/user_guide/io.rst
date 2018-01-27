@@ -644,14 +644,23 @@ stored in an HDF5 file, as well as tags and other metadata.
 EMD (NCEM)
 ^^^^^^^^^^
 
-This EMD format was developed by Colin Ophus at the National Center for Electron Microscopy (NCEM). See http://emdatasets.com/ for more information.
+This EMD format was developed by Colin Ophus at the National Center for 
+Electron Microscopy (NCEM). See http://emdatasets.com/ for more information.
 
 
 EMD (FEI)
 ^^^^^^^^^
 
-This EMD format was developed by FEI for the Velox software. Although it shares similar structure than the other EMD format from NCEM, it differs in the way the data are stored. HyperSpy supports importing images, EDS spectrum and EDS spectrum image. For spectrum image, individual frame or individual EDS detector can be imported, however selecting these option will generate very large dataset. Therefore, the default is to import the sum over all frame and over all detectors. Alternatively, a specific frame range can be choosen -see the :ref:`Extra-loading-arguments-fei-emd` section below.
-Loading a spectrum image is slow if `numba <http://numba.pydata.org/>`_ is not installed.
+This EMD format was developed by FEI for the Velox software. Although it shares 
+similar structure than the other EMD format from NCEM, it differs in the way 
+the data are stored. HyperSpy supports importing images, EDS spectrum and EDS 
+spectrum image. For spectrum image, individual frame or individual EDS detector 
+can be imported, however selecting these option will generate very large 
+dataset. Therefore, the default is to import the sum over all frame and over 
+all detectors. Alternatively, a specific frame range can be choosen -see 
+the :ref:`Extra-loading-arguments-fei-emd` section below.
+Loading a spectrum image is slow if `numba <http://numba.pydata.org/>`_ is 
+not installed.
 
 .. code-block:: python
 
@@ -661,34 +670,52 @@ Loading a spectrum image is slow if `numba <http://numba.pydata.org/>`_ is not i
 
 .. warning::
 
-   This format is still not stable and files generated with the most recent version of Velox may not be supported.
+   This format is still not stable and files generated with the most recent 
+version of Velox may not be supported.
 
 .. _Extra-loading-arguments-fei-emd:
 
 Extra loading arguments
 +++++++++++++++++++++++
 
-- `load` : one of {'all', 'images', 'spectrums', 'spectrum_image'} (default is 'all')
-- `first_frame` : integer (default is 0)
+- `load` : one of {'all', 'images', 'single_spectra', 'spectrum_image'} (default is 'all'). 
+- `first_frame` : integer (default is 0).
 - `last_frame` : integer (default is None)
 - `individual_frame` : boolean (default is False)
-- `individual_detector` : boolean (default is False)
-- `energy_rebin` : integer (default is 1)
+- `sum_EDS_detectors` : boolean (default is True)
+- `rebin_energy` : integer (default is 1)
 - `SI_dtype` : numpy dtype (default is None)
 - `read_SI_image_stack` : boolean (default is False)
 
-The `load` specifies the type of data to load. The `SI_dtype` and `energy_rebin` are particularly useful in combination with `individual_frame=True` to reduce the data size when one want to read the individual frame.
+The ``load`` parameter specifies the type of data to load: if `images` is selected, 
+only images (including EDS maps) are loaded, if `single_spectra` is selected, only 
+single spectra are loaded and if `spectrum_image` is selected, only the spectrum 
+image will be loaded. The ``first_frame`` and ``last_frame`` parameters can be used 
+to select the frame range of the EDS spectrum image to load. To load each individual 
+EDS frame, use ``individual_frame=True`` and the EDS spectrum image will be loaded 
+with an an extra navigation dimension corresponding to the frame index 
+(temporal axis). Use the ``sum_EDS_detectors=True`` parameter to load the signal of 
+each individual EDS detector. In such a case, a corresponding number of distinct 
+EDS signal is returned. The default is ``sum_EDS_detectors=True``, which loads the 
+EDS signal as a sum over the signals from each EDS detectors.  The ``rebin_energy`` 
+and ``SI_dtype`` parameters are particularly useful in combination with 
+``individual_frame=True`` to reduce the data size when one want to read the 
+individual frames of the spectrum image. If ``SI_dtype=None`` (default), the dtype 
+of the data in the emd file is used. The ``read_SI_image_stack`` parameter allows 
+loading the STEM acquired simultaneously as the EDS spectrum image. 
+This can be useful to monitor any specimen changes during the acquisition or to 
+correct the spatial drift in the spectrum image by using the STEM images.
 
 .. code-block:: python
 
-    >>> hs.load("sample.emd", individual_detector=True)
+    >>> hs.load("sample.emd", sum_EDS_detectors=False)
     [<Signal2D, title: HAADF, dimensions: (|179, 161)>,
     <EDSSEMSpectrum, title: EDS - SuperXG21, dimensions: (179, 161|4096)>,
     <EDSSEMSpectrum, title: EDS - SuperXG22, dimensions: (179, 161|4096)>,
     <EDSSEMSpectrum, title: EDS - SuperXG23, dimensions: (179, 161|4096)>,
     <EDSSEMSpectrum, title: EDS - SuperXG24, dimensions: (179, 161|4096)>]
 
-    >>> hs.load("sample.emd", individual_frame=True, read_SI_image_stack=True, SI_dtype=np.int8, energy_rebin=4)
+    >>> hs.load("sample.emd", individual_frame=True, read_SI_image_stack=True, SI_dtype=np.int8, rebin_energy=4)
     [<Signal2D, title: HAADF, dimensions: (50|179, 161)>,
     <EDSSEMSpectrum, title: EDS, dimensions: (50, 179, 161|1024)>]
 

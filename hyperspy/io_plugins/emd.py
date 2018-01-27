@@ -485,8 +485,10 @@ class FeiEMDReader(object):
 
     def __init__(self, filename, load='all', first_frame=0, last_frame=None,
                  individual_frame=False, sum_EDS_detectors=True,
-                 energy_rebin=1, SI_dtype=None, load_SI_image_stack=False,
+                 rebin_energy=1, SI_dtype=None, load_SI_image_stack=False,
                  lazy=False):
+        #TODO: Finish lazy implementation using the `FrameLocationTable`
+        # Parallelise streams reading
         self.filename = filename
         self.ureg = pint.UnitRegistry()
         self.dictionaries = []
@@ -494,7 +496,7 @@ class FeiEMDReader(object):
         self.last_frame = last_frame
         self.individual_frame = individual_frame
         self.sum_EDS_detectors = sum_EDS_detectors
-        self.energy_rebin = energy_rebin
+        self.rebin_energy = rebin_energy
         self.SI_data_dtype = SI_dtype
         self.load_SI_image_stack = load_SI_image_stack
         self.lazy = lazy
@@ -510,18 +512,18 @@ class FeiEMDReader(object):
             self._read_data(load)
 
     def _read_data(self, load):
-        self.load_images = self.load_SI = self.load_spectrums = True
-        if load == 'spectrums':
+        self.load_images = self.load_SI = self.load_spectra = True
+        if load == 'single_spectra':
             self.load_images = self.load_SI = False
         elif load == 'images':
-            self.load_SI = self.load_spectrums = False
+            self.load_SI = self.load_spectra = False
         elif load == 'spectrum_image':
-            self.load_images = self.load_spectrums = False
+            self.load_images = self.load_spectra = False
         elif load == 'all':
             pass
         else:
-            raise ValueError('`load` argument takes only: `all`, `spectrums`, '
-                             '`images` or `spectrum_image`.')
+            raise ValueError('`load` argument takes only: `all`, ',
+                             '`single_spectra`, `images` or `spectrum_image`.')
 
         if self.im_type == 'Image':
             _logger.info('Reading the images.')
@@ -550,11 +552,11 @@ class FeiEMDReader(object):
             self.im_type = 'Spectrum'
 
     def _read_spectrums(self):
-        if not self.load_spectrums:
+        if not self.load_spectra:
             return
         spectrum_grp = self.d_grp.get("Spectrum")
         if spectrum_grp is None:
-            return  # No spectrums in the file
+            return  # No spectra in the file
         self.detector_name = 'EDS'
         for spectrum_sub_group_key in _get_keys_from_group(spectrum_grp):
             self.dictionaries.append(
@@ -723,7 +725,7 @@ class FeiEMDReader(object):
 
         streams = FeiSpectrumStreamContainer(spectrum_stream_grp,
                                              shape=self.SI_shape,
-                                             energy_rebin=self.energy_rebin,
+                                             rebin_energy=self.rebin_energy,
                                              first_frame=self.first_frame,
                                              last_frame=self.last_frame,
                                              individual_frame=self.individual_frame,
@@ -805,7 +807,7 @@ class FeiEMDReader(object):
         for detectorname, detector in original_metadata['Detectors'].items():
             if original_metadata['BinaryResult']['Detector'] in detector['DetectorName']:
                 dispersion = float(
-                    detector['Dispersion']) / 1000.0 * self.energy_rebin
+                    detector['Dispersion']) / 1000.0 * self.rebin_energy
                 offset = float(
                     detector['OffsetEnergy']) / 1000.0
                 return dispersion, offset
@@ -896,12 +898,12 @@ class FeiSpectrumStreamContainer(object):
     are summed over all detectors.
     """
 
-    def __init__(self, spectrum_stream_group, shape, energy_rebin=1,
+    def __init__(self, spectrum_stream_group, shape, rebin_energy=1,
                  first_frame=0, last_frame=None, individual_frame=False,
                  data_dtype=None, lazy=False):
         self.spectrum_stream_group = spectrum_stream_group
         self.shape = shape
-        self.energy_rebin = energy_rebin
+        self.rebin_energy = rebin_energy
         self.first_frame = first_frame
         self.last_frame = last_frame
         self.individual_frame = individual_frame
@@ -936,7 +938,7 @@ class FeiSpectrumStreamContainer(object):
         subgroup_keys = _get_keys_from_group(self.spectrum_stream_group)
 
         self.kwargs = {'shape': self.shape,
-                       'energy_rebin': self.energy_rebin,
+                       'rebin_energy': self.rebin_energy,
                        'first_frame': self.first_frame,
                        'last_frame': self.last_frame,
                        'individual_frame': self.individual_frame,
@@ -980,12 +982,12 @@ class FeiSpectrumStream(object):
     not easy to decode.'
     """
 
-    def __init__(self, stream_data, shape, energy_rebin=1, first_frame=0,
+    def __init__(self, stream_data, shape, rebin_energy=1, first_frame=0,
                  last_frame=None, individual_frame=False, data_dtype=None,
                  lazy=False):
         self.stream_data = stream_data
         self.shape = shape
-        self.energy_rebin = energy_rebin
+        self.rebin_energy = rebin_energy
         self.first_frame = first_frame
         self.last_frame = last_frame
         self.individual_frame = individual_frame
@@ -1015,40 +1017,40 @@ class FeiSpectrumStream(object):
         if self.last_frame is None:
             self.last_frame = int(
                 np.ceil((stream == 65535).sum() / (shape[0] * shape[1])))
-        if self.bin_count % self.energy_rebin != 0:
-            raise ValueError('The `energy_rebin` needs to be a divisor of the',
+        if self.bin_count % self.rebin_energy != 0:
+            raise ValueError('The `rebin_energy` needs to be a divisor of the',
                              ' total number of channels.')
         self.number_of_frames = self.last_frame - self.first_frame
         if self.individual_frame:
             SI = np.zeros((self.number_of_frames, shape[0], shape[1],
-                           int(self.bin_count / self.energy_rebin)),
+                           int(self.bin_count / self.rebin_energy)),
                           dtype=self.data_dtype)
             self.spectrum_image = compute_spectrum_image_individual_frame(
-                SI, stream, self.first_frame, self.last_frame, self.energy_rebin)
+                SI, stream, self.first_frame, self.last_frame, self.rebin_energy)
         else:
             if self.lazy:
                 memmap_fname = path.join(mkdtemp(), 'newfile.dat')
                 spectrum_image = np.memmap(memmap_fname, dtype=self.data_dtype,
                                            mode='w+', shape=(shape[0], shape[1],
-                                                             int(self.bin_count / self.energy_rebin)))
+                                                             int(self.bin_count / self.rebin_energy)))
 
                 spectrum_image = delayed(compute_spectrum_image)(spectrum_image,
-                                                             stream, self.shape, self.first_frame, self.last_frame, self.energy_rebin)
+                                                             stream, self.shape, self.first_frame, self.last_frame, self.rebin_energy)
 
                 self.spectrum_image = da.from_delayed(spectrum_image, shape=shape,
                                                       dtype=self.data_dtype)
             else:
                 spectrum_image = np.zeros((shape[0], shape[1],
-                                           int(self.bin_count / self.energy_rebin)), dtype=self.data_dtype)
+                                           int(self.bin_count / self.rebin_energy)), dtype=self.data_dtype)
                 self.spectrum_image = compute_spectrum_image(spectrum_image,
-                                                         stream, self.shape, self.first_frame, self.last_frame, self.energy_rebin)
+                                                         stream, self.shape, self.first_frame, self.last_frame, self.rebin_energy)
 
         self._add_imported_parameters_to_original_metadata()
 
 
 @jit_ifnumba
 def compute_spectrum_image(spectrum_image, stream, shape,
-                       first_frame, last_frame, energy_rebin=1):
+                       first_frame, last_frame, rebin_energy=1):
 
     # jit speeds up this function by a factor of ~ 30
     navigation_index = 0
@@ -1067,7 +1069,7 @@ def compute_spectrum_image(spectrum_image, stream, shape,
             if first_frame <= frame_number:
                 spectrum_image[navigation_index // shape[1],
                                navigation_index % shape[1],
-                               count_channel // energy_rebin] += 1
+                               count_channel // rebin_energy] += 1
         else:
             navigation_index += 1
 
@@ -1076,7 +1078,7 @@ def compute_spectrum_image(spectrum_image, stream, shape,
 
 @jit_ifnumba
 def compute_spectrum_image_individual_frame(spectrum_image, stream, first_frame,
-                                  last_frame, energy_rebin=1):
+                                  last_frame, rebin_energy=1):
     navigation_index = 0
     frame_number = 0
     shape = spectrum_image.shape
@@ -1094,7 +1096,7 @@ def compute_spectrum_image_individual_frame(spectrum_image, stream, first_frame,
                 spectrum_image[frame_number,
                                navigation_index // shape[2],
                                navigation_index % shape[2],
-                               count_channel // energy_rebin] += 1
+                               count_channel // rebin_energy] += 1
         else:
             navigation_index += 1
 
