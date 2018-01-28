@@ -489,7 +489,6 @@ class FeiEMDReader(object):
                  lazy=False):
         # TODO: Finish lazy implementation using the `FrameLocationTable`
         # Parallelise streams reading
-        # Parse properly the date and time
         self.filename = filename
         self.ureg = pint.UnitRegistry()
         self.dictionaries = []
@@ -583,7 +582,7 @@ class FeiEMDReader(object):
                  'navigate': False}
                 ]
 
-        md = self._get_metadata_dict()
+        md = self._get_metadata_dict(original_metadata)
         md['Signal']['signal_type'] = 'EDS_TEM'
 
         return {'data': data,
@@ -681,7 +680,7 @@ class FeiEMDReader(object):
                       'navigate': False}
                      ])
 
-        md = self._get_metadata_dict()
+        md = self._get_metadata_dict(original_metadata)
         md['Signal']['signal_type'] = 'image'
         if hasattr(self, 'map_label_dict'):
             if image_sub_group_key in self.map_label_dict:
@@ -783,7 +782,7 @@ class FeiEMDReader(object):
                       'units': 'keV',
                       'navigate': False}])
 
-        md = self._get_metadata_dict()
+        md = self._get_metadata_dict(original_metadata)
         md['Signal']['signal_type'] = 'EDS_TEM'
 
         if self.sum_EDS_detectors:
@@ -819,10 +818,17 @@ class FeiEMDReader(object):
         converted_units = '{:~}'.format(converted_v.units)
         return converted_value, converted_units
 
-    def _get_metadata_dict(self):
+    def _get_metadata_dict(self, om):
         meta_gen = {}
         meta_gen['original_filename'] = os.path.split(self.filename)[1]
         meta_gen['title'] = self.detector_name
+        # We have only one entry in the original_metadata, so we can't use the
+        # mapping of the original_metadata to set the date and time in the
+        # metadata: need to set manually here
+        unix_time = om['Acquisition']['AcquisitionStartDatetime']['DateTime']
+        date, time = self._convert_datetime(unix_time).split('T')
+        meta_gen['date'] = date
+        meta_gen['time'] = time
 
         meta_sig = {}
         meta_sig['signal_type'] = ''
@@ -832,8 +838,6 @@ class FeiEMDReader(object):
     def _get_mapping(self, map_selected_element=True):
         mapping = {
             'Acquisition.AcquisitionStartDatetime.DateTime': (
-                "General.time", self._convert_time),
-            'Acquisition.AcquisitionStartDatetime': (
                 "General.time_zone", lambda x: self._get_local_time_zone()),
             'Optics.AccelerationVoltage': (
                 "Acquisition_instrument.TEM.beam_energy", lambda x: float(x) / 1e3),
@@ -875,9 +879,9 @@ class FeiEMDReader(object):
         atomic_number_list = d[d.keys()[0]]['elementSelection']
         return [atomic_number2name[int(atomic_number)] for atomic_number in atomic_number_list]
 
-    def _convert_time(self, unix_time):
+    def _convert_datetime(self, unix_time):
         # Since we don't know the actual time zone of where the data have been
-        # acquired, we convert the datetime to the local time for convinience
+        # acquired, we convert the datetime to the local time for convenience
         dt = datetime.fromtimestamp(float(unix_time), tz=tz.tzutc())
         return dt.astimezone(tz.tzlocal()).isoformat().split('+')[0]
 

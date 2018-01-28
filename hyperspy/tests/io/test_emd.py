@@ -204,7 +204,8 @@ class TestFeiEMD():
                                                  'microscope': 'Talos',
                                                  'Stage': stage}},
               'General': {'original_filename': 'fei_emd_image.emd',
-                          'time': '2017-03-06T09:56:41',
+                          'date': '2017-03-06',
+                          'time': '09:56:41',
                           'time_zone': 'BST',
                           'title': 'HAADF'},
               'Signal': {'binned': False, 'signal_type': 'image'},
@@ -216,8 +217,10 @@ class TestFeiEMD():
         # Update time and time_zone to local ones
         md['General']['time_zone'] = tz.tzlocal().tzname(datetime.today())
         dt = datetime.fromtimestamp(1488794201, tz=tz.tzutc())
-        md['General']['time'] = dt.astimezone(
-            tz.tzlocal()).isoformat().split('+')[0]
+        date, time = dt.astimezone(
+            tz.tzlocal()).isoformat().split('+')[0].split('T')
+        md['General']['date'] = date
+        md['General']['time'] = time
 
         signal = load(os.path.join(self.fei_files_path, 'fei_emd_image.emd'))
         fei_image = np.load(os.path.join(self.fei_files_path,
