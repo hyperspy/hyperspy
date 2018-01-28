@@ -377,7 +377,8 @@ class Model1D(BaseModel):
 
     remove.__doc__ = BaseModel.remove.__doc__
 
-    def __call__(self, non_convolved=False, onlyactive=False):
+    def __call__(self, non_convolved=False, onlyactive=False,
+                 component_list=None):
         """Returns the corresponding model for the current coordinates
 
         Parameters
@@ -387,6 +388,9 @@ class Model1D(BaseModel):
         only_active : bool
             If True, only the active components will be used to build the
             model.
+        component_list : list or None
+            If None, the sum of all the components is returned. If list, only 
+            the provided components are returned
 
         cursor: 1 or 2
 
@@ -395,35 +399,33 @@ class Model1D(BaseModel):
         numpy array
         """
 
+        if component_list is None:
+            component_list = [component for component in self]
+        if isinstance(component_list, (list, tuple)):
+            pass
+        else:
+            raise ValueError(
+                "'Component_list' parameter need to be a list or None")
+
+        if onlyactive:
+            component_list = [
+                component for component in component_list if component.active]
+
         if self.convolved is False or non_convolved is True:
             axis = self.axis.axis[self.channel_switches]
             sum_ = np.zeros(len(axis))
-            if onlyactive is True:
-                for component in self:
-                    if component.active:
-                        sum_ += component.function(axis)
-            else:
-                for component in self:
-                    sum_ += component.function(axis)
+            for component in component_list:
+                sum_ += component.function(axis)
             to_return = sum_
 
         else:  # convolved
             sum_convolved = np.zeros(len(self.convolution_axis))
             sum_ = np.zeros(len(self.axis.axis))
-            for component in self:  # Cut the parameters list
-                if onlyactive:
-                    if component.active:
-                        if component.convolved:
-                            sum_convolved += component.function(
-                                self.convolution_axis)
-                        else:
-                            sum_ += component.function(self.axis.axis)
+            for component in component_list:
+                if component.convolved:
+                    sum_convolved += component.function(self.convolution_axis)
                 else:
-                    if component.convolved:
-                        sum_convolved += component.function(
-                            self.convolution_axis)
-                    else:
-                        sum_ += component.function(self.axis.axis)
+                    sum_ += component.function(self.axis.axis)
 
             to_return = sum_ + np.convolve(
                 self.low_loss(self.axes_manager),
