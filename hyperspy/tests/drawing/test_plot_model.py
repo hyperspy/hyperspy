@@ -16,13 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import numpy as np
 import pytest
 
+import hyperspy.api as hs
 from hyperspy.signals import Signal1D, EELSSpectrum
 from hyperspy.components1d import Gaussian
 
 
+my_path = os.path.dirname(__file__)
 baseline_dir = 'plot_model'
 default_tol = 2.0
 
@@ -88,6 +91,19 @@ def test_plot_gaussian_eelsmodel(convolved, plot_component):
 
     m.fit()
     m.plot(plot_components=plot_component)
+    return m._plot.signal_plot.figure
+
+
+@pytest.mark.parametrize(("convolved"), [False, True])
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol)
+def test_fit_EELS_convolved(convolved):
+    dname = os.path.join(my_path, 'data')
+    cl = hs.load(os.path.join(dname, 'Cr_L_cl.hspy'))
+    ll = hs.load(os.path.join(dname, 'Cr_L_ll.hspy')) if convolved else None
+    m = cl.create_model(auto_background=False, ll=ll)
+    m.fit()
+    m.plot(plot_components=True)
     return m._plot.signal_plot.figure
 
 

@@ -1025,7 +1025,7 @@ class Component(t.HasTraits):
         s = self.__call__()
         if not self.active:
             s.fill(np.nan)
-        if self.model.signal.metadata.Signal.binned is True:
+        if self.model.signal.metadata.Signal.binned and not self.model.convolved:
             s *= self.model.signal.axes_manager.signal_axes[0].scale
         if old_axes_manager is not None:
             self.model.axes_manager = old_axes_manager
