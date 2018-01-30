@@ -1096,7 +1096,7 @@ def compute_spectrum_image_individual_frame(spectrum_image, stream, first_frame,
         # if different of ‘65535’, add a count to the corresponding channel
         if count_channel != 65535:
             if first_frame <= frame_number:
-                spectrum_image[frame_number,
+                spectrum_image[frame_number-first_frame,
                                navigation_index // shape[2],
                                navigation_index % shape[2],
                                count_channel // rebin_energy] += 1
