@@ -21,58 +21,94 @@ from hyperspy.component import Component
 from hyperspy.misc.material import _mass_absorption_mixture as mass_absorption_mixture
 from hyperspy.misc import elements as element_db
 from hyperspy.external.mpfit import mpfit
+from hyperspy.misc.material import atomic_to_weight
 
 
-def Wpercent(model): 
-    w=(model.get_lines_intensity(xray_lines="from_metadata"))
-    if len(np.shape(w[0]))>1 and np.shape(w[0])[1]>1 :
-        u=np.ones([np.shape(w[0])[0],np.shape(w[0])[1], len(model._signal.metadata.Sample.elements)] )
-        for i in range (0,len(w)):
-            if "Ka" in w [i].metadata.General.title :
-                u[:,:,i] =w[i].data
-            elif "La" in w [i].metadata.General.title:
-                u[:,:,i] =w[i].data*2.5
-            elif "La" in w [i].metadata.General.title:
-                u[:,:,i] =w[i].data*2.8
 
-        g=np.ones([np.shape(w[0])[0],np.shape(w[0])[1], len(model._signal.metadata.Sample.elements)] )
-        for i in range (0,len(model._signal.metadata.Sample.elements)):
-            g[:,:,i] =(u[:,:,i]/(np.sum(u,axis=2))) *100          
-                
-    elif len(np.shape(w[0]))==1 and np.shape(w[0])[0]>1 :
-        u=np.ones([np.shape(w[0])[0], len(model._signal.metadata.Sample.elements)] )
-        for i in range (0,len(w)):
-            if "Ka" in w [i].metadata.General.title :
-                u[:,i] =w[i].data
-            elif "La" in w [i].metadata.General.title:
-                u[:,i] =w[i].data*2.5
-            elif "La" in w [i].metadata.General.title:
-                u[:,i] =w[i].data*2.8
 
-        g=np.ones([np.shape(w[0])[0], len(model._signal.metadata.Sample.elements)] )
-        for i in range (0,len(model._signal.metadata.Sample.elements)):
-            g[:,i] =(u[:,i]/(np.sum(u,axis=1))) *100          
-                    
+def Wpercent(model,E0,quantification):
+    if quantification is None :
+        w=model.signal.get_lines_intensity(only_one=True)
+        if len(np.shape(w[0]))>1 and np.shape(w[0])[1]>1 :
+            u=np.ones([np.shape(w[0])[0],np.shape(w[0])[1], len(w)] )
+            for i in range (0,len(w)):
+                if "Ka" in w [i].metadata.General.title :
+                    u[:,:,i] =w[i].data
+                elif "La" in w [i].metadata.General.title:
+                    u[:,:,i] =w[i].data*2.5
+                elif "La" in w [i].metadata.General.title:
+                    u[:,:,i] =w[i].data*2.8
+                g=np.ones([np.shape(w[0])[0],np.shape(w[0])[1], len(w)] )
+                for i in range (0,len(w)):
+                    g[:,:,i] =(u[:,:,i]/(np.sum(u,axis=2))) *100          	    
+        elif len(np.shape(w[0]))==1 and np.shape(w[0])[0]>1 :
+            u=np.ones([np.shape(w[0])[0], len(w)] )
+            for i in range (0,len(w)):
+                if "Ka" in w [i].metadata.General.title :
+                    u[:,i] =w[i].data
+                elif "La" in w [i].metadata.General.title:
+                    u[:,i] =w[i].data*2.5
+                elif "La" in w [i].metadata.General.title:
+                    u[:,i] =w[i].data*2.8
+            g=np.ones([np.shape(w[0])[0], len(w)] )
+            for i in range (0,len(w)):
+                g[:,i] =(u[:,i]/(np.sum(u,axis=1))) *100          		
+        else:
+            u=np.ones([len(w)] )
+            for i in range (0,len(w)):
+                if "Ka" in w [i].metadata.General.title :
+                    u[i] =w[i].data
+                elif "La" in w [i].metadata.General.title:
+                    u[i] =w[i].data*2.5
+                elif "La" in w [i].metadata.General.title:
+                    u[i] =w[i].data*2.8        
+            g=np.ones([len(w)] )
+            t=u.sum() 
+            for i in range (0,len(u)):
+                g[i] =u[i] /t*100
                 
     else:
-        u=np.ones([len(model._signal.metadata.Sample.elements)] )
-        for i in range (0,len(w)):
-            if "Ka" in w [i].metadata.General.title :
-                u[i] =w[i].data
-            elif "La" in w [i].metadata.General.title:
-                u[i] =w[i].data*2.5
-            elif "La" in w [i].metadata.General.title:
-                u[i] =w[i].data*2.8        
+        w=quantification
+        if 'atomic percent' in w[0].metadata.General.title:
+            w=atomic_to_weight(w)
+        else:
+            w=w           
+        if len(np.shape(w[0]))>1 and np.shape(w[0])[1]>1 :
+            u=np.ones([np.shape(w[0])[0],np.shape(w[0])[1], len(model._signal.metadata.Sample.elements)] )
+            for i in range (0,len(w)):
+                u[:,:,i] =w[i].data
+	
+            g=np.ones([np.shape(w[0])[0],np.shape(w[0])[1], len(model._signal.metadata.Sample.elements)] )
+            for i in range (0,len(model._signal.metadata.Sample.elements)):
+                g[:,:,i] =(u[:,:,i]/(np.sum(u,axis=2))) *100          
+		    
+        elif len(np.shape(w[0]))==1 and np.shape(w[0])[0]>1 :
+            u=np.ones([np.shape(w[0])[0], len(model._signal.metadata.Sample.elements)] )
+            for i in range (0,len(w)):
+               u[:,i] =w[i].data
 
-        g=np.ones([len(model._signal.metadata.Sample.elements)] )
-        t=u.sum() 
-        for i in range (0,len(u)):
-            g[i] =u[i] /t*100
+            g=np.ones([np.shape(w[0])[0], len(model._signal.metadata.Sample.elements)] )
+            for i in range (0,len(model._signal.metadata.Sample.elements)):
+                g[:,i] =(u[:,i]/(np.sum(u,axis=1))) *100          
+		    
+        else:
+            u=np.ones([len(model._signal.metadata.Sample.elements)] )
+            for i in range (0,len(w)):            
+                u[i] =w[i].data
+		    
+            g=np.ones([len(model._signal.metadata.Sample.elements)] )
+            t=u.sum() 
+            for i in range (0,len(u)):
+                g[i] =u[i] /t*100
     return g
 
-def Mucoef(model): 
+
+
+def Mucoef(model,E0,quanti): 
+    w=quanti
     t=np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size)-0.05
-    w=Wpercent(model)
+    #t=t[model.channel_switches]
+    
     if len(np.shape(w))>2 and np.shape(w)[1]>1 :
         Ac=np.empty([np.shape(w)[0],np.shape(w)[1],len(t)],float)
         for i in range (0,np.shape(w)[0]):
@@ -90,19 +126,27 @@ def Mucoef(model):
 
     return Ac
 
-def Cabsorption(model): 
-    t=np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size)-0.05
-    Acc=mass_absorption_mixture(elements=['C'],weight_percent=[100], energies=t)
-    return Acc
 
-def Windowabsorption(model): 
+
+##def Cabsorption(model): 
+##    t=np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size)-0.05
+##    Acc=mass_absorption_mixture(elements=['C'],weight_percent=[100], energies=t)
+##    *((1-np.exp(-2*C*e*10**-6 ))/((2*C*e*10**-6)))
+##    return Acc
+
+
+
+def Windowabsorption(model,detector): 
+    from hyperspy.misc.eds.detector_efficiency import detector_efficiency
     from scipy.interpolate import interp1d
-    a=np.loadtxt('Polymer_window.txt', skiprows=0)
+    a=np.array(detector_efficiency[detector])
     b=np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size)-0.05
     x =a[:,0]
     y = a[:,1]
     Accc=np.interp(b, x, y)
     return Accc
+
+
 
 def emissionlaw(model,E0):
     E0=E0
@@ -141,62 +185,57 @@ class Physical_background(Component):
 
     """
     Background component based on kramer's law and absorption coefficients
-
     Attributes
     ----------
-
     a : float
     b : float
     E0 : int 
-
     """
 
-    def __init__(self,model, E0, coefficients=3, Mu=0,e=1.30,f=2.25,a=0):
-        Component.__init__(self,['coefficients','E0','Mu','C','Window','e','f','a'])
+    def __init__(self,model, E0, detector, quantification, coefficients=3, Mu=0 , Window=0, a=0,quanti=0):
+        Component.__init__(self,['coefficients','E0','detector','quantification', 'Mu','Window','a','quanti'])
         self.coefficients.value=coefficients
-        self.e.value=e
-        self.f.value=f
         self.a.value=a
         self.E0.value=E0
-                
+        self.quanti._number_of_elements=len(model._signal.metadata.Sample.xray_lines)
+        self.quanti.value=Wpercent(model,E0,quantification)
+        
+                              
         self.Mu._number_of_elements=model.axis.axis.shape[0]
-        self.Mu.value=np.ones(model.axis.axis.shape[0])
-        self.C._number_of_elements=model.axis.axis.shape[-1]
-        self.C.value=Cabsorption(model)
+        self.Mu.value=Mucoef(model,E0,self.quanti.value)
+        #self.C._number_of_elements=model.axis.axis.shape[-1]
+        #self.C.value=Cabsorption(model)
         self.Window._number_of_elements=model.axis.axis.shape[0]
-        self.Window.value=Windowabsorption(model)
+        self.Window.value=Windowabsorption(model,detector)
+
 
         self.E0.free=False
-        
+        self.quanti.free=False
         self.a.free=False
         self.coefficients.free=True
-        self.e.free=False
-        self.f.free=False
         self.Mu.free=False
         self.Window.free=False
-        self.C.free=False
+        #self.C.free=False
         
         self.isbackground=True
 
         # Boundaries
-        self.coefficients.bmin = 100
-        self.coefficients.bmax = 0
+##        self.coefficients.bmin = 100
+##        self.coefficients.bmax = 0
 
     def function(self,x):
  
         b=self.coefficients.value
-        e=self.e.value
-        f=self.f.value
-                     
-        Mu=Mucoef(self.model)
+        
+        Mu=self.Mu.value
         self.Mu._create_array()
         Mu=np.array(Mu,dtype=float)
         Mu=Mu[self.model.channel_switches]
 
-        C=self.C.value
-        self.C._create_array()
-        C=np.array(C,dtype=float)
-        C=C[self.model.channel_switches]
+##        C=self.C.value
+##        self.C._create_array()
+##        C=np.array(C,dtype=float)
+##        C=C[self.model.channel_switches]
 
         Window=self.Window.value
         self.Window._create_array()
@@ -209,9 +248,8 @@ class Physical_background(Component):
         if a==0:
             t=emissionlaw(self.model,E0)
             a=self.model.components.Bremsstrahlung.a.value=t
-            print('modifification of values : P0 = emission coefficient  / P2 = E0')
+            print('modifification of values : P0 = emission coefficient  / P1 = E0')
             
         else: a=self.a.value
         
-        return np.where((x>0.05) & (x<(E0+0.05)),((a*100*((E0-x)/x))*((1-np.exp(-2*Mu*b*10**-5 ))/((2*Mu*b*10**-5))) *((1-np.exp(-2*C*e*10**-6 ))/((2*C*e*10**-6)))*Window),0) #implement choice for coating correction and detector window correction
-   
+        return np.where((x>0.05) & (x<(E0+0.05)),((a*100*((E0-x)/x))*((1-np.exp(-2*Mu*b*10**-5 ))/((2*Mu*b*10**-5))) *Window),0) #implement choice for coating correction
