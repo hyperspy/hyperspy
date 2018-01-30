@@ -681,7 +681,7 @@ Extra loading arguments
 - `select_type` : one of {None, 'image', 'single_spectrum', 'spectrum_image'} (default is None). 
 - `first_frame` : integer (default is 0).
 - `last_frame` : integer (default is None)
-- `individual_frame` : boolean (default is False)
+- `sum_frames` : boolean (default is True)
 - `sum_EDS_detectors` : boolean (default is True)
 - `rebin_energy` : integer (default is 1)
 - `SI_dtype` : numpy dtype (default is None)
@@ -692,14 +692,14 @@ only images (including EDS maps) are loaded, if `single_spectrum` is selected, o
 single spectra are loaded and if `spectrum_image` is selected, only the spectrum 
 image will be loaded. The ``first_frame`` and ``last_frame`` parameters can be used 
 to select the frame range of the EDS spectrum image to load. To load each individual 
-EDS frame, use ``individual_frame=True`` and the EDS spectrum image will be loaded 
+EDS frame, use ``sum_frames=False`` and the EDS spectrum image will be loaded 
 with an an extra navigation dimension corresponding to the frame index 
-(temporal axis). Use the ``sum_EDS_detectors=True`` parameter to load the signal of 
+(time axis). Use the ``sum_EDS_detectors=True`` parameter to load the signal of 
 each individual EDS detector. In such a case, a corresponding number of distinct 
 EDS signal is returned. The default is ``sum_EDS_detectors=True``, which loads the 
 EDS signal as a sum over the signals from each EDS detectors.  The ``rebin_energy`` 
 and ``SI_dtype`` parameters are particularly useful in combination with 
-``individual_frame=True`` to reduce the data size when one want to read the 
+``sum_frames=False`` to reduce the data size when one want to read the 
 individual frames of the spectrum image. If ``SI_dtype=None`` (default), the dtype 
 of the data in the emd file is used. The ``load_SI_image_stack`` parameter allows 
 loading the stack of STEM images acquired simultaneously as the EDS spectrum image. 
@@ -715,7 +715,7 @@ correct the spatial drift in the spectrum image by using the STEM images.
     <EDSSEMSpectrum, title: EDS - SuperXG23, dimensions: (179, 161|4096)>,
     <EDSSEMSpectrum, title: EDS - SuperXG24, dimensions: (179, 161|4096)>]
 
-    >>> hs.load("sample.emd", individual_frame=True, load_SI_image_stack=True, SI_dtype=np.int8, rebin_energy=4)
+    >>> hs.load("sample.emd", sum_frames=False, load_SI_image_stack=True, SI_dtype=np.int8, rebin_energy=4)
     [<Signal2D, title: HAADF, dimensions: (50|179, 161)>,
     <EDSSEMSpectrum, title: EDS, dimensions: (50, 179, 161|1024)>]
 

@@ -136,7 +136,7 @@ def load(filenames=None,
     last_frame : None or int (default None)
        Only for FEI emd files: load only the data acquired up to specified 
        fname. If None, load up the data to the end.
-    individual_frame : bool (default is False)
+    sum_frames : bool (default is True)
        Only for FEI emd files: load each EDS frame individually.
     sum_EDS_detectors : bool (default is True)
        Only for FEI emd files: load each frame individually. If True, the signal 

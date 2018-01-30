@@ -484,7 +484,7 @@ class FeiEMDReader(object):
     """
 
     def __init__(self, filename, select_type=None, first_frame=0,
-                 last_frame=None, individual_frame=False, sum_EDS_detectors=True,
+                 last_frame=None, sum_frames=True, sum_EDS_detectors=True,
                  rebin_energy=1, SI_dtype=None, load_SI_image_stack=False,
                  lazy=False):
         # TODO: Finish lazy implementation using the `FrameLocationTable`
@@ -494,7 +494,7 @@ class FeiEMDReader(object):
         self.dictionaries = []
         self.first_frame = first_frame
         self.last_frame = last_frame
-        self.individual_frame = individual_frame
+        self.sum_frames = sum_frames
         self.sum_EDS_detectors = sum_EDS_detectors
         self.rebin_energy = rebin_energy
         self.SI_data_dtype = SI_dtype
@@ -726,7 +726,7 @@ class FeiEMDReader(object):
                                              rebin_energy=self.rebin_energy,
                                              first_frame=self.first_frame,
                                              last_frame=self.last_frame,
-                                             individual_frame=self.individual_frame,
+                                             sum_frames=self.sum_frames,
                                              data_dtype=self.SI_data_dtype,
                                              lazy=self.lazy)
 
@@ -750,7 +750,7 @@ class FeiEMDReader(object):
         i = 0
         axes = []
         # add a supplementary axes when we import all frames individualy
-        if self.individual_frame:
+        if not self.sum_frames:
             frame_time = float(original_metadata['Scan']['FrameTime'])
             axes.append({'index_in_array': i,
                          'name': 'Time',
@@ -902,14 +902,14 @@ class FeiSpectrumStreamContainer(object):
     """
 
     def __init__(self, spectrum_stream_group, shape, rebin_energy=1,
-                 first_frame=0, last_frame=None, individual_frame=False,
+                 first_frame=0, last_frame=None, sum_frames=True,
                  data_dtype=None, lazy=False):
         self.spectrum_stream_group = spectrum_stream_group
         self.shape = shape
         self.rebin_energy = rebin_energy
         self.first_frame = first_frame
         self.last_frame = last_frame
-        self.individual_frame = individual_frame
+        self.sum_frames = sum_frames
         self.data_dtype = data_dtype
         self.lazy = lazy
 
@@ -944,7 +944,7 @@ class FeiSpectrumStreamContainer(object):
                        'rebin_energy': self.rebin_energy,
                        'first_frame': self.first_frame,
                        'last_frame': self.last_frame,
-                       'individual_frame': self.individual_frame,
+                       'sum_frames': self.sum_frames,
                        'data_dtype': self.data_dtype}
 
         if sum_EDS_detectors:
@@ -986,14 +986,14 @@ class FeiSpectrumStream(object):
     """
 
     def __init__(self, stream_data, shape, rebin_energy=1, first_frame=0,
-                 last_frame=None, individual_frame=False, data_dtype=None,
+                 last_frame=None, sum_frames=True, data_dtype=None,
                  lazy=False):
         self.stream_data = stream_data
         self.shape = shape
         self.rebin_energy = rebin_energy
         self.first_frame = first_frame
         self.last_frame = last_frame
-        self.individual_frame = individual_frame
+        self.sum_frames = sum_frames
         self.data_dtype = data_dtype
         self.lazy = lazy
 
@@ -1024,7 +1024,7 @@ class FeiSpectrumStream(object):
             raise ValueError('The `rebin_energy` needs to be a divisor of the',
                              ' total number of channels.')
         self.number_of_frames = self.last_frame - self.first_frame
-        if self.individual_frame:
+        if not self.sum_frames:
             SI = np.zeros((self.number_of_frames, shape[0], shape[1],
                            int(self.bin_count / self.rebin_energy)),
                           dtype=self.data_dtype)
