@@ -537,7 +537,7 @@ class FeiEMDReader(object):
             t0 = time.time()
             self._read_images()
             t1 = time.time()
-            self._read_spectrum_image()
+            self._read_spectrum_stream()
             t2 = time.time()
             _logger.info('Time to load images: {} s.'.format(t1 - t0))
             _logger.info('Time to load spectrum image: {} s.'.format(t2 - t1))
@@ -716,10 +716,16 @@ class FeiEMDReader(object):
             d[group_key] = sub_dict
         self.original_metadata.update({group_name: d})
 
-    def _read_spectrum_image(self):
+    def _read_spectrum_stream(self):
         self.detector_name = 'EDS'
         # Spectrum stream group
         spectrum_stream_grp = self.d_grp.get("SpectrumStream")
+        if spectrum_stream_grp is None:
+            _logger.warning("No spectrum stream is present in the file. It ",
+                            "is possible that the file has been pruned: use ",
+                            "Velox to read the spectrum image (proprietary "
+                            "format). If you want to open FEI emd file with ",
+                            "HyperSpy don't save with pruning it in Velox.")
 
         streams = FeiSpectrumStreamContainer(spectrum_stream_grp,
                                              shape=self.SI_shape,
@@ -919,6 +925,12 @@ class FeiSpectrumStreamContainer(object):
             self.spectrum_stream_group['{}/Data'.format(key)][:].T[0]
             for key in subgroup_keys]
 
+        if len(stream_data_list) == 1:
+            _logger.warning('Reading the signal of each EDS detector ',
+                            'individually is not possible with this file ',
+                            'because the file contains only spectrum stream. ',
+                            'The sum over all EDS detectors will be loaded.')
+
         streams = [self._read_individual_stream(stream_data, key)
                    for key, stream_data in zip(subgroup_keys, stream_data_list)]
 
@@ -1096,7 +1108,7 @@ def compute_spectrum_image_individual_frame(spectrum_image, stream, first_frame,
         # if different of ‘65535’, add a count to the corresponding channel
         if count_channel != 65535:
             if first_frame <= frame_number:
-                spectrum_image[frame_number-first_frame,
+                spectrum_image[frame_number - first_frame,
                                navigation_index // shape[2],
                                navigation_index % shape[2],
                                count_channel // rebin_energy] += 1

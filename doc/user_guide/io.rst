@@ -584,21 +584,10 @@ currently supported by HyperSpy.
 Extra loading arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-select_type: one of (None, 'spectrum', 'image'). If specified, only the corresponding
-type of data, either spectrum or image, is returned. By default (None), all data are loaded.
-
-index: one of (None, int, "all"). Allow to select the index of the dataset in the bcf file,
-which can contains several datasets. Default None value result in loading the first dataset.
-When set to 'all', all available datasets will be loaded and returned as separate signals.
-
-downsample: the downsample ratio of hyperspectral array (height and width only),
-can be integer >=1, where '1' results in no downsampling (default 1). The
-underlying method of downsampling is unchangeable: sum. Differently than
-block_reduce from skimage.measure it is memory efficient (does not creates
-intermediate arrays, works inplace).
-
-cutoff_at_kV: if set (can be int or float >= 0) can be used either to crop or
-enlarge energy (or channels) range at max values. (default None)
+- `select_type` : one of (None, 'spectrum', 'image'). If specified, only the corresponding type of data, either spectrum or image, is returned. By default (None), all data are loaded.
+- `index` : one of (None, int, "all"). Allow to select the index of the dataset in the bcf file, which can contains several datasets. Default None value result in loading the first dataset. When set to 'all', all available datasets will be loaded and returned as separate signals.
+- `downsample` : the downsample ratio of hyperspectral array (height and width only), can be integer >=1, where '1' results in no downsampling (default 1). The underlying method of downsampling is unchangeable: sum. Differently than block_reduce from skimage.measure it is memory efficient (does not creates intermediate arrays, works inplace).
+- `cutoff_at_kV` : if set (can be int or float >= 0) can be used either to crop or enlarge energy (or channels) range at max values. (default None)
 
 Example of loading reduced (downsampled, and with energy range cropped)
 "spectrum only" data from bcf (original shape: 80keV EDS range (4096 channels),
@@ -654,11 +643,15 @@ EMD (FEI)
 This EMD format was developed by FEI for the Velox software. Although it shares 
 similar structure than the other EMD format from NCEM, it differs in the way 
 the data are stored. HyperSpy supports importing images, EDS spectrum and EDS 
-spectrum image. For spectrum image, individual frame or individual EDS detector 
+spectrum stream. For spectrum strean, individual frame or individual EDS detector 
 can be imported, however selecting these option will generate very large 
 dataset. Therefore, the default is to import the sum over all frame and over 
 all detectors. Alternatively, a specific frame range can be choosen -see 
-the :ref:`Extra-loading-arguments-fei-emd` section below.
+the :ref:`Extra-loading-arguments-fei-emd` section below. On top of the EDS 
+spectrum stream, FEI emd file also contains a spectrum image dataset which is 
+a proprietary format used by Velox and is not supported by HyperSpy. It is possible 
+that a file has been pruned when saving with Velox in order to reduce its size 
+(not default), which means that the spectrum stream is lost and can't be recovered.
 Loading a spectrum image is slow if `numba <http://numba.pydata.org/>`_ is 
 not installed.
 
