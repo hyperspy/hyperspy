@@ -1204,7 +1204,7 @@ def file_reader(filename, select_type=None, index=None, downsample=1,     # noqa
     used by hyperspy.api.load() method.
 
     Keyword arguments:
-    select_type -- One of: spectrum, image. If none specified, then function
+    select_type -- One of: spectrum_image, image. If none specified, then function
       loads everything, else if specified, loads either just sem imagery,
       or just hyper spectral mapping data (default None).
     index -- index of dataset in bcf v2 can be None integer and 'all'
@@ -1221,9 +1221,17 @@ def file_reader(filename, select_type=None, index=None, downsample=1,     # noqa
 
     # objectified bcf file:
     obj_bcf = BCF_reader(filename, instrument=instrument)
+    if select_type == 'spectrum':
+        select_type = 'spectrum_image'
+        from hyperspy.misc.utils import deprecation_warning
+        msg = (
+            "The 'spectrum' option for the `select_type` parameter is "
+            "deprecated and will be removed in v2.0. Use 'spectrum_image' "
+            "instead.")
+        deprecation_warning(msg)
     if select_type == 'image':
         return bcf_imagery(obj_bcf)
-    elif select_type == 'spectrum':
+    elif select_type == 'spectrum_image':
         return bcf_hyperspectra(obj_bcf, index=index,
                                 downsample=downsample,
                                 cutoff_at_kV=cutoff_at_kV,
