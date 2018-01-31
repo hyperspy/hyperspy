@@ -58,3 +58,5 @@ hyperspy/_components/Polymer_window.txt
 hyperspy/_components/Polymer_window.txt
 hyperspy/_components/Polymer_window.txt
 *.txt
+test/rimext 1.msa
+test/rimint.msa

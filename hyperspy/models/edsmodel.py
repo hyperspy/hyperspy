@@ -305,7 +305,7 @@ class EDSModel(Model1D):
             If an integer is write, this value will used during the fit
         detector: str
             The Acquisition detector of the correponding Dataset
-            String can be 'Polymer_C' / 'Super_X' / '12µm_BE' / '25µm_BE' / '100µm_BE' / '1000µm CdTe' / '750µm CdTe' / '1000µm_Si' / or '500µm_Si' 
+            String can be 'Polymer_C' / 'Super_X' / '12µm_BE' / '25µm_BE' / '100µm_BE' / 'Polymer_C2' / 'Polymer_C3' 
         Quantification: None or Muti_Base_Signal
             If quantification is None, an approximation based on peaks ratio is used
             However if the acquisition instrument is a TEM it is more consistent to perform a quantification before the use of "add_physical_background"

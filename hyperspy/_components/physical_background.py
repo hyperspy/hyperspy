@@ -30,7 +30,7 @@ def Wpercent(model,E0,quantification):
     if quantification is None :
         w=model.signal.get_lines_intensity(only_one=True)
         if len(np.shape(w[0]))>1 and np.shape(w[0])[1]>1 :
-            u=np.ones([np.shape(w[0])[0],np.shape(w[0])[1], len(w)] )
+            u=np.ones([np.shape(w[0])[0],np.shape(w[0])[1], len(model._signal.metadata.Sample.elements)] )
             for i in range (0,len(w)):
                 if "Ka" in w [i].metadata.General.title :
                     u[:,:,i] =w[i].data
@@ -38,11 +38,11 @@ def Wpercent(model,E0,quantification):
                     u[:,:,i] =w[i].data*2.5
                 elif "La" in w [i].metadata.General.title:
                     u[:,:,i] =w[i].data*2.8
-                g=np.ones([np.shape(w[0])[0],np.shape(w[0])[1], len(w)] )
-                for i in range (0,len(w)):
+                g=np.ones([np.shape(w[0])[0],np.shape(w[0])[1], len(model._signal.metadata.Sample.elements)] )
+                for i in range (0,len(model._signal.metadata.Sample.elements)):
                     g[:,:,i] =(u[:,:,i]/(np.sum(u,axis=2))) *100          	    
         elif len(np.shape(w[0]))==1 and np.shape(w[0])[0]>1 :
-            u=np.ones([np.shape(w[0])[0], len(w)] )
+            u=np.ones([np.shape(w[0])[0], len(model._signal.metadata.Sample.elements)] )
             for i in range (0,len(w)):
                 if "Ka" in w [i].metadata.General.title :
                     u[:,i] =w[i].data
@@ -50,11 +50,11 @@ def Wpercent(model,E0,quantification):
                     u[:,i] =w[i].data*2.5
                 elif "La" in w [i].metadata.General.title:
                     u[:,i] =w[i].data*2.8
-            g=np.ones([np.shape(w[0])[0], len(w)] )
-            for i in range (0,len(w)):
+            g=np.ones([np.shape(w[0])[0], len(model._signal.metadata.Sample.elements)] )
+            for i in range (0,len(model._signal.metadata.Sample.elements)):
                 g[:,i] =(u[:,i]/(np.sum(u,axis=1))) *100          		
         else:
-            u=np.ones([len(w)] )
+            u=np.ones([len(model._signal.metadata.Sample.elements)] )
             for i in range (0,len(w)):
                 if "Ka" in w [i].metadata.General.title :
                     u[i] =w[i].data
@@ -62,11 +62,12 @@ def Wpercent(model,E0,quantification):
                     u[i] =w[i].data*2.5
                 elif "La" in w [i].metadata.General.title:
                     u[i] =w[i].data*2.8        
-            g=np.ones([len(w)] )
+            g=np.ones([len(model._signal.metadata.Sample.elements)] )
             t=u.sum() 
             for i in range (0,len(u)):
                 g[i] =u[i] /t*100
-                
+    elif isinstance(quantification[0] , (float)):
+        g=quantification
     else:
         w=quantification
         if 'atomic percent' in w[0].metadata.General.title:
@@ -151,11 +152,11 @@ def Windowabsorption(model,detector):
 def emissionlaw(model,E0):
     E0=E0
 
-    axis = model._signal.axes_manager.signal_axes[0]
+    axis = model._signal.axes_manager.signal_axes[-1]
     if E0<20:
         i1, i2 = axis.value_range_to_indices(E0/3,E0)
     else :
-        i1, i2 = axis.value_range_to_indices(max(axis.axis)/3,max(axis.axis))
+        i1, i2 = axis.value_range_to_indices(np.max(axis.axis)/3,np.max(axis.axis))
     def myfunc(p, fjac=None, x=None, y=None, err=None):
         return [0, eval('(y-(%s))/err' % func, globals(), locals())]
     func='p[0]*((p[1] -x)/x)'
@@ -192,12 +193,13 @@ class Physical_background(Component):
     E0 : int 
     """
 
-    def __init__(self,model, E0, detector, quantification, coefficients=3, Mu=0 , Window=0, a=0,quanti=0):
-        Component.__init__(self,['coefficients','E0','detector','quantification', 'Mu','Window','a','quanti'])
+    def __init__(self,model, E0, detector, quantification, coefficients=3, Mu=0 , Window=0, a=0,quanti=0,d=0):
+        Component.__init__(self,['coefficients','E0','detector','quantification', 'Mu','Window','a','d','quanti'])
         self.coefficients.value=coefficients
         self.a.value=a
+        self.d.value=d
         self.E0.value=E0
-        self.quanti._number_of_elements=len(model._signal.metadata.Sample.xray_lines)
+        self.quanti._number_of_elements=len(model._signal.metadata.Sample.elements)
         self.quanti.value=Wpercent(model,E0,quantification)
         
                               
@@ -211,7 +213,8 @@ class Physical_background(Component):
 
         self.E0.free=False
         self.quanti.free=False
-        self.a.free=False
+        self.a.free=True
+        self.d.free=False
         self.coefficients.free=True
         self.Mu.free=False
         self.Window.free=False
@@ -220,12 +223,13 @@ class Physical_background(Component):
         self.isbackground=True
 
         # Boundaries
-##        self.coefficients.bmin = 100
-##        self.coefficients.bmax = 0
+        self.coefficients.bmax = None
+        self.coefficients.bmin = 0.
 
     def function(self,x):
  
         b=self.coefficients.value
+        
         
         Mu=self.Mu.value
         self.Mu._create_array()
@@ -244,12 +248,15 @@ class Physical_background(Component):
 
         E0=self.E0.value
                
-        a=self.a.value
-        if a==0:
-            t=emissionlaw(self.model,E0)
-            a=self.model.components.Bremsstrahlung.a.value=t
-            print('modifification of values : P0 = emission coefficient  / P1 = E0')
-            
-        else: a=self.a.value
-        
-        return np.where((x>0.05) & (x<(E0+0.05)),((a*100*((E0-x)/x))*((1-np.exp(-2*Mu*b*10**-5 ))/((2*Mu*b*10**-5))) *Window),0) #implement choice for coating correction
+        a=self.a.value     
+##        if a==0:
+##            t=emissionlaw(self.model,E0)
+##            self.model.components.Bremsstrahlung.a.value=(t)
+##            a=t
+##            print('modifification of values : P0 = emission coefficient  / P1 = E0')
+##            
+##        else: a=self.a.value
+
+        #d=np.max(self.model.axis.axis)/np.max(x)
+         
+        return np.where((x>0.1) & (x<(E0+0.05)),((a*100*((E0-x)/x))*((1-np.exp(-2*Mu*b*10**-5 ))/((2*Mu*b*10**-5)))*Window),0) #implement choice for coating correction
