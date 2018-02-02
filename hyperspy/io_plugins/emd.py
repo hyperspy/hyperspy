@@ -470,7 +470,7 @@ class FeiEMDReader(object):
     """
     Class for reading FEI electron microscopy datasets.
 
-    The :class:`~.FeiEMDReader` reads EMD files saved by the FEI Velox 
+    The :class:`~.FeiEMDReader` reads EMD files saved by the FEI Velox
     software package.
 
     Attributes
@@ -478,7 +478,7 @@ class FeiEMDReader(object):
     dictionaries: list
         List of dictionaries which are passed to the file_reader.
     im_type : string
-        String specifying whether the data is an image, spectrum or 
+        String specifying whether the data is an image, spectrum or
         spectrum image.
 
     """
@@ -725,7 +725,8 @@ class FeiEMDReader(object):
                             "is possible that the file has been pruned: use ",
                             "Velox to read the spectrum image (proprietary "
                             "format). If you want to open FEI emd file with ",
-                            "HyperSpy don't save with pruning it in Velox.")
+                            "HyperSpy don't prune the file when saving it in "
+                            "Velox.")
 
         streams = FeiSpectrumStreamContainer(spectrum_stream_grp,
                                              shape=self.SI_shape,
@@ -988,7 +989,7 @@ class FeiSpectrumStream(object):
 
     """
     Below some information we have got from FEI:
-    'The SI data is stored as a spectrum stream, ‘65535’ means next pixel 
+    'The SI data is stored as a spectrum stream, ‘65535’ means next pixel
     (these markers are also called `Gate pulse`), other numbers mean a spectrum
     count in that bin for that pixel.
     For the size of the spectrum image and dispersion you have to look in
