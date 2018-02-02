@@ -633,7 +633,7 @@ class FeiEMDReader(object):
         pix_scale = original_metadata['BinaryResult'].get(
             'PixelSize', {'height': 1.0, 'width': 1.0})
         offsets = original_metadata['BinaryResult'].get(
-            'Offset',  {'x': 0.0, 'y': 0.0})
+            'Offset', {'x': 0.0, 'y': 0.0})
         original_units = original_metadata['BinaryResult'].get(
             'PixelUnitX', '')
 
@@ -884,7 +884,8 @@ class FeiEMDReader(object):
 
     def _convert_element_list(self, d):
         atomic_number_list = d[d.keys()[0]]['elementSelection']
-        return [atomic_number2name[int(atomic_number)] for atomic_number in atomic_number_list]
+        return [atomic_number2name[int(atomic_number)]
+                for atomic_number in atomic_number_list]
 
     def _convert_datetime(self, unix_time):
         # Since we don't know the actual time zone of where the data have been
@@ -970,7 +971,8 @@ class FeiSpectrumStreamContainer(object):
             self.summed_spectrum_image = self.streams[0].spectrum_image
             # add other stream
             if len(stream_data_list) > 1:
-                for key, stream_data in zip(subgroup_keys[1:], stream_data_list[1:]):
+                for key, stream_data in zip(
+                        subgroup_keys[1:], stream_data_list[1:]):
                     self.streams = [self._read_individual_stream(
                         stream_data, key)]
                     self.summed_spectrum_image += self.streams[0].spectrum_image
