@@ -13,13 +13,13 @@ Loading files: the load function
 
 HyperSpy can read and write to multiple formats (see :ref:`supported-formats`).
 To load data use the :py:func:`~.io.load` command. For example, to load the
-image lena.jpg you can type:
+image ascent.jpg you can type:
 
 .. code-block:: python
 
-    >>> s = hs.load("lena.jpg")
+    >>> s = hs.load("ascent.jpg")
 
-If the loading was successful, the variable :guilabel:`s` contains a generic
+If the loading was successful, the variable ``s`` contains a generic
 :py:class:`~.signal.BaseSignal`, a :py:class:`~._signals.signal1d.Signal1D` or
 an :py:class:`~._signals.signal2d.Signal2D`.
 
@@ -40,10 +40,11 @@ providing the ``signal`` keyword, which has to be one of: ``spectrum``,
 
 Some file formats store some extra information about the data, which can be
 stored in "attributes". If HyperSpy manages to read some extra information
-about the data it stores it in `~.signal.BaseSignal.original_metadata`
-attribute. Also, it is possible that other information will be mapped by
-HyperSpy to a standard location where it can be used by some standard routines,
-the :py:attr:`~.signal.BaseSignal.metadata` attribute.
+about the data it stores it in the
+:py:attr:`~.signal.BaseSignal.original_metadata` attribute. Also, it is
+possible that other information will be mapped by HyperSpy to a standard
+location where it can be used by some standard routines, the
+:py:attr:`~.signal.BaseSignal.metadata` attribute.
 
 To print the content of the parameters simply:
 
@@ -51,8 +52,7 @@ To print the content of the parameters simply:
 
     >>> s.metadata
 
-::
-Th :py:attr:`~.signal.BaseSignal.original_metadata` and
+The :py:attr:`~.signal.BaseSignal.original_metadata` and
 :py:attr:`~.signal.BaseSignal.metadata` can be exported to  text files
 using the :py:meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 
@@ -175,7 +175,7 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +--------------------+--------+--------+--------+
     | HDF5               |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
-    | Image: jpg..       |    Yes |    Yes |    Yes |
+    | Image: jpg         |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
     | TIFF               |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
@@ -337,7 +337,7 @@ Digital Micrograph.
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-For the MSA format the `format` argument is used to specify whether the
+For the MSA format the ``format`` argument is used to specify whether the
 energy axis should also be saved with the data.  The default, 'Y' omits the
 energy axis in the file.  The alternative, 'XY', saves a second column with the
 calibrated energy data. It  is possible to personalise the separator with the
@@ -454,6 +454,14 @@ the format). That said, we understand that this is an important feature and if
 loading a particular Digital Micrograph file fails for you, please report it as
 an issue in the `issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make
 us aware of the problem.
+
+Extra loading arguments
+^^^^^^^^^^^^^^^^^^^^^^^
+
+optimize: bool, default is True. During loading, the data is replaced by its 
+:ref:`optimized copy <signal.transpose_optimize>` to speed up operations, 
+e. g. iteration over navigation axes. The cost of this speed improvement is to 
+double the memory requirement during data loading.
 
 .. _edax-format:
 

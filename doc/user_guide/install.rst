@@ -33,8 +33,10 @@ scientific Python packages. HyperSpy Bundle does not interact with any other
 Python installation in your system, so it can be safely installed alongside
 other Python distributions. Moreover it is portable, so it can be installed to
 a USB key. When installing it with administrator rights for all users it adds
-context (right-click) menu  entries to start the `Jupyter Notebook <http://jupyter.org>`_ and
-`Juypter QtConsole <http://jupyter.org/qtconsole/stable/>`_ inside the folder being clicked. See
+context (right-click) menu  entries to start the
+`Jupyter Notebook <http://jupyter.org>`_ and
+`Juypter QtConsole <http://jupyter.org/qtconsole/stable/>`_ inside the folder
+being clicked. See
 `start_jupyter_cm <https://github.com/hyperspy/start_jupyter_cm>`_ for details.
 
 
@@ -53,10 +55,10 @@ MKL libraries) and the easiest installation. The academic license is free.
    `User Guide <https://docs.continuum.io/anaconda/>`_ for
    details.
 
-#. Then install HyperSpy executing the following `conda` commands in the Anaconda
-   Prompt, Linux/Mac Terminal or Microsoft Windows Command Prompt. (This
-   depends on your OS and how you have installed Anaconda, see the `Anaconda
-   User Guide <https://docs.continuum.io/anaconda/>`_) for
+#. Then install HyperSpy executing the following `conda` commands in the
+   Anaconda Prompt, Linux/Mac Terminal or Microsoft Windows Command Prompt.
+   (This depends on your OS and how you have installed Anaconda, see the
+   `Anaconda User Guide <https://docs.continuum.io/anaconda/>`_) for
    details.
 
    .. code-block:: bash
@@ -112,8 +114,8 @@ Install using Python installers
 
 HyperSpy is listed in the `Python Package Index
 <http://pypi.python.org/pypi>`_. Therefore, it can be automatically downloaded
-and installed  `pip <http://pypi.python.org/pypi/pip>`_. You may need to install
-pip for the following commands to run.
+and installed  `pip <http://pypi.python.org/pypi/pip>`_. You may need to
+install pip for the following commands to run.
 
 Install using `pip`:
 
@@ -223,8 +225,8 @@ development mode:
     $ cd hyperspy
     $ pip install -e ./
 
-All required dependencies are automatically installed by pip. However, for extra
-functionality you may need to install some extra dependencies, see
+All required dependencies are automatically installed by pip. However, for
+extra functionality you may need to install some extra dependencies, see
 :ref:`install-dependencies`. Note the pip installer requires root to install,
 so for Ubuntu:
 
@@ -233,13 +235,14 @@ so for Ubuntu:
     $ cd hyperspy
     $ sudo pip install -e ./
 
-With development mode setup.py generates or updates git post-checkout hook, which will cleanup
-the cythonized c files, cythonize it again and run ```build_ext --inplace``` after the next checkout.
+With development mode setup.py generates or updates git post-checkout hook,
+which will cleanup the cythonized c files, cythonize it again and run
+```build_ext --inplace``` after the next checkout.
 
 
 ..
-    If using Arch Linux, the latest checkout of the master development branch can be
-    installed through the AUR by installing the `hyperspy-git package
+    If using Arch Linux, the latest checkout of the master development branch
+    can be installed through the AUR by installing the `hyperspy-git package
     <https://aur.archlinux.org/packages/hyperspy-git/>`_
 
 .. _create-debian-binary:
@@ -284,7 +287,7 @@ Windows
   before reporting a bug.
 
 * Concerning older installations with the "Hyperspy here" context menus: Due to
- a `Python bug <http://bugs.python.org/issue13276>`_ sometimes uninstalling
+  a `Python bug <http://bugs.python.org/issue13276>`_ sometimes uninstalling
   HyperSpy does not uninstall the "Hyperspy here" entries in the context menu.
   Please run the following code in a Windows Terminal (command line prompt)
   with administrator rights to remove the entries manually:
