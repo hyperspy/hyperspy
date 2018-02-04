@@ -133,7 +133,7 @@ before_deploy:
   # Give info about python vesion and compiler used to compile the python
   - "%CMD_IN_ENV% python.exe -c \"import sys; print(sys.version)\""
 
-  - "%CMD_IN_ENV% pip install --upgrade tqdm notebook cython ipython configobj start_jupyter_cm ipywidgets ipyparallel sympy pytest pytest-mpl dask"
+  - "%CMD_IN_ENV% pip install --upgrade tqdm notebook cython ipython configobj start_jupyter_cm ipywidgets ipyparallel sympy scipy pytest pytest-mpl dask"
   # install pyface and traitsui from master to get pyqt5 compatibility
   - "%CMD_IN_ENV% pip install https://github.com/enthought/pyface/archive/master.zip"
   - "%CMD_IN_ENV% pip install https://github.com/enthought/traitsui/archive/master.zip"
