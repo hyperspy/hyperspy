@@ -136,7 +136,7 @@ before_deploy:
   - "%CMD_IN_ENV% pip install --upgrade tqdm notebook cython ipython configobj start_jupyter_cm ipywidgets ipyparallel sympy pytest pytest-mpl dask"
   # install pyface and traitsui from master to get pyqt5 compatibility
   - "%CMD_IN_ENV% pip install https://github.com/enthought/pyface/archive/master.zip"
-  - "%CMD_IN_ENV% pip install ​https://github.com/enthought/traitsui/archive/master.zip"
+  - "%CMD_IN_ENV% pip install https://github.com/enthought/traitsui/archive/master.zip"
   - "%CMD_IN_ENV% pip install .[all]"
   # Try to run twice as workaround for permission error
   - "%CMD_IN_ENV% pip install https://github.com/ericpre/hyperspyUI/archive/qt5.zip || pip install https://github.com/ericpre/hyperspyUI/archive/qt5.zip"
