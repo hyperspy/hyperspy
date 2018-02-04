@@ -148,7 +148,8 @@ before_deploy:
   - "\"%NSIS_DIR%/makensis.exe\" /V3 NSIS_installer_script-%PYTHON_ARCH%bit.nsi"
   - ps: Add-AppveyorMessage "Installer created! Re-run tests in Winpython environment..."
   # Re-run tests in WinPython environment
-  - ps: if($Env:PYTHON_ARCH -eq "64") {$Env:PYTHON_DIR_NAME="python-3.5.1.amd64"} else {$Env:PYTHON_DIR_NAME="python-3.5.1"}
+  - ps: if($Env:PYTHON_VERSION -eq "3.5.x") {$Env:PY_VERSION="3.5.4"} else {$Env:PY_VERSION="3.6.3"}
+  - ps: if($Env:PYTHON_ARCH -eq "64") {$Env:PYTHON_DIR_NAME="python-"+$Env:PY_VERSION+".amd64"} else {$Env:PYTHON_DIR_NAME="python-"+$Env:PY_VERSION}
   - "SET HYPERSPY_DIR=%WP_INSTDIR%\\%PYTHON_DIR_NAME%\\Lib\\site-packages\\hyperspy"
   - ps: py.test --mpl $Env:HYPERSPY_DIR
   - ps: Add-AppveyorMessage "Tests finished! Pushing to GitHub..."
