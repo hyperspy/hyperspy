@@ -75,9 +75,7 @@ install:
   - "%CMD_IN_ENV% conda install -yq %DEPS%"
   # Having 'sip' folder on path confuses import of `sip`.
   #- "%CMD_IN_ENV% conda install -yq pip"
-  - "pip install pytest-mpl"
-  # TODO: Remove once anaconda taitsui package is at v5:
-  - "IF \"%PYTHON_MAJOR%\" EQU \"3\" pip install --upgrade traitsui tqdm"
+
   - ps: Add-AppveyorMessage "Installing hyperspy..."
   - "python setup.py install"
 
@@ -133,18 +131,11 @@ before_deploy:
   - "%CMD_IN_ENV% %WP_INSTDIR%/scripts/env.bat"
   # Give info about python vesion and compiler used to compile the python
   - "%CMD_IN_ENV% python.exe -c \"import sys; print(sys.version)\""
-  # Install scikit-image from Christoph Gohlke binaries repository
-  - cinst wget
-  - ps: Add-AppveyorMessage "Downloading scikit-image..."
-  - ps: if($Env:PYTHON_ARCH -eq "64") {$Env:SCIKIT_IMAGE="https://www.dropbox.com/s/1xn8mgudmtph19i/scikit_image-0.13.0-cp35-cp35m-win_amd64.whl?dl=1"} else {$Env:SCIKIT_IMAGE="https://www.dropbox.com/s/6hwotxy9hoalj25/scikit_image-0.13.0-cp35-cp35m-win32.whl?dl=1"}
-  - "ECHO %SCIKIT_IMAGE%"
-  # - "%CMD_IN_ENV% wget http://www.lfd.uci.edu/~gohlke/pythonlibs/tuoh5y4k/%SCIKIT_IMAGE% --header User-Agent:Chrome/23.0.1271.97"
-  - "%CMD_IN_ENV% pip install %SCIKIT_IMAGE%"
-  - "%CMD_IN_ENV% pip install --upgrade tqdm notebook cython ipython configobj start_jupyter_cm ipywidgets ipyparallel sympy pytest"
-  # uninstall and reinstall matplotlib to get the 2.0 version without using --upgrade option (to avoid upgrading numpy and breaking scipy...)
-  - "%CMD_IN_ENV% pip uninstall -y matplotlib"
-  - "%CMD_IN_ENV% pip install matplotlib pytest-mpl"
-  - "%CMD_IN_ENV% pip install dask==0.13"
+
+  - "%CMD_IN_ENV% pip install --upgrade tqdm notebook cython ipython configobj start_jupyter_cm ipywidgets ipyparallel sympy pytest pytest-mpl dask"
+  # install pyface and traitsui from master to get pyqt5 compatibility
+  - "%CMD_IN_ENV% pip install ​https://github.com/enthought/pyface/archive/master.zip"
+  - "%CMD_IN_ENV% pip install ​https://github.com/enthought/traitsui/archive/master.zip"
   - "%CMD_IN_ENV% pip install .[all]"
   # Try to run twice as workaround for permission error
   - "%CMD_IN_ENV% pip install hyperspyui || pip install hyperspyui"
