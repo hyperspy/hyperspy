@@ -19,8 +19,8 @@ environment:
        PYTHON_ARCH: "32"
        CONDA_PY: "35"
        CONDA_NPY: "19"
-       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.3.20160209/WinPython-32bit-3.5.1.2.exe'
-       WP_CRC: '172d19a743ccfaf55af779d15f29f67fca83a46f08b0af855dfaf809b4184c0d'
+       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.9.20171031/WinPython-32bit-3.5.4.1Qt5.exe'
+       WP_CRC: 'e58b0c86fc4e6ae4fe3f9f467008fd4e3447b5f35b7ad689ab01cdc93733d19e'
        DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython lxml ipyparallel dask"
 
      - PYTHON: "C:\\Miniconda35-x64"
@@ -29,20 +29,24 @@ environment:
        PYTHON_ARCH: "64"
        CONDA_PY: "35"
        CONDA_NPY: "19"
-       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.3.20160209/WinPython-64bit-3.5.1.2.exe'
-       WP_CRC: '07e854b9aa7a31d8bbf7829d04a45b6d6266603690520e365199af2d98751ab1'
+       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.9.20171031/WinPython-64bit-3.5.4.1Qt5.exe'
+       WP_CRC: 'e522c8adfbd9c967fa2f692d3c313fec1f0e53724b4651ea9e969228532a9586'
        DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython lxml ipyparallel dask"
 
      - PYTHON: "C:\\Miniconda36"
        PYTHON_VERSION: "3.6.x"
        PYTHON_MAJOR: 3
        PYTHON_ARCH: "32"
+       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.9.20171031/WinPython-32bit-3.6.3.0Qt5.exe'
+       WP_CRC: '56259865127c3f802f1eca29528f2676317cad2fd6573ce516fc35b4441a1d3c'
        CONDA_PY: "36"
        DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython lxml ipyparallel dask"
 
      - PYTHON: "C:\\Miniconda36-x64"
        PYTHON_VERSION: "3.6.x"
        PYTHON_MAJOR: 3
+       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.9.20171031/WinPython-64bit-3.6.3.0Qt5.exe'
+       WP_CRC: 'a5efea23ede143fdacab60b8db95835de25c0173bd0d9fd53d5952648bde69b9'
        PYTHON_ARCH: "64"
        CONDA_PY: "36"
        DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython lxml ipyparallel dask"
