@@ -100,7 +100,7 @@ artifacts:
 before_deploy:
   - ps: Add-AppveyorMessage "Running deployment step..."
   - "pip install winpython"
-  - "pip install https://github.com/hyperspy/hyperspy-bundle/archive/master.zip"
+  - "pip install https://github.com/ericpre/hyperspy-bundle/archive/fix_get_current_hyperspy_version.zip"
   # Download WinPython installer if not cached
   - ps: Add-AppveyorMessage "Installing WinPython..."
   - "SET WP_INSTDIR=%APPDATA%\\wpdir\\WinPython-%PYTHON_ARCH%bit\\"
@@ -138,7 +138,7 @@ before_deploy:
   - "%CMD_IN_ENV% pip install ​https://github.com/enthought/traitsui/archive/master.zip"
   - "%CMD_IN_ENV% pip install .[all]"
   # Try to run twice as workaround for permission error
-  - "%CMD_IN_ENV% pip install hyperspyui || pip install hyperspyui"
+  - "%CMD_IN_ENV% pip install https://github.com/ericpre/hyperspyUI/archive/qt5.zip || pip install https://github.com/ericpre/hyperspyUI/archive/qt5.zip"
   # setting back the config:
   - "ren %WP_INSTDIR%\\settings\\pydistutils_bak.cfg pydistutils.cfg"
   # Custom installer step
@@ -169,4 +169,4 @@ deploy:
   prerelease: false
   force_update: true
   on:
-    appveyor_repo_tag: true        # deploy on tag push only
+    appveyor_repo_tag: False        # deploy on tag push only
