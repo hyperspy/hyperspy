@@ -75,6 +75,7 @@ install:
   - "%CMD_IN_ENV% conda install -yq %DEPS%"
   # Having 'sip' folder on path confuses import of `sip`.
   #- "%CMD_IN_ENV% conda install -yq pip"
+  - "pip install pytest-mpl"
 
   - ps: Add-AppveyorMessage "Installing hyperspy..."
   - "python setup.py install"
