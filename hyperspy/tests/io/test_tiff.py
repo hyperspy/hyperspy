@@ -3,7 +3,7 @@ import tempfile
 
 import numpy as np
 import traits.api as t
-import numpy.testing as nt
+from numpy.testing import assert_allclose
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import assert_deep_almost_equal

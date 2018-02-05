@@ -13,13 +13,13 @@ Loading files: the load function
 
 HyperSpy can read and write to multiple formats (see :ref:`supported-formats`).
 To load data use the :py:func:`~.io.load` command. For example, to load the
-image lena.jpg you can type:
+image ascent.jpg you can type:
 
 .. code-block:: python
 
-    >>> s = hs.load("lena.jpg")
+    >>> s = hs.load("ascent.jpg")
 
-If the loading was successful, the variable :guilabel:`s` contains a generic
+If the loading was successful, the variable ``s`` contains a generic
 :py:class:`~.signal.BaseSignal`, a :py:class:`~._signals.signal1d.Signal1D` or
 an :py:class:`~._signals.signal2d.Signal2D`.
 
@@ -40,10 +40,11 @@ providing the ``signal`` keyword, which has to be one of: ``spectrum``,
 
 Some file formats store some extra information about the data, which can be
 stored in "attributes". If HyperSpy manages to read some extra information
-about the data it stores it in `~.signal.BaseSignal.original_metadata`
-attribute. Also, it is possible that other information will be mapped by
-HyperSpy to a standard location where it can be used by some standard routines,
-the :py:attr:`~.signal.BaseSignal.metadata` attribute.
+about the data it stores it in the
+:py:attr:`~.signal.BaseSignal.original_metadata` attribute. Also, it is
+possible that other information will be mapped by HyperSpy to a standard
+location where it can be used by some standard routines, the
+:py:attr:`~.signal.BaseSignal.metadata` attribute.
 
 To print the content of the parameters simply:
 
@@ -51,8 +52,7 @@ To print the content of the parameters simply:
 
     >>> s.metadata
 
-::
-Th :py:attr:`~.signal.BaseSignal.original_metadata` and
+The :py:attr:`~.signal.BaseSignal.original_metadata` and
 :py:attr:`~.signal.BaseSignal.metadata` can be exported to  text files
 using the :py:meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 
@@ -175,7 +175,7 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +--------------------+--------+--------+--------+
     | HDF5               |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
-    | Image: jpg..       |    Yes |    Yes |    Yes |
+    | Image: jpg         |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
     | TIFF               |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
@@ -195,7 +195,9 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +--------------------+--------+--------+--------+
     | Bruker's bcf       |    Yes |    No  |    Yes |
     +--------------------+--------+--------+--------+
-    | EMD (Berkley Labs) |    Yes |    Yes |    Yes |
+    | EMD (NCEM)         |    Yes |    Yes |    Yes |
+    +--------------------+--------+--------+--------+
+    | EMD (FEI)          |    Yes |    No  |    No  |
     +--------------------+--------+--------+--------+
     | Protochips log     |    Yes |    No  |    No  |
     +--------------------+--------+--------+--------+
@@ -282,9 +284,7 @@ intensity<get_lines_intensity>`):
 
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
-compression: One of None, 'gzip', 'szip', 'lzf'.
-
-'gzip' is the default
+- `compression` : One of None, 'gzip', 'szip', 'lzf' (default is 'gzip').
 
 
 .. _netcdf-format:
@@ -337,7 +337,7 @@ Digital Micrograph.
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-For the MSA format the msa_format argument is used to specify whether the
+For the MSA format the ``format`` argument is used to specify whether the
 energy axis should also be saved with the data.  The default, 'Y' omits the
 energy axis in the file.  The alternative, 'XY', saves a second column with the
 calibrated energy data. It  is possible to personalise the separator with the
@@ -454,6 +454,14 @@ the format). That said, we understand that this is an important feature and if
 loading a particular Digital Micrograph file fails for you, please report it as
 an issue in the `issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make
 us aware of the problem.
+
+Extra loading arguments
+^^^^^^^^^^^^^^^^^^^^^^^
+
+optimize: bool, default is True. During loading, the data is replaced by its 
+:ref:`optimized copy <signal.transpose_optimize>` to speed up operations, 
+e. g. iteration over navigation axes. The cost of this speed improvement is to 
+double the memory requirement during data loading.
 
 .. _edax-format:
 
@@ -575,19 +583,11 @@ currently supported by HyperSpy.
 
 Extra loading arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
-select_type: One of ('spectrum', 'image'). If specified just selected type of
-data is returned. (default None)
 
-index: index of dataset in bcf v2 files, which can hold few datasets (delaut 0)
-
-downsample: the downsample ratio of hyperspectral array (hight and width only),
-can be integer >=1, where '1' results in no downsampling (default 1). The
-underlying method of downsampling is unchangeable: sum. Differently than
-block_reduce from skimage.measure it is memory efficient (does not creates
-intermediate arrays, works inplace).
-
-cutoff_at_kV: if set (can be int of float >= 0) can be used either to crop or
-enlarge energy (or channels) range at max values. (default None)
+- `select_type` : one of (None, 'spectrum', 'image'). If specified, only the corresponding type of data, either spectrum or image, is returned. By default (None), all data are loaded.
+- `index` : one of (None, int, "all"). Allow to select the index of the dataset in the bcf file, which can contains several datasets. Default None value result in loading the first dataset. When set to 'all', all available datasets will be loaded and returned as separate signals.
+- `downsample` : the downsample ratio of hyperspectral array (height and width only), can be integer >=1, where '1' results in no downsampling (default 1). The underlying method of downsampling is unchangeable: sum. Differently than block_reduce from skimage.measure it is memory efficient (does not creates intermediate arrays, works inplace).
+- `cutoff_at_kV` : if set (can be int or float >= 0) can be used either to crop or enlarge energy (or channels) range at max values. (default None)
 
 Example of loading reduced (downsampled, and with energy range cropped)
 "spectrum only" data from bcf (original shape: 80keV EDS range (4096 channels),
@@ -603,8 +603,8 @@ load the same file without extra arguments:
 .. code-block:: python
 
     >>> hs.load("sample80kv.bcf")
-    [<Image, title: BSE, dimensions: (|100, 75)>,
-    <Image, title: SE, dimensions: (|100, 75)>,
+    [<Signal2D, title: BSE, dimensions: (|100, 75)>,
+    <Signal2D, title: SE, dimensions: (|100, 75)>,
     <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|1095)>]
 
 The loaded array energy dimension can by forced to be larger than the data
@@ -613,8 +613,8 @@ recorded by setting the 'cutoff_at_kV' kwarg to higher value:
 .. code-block:: python
 
     >>> hs.load("sample80kv.bcf", cutoff_at_kV=80)
-    [<Image, title: BSE, dimensions: (|100, 75)>,
-    <Image, title: SE, dimensions: (|100, 75)>,
+    [<Signal2D, title: BSE, dimensions: (|100, 75)>,
+    <Signal2D, title: SE, dimensions: (|100, 75)>,
     <EDSSEMSpectrum, title: EDX, dimensions: (100, 75|4096)>]
 
 Note that setting downsample to >1 currently locks out using SEM imagery
@@ -623,15 +623,96 @@ as navigator in the plotting.
 
 .. _emd-format:
 
-EMD Electron Microscopy Datasets (HDF5)
----------------------------------------
+EMD
+---
 
 EMD stands for “Electron Microscopy Dataset.” It is a subset of the open source
 HDF5 wrapper format. N-dimensional data arrays of any standard type can be
-stored in an HDF5 file, as well as tags and other metadata. The EMD format was
-developed at Lawrence Berkeley National Lab (see http://emdatasets.com/ for
-more information). NOT to be confused with the FEI EMD format which was
-developed later and has a different structure.
+stored in an HDF5 file, as well as tags and other metadata. 
+
+EMD (NCEM)
+^^^^^^^^^^
+
+This EMD format was developed by Colin Ophus at the National Center for 
+Electron Microscopy (NCEM). See http://emdatasets.com/ for more information.
+
+
+EMD (FEI)
+^^^^^^^^^
+
+This EMD format was developed by FEI for the Velox software. Although it shares 
+similar structure than the other EMD format from NCEM, it differs in the way 
+the data are stored. HyperSpy supports importing images, EDS spectrum and EDS 
+spectrum stream. For spectrum strean, individual frame or individual EDS detector 
+can be imported, however selecting these option will generate very large 
+dataset. Therefore, the default is to import the sum over all frame and over 
+all detectors. Alternatively, a specific frame range can be choosen -see 
+the :ref:`Extra-loading-arguments-fei-emd` section below. On top of the EDS 
+spectrum stream, FEI emd file also contains a spectrum image dataset which is 
+a proprietary format used by Velox and is not supported by HyperSpy. It is possible 
+that a file has been pruned when saving with Velox in order to reduce its size 
+(not default), which means that the spectrum stream is lost and can't be recovered.
+Loading a spectrum image is slow if `numba <http://numba.pydata.org/>`_ is 
+not installed.
+
+.. code-block:: python
+
+    >>> hs.load("sample.emd")
+    [<Signal2D, title: HAADF, dimensions: (|179, 161)>,
+    <EDSSEMSpectrum, title: EDS, dimensions: (179, 161|4096)>]
+
+.. warning::
+
+   This format is still not stable and files generated with the most recent 
+version of Velox may not be supported.
+
+.. _Extra-loading-arguments-fei-emd:
+
+Extra loading arguments
++++++++++++++++++++++++
+
+- `select_type` : one of {None, 'image', 'single_spectrum', 'spectrum_image'} (default is None). 
+- `first_frame` : integer (default is 0).
+- `last_frame` : integer (default is None)
+- `sum_frames` : boolean (default is True)
+- `sum_EDS_detectors` : boolean (default is True)
+- `rebin_energy` : integer (default is 1)
+- `SI_dtype` : numpy dtype (default is None)
+- `load_SI_image_stack` : boolean (default is False)
+
+The ``select_type`` parameter specifies the type of data to load: if `image` is selected, 
+only images (including EDS maps) are loaded, if `single_spectrum` is selected, only 
+single spectra are loaded and if `spectrum_image` is selected, only the spectrum 
+image will be loaded. The ``first_frame`` and ``last_frame`` parameters can be used 
+to select the frame range of the EDS spectrum image to load. To load each individual 
+EDS frame, use ``sum_frames=False`` and the EDS spectrum image will be loaded 
+with an an extra navigation dimension corresponding to the frame index 
+(time axis). Use the ``sum_EDS_detectors=True`` parameter to load the signal of 
+each individual EDS detector. In such a case, a corresponding number of distinct 
+EDS signal is returned. The default is ``sum_EDS_detectors=True``, which loads the 
+EDS signal as a sum over the signals from each EDS detectors.  The ``rebin_energy`` 
+and ``SI_dtype`` parameters are particularly useful in combination with 
+``sum_frames=False`` to reduce the data size when one want to read the 
+individual frames of the spectrum image. If ``SI_dtype=None`` (default), the dtype 
+of the data in the emd file is used. The ``load_SI_image_stack`` parameter allows 
+loading the stack of STEM images acquired simultaneously as the EDS spectrum image. 
+This can be useful to monitor any specimen changes during the acquisition or to 
+correct the spatial drift in the spectrum image by using the STEM images.
+
+.. code-block:: python
+
+    >>> hs.load("sample.emd", sum_EDS_detectors=False)
+    [<Signal2D, title: HAADF, dimensions: (|179, 161)>,
+    <EDSSEMSpectrum, title: EDS - SuperXG21, dimensions: (179, 161|4096)>,
+    <EDSSEMSpectrum, title: EDS - SuperXG22, dimensions: (179, 161|4096)>,
+    <EDSSEMSpectrum, title: EDS - SuperXG23, dimensions: (179, 161|4096)>,
+    <EDSSEMSpectrum, title: EDS - SuperXG24, dimensions: (179, 161|4096)>]
+
+    >>> hs.load("sample.emd", sum_frames=False, load_SI_image_stack=True, SI_dtype=np.int8, rebin_energy=4)
+    [<Signal2D, title: HAADF, dimensions: (50|179, 161)>,
+    <EDSSEMSpectrum, title: EDS, dimensions: (50, 179, 161|1024)>]
+
+
 
 .. _protochips-format:
 

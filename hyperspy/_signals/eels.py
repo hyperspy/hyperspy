@@ -32,8 +32,7 @@ from hyperspy.defaults_parser import preferences
 from hyperspy.external.progressbar import progressbar
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import (
-    isiterable, closest_power_of_two, underline, without_nans,
-    signal_range_from_roi)
+    isiterable, closest_power_of_two, underline, signal_range_from_roi)
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 
 
@@ -285,29 +284,34 @@ class EELSSpectrum_mixin:
                 zlpc = s.estimate_zero_loss_peak_centre(mask=mask)
             return zlpc
 
-        zlpc = estimate_zero_loss_peak_centre(self, mask, signal_range)
-        mean_ = without_nans(zlpc.data).mean()
+        zlpc = estimate_zero_loss_peak_centre(
+            self, mask=mask, signal_range=signal_range)
+
+        mean_ = np.nanmean(zlpc.data)
+
         if print_stats is True:
             print()
             print(underline("Initial ZLP position statistics"))
             zlpc.print_summary_statistics()
 
         for signal in also_align + [self]:
-            signal.shift1D(-
-                           zlpc.data +
-                           mean_, show_progressbar=show_progressbar)
+            shift_array = -zlpc.data + mean_
+            if zlpc._lazy:
+                shift_array = shift_array.compute()
+            signal.shift1D(shift_array, show_progressbar=show_progressbar)
 
         if calibrate is True:
-            zlpc = estimate_zero_loss_peak_centre(self, mask, signal_range)
-            substract_from_offset(without_nans(zlpc.data).mean(),
+            zlpc = estimate_zero_loss_peak_centre(
+                self, mask=mask, signal_range=signal_range)
+            substract_from_offset(np.nanmean(zlpc.data),
                                   also_align + [self])
 
         if subpixel is False:
             return
         left, right = -3., 3.
         if calibrate is False:
-            mean_ = without_nans(estimate_zero_loss_peak_centre(
-                self, mask, signal_range).data).mean()
+            mean_ = np.nanmean(estimate_zero_loss_peak_centre(
+                self, mask, signal_range).data)
             left += mean_
             right += mean_
 
@@ -315,16 +319,19 @@ class EELSSpectrum_mixin:
                 else self.axes_manager[-1].axis[0])
         right = (right if right < self.axes_manager[-1].axis[-1]
                  else self.axes_manager[-1].axis[-1])
+
         if self.axes_manager.navigation_size > 1:
             self.align1D(
                 left,
                 right,
                 also_align=also_align,
                 show_progressbar=show_progressbar,
+                mask=mask,
                 **kwargs)
-        zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
         if calibrate is True:
-            substract_from_offset(without_nans(zlpc.data).mean(),
+            zlpc = estimate_zero_loss_peak_centre(
+                self, mask=mask, signal_range=signal_range)
+            substract_from_offset(np.nanmean(zlpc.data),
                                   also_align + [self])
 
     def estimate_elastic_scattering_intensity(
@@ -1114,14 +1121,14 @@ class EELSSpectrum_mixin:
         # Mapped parameters
         try:
             e0 = s.metadata.Acquisition_instrument.TEM.beam_energy
-        except:
+        except BaseException:
             raise AttributeError("Please define the beam energy."
                                  "You can do this e.g. by using the "
                                  "set_microscope_parameters method")
         try:
             beta = s.metadata.Acquisition_instrument.TEM.Detector.\
                 EELS.collection_angle
-        except:
+        except BaseException:
             raise AttributeError("Please define the collection semi-angle. "
                                  "You can do this e.g. by using the "
                                  "set_microscope_parameters method")

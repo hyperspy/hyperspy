@@ -43,7 +43,7 @@ def _mrdivide(B, A):
             # square array
             return np.linalg.solve(A.T, B.T).T
         else:
-            return np.linalg.lstsq(A.T, B.T)[0].T
+            return np.linalg.lstsq(A.T, B.T, rcond=None)[0].T
     else:
         return B / A
 

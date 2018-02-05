@@ -82,7 +82,8 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         sf = signal1d.Signal1DFigure(title=self.signal_title +
                                      " Signal")
         sf.axis = self.axis
-        sf.create_axis()
+        if sf.ax is None:
+            sf.create_axis()
         sf.axes_manager = self.axes_manager
         self.xlabel = '{}'.format(self.axes_manager.signal_axes[0])
         if self.axes_manager.signal_axes[0].units is not Undefined:
