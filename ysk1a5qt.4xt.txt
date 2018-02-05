@@ -1,0 +1,238 @@
+﻿Merge remote-tracking branch 'refs/remotes/hyperspy/RELEASE_v1.3'
+
+# Conflicts:
+#	hyperspy/misc/array_tools.py
+#
+# It looks like you may be committing a merge.
+# If this is not correct, please remove the file
+#	.git/MERGE_HEAD
+# and try again.
+
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+# On branch master
+# Your branch is up-to-date with 'origin/master'.
+#
+# All conflicts fixed but you are still merging.
+#
+# Changes to be committed:
+#	modified:   .coveragerc
+#	modified:   .travis.yml
+#	modified:   CHANGES.txt
+#	modified:   appveyor.yml
+#	modified:   doc/api/hyperspy.external.rst
+#	deleted:    doc/api/hyperspy.gui.rst
+#	modified:   doc/api/hyperspy.io_plugins.rst
+#	modified:   doc/api/hyperspy.misc.io.rst
+#	modified:   doc/api/hyperspy.rst
+#	modified:   doc/api/hyperspy.tests.drawing.rst
+#	modified:   doc/api/hyperspy.tests.misc.rst
+#	modified:   doc/api/hyperspy.tests.signal.rst
+#	modified:   doc/dev_guide.rst
+#	modified:   doc/user_guide/big_data.rst
+#	modified:   doc/user_guide/dielectric_function.rst
+#	modified:   doc/user_guide/eds.rst
+#	modified:   doc/user_guide/eels.rst
+#	modified:   doc/user_guide/electron_holography.rst
+#	modified:   doc/user_guide/getting_started.rst
+#	new file:   doc/user_guide/images/axes_manager_gui_ipywidgets.png
+#	new file:   doc/user_guide/images/axes_manager_navigation_sliders_ipywidgets.png
+#	new file:   doc/user_guide/images/data_axis_gui_ipywidgets.png
+#	new file:   doc/user_guide/images/interactive_signal1d_cropping.png
+#	new file:   doc/user_guide/images/interactive_signal2d_cropping.png
+#	modified:   doc/user_guide/install.rst
+#	modified:   doc/user_guide/intro.rst
+#	modified:   doc/user_guide/io.rst
+#	modified:   doc/user_guide/metadata_structure.rst
+#	modified:   doc/user_guide/model.rst
+#	modified:   doc/user_guide/mva.rst
+#	modified:   doc/user_guide/signal1d.rst
+#	modified:   doc/user_guide/signal2d.rst
+#	modified:   doc/user_guide/tools.rst
+#	modified:   doc/user_guide/visualisation.rst
+#
+# Changes not staged for commit:
+#	modified:   README.rst
+#	modified:   hyperspy/Release.py
+#	modified:   hyperspy/_components/eels_cl_edge.py
+#	modified:   hyperspy/_components/gaussian2d.py
+#	modified:   hyperspy/_components/polynomial.py
+#	modified:   hyperspy/_components/scalable_fixed_pattern.py
+#	modified:   hyperspy/_signals/eds.py
+#	modified:   hyperspy/_signals/eds_sem.py
+#	modified:   hyperspy/_signals/eds_tem.py
+#	modified:   hyperspy/_signals/eels.py
+#	modified:   hyperspy/_signals/hologram_image.py
+#	modified:   hyperspy/_signals/lazy.py
+#	modified:   hyperspy/_signals/signal1d.py
+#	modified:   hyperspy/_signals/signal2d.py
+#	modified:   hyperspy/api.py
+#	modified:   hyperspy/axes.py
+#	modified:   hyperspy/component.py
+#	modified:   hyperspy/conftest.py
+#	modified:   hyperspy/decorators.py
+#	modified:   hyperspy/defaults_parser.py
+#	modified:   hyperspy/docstrings/plot.py
+#	modified:   hyperspy/drawing/_widgets/range.py
+#	modified:   hyperspy/drawing/_widgets/scalebar.py
+#	modified:   hyperspy/drawing/figure.py
+#	modified:   hyperspy/drawing/image.py
+#	modified:   hyperspy/drawing/marker.py
+#	modified:   hyperspy/drawing/mpl_he.py
+#	modified:   hyperspy/drawing/mpl_hie.py
+#	modified:   hyperspy/drawing/mpl_hse.py
+#	modified:   hyperspy/drawing/signal.py
+#	modified:   hyperspy/drawing/signal1d.py
+#	modified:   hyperspy/drawing/tiles.py
+#	modified:   hyperspy/drawing/utils.py
+#	modified:   hyperspy/drawing/widget.py
+#	modified:   hyperspy/external/progressbar.py
+#	deleted:    hyperspy/external/tifffile.py
+#	deleted:    hyperspy/gui/__init__.py
+#	deleted:    hyperspy/gui/axes.py
+#	deleted:    hyperspy/gui/eds.py
+#	deleted:    hyperspy/gui/eels.py
+#	deleted:    hyperspy/gui/egerton_quantification.py
+#	deleted:    hyperspy/gui/messages.py
+#	deleted:    hyperspy/gui/preferences.py
+#	deleted:    hyperspy/gui/tools.py
+#	modified:   hyperspy/io.py
+#	modified:   hyperspy/io_plugins/__init__.py
+#	modified:   hyperspy/io_plugins/bcf.py
+#	modified:   hyperspy/io_plugins/blockfile.py
+#	modified:   hyperspy/io_plugins/digital_micrograph.py
+#	modified:   hyperspy/io_plugins/edax.py
+#	modified:   hyperspy/io_plugins/fei.py
+#	deleted:    hyperspy/io_plugins/hdf5.py
+#	modified:   hyperspy/io_plugins/mrc.py
+#	modified:   hyperspy/io_plugins/msa.py
+#	modified:   hyperspy/io_plugins/ripple.py
+#	modified:   hyperspy/io_plugins/tiff.py
+#	modified:   hyperspy/io_plugins/unbcf_fast.pyx
+#	modified:   hyperspy/learn/mva.py
+#	modified:   hyperspy/learn/rpca.py
+#	modified:   hyperspy/misc/array_tools.py
+#	modified:   hyperspy/misc/eels/tools.py
+#	deleted:    hyperspy/misc/io/ttols.py
+#	modified:   hyperspy/misc/math_tools.py
+#	modified:   hyperspy/misc/signal_tools.py
+#	modified:   hyperspy/misc/slicing.py
+#	modified:   hyperspy/misc/utils.py
+#	modified:   hyperspy/model.py
+#	modified:   hyperspy/models/eelsmodel.py
+#	modified:   hyperspy/models/model1d.py
+#	modified:   hyperspy/roi.py
+#	modified:   hyperspy/signal.py
+#	modified:   hyperspy/tests/axes/test_axes_manager.py
+#	modified:   hyperspy/tests/drawing/plot_markers/test_plot_line_markers.png
+#	modified:   hyperspy/tests/drawing/plot_markers/test_plot_point_markers.png
+#	modified:   hyperspy/tests/drawing/plot_markers/test_plot_rectange_markers.png
+#	modified:   hyperspy/tests/drawing/plot_markers/test_plot_text_markers_nav.png
+#	modified:   hyperspy/tests/drawing/plot_markers/test_plot_text_markers_sig.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_0-1-sig-complex_imag.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_0-1-sig-complex_real.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_0-1-sig-real.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_0-2-sig-complex_imag.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_0-2-sig-complex_real.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_0-2-sig-real.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_1-1-nav-complex_imag.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_1-1-nav-complex_real.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_1-1-nav-real.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_1-1-sig-complex_imag.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_1-1-sig-complex_real.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_1-1-sig-real.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_1-2-nav-complex_imag.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_1-2-nav-complex_real.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_1-2-nav-real.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_1-2-sig-complex_imag.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_1-2-sig-complex_real.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_1-2-sig-real.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_2-1-nav-complex_imag.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_2-1-nav-complex_real.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_2-1-nav-real.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_2-1-sig-complex_imag.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_2-1-sig-complex_real.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_2-1-sig-real.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_2-2-nav-complex_imag.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_2-2-nav-complex_real.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_2-2-nav-real.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_2-2-sig-complex_imag.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_2-2-sig-complex_real.png
+#	modified:   hyperspy/tests/drawing/plot_signal/test_plot_sig_nav_2-2-sig-real.png
+#	modified:   hyperspy/tests/drawing/plot_signal1d/test_plot_spectra_cascade.png
+#	modified:   hyperspy/tests/drawing/plot_signal1d/test_plot_spectra_default.png
+#	modified:   hyperspy/tests/drawing/plot_signal1d/test_plot_spectra_heatmap.png
+#	modified:   hyperspy/tests/drawing/plot_signal1d/test_plot_spectra_mosaic.png
+#	modified:   hyperspy/tests/drawing/plot_signal1d/test_plot_spectra_overlap.png
+#	modified:   hyperspy/tests/drawing/plot_signal1d/test_plot_spectra_sync_1nav.png
+#	modified:   hyperspy/tests/drawing/plot_signal1d/test_plot_spectra_sync_1sig.png
+#	modified:   hyperspy/tests/drawing/plot_signal1d/test_plot_spectra_sync_2nav.png
+#	modified:   hyperspy/tests/drawing/plot_signal1d/test_plot_spectra_sync_2sig.png
+#	modified:   hyperspy/tests/drawing/plot_signal1d/test_plot_two_cursors_1-nav.png
+#	modified:   hyperspy/tests/drawing/plot_signal1d/test_plot_two_cursors_1-sig.png
+#	modified:   hyperspy/tests/drawing/plot_signal1d/test_plot_two_cursors_2-nav.png
+#	modified:   hyperspy/tests/drawing/plot_signal1d/test_plot_two_cursors_2-sig.png
+#	modified:   hyperspy/tests/drawing/plot_signal2d/test_plot_False-False-False-False.png
+#	modified:   hyperspy/tests/drawing/plot_signal2d/test_plot_False-False-False-True.png
+#	modified:   hyperspy/tests/drawing/plot_signal2d/test_plot_False-False-True-False.png
+#	modified:   hyperspy/tests/drawing/plot_signal2d/test_plot_False-False-True-True.png
+#	modified:   hyperspy/tests/drawing/plot_signal2d/test_plot_False-True-False-False.png
+#	modified:   hyperspy/tests/drawing/plot_signal2d/test_plot_False-True-False-True.png
+#	modified:   hyperspy/tests/drawing/plot_signal2d/test_plot_False-True-True-False.png
+#	modified:   hyperspy/tests/drawing/plot_signal2d/test_plot_False-True-True-True.png
+#	modified:   hyperspy/tests/drawing/plot_signal2d/test_plot_True-False-False-False.png
+#	modified:   hyperspy/tests/drawing/plot_signal2d/test_plot_True-False-False-True.png
+#	modified:   hyperspy/tests/drawing/plot_signal2d/test_plot_True-False-True-False.png
+#	modified:   hyperspy/tests/drawing/plot_signal2d/test_plot_True-False-True-True.png
+#	modified:   hyperspy/tests/drawing/plot_signal2d/test_plot_True-True-False-False.png
+#	modified:   hyperspy/tests/drawing/plot_signal2d/test_plot_True-True-False-True.png
+#	modified:   hyperspy/tests/drawing/plot_signal2d/test_plot_True-True-True-False.png
+#	modified:   hyperspy/tests/drawing/plot_signal2d/test_plot_True-True-True-True.png
+#	deleted:    hyperspy/tests/drawing/plot_signal2d/test_plot_multiple_images_list.png
+#	modified:   hyperspy/tests/drawing/plot_signal2d/test_rgb_image_global.png
+#	modified:   hyperspy/tests/drawing/plot_signal2d/test_rgb_image_single.png
+#	modified:   hyperspy/tests/drawing/test_mpl_testing_setup.py
+#	modified:   hyperspy/tests/drawing/test_plot_markers.py
+#	modified:   hyperspy/tests/drawing/test_plot_signal.py
+#	modified:   hyperspy/tests/drawing/test_plot_signal1d.py
+#	modified:   hyperspy/tests/drawing/test_plot_signal2d.py
+#	modified:   hyperspy/tests/io/bcf_data/test_original_metadata.json
+#	modified:   hyperspy/tests/io/test_bcf.py
+#	modified:   hyperspy/tests/io/test_dm3.py
+#	modified:   hyperspy/tests/io/test_edax.py
+#	modified:   hyperspy/tests/io/test_fei.py
+#	modified:   hyperspy/tests/io/test_hdf5.py
+#	modified:   hyperspy/tests/io/test_msa.py
+#	modified:   hyperspy/tests/io/test_ripple.py
+#	modified:   hyperspy/tests/io/test_tiff.py
+#	modified:   hyperspy/tests/model/test_eelsmodel.py
+#	modified:   hyperspy/tests/model/test_model.py
+#	modified:   hyperspy/tests/mva/test_decomposition.py
+#	modified:   hyperspy/tests/mva/test_rpca.py
+#	modified:   hyperspy/tests/samfire/test_samfire.py
+#	modified:   hyperspy/tests/signal/test_1D_tools.py
+#	modified:   hyperspy/tests/signal/test_eds_sem.py
+#	modified:   hyperspy/tests/signal/test_eds_tem.py
+#	modified:   hyperspy/tests/signal/test_fancy_indexing.py
+#	modified:   hyperspy/tests/signal/test_hologram_image.py
+#	modified:   hyperspy/tests/signal/test_lazy.py
+#	modified:   hyperspy/tests/signal/test_map_method.py
+#	modified:   hyperspy/tests/signal/test_tools.py
+#	modified:   hyperspy/tests/utils/test_stack.py
+#	modified:   setup.py
+#
+# Untracked files:
+#	hyperspy/api_nogui.py
+#	hyperspy/io_plugins/hspy.py
+#	hyperspy/signal_tools.py
+#	hyperspy/tests/drawing/plot_mva/
+#	hyperspy/tests/drawing/plot_signal2d/test_plot_multiple_images_list_None-None.png
+#	hyperspy/tests/drawing/plot_signal2d/test_plot_multiple_images_list_vmin0-vmax0.png
+#	hyperspy/tests/drawing/test_plot_mva.py
+#	hyperspy/tests/io/bcf_data/bcf_v2_50x50px.bcf
+#	hyperspy/tests/io/bcf_data/over16bit.bcf
+#	hyperspy/tests/misc/test_utils.py
+#	hyperspy/ui_registry.py
+#
+

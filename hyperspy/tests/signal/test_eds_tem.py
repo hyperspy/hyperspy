@@ -161,6 +161,8 @@ class Test_quantification:
         s.add_lines(xray_lines)
         s.axes_manager[0].scale = 0.5
         s.axes_manager[1].scale = 0.5
+        s.axes_manager[0].units = 'nm'
+        s.axes_manager[1].units = 'nm'
         self.signal = s
 
     def test_quant_lorimer(self):
