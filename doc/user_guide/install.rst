@@ -143,9 +143,7 @@ full functionality:
 
 Alternatively you can select the extra functionalities required:
 
-* ``bcf`` to install required libraries to read Brucker files.
-* ``learning`` to install required libraries for some machine learning
-  features.
+* ``learning`` to install required libraries for some machine learning features.
 * ``gui-jupyter`` to install required libraries to use the
   `Jupyter widgets <http://ipywidgets.readthedocs.io/en/stable/>`_
   GUI elements.
@@ -157,7 +155,7 @@ For example:
 
 .. code-block:: bash
 
-    $ pip install hyperspy[bcf, gui-jupyter]
+    $ pip install hyperspy[learning, gui-jupyter]
 
 See also :ref:`install-dependencies`.
 
