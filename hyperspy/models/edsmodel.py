@@ -327,7 +327,7 @@ class EDSModel(Model1D):
         if E0 == 'from_metadata':
             E0 = self.signal._get_beam_energy()
             
-        background = create_component.Physical_background(model=self,E0=E0,detector=detector, quantification=quantification)
+        background = create_component.Physical_background(E0=E0,detector=detector, quantification=quantification)
         background.name = "Bremsstrahlung"
         background.isbackground = True
         self.append(background)
