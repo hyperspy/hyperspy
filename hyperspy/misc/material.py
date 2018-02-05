@@ -41,6 +41,7 @@ def _weight_to_atomic(weight_percent, elements):
     for i, el in enumerate(elements):
         atomic_percent[i] /= sum_weight
         atomic_percent[i] = np.where(sum_weight == 0.0, 0.0, atomic_percent[i])
+        atomic_percent[i].metadata.General.title = 'atomic percent of ' + element
     return atomic_percent
 
 
@@ -117,6 +118,7 @@ def _atomic_to_weight(atomic_percent, elements):
     for i, el in enumerate(elements):
         weight_percent[i] /= sum_atomic
         weight_percent[i] = np.where(sum_atomic == 0.0, 0.0, weight_percent[i])
+        weight_percent[i].metadata.General.title = 'weight percent of ' + element
     return weight_percent
 
 
