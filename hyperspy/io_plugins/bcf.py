@@ -1015,7 +1015,7 @@ def py_parse_hypermap(virtual_file, shape, dtype, downsample=1):
             x_pix, chan1, chan2, dummy1, flag, dummy_size1, n_of_pulses,\
                 data_size2 = strct_unp('<IHHIHHHI',
                                        buffer1[offset:offset + 22])
-            pix_idx = (x_pix // dwn_factor) + ((ceil(width / dwn_factor)) *
+            pix_idx = (x_pix // dwn_factor) + (ceil(width / dwn_factor) *
                                                (line_cnt // dwn_factor))
             offset += 22
             if (offset + data_size2) >= size:
