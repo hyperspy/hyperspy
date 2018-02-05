@@ -513,7 +513,7 @@ class EDXSpectrum(object):
         self.scale = self.spectrum_metadata['CalibLin']
         
         # main data:
-        self.data = np.frombuffer(spectrum.find('./Channels').text,
+        self.data = np.fromstring(spectrum.find('./Channels').text,
                                   dtype='Q', sep=",")
 
     def energy_to_channel(self, energy, kV=True):
