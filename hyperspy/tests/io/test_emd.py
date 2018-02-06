@@ -206,12 +206,12 @@ class TestFeiEMD():
         shutil.rmtree(cls.fei_files_path)
 
     @pytest.mark.parametrize("lazy", (True, False))
-    def test_fei_emd_image(self, lazy):
-        stage = {'tilt_alpha': '0.00',
-                 'tilt_beta': '0.00',
-                 'x': '-0.000',
-                 'y': '0.000',
-                 'z': '0.000'}
+    def test_fei_emd_image(self):
+        stage = {'tilt_alpha': '0.006',
+                 'tilt_beta': '0.000',
+                 'x': '-0.000009',
+                 'y': '0.000144',
+                 'z': '0.000029'}
         md = {'Acquisition_instrument': {'TEM': {'beam_energy': 200.0,
                                                  'camera_length': 98.0,
                                                  'magnification': 40000.0,

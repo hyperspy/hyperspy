@@ -499,6 +499,14 @@ def _parse_detector_name(original_metadata):
     return name
 
 
+def _get_detector_metadata_dict(om, detector_name):
+    detectors_dict = om['Detectors']
+    # find detector dict from the detector_name
+    for key in detectors_dict:
+        if detectors_dict[key]['DetectorName'] == detector_name:
+            return detectors_dict[key]
+
+
 class FeiEMDReader(object):
     """
     Class for reading FEI electron microscopy datasets.
@@ -739,6 +747,9 @@ class FeiEMDReader(object):
 
         md = self._get_metadata_dict(original_metadata)
         md['Signal']['signal_type'] = 'image'
+        original_metadata['DetectorMetadata'] = _get_detector_metadata_dict(
+            original_metadata,
+            self.detector_name)
         if hasattr(self, 'map_label_dict'):
             if image_sub_group_key in self.map_label_dict:
                 md['General']['title'] = self.map_label_dict[image_sub_group_key]
@@ -747,7 +758,8 @@ class FeiEMDReader(object):
                 'axes': axes,
                 'metadata': md,
                 'original_metadata': original_metadata,
-                'mapping': self._get_mapping(map_selected_element=False)}
+                'mapping': self._get_mapping(map_selected_element=False,
+                        parse_individual_EDS_detector_metadata=False)}
 
     def _parse_frame_time(self, original_metadata, factor=1):
         try:
@@ -919,7 +931,8 @@ class FeiEMDReader(object):
                                       'axes': axes,
                                       'metadata': md,
                                       'original_metadata': original_metadata,
-                                      'mapping': self._get_mapping()})
+                                      'mapping': self._get_mapping(
+                                          parse_individual_EDS_detector_metadata=not self.sum_frames)})
 
     def _get_dispersion_offset(self, original_metadata):
         try:
@@ -973,7 +986,7 @@ class FeiEMDReader(object):
         return {'General': meta_gen, 'Signal': meta_sig}
 
     def _get_mapping(self, map_selected_element=True,
-                     parse_EDS_detector_metadata=True):
+                     parse_individual_EDS_detector_metadata=True):
         mapping = {
             'Acquisition.AcquisitionStartDatetime.DateTime': (
                 "General.time_zone", lambda x: self._get_local_time_zone()),
@@ -994,7 +1007,7 @@ class FeiEMDReader(object):
             'Stage.Position.x': (
                 "Acquisition_instrument.TEM.Stage.x",
                 lambda x: '{:.6f}'.format(float(x))
-                ),
+            ),
             'Stage.Position.y': (
                 "Acquisition_instrument.TEM.Stage.y",
                 lambda x: '{:.6f}'.format(float(x))),
@@ -1006,10 +1019,16 @@ class FeiEMDReader(object):
             'DetectorMetadata.ElevationAngle': (
                 "Acquisition_instrument.TEM.Detector.EDS.elevation_angle",
                 lambda x: '{:.3f}'.format(np.degrees(float(x)))),
+            'DetectorMetadata.Gain': (
+                "Signal.Noise_properties.Variance_linear_model.gain_factor",
+                lambda x: '{:.6f}'.format(float(x))),
+            'DetectorMetadata.Offset': (
+                "Signal.Noise_properties.Variance_linear_model.gain_offset",
+                lambda x: '{:.6f}'.format(float(x))),
         }
-        
+
         # Parse individual metadata for each EDS detector
-        if parse_EDS_detector_metadata:
+        if parse_individual_EDS_detector_metadata:
             mapping.update({
                 'DetectorMetadata.AzimuthAngle': (
                     "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
@@ -1018,11 +1037,11 @@ class FeiEMDReader(object):
                     "Acquisition_instrument.TEM.Detector.EDS.live_time",
                     lambda x: '{:.6f}'.format(float(x))),
                 'DetectorMetadata.RealTime': (
-                    "Acquisition_instrument.TEM.Detector.EDS.real_time", 
+                    "Acquisition_instrument.TEM.Detector.EDS.real_time",
                     lambda x: '{:.6f}'.format(float(x))),
                 'DetectorMetadata.DetectorName': (
                     "General.title", None),
-                        })
+            })
 
         # Add selected element
         if map_selected_element:
