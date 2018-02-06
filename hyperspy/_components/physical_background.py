@@ -27,9 +27,9 @@ from scipy.interpolate import interp1d
 
 def Wpercent(model,E0,quantification):
 
-    if quantification is None :
+    if quantification is None :                 #if quantification is None, this function calculate an  approximation of a quantification based on peaks ratio 
         w=model.signal.get_lines_intensity(only_one=True)
-        if len(np.shape(w[0]))>1 and np.shape(w[0])[1]>1 :
+        if len(np.shape(w[0]))>1 and np.shape(w[0])[1]>1 : #for 3D Data
             u=np.ones([np.shape(w[0])[0],np.shape(w[0])[1], len(model._signal.metadata.Sample.elements)] )
             for i in range (0,len(w)):
                 if "Ka" in w [i].metadata.General.title :
@@ -40,8 +40,8 @@ def Wpercent(model,E0,quantification):
                     u[:,:,i] =w[i].data*2.8
                 g=np.ones([np.shape(w[0])[0],np.shape(w[0])[1], len(model._signal.metadata.Sample.elements)] )
                 for i in range (0,len(model._signal.metadata.Sample.elements)):
-                    g[:,:,i] =(u[:,:,i]/(np.sum(u,axis=2))) *100          	    
-        elif len(np.shape(w[0]))==1 and np.shape(w[0])[0]>1 :
+                    g[:,:,i] =(u[:,:,i]/(np.sum(u,axis=-1))) *100          	    
+        elif len(np.shape(w[0]))==1 and np.shape(w[0])[0]>1 : #for 2D Data
             u=np.ones([np.shape(w[0])[0], len(model._signal.metadata.Sample.elements)] )
             for i in range (0,len(w)):
                 if "Ka" in w [i].metadata.General.title :
@@ -52,9 +52,9 @@ def Wpercent(model,E0,quantification):
                     u[:,i] =w[i].data*2.8
             g=np.ones([np.shape(w[0])[0], len(model._signal.metadata.Sample.elements)] )
             for i in range (0,len(model._signal.metadata.Sample.elements)):
-                g[:,i] =(u[:,i]/(np.sum(u,axis=1))) *100          		
+                g[:,i] =(u[:,i]/(np.sum(u,axis=-1))) *100          		
         else:
-            u=np.ones([len(model._signal.metadata.Sample.elements)] )
+            u=np.ones([len(model._signal.metadata.Sample.elements)] ) #for 1D 
             for i in range (0,len(w)):
                 if "Ka" in w [i].metadata.General.title :
                     u[i] =w[i].data
@@ -66,16 +66,17 @@ def Wpercent(model,E0,quantification):
             t=u.sum() 
             for i in range (0,len(u)):
                 g[i] =u[i] /t*100
-    elif isinstance(quantification[0] , (float)):
+    elif isinstance(quantification[0] , (float,int)): # if quantification is already an array of weight percent, directly keep the array
         g=quantification
 
     else:
-        w=quantification
+        w=quantification # if quantification is the result of the hyperspy quantification function. This function convert the result in an array with the same navigation shape than the model and a length equal to the number of elements 
         if 'atomic percent' in w[0].metadata.General.title:
             w=atomic_to_weight(w)
         else:
-            w=w           
-        if len(np.shape(w[0]))>1 and np.shape(w[0])[1]>1 :
+            w=w
+            
+        if len(np.shape(w[0]))>1 and np.shape(w[0])[1]>1 : # for 3D
             u=np.ones([np.shape(w[0])[0],np.shape(w[0])[1], len(model._signal.metadata.Sample.elements)] )
             for i in range (0,len(w)):
                 u[:,:,i] =w[i].data
@@ -84,7 +85,7 @@ def Wpercent(model,E0,quantification):
             for i in range (0,len(model._signal.metadata.Sample.elements)):
                 g[:,:,i] =(u[:,:,i]/(np.sum(u,axis=2))) *100          
 		    
-        elif len(np.shape(w[0]))==1 and np.shape(w[0])[0]>1 :
+        elif len(np.shape(w[0]))==1 and np.shape(w[0])[0]>1 : #for 2D
             u=np.ones([np.shape(w[0])[0], len(model._signal.metadata.Sample.elements)] )
             for i in range (0,len(w)):
                u[:,i] =w[i].data
@@ -93,7 +94,7 @@ def Wpercent(model,E0,quantification):
             for i in range (0,len(model._signal.metadata.Sample.elements)):
                 g[:,i] =(u[:,i]/(np.sum(u,axis=1))) *100          
 		    
-        else:
+        else: #for 1D
             u=np.ones([len(model._signal.metadata.Sample.elements)] )
             for i in range (0,len(w)):            
                 u[i] =w[i].data
@@ -106,32 +107,32 @@ def Wpercent(model,E0,quantification):
 
 
 
-def Mucoef(model,E0,quanti): 
+def Mucoef(model,quanti): # this function calculate the absorption coefficient for all energy. This, correspond to the Mu parameter in the function
     w=quanti
     t=np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size)-0.05
     t=t
     
-    if len(np.shape(w))>2 and np.shape(w)[1]>1 :
-        Ac=np.empty([np.shape(w)[0],np.shape(w)[1],len(t)],float)
-        for i in range (0,np.shape(w)[0]):
-            for k in range (0, np.shape(w)[1]):  
-                for j in range (0,len(t)): 
-                    Ac[i,k,j] = mass_absorption_mixture(elements=model._signal.metadata.Sample.elements,weight_percent=w[i,k], energies=t[j])
+##    if len(np.shape(w))>2 and np.shape(w)[1]>1 : #for 3D
+##        Ac=np.empty([np.shape(w)[0],np.shape(w)[1],len(t)],float)
+##        for i in range (0,np.shape(w)[0]):
+##            for k in range (0, np.shape(w)[1]):  
+##                for j in range (0,len(t)): 
+##                    Ac[i,k,j] = mass_absorption_mixture(elements=model._signal.metadata.Sample.elements,weight_percent=w[i,k], energies=t[j])
+##
+##    elif len(np.shape(w))==2 and np.shape(w)[1]>1 : #for 2D
+##        Ac=np.empty([np.shape(w)[0],len(t)],float)
+##        for i in range (0,np.shape(w)[0]):
+##            for j in range (0,len(t)): 
+##                Ac[i,j] = mass_absorption_mixture(elements=model._signal.metadata.Sample.elements,weight_percent=w[i,:], energies=t[j])
 
-    elif len(np.shape(w))==2 and np.shape(w)[1]>1 :
-        Ac=np.empty([np.shape(w)[0],len(t)],float)
-        for i in range (0,np.shape(w)[0]):
-            for j in range (0,len(t)): 
-                Ac[i,j] = mass_absorption_mixture(elements=model._signal.metadata.Sample.elements,weight_percent=w[i,:], energies=t[j])
-
-    else: Ac=mass_absorption_mixture(elements=model._signal.metadata.Sample.elements,weight_percent=w, energies=t)    
+    Ac=mass_absorption_mixture(elements=model._signal.metadata.Sample.elements,weight_percent=w, energies=t)    #1D
 
     return Ac
 
 
 
 
-def Windowabsorption(model,detector): 
+def Windowabsorption(model,detector): # this function interpolate the detector efficiency based on dictionnary (create from personnal data) and the signal length. This correspond to the Window parameter  
  
     a=np.array(detector_efficiency[detector])
     b=np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size)-0.05
@@ -141,14 +142,14 @@ def Windowabsorption(model,detector):
     return Accc
 
 
-##def Cabsorption(model): 
+##def Cabsorption(model): # This function is used to calculate absorption by the coating layer
 ##    t=np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size)-0.05
 ##    Acc=mass_absorption_mixture(elements=['C'],weight_percent=[100], energies=t)
 ##    *((1-np.exp(-2*C*e*10**-6 ))/((2*C*e*10**-6)))
 ##    return Acc
 
 
-##def emissionlaw(model,E0):
+##def emissionlaw(model,E0): # This function is made for fit the parameter only on the end of the spectra where the absorption is mostly absent
 ##    E0=E0
 ##
 ##    axis = model._signal.axes_manager.signal_axes[-1]
@@ -207,7 +208,6 @@ class Physical_background(Component):
         self.Mu.value=Mu
         self.Window.value=Window
 
-
         self.E0.free=False
         self.coefficients.free=True
         self.Mu.free=False
@@ -215,6 +215,7 @@ class Physical_background(Component):
         self.quanti.free=False
         
         self.isbackground=True
+        #self.convolved = False
 
         # Boundaries
         self.coefficients.bmax = None
@@ -223,38 +224,43 @@ class Physical_background(Component):
     def function(self,x):
  
         b=self.coefficients.value[0]
+        a=self.coefficients.value[1]
+        self.coefficients._create_array()
+            
         E0=self.E0.value
         
+
         quanti=Wpercent(self.model,E0,self._whitelist['quanti'])
+
         self.quanti._number_of_elements=len(self.model._signal.metadata.Sample.elements)
         self.quanti._create_array()
+               
         if len(self.model.axes_manager.shape)==1:
             self.quanti.value=quanti
-        else :
+        else: 
             self.quanti.map['values'][:] = quanti
             self.quanti.map['is_set'][:] = True
 
-        quanti=np.array(self.quanti.value,dtype=float)
-        
-        Mu=Mucoef(self.model,self.E0,quanti)
+        Mu=Mucoef(self.model,self.quanti.value)
+
         self.Mu._number_of_elements=len(self.model._signal.axes_manager.signal_axes[-1].axis)
         self.Mu._create_array()
-        if len(self.model.axes_manager.shape)==1:
-            self.Mu.value=Mu
-        else :
-            self.Mu.map['values'][:] = Mu
-            self.Mu.map['is_set'][:] = True
+        self.Mu.value=Mu
+                    
         Mu=np.array(Mu,dtype=float)
         Mu=Mu[self.model.channel_switches]
        
-        
+
+        Window=Windowabsorption(self.model,self._whitelist['detector'])
+
         self.Window._number_of_elements=len(self.model._signal.axes_manager.signal_axes[-1].axis)
+        self.Window.value=Window
         self.Window._create_array()
-        self.Window.value=Windowabsorption(self.model,self._whitelist['detector'])
-        Window=np.array(self.Window.value,dtype=float)
+        
+        Window=np.array(Window,dtype=float)
         Window=Window[self.model.channel_switches]
-               
-        a=self.coefficients.value[1]     
+     
+        
             #t=emissionlaw(self.model,E0)
             #self.model.components.Bremsstrahlung.a.value=(t)
             #a=t
@@ -262,4 +268,4 @@ class Physical_background(Component):
             #a=self.a.value 
             #a=self.a.value =False
             
-        return np.where((x>0.05) & (x<(E0+0.05)),((a*100*((E0-x)/x))*((1-np.exp(-2*Mu*b*10**-5 ))/((2*Mu*b*10**-5)))*Window),0) #implement choice for coating correction
+        return np.where((x>0.05) & (x<(E0)),((a*100*((E0-x)/x))*((1-np.exp(-2*Mu*b*10**-5 ))/((2*Mu*b*10**-5)))*Window),0) #implement choice for coating correction
