@@ -597,18 +597,18 @@ class HologramImage(Signal2D):
                    show_progressbar=False,
                    parallel=None):
         """Calculates following statistics for off-axis electron holograms:
-        1. Fringe contrast
-        2. Fringe spacing
-        3. Fringe sampling
-
-         The reconstruction parameters (sb_position)
-         have to be 1d or to have same dimensionality as the hologram.
+        1. Fringe contrast using either statistical definition or
+         Fourier space approach (see description of `fringe_contrast_algorithm` parameter)
+        2. Fringe sampling (in pixels)
+        3. Fringe spacing (in calibrated units)
+        4. Carrier frequency (in calibrated units, radians and 1/px)
 
         Parameters
         ----------
         sb_position : tuple, :class:`~hyperspy.signals.Signal1D, None
-            The sideband position (y, x), referred to the non-shifted FFT. If
-            None, sideband is determined automatically from FFT.
+            The sideband position (y, x), referred to the non-shifted FFT.
+            It has to be tuple or to have the same dimensionality as the hologram.
+            If None, sideband is determined automatically from FFT.
         sb : str, None
             Select which sideband is selected. 'upper', 'lower', 'left' or 'right'.
         high_cf : bool, optional
@@ -617,11 +617,13 @@ class HologramImage(Signal2D):
         fringe_contrast_algorithm : str
             Select fringe contrast algorithm between:
             'fourier'
-                fringe contrast will be estimated by dividing in fourier space twice intensity of side band
-                by the intensity of central band. This method delivers also reasonable estimation if
+                fringe contrast is estimated as:
+                2 * <I(k_0)> / <I(0)>,
+                where I(k_0) is intensity of sideband and I(0) is the intensity of central band (FFT origin).
+                This method delivers also reasonable estimation if
                 interference pattern do not cover full field of view.
             'statistical'
-                fringe contrast will be estimated by dividing standard deviation by mean
+                fringe contrast is estimated by dividing standard deviation by mean
                 of the hologram intensity in real space. This algorithm relays on that the fringes are regular and
                 covering entire field of view.
             (Default: 'statistical')
@@ -649,8 +651,14 @@ class HologramImage(Signal2D):
         >>> import hyperspy.api as hs
         >>> s = hs.datasets.example_signals.reference_hologram()
         >>> sb_position = s.estimate_sideband_position(high_cf=True)
-        >>> statistics_dict = s.statistics(sb_position=sb_position)
+        >>> s.statistics(sb_position=sb_position)
 
+        {'Fringe spacing (nm)': 3.4860442674236256,
+        'Carrier frequency (1/px)': 0.26383819985575441,
+        'Carrier frequency (mrad)': 0.56475154609203482,
+        'Fringe contrast': 0.071298357213623778,
+        'Fringe sampling (px)': 3.7902017241882331,
+        'Carrier frequency (1 / nm)': 0.28685808994016415}
         """
 
         # Testing match of navigation axes of reference and self
