@@ -21,6 +21,8 @@ def get_low_loss_eel_signal():
     --------
     get_core_loss_eel_signal : get a core loss signal
     get_core_loss_eel_model : get a core loss model
+    get_low_loss_eel_line_scan_signal : get EELS low loss line scan
+    get_core_loss_eel_line_scan_signal : get EELS core loss line scan
 
     """
     x = np.arange(-100, 400, 0.5)
@@ -60,6 +62,8 @@ def get_core_loss_eel_signal():
     --------
     get_low_loss_eel_model : get a low loss signal
     get_core_loss_eel_model : get a model instead of a signal
+    get_low_loss_eel_line_scan_signal : get EELS low loss line scan
+    get_core_loss_eel_line_scan_signal : get EELS core loss line scan
 
     """
     x = np.arange(400, 800, 1)
@@ -78,6 +82,106 @@ def get_core_loss_eel_signal():
     s.metadata.General.title = 'Artifical core loss EEL spectrum'
     s.axes_manager[0].name = 'Electron energy loss'
     s.axes_manager[0].units = 'eV'
+    s.set_microscope_parameters(
+            beam_energy=200, convergence_angle=26, collection_angle=20)
+    return s
+
+
+def get_low_loss_eel_line_scan_signal():
+    """Get an artificial low loss electron energy loss line scan spectrum.
+
+    The zero loss peak is offset by 4.1 eV.
+
+    Returns
+    -------
+    artificial_low_loss_line_scan_signal : HyperSpy EELSSpectrum
+
+    Example
+    -------
+    >>> s = hs.datasets.artificial_data.get_low_loss_eel_signal()
+    >>> s.plot()
+
+    See also
+    --------
+    get_core_loss_eel_signal : get a core loss signal
+    get_core_loss_eel_model : get a core loss model
+    get_core_loss_eel_line_scan_signal : core loss signal with the same size
+
+    """
+    x = np.arange(-100, 400, 0.5)
+    zero_loss = components1d.Gaussian(A=100, centre=4.1, sigma=1)
+    plasmon = components1d.Gaussian(A=100, centre=60, sigma=20)
+
+    data_signal = zero_loss.function(x)
+    data_signal += plasmon.function(x)
+    data = np.zeros((12, len(x)))
+    for i in range(12):
+        data[i] += data_signal
+        data[i] += np.random.random(size=len(x))*0.7
+
+    s = EELSSpectrum(data)
+    s.axes_manager.signal_axes[0].offset = x[0]
+    s.axes_manager.signal_axes[0].scale = x[1] - x[0]
+    s.metadata.General.title = 'Artifical low loss EEL spectrum'
+    s.axes_manager.signal_axes[0].name = 'Electron energy loss'
+    s.axes_manager.signal_axes[0].units = 'eV'
+    s.axes_manager.navigation_axes[0].name = 'Probe position'
+    s.axes_manager.navigation_axes[0].units = 'nm'
+    s.set_microscope_parameters(
+            beam_energy=200, convergence_angle=26, collection_angle=20)
+    return s
+
+
+def get_core_loss_eel_line_scan_signal():
+    """Get an artificial core loss electron energy loss line scan spectrum.
+
+    Similar to a Mn-L32 and Fe-L32 edge from a perovskite oxide.
+
+    Returns
+    -------
+    artificial_core_loss_line_scan_signal : HyperSpy EELSSpectrum
+
+    Example
+    -------
+    >>> s = hs.datasets.artificial_data.get_core_loss_eel_line_scan_signal()
+    >>> s.plot()
+
+    See also
+    --------
+    get_low_loss_eel_model : get a low loss signal
+    get_core_loss_eel_model : get a model instead of a signal
+    get_low_loss_eel_line_scan_signal : get low loss signal with the same size
+
+    """
+    x = np.arange(400, 800, 1)
+    arctan_mn = components1d.Arctan(A=1, k=0.2, x0=688)
+    arctan_mn.minimum_at_zero = True
+    arctan_fe = components1d.Arctan(A=1, k=0.2, x0=612)
+    arctan_fe.minimum_at_zero = True
+    mn_l3_g = components1d.Gaussian(A=100, centre=695, sigma=4)
+    mn_l2_g = components1d.Gaussian(A=20, centre=720, sigma=4)
+    fe_l3_g = components1d.Gaussian(A=100, centre=605, sigma=4)
+    fe_l2_g = components1d.Gaussian(A=10, centre=630, sigma=3)
+
+    mn_intensity = [1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.2, 0, 0, 0]
+    fe_intensity = [0, 0, 0, 0, 0, 0, 0.2, 0.5, 0.8, 1, 1, 1]
+    data = np.zeros((len(mn_intensity), len(x)))
+    for i in range(len(mn_intensity)):
+        data[i] += arctan_mn.function(x) * mn_intensity[i]
+        data[i] += mn_l3_g.function(x) * mn_intensity[i]
+        data[i] += mn_l2_g.function(x) * mn_intensity[i]
+        data[i] += arctan_fe.function(x) * fe_intensity[i]
+        data[i] += fe_l3_g.function(x) * fe_intensity[i]
+        data[i] += fe_l2_g.function(x) * fe_intensity[i]
+        data[i] += np.random.random(size=len(x))*0.7
+
+    s = EELSSpectrum(data)
+    s.axes_manager.signal_axes[0].offset = x[0]
+    s.metadata.General.title = 'Artifical core loss EEL spectrum'
+    s.axes_manager.signal_axes[0].name = 'Electron energy loss'
+    s.axes_manager.signal_axes[0].units = 'eV'
+    s.axes_manager.navigation_axes[0].name = 'Probe position'
+    s.axes_manager.navigation_axes[0].units = 'nm'
     s.set_microscope_parameters(
             beam_energy=200, convergence_angle=26, collection_angle=20)
     return s
