@@ -115,9 +115,16 @@ There are many reasons to have an access to some parameters of holograms which d
 :meth:`~._signals.hologram_image.HologramImage.statistics` can be used to calculate carrier frequency,
 fringe spacing and estimate fringe contrast. The method outputs dictionary with the values listed above calculated also
  in different units. In particular fringe spacing is calculated in pixels (fringe sampling) as well as in
-  calibrated units. Carrier frequency is calculated in inverse pixels or calibrated units as well as mrad.
-Estimation of fringe contrast is performed in Fourier space as twice the fraction of amplitude of sideband centre
-(which coordinates provided by ``sb_position`` parameter) and amplitude of center band centre (i.e. FFT origin).
+  calibrated units. Carrier frequency is calculated in inverse pixels or calibrated units as well as radians.
+Estimation of fringe contrast is either performed by division of standard deviation by mean value of hologram or
+in Fourier space as twice the fraction of amplitude of sideband centre and amplitude of center band (i.e. FFT origin).
+The first method is default and using it requires the fringe field to cover entire field of view; the method is
+ highly sensitive to any artifacts in holograms like dud pixels,
+  fresnel fringes and etc. The second method is less sensitive to the artifacts listed above and gives
+  reasonable estimation of fringe contrast even if the hologram is not covering entire field of view, but it is highly
+  sensitive to precise calculation of sideband position and therefore sometimes may underestimate the contrast.
+  The selection between to algorithms can be done using parameter ``fringe_contrast_algorithm`` setting it to
+ ``'statistical'`` or to ``'fourier'``. The side band position typically provided by a ``sb_position``.
 The statistics can be accessed as follows:
 
 .. code-block:: python
@@ -130,14 +137,14 @@ will be used for calculating the statistics.) Otherwise:
 
 .. code-block:: python
 
-    >>> statistics = im.statistics(sb_position=sb_position)
+    >>> statistics = im.statistics(sb_position=sb_position, single_value=False)
 
 Entries of ``statistics`` are Hyperspy signals containing the hologram parameters for each image in a stack.
 
-The estimation of fringe spacing uses apodization which is applied in real space prior calculating FFT.
+The estimation of fringe spacing using ``'fourier'`` method applies apodization in real space prior calculating FFT.
 By default ``apodization`` parameter is set to ``hanning`` which applies Hanning window. Other options are using either
 ``None`` or ``hamming`` for no apodization or Hamming window. Please note that for experimental conditions
- especially with extreme sampling of fringes and strong contrast variation due to Fresnel fringes fringe contrast
- is only an estimate and the values may differ strongly depending on apodization.
+ especially with extreme sampling of fringes and strong contrast variation due to Fresnel effects
+  the calculated fringe contrast provides only an estimate and the values may differ strongly depending on apodization.
 
 For further information see documentation of :meth:`~._signals.hologram_image.HologramImage.statistics`.

@@ -51,9 +51,9 @@ def calculate_carrier_frequency(holo_data, sb_position, scale):
     return np.linalg.norm(np.multiply(origins[origin_index]-sb_position, scale))
 
 
-def estimate_fringe_contrast(holo_data, sb_position, apodization='hanning'):
+def estimate_fringe_contrast_fourier(holo_data, sb_position, apodization='hanning'):
     """
-    Estimates average fringe contrast of a hologram using by dividing amplitude
+    Estimates average fringe contrast of a hologram  by dividing amplitude
     of maximum pixel of sideband by amplitude of FFT's origin.
 
     Parameters
@@ -72,7 +72,6 @@ def estimate_fringe_contrast(holo_data, sb_position, apodization='hanning'):
     Fringe contrast as a float
     """
 
-    holo_data.dtype = 'float64'
     holo_shape = holo_data.shape
 
     if apodization:
@@ -83,9 +82,10 @@ def estimate_fringe_contrast(holo_data, sb_position, apodization='hanning'):
             window_x = np.hamming(holo_shape[0])
             window_y = np.hamming(holo_shape[1])
         window_2d = np.sqrt(np.outer(window_x, window_y))
-        holo_data *= window_2d
+        data = holo_data * window_2d
+    else:
+        data = holo_data
 
-    fft_exp = fft2(holo_data)
+    fft_exp = fft2(data)
 
     return 2 * np.abs(fft_exp[tuple(sb_position)]) / np.abs(fft_exp[0, 0])
-

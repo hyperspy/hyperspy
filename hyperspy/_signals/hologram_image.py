@@ -29,7 +29,7 @@ from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.misc.holography.reconstruct import (
     reconstruct, estimate_sideband_position, estimate_sideband_size)
-from hyperspy.misc.holography.tools import calculate_carrier_frequency, estimate_fringe_contrast
+from hyperspy.misc.holography.tools import calculate_carrier_frequency, estimate_fringe_contrast_fourier
 
 _logger = logging.getLogger(__name__)
 
@@ -107,6 +107,26 @@ def _parse_sb_size(s, reference, sb_position, sb_size, parallel):
     else:
         sb_size_temp = sb_size.deepcopy()
     return sb_size, sb_size_temp
+
+
+def _estimate_fringe_contrast_statistical(holo):
+    """
+    Estimates average fringe contrast of a hologram using statistical definition:
+    V = STD / MEAN.
+
+    Parameters
+    ----------
+    holo_data: ndarray
+        The data of the hologram.
+
+    Returns
+    -------
+    Fringe contrast as a float
+    """
+
+    axes = holo.axes_manager.signal_axes
+
+    return holo.std(axes) / holo.mean(axes)
 
 
 class HologramImage(Signal2D):
@@ -568,9 +588,10 @@ class HologramImage(Signal2D):
         return wave_image
 
     def statistics(self,
-                   sb='lower',
                    sb_position=None,
+                   sb='lower',
                    high_cf=False,
+                   fringe_contrast_algorithm='statistical',
                    apodization='hanning',
                    single_values=True,
                    show_progressbar=False,
@@ -585,19 +606,30 @@ class HologramImage(Signal2D):
 
         Parameters
         ----------
-        sb : str, None
-            Select which sideband is selected. 'upper', 'lower', 'left' or 'right'.
         sb_position : tuple, :class:`~hyperspy.signals.Signal1D, None
             The sideband position (y, x), referred to the non-shifted FFT. If
             None, sideband is determined automatically from FFT.
+        sb : str, None
+            Select which sideband is selected. 'upper', 'lower', 'left' or 'right'.
         high_cf : bool, optional
             If False, the highest carrier frequency allowed for the sideband location is equal to
             half of the Nyquist frequency (Default: False).
-        apodization: string, None, optional
-            Use 'hanning', 'hamming' or None to apply apodization window in real space before FFT
-            for estimation of fringe contrast. Apodization is typically needed to suppress
-            striking  due to sharp edges of the image which often results in underestimation
-            of the fringe contrast. (Default: 'hanning')
+        fringe_contrast_algorithm : str
+            Select fringe contrast algorithm between:
+            'fourier'
+                fringe contrast will be estimated by dividing in fourier space twice intensity of side band
+                by the intensity of central band. This method delivers also reasonable estimation if
+                interference pattern do not cover full field of view.
+            'statistical'
+                fringe contrast will be estimated by dividing standard deviation by mean
+                of the hologram intensity in real space. This algorithm relays on that the fringes are regular and
+                covering entire field of view.
+            (Default: 'statistical')
+        apodization: str or None, optional
+            Used with `fringe_contrast_algorithm='fourier'. If ` 'hanning' or 'hamming' apodization window
+            will be applied in real space before FFT for estimation of fringe contrast.
+            Apodization is typically needed to suppress striking  due to sharp edges of the image,
+            which often results in underestimation of the fringe contrast. (Default: 'hanning')
         single_values : bool, optional
             If True calculates statistics only for the first navigation pixels and
             returns the values as single floats (Default: True)
@@ -687,18 +719,26 @@ class HologramImage(Signal2D):
         carrier_freq_mrad = carrier_freq_quantity.to('mrad').magnitude
 
         # Calculate fringe contrast:
-        if single_values:
-            fringe_contrast = estimate_fringe_contrast(_first_nav_pixel_data(self),
-                                                       sb_position=_first_nav_pixel_data(sb_position),
-                                                       apodization=apodization)
+        if fringe_contrast_algorithm == 'fourier':
+            if single_values:
+                fringe_contrast = estimate_fringe_contrast_fourier(_first_nav_pixel_data(self),
+                                                               sb_position=_first_nav_pixel_data(sb_position),
+                                                               apodization=apodization)
+            else:
+                fringe_contrast = self.map(estimate_fringe_contrast_fourier,
+                                           sb_position=sb_position,
+                                           apodization=apodization,
+                                           inplace=False,
+                                           ragged=False,
+                                           show_progressbar=show_progressbar,
+                                           parallel=parallel)
+        elif fringe_contrast_algorithm == 'statistical':
+            if single_values:
+                fringe_contrast = _first_nav_pixel_data(self).std() / _first_nav_pixel_data(self).mean()
+            else:
+                fringe_contrast = _estimate_fringe_contrast_statistical(self)
         else:
-            fringe_contrast = self.map(estimate_fringe_contrast,
-                                       sb_position=sb_position,
-                                       apodization=apodization,
-                                       inplace=False,
-                                       ragged=False,
-                                       show_progressbar=show_progressbar,
-                                       parallel=parallel)
+            raise ValueError("fringe_contrast_algorithm can only be set to fourier or statistical")
 
         return {'Fringe contrast': fringe_contrast,
                 'Fringe sampling (px)': fringe_sampling,
