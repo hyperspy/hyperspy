@@ -822,68 +822,75 @@ class ImageObject(object):
             return tag
 
     def get_mapping(self):
-        is_scanning = "DigiScan" in self.imdict.ImageTags.keys()
+        if 'source' in self.imdict.ImageTags.keys():
+            # For stack created with the stack builder plugin
+            tags_path = 'ImageList.TagGroup0.ImageTags.source.Tags at creation'
+            image_tags_dict = self.imdict.ImageTags.source['Tags at creation']
+        else:
+            # Standard tags
+            tags_path = 'ImageList.TagGroup0.ImageTags'
+            image_tags_dict = self.imdict.ImageTags
+        is_scanning = "DigiScan" in image_tags_dict.keys()
         mapping = {
-            "ImageList.TagGroup0.ImageTags.DataBar.Acquisition Date": (
+            "{}.DataBar.Acquisition Date".format(tags_path): (
                 "General.date", self._get_date),
-            "ImageList.TagGroup0.ImageTags.DataBar.Acquisition Time": (
+            "{}.DataBar.Acquisition Time".format(tags_path): (
                 "General.time", self._get_time),
-            "ImageList.TagGroup0.ImageTags.Microscope Info.Voltage": (
+            "{}.Microscope Info.Voltage".format(tags_path): (
                 "Acquisition_instrument.TEM.beam_energy", lambda x: x / 1e3),
-            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage Alpha": (
+            "{}.Microscope Info.Stage Position.Stage Alpha".format(tags_path): (
                 "Acquisition_instrument.TEM.Stage.tilt_alpha", None),
-            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage X": (
+            "{}.Microscope Info.Stage Position.Stage X".format(tags_path): (
                 "Acquisition_instrument.TEM.Stage.x", lambda x: x * 1e-3),
-            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage Y": (
+            "{}.Microscope Info.Stage Position.Stage Y".format(tags_path): (
                 "Acquisition_instrument.TEM.Stage.y", lambda x: x * 1e-3),
-            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage Z": (
+            "{}.Microscope Info.Stage Position.Stage Z".format(tags_path): (
                 "Acquisition_instrument.TEM.Stage.z", lambda x: x * 1e-3),
-            "ImageList.TagGroup0.ImageTags.Microscope Info.Illumination Mode": (
+            "{}.Microscope Info.Illumination Mode".format(tags_path): (
                 "Acquisition_instrument.TEM.acquisition_mode", self._get_mode),
-            "ImageList.TagGroup0.ImageTags.Microscope Info.Probe Current (nA)": (
+            "{}.Microscope Info.Probe Current (nA)".format(tags_path): (
                 "Acquisition_instrument.TEM.beam_current", None),
-            "ImageList.TagGroup0.ImageTags.Session Info.Operator": (
+            "{}.Session Info.Operator".format(tags_path): (
                 "General.authors", self._parse_string),
-            "ImageList.TagGroup0.ImageTags.Session Info.Specimen": (
+            "{}.Session Info.Specimen".format(tags_path): (
                 "Sample.description", self._parse_string),
         }
 
-        if "Microscope_Info" in self.imdict.ImageTags.keys():
+        if "Microscope_Info" in image_tags_dict.keys():
             is_TEM = is_diffraction = None
-            if "Illumination_Mode" in self.imdict.ImageTags[
-                    'Microscope_Info'].keys():
+            if "Illumination_Mode" in image_tags_dict['Microscope_Info'].keys(
+            ):
                 is_TEM = (
-                    'TEM' == self.imdict.ImageTags.Microscope_Info.Illumination_Mode)
-            if "Imaging_Mode" in self.imdict.ImageTags[
-                    'Microscope_Info'].keys():
+                    'TEM' == image_tags_dict.Microscope_Info.Illumination_Mode)
+            if "Imaging_Mode" in image_tags_dict['Microscope_Info'].keys():
                 is_diffraction = (
-                    'DIFFRACTION' == self.imdict.ImageTags.Microscope_Info.Imaging_Mode)
+                    'DIFFRACTION' == image_tags_dict.Microscope_Info.Imaging_Mode)
 
             if is_TEM:
                 if is_diffraction:
                     mapping.update({
-                        "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
+                        "{}.Microscope Info.Indicated Magnification".format(tags_path): (
                             "Acquisition_instrument.TEM.camera_length",
                             None),
                     })
                 else:
                     mapping.update({
-                        "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
+                        "{}.Microscope Info.Indicated Magnification".format(tags_path): (
                             "Acquisition_instrument.TEM.magnification",
                             None),
                     })
             else:
                 mapping.update({
-                    "ImageList.TagGroup0.ImageTags.Microscope Info.STEM Camera Length": (
+                    "{}.Microscope Info.STEM Camera Length".format(tags_path): (
                         "Acquisition_instrument.TEM.camera_length",
                         None),
-                    "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
+                    "{}.Microscope Info.Indicated Magnification".format(tags_path): (
                         "Acquisition_instrument.TEM.magnification",
                         None),
                 })
 
             mapping.update({
-                "ImageList.TagGroup0.ImageTags": (
+                tags_path: (
                     "Acquisition_instrument.TEM.microscope",
                     self._get_microscope_name),
             })
@@ -894,66 +901,66 @@ class ImageObject(object):
             else:
                 mapped_attribute = 'exposure'
             mapping.update({
-                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Date": (
+                "{}.EELS.Acquisition.Date".format(tags_path): (
                     "General.date",
                     self._get_date),
-                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Start time": (
+                "{}.EELS.Acquisition.Start time".format(tags_path): (
                     "General.time",
                     self._get_time),
-                "ImageList.TagGroup0.ImageTags.EELS.Experimental Conditions." +
+                "{}.EELS.Experimental Conditions.".format(tags_path) +
                 "Collection semi-angle (mrad)": (
                     "Acquisition_instrument.TEM.Detector.EELS.collection_angle",
                     None),
-                "ImageList.TagGroup0.ImageTags.EELS.Experimental Conditions." +
+                "{}.EELS.Experimental Conditions.".format(tags_path) +
                 "Convergence semi-angle (mrad)": (
                     "Acquisition_instrument.TEM.convergence_angle",
                     None),
-                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Integration time (s)": (
+                "{}.EELS.Acquisition.Integration time (s)".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EELS.%s" % mapped_attribute,
                     None),
-                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Number_of_frames": (
+                "{}.EELS.Acquisition.Number_of_frames".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EELS.frame_number",
                     None),
-                "ImageList.TagGroup0.ImageTags.EELS_Spectrometer.Aperture_label": (
+                "{}.EELS_Spectrometer.Aperture_label".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EELS.aperture_size",
                     lambda string: float(string.replace('mm', ''))),
-                "ImageList.TagGroup0.ImageTags.EELS Spectrometer.Instrument name": (
+                "{}.EELS Spectrometer.Instrument name".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EELS.spectrometer",
                     None),
             })
         elif self.signal_type == "EDS_TEM":
             mapping.update({
-                "ImageList.TagGroup0.ImageTags.EDS.Acquisition.Date": (
+                "{}.EDS.Acquisition.Date".format(tags_path): (
                     "General.date",
                     self._get_date),
-                "ImageList.TagGroup0.ImageTags.EDS.Acquisition.Start time": (
+                "{}.EDS.Acquisition.Start time".format(tags_path): (
                     "General.time",
                     self._get_time),
-                "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Azimuthal_angle": (
+                "{}.EDS.Detector_Info.Azimuthal_angle".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
                     None),
-                "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Elevation_angle": (
+                "{}.EDS.Detector_Info.Elevation_angle".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EDS.elevation_angle",
                     None),
-                "ImageList.TagGroup0.ImageTags.EDS.Solid_angle": (
+                "{}.EDS.Solid_angle".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EDS.solid_angle",
                     None),
-                "ImageList.TagGroup0.ImageTags.EDS.Live_time": (
+                "{}.EDS.Live_time".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EDS.live_time",
                     None),
-                "ImageList.TagGroup0.ImageTags.EDS.Real_time": (
+                "{}.EDS.Real_time".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EDS.real_time",
                     None),
             })
-        elif "DigiScan" in self.imdict.ImageTags.keys():
+        elif "DigiScan" in image_tags_dict.keys():
             mapping.update({
-                "ImageList.TagGroup0.ImageTags.DigiScan.Sample Time": (
+                "{}.DigiScan.Sample Time".format(tags_path): (
                     "Acquisition_instrument.TEM.dwell_time",
                     lambda x: x / 1e6),
             })
         else:
             mapping.update({
-                "ImageList.TagGroup0.ImageTags.Acquisition.Parameters.Detector." +
+                "{}.Acquisition.Parameters.Detector.".format(tags_path) +
                 "exposure_s": (
                     "Acquisition_instrument.TEM.Camera.exposure",
                     None),

@@ -157,12 +157,10 @@ class TestAlignZLP:
         mask.data[[3, 5]] = (True, True)
         s.align_zero_loss_peak(
             calibrate=True,
-            print_stats=True,
+            print_stats=False,
             show_progressbar=None,
             mask=mask)
         zlpc = s.estimate_zero_loss_peak_centre(mask=mask)
-        if zlpc._lazy:
-            zlpc.compute()
         np.testing.assert_allclose(np.nanmean(zlpc.data), 0,
                                    atol=np.finfo(float).eps)
         np.testing.assert_allclose(np.nanstd(zlpc.data), 0,
@@ -201,6 +199,15 @@ class TestAlignZLP:
         # the peak is split between two different channels. So 8 is the
         # maximum value for the aligned spectrum
         assert np.allclose(zlp_max, 8)
+
+    def test_align_zero_loss_peak_crop_false(self):
+        s = self.signal
+        original_size = s.axes_manager.signal_axes[0].size
+        s.align_zero_loss_peak(
+            crop=False,
+            print_stats=False,
+            show_progressbar=None)
+        assert original_size == s.axes_manager.signal_axes[0].size
 
 
 @lazifyTestClass
