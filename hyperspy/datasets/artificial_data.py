@@ -3,6 +3,45 @@ from hyperspy import components1d, components2d
 from hyperspy.signals import EELSSpectrum, Signal2D
 
 
+def get_low_loss_eel_signal():
+    """Get an artificial low loss electron energy loss spectrum.
+
+    The zero loss peak is offset by 4.1 eV.
+
+    Returns
+    -------
+    artificial_low_loss_signal : HyperSpy EELSSpectrum
+
+    Example
+    -------
+    >>> s = hs.datasets.artificial_data.get_low_loss_eel_signal()
+    >>> s.plot()
+
+    See also
+    --------
+    get_core_loss_eel_signal : get a core loss signal
+    get_core_loss_eel_model : get a core loss model
+
+    """
+    x = np.arange(-100, 400, 0.5)
+    zero_loss = components1d.Gaussian(A=100, centre=4.1, sigma=1)
+    plasmon = components1d.Gaussian(A=100, centre=60, sigma=20)
+
+    data = zero_loss.function(x)
+    data += plasmon.function(x)
+    data += np.random.random(size=len(x))*0.7
+
+    s = EELSSpectrum(data)
+    s.axes_manager[0].offset = x[0]
+    s.axes_manager[0].scale = x[1] - x[0]
+    s.metadata.General.title = 'Artifical low loss EEL spectrum'
+    s.axes_manager[0].name = 'Electron energy loss'
+    s.axes_manager[0].units = 'eV'
+    s.set_microscope_parameters(
+            beam_energy=200, convergence_angle=26, collection_angle=20)
+    return s
+
+
 def get_core_loss_eel_signal():
     """Get an artificial core loss electron energy loss spectrum.
 
@@ -19,6 +58,7 @@ def get_core_loss_eel_signal():
 
     See also
     --------
+    get_low_loss_eel_model : get a low loss signal
     get_core_loss_eel_model : get a model instead of a signal
 
     """
@@ -59,6 +99,7 @@ def get_core_loss_eel_model():
 
     See also
     --------
+    get_low_loss_eel_model : get a low loss signal
     get_core_loss_eel_signal : get a model instead of a signal
 
     """

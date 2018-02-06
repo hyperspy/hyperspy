@@ -1,6 +1,11 @@
 import hyperspy.datasets.artificial_data as ad
 
 
+def test_get_low_loss_eel_signal():
+    s = ad.get_low_loss_eel_signal()
+    assert s.metadata.Signal.signal_type == 'EELS'
+
+
 def test_get_core_loss_eel_signal():
     s = ad.get_core_loss_eel_signal()
     assert s.metadata.Signal.signal_type == 'EELS'
