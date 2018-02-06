@@ -30,6 +30,7 @@ import numpy as np
 import h5py
 from dateutil import tz
 from datetime import datetime
+import pytest
 
 from hyperspy.io import load
 from hyperspy.signals import BaseSignal, Signal2D, Signal1D, EDSTEMSpectrum
@@ -90,6 +91,7 @@ def test_metadata():
 
 
 def test_metadata_with_bytes_string():
+    pytest.importorskip("natsort", minversion="5.1.0")
     filename = os.path.join(
         my_path, 'emd_files', 'example_bytes_string_metadata.emd')
     f = h5py.File(filename, 'r')
@@ -232,11 +234,11 @@ class TestFeiEMD():
         fei_image = np.load(os.path.join(self.fei_files_path,
                                          'fei_emd_image.npy'))
         assert signal.axes_manager[0].name == 'x'
-        assert signal.axes_manager[0].units == 'um'
-        assert_allclose(signal.axes_manager[0].scale, 0.005302, atol=1E-5)
+        assert signal.axes_manager[0].units == 'nm'
+        assert_allclose(signal.axes_manager[0].scale, 5.30241, rtol=1E-5)
         assert signal.axes_manager[1].name == 'y'
-        assert signal.axes_manager[1].units == 'um'
-        assert_allclose(signal.axes_manager[1].scale, 0.005302, atol=1E-5)
+        assert signal.axes_manager[1].units == 'nm'
+        assert_allclose(signal.axes_manager[1].scale, 5.30241, rtol=1E-5)
         assert_allclose(signal.data, fei_image)
         assert_deep_almost_equal(signal.metadata.as_dictionary(), md)
         assert isinstance(signal, Signal2D)

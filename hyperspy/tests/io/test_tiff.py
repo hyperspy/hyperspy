@@ -19,9 +19,9 @@ def test_rgba16():
     assert s.axes_manager[0].units == t.Undefined
     assert s.axes_manager[1].units == t.Undefined
     assert s.axes_manager[2].units == t.Undefined
-    nt.assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-5)
-    nt.assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-5)
-    nt.assert_allclose(s.axes_manager[2].scale, 1.0, atol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-5)
+    assert_allclose(s.axes_manager[2].scale, 1.0, atol=1E-5)
     assert s.metadata.General.date == '2014-03-31'
     assert s.metadata.General.time == '16:35:46'
 
@@ -36,8 +36,8 @@ def test_read_unit_um():
     s = hs.load(os.path.join(MY_PATH2, 'test_dm_image_um_unit.dm3'))
     assert s.axes_manager[0].units == 'µm'
     assert s.axes_manager[1].units == 'µm'
-    nt.assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
-    nt.assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
     assert s.metadata.General.date == '2015-07-20'
     assert s.metadata.General.time == '18:48:25'
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -47,8 +47,8 @@ def test_read_unit_um():
         s2 = hs.load(fname)
         assert s.axes_manager[0].units == 'µm'
         assert s.axes_manager[1].units == 'µm'
-        nt.assert_allclose(s2.axes_manager[0].scale, 0.16867, atol=1E-5)
-        nt.assert_allclose(s2.axes_manager[1].scale, 0.16867, atol=1E-5)
+        assert_allclose(s2.axes_manager[0].scale, 0.16867, atol=1E-5)
+        assert_allclose(s2.axes_manager[1].scale, 0.16867, atol=1E-5)
         assert s2.metadata.General.date == s.metadata.General.date
         assert s2.metadata.General.time == s.metadata.General.time
 
@@ -73,8 +73,8 @@ def test_read_unit_from_imagej():
     s = hs.load(fname)
     assert s.axes_manager[0].units == 'µm'
     assert s.axes_manager[1].units == 'µm'
-    nt.assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
-    nt.assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
 
 
 def test_read_unit_from_imagej_stack():
@@ -85,9 +85,9 @@ def test_read_unit_from_imagej_stack():
     assert s.axes_manager[0].units == t.Undefined
     assert s.axes_manager[1].units == 'µm'
     assert s.axes_manager[2].units == 'µm'
-    nt.assert_allclose(s.axes_manager[0].scale, 2.5, atol=1E-5)
-    nt.assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
-    nt.assert_allclose(s.axes_manager[2].scale, 0.16867, atol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 2.5, atol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
+    assert_allclose(s.axes_manager[2].scale, 0.16867, atol=1E-5)
 
 
 def test_read_unit_from_DM_stack():
@@ -98,9 +98,9 @@ def test_read_unit_from_DM_stack():
     assert s.axes_manager[0].units == 's'
     assert s.axes_manager[1].units == 'µm'
     assert s.axes_manager[2].units == 'µm'
-    nt.assert_allclose(s.axes_manager[0].scale, 2.5, atol=1E-5)
-    nt.assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
-    nt.assert_allclose(s.axes_manager[2].scale, 1.68674, atol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 2.5, atol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
+    assert_allclose(s.axes_manager[2].scale, 1.68674, atol=1E-5)
     with tempfile.TemporaryDirectory() as tmpdir:
         fname2 = os.path.join(
             tmpdir, 'test_loading_image_saved_with_DM_stack2.tif')
@@ -110,17 +110,17 @@ def test_read_unit_from_DM_stack():
         assert s2.axes_manager[0].units == s.axes_manager[0].units
         assert s2.axes_manager[1].units == 'µm'
         assert s2.axes_manager[2].units == 'µm'
-        nt.assert_allclose(
+        assert_allclose(
             s2.axes_manager[0].scale, s.axes_manager[0].scale, atol=1E-5)
-        nt.assert_allclose(
+        assert_allclose(
             s2.axes_manager[1].scale, s.axes_manager[1].scale, atol=1E-5)
-        nt.assert_allclose(
+        assert_allclose(
             s2.axes_manager[2].scale, s.axes_manager[2].scale, atol=1E-5)
-        nt.assert_allclose(
+        assert_allclose(
             s2.axes_manager[0].offset, s.axes_manager[0].offset, atol=1E-5)
-        nt.assert_allclose(
+        assert_allclose(
             s2.axes_manager[1].offset, s.axes_manager[1].offset, atol=1E-5)
-        nt.assert_allclose(
+        assert_allclose(
             s2.axes_manager[2].offset, s.axes_manager[2].offset, atol=1E-5)
 
 
@@ -132,9 +132,9 @@ def test_read_unit_from_imagej_stack_no_scale():
     assert s.axes_manager[0].units == t.Undefined
     assert s.axes_manager[1].units == t.Undefined
     assert s.axes_manager[2].units == t.Undefined
-    nt.assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-5)
-    nt.assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-5)
-    nt.assert_allclose(s.axes_manager[2].scale, 1.0, atol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-5)
+    assert_allclose(s.axes_manager[2].scale, 1.0, atol=1E-5)
 
 
 def test_read_unit_from_imagej_no_scale():
@@ -143,8 +143,8 @@ def test_read_unit_from_imagej_no_scale():
     s = hs.load(fname)
     assert s.axes_manager[0].units == t.Undefined
     assert s.axes_manager[1].units == t.Undefined
-    nt.assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-5)
-    nt.assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-5)
 
 
 def test_write_read_unit_imagej():
@@ -169,24 +169,24 @@ def test_write_read_unit_imagej_with_description():
     s = hs.load(fname)
     s.axes_manager[0].units = 'µm'
     s.axes_manager[1].units = 'µm'
-    nt.assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
-    nt.assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
     with tempfile.TemporaryDirectory() as tmpdir:
         fname2 = os.path.join(tmpdir, 'description.tif')
         s.save(fname2, export_scale=False, overwrite=True, description='test')
         s2 = hs.load(fname2)
         assert s2.axes_manager[0].units == t.Undefined
         assert s2.axes_manager[1].units == t.Undefined
-        nt.assert_allclose(s2.axes_manager[0].scale, 1.0, atol=1E-5)
-        nt.assert_allclose(s2.axes_manager[1].scale, 1.0, atol=1E-5)
+        assert_allclose(s2.axes_manager[0].scale, 1.0, atol=1E-5)
+        assert_allclose(s2.axes_manager[1].scale, 1.0, atol=1E-5)
 
         fname3 = os.path.join(tmpdir, 'description2.tif')
         s.save(fname3, export_scale=True, overwrite=True, description='test')
         s3 = hs.load(fname3)
         assert s3.axes_manager[0].units == 'µm'
         assert s3.axes_manager[1].units == 'µm'
-        nt.assert_allclose(s3.axes_manager[0].scale, 0.16867, atol=1E-5)
-        nt.assert_allclose(s3.axes_manager[1].scale, 0.16867, atol=1E-5)
+        assert_allclose(s3.axes_manager[0].scale, 0.16867, atol=1E-5)
+        assert_allclose(s3.axes_manager[1].scale, 0.16867, atol=1E-5)
 
 
 def test_saving_with_custom_tag():
@@ -210,10 +210,10 @@ def _test_read_unit_from_dm():
     s = hs.load(fname)
     assert s.axes_manager[0].units == 'µm'
     assert s.axes_manager[1].units == 'µm'
-    nt.assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
-    nt.assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
-    nt.assert_allclose(s.axes_manager[0].offset, 139.66264, atol=1E-5)
-    nt.assert_allclose(s.axes_manager[1].offset, 128.19276, atol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
+    assert_allclose(s.axes_manager[0].offset, 139.66264, atol=1E-5)
+    assert_allclose(s.axes_manager[1].offset, 128.19276, atol=1E-5)
     with tempfile.TemporaryDirectory() as tmpdir:
         fname2 = os.path.join(tmpdir, "DM2.tif")
         s.save(fname2, overwrite=True)
@@ -221,14 +221,14 @@ def _test_read_unit_from_dm():
         _compare_signal_shape_data(s, s2)
         assert s2.axes_manager[0].units == 'micron'
         assert s2.axes_manager[1].units == 'micron'
-        nt.assert_allclose(s2.axes_manager[0].scale, s.axes_manager[0].scale,
-                           atol=1E-5)
-        nt.assert_allclose(s2.axes_manager[1].scale, s.axes_manager[1].scale,
-                           atol=1E-5)
-        nt.assert_allclose(s2.axes_manager[0].offset, s.axes_manager[0].offset,
-                           atol=1E-5)
-        nt.assert_allclose(s2.axes_manager[1].offset, s.axes_manager[1].offset,
-                           atol=1E-5)
+        assert_allclose(s2.axes_manager[0].scale, s.axes_manager[0].scale,
+                        atol=1E-5)
+        assert_allclose(s2.axes_manager[1].scale, s.axes_manager[1].scale,
+                        atol=1E-5)
+        assert_allclose(s2.axes_manager[0].offset, s.axes_manager[0].offset,
+                        atol=1E-5)
+        assert_allclose(s2.axes_manager[1].offset, s.axes_manager[1].offset,
+                        atol=1E-5)
 
 
 def test_write_scale_unit():
@@ -355,9 +355,9 @@ def test_write_scale_unit_image_stack():
         # only one unit can be read
         assert s1.axes_manager[1].units == 'µm'
         assert s1.axes_manager[2].units == 'µm'
-        nt.assert_allclose(s1.axes_manager[0].scale, 250.0)
-        nt.assert_allclose(s1.axes_manager[1].scale, s.axes_manager[1].scale)
-        nt.assert_allclose(s1.axes_manager[2].scale, s.axes_manager[2].scale)
+        assert_allclose(s1.axes_manager[0].scale, 250.0)
+        assert_allclose(s1.axes_manager[1].scale, s.axes_manager[1].scale)
+        assert_allclose(s1.axes_manager[2].scale, s.axes_manager[2].scale)
 
 
 def test_saving_loading_stack_no_scale():
@@ -397,8 +397,8 @@ def test_read_FEI_SEM_scale_metadata_8bits():
     s = hs.load(fname)
     assert s.axes_manager[0].units == 'µm'
     assert s.axes_manager[1].units == 'µm'
-    nt.assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
-    nt.assert_allclose(s.axes_manager[1].scale, 3.3724, rtol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 3.3724, rtol=1E-5)
     assert s.data.dtype == 'uint8'
     assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
 
@@ -408,8 +408,8 @@ def test_read_FEI_SEM_scale_metadata_16bits():
     s = hs.load(fname)
     assert s.axes_manager[0].units == 'µm'
     assert s.axes_manager[1].units == 'µm'
-    nt.assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
-    nt.assert_allclose(s.axes_manager[1].scale, 3.3724, rtol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 3.3724, rtol=1E-5)
     assert s.data.dtype == 'uint16'
     FEI_Helios_metadata['General'][
         'original_filename'] = 'FEI-Helios-Ebeam-16bits.tif'
@@ -441,8 +441,8 @@ def test_read_Zeiss_SEM_scale_metadata_1k_image():
     s = hs.load(fname)
     assert s.axes_manager[0].units == 'µm'
     assert s.axes_manager[1].units == 'µm'
-    nt.assert_allclose(s.axes_manager[0].scale, 2.615, rtol=1E-5)
-    nt.assert_allclose(s.axes_manager[1].scale, 2.615, rtol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 2.615, rtol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 2.615, rtol=1E-5)
     assert s.data.dtype == 'uint16'
     assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
@@ -455,8 +455,8 @@ def test_read_RGB_Zeiss_optical_scale_metadata():
     assert s.data.shape == (10, 13)
     assert s.axes_manager[0].units == t.Undefined
     assert s.axes_manager[1].units == t.Undefined
-    nt.assert_allclose(s.axes_manager[0].scale, 1.0, rtol=1E-5)
-    nt.assert_allclose(s.axes_manager[1].scale, 1.0, rtol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 1.0, rtol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 1.0, rtol=1E-5)
     assert s.metadata.General.date == '2016-06-13'
     assert s.metadata.General.time == '15:59:52'
 
@@ -468,8 +468,8 @@ def test_read_BW_Zeiss_optical_scale_metadata():
     assert s.data.shape == (10, 13)
     assert s.axes_manager[0].units == 'µm'
     assert s.axes_manager[1].units == 'µm'
-    nt.assert_allclose(s.axes_manager[0].scale, 169.333, rtol=1E-5)
-    nt.assert_allclose(s.axes_manager[1].scale, 169.333, rtol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 169.333, rtol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 169.333, rtol=1E-5)
     assert s.metadata.General.date == '2016-06-13'
     assert s.metadata.General.time == '16:08:49'
 
@@ -481,8 +481,8 @@ def test_read_BW_Zeiss_optical_scale_metadata_convert_units_false():
     assert s.data.shape == (10, 13)
     assert s.axes_manager[0].units == 'µm'
     assert s.axes_manager[1].units == 'µm'
-    nt.assert_allclose(s.axes_manager[0].scale, 169.333, rtol=1E-5)
-    nt.assert_allclose(s.axes_manager[1].scale, 169.333, rtol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 169.333, rtol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 169.333, rtol=1E-5)
 
 
 def test_read_BW_Zeiss_optical_scale_metadata2():
@@ -492,8 +492,8 @@ def test_read_BW_Zeiss_optical_scale_metadata2():
     assert s.data.shape == (10, 13)
     assert s.axes_manager[0].units == 'µm'
     assert s.axes_manager[1].units == 'µm'
-    nt.assert_allclose(s.axes_manager[0].scale, 169.333, rtol=1E-5)
-    nt.assert_allclose(s.axes_manager[1].scale, 169.333, rtol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 169.333, rtol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 169.333, rtol=1E-5)
     assert s.metadata.General.date == '2016-06-13'
     assert s.metadata.General.time == '16:08:49'
 
@@ -505,8 +505,8 @@ def test_read_BW_Zeiss_optical_scale_metadata3():
     assert s.data.shape == (10, 13)
     assert s.axes_manager[0].units == t.Undefined
     assert s.axes_manager[1].units == t.Undefined
-    nt.assert_allclose(s.axes_manager[0].scale, 1.0, rtol=1E-5)
-    nt.assert_allclose(s.axes_manager[1].scale, 1.0, rtol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 1.0, rtol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 1.0, rtol=1E-5)
     assert s.metadata.General.date == '2016-06-13'
     assert s.metadata.General.time == '16:08:49'
 
@@ -535,6 +535,6 @@ def test_read_TVIPS_metadata():
     assert s.data.shape == (1024, 1024)
     assert s.axes_manager[0].units == 'nm'
     assert s.axes_manager[1].units == 'nm'
-    nt.assert_allclose(s.axes_manager[0].scale, 1.42080, rtol=1E-5)
-    nt.assert_allclose(s.axes_manager[1].scale, 1.42080, rtol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 1.42080, rtol=1E-5)
+    assert_allclose(s.axes_manager[1].scale, 1.42080, rtol=1E-5)
     assert_deep_almost_equal(s.metadata.as_dictionary(), md)

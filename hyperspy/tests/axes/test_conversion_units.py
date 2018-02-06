@@ -368,6 +368,38 @@ class TestAxesManager:
         assert self.am['energy'].units == 'eV'
         nt.assert_almost_equal(self.am['energy'].scale, 5)
 
+    def test_convert_to_navigation_units_different(self):
+        # Don't convert the units since the units of the navigation axes are
+        # different
+        self.axes_list.insert(0,
+                              {'name': 'time',
+                               'navigate': True,
+                               'offset': 0.0,
+                               'scale': 1.5,
+                               'size': 20,
+                               'units': 's'})
+        am = AxesManager(self.axes_list)
+        am.convert_units(axes='navigation', same_units=True)
+        assert am['time'].units == 's'
+        nt.assert_almost_equal(am['time'].scale, 1.5)
+        assert am['x'].units == 'nm'
+        nt.assert_almost_equal(am['x'].scale, 1.5)
+        assert am['y'].units == 'nm'
+        nt.assert_almost_equal(am['y'].scale, 0.5)
+        assert am['energy'].units == 'eV'
+        nt.assert_almost_equal(am['energy'].scale, 5)
+
+    def test_convert_to_navigation_units_Undefined(self):
+        self.axes_list[0]['units'] = t.Undefined
+        am = AxesManager(self.axes_list)
+        am.convert_units(axes='navigation', same_units=True)
+        assert am['x'].units == t.Undefined
+        nt.assert_almost_equal(am['x'].scale, 1.5E-9)
+        assert am['y'].units == 'm'
+        nt.assert_almost_equal(am['y'].scale, 0.5E-9)
+        assert am['energy'].units == 'eV'
+        nt.assert_almost_equal(am['energy'].scale, 5)
+
     def test_convert_to_signal_units(self):
         self.am.convert_units(axes='signal', units='keV')
         nt.assert_almost_equal(self.am['x'].scale, self.axes_list[0]['scale'])

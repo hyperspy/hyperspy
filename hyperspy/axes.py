@@ -1080,12 +1080,19 @@ class AxesManager(t.HasTraits):
                 axis.convert_to_units(unit, factor=factor)
 
     def _convert_axes_to_same_units(self, axes, units, factor=0.25):
+        # Check if the units are supported
+        for axis in axes:
+            if axis._ignore_conversion(axis.units):
+                return
+
         # Set the same units for all axes, use the unit of the first axis
         # as reference
-        axes[0].convert_to_units(units[0], factor)
+        axes[0].convert_to_units(units[0], factor=factor)
         unit = axes[0].units  # after conversion, in case units[0] was None.
         for axis in axes[1:]:
-            axis.convert_to_units(unit, factor)
+            # Convert only the units have the same dimensionality
+            if _ureg(axis.units).dimensionality == _ureg(unit).dimensionality:
+                axis.convert_to_units(unit, factor=factor)
 
     def update_axes_attributes_from(self, axes,
                                     attributes=["scale", "offset", "units"]):
