@@ -489,6 +489,16 @@ def _parse_metadata(data_group, sub_group_key):
     return _parse_sub_data_group_metadata(data_group[sub_group_key])
 
 
+def _parse_detector_name(original_metadata):
+    try:
+        name = original_metadata['BinaryResult']['Detector']
+    except KeyError:
+        # if the `BinaryResult/Detector` is not available, there should be
+        # only one detector in `Detectors`
+        name = original_metadata['Detectors']['Detector-01']['DetectorName']
+    return name
+
+
 class FeiEMDReader(object):
     """
     Class for reading FEI electron microscopy datasets.
@@ -659,15 +669,7 @@ class FeiEMDReader(object):
         image_sub_group = image_group[image_sub_group_key]
         original_metadata = _parse_metadata(image_group, image_sub_group_key)
         original_metadata.update(self.original_metadata)
-        try:
-            if 'Detector' in original_metadata['BinaryResult']:
-                self.detector_name = original_metadata['BinaryResult']['Detector']
-            # if the `BinaryResult/Detector` is not available, there should be
-            # only one detector in `Detectors`
-            elif 'DetectorName' in original_metadata['Detectors']['Detector-01']:
-                self.detector_name = original_metadata['Detectors']['Detector-01']['DetectorName']
-        except KeyError:
-            pass
+        self.detector_name = _parse_detector_name(original_metadata)
 
         read_stack = (self.load_SI_image_stack or self.im_type == 'Image')
         h5data = image_sub_group['Data']
@@ -970,7 +972,8 @@ class FeiEMDReader(object):
 
         return {'General': meta_gen, 'Signal': meta_sig}
 
-    def _get_mapping(self, map_selected_element=True):
+    def _get_mapping(self, map_selected_element=True,
+                     parse_EDS_detector_metadata=True):
         mapping = {
             'Acquisition.AcquisitionStartDatetime.DateTime': (
                 "General.time_zone", lambda x: self._get_local_time_zone()),
@@ -984,22 +987,42 @@ class FeiEMDReader(object):
                 "Acquisition_instrument.TEM.microscope", None),
             'Stage.AlphaTilt': (
                 "Acquisition_instrument.TEM.Stage.tilt_alpha",
-                lambda x: '{:.2f}'.format(float(x))),
+                lambda x: '{:.3f}'.format(np.degrees(float(x)))),
             'Stage.BetaTilt': (
                 "Acquisition_instrument.TEM.Stage.tilt_beta",
-                lambda x: '{:.2f}'.format(float(x))),
+                lambda x: '{:.3f}'.format(np.degrees(float(x)))),
             'Stage.Position.x': (
                 "Acquisition_instrument.TEM.Stage.x",
-                lambda x: '{:.3f}'.format(float(x))),
+                lambda x: '{:.6f}'.format(float(x))
+                ),
             'Stage.Position.y': (
                 "Acquisition_instrument.TEM.Stage.y",
-                lambda x: '{:.3f}'.format(float(x))),
+                lambda x: '{:.6f}'.format(float(x))),
             'Stage.Position.z': (
                 "Acquisition_instrument.TEM.Stage.z",
-                lambda x: '{:.3f}'.format(float(x))),
+                lambda x: '{:.6f}'.format(float(x))),
             'ImportedDataParameter.Number_of_frames': (
-                "Acquisition_instrument.TEM.Detector.EDS.number_of_frames", None)
+                "Acquisition_instrument.TEM.Detector.EDS.number_of_frames", None),
+            'DetectorMetadata.ElevationAngle': (
+                "Acquisition_instrument.TEM.Detector.EDS.elevation_angle",
+                lambda x: '{:.3f}'.format(np.degrees(float(x)))),
         }
+        
+        # Parse individual metadata for each EDS detector
+        if parse_EDS_detector_metadata:
+            mapping.update({
+                'DetectorMetadata.AzimuthAngle': (
+                    "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
+                    lambda x: '{:.3f}'.format(np.degrees(float(x)))),
+                'DetectorMetadata.LiveTime': (
+                    "Acquisition_instrument.TEM.Detector.EDS.live_time",
+                    lambda x: '{:.6f}'.format(float(x))),
+                'DetectorMetadata.RealTime': (
+                    "Acquisition_instrument.TEM.Detector.EDS.real_time", 
+                    lambda x: '{:.6f}'.format(float(x))),
+                'DetectorMetadata.DetectorName': (
+                    "General.title", None),
+                        })
 
         # Add selected element
         if map_selected_element:
