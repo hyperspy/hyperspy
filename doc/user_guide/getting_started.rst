@@ -201,7 +201,7 @@ experimental data.
 
 .. code-block:: python
 
-    >>> s = hs.datasets.artificial_data.get_core_loss_eel_signal()
+    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
     >>> s.plot()
 
 .. _eelsdb-label:
