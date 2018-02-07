@@ -254,6 +254,10 @@ as shown in `this example <https://github.com/numpy/numpy/blob/master/doc/exampl
 User-guide Documentation -- A description of the functionality of the code and how
 to use it with examples and links to the relevant code.
 
+When writing both the docstrings and user guide documentation, it is useful to
+have some kind of data which the users can use themselves. Artificial
+datasets for this purpose can be found in `hyperspy.datasets.artificial_data`.
+
 Build the documentation -- To check the output of what you wrote, you can build
 the documentation, which requires python-sphinx and numpydoc to be installed.
 Run the make command in the ``doc`` to build the documentation. For example
