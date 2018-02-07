@@ -3,7 +3,7 @@ from hyperspy import components1d, components2d
 from hyperspy.signals import EELSSpectrum, Signal2D
 
 
-def get_low_loss_eel_signal():
+def get_low_loss_eels_signal():
     """Get an artificial low loss electron energy loss spectrum.
 
     The zero loss peak is offset by 4.1 eV.
@@ -14,15 +14,15 @@ def get_low_loss_eel_signal():
 
     Example
     -------
-    >>> s = hs.datasets.artificial_data.get_low_loss_eel_signal()
+    >>> s = hs.datasets.artificial_data.get_low_loss_eels_signal()
     >>> s.plot()
 
     See also
     --------
-    get_core_loss_eel_signal : get a core loss signal
-    get_core_loss_eel_model : get a core loss model
-    get_low_loss_eel_line_scan_signal : get EELS low loss line scan
-    get_core_loss_eel_line_scan_signal : get EELS core loss line scan
+    get_core_loss_eels_signal : get a core loss signal
+    get_core_loss_eels_model : get a core loss model
+    get_low_loss_eels_line_scan_signal : get EELS low loss line scan
+    get_core_loss_eels_line_scan_signal : get EELS core loss line scan
 
     """
     x = np.arange(-100, 400, 0.5)
@@ -44,7 +44,7 @@ def get_low_loss_eel_signal():
     return s
 
 
-def get_core_loss_eel_signal():
+def get_core_loss_eels_signal():
     """Get an artificial core loss electron energy loss spectrum.
 
     Similar to a Mn-L32 edge from a perovskite oxide.
@@ -55,15 +55,15 @@ def get_core_loss_eel_signal():
 
     Example
     -------
-    >>> s = hs.datasets.artificial_data.get_core_loss_eel_signal()
+    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
     >>> s.plot()
 
     See also
     --------
-    get_low_loss_eel_model : get a low loss signal
-    get_core_loss_eel_model : get a model instead of a signal
-    get_low_loss_eel_line_scan_signal : get EELS low loss line scan
-    get_core_loss_eel_line_scan_signal : get EELS core loss line scan
+    get_low_loss_eels_model : get a low loss signal
+    get_core_loss_eels_model : get a model instead of a signal
+    get_low_loss_eels_line_scan_signal : get EELS low loss line scan
+    get_core_loss_eels_line_scan_signal : get EELS core loss line scan
 
     """
     x = np.arange(400, 800, 1)
@@ -87,7 +87,7 @@ def get_core_loss_eel_signal():
     return s
 
 
-def get_low_loss_eel_line_scan_signal():
+def get_low_loss_eels_line_scan_signal():
     """Get an artificial low loss electron energy loss line scan spectrum.
 
     The zero loss peak is offset by 4.1 eV.
@@ -98,14 +98,14 @@ def get_low_loss_eel_line_scan_signal():
 
     Example
     -------
-    >>> s = hs.datasets.artificial_data.get_low_loss_eel_signal()
+    >>> s = hs.datasets.artificial_data.get_low_loss_eels_signal()
     >>> s.plot()
 
     See also
     --------
-    get_core_loss_eel_signal : get a core loss signal
-    get_core_loss_eel_model : get a core loss model
-    get_core_loss_eel_line_scan_signal : core loss signal with the same size
+    get_core_loss_eels_signal : get a core loss signal
+    get_core_loss_eels_model : get a core loss model
+    get_core_loss_eels_line_scan_signal : core loss signal with the same size
 
     """
     x = np.arange(-100, 400, 0.5)
@@ -132,7 +132,7 @@ def get_low_loss_eel_line_scan_signal():
     return s
 
 
-def get_core_loss_eel_line_scan_signal():
+def get_core_loss_eels_line_scan_signal():
     """Get an artificial core loss electron energy loss line scan spectrum.
 
     Similar to a Mn-L32 and Fe-L32 edge from a perovskite oxide.
@@ -143,14 +143,14 @@ def get_core_loss_eel_line_scan_signal():
 
     Example
     -------
-    >>> s = hs.datasets.artificial_data.get_core_loss_eel_line_scan_signal()
+    >>> s = hs.datasets.artificial_data.get_core_loss_eels_line_scan_signal()
     >>> s.plot()
 
     See also
     --------
-    get_low_loss_eel_model : get a low loss signal
-    get_core_loss_eel_model : get a model instead of a signal
-    get_low_loss_eel_line_scan_signal : get low loss signal with the same size
+    get_low_loss_eels_model : get a low loss signal
+    get_core_loss_eels_model : get a model instead of a signal
+    get_low_loss_eels_line_scan_signal : get low loss signal with the same size
 
     """
     x = np.arange(400, 800, 1)
@@ -187,7 +187,7 @@ def get_core_loss_eel_line_scan_signal():
     return s
 
 
-def get_core_loss_eel_model():
+def get_core_loss_eels_model():
     """Get an artificial core loss electron energy loss model.
 
     Similar to a Mn-L32 edge from a perovskite oxide.
@@ -198,16 +198,16 @@ def get_core_loss_eel_model():
 
     Example
     -------
-    >>> s = hs.datasets.artificial_data.get_core_loss_eel_model()
+    >>> s = hs.datasets.artificial_data.get_core_loss_eels_model()
     >>> s.plot()
 
     See also
     --------
-    get_low_loss_eel_model : get a low loss signal
-    get_core_loss_eel_signal : get a model instead of a signal
+    get_low_loss_eels_model : get a low loss signal
+    get_core_loss_eels_signal : get a model instead of a signal
 
     """
-    s = get_core_loss_eel_signal()
+    s = get_core_loss_eels_signal()
     m = s.create_model(auto_background=False, GOS='hydrogenic')
     m.fit()
     return m
