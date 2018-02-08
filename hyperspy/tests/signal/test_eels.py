@@ -151,6 +151,23 @@ class TestAlignZLP:
         np.testing.assert_allclose(zlpc.data.mean(), 0)
         np.testing.assert_allclose(zlpc.data.std(), 0)
 
+    def test_align_zero_loss_peak_calibrate_true_with_mask(self):
+        s = self.signal
+        mask = s._get_navigation_signal(dtype="bool").T
+        mask.data[[3, 5]] = (True, True)
+        s.align_zero_loss_peak(
+            calibrate=True,
+            print_stats=True,
+            show_progressbar=None,
+            mask=mask)
+        zlpc = s.estimate_zero_loss_peak_centre(mask=mask)
+        if zlpc._lazy:
+            zlpc.compute()
+        np.testing.assert_allclose(np.nanmean(zlpc.data), 0,
+                                   atol=np.finfo(float).eps)
+        np.testing.assert_allclose(np.nanstd(zlpc.data), 0,
+                                   atol=np.finfo(float).eps)
+
     def test_align_zero_loss_peak_calibrate_false(self):
         s = self.signal
         s.align_zero_loss_peak(
@@ -207,6 +224,7 @@ class TestPowerLawExtrapolation:
         sc = self.s.isig[:300]
         s = sc.power_law_extrapolation(extrapolation_size=100)
         np.testing.assert_allclose(s.data, self.s.data, atol=10e-3)
+
 
 @lazifyTestClass
 class TestFourierRatioDeconvolution:

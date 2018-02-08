@@ -29,7 +29,7 @@ from scipy.ndimage.filters import gaussian_filter1d
 try:
     from statsmodels.nonparametric.smoothers_lowess import lowess
     statsmodels_installed = True
-except:
+except BaseException:
     statsmodels_installed = False
 
 from hyperspy.signal import BaseSignal
@@ -38,17 +38,15 @@ from hyperspy.signal_tools import SpikesRemoval
 from hyperspy.models.model1d import Model1D
 
 
-from hyperspy.misc.utils import stack, signal_range_from_roi
+from hyperspy.misc.utils import signal_range_from_roi
 from hyperspy.defaults_parser import preferences
-from hyperspy.external.progressbar import progressbar
-from hyperspy._signals.lazy import lazyerror
 from hyperspy.signal_tools import (
     Signal1DCalibration,
     SmoothingSavitzkyGolay,
     SmoothingLowess,
     SmoothingTV,
     ButterworthFilter)
-from hyperspy.ui_registry import get_gui, DISPLAY_DT, TOOLKIT_DT
+from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.signal_tools import BackgroundRemoval
 from hyperspy.decorators import interactive_range_selector
@@ -225,7 +223,7 @@ def _estimate_shift1D(data, **kwargs):
     ip = kwargs.get('ip', 5)
     data_slice = kwargs.get('data_slice', slice(None))
     if bool(mask):
-        return np.nan
+        return np.float32(np.nan)
     data = data[data_slice]
     if interpolate is True:
         data = interpolate1D(ip, data)
@@ -240,7 +238,7 @@ def _shift1D(data, **kwargs):
     offset = kwargs.get('offset', 0.)
     scale = kwargs.get('scale', 1.)
     size = kwargs.get('size', 2)
-    if np.isnan(shift):
+    if np.isnan(shift) or shift == 0:
         return data
     axis = np.linspace(offset, offset + scale * (size - 1), size)
 
@@ -622,7 +620,6 @@ _spikes_diagnosis,
             _estimate_shift1D,
             iterating_kwargs=iterating_kwargs,
             data_slice=slice(i1, i2),
-            mask=None,
             ref=ref,
             ip=ip,
             interpolate=interpolate,
@@ -638,6 +635,8 @@ _spikes_diagnosis,
         if interpolate is True:
             shift_array = shift_array / ip
         shift_array *= axis.scale
+        if self._lazy:
+            shift_array = shift_array.compute()
         return shift_array
 
     def align1D(self,
