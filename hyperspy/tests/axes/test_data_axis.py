@@ -7,7 +7,6 @@ from numpy.testing import assert_allclose
 import pytest
 
 from hyperspy.axes import DataAxis
-from hyperspy.signals import Signal1D
 
 
 class TestDataAxis:
@@ -131,17 +130,28 @@ class TestDataAxis:
         ax.index += 1
         assert m.trigger_me.called
 
+
 class TestDataAxisNonLinear:
 
     def setup_method(self, method):
-        self.axis = DataAxis(axis=np.arange(16)**10)
-        
+        self.axis = DataAxis(axis=np.arange(16)**2)
+
     def test_non_linear_axis(self):
         assert not self.axis.linear
-        assert_allclose(self.axis.axis, np.arange(16)**10)
+        assert_allclose(self.axis.axis, np.arange(16)**2)
 
     def test_non_linear_axis_list(self):
-        value_list = (np.arange(16)**10).tolist()
+        value_list = (np.arange(16)**2).tolist()
         axis = DataAxis(axis=value_list)
         assert not axis.linear
-        assert_allclose(axis.axis, np.arange(16)**10)        
+        assert_allclose(axis.axis, np.arange(16)**2)
+
+    def test_unsorted_axis(self):
+        with pytest.raises(ValueError):
+            DataAxis(axis=np.array([10, 40, 1, 30, 20]))
+
+    def test_set_axis_value(self):
+        value = np.array([3, 4, 10, 40])
+        self.axis.set_axis_value(value)
+        assert not self.axis.linear
+        assert_allclose(self.axis.axis, value)

@@ -172,8 +172,11 @@ class DataAxis(t.HasTraits):
         if len(axis) > 1:
             if isinstance(axis, list):
                 axis = np.asarray(axis)
-            # Find out if it is linear
             steps = axis[1:] - axis[:-1]
+            # check axis is ordered
+            if not np.all(steps > 0):
+                raise ValueError('The non-linear axis needs to be ordered.')
+            # Find out if it is linear
             if (steps == steps[0]).all():
                 self._setup_linear_axis(
                     scale=steps[0],
@@ -191,19 +194,29 @@ class DataAxis(t.HasTraits):
             self.offset = t.Undefined
         self.size = len(axis)
 
-    def set_axis_value(self):
-        # set linear or non-linear axis without calling __init__
-        # TODO
-        pass
-
     def _setup_linear_axis(self, scale, offset, size):
         if size is None:
-            raise ValueError("size is required for linear axes but "
-                                "None was given.")
+            raise ValueError("`size` is required for linear axes but None was "
+                             "given.")
         self.linear = True
         self.size = size
         self.scale = scale
         self.offset = offset
+
+    def set_axis_value(self, axis_values):
+        """Set the value of a axis.
+
+        Parameters
+        ----------
+        axis_values : numpy array or list
+
+        Raises
+        ------
+        ValueError if the axis values are not ordered.
+
+        """
+        # set linear or non-linear axis without calling __init__
+        self._setup_non_linear_axis(axis_values)
 
     def _linear_changed(self):
         self.on_trait_change(self.update_axis,
