@@ -1993,9 +1993,15 @@ class BaseSignal(FancySlicing,
                 return navigator()
 
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
-            if (self.axes_manager.navigation_dimension == 1 and
+            if (self.axes_manager.navigation_dimension > 1 and
+                    np.any(np.array([not axis.linear for axis in self.axes_manager.navigation_axes]))):
+                navigator = "slider"
+            elif (self.axes_manager.navigation_dimension == 1 and
                     self.axes_manager.signal_dimension == 1):
-                navigator = "data"
+                if self.axes_manager.navigation_axes[0].linear:
+                    navigator = "data"
+                else:
+                    navigator = "spectrum"
             elif self.axes_manager.navigation_dimension > 0:
                 if self.axes_manager.signal_dimension == 0:
                     navigator = self.deepcopy()

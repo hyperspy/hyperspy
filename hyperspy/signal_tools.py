@@ -180,6 +180,8 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
         if signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
                 signal.axes_manager.signal_dimension, 1)
+        if not self.linear:
+            raise ValueError("Calibration tool supports only linear axis.")
         self.units = self.axis.units
         self.scale = self.axis.scale
         self.offset = self.axis.offset

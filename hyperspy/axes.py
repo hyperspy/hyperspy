@@ -345,7 +345,7 @@ class DataAxis(t.HasTraits):
             start, stop, step = my_slice.start, my_slice.stop, my_slice.step
 
             if start is None:
-                if step > 0 or step is None:
+                if step is None or step > 0:
                     start = 0
                 else:
                     start = self.size - 1
