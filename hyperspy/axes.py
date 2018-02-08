@@ -78,15 +78,18 @@ class DataAxis(t.HasTraits):
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
     continuous_value = t.Bool(False)
+    linear = t.Bool(t.Undefined)
 
     def __init__(self,
-                 size,
+                 size=None,
                  index_in_array=None,
                  name=t.Undefined,
                  scale=1.,
                  offset=0.,
                  units=t.Undefined,
-                 navigate=t.Undefined):
+                 navigate=t.Undefined,
+                 axis=t.Undefined,):
+
         super(DataAxis, self).__init__()
         self.events = Events()
         self.events.index_changed = Event("""
@@ -115,19 +118,18 @@ class DataAxis(t.HasTraits):
         self._suppress_update_value = False
         self.name = name
         self.units = units
-        self.scale = scale
-        self.offset = offset
-        self.size = size
-        self.high_index = self.size - 1
         self.low_index = 0
-        self.index = 0
-        self.update_axis()
-        self.navigate = navigate
-        self.axes_manager = None
-        self.on_trait_change(self.update_axis,
-                             ['scale', 'offset', 'size'])
         self.on_trait_change(self._update_slice, 'navigate')
         self.on_trait_change(self.update_index_bounds, 'size')
+        self.on_trait_change(self._update_bounds, 'axis')
+        if axis is not t.Undefined:
+            self._setup_non_linear_axis(axis)
+        else:
+            self._setup_linear_axis(scale=scale, offset=offset, size=size)
+        self.index = 0
+        self.navigate = navigate
+        self.axes_manager = None
+
         # The slice must be updated even if the default value did not
         # change to correctly set its value.
         self._update_slice(self.navigate)
@@ -165,6 +167,41 @@ class DataAxis(t.HasTraits):
                 self._suppress_update_value = True
                 self.index = new_index
                 self._suppress_update_value = False
+
+    def _setup_non_linear_axis(self, axis):
+        if len(axis) > 1:
+            # Find out if it is linear
+            steps = axis[1:] - axis[:-1]
+            if (steps == steps[0]).all():
+                self._setup_linear_axis(
+                    scale=steps[0],
+                    offset=axis[0],
+                    size=len(axis))
+            else:
+                self.linear = False # This must go first to setup connections 
+                self.axis = axis
+                self.scale = t.Undefined
+                self.offset = t.Undefined
+        else: # axis of len == 1
+            self.linear = False # This must go first to setup connections 
+            self.axis = axis
+            self.scale = t.Undefined
+            self.offset = t.Undefined
+        self.size = len(axis)
+
+    def _setup_linear_axis(self, scale, offset, size):
+        if size is None:
+            raise ValueError("size is required for linear axes but "
+                                "None was given.")
+        self.linear = True
+        self.size = size
+        self.scale = scale
+        self.offset = offset
+
+    def _linear_changed(self):
+        self.on_trait_change(self.update_axis,
+                             ['scale', 'offset', 'size'],
+                             remove=not self.linear)
 
     @property
     def index_in_array(self):
@@ -228,7 +265,11 @@ class DataAxis(t.HasTraits):
             step = None
 
         if isfloat(step):
-            step = int(round(step / self.scale))
+            if self.linear:
+                step = int(round(step / self.scale))
+            else:
+                raise ValueError(
+                    "Float steps are not supported for non-linear axes.")
         if isfloat(start):
             try:
                 start = v2i(start)
@@ -280,27 +321,29 @@ class DataAxis(t.HasTraits):
 
         my_slice = self._get_array_slices(slice_)
 
-        start, stop, step = my_slice.start, my_slice.stop, my_slice.step
+        if self.linear:
+            start, stop, step = my_slice.start, my_slice.stop, my_slice.step
 
-        if start is None:
-            if step is None or step > 0:
-                start = 0
-            else:
-                start = self.size - 1
-        self.offset = i2v(start)
-        if step is not None:
-            self.scale *= step
+            if start is None:
+                if step > 0 or step is None:
+                    start = 0
+                else:
+                    start = self.size - 1
+            self.offset = i2v(start)
+            if step is not None:
+                self.scale *= step
+        else:
+            self.axis = self.axis[my_slice]
 
         return my_slice
 
     def _get_name(self):
-        if self.name is t.Undefined:
-            if self.axes_manager is None:
-                name = "Unnamed"
-            else:
-                name = "Unnamed " + ordinal(self.index_in_axes_manager)
-        else:
-            name = self.name
+        name = (self.name
+                if self.name is not t.Undefined
+                else ("Unnamed " +
+                      ordinal(self.index_in_axes_manager))
+                if self.axes_manager is not None
+                else "Unnamed")
         return name
 
     def __repr__(self):
@@ -318,7 +361,12 @@ class DataAxis(t.HasTraits):
         self.high_index = self.size - 1
 
     def update_axis(self):
-        self.axis = generate_axis(self.offset, self.scale, self.size)
+        if self.linear and t.Undefined not in (self.offset,
+                                               self.scale,
+                                               self.size):
+            self.axis = generate_axis(self.offset, self.scale, self.size)
+
+    def _update_bounds(self):
         if len(self.axis) != 0:
             self.low_value, self.high_value = (
                 self.axis.min(), self.axis.max())
@@ -330,14 +378,22 @@ class DataAxis(t.HasTraits):
             self.slice = None
 
     def get_axis_dictionary(self):
-        adict = {
-            'name': self.name,
-            'scale': self.scale,
-            'offset': self.offset,
-            'size': self.size,
-            'units': self.units,
-            'navigate': self.navigate
-        }
+        if self.linear:
+            adict = {
+                'name': self.name,
+                'scale': self.scale,
+                'offset': self.offset,
+                'size': self.size,
+                'units': self.units,
+                'navigate': self.navigate,
+            }
+        else:
+            adict = {
+                'name': self.name,
+                'units': self.units,
+                'navigate': self.navigate,
+                'axis' : self.axis,
+            }
         return adict
 
     def copy(self):
@@ -369,26 +425,32 @@ class DataAxis(t.HasTraits):
         if value is None:
             return None
 
-        if isinstance(value, (np.ndarray, da.Array)):
-            if rounding is round:
-                rounding = np.round
-            elif rounding is math.ceil:
-                rounding = np.ceil
-            elif rounding is math.floor:
-                rounding = np.floor
+        if self.linear:
+            if isinstance(value, (np.ndarray, da.Array)):
+                if rounding is round:
+                    rounding = np.round
+                elif rounding is math.ceil:
+                    rounding = np.ceil
+                elif rounding is math.floor:
+                    rounding = np.floor
 
-        index = rounding((value - self.offset) / self.scale)
+            index = rounding((value - self.offset) / self.scale)
 
-        if isinstance(value, np.ndarray):
-            index = index.astype(int)
-            if np.all(self.size > index) and np.all(index >= 0):
-                return index
+            if isinstance(value, np.ndarray):
+                index = index.astype(int)
+                if np.all(self.size > index) and np.all(index >= 0):
+                    return index
+                else:
+                    raise ValueError("A value is out of the axis limits")
             else:
-                raise ValueError("A value is out of the axis limits")
+                index = int(index)
+                if self.size > index >= 0:
+                    return index
+                else:
+                    raise ValueError("The value is out of the axis limits")
         else:
-            index = int(index)
-            if self.size > index >= 0:
-                return index
+            if self.low_value <= value <= self.high_value:
+                return (np.abs(self.axis - value)).argmin()
             else:
                 raise ValueError("The value is out of the axis limits")
 
@@ -401,6 +463,9 @@ class DataAxis(t.HasTraits):
             return self.axis[index]
 
     def calibrate(self, value_tuple, index_tuple, modify_calibration=True):
+        if not self.linear:
+            raise NotImplementedError(
+                "This function works only for linear axes.")
         scale = (value_tuple[1] - value_tuple[0]) /\
             (index_tuple[1] - index_tuple[0])
         offset = value_tuple[0] - scale * index_tuple[0]
