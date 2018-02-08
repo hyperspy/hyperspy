@@ -3,15 +3,20 @@ import math
 from unittest import mock
 
 import numpy as np
+from numpy.testing import assert_allclose
 import pytest
 
 from hyperspy.axes import DataAxis
+from hyperspy.signals import Signal1D
 
 
 class TestDataAxis:
 
     def setup_method(self, method):
         self.axis = DataAxis(size=10, scale=0.1, offset=10)
+
+    def test_axis_linear(self):
+        assert self.axis.linear
 
     def test_value_range_to_indices_in_range(self):
         assert (
@@ -125,3 +130,18 @@ class TestDataAxis:
         assert not m.trigger_me.called
         ax.index += 1
         assert m.trigger_me.called
+
+class TestDataAxisNonLinear:
+
+    def setup_method(self, method):
+        self.axis = DataAxis(axis=np.arange(16)**10)
+        
+    def test_non_linear_axis(self):
+        assert not self.axis.linear
+        assert_allclose(self.axis.axis, np.arange(16)**10)
+
+    def test_non_linear_axis_list(self):
+        value_list = (np.arange(16)**10).tolist()
+        axis = DataAxis(axis=value_list)
+        assert not axis.linear
+        assert_allclose(axis.axis, np.arange(16)**10)        

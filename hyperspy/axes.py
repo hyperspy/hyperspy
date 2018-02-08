@@ -27,7 +27,7 @@ from traits.trait_errors import TraitError
 from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
-from hyperspy.ui_registry import add_gui_method, get_gui, DISPLAY_DT, TOOLKIT_DT
+from hyperspy.ui_registry import add_gui_method, get_gui
 
 import warnings
 
@@ -170,6 +170,8 @@ class DataAxis(t.HasTraits):
 
     def _setup_non_linear_axis(self, axis):
         if len(axis) > 1:
+            if isinstance(axis, list):
+                axis = np.asarray(axis)
             # Find out if it is linear
             steps = axis[1:] - axis[:-1]
             if (steps == steps[0]).all():
@@ -188,6 +190,11 @@ class DataAxis(t.HasTraits):
             self.scale = t.Undefined
             self.offset = t.Undefined
         self.size = len(axis)
+
+    def set_axis_value(self):
+        # set linear or non-linear axis without calling __init__
+        # TODO
+        pass
 
     def _setup_linear_axis(self, scale, offset, size):
         if size is None:
