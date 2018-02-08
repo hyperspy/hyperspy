@@ -39,7 +39,8 @@ description = ''
 full_support = False
 file_extensions = ('msa', 'ems', 'mas', 'emsa', 'EMS', 'MAS', 'EMSA', 'MSA')
 default_extension = 0
-
+auto_convert_units = False
+# Writing capabilities
 writes = [(1, 0), ]
 # ----------------------
 

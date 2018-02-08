@@ -35,6 +35,7 @@ full_support = False
 # Recognised file extension
 file_extensions = ('bcf',)
 default_extension = 0
+auto_convert_units = True
 # Reading capabilities
 reads_images = True
 reads_spectrum = True
@@ -1127,8 +1128,9 @@ def py_parse_hypermap(virtual_file, shape, dtype, downsample=1):
 
 
 # wrapper functions for hyperspy:
-def file_reader(filename, select_type=None, index=None, downsample=1,     # noqa
-                cutoff_at_kV=None, instrument=None, lazy=False):
+def file_reader(filename, select_type=None, convert_units=None, 
+                index=None, downsample=1, cutoff_at_kV=None, instrument=None,
+                lazy=False):
     """Reads a bruker bcf file and loads the data into the appropriate class,
     then wraps it into appropriate hyperspy required list of dictionaries
     used by hyperspy.api.load() method.

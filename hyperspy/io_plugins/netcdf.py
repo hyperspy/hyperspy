@@ -45,8 +45,7 @@ description = ''
 full_support = True
 file_extensions = ('nc', 'NC')
 default_extension = 0
-
-
+auto_convert_units = False
 # Writing features
 writes = False
 

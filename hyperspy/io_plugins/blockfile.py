@@ -38,7 +38,7 @@ full_support = False
 # Recognised file extension
 file_extensions = ['blo', 'BLO']
 default_extension = 0
-
+auto_convert_units = True
 # Writing capabilities:
 writes = [(2, 2), (2, 1), (2, 0)]
 magics = [0x0102]

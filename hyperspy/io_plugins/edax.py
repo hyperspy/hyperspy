@@ -46,7 +46,7 @@ full_support = False
 # Recognised file extension
 file_extensions = ['spd', 'SPD', 'spc', 'SPC']
 default_extension = 0
-
+auto_convert_units = True
 # Writing capabilities
 writes = False
 
@@ -806,7 +806,6 @@ def spc_reader(filename,
 
 def spd_reader(filename,
                endianess='<',
-               nav_units=None,
                spc_fname=None,
                ipr_fname=None,
                load_all_spc=False,
@@ -820,10 +819,6 @@ def spd_reader(filename,
         Name of SPD file to read
     endianess : char
         Byte-order of data to read
-    nav_units : 'nm', 'um', or None
-        Default navigation units for EDAX data is in microns, so this is the
-        default unit to save in the signal. Can also be specified as 'nm',
-        which will output a signal with nm scale instead.
     spc_fname : None or str
         Name of file from which to read the spectral calibration. If data
         was exported fully from EDAX TEAM software, an .spc file with the
@@ -834,14 +829,14 @@ def spd_reader(filename,
     ipr_fname : None or str
         Name of file from which to read the spatial calibration. If data
         was exported fully from EDAX TEAM software, an .ipr file with the
-        same name as the .spd (plus a \"_Img\" suffix) should be present.
+        same name as the .spd (plus a "_Img" suffix) should be present.
         If `None`, the default filename will be searched for.
         Otherwise, the name of the .ipr file to use for spatial calibration
         can be explicitly given as a string.
     load_all_spc : bool
         Switch to control if all of the .spc header is read, or just the
         important parts for import into HyperSpy
-    kwargs**
+    **kwargs
         Remaining arguments are passed to the Numpy ``memmap`` function
 
     Returns
@@ -849,7 +844,7 @@ def spd_reader(filename,
     list
         list with dictionary of signal information to be passed back to
         hyperspy.io.load_with_reader
-    """
+    """   
     with open(filename, 'rb') as f:
         spd_header = np.fromfile(f,
                                  dtype=get_spd_dtype_list(endianess),
@@ -939,20 +934,13 @@ def spd_reader(filename,
         'units': 'keV' if read_spc else t.Undefined,
     }
 
-    # Handle navigation units input:
-    scale = 1000 if nav_units == 'nm' else 1
-    if nav_units is not 'nm':
-        if nav_units not in [None, 'um']:
-            _logger.warning("Did not understand nav_units input \"{}\". "
-                            "Defaulting to microns.\n".format(nav_units))
-        nav_units = 'µm'
-
+    nav_units = 'µm'
     # Create navigation axes dictionaries:
     x_axis = {
         'size': data.shape[1],
         'index_in_array': 1,
         'name': 'x',
-        'scale': original_metadata['ipr_header']['mppX'] * scale if read_ipr
+        'scale': original_metadata['ipr_header']['mppX'] if read_ipr
         else 1,
         'offset': 0,
         'units': nav_units if read_ipr else t.Undefined,
@@ -962,7 +950,7 @@ def spd_reader(filename,
         'size': data.shape[0],
         'index_in_array': 0,
         'name': 'y',
-        'scale': original_metadata['ipr_header']['mppY'] * scale if read_ipr
+        'scale': original_metadata['ipr_header']['mppY'] if read_ipr
         else 1,
         'offset': 0,
         'units': nav_units if read_ipr else t.Undefined,

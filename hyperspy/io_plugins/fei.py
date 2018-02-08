@@ -47,7 +47,7 @@ full_support = False
 # Recognised file extension
 file_extensions = ser_extensions + emi_extensions
 default_extension = 0
-
+auto_convert_units = True
 # Writing capabilities
 writes = False
 # ----------------------
