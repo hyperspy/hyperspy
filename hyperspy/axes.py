@@ -183,12 +183,12 @@ class DataAxis(t.HasTraits):
                     offset=axis[0],
                     size=len(axis))
             else:
-                self.linear = False # This must go first to setup connections 
+                self.linear = False  # This must go first to setup connections
                 self.axis = axis
                 self.scale = t.Undefined
                 self.offset = t.Undefined
-        else: # axis of len == 1
-            self.linear = False # This must go first to setup connections 
+        else:  # axis of len == 1
+            self.linear = False  # This must go first to setup connections
             self.axis = axis
             self.scale = t.Undefined
             self.offset = t.Undefined
@@ -412,7 +412,7 @@ class DataAxis(t.HasTraits):
                 'name': self.name,
                 'units': self.units,
                 'navigate': self.navigate,
-                'axis' : self.axis,
+                'axis': self.axis,
             }
         return adict
 
@@ -1084,24 +1084,33 @@ class AxesManager(t.HasTraits):
     def __repr__(self):
         text = ('<Axes manager, axes: %s>\n' %
                 self._get_dimension_str())
-        ax_signature = "% 16s | %6g | %6s | %7.2g | %7.2g | %6s "
+        ax_signature_linear = "% 16s | %6g | %6s | %7.2g | %7.2g | %6s "
+        ax_signature_non_linear = "% 16s | %6g | %6s |  non-linear axis  | %6s "
         signature = "% 16s | %6s | %6s | %7s | %7s | %6s "
         text += signature % ('Name', 'size', 'index', 'offset', 'scale',
                              'units')
         text += '\n'
         text += signature % ('=' * 16, '=' * 6, '=' * 6,
                              '=' * 7, '=' * 7, '=' * 6)
+
+        def axis_repr(ax, ax_signature_linear, ax_signature_non_linear):
+            if ax.linear:
+                return ax_signature_linear % (str(ax.name)[:16], ax.size,
+                                              str(ax.index), ax.offset,
+                                              ax.scale, ax.units)
+            else:
+                return ax_signature_non_linear % (str(ax.name)[:16], ax.size,
+                                                  str(ax.index), ax.units)
+
         for ax in self.navigation_axes:
             text += '\n'
-            text += ax_signature % (str(ax.name)[:16], ax.size, str(ax.index),
-                                    ax.offset, ax.scale, ax.units)
+            text += axis_repr(ax, ax_signature_linear, ax_signature_non_linear)
         text += '\n'
         text += signature % ('-' * 16, '-' * 6, '-' * 6,
                              '-' * 7, '-' * 7, '-' * 6)
         for ax in self.signal_axes:
             text += '\n'
-            text += ax_signature % (str(ax.name)[:16], ax.size, ' ', ax.offset,
-                                    ax.scale, ax.units)
+            text += axis_repr(ax, ax_signature_linear, ax_signature_non_linear)
 
         return text
 
@@ -1126,21 +1135,29 @@ class AxesManager(t.HasTraits):
                                          '\n<' + tag +
                                          '>{}</'.format(x) + tag + '>',
                                          args))
+
+        def axis_repr(ax):
+            index = ax.index if ax.navigate else ""
+            if ax.linear:
+                return format_row(ax.name, ax.size, index, ax.offset,
+                                  ax.scale, ax.units)
+            else:
+                return format_row(ax.name, ax.size, index, "non linear axis",
+                                  "non linear axis",  ax.units)
+
         if self.navigation_axes:
             text += "<table style='width:100%'>\n"
             text += format_row('Navigation axis name', 'size', 'index', 'offset',
                                'scale', 'units', tag='th')
             for ax in self.navigation_axes:
-                text += format_row(ax.name, ax.size, ax.index, ax.offset, ax.scale,
-                                   ax.units)
+                text += axis_repr(ax)
             text += "</table>\n"
         if self.signal_axes:
             text += "<table style='width:100%'>\n"
-            text += format_row('Signal axis name', 'size', 'offset', 'scale',
-                               'units', tag='th')
+            text += format_row('Signal axis name', 'size',
+                               "", 'offset', 'scale', 'units', tag='th')
             for ax in self.signal_axes:
-                text += format_row(ax.name, ax.size, ax.offset, ax.scale,
-                                   ax.units)
+                text += axis_repr(ax)
             text += "</table>\n"
         return text
 
