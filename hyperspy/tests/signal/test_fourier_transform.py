@@ -69,7 +69,7 @@ def test_fft_signal2d(lazy):
     axis = im_fft.axes_manager.signal_axes[0]
     assert axis.offset == -axis.high_value
 
-    im_ifft = im_fft.ifft(shifted=True)
+    im_ifft = im_fft.ifft()
     assert im_ifft.axes_manager.signal_axes[0].offset == 0.
 
     assert im_fft.metadata.Signal.FFT.shifted is True

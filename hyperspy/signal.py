@@ -3236,7 +3236,7 @@ class BaseSignal(FancySlicing,
                 axis.offset = -axis.high_value / 2.
         return im_fft
 
-    def ifft(self, shifted=False, **kwargs):
+    def ifft(self, shifted=None, **kwargs):
         """
         Compute the inverse discrete Fourier Transform.
 
@@ -3247,9 +3247,11 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        shifted : bool, optional
-            If True, the origin of FFT will be shifted in the centre (Default: False).
-
+        shifted : bool or None, optional
+            If None the shift option will be set to the original status of the FFT using value in metadata.
+            If no FFT entry is present in metadata the parameter will be set to False.
+            If True, the origin of FFT will be shifted in the centre,
+            otherwise the origin would be kept at (0, 0)(Default: None).
         **kwargs
             other keyword arguments are described in np.fft.ifftn().
 
@@ -3275,6 +3277,11 @@ class BaseSignal(FancySlicing,
             raise AttributeError("Signal dimension must be at least one.")
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
+        if shifted is None:
+            try:
+                shifted = self.metadata.Signal.FFT.shifted
+            except AttributeError:
+                shifted = False
 
         if isinstance(self.data, da.Array):
             if shifted:
