@@ -143,8 +143,7 @@ class Signal1DFigure(BlittedFigure):
     def update(self):
         for marker in self.ax_markers:
             marker.update()
-        for line in self.ax_lines + \
-                self.right_ax_lines:
+        for line in self.ax_lines + self.right_ax_lines:
             line.update()
 
 
@@ -284,7 +283,7 @@ class Signal1DLine(object):
             plt.setp(self.line, **self.line_properties)
             self.ax.figure.canvas.draw_idle()
 
-    def plot(self, data=1):
+    def plot(self, data=1, connect_to_axes_manager=False):
         f = self.data_function
         if self.get_complex is False:
             data = f(axes_manager=self.axes_manager).real
@@ -295,6 +294,13 @@ class Signal1DLine(object):
         self.line, = self.ax.plot(self.axis.axis, data,
                                   **self.line_properties)
         self.line.set_animated(self.ax.figure.canvas.supports_blit)
+        # We connect to axes_manager only in case of the right pointer to
+        # avoid updating a second the line (already connected in Signal1DFigure)
+        if connect_to_axes_manager:
+            self.axes_manager.events.indices_changed.connect(self.update, [])
+            self.events.closed.connect(
+                lambda: self.axes_manager.events.indices_changed.disconnect(
+                    self.update), [])
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
         if self.plot_indices is True:

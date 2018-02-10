@@ -49,8 +49,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
     def auto_update_plot(self, value):
         if self._auto_update_plot is value:
             return
-        for line in self.signal_plot.ax_lines + \
-                self.signal_plot.right_ax_lines:
+        for line in self.signal_plot.ax_lines + self.signal_plot.right_ax_lines:
             line.auto_update = value
         if self.pointer is not None:
             if value is True:
@@ -168,7 +167,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         self.signal_plot.add_line(rl, ax='right')
         rl.plot_indices = True
         rl.text_position = (1., 1.05,)
-        rl.plot()
+        rl.plot(connect_to_axes_manager=True)
         self.right_pointer_on = True
 
     def remove_right_pointer(self):
