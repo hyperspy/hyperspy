@@ -1087,8 +1087,14 @@ class AxesManager(t.HasTraits):
                 "The number of coordinates must be equal to the "
                 "navigation dimension that is %i" %
                 self.navigation_dimension)
-        for value, axis in zip(coordinates, self.navigation_axes):
-            axis.value = value
+        changes = False
+        with self.events.indices_changed.suppress():
+            for value, axis in zip(coordinates, self.navigation_axes):
+                changes = changes or (axis.value != value)
+                axis.value = value
+        # Trigger only if the indices are changed
+        if changes:
+            self.events.indices_changed.trigger(obj=self)
 
     @property
     def indices(self):
@@ -1118,8 +1124,14 @@ class AxesManager(t.HasTraits):
                 "The number of indices must be equal to the "
                 "navigation dimension that is %i" %
                 self.navigation_dimension)
-        for index, axis in zip(indices, self.navigation_axes):
-            axis.index = index
+        changes = False
+        with self.events.indices_changed.suppress():
+            for index, axis in zip(indices, self.navigation_axes):
+                changes = changes or (axis.index != index)
+                axis.index = index
+        # Trigger only if the indices are changed
+        if changes:
+            self.events.indices_changed.trigger(obj=self)
 
     def _get_axis_attribute_values(self, attr):
         return [getattr(axis, attr) for axis in self._axes]

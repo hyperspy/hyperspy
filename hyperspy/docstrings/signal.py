@@ -37,3 +37,12 @@ ROI_ARG = \
             If a roi or a list of is passed, the operation is performed only 
             over the roi(s). The dimension of the roi should be compatible 
             with the axis argument (if provided)."""
+
+OPTIMIZE_ARG = \
+    """optimize : bool, default is False
+            If True, the location of the data in memory is optimised for the
+            fastest iteration over the navigation axes. This operation can
+            cause a peak of memory usage and requires considerable processing
+            times for large datasets and/or low specification hardware.
+            See the `transposing` section of the HyperSpy user guide
+            for more information."""

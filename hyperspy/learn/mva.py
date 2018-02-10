@@ -26,7 +26,7 @@ from matplotlib.ticker import MaxNLocator, FuncFormatter
 try:
     import mdp
     mdp_installed = True
-except:
+except BaseException:
     mdp_installed = False
 
 
@@ -327,7 +327,7 @@ class MVA():
                             var_array = np.polyval(
                                 polyfit, dc[
                                     signal_mask, navigation_mask])
-                        except:
+                        except BaseException:
                             raise ValueError(
                                 'var_func must be either a function or an '
                                 'array defining the coefficients of a polynom')
@@ -1144,7 +1144,6 @@ class MVA():
         ax.set_xlabel('Principal component')
         ax.set_ylabel('Cumulative explained variance ratio')
         plt.draw()
-        plt.show()
         return ax
 
     def normalize_poissonian_noise(self, navigation_mask=None,
