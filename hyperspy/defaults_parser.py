@@ -18,7 +18,6 @@
 
 
 import os.path
-from os import cpu_count
 import configparser
 import logging
 
@@ -26,7 +25,6 @@ import traits.api as t
 
 from hyperspy.misc.config_dir import config_path, os_name, data_path
 from hyperspy.misc.ipython_tools import turn_logging_on, turn_logging_off
-from hyperspy.io_plugins import default_write_ext
 from hyperspy.ui_registry import add_gui_method
 
 defaults_file = os.path.join(config_path, 'hyperspyrc')

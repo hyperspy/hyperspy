@@ -359,7 +359,7 @@ class SemperFormat(object):
 
     @classmethod
     def load_from_unf(cls, filename, lazy=False):
-        """Load a `.unf`-file into a :class:`~.SemperFormat` object.
+        r"""Load a `.unf`-file into a :class:`~.SemperFormat` object.
 
         Parameters
         ----------
