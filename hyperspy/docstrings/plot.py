@@ -92,7 +92,7 @@ COMPLEX_DOCSTRING = \
     """power_spectrum : {bool, None}, default is None.
             If True, plot the power spectrum instead of the actual signal, if 
             False, plot the real and imaginary parts of the complex signal.
-            If None, plot the power spectrum if the signal is in Fourier space.
+            If None, plot the power spectrum if the signal is a FFT.
         representation : {'cartesian' or 'polar'}
             Determines if the real and imaginary part of the complex data is plotted ('cartesian',
             default), or if the amplitude and phase should be used ('polar').
@@ -103,8 +103,8 @@ COMPLEX_DOCSTRING = \
         shifted : {bool, None}, default is None.
             If True, plot the signal with the zero-frequency component shifted 
             to the center of the spectrum. See `numpy.fft.fftshift` for more 
-            details. If None, set `shifted=True` only when the signal is in 
-            Fourier space.
+            details. If None, set `shifted=True` when plotting the power 
+            spectrum.
         """
 
 KWARGS_DOCSTRING = \

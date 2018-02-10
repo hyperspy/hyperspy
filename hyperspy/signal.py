@@ -1977,7 +1977,10 @@ class BaseSignal(FancySlicing,
         self._plot.axes_manager = axes_manager
         self._plot.signal_data_function = self.__call__
         if self.metadata.General.title:
-            self._plot.signal_title = self.metadata.General.title
+            title = self.metadata.General.title
+            if kwargs.get('power_spectrum', False):
+                title = title.replace('FFT', 'Power spectrum') 
+            self._plot.signal_title = title
         elif self.tmp_parameters.has_item('filename'):
             self._plot.signal_title = self.tmp_parameters.filename
         if self.metadata.has_item("Signal.quantity"):

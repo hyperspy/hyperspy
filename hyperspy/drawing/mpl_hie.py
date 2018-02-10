@@ -80,6 +80,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.scalebar_color = scalebar_color
         imf.centre_colormap = centre_colormap
         imf.intensity_scale = intensity_scale
+        kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
         imf.plot(**kwargs)
         self.signal_plot = imf
 

@@ -192,7 +192,7 @@ class ComplexSignal_mixin:
 
         """
         if power_spectrum is None:
-            power_spectrum = True if 'FFT' in self.metadata.Signal.signal_type else False
+            power_spectrum = True if self.metadata.has_item('Signal.FFT') else False
         if intensity_scale is None:
             intensity_scale = 'log' if power_spectrum else 'linear'
         if shifted is None:
