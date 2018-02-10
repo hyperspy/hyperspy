@@ -50,7 +50,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'HyperSpy User Guide [Draft]'
-copyright = '2011-2016, The HyperSpy Developers'
+copyright = '2011-2018, The HyperSpy Developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

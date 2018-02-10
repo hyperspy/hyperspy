@@ -63,7 +63,8 @@ class Signal1DFigure(BlittedFigure):
             window_title="Figure " + self.title if self.title
             else None)
         utils.on_figure_window_close(self.figure, self._on_close)
-        self.figure.canvas.mpl_connect('draw_event', self._on_draw)
+        self.draw_event_cid = self.figure.canvas.mpl_connect(
+            'draw_event', self._on_draw)
 
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
@@ -135,7 +136,7 @@ class Signal1DFigure(BlittedFigure):
         if hasattr(self.figure, 'tight_layout'):
             try:
                 self.figure.tight_layout()
-            except:
+            except BaseException:
                 # tight_layout is a bit brittle, we do this just in case it
                 # complains
                 pass
@@ -382,7 +383,7 @@ class Signal1DLine(object):
             self.events.closed.disconnect(f)
         try:
             self.ax.figure.canvas.draw_idle()
-        except:
+        except BaseException:
             pass
 
 

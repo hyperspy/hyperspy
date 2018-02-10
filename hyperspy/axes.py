@@ -20,6 +20,7 @@ import copy
 import math
 
 import numpy as np
+import dask.array as da
 import traits.api as t
 from traits.trait_errors import TraitError
 
@@ -368,7 +369,7 @@ class DataAxis(t.HasTraits):
         if value is None:
             return None
 
-        if isinstance(value, np.ndarray):
+        if isinstance(value, (np.ndarray, da.Array)):
             if rounding is round:
                 rounding = np.round
             elif rounding is math.ceil:
@@ -392,6 +393,8 @@ class DataAxis(t.HasTraits):
                 raise ValueError("The value is out of the axis limits")
 
     def index2value(self, index):
+        if isinstance(index, da.Array):
+            index = index.compute()
         if isinstance(index, np.ndarray):
             return self.axis[index.ravel()].reshape(index.shape)
         else:
@@ -1084,8 +1087,14 @@ class AxesManager(t.HasTraits):
                 "The number of coordinates must be equal to the "
                 "navigation dimension that is %i" %
                 self.navigation_dimension)
-        for value, axis in zip(coordinates, self.navigation_axes):
-            axis.value = value
+        changes = False
+        with self.events.indices_changed.suppress():
+            for value, axis in zip(coordinates, self.navigation_axes):
+                changes = changes or (axis.value != value)
+                axis.value = value
+        # Trigger only if the indices are changed
+        if changes:
+            self.events.indices_changed.trigger(obj=self)
 
     @property
     def indices(self):
@@ -1115,8 +1124,14 @@ class AxesManager(t.HasTraits):
                 "The number of indices must be equal to the "
                 "navigation dimension that is %i" %
                 self.navigation_dimension)
-        for index, axis in zip(indices, self.navigation_axes):
-            axis.index = index
+        changes = False
+        with self.events.indices_changed.suppress():
+            for index, axis in zip(indices, self.navigation_axes):
+                changes = changes or (axis.index != index)
+                axis.index = index
+        # Trigger only if the indices are changed
+        if changes:
+            self.events.indices_changed.trigger(obj=self)
 
     def _get_axis_attribute_values(self, attr):
         return [getattr(axis, attr) for axis in self._axes]
