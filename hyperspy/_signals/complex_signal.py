@@ -94,8 +94,8 @@ class ComplexSignal_mixin:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if not np.issubdtype(self.data.dtype, complex):
-            self.data = self.data.astype(complex)
+        if not np.issubdtype(self.data.dtype, np.complexfloating):
+            self.data = self.data.astype(np.complexfloating)
 
     def change_dtype(self, dtype):
         """Change the data type.
@@ -107,7 +107,7 @@ class ComplexSignal_mixin:
             complex dtypes are allowed. If real valued properties are required use `real`,
             `imag`, `amplitude` and `phase` instead.
         """
-        if np.issubdtype(dtype, complex):
+        if np.issubdtype(dtype, np.complexfloating):
             self.data = self.data.astype(dtype)
         else:
             raise AttributeError(

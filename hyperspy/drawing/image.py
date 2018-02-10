@@ -207,7 +207,8 @@ class ImagePlot(BlittedFigure):
                           else None),
             disable_xyscale_keys=True,
             figsize=figsize.clip(min_size, max_size))
-        self.figure.canvas.mpl_connect('draw_event', self._on_draw)
+        self.draw_event_cid = self.figure.canvas.mpl_connect(
+            'draw_event', self._on_draw)
         utils.on_figure_window_close(self.figure, self._on_close)
 
     def create_axis(self):
@@ -261,19 +262,31 @@ class ImagePlot(BlittedFigure):
             self._add_colorbar()
 
         self._set_background()
-        self.figure.canvas.draw_idle()
         if hasattr(self.figure, 'tight_layout'):
             try:
                 if self.axes_ticks == 'off' and not self.colorbar:
                     plt.subplots_adjust(0, 0, 1, 1)
                 else:
                     self.figure.tight_layout()
-            except:
+            except BaseException:
                 # tight_layout is a bit brittle, we do this just in case it
                 # complains
                 pass
 
         self.connect()
+        # ask the canvas to re-draw itself the next time it
+        # has a chance.
+        # For most of the GUI backends this adds an event to the queue
+        # of the GUI frameworks event loop.
+        self.figure.canvas.draw_idle()
+        try:
+            # make sure that the GUI framework has a chance to run its event loop
+            # and clear any GUI events.  This needs to be in a try/except block
+            # because the default implementation of this method is to raise
+            # NotImplementedError
+            self.figure.canvas.flush_events()
+        except NotImplementedError:
+            pass
 
     def _add_colorbar(self):
         self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
@@ -419,7 +432,6 @@ class ImagePlot(BlittedFigure):
     def connect(self):
         self.figure.canvas.mpl_connect('key_press_event',
                                        self.on_key_press)
-        self.figure.canvas.draw_idle()
         if self.axes_manager:
             self.axes_manager.events.indices_changed.connect(self.update, [])
             self.events.closed.connect(
