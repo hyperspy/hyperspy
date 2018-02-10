@@ -27,13 +27,14 @@ class Test1D:
         gaussian.A.value = 20
         gaussian.sigma.value = 10
         gaussian.centre.value = 50
-        self.signal = signals.Signal1D(gaussian.function(np.arange(0, 100, 0.01)))
+        self.signal = signals.Signal1D(
+            gaussian.function(np.arange(0, 100, 0.01)))
         self.signal.axes_manager[0].scale = 0.01
 
     def test_integrate1D(self):
         integrated_signal = self.signal.integrate1D(axis=0)
         assert np.allclose(integrated_signal.data, 20,)
-        
+
 
 @lazifyTestClass
 class Test2D:
@@ -184,7 +185,6 @@ class Test2D:
         np.testing.assert_array_equal(result, np.angle(self.signal.data))
 
 
-#@lazifyTestClass
 class Test3D:
 
     def setup_method(self, method):
@@ -193,8 +193,9 @@ class Test3D:
         self.signal.axes_manager[1].name = "y"
         self.signal.axes_manager[2].name = "E"
         self.signal.axes_manager[0].scale = 0.5
+        self.signal.axes_manager[1].scale = 0.5
         # BUG?: see #1693
-        self.signal.axes_manager[1].scale = 1      
+#        self.signal.axes_manager[1].scale = 1.0
 
         self.data = self.signal.data.copy()
         self.roi_sig = roi.SpanROI(4, 6)
@@ -209,7 +210,7 @@ class Test3D:
         assert s.axes_manager.signal_dimension == 0
         assert s.axes_manager.navigation_dimension == 2
 
-    @pytest.mark.parametrize("axis", ('E', 'signal'))      
+    @pytest.mark.parametrize("axis", ('E', 'signal'))
     def test_indexmax(self, axis):
         s = self.signal.indexmax(axis)
         ar = self.data.argmax(2)
@@ -225,7 +226,7 @@ class Test3D:
         assert s.data.ndim == 2
         assert s.axes_manager.signal_dimension == 1
         assert s.axes_manager.navigation_dimension == 1
-   
+
     def test_valuemax(self):
         s = self.signal.valuemax('x')
         ar = self.signal.axes_manager['x'].index2value(self.data.argmax(1))
@@ -270,7 +271,7 @@ class Test3D:
         assert s.data.ndim == 1
         assert s.axes_manager.signal_dimension == 1
         assert s.axes_manager.navigation_dimension == 0
-        
+
     def test_rebin(self):
         self.signal.estimate_poissonian_noise_variance()
         new_s = self.signal.rebin(scale=(2, 2, 1))
