@@ -39,7 +39,7 @@ def guess_gos_path():
         # installation
         # location in windows
         program_files = os.environ['PROGRAMFILES']
-        gos = 'Gatan\DigitalMicrograph\EELS Reference Data\H-S GOS Tables'
+        gos = 'Gatan\\DigitalMicrograph\\EELS Reference Data\\H-S GOS Tables'
         gos_path = os.path.join(program_files, gos)
 
         # Else, use the default location in the .hyperspy forlder
