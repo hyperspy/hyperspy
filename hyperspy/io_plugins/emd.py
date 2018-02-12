@@ -828,13 +828,18 @@ class FeiEMDReader(object):
         meta_gen = {}
         meta_gen['original_filename'] = os.path.split(self.filename)[1]
         meta_gen['title'] = self.detector_name
-        # We have only one entry in the original_metadata, so we can't use the
-        # mapping of the original_metadata to set the date and time in the
-        # metadata: need to set manually here
-        unix_time = om['Acquisition']['AcquisitionStartDatetime']['DateTime']
-        date, time = self._convert_datetime(unix_time).split('T')
-        meta_gen['date'] = date
-        meta_gen['time'] = time
+        try:
+            # We have only one entry in the original_metadata, so we can't use the
+            # mapping of the original_metadata to set the date and time in the
+            # metadata: need to set manually here
+            unix_time = om['Acquisition']['AcquisitionStartDatetime']['DateTime']
+            date, time = self._convert_datetime(unix_time).split('T')
+            meta_gen['date'] = date
+            meta_gen['time'] = time
+        except KeyError:
+            # The images acquired with the CETA camera in v6 files doesn't 
+            # seem to have the 'AcquisitionStartDatetime' key...
+            pass
 
         meta_sig = {}
         meta_sig['signal_type'] = ''
