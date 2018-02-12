@@ -408,7 +408,10 @@ def test_plot_point_markers_close():
 
 def _test_plot_text_markers():
     s = Signal1D(np.arange(100).reshape([10, 10]))
+    s.axes_manager.navigation_axes[0].name = 'x'
     s.plot(navigator='spectrum')
+    # Need to flush events to avoid `_draw_animated` warning
+    s._plot.signal_plot.figure.canvas.flush_events()
     for i in range(s.axes_manager.shape[0]):
         m = markers.text(y=s.sum(-1).data[i] + 5, x=i, text='abcdefghij'[i])
         s.add_marker(m, plot_on_signal=False)

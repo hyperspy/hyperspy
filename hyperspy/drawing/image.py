@@ -80,7 +80,7 @@ class ImagePlot(BlittedFigure):
         self._ylabel = ''
         self._xlabel = ''
         self._text = None
-        self._text_position = (0, 1.05,)
+        self._text_position = (0, 1.01,)
         self.axes_manager = None
         self.pointer = None
         self.resizable_pointer = False

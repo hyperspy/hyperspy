@@ -1938,7 +1938,8 @@ class BaseSignal(FancySlicing,
         return np.atleast_1d(data)
 
     def plot(self, navigator="auto", axes_manager=None, plot_markers=True,
-             resizable_pointer=True, pointer_operation=np.sum, **kwargs):
+             resizable_pointer=True, pointer_operation=np.sum, 
+             picker_tolerance=10.0, **kwargs):
         """%s
         %s
 
@@ -2065,11 +2066,12 @@ class BaseSignal(FancySlicing,
                 self._plot.navigator_data_function = get_1D_sum_explorer_wrapper
             else:
                 raise ValueError(
-                    "navigator must be one of \"spectrum\",\"auto\","
-                    " \"slider\", None, a Signal instance")
+                    'The `navigator` parameter must be one of "spectrum", '
+                    '"auto", "slider", None or a Signal instance')
 
         self._plot.plot(resizable_pointer=resizable_pointer,
-                        pointer_operation=pointer_operation, **kwargs)
+                        pointer_operation=pointer_operation, 
+                        picker_tolerance=picker_tolerance, **kwargs)
         # need both condition: in case we replot without pointer
         # (`pointer_size` from previous plot but `self._plot.pointer` is None)
         if self._plot.pointer and pointer_size is not None:

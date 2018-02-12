@@ -156,7 +156,8 @@ class MPL_HyperExplorer(object):
         else:
             return False
 
-    def plot(self, resizable_pointer=False, pointer_operation=np.sum, **kwargs):
+    def plot(self, resizable_pointer=False, pointer_operation=np.sum, 
+             picker_tolerance=10.0, **kwargs):
         self._resizable_pointer = resizable_pointer
         if self.pointer is None:
             pointer, param_dict = self.assign_pointer()
@@ -164,9 +165,10 @@ class MPL_HyperExplorer(object):
             if pointer is not None:
                 self.pointer = pointer(self.axes_manager, **param_dict)
                 self.pointer.color = 'red'
-                self.pointer.set_picker(10.0)
                 self.pointer.connect_navigate()
             self.plot_navigator(**kwargs.pop('navigator_kwds', {}))
+            if pointer is not None:
+                self.pointer.set_picker(picker_tolerance)
         self.plot_signal(**kwargs)
         if self.pointer is not None and self._resizable_pointer:
             self.pointer.events.resized_am.connect(self.signal_plot.update, [])

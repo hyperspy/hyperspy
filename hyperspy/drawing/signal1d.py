@@ -81,7 +81,7 @@ class Signal1DFigure(BlittedFigure):
             self.right_ax.hspy_fig = self
             self.right_ax.yaxis.set_animated(
                 self.figure.canvas.supports_blit)
-        plt.tight_layout()
+        self._tight_layout()
 
     def add_line(self, line, ax='left'):
         if ax == 'left':
@@ -133,9 +133,18 @@ class Signal1DFigure(BlittedFigure):
         self.events.closed.connect(
             lambda: self.axes_manager.events.indices_changed.disconnect(
                 self.update), [])
+        self._tight_layout()
+
+    def _tight_layout(self):
         if hasattr(self.figure, 'tight_layout'):
             try:
-                self.figure.tight_layout()
+                nav_length = len(self.axes_manager.navigation_shape)
+                # Add enough height to display the indices of the navigation axis
+                if nav_length > 1:
+                    top = 1 - 0.035 * (nav_length - 1.5)
+                else:
+                    top = None
+                self.figure.tight_layout(rect=[None, None, None, top])
             except BaseException:
                 # tight_layout is a bit brittle, we do this just in case it
                 # complains
@@ -209,7 +218,7 @@ class Signal1DLine(object):
         self.hspy_figure = None
         self.resizable_pointer = False
         self.text = None
-        self.text_position = (-0.085, 1.05,)
+        self.text_position = (-0.05, 1.03)
         self._line_properties = {}
         self.type = "line"
 
@@ -298,7 +307,7 @@ class Signal1DLine(object):
     def _get_pointer_text(self):
         return self.hspy_figure._get_pointer_text(pointer=self.pointer)
 
-    def plot(self, data=1):
+    def plot(self, data=1, connect_to_axes_manager=False):
         f = self.data_function
         if self.get_complex is False:
             data = f(self.axes_manager, self.resizable_pointer).real
@@ -309,10 +318,13 @@ class Signal1DLine(object):
         self.line, = self.ax.plot(self.axis.axis, data,
                                   **self.line_properties)
         self.line.set_animated(self.ax.figure.canvas.supports_blit)
-#        self.axes_manager.events.indices_changed.connect(self.update, [])
-#        self.events.closed.connect(
-#            lambda: self.axes_manager.events.indices_changed.disconnect(
-#                self.update), [])
+        # We connect to axes_manager only in case of the right pointer to
+        # avoid updating a second the line (already connected in Signal1DFigure)
+        if connect_to_axes_manager:
+            self.axes_manager.events.indices_changed.connect(self.update, [])
+            self.events.closed.connect(
+                lambda: self.axes_manager.events.indices_changed.disconnect(
+                    self.update), [])
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
         if self.plot_indices is True:

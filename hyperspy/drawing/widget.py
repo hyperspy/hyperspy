@@ -151,12 +151,12 @@ class WidgetBase(object):
 
     def set_picker(self, picker):
         """ Set the `picker` option of the widget.
-        
+
         picker: {None | float | boolean | callable}
             Default is 5.
             See matplotlib.artist.Artist.set_picker documentation.
         """
-        
+
         for p in self.patch:
             p.set_picker(picker)
 
@@ -620,7 +620,7 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
 
     def set_picker(self, picker):
         """ Set the `picker` option of the widget.
-        
+
         picker: {None | float | boolean | callable}
             Default is 5.
             See matplotlib.artist.Artist.set_picker documentation.
@@ -860,7 +860,7 @@ class ResizersMixin(object):
         self.resizer_picked = False
         self.pick_offset = (0, 0)
         self.resize_color = 'lime'
-        self.resize_pixel_size = (5, 5)  # Set to None to make one data pixel
+        self.resize_pixel_size = (10, 10)  # Set to None to make one data pixel
         self.resize_tolerance = 10.0
         self._resizers = resizers
         self._resizer_handles = []
