@@ -351,13 +351,24 @@ class EMD(object):
         # 'experiments', ...)!
         assert len(node_list) == 1, 'Dataset location is ambiguous!'
         data_group = emd_file.get(node_list[0])
+        dataset_name_list = []
         if data_group is not None:
             for name, group in data_group.items():
                 if isinstance(group, h5py.Group):
+                    dataset_name_list.append(name)
                     if (dataset_name is None) or (name in dataset_name):
                         if group.attrs.get('emd_group_type') == 1:
                             emd._read_signal_from_group(
                                 name, group, lazy)
+        if not emd.signals:
+            if (dataset_name is not None) and dataset_name_list:
+                raise ValueError(
+                        "Dataset with name {0} not found in the file. "
+                        "Possible datasets are {1}.".format(
+                            dataset_name, ', '.join(dataset_name_list)))
+            else:
+                raise IOError("No datasets found in file")
+
         # Close file and return EMD object:
         if not lazy:
             emd_file.close()
