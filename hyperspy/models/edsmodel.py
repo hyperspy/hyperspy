@@ -313,6 +313,7 @@ class EDSModel(Model1D):
             The function automatically detect if data are in weight_percent or in atomic_percent
 
         Example:
+
             s = hs.datasets.example_signals.EDS_TEM_Spectrum()
             s.add_lines()
             kfactors = [1.450226, 5.075602] #For Fe Ka and Pt La
@@ -322,6 +323,9 @@ class EDSModel(Model1D):
 
             m=s.create_model(auto_background=False)
             m.add_physical_background(quantification=Weight_percent)
+            m.components.Bremsstrahlung.initialyze()
+            m.fit_background(kind='multi')
+            m.multifit()
             
         """
         if E0 == 'from_metadata':
