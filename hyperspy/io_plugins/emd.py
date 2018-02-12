@@ -832,13 +832,16 @@ class FeiEMDReader(object):
         # mapping of the original_metadata to set the date and time in the
         # metadata: need to set it manually here
         try:
-            unix_time = om['Acquisition']['AcquisitionStartDatetime']['DateTime']
+            if 'AcquisitionStartDatetime' in om['Acquisition'].keys():
+                unix_time = om['Acquisition']['AcquisitionStartDatetime']['DateTime']
+            # Workaround when the 'AcquisitionStartDatetime' key is missing
+            # This timestamp corresponds to when the data is stored
+            elif 'Detectors[BM-Ceta].TimeStamp' in om['CustomProperties'].keys():
+                unix_time = float(om['CustomProperties']['Detectors[BM-Ceta].TimeStamp']['value'])/1E6
             date, time = self._convert_datetime(unix_time).split('T')
             meta_gen['date'] = date
             meta_gen['time'] = time
-        except KeyError:
-            # The images acquired with the CETA camera doesn't have the
-            # 'AcquisitionStartDatetime' key...
+        except (KeyError, UnboundLocalError):
             pass
 
         meta_sig = {}
