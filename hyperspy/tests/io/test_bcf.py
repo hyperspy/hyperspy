@@ -16,7 +16,8 @@ test_files = ['P45_instructively_packed_16bit_compressed.bcf',
               'test_TEM.bcf',
               'Hitachi_TM3030Plus.bcf',
               'over16bit.bcf',
-              'bcf_v2_50x50px.bcf']
+              'bcf_v2_50x50px.bcf',
+              'bcf-edx-ebsd.bcf']
 np_file = ['P45_16bit.npy', 'P45_16bit_ds.npy']
 
 my_path = os.path.dirname(__file__)
