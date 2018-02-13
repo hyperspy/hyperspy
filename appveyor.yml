@@ -40,7 +40,7 @@ environment:
        WP_URL: 'https://github.com/winpython/winpython/releases/download/1.9.20171031/WinPython-32bit-3.6.3.0Qt5.exe'
        WP_CRC: '56259865127c3f802f1eca29528f2676317cad2fd6573ce516fc35b4441a1d3c'
        CONDA_PY: "36"
-       DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython lxml ipyparallel dask"
+       DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask"
 
      - PYTHON: "C:\\Miniconda36-x64"
        PYTHON_VERSION: "3.6.x"
@@ -49,7 +49,7 @@ environment:
        WP_CRC: 'a5efea23ede143fdacab60b8db95835de25c0173bd0d9fd53d5952648bde69b9'
        PYTHON_ARCH: "64"
        CONDA_PY: "36"
-       DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython lxml ipyparallel dask"
+       DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask"
 
 
 
