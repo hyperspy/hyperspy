@@ -154,6 +154,7 @@ class ModelManager(object):
         remove
         restore
         pop
+
         """
         if model.signal is self._signal:
             self._save(name, model.as_dictionary())
@@ -189,6 +190,7 @@ class ModelManager(object):
         restore
         store
         pop
+
         """
         name = self._check_name(name, True)
         delattr(self, name)
@@ -207,6 +209,7 @@ class ModelManager(object):
         restore
         store
         remove
+
         """
         name = self._check_name(name, True)
         model = self.restore(name)
@@ -226,6 +229,7 @@ class ModelManager(object):
         remove
         store
         pop
+
         """
         name = self._check_name(name, True)
         d = self._models.get_item(name + '._dict').as_dictionary()
@@ -301,6 +305,7 @@ class MVATools(object):
            that when they are multiplied by vector_scale,
            they are on the scale of the image plot.
            If None, uses matplotlib's autoscaling.
+
         """
         if same_window is None:
             same_window = True
@@ -1411,7 +1416,7 @@ class MVATools(object):
         visualization than then other two methods.  The loadings and factors
         are displayed in different windows and each has its own
         navigator/sliders to navigate them if they are multidimensional. The
-        component index axis is syncronize between the two.
+        component index axis is synchronized between the two.
 
         Parameters
         ----------
@@ -1452,7 +1457,7 @@ class MVATools(object):
         visualization than then other two methods.  The loadings and factors
         are displayed in different windows and each has its own
         navigator/sliders to navigate them if they are multidimensional. The
-        component index axis is syncronize between the two.
+        component index axis is synchronized between the two.
 
         Parameters
         ----------
@@ -2409,16 +2414,16 @@ class BaseSignal(FancySlicing,
             (options stored in 'metadata._HyperSpy.Stacking_history'
              else the last navigation axis will be used.
         number_of_parts : {'auto' | int}
-            Number of parts in which the SI will be splitted. The
-            splitting is homegenous. When the axis size is not divisible
+            Number of parts in which the SI will be split. The
+            splitting is homogeneous. When the axis size is not divisible
             by the number_of_parts the reminder data is lost without
             warning. If number_of_parts and step_sizes is 'auto',
             number_of_parts equals the length of the axis,
             step_sizes equals one  and the axis is suppressed from each
             sub_spectra.
         step_sizes : {'auto' | list of ints | int}
-            Size of the splitted parts. If 'auto', the step_sizes equals one.
-            If int, the splitting is homogenous.
+            Size of the split parts. If 'auto', the step_sizes equals one.
+            If int, the splitting is homogeneous.
 
         Examples
         --------
@@ -2439,7 +2444,8 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        list of the splitted signals
+        list of the split signals
+
         """
 
         shape = self.data.shape
@@ -2610,6 +2616,7 @@ class BaseSignal(FancySlicing,
         >>> with s.unfolded():
                 # Do whatever needs doing while unfolded here
                 pass
+
         """
         unfolded = self.unfold(unfold_navigation, unfold_signal)
         try:
@@ -3602,7 +3609,7 @@ class BaseSignal(FancySlicing,
         -----
         If the function results do not have identical shapes, the result is an
         array of navigation shape, where each element corresponds to the result
-        of the function (of arbitraty object type), called "ragged array". As
+        of the function (of arbitrary object type), called "ragged array". As
         such, most functions are not able to operate on the result and the data
         should be used directly.
 
@@ -3613,14 +3620,14 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        Apply a gaussian filter to all the images in the dataset. The sigma
+        Apply a Gaussian filter to all the images in the dataset. The sigma
         parameter is constant.
 
         >>> import scipy.ndimage
         >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=2.5)
 
-        Apply a gaussian filter to all the images in the dataset. The sigmal
+        Apply a Gaussian filter to all the images in the dataset. The signal
         parameter is variable.
 
         >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
@@ -3634,7 +3641,7 @@ class BaseSignal(FancySlicing,
             if isinstance(value, BaseSignal):
                 ndkwargs += ((key, value),)
 
-        # Check if the signal axes have inhomogenous scales and/or units and
+        # Check if the signal axes have inhomogeneous scales and/or units and
         # display in warning if yes.
         scale = set()
         units = set()
@@ -3696,7 +3703,7 @@ class BaseSignal(FancySlicing,
                      inplace=True, **kwargs):
         """Iterates the signal navigation space applying the function.
 
-        Paratemers
+        Parameters
         ----------
         function : callable
             the function to apply
@@ -4088,7 +4095,6 @@ class BaseSignal(FancySlicing,
             e.g., `numpy.int8`.  Default is the data type of the current signal
             data.
 
-
         """
         from dask.array import Array
         if data is not None:
@@ -4196,7 +4202,6 @@ class BaseSignal(FancySlicing,
         making a copy of the data. See `transpose` for a more general method
         with more options.
 
-
         Parameters
         ----------
         spectral_axis %s
@@ -4233,7 +4238,7 @@ class BaseSignal(FancySlicing,
         """Convert signal to image.
 
         The chosen image axes are moved to the last indices in the
-        array and the data is made contiguous for effecient
+        array and the data is made contiguous for efficient
         iteration over images.
 
         Parameters
@@ -4300,7 +4305,7 @@ class BaseSignal(FancySlicing,
         accordingly if pertinent.
 
         The signal_type attribute specifies the kind of data that the signal
-        containts e.g. "EELS" for electron energy-loss spectroscopy,
+        contains e.g. "EELS" for electron energy-loss spectroscopy,
         "PES" for photoemission spectroscopy. There are some methods that are
         only available for certain kind of signals, so setting this
         parameter can enable/disable features.
@@ -4344,7 +4349,7 @@ class BaseSignal(FancySlicing,
         """Prints the five-number summary statistics of the data, the mean and
         the standard deviation.
 
-        Prints the mean, standandard deviation (std), maximum (max), minimum
+        Prints the mean, standard deviation (std), maximum (max), minimum
         (min), first quartile (Q1), median and third quartile. nans are
         removed from the calculations.
 
