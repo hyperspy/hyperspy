@@ -57,6 +57,16 @@ script:
   - pip install coverage coveralls pytest pytest-cov pytest-mpl;
     py.test --mpl --cov=hyperspy --pyargs hyperspy;
 
+#after_failure: # run only on failure in case there is a need to check matplotlib image comparison
+# This needs a service to upload the artifacts (and corresponding configuration)
+# See:
+# https://blog.travis-ci.com/2012-12-18-travis-artifacts/
+# https://docs.travis-ci.com/user/uploading-artifacts/
+# https://github.com/matplotlib/matplotlib/blob/master/.travis.yml
+#  - gem install travis-artifacts
+#  - zip -r image_comparison_failure.zip /tmp/ -i *.png
+#  - travis-artifacts upload image_comparison_failure.zip
+
 after_success:
 - coveralls
 - if [[ $MINIMAL_ENV == 'False' ]]; then

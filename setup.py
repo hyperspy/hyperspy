@@ -58,9 +58,9 @@ install_req = ['scipy>=0.15',
                'h5py',
                'python-dateutil',
                'ipyparallel',
-               'dask[array]>=0.14.3',
+               'dask[array]>=0.16.1',
                'scikit-image>=0.13',
-               'pint>0.7',
+               'pint>=0.8',
                'statsmodels',
                ]
 

@@ -58,8 +58,8 @@ class TestSpcSpectrum_v061_xrf:
             'Sample']['elements']
         sem_dict = TestSpcSpectrum_v061_xrf.spc.metadata.as_dictionary()[
             'Acquisition_instrument']['SEM']  # this will eventually need to
-                                              #  be changed when XRF-specific
-                                              #  features are added
+        #  be changed when XRF-specific
+        #  features are added
         eds_dict = sem_dict['Detector']['EDS']
         signal_dict = TestSpcSpectrum_v061_xrf.spc.metadata.as_dictionary()[
             'Signal']
