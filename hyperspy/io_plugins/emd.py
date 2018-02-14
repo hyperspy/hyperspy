@@ -841,6 +841,7 @@ class FeiEMDReader(object):
             date, time = self._convert_datetime(unix_time).split('T')
             meta_gen['date'] = date
             meta_gen['time'] = time
+            meta_gen['time_zone'] = self._get_local_time_zone()
         except (KeyError, UnboundLocalError):
             pass
 
