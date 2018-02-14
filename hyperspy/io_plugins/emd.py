@@ -38,6 +38,7 @@ import time
 import logging
 from tempfile import mkdtemp
 import os.path as path
+import traits.api as t
 
 from hyperspy.misc.elements import atomic_number2name
 
@@ -500,6 +501,7 @@ class FeiEMDReader(object):
         self.SI_data_dtype = SI_dtype
         self.load_SI_image_stack = load_SI_image_stack
         self.lazy = lazy
+        self.detector_name = None
 
         self.original_metadata = {}
         with h5py.File(filename, 'r') as f:
@@ -571,14 +573,15 @@ class FeiEMDReader(object):
                                             spectrum_sub_group_key)
         original_metadata.update(self.original_metadata)
 
-        dispersion, offset = self._get_dispersion_offset(original_metadata)
+        dispersion, offset, unit = self._get_dispersion_offset(
+            original_metadata)
 
         axes = [{'index_in_array': 0,
                  'name': 'E',
                  'offset': offset,
                  'scale': dispersion,
                  'size': data.shape[0],
-                 'units': 'keV',
+                 'units': unit,
                  'navigate': False}
                 ]
 
@@ -614,11 +617,14 @@ class FeiEMDReader(object):
         original_metadata = _parse_metadata(image_group, image_sub_group_key)
         original_metadata.update(self.original_metadata)
         try:
-            self.detector_name = original_metadata['BinaryResult']['Detector']
-        except KeyError:
+            if 'Detector' in original_metadata['BinaryResult']:
+                self.detector_name = original_metadata['BinaryResult']['Detector']
             # if the `BinaryResult/Detector` is not available, there should be
             # only one detector in `Detectors`
-            self.detector_name = original_metadata['Detectors']['Detector-01']['DetectorName']
+            elif 'DetectorName' in original_metadata['Detectors']['Detector-01']:
+                self.detector_name = original_metadata['Detectors']['Detector-01']['DetectorName']
+        except KeyError:
+            pass
 
         read_stack = (self.load_SI_image_stack or self.im_type == 'Image')
         if read_stack:
@@ -630,25 +636,27 @@ class FeiEMDReader(object):
             # Get the scanning area shape of the SI from the images
             self.SI_shape = data.shape
 
-        pix_scale = original_metadata['BinaryResult'].get(
-            'PixelSize', {'height': 1.0, 'width': 1.0})
-        offsets = original_metadata['BinaryResult'].get(
-            'Offset',  {'x': 0.0, 'y': 0.0})
-        original_units = original_metadata['BinaryResult'].get(
-            'PixelUnitX', '')
+        try:
+            pix_scale = original_metadata['BinaryResult']['PixelSize']
+            offsets = original_metadata['BinaryResult']['Offset']
+            original_units = original_metadata['BinaryResult']['PixelUnitX']
+        except KeyError:
+            _logger.warning("The calibration can't be loaded.")
+            pix_scale = {'height': 1.0, 'width': 1.0}
+            offsets = {'x': 0.0, 'y': 0.0}
+            original_units = t.Undefined
 
         axes = []
         # stack of images
         if read_stack and data.shape[0] > 1:
-            frame_time = original_metadata['Scan']['FrameTime']
-            scale_time = self._convert_scale_units(
-                frame_time, 's', 2 * data.shape[0])
+            frame_time, time_unit = self._parse_frame_time(original_metadata,
+                                                           data.shape[0])
             axes.append({'index_in_array': 0,
                          'name': 'Time',
                          'offset': 0,
-                         'scale': scale_time[0],
+                         'scale': frame_time,
                          'size': data.shape[0],
-                         'units': scale_time[1],
+                         'units': time_unit,
                          'navigate': True})
             i = 1
         else:
@@ -692,28 +700,46 @@ class FeiEMDReader(object):
                 'original_metadata': original_metadata,
                 'mapping': self._get_mapping(map_selected_element=False)}
 
+    def _parse_frame_time(self, original_metadata, factor=1):
+        try:
+            frame_time = original_metadata['Scan']['FrameTime']
+            time_unit = 's'
+        except KeyError:
+            frame_time, time_unit = None, t.Undefined
+
+        frame_time, time_unit = self._convert_scale_units(
+            frame_time, time_unit, factor)
+        return frame_time, time_unit
+
     def _parse_image_display(self):
-        image_display_group = self.p_grp.get('Displays/ImageDisplay')
-        key_list = _get_keys_from_group(image_display_group)
-        self.map_label_dict = {}
-        for key in key_list:
-            v = json.loads(image_display_group[key].value[0].decode('utf-8'))
-            data_key = v['dataPath'].split('/')[-1]  # key in data group
-            self.map_label_dict[data_key] = v['display']['label']
+        try:
+            image_display_group = self.p_grp.get('Displays/ImageDisplay')
+            key_list = _get_keys_from_group(image_display_group)
+            self.map_label_dict = {}
+            for key in key_list:
+                v = json.loads(
+                    image_display_group[key].value[0].decode('utf-8'))
+                data_key = v['dataPath'].split('/')[-1]  # key in data group
+                self.map_label_dict[data_key] = v['display']['label']
+        except:
+            pass
 
     def _parse_metadata_group(self, group, group_name):
         d = {}
-        for group_key in _get_keys_from_group(group):
-            subgroup = group.get(group_key)
-            if hasattr(subgroup, 'keys'):
-                sub_dict = {}
-                for subgroup_key in _get_keys_from_group(subgroup):
-                    v = json.loads(
-                        subgroup[subgroup_key].value[0].decode('utf-8'))
-                    sub_dict[subgroup_key] = v
-            else:
-                sub_dict = json.loads(subgroup.value[0].decode('utf-8'))
-            d[group_key] = sub_dict
+        try:
+            for group_key in _get_keys_from_group(group):
+                subgroup = group.get(group_key)
+                if hasattr(subgroup, 'keys'):
+                    sub_dict = {}
+                    for subgroup_key in _get_keys_from_group(subgroup):
+                        v = json.loads(
+                            subgroup[subgroup_key].value[0].decode('utf-8'))
+                        sub_dict[subgroup_key] = v
+                else:
+                    sub_dict = json.loads(subgroup.value[0].decode('utf-8'))
+                d[group_key] = sub_dict
+        except:
+            _logger.warning("Some metadata can't be read.")
         self.original_metadata.update({group_name: d})
 
     def _read_spectrum_stream(self):
@@ -742,7 +768,7 @@ class FeiEMDReader(object):
         original_metadata.update(self.original_metadata)
 
         pixel_size, offsets, original_units = streams.get_pixelsize_offset_unit()
-        dispersion, offset = self._get_dispersion_offset(original_metadata)
+        dispersion, offset, unit = self._get_dispersion_offset(original_metadata)
 
         scale_x = self._convert_scale_units(
             pixel_size['width'], original_units, spectrum_image_shape[1])
@@ -757,13 +783,14 @@ class FeiEMDReader(object):
         axes = []
         # add a supplementary axes when we import all frames individualy
         if not self.sum_frames:
-            frame_time = float(original_metadata['Scan']['FrameTime'])
+            frame_time, time_unit = self._parse_frame_time(original_metadata,
+                                                           spectrum_image_shape[i])
             axes.append({'index_in_array': i,
                          'name': 'Time',
                          'offset': 0,
                          'scale': frame_time,
                          'size': spectrum_image_shape[i],
-                         'units': 's',
+                         'units': time_unit,
                          'navigate': True})
             i = 1
         axes.extend([{'index_in_array': i,
@@ -785,7 +812,7 @@ class FeiEMDReader(object):
                       'offset': offset,
                       'scale': dispersion,
                       'size': spectrum_image_shape[i + 2],
-                      'units': 'keV',
+                      'units': unit,
                       'navigate': False}])
 
         md = self._get_metadata_dict(original_metadata)
@@ -808,15 +835,21 @@ class FeiEMDReader(object):
                                           'mapping': self._get_mapping()})
 
     def _get_dispersion_offset(self, original_metadata):
-        for detectorname, detector in original_metadata['Detectors'].items():
-            if original_metadata['BinaryResult']['Detector'] in detector['DetectorName']:
-                dispersion = float(
-                    detector['Dispersion']) / 1000.0 * self.rebin_energy
-                offset = float(
-                    detector['OffsetEnergy']) / 1000.0
-                return dispersion, offset
+        try:
+            for detectorname, detector in original_metadata['Detectors'].items():
+                if original_metadata['BinaryResult']['Detector'] in detector['DetectorName']:
+                    dispersion = float(
+                        detector['Dispersion']) / 1000.0 * self.rebin_energy
+                    offset = float(
+                        detector['OffsetEnergy']) / 1000.0
+                    return dispersion, offset, 'keV'
+        except KeyError:
+            _logger.warning("The spectrum calibration can't be loaded.")
+            return 1, 0, t.Undefined
 
     def _convert_scale_units(self, value, units, factor=1):
+        if units == t.Undefined:
+            return value, units
         factor /= 2
         v = np.float(value) * self.ureg(units)
         converted_v = (factor * v).to_compact()
@@ -827,7 +860,8 @@ class FeiEMDReader(object):
     def _get_metadata_dict(self, om):
         meta_gen = {}
         meta_gen['original_filename'] = os.path.split(self.filename)[1]
-        meta_gen['title'] = self.detector_name
+        if self.detector_name is not None:
+            meta_gen['title'] = self.detector_name
         # We have only one entry in the original_metadata, so we can't use the
         # mapping of the original_metadata to set the date and time in the
         # metadata: need to set it manually here
@@ -837,7 +871,8 @@ class FeiEMDReader(object):
             # Workaround when the 'AcquisitionStartDatetime' key is missing
             # This timestamp corresponds to when the data is stored
             elif 'Detectors[BM-Ceta].TimeStamp' in om['CustomProperties'].keys():
-                unix_time = float(om['CustomProperties']['Detectors[BM-Ceta].TimeStamp']['value'])/1E6
+                unix_time = float(
+                    om['CustomProperties']['Detectors[BM-Ceta].TimeStamp']['value'])/1E6
             date, time = self._convert_datetime(unix_time).split('T')
             meta_gen['date'] = date
             meta_gen['time'] = time
@@ -989,8 +1024,15 @@ class FeiSpectrumStreamContainer(object):
         return self.streams[0].spectrum_image.shape
 
     def get_pixelsize_offset_unit(self, stream_index=0):
-        om_br = self.streams[stream_index].original_metadata['BinaryResult']
-        return om_br['PixelSize'], om_br['Offset'], om_br['PixelUnitX']
+        try:
+            om_br = self.streams[stream_index].original_metadata['BinaryResult']
+            return om_br['PixelSize'], om_br['Offset'], om_br['PixelUnitX']
+        except KeyError:
+            _logger.warning("The calibration can't be loaded.")
+            pix_scale = {'height': 1.0, 'width': 1.0}
+            offsets = {'x': 0.0, 'y': 0.0}
+            original_units = t.Undefined
+            return pix_scale, offsets, original_units
 
 
 class FeiSpectrumStream(object):
