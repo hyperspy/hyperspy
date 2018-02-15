@@ -309,12 +309,13 @@ class EDSModel(Model1D):
                 String can be 'Polymer_C' / 'Super_X' / '12µm_BE' / '25µm_BE' / '100µm_BE' / 'Polymer_C2' / 'Polymer_C3' 
                 It will be used to calculate the detector efficiency
                 
-        quantification: None or Muti_Base_Signal or array/list 
+        quantification: None or Muti_Base_Signal or array
             If quantification is None, an approximation based on peaks ratio is used
             However if the acquisition instrument is a TEM it is more consistent to perform a quantification before the use of "add_physical_background"
                 In this case variable which contain the result of the quantification can be directly renseigned
                 The function automatically detect if data are in weight_percent or in atomic_percent
                 Otherwise, an array which contain the quantification (with map dimension and number or elements set in metadata) can be directly passed
+                This quantmap have to be an array not a list !
 
         Example:
 
@@ -328,8 +329,8 @@ class EDSModel(Model1D):
             m=s.create_model(auto_background=False)
             m.add_physical_background(quantification=Weight_percent)
             m.components.Bremsstrahlung.initialyze() # Carefull it's a necessary step
-            m.fit_background(kind='multi', bounded=True)
-            m.multifit()
+            m.fit_background(bounded=True)
+            m.fit()
             
         """
         if E0 == 'from_metadata':

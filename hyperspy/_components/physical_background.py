@@ -82,7 +82,7 @@ def Wpercent(model,E0,quantification):
             t=u.sum() 
             for i in range (0,len(u)):
                 g[i] =u[i] /t*100
-    elif type(quantification) is np.ndarray or list: # if quantification is already an array of weight percent, directly keep the array
+    elif type(quantification) is np.ndarray: # if quantification is already an array of weight percent, directly keep the array
         g=quantification
 
     else:
