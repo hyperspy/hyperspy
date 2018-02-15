@@ -82,7 +82,7 @@ def Wpercent(model,E0,quantification):
             t=u.sum() 
             for i in range (0,len(u)):
                 g[i] =u[i] /t*100
-    elif isinstance(quantification[0] , (float,int)): # if quantification is already an array of weight percent, directly keep the array
+    elif type(quantification) is np.ndarray or list: # if quantification is already an array of weight percent, directly keep the array
         g=quantification
 
     else:
@@ -117,7 +117,7 @@ def Mucoef(model,quanti): # this function calculate the absorption coefficient f
     t=(np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size/5))
     
     Ac=mass_absorption_mixture(elements=model._signal.metadata.Sample.elements ,weight_percent=w, energies=t)    
-    b=(model._signal.axes_manager.signal_axes[-1].axis)-0.05
+    b=(model._signal.axes_manager.signal_axes[-1].axis)-0.035
     Ac=np.interp(b,t,Ac)
     
     return Ac
@@ -126,7 +126,7 @@ def Mucoef(model,quanti): # this function calculate the absorption coefficient f
 def Windowabsorption(model,detector): # this function interpolate the detector efficiency based on dictionnary (create from personnal data) and the signal length. This correspond to the Window parameter  
  
     a=np.array(detector_efficiency[detector])
-    b=(model._signal.axes_manager.signal_axes[-1].axis)-0.05
+    b=(model._signal.axes_manager.signal_axes[-1].axis)-0.035
     x =a[:,0]
     y = a[:,1]
     Accc=np.interp(b, x, y)
@@ -143,7 +143,7 @@ class Physical_background(Component):
     E0 : int 
     """
 
-    def __init__(self, E0, detector, quantification, coefficients=3, Window=0, quanti=0):
+    def __init__(self, E0, detector, quantification, coefficients=1, Window=0, quanti=0):
         Component.__init__(self,['coefficients','E0','Window','quanti'])
 
         self.coefficients._number_of_elements = 2
@@ -165,8 +165,8 @@ class Physical_background(Component):
         self.isbackground=True
 
         # Boundaries
-        self.coefficients.bmax = None
-        self.coefficients.bmin = 0.
+        self.coefficients.bmin=0
+        self.coefficients.bmax=None
 
     def initialyze(self):
 
