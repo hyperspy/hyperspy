@@ -335,9 +335,27 @@ class SFS_reader(object):
         SFSTreeItem
         """
         with open(self.filename, 'rb') as fn:
-            # file tree do not exceed one chunk in bcf:
-            fn.seek(self.chunksize * self.tree_address + 0x138)
-            raw_tree = fn.read(0x200 * self.n_tree_items)
+            #check if file tree do not exceed one chunk:
+            n_file_tree_chunks = ceil((self.n_tree_items * 0x200) /
+                                      (self.chunksize - 0x20))
+            if n_file_tree_chunks == 1:
+                # file tree do not exceed one chunk in bcf:
+                fn.seek(self.chunksize * self.tree_address + 0x138)
+                raw_tree = fn.read(0x200 * self.n_tree_items)
+            else:
+                temp_str = io.BytesIO()
+                tree_address = self.tree_address
+                tree_items_in_chunk = (self.chunksize - 0x20) // 0x200
+                for i in range(n_file_tree_chunks):
+                    # jump to tree/list address:
+                    fn.seek(self.chunksize * tree_address + 0x118)
+                    # next tree/list address:
+                    tree_address = strct_unp('<I', fn.read(4))[0]
+                    fn.seek(28, 1)
+                    temp_str.write(fn.read(tree_items_in_chunk * 0x200))
+                temp_str.seek(0)
+                raw_tree = temp_str.read(self.n_tree_items * 0x200)
+                temp_str.close()
             temp_item_list = [SFSTreeItem(raw_tree[i * 0x200:(i + 1) * 0x200],
                                           self) for i in range(self.n_tree_items)]
             # temp list with parents of items
@@ -645,16 +663,17 @@ class HyperHeader(object):
                 #"@Type='TRTRectangleOverlayElement' and "
                 "@Name='Map']/TRTSolidOverlayElement/"
                 "TRTBasicLineOverlayElement/TRTOverlayElement")
-            over_rect = dictionarize(rect_node)['TRTOverlayElement']['Rect']
-            rect = {'y1': over_rect['Top'] * self.y_res,
-                    'x1': over_rect['Left'] * self.x_res,
-                    'y2': over_rect['Bottom'] * self.y_res,
-                    'x2': over_rect['Right'] * self.x_res}
-            over_dict = {'marker_type': 'Rectangle',
-                         'plot_on_signal': True,
-                         'data': rect,
-                         'marker_properties': {'color': 'yellow',
-                                               'linewidth': 2}}
+            if rect_node is not None:
+                over_rect = dictionarize(rect_node)['TRTOverlayElement']['Rect']
+                rect = {'y1': over_rect['Top'] * self.y_res,
+                        'x1': over_rect['Left'] * self.x_res,
+                        'y2': over_rect['Bottom'] * self.y_res,
+                        'x2': over_rect['Right'] * self.x_res}
+                over_dict = {'marker_type': 'Rectangle',
+                            'plot_on_signal': True,
+                            'data': rect,
+                            'marker_properties': {'color': 'yellow',
+                                                'linewidth': 2}}
         image = Container()
         image.width = int(xml_node.find('./Width').text)  # in pixels
         image.height = int(xml_node.find('./Height').text)  # in pixels
@@ -674,7 +693,7 @@ class HyperHeader(object):
                 item['metadata']['General'] = {'title': detector_name}
                 item['metadata']['Signal'] = {'signal_type': detector_name,
                                               'record_by': 'image'}
-                if overview:
+                if overview and (rect_node is not None):
                     item['metadata']['Markers'] = {'overview': over_dict}
                 image.images.append(item)
         return image
