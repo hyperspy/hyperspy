@@ -688,14 +688,12 @@ class HyperHeader(object):
                 item = self.gen_hspy_item_dict_basic()
                 data = array1.reshape((image.height, image.width))
                 desc = img.find('./Description')
-                #detector_name = str(dscrp.text) if  else ''
                 item['data'] = data
                 item['axes'][0]['size'] = image.height
                 item['axes'][1]['size'] = image.width
                 item['metadata']['Signal'] = {'record_by': 'image'}
                 item['metadata']['General'] = {}
                 if desc is not None:
-                    item['metadata']['Signal']['signal_type'] = str(desc.text)
                     item['metadata']['General']['title'] = str(desc.text)
                 if overview and (rect_node is not None):
                     item['metadata']['Markers'] = {'overview': over_dict}
