@@ -792,7 +792,6 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]])
 
     """
-    from itertools import zip_longest
     from hyperspy.signals import BaseSignal
     import dask.array as da
     from numbers import Number

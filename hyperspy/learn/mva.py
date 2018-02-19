@@ -476,6 +476,7 @@ class MVA():
                                 comp_list=None,
                                 mask=None,
                                 on_loadings=False,
+                                reverse_component_criterion='factor',
                                 pretreatment=None,
                                 **kwargs):
         """Blind source separation (BSS) on the result on the
@@ -511,6 +512,9 @@ class MVA():
         on_loadings : bool
             If True, perform the BSS on the loadings of a previous
             decomposition. If False, performs it on the factors.
+        reverse_component_criterion : str {'factor', 'loading'}
+            Use either the `factor` or the `loading` to determine if the 
+            component needs to be reversed.
         pretreatment: dict
 
         **kwargs : extra key word arguments
@@ -555,6 +559,10 @@ class MVA():
                              "greater than one, but the navigation "
                              "size of the given factors is %i." %
                              factors.axes_manager.navigation_size)
+
+        if reverse_component_criterion not in ['factor', 'loading']:
+            raise ValueError("`reverse_component_criterion` can take only "
+                             "`factor` or `loading` as parameter.")
 
         # Check mask dimensions
         if mask is not None:
@@ -673,7 +681,7 @@ class MVA():
         lr.unmixing_matrix = w
         lr.on_loadings = on_loadings
         self._unmix_components()
-        self._auto_reverse_bss_component(lr)
+        self._auto_reverse_bss_component(lr, reverse_component_criterion)
         lr.bss_algorithm = algorithm
         lr.bss_node = str(lr.bss_node)
 
@@ -786,14 +794,19 @@ class MVA():
             lr.bss_factors = np.dot(lr.factors[:, :n], w.T)
             lr.bss_loadings = np.dot(lr.loadings[:, :n], np.linalg.inv(w))
 
-    def _auto_reverse_bss_component(self, target):
+    def _auto_reverse_bss_component(self, target, reverse_component_criterion):
         n_components = target.bss_factors.shape[1]
         for i in range(n_components):
-            minimum = np.nanmin(target.bss_factors[:, i])
-            maximum = np.nanmax(target.bss_factors[:, i])
+            if reverse_component_criterion == 'factor':
+                values = target.bss_factors
+            else:
+                values = target.bss_loading
+            minimum = np.nanmin(values[:, i])
+            maximum = np.nanmax(values[:, i])
             if minimum < 0 and -minimum > maximum:
                 self.reverse_bss_component(i)
-                _logger.info("IC %i reversed" % i)
+                _logger.info("Independent component {} reversed based on the "
+                             "{}".format(i, reverse_component_criterion))
 
     def _calculate_recmatrix(self, components=None, mva_type=None,):
         """
