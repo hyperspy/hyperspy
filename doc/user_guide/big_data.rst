@@ -149,6 +149,19 @@ instead:
     <LazySignal2D, title: , dimensions: (200, 200|512, 512)>
     >>> s.plot(navigator='slider')
 
+Lazy operations that affect the axes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When using lazy signals the computation of the data is delayed until
+requested. However, the changes to the axes properties are performed
+when running a given function that modfies them i.e. they are not
+performed lazily. This can lead to hard to debug issues when the result
+of a given function that is computed lazily depends on the value of the
+axes parameters that *may have changed* before the computation is requested.
+Therefore, in order to avoid such issues, it is reccomended to explicitly
+compute the result of all functions that are affected by the axes
+paramters. This is the reason why e.g. the result of
+:py:meth:`~._signals.signal1d.Signal1D.shift1D` is not lazy.
 
 
 Limitations
@@ -211,10 +224,10 @@ implementations:
 
 * **PCA** (``algorithm='PCA'``): performs `IncrementalPCA <http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.IncrementalPCA.html#sklearn.decomposition.IncrementalPCA>`_
   from ``scikit-learn``.
-* **ORPCA** (``algorithm='ORPCA'``): performs Online Robust PCA. (It is also available
-  for regular signals.)
+* **ORPCA** (``algorithm='ORPCA'``): performs Online Robust PCA.
+  (It is also available for regular signals.)
 * **NMF** (``algorithm='ONMF'``): performs Online Robust NMF, as per "OPGD"
-  algorithm in [Zhao2016]_.
+  algorithm in :ref:`[Zhao2016] <Zhao2016>`.
 
 Other minor differences
 ^^^^^^^^^^^^^^^^^^^^^^^
