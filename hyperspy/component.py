@@ -21,6 +21,7 @@ import functools
 import warnings
 
 import numpy as np
+from dask.array import Array as dArray
 import traits.api as t
 from traits.trait_numeric import Array
 import sympy
@@ -518,8 +519,14 @@ class Parameter(t.HasTraits):
         if not indices:
             indices = (0,)
         if self.map['is_set'][indices]:
-            self.value = self.map['values'][indices]
-            self.std = self.map['std'][indices]
+            value = self.map['values'][indices]
+            std = self.map['std'][indices]
+            if isinstance(value, dArray):
+                value = value.compute()
+            if isinstance(std, dArray):
+                std = std.compute()
+            self.value = value
+            self.std = std
 
     def assign_current_value_to_all(self, mask=None):
         """Assign the current value attribute to all the  indices
