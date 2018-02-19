@@ -22,6 +22,11 @@ import os
 import tempfile
 import pytest
 from time import perf_counter, sleep
+try:
+    import blosc
+    blosc_installed = True
+except:
+    blosc_installed = False
 
 from hyperspy.io import load, save
 from hyperspy import signals
@@ -147,13 +152,21 @@ class TestPythonMrcz:
                              _generate_parameters())
     def test_MRC(self, dtype, compressor, clevel, lazy):
         t_start = perf_counter()
-        self.compareSaveLoad([2, 64, 32], dtype=dtype, compressor=compressor,
-                             clevel=clevel, lazy=lazy)
+        if not blosc_installed and compressor is not None:
+            with pytest.raises(ImportError):
+                return self.compareSaveLoad([2, 64, 32], dtype=dtype,
+                                            compressor=compressor,
+                                            clevel=clevel, lazy=lazy)
+        else:
+            return self.compareSaveLoad([2, 64, 32], dtype=dtype,
+                                        compressor=compressor,
+                                        clevel=clevel, lazy=lazy)
         print("MRCZ test ({}, {}, {}, lazy:{}) finished in {} s".format(
             dtype, compressor, clevel, lazy, perf_counter() - t_start))
 
     @pytest.mark.parametrize("dtype", dtype_list)
     def test_Async(self, dtype):
+        pytest.importorskip('blosc')
         t_start = perf_counter()
         self.compareSaveLoad([2, 64, 32], dtype=dtype, compressor='zstd',
                              clevel=1, do_async=True)
