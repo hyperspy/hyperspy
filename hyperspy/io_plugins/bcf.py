@@ -56,6 +56,7 @@ from struct import unpack as strct_unp
 from zlib import decompress as unzip_block
 import logging
 import re
+from math import ceil
 
 _logger = logging.getLogger(__name__)
 
@@ -113,7 +114,7 @@ class SFSTreeItem(object):
             self._fill_pointer_table()
 
     def _calc_pointer_table_size(self):
-        n_chunks = -(-self.size // self.sfs.usable_chunk)
+        n_chunks = ceil(self.size / self.sfs.usable_chunk)
         return n_chunks
 
     def _filetime_to_unix(self, time):
@@ -135,8 +136,8 @@ class SFSTreeItem(object):
         consecutive.
         """
         # table size in number of chunks:
-        n_of_chunks = -(-self.size_in_chunks //
-                        (self.sfs.usable_chunk // 4))
+        n_of_chunks = ceil(self.size_in_chunks /
+                           (self.sfs.usable_chunk // 4))
         with open(self.sfs.filename, 'rb') as fn:
             if n_of_chunks > 1:
                 next_chunk = self._pointer_to_pointer_table
@@ -247,12 +248,12 @@ but compression signature is missing in the header. Aborting....""")
 
         offset = 0x80  # the 1st compression block header
         for dummy1 in range(self.no_of_compr_blk):
-            cpr_size, dummy_size, dummy_unkn, dummy_size2 = strct_unp('<IIII',
-                                                                      self.read_piece(offset, 16))
-            # dummy_unkn is probably some kind of checksum but
+            cpr_size = strct_unp('<I12x', self.read_piece(offset, 16))[0]
+            # cpr_size, dum_size, dum_unkn, dum_size2 = strct_unp('<IIII',...
+            # dum_unkn is probably some kind of checksum but
             # none of known (crc16, crc32, adler32) algorithm could match.
-            # dummy_size2 == cpr_size + 0x10 which have no use...
-            # dummy_size, which is decompressed size, also have no use...
+            # dum_size2 == cpr_size + 0x10 which have no use...
+            # dum_size, which is decompressed size, also have no use...
             # as it is the same in file compression_header
             offset += 16
             raw_string = self.read_piece(offset, cpr_size)
@@ -445,11 +446,8 @@ def dictionarize(t):
         for dc in map(dictionarize, children):
             for k, v in dc.items():
                 dd[k].append(v)
-        d = {
-            t.tag: {
-                k: interpret(
-                    v[0]) if len(v) == 1 else v for k,
-                v in dd.items()}}
+        d = {t.tag: {k: interpret(v[0]) if len(
+            v) == 1 else v for k, v in dd.items()}}
     if t.attrib:
         d[t.tag].update(('XmlClass' + k if list(t) else k, interpret(v))
                         for k, v in t.attrib.items())
@@ -509,21 +507,16 @@ class EDXSpectrum(object):
         self.esma_metadata = dictionarize(esma_header)
         # USED:
         self.hv = self.esma_metadata['PrimaryEnergy']
-        self.elevationAngle = self.esma_metadata['ElevationAngle']
-        #self.azimutAngle = self.esma_metadata['AzimutAngle']
+        self.elev_angle = self.esma_metadata['ElevationAngle']
 
         # map stuff from spectra xml branch:
         self.spectrum_metadata = dictionarize(spectrum_header)
-        self.calibAbs = self.spectrum_metadata['CalibAbs']
-        self.calibLin = self.spectrum_metadata['CalibLin']
-        self.chnlCnt = self.spectrum_metadata['ChannelCount']
+        self.offset = self.spectrum_metadata['CalibAbs']
+        self.scale = self.spectrum_metadata['CalibLin']
 
         # main data:
         self.data = np.fromstring(spectrum.find('./Channels').text,
                                   dtype='Q', sep=",")
-        self.energy = np.arange(self.calibAbs,
-                                self.calibLin * self.chnlCnt + self.calibAbs,
-                                self.calibLin)  # the x axis for ploting spectra
 
     def energy_to_channel(self, energy, kV=True):
         """ convert energy to channel index,
@@ -533,7 +526,7 @@ class EDXSpectrum(object):
             en_temp = energy / 1000.
         else:
             en_temp = energy
-        return int(round((en_temp - self.calibAbs) / self.calibLin))
+        return int(round((en_temp - self.offset) / self.scale))
 
 
 class HyperHeader(object):
@@ -638,7 +631,7 @@ class HyperHeader(object):
         if detector:
             eds_metadata = self.get_spectra_metadata(**kwargs)
             acq_inst['Detector'] = {'EDS': {
-                'elevation_angle': eds_metadata.elevationAngle,
+                'elevation_angle': eds_metadata.elev_angle,
                 'detector_type': eds_metadata.detector_type,
                 'real_time': self.calc_real_time()}}
             if 'AzimutAngle' in eds_metadata.esma_metadata:
@@ -862,15 +855,10 @@ class BCF_reader(SFS_reader):
     filename
 
     Methods:
-    print_the_metadata, persistent_parse_hypermap, parse_hypermap,
-    py_parse_hypermap
-    (Inherited from SFS_reader: print_file_tree, get_file)
+    check_index_valid, parse_hypermap
 
     The class instantiates HyperHeader class as self.header attribute
-    where all metadata, sum eds spectras, (SEM) imagery are stored.
-    if persistent_parse_hypermap is called, the hypermap is stored
-    as instance of HyperMap inside the self.hypermap dictionary,
-    where index of the hypermap (default 0) is the key to the instance.
+    where all metadata, sum eds spectras, (SEM) images are stored.
     """
 
     def __init__(self, filename, instrument=None):
@@ -886,47 +874,17 @@ class BCF_reader(SFS_reader):
         header_byte_str = header_file.get_as_BytesIO_string().getvalue()
         hd_bt_str = fix_dec_patterns.sub(b'\\1.\\2', header_byte_str)
         self.header = HyperHeader(
-            header_byte_str,
-            self.available_indexes,
-            instrument=instrument)
+            hd_bt_str, self.available_indexes, instrument=instrument)
         self.hypermap = {}
 
     def check_index_valid(self, index):
         """check and return if index is valid"""
-        if not isinstance(index, int):
+        if type(index) != int:
             raise TypeError("provided index should be integer")
         if index not in self.available_indexes:
             raise IndexError("requisted index is not in the list of available indexes. "
                              "Available maps are under indexes: {0}".format(str(self.available_indexes)))
         return index
-
-    def persistent_parse_hypermap(self, index=None, downsample=None,
-                                  cutoff_at_kV=None,
-                                  lazy=False):
-        """Parse and assign the hypermap to the HyperMap instance.
-
-        Arguments:
-        index -- index of hypermap in bcf if v2 (default 0)
-        downsample -- downsampling factor of hypermap (default None)
-        cutoff_at_kV -- low pass cutoff value at keV (default None)
-
-        Method does not return anything, it adds the HyperMap instance to
-        self.hypermap dictionary.
-
-        See also:
-        HyperMap, parse_hypermap
-        """
-        if index is None:
-            index = self.def_index
-        dwn = downsample
-        hypermap = self.parse_hypermap(index=index,
-                                       downsample=dwn,
-                                       cutoff_at_kV=cutoff_at_kV,
-                                       lazy=lazy)
-        self.hypermap[index] = HyperMap(hypermap,
-                                        self,
-                                        index=index,
-                                        downsample=dwn)
 
     def parse_hypermap(self, index=None,
                        downsample=1, cutoff_at_kV=None,
@@ -955,245 +913,217 @@ class BCF_reader(SFS_reader):
         if index is None:
             index = self.def_index
         if type(cutoff_at_kV) in (int, float):
-            eds = self.header.get_spectra_metadata(index)
-            cutoff_chan = eds.energy_to_channel(cutoff_at_kV)
-        else:
-            cutoff_chan = None
-
-        if fast_unbcf:
-            fh = dd(self.get_file)('EDSDatabase/SpectrumData' + str(index))  # noqa
-            value = dd(unbcf_fast.parse_to_numpy)(fh,                        # noqa
-                                                  downsample=downsample,
-                                                  cutoff=cutoff_chan,
-                                                  description=False,
-                                                  index=index)
-            if lazy:
-                shape, dtype = unbcf_fast.parse_to_numpy(fh.compute(),
-                                                         downsample=downsample,
-                                                         cutoff=cutoff_chan,
-                                                         description=True,
-                                                         index=index)
-                res = da.from_delayed(value, shape=shape, dtype=dtype)
-            else:
-                res = value.compute()
-            return res
-        else:
-            value = dd(self.py_parse_hypermap)(index=index,
-                                               downsample=downsample,
-                                               cutoff_at_channel=cutoff_chan,
-                                               description=False)
-            if lazy:
-                shape, dtype = self.py_parse_hypermap(
-                    index=index, downsample=downsample,
-                    cutoff_at_channel=cutoff_chan, description=True)
-                res = da.from_delayed(value, shape=shape, dtype=dtype)
-            else:
-                res = value.compute()
-            return res
-
-    def py_parse_hypermap(self, index=None, downsample=1, cutoff_at_channel=None,  # noqa
-                          description=False):
-        """Unpack the Delphi/Bruker binary spectral map and return
-        numpy array in memory efficient way using pure python implementation.
-        (Slow!)
-
-        The function is long and complicated because Delphi/Bruker array
-        packing is complicated. Whole parsing is done in one function/method
-        to reduce overhead from python function calls. For cleaner parsing
-        logic check out fast cython implementation at
-        hyperspy/io_plugins/unbcf_fast.pyx
-
-        The method is only meant to be used if for some
-        reason c (generated with cython) version of the parser is not compiled.
-
-        Arguments:
-        ---------
-        index -- the index of hypermap in bcf if there is more than one
-            hyper map in file.
-        downsample -- downsampling factor (integer). Diferently than
-            block_reduce from skimage.measure, the parser populates
-            reduced array by suming results of pixels, thus having lower
-            memory requiriments. (default 1)
-        cutoff_at_kV -- value in keV to truncate the array at. Helps reducing
-          size of array. (default None)
-
-        Returns:
-        ---------
-        numpy array of bruker hypermap, with (y,x,E) shape.
-        """
-        if index is None:
-            index = self.def_index
-        # dict of nibbles to struct notation for reading:
-        st = {1: 'B', 2: 'B', 4: 'H', 8: 'I', 16: 'Q'}
-        spectrum_file = self.get_file('EDSDatabase/SpectrumData' + str(index))
-        iter_data, size_chnk = spectrum_file.get_iter_and_properties()[:2]
-        if isinstance(cutoff_at_channel, int):
-            max_chan = cutoff_at_channel
+            eds = self.header.spectra_data[index]
+            max_chan = eds.energy_to_channel(cutoff_at_kV)
         else:
             max_chan = self.header.estimate_map_channels(index=index)
-        depth = self.header.estimate_map_depth(index=index,
-                                               downsample=downsample,
-                                               for_numpy=True)
-        buffer1 = next(iter_data)
-        height, width = strct_unp('<ii', buffer1[:8])
-        dwn_factor = downsample
-        shape = (-(-height // dwn_factor), -(-width // dwn_factor), max_chan)
-        if description:
-            return shape, depth
-        # hyper map as very flat array:
-        vfa = np.zeros(shape[0] * shape[1] * shape[2], dtype=depth)
-        offset = 0x1A0
-        size = size_chnk
-        for line_cnt in range(height):
-            if (offset + 4) >= size:
-                size = size_chnk + size - offset
-                buffer1 = buffer1[offset:] + next(iter_data)
-                offset = 0
-            line_head = strct_unp('<i', buffer1[offset:offset + 4])[0]
-            offset += 4
-            for dummy1 in range(line_head):
-                if (offset + 22) >= size:
-                    size = size_chnk + size - offset
-                    buffer1 = buffer1[offset:] + next(iter_data)
-                    offset = 0
-                # the pixel header contains such information:
-                # x index of pixel (uint32);
-                # number of channels for whole mapping (unit16);
-                # number of channels for pixel (uint16);
-                # dummy placehollder (same value in every known bcf) (32bit);
-                # flag distinguishing packing data type (16bit):
-                #    0 - 16bit packed pulses, 1 - 12bit packed pulses,
-                #    >1 - instructively packed spectra;
-                # value which sometimes shows the size of packed data (uint16);
-                # number of pulses if pulse data are present (uint16) or
-                #      additional pulses to the instructively packed data;
-                # packed data size (32bit) (without additional pulses)
-                #       next header is after that amount of bytes;
-                x_pix, chan1, chan2, dummy1, flag, dummy_size1, n_of_pulses,\
-                    data_size2 = strct_unp('<IHHIHHHI',
-                                           buffer1[offset:offset + 22])
-                pix_idx = (x_pix // dwn_factor) + ((-(-width // dwn_factor)) *
-                                                   (line_cnt // dwn_factor))
-                offset += 22
-                if (offset + data_size2) >= size:
-                    buffer1 = buffer1[offset:] + next(iter_data)
-                    size = size_chnk + size - offset
-                    offset = 0
-                if flag == 0:
-                    data1 = buffer1[offset:offset + data_size2]
-                    arr16 = np.fromstring(data1, dtype=np.uint16)
-                    pixel = np.bincount(arr16, minlength=chan1 - 1)
-                    offset += data_size2
-                elif flag == 1:  # and (chan1 != chan2)
-                    # Unpack packed 12-bit data to 16-bit uints:
-                    data1 = buffer1[offset:offset + data_size2]
-                    switched_i2 = np.frombuffer(data1, dtype='<u2'
-                                                ).byteswap(False)
-                    data2 = np.frombuffer(switched_i2.tostring(),
-                                          dtype=np.uint8
-                                          ).repeat(2)
-                    mask = np.ones_like(data2, dtype=bool)
-                    mask[0::6] = mask[5::6] = False
-                    # Reinterpret expanded as 16-bit:
-                    # string representation of array after switch will have
-                    # always BE independently from endianess of machine
-                    exp16 = np.frombuffer(data2[mask].tostring(),
-                                          dtype='>u2', count=n_of_pulses).copy()
-                    exp16[0::2] >>= 4           # Shift every second short by 4
-                    exp16 &= np.uint16(0x0FFF)  # Mask all shorts to 12bit
-                    pixel = np.bincount(exp16, minlength=chan1 - 1)
-                    offset += data_size2
-                else:  # flag > 1
-                    # Unpack instructively packed data to pixel channels:
-                    pixel = []
-                    the_end = offset + data_size2 - 4
-                    while offset < the_end:
-                        # this would work on py3
-                        #size_p, channels = buffer1[offset:offset + 2]
-                        # this is needed on py2:
-                        size_p, channels = strct_unp('<BB',
-                                                     buffer1[offset:offset + 2])
-                        offset += 2
-                        if size_p == 0:
-                            pixel += channels * [0]
-                        else:
-                            gain = strct_unp('<' + st[size_p * 2],
-                                             buffer1[offset:offset + size_p])[0]
-                            offset += size_p
-                            if size_p == 1:
-                                # special case with nibble switching
-                                length = -(-channels // 2)  # integer roof
-                                # valid py3 code
-                                #a = list(buffer1[offset:offset + length])
-                                # this have to be used on py2:
-                                a = strct_unp('<' + 'B' * length,
-                                              buffer1[offset:offset + length])
-                                g = []
-                                for i in a:
-                                    g += (i & 0x0F) + gain, (i >> 4) + gain
-                                pixel += g[:channels]
-                            else:
-                                length = int(channels * size_p / 2)
-                                temp = strct_unp('<' + channels * st[size_p],
-                                                 buffer1[offset:offset + length])
-                                pixel += [l + gain for l in temp]
-                            offset += length
-                    if chan2 < chan1:
-                        rest = chan1 - chan2
-                        pixel += rest * [0]
-                    # additional data size:
-                    if n_of_pulses > 0:
-                        add_s = strct_unp('<I', buffer1[offset:offset + 4])[0]
-                        offset += 4
-                        if (offset + add_s) >= size:
-                            buffer1 = buffer1[offset:] + next(iter_data)
-                            size = size_chnk + size - offset
-                            offset = 0
-                        # the additional pulses:
-                        add_pulses = strct_unp('<' + 'H' * n_of_pulses,
-                                               buffer1[offset:offset + add_s])
-                        offset += add_s
-                        for i in add_pulses:
-                            pixel[i] += 1
-                    else:
-                        offset += 4
-                # if no downsampling is needed, or if it is first
-                # pixel encountered with downsampling on, then
-                # use assigment, which is ~4 times faster, than inplace add
-                if max_chan < chan1:  # if pixel have more channels than we need
-                    chan1 = max_chan
-                if (dwn_factor == 1):
-                    vfa[max_chan * pix_idx:chan1 + max_chan * pix_idx] =\
-                        pixel[:chan1]
-                else:
-                    vfa[max_chan * pix_idx:chan1 + max_chan * pix_idx] +=\
-                        pixel[:chan1]
-        vfa.resize((-(-height // dwn_factor),
-                    -(-width // dwn_factor),
-                    max_chan))
-        # check if array is signed, and convert to unsigned
-        if str(vfa.dtype)[0] == 'i':
-            new_dtype = ''.join(['u', str(vfa.dtype)])
-            vfa.dtype = new_dtype
-        return vfa
+        shape = (ceil(self.header.image.height / downsample),
+                 ceil(self.header.image.width / downsample),
+                 max_chan)
+        sfs_file = SFS_reader(self.filename)
+        vrt_file_hand = sfs_file.get_file(
+            'EDSDatabase/SpectrumData' + str(index))
+        if fast_unbcf:
+            parse_func = unbcf_fast.parse_to_numpy
+            dtype = self.header.estimate_map_depth(index=index,
+                                                   downsample=downsample,
+                                                   for_numpy=False)
+        else:
+            parse_func = py_parse_hypermap
+            dtype = self.header.estimate_map_depth(index=index,
+                                                   downsample=downsample,
+                                                   for_numpy=True)
+        if lazy:
+            value = dd(parse_func)(vrt_file_hand, shape,
+                                   dtype, downsample=downsample)
+            result = da.from_delayed(value, shape=shape, dtype=dtype)
+        else:
+            result = parse_func(vrt_file_hand, shape,
+                                dtype, downsample=downsample)
+        return result
 
     def add_filename_to_general(self, item):
+        """hypy helper method"""
         item['metadata']['General']['original_filename'] = \
             self.filename.split('/')[-1]
 
 
-class HyperMap(object):
+# dict of nibbles to struct notation for reading:
+st = {1: 'B', 2: 'B', 4: 'H', 8: 'I', 16: 'Q'}
 
-    """Container class to hold the parsed bruker hypermap
-    and its scale calibrations"""
 
-    def __init__(self, nparray, parent, index=0, downsample=1):
-        sp_meta = parent.header.get_spectra_metadata(index=index)
-        self.calib_abs = sp_meta.calibAbs  # in keV
-        self.calib_lin = sp_meta.calibLin
-        self.xcalib = parent.header.x_res * downsample
-        self.ycalib = parent.header.y_res * downsample
-        self.hypermap = nparray
+def py_parse_hypermap(virtual_file, shape, dtype, downsample=1):
+    """Unpack the Delphi/Bruker binary spectral map and return
+    numpy array in memory efficient way using pure python implementation.
+    (Slow!)
+
+    The function is long and complicated due to complexity of Delphi packed
+    array.
+    Whole parsing is placed in one function to reduce overhead of
+    python function calls. For cleaner parsing logic, please, see
+    fast cython implementation at hyperspy/io_plugins/unbcf_fast.pyx
+
+    The method is only meant to be used if for some
+    reason c (generated with cython) version of the parser is not compiled.
+
+    Arguments:
+    ---------
+    virtual_file -- virtual file handle returned by SFS_reader instance
+        or by object inheriting it (e.g. BCF_reader instance)
+    shape -- numpy shape
+    dtype -- numpy dtype
+    downsample -- downsample factor
+
+    note!: downsample, shape and dtype are interconnected and needs
+    to be properly calculated otherwise wrong output or segfault
+    is expected
+
+    Returns:
+    ---------
+    numpy array of bruker hypermap, with (y, x, E) shape.
+    """
+    iter_data, size_chnk = virtual_file.get_iter_and_properties()[:2]
+    dwn_factor = downsample
+    max_chan = shape[2]
+    buffer1 = next(iter_data)
+    height, width = strct_unp('<ii', buffer1[:8])
+    # hyper map as very flat array:
+    vfa = np.zeros(shape[0] * shape[1] * shape[2], dtype=dtype)
+    offset = 0x1A0
+    size = size_chnk
+    for line_cnt in range(height):
+        if (offset + 4) >= size:
+            size = size_chnk + size - offset
+            buffer1 = buffer1[offset:] + next(iter_data)
+            offset = 0
+        line_head = strct_unp('<i', buffer1[offset:offset + 4])[0]
+        offset += 4
+        for dummy1 in range(line_head):
+            if (offset + 22) >= size:
+                size = size_chnk + size - offset
+                buffer1 = buffer1[offset:] + next(iter_data)
+                offset = 0
+            # the pixel header contains such information:
+            # x index of pixel (uint32);
+            # number of channels for whole mapping (unit16);
+            # number of channels for pixel (uint16);
+            # dummy placehollder (same value in every known bcf) (32bit);
+            # flag distinguishing packing data type (16bit):
+            #    0 - 16bit packed pulses, 1 - 12bit packed pulses,
+            #    >1 - instructively packed spectra;
+            # value which sometimes shows the size of packed data (uint16);
+            # number of pulses if pulse data are present (uint16) or
+            #      additional pulses to the instructively packed data;
+            # packed data size (32bit) (without additional pulses) \
+            #       next header is after that amount of bytes;
+            x_pix, chan1, chan2, dummy1, flag, dummy_size1, n_of_pulses,\
+                data_size2 = strct_unp('<IHHIHHHI',
+                                       buffer1[offset:offset + 22])
+            pix_idx = (x_pix // dwn_factor) + (ceil(width / dwn_factor) *
+                                               (line_cnt // dwn_factor))
+            offset += 22
+            if (offset + data_size2) >= size:
+                buffer1 = buffer1[offset:] + next(iter_data)
+                size = size_chnk + size - offset
+                offset = 0
+            if flag == 0:
+                data1 = buffer1[offset:offset + data_size2]
+                arr16 = np.frombuffer(data1, dtype=np.uint16)
+                pixel = np.bincount(arr16, minlength=chan1 - 1)
+                offset += data_size2
+            elif flag == 1:  # and (chan1 != chan2)
+                # Unpack packed 12-bit data to 16-bit uints:
+                data1 = buffer1[offset:offset + data_size2]
+                switched_i2 = np.frombuffer(data1,
+                                            dtype='<u2'
+                                            ).copy().byteswap(True)
+                data2 = np.frombuffer(switched_i2.tostring(),
+                                      dtype=np.uint8
+                                      ).copy().repeat(2)
+                mask = np.ones_like(data2, dtype=bool)
+                mask[0::6] = mask[5::6] = False
+                # Reinterpret expanded as 16-bit:
+                # string representation of array after switch will have
+                # always BE independently from endianess of machine
+                exp16 = np.frombuffer(data2[mask].tostring(),
+                                      dtype='>u2', count=n_of_pulses).copy()
+                exp16[0::2] >>= 4           # Shift every second short by 4
+                exp16 &= np.uint16(0x0FFF)  # Mask all shorts to 12bit
+                pixel = np.bincount(exp16, minlength=chan1 - 1)
+                offset += data_size2
+            else:  # flag > 1
+                # Unpack instructively packed data to pixel channels:
+                pixel = []
+                the_end = offset + data_size2 - 4
+                while offset < the_end:
+                    # this would work on py3
+                    #size_p, channels = buffer1[offset:offset + 2]
+                    # this is needed on py2:
+                    size_p, channels = strct_unp('<BB',
+                                                 buffer1[offset:offset + 2])
+                    offset += 2
+                    if size_p == 0:
+                        pixel += channels * [0]
+                    else:
+                        gain = strct_unp('<' + st[size_p * 2],
+                                         buffer1[offset:offset + size_p])[0]
+                        offset += size_p
+                        if size_p == 1:
+                            # special case with nibble switching
+                            length = ceil(channels / 2)
+                            # valid py3 code
+                            #a = list(buffer1[offset:offset + length])
+                            # this have to be used on py2:
+                            a = strct_unp('<' + 'B' * length,
+                                          buffer1[offset:offset + length])
+                            g = []
+                            for i in a:
+                                g += (i & 0x0F) + gain, (i >> 4) + gain
+                            pixel += g[:channels]
+                        else:
+                            length = int(channels * size_p / 2)
+                            temp = strct_unp('<' + channels * st[size_p],
+                                             buffer1[offset:offset + length])
+                            pixel += [l + gain for l in temp]
+                        offset += length
+                if chan2 < chan1:
+                    rest = chan1 - chan2
+                    pixel += rest * [0]
+                # additional data size:
+                if n_of_pulses > 0:
+                    add_s = strct_unp('<I', buffer1[offset:offset + 4])[0]
+                    offset += 4
+                    if (offset + add_s) >= size:
+                        buffer1 = buffer1[offset:] + next(iter_data)
+                        size = size_chnk + size - offset
+                        offset = 0
+                    # the additional pulses:
+                    add_pulses = strct_unp('<' + 'H' * n_of_pulses,
+                                           buffer1[offset:offset + add_s])
+                    offset += add_s
+                    for i in add_pulses:
+                        pixel[i] += 1
+                else:
+                    offset += 4
+            # if no downsampling is needed, or if it is first
+            # pixel encountered with downsampling on, then
+            # use assigment, which is ~4 times faster, than inplace add
+            if max_chan < chan1:  # if pixel have more channels than we need
+                chan1 = max_chan
+            if (dwn_factor == 1):
+                vfa[max_chan * pix_idx:chan1 + max_chan * pix_idx] =\
+                    pixel[:chan1]
+            else:
+                vfa[max_chan * pix_idx:chan1 + max_chan * pix_idx] +=\
+                    pixel[:chan1]
+    vfa.resize((ceil(height / dwn_factor),
+                ceil(width / dwn_factor),
+                max_chan))
+    # check if array is signed, and convert to unsigned
+    if str(vfa.dtype)[0] == 'i':
+        new_dtype = ''.join(['u', str(vfa.dtype)])
+        vfa.dtype = new_dtype
+    return vfa
 
 
 # wrapper functions for hyperspy:
@@ -1230,14 +1160,14 @@ def file_reader(filename, select_type=None, index=None, downsample=1,     # noqa
             "instead.")
         deprecation_warning(msg)
     if select_type == 'image':
-        return bcf_imagery(obj_bcf)
+        return bcf_images(obj_bcf)
     elif select_type == 'spectrum_image':
         return bcf_hyperspectra(obj_bcf, index=index,
                                 downsample=downsample,
                                 cutoff_at_kV=cutoff_at_kV,
                                 lazy=lazy)
     else:
-        return bcf_imagery(obj_bcf) + bcf_hyperspectra(
+        return bcf_images(obj_bcf) + bcf_hyperspectra(
             obj_bcf,
             index=index,
             downsample=downsample,
@@ -1245,19 +1175,19 @@ def file_reader(filename, select_type=None, index=None, downsample=1,     # noqa
             lazy=lazy)
 
 
-def bcf_imagery(obj_bcf):
+def bcf_images(obj_bcf):
     """ return hyperspy required list of dict with sem
-    imagery and metadata.
+    images and metadata.
     """
-    imagery_list = []
+    images_list = []
     for img in obj_bcf.header.image.images:
         obj_bcf.add_filename_to_general(img)
-        imagery_list.append(img)
+        images_list.append(img)
     if hasattr(obj_bcf.header, 'overview'):
         for img2 in obj_bcf.header.overview.images:
             obj_bcf.add_filename_to_general(img2)
-            imagery_list.append(img2)
-    return imagery_list
+            images_list.append(img2)
+    return images_list
 
 
 def bcf_hyperspectra(obj_bcf, index=None, downsample=None, cutoff_at_kV=None,  # noqa
@@ -1282,54 +1212,57 @@ For more information, check the 'Installing HyperSpy' section in the documentati
     mode = obj_bcf.header.mode
     mapping = get_mapping(mode)
     for index in indexes:
-        obj_bcf.persistent_parse_hypermap(index=index, downsample=downsample,
-                                          cutoff_at_kV=cutoff_at_kV, lazy=lazy)
+        hypermap = obj_bcf.parse_hypermap(index=index,
+                                          downsample=downsample,
+                                          cutoff_at_kV=cutoff_at_kV,
+                                          lazy=lazy)
         eds_metadata = obj_bcf.header.get_spectra_metadata(index=index)
-        hyperspectra.append({'data': obj_bcf.hypermap[index].hypermap,
-                             'axes': [{'name': 'height',
-                                       'size': obj_bcf.hypermap[index].hypermap.shape[0],
-                                       'offset': 0,
-                                       'scale': obj_bcf.hypermap[index].ycalib,
-                                       'units': obj_bcf.header.units},
-                                      {'name': 'width',
-                                       'size': obj_bcf.hypermap[index].hypermap.shape[1],
-                                       'offset': 0,
-                                       'scale': obj_bcf.hypermap[index].xcalib,
-                                       'units': obj_bcf.header.units},
-                                      {'name': 'Energy',
-                                       'size': obj_bcf.hypermap[index].hypermap.shape[2],
-                                       'offset': obj_bcf.hypermap[index].calib_abs,
-                                       'scale': obj_bcf.hypermap[index].calib_lin,
-                                       'units': 'keV'}],
-                             'metadata':
-                             # where is no way to determine what kind of instrument was used:
-                             # TEM or SEM
-                             {'Acquisition_instrument': {
-                                 mode: obj_bcf.header.get_acq_instrument_dict(
-                                     detector=True,
-                                     index=index)
-                             },
-            'General': {'original_filename': obj_bcf.filename.split('/')[-1],
-                                 'title': 'EDX',
-                                 'date': obj_bcf.header.date,
-                                 'time': obj_bcf.header.time},
-            'Sample': {'name': obj_bcf.header.name,
-                                 'elements': sorted(list(obj_bcf.header.elements)),
-                                 'xray_lines': sorted(gen_elem_list(obj_bcf.header.elements))},
-            'Signal': {'signal_type': 'EDS_%s' % mode,
-                                 'record_by': 'spectrum',
-                                 'quantity': 'X-rays (Counts)'}
-        },
-            'original_metadata': {'Hardware': eds_metadata.hardware_metadata,
-                                  'Detector': eds_metadata.detector_metadata,
-                                  'Analysis': eds_metadata.esma_metadata,
-                                  'Spectrum': eds_metadata.spectrum_metadata,
-                                  'DSP Configuration': obj_bcf.header.dsp_metadata,
-                                  'Line counter': obj_bcf.header.line_counter,
-                                  'Stage': obj_bcf.header.stage_metadata,
-                                  'Microscope': obj_bcf.header.sem_metadata},
-            'mapping': mapping,
-        })
+        hyperspectra.append(
+            {'data': hypermap,
+             'axes': [{'name': 'height',
+                       'size': hypermap.shape[0],
+                       'offset': 0,
+                       'scale': obj_bcf.header.y_res * downsample,
+                       'units': obj_bcf.header.units},
+                      {'name': 'width',
+                       'size': hypermap.shape[1],
+                       'offset': 0,
+                       'scale': obj_bcf.header.y_res * downsample,
+                       'units': obj_bcf.header.units},
+                      {'name': 'Energy',
+                       'size': hypermap.shape[2],
+                       'offset': eds_metadata.offset,
+                       'scale': eds_metadata.scale,
+                       'units': 'keV'}],
+             'metadata':
+             # where is no way to determine what kind of instrument was used:
+             # TEM or SEM
+             {'Acquisition_instrument': {
+                 mode: obj_bcf.header.get_acq_instrument_dict(
+                     detector=True,
+                     index=index)
+             },
+                 'General': {'original_filename': obj_bcf.filename.split('/')[-1],
+                             'title': 'EDX',
+                             'date': obj_bcf.header.date,
+                             'time': obj_bcf.header.time},
+                 'Sample': {'name': obj_bcf.header.name,
+                            'elements': sorted(list(obj_bcf.header.elements)),
+                            'xray_lines': sorted(gen_elem_list(obj_bcf.header.elements))},
+                 'Signal': {'signal_type': 'EDS_%s' % mode,
+                            'record_by': 'spectrum',
+                            'quantity': 'X-rays (Counts)'}
+             },
+                'original_metadata': {'Hardware': eds_metadata.hardware_metadata,
+                                      'Detector': eds_metadata.detector_metadata,
+                                      'Analysis': eds_metadata.esma_metadata,
+                                      'Spectrum': eds_metadata.spectrum_metadata,
+                                      'DSP Configuration': obj_bcf.header.dsp_metadata,
+                                      'Line counter': obj_bcf.header.line_counter,
+                                      'Stage': obj_bcf.header.stage_metadata,
+                                      'Microscope': obj_bcf.header.sem_metadata},
+                'mapping': mapping,
+             })
     return hyperspectra
 
 

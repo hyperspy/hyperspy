@@ -249,7 +249,8 @@ When the plotting tests are failling, it is possible to download the figure comp
 
 The plotting tests need matplotlib > 2.0.0, since the matplotlib `style change
 <http://matplotlib.org/style_changes.html>`_ between matplotlib 1.x and 2.x is
-enough to make the test failed. Freetype==2.6 is also required to pass the plotting tests.
+enough to make the test failed. Freetype>=2.8 is also required to pass the 
+plotting tests.
 
 In travis and appveyor, the matplotlib backend is set to ``agg`` by setting
 the ``MPLBACKEND`` environment variable to ``agg``. At the first import of
@@ -273,6 +274,10 @@ specification <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT
 
 User-guide Documentation -- A description of the functionality of the code and
 how to use it with examples and links to the relevant code.
+
+When writing both the docstrings and user guide documentation, it is useful to
+have some kind of data which the users can use themselves. Artificial
+datasets for this purpose can be found in `hyperspy.datasets.artificial_data`.
 
 Build the documentation -- To check the output of what you wrote, you can build
 the documentation, which requires python-sphinx and numpydoc to be installed.
