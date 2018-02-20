@@ -71,7 +71,7 @@ install:
   - "%CMD_IN_ENV% conda install -yq %DEPS%"
   # Having 'sip' folder on path confuses import of `sip`.
   #- "%CMD_IN_ENV% conda install -yq pip"
-  - "pip install pytest-mpl"
+  - "pip install pytest-mpl blosc"
   # TODO: Remove once anaconda taitsui package is at v5:
   - "IF \"%PYTHON_MAJOR%\" EQU \"3\" pip install --upgrade traitsui tqdm"
   - ps: Add-AppveyorMessage "Installing hyperspy..."
@@ -141,7 +141,7 @@ before_deploy:
   - "ECHO %SCIKIT_IMAGE%"
   # - "%CMD_IN_ENV% wget http://www.lfd.uci.edu/~gohlke/pythonlibs/tuoh5y4k/%SCIKIT_IMAGE% --header User-Agent:Chrome/23.0.1271.97"
   - "%CMD_IN_ENV% pip install %SCIKIT_IMAGE%"
-  - "%CMD_IN_ENV% pip install --upgrade tqdm notebook cython ipython configobj start_jupyter_cm ipywidgets ipyparallel sympy pytest blosc mrcz"
+  - "%CMD_IN_ENV% pip install --upgrade tqdm notebook cython ipython configobj start_jupyter_cm ipywidgets ipyparallel sympy pytest blosc"
   # uninstall and reinstall matplotlib to get the 2.0 version without using --upgrade option (to avoid upgrading numpy and breaking scipy...)
   - "%CMD_IN_ENV% pip uninstall -y matplotlib"
   - "%CMD_IN_ENV% pip install matplotlib pytest-mpl"
