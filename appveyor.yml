@@ -139,8 +139,9 @@ before_deploy:
   - "%CMD_IN_ENV% python.exe -c \"import sys; print(sys.version)\""
 
   # install and upgrade dependencies
-  - "%CMD_IN_ENV% pip install --upgrade tqdm notebook cython ipython configobj start_jupyter_cm ipywidgets ipyparallel sympy pytest dask"
-  - "%CMD_IN_ENV% pip install pytest-mpl"
+  - "%CMD_IN_ENV% pip install --upgrade tqdm notebook cython ipython configobj start_jupyter_cm ipywidgets ipyparallel sympy pytest dask matplotlib"
+  - "%CMD_IN_ENV% pip uninstall -y matplotlib"
+  - "%CMD_IN_ENV% pip install matplotlib pytest-mpl"
 
   # install pyface and traitsui from master to get pyqt5 compatibility
   - "%CMD_IN_ENV% pip install https://github.com/enthought/pyface/archive/master.zip"
