@@ -677,7 +677,7 @@ class HyperHeader(object):
         image = Container()
         image.width = int(xml_node.find('./Width').text)  # in pixels
         image.height = int(xml_node.find('./Height').text)  # in pixels
-        image.dtype = 'u' + xml_node.find('./ItemSize').text 
+        image.dtype = 'u' + xml_node.find('./ItemSize').text  # in bytes ('u1','u2','u4') 
         image.plane_count = int(xml_node.find('./PlaneCount').text)
         image.images = []
         for i in range(image.plane_count):
