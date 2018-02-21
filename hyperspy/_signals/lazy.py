@@ -21,6 +21,7 @@ from functools import partial
 
 import numpy as np
 import math as math
+import sys
 import dask.array as da
 import dask.delayed as dd
 from dask import threaded
@@ -84,8 +85,16 @@ class LazySignal(BaseSignal):
     """
     _lazy = True
 
-    def compute(self, progressbar=True):
+    def compute(self, progressbar=None):
         """Attempt to store the full signal in memory.."""
+
+        if progressbar is None:
+            """By default, activate progress bar if stdout is a terminal.
+            Otherwise the progress bar mangles any output that is
+            redirected to a file. Currently, dask writes progress bars to
+            stdout. This should be changed in dask to match the behavior of
+            tqdm that writes to stderr, and subsequently here."""
+            progressbar = sys.stdout.isatty()
         if progressbar:
             cm = ProgressBar
         else:
