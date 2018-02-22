@@ -18,8 +18,12 @@
 
 
 import numpy as np
+import logging
 
 from hyperspy.drawing.widgets import ResizableDraggableWidgetBase
+
+
+_logger = logging.getLogger(__name__)
 
 
 def unit_vector(vector):
@@ -106,8 +110,9 @@ class Line2DWidget(ResizableDraggableWidgetBase):
                 self.axes = self.axes_manager.navigation_axes[0:2]
             else:
                 self.axes = self.axes_manager.signal_axes[0:2]
-        else:
-            self._pos = np.array([[0, 0], [0, 0]])
+        value = self.axes[0].scale if self.axes_manager else 1
+        # [[x0, y0], [x1, y1]]
+        self._pos = np.array([[0, 0], [value, 0]])
 
     def _set_size(self, value):
         """Setter for the 'size' property.
@@ -115,15 +120,14 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         Calls _size_changed to handle size change, if the value has changed.
 
         """
-        value = value[0]
+        value = value[0]  # in this method, value is a float/int
         if value < 0:
             value = 0
         elif value:
             # The size must not be smaller than the scale
             value = np.maximum(value, self.axes[0].scale)
-            # TODO Check the result of snap_size
             if self.snap_size:
-                value = self._do_snap_size(value)
+                value = self._do_snap_size(value)[0]
         if self._size[0] != value:
             if not value and self._size:
                 self._size = np.array((0,))
@@ -139,7 +143,6 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         # _set_axes overwrites self._size so we back it up
         size = self._size
         super(Line2DWidget, self)._set_axes(axes)
-        self._pos = np.tile(self._pos, (2, 1))
         # Restore self._size
         self._size = size
 
@@ -168,6 +171,24 @@ class Line2DWidget(ResizableDraggableWidgetBase):
         ret2 = super(Line2DWidget, self)._do_snap_position(value[1, :])
 
         return np.array([ret1, ret2])
+
+    def _set_snap_size(self, value):
+        if value and self.axes[0].scale != self.axes[1].scale:
+            _logger.warning('Snapping the width of the line is not supported '
+                            'for axes with different scale.')
+            return
+        super()._set_snap_size(value)
+
+    def _do_snap_size(self, value=None):
+        if value is None:
+            value = self._size[0]
+        if hasattr(value, '__len__'):
+            value = value[0]
+        ax = self.axes[0]  # take one axis, different axis scale not supported
+        value = round(value / ax.scale) * ax.scale
+
+        # must return an array to be consistent with the widget API
+        return np.array([value])
 
     def _get_line_normal(self):
         v = np.diff(self._pos, axis=0)   # Line vector
