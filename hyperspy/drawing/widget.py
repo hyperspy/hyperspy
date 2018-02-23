@@ -53,6 +53,7 @@ class WidgetBase(object):
         self.selected = False
         self._selected_artist = None
         self._size = 1.
+        self._pos = 0.
         self.color = 'red'
         self.__is_on = True
         self.background = None

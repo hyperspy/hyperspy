@@ -142,9 +142,11 @@ class Line2DWidget(ResizableDraggableWidgetBase):
     def _set_axes(self, axes):
         # _set_axes overwrites self._size so we back it up
         size = self._size
+        position = self._pos
         super(Line2DWidget, self)._set_axes(axes)
         # Restore self._size
         self._size = size
+        self._pos = position
 
     def connect_navigate(self):
         raise NotImplementedError("2D lines cannot be used to navigate (yet?)")
