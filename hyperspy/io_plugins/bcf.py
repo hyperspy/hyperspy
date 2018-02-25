@@ -677,22 +677,24 @@ class HyperHeader(object):
         image = Container()
         image.width = int(xml_node.find('./Width').text)  # in pixels
         image.height = int(xml_node.find('./Height').text)  # in pixels
+        image.dtype = 'u' + xml_node.find('./ItemSize').text  # in bytes ('u1','u2','u4') 
         image.plane_count = int(xml_node.find('./PlaneCount').text)
         image.images = []
         for i in range(image.plane_count):
             img = xml_node.find("./Plane" + str(i))
             raw = codecs.decode((img.find('./Data').text).encode('ascii'),'base64')
-            array1 = np.frombuffer(raw, dtype=np.uint16)
+            array1 = np.frombuffer(raw, dtype=image.dtype)
             if any(array1):
                 item = self.gen_hspy_item_dict_basic()
                 data = array1.reshape((image.height, image.width))
-                detector_name = str(img.find('./Description').text)
+                desc = img.find('./Description')
                 item['data'] = data
                 item['axes'][0]['size'] = image.height
                 item['axes'][1]['size'] = image.width
-                item['metadata']['General'] = {'title': detector_name}
-                item['metadata']['Signal'] = {'signal_type': detector_name,
-                                              'record_by': 'image'}
+                item['metadata']['Signal'] = {'record_by': 'image'}
+                item['metadata']['General'] = {}
+                if desc is not None:
+                    item['metadata']['General']['title'] = str(desc.text)
                 if overview and (rect_node is not None):
                     item['metadata']['Markers'] = {'overview': over_dict}
                 image.images.append(item)
