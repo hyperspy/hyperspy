@@ -1122,6 +1122,145 @@ def compute_spectrum_image_individual_frame(spectrum_image, stream, first_frame,
     return spectrum_image
 
 
+@jit_ifnumba
+def calculate_length(slice_tuple):
+    """Calculate the length of the object resulting from slicing with a tuple
+
+    Parameters
+    ----------
+    slice_tuple: tuple of 3 ints
+        The ints correspond to start, stop, tep
+
+    """
+    start, stop, step = slice_tuple
+    if step > 0:
+        lo, hi = start, stop
+    else:
+        hi, lo = start, stop
+        step *= -1
+    if lo >= hi:
+        return 0
+    else:
+        return (hi - lo - 1) // step + 1
+
+
+class StreamArrayWrap:
+    def __init__(self, stream, dtype="uint16"):
+        self.stream = stream
+        self.markers_idx = (self.stream.stream_data == 65535).nonzero()[0]
+        nchannels = stream.bin_count
+        self.shape = (stream.number_of_frames,) + stream.shape + (nchannels, )
+        self.ndims = len(self.shape)
+        self.dtype = np.dtype(dtype)
+
+    def __getitem__(self, *args, **kwargs):
+        """Python slicing and indexing support."""
+        idxs = np.array(args[0], ndmin=1)
+        # Deal with Ellipsis if any
+        is_ellipsis = idxs == Ellipsis
+        number_of_ellipsis = is_ellipsis.sum()
+        if number_of_ellipsis > 1:
+            raise IndexError(
+                "an index can only have a single ellipsis ('...')")
+        elif len(idxs) == 1:
+            _logger.debug("Just one ellipsis, filling all dims with slices")
+            idxs = np.array((slice(None),) * self.ndims)
+        elif number_of_ellipsis:
+            nslices = self.ndims - (len(idxs) - 1)
+            if nslices >= 0:
+                iellipsis = args[0].index(Ellipsis)
+                idxs = np.hstack(
+                    (idxs[:iellipsis], nslices * (slice(None), ), idxs[iellipsis + 1:]))
+
+        # Check that all the input is valid
+        isslice = np.array([isinstance(obj, slice) for obj in idxs])
+        isint = np.array([isinstance(obj, numbers.Integral)
+                          for obj in idxs.tolist()])
+        if not (isslice | isint).all():
+            raise IndexError(
+                "only integers, slices (`:`) and ellipsis (`...`) are valid indices")
+
+        # Number of slices to fill missing indices, can be 0
+        nslices = self.ndims - len(idxs)
+        if nslices < 0:
+            raise IndexError("too many indices for array")
+
+        # Pad with extra slices if the number of dimensions is greater than the number of indices
+        if nslices:
+            idxs = np.hstack((idxs, nslices * (slice(None),)))
+
+        # Generate the indexing tuples and compute the shape of the array
+        idx_tuples = ()
+        shape = ()
+        squeeze = tuple()
+        for i, (idx, dim) in enumerate(zip(idxs, self.shape)):
+            if isinstance(idx, slice):
+                idx_tuple = idx.indices(dim)
+                length = calculate_length(idx_tuple)
+                if length > 0:
+                    shape += (length,)
+                    idx_tuples += idx_tuple,
+
+                elif length == 0:
+                    # Indexing with empty slice
+                    # This will result in an array with one of the dimensions being 0
+                    # what produces an empty array
+                    shape += (0,)
+                    _logger.warning("Slice results in a 0 dimension axis")
+            else:
+                # Indexing with integers
+                # We implement the behaviour by transforming it into a slice of length 1
+                # and squeezing the spectrum image after the data has been added
+                squeeze += (i,)
+                shape += (1,)
+                idx_tuples += ((idx, idx + 1, 1), )
+        _logger.debug("Processing shape: %s" % str(shape))
+
+        spectrum_image = np.zeros(shape, dtype=self.dtype)
+        # Arrays with axis of dimension 0 cannot store data, hence we don't add the data
+        if 0 not in shape:
+            add_data_to_spectrum_image(
+                idx_tuples=idx_tuples,
+                stream_data=self.stream.stream_data,
+                spectrum_image=spectrum_image,
+                markers_idx=self.markers_idx,
+                shape=self.shape)
+        return spectrum_image.squeeze(axis=squeeze)
+
+
+@jit_ifnumba
+def ravel_index(zyx, dims):
+    if zyx[0] >= dims[0] or zyx[1] >= dims[1] or zyx[2] >= dims[2]:
+        raise IndexError
+    return zyx[2] % dims[2] + dims[2] * (zyx[1] % dims[1]) + dims[1] * dims[2] * zyx[0]
+
+
+@jit_ifnumba
+def add_data_to_spectrum_image(idx_tuples, stream_data, spectrum_image, markers_idx, shape):
+    energy_start, energy_stop, energy_step = idx_tuples[-1]
+    for iframe in range(*idx_tuples[0]):
+        for y in range(*idx_tuples[1]):
+            for x in range(*idx_tuples[2]):
+                indices = (iframe, y, x)
+                xy_unravelled = ravel_index(indices, dims=shape)
+                idx1 = markers_idx[xy_unravelled - 1] + \
+                    1 if xy_unravelled else 0
+                idx2 = markers_idx[xy_unravelled]
+                for ie in stream_data[idx1: idx2]:
+                    if energy_step > 0:
+                        if ie >= energy_start and ie < energy_stop:
+                            idx = ie - energy_start
+                            if not idx % energy_step:
+                                spectrum_image[iframe, y, x,
+                                               idx // energy_step] += 1
+                    else:
+                        if ie > energy_stop and ie <= energy_start:
+                            idx = abs(ie - energy_start)
+                            if not idx % energy_step:
+                                spectrum_image[iframe, y, x,
+                                               idx // -energy_step] += 1
+
+
 def file_reader(filename, log_info=False,
                 lazy=False, **kwds):
     dictionaries = []
