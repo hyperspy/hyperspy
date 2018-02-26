@@ -1185,7 +1185,8 @@ class StreamArrayWrap:
         if nslices < 0:
             raise IndexError("too many indices for array")
 
-        # Pad with extra slices if the number of dimensions is greater than the number of indices
+        # Pad with extra slices if the number of dimensions is greater than the
+        # number of indices
         if nslices:
             idxs = np.hstack((idxs, nslices * (slice(None),)))
 
@@ -1210,14 +1211,16 @@ class StreamArrayWrap:
             else:
                 # Indexing with integers
                 # We implement the behaviour by transforming it into a slice of length 1
-                # and squeezing the spectrum image after the data has been added
+                # and squeezing the spectrum image after the data has been
+                # added
                 squeeze += (i,)
                 shape += (1,)
                 idx_tuples += ((idx, idx + 1, 1), )
         _logger.debug("Processing shape: %s" % str(shape))
 
         spectrum_image = np.zeros(shape, dtype=self.dtype)
-        # Arrays with axis of dimension 0 cannot store data, hence we don't add the data
+        # Arrays with axis of dimension 0 cannot store data, hence we don't add
+        # the data
         if 0 not in shape:
             add_data_to_spectrum_image(
                 idx_tuples=idx_tuples,
@@ -1232,11 +1235,13 @@ class StreamArrayWrap:
 def ravel_index(zyx, dims):
     if zyx[0] >= dims[0] or zyx[1] >= dims[1] or zyx[2] >= dims[2]:
         raise IndexError
-    return zyx[2] % dims[2] + dims[2] * (zyx[1] % dims[1]) + dims[1] * dims[2] * zyx[0]
+    return zyx[2] % dims[2] + dims[2] * \
+        (zyx[1] % dims[1]) + dims[1] * dims[2] * zyx[0]
 
 
 @jit_ifnumba
-def add_data_to_spectrum_image(idx_tuples, stream_data, spectrum_image, markers_idx, shape):
+def add_data_to_spectrum_image(
+        idx_tuples, stream_data, spectrum_image, markers_idx, shape):
     energy_start, energy_stop, energy_step = idx_tuples[-1]
     for iframe in range(*idx_tuples[0]):
         for y in range(*idx_tuples[1]):
