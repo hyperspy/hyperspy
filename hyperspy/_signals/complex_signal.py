@@ -192,7 +192,8 @@ class ComplexSignal_mixin:
 
         """
         if power_spectrum is None:
-            power_spectrum = True if self.metadata.has_item('Signal.FFT') else False
+            power_spectrum = True if self.metadata.has_item(
+                'Signal.FFT') else False
         if intensity_scale is None:
             intensity_scale = 'log' if power_spectrum else 'linear'
         if shifted is None:
@@ -202,9 +203,7 @@ class ComplexSignal_mixin:
                        'navigator': navigator,
                        'axes_manager': self.axes_manager})
         if representation == 'cartesian':
-            if same_axes and self.axes_manager.signal_dimension == 1:
-                super().plot(**kwargs)
-            elif power_spectrum:
+            if (same_axes and self.axes_manager.signal_dimension == 1) or power_spectrum:
                 kwargs['power_spectrum'] = power_spectrum
                 super().plot(**kwargs)
             else:

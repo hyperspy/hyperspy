@@ -3208,7 +3208,7 @@ class BaseSignal(FancySlicing,
         >>> im.fft()
         <ComplexSignal2D, title: FFT of , dimensions: (|512, 512)>
         # Use following to plot power spectrum of `im`:
-        >>> np.log(im.fft(shifted=True).amplitude).plot()
+        >>> im.fft().plot()
 
         Notes
         -----

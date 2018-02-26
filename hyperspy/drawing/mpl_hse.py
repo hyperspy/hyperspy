@@ -97,6 +97,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         sl = signal1d.Signal1DLine()
         sl.autoscale = True if not is_complex else False
         sl.data_function = self.signal_data_function
+        kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
         sl.plot_indices = True
         if self.pointer is not None:
             color = self.pointer.color
