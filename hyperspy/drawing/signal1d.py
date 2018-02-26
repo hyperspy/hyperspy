@@ -127,7 +127,7 @@ class Signal1DFigure(BlittedFigure):
         if hasattr(self.figure, 'tight_layout'):
             try:
                 self.figure.tight_layout()
-            except:
+            except BaseException:
                 # tight_layout is a bit brittle, we do this just in case it
                 # complains
                 pass
@@ -365,7 +365,7 @@ class Signal1DLine(object):
             self.events.closed.disconnect(f)
         try:
             self.ax.figure.canvas.draw_idle()
-        except:
+        except BaseException:
             pass
 
 

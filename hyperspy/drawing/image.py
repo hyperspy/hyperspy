@@ -274,7 +274,7 @@ class ImagePlot(BlittedFigure):
                     plt.subplots_adjust(0, 0, 1, 1)
                 else:
                     self.figure.tight_layout()
-            except:
+            except BaseException:
                 # tight_layout is a bit brittle, we do this just in case it
                 # complains
                 pass
