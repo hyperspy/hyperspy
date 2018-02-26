@@ -626,7 +626,11 @@ class FeiEMDReader(object):
         h5data = image_sub_group['Data']
         if read_stack:
             if self.lazy:
-                data = da.rollaxis(da.from_array(h5data, h5data.chunks), axis=2)
+                data = da.rollaxis(
+                    da.from_array(
+                        h5data,
+                        h5data.chunks),
+                    axis=2)
             else:
                 data = np.rollaxis(np.array(image_sub_group['Data']), axis=2)
             # Get the scanning area shape of the SI from the images
