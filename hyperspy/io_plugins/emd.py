@@ -634,14 +634,14 @@ class FeiEMDReader(object):
             else:
                 data = np.rollaxis(np.array(image_sub_group['Data']), axis=2)
             # Get the scanning area shape of the SI from the images
-            self.SI_shape = data.shape[1:]
+            self.spatial_shape = data.shape[1:]
         else:
             if self.lazy:
                 data = da.from_array(h5data, h5data.chunks)[:, :, 0]
             else:
                 data = h5data[:, :, 0]
             # Get the scanning area shape of the SI from the images
-            self.SI_shape = data.shape
+            self.spatial_shape = data.shape
 
         pix_scale = original_metadata['BinaryResult'].get(
             'PixelSize', {'height': 1.0, 'width': 1.0})
@@ -742,7 +742,7 @@ class FeiEMDReader(object):
                             "Velox.")
 
         streams = FeiSpectrumStreamContainer(spectrum_stream_grp,
-                                             shape=self.SI_shape,
+                                             shape=self.spatial_shape,
                                              rebin_energy=self.rebin_energy,
                                              first_frame=self.first_frame,
                                              last_frame=self.last_frame,
