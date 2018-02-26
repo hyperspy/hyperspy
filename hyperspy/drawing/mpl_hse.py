@@ -74,6 +74,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             self.remove_right_pointer()
 
     def plot_signal(self, **kwargs):
+        super().plot_signal()
         if self.signal_plot is not None:
             self.signal_plot.plot(**kwargs)
             return

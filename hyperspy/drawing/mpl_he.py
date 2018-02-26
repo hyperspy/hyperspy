@@ -51,7 +51,12 @@ class MPL_HyperExplorer(object):
     def plot_signal(self):
         # This method should be implemented by the subclasses.
         # Doing nothing is good enough for signal_dimension==0 though.
-        return
+        if self.axes_manager.signal_dimension == 0:
+            return
+        if self.signal_data_function_kwargs.get('shifted', False):
+            self.axes_manager = self.axes_manager.deepcopy()
+            for axis in self.axes_manager.signal_axes:
+                axis.offset = -axis.high_value / 2.
 
     def plot_navigator(self,
                        colorbar=True,
@@ -154,7 +159,7 @@ class MPL_HyperExplorer(object):
         else:
             return False
 
-    def plot(self, **kwargs):            
+    def plot(self, **kwargs):
         # Parse the kwargs for plotting complex data
         for key in ['power_spectrum', 'shifted']:
             if key in kwargs:

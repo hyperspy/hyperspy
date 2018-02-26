@@ -3239,6 +3239,7 @@ class BaseSignal(FancySlicing,
         ureg = UnitRegistry()
         for axis in im_fft.axes_manager.signal_axes:
             axis.scale = 1. / axis.size / axis.scale
+            axis.offset = 0.0
             try:
                 units = ureg.parse_expression(str(axis.units))**(-1)
                 axis.units = '{:~}'.format(units.units)

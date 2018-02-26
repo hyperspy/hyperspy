@@ -126,7 +126,7 @@ def test_plot_log_scale(mpl_cleanup):
 def test_plot_FFT(mpl_cleanup, shifted):
     s = hs.datasets.example_signals.object_hologram()
     s2 = s.isig[:128,:128].fft()
-    s2.plot(shifted=shifted)
+    s2.plot(shifted=shifted, axes_ticks=True)
     return s2._plot.signal_plot.figure
 
 
