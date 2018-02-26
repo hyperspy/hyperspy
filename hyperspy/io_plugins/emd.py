@@ -916,11 +916,7 @@ class FeiSpectrumStreamContainer(object):
     """
     Container class to manage the different SpectrumStreams
 
-    When we read the array, we could add an option to import only X-rays
-    acquired within a "frame range" (specific scanning passes) or reading all
-    frames individually.
-    Each detector can also be read individually, otherwise the X-ray counts
-    are summed over all detectors.
+    Supports summing detectors (default).
     """
 
     def __init__(self, spectrum_stream_group, shape, rebin_energy=1,
@@ -942,10 +938,7 @@ class FeiSpectrumStreamContainer(object):
             for key in subgroup_keys]
 
         if len(stream_data_list) == 1:
-            _logger.warning('Reading the signal of each EDS detector ',
-                            'individually is not possible with this file ',
-                            'because the file contains only spectrum stream. ',
-                            'The sum over all EDS detectors will be loaded.')
+            _logger.warning("The file contains only one spectrum stream")
 
         streams = [self._read_individual_stream(stream_data, key)
                    for key, stream_data in zip(subgroup_keys, stream_data_list)]
