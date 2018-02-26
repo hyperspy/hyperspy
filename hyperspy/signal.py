@@ -1938,7 +1938,6 @@ class BaseSignal(FancySlicing,
         %s
 
         """
-
         if self._plot is not None:
             try:
                 self._plot.close()
@@ -1946,8 +1945,8 @@ class BaseSignal(FancySlicing,
                 # If it was already closed it will raise an exception,
                 # but we want to carry on...
                 pass
-        if  'power_spectrum' in kwargs and \
-            not self.metadata.Signal.get_item('FFT', False):
+        if 'power_spectrum' in kwargs and \
+                not self.metadata.Signal.get_item('FFT', False):
             _logger.warning('The option `power_spectrum` is considered only '
                             'for signals in Fourier space.')
             del kwargs['power_spectrum']
@@ -1976,15 +1975,17 @@ class BaseSignal(FancySlicing,
 
         self._plot.axes_manager = axes_manager
         self._plot.signal_data_function = self.__call__
+
+        if self.metadata.has_item("Signal.quantity"):
+            self._plot.quantity_label = self.metadata.Signal.quantity
         if self.metadata.General.title:
             title = self.metadata.General.title
             if kwargs.get('power_spectrum', False):
-                title = title.replace('FFT', 'Power spectrum') 
+                title = title.replace('FFT', 'Power spectrum')
+                self._plot.quantity_label = 'Power spectral density'
             self._plot.signal_title = title
         elif self.tmp_parameters.has_item('filename'):
             self._plot.signal_title = self.tmp_parameters.filename
-        if self.metadata.has_item("Signal.quantity"):
-            self._plot.quantity_label = self.metadata.Signal.quantity
 
         def get_static_explorer_wrapper(*args, **kwargs):
             return navigator()
@@ -3224,17 +3225,22 @@ class BaseSignal(FancySlicing,
                 im_fft = self._deepcopy_with_new_data(da.fft.fftshift(
                     da.fft.fftn(self.data, axes=axes, **kwargs), axes=axes))
             else:
-                im_fft = self._deepcopy_with_new_data(da.fft.fftn(self.data, axes=axes, **kwargs))
+                im_fft = self._deepcopy_with_new_data(
+                    da.fft.fftn(self.data, axes=axes, **kwargs))
         else:
             if shifted:
                 im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
                     np.fft.fftn(self.data, axes=axes, **kwargs), axes=axes))
             else:
-                im_fft = self._deepcopy_with_new_data(np.fft.fftn(self.data, axes=axes, **kwargs))
+                im_fft = self._deepcopy_with_new_data(
+                    np.fft.fftn(self.data, axes=axes, **kwargs))
 
         im_fft.change_dtype("complex")
-        im_fft.metadata.General.title = 'FFT of {}'.format(im_fft.metadata.General.title)
+        im_fft.metadata.General.title = 'FFT of {}'.format(
+            im_fft.metadata.General.title)
         im_fft.metadata.set_item('Signal.FFT.shifted', shifted)
+        if hasattr(self.metadata.Signal, 'quantity'):
+            self.metadata.Signal.__delattr__('quantity')
 
         ureg = UnitRegistry()
         for axis in im_fft.axes_manager.signal_axes:
@@ -3291,28 +3297,28 @@ class BaseSignal(FancySlicing,
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
         if shifted is None:
-            try:
-                shifted = self.metadata.Signal.FFT.shifted
-            except AttributeError:
-                shifted = False
+            shifted = self.metadata.get_item('Signal.FFT.shifted', False)
 
         if isinstance(self.data, da.Array):
             if shifted:
                 fft_data_shifted = da.fft.ifftshift(self.data, axes=axes)
-                im_ifft = self._deepcopy_with_new_data(da.fft.ifftn(fft_data_shifted, axes=axes, **kwargs))
+                im_ifft = self._deepcopy_with_new_data(
+                    da.fft.ifftn(fft_data_shifted, axes=axes, **kwargs))
             else:
                 im_ifft = self._deepcopy_with_new_data(da.fft.ifftn(
                     self.data, axes=axes, **kwargs))
         else:
             if shifted:
-                im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(np.fft.ifftshift(
-                    self.data, axes=axes), axes=axes, **kwargs))
+                im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
+                    np.fft.ifftshift(self.data, axes=axes), axes=axes, **kwargs))
             else:
                 im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
                     self.data, axes=axes, **kwargs))
 
-        im_ifft.metadata.General.title = 'iFFT of {}'.format(im_ifft.metadata.General.title)
-        im_ifft.metadata.Signal.__delattr__('FFT')
+        im_ifft.metadata.General.title = 'iFFT of {}'.format(
+            im_ifft.metadata.General.title)
+        if hasattr(im_ifft.metadata.Signal, 'FFT'):
+            im_ifft.metadata.Signal.__delattr__('FFT')
         im_ifft = im_ifft.real
 
         ureg = UnitRegistry()
