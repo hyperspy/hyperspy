@@ -954,7 +954,8 @@ class FeiSpectrumStreamContainer(object):
         self.spectrum_stream_group = spectrum_stream_group
 
     def _read_stream(self, key):
-        stream = FeiSpectrumStream(self.spectrum_stream_group[key], self.reader)
+        stream = FeiSpectrumStream(
+            self.spectrum_stream_group[key], self.reader)
         return stream
 
     def read_streams(self):
