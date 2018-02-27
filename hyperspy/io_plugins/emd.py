@@ -773,7 +773,7 @@ class FeiEMDReader(object):
         self.streams = streams
 
         streams.read_streams()
-        spectrum_image_shape = streams.streams[0].get_SI_shape()
+        spectrum_image_shape = streams.streams[0].shape
         original_metadata = streams.streams[0].original_metadata
         original_metadata.update(self.original_metadata)
 
@@ -954,13 +954,7 @@ class FeiSpectrumStreamContainer(object):
         self.spectrum_stream_group = spectrum_stream_group
 
     def _read_stream(self, stream_data, key):
-        stream = FeiSpectrumStream(stream_data, self.reader)
-        acquisition_key = '{}/AcquisitionSettings'.format(key)
-        acquisition_settings_group = self.spectrum_stream_group[acquisition_key]
-        stream.parse_acquisition_settings(acquisition_settings_group)
-        metadata_group = self.spectrum_stream_group[key]
-        stream.parse_metadata(metadata_group)
-        stream.compute_spectrum_image()
+        stream = FeiSpectrumStream(self.spectrum_stream_group[key], self.reader)
         return stream
 
     def read_streams(self):
@@ -1000,39 +994,44 @@ class FeiSpectrumStream(object):
     not easy to decode.'
     """
 
-    def __init__(self, stream_data, reader):
-        self.stream_data = stream_data
+    def __init__(self, stream_group, reader):
         self.reader = reader
-
-    def parse_metadata(self, stream_group):
-        self.original_metadata = _parse_sub_data_group_metadata(stream_group)
-
-    def _add_imported_parameters_to_original_metadata(self):
-        self.original_metadata['ImportedDataParameter'] = {
-            'First_frame': self.reader.first_frame,
-            'Last_frame': self.reader.last_frame,
-            'Number_of_frames': self.number_of_frames}
-
-    def parse_acquisition_settings(self, acquisition_settings_group):
+        # Parse acquisition settings to get bin_count and dtype
+        acquisition_settings_group = stream_group['AcquisitionSettings']
         acquisition_settings = json.loads(
             acquisition_settings_group.value[0].decode('utf-8'))
         self.bin_count = int(acquisition_settings['bincount'])
         if self.reader.SI_data_dtype is None:
             self.reader.SI_data_dtype = acquisition_settings['StreamEncoding']
-        return acquisition_settings
+        # Parse the rest of the metadata for storage
+        self.original_metadata = _parse_sub_data_group_metadata(stream_group)
+        self.stream_data = stream_group['Data'][:].T[0]
+        markers_bool = self.stream_data == 65535
+        self.markers_idx = markers_bool.nonzero()[0]
+        spatial_shape = self.reader.spatial_shape
+        number_of_frames = int(
+            np.ceil((markers_bool).sum() / np.prod(spatial_shape)))
+        nchannels = int(self.bin_count // self.reader.rebin_energy)
+        # Add attributes to emulate a numpy array
+        if self.reader.last_frame is None:
+            self.reader.last_frame = number_of_frames
+        if not self.reader.sum_frames:
+            self.shape = (self.reader.last_frame - self.reader.first_frame,) + spatial_shape + (nchannels, )
+        else:
+            self.shape = spatial_shape + (nchannels, )
+        self.ndims = len(self.shape)
+        self.dtype = self.reader.SI_data_dtype
+        self.compute_spectrum_image()
 
     def get_pixelsize_offset_unit(self):
         om_br = self.original_metadata['BinaryResult']
         return om_br['PixelSize'], om_br['Offset'], om_br['PixelUnitX']
 
-    def get_SI_shape(self):
-        return self.spectrum_image.shape
-
     def compute_spectrum_image(self):
         if self.reader.lazy:
-            arr = StreamArrayWrap(self)
             self.spectrum_image = da.from_array(
-                arr, chunks=calculate_chunks(arr.shape, arr.dtype))
+                self, chunks=calculate_chunks(
+                    self.shape, self.reader.SI_data_dtype))
         else:
             stream = self.stream_data
             shape = self.reader.spatial_shape
@@ -1055,7 +1054,87 @@ class FeiSpectrumStream(object):
                 self.spectrum_image = compute_spectrum_image(spectrum_image,
                                                              stream, self.reader.spatial_shape, self.reader.first_frame, self.reader.last_frame, self.reader.rebin_energy)
 
-            self._add_imported_parameters_to_original_metadata()
+            self.original_metadata['ImportedDataParameter'] = {
+                'First_frame': self.reader.first_frame,
+                'Last_frame': self.reader.last_frame,
+                'Number_of_frames': self.number_of_frames}
+
+    def __getitem__(self, *args, **kwargs):
+        """Python slicing and indexing support."""
+        idxs = np.array(args[0], ndmin=1)
+        # Deal with Ellipsis if any
+        is_ellipsis = idxs == Ellipsis
+        number_of_ellipsis = is_ellipsis.sum()
+        if number_of_ellipsis > 1:
+            raise IndexError(
+                "an index can only have a single ellipsis ('...')")
+        elif len(idxs) == 1:
+            _logger.debug("Just one ellipsis, filling all dims with slices")
+            idxs = np.array((slice(None),) * self.ndims)
+        elif number_of_ellipsis:
+            nslices = self.ndims - (len(idxs) - 1)
+            if nslices >= 0:
+                iellipsis = args[0].index(Ellipsis)
+                idxs = np.hstack(
+                    (idxs[:iellipsis], nslices * (slice(None), ), idxs[iellipsis + 1:]))
+
+        # Check that all the input is valid
+        isslice = np.array([isinstance(obj, slice) for obj in idxs])
+        isint = np.array([isinstance(obj, numbers.Integral)
+                          for obj in idxs.tolist()])
+        if not (isslice | isint).all():
+            raise IndexError(
+                "only integers, slices (`:`) and ellipsis (`...`) are valid indices")
+
+        # Number of slices to fill missing indices, can be 0
+        nslices = self.ndims - len(idxs)
+        if nslices < 0:
+            raise IndexError("too many indices for array")
+
+        # Pad with extra slices if the number of dimensions is greater than the
+        # number of indices
+        if nslices:
+            idxs = np.hstack((idxs, nslices * (slice(None),)))
+
+        # Generate the indexing tuples and compute the shape of the array
+        idx_tuples = ()
+        shape = ()
+        squeeze = tuple()
+        for i, (idx, dim) in enumerate(zip(idxs, self.shape)):
+            if isinstance(idx, slice):
+                idx_tuple = idx.indices(dim)
+                length = calculate_length(idx_tuple)
+                if length > 0:
+                    shape += (length,)
+                    idx_tuples += idx_tuple,
+
+                elif length == 0:
+                    # Indexing with empty slice
+                    # This will result in an array with one of the dimensions being 0
+                    # what produces an empty array
+                    shape += (0,)
+                    _logger.warning("Slice results in a 0 dimension axis")
+            else:
+                # Indexing with integers
+                # We implement the behaviour by transforming it into a slice of length 1
+                # and squeezing the spectrum image after the data has been
+                # added
+                squeeze += (i,)
+                shape += (1,)
+                idx_tuples += ((idx, idx + 1, 1), )
+        _logger.debug("Processing shape: %s" % str(shape))
+
+        spectrum_image = np.zeros(shape, dtype=self.dtype)
+        # Arrays with axis of dimension 0 cannot store data, hence we don't add
+        # the data
+        if 0 not in shape:
+            add_data_to_spectrum_image(
+                idx_tuples=idx_tuples,
+                stream_data=self.stream_data,
+                spectrum_image=spectrum_image,
+                markers_idx=self.markers_idx,
+                shape=self.shape)
+        return spectrum_image.squeeze(axis=squeeze)
 
 
 @jit_ifnumba
@@ -1133,98 +1212,6 @@ def calculate_length(slice_tuple):
         return 0
     else:
         return (hi - lo - 1) // step + 1
-
-
-class StreamArrayWrap:
-    def __init__(self, stream, dtype="uint16"):
-        self.stream = stream
-        markers_bool = self.stream.stream_data == 65535
-        self.markers_idx = markers_bool.nonzero()[0]
-        spatial_shape = stream.reader.spatial_shape
-        number_of_frames = int(
-            np.ceil((markers_bool).sum() / np.prod(spatial_shape)))
-        nchannels = stream.bin_count
-        self.shape = (number_of_frames,) + spatial_shape + (nchannels, )
-        self.ndims = len(self.shape)
-        self.dtype = np.dtype(dtype)
-
-    def __getitem__(self, *args, **kwargs):
-        """Python slicing and indexing support."""
-        idxs = np.array(args[0], ndmin=1)
-        # Deal with Ellipsis if any
-        is_ellipsis = idxs == Ellipsis
-        number_of_ellipsis = is_ellipsis.sum()
-        if number_of_ellipsis > 1:
-            raise IndexError(
-                "an index can only have a single ellipsis ('...')")
-        elif len(idxs) == 1:
-            _logger.debug("Just one ellipsis, filling all dims with slices")
-            idxs = np.array((slice(None),) * self.ndims)
-        elif number_of_ellipsis:
-            nslices = self.ndims - (len(idxs) - 1)
-            if nslices >= 0:
-                iellipsis = args[0].index(Ellipsis)
-                idxs = np.hstack(
-                    (idxs[:iellipsis], nslices * (slice(None), ), idxs[iellipsis + 1:]))
-
-        # Check that all the input is valid
-        isslice = np.array([isinstance(obj, slice) for obj in idxs])
-        isint = np.array([isinstance(obj, numbers.Integral)
-                          for obj in idxs.tolist()])
-        if not (isslice | isint).all():
-            raise IndexError(
-                "only integers, slices (`:`) and ellipsis (`...`) are valid indices")
-
-        # Number of slices to fill missing indices, can be 0
-        nslices = self.ndims - len(idxs)
-        if nslices < 0:
-            raise IndexError("too many indices for array")
-
-        # Pad with extra slices if the number of dimensions is greater than the
-        # number of indices
-        if nslices:
-            idxs = np.hstack((idxs, nslices * (slice(None),)))
-
-        # Generate the indexing tuples and compute the shape of the array
-        idx_tuples = ()
-        shape = ()
-        squeeze = tuple()
-        for i, (idx, dim) in enumerate(zip(idxs, self.shape)):
-            if isinstance(idx, slice):
-                idx_tuple = idx.indices(dim)
-                length = calculate_length(idx_tuple)
-                if length > 0:
-                    shape += (length,)
-                    idx_tuples += idx_tuple,
-
-                elif length == 0:
-                    # Indexing with empty slice
-                    # This will result in an array with one of the dimensions being 0
-                    # what produces an empty array
-                    shape += (0,)
-                    _logger.warning("Slice results in a 0 dimension axis")
-            else:
-                # Indexing with integers
-                # We implement the behaviour by transforming it into a slice of length 1
-                # and squeezing the spectrum image after the data has been
-                # added
-                squeeze += (i,)
-                shape += (1,)
-                idx_tuples += ((idx, idx + 1, 1), )
-        _logger.debug("Processing shape: %s" % str(shape))
-
-        spectrum_image = np.zeros(shape, dtype=self.dtype)
-        # Arrays with axis of dimension 0 cannot store data, hence we don't add
-        # the data
-        if 0 not in shape:
-            add_data_to_spectrum_image(
-                idx_tuples=idx_tuples,
-                stream_data=self.stream.stream_data,
-                spectrum_image=spectrum_image,
-                markers_idx=self.markers_idx,
-                shape=self.shape)
-        return spectrum_image.squeeze(axis=squeeze)
-
 
 @jit_ifnumba
 def ravel_index(zyx, dims):
