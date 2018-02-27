@@ -953,32 +953,25 @@ class FeiSpectrumStreamContainer(object):
                             "Velox.")
         self.spectrum_stream_group = spectrum_stream_group
 
-    def _read_stream(self, stream_data, key):
+    def _read_stream(self, key):
         stream = FeiSpectrumStream(self.spectrum_stream_group[key], self.reader)
         return stream
 
     def read_streams(self):
         subgroup_keys = _get_keys_from_group(self.spectrum_stream_group)
-        stream_data_list = [
-            self.spectrum_stream_group['{}/Data'.format(key)][:].T[0]
-            for key in subgroup_keys]
-        if len(stream_data_list) == 1:
+        if len(subgroup_keys) == 1:
             _logger.warning("The file contains only one spectrum stream")
         if self.reader.sum_EDS_detectors:
             # Read the first stream
-            self.streams = [self._read_stream(stream_data_list[0],
-                                              subgroup_keys[0])]
+            self.streams = [self._read_stream(subgroup_keys[0])]
             self.summed_spectrum_image = self.streams[0].spectrum_image
             # add other stream
-            if len(stream_data_list) > 1:
-                for key, stream_data in zip(
-                        subgroup_keys[1:], stream_data_list[1:]):
-                    self.streams = [self._read_stream(
-                        stream_data, key)]
+            if len(subgroup_keys) > 1:
+                for key in subgroup_keys[1:]:
+                    self.streams = [self._read_stream(key)]
                     self.summed_spectrum_image += self.streams[0].spectrum_image
         else:
-            self.streams = [self._read_stream(stream_data, key)
-                            for key, stream_data in zip(subgroup_keys, stream_data_list)]
+            self.streams = [self._read_stream(key) for key in subgroup_keys]
 
 
 class FeiSpectrumStream(object):
@@ -1016,7 +1009,8 @@ class FeiSpectrumStream(object):
         if self.reader.last_frame is None:
             self.reader.last_frame = number_of_frames
         if not self.reader.sum_frames:
-            self.shape = (self.reader.last_frame - self.reader.first_frame,) + spatial_shape + (nchannels, )
+            self.shape = (self.reader.last_frame -
+                          self.reader.first_frame,) + spatial_shape + (nchannels, )
         else:
             self.shape = spatial_shape + (nchannels, )
         self.ndims = len(self.shape)
@@ -1212,6 +1206,7 @@ def calculate_length(slice_tuple):
         return 0
     else:
         return (hi - lo - 1) // step + 1
+
 
 @jit_ifnumba
 def ravel_index(zyx, dims):
