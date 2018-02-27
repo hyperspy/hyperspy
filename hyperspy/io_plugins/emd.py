@@ -1010,6 +1010,8 @@ class FeiSpectrumStream(object):
         number_of_frames = int(
             np.ceil((markers_bool).sum() / np.prod(spatial_shape)))
         nchannels = int(self.bin_count // self.reader.rebin_energy)
+        # Real shape of the stream
+        self.real_shape = (number_of_frames, ) + spatial_shape + (nchannels, )
         # Add attributes to emulate a numpy array
         if self.reader.last_frame is None:
             self.reader.last_frame = number_of_frames
@@ -1099,7 +1101,8 @@ class FeiSpectrumStream(object):
         idx_tuples = ()
         shape = ()
         squeeze = tuple()
-        for i, (idx, dim) in enumerate(zip(idxs, self.shape)):
+        eshape = self.real_shape[1:] if self.reader.sum_frames else self.real_shape
+        for i, (idx, dim) in enumerate(zip(idxs, eshape)):
             if isinstance(idx, slice):
                 idx_tuple = idx.indices(dim)
                 length = calculate_length(idx_tuple)
@@ -1122,8 +1125,10 @@ class FeiSpectrumStream(object):
                 shape += (1,)
                 idx_tuples += ((idx, idx + 1, 1), )
         _logger.debug("Processing shape: %s" % str(shape))
-
         spectrum_image = np.zeros(shape, dtype=self.dtype)
+        if self.reader.sum_frames:
+            idx_tuples = (
+                (self.reader.first_frame, self.reader.last_frame, 1),) + idx_tuples
         # Arrays with axis of dimension 0 cannot store data, hence we don't add
         # the data
         if 0 not in shape:
@@ -1132,7 +1137,8 @@ class FeiSpectrumStream(object):
                 stream_data=self.stream_data,
                 spectrum_image=spectrum_image,
                 markers_idx=self.markers_idx,
-                shape=self.shape)
+                shape=self.real_shape,
+                sum_frames=self.reader.sum_frames)
         return spectrum_image.squeeze(axis=squeeze)
 
 
@@ -1223,7 +1229,7 @@ def ravel_index(zyx, dims):
 
 @jit_ifnumba
 def add_data_to_spectrum_image(
-        idx_tuples, stream_data, spectrum_image, markers_idx, shape):
+        idx_tuples, stream_data, spectrum_image, markers_idx, shape, sum_frames):
     energy_start, energy_stop, energy_step = idx_tuples[3]
     x_start, x_stop, x_step = idx_tuples[2]
     y_start, y_stop, y_step = idx_tuples[1]
@@ -1241,12 +1247,19 @@ def add_data_to_spectrum_image(
                             energy_step < 0 and (ie > energy_stop and ie <= energy_start)):
                         idx = ie - energy_start
                         if not idx % energy_step:
-                            spectrum_image[
-                                (iframe - iframe_start) // iframe_step,
-                                (y - y_start) // y_step,
-                                (x - x_start) // x_step,
-                                idx // energy_step
-                            ] += 1
+                            if sum_frames:
+                                spectrum_image[
+                                    (y - y_start) // y_step,
+                                    (x - x_start) // x_step,
+                                    idx // energy_step
+                                ] += 1
+                            else:
+                                spectrum_image[
+                                    (iframe - iframe_start) // iframe_step,
+                                    (y - y_start) // y_step,
+                                    (x - x_start) // x_step,
+                                    idx // energy_step
+                                ] += 1
 
 
 def file_reader(filename, log_info=False,
