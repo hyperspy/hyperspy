@@ -94,6 +94,10 @@ class ComplexSignal_mixin:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # _plot_kwargs store the plot kwargs argument for convenience when
+        # plotting ROI in order to use the same plotting options than the 
+        # original plot
+        self._plot_kwargs = {}
         if not np.issubdtype(self.data.dtype, np.complexfloating):
             self.data = self.data.astype(np.complexfloating)
 
@@ -191,13 +195,25 @@ class ComplexSignal_mixin:
         %s
 
         """
+        # if some of the options are stored in the _plot_kwargs dict, use them
+        # in case they are not explicitely provided.
         if power_spectrum is None:
-            power_spectrum = True if self.metadata.has_item(
-                'Signal.FFT') else False
+            if 'power_spectrum' in self._plot_kwargs.keys():
+                power_spectrum = self._plot_kwargs['power_spectrum']
+            else:
+                power_spectrum = True if self.metadata.has_item(
+                    'Signal.FFT') else False
         if intensity_scale is None:
-            intensity_scale = 'log' if power_spectrum else 'linear'
+            if 'intensity_scale' in self._plot_kwargs.keys():
+                intensity_scale = self._plot_kwargs['intensity_scale']
+            else:
+                intensity_scale = 'log' if power_spectrum else 'linear'
         if shifted is None:
-            shifted = True if power_spectrum else False
+            if 'shifted' in self._plot_kwargs.keys():
+                shifted = self._plot_kwargs['shifted']
+            else:
+                shifted = True if power_spectrum else False
+
         kwargs.update({'intensity_scale': intensity_scale,
                        'shifted': shifted,
                        'navigator': navigator,
@@ -221,6 +237,12 @@ class ComplexSignal_mixin:
         else:
             raise ValueError('{}'.format(representation) +
                              'is not a valid input for representation (use "cartesian" or "polar")!')
+
+        self._plot_kwargs = {'power_spectrum': power_spectrum,
+                             'representation': representation,
+                             'intensity_scale': intensity_scale,
+                             'shifted': shifted,
+                             'same_axes': same_axes}
     plot.__doc__ %= BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING
 
 

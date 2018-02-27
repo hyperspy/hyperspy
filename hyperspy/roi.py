@@ -354,6 +354,14 @@ class BaseInteractiveROI(BaseROI):
             interactivel on any roi attribute change.
 
         """
+        # in case of complex signal, the signal can be plotted shifted, if so
+        # this is currently not supported and we raise a NotImplementedError
+        if hasattr(signal, '_plot_kwargs'):
+            kwargs.update({'_plot_kwargs': signal._plot_kwargs})
+            if signal._plot_kwargs.get('shifted', False):
+                raise NotImplementedError('ROI is not supported for plot with '
+                                          '`shifted=True`. to use ROI, set '
+                                          '`shifted=False` of the plot.')
         if isinstance(navigation_signal, str) and navigation_signal == "same":
             navigation_signal = signal
         if navigation_signal is not None:
