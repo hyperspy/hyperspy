@@ -69,6 +69,7 @@ def jit_ifnumba(func):
                         'be slow.')
         return func
 
+
 def calculate_chunks(shape, dtype, chunk_size_mb=100):
     """Calculate chunks to get target chunk size.
 
@@ -940,7 +941,7 @@ class FeiSpectrumStreamContainer(object):
     Supports summing detectors (default).
     """
 
-    def __init__(self,reader):
+    def __init__(self, reader):
         self.reader = reader
         spectrum_stream_group = reader.d_grp.get("SpectrumStream")
         if spectrum_stream_group is None:
@@ -972,7 +973,7 @@ class FeiSpectrumStreamContainer(object):
         if self.reader.sum_EDS_detectors:
             # Read the first stream
             self.streams = [self._read_stream(stream_data_list[0],
-                                                         subgroup_keys[0])]
+                                              subgroup_keys[0])]
             self.summed_spectrum_image = self.streams[0].spectrum_image
             # add other stream
             if len(stream_data_list) > 1:
@@ -984,7 +985,6 @@ class FeiSpectrumStreamContainer(object):
         else:
             self.streams = [self._read_stream(stream_data, key)
                             for key, stream_data in zip(subgroup_keys, stream_data_list)]
-
 
 
 class FeiSpectrumStream(object):
@@ -1234,7 +1234,8 @@ def ravel_index(zyx, dims):
 
 
 @jit_ifnumba
-def add_data_to_spectrum_image(idx_tuples, stream_data, spectrum_image, markers_idx, shape):
+def add_data_to_spectrum_image(
+        idx_tuples, stream_data, spectrum_image, markers_idx, shape):
     energy_start, energy_stop, energy_step = idx_tuples[3]
     x_start, x_stop, x_step = idx_tuples[2]
     y_start, y_stop, y_step = idx_tuples[1]
@@ -1244,19 +1245,21 @@ def add_data_to_spectrum_image(idx_tuples, stream_data, spectrum_image, markers_
             for x in range(*idx_tuples[2]):
                 indices = (iframe, y, x)
                 xy_unravelled = ravel_index(indices, dims=shape)
-                idx1 = markers_idx[xy_unravelled - 1] + 1 if xy_unravelled else 0
+                idx1 = markers_idx[xy_unravelled - 1] + \
+                    1 if xy_unravelled else 0
                 idx2 = markers_idx[xy_unravelled]
                 for ie in stream_data[idx1: idx2]:
                     if (energy_step > 0 and (ie >= energy_start and ie < energy_stop) or
-                        energy_step < 0 and (ie > energy_stop and ie <= energy_start)):
-                            idx = ie - energy_start
-                            if not idx % energy_step:
-                                spectrum_image[
-                                    (iframe - iframe_start) // iframe_step,
-                                    (y - y_start) // y_step,
-                                    (x - x_start) // x_step,
-                                    idx // energy_step
-                                ] += 1
+                            energy_step < 0 and (ie > energy_stop and ie <= energy_start)):
+                        idx = ie - energy_start
+                        if not idx % energy_step:
+                            spectrum_image[
+                                (iframe - iframe_start) // iframe_step,
+                                (y - y_start) // y_step,
+                                (x - x_start) // x_step,
+                                idx // energy_step
+                            ] += 1
+
 
 def file_reader(filename, log_info=False,
                 lazy=False, **kwds):
