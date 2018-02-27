@@ -1140,10 +1140,11 @@ class StreamArrayWrap:
         self.stream = stream
         markers_bool = self.stream.stream_data == 65535
         self.markers_idx = markers_bool.nonzero()[0]
+        spatial_shape = stream.reader.spatial_shape
         number_of_frames = int(
-            np.ceil((markers_bool).sum() / np.prod(stream.shape)))
+            np.ceil((markers_bool).sum() / np.prod(spatial_shape)))
         nchannels = stream.bin_count
-        self.shape = (number_of_frames,) + stream.shape + (nchannels, )
+        self.shape = (number_of_frames,) + spatial_shape + (nchannels, )
         self.ndims = len(self.shape)
         self.dtype = np.dtype(dtype)
 
