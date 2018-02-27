@@ -975,17 +975,21 @@ class FeiSpectrumStreamContainer(object):
             self.streams = [self._read_stream(key) for key in subgroup_keys]
 
 
-class FeiSpectrumStream(object):
+# Below some information we have got from FEI about the format of the stream:
+#
+# The SI data is stored as a spectrum stream, ‘65535’ means next pixel
+# (these markers are also called `Gate pulse`), other numbers mean a spectrum
+# count in that bin for that pixel.
+# For the size of the spectrum image and dispersion you have to look in
+# AcquisitionSettings.
+# The spectrum image cube itself stored in a compressed format, that is
+# not easy to decode.
 
-    """
-    Below some information we have got from FEI:
-    'The SI data is stored as a spectrum stream, ‘65535’ means next pixel
-    (these markers are also called `Gate pulse`), other numbers mean a spectrum
-    count in that bin for that pixel.
-    For the size of the spectrum image and dispersion you have to look in
-    AcquisitionSettings.
-    The spectrum image cube itself stored in a compressed format, that is
-    not easy to decode.'
+class FeiSpectrumStream(object):
+    """Read spectrum image stored in FEI's stream format
+
+    Once initialized, the instance of this class supports numpy style
+    indexing and slicing of the data stored in the stream format.
     """
 
     def __init__(self, stream_group, reader):
