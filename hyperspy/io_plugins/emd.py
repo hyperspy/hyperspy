@@ -25,19 +25,21 @@
 
 
 import re
-import h5py
-import numpy as np
-import dask.array as da
-from dask import delayed
+import numbers
 import json
 import os
 from datetime import datetime
-from dateutil import tz
-import pint
 import time
 import logging
 from tempfile import mkdtemp
 import os.path as path
+
+import h5py
+import numpy as np
+import dask.array as da
+from dask import delayed
+from dateutil import tz
+import pint
 
 from hyperspy.misc.elements import atomic_number2name
 
@@ -66,6 +68,39 @@ def jit_ifnumba(func):
         _logger.warning('Numba is not installed, reading spectrum image will '
                         'be slow.')
         return func
+
+def calculate_chunks(shape, dtype, chunk_size_mb=100):
+    """Calculate chunks to get target chunk size.
+
+    The chunks are optimized for C-order reading speed.
+
+    Parameters
+    ----------
+    shape: tuple of ints
+        The shape of the array
+    dtype: string or numpy dtype
+        The dtype of the array
+    chunk_size_mb: int
+        The maximum size of the resulting chunks in MB. The default is
+        100MB as reccommended by the dask documentation.
+
+    """
+
+    target = chunk_size_mb * 1e6
+    items = int(target // np.dtype(dtype).itemsize)
+    chunks = ()
+    dimsize = np.cumprod(shape[::-1])[::-1][1:]
+    for i, ds in enumerate(dimsize):
+        chunk = items // ds
+        if not chunk:
+            chunks += (1,)
+        elif chunk <= shape[i]:
+            chunks += (chunk, )
+        else:
+            chunks += (shape[i],)
+    # At least one signal
+    chunks += (shape[-1], )
+    return chunks
 
 
 class EMD(object):
@@ -732,31 +767,17 @@ class FeiEMDReader(object):
     def _read_spectrum_stream(self):
         self.detector_name = 'EDS'
         # Spectrum stream group
-        spectrum_stream_grp = self.d_grp.get("SpectrumStream")
-        if spectrum_stream_grp is None:
-            _logger.warning("No spectrum stream is present in the file. It ",
-                            "is possible that the file has been pruned: use ",
-                            "Velox to read the spectrum image (proprietary "
-                            "format). If you want to open FEI emd file with ",
-                            "HyperSpy don't prune the file when saving it in "
-                            "Velox.")
 
-        streams = FeiSpectrumStreamContainer(spectrum_stream_grp,
-                                             shape=self.spatial_shape,
-                                             rebin_energy=self.rebin_energy,
-                                             first_frame=self.first_frame,
-                                             last_frame=self.last_frame,
-                                             sum_frames=self.sum_frames,
-                                             data_dtype=self.SI_data_dtype,
-                                             lazy=self.lazy)
+        streams = FeiSpectrumStreamContainer(reader=self)
         self.streams = streams
 
-        streams.read_streams(self.sum_EDS_detectors)
-        spectrum_image_shape = streams.get_SI_shape()
+        streams.read_streams()
+        spectrum_image_shape = streams.streams[0].get_SI_shape()
         original_metadata = streams.streams[0].original_metadata
         original_metadata.update(self.original_metadata)
 
-        pixel_size, offsets, original_units = streams.get_pixelsize_offset_unit()
+        pixel_size, offsets, original_units = \
+            streams.streams[0].get_pixelsize_offset_unit()
         dispersion, offset = self._get_dispersion_offset(original_metadata)
 
         scale_x = self._convert_scale_units(
@@ -919,79 +940,51 @@ class FeiSpectrumStreamContainer(object):
     Supports summing detectors (default).
     """
 
-    def __init__(self, spectrum_stream_group, shape, rebin_energy=1,
-                 first_frame=0, last_frame=None, sum_frames=True,
-                 data_dtype=None, lazy=False):
+    def __init__(self,reader):
+        self.reader = reader
+        spectrum_stream_group = reader.d_grp.get("SpectrumStream")
+        if spectrum_stream_group is None:
+            _logger.warning("No spectrum stream is present in the file. It ",
+                            "is possible that the file has been pruned: use ",
+                            "Velox to read the spectrum image (proprietary "
+                            "format). If you want to open FEI emd file with ",
+                            "HyperSpy don't prune the file when saving it in "
+                            "Velox.")
         self.spectrum_stream_group = spectrum_stream_group
-        self.shape = shape
-        self.rebin_energy = rebin_energy
-        self.first_frame = first_frame
-        self.last_frame = last_frame
-        self.sum_frames = sum_frames
-        self.data_dtype = data_dtype
-        self.lazy = lazy
 
-    def _read_all_streams(self, subgroup_keys):
-
-        stream_data_list = [
-            self.spectrum_stream_group['{}/Data'.format(key)][:].T[0]
-            for key in subgroup_keys]
-
-        if len(stream_data_list) == 1:
-            _logger.warning("The file contains only one spectrum stream")
-
-        streams = [self._read_individual_stream(stream_data, key)
-                   for key, stream_data in zip(subgroup_keys, stream_data_list)]
-
-        return streams
-
-    def _read_individual_stream(self, stream_data, key):
-        stream = FeiSpectrumStream(stream_data, **self.kwargs)
-
+    def _read_stream(self, stream_data, key):
+        stream = FeiSpectrumStream(stream_data, self.reader)
         acquisition_key = '{}/AcquisitionSettings'.format(key)
         acquisition_settings_group = self.spectrum_stream_group[acquisition_key]
         stream.parse_acquisition_settings(acquisition_settings_group)
-
         metadata_group = self.spectrum_stream_group[key]
         stream.parse_metadata(metadata_group)
-
         stream.compute_spectrum_image()
         return stream
 
-    def read_streams(self, sum_EDS_detectors=True):
+    def read_streams(self):
         subgroup_keys = _get_keys_from_group(self.spectrum_stream_group)
-
-        self.kwargs = {'shape': self.shape,
-                       'rebin_energy': self.rebin_energy,
-                       'first_frame': self.first_frame,
-                       'last_frame': self.last_frame,
-                       'sum_frames': self.sum_frames,
-                       'data_dtype': self.data_dtype}
-
-        if sum_EDS_detectors:
-            stream_data_list = [
-                self.spectrum_stream_group['{}/Data'.format(key)][:].T[0]
-                for key in subgroup_keys]
+        stream_data_list = [
+            self.spectrum_stream_group['{}/Data'.format(key)][:].T[0]
+            for key in subgroup_keys]
+        if len(stream_data_list) == 1:
+            _logger.warning("The file contains only one spectrum stream")
+        if self.reader.sum_EDS_detectors:
             # Read the first stream
-            self.streams = [self._read_individual_stream(stream_data_list[0],
+            self.streams = [self._read_stream(stream_data_list[0],
                                                          subgroup_keys[0])]
             self.summed_spectrum_image = self.streams[0].spectrum_image
             # add other stream
             if len(stream_data_list) > 1:
                 for key, stream_data in zip(
                         subgroup_keys[1:], stream_data_list[1:]):
-                    self.streams = [self._read_individual_stream(
+                    self.streams = [self._read_stream(
                         stream_data, key)]
                     self.summed_spectrum_image += self.streams[0].spectrum_image
         else:
-            self.streams = self._read_all_streams(subgroup_keys)
+            self.streams = [self._read_stream(stream_data, key)
+                            for key, stream_data in zip(subgroup_keys, stream_data_list)]
 
-    def get_SI_shape(self):
-        return self.streams[0].spectrum_image.shape
-
-    def get_pixelsize_offset_unit(self, stream_index=0):
-        om_br = self.streams[stream_index].original_metadata['BinaryResult']
-        return om_br['PixelSize'], om_br['Offset'], om_br['PixelUnitX']
 
 
 class FeiSpectrumStream(object):
@@ -1007,70 +1000,62 @@ class FeiSpectrumStream(object):
     not easy to decode.'
     """
 
-    def __init__(self, stream_data, shape, rebin_energy=1, first_frame=0,
-                 last_frame=None, sum_frames=True, data_dtype=None,
-                 lazy=False):
+    def __init__(self, stream_data, reader):
         self.stream_data = stream_data
-        self.shape = shape
-        self.rebin_energy = rebin_energy
-        self.first_frame = first_frame
-        self.last_frame = last_frame
-        self.sum_frames = sum_frames
-        self.data_dtype = data_dtype
-        self.lazy = lazy
+        self.reader = reader
 
     def parse_metadata(self, stream_group):
         self.original_metadata = _parse_sub_data_group_metadata(stream_group)
 
     def _add_imported_parameters_to_original_metadata(self):
         self.original_metadata['ImportedDataParameter'] = {
-            'First_frame': self.first_frame,
-            'Last_frame': self.last_frame,
+            'First_frame': self.reader.first_frame,
+            'Last_frame': self.reader.last_frame,
             'Number_of_frames': self.number_of_frames}
 
     def parse_acquisition_settings(self, acquisition_settings_group):
         acquisition_settings = json.loads(
             acquisition_settings_group.value[0].decode('utf-8'))
         self.bin_count = int(acquisition_settings['bincount'])
-        if self.data_dtype is None:
-            self.data_dtype = acquisition_settings['StreamEncoding']
+        if self.reader.SI_data_dtype is None:
+            self.reader.SI_data_dtype = acquisition_settings['StreamEncoding']
         return acquisition_settings
 
+    def get_pixelsize_offset_unit(self):
+        om_br = self.original_metadata['BinaryResult']
+        return om_br['PixelSize'], om_br['Offset'], om_br['PixelUnitX']
+
+    def get_SI_shape(self):
+        return self.spectrum_image.shape
+
     def compute_spectrum_image(self):
-        stream = self.stream_data
-        shape = self.shape
-        if self.last_frame is None:
-            self.last_frame = int(
-                np.ceil((stream == 65535).sum() / (shape[0] * shape[1])))
-        if self.bin_count % self.rebin_energy != 0:
-            raise ValueError('The `rebin_energy` needs to be a divisor of the',
-                             ' total number of channels.')
-        self.number_of_frames = self.last_frame - self.first_frame
-        if not self.sum_frames:
-            SI = np.zeros((self.number_of_frames, shape[0], shape[1],
-                           int(self.bin_count / self.rebin_energy)),
-                          dtype=self.data_dtype)
-            self.spectrum_image = compute_spectrum_image_individual_frame(
-                SI, stream, self.first_frame, self.last_frame, self.rebin_energy)
+        if self.reader.lazy:
+            arr = StreamArrayWrap(self)
+            self.spectrum_image = da.from_array(
+                arr, chunks=calculate_chunks(arr.shape, arr.dtype))
         else:
-            if self.lazy:
-                memmap_fname = path.join(mkdtemp(), 'newfile.dat')
-                spectrum_image = np.memmap(memmap_fname, dtype=self.data_dtype,
-                                           mode='w+', shape=(shape[0], shape[1],
-                                                             int(self.bin_count / self.rebin_energy)))
-
-                spectrum_image = delayed(compute_spectrum_image)(spectrum_image,
-                                                                 stream, self.shape, self.first_frame, self.last_frame, self.rebin_energy)
-
-                self.spectrum_image = da.from_delayed(spectrum_image, shape=shape,
-                                                      dtype=self.data_dtype)
+            stream = self.stream_data
+            shape = self.reader.spatial_shape
+            if self.reader.last_frame is None:
+                self.reader.last_frame = int(
+                    np.ceil((stream == 65535).sum() / (shape[0] * shape[1])))
+            if self.bin_count % self.reader.rebin_energy != 0:
+                raise ValueError('The `rebin_energy` needs to be a divisor of the',
+                                 ' total number of channels.')
+            self.number_of_frames = self.reader.last_frame - self.reader.first_frame
+            if not self.reader.sum_frames:
+                SI = np.zeros((self.number_of_frames, shape[0], shape[1],
+                               int(self.bin_count / self.reader.rebin_energy)),
+                              dtype=self.reader.SI_data_dtype)
+                self.spectrum_image = compute_spectrum_image_individual_frame(
+                    SI, stream, self.reader.first_frame, self.reader.last_frame, self.reader.rebin_energy)
             else:
                 spectrum_image = np.zeros((shape[0], shape[1],
-                                           int(self.bin_count / self.rebin_energy)), dtype=self.data_dtype)
+                                           int(self.bin_count / self.reader.rebin_energy)), dtype=self.reader.SI_data_dtype)
                 self.spectrum_image = compute_spectrum_image(spectrum_image,
-                                                             stream, self.shape, self.first_frame, self.last_frame, self.rebin_energy)
+                                                             stream, self.reader.spatial_shape, self.reader.first_frame, self.reader.last_frame, self.reader.rebin_energy)
 
-        self._add_imported_parameters_to_original_metadata()
+            self._add_imported_parameters_to_original_metadata()
 
 
 @jit_ifnumba
@@ -1153,9 +1138,12 @@ def calculate_length(slice_tuple):
 class StreamArrayWrap:
     def __init__(self, stream, dtype="uint16"):
         self.stream = stream
-        self.markers_idx = (self.stream.stream_data == 65535).nonzero()[0]
+        markers_bool = self.stream.stream_data == 65535
+        self.markers_idx = markers_bool.nonzero()[0]
+        number_of_frames = int(
+            np.ceil((markers_bool).sum() / np.prod(stream.shape)))
         nchannels = stream.bin_count
-        self.shape = (stream.number_of_frames,) + stream.shape + (nchannels, )
+        self.shape = (number_of_frames,) + stream.shape + (nchannels, )
         self.ndims = len(self.shape)
         self.dtype = np.dtype(dtype)
 
@@ -1246,40 +1234,35 @@ def ravel_index(zyx, dims):
 
 
 @jit_ifnumba
-def add_data_to_spectrum_image(
-        idx_tuples, stream_data, spectrum_image, markers_idx, shape):
-    energy_start, energy_stop, energy_step = idx_tuples[-1]
+def add_data_to_spectrum_image(idx_tuples, stream_data, spectrum_image, markers_idx, shape):
+    energy_start, energy_stop, energy_step = idx_tuples[3]
+    x_start, x_stop, x_step = idx_tuples[2]
+    y_start, y_stop, y_step = idx_tuples[1]
+    iframe_start, iframe_stop, iframe_step = idx_tuples[0]
     for iframe in range(*idx_tuples[0]):
         for y in range(*idx_tuples[1]):
             for x in range(*idx_tuples[2]):
                 indices = (iframe, y, x)
                 xy_unravelled = ravel_index(indices, dims=shape)
-                idx1 = markers_idx[xy_unravelled - 1] + \
-                    1 if xy_unravelled else 0
+                idx1 = markers_idx[xy_unravelled - 1] + 1 if xy_unravelled else 0
                 idx2 = markers_idx[xy_unravelled]
                 for ie in stream_data[idx1: idx2]:
-                    if energy_step > 0:
-                        if ie >= energy_start and ie < energy_stop:
+                    if (energy_step > 0 and (ie >= energy_start and ie < energy_stop) or
+                        energy_step < 0 and (ie > energy_stop and ie <= energy_start)):
                             idx = ie - energy_start
                             if not idx % energy_step:
-                                spectrum_image[iframe, y, x,
-                                               idx // energy_step] += 1
-                    else:
-                        if ie > energy_stop and ie <= energy_start:
-                            idx = abs(ie - energy_start)
-                            if not idx % energy_step:
-                                spectrum_image[iframe, y, x,
-                                               idx // -energy_step] += 1
-
+                                spectrum_image[
+                                    (iframe - iframe_start) // iframe_step,
+                                    (y - y_start) // y_step,
+                                    (x - x_start) // x_step,
+                                    idx // energy_step
+                                ] += 1
 
 def file_reader(filename, log_info=False,
                 lazy=False, **kwds):
     dictionaries = []
     if fei_check(filename) == True:
         _logger.debug('EMD is FEI format')
-        if lazy:
-            raise NotImplementedError('Lazy loading is not supported for FEI '
-                                      'EMD file.')
         emd = FeiEMDReader(filename, lazy=lazy, **kwds)
         dictionaries = emd.dictionaries
     else:
