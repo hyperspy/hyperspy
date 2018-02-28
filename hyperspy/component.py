@@ -1009,12 +1009,7 @@ class Component(t.HasTraits):
         -------
         numpy array
         """
-
-        axis = self.model.axis.axis[self.model.channel_switches]
-        component_array = self.function(axis)
-        if self.model.low_loss is not None:
-            component_array = self.model.__call__(component_list=[self])
-        return component_array
+        return self.model.__call__(component_list=[self])
 
     def _component2plot(self, axes_manager, out_of_range2nans=True):
         old_axes_manager = None
@@ -1025,8 +1020,6 @@ class Component(t.HasTraits):
         s = self.__call__()
         if not self.active:
             s.fill(np.nan)
-        if self.model.signal.metadata.Signal.binned and not self.model.convolved:
-            s *= self.model.signal.axes_manager.signal_axes[0].scale
         if old_axes_manager is not None:
             self.model.axes_manager = old_axes_manager
             self.charge()
