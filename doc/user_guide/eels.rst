@@ -158,7 +158,7 @@ In order to include the effect of plural scattering, the component of the model 
 
 .. NOTE::
 
-    In case of the convolution with the low loss spectrum, the fitted value of some of the parameter may seems to be unexpectedly small which can be misleading. Those paramater values are actually correct since the values of the low loss spectrum are usually much larger than 1. Indeed, the `convolution <https://en.wikipedia.org/wiki/Convolution>`_ gives the integral of the pointwise multiplication of the component function with the low-loss spectrum shifted over the component and it results that the function values of the convolved component are much larger than in the non-convolved case, which means that the fitted parameter values need to be very small to fit the data.
+    In case of the convolution with the low loss spectrum, the fitted value of some of the parameter may seem to be unexpectedly small which can be misleading. Those paramater values are actually correct since the values of the low loss spectrum are usually much larger than 1. Indeed, the `convolution <https://en.wikipedia.org/wiki/Convolution>`_ gives the integral of the pointwise multiplication of the component function with the low-loss spectrum shifted over the component and it results that the function values of the convolved component are much larger than in the non-convolved case, which means that the fitted parameter values need to be very small to fit the data.
 
 
 HyperSpy has created the model and configured it automatically:
