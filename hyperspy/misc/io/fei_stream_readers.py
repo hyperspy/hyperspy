@@ -1,4 +1,4 @@
-import numpy as np
+first_frameimport numpy as np
 import sparse
 
 from hyperspy.decorators import jit_ifnumba
@@ -119,7 +119,7 @@ def _stream_to_sparse_COO_array(stream_data, shape, channels, rebin_energy=1):
 
 
 def stream_to_sparse_COO_array(stream_data, shape, channels, rebin_energy=1,
-                               sum_frames=True):
+                               sum_frames=True, dtype="uint16"):
     """Returns data stored in a FEI stream as a nd COO array
 
     Parameters
@@ -133,6 +133,8 @@ def stream_to_sparse_COO_array(stream_data, shape, channels, rebin_energy=1,
         Rebin the spectra. The default is 1 (no rebinning applied)
     sum_frames: bool
         If True, sum all the frames
+    dtype: numpy dtype
+        dtype of the array where to store the data
 
     """
 
@@ -141,11 +143,118 @@ def stream_to_sparse_COO_array(stream_data, shape, channels, rebin_energy=1,
             stream_data=stream_data,
             shape=shape,
             channels=channels,
-            rebin_energy=rebin_energy,)
+            rebin_energy=rebin_energy,
+            dtype=dtype)
     else:
         args = _stream_to_sparse_COO_array(
             stream_data=stream_data,
             shape=shape,
             channels=channels,
-            rebin_energy=rebin_energy,)
-    return sparse.COO(*args)
+            rebin_energy=rebin_energy,
+            dtype=dtype)
+    return sparse.COO(*args, dtype=dtype)
+
+
+@jit_ifnumba
+def _fill_array_with_stream_sum_frames(spectrum_image, stream,
+                           first_frame, last_frame, rebin_energy=1):
+    # jit speeds up this function by a factor of ~ 30
+    navigation_index = 0
+    frame_number = 0
+    shape = spectrum_image.shape
+    for count_channel in np.nditer(stream):
+        # when we reach the end of the frame, reset the navigation index to 0
+        if navigation_index == (shape[0] * shape[1]):
+            navigation_index = 0
+            frame_number += 1
+            # break the for loop when we reach the last frame we want to read
+            if frame_number == last_frame:
+                break
+        # if different of ‘65535’, add a count to the corresponding channel
+        if count_channel != 65535:
+            if first_frame <= frame_number:
+                spectrum_image[navigation_index // shape[1],
+                               navigation_index % shape[1],
+                               count_channel // rebin_energy] += 1
+        else:
+            navigation_index += 1
+
+@jit_ifnumba
+def _fill_array_with_stream(spectrum_image, stream, first_frame,
+                                            last_frame, rebin_energy=1):
+    navigation_index = 0
+    frame_number = 0
+    shape = spectrum_image.shape
+    for count_channel in np.nditer(stream):
+        # when we reach the end of the frame, reset the navigation index to 0
+        if navigation_index == (shape[1] * shape[2]):
+            navigation_index = 0
+            frame_number += 1
+            # break the for loop when we reach the last frame we want to read
+            if frame_number == last_frame:
+                break
+        # if different of ‘65535’, add a count to the corresponding channel
+        if count_channel != 65535:
+            if first_frame <= frame_number:
+                spectrum_image[frame_number - first_frame,
+                               navigation_index // shape[2],
+                               navigation_index % shape[2],
+                               count_channel // rebin_energy] += 1
+        else:
+            navigation_index += 1
+
+
+def stream_to_array(stream, spatial_shape, channels, first_frame, last_frame,
+                    rebin_energy, sum_frames, dtype, number_of_frames=None,
+                    spectrum_image=None):
+    """Returns data stored in a FEI stream as a nd COO array
+
+    Parameters
+    ----------
+    stream: numpy array
+    spatial_shape: tuple of ints
+        (ysize, xsize)
+    channels: ints
+        Number of channels in the spectrum
+    rebin_energy: int
+        Rebin the spectra. The default is 1 (no rebinning applied)
+    sum_frames: bool
+        If True, sum all the frames
+    dtype: numpy dtype
+        dtype of the array where to store the data
+
+    """
+
+    if not sum_frames:
+        if spectrum_image is None:
+            if number_of_frames is None:
+                if last_frame is None:
+                    last_frame = int(np.ceil((stream == 65535).sum() /
+                                             (spatial_shape[0] * spatial_shape[1])))
+                number_of_frames = last_frame - first_frame
+            spectrum_image = np.zeros(
+                (number_of_frames,
+                 spatial_shape[0], spatial_shape[1], int(channels / rebin_energy)),
+                dtype=dtype)
+
+        _fill_array_with_stream(
+            spectrum_image=spectrum_image,
+            stream=stream,
+            first_frame=first_frame,
+            last_frame=last_frame,
+            rebin_energy=rebin_energy)
+        else:
+            last_frame = spectrum_image.shape[0] + first_frame
+    else:
+        if spectrum_image is None:
+            spectrum_image = np.zeros(
+                (spatial_shape[0], spatial_shape[1],
+                 int(channels / rebin_energy)),
+                dtype=dtype)
+        _fill_array_with_stream_sum_frames(
+            spectrum_image=spectrum_image,
+            stream=stream,
+            first_frame=first_frame,
+            last_frame=last_frame,
+            rebin_energy=rebin_energy)
+    return spectrum_image
