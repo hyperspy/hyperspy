@@ -64,7 +64,6 @@ install_req = ['scipy>=0.15',
                'statsmodels',
                'mrcz>0.3.4',
                'sparse',
-               'contexttimer',
                ]
 
 extras_require = {

@@ -40,7 +40,6 @@ import dask.array as da
 from dask import delayed
 from dateutil import tz
 import pint
-from contexttimer import Timer
 
 from hyperspy.misc.elements import atomic_number2name
 import hyperspy.misc.io.fei_stream_readers as stream_readers
