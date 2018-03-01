@@ -20,7 +20,6 @@
 from functools import wraps
 
 
-
 def lazify(func, **kwargs):
     from hyperspy.signal import BaseSignal
     from hyperspy.model import BaseModel
@@ -97,6 +96,7 @@ def simple_decorator(decorator):
 def interactive_range_selector(cm):
     from hyperspy.ui_registry import get_gui
     from hyperspy.signal_tools import Signal1DRangeSelector
+
     def wrapper(self, *args, **kwargs):
         if not args and not kwargs:
             range_selector = Signal1DRangeSelector(self)
