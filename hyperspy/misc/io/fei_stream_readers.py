@@ -157,7 +157,7 @@ def stream_to_sparse_COO_array(stream_data, shape, channels, rebin_energy=1,
 
 @jit_ifnumba
 def _fill_array_with_stream_sum_frames(spectrum_image, stream,
-                           first_frame, last_frame, rebin_energy=1):
+                                       first_frame, last_frame, rebin_energy=1):
     # jit speeds up this function by a factor of ~ 30
     navigation_index = 0
     frame_number = 0
@@ -179,9 +179,10 @@ def _fill_array_with_stream_sum_frames(spectrum_image, stream,
         else:
             navigation_index += 1
 
+
 @jit_ifnumba
 def _fill_array_with_stream(spectrum_image, stream, first_frame,
-                                            last_frame, rebin_energy=1):
+                            last_frame, rebin_energy=1):
     navigation_index = 0
     frame_number = 0
     shape = spectrum_image.shape
