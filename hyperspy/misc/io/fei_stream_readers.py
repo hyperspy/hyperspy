@@ -5,7 +5,8 @@ from hyperspy.decorators import jit_ifnumba
 
 
 @jit_ifnumba
-def _stream_to_sparse_COO_array_sum_frames(stream_data, shape, channels, rebin_energy=1):
+def _stream_to_sparse_COO_array_sum_frames(
+        stream_data, shape, channels, rebin_energy=1):
     navigation_index = 0
     frame_number = 0
     ysize, xsize = shape
@@ -20,11 +21,11 @@ def _stream_to_sparse_COO_array_sum_frames(stream_data, shape, channels, rebin_e
             navigation_index = 0
             frame_number += 1
         # if different of ‘65535’, add a count to the corresponding channel
-        if value != 65535: # Same spectrum
+        if value != 65535:  # Same spectrum
             if data:
-                if value == count_channel: # Same channel, add a count
+                if value == count_channel:  # Same channel, add a count
                     data += 1
-                else: # a new channel, same spectrum—requires new coord
+                else:  # a new channel, same spectrum—requires new coord
                     # Store previous channel
                     coords.append((
                         int(navigation_index // xsize),
@@ -37,13 +38,13 @@ def _stream_to_sparse_COO_array_sum_frames(stream_data, shape, channels, rebin_e
                     # Update count channel as this is a new channel
                     count_channel = value
 
-            else: # First non-zero channel of spectrum
+            else:  # First non-zero channel of spectrum
                 data = 1
                 # Update count channel as this is a new channel
                 count_channel = value
 
-        else: # Advances one pixel
-            if data: # Only store coordinates if the spectrum was not empty
+        else:  # Advances one pixel
+            if data:  # Only store coordinates if the spectrum was not empty
                 coords.append((
                     int(navigation_index // xsize),
                     int(navigation_index % xsize),
@@ -57,6 +58,7 @@ def _stream_to_sparse_COO_array_sum_frames(stream_data, shape, channels, rebin_e
     coords = np.array(coords)
     data = np.array(data_list)
     return coords.T, data, final_shape
+
 
 @jit_ifnumba
 def _stream_to_sparse_COO_array(stream_data, shape, channels, rebin_energy=1):
@@ -75,11 +77,11 @@ def _stream_to_sparse_COO_array(stream_data, shape, channels, rebin_energy=1):
             navigation_index = 0
             frame_number += 1
         # if different of ‘65535’, add a count to the corresponding channel
-        if value != 65535: # Same spectrum
+        if value != 65535:  # Same spectrum
             if data:
-                if value == count_channel: # Same channel, add a count
+                if value == count_channel:  # Same channel, add a count
                     data += 1
-                else: # a new channel, same spectrum—requires new coord
+                else:  # a new channel, same spectrum—requires new coord
                     # Store previous channel
                     coords.append((
                         frame_number,
@@ -93,13 +95,13 @@ def _stream_to_sparse_COO_array(stream_data, shape, channels, rebin_energy=1):
                     # Update count channel as this is a new channel
                     count_channel = value
 
-            else: # First non-zero channel of spectrum
+            else:  # First non-zero channel of spectrum
                 data = 1
                 # Update count channel as this is a new channel
                 count_channel = value
 
-        else: # Advances one pixel
-            if data: # Only store coordinates if the spectrum was not empty
+        else:  # Advances one pixel
+            if data:  # Only store coordinates if the spectrum was not empty
                 coords.append((
                     frame_number,
                     int(navigation_index // xsize),
@@ -114,6 +116,7 @@ def _stream_to_sparse_COO_array(stream_data, shape, channels, rebin_energy=1):
     coords = np.array(coords)
     data = np.array(data_list)
     return coords.T, data, final_shape
+
 
 def stream_to_sparse_COO_array(stream_data, shape, channels, rebin_energy=1,
                                sum_frames=True):
