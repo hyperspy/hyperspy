@@ -63,11 +63,14 @@ def _stream_to_sparse_COO_array_sum_frames(
             data = 0
 
     final_shape = (ysize, xsize, channels // rebin_energy)
-    return coords, data_list, final_shape
+    coords = np.array(coords).T
+    data = np.array(data_list)
+    return coords, data, final_shape
 
 
 @jit_ifnumba
-def _stream_to_sparse_COO_array(stream_data, shape, channels, rebin_energy=1):
+def _stream_to_sparse_COO_array(stream_data, shape, channels,
+                                rebin_energy=1, ):
     navigation_index = 0
     frame_number = 0
     ysize, xsize = shape
@@ -118,12 +121,13 @@ def _stream_to_sparse_COO_array(stream_data, shape, channels, rebin_energy=1):
             data = 0
 
     final_shape = (frame_number + 1, ysize, xsize, channels // rebin_energy)
-    return coords, data_list, final_shape
+    coords = np.array(coords).T
+    data = np.array(data_list)
+    return coords, data, final_shape
 
 
 def stream_to_sparse_COO_array(
-        stream_data, spatial_shape, channels, rebin_energy=1, sum_frames=True,
-        dtype="uint16"):
+        stream_data, spatial_shape, channels, rebin_energy=1, sum_frames=True,):
     """Returns data stored in a FEI stream as a nd COO array
 
     Parameters
@@ -137,8 +141,6 @@ def stream_to_sparse_COO_array(
         Rebin the spectra. The default is 1 (no rebinning applied)
     sum_frames: bool
         If True, sum all the frames
-    dtype: numpy dtype
-        dtype of the array where to store the data
 
     """
 
@@ -156,8 +158,6 @@ def stream_to_sparse_COO_array(
             channels=channels,
             rebin_energy=rebin_energy,
         )
-    coords = np.array(coords, dtype="uint32").T
-    data = np.array(data, dtype=dtype)
     return DenseSliceCOO(coords=coords, data=data, shape=shape)
 
 
