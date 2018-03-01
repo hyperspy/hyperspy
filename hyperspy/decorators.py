@@ -107,3 +107,10 @@ def interactive_range_selector(cm):
         else:
             cm(self, *args, **kwargs)
     return wrapper
+    
+def jit_ifnumba(func):
+    try:
+        import numba
+        return numba.jit(func)
+    except ImportError:
+        return func

@@ -189,12 +189,6 @@ def rebin(a, new_shape=None, scale=None, crop=True):
                                  " error")
 
 
-def jit_ifnumba(func):
-    try:
-        import numba
-        return numba.jit(func)
-    except ImportError:
-        return func
 
 
 @jit_ifnumba
