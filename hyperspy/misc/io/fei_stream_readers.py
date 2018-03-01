@@ -118,14 +118,15 @@ def _stream_to_sparse_COO_array(stream_data, shape, channels, rebin_energy=1):
     return coords.T, data, final_shape
 
 
-def stream_to_sparse_COO_array(stream_data, shape, channels, rebin_energy=1,
-                               sum_frames=True, dtype="uint16"):
+def stream_to_sparse_COO_array(
+    stream_data, spatial_shape, channels, rebin_energy=1, sum_frames=True,
+    dtype="uint16"):
     """Returns data stored in a FEI stream as a nd COO array
 
     Parameters
     ----------
     stream_data: numpy array
-    shape: tuple of ints
+    spatial_shape: tuple of ints
         (ysize, xsize)
     channels: ints
         Number of channels in the spectrum
@@ -141,14 +142,14 @@ def stream_to_sparse_COO_array(stream_data, shape, channels, rebin_energy=1,
     if sum_frames:
         args = _stream_to_sparse_COO_array_sum_frames(
             stream_data=stream_data,
-            shape=shape,
+            shape=spatial_shape,
             channels=channels,
             rebin_energy=rebin_energy,
             dtype=dtype)
     else:
         args = _stream_to_sparse_COO_array(
             stream_data=stream_data,
-            shape=shape,
+            shape=spatial_shape,
             channels=channels,
             rebin_energy=rebin_energy,
             dtype=dtype)
@@ -223,6 +224,10 @@ def stream_to_array(stream, spatial_shape, channels, first_frame, last_frame,
         If True, sum all the frames
     dtype: numpy dtype
         dtype of the array where to store the data
+    number_of_frame: int or None
+    spectrum_image: numpy array or None
+        If not None, the array provided will be filled with the data in the
+        stream.
 
     """
 
