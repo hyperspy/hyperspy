@@ -1015,7 +1015,7 @@ class FeiSpectrumStream(object):
                 channels=self.bin_count,
                 sum_frames=self.reader.sum_frames,
                 rebin_energy=self.reader.rebin_energy,
-                )
+            )
             self.spectrum_image = da.from_array(
                 sparse_array, chunks=calculate_chunks(
                     shape=sparse_array.shape, dtype=sparse_array.dtype))
