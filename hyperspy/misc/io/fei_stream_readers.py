@@ -1,8 +1,13 @@
-first_frameimport numpy as np
+import numpy as np
 import sparse
 
 from hyperspy.decorators import jit_ifnumba
 
+class DenseSliceCOO(sparse.COO):
+    """Just like sparse.COO, but returning a dense array on indexing/slicing"""
+    def __getitem__(self, *args, **kwargs):
+        obj = super().__getitem__(*args, **kwargs)
+        return obj.todense()
 
 @jit_ifnumba
 def _stream_to_sparse_COO_array_sum_frames(
@@ -55,9 +60,7 @@ def _stream_to_sparse_COO_array_sum_frames(
             data = 0
 
     final_shape = (ysize, xsize, channels // rebin_energy)
-    coords = np.array(coords)
-    data = np.array(data_list)
-    return coords.T, data, final_shape
+    return coords, data_list, final_shape
 
 
 @jit_ifnumba
@@ -69,7 +72,6 @@ def _stream_to_sparse_COO_array(stream_data, shape, channels, rebin_energy=1):
     data_list = []
     coords = []
     data = 0
-    _coordsf = _get_coords
     count_channel = None
     for value in stream_data:
         # when we reach the end of the frame, reset the navigation index to 0
@@ -113,9 +115,7 @@ def _stream_to_sparse_COO_array(stream_data, shape, channels, rebin_energy=1):
             data = 0
 
     final_shape = (frame_number + 1, ysize, xsize, channels // rebin_energy)
-    coords = np.array(coords)
-    data = np.array(data_list)
-    return coords.T, data, final_shape
+    return coords, data_list, final_shape
 
 
 def stream_to_sparse_COO_array(
@@ -140,20 +140,22 @@ def stream_to_sparse_COO_array(
     """
 
     if sum_frames:
-        args = _stream_to_sparse_COO_array_sum_frames(
+        coords, data, shape = _stream_to_sparse_COO_array_sum_frames(
             stream_data=stream_data,
             shape=spatial_shape,
             channels=channels,
             rebin_energy=rebin_energy,
-            dtype=dtype)
+            )
     else:
-        args = _stream_to_sparse_COO_array(
+       coords, data, shape  = _stream_to_sparse_COO_array(
             stream_data=stream_data,
             shape=spatial_shape,
             channels=channels,
             rebin_energy=rebin_energy,
-            dtype=dtype)
-    return sparse.COO(*args, dtype=dtype)
+            )
+    coords = np.array(coords, dtype="uint32").T
+    data = np.array(data, dtype=dtype)
+    return DenseSliceCOO(coords=coords, data=data, shape=shape)
 
 
 @jit_ifnumba
@@ -207,8 +209,7 @@ def _fill_array_with_stream(spectrum_image, stream, first_frame,
 
 
 def stream_to_array(stream, spatial_shape, channels, first_frame, last_frame,
-                    rebin_energy, sum_frames, dtype, number_of_frames=None,
-                    spectrum_image=None):
+                    rebin_energy, sum_frames, dtype, spectrum_image=None):
     """Returns data stored in a FEI stream as a nd COO array
 
     Parameters
@@ -231,26 +232,26 @@ def stream_to_array(stream, spatial_shape, channels, first_frame, last_frame,
 
     """
 
+    if last_frame is None:
+        if spectrum_image is not None:
+            last_frame = spectrum_image.shape[0] + first_frame
+        else:
+            last_frame = int(np.ceil((stream == 65535).sum() /
+                                     (spatial_shape[0] * spatial_shape[1])))
+    number_of_frames = last_frame - first_frame
     if not sum_frames:
         if spectrum_image is None:
-            if number_of_frames is None:
-                if last_frame is None:
-                    last_frame = int(np.ceil((stream == 65535).sum() /
-                                             (spatial_shape[0] * spatial_shape[1])))
-                number_of_frames = last_frame - first_frame
             spectrum_image = np.zeros(
                 (number_of_frames,
                  spatial_shape[0], spatial_shape[1], int(channels / rebin_energy)),
                 dtype=dtype)
 
-        _fill_array_with_stream(
-            spectrum_image=spectrum_image,
-            stream=stream,
-            first_frame=first_frame,
-            last_frame=last_frame,
-            rebin_energy=rebin_energy)
-        else:
-            last_frame = spectrum_image.shape[0] + first_frame
+            _fill_array_with_stream(
+                spectrum_image=spectrum_image,
+                stream=stream,
+                first_frame=first_frame,
+                last_frame=last_frame,
+                rebin_energy=rebin_energy)
     else:
         if spectrum_image is None:
             spectrum_image = np.zeros(

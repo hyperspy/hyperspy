@@ -40,9 +40,10 @@ import dask.array as da
 from dask import delayed
 from dateutil import tz
 import pint
+from contexttimer import Timer
 
 from hyperspy.misc.elements import atomic_number2name
-
+import hyperspy.misc.io.fei_stream_readers as stream_readers
 
 # Plugin characteristics
 # ----------------------
@@ -58,16 +59,6 @@ EMD_VERSION = '0.2'
 # ----------------------
 
 _logger = logging.getLogger(__name__)
-
-
-def jit_ifnumba(func):
-    try:
-        import numba
-        return numba.jit(func)
-    except ImportError:
-        _logger.warning('Numba is not installed, reading spectrum image will '
-                        'be slow.')
-        return func
 
 
 def calculate_chunks(shape, dtype, chunk_size_mb=100):
@@ -994,35 +985,24 @@ class FeiSpectrumStream(object):
 
     def __init__(self, stream_group, reader):
         self.reader = reader
+        self.stream_group = stream_group
         # Parse acquisition settings to get bin_count and dtype
         acquisition_settings_group = stream_group['AcquisitionSettings']
         acquisition_settings = json.loads(
             acquisition_settings_group.value[0].decode('utf-8'))
         self.bin_count = int(acquisition_settings['bincount'])
+        if self.bin_count % self.reader.rebin_energy != 0:
+            raise ValueError('The `rebin_energy` needs to be a divisor of the',
+                             ' total number of channels.')
         if self.reader.SI_data_dtype is None:
             self.reader.SI_data_dtype = acquisition_settings['StreamEncoding']
         # Parse the rest of the metadata for storage
         self.original_metadata = _parse_sub_data_group_metadata(stream_group)
-        self.stream_data = stream_group['Data'][:].T[0]
-        markers_bool = self.stream_data == 65535
-        self.markers_idx = markers_bool.nonzero()[0]
-        spatial_shape = self.reader.spatial_shape
-        number_of_frames = int(
-            np.ceil((markers_bool).sum() / np.prod(spatial_shape)))
-        nchannels = int(self.bin_count // self.reader.rebin_energy)
-        # Real shape of the stream
-        self.real_shape = (number_of_frames, ) + spatial_shape + (nchannels, )
-        # Add attributes to emulate a numpy array
-        if self.reader.last_frame is None:
-            self.reader.last_frame = number_of_frames
-        if not self.reader.sum_frames:
-            self.shape = (self.reader.last_frame -
-                          self.reader.first_frame,) + spatial_shape + (nchannels, )
-        else:
-            self.shape = spatial_shape + (nchannels, )
-        self.ndims = len(self.shape)
-        self.dtype = self.reader.SI_data_dtype
         self.compute_spectrum_image()
+
+    @property
+    def shape(self):
+        return self.spectrum_image.shape
 
     def get_pixelsize_offset_unit(self):
         om_br = self.original_metadata['BinaryResult']
@@ -1030,236 +1010,33 @@ class FeiSpectrumStream(object):
 
     def compute_spectrum_image(self):
         if self.reader.lazy:
+            sparse_array = stream_readers.stream_to_sparse_COO_array(
+                stream_data=self.stream_group['Data'][:].T[0],
+                spatial_shape=self.reader.spatial_shape,
+                channels=self.bin_count,
+                sum_frames=self.reader.sum_frames,
+                rebin_energy=self.reader.rebin_energy,
+                dtype=self.reader.SI_data_dtype)
             self.spectrum_image = da.from_array(
-                self, chunks=calculate_chunks(
-                    self.shape, self.reader.SI_data_dtype))
+                sparse_array, chunks=calculate_chunks(
+                    shape=sparse_array.shape, dtype=sparse_array.dtype))
         else:
-            stream = self.stream_data
-            shape = self.reader.spatial_shape
-            if self.reader.last_frame is None:
-                self.reader.last_frame = int(
-                    np.ceil((stream == 65535).sum() / (shape[0] * shape[1])))
-            if self.bin_count % self.reader.rebin_energy != 0:
-                raise ValueError('The `rebin_energy` needs to be a divisor of the',
-                                 ' total number of channels.')
-            self.number_of_frames = self.reader.last_frame - self.reader.first_frame
-            if not self.reader.sum_frames:
-                SI = np.zeros((self.number_of_frames, shape[0], shape[1],
-                               int(self.bin_count / self.reader.rebin_energy)),
-                              dtype=self.reader.SI_data_dtype)
-                self.spectrum_image = compute_spectrum_image_individual_frame(
-                    SI, stream, self.reader.first_frame, self.reader.last_frame, self.reader.rebin_energy)
-            else:
-                spectrum_image = np.zeros((shape[0], shape[1],
-                                           int(self.bin_count / self.reader.rebin_energy)), dtype=self.reader.SI_data_dtype)
-                self.spectrum_image = compute_spectrum_image(spectrum_image,
-                                                             stream, self.reader.spatial_shape, self.reader.first_frame, self.reader.last_frame, self.reader.rebin_energy)
+            self.spectrum_image = stream_readers.stream_to_array(
+                stream=self.stream_group['Data'][:].T[0],
+                spatial_shape=self.reader.spatial_shape,
+                channels=self.bin_count,
+                first_frame=self.reader.first_frame,
+                last_frame=self.reader.last_frame,
+                rebin_energy=self.reader.rebin_energy,
+                sum_frames=self.reader.sum_frames,
+                dtype=self.reader.SI_data_dtype,)
 
             self.original_metadata['ImportedDataParameter'] = {
                 'First_frame': self.reader.first_frame,
                 'Last_frame': self.reader.last_frame,
-                'Number_of_frames': self.number_of_frames}
-
-    def __getitem__(self, *args, **kwargs):
-        """Python slicing and indexing support."""
-        idxs = np.array(args[0], ndmin=1)
-        # Deal with Ellipsis if any
-        is_ellipsis = idxs == Ellipsis
-        number_of_ellipsis = is_ellipsis.sum()
-        if number_of_ellipsis > 1:
-            raise IndexError(
-                "an index can only have a single ellipsis ('...')")
-        elif len(idxs) == 1:
-            _logger.debug("Just one ellipsis, filling all dims with slices")
-            idxs = np.array((slice(None),) * self.ndims)
-        elif number_of_ellipsis:
-            nslices = self.ndims - (len(idxs) - 1)
-            if nslices >= 0:
-                iellipsis = args[0].index(Ellipsis)
-                idxs = np.hstack(
-                    (idxs[:iellipsis], nslices * (slice(None), ), idxs[iellipsis + 1:]))
-
-        # Check that all the input is valid
-        isslice = np.array([isinstance(obj, slice) for obj in idxs])
-        isint = np.array([isinstance(obj, numbers.Integral)
-                          for obj in idxs.tolist()])
-        if not (isslice | isint).all():
-            raise IndexError(
-                "only integers, slices (`:`) and ellipsis (`...`) are valid indices")
-
-        # Number of slices to fill missing indices, can be 0
-        nslices = self.ndims - len(idxs)
-        if nslices < 0:
-            raise IndexError("too many indices for array")
-
-        # Pad with extra slices if the number of dimensions is greater than the
-        # number of indices
-        if nslices:
-            idxs = np.hstack((idxs, nslices * (slice(None),)))
-
-        # Generate the indexing tuples and compute the shape of the array
-        idx_tuples = ()
-        shape = ()
-        squeeze = tuple()
-        eshape = self.real_shape[1:] if self.reader.sum_frames else self.real_shape
-        for i, (idx, dim) in enumerate(zip(idxs, eshape)):
-            if isinstance(idx, slice):
-                idx_tuple = idx.indices(dim)
-                length = calculate_length(idx_tuple)
-                if length > 0:
-                    shape += (length,)
-                    idx_tuples += idx_tuple,
-
-                elif length == 0:
-                    # Indexing with empty slice
-                    # This will result in an array with one of the dimensions being 0
-                    # what produces an empty array
-                    shape += (0,)
-                    _logger.warning("Slice results in a 0 dimension axis")
-            else:
-                # Indexing with integers
-                # We implement the behaviour by transforming it into a slice of length 1
-                # and squeezing the spectrum image after the data has been
-                # added
-                squeeze += (i,)
-                shape += (1,)
-                idx_tuples += ((idx, idx + 1, 1), )
-        _logger.debug("Processing shape: %s" % str(shape))
-        spectrum_image = np.zeros(shape, dtype=self.dtype)
-        if self.reader.sum_frames:
-            idx_tuples = (
-                (self.reader.first_frame, self.reader.last_frame, 1),) + idx_tuples
-        # Arrays with axis of dimension 0 cannot store data, hence we don't add
-        # the data
-        if 0 not in shape:
-            add_data_to_spectrum_image(
-                idx_tuples=idx_tuples,
-                stream_data=self.stream_data,
-                spectrum_image=spectrum_image,
-                markers_idx=self.markers_idx,
-                shape=self.real_shape,
-                sum_frames=self.reader.sum_frames)
-        return spectrum_image.squeeze(axis=squeeze)
+                }
 
 
-@jit_ifnumba
-def compute_spectrum_image(spectrum_image, stream, shape,
-                           first_frame, last_frame, rebin_energy=1):
-
-    # jit speeds up this function by a factor of ~ 30
-    navigation_index = 0
-    frame_number = 0
-    shape = spectrum_image.shape
-    for count_channel in np.nditer(stream):
-        # when we reach the end of the frame, reset the navigation index to 0
-        if navigation_index == (shape[0] * shape[1]):
-            navigation_index = 0
-            frame_number += 1
-            # break the for loop when we reach the last frame we want to read
-            if frame_number == last_frame:
-                break
-        # if different of ‘65535’, add a count to the corresponding channel
-        if count_channel != 65535:
-            if first_frame <= frame_number:
-                spectrum_image[navigation_index // shape[1],
-                               navigation_index % shape[1],
-                               count_channel // rebin_energy] += 1
-        else:
-            navigation_index += 1
-
-    return spectrum_image
-
-
-@jit_ifnumba
-def compute_spectrum_image_individual_frame(spectrum_image, stream, first_frame,
-                                            last_frame, rebin_energy=1):
-    navigation_index = 0
-    frame_number = 0
-    shape = spectrum_image.shape
-    for count_channel in np.nditer(stream):
-        # when we reach the end of the frame, reset the navigation index to 0
-        if navigation_index == (shape[1] * shape[2]):
-            navigation_index = 0
-            frame_number += 1
-            # break the for loop when we reach the last frame we want to read
-            if frame_number == last_frame:
-                break
-        # if different of ‘65535’, add a count to the corresponding channel
-        if count_channel != 65535:
-            if first_frame <= frame_number:
-                spectrum_image[frame_number - first_frame,
-                               navigation_index // shape[2],
-                               navigation_index % shape[2],
-                               count_channel // rebin_energy] += 1
-        else:
-            navigation_index += 1
-
-    return spectrum_image
-
-
-@jit_ifnumba
-def calculate_length(slice_tuple):
-    """Calculate the length of the object resulting from slicing with a tuple
-
-    Parameters
-    ----------
-    slice_tuple: tuple of 3 ints
-        The ints correspond to start, stop, tep
-
-    """
-    start, stop, step = slice_tuple
-    if step > 0:
-        lo, hi = start, stop
-    else:
-        hi, lo = start, stop
-        step *= -1
-    if lo >= hi:
-        return 0
-    else:
-        return (hi - lo - 1) // step + 1
-
-
-@jit_ifnumba
-def ravel_index(zyx, dims):
-    if zyx[0] >= dims[0] or zyx[1] >= dims[1] or zyx[2] >= dims[2]:
-        raise IndexError
-    return zyx[2] % dims[2] + dims[2] * \
-        (zyx[1] % dims[1]) + dims[1] * dims[2] * zyx[0]
-
-
-@jit_ifnumba
-def add_data_to_spectrum_image(
-        idx_tuples, stream_data, spectrum_image, markers_idx, shape, sum_frames):
-    energy_start, energy_stop, energy_step = idx_tuples[3]
-    x_start, x_stop, x_step = idx_tuples[2]
-    y_start, y_stop, y_step = idx_tuples[1]
-    iframe_start, iframe_stop, iframe_step = idx_tuples[0]
-    for iframe in range(*idx_tuples[0]):
-        for y in range(*idx_tuples[1]):
-            for x in range(*idx_tuples[2]):
-                indices = (iframe, y, x)
-                xy_unravelled = ravel_index(indices, dims=shape)
-                idx1 = markers_idx[xy_unravelled - 1] + \
-                    1 if xy_unravelled else 0
-                idx2 = markers_idx[xy_unravelled]
-                for ie in stream_data[idx1: idx2]:
-                    if (energy_step > 0 and (ie >= energy_start and ie < energy_stop) or
-                            energy_step < 0 and (ie > energy_stop and ie <= energy_start)):
-                        idx = ie - energy_start
-                        if not idx % energy_step:
-                            if sum_frames:
-                                spectrum_image[
-                                    (y - y_start) // y_step,
-                                    (x - x_start) // x_step,
-                                    idx // energy_step
-                                ] += 1
-                            else:
-                                spectrum_image[
-                                    (iframe - iframe_start) // iframe_step,
-                                    (y - y_start) // y_step,
-                                    (x - x_start) // x_step,
-                                    idx // energy_step
-                                ] += 1
 
 
 def file_reader(filename, log_info=False,
