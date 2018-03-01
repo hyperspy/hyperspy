@@ -119,8 +119,8 @@ def _stream_to_sparse_COO_array(stream_data, shape, channels, rebin_energy=1):
 
 
 def stream_to_sparse_COO_array(
-    stream_data, spatial_shape, channels, rebin_energy=1, sum_frames=True,
-    dtype="uint16"):
+        stream_data, spatial_shape, channels, rebin_energy=1, sum_frames=True,
+        dtype="uint16"):
     """Returns data stored in a FEI stream as a nd COO array
 
     Parameters
