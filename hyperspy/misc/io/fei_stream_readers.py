@@ -3,11 +3,14 @@ import sparse
 
 from hyperspy.decorators import jit_ifnumba
 
+
 class DenseSliceCOO(sparse.COO):
     """Just like sparse.COO, but returning a dense array on indexing/slicing"""
+
     def __getitem__(self, *args, **kwargs):
         obj = super().__getitem__(*args, **kwargs)
         return obj.todense()
+
 
 @jit_ifnumba
 def _stream_to_sparse_COO_array_sum_frames(
@@ -145,14 +148,14 @@ def stream_to_sparse_COO_array(
             shape=spatial_shape,
             channels=channels,
             rebin_energy=rebin_energy,
-            )
+        )
     else:
-       coords, data, shape  = _stream_to_sparse_COO_array(
+        coords, data, shape = _stream_to_sparse_COO_array(
             stream_data=stream_data,
             shape=spatial_shape,
             channels=channels,
             rebin_energy=rebin_energy,
-            )
+        )
     coords = np.array(coords, dtype="uint32").T
     data = np.array(data, dtype=dtype)
     return DenseSliceCOO(coords=coords, data=data, shape=shape)

@@ -1034,9 +1034,7 @@ class FeiSpectrumStream(object):
             self.original_metadata['ImportedDataParameter'] = {
                 'First_frame': self.reader.first_frame,
                 'Last_frame': self.reader.last_frame,
-                }
-
-
+            }
 
 
 def file_reader(filename, log_info=False,
