@@ -189,8 +189,6 @@ def rebin(a, new_shape=None, scale=None, crop=True):
                                  " error")
 
 
-
-
 @jit_ifnumba
 def _linear_bin_loop(result, data, scale):
     for j in range(result.shape[0]):
