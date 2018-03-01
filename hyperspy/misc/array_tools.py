@@ -13,6 +13,7 @@ import numbers
 import numpy as np
 
 from hyperspy.misc.math_tools import anyfloatin
+from hyperspy.decorators import jit_ifnumba
 
 
 _logger = logging.getLogger(__name__)
