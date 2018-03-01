@@ -110,6 +110,6 @@ def interactive_range_selector(cm):
 def jit_ifnumba(func):
     try:
         import numba
-        return numba.jit(func)
+        return numba.jit(func, nopython=True)
     except ImportError:
         return func
