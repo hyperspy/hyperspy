@@ -14,7 +14,7 @@ class DenseSliceCOO(sparse.COO):
 
 @jit_ifnumba
 def _stream_to_sparse_COO_array_sum_frames(
-        stream_data, shape, channels, rebin_energy=1):
+        stream_data, last_frame, shape, channels, rebin_energy=1, first_frame=0):
     navigation_index = 0
     frame_number = 0
     ysize, xsize = shape
@@ -28,6 +28,10 @@ def _stream_to_sparse_COO_array_sum_frames(
         if navigation_index == frame_size:
             navigation_index = 0
             frame_number += 1
+            if frame_number == last_frame:
+                break
+        if frame_number < first_frame:
+            continue
         # if different of ‘65535’, add a count to the corresponding channel
         if value != 65535:  # Same spectrum
             if data:
@@ -69,8 +73,8 @@ def _stream_to_sparse_COO_array_sum_frames(
 
 
 @jit_ifnumba
-def _stream_to_sparse_COO_array(stream_data, shape, channels,
-                                rebin_energy=1, ):
+def _stream_to_sparse_COO_array(
+        stream_data, last_frame, shape, channels, rebin_energy=1, first_frame=0):
     navigation_index = 0
     frame_number = 0
     ysize, xsize = shape
@@ -84,6 +88,10 @@ def _stream_to_sparse_COO_array(stream_data, shape, channels,
         if navigation_index == frame_size:
             navigation_index = 0
             frame_number += 1
+            if frame_number == last_frame:
+                break
+        if frame_number < first_frame:
+            continue
         # if different of ‘65535’, add a count to the corresponding channel
         if value != 65535:  # Same spectrum
             if data:
@@ -120,14 +128,16 @@ def _stream_to_sparse_COO_array(stream_data, shape, channels,
             navigation_index += 1
             data = 0
 
-    final_shape = (frame_number + 1, ysize, xsize, channels // rebin_energy)
+    final_shape = (last_frame - first_frame, ysize, xsize,
+                   channels // rebin_energy)
     coords = np.array(coords).T
     data = np.array(data_list)
     return coords, data, final_shape
 
 
 def stream_to_sparse_COO_array(
-        stream_data, spatial_shape, channels, rebin_energy=1, sum_frames=True,):
+        stream_data, spatial_shape, channels, last_frame, rebin_energy=1,
+        sum_frames=True, first_frame=0, ):
     """Returns data stored in a FEI stream as a nd COO array
 
     Parameters
@@ -150,6 +160,8 @@ def stream_to_sparse_COO_array(
             shape=spatial_shape,
             channels=channels,
             rebin_energy=rebin_energy,
+            first_frame=first_frame,
+            last_frame=last_frame,
         )
     else:
         coords, data, shape = _stream_to_sparse_COO_array(
@@ -157,6 +169,8 @@ def stream_to_sparse_COO_array(
             shape=spatial_shape,
             channels=channels,
             rebin_energy=rebin_energy,
+            first_frame=first_frame,
+            last_frame=last_frame,
         )
     return DenseSliceCOO(coords=coords, data=data, shape=shape)
 
@@ -235,18 +249,12 @@ def stream_to_array(stream, spatial_shape, channels, first_frame, last_frame,
 
     """
 
-    if last_frame is None:
-        if spectrum_image is not None:
-            last_frame = spectrum_image.shape[0] + first_frame
-        else:
-            last_frame = int(np.ceil((stream == 65535).sum() /
-                                     (spatial_shape[0] * spatial_shape[1])))
-    number_of_frames = last_frame - first_frame
+    frames = last_frame - first_frame
     if not sum_frames:
         if spectrum_image is None:
             spectrum_image = np.zeros(
-                (number_of_frames,
-                 spatial_shape[0], spatial_shape[1], int(channels / rebin_energy)),
+                (frames, spatial_shape[0], spatial_shape[1],
+                 int(channels / rebin_energy)),
                 dtype=dtype)
 
             _fill_array_with_stream(

@@ -757,8 +757,26 @@ class FeiEMDReader(object):
 
     def _read_spectrum_stream(self):
         self.detector_name = 'EDS'
-        # Spectrum stream group
-
+        # Try to read the number of frames from Data/SpectrumImage
+        try:
+            sig = self.d_grp["SpectrumImage"]
+            self.number_of_frames = int(
+                json.loads(
+                    sig[next(iter(sig))]
+                    ["SpectrumImageSettings"][0].decode("utf8")
+                    )["endFramePosition"])
+        except Exception as e:
+            _logger.exception(
+                "Failed to read the number of frames from Data/SpectrumImage")
+            self.number_of_frames = None
+        if self.last_frame is None:
+            self.last_frame = self.number_of_frames
+        elif self.number_of_frames and self.last_frame > self.number_of_frames:
+            raise ValueError(
+                "The `last_frame` cannot be greater than"
+                " the number of frames, %i for this file."
+                % self.number_of_frames
+            )
         streams = FeiSpectrumStreamContainer(reader=self)
         self.streams = streams
 
@@ -1008,10 +1026,27 @@ class FeiSpectrumStream(object):
         return om_br['PixelSize'], om_br['Offset'], om_br['PixelUnitX']
 
     def compute_spectrum_image(self):
+        # Here we load the stream data into memory, which is fine is the
+        # arrays are small. We could load them lazily when lazy.
+        stream_data = self.stream_group['Data'][:].T[0]
+        spatial_shape = self.reader.spatial_shape
+        if self.reader.last_frame is None:
+            # The information could not be retrieved from metadata
+            # we compute, which involves iterating once over the whole stream.
+            # This is required to support the `last_frame` feature without
+            # duplicating the functions as currently numba does not support
+            # parametetrization.
+            last_frame = int(
+                np.ceil((stream_data == 65535).sum() /
+                        (spatial_shape[0] * spatial_shape[1])))
+            self.reader.last_frame = last_frame
+            self.reader.number_of_frames = last_frame
         if self.reader.lazy:
             sparse_array = stream_readers.stream_to_sparse_COO_array(
-                stream_data=self.stream_group['Data'][:].T[0],
+                stream_data=stream_data,
                 spatial_shape=self.reader.spatial_shape,
+                first_frame=self.reader.first_frame,
+                last_frame=self.reader.last_frame,
                 channels=self.bin_count,
                 sum_frames=self.reader.sum_frames,
                 rebin_energy=self.reader.rebin_energy,
@@ -1021,7 +1056,7 @@ class FeiSpectrumStream(object):
                     shape=sparse_array.shape, dtype=sparse_array.dtype))
         else:
             self.spectrum_image = stream_readers.stream_to_array(
-                stream=self.stream_group['Data'][:].T[0],
+                stream=stream_data,
                 spatial_shape=self.reader.spatial_shape,
                 channels=self.bin_count,
                 first_frame=self.reader.first_frame,
@@ -1033,6 +1068,9 @@ class FeiSpectrumStream(object):
             self.original_metadata['ImportedDataParameter'] = {
                 'First_frame': self.reader.first_frame,
                 'Last_frame': self.reader.last_frame,
+                'Number_of_frames': self.reader.number_of_frames,
+                'Rebin_energy': self.reader.rebin_energy,
+                'Number_of_channels': self.bin_count,
             }
 
 
