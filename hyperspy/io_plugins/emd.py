@@ -797,15 +797,27 @@ class FeiEMDReader(object):
             _logger.warning("The file contains only one spectrum stream")
         if self.sum_EDS_detectors:
             # Read the first stream
-            streams = [_read_stream(subgroup_keys[0])]
-            summed_spectrum_image = streams[0].spectrum_image
-            # add other stream
+            s0 = _read_stream(subgroup_keys[0])
+            streams = [s0]
+            # add other stream streams
             if len(subgroup_keys) > 1:
                 for key in subgroup_keys[1:]:
-                    streams = [_read_stream(key)]
-                    summed_spectrum_image += streams[0].spectrum_image
+                    stream_data = spectrum_stream_group["key"]['Data'][:].T[0]
+                    if self.lazy:
+                        s0.spectrum_image = (
+                            s0.spectrum_image +
+                            s0.stream_to_sparse_array(stream_data=stream_data)
+                        )
+                    else:
+                        s0.stream_to_array(stream_data=stream_data,
+                                           spectrum_image=s0.spectrum_image)
         else:
             streams = [_read_stream(key) for key in subgroup_keys]
+        if self.lazy:
+            for stream in streams:
+                sa = stream.spectrum_image
+                stream.spectrum_image =  da.from_array(
+                    sa, chunks=calculate_chunks(shape=sa.shape, dtype=sa.dtype))
 
         spectrum_image_shape = streams[0].shape
         original_metadata = streams[0].original_metadata
@@ -862,21 +874,14 @@ class FeiEMDReader(object):
         md = self._get_metadata_dict(original_metadata)
         md['Signal']['signal_type'] = 'EDS_TEM'
 
-        if self.sum_EDS_detectors:
-            self.dictionaries.append({'data': summed_spectrum_image,
+        for stream in streams:
+            original_metadata = stream.original_metadata
+            original_metadata.update(self.original_metadata)
+            self.dictionaries.append({'data': stream.spectrum_image,
                                       'axes': axes,
                                       'metadata': md,
                                       'original_metadata': original_metadata,
                                       'mapping': self._get_mapping()})
-        else:
-            for stream in streams:
-                original_metadata = stream.original_metadata
-                original_metadata.update(self.original_metadata)
-                self.dictionaries.append({'data': stream.spectrum_image,
-                                          'axes': axes,
-                                          'metadata': md,
-                                          'original_metadata': original_metadata,
-                                          'mapping': self._get_mapping()})
 
     def _get_dispersion_offset(self, original_metadata):
         for detectorname, detector in original_metadata['Detectors'].items():
@@ -1000,13 +1005,13 @@ class FeiSpectrumStream(object):
         # Parse the rest of the metadata for storage
         self.original_metadata = _parse_sub_data_group_metadata(stream_group)
         # If last_frame is None, compute it
+        stream_data = self.stream_group['Data'][:].T[0]
         if self.reader.last_frame is None:
             # The information could not be retrieved from metadata
             # we compute, which involves iterating once over the whole stream.
             # This is required to support the `last_frame` feature without
             # duplicating the functions as currently numba does not support
             # parametetrization.
-            stream_data = self.stream_group['Data'][:].T[0]
             spatial_shape = self.reader.spatial_shape
             last_frame = int(
                 np.ceil((stream_data == 65535).sum() /
@@ -1019,7 +1024,15 @@ class FeiSpectrumStream(object):
             'Number_of_frames': self.reader.number_of_frames,
             'Rebin_energy': self.reader.rebin_energy,
             'Number_of_channels': self.bin_count, }
-        self.compute_spectrum_image()
+        # Convert stream to spectrum image
+        if self.reader.lazy:
+            self.spectrum_image = self.stream_to_sparse_array(
+                stream_data=stream_data
+            )
+        else:
+            self.spectrum_image = self.stream_to_array(
+                stream_data=stream_data
+            )
 
     @property
     def shape(self):
@@ -1029,33 +1042,51 @@ class FeiSpectrumStream(object):
         om_br = self.original_metadata['BinaryResult']
         return om_br['PixelSize'], om_br['Offset'], om_br['PixelUnitX']
 
-    def compute_spectrum_image(self):
+    def stream_to_sparse_array(self, stream_data):
+        """Convert stream in sparse array
+
+        Parameters
+        ----------
+        stream_data: array
+
+        """
         # Here we load the stream data into memory, which is fine is the
         # arrays are small. We could load them lazily when lazy.
         stream_data = self.stream_group['Data'][:].T[0]
-        if self.reader.lazy:
-            sparse_array = stream_readers.stream_to_sparse_COO_array(
-                stream_data=stream_data,
-                spatial_shape=self.reader.spatial_shape,
-                first_frame=self.reader.first_frame,
-                last_frame=self.reader.last_frame,
-                channels=self.bin_count,
-                sum_frames=self.reader.sum_frames,
-                rebin_energy=self.reader.rebin_energy,
+        sparse_array = stream_readers.stream_to_sparse_COO_array(
+            stream_data=stream_data,
+            spatial_shape=self.reader.spatial_shape,
+            first_frame=self.reader.first_frame,
+            last_frame=self.reader.last_frame,
+            channels=self.bin_count,
+            sum_frames=self.reader.sum_frames,
+            rebin_energy=self.reader.rebin_energy,
+        )
+        return sparse_array
+
+    def stream_to_array(self, stream_data, spectrum_image=None):
+        """Convert stream to array.
+
+        Parameters
+        ----------
+        stream_data: array
+        spectrum_image: array or None
+            If array, the data from the stream are added to the array.
+            Otherwise it creates a new array and returns it.
+
+        """
+        spectrum_image = stream_readers.stream_to_array(
+            stream=stream_data,
+            spatial_shape=self.reader.spatial_shape,
+            channels=self.bin_count,
+            first_frame=self.reader.first_frame,
+            last_frame=self.reader.last_frame,
+            rebin_energy=self.reader.rebin_energy,
+            sum_frames=self.reader.sum_frames,
+            spectrum_image=spectrum_image,
+            dtype=self.reader.SI_data_dtype,
             )
-            self.spectrum_image = da.from_array(
-                sparse_array, chunks=calculate_chunks(
-                    shape=sparse_array.shape, dtype=sparse_array.dtype))
-        else:
-            self.spectrum_image = stream_readers.stream_to_array(
-                stream=stream_data,
-                spatial_shape=self.reader.spatial_shape,
-                channels=self.bin_count,
-                first_frame=self.reader.first_frame,
-                last_frame=self.reader.last_frame,
-                rebin_energy=self.reader.rebin_energy,
-                sum_frames=self.reader.sum_frames,
-                dtype=self.reader.SI_data_dtype,)
+        return spectrum_image
 
 
 def file_reader(filename, log_info=False,
