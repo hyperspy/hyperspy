@@ -315,6 +315,6 @@ def array_to_stream(array):
         if channel % channels == 0:
             channel = 0
             stream_data.append(65535)
-    stream_data = stream_data[:-1] # Remove final mark
+    stream_data = stream_data[:-1]  # Remove final mark
     stream_data = np.array(stream_data, dtype=numba.uint16)
     return stream_data

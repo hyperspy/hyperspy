@@ -383,9 +383,9 @@ class TestFeiEMD():
     @pytest.mark.parametrize("lazy", (True, False))
     def test_fei_emd_si_non_square_20frames(self, lazy):
         s = load(os.path.join(
-                self.fei_files_path,
-                'fei_SI_SuperX-HAADF_20frames_10x50.emd'),
-                 lazy=lazy)
+            self.fei_files_path,
+            'fei_SI_SuperX-HAADF_20frames_10x50.emd'),
+            lazy=lazy)
         signal = s[1]
         if lazy:
             assert signal._lazy
@@ -407,9 +407,9 @@ class TestFeiEMD():
     @pytest.mark.parametrize("lazy", (True, False))
     def test_fei_emd_si_non_square_20frames_2eV(self, lazy):
         s = load(os.path.join(
-                self.fei_files_path,
-                'fei_SI_SuperX-HAADF_20frames_10x50_2ev.emd'),
-                 lazy=lazy)
+            self.fei_files_path,
+            'fei_SI_SuperX-HAADF_20frames_10x50_2ev.emd'),
+            lazy=lazy)
         signal = s[1]
         if lazy:
             assert signal._lazy
