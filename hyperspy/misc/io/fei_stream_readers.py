@@ -277,6 +277,7 @@ def stream_to_array(stream, spatial_shape, channels, first_frame, last_frame,
             rebin_energy=rebin_energy)
     return spectrum_image
 
+
 @jit_ifnumba
 def array_to_stream(array):
     """Convert an array to a FEI stream
