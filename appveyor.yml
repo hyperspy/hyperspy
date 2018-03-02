@@ -75,7 +75,7 @@ install:
   - "%CMD_IN_ENV% conda install -yq %DEPS%"
   # Having 'sip' folder on path confuses import of `sip`.
   #- "%CMD_IN_ENV% conda install -yq pip"
-  - "pip install pytest-mpl"
+  - "pip install pytest-mpl blosc"
 
   - ps: Add-AppveyorMessage "Installing hyperspy..."
   - "python setup.py install"
@@ -139,7 +139,7 @@ before_deploy:
   - "%CMD_IN_ENV% python.exe -c \"import sys; print(sys.version)\""
 
   # install and upgrade dependencies
-  - "%CMD_IN_ENV% pip install --upgrade tqdm notebook cython ipython configobj start_jupyter_cm ipywidgets ipyparallel sympy pytest dask matplotlib"
+  - "%CMD_IN_ENV% pip install --upgrade tqdm notebook cython ipython configobj start_jupyter_cm ipywidgets ipyparallel sympy pytest dask"
   - "%CMD_IN_ENV% pip uninstall -y matplotlib"
   - "%CMD_IN_ENV% pip install matplotlib pytest-mpl"
 
