@@ -815,7 +815,7 @@ class FeiEMDReader(object):
             streams = [_read_stream(key) for key in subgroup_keys]
         if self.lazy:
             for stream in streams:
-                sa = stream.spectrum_image
+                sa = stream.spectrum_image.astype(self.SI_data_dtype)
                 stream.spectrum_image = da.from_array(
                     sa, chunks=calculate_chunks(shape=sa.shape, dtype=sa.dtype))
 
