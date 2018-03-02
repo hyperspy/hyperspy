@@ -778,7 +778,6 @@ class FeiEMDReader(object):
                 % self.number_of_frames
             )
 
-
         spectrum_stream_group = self.d_grp.get("SpectrumStream")
         if spectrum_stream_group is None:
             _logger.warning("No spectrum stream is present in the file. It ",
@@ -807,7 +806,6 @@ class FeiEMDReader(object):
                     summed_spectrum_image += streams[0].spectrum_image
         else:
             streams = [_read_stream(key) for key in subgroup_keys]
-
 
         spectrum_image_shape = streams[0].shape
         original_metadata = streams[0].original_metadata
@@ -969,8 +967,6 @@ class FeiEMDReader(object):
         return tz.tzlocal().tzname(datetime.today())
 
 
-
-
 # Below some information we have got from FEI about the format of the stream:
 #
 # The SI data is stored as a spectrum stream, ‘65535’ means next pixel
@@ -1022,7 +1018,7 @@ class FeiSpectrumStream(object):
             'Last_frame': self.reader.last_frame,
             'Number_of_frames': self.reader.number_of_frames,
             'Rebin_energy': self.reader.rebin_energy,
-            'Number_of_channels': self.bin_count,}
+            'Number_of_channels': self.bin_count, }
         self.compute_spectrum_image()
 
     @property
@@ -1060,7 +1056,6 @@ class FeiSpectrumStream(object):
                 rebin_energy=self.reader.rebin_energy,
                 sum_frames=self.reader.sum_frames,
                 dtype=self.reader.SI_data_dtype,)
-
 
 
 def file_reader(filename, log_info=False,
