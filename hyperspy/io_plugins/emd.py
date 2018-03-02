@@ -764,7 +764,7 @@ class FeiEMDReader(object):
                 json.loads(
                     sig[next(iter(sig))]
                     ["SpectrumImageSettings"][0].decode("utf8")
-                    )["endFramePosition"])
+                )["endFramePosition"])
         except Exception as e:
             _logger.exception(
                 "Failed to read the number of frames from Data/SpectrumImage")
