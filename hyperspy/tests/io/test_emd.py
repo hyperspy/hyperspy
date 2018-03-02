@@ -30,6 +30,7 @@ import numpy as np
 import h5py
 from dateutil import tz
 from datetime import datetime
+import pytest
 
 from hyperspy.io import load
 from hyperspy.signals import BaseSignal, Signal2D, Signal1D, EDSTEMSpectrum
@@ -243,16 +244,26 @@ class TestFeiEMD():
         np.testing.assert_equal(signal.data, fei_spectrum)
         assert isinstance(signal, Signal1D)
 
-    def test_fei_emd_si(self):
-        signal = load(os.path.join(self.fei_files_path, 'fei_emd_si.emd'))
+    @pytest.mark.parametrize("lazy", (True, False))
+    def test_fei_emd_si(self, lazy):
+        signal = load(os.path.join(self.fei_files_path, 'fei_emd_si.emd'),
+                      lazy=lazy)
+        if lazy:
+            assert signal[1]._lazy
+            signal[1].compute()
         fei_si = np.load(os.path.join(self.fei_files_path, 'fei_emd_si.npy'))
         np.testing.assert_equal(signal[1].data, fei_si)
         assert isinstance(signal[1], Signal1D)
 
-    def test_fei_emd_si_non_square_10frames(self):
-        s = load(os.path.join(self.fei_files_path,
-                              'fei_SI_SuperX-HAADF_10frames_10x50.emd'))
+    @pytest.mark.parametrize("lazy", (True, False))
+    def test_fei_emd_si_non_square_10frames(self, lazy):
+        s = load(os.path.join(
+            self.fei_files_path, 'fei_SI_SuperX-HAADF_10frames_10x50.emd'),
+            lazy=lazy)
         signal = s[1]
+        if lazy:
+            assert signal._lazy
+            signal.compute()
         assert isinstance(signal, EDSTEMSpectrum)
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
@@ -268,6 +279,9 @@ class TestFeiEMD():
         assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
 
         signal0 = s[0]
+        if lazy:
+            assert signal0._lazy
+            signal0.compute()
         assert isinstance(signal0, Signal2D)
         assert signal0.axes_manager[0].name == 'x'
         assert signal0.axes_manager[0].size == 10
@@ -281,8 +295,12 @@ class TestFeiEMD():
                               'fei_SI_SuperX-HAADF_10frames_10x50.emd'),
                  sum_frames=False,
                  SI_dtype=np.uint8,
-                 rebin_energy=256)
+                 rebin_energy=256,
+                 lazy=lazy)
         signal = s[1]
+        if lazy:
+            assert signal._lazy
+            signal.compute()
         assert isinstance(signal, EDSTEMSpectrum)
         assert signal.axes_manager.navigation_shape == (10, 50, 10)
         assert signal.axes_manager[0].name == 'x'
@@ -307,8 +325,12 @@ class TestFeiEMD():
                  sum_frames=False,
                  last_frame=5,
                  SI_dtype=np.uint8,
-                 rebin_energy=256)
+                 rebin_energy=256,
+                 lazy=lazy)
         signal = s[1]
+        if lazy:
+            assert signal._lazy
+            signal.compute()
         assert isinstance(signal, EDSTEMSpectrum)
         assert signal.axes_manager.navigation_shape == (10, 50, 5)
         assert signal.axes_manager[0].name == 'x'
@@ -333,8 +355,12 @@ class TestFeiEMD():
                  sum_frames=False,
                  first_frame=4,
                  SI_dtype=np.uint8,
-                 rebin_energy=256)
+                 rebin_energy=256,
+                 lazy=lazy)
         signal = s[1]
+        if lazy:
+            assert signal._lazy
+            signal.compute()
         assert isinstance(signal, EDSTEMSpectrum)
         assert signal.axes_manager.navigation_shape == (10, 50, 6)
         assert signal.axes_manager[0].name == 'x'
@@ -354,10 +380,16 @@ class TestFeiEMD():
         assert signal.axes_manager[3].units == 'keV'
         assert_allclose(signal.axes_manager[3].scale, 1.28, atol=1E-5)
 
-    def test_fei_emd_si_non_square_20frames(self):
-        s = load(os.path.join(self.fei_files_path,
-                              'fei_SI_SuperX-HAADF_20frames_10x50.emd'))
+    @pytest.mark.parametrize("lazy", (True, False))
+    def test_fei_emd_si_non_square_20frames(self, lazy):
+        s = load(os.path.join(
+                self.fei_files_path,
+                'fei_SI_SuperX-HAADF_20frames_10x50.emd'),
+                 lazy=lazy)
         signal = s[1]
+        if lazy:
+            assert signal._lazy
+            signal.compute()
         assert isinstance(signal, EDSTEMSpectrum)
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
@@ -372,10 +404,16 @@ class TestFeiEMD():
         assert signal.axes_manager[2].units == 'keV'
         assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
 
-    def test_fei_emd_si_non_square_20frames_2eV(self):
-        s = load(os.path.join(self.fei_files_path,
-                              'fei_SI_SuperX-HAADF_20frames_10x50_2ev.emd'))
+    @pytest.mark.parametrize("lazy", (True, False))
+    def test_fei_emd_si_non_square_20frames_2eV(self, lazy):
+        s = load(os.path.join(
+                self.fei_files_path,
+                'fei_SI_SuperX-HAADF_20frames_10x50_2ev.emd'),
+                 lazy=lazy)
         signal = s[1]
+        if lazy:
+            assert signal._lazy
+            signal.compute()
         assert isinstance(signal, EDSTEMSpectrum)
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
@@ -390,11 +428,15 @@ class TestFeiEMD():
         assert signal.axes_manager[2].units == 'keV'
         assert_allclose(signal.axes_manager[2].scale, 0.002, atol=1E-5)
 
-    def test_fei_emd_si_frame_range(self):
+    @pytest.mark.parametrize("lazy", (True, False))
+    def test_fei_emd_si_frame_range(self, lazy):
         signal = load(os.path.join(self.fei_files_path, 'fei_emd_si.emd'),
-                      first_frame=2, last_frame=4)
+                      first_frame=2, last_frame=4, lazy=lazy)
         fei_si = np.load(os.path.join(self.fei_files_path,
                                       'fei_emd_si_frame.npy'))
+        if lazy:
+            assert signal[1]._lazy
+            signal[1].compute()
         np.testing.assert_equal(signal[1].data, fei_si)
         assert isinstance(signal[1], Signal1D)
         md = signal[1].metadata

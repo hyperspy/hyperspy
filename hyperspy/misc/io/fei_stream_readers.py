@@ -24,14 +24,21 @@ def _stream_to_sparse_COO_array_sum_frames(
     data = 0
     count_channel = None
     for value in stream_data:
+        if frame_number < first_frame:
+            if value != 65535:  # Same spectrum
+                continue
+            else:
+                navigation_index += 1
+                if navigation_index == frame_size:
+                    frame_number += 1
+                    navigation_index = 0
+                continue
         # when we reach the end of the frame, reset the navigation index to 0
         if navigation_index == frame_size:
             navigation_index = 0
             frame_number += 1
             if frame_number == last_frame:
                 break
-        if frame_number < first_frame:
-            continue
         # if different of ‘65535’, add a count to the corresponding channel
         if value != 65535:  # Same spectrum
             if data:
@@ -84,14 +91,21 @@ def _stream_to_sparse_COO_array(
     data = 0
     count_channel = None
     for value in stream_data:
+        if frame_number < first_frame:
+            if value != 65535:  # Same spectrum
+                continue
+            else:
+                navigation_index += 1
+                if navigation_index == frame_size:
+                    frame_number += 1
+                    navigation_index = 0
+                continue
         # when we reach the end of the frame, reset the navigation index to 0
         if navigation_index == frame_size:
             navigation_index = 0
             frame_number += 1
             if frame_number == last_frame:
                 break
-        if frame_number < first_frame:
-            continue
         # if different of ‘65535’, add a count to the corresponding channel
         if value != 65535:  # Same spectrum
             if data:
@@ -100,7 +114,7 @@ def _stream_to_sparse_COO_array(
                 else:  # a new channel, same spectrum—requires new coord
                     # Store previous channel
                     coords.append((
-                        frame_number,
+                        frame_number - first_frame,
                         int(navigation_index // xsize),
                         int(navigation_index % xsize),
                         int(count_channel // rebin_energy))
@@ -119,7 +133,7 @@ def _stream_to_sparse_COO_array(
         else:  # Advances one pixel
             if data:  # Only store coordinates if the spectrum was not empty
                 coords.append((
-                    frame_number,
+                    frame_number - first_frame,
                     int(navigation_index // xsize),
                     int(navigation_index % xsize),
                     int(count_channel // rebin_energy))
@@ -153,7 +167,9 @@ def stream_to_sparse_COO_array(
         If True, sum all the frames
 
     """
-
+    # The stream format does not add a final mark. We add to simplify the
+    # reading code in this case
+    stream_data = np.hstack((stream_data, 65535))
     if sum_frames:
         coords, data, shape = _stream_to_sparse_COO_array_sum_frames(
             stream_data=stream_data,
@@ -298,6 +314,7 @@ def array_to_stream(array):
         channel += 1
         if channel % channels == 0:
             channel = 0
-            stream_data.append(mark)
+            stream_data.append(65535)
+    stream_data = stream_data[:-1] # Remove final mark
     stream_data = np.array(stream_data, dtype=numba.uint16)
     return stream_data

@@ -592,7 +592,7 @@ class FeiEMDReader(object):
         spectrum_sub_group = spectrum_group[spectrum_sub_group_key]
         dataset = spectrum_sub_group['Data']
         if self.lazy:
-            data = da.from_array(dataset, chunks=dataset.chunks)[:, 0]
+            data = da.from_array(dataset, chunks=dataset.shape)[:, 0]
         else:
             data = dataset[:, 0]
         original_metadata = _parse_metadata(spectrum_group,
@@ -655,15 +655,16 @@ class FeiEMDReader(object):
                 data = da.rollaxis(
                     da.from_array(
                         h5data,
-                        h5data.chunks),
+                        chunks=h5data.shape),
                     axis=2)
             else:
-                data = np.rollaxis(np.array(image_sub_group['Data']), axis=2)
+                data = np.rollaxis(np.array(h5data), axis=2)
             # Get the scanning area shape of the SI from the images
             self.spatial_shape = data.shape[1:]
         else:
             if self.lazy:
-                data = da.from_array(h5data, h5data.chunks)[:, :, 0]
+                data = da.from_array(
+                    h5data, chunks=(h5data.shape[:2] + (1,)),)[:, :, 0]
             else:
                 data = h5data[:, :, 0]
             # Get the scanning area shape of the SI from the images
