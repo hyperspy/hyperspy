@@ -276,3 +276,27 @@ def stream_to_array(stream, spatial_shape, channels, first_frame, last_frame,
             last_frame=last_frame,
             rebin_energy=rebin_energy)
     return spectrum_image
+
+@jit_ifnumba
+def array_to_stream(array):
+    """Convert an array to a FEI stream
+
+    Parameters
+    ----------
+    array: array
+
+    """
+
+    channels = array.shape[-1]
+    flat_array = array.ravel()
+    stream_data = []
+    channel = 0
+    for value in flat_array:
+        for j in range(value):
+            stream_data.append(channel)
+        channel += 1
+        if channel % channels == 0:
+            channel = 0
+            stream_data.append(mark)
+    stream_data = np.array(stream_data, dtype=numba.uint16)
+    return stream_data
