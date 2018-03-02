@@ -777,16 +777,44 @@ class FeiEMDReader(object):
                 " the number of frames, %i for this file."
                 % self.number_of_frames
             )
-        streams = FeiSpectrumStreamContainer(reader=self)
-        self.streams = streams
 
-        streams.read_streams()
-        spectrum_image_shape = streams.streams[0].shape
-        original_metadata = streams.streams[0].original_metadata
+
+        spectrum_stream_group = self.d_grp.get("SpectrumStream")
+        if spectrum_stream_group is None:
+            _logger.warning("No spectrum stream is present in the file. It ",
+                            "is possible that the file has been pruned: use ",
+                            "Velox to read the spectrum image (proprietary "
+                            "format). If you want to open FEI emd file with ",
+                            "HyperSpy don't prune the file when saving it in "
+                            "Velox.")
+            return
+
+        def _read_stream(key):
+            stream = FeiSpectrumStream(spectrum_stream_group[key], self)
+            return stream
+
+        subgroup_keys = _get_keys_from_group(spectrum_stream_group)
+        if len(subgroup_keys) == 1:
+            _logger.warning("The file contains only one spectrum stream")
+        if self.sum_EDS_detectors:
+            # Read the first stream
+            streams = [_read_stream(subgroup_keys[0])]
+            summed_spectrum_image = streams[0].spectrum_image
+            # add other stream
+            if len(subgroup_keys) > 1:
+                for key in subgroup_keys[1:]:
+                    streams = [_read_stream(key)]
+                    summed_spectrum_image += streams[0].spectrum_image
+        else:
+            streams = [_read_stream(key) for key in subgroup_keys]
+
+
+        spectrum_image_shape = streams[0].shape
+        original_metadata = streams[0].original_metadata
         original_metadata.update(self.original_metadata)
 
         pixel_size, offsets, original_units = \
-            streams.streams[0].get_pixelsize_offset_unit()
+            streams[0].get_pixelsize_offset_unit()
         dispersion, offset = self._get_dispersion_offset(original_metadata)
 
         scale_x = self._convert_scale_units(
@@ -837,13 +865,13 @@ class FeiEMDReader(object):
         md['Signal']['signal_type'] = 'EDS_TEM'
 
         if self.sum_EDS_detectors:
-            self.dictionaries.append({'data': streams.summed_spectrum_image,
+            self.dictionaries.append({'data': summed_spectrum_image,
                                       'axes': axes,
                                       'metadata': md,
                                       'original_metadata': original_metadata,
                                       'mapping': self._get_mapping()})
         else:
-            for stream in streams.streams:
+            for stream in streams:
                 original_metadata = stream.original_metadata
                 original_metadata.update(self.original_metadata)
                 self.dictionaries.append({'data': stream.spectrum_image,
@@ -941,46 +969,6 @@ class FeiEMDReader(object):
         return tz.tzlocal().tzname(datetime.today())
 
 
-class FeiSpectrumStreamContainer(object):
-
-    """
-    Container class to manage the different SpectrumStreams
-
-    Supports summing detectors (default).
-    """
-
-    def __init__(self, reader):
-        self.reader = reader
-        spectrum_stream_group = reader.d_grp.get("SpectrumStream")
-        if spectrum_stream_group is None:
-            _logger.warning("No spectrum stream is present in the file. It ",
-                            "is possible that the file has been pruned: use ",
-                            "Velox to read the spectrum image (proprietary "
-                            "format). If you want to open FEI emd file with ",
-                            "HyperSpy don't prune the file when saving it in "
-                            "Velox.")
-        self.spectrum_stream_group = spectrum_stream_group
-
-    def _read_stream(self, key):
-        stream = FeiSpectrumStream(
-            self.spectrum_stream_group[key], self.reader)
-        return stream
-
-    def read_streams(self):
-        subgroup_keys = _get_keys_from_group(self.spectrum_stream_group)
-        if len(subgroup_keys) == 1:
-            _logger.warning("The file contains only one spectrum stream")
-        if self.reader.sum_EDS_detectors:
-            # Read the first stream
-            self.streams = [self._read_stream(subgroup_keys[0])]
-            self.summed_spectrum_image = self.streams[0].spectrum_image
-            # add other stream
-            if len(subgroup_keys) > 1:
-                for key in subgroup_keys[1:]:
-                    self.streams = [self._read_stream(key)]
-                    self.summed_spectrum_image += self.streams[0].spectrum_image
-        else:
-            self.streams = [self._read_stream(key) for key in subgroup_keys]
 
 
 # Below some information we have got from FEI about the format of the stream:
@@ -1015,6 +1003,26 @@ class FeiSpectrumStream(object):
             self.reader.SI_data_dtype = acquisition_settings['StreamEncoding']
         # Parse the rest of the metadata for storage
         self.original_metadata = _parse_sub_data_group_metadata(stream_group)
+        # If last_frame is None, compute it
+        if self.reader.last_frame is None:
+            # The information could not be retrieved from metadata
+            # we compute, which involves iterating once over the whole stream.
+            # This is required to support the `last_frame` feature without
+            # duplicating the functions as currently numba does not support
+            # parametetrization.
+            stream_data = self.stream_group['Data'][:].T[0]
+            spatial_shape = self.reader.spatial_shape
+            last_frame = int(
+                np.ceil((stream_data == 65535).sum() /
+                        (spatial_shape[0] * spatial_shape[1])))
+            self.reader.last_frame = last_frame
+            self.reader.number_of_frames = last_frame
+        self.original_metadata['ImportedDataParameter'] = {
+            'First_frame': self.reader.first_frame,
+            'Last_frame': self.reader.last_frame,
+            'Number_of_frames': self.reader.number_of_frames,
+            'Rebin_energy': self.reader.rebin_energy,
+            'Number_of_channels': self.bin_count,}
         self.compute_spectrum_image()
 
     @property
@@ -1029,18 +1037,6 @@ class FeiSpectrumStream(object):
         # Here we load the stream data into memory, which is fine is the
         # arrays are small. We could load them lazily when lazy.
         stream_data = self.stream_group['Data'][:].T[0]
-        spatial_shape = self.reader.spatial_shape
-        if self.reader.last_frame is None:
-            # The information could not be retrieved from metadata
-            # we compute, which involves iterating once over the whole stream.
-            # This is required to support the `last_frame` feature without
-            # duplicating the functions as currently numba does not support
-            # parametetrization.
-            last_frame = int(
-                np.ceil((stream_data == 65535).sum() /
-                        (spatial_shape[0] * spatial_shape[1])))
-            self.reader.last_frame = last_frame
-            self.reader.number_of_frames = last_frame
         if self.reader.lazy:
             sparse_array = stream_readers.stream_to_sparse_COO_array(
                 stream_data=stream_data,
@@ -1065,13 +1061,6 @@ class FeiSpectrumStream(object):
                 sum_frames=self.reader.sum_frames,
                 dtype=self.reader.SI_data_dtype,)
 
-            self.original_metadata['ImportedDataParameter'] = {
-                'First_frame': self.reader.first_frame,
-                'Last_frame': self.reader.last_frame,
-                'Number_of_frames': self.reader.number_of_frames,
-                'Rebin_energy': self.reader.rebin_energy,
-                'Number_of_channels': self.bin_count,
-            }
 
 
 def file_reader(filename, log_info=False,
