@@ -584,7 +584,7 @@ class HyperHeader(object):
         self.version = int(hd.find('./FileVersion').text)
         # fill the sem and stage attributes:
         self._set_microscope(root)
-        self._get_mode(instrument)
+        self._set_mode(instrument)
         self._set_images(root)
         self.elements = {}
         self._set_elements(root)
@@ -624,9 +624,7 @@ class HyperHeader(object):
         DSPConf = root.find("./ClassInstance[@Type='TRTDSPConfiguration']")
         self.dsp_metadata = dictionarize(DSPConf)
 
-    def _get_mode(self, instrument=None):
-        # where is no way to determine what kind of instrument was used:
-        # TEM or SEM (mode attribute)
+    def _set_mode(self, instrument=None):
         if instrument is not None:
             self.mode = instrument
         else:
