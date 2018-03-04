@@ -199,7 +199,7 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +--------------------+--------+--------+--------+
     | EMD (NCEM)         |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
-    | EMD (FEI)          |    Yes |    No  |    No  |
+    | EMD (FEI)          |    Yes |    No  |    Yes |
     +--------------------+--------+--------+--------+
     | Protochips log     |    Yes |    No  |    No  |
     +--------------------+--------+--------+--------+
