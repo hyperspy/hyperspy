@@ -296,14 +296,21 @@ def test_reconstruct_phase_multi(parallel, lazy):
             sb_size=40, sb_unit='mrad')
 
 
+def _generate_parameters():
+    parameters = []
+    for parallel in [False, True]:
+        for lazy in [False, True]:
+            for single_values in [False, True]:
+                for fcalgo in ['fourier', 'statistical']:
+                    parameters.append([parallel,
+                                       lazy,
+                                       single_values,
+                                       fcalgo])
+    return parameters
+
+
 @pytest.mark.parametrize('parallel, lazy, single_values, fringe_contrast_algorithm',
-                         [(False, False, True, 'statistical'),
-                          (False, False, False, 'statistical'),
-                          (True, False, True, 'statistical'),
-                          (True, True, True, 'statistical'),
-                          (True, False, True, 'fourier'),
-                          (True, True, True, 'fourier')
-                          ])
+                         _generate_parameters())
 def test_statistics(parallel, lazy, single_values, fringe_contrast_algorithm):
     # Parameters measured using Gatan HoloWorks:
     REF_FRINGE_SPACING = 3.48604

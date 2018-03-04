@@ -55,7 +55,7 @@ def _parse_sb_position(s, reference, sb_position, sb, high_cf, parallel):
     else:
         if isinstance(sb_position, BaseSignal) and \
                 not sb_position._signal_dimension == 1:
-            raise ValueError('sb_position dimension has to be 1')
+            raise ValueError('sb_position dimension has to be 1.')
 
         if not isinstance(sb_position, Signal1D):
             sb_position = Signal1D(sb_position)
@@ -63,7 +63,7 @@ def _parse_sb_position(s, reference, sb_position, sb, high_cf, parallel):
                 sb_position = sb_position.as_lazy()
 
         if not sb_position.axes_manager.signal_size == 2:
-            raise ValueError('sb_position should to have signal size of 2')
+            raise ValueError('sb_position should to have signal size of 2.')
 
     if sb_position.axes_manager.navigation_size != s.axes_manager.navigation_size:
         if sb_position.axes_manager.navigation_size:
@@ -596,9 +596,11 @@ class HologramImage(Signal2D):
                    single_values=True,
                    show_progressbar=False,
                    parallel=None):
-        """Calculates following statistics for off-axis electron holograms:
+        """
+        Calculates following statistics for off-axis electron holograms:
+
         1. Fringe contrast using either statistical definition or
-         Fourier space approach (see description of `fringe_contrast_algorithm` parameter)
+        Fourier space approach (see description of `fringe_contrast_algorithm` parameter)
         2. Fringe sampling (in pixels)
         3. Fringe spacing (in calibrated units)
         4. Carrier frequency (in calibrated units, radians and 1/px)
@@ -616,6 +618,7 @@ class HologramImage(Signal2D):
             half of the Nyquist frequency (Default: False).
         fringe_contrast_algorithm : str
             Select fringe contrast algorithm between:
+
             'fourier'
                 fringe contrast is estimated as:
                 2 * <I(k_0)> / <I(0)>,
@@ -626,9 +629,10 @@ class HologramImage(Signal2D):
                 fringe contrast is estimated by dividing standard deviation by mean
                 of the hologram intensity in real space. This algorithm relays on that the fringes are regular and
                 covering entire field of view.
+
             (Default: 'statistical')
         apodization: str or None, optional
-            Used with `fringe_contrast_algorithm='fourier'. If ` 'hanning' or 'hamming' apodization window
+            Used with `fringe_contrast_algorithm='fourier'`. If 'hanning' or 'hamming' apodization window
             will be applied in real space before FFT for estimation of fringe contrast.
             Apodization is typically needed to suppress striking  due to sharp edges of the image,
             which often results in underestimation of the fringe contrast. (Default: 'hanning')
@@ -652,7 +656,6 @@ class HologramImage(Signal2D):
         >>> s = hs.datasets.example_signals.reference_hologram()
         >>> sb_position = s.estimate_sideband_position(high_cf=True)
         >>> s.statistics(sb_position=sb_position)
-
         {'Fringe spacing (nm)': 3.4860442674236256,
         'Carrier frequency (1/px)': 0.26383819985575441,
         'Carrier frequency (mrad)': 0.56475154609203482,
@@ -687,7 +690,7 @@ class HologramImage(Signal2D):
         try:
             units = ureg.parse_expression(str(self.axes_manager.signal_axes[0].units))
         except UndefinedUnitError:
-            raise ValueError('Signal axes units should be defined')
+            raise ValueError('Signal axes units should be defined.')
 
         # Calculate carrier frequency in 1/units and fringe spacing in units:
         f_sampling_units = np.divide(
@@ -717,7 +720,7 @@ class HologramImage(Signal2D):
         except:
             raise AttributeError("Please define the beam energy."
                                  "You can do this e.g. by using the "
-                                 "set_microscope_parameters method")
+                                 "set_microscope_parameters method.")
 
         momentum = 2 * constants.m_e * constants.elementary_charge * ht * \
                    1000 * (1 + constants.elementary_charge * ht *
@@ -746,7 +749,7 @@ class HologramImage(Signal2D):
             else:
                 fringe_contrast = _estimate_fringe_contrast_statistical(self)
         else:
-            raise ValueError("fringe_contrast_algorithm can only be set to fourier or statistical")
+            raise ValueError("fringe_contrast_algorithm can only be set to fourier or statistical.")
 
         return {'Fringe contrast': fringe_contrast,
                 'Fringe sampling (px)': fringe_sampling,
