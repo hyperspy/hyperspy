@@ -193,7 +193,8 @@ class TestFeiEMD():
     def teardown_class(cls):
         shutil.rmtree(cls.fei_files_path)
 
-    def test_fei_emd_image(self):
+    @pytest.mark.parametrize("lazy", (True, False))
+    def test_fei_emd_image(self, lazy):
         stage = {'tilt_alpha': '0.00',
                  'tilt_beta': '0.00',
                  'x': '-0.000',
@@ -223,7 +224,11 @@ class TestFeiEMD():
         md['General']['date'] = date
         md['General']['time'] = time
 
-        signal = load(os.path.join(self.fei_files_path, 'fei_emd_image.emd'))
+        signal = load(os.path.join(self.fei_files_path, 'fei_emd_image.emd'),
+                      lazy=lazy)
+        if lazy:
+            assert signal._lazy
+            signal.compute()
         fei_image = np.load(os.path.join(self.fei_files_path,
                                          'fei_emd_image.npy'))
         assert signal.axes_manager[0].name == 'x'
@@ -236,9 +241,13 @@ class TestFeiEMD():
         assert_deep_almost_equal(signal.metadata.as_dictionary(), md)
         assert isinstance(signal, Signal2D)
 
-    def test_fei_emd_spectrum(self):
+    @pytest.mark.parametrize("lazy", (True, False))
+    def test_fei_emd_spectrum(self, lazy):
         signal = load(os.path.join(
-            self.fei_files_path, 'fei_emd_spectrum.emd'))
+            self.fei_files_path, 'fei_emd_spectrum.emd'), lazy=lazy)
+        if lazy:
+            assert signal._lazy
+            signal.compute()
         fei_spectrum = np.load(os.path.join(self.fei_files_path,
                                             'fei_emd_spectrum.npy'))
         np.testing.assert_equal(signal.data, fei_spectrum)

@@ -598,23 +598,36 @@ class FeiEMDReader(object):
         spectrum_sub_group = spectrum_group[spectrum_sub_group_key]
         dataset = spectrum_sub_group['Data']
         if self.lazy:
-            data = da.from_array(dataset, chunks=dataset.chunks)[:, 0]
+            data = da.from_array(dataset, chunks=dataset.chunks).T
         else:
-            data = dataset[:, 0]
+            data = dataset[:].T
         original_metadata = _parse_metadata(spectrum_group,
                                             spectrum_sub_group_key)
         original_metadata.update(self.original_metadata)
 
         dispersion, offset = self._get_dispersion_offset(original_metadata)
-
-        axes = [{'index_in_array': 0,
-                 'name': 'E',
-                 'offset': offset,
-                 'scale': dispersion,
-                 'size': data.shape[0],
-                 'units': 'keV',
-                 'navigate': False}
-                ]
+        axes = []
+        if len(data.shape) == 2:
+            if data.shape[0] == 1:
+                # squeeze
+                data = data[0, :]
+            else:
+                axes = [{
+                         'name': 'Stack',
+                         'offset': 0,
+                         'scale': 1,
+                         'size': data.shape[0],
+                         'navigate': True,
+                         }
+                        ]
+        axes.append({
+            'name': 'Energy',
+            'offset': offset,
+            'scale': dispersion,
+            'size': data.shape[-1],
+            'units': 'keV',
+            'navigate': False},
+                    )
 
         md = self._get_metadata_dict(original_metadata)
         md['Signal']['signal_type'] = 'EDS_TEM'
