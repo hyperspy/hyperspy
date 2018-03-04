@@ -703,20 +703,18 @@ Electron Microscopy (NCEM). See http://emdatasets.com/ for more information.
 EMD (FEI)
 ^^^^^^^^^
 
-This EMD format was developed by FEI for the Velox software. Although it shares 
-similar structure than the other EMD format from NCEM, it differs in the way 
-the data are stored. HyperSpy supports importing images, EDS spectrum and EDS 
-spectrum stream. For spectrum strean, individual frame or individual EDS detector 
-can be imported, however selecting these option will generate very large 
-dataset. Therefore, the default is to import the sum over all frame and over 
-all detectors. Alternatively, a specific frame range can be choosen -see 
-the :ref:`Extra-loading-arguments-fei-emd` section below. On top of the EDS 
-spectrum stream, FEI emd file also contains a spectrum image dataset which is 
-a proprietary format used by Velox and is not supported by HyperSpy. It is possible 
-that a file has been pruned when saving with Velox in order to reduce its size 
-(not default), which means that the spectrum stream is lost and can't be recovered.
-Loading a spectrum image is slow if `numba <http://numba.pydata.org/>`_ is 
-not installed.
+This is a non-compliant variant of the standard EMD format developed by FEI.
+HyperSpy supports importing images, EDS spectrum and EDS 
+spectrum streams (spectrum images stored in a sparse format). For spectrum
+streams, there several loading options (described below) to control the frames
+and detectors to load and if to sum them on loading.  The default is
+to import the sum over all frames and over all detectors in order to decrease
+the data size in memory.
+
+Note that pruned FEI EMD files contain the spectrum image. Therefore,
+don't prune FEI EMD files in you intend to read them with HyperSpy.
+Note also that loading a spectrum image can be slow if `numba
+<http://numba.pydata.org/>`_ is not installed.
 
 .. code-block:: python
 
@@ -726,8 +724,10 @@ not installed.
 
 .. warning::
 
-   This format is still not stable and files generated with the most recent 
-version of Velox may not be supported.
+   This format is still not stable and files generated with the most recent
+   version of Velox may not be supported. If you experience issues loading
+   a file, please report it  to the HyperSpy developers so that they can
+   add support for newer versions of the format.
 
 .. _Extra-loading-arguments-fei-emd:
 
