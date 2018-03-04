@@ -33,7 +33,7 @@ EDS spectra and metadata describing the dimentions of the data and
 SEM/TEM (limited) parameters"""
 full_support = False
 # Recognised file extension
-file_extensions = ('bcf',)
+file_extensions = ('bcf', 'spx')
 default_extension = 0
 # Reading capabilities
 reads_images = True
@@ -57,6 +57,7 @@ from zlib import decompress as unzip_block
 import logging
 import re
 from math import ceil
+from os.path import splitext
 
 _logger = logging.getLogger(__name__)
 
@@ -626,18 +627,10 @@ class HyperHeader(object):
     def _get_mode(self, instrument=None):
         # where is no way to determine what kind of instrument was used:
         # TEM or SEM (mode attribute)
-        hv = self.hv
         if instrument is not None:
             self.mode = instrument
-        elif hv > 30.0:  # workaround to know if TEM or SEM
-            self.mode = 'TEM'
         else:
-            self.mode = 'SEM'
-            _logger.info(
-                "Guessing that the acquisition instrument is %s " % self.mode +
-                "because the beam energy is %i keV. If this is wrong, " % hv +
-                "please provide the right instrument using the 'instrument' " +
-                "keyword.")
+            self.mode = guess_mode(self.hv)
 
     def get_acq_instrument_dict(self, detector=False, **kwargs):
         """return python dictionary with aquisition instrument
@@ -648,13 +641,9 @@ class HyperHeader(object):
             acq_inst['magnification'] = self.sem_metadata['Mag']
         if detector:
             eds_metadata = self.get_spectra_metadata(**kwargs)
-            acq_inst['Detector'] = {'EDS': {
-                'elevation_angle': eds_metadata.elev_angle,
-                'detector_type': eds_metadata.detector_type,
-                'real_time': self.calc_real_time()}}
-            if 'AzimutAngle' in eds_metadata.esma_metadata:
-                acq_inst['Detector']['EDS'][
-                    'azimuth_angle'] = eds_metadata.esma_metadata['AzimutAngle']
+            det = gen_detector_node(eds_metadata)
+            det['EDS']['real_time'] = self.calc_real_time()
+            acq_inst['Detector'] = det
         return acq_inst
 
     def _parse_image(self, xml_node, overview=False):
@@ -967,6 +956,46 @@ class BCF_reader(SFS_reader):
         item['metadata']['General']['original_filename'] = \
             self.filename.split('/')[-1]
 
+def spx_reader(filename, lazy=False):
+    with open(filename, 'br') as fn:
+        xml_str = fn.read()
+    root = ET.fromstring(xml_str)
+    sp_node = root.find("./ClassInstance[@Type='TRTSpectrum']")
+    try:
+        name = str(sp_node.attrib['Name'])
+    except KeyError:
+        name = 'Undefinded'
+        _logger.info("spectra have no name. Giving it 'Undefined' name")
+    spectrum = EDXSpectrum(sp_node)
+    mode = guess_mode(spectrum.hv)
+    hy_spec = {'data': spectrum.data,
+               'axes': [{'name': 'Energy',
+                         'size': len(spectrum.data),
+                         'offset': spectrum.offset,
+                         'scale': spectrum.scale,
+                         'units': 'keV'}],
+               'metadata':
+               # where is no way to determine what kind of instrument was used:
+               # TEM or SEM
+               {'Acquisition_instrument': {
+                 mode: {'Detector':
+                            gen_detector_node(spectrum),
+                         'beam_energy': spectrum.hv}
+               },
+                'General': {'original_filename': filename.split('/')[-1],
+                            'title': 'EDX',
+                            'date': spectrum.spectrum_metadata['Date'],
+                             'time': spectrum.spectrum_metadata['Time']},
+                 'Sample': {'name': name,
+                            #'elements': TODO
+                            #'xray_lines': TODO
+                            },
+                 'Signal': {'signal_type': 'EDS_%s' % mode,
+                            'record_by': 'spectrum',
+                            'quantity': 'X-rays (Counts)'}
+               },}
+    return [hy_spec]
+
 
 # dict of nibbles to struct notation for reading:
 st = {1: 'B', 2: 'B', 4: 'H', 8: 'I', 16: 'Q'}
@@ -1146,9 +1175,16 @@ def py_parse_hypermap(virtual_file, shape, dtype, downsample=1):
     return vfa
 
 
-# wrapper functions for hyperspy:
-def file_reader(filename, select_type=None, index=None, downsample=1,     # noqa
-                cutoff_at_kV=None, instrument=None, lazy=False):
+def file_reader(filename, *args, **kwds):
+    ext = splitext(filename)[1][1:]
+    if ext == 'bcf':
+        return bcf_reader(filename, *args, **kwds)
+    elif ext == 'spx':
+        return spx_reader(filename, *args, **kwds)
+
+
+def bcf_reader(filename, select_type=None, index=None, downsample=1,  # noqa
+               cutoff_at_kV=None, instrument=None, lazy=False):
     """Reads a bruker bcf file and loads the data into the appropriate class,
     then wraps it into appropriate hyperspy required list of dictionaries
     used by hyperspy.api.load() method.
@@ -1316,3 +1352,29 @@ def get_mapping(mode):
         'Stage.Z':
         ("Acquisition_instrument.%s.Stage.z" % mode, None),
     }
+
+def guess_mode(hv):
+    """there is no way to determine what kind of instrument
+    was used from metadata: TEM or SEM.
+    However simple guess can be made using the acceleration
+    voltage, assuming that SEM is <= 30kV or TEM is >30kV"""
+    if hv > 30.0:
+        mode = 'TEM'
+    else:
+        mode = 'SEM'
+    _logger.info(
+        "Guessing that the acquisition instrument is %s " % mode +
+        "because the beam energy is %i keV. If this is wrong, " % hv +
+        "please provide the right instrument using the 'instrument' " +
+        "keyword.")
+    return mode
+
+def gen_detector_node(spectrum):
+    eds_dict = {'EDS': {'elevation_angle': spectrum.elev_angle,
+                        'detector_type': spectrum.detector_type,}}
+    if 'AzimutAngle' in spectrum.esma_metadata:
+        eds_dict['EDS']['azimuth_angle'] = spectrum.esma_metadata['AzimutAngle']
+    if 'RealTime' in spectrum.hardware_metadata:
+        eds_dict['EDS']['real_time'] = spectrum.hardware_metadata['RealTime'] / 1000000
+        eds_dict['EDS']['live_time'] = spectrum.hardware_metadata['LifeTime'] / 1000000
+    return eds_dict
