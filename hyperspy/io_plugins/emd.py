@@ -528,7 +528,8 @@ class FeiEMDReader(object):
         self.lazy = lazy
 
         self.original_metadata = {}
-        with h5py.File(filename, 'r') as f:
+        try:
+            f = h5py.File(filename, 'r')
             self.d_grp = f.get('Data')
             self._check_im_type()
             self._parse_metadata_group(f.get('Operations'), 'Operations')
@@ -536,6 +537,11 @@ class FeiEMDReader(object):
                 self.p_grp = f.get('Presentation')
                 self._parse_image_display()
             self._read_data(select_type)
+        except Exception as e:
+            raise e
+        finally:
+            if not self.lazy:
+                f.close()
 
     def _read_data(self, select_type):
         self.load_images = self.load_SI = self.load_single_spectrum = True
@@ -592,7 +598,7 @@ class FeiEMDReader(object):
         spectrum_sub_group = spectrum_group[spectrum_sub_group_key]
         dataset = spectrum_sub_group['Data']
         if self.lazy:
-            data = da.from_array(dataset, chunks=dataset.shape)[:, 0]
+            data = da.from_array(dataset, chunks=dataset.chunks)[:, 0]
         else:
             data = dataset[:, 0]
         original_metadata = _parse_metadata(spectrum_group,
@@ -650,25 +656,18 @@ class FeiEMDReader(object):
 
         read_stack = (self.load_SI_image_stack or self.im_type == 'Image')
         h5data = image_sub_group['Data']
-        if read_stack:
+        # Get the scanning area shape of the SI from the images
+        self.spatial_shape = h5data.shape[:-1]
+        # Set the axes in frame, y, x order
+        if self.lazy:
             if self.lazy:
-                data = da.rollaxis(
+                data = da.transpose(
                     da.from_array(
                         h5data,
-                        chunks=h5data.shape),
-                    axis=2)
-            else:
-                data = np.rollaxis(np.array(h5data), axis=2)
-            # Get the scanning area shape of the SI from the images
-            self.spatial_shape = data.shape[1:]
+                        chunks=h5data.chunks),
+                    axes=[2, 0, 1])
         else:
-            if self.lazy:
-                data = da.from_array(
-                    h5data, chunks=(h5data.shape[:2] + (1,)),)[:, :, 0]
-            else:
-                data = h5data[:, :, 0]
-            # Get the scanning area shape of the SI from the images
-            self.spatial_shape = data.shape
+            data = np.rollaxis(np.array(h5data), axis=2)
 
         pix_scale = original_metadata['BinaryResult'].get(
             'PixelSize', {'height': 1.0, 'width': 1.0})
@@ -679,7 +678,14 @@ class FeiEMDReader(object):
 
         axes = []
         # stack of images
-        if read_stack and data.shape[0] > 1:
+        if not read_stack:
+            data = data[0:1, ...]
+
+        if data.shape[0] == 1:
+            # Squeeze
+            data = data[0, ...]
+            i = 0
+        else:
             frame_time = original_metadata['Scan']['FrameTime']
             scale_time = self._convert_scale_units(
                 frame_time, 's', 2 * data.shape[0])
@@ -691,11 +697,6 @@ class FeiEMDReader(object):
                          'units': scale_time[1],
                          'navigate': True})
             i = 1
-        else:
-            if read_stack:
-                # since there is only one image, need to remove the first axis
-                data = data.squeeze(axis=0)
-            i = 0
         scale_x = self._convert_scale_units(
             pix_scale['width'], original_units, data.shape[i + 1])
         scale_y = self._convert_scale_units(
