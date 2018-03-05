@@ -993,7 +993,7 @@ def spx_reader(filename, lazy=False):
                             'quantity': 'X-rays (Counts)'}
                },
                'original_metadata': {'Hardware': spectrum.hardware_metadata,
-                                     'Detector': spectrum.detector_metadat,
+                                     'Detector': spectrum.detector_metadata,
                                      'Analysis': spectrum.esma_metadata,
                                      'Spectrum': spectrum.spectrum_metadata,}
               }
