@@ -84,16 +84,46 @@ class LazySignal(BaseSignal):
     """
     _lazy = True
 
-    def compute(self, progressbar=True):
-        """Attempt to store the full signal in memory.."""
+    def compute(self, progressbar=True, close_file=False):
+        """Attempt to store the full signal in memory.
+
+        close_file: bool
+            If True, attemp to close the file associated with the dask
+            array data if any. Note that closing the file will make all other
+            associated lazy signals inoperative.
+            
+        """
         if progressbar:
             cm = ProgressBar
         else:
             cm = dummy_context_manager
         with cm():
-            self.data = self.data.compute()
+            da = self.data
+            data = da.compute()
+            if close_file:
+                self.close_file()
+            self.data = data
         self._lazy = False
         self._assign_subclass()
+
+    def close_file(self):
+        """Closes the associated data file if any.
+
+        Currently it only supports closing the file associated with a dask
+        array created from an h5py DataSet (default HyperSpy hdf5 reader).
+
+        """
+        arrkey = None
+        for key in self.data.dask.keys():
+            if "array-original" in key:
+                arrkey = key
+                break
+        if arrkey:
+            try:
+                self.data.dask[arrkey].file.close()
+            except AttributeError as e:
+                _logger.exception("Failed to close lazy Signal file")
+
 
     def _get_dask_chunks(self, axis=None, dtype=None):
         """Returns dask chunks
