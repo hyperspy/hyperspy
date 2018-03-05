@@ -527,7 +527,9 @@ class EDXSpectrum(object):
         # USED:
         self.hv = self.esma_metadata['PrimaryEnergy']
         self.elev_angle = self.esma_metadata['ElevationAngle']
-
+        
+        self.date, self.time = gen_iso_date_time(spectrum_header)
+        
         # map stuff from spectra xml branch:
         self.spectrum_metadata = dictionarize(spectrum_header)
         self.offset = self.spectrum_metadata['CalibAbs']
@@ -576,11 +578,7 @@ class HyperHeader(object):
             self.name = 'Undefinded'
             _logger.info("hypermap have no name. Giving it 'Undefined' name")
         hd = root.find("./Header")
-        dt = datetime.strptime(' '.join([str(hd.find('./Date').text),
-                                         str(hd.find('./Time').text)]),
-                               "%d.%m.%Y %H:%M:%S")
-        self.date = dt.date().isoformat()
-        self.time = dt.time().isoformat()
+        self.date, self.time = gen_iso_date_time(hd)
         self.version = int(hd.find('./FileVersion').text)
         # fill the sem and stage attributes:
         self._set_microscope(root)
@@ -966,6 +964,8 @@ def spx_reader(filename, lazy=False):
         _logger.info("spectra have no name. Giving it 'Undefined' name")
     spectrum = EDXSpectrum(sp_node)
     mode = guess_mode(spectrum.hv)
+    results_xml = sp_node.find("./ClassInstance[@Type='TRTResult']")
+    elements_xml = sp_node.find("./ClassInstance[@Type='TRTPSEElementList']")
     hy_spec = {'data': spectrum.data,
                'axes': [{'name': 'Energy',
                          'size': len(spectrum.data),
@@ -982,8 +982,8 @@ def spx_reader(filename, lazy=False):
                },
                 'General': {'original_filename': filename.split('/')[-1],
                             'title': 'EDX',
-                            'date': spectrum.spectrum_metadata['Date'],
-                             'time': spectrum.spectrum_metadata['Time']},
+                            'date': spectrum.date,
+                             'time': spectrum.time},
                  'Sample': {'name': name,
                             #'elements': TODO
                             #'xray_lines': TODO
@@ -997,6 +997,12 @@ def spx_reader(filename, lazy=False):
                                      'Analysis': spectrum.esma_metadata,
                                      'Spectrum': spectrum.spectrum_metadata,}
               }
+    if results_xml is not None:
+        hy_spec['original_metadata']['Results'] = dictionarize(results_xml)
+    if elements_xml is not None:
+        elem = dictionarize(elements_xml)['ChildClassInstances']
+        hy_spec['original_metadata']['Selected_elements'] = elem
+        hy_spec['metadata']['Sample']['elements'] = elem['XmlClassName']
     return [hy_spec]
 
 
@@ -1378,6 +1384,14 @@ def gen_detector_node(spectrum):
     if 'AzimutAngle' in spectrum.esma_metadata:
         eds_dict['EDS']['azimuth_angle'] = spectrum.esma_metadata['AzimutAngle']
     if 'RealTime' in spectrum.hardware_metadata:
-        eds_dict['EDS']['real_time'] = spectrum.hardware_metadata['RealTime'] / 1000000
-        eds_dict['EDS']['live_time'] = spectrum.hardware_metadata['LifeTime'] / 1000000
+        eds_dict['EDS']['real_time'] = spectrum.hardware_metadata['RealTime'] / 1000
+        eds_dict['EDS']['live_time'] = spectrum.hardware_metadata['LifeTime'] / 1000
     return eds_dict
+
+def gen_iso_date_time(node):
+    dt = datetime.strptime(' '.join([str(node.find('./Date').text),
+                                     str(node.find('./Time').text)]),
+                           "%d.%m.%Y %H:%M:%S")
+    date = dt.date().isoformat()
+    time = dt.time().isoformat()
+    return date, time
