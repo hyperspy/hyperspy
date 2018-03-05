@@ -231,7 +231,7 @@ class TestFeiEMD():
                       lazy=lazy)
         if lazy:
             assert signal._lazy
-            signal.compute()
+            signal.compute(close_file=True)
         fei_image = np.load(os.path.join(self.fei_files_path,
                                          'fei_emd_image.npy'))
         assert signal.axes_manager[0].name == 'x'
@@ -250,7 +250,7 @@ class TestFeiEMD():
             self.fei_files_path, 'fei_emd_spectrum.emd'), lazy=lazy)
         if lazy:
             assert signal._lazy
-            signal.compute()
+            signal.compute(close_file=True)
         fei_spectrum = np.load(os.path.join(self.fei_files_path,
                                             'fei_emd_spectrum.npy'))
         np.testing.assert_equal(signal.data, fei_spectrum)
@@ -262,7 +262,7 @@ class TestFeiEMD():
                       lazy=lazy)
         if lazy:
             assert signal[1]._lazy
-            signal[1].compute()
+            signal[1].compute(close_file=True)
         fei_si = np.load(os.path.join(self.fei_files_path, 'fei_emd_si.npy'))
         np.testing.assert_equal(signal[1].data, fei_si)
         assert isinstance(signal[1], Signal1D)
@@ -275,7 +275,7 @@ class TestFeiEMD():
         signal = s[1]
         if lazy:
             assert signal._lazy
-            signal.compute()
+            signal.compute(close_file=True)
         assert isinstance(signal, EDSTEMSpectrum)
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
@@ -293,7 +293,7 @@ class TestFeiEMD():
         signal0 = s[0]
         if lazy:
             assert signal0._lazy
-            signal0.compute()
+            signal0.compute(close_file=True)
         assert isinstance(signal0, Signal2D)
         assert signal0.axes_manager[0].name == 'x'
         assert signal0.axes_manager[0].size == 10
@@ -312,7 +312,7 @@ class TestFeiEMD():
         signal = s[1]
         if lazy:
             assert signal._lazy
-            signal.compute()
+            signal.compute(close_file=True)
         assert isinstance(signal, EDSTEMSpectrum)
         assert signal.axes_manager.navigation_shape == (10, 50, 10)
         assert signal.axes_manager[0].name == 'x'
@@ -342,7 +342,7 @@ class TestFeiEMD():
         signal = s[1]
         if lazy:
             assert signal._lazy
-            signal.compute()
+            signal.compute(close_file=True)
         assert isinstance(signal, EDSTEMSpectrum)
         assert signal.axes_manager.navigation_shape == (10, 50, 5)
         assert signal.axes_manager[0].name == 'x'
@@ -372,7 +372,7 @@ class TestFeiEMD():
         signal = s[1]
         if lazy:
             assert signal._lazy
-            signal.compute()
+            signal.compute(close_file=True)
         assert isinstance(signal, EDSTEMSpectrum)
         assert signal.axes_manager.navigation_shape == (10, 50, 6)
         assert signal.axes_manager[0].name == 'x'
@@ -401,7 +401,7 @@ class TestFeiEMD():
         signal = s[1]
         if lazy:
             assert signal._lazy
-            signal.compute()
+            signal.compute(close_file=True)
         assert isinstance(signal, EDSTEMSpectrum)
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
@@ -425,7 +425,7 @@ class TestFeiEMD():
         signal = s[1]
         if lazy:
             assert signal._lazy
-            signal.compute()
+            signal.compute(close_file=True)
         assert isinstance(signal, EDSTEMSpectrum)
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
@@ -448,7 +448,7 @@ class TestFeiEMD():
                                       'fei_emd_si_frame.npy'))
         if lazy:
             assert signal[1]._lazy
-            signal[1].compute()
+            signal[1].compute(close_file=True)
         np.testing.assert_equal(signal[1].data, fei_si)
         assert isinstance(signal[1], Signal1D)
         md = signal[1].metadata
