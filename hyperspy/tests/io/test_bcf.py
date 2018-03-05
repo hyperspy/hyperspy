@@ -19,6 +19,7 @@ test_files = ['P45_instructively_packed_16bit_compressed.bcf',
               'bcf_v2_50x50px.bcf',
               'bcf-edx-ebsd.bcf']
 np_file = ['P45_16bit.npy', 'P45_16bit_ds.npy']
+spx_files = ['extracted_from_bcf.spx',]
 
 my_path = os.path.dirname(__file__)
 
@@ -205,3 +206,10 @@ def test_decimal_regex():
         assert b'85.658' in fix_dec_patterns.sub(b'\\1.\\2', i)
     for j in dummy_xml_negative:
         assert b'.' not in fix_dec_patterns.sub(b'\\1.\\2', j)
+
+def test__all_spx_loads():
+    for spxfile in spx_files:
+        filename = os.path.join(my_path, 'bcf_data', spxfile)
+        s = load(filename)
+        assert s.data.dtype == np.uint64
+        assert s.metadata.Signal.signal_type == 'EDS_SEM'
