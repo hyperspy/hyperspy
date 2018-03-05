@@ -91,7 +91,7 @@ class LazySignal(BaseSignal):
             If True, attemp to close the file associated with the dask
             array data if any. Note that closing the file will make all other
             associated lazy signals inoperative.
-            
+
         """
         if progressbar:
             cm = ProgressBar
@@ -123,7 +123,6 @@ class LazySignal(BaseSignal):
                 self.data.dask[arrkey].file.close()
             except AttributeError as e:
                 _logger.exception("Failed to close lazy Signal file")
-
 
     def _get_dask_chunks(self, axis=None, dtype=None):
         """Returns dask chunks
@@ -804,14 +803,17 @@ class LazySignal(BaseSignal):
             if reproject:
                 if algorithm == 'PCA':
                     method = obj.transform
-                    post = lambda a: np.concatenate(a, axis=0)
+
+                    def post(a): return np.concatenate(a, axis=0)
                 elif algorithm == 'ORPCA':
                     method = obj.project
                     obj.R = []
-                    post = lambda a: obj.finish()[4]
+
+                    def post(a): return obj.finish()[4]
                 elif algorithm == 'ONMF':
                     method = obj.project
-                    post = lambda a: np.concatenate(a, axis=1).T
+
+                    def post(a): return np.concatenate(a, axis=1).T
 
                 _map = map(lambda thing: method(thing),
                            self._block_iterator(
