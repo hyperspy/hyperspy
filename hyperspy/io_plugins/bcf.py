@@ -991,7 +991,12 @@ def spx_reader(filename, lazy=False):
                  'Signal': {'signal_type': 'EDS_%s' % mode,
                             'record_by': 'spectrum',
                             'quantity': 'X-rays (Counts)'}
-               },}
+               },
+               'original_metadata': {'Hardware': spectrum.hardware_metadata,
+                                     'Detector': spectrum.detector_metadat,
+                                     'Analysis': spectrum.esma_metadata,
+                                     'Spectrum': spectrum.spectrum_metadata,}
+              }
     return [hy_spec]
 
 
