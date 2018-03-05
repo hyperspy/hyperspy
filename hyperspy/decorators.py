@@ -112,4 +112,4 @@ def jit_ifnumba(*args, **kwargs):
         import numba
         return numba.jit(*args, **kwargs)
     except ImportError:
-        return func
+        return args[0]
