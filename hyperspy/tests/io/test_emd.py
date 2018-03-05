@@ -25,6 +25,8 @@ import os.path
 from os import remove
 import shutil
 import tempfile
+import gc
+
 from numpy.testing import assert_allclose
 import numpy as np
 import h5py
@@ -191,6 +193,7 @@ class TestFeiEMD():
 
     @classmethod
     def teardown_class(cls):
+        gc.collect()
         shutil.rmtree(cls.fei_files_path)
 
     @pytest.mark.parametrize("lazy", (True, False))
