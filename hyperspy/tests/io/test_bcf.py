@@ -19,7 +19,8 @@ test_files = ['P45_instructively_packed_16bit_compressed.bcf',
               'bcf_v2_50x50px.bcf',
               'bcf-edx-ebsd.bcf']
 np_file = ['P45_16bit.npy', 'P45_16bit_ds.npy']
-spx_files = ['extracted_from_bcf.spx',]
+spx_files = ['extracted_from_bcf.spx',
+             'bruker_nano.spx']
 
 my_path = os.path.dirname(__file__)
 
