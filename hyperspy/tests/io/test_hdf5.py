@@ -361,7 +361,7 @@ class TestLoadingOOMReadOnly:
         gc.collect()        # Make sure any memmaps are closed first!
         try:
             remove('tmp.hdf5')
-        except:
+        except BaseException:
             # Don't fail tests if we cannot remove
             pass
 
