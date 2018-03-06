@@ -328,7 +328,7 @@ class EDSModel(Model1D):
 
             m=s.create_model(auto_background=False)
             m.add_physical_background(quantification=Weight_percent)
-            m.components.Bremsstrahlung.initialyze() # Carefull it's a necessary step
+            m.components.Bremsstrahlung.initialize() # Carefull it's a necessary step
             m.fit_background(bounded=True)
             m.fit()
             
