@@ -29,94 +29,94 @@ def Wpercent(model,E0,quantification):
     
     if quantification is None :                 #if quantification is None, this function calculate an  approximation of a quantification based on peaks ratio 
         model.signal.set_lines([])
-        w=model.signal.get_lines_intensity(only_one=True)
-        if len(np.shape(w[0]))>1 and np.shape(w[0])[1]>1 : #for 3D Data
-            u=np.ones([np.shape(w[0])[0],np.shape(w[0])[1], len(model._signal.metadata.Sample.elements)] )
-            for i in range (0,len(w)):
-                if "Ka" in w [i].metadata.General.title :
-                    u[:,:,i] =w[i].data
-                elif "La" in w [i].metadata.General.title:
-                    u[:,:,i] =w[i].data*2.5
-                elif "La" in w [i].metadata.General.title:
-                    u[:,:,i] =w[i].data*2.8
-                g=np.ones([np.shape(w[0])[0],np.shape(w[0])[1], len(model._signal.metadata.Sample.elements)] )
+        intensity=model.signal.get_lines_intensity(only_one=True)
+        if len(np.shape(intensity[0]))>1 and np.shape(intensity[0])[1]>1 : #for 3D Data
+            u=np.ones([np.shape(intensity[0])[0],np.shape(intensity[0])[1], len(model._signal.metadata.Sample.elements)] )
+            for i in range (0,len(intensity)):
+                if "Ka" in intensity [i].metadata.General.title :
+                    u[:,:,i] =intensity[i].data
+                elif "La" in intensity [i].metadata.General.title:
+                    u[:,:,i] =intensity[i].data*2.5
+                elif "La" in intensity [i].metadata.General.title:
+                    u[:,:,i] =intensity[i].data*2.8
+                weight=np.ones([np.shape(intensity[0])[0],np.shape(intensity[0])[1], len(model._signal.metadata.Sample.elements)] )
                 for i in range (0,len(model._signal.metadata.Sample.elements)):
-                    g[:,:,i] =(u[:,:,i]/(np.sum(u,axis=-1))) *100          	    
+                    weight[:,:,i] =(u[:,:,i]/(np.sum(u,axis=-1))) *100          	    
 
-        elif len(np.shape(w[0]))==1 and np.shape(w[0])[0]>1 : #for 2D Data
-            u=np.ones([np.shape(w[0])[0], len(model._signal.metadata.Sample.elements)] )
-            for i in range (0,len(w)):
-                if "Ka" in w [i].metadata.General.title :
-                    u[:,i] =w[i].data
-                elif "La" in w [i].metadata.General.title:
-                    u[:,i] =w[i].data*2.5
-                elif "La" in w [i].metadata.General.title:
-                    u[:,i] =w[i].data*2.8
-            g=np.ones([np.shape(w[0])[0], len(model._signal.metadata.Sample.elements)] )
+        elif len(np.shape(intensity[0]))==1 and np.shape(intensity[0])[0]>1 : #for 2D Data
+            u=np.ones([np.shape(intensity[0])[0], len(model._signal.metadata.Sample.elements)] )
+            for i in range (0,len(intensity)):
+                if "Ka" in intensity [i].metadata.General.title :
+                    u[:,i] =intensity[i].data
+                elif "La" in intensity [i].metadata.General.title:
+                    u[:,i] =intensity[i].data*2.5
+                elif "La" in intensity [i].metadata.General.title:
+                    u[:,i] =intensity[i].data*2.8
+            weight=np.ones([np.shape(intensity[0])[0], len(model._signal.metadata.Sample.elements)] )
             for i in range (0,len(model._signal.metadata.Sample.elements)):
-                g[:,i] =(u[:,i]/(np.sum(u,axis=-1))) *100
+                weight[:,i] =(u[:,i]/(np.sum(u,axis=-1))) *100
 
-        elif len(np.shape(w[0]))>1 and np.shape(w[0])[1]==1 : #for 2D Data
-            u=np.ones([np.shape(w[0])[0],np.shape(w[0])[1], len(model._signal.metadata.Sample.elements)] )
-            for i in range (0,len(w)):
-                if "Ka" in w [i].metadata.General.title :
-                    u[:,:,i] =w[i].data
-                elif "La" in w [i].metadata.General.title:
-                    u[:,:,i] =w[i].data*2.5
-                elif "La" in w [i].metadata.General.title:
-                    u[:,:,i] =w[i].data*2.8
-                g=np.ones([np.shape(w[0])[0],np.shape(w[0])[1], len(model._signal.metadata.Sample.elements)] )
+        elif len(np.shape(intensity[0]))>1 and np.shape(intensity[0])[1]==1 : #for 2D Data
+            u=np.ones([np.shape(intensity[0])[0],np.shape(intensity[0])[1], len(model._signal.metadata.Sample.elements)] )
+            for i in range (0,len(intensity)):
+                if "Ka" in intensity [i].metadata.General.title :
+                    u[:,:,i] =intensity[i].data
+                elif "La" in intensity [i].metadata.General.title:
+                    u[:,:,i] =intensity[i].data*2.5
+                elif "La" in intensity [i].metadata.General.title:
+                    u[:,:,i] =intensity[i].data*2.8
+                weight=np.ones([np.shape(intensity[0])[0],np.shape(intensity[0])[1], len(model._signal.metadata.Sample.elements)] )
                 for i in range (0,len(model._signal.metadata.Sample.elements)):
-                    g[:,:,i] =(u[:,:,i]/(np.sum(u,axis=-1))) *100     
+                    weight[:,:,i] =(u[:,:,i]/(np.sum(u,axis=-1))) *100     
         
         else:
             u=np.ones([len(model._signal.metadata.Sample.elements)] ) #for 1D 
-            for i in range (0,len(w)):
-                if "Ka" in w [i].metadata.General.title :
-                    u[i] =w[i].data
-                elif "La" in w [i].metadata.General.title:
-                    u[i] =w[i].data*2.5
-                elif "La" in w [i].metadata.General.title:
-                    u[i] =w[i].data*2.8        
-            g=np.ones([len(model._signal.metadata.Sample.elements)] )
+            for i in range (0,len(intensity)):
+                if "Ka" in intensity [i].metadata.General.title :
+                    u[i] =intensity[i].data
+                elif "La" in intensity [i].metadata.General.title:
+                    u[i] =intensity[i].data*2.5
+                elif "La" in intensity [i].metadata.General.title:
+                    u[i] =intensity[i].data*2.8        
+            weight=np.ones([len(model._signal.metadata.Sample.elements)] )
             t=u.sum() 
             for i in range (0,len(u)):
-                g[i] =u[i] /t*100
+                weight[i] =u[i] /t*100
     elif type(quantification) is np.ndarray: # if quantification is already an array of weight percent, directly keep the array
-        g=quantification
+        weight=quantification
 
     else:
-        w=quantification # if quantification is the result of the hyperspy quantification function. This function convert the result in an array with the same navigation shape than the model and a length equal to the number of elements 
-        if 'atomic percent' in w[0].metadata.General.title:
-            w=atomic_to_weight(w)
+        result=quantification # if quantification is the result of the hyperspy quantification function. This function convert the result in an array with the same navigation shape than the model and a length equal to the number of elements 
+        if 'atomic percent' in result[0].metadata.General.title:
+            result=atomic_to_weight(result)
         else:
-            w=w
+            result=result
             
-        if len(np.shape(w[0]))>1 and np.shape(w[0])[1]>1 : # for 3D
-            g=np.ones([np.shape(w[0])[0],np.shape(w[0])[1], len(model._signal.metadata.Sample.elements)] )
-            for i in range (0,len(w)):
-                g[:,:,i] =w[i].data        
+        if len(np.shape(result[0]))>1 and np.shape(result[0])[1]>1 : # for 3D
+            weight=np.ones([np.shape(result[0])[0],np.shape(result[0])[1], len(model._signal.metadata.Sample.elements)] )
+            for i in range (0,len(result)):
+                weight[:,:,i] =result[i].data        
 		    
-        elif len(np.shape(w[0]))==1 and np.shape(w[0])[0]>1 : #for 2D
-            g=np.ones([np.shape(w[0])[0], len(model._signal.metadata.Sample.elements)] )
-            for i in range (0,len(w)):
-               g[:,i] =w[i].data       
+        elif len(np.shape(result[0]))==1 and np.shape(result[0])[0]>1 : #for 2D
+            weight=np.ones([np.shape(result[0])[0], len(model._signal.metadata.Sample.elements)] )
+            for i in range (0,len(result)):
+               weight[:,i] =result[i].data       
 		    
         else: #for 1D
-            g=np.ones([len(model._signal.metadata.Sample.elements)] )
-            for i in range (0,len(w)):            
-                g[i] =w[i].data
+            weight=np.ones([len(model._signal.metadata.Sample.elements)] )
+            for i in range (0,len(result)):            
+                weight[i] =result[i].data
 		    
 
-    return g
+    return weight
 
 
 
 def Mucoef(model,quanti): # this function calculate the absorption coefficient for all energy. This, correspond to the Mu parameter in the function
-    w=quanti
+    weight=quanti
     t=(np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size/5))
     
-    Ac=mass_absorption_mixture(elements=model._signal.metadata.Sample.elements ,weight_percent=w, energies=t)    
+    Ac=mass_absorption_mixture(elements=model._signal.metadata.Sample.elements ,weight_percent=weight, energies=t)    
     b=(model._signal.axes_manager.signal_axes[-1].axis)-0.035
     Ac=np.interp(b,t,Ac)
     
@@ -201,5 +201,8 @@ class Physical_background(Component):
         
         Window=np.array(self.Window.value,dtype=float)
         Window=Window[self.model.channel_switches]
-            
-        return np.where((x>0.17) & (x<(E0)),((a*100*((E0-x)/x))*((1-np.exp(-2*Mu*b*10**-5 ))/((2*Mu*b*10**-5)))*Window),0) #implement choice for coating correction
+	
+        emission=(a*100*((E0-x)/x)) #kramer's law 
+	absorption=((1-np.exp(-2*Mu*b*10**-5 ))/((2*Mu*b*10**-5))) #love and scott model
+	
+        return np.where((x>0.17) & (x<(E0)),(emission*absorption*Window),0) #implement choice for coating correction
