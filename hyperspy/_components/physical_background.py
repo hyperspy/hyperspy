@@ -168,7 +168,7 @@ class Physical_background(Component):
         self.coefficients.bmin=0
         self.coefficients.bmax=None
 
-    def initialyze(self): # this function is necessary to initialyze the quant map
+    def initialize(self): # this function is necessary to initialyze the quant map
 
         E0=self.E0.value
 
