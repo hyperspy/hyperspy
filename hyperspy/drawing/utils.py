@@ -428,8 +428,7 @@ def plot_images(images,
             colors (to match with the default output of the
             :py:func:`~.drawing.utils.plot_spectra` method.
             Note: if using more than one colormap, using the ``'single'``
-            option for ``colorbar`` will use only the last colormap for the
-            bar, so it is recommended to always use ``'multi'`` or ``None``.
+            option for ``colorbar`` is disallowed.
         no_nans : bool, optional
             If True, set nans to zero for plotting.
         per_row : int, optional
@@ -545,6 +544,14 @@ def plot_images(images,
         or try adjusting `label`, `labelwrap`, or `per_row`
 
     """
+    def __check_single_colorbar(cbar):
+        if cbar is 'single':
+            _logger.warning('Cannot use a single colorbar with multiple '
+                            'colormaps.\n'
+                            'Disabling colorbar.')
+            cbar = None
+        return cbar
+
     from hyperspy.drawing.widgets import ScaleBar
     from hyperspy.misc import rgb_tools
     from hyperspy.signal import BaseSignal
@@ -585,17 +592,24 @@ def plot_images(images,
             make_cmap(colors=['#000000', c['color']],
                       name='mpl{}'.format(n_color))
         cmap = ['mpl{}'.format(i) for i in
-                    range(len(mpl.rcParams['axes.prop_cycle']))]
+                range(len(mpl.rcParams['axes.prop_cycle']))]
+        colorbar = __check_single_colorbar(colorbar)
     # cmap is list, tuple, or something else iterable (but not string):
     elif hasattr(cmap, '__iter__') and not isinstance(cmap, str):
         try:
             cmap = [c.name for c in cmap]  # convert colormap to string
         except AttributeError:
             cmap = [c for c in cmap]   # c should be string if not colormap
+        colorbar = __check_single_colorbar(colorbar)
     elif isinstance(cmap, mpl.colors.Colormap):
         cmap = [cmap.name]   # convert single colormap to list with string
+    elif isinstance(cmap, str):
+        cmap = [cmap]  # cmap is single string, so make it a list
     else:
-        cmap = [cmap]       # cmap is single string, so make it a list
+        # Didn't understand cmap input, so reset to default and raise warning
+        cmap = [plt.get_cmap().name]
+        _logger.warning('The provided cmap value was not understood.\n'
+                        'Using the default of ' + cmap[0])
 
     # If any of the cmaps given are diverging, and auto-centering, set the
     # appropriate flag:
