@@ -126,7 +126,7 @@ def Wpercent(model,E0,quantification):
 
 def Mucoef(model,quanti): # this function calculate the absorption coefficient for all energy. This, correspond to the Mu parameter in the function
     """
-    Calculate the mass absorption coefficient for all energy of the model axis for each pixel. This is based on the weigth percent array defined by the Wpercent function
+    Calculate the mass absorption coefficient for all energy of the model axis for each pixel. Need the weigth percent array defined by the Wpercent function
     Return the Mu parameter as a signal (all energy) with same number of elements than the model
     This parameter is calculated at each iteration during the fit
     Parameters
@@ -179,8 +179,8 @@ class Physical_background(Component):
     Window : int 
     	Contain the signal of the detector efficiency (calculated thanks to the function Windowabsorption())
     quanti: dictionnary
-    	Contain the referenced variable quantification (none, result of CL quantification or array) 
-	This dictionnary is call in the function Wpercent() to calculate an array of weight percent with the same dimension than the model and a length which correspond to the number of elements renseigned in the metadata
+    	Contain the referenced variable quantification (none, result of CL quantification or an array) 
+	This dictionnary is call in the function Wpercent() to calculate an array of weight percent with the same dimension than the model and a length which correspond to the number of elements filled in the metadata
     """
 
     def __init__(self, E0, detector, quantification, coefficients=1, Window=0, quanti=0):
@@ -208,7 +208,7 @@ class Physical_background(Component):
         self.coefficients.bmin=0
         self.coefficients.bmax=None
 
-    def initialize(self): # this function is necessary to initialyze the quant map
+    def initialize(self): # this function is necessary to initialize the quant map
 
         E0=self.E0.value
 
@@ -242,7 +242,8 @@ class Physical_background(Component):
         Window=np.array(self.Window.value,dtype=float)
         Window=Window[self.model.channel_switches]
 	
-        emission=(a*100*((E0-x)/x)) #kramer's law
-        absorption=((1-np.exp(-2*Mu*b*10**-5))/((2*Mu*b*10**-5))) #love and scott model could be cool to impplement CL model too
+        emission=(a*((E0-x)/x)) #kramer's law
+        absorption=((1-np.exp(-2*Mu*b*10**-5))/((2*Mu*b*10**-5))) #love and scott model. It could be cool to impplement CL model too
+	# Backscatter correction could be a good improvement in the futur
 	
         return np.where((x>0.17) & (x<(E0)),(emission*absorption*Window),0) #implement choice for coating correction

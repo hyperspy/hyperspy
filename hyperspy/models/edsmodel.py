@@ -312,10 +312,12 @@ class EDSModel(Model1D):
         quantification: None or Muti_Base_Signal or array
             If quantification is None, an approximation based on peaks ratio is used
             However if the acquisition instrument is a TEM it is more consistent to perform a quantification before the use of "add_physical_background"
-                In this case variable which contain the result of the quantification can be directly renseigned
+                In this case variable which contain the result of the quantification can be directly filled
                 The function automatically detect if data are in weight_percent or in atomic_percent
                 Otherwise, an array which contain the quantification (with map dimension and number or elements set in metadata) can be directly passed
                 This quantmap have to be an array not a list !
+
+        Caution : The number of elements have to be equal to the number of Xray_lines. It's preferable to remove secondary lines and keep only higher energy lines
 
         Example:
 
