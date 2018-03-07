@@ -629,11 +629,10 @@ __ plot.spectra_
 
 .. NOTE::
 
-    If a list or other iterable type is given for the ``cmap`` argument
-    together with ``'single'`` for the ``colorbar`` argument, the global
-    colorbar will be created from the last-used colormap, which is probably not
-    desired. Thus, it is recommended to only use ``'multi'`` or ``None`` for
-    the colorbar option when using multiple colormaps.
+    Because it does not make sense, it is not allowed to use a list or
+    other iterable type for the ``cmap`` argument together with ``'single'``
+    for the ``colorbar`` argument. Such an input will cause a warning and
+    instead set the ``colorbar`` argument to ``None``.
 
 .. _plot.spectra:
 
