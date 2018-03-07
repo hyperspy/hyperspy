@@ -26,19 +26,19 @@ from hyperspy.misc.eds.detector_efficiency import detector_efficiency
 from scipy.interpolate import interp1d
 
 def Wpercent(model,E0,quantification):
- """
-Return an array of weight percent for each elements
+    """
+    Return an array of weight percent for each elements
 
-Parameters
-----------
-model: EDS model
-E0: int
-	The Beam energy
-quantification: None or a list or an array
-	if quantification is None, this function calculate an  approximation of a quantification based on peaks ratio thanks to the function s.get_lines_intensity(). 
-	if quantification is the result of the hyperspy quantification function. This function only convert the result in an array with the same navigation shape than the model and a length equal to the number of elements 
-	if quantification is already an array of weight percent, directly keep the array
- """
+    Parameters
+    ----------
+    model: EDS model
+    E0: int
+            The Beam energy
+    quantification: None or a list or an array
+            if quantification is None, this function calculate an  approximation of a quantification based on peaks ratio thanks to the function s.get_lines_intensity(). 
+            if quantification is the result of the hyperspy quantification function. This function only convert the result in an array with the same navigation shape than the model and a length equal to the number of elements 
+            if quantification is already an array of weight percent, directly keep the array
+    """
  	
     if quantification is None :                 
         model.signal.set_lines([])
@@ -125,17 +125,17 @@ quantification: None or a list or an array
 
 
 def Mucoef(model,quanti): # this function calculate the absorption coefficient for all energy. This, correspond to the Mu parameter in the function
- """
-Calculate the mass absorption coefficient for all energy of the model axis for each pixel. This is based on the weigth percent array defined by the Wpercent function
-Return the Mu parameter as a signal (all energy) with same number of elements than the model
-This parameter is calculated at each iteration during the fit
-Parameters
-----------
-model: EDS model
-quanti: Array
-	Must contain an array of weight percent for each elements
-	This array is automaticaly created through the Wpercent function
- """	
+    """
+    Calculate the mass absorption coefficient for all energy of the model axis for each pixel. This is based on the weigth percent array defined by the Wpercent function
+    Return the Mu parameter as a signal (all energy) with same number of elements than the model
+    This parameter is calculated at each iteration during the fit
+    Parameters
+    ----------
+    model: EDS model
+    quanti: Array
+            Must contain an array of weight percent for each elements
+            This array is automaticaly created through the Wpercent function
+    """	
     weight=quanti
     t=(np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size/5))
     
@@ -147,18 +147,18 @@ quanti: Array
 
 
 def Windowabsorption(model,detector): 
- """
-Return the detector efficiency as a signal based on a dictionnary (create from personnal data) and the signal length. This correspond to the Window parameter of the physical background class  
-To obtain the same signal length compare to the model, data are interpolated
+    """
+    Return the detector efficiency as a signal based on a dictionnary (create from personnal data) and the signal length. This correspond to the Window parameter of the physical background class  
+    To obtain the same signal length compare to the model, data are interpolated
 
-Parameters
-----------
-model: EDS model
-detector: str
-	The Acquisition detector which correspond to the Dataset
-	String can be 'Polymer_C' / 'Super_X' / '12µm_BE' / '25µm_BE' / '100µm_BE' / 'Polymer_C2' / 'Polymer_C3' 
-	Data are contain in a dictionnary
- """	
+    Parameters
+    ----------
+    model: EDS model
+    detector: str
+            The Acquisition detector which correspond to the Dataset
+            String can be 'Polymer_C' / 'Super_X' / '12µm_BE' / '25µm_BE' / '100µm_BE' / 'Polymer_C2' / 'Polymer_C3' 
+            Data are contain in a dictionnary
+    """	
     a=np.array(detector_efficiency[detector])
     b=(model._signal.axes_manager.signal_axes[-1].axis)-0.035
     x =a[:,0]
@@ -242,7 +242,7 @@ class Physical_background(Component):
         Window=np.array(self.Window.value,dtype=float)
         Window=Window[self.model.channel_switches]
 	
-        emission=(a*100*((E0-x)/x)) #kramer's law 
-	absorption=((1-np.exp(-2*Mu*b*10**-5 ))/((2*Mu*b*10**-5))) #love and scott model could be cool to impplement CL model too
+        emission=(a*100*((E0-x)/x)) #kramer's law
+        absorption=((1-np.exp(-2*Mu*b*10**-5))/((2*Mu*b*10**-5))) #love and scott model could be cool to impplement CL model too
 	
         return np.where((x>0.17) & (x<(E0)),(emission*absorption*Window),0) #implement choice for coating correction
