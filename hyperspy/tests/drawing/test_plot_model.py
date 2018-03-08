@@ -101,12 +101,7 @@ def test_fit_EELS_convolved(convolved):
     dname = os.path.join(my_path, 'data')
     cl = hs.load(os.path.join(dname, 'Cr_L_cl.hspy'))
     ll = hs.load(os.path.join(dname, 'Cr_L_ll.hspy')) if convolved else None
-    m = cl.create_model(auto_background=False, ll=ll)
+    m = cl.create_model(auto_background=False, ll=ll, GOS='hydrogenic')
     m.fit()
     m.plot(plot_components=True)
     return m._plot.signal_plot.figure
-
-
-if __name__ == '__main__':
-    test_plot_gaussian_eelsmodel(False, True)
-    test_plot_gaussian_eelsmodel(True, True)
