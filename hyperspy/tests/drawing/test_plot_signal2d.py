@@ -26,7 +26,6 @@ from hyperspy.drawing.utils import plot_RGB_map
 from hyperspy.tests.drawing.test_plot_signal import _TestPlot
 from hyperspy.drawing.utils import make_cmap
 
-
 scalebar_color = 'blue'
 default_tol = 2.0
 baseline_dir = 'plot_signal2d'
@@ -232,27 +231,29 @@ def test_plot_images_cmap_mpl_colors(mpl_cleanup):
     return plt.gcf()
 
 
-@pytest.mark.mpl_image_compare(
-    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_cmap_mpl_colors_w_single_cbar(mpl_cleanup):
-    # This should give a warning and produce no colorbars
+def test_plot_images_cmap_mpl_colors_w_single_cbar():
+    # This should give an error, so test for that
     test_im_plot = _TestIteratedSignal()
-    hs.plot.plot_images(test_im_plot.signal,
-                        axes_decor='off',
-                        cmap='mpl_colors',
-                        colorbar='single')
-    return plt.gcf()
+    with pytest.raises(ValueError) as val_error:
+        hs.plot.plot_images(test_im_plot.signal,
+                            axes_decor='off',
+                            cmap='mpl_colors',
+                            colorbar='single')
+    assert str(val_error.value) == 'Cannot use a single colorbar with ' \
+                                   'multiple colormaps. Please check for ' \
+                                   'compatible arguments.'
 
-@pytest.mark.mpl_image_compare(
-    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_images_bogus_cmap(mpl_cleanup):
-    # This should give a warning and use the default colormap
+
+def test_plot_images_bogus_cmap():
+    # This should give an error, so test for that
     test_im_plot = _TestIteratedSignal()
-    hs.plot.plot_images(test_im_plot.signal,
-                        axes_decor='off',
-                        cmap=3.14159265359,
-                        colorbar=None)
-    return plt.gcf()
+    with pytest.raises(ValueError) as val_error:
+        hs.plot.plot_images(test_im_plot.signal,
+                            axes_decor='off',
+                            cmap=3.14159265359,
+                            colorbar=None)
+    assert str(val_error.value) == 'The provided cmap value was not ' \
+                                   'understood. Please check input values.'
 
 
 @pytest.mark.mpl_image_compare(

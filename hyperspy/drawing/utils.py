@@ -546,11 +546,9 @@ def plot_images(images,
     """
     def __check_single_colorbar(cbar):
         if cbar is 'single':
-            _logger.warning('Cannot use a single colorbar with multiple '
-                            'colormaps.\n'
-                            'Disabling colorbar.')
-            cbar = None
-        return cbar
+            raise ValueError('Cannot use a single colorbar with multiple '
+                             'colormaps. Please check for compatible '
+                             'arguments.')
 
     from hyperspy.drawing.widgets import ScaleBar
     from hyperspy.misc import rgb_tools
@@ -606,10 +604,9 @@ def plot_images(images,
     elif isinstance(cmap, str):
         cmap = [cmap]  # cmap is single string, so make it a list
     else:
-        # Didn't understand cmap input, so reset to default and raise warning
-        cmap = [plt.get_cmap().name]
-        _logger.warning('The provided cmap value was not understood.\n'
-                        'Using the default of ' + cmap[0])
+        # Didn't understand cmap input, so raise error
+        raise ValueError('The provided cmap value was not understood. Please '
+                         'check input values.')
 
     # If any of the cmaps given are diverging, and auto-centering, set the
     # appropriate flag:
