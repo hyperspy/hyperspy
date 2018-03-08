@@ -17,18 +17,15 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-from contextlib import contextmanager
 
 import numpy as np
-import traits.api as t
 
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 import hyperspy.drawing.signal1d
 from hyperspy.axes import generate_axis
-from hyperspy.exceptions import WrongObjectError
+from hyperspy.exceptions import WrongObjectError, SignalDimensionError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.drawing.widgets import VerticalLineWidget, LabelWidget
-from hyperspy.ui_registry import get_gui
 from hyperspy.events import EventSuppressor
 from hyperspy.signal_tools import SpanSelectorInSignal1D
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
