@@ -262,6 +262,27 @@ You can create binaries for Debian/Ubuntu from the source by running the
     For this to work, the following packages must be installed in your system
     python-stdeb, debhelper, dpkg-dev and python-argparser are required.
 
+.. _install-on-raspberry-pi:
+
+Installing on Raspberry Pi
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Hyperspy can be installed to run on a raspberry pi, according to the instructions below:
+
+.. code-block:: bash
+
+    pi@raspberrypi:~ $ sudo apt-get update
+    pi@raspberrypi:~ $ sudo apt-get install python3-pip
+    pi@raspberrypi:~ $ # if not already the latest version then reboot 
+    pi@raspberrypi:~ $ sudo pip3 install hyperspy
+    pi@raspberrypi:~ $ sudo pip3 install jupyter
+    pi@raspberrypi:~ $ sudo pip3 install numpy --upgrade
+    pi@raspberrypi:~ $ # sudo pip3 install h5py doesn't resolve the error.
+    pi@raspberrypi:~ $ sudo apt-get install python3-h5py
+    pi@raspberrypi:~ $ sudo pip3 install hyperspy_gui_ipywidgets
+    pi@raspberrypi:~ $ # reboot
+
+For troubleshooting, please see `this issue on GitHub <https://github.com/hyperspy/hyperspy/issues/1775>`_.
 
 .. _install-dependencies:
 
