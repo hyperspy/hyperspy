@@ -125,7 +125,7 @@ def test_plot_multiple_images_list(mpl_cleanup, vmin, vmax):
     axes0[0].units = "mm"
     axes0[1].units = "mm"
 
-    # load lena into 2x3 hyperimage
+    # load ascent into 2x3 hyperimage
     image1 = _generate_image_stack_signal()
 
     # load green channel of raccoon as an image
