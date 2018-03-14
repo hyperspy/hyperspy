@@ -208,9 +208,15 @@ def test_decimal_regex():
     for j in dummy_xml_negative:
         assert b'.' not in fix_dec_patterns.sub(b'\\1.\\2', j)
 
-def test__all_spx_loads():
+def test_all_spx_loads():
     for spxfile in spx_files:
         filename = os.path.join(my_path, 'bruker_data', spxfile)
         s = load(filename)
         assert s.data.dtype == np.uint64
         assert s.metadata.Signal.signal_type == 'EDS_SEM'
+
+def test_stand_alone_spx():
+    filename = os.path.join(my_path, 'bruker_data', 'bruker_nano.spx')
+    s = load(filename)
+    assert s.metadata.Sample.elements == ['Fe', 'S', 'Cu']
+    assert s.metadata.Acquisition_instrument.SEM.Detector.EDS.live_time == 7.385
