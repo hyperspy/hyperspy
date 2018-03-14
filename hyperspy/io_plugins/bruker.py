@@ -527,8 +527,9 @@ class EDXSpectrum(object):
         # USED:
         self.hv = self.esma_metadata['PrimaryEnergy']
         self.elev_angle = self.esma_metadata['ElevationAngle']
-        
-        self.date, self.time = gen_iso_date_time(spectrum_header)
+        date_time = gen_iso_date_time(spectrum_header)
+        if date_time is not None:
+            self.date, self.time = date_time
         
         # map stuff from spectra xml branch:
         self.spectrum_metadata = dictionarize(spectrum_header)
@@ -1389,9 +1390,11 @@ def gen_detector_node(spectrum):
     return eds_dict
 
 def gen_iso_date_time(node):
-    dt = datetime.strptime(' '.join([str(node.find('./Date').text),
-                                     str(node.find('./Time').text)]),
-                           "%d.%m.%Y %H:%M:%S")
-    date = dt.date().isoformat()
-    time = dt.time().isoformat()
-    return date, time
+    date_xml = node.find('./Date')
+    time_xml = node.find('./Time')
+    if date_xml is not None:
+        dt = datetime.strptime(' '.join([date_xml.text, time_xml.text]),
+                               "%d.%m.%Y %H:%M:%S")
+        date = dt.date().isoformat()
+        time = dt.time().isoformat()
+        return date, time
