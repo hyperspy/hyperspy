@@ -613,13 +613,13 @@ class FeiEMDReader(object):
                 data = data[0, :]
             else:
                 axes = [{
-                         'name': 'Stack',
-                         'offset': 0,
-                         'scale': 1,
-                         'size': data.shape[0],
-                         'navigate': True,
-                         }
-                        ]
+                    'name': 'Stack',
+                    'offset': 0,
+                    'scale': 1,
+                    'size': data.shape[0],
+                    'navigate': True,
+                }
+                ]
         axes.append({
             'name': 'Energy',
             'offset': offset,
@@ -627,7 +627,7 @@ class FeiEMDReader(object):
             'size': data.shape[-1],
             'units': 'keV',
             'navigate': False},
-                    )
+        )
 
         md = self._get_metadata_dict(original_metadata)
         md['Signal']['signal_type'] = 'EDS_TEM'
