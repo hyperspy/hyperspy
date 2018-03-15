@@ -6,6 +6,7 @@ from hyperspy.decorators import jit_ifnumba
 try:
     import sparse
     sparse_installed = False
+
     class DenseSliceCOO(sparse.COO):
         """Just like sparse.COO, but returning a dense array on indexing/slicing"""
 
@@ -255,8 +256,8 @@ def _fill_array_with_stream(spectrum_image, stream, first_frame,
 
 
 def stream_to_array(
-    stream, spatial_shape, channels, last_frame, first_frame=0,
-    rebin_energy=1, sum_frames=True, dtype="uint16", spectrum_image=None):
+        stream, spatial_shape, channels, last_frame, first_frame=0,
+        rebin_energy=1, sum_frames=True, dtype="uint16", spectrum_image=None):
     """Returns data stored in a FEI stream as a nd COO array
 
     Parameters
