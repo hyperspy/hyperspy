@@ -9,7 +9,11 @@ class DenseSliceCOO(sparse.COO):
 
     def __getitem__(self, *args, **kwargs):
         obj = super().__getitem__(*args, **kwargs)
-        return obj.todense()
+        try:
+            dense = obj.todense()
+        except AttributeError:
+            # Indexing, unlike slicing, returns directly the content
+            return obj
 
 
 @jit_ifnumba
@@ -293,8 +297,7 @@ def stream_to_array(stream, spatial_shape, channels, first_frame, last_frame,
             rebin_energy=rebin_energy)
     return spectrum_image
 
-
-@jit_ifnumba
+@jit_ifnumba(nopython=True)
 def array_to_stream(array):
     """Convert an array to a FEI stream
 
@@ -316,5 +319,5 @@ def array_to_stream(array):
             channel = 0
             stream_data.append(65535)
     stream_data = stream_data[:-1]  # Remove final mark
-    stream_data = np.array(stream_data, dtype=numba.uint16)
+    stream_data = np.array(stream_data)
     return stream_data
