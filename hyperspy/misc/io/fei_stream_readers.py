@@ -1,19 +1,23 @@
 import numpy as np
-import sparse
 
 from hyperspy.decorators import jit_ifnumba
 
 
-class DenseSliceCOO(sparse.COO):
-    """Just like sparse.COO, but returning a dense array on indexing/slicing"""
+try:
+    import sparse
+    sparse_installed = False
+    class DenseSliceCOO(sparse.COO):
+        """Just like sparse.COO, but returning a dense array on indexing/slicing"""
 
-    def __getitem__(self, *args, **kwargs):
-        obj = super().__getitem__(*args, **kwargs)
-        try:
-            return obj.todense()
-        except AttributeError:
-            # Indexing, unlike slicing, returns directly the content
-            return obj
+        def __getitem__(self, *args, **kwargs):
+            obj = super().__getitem__(*args, **kwargs)
+            try:
+                return obj.todense()
+            except AttributeError:
+                # Indexing, unlike slicing, returns directly the content
+                return obj
+except ImportError:
+    sparse_installed = False
 
 
 @jit_ifnumba
@@ -171,6 +175,11 @@ def stream_to_sparse_COO_array(
         If True, sum all the frames
 
     """
+    if not sparse_installed:
+        raise ImportError(
+            "The python-sparse package is not installed and it is required "
+            "for lazy loading of SIs stored in FEI EMD stream format."
+        )
     # The stream format does not add a final mark. We add to simplify the
     # reading code in this case
     stream_data = np.hstack((stream_data, 65535))
@@ -246,8 +255,8 @@ def _fill_array_with_stream(spectrum_image, stream, first_frame,
 
 
 def stream_to_array(
-        stream, spatial_shape, channels, last_frame, first_frame=0,
-        rebin_energy=1, sum_frames=True, dtype="uint16", spectrum_image=None):
+    stream, spatial_shape, channels, last_frame, first_frame=0,
+    rebin_energy=1, sum_frames=True, dtype="uint16", spectrum_image=None):
     """Returns data stored in a FEI stream as a nd COO array
 
     Parameters

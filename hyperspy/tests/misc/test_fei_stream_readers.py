@@ -10,38 +10,40 @@ import numpy as np
 import dask.array as da
 
 from hyperspy.misc.io.fei_stream_readers import (
-    array_to_stream, stream_to_array, stream_to_sparse_COO_array)
+    array_to_stream, stream_to_array, stream_to_sparse_COO_array, sparse_installed)
 
 
 def test_dense_stream():
     arr = np.random.randint(0, 65535, size=(2, 3, 4, 5)).astype("uint16")
     stream = array_to_stream(arr)
     # Lazy
-    arrs = da.from_array(stream_to_sparse_COO_array(
-        stream, spatial_shape=(3, 4), sum_frames=False, channels=5,
-        last_frame=2), chunks=(1, 1, 2, 5))
-    arrs = arrs.compute()
-    assert (arrs == arr).all()
+    if sparse_installed:
+        arrs = da.from_array(stream_to_sparse_COO_array(
+            stream, spatial_shape=(3, 4), sum_frames=False, channels=5,
+            last_frame=2), chunks=(1, 1, 2, 5))
+        arrs = arrs.compute()
+        assert (arrs == arr).all()
     # Dense
     arrs = stream_to_array(
         stream, spatial_shape=(3, 4), sum_frames=False, channels=5,
         last_frame=2)
     assert (arrs == arr).all()
 
-
 def test_empty_stream():
     arr = np.zeros((2, 3, 4, 5), dtype="uint16")
     stream = array_to_stream(arr)
-    arrs = da.from_array(stream_to_sparse_COO_array(
-        stream, spatial_shape=(3, 4), sum_frames=False, channels=5,
-        last_frame=2), chunks=(1, 1, 2, 5))
-    arrs = arrs.compute()
+    # Lazy
+    if sparse_installed:
+        arrs = da.from_array(stream_to_sparse_COO_array(
+            stream, spatial_shape=(3, 4), sum_frames=False, channels=5,
+            last_frame=2), chunks=(1, 1, 2, 5))
+        arrs = arrs.compute()
+        assert not arrs.any()
     # Dense
     arrs = stream_to_array(
         stream, spatial_shape=(3, 4), sum_frames=False, channels=5,
         last_frame=2)
     assert not arrs.any()
-
 
 def test_sparse_stream():
     arr = np.zeros((2, 3, 4, 5), dtype="uint16")
@@ -49,11 +51,13 @@ def test_sparse_stream():
     arr[-1, -1, -1, -1] = 2
     arr[1, 1, 3, 3] = 3
     stream = array_to_stream(arr)
-    arrs = da.from_array(stream_to_sparse_COO_array(
-        stream, spatial_shape=(3, 4), sum_frames=False, channels=5,
-        last_frame=2), chunks=(1, 1, 2, 5))
-    arrs = arrs.compute()
-    assert (arrs == arr).all()
+    # Lazy
+    if sparse_installed:
+        arrs = da.from_array(stream_to_sparse_COO_array(
+            stream, spatial_shape=(3, 4), sum_frames=False, channels=5,
+            last_frame=2), chunks=(1, 1, 2, 5))
+        arrs = arrs.compute()
+        assert (arrs == arr).all()
     # Dense
     arrs = stream_to_array(
         stream, spatial_shape=(3, 4), sum_frames=False, channels=5,

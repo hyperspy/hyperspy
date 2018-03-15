@@ -37,6 +37,7 @@ import pytest
 from hyperspy.io import load
 from hyperspy.signals import BaseSignal, Signal2D, Signal1D, EDSTEMSpectrum
 from hyperspy.misc.test_utils import assert_deep_almost_equal
+from hyperspy.misc.io.fei_stream_readers import sparse_installed
 
 
 my_path = os.path.dirname(__file__)
@@ -258,6 +259,8 @@ class TestFeiEMD():
 
     @pytest.mark.parametrize("lazy", (True, False))
     def test_fei_emd_si(self, lazy):
+        if lazy and not sparse_installed:
+            pytest.skip("python sparse is not installed")
         signal = load(os.path.join(self.fei_files_path, 'fei_emd_si.emd'),
                       lazy=lazy)
         if lazy:
@@ -269,6 +272,8 @@ class TestFeiEMD():
 
     @pytest.mark.parametrize("lazy", (True, False))
     def test_fei_emd_si_non_square_10frames(self, lazy):
+        if lazy and not sparse_installed:
+            pytest.skip("python sparse is not installed")
         s = load(os.path.join(
             self.fei_files_path, 'fei_SI_SuperX-HAADF_10frames_10x50.emd'),
             lazy=lazy)
@@ -394,6 +399,8 @@ class TestFeiEMD():
 
     @pytest.mark.parametrize("lazy", (True, False))
     def test_fei_emd_si_non_square_20frames(self, lazy):
+        if lazy and not sparse_installed:
+            pytest.skip("python sparse is not installed")
         s = load(os.path.join(
             self.fei_files_path,
             'fei_SI_SuperX-HAADF_20frames_10x50.emd'),
@@ -418,6 +425,8 @@ class TestFeiEMD():
 
     @pytest.mark.parametrize("lazy", (True, False))
     def test_fei_emd_si_non_square_20frames_2eV(self, lazy):
+        if lazy and not sparse_installed:
+            pytest.skip("python sparse is not installed")
         s = load(os.path.join(
             self.fei_files_path,
             'fei_SI_SuperX-HAADF_20frames_10x50_2ev.emd'),
@@ -442,6 +451,8 @@ class TestFeiEMD():
 
     @pytest.mark.parametrize("lazy", (True, False))
     def test_fei_emd_si_frame_range(self, lazy):
+        if lazy and not sparse_installed:
+            pytest.skip("python sparse is not installed")
         signal = load(os.path.join(self.fei_files_path, 'fei_emd_si.emd'),
                       first_frame=2, last_frame=4, lazy=lazy)
         fei_si = np.load(os.path.join(self.fei_files_path,
