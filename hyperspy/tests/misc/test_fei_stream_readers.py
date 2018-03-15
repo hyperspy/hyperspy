@@ -28,6 +28,7 @@ def test_dense_stream():
         last_frame=2)
     assert (arrs == arr).all()
 
+
 def test_empty_stream():
     arr = np.zeros((2, 3, 4, 5), dtype="uint16")
     stream = array_to_stream(arr)
@@ -40,6 +41,7 @@ def test_empty_stream():
         stream, spatial_shape=(3, 4), sum_frames=False, channels=5,
         last_frame=2)
     assert not arrs.any()
+
 
 def test_sparse_stream():
     arr = np.zeros((2, 3, 4, 5), dtype="uint16")
