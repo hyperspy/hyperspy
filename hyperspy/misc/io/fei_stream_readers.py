@@ -10,7 +10,7 @@ class DenseSliceCOO(sparse.COO):
     def __getitem__(self, *args, **kwargs):
         obj = super().__getitem__(*args, **kwargs)
         try:
-            dense = obj.todense()
+            return obj.todense()
         except AttributeError:
             # Indexing, unlike slicing, returns directly the content
             return obj
@@ -296,6 +296,7 @@ def stream_to_array(stream, spatial_shape, channels, first_frame, last_frame,
             last_frame=last_frame,
             rebin_energy=rebin_energy)
     return spectrum_image
+
 
 @jit_ifnumba(nopython=True)
 def array_to_stream(array):
