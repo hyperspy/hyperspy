@@ -110,6 +110,8 @@ def interactive_range_selector(cm):
 def jit_ifnumba(*args, **kwargs):
     try:
         import numba
+        if not "nopython" in kwargs:
+            kwargs["nopython"] = True
         return numba.jit(*args, **kwargs)
     except ImportError:
         return args[0]
