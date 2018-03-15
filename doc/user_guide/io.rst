@@ -706,12 +706,13 @@ EMD (FEI)
 This is a non-compliant variant of the standard EMD format developed by FEI.
 HyperSpy supports importing images, EDS spectrum and EDS
 spectrum streams (spectrum images stored in a sparse format). For spectrum
-streams, there several loading options (described below) to control the frames
+streams, there are several loading options (described below) to control the frames
 and detectors to load and if to sum them on loading.  The default is
 to import the sum over all frames and over all detectors in order to decrease
 the data size in memory.
 
-Note that pruned FEI EMD files contain the spectrum image. Therefore,
+Note that pruned FEI EMD files only contain the spectrum image in a proprietary
+format that HyperSpy cannot read. Therefore,
 don't prune FEI EMD files in you intend to read them with HyperSpy.
 Note also that loading a spectrum image can be slow if `numba
 <http://numba.pydata.org/>`_ is not installed.
