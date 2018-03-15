@@ -29,7 +29,7 @@ def _stream_to_sparse_COO_array_sum_frames(
     ysize, xsize = shape
     frame_size = xsize * ysize
     data_list = []
-    coords = []
+    coords_list = []
     data = 0
     count_channel = None
     for value in stream_data:
@@ -55,7 +55,7 @@ def _stream_to_sparse_COO_array_sum_frames(
                     data += 1
                 else:  # a new channel, same spectrum—requires new coord
                     # Store previous channel
-                    coords.append((
+                    coords_list.append((
                         int(navigation_index // xsize),
                         int(navigation_index % xsize),
                         int(count_channel // rebin_energy))
@@ -73,7 +73,7 @@ def _stream_to_sparse_COO_array_sum_frames(
 
         else:  # Advances one pixel
             if data:  # Only store coordinates if the spectrum was not empty
-                coords.append((
+                coords_list.append((
                     int(navigation_index // xsize),
                     int(navigation_index % xsize),
                     int(count_channel // rebin_energy))
@@ -83,7 +83,7 @@ def _stream_to_sparse_COO_array_sum_frames(
             data = 0
 
     final_shape = (ysize, xsize, channels // rebin_energy)
-    coords = np.array(coords).T
+    coords = np.array(coords_list).T
     data = np.array(data_list)
     return coords, data, final_shape
 
