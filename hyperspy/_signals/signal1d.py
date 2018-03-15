@@ -1027,6 +1027,7 @@ _spikes_diagnosis,
         if not fast:
             model.set_signal_range(signal_range[0], signal_range[1])
             model.multifit(show_progressbar=show_progressbar)
+            model.reset_signal_range()
         return self - model.as_signal(show_progressbar=show_progressbar)
 
     def remove_background(
