@@ -673,12 +673,11 @@ class FeiEMDReader(object):
         self.spatial_shape = h5data.shape[:-1]
         # Set the axes in frame, y, x order
         if self.lazy:
-            if self.lazy:
-                data = da.transpose(
-                    da.from_array(
-                        h5data,
-                        chunks=h5data.chunks),
-                    axes=[2, 0, 1])
+            data = da.transpose(
+                da.from_array(
+                    h5data,
+                    chunks=h5data.chunks),
+                axes=[2, 0, 1])
         else:
             data = np.rollaxis(np.array(h5data), axis=2)
 
@@ -808,16 +807,16 @@ class FeiEMDReader(object):
             return stream
 
         subgroup_keys = _get_keys_from_group(spectrum_stream_group)
-        if len(subgroup_keys) == 1:
-            _logger.warning("The file contains only one spectrum stream")
         if self.sum_EDS_detectors:
+            if len(subgroup_keys) == 1:
+                _logger.warning("The file contains only one spectrum stream")
             # Read the first stream
             s0 = _read_stream(subgroup_keys[0])
             streams = [s0]
             # add other stream streams
             if len(subgroup_keys) > 1:
                 for key in subgroup_keys[1:]:
-                    stream_data = spectrum_stream_group["key"]['Data'][:].T[0]
+                    stream_data = spectrum_stream_group[key]['Data'][:].T[0]
                     if self.lazy:
                         s0.spectrum_image = (
                             s0.spectrum_image +
