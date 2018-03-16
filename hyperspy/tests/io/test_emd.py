@@ -181,6 +181,14 @@ class TestCaseSaveAndRead():
         remove(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
 
 
+def _generate_parameters():
+    parameters = []
+    for lazy in [True, False]:
+        for sum_EDS_detectors in [True, False]:
+            parameters.append([lazy, sum_EDS_detectors])
+    return parameters
+
+
 class TestFeiEMD():
 
     fei_files_path = os.path.join(my_path, "emd_files", "fei_emd_files")
@@ -462,7 +470,23 @@ class TestFeiEMD():
             signal[1].compute(close_file=True)
         np.testing.assert_equal(signal[1].data, fei_si)
         assert isinstance(signal[1], Signal1D)
-        md = signal[1].metadata
+
+    @pytest.mark.parametrize(["lazy", "sum_EDS_detectors"],
+                             _generate_parameters())
+    def test_fei_si_4detectors(self, lazy, sum_EDS_detectors):
+        if lazy and not sparse_installed:
+            pytest.skip("python sparse is not installed")
+        fname = os.path.join(self.fei_files_path,
+                             'fei_SI_EDS-HAADF-4detectors_2frames.emd')
+        signal = load(fname, sum_EDS_detectors=sum_EDS_detectors, lazy=lazy)
+        if lazy:
+            assert signal[1]._lazy
+            signal[1].compute(close_file=True)
+        length = 6
+        if not sum_EDS_detectors:
+            length += 3
+        assert len(signal) == length
+        # TODO: add parsing azimuth_angle
 
     def time_loading_frame(self):
         # Run this function to check the loading time when loading EDS data
