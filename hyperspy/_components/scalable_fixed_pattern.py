@@ -64,7 +64,8 @@ class ScalableFixedPattern(Component):
 
     """
 
-    def __init__(self, signal1D, yscale=1, xscale=1, shift=0, interpolate=True):
+    def __init__(self, signal1D, yscale=1, xscale=1,
+                 shift=0, interpolate=True):
 
         Component.__init__(self, ['yscale', 'xscale', 'shift'])
 
