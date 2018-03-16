@@ -17,15 +17,17 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
+import numpy as np
 
-from hyperspy._components.expression import Expression
+from hyperspy.component import Component
+
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 
-class GaussianHF(Expression):
+class GaussianHF(Component):
 
     """Normalized gaussian function component, with a fwhm parameter instead
     of the sigma parameter, and a height parameter instead of the A parameter
@@ -62,15 +64,11 @@ class GaussianHF(Expression):
     """
 
     def __init__(self, height=1., fwhm=1., centre=0.):
-        super(GaussianHF, self).__init__(
-            expression="height * exp(-(x - centre)**2 * 4 * log(2)/fwhm**2)",
-            name="GaussianHF",
-            height=height,
-            fwhm=fwhm,
-            centre=centre,
-            position="centre",
-            autodoc=False,
-        )
+        Component.__init__(self, ['height', 'fwhm', 'centre'])
+        self.height.value = height
+        self.fwhm.value = fwhm
+        self.centre.value = centre
+        self._position = self.centre
 
         # Boundaries
         self.height.bmin = None
@@ -81,6 +79,32 @@ class GaussianHF(Expression):
 
         self.isbackground = False
         self.convolved = True
+    
+        # Gradients
+        self.height.grad = self.grad_height
+        self.fwhm.grad = self.grad_fwhm
+        self.centre.grad = self.grad_centre
+    
+    def function(self,x):
+        height = self.height.value
+        fwhm = self.fwhm.value
+        centre = self.centre.value
+        return height * np.exp(-(x - centre)**2 * 4 * np.log(2)/fwhm**2)
+
+    def grad_height(self, x):
+        return self.function(x) / self.height.value
+    
+    def grad_fwhm(self, x):
+        height = self.height.value
+        fwhm = self.fwhm.value
+        centre = self.centre.value
+        return 8*height*(-centre + x)**2*np.exp(-4*(-centre + x)**2*np.log(2)/fwhm**2)*np.log(2)/fwhm**3
+
+    def grad_centre(self, x):
+        height = self.height.value
+        fwhm = self.fwhm.value
+        centre = self.centre.value
+        return -4*height*(2*centre - 2*x)*np.exp(-4*(-centre + x)**2*np.log(2)/fwhm**2)*np.log(2)/fwhm**2
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the gaussian by calculating the momenta.
