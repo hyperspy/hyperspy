@@ -940,7 +940,7 @@ class AxesManager(t.HasTraits):
             elif event.key == "pagedown":
                 if self._step > 1:
                     self._step -= 1
-            elif len(self.navigation_axes) == 2:
+            elif self.navigation_dimension >= 2:
                 y = self.navigation_axes[1]
                 if event.key == "up" or event.key == "8":
                     y.index -= self._step
