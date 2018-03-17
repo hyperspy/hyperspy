@@ -926,7 +926,7 @@ class AxesManager(t.HasTraits):
 
     def key_navigator(self, event):
         'Set hotkeys for controlling the indices of the navigator plot'
-        if s.axes_manager.navigation_dimension == 0:
+        if self.axes_manager.navigation_dimension == 0:
             # No need for current hotkeys
             return
         x = self.navigation_axes[0]
@@ -940,7 +940,7 @@ class AxesManager(t.HasTraits):
             elif event.key == "pagedown":
                 if self._step > 1:
                     self._step -= 1
-            elif len(self.navigation_axes) == 2:
+            elif len(self.navigation_axes) >= 2:
                 y = self.navigation_axes[1]
                 if event.key == "up" or event.key == "8":
                     y.index -= self._step
