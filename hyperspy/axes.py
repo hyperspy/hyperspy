@@ -931,9 +931,11 @@ class AxesManager(t.HasTraits):
             return
         x = self.navigation_axes[0]
         try:
-            if event.key == "right" or event.key == "ctrl+right" or event.key == "6" or event.key == "ctrl+6":
+            if event.key == "right" or event.key == "ctrl+right" or \
+                    event.key == "6" or event.key == "ctrl+6":
                 x.index += self._step
-            elif event.key == "left" or event.key == "ctrl+left" or event.key == "4" or event.key == "ctrl+4":
+            elif event.key == "left" or event.key == "ctrl+left" or \
+                    event.key == "4" or event.key == "ctrl+4":
                 x.index -= self._step
             elif event.key == "pageup":
                 self._step += 1
@@ -942,9 +944,11 @@ class AxesManager(t.HasTraits):
                     self._step -= 1
             elif self.navigation_dimension >= 2:
                 y = self.navigation_axes[1]
-                if event.key == "up" or event.key == "ctrl+up" or event.key == "8" or event.key == "ctrl+8":
+                if event.key == "up" or event.key == "ctrl+up" or \
+                        event.key == "8" or event.key == "ctrl+8":
                     y.index -= self._step
-                elif event.key == "down" or event.key == "ctrl+down" or event.key == "2" or event.key == "ctrl+2":
+                elif event.key == "down" or event.key == "ctrl+down" or \
+                        event.key == "2" or event.key == "ctrl+2":
                     y.index += self._step
                 elif self.navigation_dimension >= 3:
                     navdim = self.navigation_axes[2]
@@ -956,19 +960,24 @@ class AxesManager(t.HasTraits):
                         navdim = self.navigation_axes[3]
                         if event.key == "shift+up" or event.key == "shift+8":
                             navdim.index -= self._step
-                        elif event.key == "shift+down" or event.key == "shift+2":
+                        elif event.key == "shift+down" or \
+                                event.key == "shift+2":
                             navdim.index += self._step
                         elif self.navigation_dimension >= 5:
                             navdim = self.navigation_axes[4]
-                            if event.key == "ctrl+alt+right" or event.key == "ctrl+alt+6":
+                            if event.key == "ctrl+alt+right" or \
+                                    event.key == "ctrl+alt+6":
                                 navdim.index += self._step
-                            elif event.key == "ctrl+alt+left" or event.key == "ctrl+alt+4":
+                            elif event.key == "ctrl+alt+left" or \
+                                    event.key == "ctrl+alt+4":
                                 navdim.index -= self._step
                             elif self.navigation_dimension >= 6:
                                 navdim = self.navigation_axes[5]
-                                if event.key == "ctrl+alt+up" or event.key == "ctrl+alt+8":
+                                if event.key == "ctrl+alt+up" or \
+                                        event.key == "ctrl+alt+8":
                                     navdim.index -= self._step
-                                elif event.key == "ctrl+alt+down" or event.key == "ctrl+alt+2":
+                                elif event.key == "ctrl+alt+down" or \
+                                        event.key == "ctrl+alt+2":
                                     navdim.index += self._step
         except TraitError:
             pass
@@ -1069,11 +1078,11 @@ class AxesManager(t.HasTraits):
                                          args))
         if self.navigation_axes:
             text += "<table style='width:100%'>\n"
-            text += format_row('Navigation axis name', 'size', 'index', 'offset',
-                               'scale', 'units', tag='th')
+            text += format_row('Navigation axis name', 'size', 'index',
+                               'offset', 'scale', 'units', tag='th')
             for ax in self.navigation_axes:
-                text += format_row(ax.name, ax.size, ax.index, ax.offset, ax.scale,
-                                   ax.units)
+                text += format_row(ax.name, ax.size, ax.index, ax.offset,
+                                   ax.scale, ax.units)
             text += "</table>\n"
         if self.signal_axes:
             text += "<table style='width:100%'>\n"
