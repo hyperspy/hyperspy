@@ -148,7 +148,6 @@ def test_plot_multiple_images_list(mpl_cleanup, vmin, vmax):
     axesRGB[1].units = "nm"
 
     hs.plot.plot_images([image0, image1, image2, rgb], tight_layout=True,
-                        # colorbar='single',
                         labelwrap=20, vmin=vmin, vmax=vmax)
     return plt.gcf()
 
@@ -262,7 +261,8 @@ def test_plot_images_cmap_one_string(mpl_cleanup):
     test_im_plot = _TestIteratedSignal()
     hs.plot.plot_images(test_im_plot.signal,
                         axes_decor='off',
-                        cmap='RdBu_r')
+                        cmap='RdBu_r',
+                        colorbar='single')
     return plt.gcf()
 
 

@@ -591,14 +591,14 @@ def plot_images(images,
                       name='mpl{}'.format(n_color))
         cmap = ['mpl{}'.format(i) for i in
                 range(len(mpl.rcParams['axes.prop_cycle']))]
-        colorbar = __check_single_colorbar(colorbar)
+        __check_single_colorbar(colorbar)
     # cmap is list, tuple, or something else iterable (but not string):
     elif hasattr(cmap, '__iter__') and not isinstance(cmap, str):
         try:
             cmap = [c.name for c in cmap]  # convert colormap to string
         except AttributeError:
             cmap = [c for c in cmap]   # c should be string if not colormap
-        colorbar = __check_single_colorbar(colorbar)
+        __check_single_colorbar(colorbar)
     elif isinstance(cmap, mpl.colors.Colormap):
         cmap = [cmap.name]   # convert single colormap to list with string
     elif isinstance(cmap, str):
