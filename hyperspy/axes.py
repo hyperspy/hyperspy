@@ -925,6 +925,7 @@ class AxesManager(t.HasTraits):
             axis.navigate = tl.pop(0)
 
     def key_navigator(self, event):
+        'Set hotkeys for controlling the indices of the navigator plot'
         if len(self.navigation_axes) not in (1, 2):
             return
         x = self.navigation_axes[0]
