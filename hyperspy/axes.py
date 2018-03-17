@@ -931,9 +931,9 @@ class AxesManager(t.HasTraits):
             return
         x = self.navigation_axes[0]
         try:
-            if event.key == "right" or event.key == "ctrl+right" or event.key == "6":
+            if event.key == "right" or event.key == "ctrl+right" or event.key == "6" or event.key == "ctrl+6":
                 x.index += self._step
-            elif event.key == "left" or event.key == "ctrl+left" or event.key == "4":
+            elif event.key == "left" or event.key == "ctrl+left" or event.key == "4" or event.key == "ctrl+4":
                 x.index -= self._step
             elif event.key == "pageup":
                 self._step += 1
@@ -942,9 +942,9 @@ class AxesManager(t.HasTraits):
                     self._step -= 1
             elif self.navigation_dimension >= 2:
                 y = self.navigation_axes[1]
-                if event.key == "up" or event.key == "ctrl+up" or event.key == "8":
+                if event.key == "up" or event.key == "ctrl+up" or event.key == "8" or event.key == "ctrl+8":
                     y.index -= self._step
-                elif event.key == "down" or event.key == "ctrl+down" or event.key == "2":
+                elif event.key == "down" or event.key == "ctrl+down" or event.key == "2" or event.key == "ctrl+2":
                     y.index += self._step
         except TraitError:
             pass
