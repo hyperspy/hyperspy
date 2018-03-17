@@ -946,6 +946,30 @@ class AxesManager(t.HasTraits):
                     y.index -= self._step
                 elif event.key == "down" or event.key == "ctrl+down" or event.key == "2" or event.key == "ctrl+2":
                     y.index += self._step
+                elif self.navigation_dimension >= 3:
+                    navdim = self.navigation_axes[2]
+                    if event.key == "shift+right" or event.key == "shift+6":
+                        navdim.index += self._step
+                    elif event.key == "shift+left" or event.key == "shift+4":
+                        navdim.index -= self._step
+                    elif self.navigation_dimension >= 4:
+                        navdim = self.navigation_axes[3]
+                        if event.key == "shift+up" or event.key == "shift+8":
+                            navdim.index -= self._step
+                        elif event.key == "shift+down" or event.key == "shift+2":
+                            navdim.index += self._step
+                        elif self.navigation_dimension >= 5:
+                            navdim = self.navigation_axes[4]
+                            if event.key == "ctrl+alt+right" or event.key == "ctrl+alt+6":
+                                navdim.index += self._step
+                            elif event.key == "ctrl+alt+left" or event.key == "ctrl+alt+4":
+                                navdim.index -= self._step
+                            elif self.navigation_dimension >= 6:
+                                navdim = self.navigation_axes[5]
+                                if event.key == "ctrl+alt+up" or event.key == "ctrl+alt+8":
+                                    navdim.index -= self._step
+                                elif event.key == "ctrl+alt+down" or event.key == "ctrl+alt+2":
+                                    navdim.index += self._step
         except TraitError:
             pass
 
