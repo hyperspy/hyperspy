@@ -7,10 +7,10 @@ Data visualization
 
 The object returned by :py:func:`~.io.load`, a :py:class:`~.signal.BaseSignal`
 instance, has a :py:meth:`~.signal.BaseSignal.plot` method that is powerful and
-flexible tools to visualize n-dimensional data. In this chapter, the
-visualisation of multidimensional data  is exemplified with two experimental
+flexible to visualize n-dimensional data. In this chapter, the
+visualisation of multidimensional data is exemplified with two experimental
 datasets: an EELS spectrum image and an EDX dataset consisting of a secondary
-electron emission image stack and a 3D hyperspectrum , both simoultaneously
+electron emission image stack and a 3D hyperspectral image, both simultaneously
 acquired by recording two signals in parallel in a FIB/SEM.
 
 
@@ -50,11 +50,20 @@ the x-axis if 1D:
 To change the current coordinates, click on the pointer (which will be a line
 or a square depending on the dimensions of the data) and drag it around. It is
 also possible to move the pointer by using the numpad arrows **when numlock is
-on and the spectrum or navigator figure is selected**.When using the numpad
+on and the spectrum or navigator figure is selected**. When using the numpad
 arrows the PageUp and PageDown keys change the size of the step.
 
 An extra cursor can be added by pressing the ``e`` key. Pressing ``e`` once
 more will disable the extra cursor:
+
+In matplotlib, left and right arrow keys are by default set to navigate the 
+"zoom" history. To avoid the problem of changing zoom while navigating, 
+Ctrl + arrows can be used instead. 
+
+To navigate navigation dimensions larger than 2, modifier keys can be used.
+Ctrl + Shift + left/right, Ctrl + Shift + up/down, Ctrl + Alt + left/right 
+and Ctrl + Alt + up/down navigates dimensions 2,3,4,5 respectively. These 
+do not work with the numpad.
 
 .. _second_pointer.png:
 
@@ -69,17 +78,20 @@ can be too small to be dragged or even seen. It
 is possible to change the size of the cursors by pressing the ``+`` and ``-``
 keys  **when the navigator window is selected**.
 
-=========   =============================
-key         function
-=========   =============================
-e           Switch second pointer on/off
-Arrows      Change coordinates
-PageUp      Increase step size
-PageDown    Decrease step size
-``+``           Increase pointer size
-``-``           Decrease pointer size
-``h``       Launch the contrast adjustment tool (only for Signal2D)
-=========   =============================
+=======================   =============================
+key                       function
+=======================   =============================
+e                         Switch second pointer on/off
+Arrows                    Change coordinates for dimensions 0 and 1 (typically x and y)
+Ctrl + Arrows             As above without also changing zoom
+Ctrl + Alt + Arrows       Change coordinates for dimensions 2 and 3
+Ctrl + Shift + Arrows     Change coordinates for dimensions 4 and 5
+PageUp                    Increase step size
+PageDown                  Decrease step size
+``+``                         Increase pointer size
+``-``                         Decrease pointer size
+``h``                     Launch the contrast adjustment tool (only for Signal2D)
+=======================   =============================
 
 To close all the figures run the following command:
 
@@ -150,7 +162,7 @@ arguments are supported as well:
 
 .. versionadded:: 1.1.2
 
-Same options can be passed to the navigator, albeit separatelly, by specifying
+Same options can be passed to the navigator, albeit separately, by specifying
 them as a dictionary in ``navigator_kwds`` argument when plotting:
 
 .. code-block:: python
@@ -182,11 +194,11 @@ them as a dictionary in ``navigator_kwds`` argument when plotting:
 .. versionadded:: 0.8.1
 
 When plotting using divergent colormaps, if ``centre_colormap`` is ``True``
-(default) the constrast is automatically adjusted so that zero corresponds to
+(default) the contrast is automatically adjusted so that zero corresponds to
 the center of the colormap (usually white). This can be useful e.g. when
 displaying images that contain pixels with both positive and negative values.
 
-The following example shows the effect of centering the color map:
+The following example shows the effect of centring the color map:
 
 .. code-block:: python
 

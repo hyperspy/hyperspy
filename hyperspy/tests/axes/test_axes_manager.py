@@ -263,3 +263,28 @@ def test_setting_indices_coordinates():
     s.axes_manager.indices = (2, 2)
     assert s.axes_manager.indices == (2, 2)
     assert m.call_count == 6
+
+class TestAxesHotkeys:
+
+    def setup_method(self, method):
+        s = Signal1D(zeros(7 * (5,)))
+        self.am = s.axes_manager
+
+    def test_hotkeys_in_six_dimensions(self):
+        'Step twice increasing and once decreasing all axes'
+
+        steps=['right', 'right', 'down', 'down', 'ctrl+shift+right',
+        'ctrl+shift+right', 'ctrl+shift+down', 'ctrl+shift+down',
+        'ctrl+alt+right', 'ctrl+alt+right', 'ctrl+alt+down',
+        'ctrl+alt+down', 'left', 'up', 'ctrl+shift+left', 'ctrl+shift+up',
+        'ctrl+alt+left', 'ctrl+alt+up']
+
+        class fake_key_event():
+            'Fake event handler for plot key press'
+            def __init__(self, key):
+                self.key=key
+
+        for step in steps:
+            self.am.key_navigator(fake_key_event(step))
+
+        assert self.am.indices == (1, 1, 1, 1, 1, 1)

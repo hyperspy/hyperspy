@@ -137,6 +137,62 @@ class GUIs(t.HasTraits):
     warn_if_guis_are_missing = t.CBool(
         True,
         desc="Display warnings, if hyperspy_gui_ipywidgets or hyperspy_gui_traitsui are missing.")
+    dim0_increase = t.Directory(
+        'ctrl+right',
+        #desc="Hotkey for increasing index in dimension 0"
+    )
+    dim0_decrease = t.Directory(
+        'ctrl+left',
+        #desc="Hotkey for increasing index in dimension 0"
+    )
+    dim1_increase = t.Directory(
+        'ctrl+down',
+        #desc="Hotkey for increasing index in dimension 0"
+    )
+    dim1_decrease = t.Directory(
+        'ctrl+up',
+        #desc="Hotkey for increasing index in dimension 0"
+    )
+    dim2_increase = t.Directory(
+        'shift+right',
+        #desc="Hotkey for increasing index in dimension 0"
+    )
+    dim2_decrease = t.Directory(
+        'shift+left',
+        #desc="Hotkey for increasing index in dimension 0"
+    )
+    dim3_increase = t.Directory(
+        'shift+down',
+        #desc="Hotkey for increasing index in dimension 0"
+    )
+    dim3_decrease = t.Directory(
+        'shift+up',
+        #desc="Hotkey for increasing index in dimension 0"
+    )
+    dim4_increase = t.Directory(
+        'ctrl+alt+right',
+        #desc="Hotkey for increasing index in dimension 0"
+    )
+    dim4_decrease = t.Directory(
+        'ctrl+alt+left',
+        #desc="Hotkey for increasing index in dimension 0"
+    )
+    dim5_increase = t.Directory(
+        'ctrl+alt+down',
+        #desc="Hotkey for increasing index in dimension 0"
+    )
+    dim5_decrease = t.Directory(
+        'ctrl+alt+up',
+        #desc="Hotkey for increasing index in dimension 0"
+    )
+    dim_stepsize_increase = t.Directory(
+        'pageup',
+        #desc="Hotkey for increasing index in dimension 0"
+    )
+    dim_stepsize_decrease = t.Directory(
+        'pagedown',
+        #desc="Hotkey for increasing index in dimension 0"
+    )
 
 
 class EDSConfig(t.HasTraits):
