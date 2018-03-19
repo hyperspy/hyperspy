@@ -23,8 +23,9 @@ from hyperspy.component import Component
 
 class SkewNormal(Component):
 
-    """Skew normal distribution component
-    Assymetric peak shape based on a normal distribution.
+    """Skew normal distribution component.
+    
+    Asymmetric peak shape based on a normal distribution.
     For definition see https://en.wikipedia.org/wiki/Skew_normal_distribution
     See also http://azzalini.stat.unipd.it/SN/
     
