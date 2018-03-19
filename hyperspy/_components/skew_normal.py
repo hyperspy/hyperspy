@@ -29,12 +29,23 @@ class SkewNormal(Component):
     For definition see https://en.wikipedia.org/wiki/Skew_normal_distribution
     See also http://azzalini.stat.unipd.it/SN/
     
+    .. math::
+
+        f(x) = 2 A \\phi(x) \\Phi(x)
+        phi(x) = \\frac{1}{\\sqrt{2\\pi}}\\mathrm{exp}{\\left[-\\frac{t(x)^2}{2}\\right]} 
+        Phi(x) = \\frac{1}{2}\\left[1 + \\mathrm{erf}{\\left(\\frac{shape t(x)}{\\sqrt{2}}\\right)\\right] 
+        t(x) = \\frac{x-x0}{scale}
+    
     Parameters
-    ----------
-    A : float - height parameter
-    x0 : float - center parameter
-    scale : float - width parameter
-    shape: float - skewness parameter
+    -----------
+        A : float
+            Height parameter of the peak.
+        x0 : float
+            Location of the peak position.
+        scale : float
+            Width (sigma) parameter.
+        shape: float 
+            Skewness (asymmetry) parameter. For scale=0, the normal distribution (Gaussian) is obtained. The distribution is right skewed (longer tail to the right) if scale>0 and is left skewed if scale<0.
     """
 
     def __init__(self, x0=0, A=1, scale=1, shape=0):

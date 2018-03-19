@@ -172,6 +172,14 @@ hyperspy\.\_components\.scalable\_fixed\_pattern module
     :undoc-members:
     :show-inheritance:
 
+hyperspy\.\_components\.skew\_normal module
+------------------------------------
+
+.. automodule:: hyperspy._components.skew_normal
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy\.\_components\.voigt module
 ------------------------------------
 
