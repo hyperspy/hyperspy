@@ -148,7 +148,7 @@ class Test_quantification:
         energy_axis.name = "Energy"
         s.set_microscope_parameters(beam_energy=200,
                                     live_time=2.5, tilt_stage=0.0,
-                                    azimuth_angle=None, elevation_angle=35,
+                                    azimuth_angle=0, elevation_angle=35,
                                     energy_resolution_MnKa=130,
                                     beam_current=0.05)
         elements = ['Al', 'Zn']
@@ -170,6 +170,7 @@ class Test_quantification:
 
     def test_metadata(self):
         TEM_md = self.signal.metadata.Acquisition_instrument.TEM
+        np.testing.assert_approx_equal(TEM_md.beam_energy, 200)
         np.testing.assert_approx_equal(TEM_md.beam_current, 0.05)
         np.testing.assert_approx_equal(TEM_md.Stage.tilt_alpha, 0.0)
         np.testing.assert_approx_equal(TEM_md.Detector.EDS.live_time, 2.5)
