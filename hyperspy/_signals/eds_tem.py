@@ -45,7 +45,7 @@ class EDSTEMParametersUI(BaseSetMetadataItems):
     live_time = t.Float(t.Undefined,
                         label='Live time (s)')
     probe_area = t.Float(t.Undefined,
-                         label='Beam/probe area (nm^2)')
+                         label='Beam/probe area (nm\xB2)')
     azimuth_angle = t.Float(t.Undefined,
                             label='Azimuth angle (degree)')
     elevation_angle = t.Float(t.Undefined,
@@ -125,10 +125,6 @@ class EDSTEM_mixin:
                                   real_time=None,
                                   display=True,
                                   toolkit=None):
-        if set([beam_energy, live_time, tilt_stage, azimuth_angle,
-                elevation_angle, energy_resolution_MnKa]) == {None}:
-            tem_par = EDSTEMParametersUI(self)
-            return tem_par.gui(display=display, toolkit=toolkit)
 
         md = self.metadata
         if beam_energy is not None:
@@ -166,6 +162,12 @@ class EDSTEM_mixin:
             md.set_item(
                 "Acquisition_instrument.TEM.Detector.EDS.real_time",
                 real_time)
+
+        if set([beam_energy, live_time, tilt_stage, azimuth_angle,
+                elevation_angle, energy_resolution_MnKa]) == {None}:
+            tem_par = EDSTEMParametersUI(self)
+            return tem_par.gui(display=display, toolkit=toolkit)
+
     set_microscope_parameters.__doc__ = \
         """
         Set the microscope parameters.
@@ -190,7 +192,7 @@ class EDSTEM_mixin:
         beam_current: float
             In nA
         probe_area: float
-            In nm^2
+            In nm\xB2
         real_time: float
             In seconds
         {}
@@ -578,9 +580,9 @@ class EDSTEM_mixin:
         beam_current: float
             Probe current in nA
         live_time: float
-            Acquisiton time in s
+            Acquisiton time in s, compensated for the dead time of the detector.
         probe_area: float
-            The illumination area of the electron beam in nm^2.
+            The illumination area of the electron beam in nm\xB2.
             If not set the value is extracted from the scale axes_manager.
             Therefore we assume the probe is oversampling such that
             the illumination area can be approximated to the pixel area of the
@@ -588,7 +590,7 @@ class EDSTEM_mixin:
 
         Returns
         --------
-        Dose in electrons (zeta factor) or electrons per nm^2 (cross_section)
+        Dose in electrons (zeta factor) or electrons per nm\xB2 (cross_section)
 
         See also
         --------
@@ -629,9 +631,9 @@ class EDSTEM_mixin:
                     pixel2 = self.axes_manager[1].scale
                     if pixel1 == 1 or pixel2 == 1:
                         warnings.warn('Please note your probe_area is set to'
-                                      'the default value of 1 nm^2. The \
+                                      'the default value of 1 nm\xB2. The \
                                       function will still run. However if'
-                                      '1 nm^2 is not correct, please read the \
+                                      '1 nm\xB2 is not correct, please read the \
                                       user documentations for how to set this \
                                       properly.')
                     area = pixel1 * pixel2
