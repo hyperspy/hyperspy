@@ -558,7 +558,7 @@ class EDSTEM_mixin:
                             *args, **kwargs)
         return model
 
-    def _get_dose(self, method, beam_current='auto', real_time='auto',
+    def _get_dose(self, method, beam_current='auto', live_time='auto',
                   probe_area='auto'):
         """
         Calculates the total electron dose for the zeta-factor or cross section
@@ -608,12 +608,12 @@ class EDSTEM_mixin:
 
         if real_time == 'auto':
             real_time = parameters.Detector.EDS.real_time
-            if 'real_time' not in parameters.Detector.EDS:
+            if 'live_time' not in parameters.Detector.EDS:
                 raise Exception('Electron dose could not be calculated as \
-                real_time is not set. '
+                live_time is not set. '
                                 'The beam_current can be set by calling \
                                 set_microscope_parameters()')
-            elif real_time == 0.5:
+            elif live_time == 1:
                 warnings.warn('Please note that your real time is set to '
                               'the default value of 0.5 s. If this is not \
                               correct, you should change it using '
@@ -635,10 +635,10 @@ class EDSTEM_mixin:
                                       user documentations for how to set this \
                                       properly.')
                     area = pixel1 * pixel2
-            return (real_time * beam_current * 1e-9) / (constants.e * area)
+            return (live_time * beam_current * 1e-9) / (constants.e * area)
             # 1e-9 is included here because the beam_current is in nA.
         elif method == 'zeta':
-            return real_time * beam_current * 1e-9 / constants.e
+            return live_time * beam_current * 1e-9 / constants.e
         else:
             raise Exception('Method need to be \'zeta\' or \'cross_section\'.')
 
