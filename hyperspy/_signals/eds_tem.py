@@ -125,8 +125,13 @@ class EDSTEM_mixin:
                                   real_time=None,
                                   display=True,
                                   toolkit=None):
-
+        if set([beam_energy, live_time, tilt_stage, azimuth_angle,
+                elevation_angle, energy_resolution_MnKa, beam_current,
+                probe_area, real_time]) == {None}:
+            tem_par = EDSTEMParametersUI(self)
+            return tem_par.gui(display=display, toolkit=toolkit)
         md = self.metadata
+
         if beam_energy is not None:
             md.set_item("Acquisition_instrument.TEM.beam_energy ", beam_energy)
         if live_time is not None:
@@ -162,11 +167,6 @@ class EDSTEM_mixin:
             md.set_item(
                 "Acquisition_instrument.TEM.Detector.EDS.real_time",
                 real_time)
-
-        if set([beam_energy, live_time, tilt_stage, azimuth_angle,
-                elevation_angle, energy_resolution_MnKa]) == {None}:
-            tem_par = EDSTEMParametersUI(self)
-            return tem_par.gui(display=display, toolkit=toolkit)
 
     set_microscope_parameters.__doc__ = \
         """
