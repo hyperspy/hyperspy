@@ -364,7 +364,7 @@ class EDSTEM_mixin:
         elif method == 'zeta':
             results = utils_eds.quantification_zeta_factor(
                 composition.data, zfactors=factors,
-                dose=self._get_dose(method))
+                dose=self._get_dose(method, **kwargs))
             composition.data = results[0] * 100.
             mass_thickness = intensities[0].deepcopy()
             mass_thickness.data = results[1]
@@ -373,7 +373,7 @@ class EDSTEM_mixin:
             results = utils_eds.quantification_cross_section(
                 composition.data,
                 cross_sections=factors,
-                dose=self._get_dose(method))
+                dose=self._get_dose(method, **kwargs))
             composition.data = results[0] * 100
             number_of_atoms = composition._deepcopy_with_new_data(results[1])
             number_of_atoms = number_of_atoms.split()
@@ -559,7 +559,7 @@ class EDSTEM_mixin:
         return model
 
     def _get_dose(self, method, beam_current='auto', live_time='auto',
-                  probe_area='auto'):
+                  probe_area='auto', **kwargs):
         """
         Calculates the total electron dose for the zeta-factor or cross section
         methods of quantification.
@@ -577,7 +577,7 @@ class EDSTEM_mixin:
             A is the illuminated beam area or pixel area.
         beam_current: float
             Probe current in nA
-        real_time: float
+        live_time: float
             Acquisiton time in s
         probe_area: float
             The illumination area of the electron beam in nm^2.
@@ -606,8 +606,8 @@ class EDSTEM_mixin:
             else:
                 beam_current = parameters.beam_current
 
-        if real_time == 'auto':
-            real_time = parameters.Detector.EDS.real_time
+        if live_time == 'auto':
+            live_time = parameters.Detector.EDS.live_time
             if 'live_time' not in parameters.Detector.EDS:
                 raise Exception('Electron dose could not be calculated as \
                 live_time is not set. '
