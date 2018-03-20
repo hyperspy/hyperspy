@@ -177,7 +177,6 @@ class Test_quantification:
         np.testing.assert_approx_equal(
             TEM_md.Detector.EDS.energy_resolution_MnKa, 130)
 
-        self.signal.set_microscope_parameters(real_time=3.1)
         self.signal.set_microscope_parameters(probe_area=1.2)
         TEM_md = self.signal.metadata.Acquisition_instrument.TEM
         np.testing.assert_approx_equal(
