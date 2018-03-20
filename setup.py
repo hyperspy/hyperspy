@@ -70,6 +70,7 @@ extras_require = {
     "gui-jupyter": ["hyperspy_gui_ipywidgets"],
     "gui-traitsui": ["hyperspy_gui_traitsui"],
     "mrcz-blosc": ["blosc>=1.5"],
+    "lazy_FEI_EMD": ['sparse'],
     "test": ["pytest>=3", "pytest-mpl", "matplotlib>=2.0.2"],
 }
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
