@@ -141,10 +141,10 @@ class Test_quantification:
         energy_axis.units = 'keV'
         energy_axis.name = "Energy"
         s.set_microscope_parameters(beam_energy=200,
-                                    live_time=3.1, tilt_stage=0.0,
+                                    live_time=2.5, tilt_stage=0.0,
                                     azimuth_angle=None, elevation_angle=35,
                                     energy_resolution_MnKa=130)
-        s.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time = 2.5
+        s.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time = 3.1
         s.metadata.Acquisition_instrument.TEM.beam_current = 0.05
         elements = ['Al', 'Zn']
         xray_lines = ['Al_Ka', 'Zn_Ka']
