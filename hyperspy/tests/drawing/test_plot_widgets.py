@@ -43,12 +43,12 @@ class TestPlotLine2DWidget():
         assert self.line2d.linewidth == 1
         assert self.line2d.color == 'red'
         assert self.line2d._size == np.array([0])
-        nt.assert_allclose(self.line2d._pos, np.array([[0, 0], [0, 0]]))
+        nt.assert_allclose(self.line2d._pos, np.array([[0, 0], [1.2, 0]]))
 
-        assert self.line2d.position == ([0.0, 0.0], [0.0, 0.0])
+        assert self.line2d.position == ([0.0, 0.0], [1.2, 0.0])
         nt.assert_allclose(self.line2d.indices[0], np.array([0, 0]))
-        nt.assert_allclose(self.line2d.indices[1], np.array([0, 0]))
-        nt.assert_allclose(self.line2d.get_centre(), np.array([0.,  0.]))
+        nt.assert_allclose(self.line2d.indices[1], np.array([1, 0]))
+        nt.assert_allclose(self.line2d.get_centre(), np.array([0.6,  0.]))
 
     def test_position(self):
         self.line2d.position = ([12.0, 60.0], [36.0, 96.0])
@@ -96,6 +96,39 @@ class TestPlotLine2DWidget():
         self.line2d.decrease_size()
         assert self.line2d.size == (1.2, )
 
+        self.line2d.size = (4.0, )
+        assert self.line2d.size == (4.0, )
+
+    def test_change_size_snap_size(self, mpl_cleanup):
+        # Need to plot the signal to set the mpl axis to the widget
+        self.im.plot()
+        self.line2d.set_mpl_ax(self.im._plot.signal_plot.ax)
+
+        self.line2d.snap_size = True
+        self.line2d.position = ([12.0, 60.0], [36.0, 96.0])
+        assert self.line2d.position == ([12.0, 60.0], [36.0, 96.0])
+        nt.assert_allclose(self.line2d.indices[0], np.array([10, 50]))
+        nt.assert_allclose(self.line2d.indices[1], np.array([30, 80]))
+        nt.assert_allclose(self.line2d.get_centre(), np.array([24.,  78.]))
+        assert self.line2d.size == np.array([0])
+
+        self.line2d.size = [3]
+        nt.assert_allclose(self.line2d.size, np.array([2.4]))
+        self.line2d.size = (5, )
+        nt.assert_allclose(self.line2d.size, np.array([4.8]))
+        self.line2d.size = np.array([7.4])
+        nt.assert_allclose(self.line2d.size, np.array([7.2]))
+        self.line2d.increase_size()
+        nt.assert_allclose(self.line2d.size, np.array([8.4]))
+
+    def test_change_size_snap_size_different_scale(self):
+        self.line2d.axes[0].scale = 0.8
+        assert self.line2d.axes[0].scale == 0.8
+        assert self.line2d.axes[1].scale == 1.2
+        self.line2d.snap_size = True
+        # snapping size with the different axes scale is not supported
+        assert self.line2d.snap_size == False
+
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
     def test_plot_line2d(self, mpl_cleanup):
@@ -112,5 +145,16 @@ class TestPlotLine2DWidget():
         line2d.linewidth = 4
         line2d.size = (15.0, )
         assert line2d.size == (15.0, )
+
+        line2d_snap_all = widgets.Line2DWidget(self.im.axes_manager)
+        line2d_snap_all.snap_all = True
+        line2d_snap_all.set_mpl_ax(self.im._plot.signal_plot.ax)
+        line2d_snap_all.position = ([50.0, 60.0], [96.0, 54.0])
+        nt.assert_allclose(line2d_snap_all.position[0], [50.4, 60.0])
+        nt.assert_allclose(line2d_snap_all.position[1], [96.0, 54.0])
+
+        line2d_snap_all.size = (15.0, )
+        nt.assert_allclose(line2d_snap_all.size[0], 14.4)
+        nt.assert_allclose(line2d_snap_all.size[0], 14.4)
 
         return self.im._plot.signal_plot.figure
