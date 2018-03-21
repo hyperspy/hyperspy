@@ -833,6 +833,11 @@ class LazySignal(BaseSignal):
         target.explained_variance = explained_variance
         target.explained_variance_ratio = explained_variance_ratio
 
+        # Rescale the results if the noise was normalized
+        if normalize_poissonian_noise is True:
+            target.factors = target.factors * rbH.ravel()[:, np.newaxis]
+            target.loadings = target.loadings * raG.ravel()[:, np.newaxis]
+
     def transpose(self, *args, **kwargs):
         res = super().transpose(*args, **kwargs)
         res._make_lazy(rechunk=True)
