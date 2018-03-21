@@ -182,7 +182,7 @@ class Test_quantification:
         self.signal.set_microscope_parameters(probe_area=1.2)
         np.testing.assert_approx_equal(
             TEM_md.probe_area, 1.2)
-        np.testing.assert_approx_equal(TEM_md.real_time, 3.1)
+        np.testing.assert_approx_equal(TEM_md.Detector.EDS.real_time, 3.1)
 
     def test_quant_lorimer(self):
         s = self.signal
