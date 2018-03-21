@@ -18,9 +18,9 @@
 
 import logging
 from functools import partial
+import warnings
 
 import numpy as np
-import math as math
 import dask.array as da
 import dask.delayed as dd
 from dask import threaded
@@ -28,12 +28,11 @@ from dask.diagnostics import ProgressBar
 from itertools import product
 
 from ..signal import BaseSignal
-from ..misc.utils import underline, multiply, dummy_context_manager
+from ..misc.utils import multiply, dummy_context_manager
 from ..external.progressbar import progressbar
 from ..external.astroML.histtools import dasky_histogram
-from ..defaults_parser import preferences
-from ..docstrings.signal import (ONE_AXIS_PARAMETER, OUT_ARG)
 from hyperspy.misc.array_tools import _requires_linear_rebin
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 _logger = logging.getLogger(__name__)
 
@@ -582,7 +581,7 @@ class LazySignal(BaseSignal):
                       get=threaded.get,
                       num_chunks=None,
                       reproject=True,
-                      bounds=True,
+                      bounds=False,
                       **kwargs):
         """Perform Incremental (Batch) decomposition on the data, keeping n
         significant components.
@@ -611,12 +610,6 @@ class LazySignal(BaseSignal):
             decomposition.
         reproject : bool
             Reproject data on the learnt components (factors) after learning.
-        bounds : {tuple, bool}
-            The (min, max) values of the data to normalize before learning.
-            If tuple (min, max), those values will be used for normalization.
-            If True, extremes will be looked up (expensive), default.
-            If False, no normalization is done (learning may be very slow).
-            If normalize_poissonian_noise is True, this cannot be True.
         **kwargs
             passed to the partial_fit/fit functions.
 
@@ -645,6 +638,11 @@ class LazySignal(BaseSignal):
 
 
         """
+        if bounds:
+            msg = (
+                "The `bounds` keyword is deprecated and will be removed "
+                "in v2.0. Since version > 1.3 this has no effect.")
+            warnings.warn(msg, VisibleDeprecationWarning)
         explained_variance = None
         explained_variance_ratio = None
         _al_data = self._data_aligned_with_axes
@@ -719,14 +717,6 @@ class LazySignal(BaseSignal):
                 coeff = da.where(coeff == 0, 1, coeff)
                 data = data / coeff
                 self.data = data
-
-            # normalize the data for learning algs:
-            if bounds:
-                if bounds is True:
-                    _min, _max = da.compute(self.data.min(), self.data.max())
-                else:
-                    _min, _max = bounds
-                self.data = (self.data - _min) / (_max - _min)
 
             # LEARN
             this_data = []
