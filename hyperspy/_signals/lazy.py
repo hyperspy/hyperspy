@@ -573,9 +573,9 @@ class LazySignal(BaseSignal):
                                     self.axes_manager.signal_shape[::-1])
 
     def decomposition(self,
-                      output_dimension=None,
                       normalize_poissonian_noise=False,
                       algorithm='PCA',
+                      output_dimension=None,
                       signal_mask=None,
                       navigation_mask=None,
                       get=threaded.get,
@@ -588,14 +588,14 @@ class LazySignal(BaseSignal):
 
         Parameters
         ----------
-        output_dimension : int
-            the number of significant components to keep. If None, keep all
-            (only valid for SVD)
         normalize_poissonian_noise : bool
             If True, scale the SI to normalize Poissonian noise
         algorithm : str
             One of ('svd', 'PCA', 'ORPCA', 'ONMF'). By default 'svd',
             lazy SVD decomposition from dask.
+        output_dimension : int
+            the number of significant components to keep. If None, keep all
+            (only valid for SVD)
         get : dask scheduler
             the dask scheduler to use for computations;
             default `dask.threaded.get`
