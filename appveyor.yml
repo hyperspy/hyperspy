@@ -143,6 +143,13 @@ before_deploy:
   - "%CMD_IN_ENV% pip uninstall -y matplotlib"
   - "%CMD_IN_ENV% pip install matplotlib==2.1.2 pytest-mpl"
 
+  # Install pyxem and dependencies first
+  - "%CMD_IN_ENV% pip install spglib pymatgen transforms3d"
+  - "%CMD_IN_ENV% pip install https://github.com/pyxem/pyxem/archive/master.zip"
+
+  # Install atomap
+  - "%CMD_IN_ENV% pip install atomap"
+
   # install pyface and traitsui from master to get pyqt5 compatibility
   - "%CMD_IN_ENV% pip install https://github.com/enthought/pyface/archive/master.zip"
   - "%CMD_IN_ENV% pip install https://github.com/enthought/traitsui/archive/master.zip"
