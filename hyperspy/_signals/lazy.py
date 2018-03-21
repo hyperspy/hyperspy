@@ -573,7 +573,7 @@ class LazySignal(BaseSignal):
                                     self.axes_manager.signal_shape[::-1])
 
     def decomposition(self,
-                      output_dimension,
+                      output_dimension=None,
                       normalize_poissonian_noise=False,
                       algorithm='PCA',
                       signal_mask=None,
@@ -589,12 +589,13 @@ class LazySignal(BaseSignal):
         Parameters
         ----------
         output_dimension : int
-            the number of significant components to keep
+            the number of significant components to keep. If None, keep all
+            (only valid for SVD)
         normalize_poissonian_noise : bool
             If True, scale the SI to normalize Poissonian noise
         algorithm : str
-            One of ('PCA', 'ORPCA', 'ONMF'). By default ('PCA') IncrementalPCA
-            from scikit-learn is run.
+            One of ('svd', 'PCA', 'ORPCA', 'ONMF'). By default 'svd',
+            lazy SVD decomposition from dask.
         get : dask scheduler
             the dask scheduler to use for computations;
             default `dask.threaded.get`
@@ -655,6 +656,9 @@ class LazySignal(BaseSignal):
         if blocksize / output_dimension < num_chunks:
             num_chunks = np.ceil(blocksize / output_dimension)
         blocksize *= num_chunks
+        if algorithm != "svd" and output_dimension is None:
+            raise ValueError("With the %s the output_dimension "
+                             "must be specified" % algorithm)
 
         # LEARN
         if algorithm == 'PCA':
@@ -675,16 +679,12 @@ class LazySignal(BaseSignal):
             batch_size = kwargs.pop('batch_size', None)
             obj = ONMF(output_dimension, **kwargs)
             method = partial(obj.fit, batch_size=batch_size)
-
-        else:
+        elif algorithm != "svd":
             raise ValueError('algorithm not known')
 
         original_data = self.data
         try:
             if normalize_poissonian_noise:
-                if bounds is True:
-                    bounds = False
-                    # warnings.warn?
                 data = self._data_aligned_with_axes
                 ndim = self.axes_manager.navigation_dimension
                 sdim = self.axes_manager.signal_dimension
@@ -719,27 +719,42 @@ class LazySignal(BaseSignal):
                 self.data = data
 
             # LEARN
-            this_data = []
-            try:
-                for chunk in progressbar(
-                        self._block_iterator(
-                            flat_signal=True,
-                            get=get,
-                            signal_mask=signal_mask,
-                            navigation_mask=navigation_mask),
-                        total=nblocks,
-                        leave=True,
-                        desc='Learn'):
-                    this_data.append(chunk)
-                    if len(this_data) == num_chunks:
+            if algorithm == "svd":
+                reproject = False
+                from dask.array.linalg import svd
+                try:
+                    self._unfolded4decomposition = self.unfold()
+                    # TODO: implement masking
+                    U, S, V = svd(self.data)
+                    factors = V.T
+                    explained_variance = S ** 2 / self.data.shape[0]
+                    loadings = U * S
+                finally:
+                    if self._unfolded4decomposition is True:
+                        self.fold()
+                        self._unfolded4decomposition is False
+            else:
+                this_data = []
+                try:
+                    for chunk in progressbar(
+                            self._block_iterator(
+                                flat_signal=True,
+                                get=get,
+                                signal_mask=signal_mask,
+                                navigation_mask=navigation_mask),
+                            total=nblocks,
+                            leave=True,
+                            desc='Learn'):
+                        this_data.append(chunk)
+                        if len(this_data) == num_chunks:
+                            thedata = np.concatenate(this_data, axis=0)
+                            method(thedata)
+                            this_data = []
+                    if len(this_data):
                         thedata = np.concatenate(this_data, axis=0)
                         method(thedata)
-                        this_data = []
-                if len(this_data):
-                    thedata = np.concatenate(this_data, axis=0)
-                    method(thedata)
-            except KeyboardInterrupt:
-                pass
+                except KeyboardInterrupt:
+                    pass
 
             # GET ALREADY CALCULATED RESULTS
             if algorithm == 'PCA':
@@ -811,7 +826,8 @@ class LazySignal(BaseSignal):
         target = self.learning_results
         target.decomposition_algorithm = algorithm
         target.output_dimension = output_dimension
-        target._object = obj
+        if algorithm != "svd":
+            target._object = obj
         target.factors = factors
         target.loadings = loadings
         target.explained_variance = explained_variance
