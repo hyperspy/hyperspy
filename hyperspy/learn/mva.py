@@ -51,7 +51,7 @@ def centering_and_whitening(X):
     del _
     K = (u / (d / np.sqrt(X.shape[1]))).T
     del u, d
-    X1 = np.dot(K, X)
+    X1 = K @ X
     return X1.T, K
 
 
@@ -414,15 +414,15 @@ class MVA():
             if reproject in ('navigation', 'both'):
                 if algorithm not in ('nmf', 'sparse_pca',
                                      'mini_batch_sparse_pca'):
-                    loadings_ = np.dot(dc[:, signal_mask] - mean, factors)
+                    loadings_ = (dc[:, signal_mask] - mean) @ factors
                 else:
                     loadings_ = sk.transform(dc[:, signal_mask])
                 target.loadings = loadings_
             if reproject in ('signal', 'both'):
                 if algorithm not in ('nmf', 'sparse_pca',
                                      'mini_batch_sparse_pca'):
-                    factors = np.dot(np.linalg.pinv(loadings),
-                                     dc[navigation_mask, :] - mean).T
+                    factors = (np.linalg.pinv(loadings) @ (
+                        dc[navigation_mask, :] - mean)).T
                     target.factors = factors
                 else:
                     _logger.info("Reprojecting the signal is not yet "
@@ -660,15 +660,15 @@ class MVA():
             lr.bss_node = temp_function(**kwargs)
             lr.bss_node.train(factors)
             unmixing_matrix = lr.bss_node.get_recmatrix()
-        w = np.dot(unmixing_matrix, invsqcovmat)
+        w = unmixing_matrix @ invsqcovmat
         if lr.explained_variance is not None:
             # The output of ICA is not sorted in any way what makes it
             # difficult to compare results from different unmixings. The
             # following code is an experimental attempt to sort them in a
             # more predictable way
-            sorting_indices = np.argsort(np.dot(
-                lr.explained_variance[:number_of_components],
-                np.abs(w.T)))[::-1]
+            sorting_indices = np.argsort(
+                lr.explained_variance[:number_of_components] @ np.abs(w.T)
+            )[::-1]
             w[:] = w[sorting_indices, :]
         lr.unmixing_matrix = w
         lr.on_loadings = on_loadings
@@ -779,12 +779,12 @@ class MVA():
         w = lr.unmixing_matrix
         n = len(w)
         if lr.on_loadings:
-            lr.bss_loadings = np.dot(lr.loadings[:, :n], w.T)
-            lr.bss_factors = np.dot(lr.factors[:, :n], np.linalg.inv(w))
+            lr.bss_loadings = lr.loadings[:, :n] @  w.T
+            lr.bss_factors = lr.factors[:, :n] @ np.linalg.inv(w)
         else:
 
-            lr.bss_factors = np.dot(lr.factors[:, :n], w.T)
-            lr.bss_loadings = np.dot(lr.loadings[:, :n], np.linalg.inv(w))
+            lr.bss_factors = lr.factors[:, :n] @ w.T
+            lr.bss_loadings = lr.loadings[:, :n] @ np.linalg.inv(w)
 
     def _auto_reverse_bss_component(self, target):
         n_components = target.bss_factors.shape[1]
@@ -822,7 +822,7 @@ class MVA():
             factors = target.bss_factors
             loadings = target.bss_loadings.T
         if components is None:
-            a = np.dot(factors, loadings)
+            a = factors @ loadings
             signal_name = 'model from %s with %i components' % (
                 mva_type, factors.shape[1])
         elif hasattr(components, '__iter__'):
@@ -831,12 +831,11 @@ class MVA():
             for i in range(len(components)):
                 tfactors[:, i] = factors[:, components[i]]
                 tloadings[i, :] = loadings[components[i], :]
-            a = np.dot(tfactors, tloadings)
+            a = tfactors @ tloadings
             signal_name = 'model from %s with components %s' % (
                 mva_type, components)
         else:
-            a = np.dot(factors[:, :components],
-                       loadings[:components, :])
+            a = factors[:, :components] @ loadings[:components, :]
             signal_name = 'model from %s with %i components' % (
                 mva_type, components)
 
