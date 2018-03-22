@@ -919,11 +919,20 @@ class FeiEMDReader(object):
         meta_gen['title'] = self.detector_name
         # We have only one entry in the original_metadata, so we can't use the
         # mapping of the original_metadata to set the date and time in the
-        # metadata: need to set manually here
-        unix_time = om['Acquisition']['AcquisitionStartDatetime']['DateTime']
-        date, time = self._convert_datetime(unix_time).split('T')
-        meta_gen['date'] = date
-        meta_gen['time'] = time
+        # metadata: need to set it manually here
+        try:
+            if 'AcquisitionStartDatetime' in om['Acquisition'].keys():
+                unix_time = om['Acquisition']['AcquisitionStartDatetime']['DateTime']
+            # Workaround when the 'AcquisitionStartDatetime' key is missing
+            # This timestamp corresponds to when the data is stored
+            elif 'Detectors[BM-Ceta].TimeStamp' in om['CustomProperties'].keys():
+                unix_time = float(om['CustomProperties']['Detectors[BM-Ceta].TimeStamp']['value'])/1E6
+            date, time = self._convert_datetime(unix_time).split('T')
+            meta_gen['date'] = date
+            meta_gen['time'] = time
+            meta_gen['time_zone'] = self._get_local_time_zone()
+        except (KeyError, UnboundLocalError):
+            pass
 
         meta_sig = {}
         meta_sig['signal_type'] = ''
