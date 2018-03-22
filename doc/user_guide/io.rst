@@ -199,7 +199,7 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +--------------------+--------+--------+--------+
     | EMD (NCEM)         |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
-    | EMD (FEI)          |    Yes |    No  |    No  |
+    | EMD (FEI)          |    Yes |    No  |    Yes |
     +--------------------+--------+--------+--------+
     | Protochips log     |    Yes |    No  |    No  |
     +--------------------+--------+--------+--------+
@@ -252,7 +252,7 @@ Please note that in order to increase saving efficiency and speed, if possible,
 the inner-most structures are converted to numpy arrays when saved. This
 procedure homogenizes any types of the objects inside, most notably casting
 numbers as strings if any other strings are present:
- 
+
 .. code-block:: python
 
     >>> # before saving:
@@ -327,13 +327,13 @@ MRCZ
 ----
 
 MRCZ is an extension of the CCP-EM MRC2014 file format. `CCP-EM MRC2014
-<http://www.ccpem.ac.uk/mrc_format/mrc2014.php>`_ file format.  It uses the 
+<http://www.ccpem.ac.uk/mrc_format/mrc2014.php>`_ file format.  It uses the
 `blosc` meta-compression library to bitshuffle and compress files in a blocked,
 multi-threaded environment. The supported data types are:
 
 [`float32`,`int8`,`uint16`,`int16`,`complex64`]
 
-It supports arbitrary meta-data, which is serialized into JSON. 
+It supports arbitrary meta-data, which is serialized into JSON.
 
 MRCZ also supports asychronous reads and writes.
 
@@ -346,30 +346,30 @@ Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^
 
 `do_async`:   currently supported within Hyperspy for writing only, this will save
-              the file in a background thread and return immediately. Defaults 
+              the file in a background thread and return immediately. Defaults
               to `False`.
 .. Warning::
 
-    There is no method currently implemented within Hyperspy to tell if an 
+    There is no method currently implemented within Hyperspy to tell if an
     asychronous write has finished.
 
 `compressor`: The compression codec, one of [`None`,`'zlib`',`'zstd'`, `'lz4'`].
               Defaults to `None`.
 `clevel`:     The compression level, an `int` from 1 to 9. Defaults to 1.
-`n_threads`:  The number of threads to use for `blosc` compression. Defaults to 
+`n_threads`:  The number of threads to use for `blosc` compression. Defaults to
               the maximum number of virtual cores (including Intel Hyperthreading)
               on your system, which is recommended for best performance. If \
-              `do_asyc = True` you may wish to leave one thread free for the 
+              `do_asyc = True` you may wish to leave one thread free for the
               Python GIL.
 
-The recommended compression codec is 'zstd' (zStandard) with `clevel=1` for 
+The recommended compression codec is 'zstd' (zStandard) with `clevel=1` for
 general use. If speed is critical, use 'lz4' (LZ4) with `clevel=9`. Integer data
 compresses more redably than floating-point data, and in general the histogram
 of values in the data reflects how compressible it is.
 
-To save files that are compatible with other programs that can use MRC such as 
-GMS, IMOD, Relion, MotionCorr, etc. save with `compressor=None`, extension `.mrc`.  
-JSON metadata will not be recognized by other MRC-supporting software but should 
+To save files that are compatible with other programs that can use MRC such as
+GMS, IMOD, Relion, MotionCorr, etc. save with `compressor=None`, extension `.mrc`.
+JSON metadata will not be recognized by other MRC-supporting software but should
 not cause crashes.
 
 Example Usage
@@ -521,9 +521,9 @@ us aware of the problem.
 Extra loading arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-optimize: bool, default is True. During loading, the data is replaced by its 
-:ref:`optimized copy <signal.transpose_optimize>` to speed up operations, 
-e. g. iteration over navigation axes. The cost of this speed improvement is to 
+optimize: bool, default is True. During loading, the data is replaced by its
+:ref:`optimized copy <signal.transpose_optimize>` to speed up operations,
+e. g. iteration over navigation axes. The cost of this speed improvement is to
 double the memory requirement during data loading.
 
 .. _edax-format:
@@ -691,32 +691,31 @@ EMD
 
 EMD stands for “Electron Microscopy Dataset.” It is a subset of the open source
 HDF5 wrapper format. N-dimensional data arrays of any standard type can be
-stored in an HDF5 file, as well as tags and other metadata. 
+stored in an HDF5 file, as well as tags and other metadata.
 
 EMD (NCEM)
 ^^^^^^^^^^
 
-This EMD format was developed by Colin Ophus at the National Center for 
+This EMD format was developed by Colin Ophus at the National Center for
 Electron Microscopy (NCEM). See http://emdatasets.com/ for more information.
 
 
 EMD (FEI)
 ^^^^^^^^^
 
-This EMD format was developed by FEI for the Velox software. Although it shares 
-similar structure than the other EMD format from NCEM, it differs in the way 
-the data are stored. HyperSpy supports importing images, EDS spectrum and EDS 
-spectrum stream. For spectrum strean, individual frame or individual EDS detector 
-can be imported, however selecting these option will generate very large 
-dataset. Therefore, the default is to import the sum over all frame and over 
-all detectors. Alternatively, a specific frame range can be choosen -see 
-the :ref:`Extra-loading-arguments-fei-emd` section below. On top of the EDS 
-spectrum stream, FEI emd file also contains a spectrum image dataset which is 
-a proprietary format used by Velox and is not supported by HyperSpy. It is possible 
-that a file has been pruned when saving with Velox in order to reduce its size 
-(not default), which means that the spectrum stream is lost and can't be recovered.
-Loading a spectrum image is slow if `numba <http://numba.pydata.org/>`_ is 
-not installed.
+This is a non-compliant variant of the standard EMD format developed by FEI.
+HyperSpy supports importing images, EDS spectrum and EDS
+spectrum streams (spectrum images stored in a sparse format). For spectrum
+streams, there are several loading options (described below) to control the frames
+and detectors to load and if to sum them on loading.  The default is
+to import the sum over all frames and over all detectors in order to decrease
+the data size in memory.
+
+Note that pruned FEI EMD files only contain the spectrum image in a proprietary
+format that HyperSpy cannot read. Therefore,
+don't prune FEI EMD files in you intend to read them with HyperSpy.
+Note also that loading a spectrum image can be slow if `numba
+<http://numba.pydata.org/>`_ is not installed.
 
 .. code-block:: python
 
@@ -724,17 +723,27 @@ not installed.
     [<Signal2D, title: HAADF, dimensions: (|179, 161)>,
     <EDSSEMSpectrum, title: EDS, dimensions: (179, 161|4096)>]
 
+
+.. note::
+
+    To enable lazy loading of spectrum images in this format it may be
+    necessary to install `sparse <http://sparse.pydata.org/en/latest/>`_. See
+    See also :ref:`install-with-python-installers`.
+
+
 .. warning::
 
-   This format is still not stable and files generated with the most recent 
-version of Velox may not be supported.
+   This format is still not stable and files generated with the most recent
+   version of Velox may not be supported. If you experience issues loading
+   a file, please report it  to the HyperSpy developers so that they can
+   add support for newer versions of the format.
 
 .. _Extra-loading-arguments-fei-emd:
 
 Extra loading arguments
 +++++++++++++++++++++++
 
-- `select_type` : one of {None, 'image', 'single_spectrum', 'spectrum_image'} (default is None). 
+- `select_type` : one of {None, 'image', 'single_spectrum', 'spectrum_image'} (default is None).
 - `first_frame` : integer (default is 0).
 - `last_frame` : integer (default is None)
 - `sum_frames` : boolean (default is True)
@@ -743,23 +752,23 @@ Extra loading arguments
 - `SI_dtype` : numpy dtype (default is None)
 - `load_SI_image_stack` : boolean (default is False)
 
-The ``select_type`` parameter specifies the type of data to load: if `image` is selected, 
-only images (including EDS maps) are loaded, if `single_spectrum` is selected, only 
-single spectra are loaded and if `spectrum_image` is selected, only the spectrum 
-image will be loaded. The ``first_frame`` and ``last_frame`` parameters can be used 
-to select the frame range of the EDS spectrum image to load. To load each individual 
-EDS frame, use ``sum_frames=False`` and the EDS spectrum image will be loaded 
-with an an extra navigation dimension corresponding to the frame index 
-(time axis). Use the ``sum_EDS_detectors=True`` parameter to load the signal of 
-each individual EDS detector. In such a case, a corresponding number of distinct 
-EDS signal is returned. The default is ``sum_EDS_detectors=True``, which loads the 
-EDS signal as a sum over the signals from each EDS detectors.  The ``rebin_energy`` 
-and ``SI_dtype`` parameters are particularly useful in combination with 
-``sum_frames=False`` to reduce the data size when one want to read the 
-individual frames of the spectrum image. If ``SI_dtype=None`` (default), the dtype 
-of the data in the emd file is used. The ``load_SI_image_stack`` parameter allows 
-loading the stack of STEM images acquired simultaneously as the EDS spectrum image. 
-This can be useful to monitor any specimen changes during the acquisition or to 
+The ``select_type`` parameter specifies the type of data to load: if `image` is selected,
+only images (including EDS maps) are loaded, if `single_spectrum` is selected, only
+single spectra are loaded and if `spectrum_image` is selected, only the spectrum
+image will be loaded. The ``first_frame`` and ``last_frame`` parameters can be used
+to select the frame range of the EDS spectrum image to load. To load each individual
+EDS frame, use ``sum_frames=False`` and the EDS spectrum image will be loaded
+with an an extra navigation dimension corresponding to the frame index
+(time axis). Use the ``sum_EDS_detectors=True`` parameter to load the signal of
+each individual EDS detector. In such a case, a corresponding number of distinct
+EDS signal is returned. The default is ``sum_EDS_detectors=True``, which loads the
+EDS signal as a sum over the signals from each EDS detectors.  The ``rebin_energy``
+and ``SI_dtype`` parameters are particularly useful in combination with
+``sum_frames=False`` to reduce the data size when one want to read the
+individual frames of the spectrum image. If ``SI_dtype=None`` (default), the dtype
+of the data in the emd file is used. The ``load_SI_image_stack`` parameter allows
+loading the stack of STEM images acquired simultaneously as the EDS spectrum image.
+This can be useful to monitor any specimen changes during the acquisition or to
 correct the spatial drift in the spectrum image by using the STEM images.
 
 .. code-block:: python

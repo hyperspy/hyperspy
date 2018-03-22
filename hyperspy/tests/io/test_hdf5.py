@@ -355,12 +355,13 @@ class TestLoadingOOMReadOnly:
         assert self.shape == s.data.shape
         assert isinstance(s.data, da.Array)
         assert s._lazy
+        s.close_file()
 
     def teardown_method(self, method):
         gc.collect()        # Make sure any memmaps are closed first!
         try:
             remove('tmp.hdf5')
-        except:
+        except BaseException:
             # Don't fail tests if we cannot remove
             pass
 
