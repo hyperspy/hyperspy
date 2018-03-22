@@ -148,7 +148,7 @@ before_deploy:
   - "%CMD_IN_ENV% pip install https://github.com/pyxem/pyxem/archive/master.zip"
 
   # Install atomap
-  - "%CMD_IN_ENV% pip install atomap"
+  - "%CMD_IN_ENV% pip install https://gitlab.com/atomap/atomap/repository/Absolute_Integrator/archive.zip"
 
   # install pyface and traitsui from master to get pyqt5 compatibility
   - "%CMD_IN_ENV% pip install https://github.com/enthought/pyface/archive/master.zip"
