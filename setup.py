@@ -69,6 +69,7 @@ extras_require = {
     "gui-jupyter": ["hyperspy_gui_ipywidgets"],
     "gui-traitsui": ["hyperspy_gui_traitsui"],
     "test": ["pytest>=3", "pytest-mpl", "matplotlib>=2.0.2"],
+    "doc": ["sphinx", "numpydoc", "sphinxcontrib-napoleon", "sphinx_rtd_theme"],
 }
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
