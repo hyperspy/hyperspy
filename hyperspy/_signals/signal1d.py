@@ -1238,6 +1238,7 @@ _spikes_diagnosis,
         except TypeError:
             print('hanning_taper() requres for the initial data to be of dtype("float").')
             print('Please perform s.change_dtype("float") prior to running the attempted function.')
+            raise
         if self._lazy:
             self.data = dc
         self.events.data_changed.trigger(obj=self)
