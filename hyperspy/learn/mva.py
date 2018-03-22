@@ -766,10 +766,15 @@ class MVA():
         >>> s.reverse_bss_component(1) # reverse IC 1
         >>> s.reverse_bss_component((0, 2)) # reverse ICs 0 and 2
         """
-
+        if self._lazy:
+            _logger.warning(
+                "Component(s) %s not reversed, featured not implemented "
+                "for lazy signals" % component_number)
+            return
         target = self.learning_results
 
         for i in [component_number, ]:
+            _logger.info("Component %i reversed" % i)
             target.bss_factors[:, i] *= -1
             target.bss_loadings[:, i] *= -1
             target.unmixing_matrix[i, :] *= -1
@@ -793,7 +798,6 @@ class MVA():
             maximum = np.nanmax(target.bss_loadings[:, i])
             if minimum < 0 and -minimum > maximum:
                 self.reverse_bss_component(i)
-                _logger.info("IC %i reversed" % i)
 
     def _calculate_recmatrix(self, components=None, mva_type=None,):
         """
