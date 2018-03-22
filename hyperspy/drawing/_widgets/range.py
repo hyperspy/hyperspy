@@ -19,9 +19,13 @@
 
 import numpy as np
 import matplotlib
+import logging
 
 from hyperspy.drawing.widgets import ResizableDraggableWidgetBase
 from hyperspy.events import Events, Event
+
+
+_logger = logging.getLogger(__name__)
 
 
 def in_interval(number, interval):
@@ -38,8 +42,11 @@ class RangeWidget(ResizableDraggableWidgetBase):
     ModifiablepanSelector so that it conforms to the common widget interface.
 
     For optimized changes of geometry, the class implements two methods
-    'set_bounds' and 'set_ibounds', to set the geomtry of the rectangle by
+    'set_bounds' and 'set_ibounds', to set the geometry of the rectangle by
     value and index space coordinates, respectivly.
+
+    Implements the internal method _validate_geometry to make sure the patch
+    will always stay within bounds.
     """
 
     def __init__(self, axes_manager):
@@ -83,6 +90,9 @@ class RangeWidget(ResizableDraggableWidgetBase):
             old_position, old_size = self.position, self.size
             self._pos = np.array([x])
             self._size = np.array([w])
+            self._validate_geometry()
+            if self._pos != np.array([x]) or self._size != np.array([w]):
+                self._update_patch_size()
             self._apply_changes(old_size=old_size, old_position=old_position)
 
     def _get_range(self):
@@ -100,12 +110,11 @@ class RangeWidget(ResizableDraggableWidgetBase):
         elif len(kwargs) == 1 and 'bounds' in kwargs:
             return kwargs.values()[0]
         else:
-            x = kwargs.pop('x', kwargs.pop('left', self.indices[0]))
+            x = kwargs.pop('x', kwargs.pop('left', self._pos[0]))
             if 'right' in kwargs:
                 w = kwargs.pop('right') - x
             else:
-                w = kwargs.pop('w', kwargs.pop('width',
-                                               self.get_size_in_indices()[0]))
+                w = kwargs.pop('w', kwargs.pop('width', self._size[0]))
             return x, w
 
     def set_ibounds(self, *args, **kwargs):
@@ -142,12 +151,27 @@ class RangeWidget(ResizableDraggableWidgetBase):
         """
 
         x, w = self._parse_bounds_args(args, kwargs)
+        l0, h0 = self.axes[0].low_value, self.axes[0].high_value
+        scale = self.axes[0].scale
 
-        if not (self.axes[0].low_value <= x <= self.axes[0].high_value):
-            raise ValueError()
-        if not (self.axes[0].low_value <= x + w <= self.axes[0].high_value +
-                self.axes[0].scale):
-            raise ValueError()
+        if x < l0:
+            x = l0
+            _logger.warning('`x` is too small. It is therefore set to its '
+                            'minimal value of {}.'.format(x))
+        elif h0 <= x:
+            x = h0 - scale
+            _logger.warning('`x` is too large. It is therefore set to its '
+                            'maximal value of {}.'.format(x))
+        if w < scale:
+            w = scale
+            _logger.warning('`width` or `right` value is too small. It is '
+                            'therefore set to its minimal value of '
+                            '{}.'.format(w))
+        elif not (l0 + scale <= x + w <= h0 + scale):
+            w = h0 + scale - x
+            _logger.warning('`width` or `right` value is too large. It is '
+                            'therefore set to its maximal value of '
+                            '{}.'.format(w))
 
         old_position, old_size = self.position, self.size
         self._pos = np.array([x])
@@ -179,6 +203,43 @@ class RangeWidget(ResizableDraggableWidgetBase):
         super(RangeWidget, self)._set_snap_size(value)
         self.span.snap_size = value
         self._update_patch_size()
+
+    def _validate_geometry(self, x1=None):
+        """Make sure the entire patch always stays within bounds. First the
+        position (either from position property or from x1 argument), is
+        limited within the bounds. Then, if the right edge are out of
+        bounds, the position is changed so that they will be at the limit.
+
+        The modified geometry is stored, but no change checks are performed.
+        Call _apply_changes after this in order to process any changes (the
+        size might change if it is set larger than the bounds size).
+        """
+        xaxis = self.axes[0]
+
+        # Make sure widget size is not larger than axes
+        self._size[0] = min(self._size[0], xaxis.size * xaxis.scale)
+
+        # Make sure x1 is within bounds
+        if x1 is None:
+            x1 = self._pos[0]  # Get it if not supplied
+        if x1 < xaxis.low_value:
+            x1 = xaxis.low_value
+        elif x1 > xaxis.high_value:
+            x1 = xaxis.high_value
+
+        # Make sure x2 is with upper bound.
+        # If not, keep dims, and change x1!
+        x2 = x1 + self._size[0]
+        if x2 > xaxis.high_value + xaxis.scale:
+            x2 = xaxis.high_value + xaxis.scale
+            x1 = x2 - self._size[0]
+
+        self._pos = np.array([x1])
+        # Apply snaps if appropriate
+        if self.snap_position:
+            self._do_snap_position()
+        if self.snap_size:
+            self._do_snap_size()
 
 
 class ModifiableSpanSelector(matplotlib.widgets.SpanSelector):
