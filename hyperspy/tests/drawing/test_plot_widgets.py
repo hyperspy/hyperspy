@@ -48,14 +48,14 @@ class TestPlotLine2DWidget():
         assert self.line2d.position == ([0.0, 0.0], [1.2, 0.0])
         nt.assert_allclose(self.line2d.indices[0], np.array([0, 0]))
         nt.assert_allclose(self.line2d.indices[1], np.array([1, 0]))
-        nt.assert_allclose(self.line2d.get_centre(), np.array([0.6,  0.]))
+        nt.assert_allclose(self.line2d.get_centre(), np.array([0.6, 0.]))
 
     def test_position(self):
         self.line2d.position = ([12.0, 60.0], [36.0, 96.0])
         assert self.line2d.position == ([12.0, 60.0], [36.0, 96.0])
         nt.assert_allclose(self.line2d.indices[0], np.array([10, 50]))
         nt.assert_allclose(self.line2d.indices[1], np.array([30, 80]))
-        nt.assert_allclose(self.line2d.get_centre(), np.array([24.,  78.]))
+        nt.assert_allclose(self.line2d.get_centre(), np.array([24., 78.]))
 
     def test_position_snap_position(self):
         self.line2d.snap_position = True
@@ -63,24 +63,24 @@ class TestPlotLine2DWidget():
         nt.assert_allclose(self.line2d.position, ([12.0, 61.2], [36.0, 96.0]))
         nt.assert_allclose(self.line2d.indices[0], np.array([10, 51]))
         nt.assert_allclose(self.line2d.indices[1], np.array([30, 80]))
-        nt.assert_allclose(self.line2d.get_centre(), np.array([24.,  78.6]))
+        nt.assert_allclose(self.line2d.get_centre(), np.array([24., 78.6]))
 
     def test_indices(self):
         self.line2d.indices = ([10, 50], [30, 80])
         nt.assert_allclose(self.line2d.indices[0], np.array([10, 50]))
         nt.assert_allclose(self.line2d.indices[1], np.array([30, 80]))
         assert self.line2d.position == ([12.0, 60.0], [36.0, 96.0])
-        nt.assert_allclose(self.line2d.get_centre(), np.array([24.,  78.]))
+        nt.assert_allclose(self.line2d.get_centre(), np.array([24., 78.]))
 
     def test_length(self):
         x = 10
-        self.line2d.position = ([10.0, 10.0], [10.0+x, 10.0])
+        self.line2d.position = ([10.0, 10.0], [10.0 + x, 10.0])
         assert self.line2d.get_line_length() == x
 
         y = 20
-        self.line2d.position = ([20.0, 10.0], [20.0+x, 10+y])
+        self.line2d.position = ([20.0, 10.0], [20.0 + x, 10 + y])
         nt.assert_almost_equal(self.line2d.get_line_length(),
-                               np.sqrt(x**2+y**2))
+                               np.sqrt(x**2 + y**2))
 
     def test_change_size(self, mpl_cleanup):
         # Need to plot the signal to set the mpl axis to the widget
@@ -109,7 +109,7 @@ class TestPlotLine2DWidget():
         assert self.line2d.position == ([12.0, 60.0], [36.0, 96.0])
         nt.assert_allclose(self.line2d.indices[0], np.array([10, 50]))
         nt.assert_allclose(self.line2d.indices[1], np.array([30, 80]))
-        nt.assert_allclose(self.line2d.get_centre(), np.array([24.,  78.]))
+        nt.assert_allclose(self.line2d.get_centre(), np.array([24., 78.]))
         assert self.line2d.size == np.array([0])
 
         self.line2d.size = [3]
