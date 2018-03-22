@@ -1216,9 +1216,12 @@ _spikes_diagnosis,
                 thelist.extend([tapered, therest])
                 dc = da.concatenate(thelist, axis=-1)
             else:
-                dc[..., offset:channels + offset] *= (
-                    np.hanning(2 * channels)[:channels])
-                dc[..., :offset] *= 0.
+                np.multiply(dc[..., offset:channels + offset],
+                            (np.hanning(2 * channels)[:channels]),
+                            out=dc[..., offset:channels + offset],
+                            casting="safe")
+                np.multiply(dc[..., :offset], 0,
+                            out=dc[..., :offset], casting="safe")
         if side == 'right' or side == 'both':
             rl = None if offset == 0 else -offset
             if self._lazy:
@@ -1230,10 +1233,13 @@ _spikes_diagnosis,
                     thelist.append(zeros)
                 dc = da.concatenate(thelist, axis=-1)
             else:
-                dc[..., -channels - offset:rl] *= (
-                    np.hanning(2 * channels)[-channels:])
+                np.multiply(dc[..., -channels - offset:rl],
+                            (np.hanning(2 * channels)[-channels:]),
+                            out=dc[..., -channels - offset:rl],
+                            casting="safe")
                 if offset != 0:
-                    dc[..., -offset:] *= 0.
+                    np.multiply(dc[..., -offset:], 0,
+                                out=dc[..., -offset:], casting="safe")
         if self._lazy:
             self.data = dc
         self.events.data_changed.trigger(obj=self)
