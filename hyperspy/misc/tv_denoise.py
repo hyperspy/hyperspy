@@ -148,9 +148,9 @@ def _tv_denoise_2d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
     Examples
     ---------
     >>> import scipy
-    >>> lena = scipy.ascent().astype(np.float)
-    >>> lena += 0.5 * lena.std()*np.random.randn(*lena.shape)
-    >>> denoised_lena = tv_denoise(lena, weight=60.0)
+    >>> ascent = scipy.ascent().astype(np.float)
+    >>> ascent += 0.5 * ascent.std()*np.random.randn(*ascent.shape)
+    >>> denoised_ascent = tv_denoise(ascent, weight=60.0)
     """
     im_type = im.dtype
     if im_type is not np.float:
@@ -244,9 +244,9 @@ def _tv_denoise_1d(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
     Examples
     ---------
     >>> import scipy
-    >>> lena = scipy.ascent().astype(np.float)
-    >>> lena += 0.5 * lena.std()*np.random.randn(*lena.shape)
-    >>> denoised_lena = tv_denoise(lena, weight=60.0)
+    >>> ascent = scipy.misc.ascent().astype(np.float)
+    >>> ascent += 0.5 * ascent.std()*np.random.randn(*ascent.shape)
+    >>> denoised_ascent = tv_denoise(ascent, weight=60.0)
     """
     im_type = im.dtype
     if im_type is not np.float:
@@ -342,11 +342,11 @@ def tv_denoise(im, weight=50, eps=2.e-4, keep_type=False, n_iter_max=200):
 
     Examples
     ---------
-    >>> # 2D example using lena
+    >>> # 2D example using ascent
     >>> import scipy
-    >>> lena = scipy.ascent().astype(np.float)
-    >>> lena += 0.5 * lena.std()*np.random.randn(*lena.shape)
-    >>> denoised_lena = tv_denoise(lena, weight=60)
+    >>> ascent = scipy.misc.ascent().astype(np.float)
+    >>> ascent += 0.5 * ascent.std()*np.random.randn(*ascent.shape)
+    >>> denoised_ascent = tv_denoise(ascent, weight=60)
     >>> # 3D example on synthetic data
     >>> x, y, z = np.ogrid[0:40, 0:40, 0:40]
     >>> mask = (x -22)**2 + (y - 20)**2 + (z - 17)**2 < 8**2
