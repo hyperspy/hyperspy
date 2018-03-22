@@ -477,6 +477,7 @@ class MVA():
                                 mask=None,
                                 on_loadings=False,
                                 pretreatment=None,
+                                compute=False,
                                 **kwargs):
         """Blind source separation (BSS) on the result on the
         decomposition.
@@ -512,6 +513,10 @@ class MVA():
             If True, perform the BSS on the loadings of a previous
             decomposition. If False, performs it on the factors.
         pretreatment: dict
+        compute: bool
+           If the decomposition results are lazy, compute the BSS components
+           so that they are not lazy.
+           Default is False.
 
         **kwargs : extra key word arguments
             Any keyword arguments are passed to the BSS algorithm.
@@ -672,7 +677,7 @@ class MVA():
             w[:] = w[sorting_indices, :]
         lr.unmixing_matrix = w
         lr.on_loadings = on_loadings
-        self._unmix_components()
+        self._unmix_components(compute=compute)
         self._auto_reverse_bss_component(lr)
         lr.bss_algorithm = algorithm
         lr.bss_node = str(lr.bss_node)
@@ -744,6 +749,12 @@ class MVA():
         >>> s.reverse_decomposition_component((0, 2)) # reverse ICs 0 and 2
         """
 
+        if hasattr(self.learning_results.factors, "compute"):
+            # They are lazy
+            _logger.warning(
+                "Component(s) %s not reversed, featured not implemented "
+                "for lazy computations" % component_number)
+            return
         target = self.learning_results
 
         for i in [component_number, ]:
@@ -766,10 +777,11 @@ class MVA():
         >>> s.reverse_bss_component(1) # reverse IC 1
         >>> s.reverse_bss_component((0, 2)) # reverse ICs 0 and 2
         """
-        if self._lazy:
+        if hasattr(self.learning_results.bss_factors, "compute"):
+            # They are lazy
             _logger.warning(
                 "Component(s) %s not reversed, featured not implemented "
-                "for lazy signals" % component_number)
+                "for lazy computations" % component_number)
             return
         target = self.learning_results
 
@@ -779,7 +791,7 @@ class MVA():
             target.bss_loadings[:, i] *= -1
             target.unmixing_matrix[i, :] *= -1
 
-    def _unmix_components(self):
+    def _unmix_components(self, compute=False):
         lr = self.learning_results
         w = lr.unmixing_matrix
         n = len(w)
@@ -787,9 +799,11 @@ class MVA():
             lr.bss_loadings = lr.loadings[:, :n] @  w.T
             lr.bss_factors = lr.factors[:, :n] @ np.linalg.inv(w)
         else:
-
             lr.bss_factors = lr.factors[:, :n] @ w.T
             lr.bss_loadings = lr.loadings[:, :n] @ np.linalg.inv(w)
+        if compute:
+            lr.bss_factors = lr.bss_factors.compute()
+            lr.bss_loadings = lr.bss_loadings.compute()
 
     def _auto_reverse_bss_component(self, target):
         n_components = target.bss_factors.shape[1]
@@ -1333,16 +1347,29 @@ class LearningResults(object):
                 ("Number of components : %i" % len(self.unmixing_matrix)))
         return summary_str
 
-    def crop_decomposition_dimension(self, n):
+    def crop_decomposition_dimension(self, n, compute=False):
         """
         Crop the score matrix up to the given number.
         It is mainly useful to save memory and reduce the storage size
+
+        Parameters
+        ----------
+        n : int
+            Number of components to keep.
+        compute: bool
+           If the decomposition results are lazy, also compute the results.
+           Default is False.
         """
         _logger.info("trimming to %i dimensions" % n)
         self.loadings = self.loadings[:, :n]
         if self.explained_variance is not None:
             self.explained_variance = self.explained_variance[:n]
         self.factors = self.factors[:, :n]
+        if compute:
+            self.loadings = self.loadings.compute()
+            self.factors = self.factors.compute()
+            if self.explained_variance is not None:
+                self.explained_variance = self.explained_variance.compute()
 
     def _transpose_results(self):
         (self.factors, self.loadings, self.bss_factors,
