@@ -19,9 +19,9 @@ environment:
        PYTHON_ARCH: "32"
        CONDA_PY: "35"
        CONDA_NPY: "19"
-       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.3.20160209/WinPython-32bit-3.5.1.2.exe'
-       WP_CRC: '172d19a743ccfaf55af779d15f29f67fca83a46f08b0af855dfaf809b4184c0d'
-       DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask"
+       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.9.20171031/WinPython-32bit-3.5.4.1Qt5.exe'
+       WP_CRC: 'e58b0c86fc4e6ae4fe3f9f467008fd4e3447b5f35b7ad689ab01cdc93733d19e'
+       DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython lxml ipyparallel dask"
 
      - PYTHON: "C:\\Miniconda35-x64"
        PYTHON_VERSION: "3.5.x"
@@ -29,20 +29,24 @@ environment:
        PYTHON_ARCH: "64"
        CONDA_PY: "35"
        CONDA_NPY: "19"
-       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.3.20160209/WinPython-64bit-3.5.1.2.exe'
-       WP_CRC: '07e854b9aa7a31d8bbf7829d04a45b6d6266603690520e365199af2d98751ab1'
-       DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask"
+       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.9.20171031/WinPython-64bit-3.5.4.1Qt5.exe'
+       WP_CRC: 'e522c8adfbd9c967fa2f692d3c313fec1f0e53724b4651ea9e969228532a9586'
+       DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython lxml ipyparallel dask"
 
      - PYTHON: "C:\\Miniconda36"
        PYTHON_VERSION: "3.6.x"
        PYTHON_MAJOR: 3
        PYTHON_ARCH: "32"
+       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.9.20171031/WinPython-32bit-3.6.3.0Qt5.exe'
+       WP_CRC: '56259865127c3f802f1eca29528f2676317cad2fd6573ce516fc35b4441a1d3c'
        CONDA_PY: "36"
        DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask"
 
      - PYTHON: "C:\\Miniconda36-x64"
        PYTHON_VERSION: "3.6.x"
        PYTHON_MAJOR: 3
+       WP_URL: 'https://github.com/winpython/winpython/releases/download/1.9.20171031/WinPython-64bit-3.6.3.0Qt5.exe'
+       WP_CRC: 'a5efea23ede143fdacab60b8db95835de25c0173bd0d9fd53d5952648bde69b9'
        PYTHON_ARCH: "64"
        CONDA_PY: "36"
        DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask"
@@ -72,8 +76,7 @@ install:
   # Having 'sip' folder on path confuses import of `sip`.
   #- "%CMD_IN_ENV% conda install -yq pip"
   - "pip install pytest-mpl blosc"
-  # TODO: Remove once anaconda taitsui package is at v5:
-  - "IF \"%PYTHON_MAJOR%\" EQU \"3\" pip install --upgrade traitsui tqdm"
+
   - ps: Add-AppveyorMessage "Installing hyperspy..."
   - "python setup.py install"
 
@@ -103,7 +106,7 @@ on_failure:
 before_deploy:
   - ps: Add-AppveyorMessage "Running deployment step..."
   - "pip install winpython"
-  - "pip install https://github.com/hyperspy/hyperspy-bundle/archive/master.zip"
+  - "pip install https://github.com/ericpre/hyperspy-bundle/archive/fix_get_current_hyperspy_version.zip"
   # Download WinPython installer if not cached
   - ps: Add-AppveyorMessage "Installing WinPython..."
   - "SET WP_INSTDIR=%APPDATA%\\wpdir\\WinPython-%PYTHON_ARCH%bit\\"
@@ -134,21 +137,25 @@ before_deploy:
   - "%CMD_IN_ENV% %WP_INSTDIR%/scripts/env.bat"
   # Give info about python vesion and compiler used to compile the python
   - "%CMD_IN_ENV% python.exe -c \"import sys; print(sys.version)\""
-  # Install scikit-image from Christoph Gohlke binaries repository
-  - cinst wget
-  - ps: Add-AppveyorMessage "Downloading scikit-image..."
-  - ps: if($Env:PYTHON_ARCH -eq "64") {$Env:SCIKIT_IMAGE="https://www.dropbox.com/s/1xn8mgudmtph19i/scikit_image-0.13.0-cp35-cp35m-win_amd64.whl?dl=1"} else {$Env:SCIKIT_IMAGE="https://www.dropbox.com/s/6hwotxy9hoalj25/scikit_image-0.13.0-cp35-cp35m-win32.whl?dl=1"}
-  - "ECHO %SCIKIT_IMAGE%"
-  # - "%CMD_IN_ENV% wget http://www.lfd.uci.edu/~gohlke/pythonlibs/tuoh5y4k/%SCIKIT_IMAGE% --header User-Agent:Chrome/23.0.1271.97"
-  - "%CMD_IN_ENV% pip install %SCIKIT_IMAGE%"
-  - "%CMD_IN_ENV% pip install --upgrade tqdm notebook cython ipython configobj start_jupyter_cm ipywidgets ipyparallel sympy pytest blosc"
-  # uninstall and reinstall matplotlib to get the 2.0 version without using --upgrade option (to avoid upgrading numpy and breaking scipy...)
+
+  # install and upgrade dependencies
+  - "%CMD_IN_ENV% pip install --upgrade tqdm notebook cython ipython configobj start_jupyter_cm ipywidgets ipyparallel sympy pytest dask"
   - "%CMD_IN_ENV% pip uninstall -y matplotlib"
-  - "%CMD_IN_ENV% pip install matplotlib pytest-mpl"
-  - "%CMD_IN_ENV% pip install dask==0.13"
+  - "%CMD_IN_ENV% pip install matplotlib==2.1.2 pytest-mpl"
+
+  # Install pyxem and dependencies first
+  - "%CMD_IN_ENV% pip install spglib pymatgen transforms3d"
+  - "%CMD_IN_ENV% pip install https://github.com/pyxem/pyxem/archive/master.zip"
+
+  # Install atomap
+  - "%CMD_IN_ENV% pip install https://gitlab.com/atomap/atomap/repository/Absolute_Integrator/archive.zip"
+
+  # install pyface and traitsui from master to get pyqt5 compatibility
+  - "%CMD_IN_ENV% pip install https://github.com/enthought/pyface/archive/master.zip"
+  - "%CMD_IN_ENV% pip install https://github.com/enthought/traitsui/archive/master.zip"
   - "%CMD_IN_ENV% pip install .[all]"
   # Try to run twice as workaround for permission error
-  - "%CMD_IN_ENV% pip install hyperspyui || pip install hyperspyui"
+  - "%CMD_IN_ENV% pip install https://github.com/ericpre/hyperspyUI/archive/qt5.zip || pip install https://github.com/ericpre/hyperspyUI/archive/qt5.zip"
   # setting back the config:
   - "ren %WP_INSTDIR%\\settings\\pydistutils_bak.cfg pydistutils.cfg"
   # Custom installer step
@@ -157,7 +164,8 @@ before_deploy:
   - "\"%NSIS_DIR%/makensis.exe\" /V3 NSIS_installer_script-%PYTHON_ARCH%bit.nsi"
   - ps: Add-AppveyorMessage "Installer created! Re-run tests in Winpython environment..."
   # Re-run tests in WinPython environment
-  - ps: if($Env:PYTHON_ARCH -eq "64") {$Env:PYTHON_DIR_NAME="python-3.5.1.amd64"} else {$Env:PYTHON_DIR_NAME="python-3.5.1"}
+  - ps: if($Env:PYTHON_VERSION -eq "3.5.x") {$Env:PY_VERSION="3.5.4"} else {$Env:PY_VERSION="3.6.3"}
+  - ps: if($Env:PYTHON_ARCH -eq "64") {$Env:PYTHON_DIR_NAME="python-"+$Env:PY_VERSION+".amd64"} else {$Env:PYTHON_DIR_NAME="python-"+$Env:PY_VERSION}
   - "SET HYPERSPY_DIR=%WP_INSTDIR%\\%PYTHON_DIR_NAME%\\Lib\\site-packages\\hyperspy"
   - ps: py.test --mpl $Env:HYPERSPY_DIR
   - ps: Add-AppveyorMessage "Tests finished! Pushing to GitHub..."
@@ -167,16 +175,16 @@ deploy:
   provider: GitHub
   auth_token:
     #   to266:
-    secure: ptV5Dkz3pSVdjD0qRDpxJgjVlddFtleZ+B+c2X1Fg67P8OX3bHWVktRmlj6hfLhM
+    #secure: ptV5Dkz3pSVdjD0qRDpxJgjVlddFtleZ+B+c2X1Fg67P8OX3bHWVktRmlj6hfLhM
     #   vidartf:
     #secure: KwAfARhGEqOnZHltPB6kKu8xmnoiGSk7NMYJBIEbWvFCuVnepoPV7ZcIjUN3pUpK
     #   sem-geologist:
     #secure: RRqUkx9H5VuFNITmm+YzgB0qnqgVGPH1yrPVxb4oCD+FAjcTch2WZAiPEKn4L6w6
     #   ericpre:
-    #secure: ae8XsPI+vKJI9AWm0r9+ec71CIkXcnCHlNIQ57v+87hh5k1xuAAxIOi1CFKEmmZv
+    secure: ae8XsPI+vKJI9AWm0r9+ec71CIkXcnCHlNIQ57v+87hh5k1xuAAxIOi1CFKEmmZv
   artifact: /.*\.exe/, win_wheels  # upload all exe installers and wheels to release assets
   draft: false
   prerelease: false
   force_update: true
   on:
-    appveyor_repo_tag: true        # deploy on tag push only
+    appveyor_repo_tag: True        # deploy on tag push only

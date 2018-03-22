@@ -1,6 +1,6 @@
 import numpy as np
 from hyperspy.learn.onmf import onmf
-
+import pytest
 
 def compare(a, b):
     n1, n2 = list(map(np.linalg.norm, [a, b]))
@@ -34,6 +34,8 @@ def test_corrupted_default():
     assert res < 0.13
 
 
+@pytest.mark.skipif(np.__version__ == '1.13.3',
+                    reason="numpy version not supported")
 def test_robust():
     W, H = onmf(X, r, robust=True)
     res = compare(np.dot(W, H), X.T)
@@ -41,6 +43,8 @@ def test_robust():
     assert res < 0.05
 
 
+@pytest.mark.skipif(np.__version__ == '1.13.3',
+                    reason="numpy version not supported")
 def test_corrupted_robust():
     W, H = onmf(Y, r, robust=True)
     res = compare(np.dot(W, H), X.T)

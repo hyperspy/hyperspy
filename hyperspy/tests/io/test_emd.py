@@ -406,6 +406,28 @@ class TestFeiEMD():
         md = signal[1].metadata
         assert md['Acquisition_instrument']['TEM']['Detector']['EDS']['number_of_frames'] == 2
 
+    def test_fei_emd_ceta_camera(self):
+        signal = load(os.path.join(self.fei_files_path, '1532 Camera Ceta.emd'))
+        assert_allclose(signal.data, np.zeros((64, 64)))
+        assert isinstance(signal, Signal2D)
+        date, time = self._convert_datetime(1512055942.914275).split('T')
+        assert signal.metadata.General.date == date
+        assert signal.metadata.General.time == time
+        assert signal.metadata.General.time_zone == self._get_local_time_zone()
+
+        signal = load(os.path.join(self.fei_files_path, '1854 Camera Ceta.emd'))
+        assert_allclose(signal.data, np.zeros((64, 64)))
+        assert isinstance(signal, Signal2D)
+
+    def _convert_datetime(self, unix_time):
+        # Since we don't know the actual time zone of where the data have been
+        # acquired, we convert the datetime to the local time for convenience
+        dt = datetime.fromtimestamp(float(unix_time), tz=tz.tzutc())
+        return dt.astimezone(tz.tzlocal()).isoformat().split('+')[0]
+
+    def _get_local_time_zone(self):
+        return tz.tzlocal().tzname(datetime.today())
+
     def time_loading_frame(self):
         # Run this function to check the loading time when loading EDS data
         import time
