@@ -152,6 +152,7 @@ Alternatively you can select the extra functionalities required:
 * ``test`` to install required libraries to run HyperSpy's unit tests.
 * ``lazy_FEI_EMD`` to install required libraries to load FEI spectrum imgages
   lazily.
+* ``doc`` to install required libraries to build HyperSpy's documentation.
 
 For example:
 
