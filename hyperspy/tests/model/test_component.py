@@ -202,16 +202,14 @@ class TestCallMethods:
         c.model = mock.MagicMock()
         c.model.channel_switches = np.array([True, False, True])
         c.model.axis.axis = np.array([0.1, 0.2, 0.3])
-        c.function = mock.MagicMock()
-        c.function.return_value = np.array([1.3, ])
+        c.__call__ = mock.MagicMock()
+        c.__call__.return_value = np.array([1.3, ])
         c.model.signal.axes_manager.signal_axes = [mock.MagicMock(), ]
         c.model.signal.axes_manager.signal_axes[0].scale = 2.
 
     def test_call(self):
         c = self.c
-        assert 1.3 == c()
-        np.testing.assert_array_equal(c.function.call_args[0][0],
-                                      np.array([0.1, 0.3]))
+        assert 1.3 == c.__call__()
 
     def test_plotting_not_active_component(self):
         c = self.c
@@ -232,12 +230,12 @@ class TestCallMethods:
         c.active = True
         c.model.signal.metadata.Signal.binned = True
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=False)
-        np.testing.assert_array_equal(res, 2. * np.array([1.3, ]))
+        np.testing.assert_array_equal(res, np.array([1.3, ]))
 
     def test_plotting_active_component_out_of_range(self):
         c = self.c
         c.active = True
         c.model.signal.metadata.Signal.binned = False
-        c.function.return_value = np.array([1.1, 1.3])
+        c.__call__.return_value = np.array([1.1, 1.3])
         res = c._component2plot(c.model.axes_manager, out_of_range2nans=True)
         np.testing.assert_array_equal(res, np.array([1.1, np.nan, 1.3]))
