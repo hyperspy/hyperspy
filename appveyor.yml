@@ -143,6 +143,13 @@ before_deploy:
   - "%CMD_IN_ENV% pip uninstall -y matplotlib"
   - "%CMD_IN_ENV% pip install matplotlib==2.1.2 pytest-mpl"
 
+  # install pyface and traitsui from master to get pyqt5 compatibility
+  - "%CMD_IN_ENV% pip install https://github.com/enthought/pyface/archive/master.zip"
+  - "%CMD_IN_ENV% pip install https://github.com/enthought/traitsui/archive/master.zip"
+  - "%CMD_IN_ENV% pip install .[all]"
+  # Try to run twice as workaround for permission error
+  - "%CMD_IN_ENV% pip install https://github.com/ericpre/hyperspyUI/archive/qt5.zip || pip install https://github.com/ericpre/hyperspyUI/archive/qt5.zip"
+
   # Install pyxem and dependencies first
   - "%CMD_IN_ENV% pip install spglib pymatgen transforms3d"
   - "%CMD_IN_ENV% pip install https://github.com/pyxem/pyxem/archive/master.zip"
@@ -150,12 +157,6 @@ before_deploy:
   # Install atomap
   - "%CMD_IN_ENV% pip install https://gitlab.com/atomap/atomap/repository/Absolute_Integrator/archive.zip"
 
-  # install pyface and traitsui from master to get pyqt5 compatibility
-  - "%CMD_IN_ENV% pip install https://github.com/enthought/pyface/archive/master.zip"
-  - "%CMD_IN_ENV% pip install https://github.com/enthought/traitsui/archive/master.zip"
-  - "%CMD_IN_ENV% pip install .[all]"
-  # Try to run twice as workaround for permission error
-  - "%CMD_IN_ENV% pip install https://github.com/ericpre/hyperspyUI/archive/qt5.zip || pip install https://github.com/ericpre/hyperspyUI/archive/qt5.zip"
   # setting back the config:
   - "ren %WP_INSTDIR%\\settings\\pydistutils_bak.cfg pydistutils.cfg"
   # Custom installer step
