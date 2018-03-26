@@ -28,6 +28,7 @@ import matplotlib as mpl
 import hyperspy as hs
 from distutils.version import LooseVersion
 import logging
+import re
 
 from hyperspy.defaults_parser import preferences
 
@@ -125,6 +126,8 @@ def create_figure(window_title=None,
     """
     fig = plt.figure(**kwargs)
     if window_title is not None:
+        # remove non-alphanumeric characters to prevent file saving problems
+        window_title = re.sub('[^\w\-_\. ]', '_', window_title)
         fig.canvas.set_window_title(window_title)
     if _on_figure_window_close is not None:
         on_figure_window_close(fig, _on_figure_window_close)
