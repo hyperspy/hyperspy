@@ -20,37 +20,41 @@ import math
 import numpy as np
 from scipy.special import erf
 from hyperspy.component import Component
+from hyperspy._components.gaussian import _estimate_gaussian_parameters
 
 class SkewNormal(Component):
 
     """Skew normal distribution component.
     
-    Asymmetric peak shape based on a normal distribution.
-    For definition see https://en.wikipedia.org/wiki/Skew_normal_distribution
-    See also http://azzalini.stat.unipd.it/SN/
+    |  Asymmetric peak shape based on a normal distribution.
+    |  For definition see https://en.wikipedia.org/wiki/Skew_normal_distribution
+    |  See also http://azzalini.stat.unipd.it/SN/
+    |  
     
     .. math::
 
-        f(x) = 2 A \\phi(x) \\Phi(x)
-        phi(x) = \\frac{1}{\\sqrt{2\\pi}}\\mathrm{exp}{\\left[-\\frac{t(x)^2}{2}\\right]} 
-        Phi(x) = \\frac{1}{2}\\left[1 + \\mathrm{erf}{\\left(\\frac{shape t(x)}{\\sqrt{2}}\\right)\\right] 
-        t(x) = \\frac{x-x0}{scale}
+        f(x) &= 2 A \\phi(x) \\Phi(x) \\\\
+        \\phi(x) &= \\frac{1}{\\sqrt{2\\pi}}\\mathrm{exp}{\\left[-\\frac{t(x)^2}{2}\\right]} \\\\
+        \\Phi(x) &= \\frac{1}{2}\\left[1 + \\mathrm{erf}\\left(\\frac{shape~t(x)}{\\sqrt{2}}\\right)\\right] \\\\
+        t(x) &= \\frac{x-x0}{scale}
     
     Parameters
     -----------
         A : float
             Height parameter of the peak.
         x0 : float
-            Location of the peak position.
+            Location of the peak position (not maximum, which is given by the `mode` property).
         scale : float
             Width (sigma) parameter.
         shape: float 
-            Skewness (asymmetry) parameter. For scale=0, the normal distribution (Gaussian) is obtained. The distribution is right skewed (longer tail to the right) if scale>0 and is left skewed if scale<0.
+            Skewness (asymmetry) parameter. For shape=0, the normal distribution (Gaussian) is obtained. The distribution is right skewed (longer tail to the right) if shape>0 and is left skewed if shape<0.
+            
+    The properties `mean` (position), `variance`, `skewness` and `mode` (=position of maximum) are defined for convenience.
     """
 
     def __init__(self, x0=0, A=1, scale=1, shape=0):
         # Define the parameters
-        Component.__init__(self, ('x0', 'A', 'scale', 'shape'))
+        Component.__init__(self, ['x0', 'A', 'scale', 'shape'])
 
         # Set the initial values
         self.x0.value = x0
@@ -124,3 +128,26 @@ class SkewNormal(Component):
         normpdf = np.exp(- t ** 2 / 2) / math.sqrt(2 * np.pi)
         dercdf = math.sqrt(2)*(x - x0)*np.exp(-shape**2*(x - x0)**2/(2*scale**2))/(2*math.sqrt(pi)*scale)
         return 2 * A * normpdf * dercdf
+
+    @property
+    def mean(self):
+        delta = self.shape.value / np.sqrt(1 + self.shape.value**2)
+        return self.x0.value + self.scale.value * delta * np.sqrt(2 / np.pi)
+
+    @property
+    def variance(self):
+        delta = self.shape.value / np.sqrt(1 + self.shape.value**2)
+        return self.scale.value**2 * (1 - 2 * delta**2 / np.pi)
+
+    @property
+    def skewness(self):
+        delta = self.shape.value / np.sqrt(1 + self.shape.value**2)
+        return (4 - np.pi)/2 * (delta * np.sqrt(2/np.pi))**3 / (1 - 2 * delta**2 / np.pi)**(3/2)
+        
+    @property
+    def mode(self):
+        delta = self.shape.value / np.sqrt(1 + self.shape.value**2)
+        muz = np.sqrt(2 / np.pi) * delta
+        sigmaz = np.sqrt(1 - muz**2)
+        m0 = muz - self.skewness * sigmaz / 2 - np.sign(self.shape.value) / 2 * np.exp(- 2 * np.pi / np.abs(self.shape.value))
+        return self.x0.value + self.scale.value * m0
