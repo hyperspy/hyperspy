@@ -88,7 +88,8 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         sf.xlabel = self.xlabel
         sf.ylabel = self.ylabel
         sf.axis = self.axis
-        sf.create_axis()
+        if sf.ax is None:
+            sf.create_axis()
         sf.axes_manager = self.axes_manager
         self.signal_plot = sf
         # Create a line to the left axis with the default indices

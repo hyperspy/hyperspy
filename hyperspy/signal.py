@@ -23,9 +23,11 @@ import inspect
 from contextlib import contextmanager
 from datetime import datetime
 import logging
+from pint import UnitRegistry, UndefinedUnitError
 
 import numpy as np
 import scipy as sp
+import dask.array as da
 from matplotlib import pyplot as plt
 import traits.api as t
 import numbers
@@ -50,7 +52,7 @@ from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
-    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC)
+    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG)
 from hyperspy.docstrings.plot import BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
@@ -152,6 +154,7 @@ class ModelManager(object):
         remove
         restore
         pop
+
         """
         if model.signal is self._signal:
             self._save(name, model.as_dictionary())
@@ -187,6 +190,7 @@ class ModelManager(object):
         restore
         store
         pop
+
         """
         name = self._check_name(name, True)
         delattr(self, name)
@@ -205,6 +209,7 @@ class ModelManager(object):
         restore
         store
         remove
+
         """
         name = self._check_name(name, True)
         model = self.restore(name)
@@ -224,6 +229,7 @@ class ModelManager(object):
         remove
         store
         pop
+
         """
         name = self._check_name(name, True)
         d = self._models.get_item(name + '._dict').as_dictionary()
@@ -299,6 +305,7 @@ class MVATools(object):
            that when they are multiplied by vector_scale,
            they are on the scale of the image plot.
            If None, uses matplotlib's autoscaling.
+
         """
         if same_window is None:
             same_window = True
@@ -366,7 +373,7 @@ class MVATools(object):
             animate_legend(f)
         try:
             plt.tight_layout()
-        except:
+        except BaseException:
             pass
         if not same_window:
             return fig_list
@@ -432,7 +439,7 @@ class MVATools(object):
                 plt.suptitle(title)
         try:
             plt.tight_layout()
-        except:
+        except BaseException:
             pass
         if not same_window:
             if with_factors:
@@ -1409,7 +1416,7 @@ class MVATools(object):
         visualization than then other two methods.  The loadings and factors
         are displayed in different windows and each has its own
         navigator/sliders to navigate them if they are multidimensional. The
-        component index axis is syncronize between the two.
+        component index axis is synchronized between the two.
 
         Parameters
         ----------
@@ -1450,7 +1457,7 @@ class MVATools(object):
         visualization than then other two methods.  The loadings and factors
         are displayed in different windows and each has its own
         navigator/sliders to navigate them if they are multidimensional. The
-        component index axis is syncronize between the two.
+        component index axis is synchronized between the two.
 
         Parameters
         ----------
@@ -1937,7 +1944,7 @@ class BaseSignal(FancySlicing,
         if self._plot is not None:
             try:
                 self._plot.close()
-            except:
+            except BaseException:
                 # If it was already closed it will raise an exception,
                 # but we want to carry on...
                 pass
@@ -1987,7 +1994,7 @@ class BaseSignal(FancySlicing,
             navigator.axes_manager.indices = self.axes_manager.indices[
                 navigator.axes_manager.signal_dimension:]
             navigator.axes_manager._update_attributes()
-            if np.issubdtype(navigator().dtype, complex):
+            if np.issubdtype(navigator().dtype, np.complexfloating):
                 return np.abs(navigator())
             else:
                 return navigator()
@@ -2043,7 +2050,7 @@ class BaseSignal(FancySlicing,
                         "The navigator dimensions are not compatible with "
                         "those of self.")
             elif navigator == "data":
-                if np.issubdtype(self.data.dtype, complex):
+                if np.issubdtype(self.data.dtype, np.complexfloating):
                     self._plot.navigator_data_function = lambda axes_manager=None: np.abs(
                         self.data)
                 else:
@@ -2407,16 +2414,16 @@ class BaseSignal(FancySlicing,
             (options stored in 'metadata._HyperSpy.Stacking_history'
              else the last navigation axis will be used.
         number_of_parts : {'auto' | int}
-            Number of parts in which the SI will be splitted. The
-            splitting is homegenous. When the axis size is not divisible
+            Number of parts in which the SI will be split. The
+            splitting is homogeneous. When the axis size is not divisible
             by the number_of_parts the reminder data is lost without
             warning. If number_of_parts and step_sizes is 'auto',
             number_of_parts equals the length of the axis,
             step_sizes equals one  and the axis is suppressed from each
             sub_spectra.
         step_sizes : {'auto' | list of ints | int}
-            Size of the splitted parts. If 'auto', the step_sizes equals one.
-            If int, the splitting is homogenous.
+            Size of the split parts. If 'auto', the step_sizes equals one.
+            If int, the splitting is homogeneous.
 
         Examples
         --------
@@ -2437,7 +2444,8 @@ class BaseSignal(FancySlicing,
 
         Returns
         -------
-        list of the splitted signals
+        list of the split signals
+
         """
 
         shape = self.data.shape
@@ -2608,6 +2616,7 @@ class BaseSignal(FancySlicing,
         >>> with s.unfolded():
                 # Do whatever needs doing while unfolded here
                 pass
+
         """
         unfolded = self.unfold(unfold_navigation, unfold_signal)
         try:
@@ -2685,12 +2694,13 @@ class BaseSignal(FancySlicing,
                 if isinstance(variance, BaseSignal):
                     variance.fold()
 
-    def _make_sure_data_is_contiguous(self, log=False):
+    def _make_sure_data_is_contiguous(self, log=None):
         if self.data.flags['C_CONTIGUOUS'] is False:
             if log:
-                _warn_string = "{0!r} data is replaced by its optimized copy".format(
-                    self)
-                _logger.warning(_warn_string)
+                _logger.warning("{0!r} data is replaced by its optimized copy "
+                                ", see optimize parameter of "
+                                "``Basesignal.transpose`` for more "
+                                "information.".format(self))
             self.data = np.ascontiguousarray(self.data)
 
     def _iterate_signal(self):
@@ -3169,6 +3179,148 @@ class BaseSignal(FancySlicing,
             return s
     integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
+    def fft(self, shifted=False, **kwargs):
+        """Compute the discrete Fourier Transform.
+
+        This function computes the discrete Fourier Transform over the signal
+        axes by means of the Fast Fourier Transform (FFT) as implemented in
+        numpy.
+
+        Parameters
+        ----------
+        shifted : bool, optional
+            If True, the origin of FFT will be shifted in the centre (Default: False).
+
+        **kwargs
+            other keyword arguments are described in np.fft.fftn().
+
+        Return
+        ------
+        s : ComplexSignal
+
+        Examples
+        --------
+        >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+        >>> im.fft()
+        <ComplexSignal2D, title: FFT of , dimensions: (|512, 512)>
+        # Use following to plot power spectrum of `im`:
+        >>> np.log(im.fft(shifted=True).amplitude).plot()
+
+        Notes
+        -----
+        For further information see the documentation of numpy.fft.fftn
+        """
+
+        if self.axes_manager.signal_dimension == 0:
+            raise AttributeError("Signal dimension must be at least one.")
+        ax = self.axes_manager
+        axes = ax.signal_indices_in_array
+        if isinstance(self.data, da.Array):
+            if shifted:
+                im_fft = self._deepcopy_with_new_data(da.fft.fftshift(
+                    da.fft.fftn(self.data, axes=axes, **kwargs), axes=axes))
+            else:
+                im_fft = self._deepcopy_with_new_data(da.fft.fftn(self.data, axes=axes, **kwargs))
+        else:
+            if shifted:
+                im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
+                    np.fft.fftn(self.data, axes=axes, **kwargs), axes=axes))
+            else:
+                im_fft = self._deepcopy_with_new_data(np.fft.fftn(self.data, axes=axes, **kwargs))
+
+        im_fft.change_dtype("complex")
+        im_fft.metadata.General.title = 'FFT of {}'.format(im_fft.metadata.General.title)
+        im_fft.metadata.set_item('Signal.FFT.shifted', shifted)
+
+        ureg = UnitRegistry()
+        for axis in im_fft.axes_manager.signal_axes:
+            axis.scale = 1. / axis.size / axis.scale
+            try:
+                units = ureg.parse_expression(str(axis.units))**(-1)
+                axis.units = '{:~}'.format(units.units)
+            except UndefinedUnitError:
+                _logger.warning('Units are not set or cannot be recognized')
+            if shifted:
+                axis.offset = -axis.high_value / 2.
+        return im_fft
+
+    def ifft(self, shifted=None, **kwargs):
+        """
+        Compute the inverse discrete Fourier Transform.
+
+        This function computes real part of the inverse of the discrete
+        Fourier Transform over the signal axes by means of the
+        Fast Fourier Transform (FFT) as implemented in
+        numpy.
+
+        Parameters
+        ----------
+        shifted : bool or None, optional
+            If None the shift option will be set to the original status of the FFT using value in metadata.
+            If no FFT entry is present in metadata the parameter will be set to False.
+            If True, the origin of FFT will be shifted in the centre,
+            otherwise the origin would be kept at (0, 0)(Default: None).
+        **kwargs
+            other keyword arguments are described in np.fft.ifftn().
+
+        Return
+        ------
+        s : Signal
+
+        Examples
+        --------
+        >>> import scipy
+        >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+        >>> imfft = im.fft()
+        >>> imfft.ifft()
+        <Signal2D, title: real(iFFT of FFT of ), dimensions: (|512, 512)>
+
+        Notes
+        -----
+        For further information see the documentation of numpy.fft.ifftn
+
+        """
+
+        if self.axes_manager.signal_dimension == 0:
+            raise AttributeError("Signal dimension must be at least one.")
+        ax = self.axes_manager
+        axes = ax.signal_indices_in_array
+        if shifted is None:
+            try:
+                shifted = self.metadata.Signal.FFT.shifted
+            except AttributeError:
+                shifted = False
+
+        if isinstance(self.data, da.Array):
+            if shifted:
+                fft_data_shifted = da.fft.ifftshift(self.data, axes=axes)
+                im_ifft = self._deepcopy_with_new_data(da.fft.ifftn(fft_data_shifted, axes=axes, **kwargs))
+            else:
+                im_ifft = self._deepcopy_with_new_data(da.fft.ifftn(
+                    self.data, axes=axes, **kwargs))
+        else:
+            if shifted:
+                im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(np.fft.ifftshift(
+                    self.data, axes=axes), axes=axes, **kwargs))
+            else:
+                im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
+                    self.data, axes=axes, **kwargs))
+
+        im_ifft.metadata.General.title = 'iFFT of {}'.format(im_ifft.metadata.General.title)
+        im_ifft.metadata.Signal.__delattr__('FFT')
+        im_ifft = im_ifft.real
+
+        ureg = UnitRegistry()
+        for axis in im_ifft.axes_manager.signal_axes:
+            axis.scale = 1. / axis.size / axis.scale
+            try:
+                units = ureg.parse_expression(str(axis.units)) ** (-1)
+                axis.units = '{:~}'.format(units.units)
+            except UndefinedUnitError:
+                _logger.warning('Units are not set or cannot be recognized')
+            axis.offset = 0.
+        return im_ifft
+
     def integrate1D(self, axis, out=None):
         """Integrate the signal over the given axis.
 
@@ -3457,7 +3609,7 @@ class BaseSignal(FancySlicing,
         -----
         If the function results do not have identical shapes, the result is an
         array of navigation shape, where each element corresponds to the result
-        of the function (of arbitraty object type), called "ragged array". As
+        of the function (of arbitrary object type), called "ragged array". As
         such, most functions are not able to operate on the result and the data
         should be used directly.
 
@@ -3468,14 +3620,14 @@ class BaseSignal(FancySlicing,
 
         Examples
         --------
-        Apply a gaussian filter to all the images in the dataset. The sigma
+        Apply a Gaussian filter to all the images in the dataset. The sigma
         parameter is constant.
 
         >>> import scipy.ndimage
         >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
         >>> im.map(scipy.ndimage.gaussian_filter, sigma=2.5)
 
-        Apply a gaussian filter to all the images in the dataset. The sigmal
+        Apply a Gaussian filter to all the images in the dataset. The signal
         parameter is variable.
 
         >>> im = hs.signals.Signal2D(np.random.random((10, 64, 64)))
@@ -3489,7 +3641,7 @@ class BaseSignal(FancySlicing,
             if isinstance(value, BaseSignal):
                 ndkwargs += ((key, value),)
 
-        # Check if the signal axes have inhomogenous scales and/or units and
+        # Check if the signal axes have inhomogeneous scales and/or units and
         # display in warning if yes.
         scale = set()
         units = set()
@@ -3551,7 +3703,7 @@ class BaseSignal(FancySlicing,
                      inplace=True, **kwargs):
         """Iterates the signal navigation space applying the function.
 
-        Paratemers
+        Parameters
         ----------
         function : callable
             the function to apply
@@ -3650,6 +3802,9 @@ class BaseSignal(FancySlicing,
                            show_progressbar)
         for ind, res in zip(range(res_data.size),
                             thismap(func, zip(*iterators))):
+            # In what follows we assume that res is a numpy scalar or array
+            # The following line guarantees that that's the case.
+            res = np.asarray(res)
             res_data.flat[ind] = res
             if ragged is False:
                 # to be able to break quickly and not waste time / resources
@@ -3940,7 +4095,6 @@ class BaseSignal(FancySlicing,
             e.g., `numpy.int8`.  Default is the data type of the current signal
             data.
 
-
         """
         from dask.array import Array
         if data is not None:
@@ -4039,17 +4193,19 @@ class BaseSignal(FancySlicing,
         nitem = nitem if nitem > 0 else 1
         return nitem
 
-    def as_signal1D(self, spectral_axis, out=None):
+    def as_signal1D(self, spectral_axis, out=None, optimize=True):
         """Return the Signal as a spectrum.
 
         The chosen spectral axis is moved to the last index in the
-        array and the data is made contiguous for effecient
-        iteration over spectra.
-
+        array and the data is made contiguous for efficient iteration over
+        spectra. By default ensures the data is stored optimally, hence often
+        making a copy of the data. See `transpose` for a more general method
+        with more options.
 
         Parameters
         ----------
         spectral_axis %s
+        %s
         %s
 
         See Also
@@ -4066,7 +4222,7 @@ class BaseSignal(FancySlicing,
         <Signal1D, title: , dimensions: (6, 5, 3, 4)>
 
         """
-        sp = self.transpose(signal_axes=[spectral_axis], optimize=True)
+        sp = self.transpose(signal_axes=[spectral_axis], optimize=optimize)
         if out is None:
             return sp
         else:
@@ -4075,13 +4231,14 @@ class BaseSignal(FancySlicing,
             else:
                 out.data[:] = sp.data
             out.events.data_changed.trigger(obj=out)
-    as_signal1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+    as_signal1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG,
+                            OPTIMIZE_ARG.replace('False', 'True'))
 
-    def as_signal2D(self, image_axes, out=None):
+    def as_signal2D(self, image_axes, out=None, optimize=True):
         """Convert signal to image.
 
         The chosen image axes are moved to the last indices in the
-        array and the data is made contiguous for effecient
+        array and the data is made contiguous for efficient
         iteration over images.
 
         Parameters
@@ -4089,6 +4246,7 @@ class BaseSignal(FancySlicing,
         image_axes : tuple of {int | str | axis}
             Select the image axes. Note that the order of the axes matters
             and it is given in the "natural" i.e. X, Y, Z... order.
+        %s
         %s
 
         Raises
@@ -4116,7 +4274,7 @@ class BaseSignal(FancySlicing,
         if self.data.ndim < 2:
             raise DataDimensionError(
                 "A Signal dimension must be >= 2 to be converted to a Signal2D")
-        im = self.transpose(signal_axes=image_axes, optimize=True)
+        im = self.transpose(signal_axes=image_axes, optimize=optimize)
         if out is None:
             return im
         else:
@@ -4125,7 +4283,7 @@ class BaseSignal(FancySlicing,
             else:
                 out.data[:] = im.data
             out.events.data_changed.trigger(obj=out)
-    as_signal2D.__doc__ %= OUT_ARG
+    as_signal2D.__doc__ %= (OUT_ARG, OPTIMIZE_ARG.replace('False', 'True'))
 
     def _assign_subclass(self):
         mp = self.metadata
@@ -4147,7 +4305,7 @@ class BaseSignal(FancySlicing,
         accordingly if pertinent.
 
         The signal_type attribute specifies the kind of data that the signal
-        containts e.g. "EELS" for electron energy-loss spectroscopy,
+        contains e.g. "EELS" for electron energy-loss spectroscopy,
         "PES" for photoemission spectroscopy. There are some methods that are
         only available for certain kind of signals, so setting this
         parameter can enable/disable features.
@@ -4191,7 +4349,7 @@ class BaseSignal(FancySlicing,
         """Prints the five-number summary statistics of the data, the mean and
         the standard deviation.
 
-        Prints the mean, standandard deviation (std), maximum (max), minimum
+        Prints the mean, standard deviation (std), maximum (max), minimum
         (min), first quartile (Q1), median and third quartile. nans are
         removed from the calculations.
 
@@ -4428,10 +4586,7 @@ class BaseSignal(FancySlicing,
             corresponding space.
             If both are iterables, full control is given as long as all axes
             are assigned to one space only.
-        optimize : bool [False]
-            If the data should be re-ordered in memory, most likely making a
-            copy. Ensures the fastest available iteration at the expense of
-            memory.
+        %s
 
         See also
         --------
@@ -4470,7 +4625,6 @@ class BaseSignal(FancySlicing,
         """
 
         am = self.axes_manager
-        ns = self.axes_manager.navigation_axes + self.axes_manager.signal_axes
         ax_list = am._axes
         if isinstance(signal_axes, int):
             if navigation_axes is not None:
@@ -4573,6 +4727,7 @@ class BaseSignal(FancySlicing,
             del res.metadata.Markers
 
         return res
+    transpose.__doc__ %= (OPTIMIZE_ARG)
 
     @property
     def T(self):

@@ -124,11 +124,35 @@ def load(filenames=None,
        bcf is parsed into array with depth cutoff at coresponding given energy.
        This allows to conserve the memory, with cutting-off unused spectra's
        tail, or force enlargement of the spectra size.
-    select_type: {'spectrum', 'image', None}
-       For Bruker bcf files, if one of 'spectrum' or 'image' (default is None)
-       the loader returns either only hypermap or only SEM/TEM electron images.
-
-
+    select_type: {'spectrum_image', 'image', 'single_spectrum', None} 
+       If `None` (default), all data are loaded. 
+       For Bruker bcf and FEI emd files: if one of 'spectrum_image', 'image' or 
+       'single_spectrum', the loader return single_spectrumns either only the 
+       spectrum image or only the images (including EDS map for FEI emd files) 
+       or only the single spectra (for FEI emd files).
+    first_frame : int (default 0)
+       Only for FEI emd files: load only the data acquired after the specified 
+       fname.
+    last_frame : None or int (default None)
+       Only for FEI emd files: load only the data acquired up to specified 
+       fname. If None, load up the data to the end.
+    sum_frames : bool (default is True)
+       Only for FEI emd files: load each EDS frame individually.
+    sum_EDS_detectors : bool (default is True)
+       Only for FEI emd files: load each frame individually. If True, the signal 
+       from the different detector are summed. If False, a distinct signal is 
+       returned for each EDS detectors.
+    rebin_energy : int, a multiple of the length of the energy dimension (default 1)
+       Only for FEI emd files: rebin the energy axis by the integer provided 
+       during loading in order to save memory space.
+    SI_data_dtype : numpy.dtype
+       Only for FEI emd files: set the dtype of the spectrum image data in 
+       order to save memory space. If None, the default dtype from the FEI emd 
+       file is used.
+    load_SI_image_stack : bool (default False)
+       Load the stack of STEM images acquired simultaneously as the EDS 
+       spectrum image.
+       
 
     Returns
     -------
@@ -275,7 +299,7 @@ def load_single_file(filename,
             reader = image
             return load_with_reader(filename, reader,
                                     signal_type=signal_type, **kwds)
-        except:
+        except BaseException:
             raise IOError('If the file format is supported'
                           ' please report this error')
     else:
@@ -338,7 +362,7 @@ def assign_signal_subclass(dtype,
     import hyperspy._lazy_signals
     from hyperspy.signal import BaseSignal
     # Check if parameter values are allowed:
-    if np.issubdtype(dtype, complex):
+    if np.issubdtype(dtype, np.complexfloating):
         dtype = 'complex'
     elif ('float' in dtype.name or 'int' in dtype.name or
           'void' in dtype.name or 'bool' in dtype.name or
