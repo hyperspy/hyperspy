@@ -23,11 +23,7 @@ import os
 from dateutil import parser
 import logging
 import xml.etree.ElementTree as ET
-try:
-    from collections import OrderedDict
-    ordict = True
-except ImportError:
-    ordict = False
+from collections import OrderedDict
 
 import numpy as np
 import traits.api as t
@@ -36,6 +32,7 @@ from hyperspy.misc.array_tools import sarray2dict
 from hyperspy.misc.utils import DictionaryTreeBrowser, multiply
 
 _logger = logging.getLogger(__name__)
+
 
 ser_extensions = ('ser', 'SER')
 emi_extensions = ('emi', 'EMI')
@@ -585,10 +582,7 @@ def ser_reader(filename, objects=None, *args, **kwds):
         dc = load_only_data(filename, array_shape, record_by, len(axes),
                             data=data)
 
-    if ordict:
-        original_metadata = OrderedDict()
-    else:
-        original_metadata = {}
+    original_metadata = OrderedDict()
     header_parameters = sarray2dict(header)
     sarray2dict(data, header_parameters)
     # We remove the Array key to save memory avoiding duplication
@@ -691,10 +685,6 @@ def _get_simplified_mode(mode):
         return "TEM"
 
 
-def _get_degree(value):
-    return np.degrees(float(value))
-
-
 def _get_date_time(value):
     dt = parser.parse(value)
     return dt.date().isoformat(), dt.time().isoformat()
@@ -728,10 +718,10 @@ mapping = {
         None),
     "ObjectInfo.ExperimentalDescription.Stage_A_deg": (
         "Acquisition_instrument.TEM.Stage.tilt_alpha",
-        _get_degree),
+        None),
     "ObjectInfo.ExperimentalDescription.Stage_B_deg": (
         "Acquisition_instrument.TEM.Stage.tilt_beta",
-        _get_degree),
+        None),
     "ObjectInfo.ExperimentalDescription.Stage_X_um": (
         "Acquisition_instrument.TEM.Stage.x",
         lambda x: x * 1e-3),
