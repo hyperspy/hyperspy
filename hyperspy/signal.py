@@ -19,7 +19,7 @@
 import copy
 import os.path
 import warnings
-import inspect
+import inspectp
 from contextlib import contextmanager
 from datetime import datetime
 import logging
@@ -866,7 +866,7 @@ class MVATools(object):
 
         if same_window is None:
             same_window = True
-        if self.learning_results.mvsa_processed or self.learning_results.vca_processed:
+        if self.learning_results.vca_processed or self.learning_results.blu_processed:
             factors = self.learning_results.factors
         else:
             factors = self.learning_results.bss_factors
@@ -1053,13 +1053,13 @@ class MVATools(object):
         if title is None:
             title = self._get_plot_title('BSS loadings of',
                                          same_window)
-        if self.learning_results.mvsa_processed or self.learning_results.vca_processed:
-            loadings = self.learning_results.loadings
+        if self.learning_results.vca_processed or self.learning_results.blu_processed:
+            loadings = self.learning_results.loadings.T
         else:
             loadings = self.learning_results.bss_loadings.T
         if with_factors:
-            if self.learning_results.mvsa_processed or self.learning_results.vca_processed:
-                factors = self.learning_results.factors
+            if self.learning_results.vca_processed or self.learning_results.blu_processed:
+                factors = self.learning_results.factors.T
             else:
                 factors = self.learning_results.bss_factors
         else:
@@ -1293,9 +1293,12 @@ class MVATools(object):
         get_bss_loadings.
 
         """
-
-        factors = self.learning_results.bss_factors
-        loadings = self.learning_results.bss_loadings.T
+        if self.learning_results.mvsa_processed or self.learning_results.vca_processed or self.learning_results.blu_processed:
+           factors = self.learning_results.factors
+           loadings = self.learning_results.loadings.T
+        else:
+            factors = self.learning_results.bss_factors
+            loadings = self.learning_results.bss_loadings.T
         self._export_factors(factors,
                              folder=folder,
                              comp_ids=comp_ids,
