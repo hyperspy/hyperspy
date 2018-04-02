@@ -468,7 +468,7 @@ def estimate_snr(R, r_m, x_p):
     P_x = np.sum(x_p.flatten(order = 'F')[:, np.newaxis]**2)/N + np.dot(r_m.T, r_m)
     P_y = np.sum(R.flatten(order = 'F')[:, np.newaxis]**2)/N
     
-    snr_est = 10*math.log10((P_x - p/L*P_y)/(P_y-P_x))#Change to absolute value of snr_est
+    snr_est = 10*math.log10((P_x - p/L*P_y)/(P_y-P_x))
     return snr_est
 
 
@@ -515,23 +515,23 @@ def blind_unmix(Y, R, Nmc = 100, geo_method = 'vca', bool_plot = 0):
         print('---MCMC iteration: ', j)
         #sampling noise variance
         sigma2_est = sample_sigma2(A_est, M_est, Y)
-        #print('Check point 1')
+        print('Check point 1')
         #sampling abundance vectors
         A_est = sample_A(Y.T, M_est.T, A_est.T, R, P, sigma2_est).T
         #print('A values: ', A_est.shape)
         #print(A_est[0, :])
-        #print('Check point 2')
+        print('Check point 2')
         #print('A_est nan status: ', np.isnan(A_est).any())
         #print('Check point 1')
         #sampling endmember projections
         T_est, M_est = sample_T_const(A_est,M_est,T_est,sigma2_est,Tsigma2r,matU,Y_bar,Y,endm_proj,bool_plot,y_proj)
         #print('Check point 2')
-        #print('Check point 3')
+        print('Check point 3')
         #saving the MC chains
         Tab_A[m_compt-1, :, :] = A_est
         Tab_T[m_compt-1,:,:] = T_est
         Tab_sigma2[m_compt-1,:] = sigma2_est
-        #print('Check point 3')
+        print('Check point 4')
         m_compt = m_compt + 1
         j += 1
 
@@ -592,10 +592,8 @@ OUTPUT
 
     for p in range(P):
             Sigma = np.linalg.inv(T/sigma2e)
-            
             Mu = np.dot(Sigma, np.dot((M-M_Ru).T/sigma2e, y[p, :][:, np.newaxis] - M_R))
-
-            #print('shape of alpha bef func: ', alpha.shape)
+            #print('p: ', p)
             alpha[p, :] = dtrandnmult(alpha[p, :], Mu, Sigma)
             
     A[:, ord[:(R-1)]] = alpha
@@ -765,14 +763,14 @@ def sample_T_const(A,M,T,sigma2p,Tsigma2r,matU,Y_bar,Y,E_prior,bool_plot,y_proj)
             #first value before multiplication with matU.T should be a scalar)
             #In case of nan values, check for inf in A[r, :]
             invSigma_r = np.dot(np.dot(np.sum((A[r, :]**2)[:, np.newaxis]/sigma2p), matU.T), matU) + 1/Tsigma2r[r]*np.eye(R-1)
-            if np.isnan(np.dot(np.sum((A[r, :]**2)[:, np.newaxis]/sigma2p), matU.T)).any():
-                print('r value: ', r)
-                print('matU.T values: ', matU.T)
-                print('A r: ', A[r, :])
+            #if np.isnan(np.dot(np.sum((A[r, :]**2)[:, np.newaxis]/sigma2p), matU.T)).any():
+                #print('r value: ', r)
+                #print('matU.T values: ', matU.T)
+                #print('A r: ', A[r, :])
             """print('matU nan status: ', np.isnan(matU.T).any())
             print('sigma2p: ', sigma2p)
-            print('Check point T1')
             print('invsigmaR nan status: ', np.isnan(invSigma_r).any())"""
+            #print('Check point T1')
             Sigma_r = np.linalg.inv(invSigma_r)
             
             er = E_prior[:, r][:, np.newaxis]
@@ -828,7 +826,7 @@ def sample_T_const(A,M,T,sigma2p,Tsigma2r,matU,Y_bar,Y,E_prior,bool_plot,y_proj)
 
                     vect_e = ((-Y_bar - np.dot(matU[:, comp_k], tr[comp_k, 0][:, np.newaxis]))/(matU[:, k][:, np.newaxis])).flatten()
 
-                    #print('check point T2')
+                    print('check point T2')
 
                     """print('Y_bar nan status: ', np.isnan(Y_bar).any())
                     print('matU nan status: ', np.isnan(matU[:, comp_k]).any())
@@ -844,7 +842,7 @@ def sample_T_const(A,M,T,sigma2p,Tsigma2r,matU,Y_bar,Y,E_prior,bool_plot,y_proj)
                     
                     T_out[k,r] = dtrandn_MH(T_out[k,r], muk[0,0], math.sqrt(s2k), mum, mup, sample_T = True)
 
-                    #print('check point T3')
+                    print('check point T3')
 
                     M_out[:, r] = (np.dot(matU, T_out[:, r][:, np.newaxis]) + Y_bar).flatten()
                     #print('Check point T3')

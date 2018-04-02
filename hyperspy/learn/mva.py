@@ -14,7 +14,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.				
 
 
 import types
@@ -38,7 +38,7 @@ from hyperspy.learn.rpca import rpca_godec, orpca
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack, ordinal
-from hyperspy.learn.unmixing_algo import mvsa, quadProgl, VCA, estimate_snr, computeAtransYinvLA
+from hyperspy.learn.unmixing_algo import mvsa, quadProgl, VCA, estimate_snr, computeAtransYinvLA, blind_unmix, sample_T_const, sample_A, dtrandnmult, dtrandn_MH, randnt, trandn, find_endm, sample_sigma2 
 _logger = logging.getLogger(__name__)
 
 
@@ -371,13 +371,21 @@ class MVA():
                     to_return = (X, E)
             elif algorithm == 'mvsa':
                 _logger.info("Performing MVSA Unmixing")
-                factors, loadings, Up, my, sing_values = mvsa(dc, **kwargs)
+                factors, loadings, Up, my, sing_values = mvsa(dc[:, signal_mask][navigation_mask, :], **kwargs)
                 print("mvsa factor size: ", factors.shape)
                 print("mvsa loading size: ", loadings.shape)
             elif algorithm == 'vca':
                 _logger.info("Performing VCA Unmixing")
-                factors, indice, Rp, loadings = VCA(dc.T, **kwargs)
-                print("vca factor size: ", factors.shape)
+                print('dc size: ', dc.T.shape)
+                factors, loadings, SNR = VCA(dc[:, signal_mask][navigation_mask, :].T, **kwargs)
+                loadings = loadings.T
+                target.vca_processed = True
+                target.vca_SNR = SNR
+            elif algorithm == 'blu':
+                _logger.info("Performing BLU Decomposition")
+                loadings, factors, Tab_A, Tab_T, Tab_sigma2, matU, Y_bar, Nmc = blind_unmix(Y = dc[:, signal_mask][navigation_mask, :], **kwargs)
+                loadings = loadings.T
+                target.blu_processed = True
             else:
                 raise ValueError('Algorithm not recognised. '
                                  'Nothing done')
@@ -391,10 +399,6 @@ class MVA():
                     explained_variance / explained_variance.sum()
 
             # Store the results in learning_results
-            if algorithm == 'mvsa':
-                target.mvsa_processed = True
-            if algorithm == 'vca':
-                target.vca_processed = True
             target.factors = factors
             target.loadings = loadings
             target.explained_variance = explained_variance
@@ -446,13 +450,8 @@ class MVA():
 
             # Rescale the results if the noise was normalized
             if normalize_poissonian_noise is True:
-                if target.mvsa_processed or target.vca_processed:
-                    target.factors[:] *= self._root_bH.T
-                    loadings = target.loadings.T[:] * self._root_aG
-                    target.loadings[:] = loadings.T
-                else:
-                    target.factors[:] *= self._root_bH.T
-                    target.loadings[:] *= self._root_aG
+                target.factors[:] *= self._root_bH.T
+                target.loadings[:] *= self._root_aG
 
             # Set the pixels that were not processed to nan
             if not isinstance(signal_mask, slice):
@@ -538,7 +537,8 @@ class MVA():
 
         """
         from hyperspy.signal import BaseSignal
-
+        import time
+        start_time = time.clock()
         lr = self.learning_results
 
         if factors is None:
@@ -693,7 +693,7 @@ class MVA():
         self._auto_reverse_bss_component(lr)
         lr.bss_algorithm = algorithm
         lr.bss_node = str(lr.bss_node)
-
+        print("Execution Time---%s seconds ---" %(time.clock() - start_time))
     def normalize_decomposition_components(self, target='factors',
                                            function=np.sum):
         """Normalize decomposition components.
@@ -1244,6 +1244,8 @@ class LearningResults(object):
     vca_factors = None
     vca_loadings = None
     vca_processed = False
+    vca_SNR = 0
+    blu_processed = False
     # Shape
     unfolded = None
     original_shape = None
