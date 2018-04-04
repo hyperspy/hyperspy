@@ -211,8 +211,9 @@ class ImagePlot(BlittedFigure):
                           if self.title
                           else None),
             figsize=figsize.clip(min_size, max_size))
-        self.draw_event_cid = self.figure.canvas.mpl_connect(
-            'draw_event', self._on_draw)
+        if self.figure.canvas.supports_blit:
+            self._draw_event_cid = self.figure.canvas.mpl_connect(
+                'draw_event', self._update_background)
         utils.on_figure_window_close(self.figure, self._on_close)
 
     def create_axis(self):
@@ -267,7 +268,6 @@ class ImagePlot(BlittedFigure):
             self._colorbar.ax.yaxis.set_animated(
                 self.figure.canvas.supports_blit)
 
-        self._set_background()
         if hasattr(self.figure, 'tight_layout'):
             try:
                 if self.axes_ticks == 'off' and not self.colorbar:
@@ -371,7 +371,7 @@ class ImagePlot(BlittedFigure):
             else:
                 ims[0].changed()
             if self.figure.canvas.supports_blit:
-                self._draw_animated()
+                self._update_animated()
                 # It seems that nans they're simply not drawn, so simply replacing
                 # the data does not update the value of the nan pixels to the
                 # background color. We redraw everything as a workaround.

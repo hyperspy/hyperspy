@@ -86,7 +86,7 @@ class MarkerBase(object):
         if self.marker is not None:
             plt.setp(self.marker, **self.marker_properties)
             if self.ax.figure.canvas.supports_blit:
-                self.ax.hspy_fig._draw_animated()
+                self.ax.hspy_fig._update_animated()
             else:
                 self.ax.figure.canvas.draw_idle()
 
@@ -194,7 +194,7 @@ class MarkerBase(object):
         self.marker.set_animated(animated)
         if update_plot:
             if animated:
-                self.ax.hspy_fig._draw_animated()
+                self.ax.hspy_fig._update_animated()
             else:
                 self.ax.figure.canvas.draw_idle()
 
@@ -219,7 +219,7 @@ class MarkerBase(object):
             self.events.closed.disconnect(f)
         if update_plot:
             if self.ax.figure.canvas.supports_blit:
-                self.ax.hspy_fig._draw_animated()
+                self.ax.hspy_fig._update_animated()
             else:
                 self.ax.figure.canvas.draw_idle()
 

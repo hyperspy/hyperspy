@@ -40,7 +40,8 @@ class HistogramTilePlot(BlittedFigure):
                           else None))
         canvas = self.figure.canvas
         self._background = canvas.copy_from_bbox(self.figure.bbox)
-        self.figure.canvas.mpl_connect('draw_event', self._on_draw)
+        if self.figure.canvas.supports_blit:
+            self.figure.canvas.mpl_connect('draw_event', self._update_background)
         utils.on_figure_window_close(self.figure, self.close)
 
     def create_axis(self, ncols=1, nrows=1, number=1, title=''):

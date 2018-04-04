@@ -60,8 +60,9 @@ class Signal1DFigure(BlittedFigure):
             window_title="Figure " + self.title if self.title
             else None)
         utils.on_figure_window_close(self.figure, self._on_close)
-        self.draw_event_cid = self.figure.canvas.mpl_connect(
-            'draw_event', self._on_draw)
+        if self.figure.canvas.supports_blit:
+            self._draw_event_cid = self.figure.canvas.mpl_connect(
+                'draw_event', self._update_background)
 
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
@@ -111,7 +112,6 @@ class Signal1DFigure(BlittedFigure):
         self.ax.set_title(self.title)
         x_axis_upper_lims = []
         x_axis_lower_lims = []
-        self._set_background()
         for line in self.ax_lines:
             line.plot()
             x_axis_lower_lims.append(line.axis.axis[0])
@@ -124,6 +124,7 @@ class Signal1DFigure(BlittedFigure):
         self.events.closed.connect(
             lambda: self.axes_manager.events.indices_changed.disconnect(
                 self.update), [])
+        self.ax.figure.canvas.draw_idle()
         if hasattr(self.figure, 'tight_layout'):
             try:
                 self.figure.tight_layout()
@@ -349,7 +350,7 @@ class Signal1DLine(object):
         if self.plot_indices is True:
             self.text.set_text(self.axes_manager.indices)
         if self.ax.figure.canvas.supports_blit:
-            self.ax.hspy_fig._draw_animated()
+            self.ax.hspy_fig._update_animated()
         else:
             self.ax.figure.canvas.draw_idle()
 

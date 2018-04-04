@@ -4384,9 +4384,9 @@ class BaseSignal(FancySlicing,
             self.metadata.Markers = markers_dict
         if plot_marker:
             if self._plot.signal_plot:
-                self._plot.signal_plot.ax.hspy_fig._draw_animated()
+                self._plot.signal_plot.ax.hspy_fig._update_animated()
             if self._plot.navigator_plot:
-                self._plot.navigator_plot.ax.hspy_fig._draw_animated()
+                self._plot.navigator_plot.ax.hspy_fig._update_animated()
 
     def _plot_permanent_markers(self):
         marker_name_list = self.metadata.Markers.keys()
@@ -4400,9 +4400,9 @@ class BaseSignal(FancySlicing,
                     self._plot.navigator_plot.add_marker(marker)
                 marker.plot(update_plot=False)
         if self._plot.signal_plot:
-            self._plot.signal_plot.ax.hspy_fig._draw_animated()
+            self._plot.signal_plot.ax.hspy_fig._update_animated()
         if self._plot.navigator_plot:
-            self._plot.navigator_plot.ax.hspy_fig._draw_animated()
+            self._plot.navigator_plot.ax.hspy_fig._update_animated()
 
     def add_poissonian_noise(self, **kwargs):
         """Add Poissonian noise to the data"""

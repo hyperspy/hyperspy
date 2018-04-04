@@ -29,6 +29,7 @@ _logger = logging.getLogger(__name__)
 class BlittedFigure(object):
 
     def __init__(self):
+        self._draw_event_cid = None
         self._background = None
         self.events = Events()
         self.events.closed = Event("""
@@ -39,52 +40,30 @@ class BlittedFigure(object):
                     The instance that triggered the event.
             """, arguments=["obj"])
 
-    def _set_background(self):
-        if self.figure:
-            canvas = self.figure.canvas
-            if canvas.supports_blit:
-                self._background = canvas.copy_from_bbox(self.figure.bbox)
-
-    def _on_draw(self, *args):
-        if self.figure:
-            canvas = self.figure.canvas
-            canvas.mpl_disconnect(self.draw_event_cid)
-            if canvas.supports_blit:
-                self._set_background()
-                self._draw_animated()
-            else:
-                canvas.draw_idle()
-            self.draw_event_cid = canvas.mpl_connect(
-                'draw_event', self._on_draw)
+    def _update_background(self, *args):
+        fig = self.figure
+        self._background = fig.canvas.copy_from_bbox(fig.bbox)
+        self._draw_animated()
 
     def _draw_animated(self):
-        if self.ax.figure and self.figure.axes:
-            canvas = self.ax.figure.canvas
-            if canvas.supports_blit:
-                canvas.restore_region(self._background)
-            for ax in self.figure.axes:
-                artists = []
-                artists.extend(ax.images)
-                artists.extend(ax.collections)
-                artists.extend(ax.patches)
-                artists.extend(ax.lines)
-                artists.extend(ax.texts)
-                artists.extend(ax.artists)
-                artists.append(ax.get_yaxis())
-                artists.append(ax.get_xaxis())
-                try:
-                    [ax.draw_artist(a) for a in artists if
-                     a.get_animated() is True]
-                except AttributeError:
-                    # The method was called before draw. This is a quick
-                    # fix. Properly fixing the issue involves avoiding
-                    # calling this method too early in the code.
-                    _logger.warning('Please report this warning to the '
-                                    'developers: `_draw_animated` was called '
-                                    'before `draw`.')
-                    pass
-            if canvas.supports_blit:
-                canvas.blit(self.figure.bbox)
+        for ax in self.figure.axes:
+            artists = []
+            artists.extend(ax.images)
+            artists.extend(ax.collections)
+            artists.extend(ax.patches)
+            artists.extend(ax.lines)
+            artists.extend(ax.texts)
+            artists.extend(ax.artists)
+            artists.append(ax.get_yaxis())
+            artists.append(ax.get_xaxis())
+            [ax.draw_artist(a) for a in artists if a.get_animated()]
+
+    def _update_animated(self):
+        canvas = self.ax.figure.canvas
+        canvas.restore_region(self._background)
+        self._draw_animated()
+        canvas.blit(self.figure.bbox)
+
 
     def add_marker(self, marker):
         marker.ax = self.ax
@@ -101,7 +80,8 @@ class BlittedFigure(object):
         self.events.closed.trigger(obj=self)
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)
-        self.figure.canvas.mpl_disconnect(self.draw_event_cid)
+        if self._draw_event_cid:
+            self.figure.canvas.mpl_disconnect(self._draw_event_cid)
         self.figure = None
 
     def close(self):
