@@ -82,6 +82,8 @@ class BlittedFigure(object):
         if self._draw_event_cid:
             self.figure.canvas.mpl_disconnect(self._draw_event_cid)
         self.figure = None
+        self._background = None
+        self._draw_event_cid = None
 
     def close(self):
         figure = self.figure
