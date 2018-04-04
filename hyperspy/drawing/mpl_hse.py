@@ -177,4 +177,3 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             line.close()
         self.right_pointer.close()
         self.right_pointer = None
-        self.navigator_plot.update()
