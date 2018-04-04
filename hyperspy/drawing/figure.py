@@ -81,14 +81,14 @@ class BlittedFigure(object):
             self.events.closed.disconnect(f)
         if self._draw_event_cid:
             self.figure.canvas.mpl_disconnect(self._draw_event_cid)
-        self.figure = None
-        self._background = None
-        self._draw_event_cid = None
+            self._draw_event_cid = None
 
     def close(self):
         figure = self.figure
         self._on_close()   # Needs to trigger serially for a well defined state
         plt.close(figure)
+        self.figure = None
+        self._background = None
 
     @property
     def title(self):
