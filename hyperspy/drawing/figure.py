@@ -64,7 +64,6 @@ class BlittedFigure(object):
         self._draw_animated()
         canvas.blit(self.figure.bbox)
 
-
     def add_marker(self, marker):
         marker.ax = self.ax
         if marker.axes_manager is None:

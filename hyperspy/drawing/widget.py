@@ -218,7 +218,7 @@ class WidgetBase(object):
         for cid in self.cids:
             try:
                 self.ax.figure.canvas.mpl_disconnect(cid)
-            except:
+            except BaseException:
                 pass
         if self._navigating:
             self.disconnect_navigate()
