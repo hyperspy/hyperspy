@@ -28,7 +28,8 @@ class Test1D:
         gaussian.A.value = 20
         gaussian.sigma.value = 10
         gaussian.centre.value = 50
-        self.signal = signals.Signal1D(gaussian.function(np.arange(0, 100, 0.01)))
+        self.signal = signals.Signal1D(
+            gaussian.function(np.arange(0, 100, 0.01)))
         self.signal.axes_manager[0].scale = 0.01
 
     def test_integrate1D(self):
@@ -219,7 +220,6 @@ class Test2D:
             s.compute()
         np.testing.assert_array_almost_equal(
             s.data, poisson(lam=data, **kwargs))
-
 
 
 def _test_default_navigation_signal_operations_over_many_axes(self, op):
