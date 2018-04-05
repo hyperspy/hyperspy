@@ -190,7 +190,7 @@ class Signal1DLine(object):
         self.axis = None
         self.axes_manager = None
         self.auto_update = True
-        self.get_complex = False
+        self.plot_imag = False
 
         # Properties
         self.line = None
@@ -285,7 +285,7 @@ class Signal1DLine(object):
 
     def plot(self, data=1):
         f = self.data_function
-        if self.get_complex is False:
+        if self.plot_imag is False:
             data = f(axes_manager=self.axes_manager).real
         else:
             data = f(axes_manager=self.axes_manager).imag
@@ -318,7 +318,7 @@ class Signal1DLine(object):
         if force_replot is True:
             self.close()
             self.plot()
-        if self.get_complex is False:
+        if self.plot_imag is False:
             ydata = self.data_function(axes_manager=self.axes_manager).real
         else:
             ydata = self.data_function(axes_manager=self.axes_manager).imag
@@ -340,7 +340,7 @@ class Signal1DLine(object):
             clipped_ydata = ydata[y1:y2]
             y_max, y_min = (np.nanmax(clipped_ydata),
                             np.nanmin(clipped_ydata))
-            if self.get_complex:
+            if self.plot_imag:
                 yreal = self.data_function(axes_manager=self.axes_manager).real
                 clipped_yreal = yreal[y1:y2]
                 y_min = min(y_min, clipped_yreal.min())
