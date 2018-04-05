@@ -121,7 +121,7 @@ def all_warnings():
 
 @contextmanager
 def assert_warns(message=None, category=None):
-    """Context for use in testing to catch known warnings matching regexes
+    r"""Context for use in testing to catch known warnings matching regexes
 
     Parameters
     ----------
@@ -156,7 +156,7 @@ def assert_warns(message=None, category=None):
         # enter context
         yield w
         # exited user context, check the recorded warnings
-        remaining = [m for m in message if '\A\Z' not in m.split('|')]
+        remaining = [m for m in message if r'\A\Z' not in m.split('|')]
         for warn in w:
             found = False
             for match in message:
