@@ -23,22 +23,22 @@ from hyperspy.component import Component
 
 class Lorentzian(Component):
 
-    """Cauchy-Lorentz distribution (a.k.a. Lorentzian function) component
+    r"""Cauchy-Lorentz distribution (a.k.a. Lorentzian function) component
 
     .. math::
 
-        f(x)=\\frac{a}{\pi}\left[\\frac{\gamma}{\left(x-x_{0}\\right)^{2}+\gamma^{2}}\\right]
+        f(x)=\frac{a}{\pi}\left[\frac{\gamma}{\left(x-x_{0}\right)^{2}+\gamma^{2}}\right]
 
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |     a      |     A     |
-    +------------+-----------+
-    |   gamma    |   gamma   |
-    +------------+-----------+
-    |    x0      |  centre   |
-    +------------+-----------+
+    +---------------------+-----------+
+    |     Parameter       | Attribute |
+    +---------------------+-----------+
+    +---------------------+-----------+
+    |      :math:`a`      |     A     |
+    +---------------------+-----------+
+    |    :math:`\gamma`   |   gamma   |
+    +---------------------+-----------+
+    |      :math:`x_0`    |  centre   |
+    +---------------------+-----------+
 
     """
 

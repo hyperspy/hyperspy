@@ -3801,7 +3801,7 @@ class BaseSignal(FancySlicing,
                                            gain_factor=None,
                                            gain_offset=None,
                                            correlation_factor=None):
-        """Estimate the poissonian noise variance of the signal.
+        r"""Estimate the poissonian noise variance of the signal.
 
         The variance is stored in the
         ``metadata.Signal.Noise_properties.variance`` attribute.
