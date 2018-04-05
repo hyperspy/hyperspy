@@ -34,7 +34,7 @@ class Test1D:
     def test_integrate1D(self):
         integrated_signal = self.signal.integrate1D(axis=0)
         assert np.allclose(integrated_signal.data, 20,)
-        
+
 
 @lazifyTestClass
 class Test2D:
@@ -183,6 +183,43 @@ class Test2D:
         result = np.angle(self.signal)
         assert isinstance(result, np.ndarray)
         np.testing.assert_array_equal(result, np.angle(self.signal.data))
+
+    def test_add_gaussian_noise(self):
+        s = self.signal
+        kwargs = {}
+        if s._lazy:
+            data = s.data.compute()
+            from dask.array.random import seed, normal
+            kwargs["chunks"] = s.data.chunks
+        else:
+            data = s.data.copy()
+            from numpy.random import seed, normal
+        seed(1)
+        s.add_gaussian_noise(std=1.0)
+        seed(1)
+        if s._lazy:
+            s.compute()
+        np.testing.assert_array_almost_equal(
+            s.data - data, normal(scale=1.0, size=data.shape, **kwargs))
+
+    def test_add_poisson_noise(self):
+        s = self.signal
+        kwargs = {}
+        if s._lazy:
+            data = s.data.compute()
+            from dask.array.random import seed, poisson
+            kwargs["chunks"] = s.data.chunks
+        else:
+            data = s.data.copy()
+            from numpy.random import seed, poisson
+        seed(1)
+        s.add_poissonian_noise()
+        seed(1)
+        if s._lazy:
+            s.compute()
+        np.testing.assert_array_almost_equal(
+            s.data, poisson(lam=data, **kwargs))
+
 
 
 def _test_default_navigation_signal_operations_over_many_axes(self, op):
