@@ -930,6 +930,8 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                 # This is only available for traitsui, ipywidgets has a
                 # progress bar instead.
                 pass
+            except ValueError as error:
+                _logger.warning(error)
             self.index = 0
             self._reset_line()
             return

@@ -548,8 +548,91 @@ which is used to call subplots_adjust method of matplotlib
 .. NOTE::
 
     This padding can also be changed interactively by clicking on the
-    |subplots_adjust| button in the GUI (button may be different when
-    using different graphical backends).
+    |subplots_adjust| button in the GUI (button may be different when using
+    different graphical backends).
+
+Finally, the ``cmap`` option of :py:func:`~.drawing.utils.plot_images`
+supports iterable types, allowing the user to specify different colormaps
+for the different images that are plotted by providing a list or other
+generator:
+
+.. code-block:: python
+
+    >>> si_EDS = hs.load("core_shell.hdf5")
+    >>> im = si_EDS.get_lines_intensity()
+    >>> hs.plot.plot_images(hs.transpose(im[0], im[1]),
+    >>>    tight_layout=True, cmap=['viridis', 'plasma'], axes_decor='off',
+    >>>    colorbar='multi', saturated_pixels=2, scalebar=[0],
+    >>>    scalebar_color='white', suptitle_fontsize=16)
+
+.. figure::  images/plot_images_eds_cmap_list.png
+  :align:   center
+  :width:   500
+
+  Using :py:func:`~.drawing.utils.plot_images` to plot the output of
+  :py:meth:`~._signals.eds.EDS_mixin.get_lines_intensity` using a unique
+  colormap for each image.
+
+The ``cmap`` argument can also be given as ``'mpl_colors'``, and as a result,
+the images will be plotted with colormaps generated from the default
+``matplotlib`` colors, which is very helpful when plotting multiple spectral
+signals and their relative intensities (such as the results of a
+:py:func:`~.learn.mva.decomposition` analysis). This example uses
+:py:func:`~.drawing.utils.plot_spectra`, which is explained in the
+`next section`__.
+
+__ plot.spectra_
+
+.. code-block:: python
+
+    >>> si_EDS = hs.load("core_shell.hdf5")
+    >>> si_EDS.change_dtype('float')
+    >>> si_EDS.decomposition(True, algorithm='nmf', output_dimension=3)
+    >>> factors = si_EDS.get_decomposition_factors()
+    >>>
+    >>> # the first factor is a very strong carbon background component, so we
+    >>> # normalize factor intensities for easier qualitative comparison
+    >>> for f in factors:
+    >>>     f.data /= f.data.max()
+    >>>
+    >>> loadings = si_EDS.get_decomposition_loadings()
+    >>>
+    >>> hs.plot.plot_spectra(factors.isig[:14.0], style='cascade',
+    >>>                      padding=-1)
+    >>>
+    >>> # add some lines to nicely label the peak positions
+    >>> plt.axvline(6.403, c='C2', ls=':', lw=0.5)
+    >>> plt.text(x=6.503, y=0.85, s='Fe-K$_\\alpha$', color='C2')
+    >>> plt.axvline(9.441, c='C1', ls=':', lw=0.5)
+    >>> plt.text(x=9.541, y=0.85, s='Pt-L$_\\alpha$', color='C1')
+    >>> plt.axvline(2.046, c='C1', ls=':', lw=0.5)
+    >>> plt.text(x=2.146, y=0.85, s='Pt-M', color='C1')
+    >>> plt.axvline(8.040, ymax=0.8, c='k', ls=':', lw=0.5)
+    >>> plt.text(x=8.14, y=0.35, s='Cu-K$_\\alpha$', color='k')
+    >>>
+    >>> hs.plot.plot_images(loadings, cmap='mpl_colors',
+    >>>             axes_decor='off', per_row=1,
+    >>>             label=['Background', 'Pt core', 'Fe shell'],
+    >>>             scalebar=[0], scalebar_color='white',
+    >>>             padding={'top': 0.95, 'bottom': 0.05,
+    >>>                      'left': 0.05, 'right':0.78})
+
+
+.. figure::  images/plot_images_eds_cmap_factors_side_by_side.png
+  :align:   center
+  :width:   500
+
+  Using :py:func:`~.drawing.utils.plot_images` with ``cmap='mpl_colors'``
+  together with :py:func:`~.drawing.utils.plot_spectra` to visualize the
+  output of a non-negative matrix factorization of the EDS data.
+
+
+.. NOTE::
+
+    Because it does not make sense, it is not allowed to use a list or
+    other iterable type for the ``cmap`` argument together with ``'single'``
+    for the ``colorbar`` argument. Such an input will cause a warning and
+    instead set the ``colorbar`` argument to ``None``.
 
 .. _plot.spectra:
 

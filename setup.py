@@ -62,13 +62,17 @@ install_req = ['scipy>=0.15',
                'scikit-image>=0.13',
                'pint>=0.8',
                'statsmodels',
+               'mrcz>0.3.4',
                ]
 
 extras_require = {
     "learning": ['scikit-learn'],
     "gui-jupyter": ["hyperspy_gui_ipywidgets"],
     "gui-traitsui": ["hyperspy_gui_traitsui"],
+    "mrcz-blosc": ["blosc>=1.5"],
+    "lazy_FEI_EMD": ['sparse'],
     "test": ["pytest>=3", "pytest-mpl", "matplotlib>=2.0.2"],
+    "doc": ["sphinx", "numpydoc", "sphinxcontrib-napoleon", "sphinx_rtd_theme"],
 }
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
