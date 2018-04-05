@@ -40,7 +40,7 @@ extensions = [
 try:
     import sphinxcontrib.spelling
     extensions.append('sphinxcontrib.spelling')
-except:
+except BaseException:
     pass
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
