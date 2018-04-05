@@ -25,20 +25,16 @@
 
 
 import re
-import numbers
 import json
 import os
 from datetime import datetime
 import time
 import logging
-from tempfile import mkdtemp
-import os.path as path
 import traits.api as t
 
 import h5py
 import numpy as np
 import dask.array as da
-from dask import delayed
 from dateutil import tz
 import pint
 
