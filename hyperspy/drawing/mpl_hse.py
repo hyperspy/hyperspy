@@ -112,7 +112,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             sl.autoscale = True
             sl.data_function = self.signal_data_function
             sl.plot_coordinates = True
-            sl.plot_imag = True
+            sl._plot_imag = True
             sl.set_line_properties(color="blue", type='step')
             # Add extra line to the figure
             sf.add_line(sl)
