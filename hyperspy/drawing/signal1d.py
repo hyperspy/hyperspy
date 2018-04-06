@@ -206,7 +206,7 @@ class Signal1DLine(object):
     @property
     def get_complex(self):
         warnings.warn("The `get_complex` attribute is deprecated and will be"
-              "removed in 2.0, please use `_plot_image` instead.",
+              "removed in 2.0, please use `_plot_imag` instead.",
               VisibleDeprecationWarning)
         return self._plot_imag
 
