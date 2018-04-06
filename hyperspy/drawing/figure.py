@@ -60,11 +60,20 @@ class BlittedFigure(object):
 
     def _on_blit_draw(self, *args):
         fig = self.figure
+        # As draw doesn't draw animated elements, in its current state the
+        # canvas only contains the backgroud. The following line simply stores
+        # it for the consumption of _update_animated.
         self._background = fig.canvas.copy_from_bbox(fig.bbox)
+        # draw does not draw animated elements, so we must draw them
+        # manually
         self._draw_animated()
 
     def _draw_animated(self):
+        """Draw animated plot elements
+
+        """
         for ax in self.figure.axes:
+            # Create a list of animated artitst and draw them.
             artists = []
             artists.extend(ax.images)
             artists.extend(ax.collections)
@@ -78,7 +87,9 @@ class BlittedFigure(object):
 
     def _update_animated(self):
         canvas = self.ax.figure.canvas
+        # As the background haven't changed, we can simply restore it.
         canvas.restore_region(self._background)
+        # Now it is when we draw the animated elements using the blit method
         self._draw_animated()
         canvas.blit(self.figure.bbox)
 
