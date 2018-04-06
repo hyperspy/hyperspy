@@ -62,7 +62,7 @@ class Signal1DFigure(BlittedFigure):
         utils.on_figure_window_close(self.figure, self._on_close)
         if self.figure.canvas.supports_blit:
             self._draw_event_cid = self.figure.canvas.mpl_connect(
-                'draw_event', self._update_background)
+                'draw_event', self._on_blit_draw)
 
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)

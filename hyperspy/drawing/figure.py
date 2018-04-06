@@ -40,7 +40,7 @@ class BlittedFigure(object):
                     The instance that triggered the event.
             """, arguments=["obj"])
 
-    def _update_background(self, *args):
+    def _on_blit_draw(self, *args):
         fig = self.figure
         self._background = fig.canvas.copy_from_bbox(fig.bbox)
         self._draw_animated()
