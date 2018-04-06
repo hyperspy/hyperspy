@@ -196,25 +196,36 @@ class ImagePlot(BlittedFigure):
         self._vmin_auto, self._vmax_auto = utils.contrast_stretching(
             data, self.saturated_pixels)
 
-    def create_figure(self, max_size=None, min_size=2):
-        if self.scalebar is True:
-            wfactor = 1.0 + plt.rcParams['font.size'] / 100
-        else:
-            wfactor = 1
+    def create_figure(self, max_size=None, min_size=2, **kwargs):
+        """Create matplotlib figure
 
-        height = abs(self._extent[3] - self._extent[2]) * self._aspect
-        width = abs(self._extent[1] - self._extent[0])
-        figsize = np.array((width * wfactor, height)) * \
-            max(plt.rcParams['figure.figsize']) / max(width * wfactor, height)
-        self.figure = utils.create_figure(
-            window_title=("Figure " + self.title
-                          if self.title
-                          else None),
-            figsize=figsize.clip(min_size, max_size))
-        if self.figure.canvas.supports_blit:
-            self._draw_event_cid = self.figure.canvas.mpl_connect(
-                'draw_event', self._on_blit_draw)
-        utils.on_figure_window_close(self.figure, self._on_close)
+        The figure size is automatically computed by default, taking into
+        account the x and y dimensions of the image. Alternatively the figure
+        size can be defined by passing the ``figsize`` keyword argument.
+
+        Parameters
+        ----------
+        max_size, min_size: number
+            The maximum and minimum size of the axes in inches. These have
+            no effect when passing the ``figsize`` keyword to manually set
+            the figure size.
+        **kwargs
+            All keyword arguments are passed to ``plt.figure``.
+
+        """
+        if "figsize" not in kwargs:
+            if self.scalebar is True:
+                wfactor = 1.0 + plt.rcParams['font.size'] / 100
+            else:
+                wfactor = 1
+
+            height = abs(self._extent[3] - self._extent[2]) * self._aspect
+            width = abs(self._extent[1] - self._extent[0])
+            figsize = np.array((width * wfactor, height)) * \
+                max(plt.rcParams['figure.figsize']) / max(width * wfactor, height)
+            figsize = figsize.clip(min_size, max_size)
+            kwargs["figsize"] = figsize
+        super().create_figure(**kwargs)
 
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)

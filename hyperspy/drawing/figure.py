@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 import logging
 
 from hyperspy.events import Event, Events
+from hyperspy.drawing import utils
 
 
 _logger = logging.getLogger(__name__)
@@ -39,6 +40,24 @@ class BlittedFigure(object):
                 obj:  SpectrumFigure instances
                     The instance that triggered the event.
             """, arguments=["obj"])
+
+    def create_figure(self, **kwargs):
+        """Create matplotlib figure
+
+        Parameters
+        ----------
+        **kwargs
+            All keyword arguments are passed to ``plt.figure``.
+
+        """
+        self.figure = utils.create_figure(
+            window_title="Figure " + self.title if self.title
+            else None, **kwargs)
+        utils.on_figure_window_close(self.figure, self._on_close)
+        if self.figure.canvas.supports_blit:
+            self._draw_event_cid = self.figure.canvas.mpl_connect(
+                'draw_event', self._on_blit_draw)
+
 
     def _on_blit_draw(self, *args):
         fig = self.figure
