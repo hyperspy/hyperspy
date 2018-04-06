@@ -222,7 +222,8 @@ class ImagePlot(BlittedFigure):
             height = abs(self._extent[3] - self._extent[2]) * self._aspect
             width = abs(self._extent[1] - self._extent[0])
             figsize = np.array((width * wfactor, height)) * \
-                max(plt.rcParams['figure.figsize']) / max(width * wfactor, height)
+                max(plt.rcParams['figure.figsize']) / \
+                max(width * wfactor, height)
             figsize = figsize.clip(min_size, max_size)
             kwargs["figsize"] = figsize
         super().create_figure(**kwargs)

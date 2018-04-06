@@ -58,7 +58,6 @@ class BlittedFigure(object):
             self._draw_event_cid = self.figure.canvas.mpl_connect(
                 'draw_event', self._on_blit_draw)
 
-
     def _on_blit_draw(self, *args):
         fig = self.figure
         self._background = fig.canvas.copy_from_bbox(fig.bbox)
