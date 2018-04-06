@@ -603,7 +603,8 @@ class FeiEMDReader(object):
                                             spectrum_sub_group_key)
         original_metadata.update(self.original_metadata)
 
-        dispersion, offset, unit = self._get_dispersion_offset(original_metadata)
+        dispersion, offset, unit = self._get_dispersion_offset(
+            original_metadata)
         axes = []
         if len(data.shape) == 2:
             if data.shape[0] == 1:
@@ -767,7 +768,8 @@ class FeiEMDReader(object):
                     image_display_group[key].value[0].decode('utf-8'))
                 data_key = v['dataPath'].split('/')[-1]  # key in data group
                 self.map_label_dict[data_key] = v['display']['label']
-        except:
+        except KeyError:
+            _logger.warning("The image label can't be read from the metadata.")
             pass
 
     def _parse_metadata_group(self, group, group_name):
@@ -784,7 +786,7 @@ class FeiEMDReader(object):
                 else:
                     sub_dict = json.loads(subgroup.value[0].decode('utf-8'))
                 d[group_key] = sub_dict
-        except:
+        except IndexError:
             _logger.warning("Some metadata can't be read.")
         self.original_metadata.update({group_name: d})
 
@@ -857,7 +859,8 @@ class FeiEMDReader(object):
 
         pixel_size, offsets, original_units = \
             streams[0].get_pixelsize_offset_unit()
-        dispersion, offset, unit = self._get_dispersion_offset(original_metadata)
+        dispersion, offset, unit = self._get_dispersion_offset(
+            original_metadata)
 
         scale_x = self._convert_scale_units(
             pixel_size['width'], original_units, spectrum_image_shape[1])
@@ -954,7 +957,7 @@ class FeiEMDReader(object):
             # This timestamp corresponds to when the data is stored
             elif 'Detectors[BM-Ceta].TimeStamp' in om['CustomProperties'].keys():
                 unix_time = float(
-                    om['CustomProperties']['Detectors[BM-Ceta].TimeStamp']['value'])/1E6
+                    om['CustomProperties']['Detectors[BM-Ceta].TimeStamp']['value']) / 1E6
             date, time = self._convert_datetime(unix_time).split('T')
             meta_gen['date'] = date
             meta_gen['time'] = time
