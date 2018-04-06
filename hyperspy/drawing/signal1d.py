@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -24,6 +25,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.drawing import utils
 from hyperspy.events import Event, Events
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 class Signal1DFigure(BlittedFigure):
@@ -190,7 +192,7 @@ class Signal1DLine(object):
         self.axis = None
         self.axes_manager = None
         self.auto_update = True
-        self.get_complex = False
+        self._plot_imag = False
 
         # Properties
         self.line = None
@@ -200,6 +202,13 @@ class Signal1DLine(object):
         self.text_position = (-0.1, 1.05,)
         self._line_properties = {}
         self.type = "line"
+
+    @property
+    def get_complex(self):
+        warnings.warn("The `get_complex` attribute is deprecated and will be"
+              "removed in 2.0, please use `_plot_imag` instead.",
+              VisibleDeprecationWarning)
+        return self._plot_imag
 
     @property
     def line_properties(self):
@@ -285,7 +294,7 @@ class Signal1DLine(object):
 
     def plot(self, data=1):
         f = self.data_function
-        if self.get_complex is False:
+        if self._plot_imag is False:
             data = f(axes_manager=self.axes_manager).real
         else:
             data = f(axes_manager=self.axes_manager).imag
@@ -318,7 +327,7 @@ class Signal1DLine(object):
         if force_replot is True:
             self.close()
             self.plot()
-        if self.get_complex is False:
+        if self._plot_imag is False:
             ydata = self.data_function(axes_manager=self.axes_manager).real
         else:
             ydata = self.data_function(axes_manager=self.axes_manager).imag
@@ -340,7 +349,7 @@ class Signal1DLine(object):
             clipped_ydata = ydata[y1:y2]
             y_max, y_min = (np.nanmax(clipped_ydata),
                             np.nanmin(clipped_ydata))
-            if self.get_complex:
+            if self._plot_imag:
                 yreal = self.data_function(axes_manager=self.axes_manager).real
                 clipped_yreal = yreal[y1:y2]
                 y_min = min(y_min, clipped_yreal.min())
