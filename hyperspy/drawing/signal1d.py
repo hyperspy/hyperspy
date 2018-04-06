@@ -124,6 +124,7 @@ class Signal1DFigure(BlittedFigure):
                 # tight_layout is a bit brittle, we do this just in case it
                 # complains
                 pass
+        self._init_draw()
 
     def _on_close(self):
         if self.figure is None:
@@ -305,7 +306,6 @@ class Signal1DLine(object):
                                      fontsize=12,
                                      color=self.line.get_color(),
                                      animated=self.ax.figure.canvas.supports_blit)
-        self.ax.figure.canvas.draw_idle()
 
     def update(self, force_replot=False):
         """Update the current spectrum figure"""

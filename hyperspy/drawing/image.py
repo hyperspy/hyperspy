@@ -292,19 +292,7 @@ class ImagePlot(BlittedFigure):
                 pass
 
         self.connect()
-        # ask the canvas to re-draw itself the next time it
-        # has a chance.
-        # For most of the GUI backends this adds an event to the queue
-        # of the GUI frameworks event loop.
-        self.figure.canvas.draw_idle()
-        try:
-            # make sure that the GUI framework has a chance to run its event loop
-            # and clear any GUI events.  This needs to be in a try/except block
-            # because the default implementation of this method is to raise
-            # NotImplementedError
-            self.figure.canvas.flush_events()
-        except NotImplementedError:
-            pass
+        self._init_draw()
 
     def update(self, **kwargs):
         ims = self.ax.images
