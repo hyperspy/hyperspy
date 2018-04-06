@@ -29,12 +29,11 @@ from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
 from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
 from hyperspy.defaults_parser import preferences
-from hyperspy.external.progressbar import progressbar
 from hyperspy.components1d import PowerLaw
 from hyperspy.misc.utils import (
-    isiterable, closest_power_of_two, underline, without_nans,
-    signal_range_from_roi)
+    isiterable, closest_power_of_two, underline, signal_range_from_roi)
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
+from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 
 
 _logger = logging.getLogger(__name__)
@@ -207,6 +206,7 @@ class EELSSpectrum_mixin:
             mask=None,
             signal_range=None,
             show_progressbar=None,
+            crop=True,
             **kwargs):
         """Align the zero-loss peak.
 
@@ -244,6 +244,7 @@ class EELSSpectrum_mixin:
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
+        %s
 
         Examples
         --------
@@ -285,29 +286,36 @@ class EELSSpectrum_mixin:
                 zlpc = s.estimate_zero_loss_peak_centre(mask=mask)
             return zlpc
 
-        zlpc = estimate_zero_loss_peak_centre(self, mask, signal_range)
-        mean_ = without_nans(zlpc.data).mean()
+        zlpc = estimate_zero_loss_peak_centre(
+            self, mask=mask, signal_range=signal_range)
+
+        mean_ = np.nanmean(zlpc.data)
+
         if print_stats is True:
             print()
             print(underline("Initial ZLP position statistics"))
             zlpc.print_summary_statistics()
 
         for signal in also_align + [self]:
-            signal.shift1D(-
-                           zlpc.data +
-                           mean_, show_progressbar=show_progressbar)
+            shift_array = -zlpc.data + mean_
+            if zlpc._lazy:
+                # We must compute right now because otherwise any changes to the
+                # axes_manager of the signal later in the workflow may result in
+                # a wrong shift_array
+                shift_array = shift_array.compute()
+            signal.shift1D(
+                shift_array, crop=crop, show_progressbar=show_progressbar)
 
         if calibrate is True:
-            zlpc = estimate_zero_loss_peak_centre(self, mask, signal_range)
-            substract_from_offset(without_nans(zlpc.data).mean(),
+            zlpc = estimate_zero_loss_peak_centre(
+                self, mask=mask, signal_range=signal_range)
+            substract_from_offset(np.nanmean(zlpc.data),
                                   also_align + [self])
 
         if subpixel is False:
             return
         left, right = -3., 3.
         if calibrate is False:
-            mean_ = without_nans(estimate_zero_loss_peak_centre(
-                self, mask, signal_range).data).mean()
             left += mean_
             right += mean_
 
@@ -315,17 +323,22 @@ class EELSSpectrum_mixin:
                 else self.axes_manager[-1].axis[0])
         right = (right if right < self.axes_manager[-1].axis[-1]
                  else self.axes_manager[-1].axis[-1])
+
         if self.axes_manager.navigation_size > 1:
             self.align1D(
                 left,
                 right,
                 also_align=also_align,
                 show_progressbar=show_progressbar,
+                mask=mask,
+                crop=crop,
                 **kwargs)
-        zlpc = self.estimate_zero_loss_peak_centre(mask=mask)
         if calibrate is True:
-            substract_from_offset(without_nans(zlpc.data).mean(),
+            zlpc = estimate_zero_loss_peak_centre(
+                self, mask=mask, signal_range=signal_range)
+            substract_from_offset(np.nanmean(zlpc.data),
                                   also_align + [self])
+    align_zero_loss_peak.__doc__ %= CROP_PARAMETER_DOC
 
     def estimate_elastic_scattering_intensity(
             self, threshold, show_progressbar=None):
@@ -1000,7 +1013,7 @@ class EELSSpectrum_mixin:
                                 t=None,
                                 delta=0.5,
                                 full_output=False):
-        """Calculate the complex
+        r"""Calculate the complex
         dielectric function from a single scattering distribution (SSD) using
         the Kramers-Kronig relations.
 
@@ -1058,7 +1071,10 @@ class EELSSpectrum_mixin:
         -------
         eps: DielectricFunction instance
             The complex dielectric function results,
-                $\epsilon = \epsilon_1 + i*\epsilon_2$,
+
+                .. math::
+                    \epsilon = \epsilon_1 + i*\epsilon_2,
+
             contained in an DielectricFunction instance.
         output: Dictionary (optional)
             A dictionary of optional outputs with the following keys:
@@ -1114,14 +1130,14 @@ class EELSSpectrum_mixin:
         # Mapped parameters
         try:
             e0 = s.metadata.Acquisition_instrument.TEM.beam_energy
-        except:
+        except BaseException:
             raise AttributeError("Please define the beam energy."
                                  "You can do this e.g. by using the "
                                  "set_microscope_parameters method")
         try:
             beta = s.metadata.Acquisition_instrument.TEM.Detector.\
                 EELS.collection_angle
-        except:
+        except BaseException:
             raise AttributeError("Please define the collection semi-angle. "
                                  "You can do this e.g. by using the "
                                  "set_microscope_parameters method")
