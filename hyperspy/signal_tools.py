@@ -873,10 +873,12 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                 self.noise_type = "shot noise"
         else:
             self.noise_type = "shot noise"
+        self.find()
 
     def _threshold_changed(self, old, new):
         self.index = 0
         self.update_plot()
+        self.find()
 
     def _click_to_show_instructions_fired(self):
         from pyface.message_dialog import information
