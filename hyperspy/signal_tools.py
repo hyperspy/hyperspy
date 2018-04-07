@@ -950,6 +950,8 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                     minimum),
                 self.signal.axes_manager.signal_axes[0].index2value(
                     maximum))
+            self.signal.axes_manager.indices = self.coordinates[self.index]
+            self.signal._plot.pointer.indices = self.coordinates[self.index]
             self.update_plot()
             self.create_interpolation_line()
 
@@ -1005,9 +1007,11 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self.interpolated_line.set_line_properties(
             color='blue',
             type='line')
-        self.signal._plot.signal_plot.add_line(self.interpolated_line)
+        self.signal._plot.signal_plot.add_line(self.interpolated_line,
+                                               connect_event=False)
         self.interpolated_line.autoscale = False
         self.interpolated_line.plot()
+        self.interpolated_line.update()
 
     def get_interpolation_range(self):
         axis = self.signal.axes_manager.signal_axes[0]

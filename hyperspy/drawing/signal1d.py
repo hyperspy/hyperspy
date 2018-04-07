@@ -74,7 +74,7 @@ class Signal1DFigure(BlittedFigure):
                 self.figure.canvas.supports_blit)
         plt.tight_layout()
 
-    def add_line(self, line, ax='left'):
+    def add_line(self, line, ax='left', connect_event=True):
         if ax == 'left':
             line.ax = self.ax
             if line.axes_manager is None:
@@ -87,10 +87,11 @@ class Signal1DFigure(BlittedFigure):
             line.sf_lines = self.right_ax_lines
             if line.axes_manager is None:
                 line.axes_manager = self.right_axes_manager
-        line.axes_manager.events.indices_changed.connect(line.update, [])
-        self.events.closed.connect(
-            lambda: line.axes_manager.events.indices_changed.disconnect(
-                line.update), [])
+        if connect_event:
+            line.axes_manager.events.indices_changed.connect(line.update, [])
+            self.events.closed.connect(
+                lambda: line.axes_manager.events.indices_changed.disconnect(
+                    line.update), [])
         line.axis = self.axis
         # Automatically asign the color if not defined
         if line.color is None:
