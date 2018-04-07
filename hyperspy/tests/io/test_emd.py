@@ -206,7 +206,7 @@ class TestFeiEMD():
         shutil.rmtree(cls.fei_files_path)
 
     @pytest.mark.parametrize("lazy", (True, False))
-    def test_fei_emd_image(self):
+    def test_fei_emd_image(self, lazy):
         stage = {'tilt_alpha': '0.006',
                  'tilt_beta': '0.000',
                  'x': '-0.000009',
