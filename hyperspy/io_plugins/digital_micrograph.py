@@ -854,7 +854,9 @@ class ImageObject(object):
             "{}.Microscope Info.Voltage".format(tags_path): (
                 "Acquisition_instrument.TEM.beam_energy", lambda x: x / 1e3),
             "{}.Microscope Info.Stage Position.Stage Alpha".format(tags_path): (
-                "Acquisition_instrument.TEM.Stage.tilt_alpha", None),
+                "Acquisition_instrument.TEM.Stage.tilt_alpha", lambda x: round(x, 2)),
+            "{}.Microscope Info.Stage Position.Stage Beta".format(tags_path): (
+                "Acquisition_instrument.TEM.Stage.tilt_beta", lambda x: round(x, 2)),
             "{}.Microscope Info.Stage Position.Stage X".format(tags_path): (
                 "Acquisition_instrument.TEM.Stage.x", lambda x: x * 1e-3),
             "{}.Microscope Info.Stage Position.Stage Y".format(tags_path): (
