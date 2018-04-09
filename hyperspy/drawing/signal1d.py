@@ -125,7 +125,7 @@ class Signal1DFigure(BlittedFigure):
                 # tight_layout is a bit brittle, we do this just in case it
                 # complains
                 pass
-        self._init_draw()
+        self.figure.canvas.draw()
 
     def _on_close(self):
         if self.figure is None:

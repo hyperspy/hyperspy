@@ -32,7 +32,6 @@ from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import VerticalLineWidget
 from hyperspy import components1d
 from hyperspy.component import Component
-from hyperspy import drawing
 from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
@@ -873,12 +872,10 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                 self.noise_type = "shot noise"
         else:
             self.noise_type = "shot noise"
-        self.find()
 
     def _threshold_changed(self, old, new):
         self.index = 0
         self.update_plot()
-        self.find()
 
     def _click_to_show_instructions_fired(self):
         from pyface.message_dialog import information
@@ -952,8 +949,6 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                     minimum),
                 self.signal.axes_manager.signal_axes[0].index2value(
                     maximum))
-            self.signal.axes_manager.indices = self.coordinates[self.index]
-            self.signal._plot.pointer.indices = self.coordinates[self.index]
             self.update_plot()
             self.create_interpolation_line()
 
@@ -964,6 +959,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self.reset_span_selector()
         self.update_spectrum_line()
         if len(self.coordinates) > 1:
+            self.signal._plot.pointer.indices = self.coordinates[self.index]
             self.signal._plot.pointer._update_patch_position()
 
     def update_spectrum_line(self):

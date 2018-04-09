@@ -292,7 +292,7 @@ class ImagePlot(BlittedFigure):
                 pass
 
         self.connect()
-        self._init_draw()
+        self.figure.canvas.draw()
 
     def update(self, **kwargs):
         ims = self.ax.images
