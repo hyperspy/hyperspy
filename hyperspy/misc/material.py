@@ -77,6 +77,8 @@ def weight_to_atomic(weight_percent, elements='auto'):
             atomic_percent.data, elements)
         atomic_percent.data = np.nan_to_num(atomic_percent.data)
         atomic_percent = atomic_percent.split()
+        for i, el in enumerate(elements):
+            atomic_percent[i].metadata.General.title = 'atomic percent of ' + el
         return atomic_percent
     else:
         return _weight_to_atomic(weight_percent, elements)
@@ -151,6 +153,8 @@ def atomic_to_weight(atomic_percent, elements='auto'):
         weight_percent.data = _atomic_to_weight(
             weight_percent.data, elements)
         weight_percent = weight_percent.split()
+        for i, el in enumerate(elements):
+            atomic_percent[i].metadata.General.title = 'weight percent of ' + el
         return weight_percent
     else:
         return _atomic_to_weight(atomic_percent, elements)

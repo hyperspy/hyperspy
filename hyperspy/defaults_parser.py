@@ -18,7 +18,6 @@
 
 
 import os.path
-from os import cpu_count
 import configparser
 import logging
 
@@ -26,7 +25,6 @@ import traits.api as t
 
 from hyperspy.misc.config_dir import config_path, os_name, data_path
 from hyperspy.misc.ipython_tools import turn_logging_on, turn_logging_off
-from hyperspy.io_plugins import default_write_ext
 from hyperspy.ui_registry import add_gui_method
 
 defaults_file = os.path.join(config_path, 'hyperspyrc')
@@ -41,7 +39,7 @@ def guess_gos_path():
         # installation
         # location in windows
         program_files = os.environ['PROGRAMFILES']
-        gos = 'Gatan\DigitalMicrograph\EELS Reference Data\H-S GOS Tables'
+        gos = 'Gatan\\DigitalMicrograph\\EELS Reference Data\\H-S GOS Tables'
         gos_path = os.path.join(program_files, gos)
 
         # Else, use the default location in the .hyperspy forlder
@@ -134,6 +132,9 @@ class GUIs(t.HasTraits):
         True,
         desc="Display traitsui user interface elements. "
         "Requires installing hyperspy_gui_traitsui.")
+    warn_if_guis_are_missing = t.CBool(
+        True,
+        desc="Display warnings, if hyperspy_gui_ipywidgets or hyperspy_gui_traitsui are missing.")
 
 
 class EDSConfig(t.HasTraits):
