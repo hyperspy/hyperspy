@@ -825,15 +825,14 @@ class ImageObject(object):
         # for GMS 2 and quantum/enfinium, the  "Integration time (s)" tag is
         # only present for single spectrum acquisition;  for maps we need to
         # compute exposure * number of frames
-        try:
-            if 'Integration_time_s' in tags.keys():
-                return float(tags["Integration time (s)"])
-            else:
-                frame_number = 1
-                if "Number_of_frames" in tags.keys():
-                    frame_number = float(tags["Number_of_frames"])
-                return float(tags["Exposure_s"]) * frame_number
-        except AttributeError:
+        if 'Integration_time_s' in tags.keys():
+            return float(tags["Integration time (s)"])
+        elif 'Exposure_s' in tags.keys():
+            frame_number = 1
+            if "Number_of_frames" in tags.keys():
+                frame_number = float(tags["Number_of_frames"])
+            return float(tags["Exposure_s"]) * frame_number
+        else:
             _logger.info("EELS exposure time can't be read.")
 
     def get_mapping(self):
