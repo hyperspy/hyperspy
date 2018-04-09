@@ -810,7 +810,7 @@ class ImageObject(object):
             "Session_Info.Microscope",
             "Microscope_Info.Name",
             "Microscope_Info.Microscope",
-            )
+        )
         for loc in locations:
             mic = ImageTags.get_item(loc)
             if mic not in (None, "[]"):
