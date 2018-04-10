@@ -74,7 +74,7 @@ class Signal1DFigure(BlittedFigure):
                 self.figure.canvas.supports_blit)
         plt.tight_layout()
 
-    def add_line(self, line, ax='left', update_on_navigation=True):
+    def add_line(self, line, ax='left'):
         if ax == 'left':
             line.ax = self.ax
             if line.axes_manager is None:
@@ -87,11 +87,10 @@ class Signal1DFigure(BlittedFigure):
             line.sf_lines = self.right_ax_lines
             if line.axes_manager is None:
                 line.axes_manager = self.right_axes_manager
-        if update_on_navigation:
-            line.axes_manager.events.indices_changed.connect(line.update, [])
-            self.events.closed.connect(
-                lambda: line.axes_manager.events.indices_changed.disconnect(
-                    line.update), [])
+        line.axes_manager.events.indices_changed.connect(line.update, [])
+        self.events.closed.connect(
+            lambda: line.axes_manager.events.indices_changed.disconnect(
+                line.update), [])
         line.axis = self.axis
         # Automatically asign the color if not defined
         if line.color is None:
@@ -309,9 +308,9 @@ class Signal1DLine(object):
                                      animated=self.ax.figure.canvas.supports_blit)
         self.ax.figure.canvas.draw_idle()
 
-    def update(self, force_replot=False):
+    def update(self, force_replot=False, ignore_auto_update=False):
         """Update the current spectrum figure"""
-        if self.auto_update is False:
+        if self.auto_update is False and ignore_auto_update is False:
             return
         if force_replot is True:
             self.close()

@@ -959,8 +959,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self.reset_span_selector()
         self.update_spectrum_line()
         if len(self.coordinates) > 1:
-            self.signal._plot.pointer.indices = self.coordinates[self.index]
-            self.signal._plot.pointer._update_patch_position()
+            self.signal._plot.pointer._on_navigate(self.signal.axes_manager)
 
     def update_spectrum_line(self):
         self.line.auto_update = True
@@ -1005,8 +1004,8 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self.interpolated_line.set_line_properties(
             color='blue',
             type='line')
-        self.signal._plot.signal_plot.add_line(self.interpolated_line,
-                                               update_on_navigation=False)
+        self.signal._plot.signal_plot.add_line(self.interpolated_line)
+        self.interpolated_line.auto_update = False
         self.interpolated_line.autoscale = False
         self.interpolated_line.plot()
 
@@ -1081,7 +1080,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         if self.interpolated_line is None:
             return
         else:
-            self.interpolated_line.update()
+            self.interpolated_line.update(ignore_auto_update=True)
 
     def apply(self):
         if not self.interpolated_line:  # No spike selected
