@@ -57,6 +57,8 @@ _logger = logging.getLogger(__name__)
 
 class DummyComponentsContainer:
     pass
+
+
 components = DummyComponentsContainer()
 components.__dict__.update(components1d.__dict__)
 components.__dict__.update(components2d.__dict__)
@@ -563,7 +565,8 @@ class BaseModel(list):
         if self._model_line is None:
             return
         for component in components:
-            component.events.active_changed.disconnect(self._model_line._auto_update_line)
+            component.events.active_changed.disconnect(
+                self._model_line._auto_update_line)
             for parameter in component.parameters:
                 parameter.events.value_changed.disconnect(
                     self._model_line._auto_update_line)
@@ -585,7 +588,7 @@ class BaseModel(list):
                 for component in [component for component in self if
                                   component.active is True]:
                     self._update_component_line(component)
-            except:
+            except BaseException:
                 self._disconnect_parameters2update_plot(components=self)
 
     @contextmanager

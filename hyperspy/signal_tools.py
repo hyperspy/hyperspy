@@ -254,7 +254,7 @@ class Smoothing(t.HasTraits):
                 try:
                     # PySide
                     return np.array(self.line_color.getRgb()) / 255.
-                except:
+                except BaseException:
                     return matplotlib.colors.to_rgb(self.line_color_ipy)
         else:
             return matplotlib.colors.to_rgb(self.line_color_ipy)
