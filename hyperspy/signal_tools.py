@@ -1080,7 +1080,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         if self.interpolated_line is None:
             return
         else:
-            self.interpolated_line.update(ignore_auto_update=True)
+            self.interpolated_line.update()
 
     def apply(self):
         if not self.interpolated_line:  # No spike selected
