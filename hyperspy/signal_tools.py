@@ -254,7 +254,7 @@ class Smoothing(t.HasTraits):
                 try:
                     # PySide
                     return np.array(self.line_color.getRgb()) / 255.
-                except:
+                except BaseException:
                     return matplotlib.colors.to_rgb(self.line_color_ipy)
         else:
             return matplotlib.colors.to_rgb(self.line_color_ipy)
@@ -1080,7 +1080,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         if self.interpolated_line is None:
             return
         else:
-            self.interpolated_line.update(ignore_auto_update=True)
+            self.interpolated_line.update()
 
     def apply(self):
         if not self.interpolated_line:  # No spike selected
