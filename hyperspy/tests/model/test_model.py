@@ -861,12 +861,14 @@ class TestModelScalarVariance:
 class TestModelSignalVariance:
 
     def setup_method(self, method):
-        variance = hs.signals.Signal1D(np.arange(100, 300).reshape(
-            (2, 100)))
+        variance = hs.signals.Signal1D(
+            np.arange(100, 300, dtype="float64").reshape((2, 100)))
         s = variance.deepcopy()
         np.random.seed(1)
         std = 10
+        np.random.seed(1)
         s.add_gaussian_noise(std)
+        np.random.seed(1)
         s.add_poissonian_noise()
         s.metadata.set_item("Signal.Noise_properties.variance",
                             variance + std ** 2)
@@ -877,10 +879,10 @@ class TestModelSignalVariance:
 
     def test_std1_red_chisq(self):
         self.m.multifit(fitter="leastsq", method="ls", show_progressbar=None)
-        np.testing.assert_allclose(self.m.red_chisq.data[0],
-                                   0.79693355673230915)
-        np.testing.assert_allclose(self.m.red_chisq.data[1],
-                                   0.91453032901427167)
+        np.testing.assert_allclose(self.m.red_chisq.data[0], 0.813109,
+                                   atol=1e-5)
+        np.testing.assert_allclose(self.m.red_chisq.data[1], 0.697727,
+                                   atol=1e-5)
 
 
 @lazifyTestClass
