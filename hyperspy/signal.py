@@ -4439,7 +4439,7 @@ class BaseSignal(FancySlicing,
                 _logger.warning(
                     "Changing data type from %s to the original %s." % (
                         self.data.dtype, original_dtype)
-                    )
+                )
                 # Don't change the object if possible
                 self.data = self.data.astype(original_dtype, copy=False)
             else:

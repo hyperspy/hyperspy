@@ -41,7 +41,12 @@ class Test1D:
 class Test2D:
 
     def setup_method(self, method):
-        self.signal = signals.Signal1D(np.arange(5 * 10).reshape(5, 10)) # dtype int
+        self.signal = signals.Signal1D(
+            np.arange(
+                5 *
+                10).reshape(
+                5,
+                10))  # dtype int
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "E"
         self.signal.axes_manager[0].scale = 0.5
