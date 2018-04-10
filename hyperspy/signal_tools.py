@@ -32,7 +32,6 @@ from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import VerticalLineWidget
 from hyperspy import components1d
 from hyperspy.component import Component
-from hyperspy import drawing
 from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
@@ -255,7 +254,7 @@ class Smoothing(t.HasTraits):
                 try:
                     # PySide
                     return np.array(self.line_color.getRgb()) / 255.
-                except:
+                except BaseException:
                     return matplotlib.colors.to_rgb(self.line_color_ipy)
         else:
             return matplotlib.colors.to_rgb(self.line_color_ipy)
@@ -960,7 +959,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self.reset_span_selector()
         self.update_spectrum_line()
         if len(self.coordinates) > 1:
-            self.signal._plot.pointer._update_patch_position()
+            self.signal._plot.pointer._on_navigate(self.signal.axes_manager)
 
     def update_spectrum_line(self):
         self.line.auto_update = True
@@ -1006,6 +1005,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
             color='blue',
             type='line')
         self.signal._plot.signal_plot.add_line(self.interpolated_line)
+        self.interpolated_line.auto_update = False
         self.interpolated_line.autoscale = False
         self.interpolated_line.plot()
 

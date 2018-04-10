@@ -87,6 +87,11 @@ class Signal1DFigure(BlittedFigure):
             line.sf_lines = self.right_ax_lines
             if line.axes_manager is None:
                 line.axes_manager = self.right_axes_manager
+        line.axes_manager.events.indices_changed.connect(
+            line._auto_update_line, [])
+        self.events.closed.connect(
+            lambda: line.axes_manager.events.indices_changed.disconnect(
+                line._auto_update_line), [])
         line.axis = self.axis
         # Automatically asign the color if not defined
         if line.color is None:
@@ -112,11 +117,6 @@ class Signal1DFigure(BlittedFigure):
         for marker in self.ax_markers:
             marker.plot()
         plt.xlim(np.min(x_axis_lower_lims), np.max(x_axis_upper_lims))
-        # To be discussed
-        self.axes_manager.events.indices_changed.connect(self.update, [])
-        self.events.closed.connect(
-            lambda: self.axes_manager.events.indices_changed.disconnect(
-                self.update), [])
         self.ax.figure.canvas.draw_idle()
         if hasattr(self.figure, 'tight_layout'):
             try:
@@ -125,6 +125,7 @@ class Signal1DFigure(BlittedFigure):
                 # tight_layout is a bit brittle, we do this just in case it
                 # complains
                 pass
+        self.figure.canvas.draw()
 
     def _on_close(self):
         if self.figure is None:
@@ -154,6 +155,9 @@ class Signal1DLine(object):
         containing valid line properties. In addition it understands
         the keyword `type` that can take the following values:
         {'scatter', 'step', 'line'}
+    auto_update: bool
+        If False, executing ``_auto_update_line`` does not update the
+        line plot.
 
     Methods
     -------
@@ -198,8 +202,8 @@ class Signal1DLine(object):
     @property
     def get_complex(self):
         warnings.warn("The `get_complex` attribute is deprecated and will be"
-              "removed in 2.0, please use `_plot_imag` instead.",
-              VisibleDeprecationWarning)
+                      "removed in 2.0, please use `_plot_imag` instead.",
+                      VisibleDeprecationWarning)
         return self._plot_imag
 
     @property
@@ -295,10 +299,6 @@ class Signal1DLine(object):
         self.line, = self.ax.plot(self.axis.axis, data,
                                   **self.line_properties)
         self.line.set_animated(self.ax.figure.canvas.supports_blit)
-        self.axes_manager.events.indices_changed.connect(self.update, [])
-        self.events.closed.connect(
-            lambda: self.axes_manager.events.indices_changed.disconnect(
-                self.update), [])
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
         if self.plot_indices is True:
@@ -312,10 +312,17 @@ class Signal1DLine(object):
                                      animated=self.ax.figure.canvas.supports_blit)
         self.ax.figure.canvas.draw_idle()
 
+    def _auto_update_line(self, *args, **kwargs):
+        """Updates the line plot only if `auto_update` is `True`.
+
+        This is useful to connect to events that automatically update the line.
+
+        """
+        if self.auto_update:
+            self.update(self, *args, **kwargs)
+
     def update(self, force_replot=False):
         """Update the current spectrum figure"""
-        if self.auto_update is False:
-            return
         if force_replot is True:
             self.close()
             self.plot()
