@@ -74,16 +74,10 @@ class BlittedFigure(object):
         """
         for ax in self.figure.axes:
             # Create a list of animated artitst and draw them.
-            artists = []
-            artists.extend(ax.images)
-            artists.extend(ax.collections)
-            artists.extend(ax.patches)
-            artists.extend(ax.lines)
-            artists.extend(ax.texts)
-            artists.extend(ax.artists)
-            artists.append(ax.get_yaxis())
-            artists.append(ax.get_xaxis())
-            [ax.draw_artist(a) for a in artists if a.get_animated()]
+            for artist in ax.get_children():
+                # It turns out that not all artists have an animated attribute
+                if hasattr(artist, "animated") and artist.animated:
+                    ax.draw_artist(artist)
 
     def _update_animated(self):
         canvas = self.ax.figure.canvas
