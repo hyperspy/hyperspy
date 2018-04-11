@@ -28,19 +28,25 @@ class Test1D:
         gaussian.A.value = 20
         gaussian.sigma.value = 10
         gaussian.centre.value = 50
-        self.signal = signals.Signal1D(gaussian.function(np.arange(0, 100, 0.01)))
+        self.signal = signals.Signal1D(
+            gaussian.function(np.arange(0, 100, 0.01)))
         self.signal.axes_manager[0].scale = 0.01
 
     def test_integrate1D(self):
         integrated_signal = self.signal.integrate1D(axis=0)
         assert np.allclose(integrated_signal.data, 20,)
-        
+
 
 @lazifyTestClass
 class Test2D:
 
     def setup_method(self, method):
-        self.signal = signals.Signal1D(np.arange(5 * 10).reshape(5, 10))
+        self.signal = signals.Signal1D(
+            np.arange(
+                5 *
+                10).reshape(
+                5,
+                10))  # dtype int
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "E"
         self.signal.axes_manager[0].scale = 0.5
@@ -183,6 +189,49 @@ class Test2D:
         result = np.angle(self.signal)
         assert isinstance(result, np.ndarray)
         np.testing.assert_array_equal(result, np.angle(self.signal.data))
+
+    def test_add_gaussian_noise(self):
+        s = self.signal
+        s.change_dtype("float64")
+        kwargs = {}
+        if s._lazy:
+            data = s.data.compute()
+            from dask.array.random import seed, normal
+            kwargs["chunks"] = s.data.chunks
+        else:
+            data = s.data.copy()
+            from numpy.random import seed, normal
+        seed(1)
+        s.add_gaussian_noise(std=1.0)
+        seed(1)
+        if s._lazy:
+            s.compute()
+        np.testing.assert_array_almost_equal(
+            s.data - data, normal(scale=1.0, size=data.shape, **kwargs))
+
+    def test_add_poisson_noise(self):
+        s = self.signal
+        kwargs = {}
+        if s._lazy:
+            data = s.data.compute()
+            from dask.array.random import seed, poisson
+            kwargs["chunks"] = s.data.chunks
+        else:
+            data = s.data.copy()
+            from numpy.random import seed, poisson
+        seed(1)
+        s.add_poissonian_noise(keep_dtype=False)
+        if s._lazy:
+            s.compute()
+        seed(1)
+        np.testing.assert_array_almost_equal(
+            s.data, poisson(lam=data, **kwargs))
+        s.change_dtype("float64")
+        seed(1)
+        s.add_poissonian_noise(keep_dtype=True)
+        if s._lazy:
+            s.compute()
+        assert s.data.dtype == np.dtype("float64")
 
 
 def _test_default_navigation_signal_operations_over_many_axes(self, op):
