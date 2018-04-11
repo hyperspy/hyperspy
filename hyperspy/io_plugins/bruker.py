@@ -985,10 +985,7 @@ def spx_reader(filename, lazy=False):
                             'title': 'EDX',
                             'date': spectrum.date,
                              'time': spectrum.time},
-                 'Sample': {'name': name,
-                            #'elements': TODO
-                            #'xray_lines': TODO
-                            },
+                 'Sample': {'name': name},
                  'Signal': {'signal_type': 'EDS_%s' % mode,
                             'record_by': 'spectrum',
                             'quantity': 'X-rays (Counts)'}
