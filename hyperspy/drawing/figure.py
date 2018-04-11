@@ -73,10 +73,12 @@ class BlittedFigure(object):
 
         """
         for ax in self.figure.axes:
-            # Create a list of animated artitst and draw them.
+            # Create a list of animated artists and draw them.
             for artist in ax.get_children():
                 # It turns out that not all artists have an animated attribute
-                if hasattr(artist, "animated") and artist.animated:
+                print(artist)
+                if artist.get_animated():
+                    print("animated %s" % artist)
                     ax.draw_artist(artist)
 
     def _update_animated(self):
