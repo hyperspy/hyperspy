@@ -218,7 +218,7 @@ class WidgetBase(object):
         for cid in self.cids:
             try:
                 self.ax.figure.canvas.mpl_disconnect(cid)
-            except:
+            except BaseException:
                 pass
         if self._navigating:
             self.disconnect_navigate()
@@ -235,7 +235,7 @@ class WidgetBase(object):
         """
         try:
             if self.blit and hasattr(self.ax, 'hspy_fig'):
-                self.ax.hspy_fig._draw_animated()
+                self.ax.hspy_fig._update_animated()
             elif self.ax.figure is not None:
                 self.ax.figure.canvas.draw_idle()
         except AttributeError:
