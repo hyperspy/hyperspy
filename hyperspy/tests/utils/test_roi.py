@@ -1,6 +1,7 @@
 
 
 import numpy as np
+import pytest
 
 from hyperspy.signals import Signal2D, Signal1D
 from hyperspy.roi import (Point1DROI, Point2DROI, SpanROI, RectangularROI,
@@ -19,6 +20,13 @@ class TestROIs():
 
         # 4D dataset
         self.s_i = Signal2D(np.random.rand(100, 100, 4, 4))
+
+        # Generate ROI for test of angle measurements
+        self.r = []
+        t = np.tan(30. / 180. * np.pi)
+        for x in [-1., -t, t, 1]:
+            for y in [-1., -t, t, 1]:
+                self.r.append(Line2DROI(x1=0., x2=x, y1=0., y2=y))
 
     def test_point1d_spectrum(self):
         s = self.s_s
@@ -294,6 +302,36 @@ class TestROIs():
               [0.56463766, 0.73848284, 0.41183566, 0.37515417],
               [0.48426503, 0.23582684, 0.45947953, 0.49322732]]]
         ))
+
+    def test_line2droi_angle(self):
+        # 1. Testing quantitative measurement for different quadrants:
+        r = self.r
+        r_angles = np.array([rr.angle() for rr in r])
+        angles_h = np.array([-135., -150., 150., 135.,
+                             -120., -135., 135., 120.,
+                             -60., -45., 45., 60.,
+                             -45., -30, 30., 45.])
+        angles_v = np.array([-135., -120., -60., -45.,
+                             -150., -135., -45., -30.,
+                             150., 135., 45., 30.,
+                             135., 120., 60., 45.])
+        assert np.allclose(r_angles, angles_h)
+        r_angles = np.array([rr.angle(axis='vertical') for rr in r])
+        assert np.allclose(r_angles, angles_v)
+
+        # 2. Testing axis aliases:
+        r = Line2DROI(np.random.rand(), np.random.rand(), np.random.rand(), np.random.rand())
+        assert r.angle(axis='horizontal') == r.angle(axis='x')
+        assert r.angle(axis='vertical') == r.angle(axis='y')
+
+        # 3. Testing unit conversation
+        assert r.angle(units='degrees') == (r.angle(units='radians') / np.pi * 180.)
+
+        # 4. Testing raises:
+        with pytest.raises(ValueError):
+            r.angle(units='meters')
+        with pytest.raises(ValueError):
+            r.angle(axis='z')
 
 
 class TestInteractive:
