@@ -1009,7 +1009,9 @@ class Component(t.HasTraits):
         -------
         numpy array
         """
-        return self.model.__call__(component_list=[self])
+        axis = self.model.axis.axis[self.model.channel_switches]
+        component_array = self.function(axis)
+        return component_array
 
     def _component2plot(self, axes_manager, out_of_range2nans=True):
         old_axes_manager = None
@@ -1017,7 +1019,10 @@ class Component(t.HasTraits):
             old_axes_manager = self.model.axes_manager
             self.model.axes_manager = axes_manager
             self.fetch_stored_values()
-        s = self.__call__()
+        if self.model:
+            s = self.model.__call__(component_list=[self])
+        else:
+            s = self.__call__()
         if not self.active:
             s.fill(np.nan)
         if old_axes_manager is not None:
