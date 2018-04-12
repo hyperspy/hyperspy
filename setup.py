@@ -62,7 +62,7 @@ install_req = ['scipy>=0.15',
                'scikit-image>=0.13',
                'pint>=0.8',
                'statsmodels',
-               'mrcz>0.3.4',
+               'mrcz>=0.3.6',
                ]
 
 extras_require = {
