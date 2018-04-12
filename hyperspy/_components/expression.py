@@ -124,13 +124,20 @@ class Expression(Component):
             self.compile_function(module=module, position=rotation_center)
         # Initialise component
         Component.__init__(self, self._parameter_strings)
-        self._whitelist['expression'] = ('init', expression)
-        self._whitelist['name'] = ('init', name)
-        self._whitelist['position'] = ('init', position)
-        self._whitelist['module'] = ('init', module)
-        if self._is2D:
-            self._whitelist['add_rotation'] = ('init', self._add_rotation)
-            self._whitelist['rotation_center'] = ('init', rotation_center)
+        # When creating components using Expression (for example GaussianHF)
+        # we shouldn't add anything else to the _whitelist as the
+        # component should be initizialize with its own kwargs
+        # To implement this, we check if a "no_whitelist" kwarg exists.
+        if "no_whitelist" not in kwargs:
+            self._whitelist['expression'] = ('init', expression)
+            self._whitelist['name'] = ('init', name)
+            self._whitelist['position'] = ('init', position)
+            self._whitelist['module'] = ('init', module)
+            if self._is2D:
+                self._whitelist['add_rotation'] = ('init', self._add_rotation)
+                self._whitelist['rotation_center'] = ('init', rotation_center)
+        else:
+            del kwargs["no_whitelist"]
         self.name = name
         # Set the position parameter
         if position:

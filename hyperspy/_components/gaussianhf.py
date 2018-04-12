@@ -70,6 +70,7 @@ class GaussianHF(Expression):
             centre=centre,
             position="centre",
             autodoc=False,
+            no_whitelist=True,
         )
 
         # Boundaries
