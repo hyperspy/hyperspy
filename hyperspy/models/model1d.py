@@ -397,10 +397,8 @@ class Model1D(BaseModel):
         """
 
         if component_list is None:
-            component_list = [component for component in self]
-        if isinstance(component_list, (list, tuple)):
-            pass
-        else:
+            component_list = self
+        if not isinstance(component_list, (list, tuple)):
             raise ValueError(
                 "'Component_list' parameter need to be a list or None")
 
