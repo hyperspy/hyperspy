@@ -24,6 +24,8 @@ from hyperspy.drawing.widgets import Widget2DBase, ResizersMixin
 
 
 _logger = logging.getLogger(__name__)
+# Track if we have already warned when the widget is out of range
+already_warn_out_of_range = False
 
 
 class SquareWidget(Widget2DBase):
@@ -144,48 +146,79 @@ class RectangleWidget(SquareWidget, ResizersMixin):
         If specifying with keywords, any unspecified dimensions will be kept
         constant (note: width/height will be kept, not right/bottom).
         """
+        global already_warn_out_of_range
         x, y, w, h = self._parse_bounds_args(args, kwargs)
 
         scale = [axis.scale for axis in self.axes]
         l0, h0 = self.axes[0].low_value, self.axes[0].high_value
         l1, h1 = self.axes[1].low_value, self.axes[1].high_value
 
+        in_range = 0
         if x < l0:
             x = l0
-            _logger.warning('`x` is too small. It is therefore set to its '
-                            'minimal value of {}.'.format(x))
+            if not already_warn_out_of_range:
+                _logger.info('`x` is too small. It is therefore set to its '
+                             'minimal value of {}.'.format(x))
+                already_warn_out_of_range = True
         elif h0 <= x:
             x = h0 - scale[0]
-            _logger.warning('`x` is too large. It is therefore set to its '
-                            'maximal value of {}.'.format(x))
+            if not already_warn_out_of_range:
+                _logger.info('`x` is too large. It is therefore set to its '
+                             'maximal value of {}.'.format(x))
+                already_warn_out_of_range = True
+        else:
+            in_range += 1
         if y < l1:
             y = l1
-            _logger.warning('`y` is too small. It is therefore set to its '
-                            'minimal value of {}.'.format(y))
+            if not already_warn_out_of_range:
+                _logger.info('`y` is too small. It is therefore set to its '
+                             'minimal value of {}.'.format(y))
+                already_warn_out_of_range = True
         elif h1 <= y:
             y = h1 - scale[1]
-            _logger.warning('`y` is too large. It is therefore set to its '
-                            'minimal value of {}.'.format(y))
+            if not already_warn_out_of_range:
+                _logger.info('`y` is too large. It is therefore set to its '
+                             'minimal value of {}.'.format(y))
+                already_warn_out_of_range = True
+        else:
+            in_range += 1
         if w < scale[0]:
             w = scale[0]
-            _logger.warning('`width` or `right` value is too small. It is '
-                            'therefore set to its minimal value of '
-                            '{}.'.format(w))
+            if not already_warn_out_of_range:
+                _logger.info('`width` or `right` value is too small. It is '
+                             'therefore set to its minimal value of '
+                             '{}.'.format(w))
+                already_warn_out_of_range = True
         elif not (l0 + scale[0] <= x + w <= h0 + scale[0]):
             w = h0 + scale[0] - x
-            _logger.warning('`width` or `right` value is too large. It is '
-                            'therefore set to its maximal value of '
-                            '{}.'.format(w))
+            if not already_warn_out_of_range:
+                _logger.info('`width` or `right` value is too large. It is '
+                             'therefore set to its maximal value of '
+                             '{}.'.format(w))
+                already_warn_out_of_range = True
+        else:
+            in_range += 1
         if h < scale[1]:
             h = scale[1]
-            _logger.warning('`height` or `bottom` value is too small. It is '
-                            'therefore set to the minimal value of '
-                            '{}.'.format(h))
+            if not already_warn_out_of_range:
+                _logger.info('`height` or `bottom` value is too small. It is '
+                             'therefore set to the minimal value of '
+                             '{}.'.format(h))
+                already_warn_out_of_range = True
         elif not (l1 + scale[1] <= y + h <= h1 + scale[1]):
             h = h1 + scale[1] - y
-            _logger.warning('`height` or `bottom` value is too large. It is '
-                            'therefore set to its maximal value of '
-                            '{}.'.format(h))
+            if not already_warn_out_of_range:
+                _logger.info('`height` or `bottom` value is too large. It is '
+                             'therefore set to its maximal value of '
+                             '{}.'.format(h))
+                already_warn_out_of_range = True
+        else:
+            in_range += 1
+            
+        # if we are in range again, reset `already_warn_out_of_range` to False
+        if in_range == 4 and already_warn_out_of_range:
+            _logger.info('ROI back in range.')
+            already_warn_out_of_range = False
 
         old_position, old_size = self.position, self.size
         self._pos = np.array([x, y])

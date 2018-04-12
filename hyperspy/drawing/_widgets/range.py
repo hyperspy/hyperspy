@@ -26,6 +26,8 @@ from hyperspy.events import Events, Event
 
 
 _logger = logging.getLogger(__name__)
+# Track if we have already warned when the widget is out of range
+already_warn_out_of_range = False
 
 
 def in_interval(number, interval):
@@ -149,30 +151,45 @@ class RangeWidget(ResizableDraggableWidgetBase):
         If specifying with keywords, any unspecified dimensions will be kept
         constant (note: width will be kept, not right).
         """
+        global already_warn_out_of_range
 
         x, w = self._parse_bounds_args(args, kwargs)
         l0, h0 = self.axes[0].low_value, self.axes[0].high_value
         scale = self.axes[0].scale
 
+        in_range = 0
         if x < l0:
             x = l0
-            _logger.warning('`x` is too small. It is therefore set to its '
-                            'minimal value of {}.'.format(x))
+            if not already_warn_out_of_range:
+                _logger.info('`x` is too small. It is therefore set to its '
+                             'minimal value of {}.'.format(x))
         elif h0 <= x:
             x = h0 - scale
-            _logger.warning('`x` is too large. It is therefore set to its '
-                            'maximal value of {}.'.format(x))
+            if not already_warn_out_of_range:
+                _logger.info('`x` is too large. It is therefore set to its '
+                             'maximal value of {}.'.format(x))
+        else:
+            in_range += 1
         if w < scale:
             w = scale
-            _logger.warning('`width` or `right` value is too small. It is '
-                            'therefore set to its minimal value of '
-                            '{}.'.format(w))
+            if not already_warn_out_of_range:
+                _logger.info('`width` or `right` value is too small. It is '
+                             'therefore set to its minimal value of '
+                             '{}.'.format(w))
         elif not (l0 + scale <= x + w <= h0 + scale):
             w = h0 + scale - x
-            _logger.warning('`width` or `right` value is too large. It is '
-                            'therefore set to its maximal value of '
-                            '{}.'.format(w))
-
+            if not already_warn_out_of_range:
+                _logger.info('`width` or `right` value is too large. It is '
+                             'therefore set to its maximal value of '
+                             '{}.'.format(w))
+        else:
+            in_range += 1
+        
+        # if we are in range again, reset `already_warn_out_of_range` to False
+        if in_range == 2 and already_warn_out_of_range:
+            _logger.info('ROI back in range.')
+            already_warn_out_of_range = False
+            
         old_position, old_size = self.position, self.size
         self._pos = np.array([x])
         self._size = np.array([w])
