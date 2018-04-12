@@ -351,6 +351,7 @@ with update_version_when_dev() as version:
                 'tests/drawing/plot_signal1d/*.png',
                 'tests/drawing/plot_signal2d/*.png',
                 'tests/drawing/plot_markers/*.png',
+                'tests/drawing/plot_widgets/*.png',
                 'tests/io/blockfile_data/*.blo',
                 'tests/io/dens_data/*.dens',
                 'tests/io/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3',
