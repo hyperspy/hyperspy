@@ -1019,10 +1019,7 @@ class Component(t.HasTraits):
             old_axes_manager = self.model.axes_manager
             self.model.axes_manager = axes_manager
             self.fetch_stored_values()
-        if self.model:
-            s = self.model.__call__(component_list=[self])
-        else:
-            s = self.__call__()
+        s = self.model.__call__(component_list=[self])
         if not self.active:
             s.fill(np.nan)
         if old_axes_manager is not None:
