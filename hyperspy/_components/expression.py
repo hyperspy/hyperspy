@@ -196,9 +196,10 @@ class Expression(Component):
                            modules=module, dummify=False)
 
         if self._is2D:
-            f = lambda x, y: self._f(x, y, *[p.value for p in self.parameters])
+            def f(x, y): return self._f(
+                x, y, *[p.value for p in self.parameters])
         else:
-            f = lambda x: self._f(x, *[p.value for p in self.parameters])
+            def f(x): return self._f(x, *[p.value for p in self.parameters])
         setattr(self, "function", f)
         parnames = [symbol.name for symbol in parameters]
         self._parameter_strings = parnames
