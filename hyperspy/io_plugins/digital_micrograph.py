@@ -813,7 +813,7 @@ class ImageObject(object):
         )
         for loc in locations:
             mic = ImageTags.get_item(loc)
-            if mic not in (None, "[]"):
+            if mic not in (None, "[]", ""):
                 return mic
         _logger.info("Microscope name not present")
         return None
