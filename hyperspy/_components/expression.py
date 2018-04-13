@@ -126,12 +126,13 @@ class Expression(Component):
         Component.__init__(self, self._parameter_strings)
         # When creating components using Expression (for example GaussianHF)
         # we shouldn't add anything else to the _whitelist as the
-        # component should be initizialized with its own kwargs
+        # component should be initizialized with its own kwargs.
+        # An exception is "module"
+        self._whitelist['module'] = ('init', module)
         if self.__class__ is Expression:
             self._whitelist['expression'] = ('init', expression)
             self._whitelist['name'] = ('init', name)
             self._whitelist['position'] = ('init', position)
-            self._whitelist['module'] = ('init', module)
             if self._is2D:
                 self._whitelist['add_rotation'] = ('init', self._add_rotation)
                 self._whitelist['rotation_center'] = ('init', rotation_center)

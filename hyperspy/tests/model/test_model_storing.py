@@ -146,7 +146,7 @@ class TestModelSaving:
         m = s.create_model()
         m.append(Gaussian(A=13))
         m[-1].name = 'something'
-        m.append(GaussianHF())
+        m.append(GaussianHF(module="numpy"))
         m[-1].height.value = 3
         m.append(Expression(name="Line", expression="a * x + b", a=1, b=0))
         self.m = m
