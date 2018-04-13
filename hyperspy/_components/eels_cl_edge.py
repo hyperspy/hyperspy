@@ -213,7 +213,7 @@ class EELSCLEdge(Component):
                 self.GOS.onset_energy,
                 self.convergence_angle,
                 self.collection_angle)
-        except:
+        except BaseException:
             # All the parameters may not be defined yet...
             pass
 

@@ -21,6 +21,7 @@ import functools
 import warnings
 
 import numpy as np
+from dask.array import Array as dArray
 import traits.api as t
 from traits.trait_numeric import Array
 import sympy
@@ -206,7 +207,7 @@ class Parameter(t.HasTraits):
             load_from_dictionary(self, dictionary)
             return dictionary['self']
         else:
-            raise ValueError( "_id_name of parameter and dictionary do not match, \nparameter._id_name = %s\
+            raise ValueError("_id_name of parameter and dictionary do not match, \nparameter._id_name = %s\
                     \ndictionary['_id_name'] = %s" % (self._id_name, dictionary['_id_name']))
 
     def __repr__(self):
@@ -247,7 +248,7 @@ class Parameter(t.HasTraits):
                 inv = sympy.solveset(sympy.Eq(y, expr), x)
                 self._twin_inverse_sympy = lambdify(y, inv)
                 self._twin_inverse_function = None
-            except:
+            except BaseException:
                 # Not all may have a suitable solution.
                 self._twin_inverse_function = None
                 self._twin_inverse_sympy = None
@@ -518,8 +519,14 @@ class Parameter(t.HasTraits):
         if not indices:
             indices = (0,)
         if self.map['is_set'][indices]:
-            self.value = self.map['values'][indices]
-            self.std = self.map['std'][indices]
+            value = self.map['values'][indices]
+            std = self.map['std'][indices]
+            if isinstance(value, dArray):
+                value = value.compute()
+            if isinstance(std, dArray):
+                std = std.compute()
+            self.value = value
+            self.std = std
 
     def assign_current_value_to_all(self, mask=None):
         """Assign the current value attribute to all the  indices
@@ -1176,5 +1183,5 @@ class Component(t.HasTraits):
                         "_id_name of parameters in component and dictionary do not match")
             return id_dict
         else:
-            raise ValueError( "_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
+            raise ValueError("_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
                     \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
