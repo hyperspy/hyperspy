@@ -140,7 +140,7 @@ def Mucoef(model,quanti): # this function calculate the absorption coefficient f
     t=(np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size/5))
     
     Ac=mass_absorption_mixture(elements=model._signal.metadata.Sample.elements ,weight_percent=weight, energies=t)    
-    b=(model._signal.axes_manager.signal_axes[-1].axis)-0.035
+    b=(model._signal.axes_manager.signal_axes[-1].axis)
     Ac=np.interp(b,t,Ac) # Interpolation allows to gain some time
     
     return Ac
@@ -160,7 +160,7 @@ def Windowabsorption(model,detector):
             Data are contain in a dictionnary
     """	
     a=np.array(detector_efficiency[detector])
-    b=(model._signal.axes_manager.signal_axes[-1].axis)-0.035
+    b=(model._signal.axes_manager.signal_axes[-1].axis)
     x =a[:,0]
     y = a[:,1]
     Accc=np.interp(b, x, y)
