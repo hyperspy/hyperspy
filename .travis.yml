@@ -39,7 +39,6 @@ install:
   - conda create -n testenv --yes python=$PYTHON;
     source activate testenv;
     conda install -y -c conda-forge $DEPS;
-    conda install -y -c conda-forge --no-deps freetype=2.6;
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
       pip install .[all];
     else pip install .;
@@ -55,7 +54,7 @@ before_script: # configure a headless display to test plot generation
 
 script:
   - python -c 'import matplotlib.pyplot as plt; print(plt.get_backend())';
-  - pip install coverage coveralls pytest pytest-cov pytest-mpl pytest-sugar;
+  - pip install coverage coveralls pytest pytest-cov pytest-mpl;
     py.test --mpl --cov=hyperspy --pyargs hyperspy;
 
 #after_failure: # run only on failure in case there is a need to check matplotlib image comparison

@@ -25,7 +25,7 @@ import logging
 import numpy as np
 from hyperspy.misc.array_tools import sarray2dict
 import traits.api as t
-from hyperspy.misc.elements import elements_db
+from hyperspy.misc.elements import atomic_number2name
 
 _logger = logging.getLogger(__name__)
 
@@ -52,18 +52,6 @@ writes = False
 
 spd_extensions = ('spd', 'SPD', 'Spd')
 spc_extensions = ('spc', 'SPC', 'Spc')
-
-# read dictionary of atomic numbers from HyperSpy, and add the elements that
-# do not currently exist in the database (in case anyone is doing EDS on
-# Ununpentium...)
-atomic_num_dict = dict((p.General_properties.Z, e) for (e, p) in elements_db)
-atomic_num_dict.update({93: 'Np', 94: 'Pu', 95: 'Am', 96: 'Cm', 97: 'Bk',
-                        98: 'Cf', 99: 'Es', 100: 'Fm', 101: 'Md', 102: 'No',
-                        103: 'Lr', 104: 'Rf', 105: 'Db', 106: 'Sg', 107: 'Bh',
-                        108: 'Hs', 109: 'Mt', 110: 'Ds', 111: 'Rg', 112: 'Cp',
-                        113: 'Uut', 114: 'Uuq', 115: 'Uup', 116: 'Uuh',
-                        117: 'Uus',
-                        118: 'Uuo'})
 
 
 def get_spd_dtype_list(endianess='<'):
@@ -737,7 +725,7 @@ def _add_spc_metadata(metadata, spc_header):
     # Get elements stored in spectrum:
     num_elem = spc_header['numElem']
     if num_elem > 0:
-        element_list = sorted([atomic_num_dict[i] for
+        element_list = sorted([atomic_number2name[i] for
                                i in spc_header['at'][:num_elem]])
         metadata['Sample'] = {'elements': element_list}
         _logger.info(" Elemental information found in the spectral metadata "
