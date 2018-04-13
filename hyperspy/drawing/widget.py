@@ -273,6 +273,9 @@ class WidgetBase(object):
             else:
                 raise
 
+    def __str__(self):
+        return "{} with id {}".format(self.__class__.__name__, id(self))
+
 
 class DraggableWidgetBase(WidgetBase):
 

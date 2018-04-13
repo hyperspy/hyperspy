@@ -153,6 +153,13 @@ class RangeWidget(ResizableDraggableWidgetBase):
         """
         global already_warn_out_of_range
 
+        def warn(obj, parameter, value):
+            global already_warn_out_of_range
+            if not already_warn_out_of_range:
+                _logger.info('{}: {} is out of range. It is therefore set '
+                             'to the value of {}'.format(obj, parameter, value))
+                already_warn_out_of_range = True
+
         x, w = self._parse_bounds_args(args, kwargs)
         l0, h0 = self.axes[0].low_value, self.axes[0].high_value
         scale = self.axes[0].scale
@@ -160,36 +167,30 @@ class RangeWidget(ResizableDraggableWidgetBase):
         in_range = 0
         if x < l0:
             x = l0
-            if not already_warn_out_of_range:
-                _logger.info('`x` is too small. It is therefore set to its '
-                             'minimal value of {}.'.format(x))
+            warn(self, '`x` or `left`', x)
         elif h0 <= x:
             x = h0 - scale
-            if not already_warn_out_of_range:
-                _logger.info('`x` is too large. It is therefore set to its '
-                             'maximal value of {}.'.format(x))
+            warn(self, '`x` or `left`', x)
         else:
             in_range += 1
         if w < scale:
             w = scale
-            if not already_warn_out_of_range:
-                _logger.info('`width` or `right` value is too small. It is '
-                             'therefore set to its minimal value of '
-                             '{}.'.format(w))
+            warn(self, '`width` or `right`', w)
         elif not (l0 + scale <= x + w <= h0 + scale):
-            w = h0 + scale - x
-            if not already_warn_out_of_range:
-                _logger.info('`width` or `right` value is too large. It is '
-                             'therefore set to its maximal value of '
-                             '{}.'.format(w))
+            if self.size != np.array([w]):  # resize
+                w = h0 + scale - self.position[0]
+                warn(self, '`width` or `right`', w)
+            if self.position != np.array([x]):  # moved
+                x = h0 + scale - self.size[0]
+                warn(self, '`x` or `left`', x)
         else:
             in_range += 1
-        
+
         # if we are in range again, reset `already_warn_out_of_range` to False
         if in_range == 2 and already_warn_out_of_range:
-            _logger.info('ROI back in range.')
+            _logger.info('{} back in range.'.format(self.__class__.__name__))
             already_warn_out_of_range = False
-            
+
         old_position, old_size = self.position, self.size
         self._pos = np.array([x])
         self._size = np.array([w])

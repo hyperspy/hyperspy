@@ -111,7 +111,7 @@ class TestROIs():
         s.axes_manager[0].scale = 0.2
         r2 = SpanROI(0, 12)
         # Test adding roi to plot
-        s.plot()
+        s.plot(navigator='spectrum')
         w2 = r2.add_widget(s)
         np.testing.assert_equal(r2(s).data, s.data)
 
@@ -122,14 +122,14 @@ class TestROIs():
         w2.set_bounds(width=30.0)  # above max width
         assert w2._size[0] == 12
 
-        w2.set_bounds(x=10, width=20)
-        assert w2._pos[0] == 10
-        assert w2._size[0] == 2
+        w2.set_bounds(x=10, width=20) # the combination of the two is not valid
+        assert w2._pos[0] == 0
+        assert w2._size[0] == 12
 
         w2.set_bounds(x=10)
         w2.set_bounds(width=20)
-        assert w2._pos[0] == 10
-        assert w2._size[0] == 2
+        assert w2._pos[0] == 0
+        assert w2._size[0] == 12
 
     def test_widget_initialisation(self, mpl_cleanup):
         s = Signal1D(np.arange(2 * 4 * 6).reshape(2, 4, 6))
@@ -211,22 +211,22 @@ class TestROIs():
         with pytest.raises(ValueError):
             w2.height = 101
 
-        w2.set_bounds(x=10, width=20)
-        assert w2._pos[0] == 10
-        assert w2._size[0] == 10
+        w2.set_bounds(x=10, width=20) # the combination of the two is not valid
+        assert w2._pos[0] == 0.0
+        assert w2._size[0] == 20.0
 
-        w2.set_bounds(y=40, height=60)
-        assert w2._pos[1] == 40
-        assert w2._size[1] == 40
+        w2.set_bounds(y=40, height=60) # the combination of the two is not valid
+        assert w2._pos[1] == 0
+        assert w2._size[1] == 80
 
         w2.set_bounds(x=10)
         w2.set_bounds(width=20)
-        assert w2._pos[0] == 10
-        assert w2._size[0] == 10
+        assert w2._pos[0] == 0
+        assert w2._size[0] == 20
         w2.set_bounds(y=10)
         w2.set_bounds(height=79.2)
-        assert w2._pos[1] == 10
-        assert w2._size[1] == 70
+        assert w2._pos[1] == 0.0
+        assert w2._size[1] == 79.2
 
     def test_circle_spec(self):
         s = self.s_s
