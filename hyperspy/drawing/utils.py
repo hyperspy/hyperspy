@@ -126,7 +126,7 @@ def create_figure(window_title=None,
     fig = plt.figure(**kwargs)
     if window_title is not None:
         # remove non-alphanumeric characters to prevent file saving problems
-        # This is a workaround for: 
+        # This is a workaround for:
         #   https://github.com/matplotlib/matplotlib/issues/9056
         reserved_characters = '<>"/\|?*'
         for c in reserved_characters:
@@ -1044,7 +1044,8 @@ def make_cmap(colors, name='my_colormap', position=None,
     def _html_color_to_rgb(color_string):
         """ convert #RRGGBB to an (R, G, B) tuple """
         color_string = color_string.strip()
-        if color_string[0] == '#': color_string = color_string[1:]
+        if color_string[0] == '#':
+            color_string = color_string[1:]
         if len(color_string) != 6:
             raise ValueError(
                 "input #{} is not in #RRGGBB format".format(color_string))
@@ -1163,16 +1164,16 @@ def plot_spectra(
 
     def _reverse_legend(ax_, legend_loc_):
         """
-        Reverse the ordering of a matplotlib legend (to be more consistent 
-        with the default ordering of plots in the 'cascade' and 'overlap' 
+        Reverse the ordering of a matplotlib legend (to be more consistent
+        with the default ordering of plots in the 'cascade' and 'overlap'
         styles
-        
+
         Parameters
         ----------
         ax_: matplotlib axes
-        
+
         legend_loc_: str or int
-            This parameter controls where the legend is placed on the 
+            This parameter controls where the legend is placed on the
             figure; see the pyplot.legend docstring for valid values
         """
         l = ax_.get_legend()

@@ -386,7 +386,7 @@ class Model1D(BaseModel):
             If True, only the active components will be used to build the
             model.
         component_list : list or None
-            If None, the sum of all the components is returned. If list, only 
+            If None, the sum of all the components is returned. If list, only
             the provided components are returned
 
         cursor: 1 or 2
