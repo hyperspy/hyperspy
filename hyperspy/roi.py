@@ -1057,9 +1057,13 @@ class Line2DROI(BaseInteractiveROI):
         -------
         angle : float
             Angle in radians or degrees in range [-pi, pi]
+
         Examples
         --------
-
+        >>> import hyperspy.api as hs
+        >>> hs.roi.Line2DROI(0., 0., 1., 2., 1)
+        >>> r.angle()
+        63.43494882292201
         """
 
         x = self.x2 - self.x1
