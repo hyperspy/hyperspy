@@ -806,14 +806,17 @@ class ImageObject(object):
             _logger.warning("Date string, %s,  could not be parsed", date)
 
     def _get_microscope_name(self, ImageTags):
-        try:
-            if ImageTags.Session_Info.Microscope != "[]":
-                return ImageTags.Session_Info.Microscope
-        except AttributeError:
-            if 'Name' in ImageTags['Microscope_Info'].keys():
-                return ImageTags.Microscope_Info.Name
-            elif 'Microscope' in ImageTags['Microscope_Info'].keys():
-                return ImageTags.Microscope_Info.Microscope
+        locations = (
+            "Session_Info.Microscope",
+            "Microscope_Info.Name",
+            "Microscope_Info.Microscope",
+        )
+        for loc in locations:
+            mic = ImageTags.get_item(loc)
+            if mic and mic != "[]":
+                return mic
+        _logger.info("Microscope name not present")
+        return None
 
     def _parse_string(self, tag):
         if len(tag) == 0:
