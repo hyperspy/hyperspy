@@ -125,6 +125,14 @@ def create_figure(window_title=None,
     """
     fig = plt.figure(**kwargs)
     if window_title is not None:
+        # remove non-alphanumeric characters to prevent file saving problems
+        # This is a workaround for: 
+        #   https://github.com/matplotlib/matplotlib/issues/9056
+        reserved_characters = '<>"/\|?*'
+        for c in reserved_characters:
+            window_title = window_title.replace(c, '')
+        window_title = window_title.replace('\n', ' ')
+        window_title = window_title.replace(':', ' -')
         fig.canvas.set_window_title(window_title)
     if _on_figure_window_close is not None:
         on_figure_window_close(fig, _on_figure_window_close)
@@ -684,7 +692,7 @@ def plot_images(images,
         if len(label_list) > n:
             del label_list[n:]
         if len(label_list) < n:
-            label_list *= (n / len(label_list)) + 1
+            label_list *= (n // len(label_list)) + 1
             del label_list[n:]
 
     else:
@@ -1028,6 +1036,25 @@ def plot_spectra(
     """
     import hyperspy.signal
 
+    def _reverse_legend(ax_, legend_loc_):
+        """
+        Reverse the ordering of a matplotlib legend (to be more consistent 
+        with the default ordering of plots in the 'cascade' and 'overlap' 
+        styles
+        
+        Parameters
+        ----------
+        ax_: matplotlib axes
+        
+        legend_loc_: str or int
+            This parameter controls where the legend is placed on the 
+            figure; see the pyplot.legend docstring for valid values
+        """
+        l = ax_.get_legend()
+        labels = [lb.get_text() for lb in list(l.get_texts())]
+        handles = l.legendHandles
+        ax_.legend(handles[::-1], labels[::-1], loc=legend_loc_)
+
     # Before v1.3 default would read the value from prefereces.
     if style == "default":
         style = "overlap"
@@ -1081,6 +1108,7 @@ def plot_spectra(
                            line_style=line_style,)
         if legend is not None:
             plt.legend(legend, loc=legend_loc)
+            _reverse_legend(ax, legend_loc)
             if legend_picking is True:
                 animate_legend(figure=fig)
     elif style == 'cascade':
@@ -1095,6 +1123,7 @@ def plot_spectra(
                               padding=padding)
         if legend is not None:
             plt.legend(legend, loc=legend_loc)
+            _reverse_legend(ax, legend_loc)
     elif style == 'mosaic':
         default_fsize = plt.rcParams["figure.figsize"]
         figsize = (default_fsize[0], default_fsize[1] * len(spectra))

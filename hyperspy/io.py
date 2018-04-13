@@ -338,7 +338,7 @@ def assign_signal_subclass(dtype,
     import hyperspy._lazy_signals
     from hyperspy.signal import BaseSignal
     # Check if parameter values are allowed:
-    if np.issubdtype(dtype, complex):
+    if np.issubdtype(dtype, np.complexfloating):
         dtype = 'complex'
     elif ('float' in dtype.name or 'int' in dtype.name or
           'void' in dtype.name or 'bool' in dtype.name or
