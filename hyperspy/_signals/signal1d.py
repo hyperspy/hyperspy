@@ -62,44 +62,53 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                       medfilt_radius=5, maxpeakn=30000, peakgroup=10,
                       subchannel=True,):
     """Find peaks along a 1D line.
+    
     Function to locate the positive peaks in a noisy x-y data set.
     Detects peaks by looking for downward zero-crossings in the first
     derivative that exceed 'slope_thresh'.
     Returns an array containing position, height, and width of each peak.
     Sorted by position.
-    'slope_thresh' and 'amp_thresh', control sensitivity: higher values will
-    neglect smaller features.
+    'slope_thresh' and 'amp_thresh', control sensitivity: higher values 
+    will neglect wider peaks (slope) and smaller features (amp), 
+    respectively.
+    
     Parameters
-    ---------
+    ----------
+    
     y : array
         1D input array, e.g. a spectrum
     x : array (optional)
         1D array describing the calibration of y (must have same shape as y)
     slope_thresh : float (optional)
-                   1st derivative threshold to count the peak
-                   default is set to 0.5
-                   higher values will neglect smaller features.
+                   1st derivative threshold to count the peak;
+                   higher values will neglect broader features;
+                   default is set to 0.
     amp_thresh : float (optional)
-                 intensity threshold above which
-                 default is set to 10% of max(y)
-                 higher values will neglect smaller features.
+                 intensity threshold below which peaks are ignored;
+                 higher values will neglect smaller features;
+                 default is set to 10% of max(y).
     medfilt_radius : int (optional)
                      median filter window to apply to smooth the data
-                     (see scipy.signal.medfilt)
-                     if 0, no filter will be applied.
-                     default is set to 5
+                     (see scipy.signal.medfilt);
+                     if 0, no filter will be applied;
+                     default is set to 5.
     peakgroup : int (optional)
-                number of points around the "top part" of the peak
-                default is set to 10
+                number of points around the "top part" of the peak that 
+                are taken to estimate the peak height; for spikes or 
+                very narrow peaks, keep PeakGroup=1 or 2; for broad or 
+                noisy peaks, make PeakGroup larger to reduce the effect 
+                of noise;
+                default is set to 10.
     maxpeakn : int (optional)
-              number of maximum detectable peaks
-              default is set to 30000
+              number of maximum detectable peaks;
+              default is set to 30000.
     subchannel : bool (optional)
-             default is set to True
+             default is set to True.
     Returns
     -------
-    P : structured array of shape (npeaks) and fields: position, width, height
-        contains position, height, and width of each peak
+    P : structured array of shape (npeaks) 
+        contains fields: 'position', 'width', and 'height' for each peak.
+    
     Examples
     --------
     >>> x = np.arange(0,50,0.01)
@@ -1027,6 +1036,7 @@ _spikes_diagnosis,
         if not fast:
             model.set_signal_range(signal_range[0], signal_range[1])
             model.multifit(show_progressbar=show_progressbar)
+            model.reset_signal_range()
         return self - model.as_signal(show_progressbar=show_progressbar)
 
     def remove_background(
@@ -1243,53 +1253,53 @@ _spikes_diagnosis,
         peak.
 
         'slope_thresh' and 'amp_thresh', control sensitivity: higher
-        values will
-        neglect smaller features.
+        values will neglect broad peaks (slope) and smaller features (amp), 
+        respectively.
 
-
-        peakgroup is the number of points around the top peak to search
-        around
+        peakgroup is the number of points around the top of the peak 
+        that are taken to estimate the peak height. For spikes or very 
+        narrow peaks, keep PeakGroup=1 or 2; for broad or noisy peaks, 
+        make PeakGroup larger to reduce the effect of noise.
 
         Parameters
-        ---------
-
+        ----------
 
         slope_thresh : float (optional)
-                       1st derivative threshold to count the peak
-                       default is set to 0.5
-                       higher values will neglect smaller features.
+                       1st derivative threshold to count the peak;
+                       higher values will neglect broader features;
+                       default is set to 0.
 
         amp_thresh : float (optional)
-                     intensity threshold above which
-                     default is set to 10% of max(y)
-                     higher values will neglect smaller features.
+                     intensity threshold below which peaks are ignored;
+                     higher values will neglect smaller features;
+                     default is set to 10% of max(y).
 
         medfilt_radius : int (optional)
                      median filter window to apply to smooth the data
-                     (see scipy.signal.medfilt)
-                     if 0, no filter will be applied.
-                     default is set to 5
+                     (see scipy.signal.medfilt);
+                     if 0, no filter will be applied;
+                     default is set to 5.
 
         peakgroup : int (optional)
-                    number of points around the "top part" of the peak
+                    number of points around the "top part" of the peak 
+                    that are taken to estimate the peak height;
                     default is set to 10
 
         maxpeakn : int (optional)
-                   number of maximum detectable peaks
-                   default is set to 5000
+                   number of maximum detectable peaks;
+                   default is set to 5000.
 
-        subpix : bool (optional)
-                 default is set to True
+        subchannel : bool (optional)
+                 default is set to True.
 
         parallel : {None, bool}
             Perform the operation in a threaded (parallel) manner.
 
         Returns
         -------
-        peaks : structured array of shape _navigation_shape_in_array in which
-        each cell contains an array that contains as many structured arrays as
-        peaks where found at that location and which fields: position, height,
-        width, contains position, height, and width of each peak.
+        peaks : structured array of shape (npeaks)
+            contains fields: 'position', 'width', and 'height' for each peak.
+
 
         Raises
         ------
