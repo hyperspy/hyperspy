@@ -299,7 +299,8 @@ class TestSmoothing:
         self.rtol = 1e-7
         self.atol = 0
 
-    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_lowess(self, parallel):
         pytest.importorskip("statsmodels")
         from statsmodels.nonparametric.smoothers_lowess import lowess
@@ -321,7 +322,8 @@ class TestSmoothing:
         np.testing.assert_allclose(self.s.data, data,
                                    rtol=self.rtol, atol=self.atol)
 
-    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_tv(self, parallel):
         weight = 1
         data = np.asanyarray(self.s.data, dtype='float')

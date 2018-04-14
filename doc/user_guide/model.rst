@@ -805,7 +805,10 @@ To visualise the result use the :py:meth:`~.model.BaseModel.plot` method:
 
     >>> m.plot() # Visualise the results
 
-.. versionadded:: 0.7
+
+
+
+.. versionadded:: 0.7 plot componets features
 
 By default only the full model line is displayed in the plot. In addition, it
 is possible to display the individual components by calling
@@ -821,6 +824,17 @@ To disable this feature call
 
 .. versionadded:: 0.7.1 :py:meth:`~.model.Model.suspend_update` and
                   :py:meth:`~.model.Model.resume_update`
+
+.. versionadded:: 1.4 ``Signal1D.plot`` keyword arguments
+
+All extra keyword argments are passes to the :meth:`plot` method of the
+corresponing signal object. For example, the following plots the model signal
+figure but not its navigator:
+
+.. code-block:: python
+
+    >>> m.plot(navigator=False)
+
 
 By default the model plot is automatically updated when any parameter value
 changes. It is possible to suspend this feature with

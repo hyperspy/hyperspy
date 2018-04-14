@@ -80,14 +80,14 @@ MKL libraries) and the easiest installation. The academic license is free.
         As of traitsui v5.1.0, traitsui does not support Qt5 and, therefore,
         in order to use the Qt backend it is necessary to
         downgrade pyqt. With the standard Anaconda installation this causes
-        a conflict with the anaconda-navigator package and, therefore,
-        it is necessary to remove it in order to install hyperspy_gui_traitsui
-        as follows:
+        a conflict with the anaconda-navigator and the navigator-updater packages, 
+	therefore, it is necessary to remove it in order to install 
+	hyperspy_gui_traitsui as follows:
 
         .. code-block:: bash
 
-            $ conda uninstall anaconda-navigator -y
-            $ conda install hyperspy_gui_traitsui -c conda-forge
+            $ conda remove anaconda-navigator navigator-updater
+            $ conda install hyperspy-gui-traitsui -c conda-forge
 
 
 .. note::
@@ -150,6 +150,10 @@ Alternatively you can select the extra functionalities required:
 * ``gui-traitsui`` to install required libraries to use the GUI elements based
   on `traitsui <http://docs.enthought.com/traitsui/>`_
 * ``test`` to install required libraries to run HyperSpy's unit tests.
+* ``lazy_FEI_EMD`` to install required libraries to load FEI spectrum imgages
+  lazily.
+* ``mrcz-blosc`` to install the blosc library to use compression with the mrcz plugin.
+* ``doc`` to install required libraries to build HyperSpy's documentation.
 
 For example:
 

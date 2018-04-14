@@ -1234,7 +1234,8 @@ The convenience methods :py:meth:`~.signal.BaseSignal.as_signal1D` and
 :py:meth:`~.signal.BaseSignal.transpose`, but always optimize the data
 for iteration over the navigation axes if required. Hence, these methods do not
 always return a view of the original data. If a copy of the data is required
-use :py:meth:`~.signal.BaseSignal.deepcopy` on the output of any of these
+use 
+:py:meth:`~.signal.BaseSignal.deepcopy` on the output of any of these
 methods e.g.:
 
 .. code-block:: python
@@ -1255,6 +1256,7 @@ prints the five-number summary statistics of the data.
 These two methods can be combined with
 :py:meth:`~.signal.BaseSignal.get_current_signal` to compute the histogram or
 print the summary statistics of the signal at the current coordinates, e.g:
+
 .. code-block:: python
 
     >>> s = hs.signals.EELSSpectrum(np.random.normal(size=(10,100)))
