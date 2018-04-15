@@ -21,6 +21,7 @@ from itertools import chain
 
 import numpy as np
 from scipy.stats import halfnorm
+
 from hyperspy.external.progressbar import progressbar
 
 _logger = logging.getLogger(__name__)
@@ -42,7 +43,10 @@ def _mrdivide(B, A):
             # square array
             return np.linalg.solve(A.T, B.T).T
         else:
-            return np.linalg.lstsq(A.T, B.T, rcond=None)[0].T
+            # Set rcond default value to match numpy 1.14 default value with
+            # previous numpy version
+            rcond = np.finfo(float).eps * max(A.shape)
+            return np.linalg.lstsq(A.T, B.T, rcond=rcond)[0].T
     else:
         return B / A
 

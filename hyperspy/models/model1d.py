@@ -19,7 +19,6 @@
 import copy
 
 import numpy as np
-import traits.api as t
 
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 import hyperspy.drawing.signal1d
@@ -375,7 +374,8 @@ class Model1D(BaseModel):
 
     remove.__doc__ = BaseModel.remove.__doc__
 
-    def __call__(self, non_convolved=False, onlyactive=False):
+    def __call__(self, non_convolved=False, onlyactive=False,
+                 component_list=None):
         """Returns the corresponding model for the current coordinates
 
         Parameters
@@ -385,6 +385,9 @@ class Model1D(BaseModel):
         only_active : bool
             If True, only the active components will be used to build the
             model.
+        component_list : list or None
+            If None, the sum of all the components is returned. If list, only
+            the provided components are returned
 
         cursor: 1 or 2
 
@@ -393,35 +396,31 @@ class Model1D(BaseModel):
         numpy array
         """
 
+        if component_list is None:
+            component_list = self
+        if not isinstance(component_list, (list, tuple)):
+            raise ValueError(
+                "'Component_list' parameter need to be a list or None")
+
+        if onlyactive:
+            component_list = [
+                component for component in component_list if component.active]
+
         if self.convolved is False or non_convolved is True:
             axis = self.axis.axis[self.channel_switches]
             sum_ = np.zeros(len(axis))
-            if onlyactive is True:
-                for component in self:
-                    if component.active:
-                        sum_ += component.function(axis)
-            else:
-                for component in self:
-                    sum_ += component.function(axis)
+            for component in component_list:
+                sum_ += component.function(axis)
             to_return = sum_
 
         else:  # convolved
             sum_convolved = np.zeros(len(self.convolution_axis))
             sum_ = np.zeros(len(self.axis.axis))
-            for component in self:  # Cut the parameters list
-                if onlyactive:
-                    if component.active:
-                        if component.convolved:
-                            sum_convolved += component.function(
-                                self.convolution_axis)
-                        else:
-                            sum_ += component.function(self.axis.axis)
+            for component in component_list:
+                if component.convolved:
+                    sum_convolved += component.function(self.convolution_axis)
                 else:
-                    if component.convolved:
-                        sum_convolved += component.function(
-                            self.convolution_axis)
-                    else:
-                        sum_ += component.function(self.axis.axis)
+                    sum_ += component.function(self.axis.axis)
 
             to_return = sum_ + np.convolve(
                 self.low_loss(self.axes_manager),
@@ -646,7 +645,7 @@ class Model1D(BaseModel):
         return s
 
     def plot(self, plot_components=False, resizable_pointer=False,
-             pointer_operation=np.mean):
+             pointer_operation=np.mean, **kwargs):
         """Plots the current spectrum to the screen and a map with a
         cursor to explore the SI.
 
@@ -659,11 +658,14 @@ class Model1D(BaseModel):
         pointer_operation : numpy function, default np.mean
             Set the operation to perform over the navigation area selected by
             the pointer.
+        kwargs:
+            All extra keyword arguements are passed to ``Signal1D.plot``
         """
 
         # If new coordinates are assigned
         self.signal.plot(resizable_pointer=resizable_pointer,
-                         pointer_operation=pointer_operation)
+                         pointer_operation=pointer_operation,
+                         **kwargs)
         _plot = self.signal._plot
         l1 = _plot.signal_plot.ax_lines[0]
         color = l1.line.get_color()
@@ -691,7 +693,7 @@ class Model1D(BaseModel):
     @staticmethod
     def _connect_component_line(component):
         if hasattr(component, "_model_plot_line"):
-            f = component._model_plot_line.update
+            f = component._model_plot_line._auto_update_line
             component.events.active_changed.connect(f, [])
             for parameter in component.parameters:
                 parameter.events.value_changed.connect(f, [])
@@ -699,7 +701,7 @@ class Model1D(BaseModel):
     @staticmethod
     def _disconnect_component_line(component):
         if hasattr(component, "_model_plot_line"):
-            f = component._model_plot_line.update
+            f = component._model_plot_line._auto_update_line
             component.events.active_changed.disconnect(f)
             for parameter in component.parameters:
                 parameter.events.value_changed.disconnect(f)

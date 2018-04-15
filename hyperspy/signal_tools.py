@@ -254,7 +254,7 @@ class Smoothing(t.HasTraits):
                 try:
                     # PySide
                     return np.array(self.line_color.getRgb()) / 255.
-                except:
+                except BaseException:
                     return matplotlib.colors.to_rgb(self.line_color_ipy)
         else:
             return matplotlib.colors.to_rgb(self.line_color_ipy)
@@ -933,6 +933,8 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                 # This is only available for traitsui, ipywidgets has a
                 # progress bar instead.
                 pass
+            except ValueError as error:
+                _logger.warning(error)
             self.index = 0
             self._reset_line()
             return
@@ -961,7 +963,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self.reset_span_selector()
         self.update_spectrum_line()
         if len(self.coordinates) > 1:
-            self.signal._plot.pointer._update_patch_position()
+            self.signal._plot.pointer._on_navigate(self.signal.axes_manager)
 
     def update_spectrum_line(self):
         self.line.auto_update = True
@@ -1007,6 +1009,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
             color='blue',
             type='line')
         self.signal._plot.signal_plot.add_line(self.interpolated_line)
+        self.interpolated_line.auto_update = False
         self.interpolated_line.autoscale = False
         self.interpolated_line.plot()
 
@@ -1026,7 +1029,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
 
         return left, right
 
-    def get_interpolated_spectrum(self, axes_manager=None):
+    def get_interpolated_spectrum(self, axes_manager=None, *args):
         data = self.signal().copy()
         axis = self.signal.axes_manager.signal_axes[0]
         left, right = self.get_interpolation_range()

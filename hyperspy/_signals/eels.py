@@ -1013,7 +1013,7 @@ class EELSSpectrum_mixin:
                                 t=None,
                                 delta=0.5,
                                 full_output=False):
-        """Calculate the complex
+        r"""Calculate the complex
         dielectric function from a single scattering distribution (SSD) using
         the Kramers-Kronig relations.
 
@@ -1071,7 +1071,10 @@ class EELSSpectrum_mixin:
         -------
         eps: DielectricFunction instance
             The complex dielectric function results,
-                $\epsilon = \epsilon_1 + i*\epsilon_2$,
+
+                .. math::
+                    \epsilon = \epsilon_1 + i*\epsilon_2,
+
             contained in an DielectricFunction instance.
         output: Dictionary (optional)
             A dictionary of optional outputs with the following keys:

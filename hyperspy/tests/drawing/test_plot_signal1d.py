@@ -146,8 +146,8 @@ def _test_plot_two_cursors(ndim):
     s.axes_manager[0].index = 4
     s.plot()
     s._plot.add_right_pointer()
-    # Need to flush events to avoid `_draw_animated` warning
-    s._plot.signal_plot.figure.canvas.flush_events()
+    s._plot.navigator_plot.figure.canvas.draw()
+    s._plot.signal_plot.figure.canvas.draw()
     s._plot.right_pointer.axes_manager[0].index = 2
     if ndim == 2:
         s.axes_manager[1].index = 2

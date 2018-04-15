@@ -53,9 +53,9 @@ def load(filenames=None,
     """
     Load potentially multiple supported file into an hyperspy structure
 
-    Supported formats: hspy (HDF5), msa, Gatan dm3, Ripple (rpl+raw), Bruker bcf,
-    FEI ser and emi, SEMPER unf, EMD, EDAX spd/spc, tif, and a number
-    of image formats.
+    Supported formats: hspy (HDF5), msa, Gatan dm3, Ripple (rpl+raw),
+    Bruker bcf and spx, FEI ser and emi, SEMPER unf, EMD, EDAX spd/spc,
+    tif, and a number of image formats.
 
     Any extra keyword is passed to the corresponding reader. For
     available options see their individual documentation.

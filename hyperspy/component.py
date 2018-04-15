@@ -246,7 +246,7 @@ class Parameter(t.HasTraits):
                 inv = sympy.solveset(sympy.Eq(y, expr), x)
                 self._twin_inverse_sympy = lambdify(y, inv)
                 self._twin_inverse_function = None
-            except:
+            except BaseException:
                 # Not all may have a suitable solution.
                 self._twin_inverse_function = None
                 self._twin_inverse_sympy = None
@@ -1016,7 +1016,6 @@ class Component(t.HasTraits):
         -------
         numpy array
         """
-
         axis = self.model.axis.axis[self.model.channel_switches]
         component_array = self.function(axis)
         return component_array
@@ -1027,11 +1026,9 @@ class Component(t.HasTraits):
             old_axes_manager = self.model.axes_manager
             self.model.axes_manager = axes_manager
             self.fetch_stored_values()
-        s = self.__call__()
+        s = self.model.__call__(component_list=[self])
         if not self.active:
             s.fill(np.nan)
-        if self.model.signal.metadata.Signal.binned is True:
-            s *= self.model.signal.axes_manager.signal_axes[0].scale
         if old_axes_manager is not None:
             self.model.axes_manager = old_axes_manager
             self.charge()
