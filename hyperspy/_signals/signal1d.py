@@ -1181,6 +1181,11 @@ _spikes_diagnosis,
         SignalDimensionError if the signal dimension is not 1.
 
         """
+        if not np.issubdtype(self.data.dtype, np.floating):
+            raise TypeError("The data dtype should be `float`. It can be "
+                            "changed by using the `change_dtype('float')` "
+                            "method of the signal.")
+
         # TODO: generalize it
         self._check_signal_dimension_equals_one()
         if channels is None:
@@ -1198,38 +1203,35 @@ _spikes_diagnosis,
                 nav_chunks = dc.chunks[:-1]
             zeros = da.zeros(nav_shape + (offset,),
                              chunks=nav_chunks + ((offset,),))
-        try:
-            if side == 'left' or side == 'both':
-                if self._lazy:
-                    tapered = dc[..., offset:channels + offset]
-                    tapered *= np.hanning(2 * channels)[:channels]
-                    therest = dc[..., channels + offset:]
-                    thelist = [] if offset == 0 else [zeros]
-                    thelist.extend([tapered, therest])
-                    dc = da.concatenate(thelist, axis=-1)
-                else:
-                    dc[..., offset:channels + offset] *= (
-                        np.hanning(2 * channels)[:channels])
-                    dc[..., :offset] *= 0.
-            if side == 'right' or side == 'both':
-                rl = None if offset == 0 else -offset
-                if self._lazy:
-                    therest = dc[..., :-channels - offset]
-                    tapered = dc[..., -channels - offset:rl]
-                    tapered *= np.hanning(2 * channels)[-channels:]
-                    thelist = [therest, tapered]
-                    if offset != 0:
-                        thelist.append(zeros)
-                    dc = da.concatenate(thelist, axis=-1)
-                else:
-                    dc[..., -channels - offset:rl] *= (
-                        np.hanning(2 * channels)[-channels:])
-                    if offset != 0:
-                        dc[..., -offset:] *= 0.
-        except TypeError:
-            print('hanning_taper() requres for the initial data to be of dtype("float").')
-            print('Please perform s.change_dtype("float") prior to running the attempted function.')
-            raise
+
+        if side == 'left' or side == 'both':
+            if self._lazy:
+                tapered = dc[..., offset:channels + offset]
+                tapered *= np.hanning(2 * channels)[:channels]
+                therest = dc[..., channels + offset:]
+                thelist = [] if offset == 0 else [zeros]
+                thelist.extend([tapered, therest])
+                dc = da.concatenate(thelist, axis=-1)
+            else:
+                dc[..., offset:channels + offset] *= (
+                    np.hanning(2 * channels)[:channels])
+                dc[..., :offset] *= 0.
+        if side == 'right' or side == 'both':
+            rl = None if offset == 0 else -offset
+            if self._lazy:
+                therest = dc[..., :-channels - offset]
+                tapered = dc[..., -channels - offset:rl]
+                tapered *= np.hanning(2 * channels)[-channels:]
+                thelist = [therest, tapered]
+                if offset != 0:
+                    thelist.append(zeros)
+                dc = da.concatenate(thelist, axis=-1)
+            else:
+                dc[..., -channels - offset:rl] *= (
+                    np.hanning(2 * channels)[-channels:])
+                if offset != 0:
+                    dc[..., -offset:] *= 0.
+
         if self._lazy:
             self.data = dc
         self.events.data_changed.trigger(obj=self)
