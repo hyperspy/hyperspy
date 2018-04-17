@@ -29,8 +29,6 @@ import hyperspy as hs
 from distutils.version import LooseVersion
 import logging
 
-from hyperspy.defaults_parser import preferences
-
 _logger = logging.getLogger(__name__)
 
 
@@ -126,7 +124,7 @@ def create_figure(window_title=None,
     fig = plt.figure(**kwargs)
     if window_title is not None:
         # remove non-alphanumeric characters to prevent file saving problems
-        # This is a workaround for: 
+        # This is a workaround for:
         #   https://github.com/matplotlib/matplotlib/issues/9056
         reserved_characters = '<>"/\|?*'
         for c in reserved_characters:
@@ -547,10 +545,18 @@ def plot_images(images,
     """
     from hyperspy.drawing.widgets import ScaleBar
     from hyperspy.misc import rgb_tools
-    from hyperspy.signal import BaseSignal
+    from hyperspy.signal import BaseSignal, Signal2D
 
-    if isinstance(images, BaseSignal) and len(images) is 1:
-        images.plot()
+    if isinstance(images, Signal2D) and len(images) is 1:
+        colorbar = True if colorbar in (True, 'single', 'multi') else False
+        scalebar = True if scalebar in (True, 'all') else False
+        if aspect == 'square':
+            raise ValueError('`square` is not supported for single image.')
+        images.plot(colorbar=colorbar, scalebar=scalebar, cmap=cmap,
+                    scalebar_color=scalebar_color,
+                    saturated_pixels=saturated_pixels, vmin=vmin, vmax=vmax,
+                    centre_colormap=centre_colormap, no_nans=no_nans,
+                    aspect=aspect)
         ax = plt.gca()
         return ax
     elif not isinstance(images, (list, tuple, BaseSignal)):
@@ -1041,11 +1047,11 @@ def plot_spectra(
         Reverse the ordering of a matplotlib legend (to be more consistent 
         with the default ordering of plots in the 'cascade' and 'overlap' 
         styles
-        
+
         Parameters
         ----------
         ax_: matplotlib axes
-        
+
         legend_loc_: str or int
             This parameter controls where the legend is placed on the 
             figure; see the pyplot.legend docstring for valid values
