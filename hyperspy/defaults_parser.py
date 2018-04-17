@@ -137,62 +137,24 @@ class GUIs(t.HasTraits):
     warn_if_guis_are_missing = t.CBool(
         True,
         desc="Display warnings, if hyperspy_gui_ipywidgets or hyperspy_gui_traitsui are missing.")
-    dim0_increase = t.Directory(
-        'ctrl+right',
-        #desc="Hotkey for increasing index in dimension 0"
-    )
-    dim0_decrease = t.Directory(
-        'ctrl+left',
-        #desc="Hotkey for increasing index in dimension 0"
-    )
-    dim1_increase = t.Directory(
-        'ctrl+down',
-        #desc="Hotkey for increasing index in dimension 0"
-    )
-    dim1_decrease = t.Directory(
-        'ctrl+up',
-        #desc="Hotkey for increasing index in dimension 0"
-    )
-    dim2_increase = t.Directory(
-        'shift+right',
-        #desc="Hotkey for increasing index in dimension 0"
-    )
-    dim2_decrease = t.Directory(
-        'shift+left',
-        #desc="Hotkey for increasing index in dimension 0"
-    )
-    dim3_increase = t.Directory(
-        'shift+down',
-        #desc="Hotkey for increasing index in dimension 0"
-    )
-    dim3_decrease = t.Directory(
-        'shift+up',
-        #desc="Hotkey for increasing index in dimension 0"
-    )
-    dim4_increase = t.Directory(
-        'ctrl+alt+right',
-        #desc="Hotkey for increasing index in dimension 0"
-    )
-    dim4_decrease = t.Directory(
-        'ctrl+alt+left',
-        #desc="Hotkey for increasing index in dimension 0"
-    )
-    dim5_increase = t.Directory(
-        'ctrl+alt+down',
-        #desc="Hotkey for increasing index in dimension 0"
-    )
-    dim5_decrease = t.Directory(
-        'ctrl+alt+up',
-        #desc="Hotkey for increasing index in dimension 0"
-    )
-    dim_stepsize_increase = t.Directory(
-        'pageup',
-        #desc="Hotkey for increasing index in dimension 0"
-    )
-    dim_stepsize_decrease = t.Directory(
-        'pagedown',
-        #desc="Hotkey for increasing index in dimension 0"
-    )
+
+
+class PlotConfig(t.HasTraits):
+    dim0_increase = t.Str('right',
+                          #desc="Hotkey for increasing index in dimension 0"
+                          )
+    dim0_decrease = t.Str('left',
+                          #desc="Hotkey for increasing index in dimension 0"
+                          )
+    dim1_increase = t.Str('down',
+                          #desc="Hotkey for increasing index in dimension 0"
+                          )
+    dim1_decrease = t.Str('up',
+                          #desc="Hotkey for increasing index in dimension 0"
+                          )
+    dim_modifier0 = t.Enum(['ctrl', 'alt', 'shift'])  # 0 elem is default
+    dim_modifier1 = t.Enum(['shift', 'alt', 'ctrl'])  # 0 elem is default
+    dim_modifier2 = t.Enum(['alt', 'ctrl', 'shift'])  # 0 elem is default
 
 
 class EDSConfig(t.HasTraits):
@@ -221,6 +183,7 @@ template = {
     'GUIs': GUIs(),
     'EELS': EELSConfig(),
     'EDS': EDSConfig(),
+    'Plot': PlotConfig(),
 }
 
 # Set the enums defaults
@@ -255,6 +218,7 @@ def dictionary_from_template(template):
     for section, traited_class in template.items():
         dictionary[section] = traited_class.get()
     return dictionary
+
 
 config = configparser.ConfigParser(allow_no_value=True)
 template2config(template, config)
@@ -291,17 +255,20 @@ class Preferences(t.HasTraits):
     EDS = t.Instance(EDSConfig)
     General = t.Instance(GeneralConfig)
     GUIs = t.Instance(GUIs)
+    Plot = t.Instance(PlotConfig)
 
     def save(self):
         config = configparser.ConfigParser(allow_no_value=True)
         template2config(template, config)
         config.write(open(defaults_file, 'w'))
 
+
 preferences = Preferences(
     EELS=template['EELS'],
     EDS=template['EDS'],
     General=template['General'],
     GUIs=template['GUIs'],
+    Plot=template['Plot'],
 )
 
 if preferences.General.logger_on:
