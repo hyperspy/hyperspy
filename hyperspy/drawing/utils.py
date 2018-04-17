@@ -545,21 +545,9 @@ def plot_images(images,
     """
     from hyperspy.drawing.widgets import ScaleBar
     from hyperspy.misc import rgb_tools
-    from hyperspy.signal import BaseSignal, Signal2D
+    from hyperspy.signal import BaseSignal
 
-    if isinstance(images, Signal2D) and len(images) is 1:
-        colorbar = True if colorbar in (True, 'single', 'multi') else False
-        scalebar = True if scalebar in (True, 'all') else False
-        if aspect == 'square':
-            raise ValueError('`square` is not supported for single image.')
-        images.plot(colorbar=colorbar, scalebar=scalebar, cmap=cmap,
-                    scalebar_color=scalebar_color,
-                    saturated_pixels=saturated_pixels, vmin=vmin, vmax=vmax,
-                    centre_colormap=centre_colormap, no_nans=no_nans,
-                    aspect=aspect)
-        ax = plt.gca()
-        return ax
-    elif not isinstance(images, (list, tuple, BaseSignal)):
+    if not isinstance(images, (list, tuple, BaseSignal)):
         raise ValueError("images must be a list of image signals or "
                          "multi-dimensional signal."
                          " " + repr(type(images)) + " was given.")
@@ -621,7 +609,12 @@ def plot_images(images,
         pass
     elif label is 'auto':
         # Use some heuristics to try to get base string of similar titles
-        label_list = [x.metadata.General.title for x in images]
+
+        # in case of single image
+        if len(images) > 1:
+            label_list = [x.metadata.General.title for x in images]
+        else:
+            label_list = [images.metadata.General.title]
 
         # Find the shortest common string between the image titles
         # and pull that out as the base title for the sequence of images
