@@ -1190,6 +1190,11 @@ _spikes_diagnosis,
         SignalDimensionError if the signal dimension is not 1.
 
         """
+        if not np.issubdtype(self.data.dtype, np.floating):
+            raise TypeError("The data dtype should be `float`. It can be "
+                            "changed by using the `change_dtype('float')` "
+                            "method of the signal.")
+
         # TODO: generalize it
         self._check_signal_dimension_equals_one()
         if channels is None:
@@ -1207,6 +1212,7 @@ _spikes_diagnosis,
                 nav_chunks = dc.chunks[:-1]
             zeros = da.zeros(nav_shape + (offset,),
                              chunks=nav_chunks + ((offset,),))
+
         if side == 'left' or side == 'both':
             if self._lazy:
                 tapered = dc[..., offset:channels + offset]
@@ -1234,6 +1240,7 @@ _spikes_diagnosis,
                     np.hanning(2 * channels)[-channels:])
                 if offset != 0:
                     dc[..., -offset:] *= 0.
+
         if self._lazy:
             self.data = dc
         self.events.data_changed.trigger(obj=self)
