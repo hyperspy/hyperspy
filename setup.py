@@ -47,7 +47,7 @@ setup_path = os.path.dirname(__file__)
 import hyperspy.Release as Release
 
 install_req = ['scipy>=0.15',
-               'matplotlib>=1.2',
+               'matplotlib>=1.2, !=2.1.0, !=2.1.1',
                'numpy>=1.10, !=1.13.0',
                'traits>=4.5.0',
                'natsort',
@@ -66,10 +66,10 @@ install_req = ['scipy>=0.15',
 
 extras_require = {
     "learning": ['scikit-learn'],
-    "bcf": ['lxml'],
     "gui-jupyter": ["hyperspy_gui_ipywidgets"],
     "gui-traitsui": ["hyperspy_gui_traitsui"],
     "test": ["pytest>=3", "pytest-mpl", "matplotlib>=2.0.2"],
+    "doc": ["sphinx", "numpydoc", "sphinxcontrib-napoleon", "sphinx_rtd_theme"],
 }
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
@@ -92,26 +92,19 @@ def update_version(version):
 
 # Extensions. Add your extension here:
 raw_extensions = [Extension("hyperspy.io_plugins.unbcf_fast",
-                            ['hyperspy/io_plugins/unbcf_fast.pyx']),
+                            [os.path.join('hyperspy', 'io_plugins', 'unbcf_fast.pyx')]),
                   ]
 
 cleanup_list = []
 for leftover in raw_extensions:
     path, ext = os.path.splitext(leftover.sources[0])
     if ext in ('.pyx', '.py'):
-        cleanup_list.append(os.path.join(setup_path, path + '.c*'))
+        cleanup_list.append(''.join([os.path.join(setup_path, path), '.c*']))
         if os.name == 'nt':
-            cleanup_list.append(
-                os.path.join(
-                    setup_path,
-                    path +
-                    '.cpython-*.pyd'))
+            bin_ext = '.cpython-*.pyd'
         else:
-            cleanup_list.append(
-                os.path.join(
-                    setup_path,
-                    path +
-                    '.cpython-*.so'))
+            bin_ext = '.cpython-*.so'
+        cleanup_list.append(''.join([os.path.join(setup_path, path), bin_ext]))
 
 
 def count_c_extensions(extensions):
@@ -168,8 +161,8 @@ compiler = distutils.ccompiler.new_compiler()
 assert isinstance(compiler, distutils.ccompiler.CCompiler)
 distutils.sysconfig.customize_compiler(compiler)
 try:
-    compiler.compile([os.path.join(setup_path,
-                                   'hyperspy/misc/etc/test_compilers.c')])
+    compiler.compile([os.path.join(setup_path, 'hyperspy', 'misc', 'etc',
+                                   'test_compilers.c')])
 except (CompileError, DistutilsPlatformError):
     warnings.warn("""WARNING: C compiler can't be found.
 Only slow pure python alternative functions will be available.
@@ -184,7 +177,8 @@ Installation will continue in 5 sec...""")
 
 
 # HOOKS ######
-post_checkout_hook_file = os.path.join(setup_path, '.git/hooks/post-checkout')
+post_checkout_hook_file = os.path.join(setup_path, '.git', 'hooks',
+                                       'post-checkout')
 git_dir = os.path.join(setup_path, '.git')
 hook_ignorer = os.path.join(setup_path, '.hook_ignore')
 
@@ -199,18 +193,13 @@ def find_post_checkout_cleanup_line():
                          hook_lines[i]) is not None:
                 return i + 1
 
+
 # generate some git hook to clean up and re-build_ext --inplace
 # after changing branches:
 if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
     exec_str = sys.executable
-    recythonize_str = ' '.join(['"%s"' % exec_str, '"%s"' %
-                                os.path.join(setup_path, 'setup.py'),
-                                'clean --all build_ext --inplace\n'])
-    if os.name == 'nt':
-        exec_str = exec_str.replace('\\', '/')
-        recythonize_str = recythonize_str.replace('\\', '/')
-        for i in range(len(cleanup_list)):
-            cleanup_list[i] = cleanup_list[i].replace('\\', '/')
+    recythonize_str = '"{}" "{}" clean --all build_ext --inplace\n'.format(
+        exec_str, os.path.join(setup_path, 'setup.py'))
     if (not os.path.exists(post_checkout_hook_file)):
         with open(post_checkout_hook_file, 'w') as pchook:
             pchook.write('#!/bin/sh\n')
@@ -268,11 +257,11 @@ class update_version_when_dev:
 
         # Get the hash from the git repository if available
         self.restore_version = False
-        git_master_path = ".git/refs/heads/master"
         if self.release_version.endswith(".dev"):
             p = subprocess.Popen(["git", "describe",
                                   "--tags", "--dirty", "--always"],
-                                 stdout=subprocess.PIPE)
+                                 stdout=subprocess.PIPE,
+                                 shell=True)
             stdout = p.communicate()[0]
             if p.returncode != 0:
                 # Git is not available, we keep the version as is
@@ -341,16 +330,18 @@ with update_version_when_dev() as version:
                   'hyperspy.samfire_utils.goodness_of_fit_tests',
                   ],
         install_requires=install_req,
-        test_require=["pytest>=3.0.2"],
+        tests_require=["pytest>=3.0.2"],
         extras_require=extras_require,
         package_data={
             'hyperspy':
             [
                 'tests/drawing/*.png',
+                'tests/drawing/data/*.hspy',
                 'tests/drawing/plot_signal/*.png',
                 'tests/drawing/plot_signal1d/*.png',
                 'tests/drawing/plot_signal2d/*.png',
                 'tests/drawing/plot_markers/*.png',
+                'tests/drawing/plot_model/*.png',
                 'misc/eds/example_signals/*.hdf5',
                 'misc/holography/example_signals/*.hdf5',
                 'tests/drawing/plot_mva/*.png',
@@ -358,6 +349,7 @@ with update_version_when_dev() as version:
                 'tests/drawing/plot_signal1d/*.png',
                 'tests/drawing/plot_signal2d/*.png',
                 'tests/drawing/plot_markers/*.png',
+                'tests/drawing/plot_widgets/*.png',
                 'tests/io/blockfile_data/*.blo',
                 'tests/io/dens_data/*.dens',
                 'tests/io/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3',

@@ -8,10 +8,10 @@ Introduction
 ============
 
 HyperSpy provides easy access to several "machine learning" algorithms that
-can be useful when analysing multi-dimensional data. In particular, decomposition
-algorithms, such as principal component analysis (PCA), or blind source
-separation (BSS) algorithms, such as independent component analysis (ICA), are
-available through the methods described in this section.
+can be useful when analysing multi-dimensional data. In particular,
+decomposition algorithms, such as principal component analysis (PCA), or
+blind source separation (BSS) algorithms, such as independent component
+analysis (ICA), are available through the methods described in this section.
 
 The behaviour of some machine learning operations can be customised
 :ref:`customised <configuring-hyperspy-label>` in the Machine Learning section
@@ -38,12 +38,13 @@ other with the dimension of the navigation space known as `loadings`.
 Decomposition
 =============
 
-Decomposition techniques are most commonly applied as a means of noise reduction (or `denoising`)
-and dimensionality reduction.
+Decomposition techniques are most commonly applied as a means of noise
+reduction (or `denoising`) and dimensionality reduction.
 
 Principal component analysis
 ----------------------------
-One of the most popular decomposition methods is principal component analysis (PCA). To perform PCA on your dataset, run the
+One of the most popular decomposition methods is principal component analysis
+(PCA). To perform PCA on your dataset, run the
 :py:meth:`~.learn.mva.MVA.decomposition` method:
 
 .. code-block:: python
@@ -51,11 +52,11 @@ One of the most popular decomposition methods is principal component analysis (P
    >>> s.decomposition()
 
 
-Note that the `s` variable must contain either a :class:`~.signal.BaseSignal`  class
-or its subclasses, which will most likely have been loaded with the
-:func:`~.io.load` function, e.g. ``s = hs.load('my_file.hspy')``. Also, the signal must be
-multi-dimensional, that is ``s.axes_manager.navigation_size`` must be greater than
-one.
+Note that the `s` variable must contain either a :class:`~.signal.BaseSignal`
+class or its subclasses, which will most likely have been loaded with the
+:func:`~.io.load` function, e.g. ``s = hs.load('my_file.hspy')``. Also, the
+signal must be multi-dimensional, *i.e.* ``s.axes_manager.navigation_size``
+must be greater than one.
 
 Several algorithms exist for performing PCA, and the default algorithm in
 HyperSpy is :py:const:`SVD`, which uses an approach called
@@ -75,8 +76,8 @@ eventually becoming a slowly descending line.
 
 The point at which the scree plot becomes linear (often referred to as
 the `elbow`) is generally judged to be a good estimation of the dimensionality
-of the data (or equivalently, the number of components that should be retained -
-see below).
+of the data (or equivalently, the number of components that should be retained
+- see below).
 
 To obtain a scree plot for your dataset, run the
 :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio` method:
@@ -115,8 +116,8 @@ notation, specify the ``xaxis_type`` parameter:
 .. code-block:: python
 
     >>> ax = s.plot_explained_variance_ratio(n=20,
-    >>>                                      threshold=4,
-    >>>                                      xaxis_type='number')
+    ...                                      threshold=4,
+    ...                                      xaxis_type='number')
 
 .. figure::  images/screeplot2.png
    :align:   center
@@ -178,51 +179,54 @@ the decomposition model. You can easily calculate and display the residuals:
 Poissonian noise
 ----------------
 
-Many decomposition methods such as PCA assume that the noise of the data follows a
-Gaussian distribution. In cases where your data is instead corrupted by Poisson noise,
-HyperSpy can "normalize" the data by performing a scaling operation, which
-can greatly enhance the result.
+Many decomposition methods such as PCA assume that the noise of the data
+follows a Gaussian distribution. In cases where your data is instead
+corrupted by Poisson noise, HyperSpy can "normalize" the data by performing
+a scaling operation, which can greatly enhance the result.
 
 To perform Poissonian noise normalization:
 
 .. code-block:: python
 
-     The long way:
+     >>> # The long way:
      >>> s.decomposition(normalize_poissonian_noise=True)
 
-     Because it is the first argument we could have simply written:
+     >>> # Because it is the first argument we could have simply written:
      >>> s.decomposition(True)
 
-More details about the scaling procedure can be found in [Keenan2004]_.
+More details about the scaling procedure can be found in
+:ref:`[Keenan2004] <Keenan2004>`.
 
 .. _rpca-label:
 
 Robust principal component analysis
 -----------------------------------
 
-PCA is known to be very sensitive to the presence of outliers in data. These outliers
-can be the result of missing or dead pixels, X-ray spikes, or very low count data.
-If one assumes a dataset to consist of a low-rank component **L** corrupted by
-a sparse error component **S**, then Robust PCA (RPCA) can be used to recover the
-low-rank component for subsequent processing [Candes2011]_.
+PCA is known to be very sensitive to the presence of outliers in data. These
+outliers can be the result of missing or dead pixels, X-ray spikes, or very
+low count data. If one assumes a dataset to consist of a low-rank component
+**L** corrupted by a sparse error component **S**, then Robust PCA (RPCA)
+can be used to recover the low-rank component for subsequent processing
+:ref:`[Candes2011] <Candes2011>`.
 
-The default RPCA algorithm is GoDec [Zhou2011]_. In HyperSpy it returns the factors
-and loadings of **L**, and can be accessed with the following code. You must set the
-"output_dimension" when using RPCA.
+The default RPCA algorithm is GoDec :ref:`[Zhou2011] <Zhou2011>`. In HyperSpy
+it returns the factors and loadings of **L**, and can be accessed with the
+following code. You must set the ``output_dimension`` when using RPCA.
 
 .. code-block:: python
 
    >>> s.decomposition(algorithm='RPCA_GoDec',
-                       output_dimension=3)
+   ...                 output_dimension=3)
 
-HyperSpy also implements an *online* algorithm for RPCA developed by Feng et al. [Feng2013]_.
-This minimizes memory usage, making it suitable for large datasets, and can often
-be faster than the default algorithm.
+HyperSpy also implements an *online* algorithm for RPCA developed by Feng et
+al. :ref:`[Feng2013] <Feng2013>`. This minimizes memory usage, making it
+suitable for large datasets, and can often be faster than the default
+algorithm.
 
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
-                       output_dimension=3)
+   ...                 output_dimension=3)
 
 The online RPCA implementation sets several default parameters that are
 usually suitable for most datasets. However, to improve the convergence you can
@@ -232,8 +236,8 @@ the following code will train ORPCA using the first 32 samples of the data.
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
-                       output_dimension=3,
-                       training_samples=32)
+   ...                 output_dimension=3,
+   ...                 training_samples=32)
 
 Finally, online RPCA includes three alternative methods to the default
 closed-form solver, which can again improve both the convergence and speed
@@ -245,8 +249,8 @@ additional parameters:
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
-                       output_dimension=3,
-                       method='BCD')
+   ...                 output_dimension=3,
+   ...                 method='BCD')
 
 The second is based on stochastic gradient descent (SGD), and takes an
 additional parameter to set the learning rate. The learning rate dictates
@@ -257,9 +261,9 @@ finding the correct minima. Usually a value between 1 and 2 works well:
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
-                       output_dimension=3,
-                       method='SGD',
-                       learning_rate=1.1)
+   ...                 output_dimension=3,
+   ...                 method='SGD',
+   ...                 learning_rate=1.1)
 
 The third method is MomentumSGD, which typically improves the convergence
 properties of stochastic gradient descent. This takes the further parameter
@@ -268,23 +272,25 @@ properties of stochastic gradient descent. This takes the further parameter
 .. code-block:: python
 
    >>> s.decomposition(algorithm='ORPCA',
-                       output_dimension=3,
-                       method='MomentumSGD',
-                       learning_rate=1.1,
-                       momentum=0.5)
+   ...                 output_dimension=3,
+   ...                 method='MomentumSGD',
+   ...                 learning_rate=1.1,
+   ...                 momentum=0.5)
 
 Non-negative matrix factorization
 ----------------------------
 
-Another popular decomposition method is non-negative matrix factorization (NMF), which
-can be accessed in HyperSpy with:
+Another popular decomposition method is non-negative matrix factorization
+(NMF), which can be accessed in HyperSpy with:
 
 .. code-block:: python
 
    >>> s.decomposition(algorithm='nmf')
 
-Unlike PCA, NMF forces the components to be strictly non-negative, which can aid
-the physical interpretation of components for count data such as images, EELS or EDS.
+Unlike PCA, NMF forces the components to be strictly non-negative, which can
+aid the physical interpretation of components for count data such as images,
+EELS or EDS. For an example of NMF in EELS processing, see
+:ref:`[Nicoletti2013] <[Nicoletti2013]>`.
 
 NMF takes the optional argument "output_dimension", which determines the number
 of components to keep. Setting this to a small number is recommended to keep
@@ -296,9 +302,9 @@ Blind Source Separation
 
 In some cases (it largely depends on the particular application) it is possible
 to obtain more physically interpretable set of components using a process
-called Blind Source Separation (BSS). For more information about blind source separation
-please see [Hyvarinen2000]_, and for an example application to EELS analysis, see
-[Pena2010]_.
+called Blind Source Separation (BSS). For more information about blind source
+separation please see :ref:`[Hyvarinen2000] <Hyvarinen2000>`, and for an
+example application to EELS analysis, see :ref:`[Pena2010] <Pena2010>`.
 
 To perform BSS on the result of a decomposition, run the
 :py:meth:`~.learn.mva.MVA.blind_source_separation` method, e.g.:
@@ -324,7 +330,7 @@ Visualizing results
 ===================
 
 HyperSpy includes a number of plotting methods for the results of decomposition
-and blind source separation. All the methods begin with "plot_":
+and blind source separation. All the methods begin with ``plot_``:
 
 1. :py:meth:`~.signal.MVATools.plot_decomposition_results`.
 2. :py:meth:`~.signal.MVATools.plot_decomposition_factors`.
@@ -337,8 +343,10 @@ and blind source separation. All the methods begin with "plot_":
 results. All the other methods display each component in its own window. For 2
 and 3 it is wise to provide the number of factors or loadings you wish to
 visualise, since the default is to plot all of them. For BSS, the default is
-the number you included when running the :py:meth:`~.learn.mva.MVA.blind_source_separation`
-method. In case of one dimensional factors or loadings, the latters can be toggled on and off by clicking on their corresponding line in the legend.
+the number you included when running the
+:py:meth:`~.learn.mva.MVA.blind_source_separation` method. In case of one
+dimensional factors or loadings, the latter can be toggled on and off by
+clicking on their corresponding line in the legend.
 
 .. _mva.get_results:
 
@@ -373,14 +381,15 @@ file automatically, and it is loaded along with the rest of the data when you
 next open the file.
 
 .. NOTE::
-  This approach currently supports storing one decomposition and one BSS result,
-  which may not be enough for your purposes.
+  This approach currently supports storing one decomposition and one BSS
+  result, which may not be enough for your purposes.
 
 Saving to an external file
 ---------------------------
 
-Alternatively, you can save the results of the current machine learning analysis to
-a separate file with the :py:meth:`~.learn.mva.LearningResults.save` method:
+Alternatively, you can save the results of the current machine learning
+analysis to a separate file with the
+:py:meth:`~.learn.mva.LearningResults.save` method:
 
 .. code-block:: python
 
