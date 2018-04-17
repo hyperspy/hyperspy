@@ -291,7 +291,7 @@ class EDSModel(Model1D):
         self.append(background)
         self.background_components.append(background)
 
-    def add_physical_background(self, E0='from_metadata', detector='Polymer_C', quantification=None):
+    def add_physical_background(self, E0='from_metadata', detector='Polymer_C', quantification=None,absorption_model='quadrilateral', coating_thickness=0, TOA='from_metadata'):
         """
         Add a background based on physical property of the interraction e-/mater (see Zanetta et al. 2018)
     
@@ -304,10 +304,11 @@ class EDSModel(Model1D):
                 If `from_metadata` contains `beam_energy` referenced in the metadata
                 If an integer is write, this value will be used during the fit
 
-        detector: str
-            The type of detector used during the acquisition
+        detector: str or array
+            The string is the type of detector used during the acquisition
                 String can be 'Polymer_C' / 'Super_X' / '12µm_BE' / '25µm_BE' / '100µm_BE' / 'Polymer_C2' / 'Polymer_C3' 
                 It will be used to calculate the detector efficiency
+            An array of value representing the detector efficiency can also be passed
                 
         quantification: None or Muti_Base_Signal or array
             If quantification is None, an approximation based on peaks ratio is used
@@ -316,8 +317,17 @@ class EDSModel(Model1D):
                 The function automatically detect if data are in weight_percent or in atomic_percent
                 Otherwise, an array which contain the quantification (with map dimension and number or elements set in metadata) can be directly passed
                 This quantmap have to be an array not a list !
-
-        Caution : The number of elements have to be equal to the number of Xray_lines. It's preferable to remove secondary lines and keep only higher energy lines
+        absorption_model:  str
+            The type of distribution for x-ray generation
+            String can be 'quadrilateral' or 'CL'
+            The quadrilateral method refers to the quadrilateral model of Love&Scott (see documentation).
+            While 'CL' refers to the cliff lorimer method where the depth distribution of X-ray production is a constant and equal to unity.
+        Coating_thickness: float
+            The thickness of the carbon deposit on the sample in nanometers. The Deafault is coating_thickness=0nm.
+        TOA
+             TOA(take off angle) is the angle with which the X-rays leave the surface towards the detector. Parameters are read in metadata but an integer can be passed
+             
+        Caution ! : The number of elements have to be equal to the number of Xray_lines. It's preferable to remove secondary lines and keep only higher energy lines
 
         Example:
 
@@ -337,8 +347,10 @@ class EDSModel(Model1D):
         """
         if E0 == 'from_metadata':
             E0 = self.signal._get_beam_energy()
+        if TOA == 'from_metadata':
+            TOA = self.signal.get_take_off_angle()
             
-        background = create_component.Physical_background(E0=E0,detector=detector, quantification=quantification)
+        background = create_component.Physical_background(E0=E0,detector=detector, quantification=quantification, absorption_model=absorption_model, coating_thickness=coating_thickness,TOA=TOA)
         background.name = "Bremsstrahlung"
         background.isbackground = True
         self.append(background)
