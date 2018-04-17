@@ -147,22 +147,18 @@ def Mucoef(model,quanti): # this function calculate the absorption coefficient f
 
 def Cabsorption(model): # this function calculate the absorption coefficient for all energy. This, correspond to the Mu parameter in the function
     """
-    Calculate the mass absorption coefficient for all energy of the model axis for each pixel. Need the weigth percent array defined by the Wpercent function
-    Return the Mu parameter as a signal (all energy) with same number of elements than the model
-    This parameter is calculated at each iteration during the fit
+    Calculate the mass absorption coefficient due to the coating layer for all energy 
     Parameters
     ----------
     model: EDS model
-    quanti: Array
-            Must contain an array of weight percent for each elements
-            This array is automaticaly created through the Wpercent function
+
     """	
 
-    t=(np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size/5))
+    t=(np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size))
     
     Acc=mass_absorption_mixture(elements='C' ,weight_percent=[100], energies=t)    
-    b=(model._signal.axes_manager.signal_axes[-1].axis)
-    Acc=np.interp(b,t,Acc) # Interpolation allows to gain some time
+    #b=(model._signal.axes_manager.signal_axes[-1].axis)
+    #Acc=np.interp(b,t,Acc) # Interpolation allows to gain some time
     
     return Acc
 
@@ -293,8 +289,8 @@ class Physical_background(Component):
         absorption=((1-np.exp(-2*Mu*b*10**-5*(1/np.sin(teta))))/((2*Mu*b*10**-5*(1/np.sin(teta))))) #love and scott model. 
         METabsorption=(np.exp(-Mu*b*10**-5*(1/np.sin(teta)))) #CL model
 
-        coating=((np.exp(-MuC*1.3*Cthickness*10**-7*np.sin(teta))))# absorption by the coating layer (1.3 is the density)
-	# Backscatter correction could be a good improvement in the futur
+        coating=(np.exp(-MuC*1.3*Cthickness*10**-7*(1/np.sin(teta))))# absorption by the coating layer (1.3 is the density)
+
 	
         if self._whitelist['absorption_model'] is 'quadrilateral':
             return np.where((x>0.17) & (x<(E0)),(emission*absorption*Window*coating),0) 
