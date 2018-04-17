@@ -1018,17 +1018,20 @@ _spikes_diagnosis,
     def remove_background(
             self,
             signal_range='interactive',
-            background_type='PowerLaw',
+            background_type='Power Law',
             polynomial_order=2,
             fast=True,
             show_progressbar=None, display=True, toolkit=None):
         signal_range = signal_range_from_roi(signal_range)
         self._check_signal_dimension_equals_one()
         if signal_range == 'interactive':
-            br = BackgroundRemoval(self)
+            br = BackgroundRemoval(self, background_type=background_type,
+                                   polynomial_order=polynomial_order,
+                                   fast=fast,
+                                   show_progressbar=show_progressbar)
             return br.gui(display=display, toolkit=toolkit)
         else:
-            if background_type == 'PowerLaw':
+            if background_type in ('PowerLaw', 'Power Law'):
                 background_estimator = components1d.PowerLaw()
             elif background_type == 'Gaussian':
                 background_estimator = components1d.Gaussian()
