@@ -50,21 +50,24 @@ the x-axis if 1D:
 To change the current coordinates, click on the pointer (which will be a line
 or a square depending on the dimensions of the data) and drag it around. It is
 also possible to move the pointer by using the numpad arrows **when numlock is
-on and the spectrum or navigator figure is selected**. When using the numpad
-arrows the PageUp and PageDown keys change the size of the step.
+on and the spectrum or navigator figure is selected**. When using the keyboard
+arrows the PageUp and PageDown keys change the stepsize.
 
 An extra cursor can be added by pressing the ``e`` key. Pressing ``e`` once
 more will disable the extra cursor:
 
 In matplotlib, left and right arrow keys are by default set to navigate the 
 "zoom" history. To avoid the problem of changing zoom while navigating, 
-Ctrl + arrows can be used instead. 
+Ctrl + arrows can be used instead. Navigating without using the modifier keys
+will be deprecated in version 2.0.
 
 To navigate navigation dimensions larger than 2, modifier keys can be used.
-Ctrl + Shift + left/right, Ctrl + Shift + up/down, Ctrl + Alt + left/right 
-and Ctrl + Alt + up/down navigates dimensions 2,3,4,5 respectively. These 
-do not work with the numpad.
+The defaults are Shift + left/right and Shift + up/down, (Alt + left/right and Alt + up/down) 
+for navigating dimensions 2 and 3 (4 and 5) respectively. Modifier keys do not work with the numpad.
 
+Hotkeys and modifier keys for navigating the plot can be set in the ``hs.preferences.gui()``.
+Note that some combinations will not work for all platforms, as some systems reserve them for
+other purposes.
 .. _second_pointer.png:
 
 .. figure::  images/second_pointer.png
@@ -82,10 +85,9 @@ keys  **when the navigator window is selected**.
 key                       function
 =======================   =============================
 e                         Switch second pointer on/off
-Arrows                    Change coordinates for dimensions 0 and 1 (typically x and y)
-Ctrl + Arrows             As above without also changing zoom
-Ctrl + Alt + Arrows       Change coordinates for dimensions 2 and 3
-Ctrl + Shift + Arrows     Change coordinates for dimensions 4 and 5
+Ctrl + Arrows             Change coordinates for dimensions 0 and 1 (typically x and y)
+Shift + Arrows            Change coordinates for dimensions 2 and 3
+Alt + Arrows              Change coordinates for dimensions 4 and 5
 PageUp                    Increase step size
 PageDown                  Decrease step size
 ``+``                         Increase pointer size
