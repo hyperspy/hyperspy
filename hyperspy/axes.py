@@ -934,27 +934,44 @@ class AxesManager(t.HasTraits):
 
         # keyDict values are (axis_index, direction)
         # Using arrow keys without Ctrl will be deprecated in 2.0
+        mod01 = preferences.Plot.modifier_dims_01
+        mod23 = preferences.Plot.modifier_dims_23
+        mod45 = preferences.Plot.modifier_dims_45
+
+        dim0_decrease = mod01 + '+' + preferences.Plot.dims_024_decrease
+        dim0_increase = mod01 + '+' + preferences.Plot.dims_024_increase
+        dim1_decrease = mod01 + '+' + preferences.Plot.dims_135_decrease
+        dim1_increase = mod01 + '+' + preferences.Plot.dims_135_increase
+        dim2_decrease = mod23 + '+' + preferences.Plot.dims_024_decrease
+        dim2_increase = mod23 + '+' + preferences.Plot.dims_024_increase
+        dim3_decrease = mod23 + '+' + preferences.Plot.dims_135_decrease
+        dim3_increase = mod23 + '+' + preferences.Plot.dims_135_increase
+        dim4_decrease = mod45 + '+' + preferences.Plot.dims_024_decrease
+        dim4_increase = mod45 + '+' + preferences.Plot.dims_024_increase
+        dim5_decrease = mod45 + '+' + preferences.Plot.dims_135_decrease
+        dim5_increase = mod45 + '+' + preferences.Plot.dims_135_increase
+
         keyDict = {
             # axes 0, 1
-            **dict.fromkeys(['left',  preferences.GUIs.dim0_decrease, '4'], (0, -1)),
-            **dict.fromkeys(['right', preferences.GUIs.dim0_increase, '6'], (0, +1)),
-            **dict.fromkeys(['up',    preferences.GUIs.dim1_decrease, '8'], (1, -1)),
-            **dict.fromkeys(['down',  preferences.GUIs.dim1_increase,  '2'], (1, +1)),
+            **dict.fromkeys(['left',  dim0_decrease, '4'], (0, -1)),
+            **dict.fromkeys(['right', dim0_increase, '6'], (0, +1)),
+            **dict.fromkeys(['up',    dim1_decrease, '8'], (1, -1)),
+            **dict.fromkeys(['down',  dim1_increase,  '2'], (1, +1)),
             # axes 2, 3
-            **dict.fromkeys([preferences.GUIs.dim2_decrease], (2, -1)),
-            **dict.fromkeys([preferences.GUIs.dim2_increase], (2, +1)),
-            **dict.fromkeys([preferences.GUIs.dim3_decrease], (3, -1)),
-            **dict.fromkeys([preferences.GUIs.dim3_increase], (3, +1)),
+            **dict.fromkeys([dim2_decrease], (2, -1)),
+            **dict.fromkeys([dim2_increase], (2, +1)),
+            **dict.fromkeys([dim3_decrease], (3, -1)),
+            **dict.fromkeys([dim3_increase], (3, +1)),
             # axes 4, 5
-            **dict.fromkeys([preferences.GUIs.dim4_decrease], (4, -1)),
-            **dict.fromkeys([preferences.GUIs.dim4_increase], (4, +1)),
-            **dict.fromkeys([preferences.GUIs.dim5_decrease], (5, -1)),
-            **dict.fromkeys([preferences.GUIs.dim5_increase], (5, +1)),
+            **dict.fromkeys([dim4_decrease], (4, -1)),
+            **dict.fromkeys([dim4_increase], (4, +1)),
+            **dict.fromkeys([dim5_decrease], (5, -1)),
+            **dict.fromkeys([dim5_increase], (5, +1)),
         }
 
-        if event.key == preferences.GUIs.dim_stepsize_increase:
+        if event.key == 'pageup':
             self._step += 1
-        elif event.key == preferences.GUIs.dim_stepsize_decrease:
+        elif event.key == 'pagedown':
             if self._step > 1:
                 self._step -= 1
         else:

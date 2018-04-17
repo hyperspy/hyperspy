@@ -140,21 +140,24 @@ class GUIs(t.HasTraits):
 
 
 class PlotConfig(t.HasTraits):
-    dim0_increase = t.Str('right',
-                          #desc="Hotkey for increasing index in dimension 0"
-                          )
-    dim0_decrease = t.Str('left',
-                          #desc="Hotkey for increasing index in dimension 0"
-                          )
-    dim1_increase = t.Str('down',
-                          #desc="Hotkey for increasing index in dimension 0"
-                          )
-    dim1_decrease = t.Str('up',
-                          #desc="Hotkey for increasing index in dimension 0"
-                          )
-    dim_modifier0 = t.Enum(['ctrl', 'alt', 'shift'])  # 0 elem is default
-    dim_modifier1 = t.Enum(['shift', 'alt', 'ctrl'])  # 0 elem is default
-    dim_modifier2 = t.Enum(['alt', 'ctrl', 'shift'])  # 0 elem is default
+    dims_024_increase = t.Str('right',
+                              label='Navigate right'
+                              )
+    dims_024_decrease = t.Str('left',
+                              label='Navigate left',
+                              )
+    dims_135_increase = t.Str('down',
+                              label='Navigate down',
+                              )
+    dims_135_decrease = t.Str('up',
+                              label='Navigate up',
+                              )
+    modifier_dims_01 = t.Enum(['ctrl', 'alt', 'shift', 'ctrl+alt', 'ctrl+shift', 'alt+shift',
+                               'ctrl+alt+shift'], label='Modifier key for 1st and 2nd dimensions')  # 0 elem is default
+    modifier_dims_23 = t.Enum(['shift', 'alt', 'ctrl', 'ctrl+alt', 'ctrl+shift', 'alt+shift',
+                               'ctrl+alt+shift'], label='Modifier key for 3rd and 4th dimensions')  # 0 elem is default
+    modifier_dims_45 = t.Enum(['alt', 'ctrl', 'shift', 'ctrl+alt', 'ctrl+shift', 'alt+shift',
+                               'ctrl+alt+shift'], label='Modifier key for 5th and 6th dimensions')  # 0 elem is default
 
 
 class EDSConfig(t.HasTraits):
