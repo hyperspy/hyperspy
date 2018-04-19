@@ -7,12 +7,12 @@ Events
 
 .. versionadded:: 9.0
 
-Events are a mechanism to send notifications. HyperSpy events are decentralised,
-meaning that there is not a central events dispatcher. Instead, each object
-that can emit events has an :py:attr:`events`
+Events are a mechanism to send notifications. HyperSpy events are
+decentralised, meaning that there is not a central events dispatcher.
+Instead, each object that can emit events has an :py:attr:`events`
 attribute that is an instance of :py:class:`~.events.Events` and that contains
-instances of  :py:class:`~.events.Event` as attributes. When triggered the first
-keyword argument, `obj` contains the object that the events belongs to.
+instances of  :py:class:`~.events.Event` as attributes. When triggered the
+first keyword argument, `obj` contains the object that the events belongs to.
 Different events may be triggered by other keyword arguments too.
 
 Connecting to events
@@ -80,7 +80,8 @@ keyword arguments as follows:
     >>>    print("on_index_changed4_called")
     >>>    print("Index: ", arg)
     ...
-    >>> nav_axis.events.index_changed.connect(on_index_changed4, {"index" : "arg"})
+    >>> nav_axis.events.index_changed.connect(on_index_changed4,
+    ...                                       {"index" : "arg"})
     >>> s.axes_manager.indices = (4,)
     on_index_changed_called
     ('Axis name: ', 'x')
