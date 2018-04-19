@@ -4,6 +4,7 @@ import numpy as np
 from hyperspy.signal import BaseSignal
 from hyperspy.decorators import lazifyTestClass
 
+
 @lazifyTestClass
 class TestSignalFolding:
 
