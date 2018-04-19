@@ -653,13 +653,16 @@ class LazySignal(BaseSignal):
         num_chunks = 1 if num_chunks is None else num_chunks
         blocksize = np.min([multiply(ar) for ar in product(*nav_chunks)])
         nblocks = multiply([len(c) for c in nav_chunks])
-        if blocksize / output_dimension < num_chunks:
-            num_chunks = np.ceil(blocksize / output_dimension)
-        blocksize *= num_chunks
         if algorithm != "svd" and output_dimension is None:
             raise ValueError("With the %s the output_dimension "
                              "must be specified" % algorithm)
 
+        if not output_dimension:
+            output_dimension = min(self.axes_manager.navigation_size,
+                                   self.axes_manager.signal_size)
+        if blocksize / output_dimension < num_chunks:
+            num_chunks = np.ceil(blocksize / output_dimension)
+        blocksize *= num_chunks
         # LEARN
         if algorithm == 'PCA':
             from sklearn.decomposition import IncrementalPCA

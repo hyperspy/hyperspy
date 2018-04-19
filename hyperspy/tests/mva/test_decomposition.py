@@ -21,6 +21,7 @@ import pytest
 
 from hyperspy import signals
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
+from hyperspy.decorators import lazifyTestClass
 
 
 class TestNdAxes:
@@ -91,19 +92,23 @@ class TestNdAxes:
         np.testing.assert_array_equal(s1.inav[0, 0, 0].data, s1n000.data)
 
 
+@lazifyTestClass
 class TestGetModel:
     def setup_method(self, method):
         np.random.seed(100)
         sources = signals.Signal1D(np.random.standard_t(.5, size=(3, 100)))
-        maps = signals.Signal2D(np.random.standard_t(.5, size=(5, 3)))
-        self.s = maps.T * sources
+        np.random.seed(100)
+        maps = signals.Signal2D(np.random.standard_t(.5, size=(3, 8, 15)))
+        self.s = (sources.inav[0] * maps.inav[0].T
+                  + sources.inav[1] * maps.inav[1].T
+                  + sources.inav[2] * maps.inav[2].T)
 
     def test_get_decomposition_model(self):
         s = self.s
         s.decomposition(algorithm='svd')
         sc = self.s.get_decomposition_model(3)
         rms = np.sqrt(((sc.data - s.data)**2).sum())
-        assert rms < 1.4e-10
+        assert rms < 2e-7
 
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_get_bss_model(self):
@@ -112,7 +117,7 @@ class TestGetModel:
         s.blind_source_separation(3)
         sc = self.s.get_bss_model()
         rms = np.sqrt(((sc.data - s.data)**2).sum())
-        assert rms < 4e-10
+        assert rms < 2e-7
 
 
 class TestGetExplainedVarinaceRatio:
