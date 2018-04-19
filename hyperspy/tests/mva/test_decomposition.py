@@ -108,7 +108,7 @@ class TestGetModel:
         s.decomposition(algorithm='svd')
         sc = self.s.get_decomposition_model(3)
         rms = np.sqrt(((sc.data - s.data)**2).sum())
-        assert rms < 3.5e-7
+        assert rms < 5e-7
 
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_get_bss_model(self):
@@ -117,7 +117,7 @@ class TestGetModel:
         s.blind_source_separation(3)
         sc = self.s.get_bss_model()
         rms = np.sqrt(((sc.data - s.data)**2).sum())
-        assert rms < 3.5e-7
+        assert rms < 5e-7
 
 
 class TestGetExplainedVarinaceRatio:
