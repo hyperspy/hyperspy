@@ -176,7 +176,6 @@ Installation will continue in 5 sec...""")
     sleep(5)  # wait 5 secs for user to notice the message
 
 
-
 class Recythonize(Command):
 
     """cythonize all extensions"""
