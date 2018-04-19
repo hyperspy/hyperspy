@@ -724,6 +724,10 @@ class LazySignal(BaseSignal):
                 try:
                     self._unfolded4decomposition = self.unfold()
                     # TODO: implement masking
+                    if navigation_mask or signal_mask:
+                        raise NotImplemented(
+                            "Masking is not yet implemented for lazy SVD."
+                        )
                     U, S, V = svd(self.data)
                     factors = V.T
                     explained_variance = S ** 2 / self.data.shape[0]
