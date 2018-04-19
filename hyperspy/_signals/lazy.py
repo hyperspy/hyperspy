@@ -574,7 +574,7 @@ class LazySignal(BaseSignal):
 
     def decomposition(self,
                       normalize_poissonian_noise=False,
-                      algorithm='PCA',
+                      algorithm='svd',
                       output_dimension=None,
                       signal_mask=None,
                       navigation_mask=None,
@@ -656,11 +656,7 @@ class LazySignal(BaseSignal):
         if algorithm != "svd" and output_dimension is None:
             raise ValueError("With the %s the output_dimension "
                              "must be specified" % algorithm)
-
-        if not output_dimension:
-            output_dimension = min(self.axes_manager.navigation_size,
-                                   self.axes_manager.signal_size)
-        if blocksize / output_dimension < num_chunks:
+        if output_dimension and blocksize / output_dimension < num_chunks:
             num_chunks = np.ceil(blocksize / output_dimension)
         blocksize *= num_chunks
         # LEARN
@@ -777,6 +773,7 @@ class LazySignal(BaseSignal):
 
             # REPROJECT
             if reproject:
+                print(reproject)
                 if algorithm == 'PCA':
                     method = obj.transform
 
@@ -813,16 +810,17 @@ class LazySignal(BaseSignal):
 
             # RESHUFFLE "blocked" LOADINGS
             ndim = self.axes_manager.navigation_dimension
-            try:
-                loadings = _reshuffle_mixed_blocks(
-                    loadings,
-                    ndim,
-                    (output_dimension,),
-                    nav_chunks).reshape((-1, output_dimension))
-            except ValueError:
-                # In case the projection step was not finished, it's left
-                # as scrambled
-                pass
+            if algorithm != "svd": # Only needed for online algorithms
+                try:
+                    loadings = _reshuffle_mixed_blocks(
+                        loadings,
+                        ndim,
+                        (output_dimension,),
+                        nav_chunks).reshape((-1, output_dimension))
+                except ValueError:
+                    # In case the projection step was not finished, it's left
+                    # as scrambled
+                    pass
         finally:
             self.data = original_data
 
