@@ -810,7 +810,7 @@ class LazySignal(BaseSignal):
 
             # RESHUFFLE "blocked" LOADINGS
             ndim = self.axes_manager.navigation_dimension
-            if algorithm != "svd": # Only needed for online algorithms
+            if algorithm != "svd":  # Only needed for online algorithms
                 try:
                     loadings = _reshuffle_mixed_blocks(
                         loadings,
