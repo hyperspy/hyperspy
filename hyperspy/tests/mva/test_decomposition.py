@@ -90,6 +90,7 @@ class TestNdAxes:
         # Check that views of the data don't change. See #871
         np.testing.assert_array_equal(s1.inav[0, 0, 0].data, s1n000.data)
 
+
 class TestGetModel:
     def setup_method(self, method):
         np.random.seed(100)
@@ -112,7 +113,6 @@ class TestGetModel:
         sc = self.s.get_bss_model()
         rms = np.sqrt(((sc.data - s.data)**2).sum())
         assert rms < 4e-10
-
 
 
 class TestGetExplainedVarinaceRatio:
