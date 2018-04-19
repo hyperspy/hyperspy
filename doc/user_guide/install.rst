@@ -75,23 +75,6 @@ MKL libraries) and the easiest installation. The academic license is free.
 
         $ conda install hyperspy-gui-traitsui -c conda-forge
 
-    .. note::
-	As of traitsui v6.0.0, Qt5 is supported by traitsui, which resolves the 
-	conflict issue with packages depending on Qt5. 
-
-	Previous version of traitsui (v5.1.0 and below) does not support Qt5 and, 
-	therefore, in order to use the Qt backend it is necessary to
-        downgrade pyqt. With the standard Anaconda installation this causes
-        a conflict with the anaconda-navigator and the navigator-updater packages, 
-	therefore, it is necessary to remove it in order to install 
-	hyperspy_gui_traitsui as follows:
-
-        .. code-block:: bash
-
-            $ conda remove anaconda-navigator navigator-updater
-            $ conda install hyperspy-gui-traitsui -c conda-forge
-
-
 .. note::
     Since version 0.8.4 HyperSpy only supports Python 3. If you need to
     install HyperSpy in Python 2.7 install version 0.8.3:
