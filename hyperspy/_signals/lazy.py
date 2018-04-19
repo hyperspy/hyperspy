@@ -777,7 +777,6 @@ class LazySignal(BaseSignal):
 
             # REPROJECT
             if reproject:
-                print(reproject)
                 if algorithm == 'PCA':
                     method = obj.transform
 
