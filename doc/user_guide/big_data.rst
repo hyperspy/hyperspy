@@ -3,6 +3,15 @@
 Working with big data
 *********************
 
+.. warning:: All the features described in this chapter are in beta state.
+   Although most of them work, their opearation may not always be optimal,
+   well documented and/or consistent with their in-memory counterparts.
+   Therefore, although efforts will be taken to minimise major disruptions,
+   the syntax and features described here may change in patch and minor
+   HyperSpy releases. If you experience issues with HyperSpy's lazy features
+   please report them to the developers.
+
+
 .. versionadded:: 1.2
 
 HyperSpy makes it possible to analyse data larger than the available memory by
