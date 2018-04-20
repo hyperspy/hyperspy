@@ -29,16 +29,9 @@ HyperSpy Bundle for Microsoft Windows
 The easiest way to install HyperSpy in Windows is installing the HyperSpy
 Bundle. This is a customised `WinPython <http://winpython.github.io/>`_
 distribution that includes HyperSpy, all its dependencies and many other
-scientific Python packages. HyperSpy Bundle does not interact with any other
-Python installation in your system, so it can be safely installed alongside
-other Python distributions. Moreover it is portable, so it can be installed to
-a USB key. When installing it with administrator rights for all users it adds
-context (right-click) menu  entries to start the
-`Jupyter Notebook <http://jupyter.org>`_ and
-`Juypter QtConsole <http://jupyter.org/qtconsole/stable/>`_ inside the folder
-being clicked. See
-`start_jupyter_cm <https://github.com/hyperspy/start_jupyter_cm>`_ for details.
+scientific Python packages.
 
+For details and download links go to https://github.com/hyperspy/hyperspy-bundle 
 
 .. _quick-anaconda-install:
 
