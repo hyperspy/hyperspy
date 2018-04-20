@@ -4,8 +4,7 @@
 Installing HyperSpy
 ===================
 
-The easiest way to install HyperSpy in Microsoft Windows is installing the
-:ref:`HyperSpy Bundle <hyperspy-bundle>`.
+
 
 For quick instructions on how to install HyperSpy in Linux, MacOs or Windows
 using the `Anaconda Python distribution <http://docs.continuum.io/anaconda/>`_
