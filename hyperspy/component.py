@@ -17,8 +17,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import functools
-import warnings
 
 import numpy as np
 from dask.array import Array as dArray
@@ -27,15 +25,13 @@ from traits.trait_numeric import Array
 import sympy
 from sympy.utilities.lambdify import lambdify
 
-from hyperspy.defaults_parser import preferences
 from hyperspy.misc.utils import slugify
 from hyperspy.misc.io.tools import (incremental_filename,
                                     append2pathname,)
-from hyperspy.exceptions import NavigationDimensionError
 from hyperspy.misc.export_dictionary import export_to_dictionary, \
     load_from_dictionary
 from hyperspy.events import Events, Event
-from hyperspy.ui_registry import add_gui_method, register_toolkey
+from hyperspy.ui_registry import add_gui_method
 
 import logging
 
@@ -207,7 +203,7 @@ class Parameter(t.HasTraits):
             load_from_dictionary(self, dictionary)
             return dictionary['self']
         else:
-            raise ValueError( "_id_name of parameter and dictionary do not match, \nparameter._id_name = %s\
+            raise ValueError("_id_name of parameter and dictionary do not match, \nparameter._id_name = %s\
                     \ndictionary['_id_name'] = %s" % (self._id_name, dictionary['_id_name']))
 
     def __repr__(self):
@@ -248,7 +244,7 @@ class Parameter(t.HasTraits):
                 inv = sympy.solveset(sympy.Eq(y, expr), x)
                 self._twin_inverse_sympy = lambdify(y, inv)
                 self._twin_inverse_function = None
-            except:
+            except BaseException:
                 # Not all may have a suitable solution.
                 self._twin_inverse_function = None
                 self._twin_inverse_sympy = None
@@ -1013,7 +1009,6 @@ class Component(t.HasTraits):
         -------
         numpy array
         """
-
         axis = self.model.axis.axis[self.model.channel_switches]
         component_array = self.function(axis)
         return component_array
@@ -1024,11 +1019,9 @@ class Component(t.HasTraits):
             old_axes_manager = self.model.axes_manager
             self.model.axes_manager = axes_manager
             self.fetch_stored_values()
-        s = self.__call__()
+        s = self.model.__call__(component_list=[self])
         if not self.active:
             s.fill(np.nan)
-        if self.model.signal.metadata.Signal.binned is True:
-            s *= self.model.signal.axes_manager.signal_axes[0].scale
         if old_axes_manager is not None:
             self.model.axes_manager = old_axes_manager
             self.charge()
@@ -1183,5 +1176,5 @@ class Component(t.HasTraits):
                         "_id_name of parameters in component and dictionary do not match")
             return id_dict
         else:
-            raise ValueError( "_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
+            raise ValueError("_id_name of component and dictionary do not match, \ncomponent._id_name = %s\
                     \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))

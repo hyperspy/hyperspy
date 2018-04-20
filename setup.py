@@ -56,13 +56,13 @@ install_req = ['scipy>=0.15',
                'sympy',
                'dill',
                'h5py',
-               'python-dateutil',
+               'python-dateutil>=2.5.0',
                'ipyparallel',
                'dask[array]>=0.16.1',
                'scikit-image>=0.13',
                'pint>=0.8',
                'statsmodels',
-               'mrcz>0.3.4',
+               'mrcz>=0.3.6',
                ]
 
 extras_require = {
@@ -72,6 +72,7 @@ extras_require = {
     "mrcz-blosc": ["blosc>=1.5"],
     "lazy_FEI_EMD": ['sparse'],
     "test": ["pytest>=3", "pytest-mpl", "matplotlib>=2.0.2"],
+    "doc": ["sphinx", "numpydoc", "sphinxcontrib-napoleon", "sphinx_rtd_theme"],
 }
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
@@ -176,57 +177,6 @@ Installation will continue in 5 sec...""")
     extensions = []
     from time import sleep
     sleep(5)  # wait 5 secs for user to notice the message
-
-
-# HOOKS ######
-post_checkout_hook_file = os.path.join(setup_path, '.git', 'hooks',
-                                       'post-checkout')
-git_dir = os.path.join(setup_path, '.git')
-hook_ignorer = os.path.join(setup_path, '.hook_ignore')
-
-
-def find_post_checkout_cleanup_line():
-    """find the line index in the git post-checkout hooks
-    'rm extension1 extension2 ...'"""
-    with open(post_checkout_hook_file, 'r') as pchook:
-        hook_lines = pchook.readlines()
-        for i in range(1, len(hook_lines), 1):
-            if re.search('#cleanup_cythonized_and_compiled:',
-                         hook_lines[i]) is not None:
-                return i + 1
-
-
-# generate some git hook to clean up and re-build_ext --inplace
-# after changing branches:
-if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
-    exec_str = sys.executable
-    recythonize_str = '"{}" "{}" clean --all build_ext --inplace\n'.format(
-        exec_str, os.path.join(setup_path, 'setup.py'))
-    if (not os.path.exists(post_checkout_hook_file)):
-        with open(post_checkout_hook_file, 'w') as pchook:
-            pchook.write('#!/bin/sh\n')
-            pchook.write('#cleanup_cythonized_and_compiled:\n')
-            pchook.write(
-                'rm ' + ' '.join(['"%s"' % i for i in cleanup_list]) + '\n')
-            pchook.write(recythonize_str)
-        hook_mode = 0o777  # make it executable
-        os.chmod(post_checkout_hook_file, hook_mode)
-    else:
-        with open(post_checkout_hook_file, 'r') as pchook:
-            hook_lines = pchook.readlines()
-        if re.search(r'#!/bin/.*?sh', hook_lines[0]) is not None:
-            line_n = find_post_checkout_cleanup_line()
-            if line_n is not None:
-                hook_lines[line_n] = 'rm ' + \
-                    ' '.join(['"%s"' % i for i in cleanup_list]) + '\n'
-                hook_lines[line_n + 1] = recythonize_str
-            else:
-                hook_lines.append('\n#cleanup_cythonized_and_compiled:\n')
-                hook_lines.append(
-                    'rm ' + ' '.join(['"%s"' % i for i in cleanup_list]) + '\n')
-                hook_lines.append(recythonize_str)
-            with open(post_checkout_hook_file, 'w') as pchook:
-                pchook.writelines(hook_lines)
 
 
 class Recythonize(Command):
@@ -338,10 +288,13 @@ with update_version_when_dev() as version:
             'hyperspy':
             [
                 'tests/drawing/*.png',
+                'tests/drawing/data/*.hspy',
                 'tests/drawing/plot_signal/*.png',
                 'tests/drawing/plot_signal1d/*.png',
                 'tests/drawing/plot_signal2d/*.png',
                 'tests/drawing/plot_markers/*.png',
+                'tests/drawing/plot_model1d/*.png',
+                'tests/drawing/plot_model/*.png',
                 'misc/eds/example_signals/*.hdf5',
                 'misc/holography/example_signals/*.hdf5',
                 'tests/drawing/plot_mva/*.png',
@@ -349,6 +302,7 @@ with update_version_when_dev() as version:
                 'tests/drawing/plot_signal1d/*.png',
                 'tests/drawing/plot_signal2d/*.png',
                 'tests/drawing/plot_markers/*.png',
+                'tests/drawing/plot_widgets/*.png',
                 'tests/io/blockfile_data/*.blo',
                 'tests/io/dens_data/*.dens',
                 'tests/io/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3',
@@ -373,12 +327,14 @@ with update_version_when_dev() as version:
                 'tests/io/tiff_files/*.dm3',
                 'tests/io/npy_files/*.npy',
                 'tests/io/unf_files/*.unf',
-                'tests/io/bcf_data/*.bcf',
-                'tests/io/bcf_data/*.json',
-                'tests/io/bcf_data/*.npy',
+                'tests/io/bruker_data/*.bcf',
+                'tests/io/bruker_data/*.json',
+                'tests/io/bruker_data/*.npy',
+                'tests/io/bruker_data/*.spx',
                 'tests/io/ripple_files/*.rpl',
                 'tests/io/ripple_files/*.raw',
                 'tests/io/emd_files/*.emd',
+                'tests/io/emd_files/fei_emd_files.zip',
                 'tests/io/protochips_data/*.npy',
                 'tests/io/protochips_data/*.csv',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',

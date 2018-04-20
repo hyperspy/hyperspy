@@ -141,12 +141,13 @@ def test_plot_nav2_close():
 
 def _test_plot_two_cursors(ndim):
     test_plot = _TestPlot(ndim=ndim, sdim=1)  # sdim=2 not supported
-    test_plot.signal.plot()
     s = test_plot.signal
     s.metadata.General.title = 'Nav %i, Sig 1, two cursor' % ndim
     s.axes_manager[0].index = 4
     s.plot()
     s._plot.add_right_pointer()
+    s._plot.navigator_plot.figure.canvas.draw()
+    s._plot.signal_plot.figure.canvas.draw()
     s._plot.right_pointer.axes_manager[0].index = 2
     if ndim == 2:
         s.axes_manager[1].index = 2
