@@ -76,7 +76,7 @@ Falling back to slow python only backend.""")
 # without minus sign, second group looks for numeric value with following
 # closing <\tag> (the '<' char); '([Ee]-?\d*)' part (optionally a third group)
 # checks for scientific notation (e.g. 8,843E-7 -> 'E-7');
-# compiled pattern is binary, as raw xml string is binary.: 
+# compiled pattern is binary, as raw xml string is binary.:
 fix_dec_patterns = re.compile(b'(>-?\\d+),(\\d*([Ee]-?\\d*)?<)')
 
 
@@ -464,14 +464,16 @@ def dictionarize(t):
         for dc in map(dictionarize, children):
             for k, v in dc.items():
                 dd[k].append(v)
-        d = {t.tag: {k:interpret(v[0]) if len(v) == 1 else v for k, v in dd.items()}}
+        d = {t.tag: {k: interpret(v[0]) if len(
+            v) == 1 else v for k, v in dd.items()}}
     if t.attrib:
-        d[t.tag].update(('XmlClass' + k if list(t) else k, interpret(v)) for k, v in t.attrib.items())
+        d[t.tag].update(('XmlClass' + k if list(t) else k, interpret(v))
+                        for k, v in t.attrib.items())
     if t.text:
         text = t.text.strip()
         if children or t.attrib:
             if text:
-              d[t.tag]['#text'] = interpret(text)
+                d[t.tag]['#text'] = interpret(text)
         else:
             d[t.tag] = interpret(text)
     if 'ClassInstance' in d:
@@ -529,7 +531,7 @@ class EDXSpectrum(object):
         self.spectrum_metadata = dictionarize(spectrum_header)
         self.offset = self.spectrum_metadata['CalibAbs']
         self.scale = self.spectrum_metadata['CalibLin']
-        
+
         # main data:
         self.data = np.fromstring(spectrum.find('./Channels').text,
                                   dtype='Q', sep=",")
@@ -737,8 +739,8 @@ class HyperHeader(object):
                     "./ClassInstance[@Type='TRTSpectrumRegion']"):
                 tmp_d = dictionarize(j)
                 self.elements[tmp_d['XmlClassName']] = {'line': tmp_d['Line'],
-                                                 'energy': tmp_d['Energy'],
-                                                 'width': tmp_d['Width']}
+                                                        'energy': tmp_d['Energy'],
+                                                        'width': tmp_d['Width']}
         except AttributeError:
             _logger.info('no element selection present in the spectra..')
 
@@ -891,18 +893,19 @@ class BCF_reader(SFS_reader):
         self.def_index = min(self.available_indexes)
         header_byte_str = header_file.get_as_BytesIO_string().getvalue()
         hd_bt_str = fix_dec_patterns.sub(b'\\1.\\2', header_byte_str)
-        self.header = HyperHeader(hd_bt_str, self.available_indexes, instrument=instrument)
+        self.header = HyperHeader(
+            hd_bt_str, self.available_indexes, instrument=instrument)
         self.hypermap = {}
 
     def check_index_valid(self, index):
-        """check and return if index is valid""" 
+        """check and return if index is valid"""
         if type(index) != int:
             raise TypeError("provided index should be integer")
         if index not in self.available_indexes:
             raise IndexError("requisted index is not in the list of available indexes. "
-                "Available maps are under indexes: {0}".format(str(self.available_indexes)))
+                             "Available maps are under indexes: {0}".format(str(self.available_indexes)))
         return index
-    
+
     def parse_hypermap(self, index=None,
                        downsample=1, cutoff_at_kV=None,
                        lazy=False):
@@ -1151,7 +1154,7 @@ def file_reader(filename, select_type=None, index=None, downsample=1,     # noqa
     used by hyperspy.api.load() method.
 
     Keyword arguments:
-    select_type -- One of: spectrum, image. If none specified, then function
+    select_type -- One of: spectrum_image, image. If none specified, then function
       loads everything, else if specified, loads either just sem imagery,
       or just hyper spectral mapping data (default None).
     index -- index of dataset in bcf v2 can be None integer and 'all'
@@ -1168,9 +1171,17 @@ def file_reader(filename, select_type=None, index=None, downsample=1,     # noqa
 
     # objectified bcf file:
     obj_bcf = BCF_reader(filename, instrument=instrument)
+    if select_type == 'spectrum':
+        select_type = 'spectrum_image'
+        from hyperspy.misc.utils import deprecation_warning
+        msg = (
+            "The 'spectrum' option for the `select_type` parameter is "
+            "deprecated and will be removed in v2.0. Use 'spectrum_image' "
+            "instead.")
+        deprecation_warning(msg)
     if select_type == 'image':
         return bcf_images(obj_bcf)
-    elif select_type == 'spectrum':
+    elif select_type == 'spectrum_image':
         return bcf_hyperspectra(obj_bcf, index=index,
                                 downsample=downsample,
                                 cutoff_at_kV=cutoff_at_kV,
@@ -1244,34 +1255,34 @@ For more information, check the 'Installing HyperSpy' section in the documentati
                        'scale': eds_metadata.scale,
                        'units': 'keV'}],
              'metadata':
-                     # where is no way to determine what kind of instrument was used:
-                     # TEM or SEM
-                     {'Acquisition_instrument': {
-                         mode: obj_bcf.header.get_acq_instrument_dict(
-                             detector=True,
-                             index=index)
-                     },
-        'General': {'original_filename': obj_bcf.filename.split('/')[-1],
-                         'title': 'EDX',
-                         'date': obj_bcf.header.date,
-                         'time': obj_bcf.header.time},
-        'Sample': {'name': obj_bcf.header.name,
-                         'elements': sorted(list(obj_bcf.header.elements)),
-                         'xray_lines': sorted(gen_elem_list(obj_bcf.header.elements))},
-        'Signal': {'signal_type': 'EDS_%s' % mode,
-                         'record_by': 'spectrum',
-                         'quantity': 'X-rays (Counts)'}
-    },
-        'original_metadata': {'Hardware': eds_metadata.hardware_metadata,
-                              'Detector': eds_metadata.detector_metadata,
-                              'Analysis': eds_metadata.esma_metadata,
-                              'Spectrum': eds_metadata.spectrum_metadata,
-                              'DSP Configuration': obj_bcf.header.dsp_metadata,
-                              'Line counter': obj_bcf.header.line_counter,
-                              'Stage': obj_bcf.header.stage_metadata,
-                              'Microscope': obj_bcf.header.sem_metadata},
-        'mapping': mapping,
-    })
+             # where is no way to determine what kind of instrument was used:
+             # TEM or SEM
+             {'Acquisition_instrument': {
+                 mode: obj_bcf.header.get_acq_instrument_dict(
+                     detector=True,
+                     index=index)
+             },
+                 'General': {'original_filename': obj_bcf.filename.split('/')[-1],
+                             'title': 'EDX',
+                             'date': obj_bcf.header.date,
+                             'time': obj_bcf.header.time},
+                 'Sample': {'name': obj_bcf.header.name,
+                            'elements': sorted(list(obj_bcf.header.elements)),
+                            'xray_lines': sorted(gen_elem_list(obj_bcf.header.elements))},
+                 'Signal': {'signal_type': 'EDS_%s' % mode,
+                            'record_by': 'spectrum',
+                            'quantity': 'X-rays (Counts)'}
+             },
+                'original_metadata': {'Hardware': eds_metadata.hardware_metadata,
+                                      'Detector': eds_metadata.detector_metadata,
+                                      'Analysis': eds_metadata.esma_metadata,
+                                      'Spectrum': eds_metadata.spectrum_metadata,
+                                      'DSP Configuration': obj_bcf.header.dsp_metadata,
+                                      'Line counter': obj_bcf.header.line_counter,
+                                      'Stage': obj_bcf.header.stage_metadata,
+                                      'Microscope': obj_bcf.header.sem_metadata},
+                'mapping': mapping,
+             })
     return hyperspectra
 
 

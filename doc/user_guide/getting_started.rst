@@ -209,6 +209,17 @@ signals:
 
     >>> hs.datasets.example_signals.EDS_TEM_Spectrum().plot()
 
+.. versionadded:: 1.4
+    :py:mod:`~.datasets.artificial_data`
+
+There are also artificial datasets, which are made to resemble real
+experimental data.
+
+.. code-block:: python
+
+    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
+    >>> s.plot()
+
 .. _eelsdb-label:
 
 .. versionadded:: 1.0

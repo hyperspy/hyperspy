@@ -23,9 +23,11 @@ import inspect
 from contextlib import contextmanager
 from datetime import datetime
 import logging
+from pint import UnitRegistry, UndefinedUnitError
 
 import numpy as np
 import scipy as sp
+import dask.array as da
 from matplotlib import pyplot as plt
 import traits.api as t
 import numbers
@@ -3176,6 +3178,148 @@ class BaseSignal(FancySlicing,
             s._remove_axis(axis.index_in_axes_manager)
             return s
     integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+
+    def fft(self, shifted=False, **kwargs):
+        """Compute the discrete Fourier Transform.
+
+        This function computes the discrete Fourier Transform over the signal
+        axes by means of the Fast Fourier Transform (FFT) as implemented in
+        numpy.
+
+        Parameters
+        ----------
+        shifted : bool, optional
+            If True, the origin of FFT will be shifted in the centre (Default: False).
+
+        **kwargs
+            other keyword arguments are described in np.fft.fftn().
+
+        Return
+        ------
+        s : ComplexSignal
+
+        Examples
+        --------
+        >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+        >>> im.fft()
+        <ComplexSignal2D, title: FFT of , dimensions: (|512, 512)>
+        # Use following to plot power spectrum of `im`:
+        >>> np.log(im.fft(shifted=True).amplitude).plot()
+
+        Notes
+        -----
+        For further information see the documentation of numpy.fft.fftn
+        """
+
+        if self.axes_manager.signal_dimension == 0:
+            raise AttributeError("Signal dimension must be at least one.")
+        ax = self.axes_manager
+        axes = ax.signal_indices_in_array
+        if isinstance(self.data, da.Array):
+            if shifted:
+                im_fft = self._deepcopy_with_new_data(da.fft.fftshift(
+                    da.fft.fftn(self.data, axes=axes, **kwargs), axes=axes))
+            else:
+                im_fft = self._deepcopy_with_new_data(da.fft.fftn(self.data, axes=axes, **kwargs))
+        else:
+            if shifted:
+                im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
+                    np.fft.fftn(self.data, axes=axes, **kwargs), axes=axes))
+            else:
+                im_fft = self._deepcopy_with_new_data(np.fft.fftn(self.data, axes=axes, **kwargs))
+
+        im_fft.change_dtype("complex")
+        im_fft.metadata.General.title = 'FFT of {}'.format(im_fft.metadata.General.title)
+        im_fft.metadata.set_item('Signal.FFT.shifted', shifted)
+
+        ureg = UnitRegistry()
+        for axis in im_fft.axes_manager.signal_axes:
+            axis.scale = 1. / axis.size / axis.scale
+            try:
+                units = ureg.parse_expression(str(axis.units))**(-1)
+                axis.units = '{:~}'.format(units.units)
+            except UndefinedUnitError:
+                _logger.warning('Units are not set or cannot be recognized')
+            if shifted:
+                axis.offset = -axis.high_value / 2.
+        return im_fft
+
+    def ifft(self, shifted=None, **kwargs):
+        """
+        Compute the inverse discrete Fourier Transform.
+
+        This function computes real part of the inverse of the discrete
+        Fourier Transform over the signal axes by means of the
+        Fast Fourier Transform (FFT) as implemented in
+        numpy.
+
+        Parameters
+        ----------
+        shifted : bool or None, optional
+            If None the shift option will be set to the original status of the FFT using value in metadata.
+            If no FFT entry is present in metadata the parameter will be set to False.
+            If True, the origin of FFT will be shifted in the centre,
+            otherwise the origin would be kept at (0, 0)(Default: None).
+        **kwargs
+            other keyword arguments are described in np.fft.ifftn().
+
+        Return
+        ------
+        s : Signal
+
+        Examples
+        --------
+        >>> import scipy
+        >>> im = hs.signals.Signal2D(scipy.misc.ascent())
+        >>> imfft = im.fft()
+        >>> imfft.ifft()
+        <Signal2D, title: real(iFFT of FFT of ), dimensions: (|512, 512)>
+
+        Notes
+        -----
+        For further information see the documentation of numpy.fft.ifftn
+
+        """
+
+        if self.axes_manager.signal_dimension == 0:
+            raise AttributeError("Signal dimension must be at least one.")
+        ax = self.axes_manager
+        axes = ax.signal_indices_in_array
+        if shifted is None:
+            try:
+                shifted = self.metadata.Signal.FFT.shifted
+            except AttributeError:
+                shifted = False
+
+        if isinstance(self.data, da.Array):
+            if shifted:
+                fft_data_shifted = da.fft.ifftshift(self.data, axes=axes)
+                im_ifft = self._deepcopy_with_new_data(da.fft.ifftn(fft_data_shifted, axes=axes, **kwargs))
+            else:
+                im_ifft = self._deepcopy_with_new_data(da.fft.ifftn(
+                    self.data, axes=axes, **kwargs))
+        else:
+            if shifted:
+                im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(np.fft.ifftshift(
+                    self.data, axes=axes), axes=axes, **kwargs))
+            else:
+                im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
+                    self.data, axes=axes, **kwargs))
+
+        im_ifft.metadata.General.title = 'iFFT of {}'.format(im_ifft.metadata.General.title)
+        im_ifft.metadata.Signal.__delattr__('FFT')
+        im_ifft = im_ifft.real
+
+        ureg = UnitRegistry()
+        for axis in im_ifft.axes_manager.signal_axes:
+            axis.scale = 1. / axis.size / axis.scale
+            try:
+                units = ureg.parse_expression(str(axis.units)) ** (-1)
+                axis.units = '{:~}'.format(units.units)
+            except UndefinedUnitError:
+                _logger.warning('Units are not set or cannot be recognized')
+            axis.offset = 0.
+        return im_ifft
 
     def integrate1D(self, axis, out=None):
         """Integrate the signal over the given axis.

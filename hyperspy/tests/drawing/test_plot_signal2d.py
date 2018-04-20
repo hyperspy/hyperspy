@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 import hyperspy.api as hs
 from hyperspy.drawing.utils import plot_RGB_map
 from hyperspy.tests.drawing.test_plot_signal import _TestPlot
-
+from hyperspy.drawing.utils import make_cmap
 
 scalebar_color = 'blue'
 default_tol = 2.0
@@ -148,6 +148,193 @@ def test_plot_multiple_images_list(mpl_cleanup, vmin, vmax):
     axesRGB[1].units = "nm"
 
     hs.plot.plot_images([image0, image1, image2, rgb], tight_layout=True,
-                        # colorbar='single',
                         labelwrap=20, vmin=vmin, vmax=vmax)
+    return plt.gcf()
+
+
+class _TestIteratedSignal:
+
+    def __init__(self):
+        s = hs.signals.Signal2D([scipy.misc.ascent()] * 6)
+        angles = hs.signals.BaseSignal(range(00, 60, 10))
+        s.map(scipy.ndimage.rotate, angle=angles.T, reshape=False)
+        s.data = np.clip(s.data, 0, 255)  # prevent values outside
+                                          # of integer range
+        title = 'Ascent'
+
+        s.axes_manager = self._set_signal_axes(s.axes_manager,
+                                               name='spatial',
+                                               units='nm', scale=1,
+                                               offset=0.0)
+        s.axes_manager = self._set_navigation_axes(s.axes_manager,
+                                                   name='index',
+                                                   units='images',
+                                                   scale=1, offset=0)
+        s.metadata.General.title = title
+
+        self.signal = s
+
+    def _set_navigation_axes(self, axes_manager, name=t.Undefined,
+                             units=t.Undefined, scale=1.0, offset=0.0):
+        for nav_axis in axes_manager.navigation_axes:
+            nav_axis.units = units
+            nav_axis.scale = scale
+            nav_axis.offset = offset
+        return axes_manager
+
+    def _set_signal_axes(self, axes_manager, name=t.Undefined,
+                         units=t.Undefined, scale=1.0, offset=0.0):
+        for sig_axis in axes_manager.signal_axes:
+            sig_axis.name = name
+            sig_axis.units = units
+            sig_axis.scale = scale
+            sig_axis.offset = offset
+        return axes_manager
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_images_default(mpl_cleanup):
+    test_im_plot = _TestIteratedSignal()
+    hs.plot.plot_images(test_im_plot.signal)
+    return plt.gcf()
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_images_cmap_list(mpl_cleanup):
+    test_im_plot = _TestIteratedSignal()
+    hs.plot.plot_images(test_im_plot.signal,
+                        axes_decor='off',
+                        cmap=['viridis', 'gray'])
+    return plt.gcf()
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_images_cmap_list_w_diverging(mpl_cleanup):
+    test_im_plot = _TestIteratedSignal()
+    hs.plot.plot_images(test_im_plot.signal,
+                        axes_decor='off',
+                        cmap=['viridis', 'gray', 'RdBu_r'])
+    return plt.gcf()
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_images_cmap_mpl_colors(mpl_cleanup):
+    test_im_plot = _TestIteratedSignal()
+    hs.plot.plot_images(test_im_plot.signal,
+                        axes_decor='off',
+                        cmap='mpl_colors')
+    return plt.gcf()
+
+
+def test_plot_images_cmap_mpl_colors_w_single_cbar():
+    # This should give an error, so test for that
+    test_im_plot = _TestIteratedSignal()
+    with pytest.raises(ValueError) as val_error:
+        hs.plot.plot_images(test_im_plot.signal,
+                            axes_decor='off',
+                            cmap='mpl_colors',
+                            colorbar='single')
+    assert str(val_error.value) == 'Cannot use a single colorbar with ' \
+                                   'multiple colormaps. Please check for ' \
+                                   'compatible arguments.'
+
+
+def test_plot_images_bogus_cmap():
+    # This should give an error, so test for that
+    test_im_plot = _TestIteratedSignal()
+    with pytest.raises(ValueError) as val_error:
+        hs.plot.plot_images(test_im_plot.signal,
+                            axes_decor='off',
+                            cmap=3.14159265359,
+                            colorbar=None)
+    assert str(val_error.value) == 'The provided cmap value was not ' \
+                                   'understood. Please check input values.'
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_images_cmap_one_string(mpl_cleanup):
+    test_im_plot = _TestIteratedSignal()
+    hs.plot.plot_images(test_im_plot.signal,
+                        axes_decor='off',
+                        cmap='RdBu_r',
+                        colorbar='single')
+    return plt.gcf()
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_images_cmap_make_cmap_bittrue(mpl_cleanup):
+    test_im_plot = _TestIteratedSignal()
+    hs.plot.plot_images(test_im_plot.signal,
+                        axes_decor='off',
+                        cmap=make_cmap([(255, 255, 255),
+                                        '#F5B0CB',
+                                        (220, 106, 207),
+                                        '#745C97',
+                                        (57, 55, 91)],
+                                       bit=True,
+                                       name='test_cmap',
+                                       register=True))
+    return plt.gcf()
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_images_cmap_make_cmap_bitfalse(mpl_cleanup):
+    test_im_plot = _TestIteratedSignal()
+    hs.plot.plot_images(test_im_plot.signal,
+                        axes_decor='off',
+                        cmap=make_cmap([(1, 1, 1),
+                                        '#F5B0CB',
+                                        (0.86, 0.42, 0.81),
+                                        '#745C97',
+                                        (0.22, 0.22, 0.36)],
+                                       bit=False,
+                                       name='test_cmap',
+                                       register=True))
+    return plt.gcf()
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_images_cmap_multi_signal(mpl_cleanup):
+    test_plot1 = _TestIteratedSignal()
+
+    test_plot2 = _TestIteratedSignal()
+    test_plot2.signal *= 2  # change scale of second signal
+    test_plot2.signal = test_plot2.signal.inav[::-1]
+    test_plot2.signal.metadata.General.title = 'Descent'
+
+    hs.plot.plot_images([test_plot1.signal,
+                         test_plot2.signal],
+                        axes_decor='off',
+                        per_row=4,
+                        cmap='mpl_colors')
+    return plt.gcf()
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_images_cmap_multi_w_rgb(mpl_cleanup):
+    test_plot1 = _TestIteratedSignal()
+
+    test_plot2 = _TestIteratedSignal()
+    test_plot2.signal *= 2  # change scale of second signal
+    test_plot2.signal.metadata.General.title = 'Ascent-2'
+
+    rgb_sig = hs.signals.Signal1D(scipy.misc.face())
+    rgb_sig.change_dtype('rgb8')
+    rgb_sig.metadata.General.title = 'Racoon!'
+
+    hs.plot.plot_images([test_plot1.signal,
+                         test_plot2.signal,
+                         rgb_sig],
+                        axes_decor='off',
+                        per_row=4,
+                        cmap='mpl_colors')
     return plt.gcf()
