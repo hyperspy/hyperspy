@@ -197,6 +197,8 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +--------------------+--------+--------+--------+
     | Bruker's bcf       |    Yes |    No  |    Yes |
     +--------------------+--------+--------+--------+
+    | Bruker's spx       |    Yes |    No  |    No  |
+    +--------------------+--------+--------+--------+
     | EMD (NCEM)         |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
     | EMD (FEI)          |    Yes |    No  |    Yes |
@@ -624,11 +626,16 @@ header in a plain-text format. The reader extracts the measured temperature
 along the time axis, as well as the date and calibration constants stored in
 the header.
 
+Bruker's formats
+----------------
+Bruker's Esprit(TM) software and hardware allows to acquire and save the data
+in different kind of formats. Hyperspy can read two main basic formats: bcf
+and spx.
 
 .. _bcf-format:
 
 Bruker composite file
-----------------
+^^^^^^^^^^^^^^^^^^^^^
 
 HyperSpy can read "hypermaps" saved with Bruker's Esprit v1.x or v2.x in bcf
 hybrid (virtual file system/container with xml and binary data, optionally
@@ -645,7 +652,7 @@ Note that Bruker Esprit uses a similar format for EBSD data, but it is not
 currently supported by HyperSpy.
 
 Extra loading arguments
-^^^^^^^^^^^^^^^^^^^^^^^
++++++++++++++++++++++++
 
 - `select_type` : one of (None, 'spectrum', 'image'). If specified, only the corresponding type of data, either spectrum or image, is returned. By default (None), all data are loaded.
 - `index` : one of (None, int, "all"). Allow to select the index of the dataset in the bcf file, which can contains several datasets. Default None value result in loading the first dataset. When set to 'all', all available datasets will be loaded and returned as separate signals.
@@ -683,6 +690,14 @@ recorded by setting the 'cutoff_at_kV' kwarg to higher value:
 Note that setting downsample to >1 currently locks out using SEM imagery
 as navigator in the plotting.
 
+.. _spx-format:
+
+SPX format
+^^^^^^^^^^
+
+Hyperspy can read Bruker's spx format (single spectra format based on XML).
+The format contains extensive list of details and parameters of EDS analyses
+which are mapped in hyperspy to metadata and original_metadata dictionaries.
 
 .. _emd-format:
 
