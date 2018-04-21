@@ -303,6 +303,9 @@ class ComplexSignal(ComplexSignal_mixin, BaseSignal):
         sap.axes_manager.signal_axes[1].offset = ap[2][0]
         sap.axes_manager.signal_axes[1].scale = np.abs(ap[2][0] - ap[2][1])
 
+        if plot:
+            sap.plot()
+
         return sap
 
 
