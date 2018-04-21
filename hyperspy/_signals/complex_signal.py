@@ -20,8 +20,10 @@ from functools import wraps
 
 import numpy as np
 import dask.array as da
+import matplotlib.pyplot as plt
 
 from hyperspy.signal import BaseSignal
+from hyperspy._signals.signal2d import Signal2D
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING)
@@ -259,6 +261,49 @@ class ComplexSignal(ComplexSignal_mixin, BaseSignal):
         angle = self._deepcopy_with_new_data(np.angle(self.data, deg))
         return super().angle(angle, deg=deg)
     angle.__doc__ = ComplexSignal_mixin.angle.__doc__
+
+    def argand_diagram(self, plot=True, size=[256, 256], display_range=None):
+        """
+        Calculate and plot Argand diagram of complex signal
+
+        Parameters
+        ----------
+        plot : bool, optional
+            Enable plotting of argand diagram
+            (Default: True)
+        size : [int, int], optional
+            Size of the Argand plot in pixels
+            (Default: [256, 256])
+        display_range : array_like, shape(2,2) or shape(2,) optional
+            The position of the edges of the diagram
+            (if not specified explicitly in the bins parameters): [[xmin, xmax], [ymin, ymax]].
+            All values outside of this range will be considered outliers and not tallied in the histogram.
+            (Default: None)
+
+        """
+        im = self.imag.data.ravel()
+        re = self.real.data.ravel()
+
+        if display_range:
+            if np.asarray(display_range).shape == (2, ):
+                display_range = [[display_range[0], display_range[1]],
+                                 [display_range[0], display_range[1]]]
+            elif np.asarray(display_range).shape != (2, 2):
+                raise ValueError('display_range should be array_like, shape(2,2) or shape(2,).')
+
+        ap = np.histogram2d(re, im, bins=size, range=display_range)
+        sap = Signal2D(ap[0].T)
+        sap.metadata = self.metadata.deepcopy()
+        sap.metadata.General.title = 'Argand diagram of {}'.format(self.metadata.General.title)
+        sap.metadata.Signal.signal_type = 'signal2d'
+        sap.axes_manager.signal_axes[0].name = 'Real'
+        sap.axes_manager.signal_axes[0].offset = ap[1][0]
+        sap.axes_manager.signal_axes[0].scale = np.abs(ap[1][0] - ap[1][1])
+        sap.axes_manager.signal_axes[1].name = 'Imaginary'
+        sap.axes_manager.signal_axes[1].offset = ap[2][0]
+        sap.axes_manager.signal_axes[1].scale = np.abs(ap[2][0] - ap[2][1])
+
+        return sap
 
 
 class LazyComplexSignal(ComplexSignal, LazySignal):
