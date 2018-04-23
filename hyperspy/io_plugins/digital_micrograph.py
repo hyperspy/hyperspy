@@ -806,20 +806,37 @@ class ImageObject(object):
             _logger.warning("Date string, %s,  could not be parsed", date)
 
     def _get_microscope_name(self, ImageTags):
-        try:
-            if ImageTags.Session_Info.Microscope != "[]":
-                return ImageTags.Session_Info.Microscope
-        except AttributeError:
-            if 'Name' in ImageTags['Microscope_Info'].keys():
-                return ImageTags.Microscope_Info.Name
-            elif 'Microscope' in ImageTags['Microscope_Info'].keys():
-                return ImageTags.Microscope_Info.Microscope
+        locations = (
+            "Session_Info.Microscope",
+            "Microscope_Info.Name",
+            "Microscope_Info.Microscope",
+        )
+        for loc in locations:
+            mic = ImageTags.get_item(loc)
+            if mic and mic != "[]":
+                return mic
+        _logger.info("Microscope name not present")
+        return None
 
     def _parse_string(self, tag):
         if len(tag) == 0:
             return None
         else:
             return tag
+
+    def _get_EELS_exposure_time(self, tags):
+        # for GMS 2 and quantum/enfinium, the  "Integration time (s)" tag is
+        # only present for single spectrum acquisition;  for maps we need to
+        # compute exposure * number of frames
+        if 'Integration_time_s' in tags.keys():
+            return float(tags["Integration_time_s"])
+        elif 'Exposure_s' in tags.keys():
+            frame_number = 1
+            if "Number_of_frames" in tags.keys():
+                frame_number = float(tags["Number_of_frames"])
+            return float(tags["Exposure_s"]) * frame_number
+        else:
+            _logger.info("EELS exposure time can't be read.")
 
     def get_mapping(self):
         if 'source' in self.imdict.ImageTags.keys():
@@ -840,6 +857,8 @@ class ImageObject(object):
                 "Acquisition_instrument.TEM.beam_energy", lambda x: x / 1e3),
             "{}.Microscope Info.Stage Position.Stage Alpha".format(tags_path): (
                 "Acquisition_instrument.TEM.Stage.tilt_alpha", None),
+            "{}.Microscope Info.Stage Position.Stage Beta".format(tags_path): (
+                "Acquisition_instrument.TEM.Stage.tilt_beta", None),
             "{}.Microscope Info.Stage Position.Stage X".format(tags_path): (
                 "Acquisition_instrument.TEM.Stage.x", lambda x: x * 1e-3),
             "{}.Microscope Info.Stage Position.Stage Y".format(tags_path): (
@@ -915,9 +934,9 @@ class ImageObject(object):
                 "Convergence semi-angle (mrad)": (
                     "Acquisition_instrument.TEM.convergence_angle",
                     None),
-                "{}.EELS.Acquisition.Integration time (s)".format(tags_path): (
+                "{}.EELS.Acquisition".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EELS.%s" % mapped_attribute,
-                    None),
+                    self._get_EELS_exposure_time),
                 "{}.EELS.Acquisition.Number_of_frames".format(tags_path): (
                     "Acquisition_instrument.TEM.Detector.EELS.frame_number",
                     None),

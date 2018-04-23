@@ -25,6 +25,8 @@ import os.path
 from os import remove
 import shutil
 import tempfile
+import gc
+
 from numpy.testing import assert_allclose
 import numpy as np
 import h5py
@@ -35,6 +37,7 @@ import pytest
 from hyperspy.io import load
 from hyperspy.signals import BaseSignal, Signal2D, Signal1D, EDSTEMSpectrum
 from hyperspy.misc.test_utils import assert_warns, assert_deep_almost_equal
+from hyperspy.misc.io.fei_stream_readers import sparse_installed
 
 
 my_path = os.path.dirname(__file__)
@@ -185,6 +188,14 @@ class TestCaseSaveAndRead():
         remove(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
 
 
+def _generate_parameters():
+    parameters = []
+    for lazy in [True, False]:
+        for sum_EDS_detectors in [True, False]:
+            parameters.append([lazy, sum_EDS_detectors])
+    return parameters
+
+
 class TestFeiEMD():
 
     fei_files_path = os.path.join(my_path, "emd_files", "fei_emd_files")
@@ -198,9 +209,11 @@ class TestFeiEMD():
 
     @classmethod
     def teardown_class(cls):
+        gc.collect()
         shutil.rmtree(cls.fei_files_path)
 
-    def test_fei_emd_image(self):
+    @pytest.mark.parametrize("lazy", (True, False))
+    def test_fei_emd_image(self, lazy):
         stage = {'tilt_alpha': '0.00',
                  'tilt_beta': '0.00',
                  'x': '-0.000',
@@ -230,7 +243,11 @@ class TestFeiEMD():
         md['General']['date'] = date
         md['General']['time'] = time
 
-        signal = load(os.path.join(self.fei_files_path, 'fei_emd_image.emd'))
+        signal = load(os.path.join(self.fei_files_path, 'fei_emd_image.emd'),
+                      lazy=lazy)
+        if lazy:
+            assert signal._lazy
+            signal.compute(close_file=True)
         fei_image = np.load(os.path.join(self.fei_files_path,
                                          'fei_emd_image.npy'))
         assert signal.axes_manager[0].name == 'x'
@@ -243,24 +260,42 @@ class TestFeiEMD():
         assert_deep_almost_equal(signal.metadata.as_dictionary(), md)
         assert isinstance(signal, Signal2D)
 
-    def test_fei_emd_spectrum(self):
+    @pytest.mark.parametrize("lazy", (True, False))
+    def test_fei_emd_spectrum(self, lazy):
         signal = load(os.path.join(
-            self.fei_files_path, 'fei_emd_spectrum.emd'))
+            self.fei_files_path, 'fei_emd_spectrum.emd'), lazy=lazy)
+        if lazy:
+            assert signal._lazy
+            signal.compute(close_file=True)
         fei_spectrum = np.load(os.path.join(self.fei_files_path,
                                             'fei_emd_spectrum.npy'))
         np.testing.assert_equal(signal.data, fei_spectrum)
         assert isinstance(signal, Signal1D)
 
-    def test_fei_emd_si(self):
-        signal = load(os.path.join(self.fei_files_path, 'fei_emd_si.emd'))
+    @pytest.mark.parametrize("lazy", (True, False))
+    def test_fei_emd_si(self, lazy):
+        if lazy and not sparse_installed:
+            pytest.skip("python sparse is not installed")
+        signal = load(os.path.join(self.fei_files_path, 'fei_emd_si.emd'),
+                      lazy=lazy)
+        if lazy:
+            assert signal[1]._lazy
+            signal[1].compute(close_file=True)
         fei_si = np.load(os.path.join(self.fei_files_path, 'fei_emd_si.npy'))
         np.testing.assert_equal(signal[1].data, fei_si)
         assert isinstance(signal[1], Signal1D)
 
-    def test_fei_emd_si_non_square_10frames(self):
-        s = load(os.path.join(self.fei_files_path,
-                              'fei_SI_SuperX-HAADF_10frames_10x50.emd'))
+    @pytest.mark.parametrize("lazy", (True, False))
+    def test_fei_emd_si_non_square_10frames(self, lazy):
+        if lazy and not sparse_installed:
+            pytest.skip("python sparse is not installed")
+        s = load(os.path.join(
+            self.fei_files_path, 'fei_SI_SuperX-HAADF_10frames_10x50.emd'),
+            lazy=lazy)
         signal = s[1]
+        if lazy:
+            assert signal._lazy
+            signal.compute(close_file=True)
         assert isinstance(signal, EDSTEMSpectrum)
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
@@ -274,9 +309,11 @@ class TestFeiEMD():
         assert signal.axes_manager[2].size == 4096
         assert signal.axes_manager[2].units == 'keV'
         assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
-        assert signal.metadata.Acquisition_instrument.TEM.Detector.EDS.number_of_frames == 10
 
         signal0 = s[0]
+        if lazy:
+            assert signal0._lazy
+            signal0.compute(close_file=True)
         assert isinstance(signal0, Signal2D)
         assert signal0.axes_manager[0].name == 'x'
         assert signal0.axes_manager[0].size == 10
@@ -290,8 +327,12 @@ class TestFeiEMD():
                               'fei_SI_SuperX-HAADF_10frames_10x50.emd'),
                  sum_frames=False,
                  SI_dtype=np.uint8,
-                 rebin_energy=256)
+                 rebin_energy=256,
+                 lazy=lazy)
         signal = s[1]
+        if lazy:
+            assert signal._lazy
+            signal.compute(close_file=True)
         assert isinstance(signal, EDSTEMSpectrum)
         assert signal.axes_manager.navigation_shape == (10, 50, 10)
         assert signal.axes_manager[0].name == 'x'
@@ -310,15 +351,18 @@ class TestFeiEMD():
         assert signal.axes_manager[3].size == 16
         assert signal.axes_manager[3].units == 'keV'
         assert_allclose(signal.axes_manager[3].scale, 1.28, atol=1E-5)
-        assert signal.metadata.Acquisition_instrument.TEM.Detector.EDS.number_of_frames == 10
 
         s = load(os.path.join(self.fei_files_path,
                               'fei_SI_SuperX-HAADF_10frames_10x50.emd'),
                  sum_frames=False,
                  last_frame=5,
                  SI_dtype=np.uint8,
-                 rebin_energy=256)
+                 rebin_energy=256,
+                 lazy=lazy)
         signal = s[1]
+        if lazy:
+            assert signal._lazy
+            signal.compute(close_file=True)
         assert isinstance(signal, EDSTEMSpectrum)
         assert signal.axes_manager.navigation_shape == (10, 50, 5)
         assert signal.axes_manager[0].name == 'x'
@@ -337,15 +381,18 @@ class TestFeiEMD():
         assert signal.axes_manager[3].size == 16
         assert signal.axes_manager[3].units == 'keV'
         assert_allclose(signal.axes_manager[3].scale, 1.28, atol=1E-5)
-        assert signal.metadata.Acquisition_instrument.TEM.Detector.EDS.number_of_frames == 5
 
         s = load(os.path.join(self.fei_files_path,
                               'fei_SI_SuperX-HAADF_10frames_10x50.emd'),
                  sum_frames=False,
                  first_frame=4,
                  SI_dtype=np.uint8,
-                 rebin_energy=256)
+                 rebin_energy=256,
+                 lazy=lazy)
         signal = s[1]
+        if lazy:
+            assert signal._lazy
+            signal.compute(close_file=True)
         assert isinstance(signal, EDSTEMSpectrum)
         assert signal.axes_manager.navigation_shape == (10, 50, 6)
         assert signal.axes_manager[0].name == 'x'
@@ -364,12 +411,19 @@ class TestFeiEMD():
         assert signal.axes_manager[3].size == 16
         assert signal.axes_manager[3].units == 'keV'
         assert_allclose(signal.axes_manager[3].scale, 1.28, atol=1E-5)
-        assert signal.metadata.Acquisition_instrument.TEM.Detector.EDS.number_of_frames == 6
 
-    def test_fei_emd_si_non_square_20frames(self):
-        s = load(os.path.join(self.fei_files_path,
-                              'fei_SI_SuperX-HAADF_20frames_10x50.emd'))
+    @pytest.mark.parametrize("lazy", (True, False))
+    def test_fei_emd_si_non_square_20frames(self, lazy):
+        if lazy and not sparse_installed:
+            pytest.skip("python sparse is not installed")
+        s = load(os.path.join(
+            self.fei_files_path,
+            'fei_SI_SuperX-HAADF_20frames_10x50.emd'),
+            lazy=lazy)
         signal = s[1]
+        if lazy:
+            assert signal._lazy
+            signal.compute(close_file=True)
         assert isinstance(signal, EDSTEMSpectrum)
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
@@ -383,12 +437,19 @@ class TestFeiEMD():
         assert signal.axes_manager[2].size == 4096
         assert signal.axes_manager[2].units == 'keV'
         assert_allclose(signal.axes_manager[2].scale, 0.005, atol=1E-5)
-        assert signal.metadata.Acquisition_instrument.TEM.Detector.EDS.number_of_frames == 20
 
-    def test_fei_emd_si_non_square_20frames_2eV(self):
-        s = load(os.path.join(self.fei_files_path,
-                              'fei_SI_SuperX-HAADF_20frames_10x50_2ev.emd'))
+    @pytest.mark.parametrize("lazy", (True, False))
+    def test_fei_emd_si_non_square_20frames_2eV(self, lazy):
+        if lazy and not sparse_installed:
+            pytest.skip("python sparse is not installed")
+        s = load(os.path.join(
+            self.fei_files_path,
+            'fei_SI_SuperX-HAADF_20frames_10x50_2ev.emd'),
+            lazy=lazy)
         signal = s[1]
+        if lazy:
+            assert signal._lazy
+            signal.compute(close_file=True)
         assert isinstance(signal, EDSTEMSpectrum)
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].size == 10
@@ -402,17 +463,59 @@ class TestFeiEMD():
         assert signal.axes_manager[2].size == 4096
         assert signal.axes_manager[2].units == 'keV'
         assert_allclose(signal.axes_manager[2].scale, 0.002, atol=1E-5)
-        assert signal.metadata.Acquisition_instrument.TEM.Detector.EDS.number_of_frames == 20
 
-    def test_fei_emd_si_frame_range(self):
+    @pytest.mark.parametrize("lazy", (True, False))
+    def test_fei_emd_si_frame_range(self, lazy):
+        if lazy and not sparse_installed:
+            pytest.skip("python sparse is not installed")
         signal = load(os.path.join(self.fei_files_path, 'fei_emd_si.emd'),
-                      first_frame=2, last_frame=4)
+                      first_frame=2, last_frame=4, lazy=lazy)
         fei_si = np.load(os.path.join(self.fei_files_path,
                                       'fei_emd_si_frame.npy'))
+        if lazy:
+            assert signal[1]._lazy
+            signal[1].compute(close_file=True)
         np.testing.assert_equal(signal[1].data, fei_si)
         assert isinstance(signal[1], Signal1D)
-        md = signal[1].metadata
-        assert md['Acquisition_instrument']['TEM']['Detector']['EDS']['number_of_frames'] == 2
+
+    @pytest.mark.parametrize(["lazy", "sum_EDS_detectors"],
+                             _generate_parameters())
+    def test_fei_si_4detectors(self, lazy, sum_EDS_detectors):
+        if lazy and not sparse_installed:
+            pytest.skip("python sparse is not installed")
+        fname = os.path.join(self.fei_files_path,
+                             'fei_SI_EDS-HAADF-4detectors_2frames.emd')
+        signal = load(fname, sum_EDS_detectors=sum_EDS_detectors, lazy=lazy)
+        if lazy:
+            assert signal[1]._lazy
+            signal[1].compute(close_file=True)
+        length = 6
+        if not sum_EDS_detectors:
+            length += 3
+        assert len(signal) == length
+        # TODO: add parsing azimuth_angle
+
+    def test_fei_emd_ceta_camera(self):
+        signal = load(os.path.join(self.fei_files_path, '1532 Camera Ceta.emd'))
+        assert_allclose(signal.data, np.zeros((64, 64)))
+        assert isinstance(signal, Signal2D)
+        date, time = self._convert_datetime(1512055942.914275).split('T')
+        assert signal.metadata.General.date == date
+        assert signal.metadata.General.time == time
+        assert signal.metadata.General.time_zone == self._get_local_time_zone()
+
+        signal = load(os.path.join(self.fei_files_path, '1854 Camera Ceta.emd'))
+        assert_allclose(signal.data, np.zeros((64, 64)))
+        assert isinstance(signal, Signal2D)
+
+    def _convert_datetime(self, unix_time):
+        # Since we don't know the actual time zone of where the data have been
+        # acquired, we convert the datetime to the local time for convenience
+        dt = datetime.fromtimestamp(float(unix_time), tz=tz.tzutc())
+        return dt.astimezone(tz.tzlocal()).isoformat().split('+')[0]
+
+    def _get_local_time_zone(self):
+        return tz.tzlocal().tzname(datetime.today())
 
     def time_loading_frame(self):
         # Run this function to check the loading time when loading EDS data

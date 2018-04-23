@@ -217,6 +217,7 @@ def file_reader(filename, endianess='<', **kwds):
 
     return [dictionary, ]
 
+
 mapping = {
     'fei_header.a_tilt':
     ("Acquisition_instrument.TEM.Stage.tilt_alpha", None),

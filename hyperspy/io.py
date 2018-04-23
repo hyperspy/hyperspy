@@ -54,14 +54,14 @@ def load(filenames=None,
     """
     Load potentially multiple supported file into an hyperspy structure.
 
-    Supported formats: hspy (HDF5), msa, Gatan dm3, Ripple (rpl+raw), Bruker bcf,
-    FEI ser and emi, SEMPER unf, Berkeley and FEI emd, EDAX spd/spc, tif and a 
-    number of image formats.
+    Supported formats: hspy (HDF5), msa, Gatan dm3, Ripple (rpl+raw),
+    Bruker bcf and spx, FEI ser and emi, SEMPER unf, EMD, EDAX spd/spc,
+    tif, and a number of image formats.
 
     Any extra keyword is passed to the corresponding reader. For
     available options see their individual documentation.
 
-    Parameters (main)
+    Parameters
     ----------
     filenames :  None, str or list of strings
         The filename to be loaded. If None, a window will open to select
@@ -104,76 +104,58 @@ def load(filenames=None,
         If an axis with this name already
         exists it automatically append '-i', where `i` are integers,
         until it finds a name that is not yet in use.
-    lazy : {None, bool} (default is False)
+    lazy : {None, bool}
         Open the data lazily - i.e. without actually reading the data from the
-        disk until required. Allows opening arbitrary-sized datasets.
-    convert_units : {None, bool} (default is None)
+        disk until required. Allows opening arbitrary-sized datasets. The default
+        is `False`.
+    convert_units : {None, bool}
         If True, convert the units using the `convert_to_units` method of
         the `axes_manager`. If False, does nothing. If None, use the default 
-        setting of the file reader used.
-    print_info: bool (default is False)
-        For SEMPER ``unf`` and ``emd`` (Berkeley) files, if True 
+        setting of the file reader used. The default is None
+    print_info: bool
+        For SEMPER unf- and EMD (Berkley)-files, if True (default is False)
         additional information read during loading is printed for a quick
         overview.
-    downsample : int (1–4095) (default is 1)
-        For ``bcf`` files, if set to integer (>=2)
+    downsample : int (1–4095)
+        For Bruker bcf files, if set to integer (>=2) (default 1)
         bcf is parsed into down-sampled size array by given integer factor,
         multiple values from original bcf pixels are summed forming downsampled
         pixel. This allows to improve signal and conserve the memory with the
         cost of lower resolution.
-    cutoff_at_kV : {None, int, float} (default is None)
-        For ``bcf`` files, if set to numerical ``bcf`` is parsed into array 
-        with depth cutoff at coresponding given energy. This allows to conserve 
-        the memory, with cutting-off unused spectra's tail, or force 
-        enlargement of the spectra size.
-    select_type: {'spectrum_image', 'image', 'single_spectrum', None} (default is None)
-        If `None`, all data are loaded. 
-        For ``bcf`` and FEI emd files: if one of 'spectrum_image', 'image' or 
-        'single_spectrum', the loader return single_spectrumns either only the 
-        spectrum image or only the images (including EDS map for FEI emd files) 
-        or only the single spectra (for FEI emd files).
-    first_frame : int (default is 0)
-        For FEI ``emd`` files: load only the data acquired after the specified 
-        fname.
-    last_frame : {None, int} (default is None)
-        For FEI``emd`` files: load only the data acquired up to specified 
-        fname. If None, load up the data to the end.
+    cutoff_at_kV : {None, int, float}
+       For Bruker bcf files, if set to numerical (default is None)
+       bcf is parsed into array with depth cutoff at coresponding given energy.
+       This allows to conserve the memory, with cutting-off unused spectra's
+       tail, or force enlargement of the spectra size.
+    select_type: {'spectrum_image', 'image', 'single_spectrum', None} 
+       If `None` (default), all data are loaded. 
+       For Bruker bcf and FEI emd files: if one of 'spectrum_image', 'image' or 
+       'single_spectrum', the loader return single_spectrumns either only the 
+       spectrum image or only the images (including EDS map for FEI emd files) 
+       or only the single spectra (for FEI emd files).
+    first_frame : int (default 0)
+       Only for FEI emd files: load only the data acquired after the specified 
+       fname.
+    last_frame : None or int (default None)
+       Only for FEI emd files: load only the data acquired up to specified 
+       fname. If None, load up the data to the end.
     sum_frames : bool (default is True)
-        For FEI ``emd`` files: load each EDS frame individually.
+       Only for FEI emd files: load each EDS frame individually.
     sum_EDS_detectors : bool (default is True)
-        For FEI ``emd`` files: load each frame individually. If True, the signal 
-        from the different detector are summed. If False, a distinct signal is 
-        returned for each EDS detectors.
+       Only for FEI emd files: load each frame individually. If True, the signal 
+       from the different detector are summed. If False, a distinct signal is 
+       returned for each EDS detectors.
     rebin_energy : int, a multiple of the length of the energy dimension (default 1)
-        For FEI ``emd`` files: rebin the energy axis by the integer provided 
-        during loading in order to save memory space.
-    SI_data_dtype : {None, numpy.dtype} (default is None)
-        For FEI ``emd`` files: set the dtype of the spectrum image data in 
-        order to save memory space. If None, the default dtype from the FEI emd 
-        file is used.
+       Only for FEI emd files: rebin the energy axis by the integer provided 
+       during loading in order to save memory space.
+    SI_data_dtype : numpy.dtype
+       Only for FEI emd files: set the dtype of the spectrum image data in 
+       order to save memory space. If None, the default dtype from the FEI emd 
+       file is used.
     load_SI_image_stack : bool (default False)
-        For FEI ``emd`` files: load the stack of STEM images acquired 
-        simultaneously as the EDS spectrum image.
-    spc_fname : {None, str} (default is None)
-        For ``spd`` file: name of file from which to read the spectral calibration. 
-        If data was exported fully from EDAX TEAM software, an .spc file with 
-        the same name as the .spd should be present.
-        If `None`, the default filename will be searched for.
-        Otherwise, the name of the .spc file to use for calibration can
-        be explicitly given as a string.
-    ipr_fname : {None, str} (default is None)
-        For ``spd`` file: name of file from which to read the spatial calibration. 
-        If data was exported fully from EDAX TEAM software, an .ipr file with 
-        the same name as the .spd (plus a "_Img" suffix) should be present.
-        If `None`, the default filename will be searched for.
-        Otherwise, the name of the .ipr file to use for spatial calibration
-        can be explicitly given as a string.
-    load_all_spc : bool (default is False)
-        For ``spd`` and ``spc`` file: switch to control if all of the .spc 
-        header is read, or just the important parts for import into HyperSpy.
-    **kwds
-        For ``spd`` file: remaining arguments are passed to the Numpy ``memmap`` 
-        function       
+       Load the stack of STEM images acquired simultaneously as the EDS 
+       spectrum image.
+       
 
     Returns
     -------
@@ -303,12 +285,6 @@ def load_single_file(filename, **kwds):
 
     filename : string
         File name (including the extension)
-
-    signal_type : {None, "EELS", "EDS_SEM", "EDS_TEM", "", str}
-        Set the signal type of the data to be read.
-
-    kwds : dictionary
-        Keyword arguments for the file reader.
 
     """
     extension = os.path.splitext(filename)[1][1:]
@@ -524,9 +500,17 @@ def save(filename, signal, overwrite=None, **kwds):
                           'The following formats can: %s' %
                           strlist2enumeration(yes_we_can))
         ensure_directory(filename)
+        is_file = os.path.isfile(filename)
         if overwrite is None:
-            overwrite = overwrite_method(filename)
-        if overwrite is True:
+            write = overwrite_method(filename) # Ask what to do
+        elif overwrite is True or (overwrite is False and not is_file):
+            write = True # Write the file
+        elif overwrite is False and is_file:
+            write = False # Don't write the file
+        else:
+            raise ValueError("`overwrite` parameter can only be None, True or "
+                             "False.")
+        if write:
             writer.file_writer(filename, signal, **kwds)
             _logger.info('The %s file was created' % filename)
             folder, filename = os.path.split(os.path.abspath(filename))
