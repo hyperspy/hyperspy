@@ -1361,6 +1361,52 @@ class EELSSpectrum_mixin:
         return m
     rebin.__doc__ = hyperspy.signal.BaseSignal.rebin.__doc__
 
+    def vacuum_mask(self, threshold=10.0, start_energy=None,
+                    closing=True, opening=False):
+        """
+        Generate mask of the vacuum region
+
+        Parameters
+        ----------
+        threshold: float
+            For a given pixel, mean value in the energy axis below which the
+            pixel is considered as vacuum.
+        start_energy: float, None
+            Energy from which the intensity is averaged up to the end.
+            If None, set the value to 15.0 eV when the zero-loss peak and the
+            15.0 eV energy channel are in the spectrum, otherwise, take the 
+            last quarter of the spectrum.
+        closing: bool
+            If true, applied a morphologic closing to the mask
+        opnening: bool
+            If true, applied a morphologic opening to the mask
+
+        Return
+        ------
+        mask: signal
+            The mask of the region
+        """
+        signal_axis = self.axes_manager.signal_axes[0]
+        if start_energy is None:
+            # zero-loss peak present
+            if signal_axis.low_value < 0.0:
+                start_energy = 15.0
+                if signal_axis.high_value < start_energy:
+                    start_energy = 0.25 * signal_axis.high_value
+            else:
+                start_energy = 0.25 * signal_axis.high_value
+
+        mask = (self.isig[start_energy:].mean(-1) <= threshold)
+
+        from scipy.ndimage.morphology import binary_dilation, binary_erosion
+        if closing:
+            mask.data = binary_dilation(mask.data, border_value=0)
+            mask.data = binary_erosion(mask.data, border_value=1)
+        if opening:
+            mask.data = binary_erosion(mask.data, border_value=1)
+            mask.data = binary_dilation(mask.data, border_value=0)
+        return mask
+
 
 class EELSSpectrum(EELSSpectrum_mixin, Signal1D):
 
