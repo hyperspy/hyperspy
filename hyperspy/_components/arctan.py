@@ -59,7 +59,7 @@ class Arctan(Component):
         self._whitelist['minimum_at_zero'] = ('init', minimum_at_zero)
 
         self.isbackground = False
-        self.isconvolved = False
+        self.convolved = False
         self._position = self.x0
 
     def function(self, x):

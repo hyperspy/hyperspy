@@ -1048,6 +1048,30 @@ to reverse the :py:func:`~.utils.stack` function:
 
   Splitting example.
 
+FFT and iFFT
+^^^^^^^^^^^^
+
+The Fast Fourier transform and its inverse can be applied on a signal with the :py:meth:`~.signal.BaseSignal.fft` and the :py:meth:`~.signal.BaseSignal.ifft` methods.
+
+.. code-block:: python
+
+    >>> import numpy as np
+    >>> im = hs.datasets.example_signals.object_hologram()
+    >>> np.log(im.fft(shifted=True).amplitude).plot()
+
+.. figure::  images/hologram_fft.png
+  :align:   center
+  :width:   400
+
+Note that for visual inspection of FFT it is common to plot logarithm of amplitude rather than FFT itself as it is done
+    in the example above.
+
+By default both methods calculate FFT and IFFT with origin at (0, 0) (not in the centre of FFT). Use `shifted=True` option to
+calculate FFT and the inverse with origin shifted in the centre.
+
+.. code-block:: python
+
+    >>> im_ifft = im.fft(shifted=True).ifft(shifted=True)
 
 .. _signal.change_dtype:
 
@@ -1210,7 +1234,8 @@ The convenience methods :py:meth:`~.signal.BaseSignal.as_signal1D` and
 :py:meth:`~.signal.BaseSignal.transpose`, but always optimize the data
 for iteration over the navigation axes if required. Hence, these methods do not
 always return a view of the original data. If a copy of the data is required
-use :py:meth:`~.signal.BaseSignal.deepcopy` on the output of any of these
+use 
+:py:meth:`~.signal.BaseSignal.deepcopy` on the output of any of these
 methods e.g.:
 
 .. code-block:: python
@@ -1231,6 +1256,7 @@ prints the five-number summary statistics of the data.
 These two methods can be combined with
 :py:meth:`~.signal.BaseSignal.get_current_signal` to compute the histogram or
 print the summary statistics of the signal at the current coordinates, e.g:
+
 .. code-block:: python
 
     >>> s = hs.signals.EELSSpectrum(np.random.normal(size=(10,100)))
