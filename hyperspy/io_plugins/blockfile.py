@@ -108,7 +108,7 @@ def get_header_from_signal(signal, endianess='<'):
     else:
         note = ''
     # The navigation and signal units are 'nm' and 'cm', respectively, so we
-    # convert the units according before saving the signal
+    # convert the units accordingly before saving the signal
     axes_manager = signal.axes_manager.deepcopy()
     axes_manager.convert_units('navigation', 'nm')
     axes_manager.convert_units('signal', 'cm')

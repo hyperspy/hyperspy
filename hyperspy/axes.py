@@ -89,7 +89,7 @@ class UnitConversion(object):
     def _convert_compact_units(self, factor=0.25, inplace=True):
         """ Convert units to "human-readable" units, which means with a 
             convenient prefix. `factor` is a adjustage factor used to 
-            determine the prefix of the units (in combinaison with the size of 
+            determine the prefix of the units (in combination with the size of 
             the axis). See to_compact() method of the pint library for details.
         """
         if self._ignore_conversion(self.units):
@@ -125,15 +125,15 @@ class UnitConversion(object):
             return scale, offset, units
 
     def convert_to_units(self, units=None, inplace=True, factor=0.25):
-        """ Convert the scale and the units of the current axis. If the units
-        is not supported by the pint library, the scale and units are not
-        changed.
+        """ Convert the scale and the units of the current axis. If the unit 
+        of measure is not supported by the pint library, the scale and units 
+        are not changed.
 
         Parameters
         ----------
         units : {str | None}
             Default = None
-            If str, the axis will converted to the provided units.
+            If str, the axis will be converted to the provided units.
             If `None`, the scale and the units are converted to the appropriate 
             scale and units to avoid displaying scalebar with >3 digits or too 
             small number. This can be tweaked by the `factor` argument.
@@ -141,8 +141,8 @@ class UnitConversion(object):
             If `True`, convert the axis in place. if `False` return the  
             `scale`, `offset` and `units`.
         factor : float
-            `factor` is a adjustage factor used to determine the prefix of the 
-            units (in combinaison with the size of the axis).
+            'factor' an adjustable value used to determine the prefix of the 
+            units.
         """
         if units is None:
             out = self._convert_compact_units(factor, inplace=inplace)
@@ -999,15 +999,15 @@ class AxesManager(t.HasTraits):
 
     def convert_units(self, axes=None, units=None, same_units=True,
                       factor=0.25):
-        """ Convert the scale and the units of the selected axes. If the units
-        is not supported by the pint library, the scale and units are not
-        changed.
+        """ Convert the scale and the units of the selected axes. If the unit 
+        of measure is not supported by the pint library, the scale and units 
+        are not changed.
 
         Parameters
         ----------
         axes : {int | string | iterable of `DataAxis` | None}
             Default = None
-            Convert to the convenient scale and units on the specified axis.
+            Convert to a convenient scale and units on the specified axis.
             If int, the axis can be specified using the index of the
             axis in `axes_manager`.
             If string, argument can be `navigation` or `signal` to select the
@@ -1016,7 +1016,7 @@ class AxesManager(t.HasTraits):
         units : {list of string of the same length than axes | str | None}
             Default = None
             If list, the selected axes will be converted to the provided units.
-            If str, the navigation or signal axes will converted to the 
+            If str, the navigation or signal axes will be converted to the 
             provided units.
             If `None`, the scale and the units are converted to the appropriate 
             scale and units to avoid displaying scalebar with >3 digits or too 
@@ -1028,8 +1028,8 @@ class AxesManager(t.HasTraits):
             first axis is used for all axes. If `False`, convert all axes 
             individually.
         factor : float
-            `factor` is a adjustage factor used to determine the prefix of the 
-            units (in combinaison with the size of each axis).
+            'factor' an adjustable value used to determine the prefix of the 
+            units.
         """
         convert_navigation = convert_signal = True
 
