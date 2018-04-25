@@ -68,7 +68,7 @@ def create_axis(**kwargs):
 
     Parameters
     ----------
-    axis_values : iteratable of values (list, tuple or 1D numpy array)
+    axis : iteratable of values (list, tuple or 1D numpy array)
     offset : float
     scale : float
     size : number of channels
@@ -78,7 +78,7 @@ def create_axis(**kwargs):
     A DataAxis or a LinearDataAxis
 
     """
-    if 'axis_values' in kwargs.keys(): # non linear axis
+    if 'axis' in kwargs.keys(): # non linear axis
         axis_class = DataAxis
     elif "size" in kwargs.keys(): # set default value 
         axis_class = LinearDataAxis
@@ -86,7 +86,7 @@ def create_axis(**kwargs):
         kwargs.setdefault("scale", 1.0)
         kwargs.setdefault("offset", 0.0)
     else:
-        raise ValueError('Missing argument: either "axis_value" or "size" '
+        raise ValueError('Missing argument: either "axis" or "size" '
                          'should be provided.')
     return axis_class(**kwargs)
 
@@ -148,6 +148,7 @@ class BaseDataAxis(t.HasTraits):
         self.index = 0
         self.navigate = navigate
         self.axes_manager = None
+        self.is_linear = False
 
         # The slice must be updated even if the default value did not
         # change to correctly set its value.
@@ -389,30 +390,30 @@ class DataAxis(BaseDataAxis):
                  name=t.Undefined,
                  units=t.Undefined,
                  navigate=t.Undefined,
-                 axis_values=[1]):
+                 axis=[1]):
         super().__init__(index_in_array, name, units, navigate)
-        self.update_axis(axis_values)
+        self.update_axis(axis)
 
-    def update_axis(self, axis_values):
+    def update_axis(self, axis):
         """Set the value of a axis. The axis value needs to be ordered.
 
         Parameters
         ----------
-        axis_values : numpy array or list
+        axis : numpy array or list
 
         Raises
         ------
         ValueError if the axis values are not ordered.
 
         """
-        if len(axis_values) > 1:
-            if isinstance(axis_values, list):
-                axis_values = np.asarray(axis_values)
-            steps = axis_values[1:] - axis_values[:-1]
+        if len(axis) > 1:
+            if isinstance(axis, list):
+                axis = np.asarray(axis)
+            steps = axis[1:] - axis[:-1]
             # check axis is ordered
             if not np.all(steps > 0):
                 raise ValueError('The non-linear axis needs to be ordered.')
-        self.axis = axis_values
+        self.axis = axis
         self.size = len(self.axis)
 
     def _get_array_slices(self, slice_):
@@ -497,6 +498,7 @@ class DataAxis(BaseDataAxis):
         # TODO
         pass
 
+
 #class FunctionalDataAxis:
 #
 #    def __init__(self, function):
@@ -510,7 +512,6 @@ class DataAxis(BaseDataAxis):
 class LinearDataAxis(BaseDataAxis):
     scale = t.Float()
     offset = t.Float()
-    linear = t.Bool(t.Undefined)
 
     def __init__(self,
                  index_in_array=None,
@@ -527,7 +528,8 @@ class LinearDataAxis(BaseDataAxis):
         self.update_axis()
         self.on_trait_change(self.update_axis,
                              ['scale', 'offset', 'size'])
-
+        self.is_linear = True
+    
     def update_axis(self):
         self.axis = generate_linear_axis(self.offset, self.scale, self.size)
 
@@ -940,6 +942,9 @@ class AxesManager(t.HasTraits):
         for axis_dict in axes_list:
             self._append_axis(**axis_dict)
 
+    def set_axis(self, axis, index_in_axes_manager):
+        self._axes[index_in_axes_manager] = axis
+
     def _update_max_index(self):
         self._max_index = 1
         for i in self.navigation_shape:
@@ -1186,7 +1191,7 @@ class AxesManager(t.HasTraits):
                              '=' * 7, '=' * 7, '=' * 6)
 
         def axis_repr(ax, ax_signature_linear, ax_signature_non_linear):
-            if ax.linear:
+            if ax.is_linear:
                 return ax_signature_linear % (str(ax.name)[:16], ax.size,
                                               str(ax.index), ax.offset,
                                               ax.scale, ax.units)
@@ -1230,7 +1235,7 @@ class AxesManager(t.HasTraits):
 
         def axis_repr(ax):
             index = ax.index if ax.navigate else ""
-            if ax.linear:
+            if ax.is_linear:
                 return format_row(ax.name, ax.size, index, ax.offset,
                                   ax.scale, ax.units)
             else:

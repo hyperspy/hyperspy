@@ -21,22 +21,25 @@ class TestBaseDataAxis:
         assert self.axis.name is t.Undefined
         assert self.axis.units is t.Undefined
         assert self.axis.navigate is t.Undefined
+        assert not self.axis.is_linear
 
     def test_initialisation_BaseDataAxis(self):
         axis = BaseDataAxis(name='named axis', units='s', navigate=True)
         assert axis.name == 'named axis'
         assert axis.units == 's'
         assert axis.navigate
+        assert not self.axis.is_linear
 
 
 class TestDataAxis:
 
     def setup_method(self, method):
-        self.axis = DataAxis(axis_values=np.arange(16)**2)
+        self.axis = DataAxis(axis=np.arange(16)**2)
 
     def test_axis_value(self):
         assert_allclose(self.axis.axis, np.arange(16)**2)
         assert self.axis.size == 16
+        assert not self.axis.is_linear
 
     def test_update_axes(self):
         values = np.arange(20)**2
@@ -45,9 +48,9 @@ class TestDataAxis:
         assert_allclose(self.axis.axis, values)    
 
     def test_update_axes2(self):
-        value = np.array([3, 4, 10, 40])
-        self.axis.update_axis(value)
-        assert_allclose(self.axis.axis, value)
+        values = np.array([3, 4, 10, 40])
+        self.axis.update_axis(values)
+        assert_allclose(self.axis.axis, values)
 
     def test_update_axis_from_list(self):
         values = np.arange(16)**2
@@ -56,7 +59,7 @@ class TestDataAxis:
 
     def test_unsorted_axis(self):
         with pytest.raises(ValueError):
-            DataAxis(axis_values=np.array([10, 40, 1, 30, 20]))
+            DataAxis(axis=np.array([10, 40, 1, 30, 20]))
             
     def test_index_changed_event(self):
         ax = self.axis
@@ -85,6 +88,7 @@ class TestLinearDataAxis:
         self.axis = LinearDataAxis(size=10, scale=0.1, offset=10)
 
     def test_value_range_to_indices_in_range(self):
+        assert self.axis.is_linear
         assert (
             self.axis.value_range_to_indices(
                 10.1, 10.8) == (1, 8))

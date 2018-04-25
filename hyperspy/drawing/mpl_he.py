@@ -89,8 +89,7 @@ class MPL_HyperExplorer(object):
             sl = signal1d.Signal1DLine()
             sl.data_function = self.navigator_data_function
             sl.set_line_properties(color='blue',
-                                   type='step' if
-                                   isinstance(axis, LinearDataAxis) else 'line')
+                                   type='step' if axis.is_linear else 'line')
             # Add the line to the figure
             sf.add_line(sl)
             sf.plot()

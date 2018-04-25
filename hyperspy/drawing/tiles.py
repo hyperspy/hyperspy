@@ -23,7 +23,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from hyperspy.drawing.figure import BlittedFigure
-from hyperspy.drawing import utils
 
 
 class HistogramTilePlot(BlittedFigure):

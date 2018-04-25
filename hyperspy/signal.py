@@ -2001,11 +2001,12 @@ class BaseSignal(FancySlicing,
 
         if not isinstance(navigator, BaseSignal) and navigator == "auto":
             if (self.axes_manager.navigation_dimension > 1 and
-                    np.any(np.array([not axis.linear for axis in self.axes_manager.navigation_axes]))):
+                    np.any(np.array([not axis.is_linear for axis in
+                                     self.axes_manager.navigation_axes]))):
                 navigator = "slider"
             elif (self.axes_manager.navigation_dimension == 1 and
                     self.axes_manager.signal_dimension == 1):
-                if self.axes_manager.navigation_axes[0].linear:
+                if self.axes_manager.navigation_axes[0].is_linear:
                     navigator = "data"
                 else:
                     navigator = "spectrum"
@@ -3226,16 +3227,19 @@ class BaseSignal(FancySlicing,
                 im_fft = self._deepcopy_with_new_data(da.fft.fftshift(
                     da.fft.fftn(self.data, axes=axes, **kwargs), axes=axes))
             else:
-                im_fft = self._deepcopy_with_new_data(da.fft.fftn(self.data, axes=axes, **kwargs))
+                im_fft = self._deepcopy_with_new_data(
+                    da.fft.fftn(self.data, axes=axes, **kwargs))
         else:
             if shifted:
                 im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
                     np.fft.fftn(self.data, axes=axes, **kwargs), axes=axes))
             else:
-                im_fft = self._deepcopy_with_new_data(np.fft.fftn(self.data, axes=axes, **kwargs))
+                im_fft = self._deepcopy_with_new_data(
+                    np.fft.fftn(self.data, axes=axes, **kwargs))
 
         im_fft.change_dtype("complex")
-        im_fft.metadata.General.title = 'FFT of {}'.format(im_fft.metadata.General.title)
+        im_fft.metadata.General.title = 'FFT of {}'.format(
+            im_fft.metadata.General.title)
         im_fft.metadata.set_item('Signal.FFT.shifted', shifted)
 
         ureg = UnitRegistry()
@@ -3300,7 +3304,8 @@ class BaseSignal(FancySlicing,
         if isinstance(self.data, da.Array):
             if shifted:
                 fft_data_shifted = da.fft.ifftshift(self.data, axes=axes)
-                im_ifft = self._deepcopy_with_new_data(da.fft.ifftn(fft_data_shifted, axes=axes, **kwargs))
+                im_ifft = self._deepcopy_with_new_data(
+                    da.fft.ifftn(fft_data_shifted, axes=axes, **kwargs))
             else:
                 im_ifft = self._deepcopy_with_new_data(da.fft.ifftn(
                     self.data, axes=axes, **kwargs))
@@ -3312,7 +3317,8 @@ class BaseSignal(FancySlicing,
                 im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
                     self.data, axes=axes, **kwargs))
 
-        im_ifft.metadata.General.title = 'iFFT of {}'.format(im_ifft.metadata.General.title)
+        im_ifft.metadata.General.title = 'iFFT of {}'.format(
+            im_ifft.metadata.General.title)
         im_ifft.metadata.Signal.__delattr__('FFT')
         im_ifft = im_ifft.real
 
