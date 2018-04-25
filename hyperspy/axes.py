@@ -103,7 +103,6 @@ class BaseDataAxis(t.HasTraits):
     navigate = t.Bool(t.Undefined)
     index = t.Range('low_index', 'high_index')
     axis = t.Array()
-    continuous_value = t.Bool(False)
 
     def __init__(self,
                  index_in_array=None,
@@ -164,29 +163,22 @@ class BaseDataAxis(t.HasTraits):
     def _value_changed(self, name, old, new):
         old_index = self.index
         new_index = self.value2index(new)
-        if self.continuous_value is False:  # Only values in the grid allowed
-            if old_index != new_index:
-                self.index = new_index
-                if new == self.axis[self.index]:
-                    self.events.value_changed.trigger(obj=self, value=new)
-            elif old_index == new_index:
-                new_value = self.index2value(new_index)
-                if new_value == old:
-                    self._suppress_value_changed_trigger = True
-                    try:
-                        self.value = new_value
-                    finally:
-                        self._suppress_value_changed_trigger = False
+        if old_index != new_index:
+            self.index = new_index
+            if new == self.axis[self.index]:
+                self.events.value_changed.trigger(obj=self, value=new)
+        elif old_index == new_index:
+            new_value = self.index2value(new_index)
+            if new_value == old:
+                self._suppress_value_changed_trigger = True
+                try:
+                    self.value = new_value
+                finally:
+                    self._suppress_value_changed_trigger = False
 
-                elif new_value == new and not\
-                        self._suppress_value_changed_trigger:
-                    self.events.value_changed.trigger(obj=self, value=new)
-        else:  # Intergrid values are allowed. This feature is deprecated
-            self.events.value_changed.trigger(obj=self, value=new)
-            if old_index != new_index:
-                self._suppress_update_value = True
-                self.index = new_index
-                self._suppress_update_value = False
+            elif new_value == new and not\
+                    self._suppress_value_changed_trigger:
+                self.events.value_changed.trigger(obj=self, value=new)
 
     @property
     def index_in_array(self):
