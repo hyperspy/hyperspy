@@ -103,6 +103,16 @@ class TestDataAxis:
         assert self.axis.size == 5
         np.testing.assert_allclose(self.axis.axis, np.arange(0, 10, 2)**2)
 
+    def test_convert_to_linear_axis(self):
+        scale = (self.axis.high_value - self.axis.low_value) / self.axis.size
+        self.axis.convert_to_linear_axis()
+        assert isinstance(self.axis, LinearDataAxis)
+        assert self.axis.size == 16
+        assert self.axis.scale == scale
+        assert self.axis.offset == 0
+        assert self.axis.low_value == 0
+        assert self.axis.high_value == 15 * scale
+
 
 class TestLinearDataAxis:
 
@@ -208,3 +218,12 @@ class TestLinearDataAxis:
         assert not m.trigger_me.called
         ax.index += 1
         assert m.trigger_me.called
+
+    def test_convert_to_non_linear_axis(self):
+        axis = np.copy(self.axis.axis)
+        self.axis.convert_to_non_linear_axis()
+        assert isinstance(self.axis, DataAxis)
+        assert self.axis.size == 10
+        assert self.axis.low_value == 10
+        assert self.axis.high_value == 10 + 0.1 * 9
+        np.testing.assert_allclose(self.axis.axis, axis)

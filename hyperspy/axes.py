@@ -18,6 +18,7 @@
 
 import copy
 import math
+import logging
 
 import numpy as np
 import dask.array as da
@@ -30,6 +31,8 @@ from hyperspy.misc.math_tools import isfloat
 from hyperspy.ui_registry import add_gui_method, get_gui
 
 import warnings
+
+_logger = logging.getLogger(__name__)
 
 
 class ndindex_nat(np.ndindex):
@@ -510,12 +513,16 @@ class DataAxis(BaseDataAxis):
         # TODO
         pass
 
-    def convert_linear_axis(self):
-        # TODO
-        pass
+    def convert_to_linear_axis(self):
+        scale = (self.high_value - self.low_value) / self.size
+        d = super().get_axis_dictionary()
+        scale_error = max(self.axis[1:] - self.axis[:-1]) - scale
+        _logger.warning('The maximum scale error is {}'.format(scale_error))
+        self.__class__ = LinearDataAxis
+        self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
 
 
-# class FunctionalDataAxis:
+# class FunctionalDataAxis(BaseDataAxis):
 #
 #    def __init__(self, function):
 #        self.function = function
@@ -652,6 +659,11 @@ class LinearDataAxis(BaseDataAxis):
 
         """
         return super().update_from(axis, attributes)
+
+    def convert_to_non_linear_axis(self):
+        d = super().get_axis_dictionary()
+        self.__class__ = DataAxis
+        self.__init__(**d, axis=self.axis)
 
 
 @add_gui_method(toolkey="AxesManager")
