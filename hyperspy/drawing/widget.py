@@ -267,6 +267,7 @@ class WidgetBase(object):
             return axis.index2value(i)
         except ValueError:
             if i > axis.high_index:
+                # TODO: broken with non linear axis
                 return axis.high_value + axis.scale
             elif i < axis.low_index:
                 return axis.low_value

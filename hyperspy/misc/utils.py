@@ -71,28 +71,6 @@ def attrsetter(target, attrs, value):
     setattr(target, attrs[where + 1:], value)
 
 
-def generate_axis(origin, step, N, index=0):
-    """Creates an axis given the origin, step and number of channels
-
-    Alternatively, the index of the origin channel can be specified.
-
-    Parameters
-    ----------
-    origin : float
-    step : float
-    N : number of channels
-    index : int
-        index of origin
-
-    Returns
-    -------
-    Numpy array
-
-    """
-    return np.linspace(
-        origin - index * step, origin + step * (N - 1 - index), N)
-
-
 @contextmanager
 def stash_active_state(model):
     active_state = []
@@ -1003,7 +981,7 @@ def map_result_construction(signal,
         # add additional required axes
         for ind in range(
                 len(sig_shape) - sig.axes_manager.signal_dimension, 0, -1):
-            sig.axes_manager._append_axis(sig_shape[-ind], navigate=False)
+            sig.axes_manager._append_axis(size=sig_shape[-ind], navigate=False)
     sig.get_dimensions_from_data()
     if not sig.axes_manager._axes:
         add_scalar_axis(sig)

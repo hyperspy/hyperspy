@@ -28,7 +28,7 @@ import traits.api as t
 
 from hyperspy import drawing
 from hyperspy.exceptions import SignalDimensionError
-from hyperspy.axes import AxesManager
+from hyperspy.axes import AxesManager, LinearDataAxis
 from hyperspy.drawing.widgets import VerticalLineWidget
 from hyperspy import components1d
 from hyperspy.component import Component
@@ -179,8 +179,8 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
         if signal.axes_manager.signal_dimension != 1:
             raise SignalDimensionError(
                 signal.axes_manager.signal_dimension, 1)
-        if not self.linear:
-            raise ValueError("Calibration tool supports only linear axis.")
+        if not isinstance(self.axis, LinearDataAxis):
+            raise ValueError("The calibration tool supports only linear axis.")
         self.units = self.axis.units
         self.scale = self.axis.scale
         self.offset = self.axis.offset

@@ -22,7 +22,7 @@ import numpy as np
 
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 import hyperspy.drawing.signal1d
-from hyperspy.axes import generate_axis
+from hyperspy.axes import generate_linear_axis
 from hyperspy.exceptions import WrongObjectError, SignalDimensionError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.drawing.widgets import VerticalLineWidget, LabelWidget
@@ -346,8 +346,8 @@ class Model1D(BaseModel):
         dimension = self.axis.size + ll_axis.size - 1
         step = self.axis.scale
         knot_position = ll_axis.size - ll_axis.value2index(0) - 1
-        self.convolution_axis = generate_axis(self.axis.offset, step,
-                                              dimension, knot_position)
+        self.convolution_axis = generate_linear_axis(self.axis.offset, step,
+                                                     dimension, knot_position)
 
     def append(self, thing):
         super(Model1D, self).append(thing)

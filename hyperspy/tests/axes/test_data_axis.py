@@ -4,18 +4,85 @@ from unittest import mock
 
 import numpy as np
 from numpy.testing import assert_allclose
+import traits.api as t
 import pytest
 
-from hyperspy.axes import DataAxis
+from hyperspy.axes import BaseDataAxis, DataAxis, LinearDataAxis
+
+
+class TestBaseDataAxis:
+    
+    def setup_method(self, method):
+        self.axis = BaseDataAxis()
+        
+    def test_initialisation_BaseDataAxis_default(self):
+        with pytest.raises(AttributeError):
+            assert self.axis.index_in_array is None
+        assert self.axis.name is t.Undefined
+        assert self.axis.units is t.Undefined
+        assert self.axis.navigate is t.Undefined
+
+    def test_initialisation_BaseDataAxis(self):
+        axis = BaseDataAxis(name='named axis', units='s', navigate=True)
+        assert axis.name == 'named axis'
+        assert axis.units == 's'
+        assert axis.navigate
 
 
 class TestDataAxis:
 
     def setup_method(self, method):
-        self.axis = DataAxis(size=10, scale=0.1, offset=10)
+        self.axis = DataAxis(axis_values=np.arange(16)**2)
 
-    def test_axis_linear(self):
-        assert self.axis.linear
+    def test_axis_value(self):
+        assert_allclose(self.axis.axis, np.arange(16)**2)
+        assert self.axis.size == 16
+
+    def test_update_axes(self):
+        values = np.arange(20)**2
+        self.axis.update_axis(values.tolist())
+        assert self.axis.size == 20
+        assert_allclose(self.axis.axis, values)    
+
+    def test_update_axes2(self):
+        value = np.array([3, 4, 10, 40])
+        self.axis.update_axis(value)
+        assert_allclose(self.axis.axis, value)
+
+    def test_update_axis_from_list(self):
+        values = np.arange(16)**2
+        self.axis.update_axis(values.tolist())
+        assert_allclose(self.axis.axis, values)
+
+    def test_unsorted_axis(self):
+        with pytest.raises(ValueError):
+            DataAxis(axis_values=np.array([10, 40, 1, 30, 20]))
+            
+    def test_index_changed_event(self):
+        ax = self.axis
+        m = mock.Mock()
+        ax.events.index_changed.connect(m.trigger_me)
+        ax.index = ax.index
+        assert not m.trigger_me.called
+        ax.index += 1
+        assert m.trigger_me.called
+
+    def test_value_changed_event(self):
+        ax = self.axis
+        m = mock.Mock()
+        ax.events.value_changed.connect(m.trigger_me)
+        ax.value = ax.value
+        assert not m.trigger_me.called
+        ax.value = ax.value + (ax.axis[1] - ax.axis[0])/2
+        assert not m.trigger_me.called
+        ax.value = ax.axis[1]
+        assert m.trigger_me.called
+
+
+class TestLinearDataAxis:
+
+    def setup_method(self, method):
+        self.axis = LinearDataAxis(size=10, scale=0.1, offset=10)
 
     def test_value_range_to_indices_in_range(self):
         assert (
@@ -91,7 +158,7 @@ class TestDataAxis:
             slice(2, 4, 2))
 
     def test_update_from(self):
-        ax2 = DataAxis(size=2, units="nm", scale=0.5)
+        ax2 = LinearDataAxis(size=2, units="nm", scale=0.5)
         self.axis.update_from(ax2, attributes=("units", "scale"))
         assert ((ax2.units, ax2.scale) ==
                 (self.axis.units, self.axis.scale))
@@ -107,20 +174,6 @@ class TestDataAxis:
         ax.value = ax.value + ax.scale
         assert m.trigger_me.called
 
-    def test_value_changed_event_continuous(self):
-        ax = self.axis
-        ax.continuous_value = True
-        m = mock.Mock()
-        ax.events.value_changed.connect(m.trigger_me_value)
-        ax.events.index_changed.connect(m.trigger_me_index)
-        ax.value = ax.value
-        assert not m.trigger_me_value.called
-        ax.value = ax.value + ax.scale * 0.3
-        assert m.trigger_me_value.called
-        assert not m.trigger_me_index.called
-        ax.value = ax.value + ax.scale
-        assert m.trigger_me_index.called
-
     def test_index_changed_event(self):
         ax = self.axis
         m = mock.Mock()
@@ -129,29 +182,3 @@ class TestDataAxis:
         assert not m.trigger_me.called
         ax.index += 1
         assert m.trigger_me.called
-
-
-class TestDataAxisNonLinear:
-
-    def setup_method(self, method):
-        self.axis = DataAxis(axis=np.arange(16)**2)
-
-    def test_non_linear_axis(self):
-        assert not self.axis.linear
-        assert_allclose(self.axis.axis, np.arange(16)**2)
-
-    def test_non_linear_axis_list(self):
-        value_list = (np.arange(16)**2).tolist()
-        axis = DataAxis(axis=value_list)
-        assert not axis.linear
-        assert_allclose(axis.axis, np.arange(16)**2)
-
-    def test_unsorted_axis(self):
-        with pytest.raises(ValueError):
-            DataAxis(axis=np.array([10, 40, 1, 30, 20]))
-
-    def test_set_axis_value(self):
-        value = np.array([3, 4, 10, 40])
-        self.axis.set_axis_value(value)
-        assert not self.axis.linear
-        assert_allclose(self.axis.axis, value)

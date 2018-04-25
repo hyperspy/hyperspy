@@ -21,8 +21,7 @@ import logging
 from traits.api import Undefined
 
 from hyperspy.drawing import widgets, signal1d, image
-from hyperspy.ui_registry import get_gui
-
+from hyperspy.axes import LinearDataAxis
 
 _logger = logging.getLogger(__name__)
 
@@ -90,7 +89,8 @@ class MPL_HyperExplorer(object):
             sl = signal1d.Signal1DLine()
             sl.data_function = self.navigator_data_function
             sl.set_line_properties(color='blue',
-                                   type='step' if axis.linear else 'line')
+                                   type='step' if
+                                   isinstance(axis, LinearDataAxis) else 'line')
             # Add the line to the figure
             sf.add_line(sl)
             sf.plot()

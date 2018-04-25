@@ -50,7 +50,7 @@ import numpy as np
 
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
-from hyperspy.axes import DataAxis
+from hyperspy.axes import LinearDataAxis
 from hyperspy.drawing import widgets
 from hyperspy.ui_registry import add_gui_method
 
@@ -1173,10 +1173,10 @@ class Line2DROI(BaseInteractiveROI):
             axm = signal.axes_manager.deepcopy()
             i0 = min(axes[0].index_in_array, axes[1].index_in_array)
             axm.remove([ax.index_in_array + 3j for ax in axes])
-            axis = DataAxis(profile.shape[i0],
-                            scale=length / profile.shape[i0],
-                            units=axes[0].units,
-                            navigate=axes[0].navigate)
+            axis = LinearDataAxis(size=profile.shape[i0],
+                                  scale=length / profile.shape[i0],
+                                  units=axes[0].units,
+                                  navigate=axes[0].navigate)
             axis.axes_manager = axm
             axm._axes.insert(i0, axis)
             from hyperspy.signals import BaseSignal
