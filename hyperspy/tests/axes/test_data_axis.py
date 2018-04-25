@@ -8,13 +8,14 @@ import traits.api as t
 import pytest
 
 from hyperspy.axes import BaseDataAxis, DataAxis, LinearDataAxis
+from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
 class TestBaseDataAxis:
-    
+
     def setup_method(self, method):
         self.axis = BaseDataAxis()
-        
+
     def test_initialisation_BaseDataAxis_default(self):
         with pytest.raises(AttributeError):
             assert self.axis.index_in_array is None
@@ -29,6 +30,10 @@ class TestBaseDataAxis:
         assert axis.units == 's'
         assert axis.navigate
         assert not self.axis.is_linear
+        assert_deep_almost_equal(axis.get_axis_dictionary(),
+                                 {'name': 'named axis',
+                                  'units': 's',
+                                  'navigate': True})
 
 
 class TestDataAxis:
@@ -45,7 +50,7 @@ class TestDataAxis:
         values = np.arange(20)**2
         self.axis.update_axis(values.tolist())
         assert self.axis.size == 20
-        assert_allclose(self.axis.axis, values)    
+        assert_allclose(self.axis.axis, values)
 
     def test_update_axes2(self):
         values = np.array([3, 4, 10, 40])
@@ -60,7 +65,7 @@ class TestDataAxis:
     def test_unsorted_axis(self):
         with pytest.raises(ValueError):
             DataAxis(axis=np.array([10, 40, 1, 30, 20]))
-            
+
     def test_index_changed_event(self):
         ax = self.axis
         m = mock.Mock()
@@ -76,10 +81,27 @@ class TestDataAxis:
         ax.events.value_changed.connect(m.trigger_me)
         ax.value = ax.value
         assert not m.trigger_me.called
-        ax.value = ax.value + (ax.axis[1] - ax.axis[0])/2
+        ax.value = ax.value + (ax.axis[1] - ax.axis[0]) / 2
         assert not m.trigger_me.called
         ax.value = ax.axis[1]
         assert m.trigger_me.called
+
+    def test_deepcopy(self):
+        ac = copy.deepcopy(self.axis)
+        np.testing.assert_allclose(ac.axis, np.arange(16)**2)
+        ac.name = 'name changed'
+        assert ac.name == 'name changed'
+        assert self.axis.name != ac.name
+
+    def test_slice_me(self):
+        assert self.axis._slice_me(slice(1, 5)) == slice(1, 5)
+        assert self.axis.size == 4
+        np.testing.assert_allclose(self.axis.axis, np.arange(1, 5)**2)
+
+    def test_slice_me_step(self):
+        assert self.axis._slice_me(slice(0, 10, 2)) == slice(0, 10, 2)
+        assert self.axis.size == 5
+        np.testing.assert_allclose(self.axis.axis, np.arange(0, 10, 2)**2)
 
 
 class TestLinearDataAxis:

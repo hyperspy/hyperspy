@@ -60,6 +60,7 @@ def generate_linear_axis(offset, scale, size, offset_index=0):
                        offset + scale * (size - 1 - offset_index),
                        size)
 
+
 def create_axis(**kwargs):
     """Creates either a linear or a non-linear axis based on the provided 
     kwargs. 
@@ -78,9 +79,9 @@ def create_axis(**kwargs):
     A DataAxis or a LinearDataAxis
 
     """
-    if 'axis' in kwargs.keys(): # non linear axis
+    if 'axis' in kwargs.keys():  # non linear axis
         axis_class = DataAxis
-    elif "size" in kwargs.keys(): # set default value 
+    elif "size" in kwargs.keys():  # set default value
         axis_class = LinearDataAxis
         # Set default values if their are missing
         kwargs.setdefault("scale", 1.0)
@@ -89,6 +90,7 @@ def create_axis(**kwargs):
         raise ValueError('Missing argument: either "axis" or "size" '
                          'should be provided.')
     return axis_class(**kwargs)
+
 
 class BaseDataAxis(t.HasTraits):
     name = t.Str()
@@ -312,6 +314,12 @@ class BaseDataAxis(t.HasTraits):
         else:
             self.slice = None
 
+    def get_axis_dictionary(self):
+        return {'name': self.name,
+                'units': self.units,
+                'navigate': self.navigate
+                }
+
     def copy(self):
         return self.__class__(**self.get_axis_dictionary())
 
@@ -421,14 +429,15 @@ class DataAxis(BaseDataAxis):
             if isfloat(slice_.step):
                 raise ValueError(
                     "Float steps are not supported for non-linear axes.")
-        super()._get_array_slices(slice_)
+        return super()._get_array_slices(slice_)
 
     def _slice_me(self, slice_):
-        """Returns a slice to slice the corresponding data axis.
+        """Returns a slice to slice the corresponding data axis and set the 
+        axis accordingly.
 
         Parameters
         ----------
-        slice_ : {float, int, slice}
+        slice_ : {int, slice}
 
         Returns
         -------
@@ -436,15 +445,22 @@ class DataAxis(BaseDataAxis):
 
         """
         my_slice = self._get_array_slices(slice_)
-        self.axis = self.axis[my_slice]
+        start, step = my_slice.start, my_slice.step
+
+        if start is None:
+            if step is None or step > 0:
+                start = 0
+            else:
+                start = self.size - 1
+
+        self.update_axis(self.axis[my_slice])
+
         return my_slice
 
     def get_axis_dictionary(self):
-        return {'name': self.name,
-                'units': self.units,
-                'navigate': self.navigate,
-                'axis': self.axis
-                }
+        d = super().get_axis_dictionary()
+        d.update({'axis': self.axis})
+        return d
 
     def value2index(self, value, rounding=round):
         """Return the closest index to the given value if between the limit.
@@ -499,7 +515,7 @@ class DataAxis(BaseDataAxis):
         pass
 
 
-#class FunctionalDataAxis:
+# class FunctionalDataAxis:
 #
 #    def __init__(self, function):
 #        self.function = function
@@ -529,7 +545,7 @@ class LinearDataAxis(BaseDataAxis):
         self.on_trait_change(self.update_axis,
                              ['scale', 'offset', 'size'])
         self.is_linear = True
-    
+
     def update_axis(self):
         self.axis = generate_linear_axis(self.offset, self.scale, self.size)
 
@@ -546,7 +562,6 @@ class LinearDataAxis(BaseDataAxis):
         my_slice : slice
 
         """
-        i2v = self.index2value
         my_slice = self._get_array_slices(slice_)
         start, step = my_slice.start, my_slice.step
 
@@ -555,20 +570,18 @@ class LinearDataAxis(BaseDataAxis):
                 start = 0
             else:
                 start = self.size - 1
-        self.offset = i2v(start)
+        self.offset = self.index2value(start)
         if step is not None:
             self.scale *= step
 
         return my_slice
 
     def get_axis_dictionary(self):
-        return {'name': self.name,
-                'units': self.units,
-                'navigate': self.navigate,
-                'size': self.size,
-                'scale': self.scale,
-                'offset': self.offset
-                }
+        d = super().get_axis_dictionary()
+        d.update({'size': self.size,
+                  'scale': self.scale,
+                  'offset': self.offset})
+        return d
 
     def value2index(self, value, rounding=round):
         """Return the closest index to the given value if between the limit.
