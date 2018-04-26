@@ -58,6 +58,7 @@ from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
                                         broadcast_signals)
+from hyperspy.misc.math_tools import outer_nd
 
 from hyperspy.exceptions import VisibleDeprecationWarning
 
@@ -4736,6 +4737,54 @@ class BaseSignal(FancySlicing,
         """
         return self.transpose()
 
+    def apply_apodization(self, type='hanning', inplace=False):
+        """
+        Apply apodization window to a signal either in place or return a new signal.
+
+        Parameters
+        ----------
+        type : string, optional
+            Select between 'hanning',
+        inplace : boolean, optional
+            If True apodization applied in place, i.e. signal data will be substituted by the apodized one.
+        (Default: False)
+        """
+
+        if type == 'hanning':
+            # window_function = lambda x, x0: 0.5 * (1. - np.cos(2 * np.pi *
+            #                                                    (x - x0 - (x[-1] - x[0]) / 2) /
+            #                                                    (x[-1] - x[0])))
+            window_function = lambda m: np.hanning(m)
+        else:
+            raise ValueError('Wrong type parameter value.')
+
+        windows_1d = []
+
+        axes = np.array(self.axes_manager.signal_indices_in_array)
+
+        for axis, axis_index in zip(self.axes_manager.signal_axes, axes):
+            if isinstance(self.data, da.Array):
+                chunks = self.data.chunks[axis_index]
+                window_da = da.from_array(window_function(axis.size),
+                                          chunks=(chunks, ))
+                windows_1d.append(window_da)
+            else:
+                windows_1d.append(window_function(axis.size))
+
+        window_nd = outer_nd(*windows_1d)
+
+        if inplace:
+            slice_w = []
+
+            for i in range(self.data.ndim):
+                if any(i == axes):
+                    slice_w.append(slice(None))
+                else:
+                    slice_w.append(None)
+
+            self.data = self.data * window_nd[tuple(slice_w)]
+        else:
+            return self.deepcopy() * window_nd
 
 ARITHMETIC_OPERATORS = (
     "__add__",

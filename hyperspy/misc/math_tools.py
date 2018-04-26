@@ -1,6 +1,6 @@
 import math
-
 import numpy as np
+from functools import reduce
 
 
 def symmetrize(a):
@@ -69,3 +69,18 @@ def anyfloatin(things):
         if isfloat(n) and not n.is_integer():
             return True
     return False
+
+
+def outer_nd(*vec):
+    """
+    Calculates outer product of n vectors
+
+    Parameters
+    ----------
+    vec : vector
+
+    Return
+    ------
+    out : ndarray
+    """
+    return reduce(np.multiply.outer, vec)
