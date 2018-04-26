@@ -7,7 +7,8 @@ from numpy.testing import assert_allclose
 import traits.api as t
 import pytest
 
-from hyperspy.axes import BaseDataAxis, DataAxis, LinearDataAxis
+from hyperspy.axes import (BaseDataAxis, DataAxis, FunctionalDataAxis,
+                           LinearDataAxis)
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
@@ -112,6 +113,35 @@ class TestDataAxis:
         assert self.axis.offset == 0
         assert self.axis.low_value == 0
         assert self.axis.high_value == 15 * scale
+
+
+class TestFunctionalDataAxis:
+
+    def setup_method(self, method):
+        expression = "scale * x + offset"
+        self.axis = FunctionalDataAxis(size=10, expression=expression,
+                                       scale=0.1, offset=10)
+
+    def test_initialisation_parameters(self):
+        assert self.axis.scale == 0.1
+        assert self.axis.offset == 10
+        assert hasattr(self.axis, 'function')
+        np.testing.assert_allclose(self.axis.axis, np.linspace(10, 10.9, 10))
+
+
+class TestReciprocalDataAxis:
+
+    def setup_method(self, method):
+        expression = "a / (x + 1) + b"
+        self.axis = FunctionalDataAxis(size=10, expression=expression,
+                                       a=0.1, b=10)
+
+    def test_initialisation_parameters(self):
+        assert self.axis.a == 0.1
+        assert self.axis.b == 10
+        assert hasattr(self.axis, 'function')
+        def func(x): return 0.1 / (x + 1) + 10
+        np.testing.assert_allclose(self.axis.axis, func(np.arange(10)))
 
 
 class TestLinearDataAxis:

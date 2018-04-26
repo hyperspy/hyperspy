@@ -318,6 +318,9 @@ class BaseDataAxis(t.HasTraits):
             self.slice = None
 
     def get_axis_dictionary(self):
+        return self._get_axis_dictionary()
+
+    def _get_axis_dictionary(self):
         return {'name': self.name,
                 'units': self.units,
                 'navigate': self.navigate
@@ -391,6 +394,15 @@ class BaseDataAxis(t.HasTraits):
             self.trait_set(**changed)
             any_changes = True
         return any_changes
+
+    def convert_to_linear_axis(self):
+        scale = (self.high_value - self.low_value) / self.size
+        d = self._get_axis_dictionary()
+        if len(self.axis) > 1:
+            scale_err = max(self.axis[1:] - self.axis[:-1]) - scale
+            _logger.warning('The maximum scale error is {}.'.format(scale_err))
+        self.__class__ = LinearDataAxis
+        self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
 
 
 @add_gui_method(toolkey="DataAxis")
@@ -513,22 +525,48 @@ class DataAxis(BaseDataAxis):
         # TODO
         pass
 
-    def convert_to_linear_axis(self):
-        scale = (self.high_value - self.low_value) / self.size
-        d = super().get_axis_dictionary()
-        scale_error = max(self.axis[1:] - self.axis[:-1]) - scale
-        _logger.warning('The maximum scale error is {}'.format(scale_error))
-        self.__class__ = LinearDataAxis
-        self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
 
+class FunctionalDataAxis(BaseDataAxis):
 
-# class FunctionalDataAxis(BaseDataAxis):
-#
-#    def __init__(self, function):
-#        self.function = function
-#
-#    def generate_axis(self):
-#        return self.function()
+    def __init__(self,
+                 index_in_array=None,
+                 name=t.Undefined,
+                 units=t.Undefined,
+                 navigate=t.Undefined,
+                 size=1.,
+                 expression=None,
+                 **parameters):
+        super().__init__(index_in_array, name, units, navigate)
+        self.size = size
+
+        self.parameters_list = [key for key in parameters.keys()]
+        self.compile_function(expression)
+
+        # Set the value of the parameters
+        for kwarg, value in parameters.items():
+            setattr(self, kwarg, value)
+
+        self.update_axis()
+
+    def compile_function(self, expression):
+        from sympy.utilities.lambdify import lambdify
+        from hyperspy._components.expression import _parse_substitutions
+        expr = _parse_substitutions(expression)
+
+        variables = ["x"]
+        parameters = [symbol for symbol in expr.free_symbols
+                      if symbol.name not in variables]
+
+        self.function = lambdify(variables + parameters, expr.evalf(),
+                                 dummify=False)
+
+    def update_axis(self):
+        kwargs = {}
+        for kwarg in self.parameters_list:
+            kwargs[kwarg] = getattr(self, kwarg)
+        self.axis = self.function(x=np.arange(self.size), **kwargs)
+        # Set not valid values to np.nan
+        self.axis[np.logical_not(np.isfinite(self.axis))] = np.nan
 
 
 @add_gui_method(toolkey="LinearDataAxis")
