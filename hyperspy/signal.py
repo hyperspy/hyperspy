@@ -4795,24 +4795,27 @@ class BaseSignal(FancySlicing,
         """
         return self.transpose()
 
-    def apply_apodization(self, type='hanning', inplace=False):
+    def apply_apodization(self, type='hann', inplace=False):
         """
         Apply apodization window to a signal either in place or return a new signal.
 
         Parameters
         ----------
         type : string, optional
-            Select between 'hanning',
+            Select between 'hann', 'hamming'
+        (Default: 'hann')
         inplace : boolean, optional
             If True apodization applied in place, i.e. signal data will be substituted by the apodized one.
         (Default: False)
         """
 
-        if type == 'hanning':
+        if type == 'hanning' or type == 'hann':
             # window_function = lambda x, x0: 0.5 * (1. - np.cos(2 * np.pi *
             #                                                    (x - x0 - (x[-1] - x[0]) / 2) /
             #                                                    (x[-1] - x[0])))
             window_function = lambda m: np.hanning(m)
+        elif type == 'hamming':
+            window_function = lambda m: np.hamming(m)
         else:
             raise ValueError('Wrong type parameter value.')
 

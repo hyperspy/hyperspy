@@ -22,8 +22,17 @@ from numpy.testing import assert_allclose
 from hyperspy.signals import Signal1D, Signal2D, ComplexSignal1D, ComplexSignal2D, BaseSignal
 
 
-@pytest.mark.parametrize('lazy', [True, False])
-def test_apodization(lazy):
+def _generate_parameters():
+    parameters = []
+    for lazy in [False, True]:
+        for window_type in ['hann', 'hamming']:
+            parameters.append([lazy,
+                               window_type])
+    return parameters
+
+
+@pytest.mark.parametrize('lazy, window_type', _generate_parameters())
+def test_apodization(lazy, window_type):
     SIZE_NAV0 = 2
     SIZE_NAV1 = 3
     SIZE_NAV2 = 4
@@ -40,8 +49,11 @@ def test_apodization(lazy):
     data = np.random.rand(SIZE_NAV0 * SIZE_NAV1 * SIZE_SIG0 * SIZE_NAV2).reshape(
         (SIZE_NAV0, SIZE_NAV1, SIZE_NAV2, SIZE_SIG0))
     signal1d = Signal1D(data)
-    signal1d_a = signal1d.apply_apodization()
-    window = np.hanning(SIZE_SIG0)
+    signal1d_a = signal1d.apply_apodization(type=window_type)
+    if window_type == 'hann':
+        window = np.hanning(SIZE_SIG0)
+    elif window_type == 'hamming':
+        window = np.hamming(SIZE_SIG0)
     # data_a = data * window[np.newaxis, np.newaxis, :, np.newaxis]
     data_a = data * window[np.newaxis, np.newaxis, np.newaxis, :]
 
