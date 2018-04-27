@@ -39,7 +39,7 @@ from hyperspy.misc.test_utils import assert_deep_almost_equal
 #==============================================================================
 tmpDir = tempfile.gettempdir()
 
-MAX_ASYNC_TIME = 2.0
+MAX_ASYNC_TIME = 10.0
 dtype_list = ['float32', 'int8', 'int16', 'uint16', 'complex64']
 
 
@@ -111,6 +111,9 @@ class TestPythonMrcz:
                     break
                 except IOError:
                     sleep(0.001)
+            print("Time to save file: {} s".format(
+                    perf_counter() - (t_stop - MAX_ASYNC_TIME)))
+            sleep(0.005)
 
         reSignal = load(mrcName)
         try:

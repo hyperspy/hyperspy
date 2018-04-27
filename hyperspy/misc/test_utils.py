@@ -181,11 +181,7 @@ def assert_warns(message=None, category=None):
 def update_close_figure(function):
     def wrapper():
         signal = function()
-
         p = signal._plot
-        p.signal_plot.update()
-        if hasattr(p, 'navigation_plot'):
-            p.navigation_plot.update()
         p.close()
 
     return wrapper

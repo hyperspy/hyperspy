@@ -180,7 +180,9 @@ class WidgetBase(object):
         # Simulate a pick event
         x, y = self.patch[0].get_transform().transform_point((0, 0))
         mouseevent = MouseEvent('pick_event', canvas, x, y)
-        canvas.pick_event(mouseevent, self.patch[0])
+        # when the widget is added programatically, mouseevent can be "empty"
+        if mouseevent.button:
+            canvas.pick_event(mouseevent, self.patch[0])
         self.picked = False
 
     def connect(self, ax):
@@ -235,7 +237,7 @@ class WidgetBase(object):
         """
         try:
             if self.blit and hasattr(self.ax, 'hspy_fig'):
-                self.ax.hspy_fig._draw_animated()
+                self.ax.hspy_fig._update_animated()
             elif self.ax.figure is not None:
                 self.ax.figure.canvas.draw_idle()
         except AttributeError:
@@ -270,6 +272,9 @@ class WidgetBase(object):
                 return axis.low_value
             else:
                 raise
+
+    def __str__(self):
+        return "{} with id {}".format(self.__class__.__name__, id(self))
 
 
 class DraggableWidgetBase(WidgetBase):
