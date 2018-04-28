@@ -110,7 +110,6 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
                          dtype='float', normalize_corr=False,
                          sub_pixel_factor=1,
                          return_maxval=True):
-
     """Estimate the shift in a image using phase correlation
 
     This method can only estimate the shift by comparing
@@ -138,9 +137,9 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         If True, plots the images after applying the filters and the phase
         correlation. If a figure instance, the images will be plotted to the
         given figure.
-    reference : \'current\' | \'cascade\'
-        If \'current\' (default) the image at the current
-        coordinates is taken as reference. If \'cascade\' each image
+    reference : 'current' | 'cascade'
+        If 'current' (default) the image at the current
+        coordinates is taken as reference. If 'cascade' each image
         is aligned with the previous one.
     dtype : str or dtype
         Typecode or data-type in which the calculations must be
@@ -208,7 +207,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         sub_pixel_factor = np.array(sub_pixel_factor, dtype=np.float64)
         normalization = (image_product.size * sub_pixel_factor ** 2)
         # Matrix multiply DFT around the current shift estimate
-        sample_region_offset = dftshift - shifts*sub_pixel_factor
+        sample_region_offset = dftshift - shifts * sub_pixel_factor
         correlation = _upsampled_dft(image_product.conj(),
                                      upsampled_region_size,
                                      sub_pixel_factor,
@@ -226,14 +225,14 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
     # Plot on demand
     if plot is True or isinstance(plot, plt.Figure):
         if isinstance(plot, plt.Figure):
-            f = plot
+            fig = plot
             axarr = plot.axes
             if len(axarr) < 3:
                 for i in range(3):
-                    f.add_subplot(1, 3, i)
-                axarr = plot.axes
+                    fig.add_subplot(1, 3, i + 1)
+                axarr = fig.axes
         else:
-            f, axarr = plt.subplots(1, 3)
+            fig, axarr = plt.subplots(1, 3)
         full_plot = len(axarr[0].images) == 0
         if full_plot:
             axarr[0].set_title('Reference')
@@ -251,7 +250,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
             axarr[1].images[0].set_data(image)
             axarr[2].images[0].set_data(np.fft.fftshift(phase_correlation))
             # TODO: Renormalize images
-            f.canvas.draw_idle()
+            fig.canvas.draw_idle()
     # Liberate the memory. It is specially necessary if it is a
     # memory map
     del ref

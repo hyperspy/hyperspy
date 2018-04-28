@@ -27,6 +27,14 @@ import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
 
 
+def _generate_parameters():
+    parameters = []
+    for normalize_corr in [False, True]:
+        for reference in ['current', 'cascade', 'stat']:
+            parameters.append([normalize_corr, reference])
+    return parameters
+
+
 @lazifyTestClass
 class TestSubPixelAlign:
 
@@ -58,13 +66,20 @@ class TestSubPixelAlign:
         # Compare by broadcasting
         np.testing.assert_allclose(s.data[4], s.data[0], rtol=0.5)
 
-    @pytest.mark.parametrize(("normalize_corr"), [True, False])
-    def test_estimate_subpix(self, normalize_corr):
+    @pytest.mark.parametrize(("normalize_corr", "reference"),
+                             _generate_parameters())
+    def test_estimate_subpix(self, normalize_corr, reference):
         s = self.signal
         shifts = s.estimate_shift2D(sub_pixel_factor=200,
                                     normalize_corr=normalize_corr)
         np.testing.assert_allclose(shifts, self.shifts, rtol=0.2, atol=0.2,
                                    verbose=True)
+
+    @pytest.mark.parametrize(("plot"), [True, 'reuse'])
+    def test_estimate_subpix_plot(self, mpl_cleanup, plot):
+        # Run the
+        s = self.signal
+        s.estimate_shift2D(sub_pixel_factor=200, plot=plot)
 
 
 @lazifyTestClass
@@ -145,6 +160,7 @@ def test_add_ramp_lazy():
     s = hs.signals.Signal2D(np.indices((3, 3)).sum(axis=0) + 4).as_lazy()
     s.add_ramp(-1, -1, -4)
     npt.assert_almost_equal(s.data.compute(), 0)
+
 
 if __name__ == '__main__':
     import pytest
