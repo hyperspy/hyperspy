@@ -15,15 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-
-import sys
 from unittest import mock
-
 
 import numpy.testing as npt
 import numpy as np
 from scipy.misc import face, ascent
 from scipy.ndimage import fourier_shift
+import pytest
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
@@ -58,12 +56,14 @@ class TestSubPixelAlign:
         shifts = self.shifts
         s.align2D(shifts=shifts)
         # Compare by broadcasting
-        np.testing.assert_allclose(s.data[4], s.data[0], rtol=1)
+        np.testing.assert_allclose(s.data[4], s.data[0], rtol=0.5)
 
-    def test_estimate_subpix(self):
+    @pytest.mark.parametrize(("normalize_corr"), [True, False])
+    def test_estimate_subpix(self, normalize_corr):
         s = self.signal
-        shifts = s.estimate_shift2D(sub_pixel_factor=200)
-        np.testing.assert_allclose(shifts, self.shifts, rtol=0.02, atol=0.02,
+        shifts = s.estimate_shift2D(sub_pixel_factor=200,
+                                    normalize_corr=normalize_corr)
+        np.testing.assert_allclose(shifts, self.shifts, rtol=0.2, atol=0.2,
                                    verbose=True)
 
 

@@ -257,9 +257,9 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
     del ref
     del image
     if return_maxval:
-        return -np.array((shift0, shift1)), max_val
+        return -shifts, max_val
     else:
-        return -np.array((shift0, shift1))
+        return -shifts
 
 
 class Signal2D(BaseSignal, CommonSignal2D):
