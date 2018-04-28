@@ -2,10 +2,10 @@ from unittest import mock
 
 import numpy as np
 import pytest
-from matplotlib.testing.decorators import cleanup
 
 import hyperspy.api as hs
 from hyperspy.misc.utils import slugify
+from hyperspy.decorators import lazifyTestClass
 
 
 class TestModelJacobians:
@@ -308,20 +308,6 @@ class TestModel1D:
         np.testing.assert_array_equal(m.convolution_axis, np.arange(7, 23))
         np.testing.assert_equal(ll_axis.value2index.call_args[0][0], 0)
 
-    @pytest.mark.parallel
-    def test_notebook_interactions(self):
-        ipywidgets = pytest.importorskip("ipywidgets", minversion="5.0")
-        ipython = pytest.importorskip("IPython")
-        from IPython import get_ipython
-        ip = get_ipython()
-        if ip is None or not getattr(ip, 'kernel', None):
-            pytest.skip("Not attached to notebook")
-        m = self.model
-        m.notebook_interaction()
-        m.append(hs.model.components1D.Offset())
-        m[0].notebook_interaction()
-        m[0].offset.notebook_interaction()
-
     def test_access_component_by_name(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
@@ -600,6 +586,7 @@ class TestModel2D:
         np.testing.assert_allclose(gt.sigma_y.value, 2.)
 
 
+@lazifyTestClass
 class TestModelFitBinned:
 
     def setup_method(self, method):
@@ -728,6 +715,7 @@ class TestModelFitBinned:
             self.m.fit(method="dummy")
 
 
+@lazifyTestClass
 class TestModelWeighted:
 
     def setup_method(self, method):
@@ -869,15 +857,18 @@ class TestModelScalarVariance:
         np.testing.assert_allclose(self.m.red_chisq.data, 0.86206965)
 
 
+@lazifyTestClass
 class TestModelSignalVariance:
 
     def setup_method(self, method):
-        variance = hs.signals.Signal1D(np.arange(100, 300).reshape(
-            (2, 100)))
+        variance = hs.signals.Signal1D(
+            np.arange(100, 300, dtype="float64").reshape((2, 100)))
         s = variance.deepcopy()
         np.random.seed(1)
         std = 10
+        np.random.seed(1)
         s.add_gaussian_noise(std)
+        np.random.seed(1)
         s.add_poissonian_noise()
         s.metadata.set_item("Signal.Noise_properties.variance",
                             variance + std ** 2)
@@ -888,12 +879,13 @@ class TestModelSignalVariance:
 
     def test_std1_red_chisq(self):
         self.m.multifit(fitter="leastsq", method="ls", show_progressbar=None)
-        np.testing.assert_allclose(self.m.red_chisq.data[0],
-                                   0.79693355673230915)
-        np.testing.assert_allclose(self.m.red_chisq.data[1],
-                                   0.91453032901427167)
+        np.testing.assert_allclose(self.m.red_chisq.data[0], 0.813109,
+                                   atol=1e-5)
+        np.testing.assert_allclose(self.m.red_chisq.data[1], 0.697727,
+                                   atol=1e-5)
 
 
+@lazifyTestClass
 class TestMultifit:
 
     def setup_method(self, method):
@@ -1040,19 +1032,22 @@ class TestAsSignal:
                                   show_progressbar=False, parallel=False)
             np.testing.assert_allclose(s1.data, s.data)
 
-    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_all_components_simple(self, parallel):
         s = self.m.as_signal(show_progressbar=False, parallel=parallel)
         assert np.all(s.data == 4.)
 
-    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_one_component_simple(self, parallel):
         s = self.m.as_signal(component_list=[0], show_progressbar=False,
                              parallel=parallel)
         assert np.all(s.data == 2.)
         assert self.m[1].active
 
-    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_all_components_multidim(self, parallel):
         self.m[0].active_is_multidimensional = True
 
@@ -1065,7 +1060,8 @@ class TestAsSignal:
             s.data, np.array([np.ones((2, 5)) * 2, np.ones((2, 5)) * 4]))
         assert self.m[0].active_is_multidimensional
 
-    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_one_component_multidim(self, parallel):
         self.m[0].active_is_multidimensional = True
 
@@ -1091,6 +1087,7 @@ class TestAsSignal:
                                                         np.ones((2, 5)) * 2]))
 
 
+@lazifyTestClass
 class TestCreateModel:
 
     def setup_method(self, method):
@@ -1110,36 +1107,31 @@ class TestAdjustPosition:
         self.s = hs.signals.Signal1D(np.random.rand(10, 10, 20))
         self.m = self.s.create_model()
 
-    @cleanup
-    def test_enable_adjust_position(self):
+    def test_enable_adjust_position(self, mpl_cleanup):
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()
         assert len(self.m._position_widgets) == 1
         # Check that both line and label was added
         assert len(list(self.m._position_widgets.values())[0]) == 2
 
-    @cleanup
-    def test_disable_adjust_position(self):
+    def test_disable_adjust_position(self, mpl_cleanup):
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()
         self.m.disable_adjust_position()
         assert len(self.m._position_widgets) == 0
 
-    @cleanup
-    def test_enable_all(self):
+    def test_enable_all(self, mpl_cleanup):
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()
         self.m.append(hs.model.components1D.Gaussian())
         assert len(self.m._position_widgets) == 2
 
-    @cleanup
-    def test_enable_all_zero_start(self):
+    def test_enable_all_zero_start(self, mpl_cleanup):
         self.m.enable_adjust_position()
         self.m.append(hs.model.components1D.Gaussian())
         assert len(self.m._position_widgets) == 1
 
-    @cleanup
-    def test_manual_close(self):
+    def test_manual_close(self, mpl_cleanup):
         self.m.append(hs.model.components1D.Gaussian())
         self.m.append(hs.model.components1D.Gaussian())
         self.m.enable_adjust_position()

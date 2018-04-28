@@ -52,6 +52,7 @@ from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.axes import DataAxis
 from hyperspy.drawing import widgets
+from hyperspy.ui_registry import add_gui_method
 
 
 class BaseROI(t.HasTraits):
@@ -357,7 +358,8 @@ class BaseInteractiveROI(BaseROI):
             navigation_signal = signal
         if navigation_signal is not None:
             if navigation_signal not in self.signal_map:
-                self.add_widget(navigation_signal, color=color)
+                self.add_widget(navigation_signal, color=color,
+                                axes=kwargs.get("axes", None))
         if (self.update not in
                 signal.axes_manager.events.any_axis_changed.connected):
             signal.axes_manager.events.any_axis_changed.connect(
@@ -432,8 +434,6 @@ class BaseInteractiveROI(BaseROI):
 
         # Set DataAxes
         widget.axes = axes
-        with widget.events.changed.suppress_callback(self._on_widget_change):
-            self._apply_roi2widget(widget)
         if widget.ax is None:
             if signal._plot is None:
                 raise Exception(
@@ -443,6 +443,8 @@ class BaseInteractiveROI(BaseROI):
 
             ax = _get_mpl_ax(signal._plot, axes)
             widget.set_mpl_ax(ax)
+        with widget.events.changed.suppress_callback(self._on_widget_change):
+            self._apply_roi2widget(widget)
 
         # Connect widget changes to on_widget_change
         widget.events.changed.connect(self._on_widget_change,
@@ -484,6 +486,7 @@ class BasePointROI(BaseInteractiveROI):
         return s
 
 
+@add_gui_method(toolkey="Point1DROI")
 class Point1DROI(BasePointROI):
 
     """Selects a single point in a 1D space. The coordinate of the point in the
@@ -540,6 +543,7 @@ class Point1DROI(BasePointROI):
             self.value)
 
 
+@add_gui_method(toolkey="Point2DROI")
 class Point2DROI(BasePointROI):
 
     """Selects a single point in a 2D space. The coordinates of the point in
@@ -580,6 +584,7 @@ class Point2DROI(BasePointROI):
             self.x, self.y)
 
 
+@add_gui_method(toolkey="SpanROI")
 class SpanROI(BaseInteractiveROI):
 
     """Selects a range in a 1D space. The coordinates of the range in
@@ -632,6 +637,7 @@ class SpanROI(BaseInteractiveROI):
             self.right)
 
 
+@add_gui_method(toolkey="RectangularROI")
 class RectangularROI(BaseInteractiveROI):
 
     """Selects a range in a 2D space. The coordinates of the range in
@@ -769,6 +775,7 @@ class RectangularROI(BaseInteractiveROI):
             self.bottom)
 
 
+@add_gui_method(toolkey="CircleROI")
 class CircleROI(BaseInteractiveROI):
 
     cx, cy, r, r_inner = (t.CFloat(t.Undefined),) * 4
@@ -783,7 +790,9 @@ class CircleROI(BaseInteractiveROI):
 
     def is_valid(self):
         return (t.Undefined not in (self.cx, self.cy, self.r,) and
-                self.r_inner == t.Undefined or self.r >= self.r_inner)
+                (self.r_inner is t.Undefined or
+                 t.Undefined not in (self.r, self.r_inner) and
+                 self.r >= self.r_inner))
 
     def _cx_changed(self, old, new):
         self.update()
@@ -929,12 +938,13 @@ class CircleROI(BaseInteractiveROI):
                 self.r_inner)
 
 
+@add_gui_method(toolkey="Line2DROI")
 class Line2DROI(BaseInteractiveROI):
 
     x1, y1, x2, y2, linewidth = (t.CFloat(t.Undefined),) * 5
     _ndim = 2
 
-    def __init__(self, x1, y1, x2, y2, linewidth):
+    def __init__(self, x1, y1, x2, y2, linewidth=0):
         super(Line2DROI, self).__init__()
         self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
         self.linewidth = linewidth
@@ -976,6 +986,7 @@ class Line2DROI(BaseInteractiveROI):
     @staticmethod
     def _line_profile_coordinates(src, dst, linewidth=1):
         """Return the coordinates of the profile of an image along a scan line.
+
         Parameters
         ----------
         src : 2-tuple of numeric scalar (float or int)
@@ -994,6 +1005,7 @@ class Line2DROI(BaseInteractiveROI):
         This is a utility method meant to be used internally by skimage
         functions. The destination point is included in the profile, in
         contrast to standard numpy indexing.
+
         """
         src_row, src_col = src = np.asarray(src, dtype=float)
         dst_row, dst_col = dst = np.asarray(dst, dtype=float)
@@ -1005,7 +1017,6 @@ class Line2DROI(BaseInteractiveROI):
         # (in contrast to standard numpy indexing)
         line_col = np.linspace(src_col, dst_col, length)
         line_row = np.linspace(src_row, dst_row, length)
-        linewidth = int(linewidth)
         data = np.zeros((2, length, linewidth))
         data[0, :, :] = np.tile(line_col, [linewidth, 1]).T
         data[1, :, :] = np.tile(line_row, [linewidth, 1]).T
@@ -1033,6 +1044,7 @@ class Line2DROI(BaseInteractiveROI):
     def profile_line(img, src, dst, axes, linewidth=1,
                      order=1, mode='constant', cval=0.0):
         """Return the intensity profile of an image measured along a scan line.
+
         Parameters
         ----------
         img : numeric array, shape (M, N[, C])
@@ -1075,15 +1087,22 @@ class Line2DROI(BaseInteractiveROI):
         -----
         The destination point is included in the profile, in contrast to
         standard numpy indexing.
-        """
 
+        """
         import scipy.ndimage as nd
+        # Convert points coordinates from axes units to pixels
         p0 = ((src[0] - axes[0].offset) / axes[0].scale,
               (src[1] - axes[1].offset) / axes[1].scale)
         p1 = ((dst[0] - axes[0].offset) / axes[0].scale,
               (dst[1] - axes[1].offset) / axes[1].scale)
+        if linewidth < 0:
+            raise ValueError("linewidth must be positive number")
+        linewidth_px = linewidth / np.min([ax.scale for ax in axes])
+        linewidth_px = int(round(linewidth_px))
+        # Minimum size 1 pixel
+        linewidth_px = linewidth_px if linewidth_px >= 1 else 1
         perp_lines = Line2DROI._line_profile_coordinates(p0, p1,
-                                                         linewidth=linewidth)
+                                                         linewidth=linewidth_px)
         if img.ndim > 2:
             idx = [ax.index_in_array for ax in axes]
             if idx[0] < idx[1]:
@@ -1141,12 +1160,11 @@ class Line2DROI(BaseInteractiveROI):
             axes = self.signal_map[signal][1]
         else:
             axes = self._parse_axes(axes, signal.axes_manager)
-        linewidth = self.linewidth / np.min([ax.scale for ax in axes])
         profile = Line2DROI.profile_line(signal.data,
                                          (self.x1, self.y1),
                                          (self.x2, self.y2),
                                          axes=axes,
-                                         linewidth=linewidth,
+                                         linewidth=self.linewidth,
                                          order=order)
         length = np.linalg.norm(np.diff(
             np.array(((self.x1, self.y1), (self.x2, self.y2))), axis=0),

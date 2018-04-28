@@ -20,7 +20,6 @@ from functools import wraps
 
 import numpy as np
 import dask.array as da
-import h5py
 
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.lazy import LazySignal
@@ -95,8 +94,8 @@ class ComplexSignal_mixin:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if not np.issubdtype(self.data.dtype, complex):
-            self.data = self.data.astype(complex)
+        if not np.issubdtype(self.data.dtype, np.complexfloating):
+            self.data = self.data.astype(np.complexfloating)
 
     def change_dtype(self, dtype):
         """Change the data type.
@@ -108,7 +107,7 @@ class ComplexSignal_mixin:
             complex dtypes are allowed. If real valued properties are required use `real`,
             `imag`, `amplitude` and `phase` instead.
         """
-        if np.issubdtype(dtype, complex):
+        if np.issubdtype(dtype, np.complexfloating):
             self.data = self.data.astype(dtype)
         else:
             raise AttributeError(
@@ -116,8 +115,8 @@ class ComplexSignal_mixin:
 
     @format_title('angle')
     def angle(self, angle, deg=False):
-        """Return the angle (also known as phase or argument). If the data is real, the angle is 0
-        for positive values and 2$\pi$ for negative values.
+        r"""Return the angle (also known as phase or argument). If the data is real, the angle is 0
+        for positive values and :math:`2\pi` for negative values.
 
         Parameters
         ----------
@@ -262,16 +261,16 @@ class ComplexSignal(ComplexSignal_mixin, BaseSignal):
     angle.__doc__ = ComplexSignal_mixin.angle.__doc__
 
 
-class LazyComplexSignal(ComplexSignal_mixin, LazySignal):
+class LazyComplexSignal(ComplexSignal, LazySignal):
 
     @format_title('absolute')
     def _get_amplitude(self):
         amplitude = da.numpy_compat.builtins.abs(self)
-        return super()._get_amplitude(amplitude)
+        return super(ComplexSignal, self)._get_amplitude(amplitude)
 
     def _get_phase(self):
         phase = self._deepcopy_with_new_data(da.angle(self.data))
-        return super()._get_phase(phase)
+        return super(ComplexSignal, self)._get_phase(phase)
 
     def _set_real(self, real):
         if isinstance(real, BaseSignal):
@@ -300,5 +299,5 @@ class LazyComplexSignal(ComplexSignal_mixin, LazySignal):
 
     def angle(self, deg=False):
         angle = self._deepcopy_with_new_data(da.angle(self.data, deg))
-        return super().angle(angle, deg=deg)
+        return super(ComplexSignal, self).angle(angle, deg=deg)
     angle.__doc__ = ComplexSignal_mixin.angle.__doc__

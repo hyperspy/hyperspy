@@ -261,7 +261,7 @@ class TestExpression:
 
 
 def test_expression_substitution():
-    expr = 'A / B; A = x+2; B= x-c'
+    expr = 'A / B; A = x+2; B = x-c'
     comp = hs.model.components1D.Expression(expr, name='testcomp',
                                             autodoc=True,
                                             c=2)

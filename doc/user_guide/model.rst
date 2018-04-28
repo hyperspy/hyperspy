@@ -6,8 +6,8 @@ two-dimensional signals (images) in n-dimensional data sets. Models can be
 created as a linear combination of predefined components and multiple
 optimisation algorithms can be used to fit the model to experimental data.
 Bounds and weights are supported. The syntax for creating both kinds of model
-is essentially the same as in this documentation any method referred to in
-the :py:class`~.model.BaseModel` class is available for both kinds.
+is essentially the same, as in this documentation any method referred to in
+the :py:class:`~.model.BaseModel` class is available for both kinds.
 
 .. _2D_model-label:
 
@@ -30,6 +30,15 @@ Before creating a model verify that the ``Signal.binned`` metadata
 attribute of the signal is set to the correct value because the resulting
 model depends on this parameter. See :ref:`signal.binned` for more details.
 
+.. Warning::
+
+   When importing data that have been binned using other software, in
+   particular Gatan's DM, the stored values may be the averages of the
+   binned channels or pixels, instead of their sum, as would be required
+   for proper statistical analysis. We therefore cannot guarantee that
+   the statistics will be valid. We therefore strongly recommend that all
+   pre-fitting binning should be done using Hyperspy.
+
 Creating a model
 ----------------
 
@@ -39,8 +48,8 @@ A :py:class:`~.models.model1D.Model1D` can be created for data in the
 
 .. code-block:: python
 
-    >>> s = hs.signals.Signal1D('SomeDataHere') # or load the data from a file
-    >>> m = s.create_model() # Creates the 1D-Model and asign it to the variable m
+    >>> s = hs.signals.Signal1D(np.arange(300).reshape(30, 10))
+    >>> m = s.create_model() # Creates the 1D-Model and assign it to m
 
 Similarly A :py:class:`~.models.model2D.Model2D` can be created for data in the
 :py:class:`~._signals.signal2D.Signal2D` class using the
@@ -48,14 +57,14 @@ Similarly A :py:class:`~.models.model2D.Model2D` can be created for data in the
 
 .. code-block:: python
 
-    >>> im = hs.signals.Signal2D('SomeDataHere') # Load the data from a file
-    >>> mod = im.create_model() # Create the 2D-Model and asign it to the variable mod
+    >>> im = hs.signals.Signal2D(np.arange(300).reshape(3, 10, 10))
+    >>> mod = im.create_model() # Create the 2D-Model and assign it to mod
 
 The syntax for creating both one-dimensional and two-dimensional models is thus
-identical for the user in practice. When a model is created  you may be prompted
-to provide important information not already included in the datafile, e.g.if s
-is EELS data, you may be asked for the accelerating voltage, convergence and
-collection semi-angles etc.
+identical for the user in practice. When a model is created  you may be
+prompted to provide important information not already included in the
+datafile, e.g.if s is EELS data, you may be asked for the accelerating
+voltage, convergence and collection semi-angles etc.
 
 
 
@@ -94,21 +103,25 @@ The following components are currently available for one-dimensional models:
 * :py:class:`~._components.arctan.Arctan`
 * :py:class:`~._components.heaviside.HeavisideStep`
 
-.. versionadded:: 1.0 The following components are currently available for two-dimensional models:
+.. versionadded:: 1.0 The following components are currently available for
+                  two-dimensional models:
 
 * :py:class:`~._components.gaussian2d.Gaussian2D`
 
-However, this doesn't mean that you have to limit yourself to this meagre list of functions.
-A new function can easily be written or a custom function may be specified as below.
+However, this doesn't mean that you have to limit yourself to this meagre list
+of functions. A new function can easily be written or a custom function may
+be specified as below.
 
 Specifying custom components
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. _expression_component-label:
 
-.. versionadded:: 0.8.1 :py:class:`~._components.expression.Expression` component
+.. versionadded:: 0.8.1 :py:class:`~._components.expression.Expression`
+                  component
 
-.. versionadded:: 1.2 :py:class:`~._components.expression.Expression` component can create 2D components.
+.. versionadded:: 1.2 :py:class:`~._components.expression.Expression` component
+                  can create 2D components.
 
 The easiest way to turn a mathematical expression into a component is using the
 :py:class:`~._components.expression.Expression` component. For example, the
@@ -123,11 +136,11 @@ parameters for spectroscopy than the one that ships with HyperSpy:
     ... position="x0",
     ... height=1,
     ... fwhm=1,
-    ... centre=0,
+    ... x0=0,
     ... module="numpy")
 
 If the expression is inconvenient to write out in full (e.g. it's long and/or
-complicated), multiple substitutions can be given, separated by semicolumns.
+complicated), multiple substitutions can be given, separated by semicolons.
 Both symbolic and numerical substitutions are allowed:
 
 .. code-block:: python
@@ -145,28 +158,29 @@ a funtion. By default it "translates" the expression using
 numpy, but often it is possible to boost performance by using
 `numexpr <https://github.com/pydata/numexpr>`_ instead.
 
-It can also create 2D components with optional rotation. In the following example
-we create a 2D gaussian that rotates around its center:
+It can also create 2D components with optional rotation. In the following
+example we create a 2D gaussian that rotates around its center:
 
 .. code-block:: python
 
-    g = hs.model.components2D.Expression(
-        "k * exp(-((x-x0)**2 / (2 * sx ** 2) + (y-y0)**2 / (2 * sy ** 2)))",
-        "Gaussian2d", add_rotation=True, position=("x0", "y0"),
-        module="numpy", )
+    >>> g = hs.model.components2D.Expression(
+    ... "k * exp(-((x-x0)**2 / (2 * sx ** 2) + (y-y0)**2 / (2 * sy ** 2)))",
+    ... "Gaussian2d", add_rotation=True, position=("x0", "y0"),
+    ... module="numpy", )
 
 
-Of course :py:class:`~._components.expression.Expression` is only useful for analytical
-functions. For more general components you need to create the component "by hand". The
-good news is that, if you know how to write the function with Python, turning it into
-a component is very easy, just modify the following template to suit your needs:
+Of course :py:class:`~._components.expression.Expression` is only useful for
+analytical functions. For more general components you need to create the
+component "by hand". The good news is that, if you know how to write the
+function with Python, turning it into a component is very easy, just modify
+the following template to suit your needs:
 
 
 .. code-block:: python
 
     from hyperspy.component import Component
 
-    class My_Component(Component):
+    class MyComponent(Component):
 
         """
         """
@@ -176,46 +190,46 @@ a component is very easy, just modify the following template to suit your needs:
             Component.__init__(self, ('parameter_1', 'parameter_2'))
 
             # Optionally we can set the initial values
-             self.parameter_1.value = parameter_1
-             self.parameter_1.value = parameter_1
+            self.parameter_1.value = parameter_1
+            self.parameter_1.value = parameter_1
 
             # The units (optional)
-             self.parameter_1.units = 'Tesla'
-             self.parameter_2.units = 'Kociak'
+            self.parameter_1.units = 'Tesla'
+            self.parameter_2.units = 'Kociak'
 
-            # Once defined we can give default values to the attribute is we want
+            # Once defined we can give default values to the attribute
             # For example we fix the attribure_1 (optional)
-             self.parameter_1.attribute_1.free = False
+            self.parameter_1.attribute_1.free = False
 
             # And we set the boundaries (optional)
-             self.parameter_1.bmin = 0.
-             self.parameter_1.bmax = None
+            self.parameter_1.bmin = 0.
+            self.parameter_1.bmax = None
 
-            # Optionally, to boost the optimization speed we can define also define
+            # Optionally, to boost the optimization speed we can also define
             # the gradients of the function we the syntax:
             # self.parameter.grad = function
-             self.parameter_1.grad = self.grad_parameter_1
-             self.parameter_2.grad = self.grad_parameter_2
+            self.parameter_1.grad = self.grad_parameter_1
+            self.parameter_2.grad = self.grad_parameter_2
 
-        # Define the function as a function of the already defined parameters, x
-        # being the independent variable value
+        # Define the function as a function of the already defined parameters,
+        # x being the independent variable value
         def function(self, x):
             p1 = self.parameter_1.value
             p2 = self.parameter_2.value
             return p1 + x * p2
 
         # Optionally define the gradients of each parameter
-         def grad_parameter_1(self, x):
-             """
-             Returns d(function)/d(parameter_1)
-             """
-             return 0
+        def grad_parameter_1(self, x):
+            """
+            Returns d(function)/d(parameter_1)
+            """
+            return 0
 
-         def grad_parameter_2(self, x):
-             """
-             Returns d(function)/d(parameter_2)
-             """
-             return x
+        def grad_parameter_2(self, x):
+            """
+            Returns d(function)/d(parameter_2)
+            """
+            return x
 
 
 If you need help with the task please submit your question to the :ref:`users
@@ -226,8 +240,8 @@ mailing list <http://groups.google.com/group/hyperspy-users>`.
 
 .. versionchanged:: 0.8.1 printing current model components
 
-To print the current components in a model use :py:attr:`components` of the
-variable. A table with component number, attribute name, component name and
+To print the current components in a model use :py:attr:`components`. A
+table with component number, attribute name, component name and
 component type will be printed:
 
 .. code-block:: python
@@ -235,8 +249,8 @@ component type will be printed:
     >>> m
     <Model, title: my signal title>
     >>> m.components # an empty model
-       # |            Attribute Name |            Component Name |            Component Type
-    ---- | ------------------------- | ------------------------- | -------------------------
+       # |       Attribute Name |       Component Name |        Component Type
+    ---- | -------------------- | -------------------- | ---------------------
 
 
 In fact, components may be created automatically in some cases. For example, if
@@ -249,14 +263,14 @@ data that can be modelled using gaussians we might proceed as follows:
 
 .. code-block:: python
 
-    >>> gaussian = hs.model.components1D.Gaussian() # Create a Gaussian function component
+    >>> gaussian = hs.model.components1D.Gaussian() # Create a Gaussian comp.
     >>> m.append(gaussian) # Add it to the model
     >>> m.components # Print the model components
-       # |            Attribute Name |            Component Name |            Component Type
-    ---- | ------------------------- | ------------------------- | -------------------------
-       0 |                  Gaussian |                  Gaussian |                  Gaussian
-    >>> gaussian2 = hs.model.components1D.Gaussian() # Create another gaussian component
-    >>> gaussian3 = hs.model.components1D.Gaussian() # Create a third gaussian component
+       # |       Attribute Name |        Component Name |        Component Type
+    ---- | -------------------- | --------------------- | ---------------------
+       0 |             Gaussian |              Gaussian |              Gaussian
+    >>> gaussian2 = hs.model.components1D.Gaussian() # Create another gaussian
+    >>> gaussian3 = hs.model.components1D.Gaussian() # Create a third gaussian
 
 
 We could use the append method twice to add the two gaussians, but when
@@ -268,11 +282,11 @@ adding a list of components at once.
 
     >>> m.extend((gaussian2, gaussian3)) # note the double brackets!
     >>> m.components
-       # |            Attribute Name |            Component Name |            Component Type
-    ---- | ------------------------- | ------------------------- | -------------------------
-       0 |                  Gaussian |                  Gaussian |                  Gaussian
-       1 |                Gaussian_0 |                Gaussian_0 |                  Gaussian
-       2 |                Gaussian_1 |                Gaussian_1 |                  Gaussian
+       # |       Attribute Name |      Component Name |        Component Type
+    ---- | -------------------- | ------------------- | ---------------------
+       0 |             Gaussian |            Gaussian |              Gaussian
+       1 |           Gaussian_0 |          Gaussian_0 |              Gaussian
+       2 |           Gaussian_1 |          Gaussian_1 |              Gaussian
 
 
 We can customise the name of the components.
@@ -283,11 +297,11 @@ We can customise the name of the components.
     >>> gaussian2.name = 'Long Hydrogen name'
     >>> gaussian3.name = 'Nitrogen'
     >>> m.components
-       # |            Attribute Name |            Component Name |            Component Type
-    ---- | ------------------------- | ------------------------- | -------------------------
-       0 |                    Carbon |                    Carbon |                  Gaussian
-       1 |        Long_Hydrogen_name |        Long Hydrogen name |                  Gaussian
-       2 |                  Nitrogen |                  Nitrogen |                  Gaussian
+       # |        Attribute Name |        Component Name |      Component Type
+    ---- | --------------------- | --------------------- | -------------------
+       0 |                Carbon |                Carbon |            Gaussian
+       1 |    Long_Hydrogen_name |    Long Hydrogen name |            Gaussian
+       2 |              Nitrogen |              Nitrogen |            Gaussian
 
 
 Two components cannot have the same name.
@@ -298,8 +312,8 @@ Two components cannot have the same name.
     Traceback (most recent call last):
       File "<ipython-input-5-2b5669fae54a>", line 1, in <module>
         g2.name = "Carbon"
-      File "/home/fjd29/Python/hyperspy/hyperspy/component.py", line 466, in name
-        "the name " + str(value))
+      File "/home/fjd29/Python/hyperspy/hyperspy/component.py", line 466, in
+        name "the name " + str(value))
     ValueError: Another component already has the name Carbon
 
 
@@ -309,11 +323,11 @@ index in the model.
 .. code-block:: python
 
     >>> m
-       # |            Attribute Name |            Component Name |            Component Type
-    ---- | ------------------------- | ------------------------- | -------------------------
-       0 |                    Carbon |                    Carbon |                  Gaussian
-       1 |        Long_Hydrogen_name |        Long Hydrogen name |                  Gaussian
-       2 |                  Nitrogen |                  Nitrogen |                  Gaussian
+       # |        Attribute Name |       Component Name |      Component Type
+    ---- | --------------------- | -------------------- | -------------------
+       0 |                Carbon |               Carbon |            Gaussian
+       1 |    Long_Hydrogen_name |   Long Hydrogen name |            Gaussian
+       2 |              Nitrogen |             Nitrogen |            Gaussian
     >>> m[0]
     <Carbon (Gaussian component)>
     >>> m["Long Hydrogen name"]
@@ -329,17 +343,17 @@ enables tab completion.
 .. code-block:: python
 
     >>> m
-       # |            Attribute Name |            Component Name |            Component Type
-    ---- | ------------------------- | ------------------------- | -------------------------
-       0 |                    Carbon |                    Carbon |                  Gaussian
-       1 |        Long_Hydrogen_name |        Long Hydrogen name |                  Gaussian
-       2 |                  Nitrogen |                  Nitrogen |                  Gaussian
+       # |        Attribute Name |        Component Name |      Component Type
+    ---- | --------------------- | --------------------- | -------------------
+       0 |                Carbon |                Carbon |            Gaussian
+       1 |    Long_Hydrogen_name |    Long Hydrogen name |            Gaussian
+       2 |              Nitrogen |              Nitrogen |            Gaussian
     >>> m.components.Long_Hydrogen_name
     <Long Hydrogen name (Gaussian component)>
 
 
 It is possible to "switch off" a component by setting its
-:py:attr:`~.component.Component.active` to `False`. When a components is
+:py:attr:`~.component.Component.active` to `False`. When a component is
 switched off, to all effects it is as if it was not part of the model. To
 switch it on simply set the :py:attr:`~.component.Component.active` attribute
 back to `True`.
@@ -376,7 +390,7 @@ To enable this feature for a given component set the
 
 .. _model_indexing-label:
 
-Indexing model
+Indexing the model
 --------------
 
 .. versionadded:: 1.0 model indexing
@@ -396,7 +410,7 @@ recomputed for the resulting slices.
     >>> m.append(hs.model.components1D.Gaussian())
     >>> # select first three navigation pixels and last five signal channels
     >>> m1 = m.inav[:3].isig[-5:]
-    >>> m1.signal1D
+    >>> m1.signal
     <Signal1D, title: , dimensions: (3|5)>
 
 
@@ -503,7 +517,7 @@ For example:
     >>> gaussian.centre.free = False # Fix the centre
     >>> gaussian.free_parameters  # Print the free parameters
     set([A, sigma])
-    >>> m.print_current_values() # Print the current value of all the free parameters
+    >>> m.print_current_values() # Print the current value of all free param.
     Components	Parameter	Value
     Normalized Gaussian
             A	1.000000
@@ -516,7 +530,8 @@ For example:
             A	1.000000
             sigma	1.000000
             centre	0.000000
-    >>> gaussian2.A.twin = gaussian3.A # Couple the A parameter of gaussian2 to the A parameter of gaussian 3
+    >>> # Couple the A parameter of gaussian2 to the A parameter of gaussian 3:
+    >>> gaussian2.A.twin = gaussian3.A
     >>> gaussian2.A.value = 10 # Set the gaussian2 centre value to 10
     >>> m.print_current_values()
     Components	Parameter	Value
@@ -549,14 +564,14 @@ For example:
             A	5.000000
             centre	0.000000
 
-.. deprecated:: 1.1.3
+.. deprecated:: 1.2.0
     Setting the :py:attr:`~.component.Parameter.twin_function` and
     :py:attr:`~.component.Parameter.twin_inverse_function` attributes. Set the
     :py:attr:`~.component.Parameter.twin_function_expr` and
     :py:attr:`~.component.Parameter.twin_inverse_function_expr` attributes
     instead.
 
-.. versionadded:: 1.1.3
+.. versionadded:: 1.2.0
     :py:attr:`~.component.Parameter.twin_function_expr` and
     :py:attr:`~.component.Parameter.twin_inverse_function_expr`.
 
@@ -565,6 +580,8 @@ possible to set a different coupling function by setting the
 :py:attr:`~.component.Parameter.twin_function_expr` and
 :py:attr:`~.component.Parameter.twin_inverse_function_expr` attributes.  For
 example:
+
+.. code-block:: python
 
     >>> gaussian2.A.twin_function_expr = "x**2"
     >>> gaussian2.A.twin_inverse_function_expr = "sqrt(abs(x))"
@@ -583,6 +600,8 @@ example:
             sigma	1.000000
             A	2.000000
             centre	0.000000
+
+.. code-block:: python
 
     >>> gaussian3.A.value = 4
     >>> m.print_current_values()
@@ -610,13 +629,16 @@ spectrum at a particular point in a spectrum-image) use
 :py:meth:`~.model.BaseModel.fit`.
 
 The following table summarizes the features of the currently available
-optimizers. For more information on the local and global optimization algorithms, see the
+optimizers. For more information on the local and global optimization
+algorithms, see the
 `Scipy documentation <http://docs.scipy.org/doc/scipy/reference/optimize.html>`_.
 
 .. versionadded:: 1.1 Global optimizer `Differential Evolution` added.
 
-.. versionchanged:: 1.1 `leastsq` supports bound constraints. `fmin_XXX` methods
-                  changed to the `scipy.optimze.minimize()` notation.
+.. versionchanged:: 1.1 `leastsq` supports bound constraints. `fmin_XXX`
+                    methods changed to the `scipy.optimze.minimize()` notation.
+
+.. _optimizers-table:
 
 .. table:: Features of curve fitting optimizers.
 
@@ -654,7 +676,7 @@ and ``b = 100`` and we add white noise to it:
 
 .. code-block:: python
 
-    >>> s = hs.signals.SpectrumSimulation(
+    >>> s = hs.signals.Signal1D(
     ...     np.arange(100, 300))
     >>> s.add_gaussian_noise(std=100)
 
@@ -669,8 +691,8 @@ to the data.
     >>> m.append(line)
     >>> m.fit()
 
-On fitting completion, the optimized value of the parameters and their estimated
-standard deviation are stored in the following line attributes:
+On fitting completion, the optimized value of the parameters and their
+estimated standard deviation are stored in the following line attributes:
 
 .. code-block:: python
 
@@ -696,7 +718,7 @@ gaussian noise and proceed to fit as in the previous example.
 
 .. code-block:: python
 
-    >>> s = hs.signals.SpectrumSimulation(
+    >>> s = hs.signals.Signal1D(
     ...     np.arange(300))
     >>> s.add_poissonian_noise()
     >>> m = s.create_model()
@@ -715,7 +737,8 @@ approximation in most cases.
 
 .. code-block:: python
 
-   >>> s.estimate_poissonian_noise_variance(expected_value=hs.signals.Signal1D(np.arange(300)))
+   >>> s.estimate_poissonian_noise_variance(
+   ...     expected_value=hs.signals.Signal1D(np.arange(300)))
    >>> m.fit()
    >>> line.coefficients.value
    (1.0004224896604759, -0.46982916592391377)
@@ -733,15 +756,15 @@ To do so, we use a general optimizer called "Nelder-Mead".
    (1.0030718094185611, -0.63590210946134107)
 
 Problems of ill-conditioning and divergence can be ameliorated by using bounded
-optimization. Currently, only the "mpfit" optimizer supports bounds. In the
-following example a gaussian histogram is fitted using a
-:class:`~._components.gaussian.Gaussian` component using mpfit and bounds on
-the ``centre`` parameter.
+optimization. Currently, not all optimizers support bounds - see the
+:ref:`table above <optimizers-table>`. In the following example a gaussian
+histogram is fitted using a :class:`~._components.gaussian.Gaussian`
+component using mpfit and bounds on the ``centre`` parameter.
 
 .. code-block:: python
 
     >>> s = hs.signals.BaseSignal(np.random.normal(loc=10, scale=0.01,
-    size=1e5)).get_histogram()
+    ... size=1e5)).get_histogram()
     >>> s.metadata.Signal.binned = True
     >>> m = s.create_model()
     >>> g1 = hs.model.components1D.Gaussian()
@@ -782,7 +805,10 @@ To visualise the result use the :py:meth:`~.model.BaseModel.plot` method:
 
     >>> m.plot() # Visualise the results
 
-.. versionadded:: 0.7
+
+
+
+.. versionadded:: 0.7 plot componets features
 
 By default only the full model line is displayed in the plot. In addition, it
 is possible to display the individual components by calling
@@ -793,9 +819,22 @@ is possible to display the individual components by calling
 
     >>> m.plot(plot_components=True) # Visualise the results
 
-To disable this feature call :py:meth:`~.model.BaseModel.disable_plot_components`.
+To disable this feature call
+:py:meth:`~.model.BaseModel.disable_plot_components`.
 
-.. versionadded:: 0.7.1 :py:meth:`~.model.Model.suspend_update` and :py:meth:`~.model.Model.resume_update`
+.. versionadded:: 0.7.1 :py:meth:`~.model.Model.suspend_update` and
+                  :py:meth:`~.model.Model.resume_update`
+
+.. versionadded:: 1.4 ``Signal1D.plot`` keyword arguments
+
+All extra keyword argments are passes to the :meth:`plot` method of the
+corresponing signal object. For example, the following plots the model signal
+figure but not its navigator:
+
+.. code-block:: python
+
+    >>> m.plot(navigator=False)
+
 
 By default the model plot is automatically updated when any parameter value
 changes. It is possible to suspend this feature with
@@ -819,20 +858,19 @@ by hand.
 
 
 .. versionadded:: 0.8.5
-    :py:meth:`~.model.Model.notebook_interaction`,
+    :py:meth:`~.model.Model.gui`,
+
+.. versionchanged:: 1.3
+    All :meth:`notebook_interaction` methods renamed to :meth:`gui`. The
+    :meth:`notebook_interaction` methods will be removed in 2.0
 
 .. _notebook_interaction-label:
 
 If running in a Jupyter Notebook, interactive widgets can be used to
 conveniently adjust the parameter values by running
-:py:meth:`~.model.Model.notebook_interaction` for :py:class:`~.model.Model`,
+:py:meth:`~.model.Model.gui` for :py:class:`~.model.Model`,
 :py:class:`~.component.Component` and
 :py:class:`~.component.Parameter`.
-
-.. Warning::
-
-    :py:meth:`~.model.Model.notebook_interaction` functions require
-    ``ipywidgets``, which is an optional dependency of HyperSpy.
 
 
 .. figure::  images/notebook_widgets.png
@@ -848,8 +886,9 @@ conveniently adjust the parameter values by running
     :py:meth:`~.model.Model.enable_adjust_position` and
     :py:meth:`~.model.Model.disable_adjust_position`
 
-Also, :py:meth:`~.model.BaseModel.enable_adjust_position` provides an interactive
-way of setting the position of the components with a well define position.
+Also, :py:meth:`~.model.BaseModel.enable_adjust_position` provides an
+interactive way of setting the position of the components with a
+well-defined position.
 :py:meth:`~.model.BaseModel.disable_adjust_position` disables the tool.
 
 
@@ -857,7 +896,7 @@ way of setting the position of the components with a well define position.
     :align:   center
     :width:   500
 
-    Interactive component position adjustment tool.Drag the vertical lines
+    Interactive component position adjustment tool. Drag the vertical lines
     to set the initial value of the position parameter.
 
 
@@ -960,9 +999,9 @@ Current stored models can be listed by calling :py:attr:`~.signal.models`:
         └── dimensions = (|100)
     >>> m1 = s.models.restore('myname')
     >>> m1.components
-       # |            Attribute Name |            Component Name |            Component Type
-    ---- | ------------------------- | ------------------------- | -------------------------
-       0 |                Lorentzian |                Lorentzian |                Lorentzian
+       # |      Attribute Name |       Component Name |       Component Type
+    ---- | ------------------- | -------------------- | --------------------
+       0 |          Lorentzian |           Lorentzian |           Lorentzian
 
 Saving and loading the result of the fit
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -978,18 +1017,18 @@ one signal.
     >>> m = s.create_model()
     >>> # analysis and fitting goes here
     >>> m.save('my_filename', 'model_name')
-    >>> l = hs.load('my_filename.hdf5')
+    >>> l = hs.load('my_filename.hspy')
     >>> m = l.models.restore('model_name') # or l.models.model_name.restore()
 
 For older versions of HyperSpy (before 0.9), the instructions were as follows:
 
     Note that this method is known to be brittle i.e. there is no
-    guarantee that a version of HyperSpy different from the one used to save the
-    model will be able to load it successfully.  Also, it is advisable not to use
-    this method in combination with functions that alter the value of the
-    parameters interactively (e.g.  `enable_adjust_position`) as the modifications
-    made by this functions are normally not stored in the IPython notebook or
-    Python script.
+    guarantee that a version of HyperSpy different from the one used to save
+    the model will be able to load it successfully.  Also, it is
+    advisable not to use this method in combination with functions that
+    alter the value of the parameters interactively (e.g.
+    `enable_adjust_position`) as the modifications made by this functions
+    are normally not stored in the IPython notebook or Python script.
 
     To save a model:
 
@@ -999,14 +1038,15 @@ For older versions of HyperSpy (before 0.9), the instructions were as follows:
     2. Save all the commands that used to create the model to a file. This
        can be done in the form of an IPython notebook or a Python script.
 
-    3.  (Optional) Comment out or delete the fitting commangs (e.g. `multifit`).
+    3. (Optional) Comment out or delete the fitting commands (e.g.
+       ``multifit``).
 
     To recreate the model:
 
     1. Execute the IPython notebook or Python script.
 
-    2. Use :py:meth:`~.model.BaseModel.load_parameters_from_file` to load back the
-       parameter values and arrays.
+    2. Use :py:meth:`~.model.BaseModel.load_parameters_from_file` to load
+       back the parameter values and arrays.
 
 
 Exporting the result of the fit
@@ -1042,7 +1082,9 @@ reduce the starting value (or local / false minima) problem, which often arises
 when fitting multi-dimensional datasets.
 
 The algorithm will be described in full when accompanying paper is published,
-but we are making the implementation available now.
+but we are making the implementation available now, with additional details
+available in the following `conference proceeding
+<http://doi.org/10.1002/9783527808465.EMC2016.6233>`_.
 
 The idea
 ^^^^^^^^

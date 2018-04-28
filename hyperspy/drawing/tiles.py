@@ -33,16 +33,6 @@ class HistogramTilePlot(BlittedFigure):
         self.title = ''
         self.ax = None
 
-    def create_figure(self):
-        self.figure = utils.create_figure(
-            window_title=("Figure " + self.title
-                          if self.title
-                          else None))
-        canvas = self.figure.canvas
-        self._background = canvas.copy_from_bbox(self.figure.bbox)
-        self.figure.canvas.mpl_connect('draw_event', self._on_draw)
-        utils.on_figure_window_close(self.figure, self.close)
-
     def create_axis(self, ncols=1, nrows=1, number=1, title=''):
         ax = self.figure.add_subplot(ncols, nrows, number)
         ax.set_title(title)
@@ -91,12 +81,11 @@ class HistogramTilePlot(BlittedFigure):
                         bin_edges[0] - width * 0.1, bin_edges[-1] + width * 0.1)
                     ax.set_ylim(0, np.max(hist) * 1.1)
                     # ax.set_title(c_n + ' ' + p_n)
-        self._draw_animated()
-        self.figure.canvas.draw()
+        self.figure.canvas.draw_idle()
 
     def close(self):
         try:
             plt.close(self.figure)
-        except:
+        except BaseException:
             pass
         self.figure = None

@@ -24,11 +24,13 @@ import tempfile
 
 import h5py
 import numpy as np
+import dask
 import dask.array as da
 import pytest
+from distutils.version import LooseVersion
 
 from hyperspy.io import load
-from hyperspy.io_plugins.hdf5 import get_signal_chunks
+from hyperspy.io_plugins.hspy import get_signal_chunks
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
@@ -37,6 +39,8 @@ from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 from hyperspy.utils import markers
 from hyperspy.drawing.marker import dict2marker
 from hyperspy.misc.test_utils import sanitize_dict as san_dict
+from hyperspy.api import preferences
+from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 my_path = os.path.dirname(__file__)
 
@@ -185,7 +189,7 @@ class TestLoadingNewSavedMetadata:
 @pytest.fixture()
 def tmpfilepath():
     with tempfile.TemporaryDirectory() as tmp:
-        yield os.path.join(tmp, "test.hdf5")
+        yield os.path.join(tmp, "test")
         gc.collect()        # Make sure any memmaps are closed first!
 
 
@@ -198,7 +202,7 @@ class TestSavingMetadataContainers:
         s = self.s
         s.metadata.set_item('test', ['a', 'b', '\u6f22\u5b57'])
         s.save(tmpfilepath)
-        l = load(tmpfilepath)
+        l = load(tmpfilepath + ".hspy")
         assert isinstance(l.metadata.test[0], str)
         assert isinstance(l.metadata.test[1], str)
         assert isinstance(l.metadata.test[2], str)
@@ -216,7 +220,7 @@ class TestSavingMetadataContainers:
         s = self.s
         s.metadata.set_item('test', [[1., 2], ('3', 4)])
         s.save(tmpfilepath)
-        l = load(tmpfilepath)
+        l = load(tmpfilepath + ".hspy")
         assert isinstance(l.metadata.test, list)
         assert isinstance(l.metadata.test[0], list)
         assert isinstance(l.metadata.test[1], tuple)
@@ -225,7 +229,7 @@ class TestSavingMetadataContainers:
         s = self.s
         s.metadata.set_item('test', [[1., 2], ['3', 4]])
         s.save(tmpfilepath)
-        l = load(tmpfilepath)
+        l = load(tmpfilepath + ".hspy")
         assert isinstance(l.metadata.test[0][0], float)
         assert isinstance(l.metadata.test[0][1], float)
         assert isinstance(l.metadata.test[1][0], str)
@@ -235,7 +239,7 @@ class TestSavingMetadataContainers:
         s = self.s
         s.metadata.set_item('test', (BaseSignal([1]), 0.1, 'test_string'))
         s.save(tmpfilepath)
-        l = load(tmpfilepath)
+        l = load(tmpfilepath + ".hspy")
         assert isinstance(l.metadata.test, tuple)
         assert isinstance(l.metadata.test[0], Signal1D)
         assert isinstance(l.metadata.test[1], float)
@@ -245,7 +249,7 @@ class TestSavingMetadataContainers:
         s = self.s
         s.metadata.set_item('test', Point2DROI(1, 2))
         s.save(tmpfilepath)
-        l = load(tmpfilepath)
+        l = load(tmpfilepath + ".hspy")
         assert 'test' not in l.metadata
 
     def test_date_time(self, tmpfilepath):
@@ -254,7 +258,7 @@ class TestSavingMetadataContainers:
         s.metadata.General.date = date
         s.metadata.General.time = time
         s.save(tmpfilepath)
-        l = load(tmpfilepath)
+        l = load(tmpfilepath + ".hspy")
         assert l.metadata.General.date == date
         assert l.metadata.General.time == time
 
@@ -267,7 +271,7 @@ class TestSavingMetadataContainers:
         s.metadata.General.authors = authors
         s.metadata.General.doi = doi
         s.save(tmpfilepath)
-        l = load(tmpfilepath)
+        l = load(tmpfilepath + ".hspy")
         assert l.metadata.General.notes == notes
         assert l.metadata.General.authors == authors
         assert l.metadata.General.doi == doi
@@ -277,8 +281,36 @@ class TestSavingMetadataContainers:
         quantity = "Intensity (electron)"
         s.metadata.Signal.quantity = quantity
         s.save(tmpfilepath)
-        l = load(tmpfilepath)
+        l = load(tmpfilepath + ".hspy")
         assert l.metadata.Signal.quantity == quantity
+
+    def test_metadata_update_to_v3_0(self):
+        md = {'Acquisition_instrument': {'SEM': {'Stage': {'tilt_alpha': 5.0}},
+                                         'TEM': {'Detector': {'Camera': {'exposure': 0.20000000000000001}},
+                                                 'Stage': {'tilt_alpha': 10.0},
+                                                 'acquisition_mode': 'TEM',
+                                                 'beam_current': 0.0,
+                                                 'beam_energy': 200.0,
+                                                 'camera_length': 320.00000000000006,
+                                                 'microscope': 'FEI Tecnai'}},
+              'General': {'date': '2014-07-09',
+                          'original_filename': 'test_diffraction_pattern.dm3',
+                          'time': '18:56:37',
+                          'title': 'test_diffraction_pattern'},
+              'Signal': {'Noise_properties': {'Variance_linear_model': {'gain_factor': 1.0,
+                                                                        'gain_offset': 0.0}},
+                         'binned': False,
+                         'quantity': 'Intensity',
+                         'signal_type': ''},
+              '_HyperSpy': {'Folding': {'original_axes_manager': None,
+                                        'original_shape': None,
+                                        'signal_unfolded': False,
+                                        'unfolded': False}}}
+        s = load(os.path.join(
+            my_path,
+            "hdf5_files",
+            'example2_v2.2.hspy'))
+        assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
 
 def test_none_metadata():
@@ -308,7 +340,7 @@ class TestLoadingOOMReadOnly:
         s.save('tmp.hdf5', overwrite=True)
         self.shape = (10000, 10000, 100)
         del s
-        f = h5py.File('tmp.hdf5', model='r+')
+        f = h5py.File('tmp.hdf5', mode='r+')
         s = f['Experiments/__unnamed__']
         del s['data']
         s.create_dataset(
@@ -323,12 +355,13 @@ class TestLoadingOOMReadOnly:
         assert self.shape == s.data.shape
         assert isinstance(s.data, da.Array)
         assert s._lazy
+        s.close_file()
 
     def teardown_method(self, method):
         gc.collect()        # Make sure any memmaps are closed first!
         try:
             remove('tmp.hdf5')
-        except:
+        except BaseException:
             # Don't fail tests if we cannot remove
             pass
 
@@ -371,8 +404,7 @@ class TestAxesConfiguration:
 
 class Test_permanent_markers_io:
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
-    def test_save_permanent_marker(self):
+    def test_save_permanent_marker(self, mpl_cleanup):
         s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(x=5, y=5)
         s.add_marker(m, permanent=True)
@@ -380,8 +412,7 @@ class Test_permanent_markers_io:
             filename = tmp + '/testsavefile.hdf5'
         s.save(filename)
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
-    def test_save_load_empty_metadata_markers(self):
+    def test_save_load_empty_metadata_markers(self, mpl_cleanup):
         s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(x=5, y=5)
         m.name = "test"
@@ -393,8 +424,7 @@ class Test_permanent_markers_io:
         s1 = load(filename)
         assert len(s1.metadata.Markers) == 0
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
-    def test_save_load_permanent_marker(self):
+    def test_save_load_permanent_marker(self, mpl_cleanup):
         x, y = 5, 2
         color = 'red'
         size = 10
@@ -415,8 +445,7 @@ class Test_permanent_markers_io:
         assert m1.marker_properties['color'] == color
         assert m1.name == name
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
-    def test_save_load_permanent_marker_all_types(self):
+    def test_save_load_permanent_marker_all_types(self, mpl_cleanup):
         x1, y1, x2, y2 = 5, 2, 1, 8
         s = Signal2D(np.arange(100).reshape(10, 10))
         m0_list = [
@@ -446,8 +475,7 @@ class Test_permanent_markers_io:
         for m0_dict, m1_dict in zip(m0_dict_list, m1_dict_list):
             assert m0_dict == m1_dict
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
-    def test_save_load_horizontal_line_marker(self):
+    def test_save_load_horizontal_line_marker(self, mpl_cleanup):
         y = 8
         color = 'blue'
         linewidth = 2.5
@@ -463,8 +491,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
-    def test_save_load_horizontal_line_segment_marker(self):
+    def test_save_load_horizontal_line_segment_marker(self, mpl_cleanup):
         x1, x2, y = 1, 5, 8
         color = 'red'
         linewidth = 1.2
@@ -481,8 +508,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
-    def test_save_load_vertical_line_marker(self):
+    def test_save_load_vertical_line_marker(self, mpl_cleanup):
         x = 9
         color = 'black'
         linewidth = 3.5
@@ -498,8 +524,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
-    def test_save_load_vertical_line_segment_marker(self):
+    def test_save_load_vertical_line_segment_marker(self, mpl_cleanup):
         x, y1, y2 = 2, 1, 3
         color = 'white'
         linewidth = 4.2
@@ -516,8 +541,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
-    def test_save_load_line_segment_marker(self):
+    def test_save_load_line_segment_marker(self, mpl_cleanup):
         x1, x2, y1, y2 = 1, 9, 4, 7
         color = 'cyan'
         linewidth = 0.7
@@ -534,8 +558,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
-    def test_save_load_point_marker(self):
+    def test_save_load_point_marker(self, mpl_cleanup):
         x, y = 9, 8
         color = 'purple'
         name = "point test"
@@ -551,8 +574,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
-    def test_save_load_rectangle_marker(self):
+    def test_save_load_rectangle_marker(self, mpl_cleanup):
         x1, x2, y1, y2 = 2, 4, 1, 3
         color = 'yellow'
         linewidth = 5
@@ -569,8 +591,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
-    def test_save_load_text_marker(self):
+    def test_save_load_text_marker(self, mpl_cleanup):
         x, y = 3, 9.5
         color = 'brown'
         name = "text_test"
@@ -587,8 +608,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    @pytest.mark.skipif("sys.platform == 'darwin'")
-    def test_save_load_multidim_navigation_marker(self):
+    def test_save_load_multidim_navigation_marker(self, mpl_cleanup):
         x, y = (1, 2, 3), (5, 6, 7)
         name = 'test point'
         s = Signal2D(np.arange(300).reshape(3, 10, 10))
@@ -636,11 +656,13 @@ def test_strings_from_py2():
     assert s.metadata.Sample.elements.dtype.char == "U"
 
 
+@pytest.mark.skipif(LooseVersion(dask.__version__) >= LooseVersion('0.14.1'),
+                    reason='Fixed in later dask versions')
 def test_lazy_metadata_arrays(tmpfilepath):
     s = BaseSignal([1, 2, 3])
     s.metadata.array = np.arange(10.)
     s.save(tmpfilepath)
-    l = load(tmpfilepath, lazy=True)
+    l = load(tmpfilepath + ".hspy", lazy=True)
     # Can't deepcopy open hdf5 file handles
     with pytest.raises(TypeError):
         l.deepcopy()

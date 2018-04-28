@@ -47,6 +47,7 @@ from hyperspy.misc.slicing import copy_slice_from_whitelist
 from hyperspy.events import Events, Event, EventSuppressor
 import warnings
 from hyperspy.exceptions import VisibleDeprecationWarning
+from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
 
@@ -56,6 +57,8 @@ _logger = logging.getLogger(__name__)
 
 class DummyComponentsContainer:
     pass
+
+
 components = DummyComponentsContainer()
 components.__dict__.update(components1d.__dict__)
 components.__dict__.update(components2d.__dict__)
@@ -98,6 +101,7 @@ class ModelComponents(object):
         return ans
 
 
+@add_gui_method(toolkey="Model")
 class BaseModel(list):
 
     """Model and data fitting tools applicable to signals of both one and two
@@ -441,6 +445,8 @@ class BaseModel(list):
         >>> s2 = m.as_signal(component_list=[l1])
 
         """
+        if show_progressbar is None:
+            show_progressbar = preferences.General.show_progressbar
         if parallel is None:
             parallel = preferences.General.parallel
         if out is None:
@@ -498,7 +504,7 @@ class BaseModel(list):
                         data=thing[1],
                         component_list=component_list,
                         out_of_range_to_nan=out_of_range_to_nan,
-                        show_progressbar=thing[2] + 1),
+                        show_progressbar=thing[2] + 1 if show_progressbar else False),
                     zip(models, data_slices, range(int(parallel))))
             _ = next(_map)
         return signal
@@ -552,19 +558,20 @@ class BaseModel(list):
             return
         for i, component in enumerate(components):
             component.events.active_changed.connect(
-                self._model_line.update, [])
+                self._model_line._auto_update_line, [])
             for parameter in component.parameters:
                 parameter.events.value_changed.connect(
-                    self._model_line.update, [])
+                    self._model_line._auto_update_line, [])
 
     def _disconnect_parameters2update_plot(self, components):
         if self._model_line is None:
             return
         for component in components:
-            component.events.active_changed.disconnect(self._model_line.update)
+            component.events.active_changed.disconnect(
+                self._model_line._auto_update_line)
             for parameter in component.parameters:
                 parameter.events.value_changed.disconnect(
-                    self._model_line.update)
+                    self._model_line._auto_update_line)
 
     def update_plot(self, *args, **kwargs):
         """Update model plot.
@@ -578,11 +585,12 @@ class BaseModel(list):
         """
         if self._plot_active is True and self._suspend_update is False:
             try:
-                self._update_model_line()
+                if self._model_line is not None:
+                    self._model_line.update()
                 for component in [component for component in self if
                                   component.active is True]:
                     self._update_component_line(component)
-            except:
+            except BaseException:
                 self._disconnect_parameters2update_plot(components=self)
 
     @contextmanager
@@ -597,14 +605,14 @@ class BaseModel(list):
         es = EventSuppressor()
         es.add(self.axes_manager.events.indices_changed)
         if self._model_line:
-            f = self._model_line.update
+            f = self._model_line._auto_update_line
             for c in self:
                 es.add(c.events, f)
                 for p in c.parameters:
                     es.add(p.events, f)
         for c in self:
             if hasattr(c, '_model_plot_line'):
-                f = c._model_plot_line.update
+                f = c._model_plot_line._auto_update_line
                 es.add(c.events, f)
                 for p in c.parameters:
                     es.add(p.events, f)
@@ -618,26 +626,16 @@ class BaseModel(list):
         if update_on_resume is True:
             self.update_plot()
 
-    def _update_model_line(self):
-        if (self._plot_active is True and
-                self._model_line is not None):
-            self._model_line.update()
-
     def _close_plot(self):
         if self._plot_components is True:
             self.disable_plot_components()
         self._disconnect_parameters2update_plot(components=self)
         self._model_line = None
 
-    def _update_model_line(self):
-        if (self._plot_active is True and
-                self._model_line is not None):
-            self._model_line.update()
-
     @staticmethod
     def _connect_component_line(component):
         if hasattr(component, "_model_plot_line"):
-            f = component._model_plot_line.update
+            f = component._model_plot_line._auto_update_line
             component.events.active_changed.connect(f, [])
             for parameter in component.parameters:
                 parameter.events.value_changed.connect(f, [])
@@ -645,7 +643,7 @@ class BaseModel(list):
     @staticmethod
     def _disconnect_component_line(component):
         if hasattr(component, "_model_plot_line"):
-            f = component._model_plot_line.update
+            f = component._model_plot_line._auto_update_line
             component.events.active_changed.disconnect(f)
             for parameter in component.parameters:
                 parameter.events.value_changed.disconnect(f)
@@ -880,7 +878,7 @@ class BaseModel(list):
             ' reduced chi-squared'
         return tmp
 
-    def fit(self, fitter=None, method='ls', grad=False,
+    def fit(self, fitter="leastsq", method='ls', grad=False,
             bounded=False, ext_bounding=False, update_plot=False,
             **kwargs):
         """Fits the model to the experimental data.
@@ -895,11 +893,11 @@ class BaseModel(list):
 
         Parameters
         ----------
-        fitter : {None, "leastsq", "mpfit", "odr", "Nelder-Mead",
+        fitter : {"leastsq", "mpfit", "odr", "Nelder-Mead",
                  "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B", "TNC",
                  "Differential Evolution"}
-            The optimization algorithm used to perform the fitting. If None the
-            fitter defined in `preferences.Model.default_fitter` is used.
+            The optimization algorithm used to perform the fitting. Deafault
+            is "leastsq".
 
                 "leastsq" performs least-squares optimization, and supports
                 bounds on parameters.
@@ -954,8 +952,8 @@ class BaseModel(list):
 
         """
 
-        if fitter is None:
-            fitter = preferences.Model.default_fitter
+        if fitter is None:  # None meant "from preferences" before v1.3
+            fitter = "leastsq"
         switch_aap = (update_plot != self._plot_active)
         if switch_aap is True and update_plot is False:
             cm = self.suspend_update
@@ -1403,7 +1401,7 @@ class BaseModel(list):
             for parameter in component.parameters:
                 parameter.ext_bounded = False
 
-    def export_results(self, folder=None, format=None, save_std=False,
+    def export_results(self, folder=None, format="hspy", save_std=False,
                        only_free=True, only_active=True):
         """Export the results of the parameters of the model to the desired
         folder.
@@ -1414,9 +1412,8 @@ class BaseModel(list):
             The path to the folder where the file will be saved. If `None` the
             current folder is used by default.
         format : str
-            The format to which the data will be exported. It must be the
-            extension of any format supported by HyperSpy. If None, the default
-            format for exporting as defined in the `Preferences` will be used.
+            The extension of the file format. It must be one of the
+            fileformats supported by HyperSpy. The default is "hspy".
         save_std : bool
             If True, also the standard deviation will be saved.
         only_free : bool
@@ -1460,14 +1457,16 @@ class BaseModel(list):
             if only_active is False or component.active:
                 component.plot(only_free=only_free)
 
-    def print_current_values(self, only_free=True):
+    def print_current_values(self, only_free=True, skip_multi=False):
         """Print the value of each parameter of the model.
 
         Parameters
         ----------
         only_free : bool
             If True, only the value of the parameters that are free will
-             be printed.
+            be printed.
+        skip_multi : bool
+            If True, parameters with attribute "__iter__" are not printed
 
         """
         print("Components\tParameter\tValue")
@@ -1480,9 +1479,13 @@ class BaseModel(list):
                 parameters = component.free_parameters if only_free \
                     else component.parameters
                 for parameter in parameters:
-                    if not hasattr(parameter.value, '__iter__'):
-                        print("\t\t%s\t%g" % (
-                            parameter.name, parameter.value))
+                    if hasattr(parameter.value, '__iter__'):
+                        if not skip_multi:
+                            for idx in range(len(parameter.value)):
+                                print("\t\t%s[%d]\t%g" % (parameter.name, idx,
+                                                          parameter.value[idx]))
+                    else:
+                        print("\t\t%s\t%g" % (parameter.name, parameter.value))
 
     def set_parameters_not_free(self, component_list=None,
                                 parameter_name_list=None):
@@ -1747,26 +1750,6 @@ class BaseModel(list):
                     "\" not found in model")
         else:
             return list.__getitem__(self, value)
-
-    def notebook_interaction(self):
-        """Creates interactive notebook widgets for all components and
-        parameters, if available.
-        Requires `ipywidgets` to be installed.
-        """
-        from ipywidgets import Accordion
-        from traitlets import TraitError as TraitletError
-        from IPython.display import display as ip_display
-
-        try:
-            children = [component.notebook_interaction(False) for component in
-                        self]
-            accord = Accordion(children=children)
-            for i, comp in enumerate(self):
-                accord.set_title(i, comp.name)
-            ip_display(accord)
-        except TraitletError:
-            _logger.info('This function is only avialable when running in a'
-                         ' notebook')
 
     def create_samfire(self, workers=None, setup=True, **kwargs):
         """Creates a SAMFire object.
