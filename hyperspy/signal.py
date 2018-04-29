@@ -3180,7 +3180,7 @@ class BaseSignal(FancySlicing,
             return s
     integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def fft(self, shifted=False, **kwargs):
+    def fft(self, shifted=False, apodization=False, **kwargs):
         """Compute the discrete Fourier Transform.
 
         This function computes the discrete Fourier Transform over the signal
@@ -3191,7 +3191,11 @@ class BaseSignal(FancySlicing,
         ----------
         shifted : bool, optional
             If True, the origin of FFT will be shifted in the centre (Default: False).
-
+        apodization : bool or 'hann' or 'hamming' or 'tukey'
+            Apply apodization window before calculating FFT in order to suppress streaks.
+            If True or 'hann' applies Hann window. If 'hamming' or 'tukey',
+            applies Hamming or Tukey windows.
+            (Default: False)
         **kwargs
             other keyword arguments are described in np.fft.fftn().
 
@@ -3205,7 +3209,7 @@ class BaseSignal(FancySlicing,
         >>> im.fft()
         <ComplexSignal2D, title: FFT of , dimensions: (|512, 512)>
         # Use following to plot power spectrum of `im`:
-        >>> np.log(im.fft(shifted=True).amplitude).plot()
+        >>> np.log(im.fft(shifted=True, apodization=True).amplitude).plot()
 
         Notes
         -----
@@ -3214,20 +3218,27 @@ class BaseSignal(FancySlicing,
 
         if self.axes_manager.signal_dimension == 0:
             raise AttributeError("Signal dimension must be at least one.")
+        if apodization==True:
+            apodization = 'hann'
+
+        if apodization:
+            im_fft = self.deepcopy().apply_apodization(type=apodization)
+        else:
+            im_fft = self.deepcopy()
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
         if isinstance(self.data, da.Array):
             if shifted:
                 im_fft = self._deepcopy_with_new_data(da.fft.fftshift(
-                    da.fft.fftn(self.data, axes=axes, **kwargs), axes=axes))
+                    da.fft.fftn(im_fft.data, axes=axes, **kwargs), axes=axes))
             else:
-                im_fft = self._deepcopy_with_new_data(da.fft.fftn(self.data, axes=axes, **kwargs))
+                im_fft = self._deepcopy_with_new_data(da.fft.fftn(im_fft.data, axes=axes, **kwargs))
         else:
             if shifted:
                 im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
-                    np.fft.fftn(self.data, axes=axes, **kwargs), axes=axes))
+                    np.fft.fftn(im_fft.data, axes=axes, **kwargs), axes=axes))
             else:
-                im_fft = self._deepcopy_with_new_data(np.fft.fftn(self.data, axes=axes, **kwargs))
+                im_fft = self._deepcopy_with_new_data(np.fft.fftn(im_fft.data, axes=axes, **kwargs))
 
         im_fft.change_dtype("complex")
         im_fft.metadata.General.title = 'FFT of {}'.format(im_fft.metadata.General.title)
