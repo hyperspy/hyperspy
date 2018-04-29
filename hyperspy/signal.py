@@ -2006,7 +2006,8 @@ class BaseSignal(FancySlicing,
                 navigator = "slider"
             elif (self.axes_manager.navigation_dimension == 1 and
                     self.axes_manager.signal_dimension == 1):
-                if self.axes_manager.navigation_axes[0].is_linear:
+                if (self.axes_manager.navigation_axes[0].is_linear and 
+                        self.axes_manager.signal_axes[0].is_linear):
                     navigator = "data"
                 else:
                     navigator = "spectrum"

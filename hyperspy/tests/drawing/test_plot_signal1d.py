@@ -15,11 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+from shutil import copyfile
+
+import numpy as np
 import scipy.misc
 import pytest
 import matplotlib.pyplot as plt
-import os
-from shutil import copyfile
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import update_close_figure
@@ -116,6 +118,32 @@ class TestPlotSpectra():
             return s2._plot.navigator_plot.figure
         if figure == '2sig':
             return s2._plot.navigator_plot.figure
+
+
+class TestPlotNonLinearAxis:
+
+    def setup_method(self):
+        dict0 = {'size': 10, 'name': 'Axis0', 'units': 'A', 'scale': 0.2,
+                 'offset': 1, 'navigate': True}
+        dict1 = {'axis': np.arange(100)**3, 'name': 'Axis1', 'units': 'A',
+                 'navigate': False}
+        np.random.seed(1)
+        s = hs.signals.Signal1D(np.random.random((10, 100)),
+                                axes=[dict0, dict1])
+        self.s = s
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_non_linear_sig(self):
+        self.s.plot()
+        return self.s._plot.signal_plot.figure
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_non_linear_nav(self):
+        s2 = self.s.T
+        s2.plot()
+        return s2._plot.navigator_plot.figure
 
 
 @update_close_figure

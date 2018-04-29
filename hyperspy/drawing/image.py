@@ -157,7 +157,8 @@ class ImagePlot(BlittedFigure):
         if yaxis.units is not Undefined:
             self._ylabel += ' (%s)' % yaxis.units
 
-        if (xaxis.units == yaxis.units) and (xaxis.scale == yaxis.scale):
+        if (xaxis.is_linear and yaxis.is_linear and
+                (xaxis.units == yaxis.units) and (xaxis.scale == yaxis.scale)):
             self._auto_scalebar = True
             self._auto_axes_ticks = False
             self.pixel_units = xaxis.units
@@ -165,12 +166,23 @@ class ImagePlot(BlittedFigure):
             self._auto_scalebar = False
             self._auto_axes_ticks = True
 
-        # Calibrate the axes of the navigator image
-        self._extent = (xaxis.axis[0] - xaxis.scale / 2.,
-                        xaxis.axis[-1] + xaxis.scale / 2.,
-                        yaxis.axis[-1] + yaxis.scale / 2.,
-                        yaxis.axis[0] - yaxis.scale / 2.)
+        self._set_extent()
         self._calculate_aspect()
+
+    def _set_extent(self):
+        xaxis = self.xaxis
+        yaxis = self.yaxis
+        if xaxis.is_linear and yaxis.is_linear:
+            xaxis_half_px = xaxis.scale / 2.
+            yaxis_half_px = yaxis.scale / 2.
+        else:
+            xaxis_half_px = 0
+            yaxis_half_px = 0
+        # Calibrate the axes of the navigator image
+        self._extent = (xaxis.axis[0] - xaxis_half_px,
+                        xaxis.axis[-1] + xaxis_half_px,
+                        yaxis.axis[-1] + yaxis_half_px,
+                        yaxis.axis[0] - yaxis_half_px)
 
     def _calculate_aspect(self):
         xaxis = self.xaxis
@@ -187,7 +199,10 @@ class ImagePlot(BlittedFigure):
                 factor = min_asp ** -1 * xaxis.size / yaxis.size
                 self._auto_scalebar = False
                 self._auto_axes_ticks = True
-        self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
+        if xaxis.is_linear and yaxis.is_linear:
+            self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
+        else:
+            self._aspect = 1.0
         # print(self._aspect)
 
     def optimize_contrast(self, data):
@@ -297,10 +312,7 @@ class ImagePlot(BlittedFigure):
     def update(self, **kwargs):
         ims = self.ax.images
         # update extent:
-        self._extent = (self.xaxis.axis[0] - self.xaxis.scale / 2.,
-                        self.xaxis.axis[-1] + self.xaxis.scale / 2.,
-                        self.yaxis.axis[-1] + self.yaxis.scale / 2.,
-                        self.yaxis.axis[0] - self.yaxis.scale / 2.)
+        self._set_extent()
 
         # Turn on centre_colormap if a diverging colormap is used.
         if self.centre_colormap == "auto":

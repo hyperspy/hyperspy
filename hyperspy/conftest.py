@@ -14,6 +14,10 @@ import hyperspy.api as hs
 
 matplotlib.rcParams['figure.max_open_warning'] = 25
 
+# make sure the GUIs are enabled, so there are called 
+hs.preferences.GUIs.enable_ipywidgets_gui = True
+hs.preferences.GUIs.enable_traitsui_gui = True
+
 
 @pytest.fixture(autouse=True)
 def add_np(doctest_namespace):
