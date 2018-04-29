@@ -58,7 +58,7 @@ from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
                                         broadcast_signals)
-from hyperspy.misc.math_tools import outer_nd
+from hyperspy.misc.math_tools import outer_nd, hann_window_nth_order
 
 from hyperspy.exceptions import VisibleDeprecationWarning
 
@@ -4795,27 +4795,48 @@ class BaseSignal(FancySlicing,
         """
         return self.transpose()
 
-    def apply_apodization(self, type='hann', inplace=False):
+    def apply_apodization(self, type='hann', hann_order=None, tukey_alpha=0.5, inplace=False):
         """
         Apply apodization window to a signal either in place or return a new signal.
 
         Parameters
         ----------
         type : string, optional
-            Select between 'hann', 'hamming'
-        (Default: 'hann')
+            Select between 'hann', 'hamming', 'tukey'
+            (Default: 'hann')
+        hann_order : None or int, optional
+            If integer n provided hann window of nth order will be used.
+            Higher orders result in more homogeneous intensity distribution.
+        tukey_alpha : float
+            From scipy documentation:
+            Shape parameter of the Tukey window, representing the fraction of
+            the window inside the cosine tapered region. If zero,
+            the Tukey window is equivalent to a rectangular window.
+            If one, the Tukey window is equivalent to a Hann window.
+            (Default: 0.5)
         inplace : boolean, optional
             If True apodization applied in place, i.e. signal data will be substituted by the apodized one.
-        (Default: False)
+            (Default: False)
+        Returns
+        -------
+        out : :class:`~hyperspy.signals.BaseSignal or subclasses, optional
+            If 'inplace'=True, returns apodized signal of the same type as self.
+        Examples
+        --------
+        >>> import hyperspy.api as hs
+        >>> holo = hs.datasets.example_signals.object_hologram()
+        >>> holo.apply_apodization('tukey', tukey_alpha=0.1).plot()
         """
 
         if type == 'hanning' or type == 'hann':
-            # window_function = lambda x, x0: 0.5 * (1. - np.cos(2 * np.pi *
-            #                                                    (x - x0 - (x[-1] - x[0]) / 2) /
-            #                                                    (x[-1] - x[0])))
-            window_function = lambda m: np.hanning(m)
+            if hann_order:
+                window_function = lambda m: hann_window_nth_order(m, hann_order)
+            else:
+                window_function = lambda m: np.hanning(m)
         elif type == 'hamming':
             window_function = lambda m: np.hamming(m)
+        elif type == 'tukey':
+            window_function = lambda m: sp.signal.tukey(m, tukey_alpha)
         else:
             raise ValueError('Wrong type parameter value.')
 
