@@ -77,7 +77,11 @@ class TestSubPixelAlign:
 
     @pytest.mark.parametrize(("plot"), [True, 'reuse'])
     def test_estimate_subpix_plot(self, mpl_cleanup, plot):
-        # Run the
+        # To avoid this function plotting many figures and holding the test, we 
+        # make sure the backend is set to `agg` in case it is set to something
+        # else in the testing environment
+        import matplotlib.pyplot as plt
+        plt.switch_backend('agg')
         s = self.signal
         s.estimate_shift2D(sub_pixel_factor=200, plot=plot)
 

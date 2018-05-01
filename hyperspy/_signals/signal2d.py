@@ -193,7 +193,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         argmax[0] - phase_correlation.shape[0]
     shift1 = argmax[1] if argmax[1] < threshold[1] else \
         argmax[1] - phase_correlation.shape[1]
-    max_val = phase_correlation.max()
+    max_val = phase_correlation.real.max()
     shifts = np.array((shift0, shift1))
 
     # The following code is more or less copied from
@@ -220,7 +220,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
             dtype=np.float64)
         maxima -= dftshift
         shifts = shifts + maxima / sub_pixel_factor
-        max_val = correlation.max()
+        max_val = correlation.real.max()
 
     # Plot on demand
     if plot is True or isinstance(plot, plt.Figure):
@@ -486,7 +486,6 @@ class Signal2D(BaseSignal, CommonSignal2D):
                                 plot=plot,
                                 dtype=dtype,
                                 sub_pixel_factor=sub_pixel_factor)
-
                             pcarray[i1, i2] = max_value, nshift
                         del im2
                         pbar.update(1)
