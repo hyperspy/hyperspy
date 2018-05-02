@@ -65,33 +65,32 @@ def generate_linear_axis(offset, scale, size, offset_index=0):
 
 
 def create_axis(**kwargs):
-    """Creates either a linear or a non-linear axis based on the provided 
-    kwargs. 
+    """Creates a linear, a non-linear axis or a functional axis depending on 
+    the kwargs provided. If `axis` or  `expression` are provided, a non-linear
+    or a functional axis is created, respectively. Otherwise a linear axis is 
+    created, which can be defined by `scale`, `size` and `offset`.
 
     Alternatively, the offset_index of the offset channel can be specified.
 
     Parameters
     ----------
-    axis : iteratable of values (list, tuple or 1D numpy array)
-    offset : float
-    scale : float
-    size : number of channels
+    axis : iteratable of values (list, tuple or 1D numpy array) (optional)
+    expression : Component function in SymPy text expression format (str) (optional)
+    offset : float (optional)
+    scale : float (optional)
+    size : number of channels (optional)
 
     Returns
     -------
-    A DataAxis or a LinearDataAxis
+    A DataAxis, FunctionalDataAxis or a LinearDataAxis
 
     """
     if 'axis' in kwargs.keys():  # non linear axis
         axis_class = DataAxis
-    elif "size" in kwargs.keys():  # set default value
+    elif 'expression' in kwargs.keys():  # Functional axis
+        axis_class = FunctionalDataAxis
+    else:  # if not argument is provided fall back to linear axis
         axis_class = LinearDataAxis
-        # Set default values if their are missing
-        kwargs.setdefault("scale", 1.0)
-        kwargs.setdefault("offset", 0.0)
-    else:
-        raise ValueError('Missing argument: either "axis" or "size" '
-                         'should be provided.')
     return axis_class(**kwargs)
 
 
@@ -405,7 +404,6 @@ class BaseDataAxis(t.HasTraits):
         self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
 
 
-@add_gui_method(toolkey="DataAxis")
 class DataAxis(BaseDataAxis):
 
     def __init__(self,
@@ -521,10 +519,6 @@ class DataAxis(BaseDataAxis):
         """
         return super().update_from(axis, attributes)
 
-    def convert_to_functional_axis(self):
-        # TODO
-        pass
-
 
 class FunctionalDataAxis(BaseDataAxis):
 
@@ -568,9 +562,40 @@ class FunctionalDataAxis(BaseDataAxis):
         # Set not valid values to np.nan
         self.axis[np.logical_not(np.isfinite(self.axis))] = np.nan
 
+    def update_from(self, axis, attributes=None):
+        """Copy values of specified axes fields from the passed AxesManager.
 
-@add_gui_method(toolkey="LinearDataAxis")
-class LinearDataAxis(BaseDataAxis):
+        Parameters
+        ----------
+        axis : LinearDataAxis
+            The LinearDataAxis instance to use as a source for values.
+        attributes : iterable container of strings.
+            The name of the attribute to update. If the attribute does not
+            exist in either of the AxesManagers, an AttributeError will be
+            raised.
+        Returns
+        -------
+        A boolean indicating whether any changes were made.
+
+        """
+        if attributes is None:
+            attributes = self.parameters_list
+        return super().update_from(axis, attributes)
+
+    def get_axis_dictionary(self):
+        d = super().get_axis_dictionary()
+        for kwarg in self.parameters_list:
+            d[kwarg] = getattr(self, kwarg)
+        return d
+
+    def convert_to_non_linear_axis(self):
+        d = super()._get_axis_dictionary()
+        self.__class__ = DataAxis
+        self.__init__(**d, axis=self.axis)
+
+
+@add_gui_method(toolkey="DataAxis")
+class LinearDataAxis(FunctionalDataAxis):
     scale = t.Float()
     offset = t.Float()
 
@@ -582,17 +607,13 @@ class LinearDataAxis(BaseDataAxis):
                  size=1.,
                  scale=1.,
                  offset=0.):
-        super().__init__(index_in_array, name, units, navigate)
-        self.size = size
-        self.scale = scale
-        self.offset = offset
+        expression = "scale * x + offset"
+        super().__init__(index_in_array, name, units, navigate, size=size,
+                         expression=expression, scale=scale, offset=offset)
         self.update_axis()
         self.on_trait_change(self.update_axis,
                              ['scale', 'offset', 'size'])
         self.is_linear = True
-
-    def update_axis(self):
-        self.axis = generate_linear_axis(self.offset, self.scale, self.size)
 
     def _slice_me(self, slice_):
         """Returns a slice to slice the corresponding data axis and
@@ -679,29 +700,6 @@ class LinearDataAxis(BaseDataAxis):
             self.scale = scale
         else:
             return offset, scale
-
-    def update_from(self, axis, attributes=["scale", "offset", "units"]):
-        """Copy values of specified axes fields from the passed AxesManager.
-
-        Parameters
-        ----------
-        axis : LinearDataAxis
-            The LinearDataAxis instance to use as a source for values.
-        attributes : iterable container of strings.
-            The name of the attribute to update. If the attribute does not
-            exist in either of the AxesManagers, an AttributeError will be
-            raised.
-        Returns
-        -------
-        A boolean indicating whether any changes were made.
-
-        """
-        return super().update_from(axis, attributes)
-
-    def convert_to_non_linear_axis(self):
-        d = super().get_axis_dictionary()
-        self.__class__ = DataAxis
-        self.__init__(**d, axis=self.axis)
 
 
 @add_gui_method(toolkey="AxesManager")
