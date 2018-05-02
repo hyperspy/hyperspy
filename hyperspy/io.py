@@ -153,7 +153,7 @@ def load(filenames=None,
        spectrum image.
     dataset_name : string, list of strings
        For filetypes which support several datasets in the same file, this
-       will only load the specified datasets. Only for EMD files.
+       will only load the specified datasets. Only for EMD (NCEM) files.
 
     Returns
     -------
