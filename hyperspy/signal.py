@@ -3222,9 +3222,9 @@ class BaseSignal(FancySlicing,
             apodization = 'hann'
 
         if apodization:
-            im_fft = self.deepcopy().apply_apodization(type=apodization)
+            im_fft = self.deepcopy().apply_apodization(window=apodization)
         else:
-            im_fft = self.deepcopy()
+            im_fft = self
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
         if isinstance(self.data, da.Array):
@@ -4806,19 +4806,22 @@ class BaseSignal(FancySlicing,
         """
         return self.transpose()
 
-    def apply_apodization(self, type='hann', hann_order=None, tukey_alpha=0.5, inplace=False):
+    def apply_apodization(self, window='hann', hann_order=None, tukey_alpha=0.5, inplace=False):
         """
         Apply apodization window to a signal either in place or return a new signal.
 
         Parameters
         ----------
-        type : string, optional
+        window : string, optional
             Select between 'hann', 'hamming', 'tukey'
             (Default: 'hann')
         hann_order : None or int, optional
+            Only used if type='hann'
             If integer n provided hann window of nth order will be used.
+            If None, first order hann window is used.
             Higher orders result in more homogeneous intensity distribution.
         tukey_alpha : float
+            Only used if type='tykey'
             From scipy documentation:
             Shape parameter of the Tukey window, representing the fraction of
             the window inside the cosine tapered region. If zero,
@@ -4839,14 +4842,14 @@ class BaseSignal(FancySlicing,
         >>> holo.apply_apodization('tukey', tukey_alpha=0.1).plot()
         """
 
-        if type == 'hanning' or type == 'hann':
+        if window == 'hanning' or window == 'hann':
             if hann_order:
                 window_function = lambda m: hann_window_nth_order(m, hann_order)
             else:
                 window_function = lambda m: np.hanning(m)
-        elif type == 'hamming':
+        elif window == 'hamming':
             window_function = lambda m: np.hamming(m)
-        elif type == 'tukey':
+        elif window == 'tukey':
             window_function = lambda m: sp.signal.tukey(m, tukey_alpha)
         else:
             raise ValueError('Wrong type parameter value.')
@@ -4864,15 +4867,18 @@ class BaseSignal(FancySlicing,
             else:
                 windows_1d.append(window_function(axis.size))
 
-        window_nd = outer_nd(*windows_1d)
+        window_nd = outer_nd(*windows_1d).T
 
+        # Prepare slicing for multiplication window_nd nparray with data with higher dimensionality:
         if inplace:
             slice_w = []
 
+            # Iterate over all dimensions of the data
             for i in range(self.data.ndim):
-                if any(i == axes):
+                if any(i == axes):  # If current dimension represents one of signal axis, all elements in window
+                    # along current axis to be subscribed
                     slice_w.append(slice(None))
-                else:
+                else:  # If current dimension is navigation one, new axis is absent in window and should be created
                     slice_w.append(None)
 
             self.data = self.data * window_nd[tuple(slice_w)]
