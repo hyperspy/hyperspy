@@ -861,12 +861,14 @@ class TestModelScalarVariance:
 class TestModelSignalVariance:
 
     def setup_method(self, method):
-        variance = hs.signals.Signal1D(np.arange(100, 300).reshape(
-            (2, 100)))
+        variance = hs.signals.Signal1D(
+            np.arange(100, 300, dtype="float64").reshape((2, 100)))
         s = variance.deepcopy()
         np.random.seed(1)
         std = 10
+        np.random.seed(1)
         s.add_gaussian_noise(std)
+        np.random.seed(1)
         s.add_poissonian_noise()
         s.metadata.set_item("Signal.Noise_properties.variance",
                             variance + std ** 2)
@@ -877,10 +879,10 @@ class TestModelSignalVariance:
 
     def test_std1_red_chisq(self):
         self.m.multifit(fitter="leastsq", method="ls", show_progressbar=None)
-        np.testing.assert_allclose(self.m.red_chisq.data[0],
-                                   0.79693355673230915)
-        np.testing.assert_allclose(self.m.red_chisq.data[1],
-                                   0.91453032901427167)
+        np.testing.assert_allclose(self.m.red_chisq.data[0], 0.813109,
+                                   atol=1e-5)
+        np.testing.assert_allclose(self.m.red_chisq.data[1], 0.697727,
+                                   atol=1e-5)
 
 
 @lazifyTestClass
@@ -1030,19 +1032,22 @@ class TestAsSignal:
                                   show_progressbar=False, parallel=False)
             np.testing.assert_allclose(s1.data, s.data)
 
-    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_all_components_simple(self, parallel):
         s = self.m.as_signal(show_progressbar=False, parallel=parallel)
         assert np.all(s.data == 4.)
 
-    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_one_component_simple(self, parallel):
         s = self.m.as_signal(component_list=[0], show_progressbar=False,
                              parallel=parallel)
         assert np.all(s.data == 2.)
         assert self.m[1].active
 
-    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_all_components_multidim(self, parallel):
         self.m[0].active_is_multidimensional = True
 
@@ -1055,7 +1060,8 @@ class TestAsSignal:
             s.data, np.array([np.ones((2, 5)) * 2, np.ones((2, 5)) * 4]))
         assert self.m[0].active_is_multidimensional
 
-    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_one_component_multidim(self, parallel):
         self.m[0].active_is_multidimensional = True
 

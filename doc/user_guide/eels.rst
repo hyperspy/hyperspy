@@ -149,8 +149,7 @@ Define the chemical composition of the sample
     >>> s.add_elements(('B', 'N'))
 
 
-In order to include the effect of plural scattering we provide the low-loss
-spectrum to :py:meth:`~._signals.eels.EELSSpectrum_mixin.create_model`:
+In order to include the effect of plural scattering, the model is convolved with the loss loss spectrum in which case the low loss spectrum needs to be provided to :py:meth:`~._signals.eels.EELSSpectrum_mixin.create_model`:
 
 .. code-block:: python
 

@@ -3945,7 +3945,7 @@ class BaseSignal(FancySlicing,
                                            gain_factor=None,
                                            gain_offset=None,
                                            correlation_factor=None):
-        """Estimate the poissonian noise variance of the signal.
+        r"""Estimate the poissonian noise variance of the signal.
 
         The variance is stored in the
         ``metadata.Signal.Noise_properties.variance`` attribute.
@@ -4528,9 +4528,9 @@ class BaseSignal(FancySlicing,
             self.metadata.Markers = markers_dict
         if plot_marker:
             if self._plot.signal_plot:
-                self._plot.signal_plot.ax.hspy_fig._draw_animated()
+                self._plot.signal_plot.ax.hspy_fig._update_animated()
             if self._plot.navigator_plot:
-                self._plot.navigator_plot.ax.hspy_fig._draw_animated()
+                self._plot.navigator_plot.ax.hspy_fig._update_animated()
 
     def _plot_permanent_markers(self):
         marker_name_list = self.metadata.Markers.keys()
@@ -4544,32 +4544,90 @@ class BaseSignal(FancySlicing,
                     self._plot.navigator_plot.add_marker(marker)
                 marker.plot(update_plot=False)
         if self._plot.signal_plot:
-            self._plot.signal_plot.ax.hspy_fig._draw_animated()
+            self._plot.signal_plot.ax.hspy_fig._update_animated()
         if self._plot.navigator_plot:
-            self._plot.navigator_plot.ax.hspy_fig._draw_animated()
+            self._plot.navigator_plot.ax.hspy_fig._update_animated()
 
-    def add_poissonian_noise(self, **kwargs):
-        """Add Poissonian noise to the data"""
-        original_type = self.data.dtype
-        self.data = np.random.poisson(self.data, **kwargs).astype(
-            original_type)
+    def add_poissonian_noise(self, keep_dtype=True):
+        """Add Poissonian noise to the data
+
+        This method works in-place. The resulting data type is int64. If this
+        is different from the original data type a warning is added to the
+        log.
+
+        Parameters
+        ----------
+        keep_dtype: bool
+            If `True`, keep the original data type of the signal data. For
+            example, if the data type was initially "float64", the result of
+            the operation (usually "int64") will be converted to "float64".
+            The default is ``True`` for convienece.
+
+        Note:
+        -----
+        This method uses ``numpy.random.poisson`` (``dask.array.random.poisson``
+        for lazy signals) to generate the Gaussian noise. In order to seed it
+        you must use ``numpy.random.seed`` (``dask.random.seed``).
+
+        """
+        kwargs = {}
+        if self._lazy:
+            from dask.array.random import poisson
+            kwargs["chunks"] = self.data.chunks
+        else:
+            from numpy.random import poisson
+        original_dtype = self.data.dtype
+        self.data = poisson(lam=self.data, **kwargs)
+        if self.data.dtype != original_dtype:
+            if keep_dtype:
+                _logger.warning(
+                    "Changing data type from %s to the original %s." % (
+                        self.data.dtype, original_dtype)
+                )
+                # Don't change the object if possible
+                self.data = self.data.astype(original_dtype, copy=False)
+            else:
+                _logger.warning("The data type changed from %s to %s" % (
+                    original_dtype, self.data.dtype
+                ))
         self.events.data_changed.trigger(obj=self)
 
     def add_gaussian_noise(self, std):
-        """Add Gaussian noise to the data
+        """Add Gaussian noise to the data.
+
+        The operation is performed in-place i.e. the data of the signal
+        is modified.
+
+        This method requires a float data type, otherwise numpy raises a
+        ``TypeError``.
+
+
         Parameters
         ----------
         std : float
+            The standard deviation of the gaussian noise.
+
+        Note:
+        -----
+        This method uses ``numpy.random.normal`` (``dask.array.random.normal``
+        for lazy signals) to generate the Gaussian noise. In order to seed it
+        you must use ``numpy.random.seed`` (``dask.random.seed``).
 
         """
-        noise = np.random.normal(0,
-                                 std,
-                                 self.data.shape)
-        original_dtype = self.data.dtype
-        self.data = (
-            self.data.astype(
-                noise.dtype) +
-            noise).astype(original_dtype)
+
+        kwargs = {}
+        if self._lazy:
+            from dask.array.random import normal
+            kwargs["chunks"] = self.data.chunks
+        else:
+            from numpy.random import normal
+        noise = normal(loc=0, scale=std, size=self.data.shape, **kwargs)
+        if self._lazy:
+            # With lazy data we can't keep the same array object
+            self.data = self.data + noise
+        else:
+            # Don't change the object
+            self.data += noise
         self.events.data_changed.trigger(obj=self)
 
     def transpose(self, signal_axes=None,

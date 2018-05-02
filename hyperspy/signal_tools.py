@@ -32,7 +32,6 @@ from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import VerticalLineWidget
 from hyperspy import components1d
 from hyperspy.component import Component
-from hyperspy import drawing
 from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
@@ -255,7 +254,7 @@ class Smoothing(t.HasTraits):
                 try:
                     # PySide
                     return np.array(self.line_color.getRgb()) / 255.
-                except:
+                except BaseException:
                     return matplotlib.colors.to_rgb(self.line_color_ipy)
         else:
             return matplotlib.colors.to_rgb(self.line_color_ipy)
@@ -655,9 +654,16 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                            default='full')
     hi = t.Int(0)
 
-    def __init__(self, signal):
+    def __init__(self, signal, background_type='Power Law', polynomial_order=2,
+                 fast=True, show_progressbar=None):
         super(BackgroundRemoval, self).__init__(signal)
+        # setting the polynomial order will change the backgroud_type to
+        # polynomial, so we set it before setting the background type
+        self.polynomial_order = polynomial_order
+        self.background_type = background_type
         self.set_background_estimator()
+        self.fast = fast
+        self.show_progressbar = show_progressbar
         self.bg_line = None
 
     def on_disabling_span_selector(self):
@@ -666,7 +672,6 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.bg_line = None
 
     def set_background_estimator(self):
-
         if self.background_type == 'Power Law':
             self.background_estimator = components1d.PowerLaw()
             self.bg_line_range = 'from_left_range'
@@ -763,7 +768,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             signal_range=(self.ss_left_value, self.ss_right_value),
             background_type=background_type,
             fast=self.fast,
-            polynomial_order=self.polynomial_order)
+            polynomial_order=self.polynomial_order,
+            show_progressbar=self.show_progressbar)
         self.signal.data = new_spectra.data
         self.signal.events.data_changed.trigger(self)
         if plot:
@@ -930,6 +936,8 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                 # This is only available for traitsui, ipywidgets has a
                 # progress bar instead.
                 pass
+            except ValueError as error:
+                _logger.warning(error)
             self.index = 0
             self._reset_line()
             return
@@ -958,7 +966,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self.reset_span_selector()
         self.update_spectrum_line()
         if len(self.coordinates) > 1:
-            self.signal._plot.pointer._update_patch_position()
+            self.signal._plot.pointer._on_navigate(self.signal.axes_manager)
 
     def update_spectrum_line(self):
         self.line.auto_update = True
@@ -1004,6 +1012,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
             color='blue',
             type='line')
         self.signal._plot.signal_plot.add_line(self.interpolated_line)
+        self.interpolated_line.auto_update = False
         self.interpolated_line.autoscale = False
         self.interpolated_line.plot()
 

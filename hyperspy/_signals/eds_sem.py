@@ -177,11 +177,10 @@ class EDSSEM_mixin:
                                   elevation_angle=None,
                                   energy_resolution_MnKa=None,
                                   display=True, toolkit=None):
-        if {beam_energy, live_time, tilt_stage, azimuth_angle,
-                elevation_angle, energy_resolution_MnKa} == {None}:
+        if set([beam_energy, live_time, tilt_stage, azimuth_angle,
+                elevation_angle, energy_resolution_MnKa]) == {None}:
             tem_par = EDSSEMParametersUI(self)
             return tem_par.gui(toolkit=toolkit, display=display)
-            return self._set_microscope_parameters_gui()
         md = self.metadata
 
         if beam_energy is not None:
