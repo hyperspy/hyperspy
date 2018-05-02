@@ -389,8 +389,6 @@ class EMD(object):
                         "Dataset with name {0} not found in the file. "
                         "Possible datasets are {1}.".format(
                             dataset_name, ', '.join(dataset_name_list)))
-            else:
-                raise IOError("No datasets found in file")
 
         # Close file and return EMD object:
         if not lazy:
