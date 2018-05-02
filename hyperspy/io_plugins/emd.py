@@ -40,6 +40,7 @@ import pint
 
 from hyperspy.misc.elements import atomic_number2name
 import hyperspy.misc.io.fei_stream_readers as stream_readers
+from hyperspy.misc.utils import isiterable
 
 # Plugin characteristics
 # ----------------------
@@ -317,7 +318,7 @@ class EMD(object):
         self.signals[name] = signal
 
     @classmethod
-    def load_from_emd(cls, filename, lazy=False):
+    def load_from_emd(cls, filename, lazy=False, dataset_name=None):
         """Construct :class:`~.EMD` object from an emd-file.
 
         Parameters
@@ -336,6 +337,9 @@ class EMD(object):
 
         """
         cls._log.debug('Calling load_from_emd')
+        if not isiterable(dataset_name):
+            if dataset_name is not None:
+                dataset_name = [dataset_name]
         # Read in file:
         emd_file = h5py.File(filename, 'r')
         # Creat empty EMD instance:
@@ -370,12 +374,22 @@ class EMD(object):
         # 'experiments', ...)!
         assert len(node_list) == 1, 'Dataset location is ambiguous!'
         data_group = emd_file.get(node_list[0])
+        dataset_name_list = []
         if data_group is not None:
             for name, group in data_group.items():
                 if isinstance(group, h5py.Group):
-                    if group.attrs.get('emd_group_type') == 1:
-                        emd._read_signal_from_group(
-                            name, group, lazy)
+                    dataset_name_list.append(name)
+                    if (dataset_name is None) or (name in dataset_name):
+                        if group.attrs.get('emd_group_type') == 1:
+                            emd._read_signal_from_group(
+                                name, group, lazy)
+        if not emd.signals:
+            if (dataset_name is not None) and dataset_name_list:
+                raise ValueError(
+                        "Dataset with name {0} not found in the file. "
+                        "Possible datasets are {1}.".format(
+                            dataset_name, ', '.join(dataset_name_list)))
+
         # Close file and return EMD object:
         if not lazy:
             emd_file.close()
@@ -1150,7 +1164,7 @@ def file_reader(filename, log_info=False,
         emd = FeiEMDReader(filename, lazy=lazy, **kwds)
         dictionaries = emd.dictionaries
     else:
-        emd = EMD.load_from_emd(filename, lazy)
+        emd = EMD.load_from_emd(filename, lazy=lazy, **kwds)
         if log_info:
             emd.log_info()
         for signal in emd.signals.values():

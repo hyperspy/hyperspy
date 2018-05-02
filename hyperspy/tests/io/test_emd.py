@@ -23,6 +23,7 @@
 
 import os.path
 from os import remove
+import pytest
 import shutil
 import tempfile
 import gc
@@ -118,6 +119,53 @@ def test_data_axis_length_1():
         my_path, 'emd_files', 'example_axis_len_1.emd')
     signal = load(filename)
     assert signal.data.shape == (5, 1, 5)
+
+
+class TestDatasetName:
+
+    def setup_method(self):
+        tmpdir = tempfile.TemporaryDirectory()
+        hdf5_dataset_path = os.path.join(tmpdir.name, "test_dataset.emd")
+        f = h5py.File(hdf5_dataset_path, mode="w")
+        f.attrs.create('version_major', 0)
+        f.attrs.create('version_minor', 2)
+
+        f.create_group('experimental/science_data_0')
+        group = f['experimental/science_data_0']
+        group.attrs.create('emd_group_type', 1)
+
+        data = np.random.random((128, 128))
+        group.create_dataset(name='data', data=data)
+        group.create_dataset(name='dim1', data=range(128))
+        group.create_dataset(name='dim2', data=range(128))
+
+        f.create_group('experimental/science_data_1')
+        group = f['experimental/science_data_1']
+        group.attrs.create('emd_group_type', 1)
+
+        data = np.random.random((128, 128))
+        group.create_dataset(name='data', data=data)
+        group.create_dataset(name='dim1', data=range(128))
+        group.create_dataset(name='dim2', data=range(128))
+        f.close()
+
+        self.hdf5_dataset_path = hdf5_dataset_path
+        self.tmpdir = tmpdir
+
+    def teardown_method(self):
+        self.tmpdir.cleanup()
+
+    def test_load_one_dataset(self):
+        s = load(self.hdf5_dataset_path)
+        assert len(s) == 2
+        s = load(self.hdf5_dataset_path, dataset_name='science_data_0')
+        assert s.metadata.General.title == 'science_data_0'
+        s = load(self.hdf5_dataset_path, dataset_name='science_data_1')
+        assert s.metadata.General.title == 'science_data_1'
+
+    def test_wrong_dataset_name(self):
+        with pytest.raises(ValueError):
+            load(self.hdf5_dataset_path, dataset_name='a_wrong_name')
 
 
 class TestMinimalSave():
