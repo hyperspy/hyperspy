@@ -4816,12 +4816,12 @@ class BaseSignal(FancySlicing,
             Select between 'hann', 'hamming', 'tukey'
             (Default: 'hann')
         hann_order : None or int, optional
-            Only used if type='hann'
+            Only used if window='hann'
             If integer n provided hann window of nth order will be used.
             If None, first order hann window is used.
             Higher orders result in more homogeneous intensity distribution.
         tukey_alpha : float
-            Only used if type='tykey'
+            Only used if window='tykey'
             From scipy documentation:
             Shape parameter of the Tukey window, representing the fraction of
             the window inside the cosine tapered region. If zero,

@@ -1051,27 +1051,36 @@ to reverse the :py:func:`~.utils.stack` function:
 FFT and iFFT
 ^^^^^^^^^^^^
 
-The Fast Fourier transform and its inverse can be applied on a signal with the :py:meth:`~.signal.BaseSignal.fft` and the :py:meth:`~.signal.BaseSignal.ifft` methods.
+The Fast Fourier transform and its inverse can be applied on a signal with the :py:meth:`~.signal.BaseSignal.fft` and
+the :py:meth:`~.signal.BaseSignal.ifft` methods. In order to remove streaks in FFT
+(usually used only for presenting FFT patterns rather than for quantitative
+analyses) use ``apodization`` attribute as follows:
 
 .. code-block:: python
 
     >>> import numpy as np
-    >>> im = hs.datasets.example_signals.object_hologram()
-    >>> np.log(im.fft(shifted=True).amplitude).plot()
+    >>> im = hs.datasets.example_signals.reference_hologram()
+    >>> fft_power = np.log(im.fft(shifted=True).amplitude)
+    >>> fft_power_apodized = np.log(im.fft(shifted=True, apodization=True).amplitude)
+    >>> hs.plot.plot_images([fft_power, fft_power_apodized], tight_layout=True)
 
-.. figure::  images/hologram_fft.png
+.. figure::  images/ref_hologram_fft.png
   :align:   center
-  :width:   400
+  :width:   800
 
-Note that for visual inspection of FFT it is common to plot logarithm of amplitude rather than FFT itself as it is done
-    in the example above.
+``apodization`` attribute can also take following values which correspond to types of apodization windows:
+``hann`` (or ``apodization=True``), ``hamming``, ``tukey``.
 
-By default both methods calculate FFT and IFFT with origin at (0, 0) (not in the centre of FFT). Use `shifted=True` option to
+Note that for visual inspection of FFT it is common to plot logarithm of amplitude
+rather than FFT itself as it is done in the example above.
+
+By default both methods calculate FFT and IFFT with origin at (0, 0) (not in the centre of FFT). Use ``shifted=True`` option to
 calculate FFT and the inverse with origin shifted in the centre.
 
 .. code-block:: python
 
     >>> im_ifft = im.fft(shifted=True).ifft(shifted=True)
+
 
 .. _signal.change_dtype:
 
@@ -1243,6 +1252,54 @@ methods e.g.:
    >>> hs.signals.Signal1D(np.zeros((4,5,6))).T.deepcopy()
    <Signal2D, title: , dimensions: (6|4, 5)>
 
+
+Applying apodization window
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Apodization window (also known as apodization function) can be applied to a signal
+using :py:meth:`~.signal.BaseSignal.apply_apodization` method. By default standard
+Hann window is used:
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.ones(1000))
+    >>> sa = s.apply_apodization()
+    >>> sa.metadata.General.title = 'Hann window'
+    >>> sa.plot()
+
+
+.. figure::  images/hann_window.png
+  :align:   center
+  :width:   400
+
+Higher order Hann window can be used in order to keep larger fraction of intensity of original signal.
+This can be done providing an integer number for the order of the window through
+keyword argument ``hann_order``. (The last one works only together with default value of ``window`` argument
+or with ``window='hann'``.)
+
+.. code-block:: python
+
+    >>> im = hs.datasets.example_signals.reference_hologram().isig[:200, :200]
+    >>> ima = im.apply_apodization(window='hann', hann_order=3)
+    >>> hs.plot.plot_images([im, ima], vmax=3000, tight_layout=True)
+
+
+.. figure::  images/hann_3d_order_ref_holo.png
+  :align:   center
+  :width:   800
+
+In addition to Hann window also Hamming or Tukey windows can be applied using ``window`` attribute
+selecting ``'hamming'`` or ``'tukey'`` respectively.
+
+The shape of Tukey window can be adjusted using parameter alpha
+provided through ``tukey_alpha`` keyword argument (only used when ``window='tukey'``).
+The parameter represents the fraction of the window inside the cosine tapered region,
+i.e. smaller is alpha larger is the middle flat region where the original signal
+is preserved. If alpha is one, the Tukey window is equivalent to a Hann window.
+(Default value is 0.5)
+
+Apodization can be applied in place by setting keyword argument ``inplace`` to ``True``.
+In this case method will not return anything.
 
 Basic statistical analysis
 --------------------------
