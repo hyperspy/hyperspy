@@ -53,7 +53,7 @@ user = {'name': 'John Doe', 'institution': 'TestUniversity',
 microscope = {'name': 'Titan', 'voltage': '300kV'}
 sample = {'material': 'TiO2', 'preparation': 'FIB'}
 comments = {'comment': 'Test'}
-test_title = 'This is a test!'
+test_title = '/signals/This is a test!'
 
 
 def test_signal_3d_loading():
@@ -126,6 +126,39 @@ class TestMinimalSave():
         self.signal = Signal1D([0, 1])
         with tempfile.TemporaryDirectory() as tmp:
             self.signal.save(os.path.join(tmp, 'testfile.emd'))
+
+
+class TestReadSeveralDatasets:
+
+    def setup_method(self):
+        tmpdir = tempfile.TemporaryDirectory()
+        hdf5_dataset_path = os.path.join(tmpdir.name, "test_dataset.emd")
+        f = h5py.File(hdf5_dataset_path, mode="w")
+        f.attrs.create('version_major', 0)
+        f.attrs.create('version_minor', 2)
+
+        group_path_list = ['exp/data_0', 'exp/data_1', 'calc/data_0']
+
+        for group_path in group_path_list:
+            group = f.create_group(group_path)
+            group.attrs.create('emd_group_type', 1)
+            data = np.random.random((128, 128))
+            group.create_dataset(name='data', data=data)
+            group.create_dataset(name='dim1', data=range(128))
+            group.create_dataset(name='dim2', data=range(128))
+
+        f.close()
+
+        self.group_path_list = group_path_list
+        self.hdf5_dataset_path = hdf5_dataset_path
+        self.tmpdir = tmpdir
+
+    def teardown_method(self):
+        self.tmpdir.cleanup()
+
+    def test_load_file(self):
+        s = load(self.hdf5_dataset_path)
+        assert len(s) == len(self.group_path_list)
 
 
 class TestCaseSaveAndRead():
