@@ -323,9 +323,11 @@ class Model1D(BaseModel):
         if value is not None:
             if (value.axes_manager.navigation_shape !=
                     self.signal.axes_manager.navigation_shape):
-                raise ValueError('The low-loss does not have '
-                                 'the same navigation dimension as the '
-                                 'core-loss')
+                raise ValueError('The low-loss does not have the same '
+                                 'navigation dimension as the core-loss.')
+            if not value.axes_manager.signal_axes[0].is_linear:
+                raise ValueError('Low loss convolution is not supported with '
+                                 'non linear signal axes.')
             self._low_loss = value
             self.set_convolution_axis()
             self.convolved = True

@@ -404,6 +404,7 @@ class BaseDataAxis(t.HasTraits):
         self.__init__(**d, size=self.size, scale=scale, offset=self.low_value)
 
 
+@add_gui_method(toolkey="DataAxis")
 class DataAxis(BaseDataAxis):
 
     def __init__(self,
@@ -594,7 +595,6 @@ class FunctionalDataAxis(BaseDataAxis):
         self.__init__(**d, axis=self.axis)
 
 
-@add_gui_method(toolkey="DataAxis")
 class LinearDataAxis(FunctionalDataAxis):
     scale = t.Float()
     offset = t.Float()
