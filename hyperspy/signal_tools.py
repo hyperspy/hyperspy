@@ -299,13 +299,13 @@ class Smoothing(t.HasTraits):
 
         self.signal._plot.signal_plot.create_right_axis()
         self.smooth_diff_line = drawing.signal1d.Signal1DLine()
+        self.smooth_diff_line.axes_manager = self.signal.axes_manager
         self.smooth_diff_line.data_function = self.diff_model2plot
         self.smooth_diff_line.set_line_properties(
             color=self.line_color_rgb,
             type='line')
         self.signal._plot.signal_plot.add_line(self.smooth_diff_line,
                                                ax='right')
-        self.smooth_diff_line.axes_manager = self.signal.axes_manager
 
     def _line_color_ipy_changed(self):
         if hasattr(self, "line_color"):
@@ -320,13 +320,14 @@ class Smoothing(t.HasTraits):
         self.smooth_diff_line = None
 
     def _differential_order_changed(self, old, new):
-        if old == 0:
-            self.turn_diff_line_on(new)
-            self.smooth_diff_line.plot()
         if new == 0:
             self.turn_diff_line_off()
             return
-        self.smooth_diff_line.update(force_replot=False)
+        if old == 0:
+            self.turn_diff_line_on(new)
+            self.smooth_diff_line.plot()
+        else:
+            self.smooth_diff_line.update(force_replot=False)
 
     def _line_color_changed(self, old, new):
         self.smooth_line.line_properties = {
