@@ -53,11 +53,8 @@ class ComponentFit(SpanSelectorInSignal1D):
         self.fit_kwargs = kwargs
         self.only_current = only_current
         if signal_range == "interactive":
-            if not hasattr(self.model, '_plot'):
-                self.model.plot()
-            elif self.model._plot is None:
-                self.model.plot()
-            elif self.model._plot.is_active() is False:
+            if (not hasattr(self.model, '_plot') or self.model._plot is None or
+                not self.model._plot.is_active):
                 self.model.plot()
             self.span_selector_switch(on=True)
 
@@ -781,8 +778,7 @@ class Model1D(BaseModel):
         disable_adjust_position
 
         """
-        if (self._plot is None or
-                self._plot.is_active() is False):
+        if self._plot is None or not self._plot.is_active:
             self.plot()
         if self._position_widgets:
             self.disable_adjust_position()
