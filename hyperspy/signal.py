@@ -2136,12 +2136,12 @@ class BaseSignal(FancySlicing,
 
     def _replot(self):
         if self._plot is not None:
-            if self._plot.is_active() is True:
+            if self._plot.is_active:
                 self.plot()
 
     def update_plot(self):
         if self._plot is not None:
-            if self._plot.is_active() is True:
+            if self._plot.is_active:
                 if self._plot.signal_plot is not None:
                     self._plot.signal_plot.update()
                 if self._plot.navigator_plot is not None:

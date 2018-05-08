@@ -57,7 +57,7 @@ class SpanSelectorInSignal1D(t.HasTraits):
         pass
 
     def span_selector_switch(self, on):
-        if not self.signal._plot.is_active():
+        if not self.signal._plot.is_active:
             return
 
         if on is True:
@@ -73,7 +73,7 @@ class SpanSelectorInSignal1D(t.HasTraits):
             self.span_selector = None
 
     def update_span_selector_traits(self, *args, **kwargs):
-        if not self.signal._plot.is_active():
+        if not self.signal._plot.is_active:
             return
         self.ss_left_value = self.span_selector.rect.get_x()
         self.ss_right_value = self.ss_left_value + \
@@ -135,7 +135,7 @@ class LineInSignal1D(t.HasTraits):
         self.signal._plot.signal_plot.figure.canvas.draw_idle()
 
     def switch_on_off(self, obj, trait_name, old, new):
-        if not self.signal._plot.is_active():
+        if not self.signal._plot.is_active:
             return
 
         if new is True and old is False:
@@ -152,7 +152,7 @@ class LineInSignal1D(t.HasTraits):
             self.draw()
 
     def update_position(self, *args, **kwargs):
-        if not self.signal._plot.is_active():
+        if not self.signal._plot.is_active:
             return
         self.position = self.axes_manager.coordinates[0]
 
@@ -269,8 +269,7 @@ class Smoothing(t.HasTraits):
         self.plot()
 
     def plot(self):
-        if self.signal._plot is None or not \
-                self.signal._plot.is_active():
+        if self.signal._plot is None or not self.signal._plot.is_active:
             self.signal.plot()
         hse = self.signal._plot
         l1 = hse.signal_plot.ax_lines[0]
@@ -343,7 +342,7 @@ class Smoothing(t.HasTraits):
         return smoothed
 
     def close(self):
-        if self.signal._plot.is_active():
+        if self.signal._plot.is_active:
             if self.differential_order != 0:
                 self.turn_diff_line_off()
             self.smooth_line.close()
@@ -608,11 +607,8 @@ class IntegrateArea(SpanSelectorInSignal1D):
         self.signal = signal
         self.axis = self.signal.axes_manager.signal_axes[0]
         self.span_selector = None
-        if not hasattr(self.signal, '_plot'):
-            self.signal.plot()
-        elif self.signal._plot is None:
-            self.signal.plot()
-        elif self.signal._plot.is_active() is False:
+        if (not hasattr(self.signal, '_plot') or self.signal._plot is None or 
+            not self.signal._plot.is_active):
             self.signal.plot()
         self.span_selector_switch(on=True)
 
