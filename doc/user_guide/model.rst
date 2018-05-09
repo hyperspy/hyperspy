@@ -15,7 +15,7 @@ the :py:class:`~.model.BaseModel` class is available for both kinds.
    2D models. Note that this first implementation lacks many of the
    features of 1D models e.g. plotting. Those will be added in future releases.
 
-Models can be created and and fit to experimental data in both one and two
+Models can be created and fit to experimental data in both one and two
 dimensions i.e. spectra and images respectively. Most of the syntax is
 identical in either case. A one-dimensional model is created when a model
 is created for a :py:class:`~._signals.signal1D.Signal1D` whereas a two-
@@ -154,7 +154,7 @@ Both symbolic and numerical substitutions are allowed:
 
 :py:class:`~._components.expression.Expression` uses `Sympy
 <http://www.sympy.org>`_ internally to turn the string into
-a funtion. By default it "translates" the expression using
+a function. By default it "translates" the expression using
 numpy, but often it is possible to boost performance by using
 `numexpr <https://github.com/pydata/numexpr>`_ instead.
 
@@ -453,7 +453,7 @@ Example:
     array([ 40.,  20.,  20.,  20.,  20.,  20.,  20.,  20.,  20.,  20.])
 
 
-To set the the `free` state of a parameter change the
+To set the `free` state of a parameter change the
 :py:attr:`~.component.Parameter.free` attribute. To change the `free` state of
 all parameters in a component to `True` use
 :py:meth:`~.component.Component.set_parameters_free`, and
@@ -669,7 +669,7 @@ algorithms, see the
     +--------------------------+--------+------------------+------------+--------+
 
 
-The following example shows how to perfom least squares with error estimation.
+The following example shows how to perform least squares with error estimation.
 
 First we create data consisting of a line line ``y = a*x + b`` with ``a = 1``
 and ``b = 100`` and we add white noise to it:
@@ -827,8 +827,8 @@ To disable this feature call
 
 .. versionadded:: 1.4 ``Signal1D.plot`` keyword arguments
 
-All extra keyword argments are passes to the :meth:`plot` method of the
-corresponing signal object. For example, the following plots the model signal
+All extra keyword arguments are passes to the :meth:`plot` method of the
+corresponding signal object. For example, the following plots the model signal
 figure but not its navigator:
 
 .. code-block:: python
@@ -914,7 +914,7 @@ undesired spectral channels from the fitting process:
 Fitting multidimensional datasets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To fit the model to all the elements of a multidimensional datataset use
+To fit the model to all the elements of a multidimensional dataset use
 :py:meth:`~.model.BaseModel.multifit`, e.g.:
 
 .. code-block:: python
@@ -1165,7 +1165,7 @@ Usage
 ^^^^^
 
 After creating a model and fitting suitable seed pixels, to fit the rest of
-the multi-dimensional dataset using SAMFire we must craete a SAMFire instance
+the multi-dimensional dataset using SAMFire we must create a SAMFire instance
 as follows:
 
 .. code-block:: python
