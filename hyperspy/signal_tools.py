@@ -334,7 +334,12 @@ class Smoothing(t.HasTraits):
         if self.smooth_diff_line is not None:
             self.smooth_diff_line.line_properties = {
                 'color': self.line_color_rgb}
-        self.update_lines()
+        try:
+            # it seems that changing the properties can be done before the
+            # first rendering event, which can cause issue with blitting
+            self.update_lines()
+        except AttributeError:
+            pass
 
     def diff_model2plot(self, axes_manager=None):
         smoothed = np.diff(self.model2plot(axes_manager),
@@ -607,8 +612,8 @@ class IntegrateArea(SpanSelectorInSignal1D):
         self.signal = signal
         self.axis = self.signal.axes_manager.signal_axes[0]
         self.span_selector = None
-        if (not hasattr(self.signal, '_plot') or self.signal._plot is None or 
-            not self.signal._plot.is_active):
+        if (not hasattr(self.signal, '_plot') or self.signal._plot is None or
+                not self.signal._plot.is_active):
             self.signal.plot()
         self.span_selector_switch(on=True)
 
