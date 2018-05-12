@@ -366,16 +366,17 @@ class EMD(object):
                     'sample', 'comments']:  # Nodes which are not the data!
             if key in node_list:
                 node_list.pop(node_list.index(key))  # Pop all unwanted nodes!
-        # One node should remain, the data node (named 'data', 'signals',
-        # 'experiments', ...)!
-        assert len(node_list) == 1, 'Dataset location is ambiguous!'
-        data_group = emd_file.get(node_list[0])
-        if data_group is not None:
-            for name, group in data_group.items():
-                if isinstance(group, h5py.Group):
-                    if group.attrs.get('emd_group_type') == 1:
-                        emd._read_signal_from_group(
-                            name, group, lazy)
+        if len(node_list) == 0:
+            raise IOError("No datasets found in {0}".format(filename))
+        for node in node_list:
+            data_group = emd_file.get(node)
+            if data_group is not None:
+                for group in data_group.values():
+                    name = group.name
+                    if isinstance(group, h5py.Group):
+                        if group.attrs.get('emd_group_type') == 1:
+                            emd._read_signal_from_group(
+                                name, group, lazy)
         # Close file and return EMD object:
         if not lazy:
             emd_file.close()
