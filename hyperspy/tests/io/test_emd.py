@@ -137,7 +137,7 @@ class TestReadSeveralDatasets:
         f.attrs.create('version_major', 0)
         f.attrs.create('version_minor', 2)
 
-        group_path_list = ['exp/data_0', 'exp/data_1', 'calc/data_0']
+        group_path_list = ['/exp/data_0', '/exp/data_1', '/calc/data_0']
 
         for group_path in group_path_list:
             group = f.create_group(group_path)
@@ -159,6 +159,8 @@ class TestReadSeveralDatasets:
     def test_load_file(self):
         s = load(self.hdf5_dataset_path)
         assert len(s) == len(self.group_path_list)
+        title_list = [s_temp.metadata.General.title for s_temp in s]
+        assert sorted(self.group_path_list) == sorted(title_list)
 
 
 class TestCaseSaveAndRead():
