@@ -266,7 +266,8 @@ def load(filenames=None,
                        for filename in filenames]
 
         if len(objects) == 1:
-            objects = objects[0]
+            objects = objects[0]    
+            
     return objects
 
 
@@ -337,6 +338,50 @@ def load_with_reader(filename,
     if len(objects) == 1:
         objects = objects[0]
     return objects
+
+
+def oneview_is_reader(folder_path):
+    """
+    Imports OneView_IS datasets.
+    These datasets are saved as nested folders with the format:
+    'Dataset/Hour_00/Minute_00/Second_00/*.dm4' etc.
+    Function parameters:
+     
+    folder_path (string): the directory path of the Dataset folder
+    ----------
+    Retuns:
+    imageStack: Hypespy Signal2D lazy stack of the frames, ordered sequentially
+                    The image axes parameters are copied over from first frame.
+                    The thrid axis is defines as 't', scaled with the camera
+                    exposure time, read from the first frame metadata.
+                    OneView_IS mode captures the frames continuously.
+    """
+     
+    os.chdir(folder_path)
+     
+    filenames_sort = []
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            if file.endswith('.dm4') or file.endswith('.dm3'):
+                filenames_sort.append(os.path.join(root, file))
+    
+    filenames_sort.sort()
+
+    #This works due to the naming format of these datasets.
+    #May need changing if to cover other formats
+     
+    imageStack = load(filenames_sort, lazy = True, stack = True)
+     
+    imageStack.axes_manager[0].name = 't'
+    imageStack.axes_manager[0].units = 'sec'
+    imageStack.axes_manager[0].scale = imageStack.inav[0].metadata.\
+            Acquisition_instrument.TEM.Camera.exposure
+     
+    imageStack.axes_manager['t'].index = 0 
+    #For some reason the index is changed to 211! Resettting to 0 above.
+     
+    return imageStack
+
 
 
 def assign_signal_subclass(dtype,

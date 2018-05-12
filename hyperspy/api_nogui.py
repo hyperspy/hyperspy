@@ -74,6 +74,7 @@ del docstrings
 from hyperspy.Release import version as __version__
 from hyperspy import signals
 from hyperspy.io import load
+from hyperspy.io import oneview_is_reader
 from hyperspy.defaults_parser import preferences
 from hyperspy.utils import *
 from hyperspy import datasets
