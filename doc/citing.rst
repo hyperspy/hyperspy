@@ -7,4 +7,4 @@ publication, please acknowledge that fact by citing the software. Click on
 the DOI badge below for formatted citation formats.
 
 .. image:: https://zenodo.org/badge/doi/10.5281/zenodo.1221347.svg
-   :target: http://dx.doi.org/10.5281/zenodo.1221347
+   :target: https://doi.org/10.5281/zenodo.1221347
