@@ -1042,9 +1042,45 @@ to reverse the :py:func:`~.utils.stack` function:
     >>> image = image.split()[0].split()[0]
     >>> image.plot()
 
-.. figure::  images/split_ascent_3_3.png
+.. figure::  images/split_lena_3_3.png
   :align:   center
   :width:   400
+
+  Splitting example.
+
+FFT and iFFT
+^^^^^^^^^^^^
+
+The Fast Fourier transform and its inverse can be applied on a signal with the :py:meth:`~.signal.BaseSignal.fft` and the :py:meth:`~.signal.BaseSignal.ifft` methods.
+
+.. code-block:: python
+
+    >>> import numpy as np
+    >>> im = hs.datasets.example_signals.object_hologram()
+    >>> np.log(im.fft(shifted=True).amplitude).plot()
+
+.. figure::  images/hologram_fft.png
+  :align:   center
+  :width:   400
+
+Note that for visual inspection of FFT it is common to plot logarithm of amplitude rather than FFT itself as it is done
+    in the example above.
+
+By default both methods calculate FFT and IFFT with origin at (0, 0) (not in the centre of FFT). Use `shifted=True` option to
+calculate FFT and the inverse with origin shifted in the centre.
+
+.. code-block:: python
+
+    >>> im_ifft = im.fft(shifted=True).ifft(shifted=True)
+
+Simple operations over one axis
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* :py:meth:`~.signal.Signal.sum`
+* :py:meth:`~.signal.Signal.mean`
+* :py:meth:`~.signal.Signal.max`
+* :py:meth:`~.signal.Signal.min`
+* :py:meth:`~.signal.Signal.std`
 
   Splitting example.
 

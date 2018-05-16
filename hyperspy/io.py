@@ -53,9 +53,9 @@ def load(filenames=None,
     """
     Load potentially multiple supported file into an hyperspy structure
 
-    Supported formats: hspy (HDF5), msa, Gatan dm3, Ripple (rpl+raw), Bruker bcf,
-    FEI ser and emi, SEMPER unf, EMD, EDAX spd/spc, tif, and a number
-    of image formats.
+    Supported formats: hspy (HDF5), msa, Gatan dm3, Ripple (rpl+raw),
+    Bruker bcf and spx, FEI ser and emi, SEMPER unf, EMD, EDAX spd/spc,
+    tif, and a number of image formats.
 
     Any extra keyword is passed to the corresponding reader. For
     available options see their individual documentation.
@@ -123,11 +123,35 @@ def load(filenames=None,
        bcf is parsed into array with depth cutoff at coresponding given energy.
        This allows to conserve the memory, with cutting-off unused spectra's
        tail, or force enlargement of the spectra size.
-    select_type: {'spectrum', 'image', None}
-       For Bruker bcf files, if one of 'spectrum' or 'image' (default is None)
-       the loader returns either only hypermap or only SEM/TEM electron images.
-
-
+    select_type: {'spectrum_image', 'image', 'single_spectrum', None} 
+       If `None` (default), all data are loaded. 
+       For Bruker bcf and FEI emd files: if one of 'spectrum_image', 'image' or 
+       'single_spectrum', the loader return single_spectrumns either only the 
+       spectrum image or only the images (including EDS map for FEI emd files) 
+       or only the single spectra (for FEI emd files).
+    first_frame : int (default 0)
+       Only for FEI emd files: load only the data acquired after the specified 
+       fname.
+    last_frame : None or int (default None)
+       Only for FEI emd files: load only the data acquired up to specified 
+       fname. If None, load up the data to the end.
+    sum_frames : bool (default is True)
+       Only for FEI emd files: load each EDS frame individually.
+    sum_EDS_detectors : bool (default is True)
+       Only for FEI emd files: load each frame individually. If True, the signal 
+       from the different detector are summed. If False, a distinct signal is 
+       returned for each EDS detectors.
+    rebin_energy : int, a multiple of the length of the energy dimension (default 1)
+       Only for FEI emd files: rebin the energy axis by the integer provided 
+       during loading in order to save memory space.
+    SI_data_dtype : numpy.dtype
+       Only for FEI emd files: set the dtype of the spectrum image data in 
+       order to save memory space. If None, the default dtype from the FEI emd 
+       file is used.
+    load_SI_image_stack : bool (default False)
+       Load the stack of STEM images acquired simultaneously as the EDS 
+       spectrum image.
+       
 
     Returns
     -------
@@ -274,7 +298,7 @@ def load_single_file(filename,
             reader = image
             return load_with_reader(filename, reader,
                                     signal_type=signal_type, **kwds)
-        except:
+        except BaseException:
             raise IOError('If the file format is supported'
                           ' please report this error')
     else:
@@ -318,64 +342,53 @@ def load_with_reader(filename,
 def assign_signal_subclass(dtype,
                            signal_dimension,
                            signal_type="",
-                           lazy=False):
+                           signal_origin="",):
     """Given record_by and signal_type return the matching Signal subclass.
 
     Parameters
     ----------
-    dtype : :class:`~.numpy.dtype`
-    signal_dimension: int
-    signal_type : {"EELS", "EDS", "EDS_SEM", "EDS_TEM", "DielectricFunction", "", str}
-    lazy: bool
-
+    record_by: {"spectrum", "image", ""}
+    signal_type : {"EELS", "EDS", "EDS_TEM", "", str}
+    signal_origin : {"experiment", "simulation", ""}
+    is_ft : {True,False,""}
+    
     Returns
     -------
     Signal or subclass
 
     """
     import hyperspy.signals
-    import hyperspy._lazy_signals
-    from hyperspy.signal import BaseSignal
-    # Check if parameter values are allowed:
-    if np.issubdtype(dtype, np.complexfloating):
-        dtype = 'complex'
-    elif ('float' in dtype.name or 'int' in dtype.name or
-          'void' in dtype.name or 'bool' in dtype.name or
-          'object' in dtype.name):
-        dtype = 'real'
-    else:
-        raise ValueError('Data type "{}" not understood!'.format(dtype.name))
-    if not isinstance(signal_dimension, int) or signal_dimension < 0:
-        raise ValueError("signal_dimension must be a positive interger")
-    base_signals = find_subclasses(hyperspy.signals, BaseSignal)
-    lazy_signals = find_subclasses(hyperspy._lazy_signals,
-                                   hyperspy._lazy_signals.LazySignal)
-    if lazy:
-        signals = lazy_signals
-    else:
-        signals = {
-            k: v for k,
-            v in base_signals.items() if k not in lazy_signals}
-    dtype_matches = [s for s in signals.values() if dtype == s._dtype]
-    dtype_dim_matches = [s for s in dtype_matches
-                         if signal_dimension == s._signal_dimension]
-    dtype_dim_type_matches = [s for s in dtype_dim_matches if signal_type == s._signal_type
-                              or signal_type in s._alias_signal_types]
-    if dtype_dim_type_matches:
-        # Perfect match found, return it.
-        return dtype_dim_type_matches[0]
-    elif [s for s in dtype_dim_matches if s._signal_type == ""]:
-        # just signal_dimension and dtype matches
-        # Return a general class for the given signal dimension.
-        return [s for s in dtype_dim_matches if s._signal_type == ""][0]
-    else:
-        # no signal_dimension match either, hence return the general subclass for
-        # correct dtype
-        return [s for s in dtype_matches if s._signal_dimension == -
-                1 and s._signal_type == ""][0]
-
-
-def dict2signal(signal_dict, lazy=False):
+    from hyperspy.signal import Signal
+    if record_by and record_by not in ["image", "spectrum"]:
+        raise ValueError("record_by must be one of: None, empty string, "
+                         "\"image\" or \"spectrum\"")
+    if signal_origin and signal_origin not in ["experiment", "simulation"]:
+        raise ValueError("signal_origin must be one of: None, empty string, "
+                         "\"experiment\" or \"simulation\"")
+        
+    signals = hyperspy.misc.utils.find_subclasses(hyperspy.signals, Signal)
+    signals['Signal'] = Signal
+    
+    if signal_origin == "experiment":
+        signal_origin = ""
+        
+    if is_ft==False:
+        is_ft = ""
+    
+    preselection = [s for s in
+                    [s for s in signals.itervalues()
+                     if record_by == s._record_by]
+                    if signal_origin == s._signal_origin]
+    perfect_match = [s for s in preselection
+                     if signal_type == s._signal_type]
+    selection = perfect_match[0] if perfect_match else \
+                [s for s in preselection if s._signal_type == ""][0]
+    #if is_ft:
+    #    selection = signals['FourierTransformSignal']
+    return selection
+    
+    
+def dict2signal(signal_dict):
     """Create a signal (or subclass) instance defined by a dictionary
 
     Parameters

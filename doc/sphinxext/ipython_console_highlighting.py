@@ -111,6 +111,7 @@ def setup(app):
     # suppresses the sphinx warning we'd get without it.
     pass
 
+
 #-----------------------------------------------------------------------------
 # Register the extension as a valid pygments lexer
 highlighting.lexers['ipython'] = IPythonConsoleLexer()

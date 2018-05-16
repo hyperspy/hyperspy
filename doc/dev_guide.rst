@@ -206,6 +206,9 @@ Useful hints on testing:
   your PR. There should be a link to it at the bottom of your PR on the github
   PR page. This service can help you to find how well your code is being tested
   and exactly which part is not currently tested.
+* `pytest-sugar <https://pypi.python.org/pypi/pytest-sugar>`_ can be installed
+  to have a nicer look and feel of py.test in the console (encoding issue have
+  been reported in the Windows console).
 
 
 .. _plot-test-label:
@@ -268,6 +271,10 @@ specification <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT
 
 User-guide Documentation -- A description of the functionality of the code and
 how to use it with examples and links to the relevant code.
+
+When writing both the docstrings and user guide documentation, it is useful to
+have some kind of data which the users can use themselves. Artificial
+datasets for this purpose can be found in `hyperspy.datasets.artificial_data`.
 
 Build the documentation -- To check the output of what you wrote, you can build
 the documentation, which requires python-sphinx and numpydoc to be installed.

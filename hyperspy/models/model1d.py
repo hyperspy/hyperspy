@@ -386,7 +386,7 @@ class Model1D(BaseModel):
             If True, only the active components will be used to build the
             model.
         component_list : list or None
-            If None, the sum of all the components is returned. If list, only 
+            If None, the sum of all the components is returned. If list, only
             the provided components are returned
 
         cursor: 1 or 2
@@ -644,7 +644,7 @@ class Model1D(BaseModel):
             s = ns
         return s
 
-    def plot(self, plot_components=False):
+    def plot(self, plot_components=False, **kwargs):
         """Plots the current spectrum to the screen and a map with a
         cursor to explore the SI.
 
@@ -652,11 +652,14 @@ class Model1D(BaseModel):
         ----------
         plot_components : bool
             If True, add a line per component to the signal figure.
+        kwargs:
+            All extra keyword arguements are passed to ``Signal1D.plot``
+
 
         """
 
         # If new coordinates are assigned
-        self.signal.plot()
+        self.signal.plot(**kwargs)
         _plot = self.signal._plot
         l1 = _plot.signal_plot.ax_lines[0]
         color = l1.line.get_color()

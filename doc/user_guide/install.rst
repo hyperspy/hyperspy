@@ -128,7 +128,8 @@ Alternatively you can select the extra functionalities required:
 * ``gui-traitsui`` to install required libraries to use the GUI elements based
   on `traitsui <http://docs.enthought.com/traitsui/>`_
 * ``test`` to install required libraries to run HyperSpy's unit tests.
-* ``doc`` to install required libraries to build HyperSpy's documentation.
+* ``lazy_FEI_EMD`` to install required libraries to load FEI spectrum imgages
+  lazily.
 
 For example:
 

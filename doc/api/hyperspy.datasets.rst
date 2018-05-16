@@ -13,6 +13,15 @@ hyperspy\.datasets\.example\_signals module
     :show-inheritance:
 
 
+hyperspy\.datasets\.artificial\_data module
+-------------------------------------------
+
+.. automodule:: hyperspy.datasets.artificial_data
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 Module contents
 ---------------
 
