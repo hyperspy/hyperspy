@@ -4201,7 +4201,7 @@ class BaseSignal(FancySlicing,
         """
         self.metadata.Signal.signal_origin = origin
 
-    def print_summary_statistics(self, formatter="%.3f"):
+    def print_summary_statistics(self, formatter="%.3g"):
         """Prints the five-number summary statistics of the data, the mean and
         the standard deviation.
 
