@@ -31,7 +31,6 @@ from hyperspy.misc.utils import (strlist2enumeration, find_subclasses)
 from hyperspy.misc.utils import stack as stack_method
 from hyperspy.io_plugins import io_plugins, default_write_ext
 from hyperspy.exceptions import VisibleDeprecationWarning
-from hyperspy.defaults_parser import preferences
 from hyperspy.ui_registry import get_gui
 
 _logger = logging.getLogger(__name__)
@@ -500,9 +499,17 @@ def save(filename, signal, overwrite=None, **kwds):
                           'The following formats can: %s' %
                           strlist2enumeration(yes_we_can))
         ensure_directory(filename)
+        is_file = os.path.isfile(filename)
         if overwrite is None:
-            overwrite = overwrite_method(filename)
-        if overwrite is True:
+            write = overwrite_method(filename) # Ask what to do
+        elif overwrite is True or (overwrite is False and not is_file):
+            write = True # Write the file
+        elif overwrite is False and is_file:
+            write = False # Don't write the file
+        else:
+            raise ValueError("`overwrite` parameter can only be None, True or "
+                             "False.")
+        if write:
             writer.file_writer(filename, signal, **kwds)
             _logger.info('The %s file was created' % filename)
             folder, filename = os.path.split(os.path.abspath(filename))

@@ -359,7 +359,6 @@ class TestSmoothing:
 @pytest.mark.parametrize('offset', [3, 0])
 def test_hanning(lazy, offset):
     sig = hs.signals.Signal1D(np.random.rand(5, 20))
-    ind = 2
     if lazy:
         sig = sig.as_lazy()
     data = np.array(sig.data)
@@ -375,3 +374,16 @@ def test_hanning(lazy, offset):
     assert channels == sig.hanning_taper(side='both', channels=channels,
                                          offset=offset)
     np.testing.assert_allclose(data, sig.data)
+
+
+@pytest.mark.parametrize('float_data', [True, False])
+def test_hanning_wrong_type(float_data):
+    sig = hs.signals.Signal1D(np.arange(100).reshape(5, 20))
+    if float_data:
+        sig.change_dtype('float')
+
+    if float_data:
+        sig.hanning_taper()
+    else:
+        with pytest.raises(TypeError):
+            sig.hanning_taper()
