@@ -263,6 +263,13 @@ class TestROIs():
         assert np.sum(sr.data) == (n**2 - 3 * 4) * 4
         assert np.sum(sr_ann.data) == 4 * 5 * 4
 
+        s.plot()
+        r_signal = r.interactive(signal=s)
+        r_ann_signal = r_ann.interactive(signal=s)
+
+        assert np.sum(r_signal.sum().data) == (n**2 - 3 * 4) * 4
+        assert np.sum(r_ann_signal.sum().data) == 4 * 5 * 4
+
     def test_2d_line_spec_plot(self):
         r = Line2DROI(10, 10, 150, 50, 5)
         s = self.s_s
