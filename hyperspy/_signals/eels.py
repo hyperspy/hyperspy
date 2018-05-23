@@ -1352,10 +1352,12 @@ class EELSSpectrum_mixin:
         m.get_dimensions_from_data()
         if "Acquisition_instrument.TEM.Detector.EELS.dwell_time" in m.metadata:
             mdeels.EELS.dwell_time *= time_factor
-        if "Acquisition_instrument.TEM.Detector.EELS.exposure" in m.metadata:
+        elif "Acquisition_instrument.TEM.Detector.EELS.exposure" in m.metadata:
             mdeels.EELS.exposure *= time_factor
-        if "Acquisition_instrument.TEM.Detector.Camera.exposure" in m.metadata:
+        elif "Acquisition_instrument.TEM.Detector.Camera.exposure" in m.metadata:
             mdeels.Camera.exposure *= time_factor
+        else:
+            warnings.warn('No dwell_time could be found in the metadata so this has not been updated.') 
         if out is None:
             return m
         else:
