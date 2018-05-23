@@ -2360,6 +2360,9 @@ class BaseSignal(FancySlicing,
         Sum =  164.0
 
         """
+        if self.metadata.Signal.binned == False:
+            raise TypeError('The signal is not binned, hence cannot be rebinned.\
+            Change using s.metadata.Signal.binned = True')
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
             scale=scale,)
@@ -2375,6 +2378,8 @@ class BaseSignal(FancySlicing,
         else:
             s.data = data
         s.get_dimensions_from_data()
+        for i, factor in enumerate(factors):
+            s.axes_manager[i].offset = (factor - 1)/2*s.axes_manager[i].scale
         for axis, axis_src in zip(s.axes_manager._axes,
                                   self.axes_manager._axes):
             axis.scale = axis_src.scale * factors[axis.index_in_array]
