@@ -188,12 +188,17 @@ class EDS_mixin:
         aimd = m.metadata.Acquisition_instrument
         if "Acquisition_instrument.SEM.Detector.EDS.real_time" in m.metadata:
             aimd.SEM.Detector.EDS.real_time *= time_factor
+        elif "Acquisition_instrument.TEM.Detector.EDS.real_time" in m.metadata:
+            aimd.TEM.Detector.EDS.real_time *= time_factor
+        else:
+            warnings.warn("real_time could not be found in the metadata and has not been updated.")
         if "Acquisition_instrument.SEM.Detector.EDS.live_time" in m.metadata:
             aimd.SEM.Detector.EDS.live_time *= time_factor
-        if "Acquisition_instrument.TEM.Detector.EDS.real_time" in m.metadata:
-            aimd.TEM.Detector.EDS.real_time *= time_factor
-        if "Acquisition_instrument.TEM.Detector.EDS.live_time" in m.metadata:
+        elif "Acquisition_instrument.TEM.Detector.EDS.live_time" in m.metadata:
             aimd.TEM.Detector.EDS.live_time *= time_factor
+        else: 
+            warnings.warn("real_time could not be found in the metadata and has not been updated.")
+
         if out is None:
             return m
         else:
