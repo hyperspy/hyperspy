@@ -185,7 +185,7 @@ def Windowabsorption(model,detector):
         Accc=np.interp(b, x, y)
     else :
         a=detector
-        b=(model._signal.axes_manager.signal_axes[-1].axis)
+        b=(model._signal.axes_manager.signal_axes[-1].axis)-0.04
         x =a[:,0]
         y = a[:,1]
         Accc=np.interp(b, x, y)
@@ -284,13 +284,16 @@ class Physical_background(Component):
 
         MuC=np.array(self.MuC.value,dtype=float)
         MuC=MuC[self.model.channel_switches]
+        cosec=(1/np.sin(teta))
 	
         emission=(a*((E0-x)/x)) #kramer's law
-        absorption=((1-np.exp(-2*Mu*b*10**-5*(1/np.sin(teta))))/((2*Mu*b*10**-5*(1/np.sin(teta))))) #love and scott model. 
-        METabsorption=(np.exp(-Mu*b*10**-5*(1/np.sin(teta)))) #CL model
+        absorption=((1-np.exp(-2*Mu*b*10**-5*cosec))/((2*Mu*b*10**-5*cosec))) #love and scott model. 
+        METabsorption=(np.exp(-Mu*b*10**-5*cosec)) #CL model
 
-        coating=(np.exp(-MuC*1.3*Cthickness*10**-7*(1/np.sin(teta))))# absorption by the coating layer (1.3 is the density)
-
+        if self.coating_thickness.value>0:
+            coating=(np.exp(-MuC*1.3*Cthickness*10**-7*cosec))# absorption by the coating layer (1.3 is the density)
+        else:
+            coating=1
 	
         if self._whitelist['absorption_model'] is 'quadrilateral':
             return np.where((x>0.17) & (x<(E0)),(emission*absorption*Window*coating),0) 
