@@ -1,6 +1,6 @@
-"""Creates a 2D hyperspectrum consisting of two gaussians and plots it.
+"""Creates a 2D hyperspectrum consisting of two Gaussians and plots it.
 
-This example can serve as starting point to test other functionalities on the
+This example can serve as starting point to test other functionality on the
 simulated hyperspectrum.
 
 """
@@ -22,7 +22,7 @@ gs1 = hs.model.components1D.Gaussian()
 # Add it to the model
 m.append(gs1)
 
-# Set the sparameters
+# Set the parameters
 gs1.sigma.value = 10
 # Make the center vary in the -5,5 range around 128
 gs1.centre.map['values'][:] = 256 + (np.random.random((32, 32)) - 0.5) * 10

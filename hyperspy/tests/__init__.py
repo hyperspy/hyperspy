@@ -34,7 +34,7 @@ if fail_on_external:
     # Travis setup has these warnings, so ignore:
     warnings.filterwarnings(
         'ignore',
-        "BaseException\.message has been deprecated as of Python 2\.6",
+        r"BaseException\.message has been deprecated as of Python 2\.6",
         DeprecationWarning)
     # Don't care about warnings in hyperspy in this mode!
     warnings.filterwarnings('default', module="hyperspy")
