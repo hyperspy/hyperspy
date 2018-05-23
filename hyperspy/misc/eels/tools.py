@@ -208,16 +208,14 @@ def ratio(edge_A, edge_B):
 
 
 def eels_constant(s, zlp, t):
-    r"""Calculate the constant of proportionality (k) in the relationship
+    """Calculate the constant of proportionality (k) in the relationship
     between the EELS signal and the dielectric function.
     dielectric function from a single scattering distribution (SSD) using
     the Kramers-Kronig relations.
 
-        .. math::
-
-            S(E)=\frac{I_{0}t}{\pi a_{0}m_{0}v^{2}}\ln\left[1+\left(\frac{\beta}
-            {\theta_{E}}\right)^{2}\right]\Im(\frac{-1}{\epsilon(E)})=
-            k\Im(\frac{-1}{\epsilon(E)})
+    $S(E)=\frac{I_{0}t}{\pi a_{0}m_{0}v^{2}}\ln\left[1+\left(\frac{\beta}
+    {\theta_{E}}\right)^{2}\right]\Im(\frac{-1}{\epsilon(E)})=
+    k\Im(\frac{-1}{\epsilon(E)})$
 
 
     Parameters

@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -25,7 +24,6 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.drawing import utils
 from hyperspy.events import Event, Events
-from hyperspy.exceptions import VisibleDeprecationWarning
 
 
 class Signal1DFigure(BlittedFigure):
@@ -57,6 +55,13 @@ class Signal1DFigure(BlittedFigure):
             'step': utils.ColorCycle(),
             'scatter': utils.ColorCycle(), }
 
+    def create_figure(self):
+        self.figure = utils.create_figure(
+            window_title="Figure " + self.title if self.title
+            else None)
+        utils.on_figure_window_close(self.figure, self._on_close)
+        self.figure.canvas.mpl_connect('draw_event', self._on_draw)
+
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
         animated = self.figure.canvas.supports_blit
@@ -87,11 +92,6 @@ class Signal1DFigure(BlittedFigure):
             line.sf_lines = self.right_ax_lines
             if line.axes_manager is None:
                 line.axes_manager = self.right_axes_manager
-        line.axes_manager.events.indices_changed.connect(
-            line._auto_update_line, [])
-        self.events.closed.connect(
-            lambda: line.axes_manager.events.indices_changed.disconnect(
-                line._auto_update_line), [])
         line.axis = self.axis
         # Automatically asign the color if not defined
         if line.color is None:
@@ -110,6 +110,7 @@ class Signal1DFigure(BlittedFigure):
         self.ax.set_title(self.title)
         x_axis_upper_lims = []
         x_axis_lower_lims = []
+        self._set_background()
         for line in self.ax_lines:
             line.plot()
             x_axis_lower_lims.append(line.axis.axis[0])
@@ -117,15 +118,18 @@ class Signal1DFigure(BlittedFigure):
         for marker in self.ax_markers:
             marker.plot()
         plt.xlim(np.min(x_axis_lower_lims), np.max(x_axis_upper_lims))
-        self.ax.figure.canvas.draw_idle()
+        # To be discussed
+        self.axes_manager.events.indices_changed.connect(self.update, [])
+        self.events.closed.connect(
+            lambda: self.axes_manager.events.indices_changed.disconnect(
+                self.update), [])
         if hasattr(self.figure, 'tight_layout'):
             try:
                 self.figure.tight_layout()
-            except BaseException:
+            except:
                 # tight_layout is a bit brittle, we do this just in case it
                 # complains
                 pass
-        self.figure.canvas.draw()
 
     def _on_close(self):
         if self.figure is None:
@@ -155,9 +159,6 @@ class Signal1DLine(object):
         containing valid line properties. In addition it understands
         the keyword `type` that can take the following values:
         {'scatter', 'step', 'line'}
-    auto_update: bool
-        If False, executing ``_auto_update_line`` does not update the
-        line plot.
 
     Methods
     -------
@@ -188,7 +189,7 @@ class Signal1DLine(object):
         self.axis = None
         self.axes_manager = None
         self.auto_update = True
-        self._plot_imag = False
+        self.get_complex = False
 
         # Properties
         self.line = None
@@ -198,13 +199,6 @@ class Signal1DLine(object):
         self.text_position = (-0.1, 1.05,)
         self._line_properties = {}
         self.type = "line"
-
-    @property
-    def get_complex(self):
-        warnings.warn("The `get_complex` attribute is deprecated and will be"
-                      "removed in 2.0, please use `_plot_imag` instead.",
-                      VisibleDeprecationWarning)
-        return self._plot_imag
 
     @property
     def line_properties(self):
@@ -290,7 +284,7 @@ class Signal1DLine(object):
 
     def plot(self, data=1):
         f = self.data_function
-        if self._plot_imag is False:
+        if self.get_complex is False:
             data = f(axes_manager=self.axes_manager).real
         else:
             data = f(axes_manager=self.axes_manager).imag
@@ -299,6 +293,10 @@ class Signal1DLine(object):
         self.line, = self.ax.plot(self.axis.axis, data,
                                   **self.line_properties)
         self.line.set_animated(self.ax.figure.canvas.supports_blit)
+        self.axes_manager.events.indices_changed.connect(self.update, [])
+        self.events.closed.connect(
+            lambda: self.axes_manager.events.indices_changed.disconnect(
+                self.update), [])
         if not self.axes_manager or self.axes_manager.navigation_size == 0:
             self.plot_indices = False
         if self.plot_indices is True:
@@ -312,21 +310,14 @@ class Signal1DLine(object):
                                      animated=self.ax.figure.canvas.supports_blit)
         self.ax.figure.canvas.draw_idle()
 
-    def _auto_update_line(self, *args, **kwargs):
-        """Updates the line plot only if `auto_update` is `True`.
-
-        This is useful to connect to events that automatically update the line.
-
-        """
-        if self.auto_update:
-            self.update(self, *args, **kwargs)
-
     def update(self, force_replot=False):
         """Update the current spectrum figure"""
+        if self.auto_update is False:
+            return
         if force_replot is True:
             self.close()
             self.plot()
-        if self._plot_imag is False:
+        if self.get_complex is False:
             ydata = self.data_function(axes_manager=self.axes_manager).real
         else:
             ydata = self.data_function(axes_manager=self.axes_manager).imag
@@ -348,7 +339,7 @@ class Signal1DLine(object):
             clipped_ydata = ydata[y1:y2]
             y_max, y_min = (np.nanmax(clipped_ydata),
                             np.nanmin(clipped_ydata))
-            if self._plot_imag:
+            if self.get_complex:
                 yreal = self.data_function(axes_manager=self.axes_manager).real
                 clipped_yreal = yreal[y1:y2]
                 y_min = min(y_min, clipped_yreal.min())
@@ -357,7 +348,7 @@ class Signal1DLine(object):
         if self.plot_indices is True:
             self.text.set_text(self.axes_manager.indices)
         if self.ax.figure.canvas.supports_blit:
-            self.ax.hspy_fig._update_animated()
+            self.ax.hspy_fig._draw_animated()
         else:
             self.ax.figure.canvas.draw_idle()
 
@@ -373,7 +364,7 @@ class Signal1DLine(object):
             self.events.closed.disconnect(f)
         try:
             self.ax.figure.canvas.draw_idle()
-        except BaseException:
+        except:
             pass
 
 

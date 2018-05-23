@@ -475,7 +475,7 @@ def dict2hdfgroup(dictionary, group, **kwds):
         else:
             try:
                 group.attrs[key] = value
-            except BaseException:
+            except:
                 _logger.exception(
                     "The hdf5 writer could not write the following "
                     "information in the file: %s : %s", key, value)
@@ -558,10 +558,8 @@ def overwrite_dataset(group, data, key, signal_axes=None, **kwds):
     else:
         if isinstance(data, da.Array):
             da.store(data.rechunk(dset.chunks), dset)
-        elif data.flags.c_contiguous:
-            dset.write_direct(data)
         else:
-            dset[:] = data
+            da.store(da.from_array(data, chunks=dset.chunks), dset)
 
 
 def hdfgroup2dict(group, dictionary=None, lazy=False):
@@ -729,7 +727,7 @@ def file_writer(filename,
             smd.record_by = ""
         try:
             write_signal(signal, expg, **kwds)
-        except BaseException:
+        except:
             raise
         finally:
             del smd.record_by

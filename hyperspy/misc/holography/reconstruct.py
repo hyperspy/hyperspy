@@ -25,7 +25,7 @@ _logger = logging.getLogger(__name__)
 
 
 def estimate_sideband_position(
-        holo_data, holo_sampling, central_band_mask_radius=None, sb='lower', high_cf=True):
+        holo_data, holo_sampling, central_band_mask_radius=None, sb='lower', high_cf=False):
     """
     Finds the position of the sideband and returns its position.
 
@@ -41,7 +41,7 @@ def estimate_sideband_position(
         Chooses which sideband is taken. 'lower', 'upper', 'left', or 'right'.
     high_cf : bool, optional
         If False, the highest carrier frequency allowed for the sideband location is equal to
-        half of the Nyquist frequency (Default: True).
+        half of the Nyquist frequency (Default: False).
 
     Returns
     -------
@@ -106,7 +106,7 @@ def estimate_sideband_size(sb_position, holo_shape, sb_size_ratio=0.5):
     return np.min(np.linalg.norm(h, axis=1))
 
 
-def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness,
+def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness, high_cf=False,
                 output_shape=None, plotting=False):
     """Core function for holographic reconstruction.
 
@@ -122,6 +122,9 @@ def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness,
         Sideband position in pixel.
     sb_smoothness: float
         Smoothness of the aperture in pixel.
+    high_cf : bool, optional
+        If False, the highest carrier frequency allowed for the sideband location is equal to half
+        of the Nyquist frequency (Default: False).
     output_shape: tuple, optional
         New output shape.
     plotting : boolean

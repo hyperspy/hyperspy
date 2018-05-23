@@ -18,6 +18,7 @@
 
 
 import os.path
+from os import cpu_count
 import configparser
 import logging
 
@@ -25,6 +26,7 @@ import traits.api as t
 
 from hyperspy.misc.config_dir import config_path, os_name, data_path
 from hyperspy.misc.ipython_tools import turn_logging_on, turn_logging_off
+from hyperspy.io_plugins import default_write_ext
 from hyperspy.ui_registry import add_gui_method
 
 defaults_file = os.path.join(config_path, 'hyperspyrc')
@@ -39,7 +41,7 @@ def guess_gos_path():
         # installation
         # location in windows
         program_files = os.environ['PROGRAMFILES']
-        gos = 'Gatan\\DigitalMicrograph\\EELS Reference Data\\H-S GOS Tables'
+        gos = 'Gatan\DigitalMicrograph\EELS Reference Data\H-S GOS Tables'
         gos_path = os.path.join(program_files, gos)
 
         # Else, use the default location in the .hyperspy forlder
@@ -198,7 +200,6 @@ def dictionary_from_template(template):
         dictionary[section] = traited_class.get()
     return dictionary
 
-
 config = configparser.ConfigParser(allow_no_value=True)
 template2config(template, config)
 rewrite = False
@@ -239,7 +240,6 @@ class Preferences(t.HasTraits):
         config = configparser.ConfigParser(allow_no_value=True)
         template2config(template, config)
         config.write(open(defaults_file, 'w'))
-
 
 preferences = Preferences(
     EELS=template['EELS'],

@@ -44,17 +44,10 @@ HyperSpy is released under the GPL v3 license.
     **Since version 0.8.4 HyperSpy only supports Python 3. If you need to install
     HyperSpy in Python 2.7 install HyperSpy 0.8.3.**
 
-
-Contributing
-------------
-
-Everyone is welcome to contribute. Please read our
-`contributing guidelines <https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/.github/CONTRIBUTING.md>`_ and get started!
-
 Cite
 ----
 
 |DOI|_
 
-.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.1221347.svg
-.. _DOI: https://doi.org/10.5281/zenodo.1221347
+.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.583693.svg
+.. _DOI: http://dx.doi.org/10.5281/zenodo.583693

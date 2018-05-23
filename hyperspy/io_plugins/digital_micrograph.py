@@ -32,8 +32,6 @@ import hyperspy.misc.io.utils_readfile as iou
 from hyperspy.exceptions import DM3TagIDError, DM3DataTypeError, DM3TagTypeError
 import hyperspy.misc.io.tools
 from hyperspy.misc.utils import DictionaryTreeBrowser
-from hyperspy.docstrings.signal import OPTIMIZE_ARG
-
 
 _logger = logging.getLogger(__name__)
 
@@ -332,7 +330,7 @@ class DigitalMicrographReader(object):
             data += s.unpack(self.f.read(1))[0]
         try:
             data = data.decode('utf8')
-        except BaseException:
+        except:
             # Sometimes the dm3 file strings are encoded in latin-1
             # instead of utf8
             data = data.decode('latin-1', errors='ignore')
@@ -668,8 +666,7 @@ class ImageObject(object):
             return self.unpack_packed_complex(data)
         elif self.imdict.ImageData.DataType in (8, 23):  # ABGR
             # Reorder the fields
-            data = data[['R', 'G', 'B', 'A']].astype(
-                [('R', 'u1'), ('G', 'u1'), ('B', 'u1'), ('A', 'u1')])
+            data = data[['R', 'G', 'B', 'A']].copy()
         return data.reshape(self.shape, order=self.order)
 
     def unpack_new_packed_complex(self, data):
@@ -795,28 +792,25 @@ class ImageObject(object):
         try:
             dt = dateutil.parser.parse(time)
             return dt.time().isoformat()
-        except BaseException:
+        except:
             _logger.warning("Time string, %s,  could not be parsed", time)
 
     def _get_date(self, date):
         try:
             dt = dateutil.parser.parse(date)
             return dt.date().isoformat()
-        except BaseException:
+        except:
             _logger.warning("Date string, %s,  could not be parsed", date)
 
     def _get_microscope_name(self, ImageTags):
-        locations = (
-            "Session_Info.Microscope",
-            "Microscope_Info.Name",
-            "Microscope_Info.Microscope",
-        )
-        for loc in locations:
-            mic = ImageTags.get_item(loc)
-            if mic and mic != "[]":
-                return mic
-        _logger.info("Microscope name not present")
-        return None
+        try:
+            if ImageTags.Session_Info.Microscope != "[]":
+                return ImageTags.Session_Info.Microscope
+        except AttributeError:
+            if 'Name' in ImageTags['Microscope_Info'].keys():
+                return ImageTags.Microscope_Info.Name
+            elif 'Microscope' in ImageTags['Microscope_Info'].keys():
+                return ImageTags.Microscope_Info.Microscope
 
     def _parse_string(self, tag):
         if len(tag) == 0:
@@ -824,92 +818,69 @@ class ImageObject(object):
         else:
             return tag
 
-    def _get_EELS_exposure_time(self, tags):
-        # for GMS 2 and quantum/enfinium, the  "Integration time (s)" tag is
-        # only present for single spectrum acquisition;  for maps we need to
-        # compute exposure * number of frames
-        if 'Integration_time_s' in tags.keys():
-            return float(tags["Integration_time_s"])
-        elif 'Exposure_s' in tags.keys():
-            frame_number = 1
-            if "Number_of_frames" in tags.keys():
-                frame_number = float(tags["Number_of_frames"])
-            return float(tags["Exposure_s"]) * frame_number
-        else:
-            _logger.info("EELS exposure time can't be read.")
-
     def get_mapping(self):
-        if 'source' in self.imdict.ImageTags.keys():
-            # For stack created with the stack builder plugin
-            tags_path = 'ImageList.TagGroup0.ImageTags.source.Tags at creation'
-            image_tags_dict = self.imdict.ImageTags.source['Tags at creation']
-        else:
-            # Standard tags
-            tags_path = 'ImageList.TagGroup0.ImageTags'
-            image_tags_dict = self.imdict.ImageTags
-        is_scanning = "DigiScan" in image_tags_dict.keys()
+        is_scanning = "DigiScan" in self.imdict.ImageTags.keys()
         mapping = {
-            "{}.DataBar.Acquisition Date".format(tags_path): (
+            "ImageList.TagGroup0.ImageTags.DataBar.Acquisition Date": (
                 "General.date", self._get_date),
-            "{}.DataBar.Acquisition Time".format(tags_path): (
+            "ImageList.TagGroup0.ImageTags.DataBar.Acquisition Time": (
                 "General.time", self._get_time),
-            "{}.Microscope Info.Voltage".format(tags_path): (
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Voltage": (
                 "Acquisition_instrument.TEM.beam_energy", lambda x: x / 1e3),
-            "{}.Microscope Info.Stage Position.Stage Alpha".format(tags_path): (
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage Alpha": (
                 "Acquisition_instrument.TEM.Stage.tilt_alpha", None),
-            "{}.Microscope Info.Stage Position.Stage Beta".format(tags_path): (
-                "Acquisition_instrument.TEM.Stage.tilt_beta", None),
-            "{}.Microscope Info.Stage Position.Stage X".format(tags_path): (
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage X": (
                 "Acquisition_instrument.TEM.Stage.x", lambda x: x * 1e-3),
-            "{}.Microscope Info.Stage Position.Stage Y".format(tags_path): (
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage Y": (
                 "Acquisition_instrument.TEM.Stage.y", lambda x: x * 1e-3),
-            "{}.Microscope Info.Stage Position.Stage Z".format(tags_path): (
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Stage Position.Stage Z": (
                 "Acquisition_instrument.TEM.Stage.z", lambda x: x * 1e-3),
-            "{}.Microscope Info.Illumination Mode".format(tags_path): (
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Illumination Mode": (
                 "Acquisition_instrument.TEM.acquisition_mode", self._get_mode),
-            "{}.Microscope Info.Probe Current (nA)".format(tags_path): (
+            "ImageList.TagGroup0.ImageTags.Microscope Info.Probe Current (nA)": (
                 "Acquisition_instrument.TEM.beam_current", None),
-            "{}.Session Info.Operator".format(tags_path): (
+            "ImageList.TagGroup0.ImageTags.Session Info.Operator": (
                 "General.authors", self._parse_string),
-            "{}.Session Info.Specimen".format(tags_path): (
+            "ImageList.TagGroup0.ImageTags.Session Info.Specimen": (
                 "Sample.description", self._parse_string),
         }
 
-        if "Microscope_Info" in image_tags_dict.keys():
+        if "Microscope_Info" in self.imdict.ImageTags.keys():
             is_TEM = is_diffraction = None
-            if "Illumination_Mode" in image_tags_dict['Microscope_Info'].keys(
-            ):
+            if "Illumination_Mode" in self.imdict.ImageTags[
+                    'Microscope_Info'].keys():
                 is_TEM = (
-                    'TEM' == image_tags_dict.Microscope_Info.Illumination_Mode)
-            if "Imaging_Mode" in image_tags_dict['Microscope_Info'].keys():
+                    'TEM' == self.imdict.ImageTags.Microscope_Info.Illumination_Mode)
+            if "Imaging_Mode" in self.imdict.ImageTags[
+                    'Microscope_Info'].keys():
                 is_diffraction = (
-                    'DIFFRACTION' == image_tags_dict.Microscope_Info.Imaging_Mode)
+                    'DIFFRACTION' == self.imdict.ImageTags.Microscope_Info.Imaging_Mode)
 
             if is_TEM:
                 if is_diffraction:
                     mapping.update({
-                        "{}.Microscope Info.Indicated Magnification".format(tags_path): (
+                        "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
                             "Acquisition_instrument.TEM.camera_length",
                             None),
                     })
                 else:
                     mapping.update({
-                        "{}.Microscope Info.Indicated Magnification".format(tags_path): (
+                        "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
                             "Acquisition_instrument.TEM.magnification",
                             None),
                     })
             else:
                 mapping.update({
-                    "{}.Microscope Info.STEM Camera Length".format(tags_path): (
+                    "ImageList.TagGroup0.ImageTags.Microscope Info.STEM Camera Length": (
                         "Acquisition_instrument.TEM.camera_length",
                         None),
-                    "{}.Microscope Info.Indicated Magnification".format(tags_path): (
+                    "ImageList.TagGroup0.ImageTags.Microscope Info.Indicated Magnification": (
                         "Acquisition_instrument.TEM.magnification",
                         None),
                 })
 
             mapping.update({
-                tags_path: (
+                "ImageList.TagGroup0.ImageTags": (
                     "Acquisition_instrument.TEM.microscope",
                     self._get_microscope_name),
             })
@@ -920,66 +891,66 @@ class ImageObject(object):
             else:
                 mapped_attribute = 'exposure'
             mapping.update({
-                "{}.EELS.Acquisition.Date".format(tags_path): (
+                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Date": (
                     "General.date",
                     self._get_date),
-                "{}.EELS.Acquisition.Start time".format(tags_path): (
+                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Start time": (
                     "General.time",
                     self._get_time),
-                "{}.EELS.Experimental Conditions.".format(tags_path) +
+                "ImageList.TagGroup0.ImageTags.EELS.Experimental Conditions." +
                 "Collection semi-angle (mrad)": (
                     "Acquisition_instrument.TEM.Detector.EELS.collection_angle",
                     None),
-                "{}.EELS.Experimental Conditions.".format(tags_path) +
+                "ImageList.TagGroup0.ImageTags.EELS.Experimental Conditions." +
                 "Convergence semi-angle (mrad)": (
                     "Acquisition_instrument.TEM.convergence_angle",
                     None),
-                "{}.EELS.Acquisition".format(tags_path): (
+                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Integration time (s)": (
                     "Acquisition_instrument.TEM.Detector.EELS.%s" % mapped_attribute,
-                    self._get_EELS_exposure_time),
-                "{}.EELS.Acquisition.Number_of_frames".format(tags_path): (
+                    None),
+                "ImageList.TagGroup0.ImageTags.EELS.Acquisition.Number_of_frames": (
                     "Acquisition_instrument.TEM.Detector.EELS.frame_number",
                     None),
-                "{}.EELS_Spectrometer.Aperture_label".format(tags_path): (
+                "ImageList.TagGroup0.ImageTags.EELS_Spectrometer.Aperture_label": (
                     "Acquisition_instrument.TEM.Detector.EELS.aperture_size",
                     lambda string: float(string.replace('mm', ''))),
-                "{}.EELS Spectrometer.Instrument name".format(tags_path): (
+                "ImageList.TagGroup0.ImageTags.EELS Spectrometer.Instrument name": (
                     "Acquisition_instrument.TEM.Detector.EELS.spectrometer",
                     None),
             })
         elif self.signal_type == "EDS_TEM":
             mapping.update({
-                "{}.EDS.Acquisition.Date".format(tags_path): (
+                "ImageList.TagGroup0.ImageTags.EDS.Acquisition.Date": (
                     "General.date",
                     self._get_date),
-                "{}.EDS.Acquisition.Start time".format(tags_path): (
+                "ImageList.TagGroup0.ImageTags.EDS.Acquisition.Start time": (
                     "General.time",
                     self._get_time),
-                "{}.EDS.Detector_Info.Azimuthal_angle".format(tags_path): (
+                "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Azimuthal_angle": (
                     "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
                     None),
-                "{}.EDS.Detector_Info.Elevation_angle".format(tags_path): (
+                "ImageList.TagGroup0.ImageTags.EDS.Detector_Info.Elevation_angle": (
                     "Acquisition_instrument.TEM.Detector.EDS.elevation_angle",
                     None),
-                "{}.EDS.Solid_angle".format(tags_path): (
+                "ImageList.TagGroup0.ImageTags.EDS.Solid_angle": (
                     "Acquisition_instrument.TEM.Detector.EDS.solid_angle",
                     None),
-                "{}.EDS.Live_time".format(tags_path): (
+                "ImageList.TagGroup0.ImageTags.EDS.Live_time": (
                     "Acquisition_instrument.TEM.Detector.EDS.live_time",
                     None),
-                "{}.EDS.Real_time".format(tags_path): (
+                "ImageList.TagGroup0.ImageTags.EDS.Real_time": (
                     "Acquisition_instrument.TEM.Detector.EDS.real_time",
                     None),
             })
-        elif "DigiScan" in image_tags_dict.keys():
+        elif "DigiScan" in self.imdict.ImageTags.keys():
             mapping.update({
-                "{}.DigiScan.Sample Time".format(tags_path): (
+                "ImageList.TagGroup0.ImageTags.DigiScan.Sample Time": (
                     "Acquisition_instrument.TEM.dwell_time",
                     lambda x: x / 1e6),
             })
         else:
             mapping.update({
-                "{}.Acquisition.Parameters.Detector.".format(tags_path) +
+                "ImageList.TagGroup0.ImageTags.Acquisition.Parameters.Detector." +
                 "exposure_s": (
                     "Acquisition_instrument.TEM.Camera.exposure",
                     None),
@@ -998,8 +969,7 @@ class ImageObject(object):
         return mapping
 
 
-def file_reader(filename, record_by=None, order=None, lazy=False,
-                optimize=True):
+def file_reader(filename, record_by=None, order=None, lazy=False):
     """Reads a DM3 file and loads the data into the appropriate class.
     data_id can be specified to load a given image within a DM3 file that
     contains more than one dataset.
@@ -1008,11 +978,9 @@ def file_reader(filename, record_by=None, order=None, lazy=False,
     ----------
     record_by: Str
         One of: SI, Signal2D
-    order : Str
+    order: Str
         One of 'C' or 'F'
-    lazy : bool, default False
-        Load the signal lazily.
-    %s
+
     """
 
     with open(filename, "rb") as f:
@@ -1032,7 +1000,7 @@ def file_reader(filename, record_by=None, order=None, lazy=False,
             mp['General']['original_filename'] = os.path.split(filename)[1]
             post_process = []
             if image.to_spectrum is True:
-                post_process.append(lambda s: s.to_signal1D(optimize=optimize))
+                post_process.append(lambda s: s.to_signal1D())
             post_process.append(lambda s: s.squeeze())
             if lazy:
                 image.filename = filename
@@ -1053,4 +1021,3 @@ def file_reader(filename, record_by=None, order=None, lazy=False,
                  })
 
     return imd
-    file_reader.__doc__ %= (OPTIMIZE_ARG.replace('False', 'True'))

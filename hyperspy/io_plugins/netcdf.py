@@ -27,15 +27,15 @@ no_netcdf = False
 try:
     from netCDF4 import Dataset
     which_netcdf = 'netCDF4'
-except BaseException:
+except:
     try:
         from netCDF3 import Dataset
         which_netcdf = 'netCDF3'
-    except BaseException:
+    except:
         try:
             from Scientific.IO.NetCDF import NetCDFFile as Dataset
             which_netcdf = 'Scientific Python'
-        except BaseException:
+        except:
             no_netcdf = True
 
 # Plugin characteristics

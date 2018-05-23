@@ -88,13 +88,12 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         sf.xlabel = self.xlabel
         sf.ylabel = self.ylabel
         sf.axis = self.axis
-        if sf.ax is None:
-            sf.create_axis()
+        sf.create_axis()
         sf.axes_manager = self.axes_manager
         self.signal_plot = sf
         # Create a line to the left axis with the default indices
+        is_complex = np.iscomplex(self.signal_data_function()).any()
         sl = signal1d.Signal1DLine()
-        is_complex = np.iscomplexobj(self.signal_data_function())
         sl.autoscale = True if not is_complex else False
         sl.data_function = self.signal_data_function
         sl.plot_indices = True
@@ -112,7 +111,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             sl.autoscale = True
             sl.data_function = self.signal_data_function
             sl.plot_coordinates = True
-            sl._plot_imag = True
+            sl.get_complex = True
             sl.set_line_properties(color="blue", type='step')
             # Add extra line to the figure
             sf.add_line(sl)
@@ -177,3 +176,4 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             line.close()
         self.right_pointer.close()
         self.right_pointer = None
+        self.navigator_plot.update()

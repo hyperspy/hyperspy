@@ -1,9 +1,11 @@
 import os
 import tempfile
+from distutils.version import LooseVersion
 
 import numpy as np
 import traits.api as t
 from numpy.testing import assert_allclose
+import pytest
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import assert_deep_almost_equal

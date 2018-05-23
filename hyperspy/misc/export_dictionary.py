@@ -20,7 +20,6 @@ from operator import attrgetter
 from hyperspy.misc.utils import attrsetter
 from copy import deepcopy
 import dill
-from dask.array import Array
 
 
 def check_that_flags_make_sense(flags):
@@ -206,6 +205,4 @@ def reconstruct_object(flags, value):
             return dill.loads(thing)
         # should not be reached
         raise ValueError("The object format is not recognized")
-    if isinstance(value, Array):
-        value = value.compute()
     return value

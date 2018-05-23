@@ -84,14 +84,6 @@ hyperspy\.io\_plugins\.mrc module
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.io\_plugins\.mrcz module
----------------------------------
-
-.. automodule:: hyperspy.io_plugins.mrcz
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 hyperspy\.io\_plugins\.msa module
 ---------------------------------
 

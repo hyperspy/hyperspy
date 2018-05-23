@@ -33,22 +33,16 @@ def _slice_target(target, dims, both_slices, slice_nav=None, issignal=False):
     if slice_nav is True:  # check explicitly for safety
         if issignal:
             return target.inav[slices]
-        sl = tuple(array_slices[:nav_dims])
         if isinstance(target, np.ndarray):
-            return np.atleast_1d(target[sl])
-        if isinstance(target, dArray):
-            return target[sl]
+            return np.atleast_1d(target[tuple(array_slices[:nav_dims])])
         raise ValueError(
             'tried to slice with navigation dimensions, but was neither a '
             'signal nor an array')
     if slice_nav is False:  # check explicitly
         if issignal:
             return target.isig[slices]
-        sl = tuple(array_slices[-sig_dims:])
         if isinstance(target, np.ndarray):
-            return np.atleast_1d(target[sl])
-        if isinstance(target, dArray):
-            return target[sl]
+            return np.atleast_1d(target[tuple(array_slices[-sig_dims:])])
         raise ValueError(
             'tried to slice with navigation dimensions, but was neither a '
             'signal nor an array')

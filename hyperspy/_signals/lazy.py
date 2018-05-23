@@ -18,9 +18,9 @@
 
 import logging
 from functools import partial
-import warnings
 
 import numpy as np
+import math as math
 import dask.array as da
 import dask.delayed as dd
 from dask import threaded
@@ -28,11 +28,12 @@ from dask.diagnostics import ProgressBar
 from itertools import product
 
 from ..signal import BaseSignal
-from ..misc.utils import multiply, dummy_context_manager
+from ..misc.utils import underline, multiply, dummy_context_manager
 from ..external.progressbar import progressbar
 from ..external.astroML.histtools import dasky_histogram
+from ..defaults_parser import preferences
+from ..docstrings.signal import (ONE_AXIS_PARAMETER, OUT_ARG)
 from hyperspy.misc.array_tools import _requires_linear_rebin
-from hyperspy.exceptions import VisibleDeprecationWarning
 
 _logger = logging.getLogger(__name__)
 
@@ -83,45 +84,16 @@ class LazySignal(BaseSignal):
     """
     _lazy = True
 
-    def compute(self, progressbar=True, close_file=False):
-        """Attempt to store the full signal in memory.
-
-        close_file: bool
-            If True, attemp to close the file associated with the dask
-            array data if any. Note that closing the file will make all other
-            associated lazy signals inoperative.
-
-        """
+    def compute(self, progressbar=True):
+        """Attempt to store the full signal in memory.."""
         if progressbar:
             cm = ProgressBar
         else:
             cm = dummy_context_manager
         with cm():
-            da = self.data
-            data = da.compute()
-            if close_file:
-                self.close_file()
-            self.data = data
+            self.data = self.data.compute()
         self._lazy = False
         self._assign_subclass()
-
-    def close_file(self):
-        """Closes the associated data file if any.
-
-        Currently it only supports closing the file associated with a dask
-        array created from an h5py DataSet (default HyperSpy hdf5 reader).
-
-        """
-        arrkey = None
-        for key in self.data.dask.keys():
-            if "array-original" in key:
-                arrkey = key
-                break
-        if arrkey:
-            try:
-                self.data.dask[arrkey].file.close()
-            except AttributeError as e:
-                _logger.exception("Failed to close lazy Signal file")
 
     def _get_dask_chunks(self, axis=None, dtype=None):
         """Returns dask chunks
@@ -282,6 +254,9 @@ class LazySignal(BaseSignal):
 
     def __array__(self, dtype=None):
         return self.data.__array__(dtype=dtype)
+
+    def _unfold(self, *args):
+        raise lazyerror
 
     def _make_sure_data_is_contiguous(self, log=None):
         self._make_lazy(rechunk=True)
@@ -602,29 +577,28 @@ class LazySignal(BaseSignal):
                                     self.axes_manager.signal_shape[::-1])
 
     def decomposition(self,
+                      output_dimension,
                       normalize_poissonian_noise=False,
-                      algorithm='svd',
-                      output_dimension=None,
+                      algorithm='PCA',
                       signal_mask=None,
                       navigation_mask=None,
                       get=threaded.get,
                       num_chunks=None,
                       reproject=True,
-                      bounds=False,
+                      bounds=True,
                       **kwargs):
         """Perform Incremental (Batch) decomposition on the data, keeping n
         significant components.
 
         Parameters
         ----------
+        output_dimension : int
+            the number of significant components to keep
         normalize_poissonian_noise : bool
             If True, scale the SI to normalize Poissonian noise
         algorithm : str
-            One of ('svd', 'PCA', 'ORPCA', 'ONMF'). By default 'svd',
-            lazy SVD decomposition from dask.
-        output_dimension : int
-            the number of significant components to keep. If None, keep all
-            (only valid for SVD)
+            One of ('PCA', 'ORPCA', 'ONMF'). By default ('PCA') IncrementalPCA
+            from scikit-learn is run.
         get : dask scheduler
             the dask scheduler to use for computations;
             default `dask.threaded.get`
@@ -640,6 +614,12 @@ class LazySignal(BaseSignal):
             decomposition.
         reproject : bool
             Reproject data on the learnt components (factors) after learning.
+        bounds : {tuple, bool}
+            The (min, max) values of the data to normalize before learning.
+            If tuple (min, max), those values will be used for normalization.
+            If True, extremes will be looked up (expensive), default.
+            If False, no normalization is done (learning may be very slow).
+            If normalize_poissonian_noise is True, this cannot be True.
         **kwargs
             passed to the partial_fit/fit functions.
 
@@ -668,11 +648,6 @@ class LazySignal(BaseSignal):
 
 
         """
-        if bounds:
-            msg = (
-                "The `bounds` keyword is deprecated and will be removed "
-                "in v2.0. Since version > 1.3 this has no effect.")
-            warnings.warn(msg, VisibleDeprecationWarning)
         explained_variance = None
         explained_variance_ratio = None
         _al_data = self._data_aligned_with_axes
@@ -682,12 +657,10 @@ class LazySignal(BaseSignal):
         num_chunks = 1 if num_chunks is None else num_chunks
         blocksize = np.min([multiply(ar) for ar in product(*nav_chunks)])
         nblocks = multiply([len(c) for c in nav_chunks])
-        if algorithm != "svd" and output_dimension is None:
-            raise ValueError("With the %s the output_dimension "
-                             "must be specified" % algorithm)
-        if output_dimension and blocksize / output_dimension < num_chunks:
+        if blocksize / output_dimension < num_chunks:
             num_chunks = np.ceil(blocksize / output_dimension)
         blocksize *= num_chunks
+
         # LEARN
         if algorithm == 'PCA':
             from sklearn.decomposition import IncrementalPCA
@@ -707,12 +680,16 @@ class LazySignal(BaseSignal):
             batch_size = kwargs.pop('batch_size', None)
             obj = ONMF(output_dimension, **kwargs)
             method = partial(obj.fit, batch_size=batch_size)
-        elif algorithm != "svd":
+
+        else:
             raise ValueError('algorithm not known')
 
         original_data = self.data
         try:
             if normalize_poissonian_noise:
+                if bounds is True:
+                    bounds = False
+                    # warnings.warn?
                 data = self._data_aligned_with_axes
                 ndim = self.axes_manager.navigation_dimension
                 sdim = self.axes_manager.signal_dimension
@@ -746,47 +723,36 @@ class LazySignal(BaseSignal):
                 data = data / coeff
                 self.data = data
 
+            # normalize the data for learning algs:
+            if bounds:
+                if bounds is True:
+                    _min, _max = da.compute(self.data.min(), self.data.max())
+                else:
+                    _min, _max = bounds
+                self.data = (self.data - _min) / (_max - _min)
+
             # LEARN
-            if algorithm == "svd":
-                reproject = False
-                from dask.array.linalg import svd
-                try:
-                    self._unfolded4decomposition = self.unfold()
-                    # TODO: implement masking
-                    if navigation_mask or signal_mask:
-                        raise NotImplemented(
-                            "Masking is not yet implemented for lazy SVD."
-                        )
-                    U, S, V = svd(self.data)
-                    factors = V.T
-                    explained_variance = S ** 2 / self.data.shape[0]
-                    loadings = U * S
-                finally:
-                    if self._unfolded4decomposition is True:
-                        self.fold()
-                        self._unfolded4decomposition is False
-            else:
-                this_data = []
-                try:
-                    for chunk in progressbar(
-                            self._block_iterator(
-                                flat_signal=True,
-                                get=get,
-                                signal_mask=signal_mask,
-                                navigation_mask=navigation_mask),
-                            total=nblocks,
-                            leave=True,
-                            desc='Learn'):
-                        this_data.append(chunk)
-                        if len(this_data) == num_chunks:
-                            thedata = np.concatenate(this_data, axis=0)
-                            method(thedata)
-                            this_data = []
-                    if len(this_data):
+            this_data = []
+            try:
+                for chunk in progressbar(
+                        self._block_iterator(
+                            flat_signal=True,
+                            get=get,
+                            signal_mask=signal_mask,
+                            navigation_mask=navigation_mask),
+                        total=nblocks,
+                        leave=True,
+                        desc='Learn'):
+                    this_data.append(chunk)
+                    if len(this_data) == num_chunks:
                         thedata = np.concatenate(this_data, axis=0)
                         method(thedata)
-                except KeyboardInterrupt:
-                    pass
+                        this_data = []
+                if len(this_data):
+                    thedata = np.concatenate(this_data, axis=0)
+                    method(thedata)
+            except KeyboardInterrupt:
+                pass
 
             # GET ALREADY CALCULATED RESULTS
             if algorithm == 'PCA':
@@ -808,17 +774,14 @@ class LazySignal(BaseSignal):
             if reproject:
                 if algorithm == 'PCA':
                     method = obj.transform
-
-                    def post(a): return np.concatenate(a, axis=0)
+                    post = lambda a: np.concatenate(a, axis=0)
                 elif algorithm == 'ORPCA':
                     method = obj.project
                     obj.R = []
-
-                    def post(a): return obj.finish()[4]
+                    post = lambda a: obj.finish()[4]
                 elif algorithm == 'ONMF':
                     method = obj.project
-
-                    def post(a): return np.concatenate(a, axis=1).T
+                    post = lambda a: np.concatenate(a, axis=1).T
 
                 _map = map(lambda thing: method(thing),
                            self._block_iterator(
@@ -842,34 +805,27 @@ class LazySignal(BaseSignal):
 
             # RESHUFFLE "blocked" LOADINGS
             ndim = self.axes_manager.navigation_dimension
-            if algorithm != "svd":  # Only needed for online algorithms
-                try:
-                    loadings = _reshuffle_mixed_blocks(
-                        loadings,
-                        ndim,
-                        (output_dimension,),
-                        nav_chunks).reshape((-1, output_dimension))
-                except ValueError:
-                    # In case the projection step was not finished, it's left
-                    # as scrambled
-                    pass
+            try:
+                loadings = _reshuffle_mixed_blocks(
+                    loadings,
+                    ndim,
+                    (output_dimension,),
+                    nav_chunks).reshape((-1, output_dimension))
+            except ValueError:
+                # In case the projection step was not finished, it's left
+                # as scrambled
+                pass
         finally:
             self.data = original_data
 
         target = self.learning_results
         target.decomposition_algorithm = algorithm
         target.output_dimension = output_dimension
-        if algorithm != "svd":
-            target._object = obj
+        target._object = obj
         target.factors = factors
         target.loadings = loadings
         target.explained_variance = explained_variance
         target.explained_variance_ratio = explained_variance_ratio
-
-        # Rescale the results if the noise was normalized
-        if normalize_poissonian_noise is True:
-            target.factors = target.factors * rbH.ravel()[:, np.newaxis]
-            target.loadings = target.loadings * raG.ravel()[:, np.newaxis]
 
     def transpose(self, *args, **kwargs):
         res = super().transpose(*args, **kwargs)

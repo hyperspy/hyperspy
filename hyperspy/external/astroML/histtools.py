@@ -328,7 +328,7 @@ def dasky_histogram(a, bins=10, **kwargs):
 
     See Also
     --------
-    numpy.histogram,
+    numpy.histogram
     astroML.plotting.hist
     """
     if not isinstance(a, da.Array):
@@ -352,12 +352,11 @@ def dasky_histogram(a, bins=10, **kwargs):
 
 
 def dasky_scotts_bin_width(data, return_bins=True):
-    r"""Dask version of scotts_bin_width
+    """Dask version of scotts_bin_width
 
     Parameters
     ----------
     data : dask array
-        the data
     return_bins : bool (optional)
         if True, then return the bin edges
 
@@ -370,19 +369,16 @@ def dasky_scotts_bin_width(data, return_bins=True):
 
     Notes
     -----
-    The optimal bin width is:
-
+    The optimal bin width is
     .. math::
-
         \Delta_b = \frac{3.5\sigma}{n^{1/3}}
-
     where :math:`\sigma` is the standard deviation of the data, and
     :math:`n` is the number of data points.
 
     See Also
     --------
-    knuth_bin_width, 
-    freedman_bin_width, 
+    knuth_bin_width
+    freedman_bin_width
     astroML.plotting.hist
     """
     if not isinstance(data, da.Array):
@@ -406,12 +402,11 @@ def dasky_scotts_bin_width(data, return_bins=True):
 
 
 def dasky_freedman_bin_width(data, return_bins=True):
-    r"""Dask version of freedman_bin_width
+    """Dask version of freedman_bin_width
 
     Parameters
     ----------
     data : dask array
-        the data
     return_bins : bool (optional)
         if True, then return the bin edges
 
@@ -425,18 +420,15 @@ def dasky_freedman_bin_width(data, return_bins=True):
     Notes
     -----
     The optimal bin width is
-
     .. math::
-
         \Delta_b = \frac{2(q_{75} - q_{25})}{n^{1/3}}
-
     where :math:`q_{N}` is the :math:`N` percent quartile of the data, and
     :math:`n` is the number of data points.
 
     See Also
     --------
-    knuth_bin_width,
-    scotts_bin_width,
+    knuth_bin_width
+    scotts_bin_width
     astroML.plotting.hist
     """
     if not isinstance(data, da.Array):
