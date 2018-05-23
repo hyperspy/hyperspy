@@ -45,4 +45,4 @@ def test_corrupted_robust():
     W, H = onmf(Y, r, robust=True)
     res = compare(np.dot(W, H), X.T)
     print(res)
-    assert res < 0.095
+    assert res < 0.1
