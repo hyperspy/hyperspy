@@ -58,7 +58,7 @@ def isfloat(number):
 
     """
     if hasattr(number, "dtype"):
-        return np.issubdtype(number, np.float)
+        return np.issubdtype(number, np.floating)
     else:
         return isinstance(number, float)
 
