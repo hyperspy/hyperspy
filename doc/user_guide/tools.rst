@@ -918,10 +918,10 @@ The execution can be sped up by passing ``parallel`` keyword to the
 .. versionadded:: 1.4
     Iterating over signal using a parameter with no navigation dimension.
 
-    In this case, the parameter is cyclically iterated over the navigation
-    dimension of the input signal. In the example below, signal s is
-    multiplied by a cosine parameter d, which is repeated over the
-    navigation dimension of s.
+In this case, the parameter is cyclically iterated over the navigation
+dimension of the input signal. In the example below, signal s is
+multiplied by a cosine parameter d, which is repeated over the
+navigation dimension of s.
 
 .. code-block:: python
 
