@@ -415,6 +415,7 @@ def plot_images(images,
                 aspect='auto',
                 min_asp=0.1,
                 namefrac_thresh=0.4,
+                axes_replot=True,
                 fig=None,
                 vmin=None,
                 vmax=None,
@@ -523,6 +524,9 @@ def plot_images(images,
             encourage shortening of titles by auto-labeling, while larger
             values will require more overlap in titles before activing the
             auto-label code.
+        axes_replot : bool, optional
+            If True, allows to select and replot an axis from the figure. This
+            creates a new figure with only this axis. True by default.
         fig : mpl figure, optional
             If set, the images will be plotted to an existing MPL figure
         vmin, vmax : scalar or list of scalar, optional, default: None
@@ -1008,6 +1012,9 @@ def plot_images(images,
     if padding is not None:
         plt.subplots_adjust(**padding)
 
+    if axes_replot:
+        replot_axes(figure=f)
+
     return axes_list
 
 
@@ -1341,6 +1348,47 @@ def animate_legend(figure='last'):
 
     figure.canvas.mpl_connect('pick_event', onpick)
 
+def replot_axes(figure='last'):
+    """Select and replot an axis from a figure. The axis can be selected by
+    clicking, this triggers a replotting of the axis in a new figure.
+
+    Parameters
+    ----------
+    figure: 'last' | matplotlib.figure
+        If 'last' pick the last figure
+
+    Note
+    ----
+    Code inspired on https://stackoverflow.com/a/45812071
+    """
+    if figure == 'last':
+        fig = plt.gcf()
+    else:
+        fig = figure
+
+    def on_click(event):
+        from pickle import dump, load
+        from io import BytesIO
+
+        if not event.inaxes: return
+        inx = list(fig.axes).index(event.inaxes)
+        buf = BytesIO()
+        dump(fig, buf)
+        buf.seek(0)
+        fig2 = load(buf)
+
+        for i, ax in enumerate(fig2.axes):
+            if i != inx:
+                fig2.delaxes(ax)
+            else:
+                axes=ax
+
+        dummy = fig2.add_subplot(111)
+        axes.set_position(dummy.get_position())
+        dummy.remove()
+        fig2.show()
+
+    fig.canvas.mpl_connect('button_press_event', on_click)
 
 def plot_histograms(signal_list,
                     bins='freedman',
