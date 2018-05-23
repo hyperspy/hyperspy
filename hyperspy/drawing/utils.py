@@ -1350,7 +1350,7 @@ def animate_legend(figure='last'):
 
 def replot_axes(figure='last'):
     """Select and replot an axis from a figure. The axis can be selected by
-    clicking, this triggers a replotting of the axis in a new figure.
+    double clicking, this triggers a replotting of the axis in a new figure.
 
     Parameters
     ----------
@@ -1366,11 +1366,12 @@ def replot_axes(figure='last'):
     else:
         fig = figure
 
-    def on_click(event):
+    def on_dblclick(event):
         from pickle import dump, load
         from io import BytesIO
 
         if not event.inaxes: return
+        if not event.dblclick: return
         inx = list(fig.axes).index(event.inaxes)
         buf = BytesIO()
         dump(fig, buf)
@@ -1388,7 +1389,7 @@ def replot_axes(figure='last'):
         dummy.remove()
         fig2.show()
 
-    fig.canvas.mpl_connect('button_press_event', on_click)
+    fig.canvas.mpl_connect('button_press_event', on_dblclick)
 
 def plot_histograms(signal_list,
                     bins='freedman',
