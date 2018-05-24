@@ -1013,7 +1013,34 @@ def plot_images(images,
         plt.subplots_adjust(**padding)
 
     if axes_replot:
-        replot_axes(figure=f)
+        def on_dblclick(event):
+            # On the event of a double click, replot the selected subplot
+            if not event.inaxes: return
+            if not event.dblclick: return
+            subplots = [axi for axi in f.axes if type(axi) is mpl.axes.Subplot]
+            inx = list(subplots).index(event.inaxes)
+            # Loop through each image in the list, till we find the good one!
+            idx = 0
+            done = False
+            for ims in images:
+                for im in ims:
+                    if idx == inx:
+                        done = True
+                        break
+                    idx += 1
+                if done:
+                    break
+            # Use some of the info in the subplot
+            cm = subplots[inx].images[0].get_cmap()
+            clim = subplots[inx].images[0].get_clim()
+
+            im.plot(colorbar=bool(colorbar),
+                    vmin=clim[0],
+                    vmax=clim[1],
+                    no_nans=no_nans,
+                    cmap=cm)
+
+        f.canvas.mpl_connect('button_press_event', on_dblclick)
 
     return axes_list
 
@@ -1347,49 +1374,6 @@ def animate_legend(figure='last'):
         figure.canvas.draw_idle()
 
     figure.canvas.mpl_connect('pick_event', onpick)
-
-def replot_axes(figure='last'):
-    """Select and replot an axis from a figure. The axis can be selected by
-    double clicking, this triggers a replotting of the axis in a new figure.
-
-    Parameters
-    ----------
-    figure: 'last' | matplotlib.figure
-        If 'last' pick the last figure
-
-    Note
-    ----
-    Code inspired on https://stackoverflow.com/a/45812071
-    """
-    if figure == 'last':
-        fig = plt.gcf()
-    else:
-        fig = figure
-
-    def on_dblclick(event):
-        from pickle import dump, load
-        from io import BytesIO
-
-        if not event.inaxes: return
-        if not event.dblclick: return
-        inx = list(fig.axes).index(event.inaxes)
-        buf = BytesIO()
-        dump(fig, buf)
-        buf.seek(0)
-        fig2 = load(buf)
-
-        for i, ax in enumerate(fig2.axes):
-            if i != inx:
-                fig2.delaxes(ax)
-            else:
-                axes=ax
-
-        dummy = fig2.add_subplot(111)
-        axes.set_position(dummy.get_position())
-        dummy.remove()
-        fig2.show()
-
-    fig.canvas.mpl_connect('button_press_event', on_dblclick)
 
 def plot_histograms(signal_list,
                     bins='freedman',
