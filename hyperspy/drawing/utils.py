@@ -1038,6 +1038,7 @@ def plot_images(images,
                     vmin=clim[0],
                     vmax=clim[1],
                     no_nans=no_nans,
+                    aspect=aspect,
                     cmap=cm)
 
         f.canvas.mpl_connect('button_press_event', on_dblclick)
