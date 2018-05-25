@@ -1034,11 +1034,17 @@ def plot_images(images,
             cm = subplots[inx].images[0].get_cmap()
             clim = subplots[inx].images[0].get_clim()
 
+            sbar = False
+            if (scalelist and inx in scalebar) or scalebar is 'all':
+                sbar = True
+
             im.plot(colorbar=bool(colorbar),
                     vmin=clim[0],
                     vmax=clim[1],
                     no_nans=no_nans,
-                    aspect=aspect,
+                    aspect=asp,
+                    scalebar=sbar,
+                    scalebar_color=scalebar_color,
                     cmap=cm)
 
         f.canvas.mpl_connect('button_press_event', on_dblclick)
