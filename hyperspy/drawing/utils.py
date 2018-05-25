@@ -820,6 +820,11 @@ def plot_images(images,
 
     idx = 0
     ax_im_list = [0] * len(isrgb)
+
+    # If replot is selected create a list to store references to the images
+    if axes_replot:
+        replot_ims = []
+
     # Loop through each image, adding subplot for each one
     for i, ims in enumerate(images):
         # Get handles for the signal axes and axes_manager
@@ -966,6 +971,10 @@ def plot_images(images,
                     units=axes[0].units,
                     color=scalebar_color,
                 )
+            # Store references to the images
+            if axes_replot:
+                replot_ims.append(im)
+
             idx += 1
 
     # If using a single colorbar, add it, and do tight_layout, ensuring that
@@ -1019,17 +1028,8 @@ def plot_images(images,
             if not event.dblclick: return
             subplots = [axi for axi in f.axes if type(axi) is mpl.axes.Subplot]
             inx = list(subplots).index(event.inaxes)
-            # Loop through each image in the list, till we find the good one!
-            idx = 0
-            done = False
-            for ims in images:
-                for im in ims:
-                    if idx == inx:
-                        done = True
-                        break
-                    idx += 1
-                if done:
-                    break
+            im = replot_ims[inx]
+
             # Use some of the info in the subplot
             cm = subplots[inx].images[0].get_cmap()
             clim = subplots[inx].images[0].get_clim()
