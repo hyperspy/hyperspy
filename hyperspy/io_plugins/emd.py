@@ -328,6 +328,11 @@ class EMD(object):
         False : bool, optional
             If False (default) loads data to memory. If True, enables loading
             only if requested.
+        dataset_name : string, optional
+            Only add dataset with specific name. Note, this has to be the full
+            group path in the file. For example `/experimental/science_data'.
+            If the dataset is not found, an IOError with the possible
+            datasets will be raised.
 
         Returns
         -------
