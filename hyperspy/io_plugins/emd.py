@@ -317,7 +317,7 @@ class EMD(object):
         self.signals[name] = signal
 
     @classmethod
-    def load_from_emd(cls, filename, lazy=False):
+    def load_from_emd(cls, filename, lazy=False, dataset_name=None):
         """Construct :class:`~.EMD` object from an emd-file.
 
         Parameters
@@ -366,8 +366,7 @@ class EMD(object):
                     'sample', 'comments']:  # Nodes which are not the data!
             if key in node_list:
                 node_list.pop(node_list.index(key))  # Pop all unwanted nodes!
-        if len(node_list) == 0:
-            raise IOError("No datasets found in {0}".format(filename))
+        dataset_name_list = []
         for node in node_list:
             data_group = emd_file.get(node)
             if data_group is not None:
@@ -375,8 +374,21 @@ class EMD(object):
                     name = group.name
                     if isinstance(group, h5py.Group):
                         if group.attrs.get('emd_group_type') == 1:
-                            emd._read_signal_from_group(
-                                name, group, lazy)
+                            dataset_name_list.append(name)
+        if len(dataset_name_list) == 0:
+            raise IOError("No datasets found in {0}".format(filename))
+        if dataset_name is not None:
+            if dataset_name in dataset_name_list:
+                dataset_name_list = [dataset_name]
+            else:
+                raise IOError(
+                        "Dataset with name {0} not found in the file. "
+                        "Possible datasets are {1}.".format(
+                            dataset_name, ', '.join(dataset_name_list)))
+        for temp_dataset_name in dataset_name_list:
+            group = emd_file[temp_dataset_name]
+            emd._read_signal_from_group(temp_dataset_name, group, lazy)
+
         # Close file and return EMD object:
         if not lazy:
             emd_file.close()
@@ -1151,7 +1163,7 @@ def file_reader(filename, log_info=False,
         emd = FeiEMDReader(filename, lazy=lazy, **kwds)
         dictionaries = emd.dictionaries
     else:
-        emd = EMD.load_from_emd(filename, lazy)
+        emd = EMD.load_from_emd(filename, lazy, **kwds)
         if log_info:
             emd.log_info()
         for signal in emd.signals.values():

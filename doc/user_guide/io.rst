@@ -714,6 +714,13 @@ EMD (NCEM)
 This EMD format was developed by Colin Ophus at the National Center for
 Electron Microscopy (NCEM). See http://emdatasets.com/ for more information.
 
+For files containing several datasets, the `dataset_name` argument can be
+used to select a specific one:
+
+.. code-block:: python
+
+    >>> s = hs.load("adatafile.emd", dataset_name="/experimental/science_data_1")
+
 
 EMD (FEI)
 ^^^^^^^^^

@@ -120,6 +120,52 @@ def test_data_axis_length_1():
     assert signal.data.shape == (5, 1, 5)
 
 
+class TestDatasetName:
+
+    def setup_method(self):
+        tmpdir = tempfile.TemporaryDirectory()
+        hdf5_dataset_path = os.path.join(tmpdir.name, "test_dataset.emd")
+        f = h5py.File(hdf5_dataset_path, mode="w")
+        f.attrs.create('version_major', 0)
+        f.attrs.create('version_minor', 2)
+
+        dataset_name_list = [
+                '/experimental/science_data_0',
+                '/experimental/science_data_1',
+                '/processed/science_data_0']
+        data_size_list = [(50, 50), (20, 10), (16, 32)]
+
+        for dataset_name, data_size in zip(dataset_name_list, data_size_list):
+            group = f.create_group(dataset_name)
+            group.attrs.create('emd_group_type', 1)
+            group.create_dataset(name='data', data=np.random.random(data_size))
+            group.create_dataset(name='dim1', data=range(data_size[0]))
+            group.create_dataset(name='dim2', data=range(data_size[1]))
+
+        f.close()
+
+        self.hdf5_dataset_path = hdf5_dataset_path
+        self.tmpdir = tmpdir
+        self.dataset_name_list = dataset_name_list
+        self.data_size_list = data_size_list
+
+    def teardown_method(self):
+        self.tmpdir.cleanup()
+
+    def test_load_with_dataset_name(self):
+        s = load(self.hdf5_dataset_path)
+        assert len(s) == len(self.dataset_name_list)
+        for dataset_name, data_size in zip(
+                self.dataset_name_list, self.data_size_list):
+            s = load(self.hdf5_dataset_path, dataset_name=dataset_name)
+            assert s.metadata.General.title == dataset_name
+            assert s.data.shape == data_size
+
+    def test_wrong_dataset_name(self):
+        with pytest.raises(IOError):
+            load(self.hdf5_dataset_path, dataset_name='a_wrong_name')
+
+
 class TestMinimalSave():
 
     def test_minimal_save(self):
