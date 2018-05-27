@@ -54,10 +54,10 @@ class WidgetBase(object):
         self._selected_artist = None
         self._size = 1.
         self._pos = 0.
-        self.color = 'red'
         self.__is_on = True
         self.background = None
         self.patch = []
+        self.color = 'red'
         self.cids = list()
         self.blit = True
         self.events = Events()
@@ -131,6 +131,17 @@ class WidgetBase(object):
             if value is False:
                 self.ax = None
         self.__is_on = value
+
+    @property
+    def color(self):
+        return self._color
+
+    @color.setter
+    def color(self, color):
+        self._color = color
+        for p in self.patch:
+            p.set_color(self._color)
+
 
     def _set_patch(self):
         """Create the matplotlib patch(es), and store it in self.patch

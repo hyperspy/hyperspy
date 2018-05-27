@@ -81,6 +81,7 @@ class RangeWidget(ResizableDraggableWidgetBase):
         self.span.step_ax = self.axes[0]
         self.span.tolerance = 5
         self.patch = [self.span.rect]
+        self.patch[0].set_color(self.color)
 
     def _span_changed(self, widget):
         r = self._get_range()
