@@ -667,7 +667,7 @@ def plot_images(images,
         # Use some heuristics to try to get base string of similar titles
 
         # in case of single image
-        if len(images) > 1:
+        if isinstance(images, list) or len(images) > 1:
             label_list = [x.metadata.General.title for x in images]
         else:
             label_list = [images.metadata.General.title]
@@ -807,7 +807,7 @@ def plot_images(images,
                             'single colorbar')
         else:
             g_vmax = vmax if vmax is not None else g_vmax
-        if centre_colormap:
+        if next(centre_colormaps):
             g_vmin, g_vmax = centre_colormap_values(g_vmin, g_vmax)
 
     # Check if we need to add a scalebar for some of the images
@@ -865,8 +865,8 @@ def plot_images(images,
 
             if not isinstance(aspect, (int, float)) and aspect not in [
                     'auto', 'square', 'equal']:
-                print('Did not understand aspect ratio input. '
-                      'Using \'auto\' as default.')
+                _logger.warning("Did not understand aspect ratio input. "
+                                "Using 'auto' as default.")
                 aspect = 'auto'
 
             if aspect is 'auto':

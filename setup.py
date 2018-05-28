@@ -294,6 +294,7 @@ with update_version_when_dev() as version:
                 'tests/drawing/plot_signal2d/*.png',
                 'tests/drawing/plot_markers/*.png',
                 'tests/drawing/plot_model1d/*.png',
+                'tests/drawing/plot_model/*.png',
                 'misc/eds/example_signals/*.hdf5',
                 'misc/holography/example_signals/*.hdf5',
                 'tests/drawing/plot_mva/*.png',

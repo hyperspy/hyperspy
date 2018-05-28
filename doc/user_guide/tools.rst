@@ -1042,7 +1042,7 @@ to reverse the :py:func:`~.utils.stack` function:
     >>> image = image.split()[0].split()[0]
     >>> image.plot()
 
-.. figure::  images/split_lena_3_3.png
+.. figure::  images/split_ascent_3_3.png
   :align:   center
   :width:   400
 
@@ -1072,18 +1072,6 @@ calculate FFT and the inverse with origin shifted in the centre.
 .. code-block:: python
 
     >>> im_ifft = im.fft(shifted=True).ifft(shifted=True)
-
-Simple operations over one axis
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-* :py:meth:`~.signal.Signal.sum`
-* :py:meth:`~.signal.Signal.mean`
-* :py:meth:`~.signal.Signal.max`
-* :py:meth:`~.signal.Signal.min`
-* :py:meth:`~.signal.Signal.std`
-
-  Splitting example.
-
 
 .. _signal.change_dtype:
 

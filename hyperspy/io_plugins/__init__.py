@@ -19,7 +19,7 @@
 
 import logging
 
-from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc, ripple,
+from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc, mrcz, ripple,
                                  tiff, semper_unf, blockfile, dens, emd,
                                  protochips, edax, bruker)
 

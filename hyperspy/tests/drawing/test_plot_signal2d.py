@@ -158,8 +158,8 @@ class _TestIteratedSignal:
         s = hs.signals.Signal2D([scipy.misc.ascent()] * 6)
         angles = hs.signals.BaseSignal(range(00, 60, 10))
         s.map(scipy.ndimage.rotate, angle=angles.T, reshape=False)
-        s.data = np.clip(s.data, 0, 255)  # prevent values outside
-                                          # of integer range
+        # prevent values outside of integer range
+        s.data = np.clip(s.data, 0, 255)
         title = 'Ascent'
 
         s.axes_manager = self._set_signal_axes(s.axes_manager,
@@ -338,3 +338,46 @@ def test_plot_images_cmap_multi_w_rgb(mpl_cleanup):
                         per_row=4,
                         cmap='mpl_colors')
     return plt.gcf()
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_images_saturated_pixels(mpl_cleanup, saturated_pixels):
+    image0 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    image0.isig[5, 5] = 200
+    image0.metadata.General.title = 'This is the title from the metadata'
+    ax = hs.plot.plot_images([image0, image0, image0],
+                             saturated_pixels=saturated_pixels,
+                             axes_decor='off')
+    return ax[0].figure
+
+
+@pytest.mark.parametrize("colorbar", ['single', 'multi', None])
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_images_colorbar(mpl_cleanup, colorbar):
+    image0 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
+    image0.isig[5, 5] = 200
+    image0.metadata.General.title = 'This is the title from the metadata'
+    ax = hs.plot.plot_images([image0, image0], colorbar=colorbar,
+                             vmin=[0, 10], vmax=[120, None],
+                             axes_decor='ticks')
+    return ax[0].figure
+
+
+def test_plot_images_signal1D():
+    image0 = hs.signals.Signal1D(np.arange(100).reshape(10, 10))
+    with pytest.raises(ValueError):
+        hs.plot.plot_images([image0, image0])
+
+
+def test_plot_images_not_signal():
+    data = np.arange(100).reshape(10, 10)
+    with pytest.raises(ValueError):
+        hs.plot.plot_images([data, data])
+
+    with pytest.raises(ValueError):
+        hs.plot.plot_images(data)
+
+    with pytest.raises(ValueError):
+        hs.plot.plot_images('not a list of signal')
