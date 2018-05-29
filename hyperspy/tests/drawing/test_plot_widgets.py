@@ -20,7 +20,7 @@ import numpy as np
 import numpy.testing as nt
 import pytest
 
-from hyperspy.signals import Signal2D
+from hyperspy.signals import Signal2D, Signal1D
 from hyperspy.drawing import widgets
 
 
@@ -158,3 +158,30 @@ class TestPlotLine2DWidget():
         nt.assert_allclose(line2d_snap_all.size[0], 14.4)
 
         return self.im._plot.signal_plot.figure
+    
+
+
+class TestPlotRangeWidget():
+
+    def setup_method(self, method):
+        # Create test image 100x100 pixels:
+        self.s = Signal1D(np.arange(50000).reshape(100, 500))
+        self.s.axes_manager.signal_axes[0].scale = 1.2
+        self.s.axes_manager.navigation_axes[0].scale = 1.2
+        self.range = widgets.RangeWidget(self.s.axes_manager)
+        
+    def test_plot_range_widget(self):
+        self.s.plot()
+        self.range.color = 'green'
+        assert self.range.color == 'green'
+        
+        self.range.position = (120, )
+        self.range.size = (300, )
+
+
+#        assert self.range.position == 1a =18.8
+        self.range.set_mpl_ax(self.s._plot.signal_plot.ax)        
+        assert self.line2d.ax == self.s._plot.signal_plot.ax
+
+        
+
