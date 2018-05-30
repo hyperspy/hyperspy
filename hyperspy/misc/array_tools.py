@@ -143,6 +143,9 @@ def rebin(a, new_shape=None, scale=None, crop=True):
     Notes
     -----
     Fast re_bin function Adapted from scipy cookbook
+    If rebin function fails with error stating that the function is 'not binned
+    and therefore cannot be rebinned', add binned to metadata with:
+    >>> s.metadata.Signal.binned = True
 
     """
     # Series of if statements to check that only one out of new_shape or scale
