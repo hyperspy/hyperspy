@@ -134,7 +134,7 @@ have used a :py:class:`~._signals.signal2d.Signal2D` instead e.g.:
 Indeed, for data analysis purposes,
 one may like to operate with an image stack as if it was a set of spectra or
 viceversa. One can easily switch between these two alternative ways of
-classifiying the dimensions of a three-dimensional dataset by
+classifying the dimensions of a three-dimensional dataset by
 :ref:`transforming between BaseSignal subclasses
 <transforming.signal>`.
 
@@ -962,7 +962,7 @@ lazily:
     <LazyEDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|512)>
 
 
-On the other hand, the following rebining operation requires interpolation and
+On the other hand, the following rebinning operation requires interpolation and
 cannot be performed lazily:
 
 .. code-block:: python
