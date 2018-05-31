@@ -114,7 +114,7 @@ class Signal1DFigure(BlittedFigure):
             x_axis_lower_lims.append(line.axis.axis[0])
             x_axis_upper_lims.append(line.axis.axis[-1])
         for marker in self.ax_markers:
-            marker.plot(update_plot=False)
+            marker.plot(render_figure=False)
         plt.xlim(np.min(x_axis_lower_lims), np.max(x_axis_upper_lims))
         self.axes_manager.events.indices_changed.connect(self.update, [])
         self.events.closed.connect(
