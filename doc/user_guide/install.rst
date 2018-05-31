@@ -31,7 +31,7 @@ Bundle. This is a customised `WinPython <http://winpython.github.io/>`_
 distribution that includes HyperSpy, all its dependencies and many other
 scientific Python packages.
 
-For details and download links go to https://github.com/hyperspy/hyperspy-bundle 
+For details and download links go to https://github.com/hyperspy/hyperspy-bundle
 
 .. _quick-anaconda-install:
 
@@ -256,6 +256,13 @@ HyperSpy using ``pip`` (see :ref:`install-with-python-installers`), if HyperSpy
 is going to be installed from  source, Cython is also required. Also, to
 compile the documentation sphinxcontrib-napoleon and sphinx_rtd_theme are
 required.
+
+In case some of the required libraries are not automatically installed when
+installing from source in a conda environment, these can be obtained beforehand.
+
+.. code-block:: bash
+    $ conda install hyperspy --only-deps -c conda-forge
+    $ sudo pip install -e ./
 
 .. _known-issues:
 
