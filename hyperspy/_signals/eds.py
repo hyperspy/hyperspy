@@ -953,7 +953,8 @@ class EDS_mixin:
                 plt.rcParams['axes.color_cycle'] * per_xray))
         for x, color in zip(np.ravel(position), colors):
             line = markers.vertical_line(x=x, color=color, **kwargs)
-            self.add_marker(line)
+            self.add_marker(line, render_figure=False)
+        self._render_figure(plot=['signal_plot'])
 
     def add_xray_lines_markers(self, xray_lines):
         """
@@ -978,16 +979,17 @@ class EDS_mixin:
         for i in range(len(line_energy)):
             line = markers.vertical_line_segment(
                 x=line_energy[i], y1=None, y2=intensity[i] * 0.8)
-            self.add_marker(line)
+            self.add_marker(line, render_figure=False)
             string = (r'$\mathrm{%s}_{\mathrm{%s}}$' %
                       utils_eds._get_element_and_line(xray_lines[i]))
             text = markers.text(
                 x=line_energy[i], y=intensity[i] * 1.1, text=string,
                 rotation=90)
-            self.add_marker(text)
+            self.add_marker(text, render_figure=False)
             self._xray_markers[xray_lines[i]] = [line, text]
             line.events.closed.connect(self._xray_marker_closed)
             text.events.closed.connect(self._xray_marker_closed)
+        self._render_figure(plot=['signal_plot'])
 
     def _xray_marker_closed(self, obj):
         marker = obj
@@ -1013,7 +1015,8 @@ class EDS_mixin:
                 line_markers = self._xray_markers[xray_line]
                 while line_markers:
                     m = line_markers.pop()
-                    m.close()
+                    m.close(render_figure=False)
+        self._render_figure(plot=['signal_plot'])
 
     def _add_background_windows_markers(self,
                                         windows_position):
@@ -1050,7 +1053,8 @@ class EDS_mixin:
             line = markers.line_segment(
                 x1=(bw[0] + bw[1]) / 2., x2=(bw[2] + bw[3]) / 2.,
                 y1=y1, y2=y2, color='black')
-            self.add_marker(line)
+            self.add_marker(line, render_figure=False)
+        self._render_figure(plot=['signal_plot'])
 
 
 class EDSSpectrum(EDS_mixin, Signal1D):

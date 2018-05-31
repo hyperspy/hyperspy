@@ -4382,17 +4382,17 @@ class BaseSignal(FancySlicing,
                     "plot_marker=False and permanent=False does nothing")
         if permanent:
             self.metadata.Markers = markers_dict
-        if plot_marker and not render_figure:
-            self._plot_markers()
+        if plot_marker and render_figure:
+            self._render_figure()
 
-    def _plot_markers(self):
-        for plot in ['signal_plot', 'navigation_plot']:
-            if hasattr(self._plot, plot):
-                plot = getattr(self._plot, plot)
-                if plot.figure.canvas.supports_blit:
-                    plot.ax.hspy_fig._update_animated()
+    def _render_figure(self, plot=['signal_plot', 'navigation_plot']):
+        for p in plot:
+            if hasattr(self._plot, p):
+                p = getattr(self._plot, p)
+                if p.figure.canvas.supports_blit:
+                    p.ax.hspy_fig._update_animated()
                 else:
-                    plot.ax.hspy_fig._draw_animated()
+                    p.ax.hspy_fig._draw_animated()
 
     def _plot_permanent_markers(self):
         marker_name_list = self.metadata.Markers.keys()
@@ -4405,7 +4405,7 @@ class BaseSignal(FancySlicing,
                 else:
                     self._plot.navigator_plot.add_marker(marker)
                 marker.plot(render_figure=False)
-        self._plot_markers()
+        self._render_figure()
 
     def add_poissonian_noise(self, keep_dtype=True):
         """Add Poissonian noise to the data
