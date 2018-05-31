@@ -70,8 +70,7 @@ class Signal1DFigure(BlittedFigure):
         if self.right_ax is None:
             self.right_ax = self.ax.twinx()
             self.right_ax.hspy_fig = self
-            self.right_ax.yaxis.set_animated(
-                self.figure.canvas.supports_blit)
+            self.right_ax.yaxis.set_animated(self.figure.canvas.supports_blit)
         plt.tight_layout()
 
     def add_line(self, line, ax='left'):
@@ -326,9 +325,12 @@ class Signal1DLine(object):
 
         """
         if self.auto_update:
+            # if markers are plotted, we don't render the figure now but when
+            # once the markers have been updated
+            kwargs['render_figure'] = (len(self.ax.hspy_fig.ax_markers) == 0)
             self.update(self, *args, **kwargs)
 
-    def update(self, force_replot=False):
+    def update(self, force_replot=False, render_figure=True):
         """Update the current spectrum figure"""
         if force_replot is True:
             self.close()
@@ -363,10 +365,11 @@ class Signal1DLine(object):
             self.ax.set_ylim(y_min, y_max)
         if self.plot_indices is True:
             self.text.set_text(self.axes_manager.indices)
-        if self.ax.figure.canvas.supports_blit:
-            self.ax.hspy_fig._update_animated()
-        else:
-            self.ax.figure.canvas.draw_idle()
+        if render_figure:
+            if self.ax.figure.canvas.supports_blit:
+                self.ax.hspy_fig._update_animated()
+            else:
+                self.ax.figure.canvas.draw_idle()
 
     def close(self):
         if self.line in self.ax.lines:
