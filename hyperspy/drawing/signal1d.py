@@ -115,8 +115,13 @@ class Signal1DFigure(BlittedFigure):
             x_axis_lower_lims.append(line.axis.axis[0])
             x_axis_upper_lims.append(line.axis.axis[-1])
         for marker in self.ax_markers:
-            marker.plot()
+            marker.plot(update_plot=False)
         plt.xlim(np.min(x_axis_lower_lims), np.max(x_axis_upper_lims))
+        self.axes_manager.events.indices_changed.connect(self.update, [])
+        self.events.closed.connect(
+            lambda: self.axes_manager.events.indices_changed.disconnect(
+                self.update), [])
+
         self.ax.figure.canvas.draw_idle()
         if hasattr(self.figure, 'tight_layout'):
             try:
@@ -137,9 +142,11 @@ class Signal1DFigure(BlittedFigure):
     def update(self):
         for marker in self.ax_markers:
             marker.update()
-        for line in self.ax_lines + \
-                self.right_ax_lines:
-            line.update()
+        if self.ax_markers:
+            if self.ax.figure.canvas.supports_blit:
+                self.ax.hspy_fig._update_animated()
+            else:
+                self.ax.figure.canvas.draw_idle()
 
 
 class Signal1DLine(object):

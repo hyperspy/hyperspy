@@ -85,10 +85,7 @@ class MarkerBase(object):
                 self._marker_properties[key] = item
         if self.marker is not None:
             plt.setp(self.marker, **self.marker_properties)
-            if self.ax.figure.canvas.supports_blit:
-                self.ax.hspy_fig._update_animated()
-            else:
-                self.ax.figure.canvas.draw_idle()
+            self._update_plot()
 
     def _to_dictionary(self):
         marker_dict = {
@@ -190,13 +187,15 @@ class MarkerBase(object):
                 "figure using `s._plot.signal_plot.add_marker(m)` or " +
                 "`s._plot.navigator_plot.add_marker(m)`")
         self._plot_marker()
-        animated = self.ax.figure.canvas.supports_blit
-        self.marker.set_animated(animated)
+        self.marker.set_animated(self.ax.figure.canvas.supports_blit)
         if update_plot:
-            if animated:
-                self.ax.hspy_fig._update_animated()
-            else:
-                self.ax.figure.canvas.draw_idle()
+            self._update_plot()
+
+    def _update_plot(self):
+        if self.ax.figure.canvas.supports_blit:
+            self.ax.hspy_fig._update_animated()
+        else:
+            self.ax.figure.canvas.draw_idle()
 
     def close(self, update_plot=True):
         """Remove and disconnect the marker.
@@ -218,10 +217,7 @@ class MarkerBase(object):
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)
         if update_plot:
-            if self.ax.figure.canvas.supports_blit:
-                self.ax.hspy_fig._update_animated()
-            else:
-                self.ax.figure.canvas.draw_idle()
+            self._update_plot()
 
 
 def dict2marker(marker_dict, marker_name):
@@ -245,7 +241,7 @@ def dict2marker(marker_dict, marker_name):
     else:
         _log = logging.getLogger(__name__)
         _log.warning(
-            "Marker {} with marker type {} "
+            "Marker {} with marker type {} "
             "not recognized".format(marker_name, marker_type))
         return(False)
     marker.set_data(**marker_dict['data'])
