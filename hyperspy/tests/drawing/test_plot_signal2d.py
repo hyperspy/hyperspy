@@ -353,7 +353,8 @@ def test_plot_images_multi_signal_w_axes_replot(mpl_cleanup):
     img_list = [imgs, imgs.inav[:2], imgs.inav[0]]
     subplots=hs.plot.plot_images(img_list, axes_replot=True)
     f = plt.gcf()
-    plt.pause(0.01) # this pause is important somehow
+    f.canvas.draw()
+    f.canvas.flush_events()
 
     tests = []
     for axi in subplots:
