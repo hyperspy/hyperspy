@@ -635,12 +635,12 @@ __ plot.spectra_
     instead set the ``colorbar`` argument to ``None``.
 
 .. versionadd: 1.4
-    By default or by setting the ``axes_replot`` bool argument to ``True``, adds
-    the possibility to select and re-plot and axis in ``plot_images``. This is
-    achieved by double clicking into this axis. Each click triggers a plot
-    event, in which the selected signal is presented. This helps navigating
-    through a panel with many figures by enlarging some of them and allowing
-    comfortable zooming.
+    Double-clicking into an axis in the panel created by ``plot_images``
+    triggers a plot event, creating a new figure in which the selected signal is
+    presented alone. This helps navigating through panels with many figures by
+    selecting and enlarging some of them and allowing comfortable zooming. This
+    functionality is only enabled if a ``matplotlib`` backend that supports the
+    ``button_press_event`` in the figure canvas is being used.
 
 .. _plot.spectra:
 

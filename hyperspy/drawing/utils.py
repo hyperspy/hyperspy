@@ -415,7 +415,6 @@ def plot_images(images,
                 aspect='auto',
                 min_asp=0.1,
                 namefrac_thresh=0.4,
-                axes_replot=True,
                 fig=None,
                 vmin=None,
                 vmax=None,
@@ -524,9 +523,6 @@ def plot_images(images,
             encourage shortening of titles by auto-labeling, while larger
             values will require more overlap in titles before activing the
             auto-label code.
-        axes_replot : bool, optional
-            If True, allows to select and replot an axis from the figure. This
-            creates a new figure with only this axis. True by default.
         fig : mpl figure, optional
             If set, the images will be plotted to an existing MPL figure
         vmin, vmax : scalar or list of scalar, optional, default: None
@@ -821,9 +817,8 @@ def plot_images(images,
     idx = 0
     ax_im_list = [0] * len(isrgb)
 
-    # If replot is selected create a list to store references to the images
-    if axes_replot:
-        replot_ims = []
+    # Replot: create a list to store references to the images
+    replot_ims = []
 
     # Loop through each image, adding subplot for each one
     for i, ims in enumerate(images):
@@ -971,9 +966,8 @@ def plot_images(images,
                     units=axes[0].units,
                     color=scalebar_color,
                 )
-            # Store references to the images
-            if axes_replot:
-                replot_ims.append(im)
+            # Replot: store references to the images
+            replot_ims.append(im)
 
             idx += 1
 
@@ -1021,33 +1015,33 @@ def plot_images(images,
     if padding is not None:
         plt.subplots_adjust(**padding)
 
-    if axes_replot:
-        def on_dblclick(event):
-            # On the event of a double click, replot the selected subplot
-            if not event.inaxes: return
-            if not event.dblclick: return
-            subplots = [axi for axi in f.axes if type(axi) is mpl.axes.Subplot]
-            inx = list(subplots).index(event.inaxes)
-            im = replot_ims[inx]
+    # Replot: connect function
+    def on_dblclick(event):
+        # On the event of a double click, replot the selected subplot
+        if not event.inaxes: return
+        if not event.dblclick: return
+        subplots = [axi for axi in f.axes if type(axi) is mpl.axes.Subplot]
+        inx = list(subplots).index(event.inaxes)
+        im = replot_ims[inx]
 
-            # Use some of the info in the subplot
-            cm = subplots[inx].images[0].get_cmap()
-            clim = subplots[inx].images[0].get_clim()
+        # Use some of the info in the subplot
+        cm = subplots[inx].images[0].get_cmap()
+        clim = subplots[inx].images[0].get_clim()
 
-            sbar = False
-            if (scalelist and inx in scalebar) or scalebar is 'all':
-                sbar = True
+        sbar = False
+        if (scalelist and inx in scalebar) or scalebar is 'all':
+            sbar = True
 
-            im.plot(colorbar=bool(colorbar),
-                    vmin=clim[0],
-                    vmax=clim[1],
-                    no_nans=no_nans,
-                    aspect=asp,
-                    scalebar=sbar,
-                    scalebar_color=scalebar_color,
-                    cmap=cm)
+        im.plot(colorbar=bool(colorbar),
+                vmin=clim[0],
+                vmax=clim[1],
+                no_nans=no_nans,
+                aspect=asp,
+                scalebar=sbar,
+                scalebar_color=scalebar_color,
+                cmap=cm)
 
-        f.canvas.mpl_connect('button_press_event', on_dblclick)
+    f.canvas.mpl_connect('button_press_event', on_dblclick)
 
     return axes_list
 
