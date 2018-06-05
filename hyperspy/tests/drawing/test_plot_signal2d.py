@@ -351,7 +351,7 @@ def test_plot_images_multi_signal_w_axes_replot(mpl_cleanup):
     imdata = np.random.rand(3, 5, 5)
     imgs = hs.signals.Signal2D(imdata)
     img_list = [imgs, imgs.inav[:2], imgs.inav[0]]
-    subplots=hs.plot.plot_images(img_lists, axes_decor=None)
+    subplots=hs.plot.plot_images(img_list, axes_decor=None)
     f = plt.gcf()
     f.canvas.draw()
     f.canvas.flush_events()
