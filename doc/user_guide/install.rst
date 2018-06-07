@@ -258,10 +258,12 @@ compile the documentation sphinxcontrib-napoleon and sphinx_rtd_theme are
 required.
 
 In case some of the required libraries are not automatically installed when
-installing from source in a conda environment, these can be obtained beforehand.
+installing from source in a conda environment, these can be obtained beforehand
+by installing and removing hyperspy from that environment;
 
 .. code-block:: bash
-    $ conda install hyperspy --only-deps -c conda-forge
+    $ conda install hyperspy
+    $ conda remove hyperspy
     $ sudo pip install -e ./
 
 .. _known-issues:
