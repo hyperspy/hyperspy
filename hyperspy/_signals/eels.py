@@ -1295,6 +1295,12 @@ class EELSSpectrum_mixin:
                     self.metadata.General.title + ' thickness '
                     '(calculated using Kramers-Kronig analysis)')
                 output['thickness'] = thickness
+            else:
+                thickness = eps._get_navigation_signal(data=te)
+                thickness.metadata.General.title = (
+                    self.metadata.General.title + ' thickness '
+                    '(calculated using Kramers-Kronig analysis)')
+                output['thickness'] = thickness
         if full_output is False:
             return eps
         else:
