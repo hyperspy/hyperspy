@@ -1288,19 +1288,13 @@ class EELSSpectrum_mixin:
         if 'thickness' in output:
             # As above,prevent errors if the signal is a single spectrum
             if len(te) != 1:
-                thickness = eps._get_navigation_signal(
-                    data=te[self.axes_manager._get_data_slice(
-                        [(axis.index_in_array, 0)])])
-                thickness.metadata.General.title = (
-                    self.metadata.General.title + ' thickness '
-                    '(calculated using Kramers-Kronig analysis)')
-                output['thickness'] = thickness
-            else:
-                thickness = eps._get_navigation_signal(data=te)
-                thickness.metadata.General.title = (
-                    self.metadata.General.title + ' thickness '
-                    '(calculated using Kramers-Kronig analysis)')
-                output['thickness'] = thickness
+                te = te[self.axes_manager._get_data_slice(
+                        [(axis.index_in_array, 0)])]
+            thickness = eps._get_navigation_signal(data=te)
+            thickness.metadata.General.title = (
+                self.metadata.General.title + ' thickness '
+                '(calculated using Kramers-Kronig analysis)')
+            output['thickness'] = thickness
         if full_output is False:
             return eps
         else:
