@@ -308,7 +308,7 @@ def _linear_bin(dat, scale, crop=True):
         # The new dimension size is old_size/step, this is rounded down normally
         # but if crop is switched off it is rounded up to the nearest whole
         # number.
-        if not np.issubdtype(s, float):
+        if not np.issubdtype(s, np.floating):
             s = float(s)
 
         dim = (math.floor(dat.shape[0] / s) if crop
