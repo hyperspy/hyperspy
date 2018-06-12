@@ -1357,7 +1357,7 @@ class EELSSpectrum_mixin:
         elif "Acquisition_instrument.TEM.Detector.Camera.exposure" in m.metadata:
             mdeels.Camera.exposure *= time_factor
         else:
-            _logger.info('No dwell_time could be found in the metadata so this has not been updated.') 
+            _logger.info('No dwell_time could be found in the metadata so this has not been updated.')
         if out is None:
             return m
         else:

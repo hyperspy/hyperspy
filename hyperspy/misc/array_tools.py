@@ -167,9 +167,9 @@ def rebin(a, new_shape=None, scale=None, crop=True):
     if _requires_linear_rebin(arr=a, scale=scale):
         _logger.debug("Using linear_bin")
         if np.issubdtype(a.dtype, np.integer):
-            # The operations below require a float dtype with the default
-            # numpy casting rule ('same_kind')
-            a.astype("float")
+            # The _linear_bin function below requires a float dtype
+            # because of the default numpy casting rule ('same_kind').
+            a.astype("float", castin="safe", copy=False)
         return _linear_bin(a, scale, crop)
     else:
         _logger.debug("Using standard rebin with lazy support")
@@ -308,7 +308,7 @@ def _linear_bin(dat, scale, crop=True):
         # The new dimension size is old_size/step, this is rounded down normally
         # but if crop is switched off it is rounded up to the nearest whole
         # number.
-        if type(s) != float:
+        if not np.issubtype(s, float):
             s = float(s)
 
         dim = (math.floor(dat.shape[0] / s) if crop

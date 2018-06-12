@@ -252,7 +252,6 @@ class Test3D:
         self.signal.axes_manager[1].name = "y"
         self.signal.axes_manager[2].name = "E"
         self.signal.axes_manager[0].scale = 0.5
-        self.signal.metadata.Signal.binned = True
         self.data = self.signal.data.copy()
 
     def test_indexmin(self):

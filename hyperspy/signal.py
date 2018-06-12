@@ -2360,9 +2360,6 @@ class BaseSignal(FancySlicing,
         Sum =  164.0
 
         """
-        if self.metadata.Signal.binned == False:
-            raise TypeError('The signal is not binned, hence cannot be rebinned.\
-            Change using s.metadata.Signal.binned = True')
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
             scale=scale,)
