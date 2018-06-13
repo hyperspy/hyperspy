@@ -2376,7 +2376,7 @@ class BaseSignal(FancySlicing,
             s.data = data
         s.get_dimensions_from_data()
         for i, factor in enumerate(factors):
-            s.axes_manager[i].offset = (factor - 1)/2*s.axes_manager[i].scale
+            s.axes_manager[i].offset = (factor - 1)/2*s.axes_manager[i].scale + s.axes_manager[i].offset
         for axis, axis_src in zip(s.axes_manager._axes,
                                   self.axes_manager._axes):
             axis.scale = axis_src.scale * factors[axis.index_in_array]
