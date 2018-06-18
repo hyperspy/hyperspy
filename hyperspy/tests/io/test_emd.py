@@ -161,9 +161,19 @@ class TestDatasetName:
             assert s.metadata.General.title == dataset_name
             assert s.data.shape == data_size
 
+    def test_load_with_dataset_name_several(self):
+        dataset_name = self.dataset_name_list[0:2]
+        s = load(self.hdf5_dataset_path, dataset_name=dataset_name)
+        assert len(s) == len(dataset_name)
+        assert s[0].metadata.General.title in dataset_name
+        assert s[1].metadata.General.title in dataset_name
+
     def test_wrong_dataset_name(self):
         with pytest.raises(IOError):
             load(self.hdf5_dataset_path, dataset_name='a_wrong_name')
+        with pytest.raises(IOError):
+            load(self.hdf5_dataset_path,
+                 dataset_name=[self.dataset_name_list[0], 'a_wrong_name'])
 
 
 class TestMinimalSave():

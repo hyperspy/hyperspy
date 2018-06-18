@@ -722,6 +722,16 @@ used to select a specific one:
     >>> s = hs.load("adatafile.emd", dataset_name="/experimental/science_data_1")
 
 
+Or several by using a list:
+
+.. code-block:: python
+
+    >>> s = hs.load("adatafile.emd",
+    ...             dataset_name=[
+    ...                 "/experimental/science_data_1",
+    ...                 "/experimental/science_data_1"])
+
+
 EMD (FEI)
 ^^^^^^^^^
 

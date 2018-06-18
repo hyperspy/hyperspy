@@ -328,11 +328,12 @@ class EMD(object):
         False : bool, optional
             If False (default) loads data to memory. If True, enables loading
             only if requested.
-        dataset_name : string, optional
+        dataset_name : string or iterable, optional
             Only add dataset with specific name. Note, this has to be the full
             group path in the file. For example `/experimental/science_data'.
             If the dataset is not found, an IOError with the possible
-            datasets will be raised.
+            datasets will be raised. Several names can be specified
+            in the form of a list.
 
         Returns
         -------
@@ -371,7 +372,7 @@ class EMD(object):
                     'sample', 'comments']:  # Nodes which are not the data!
             if key in node_list:
                 node_list.pop(node_list.index(key))  # Pop all unwanted nodes!
-        dataset_name_list = []
+        dataset_in_file_list = []
         for node in node_list:
             data_group = emd_file.get(node)
             if data_group is not None:
@@ -379,20 +380,28 @@ class EMD(object):
                     name = group.name
                     if isinstance(group, h5py.Group):
                         if group.attrs.get('emd_group_type') == 1:
-                            dataset_name_list.append(name)
-        if len(dataset_name_list) == 0:
+                            dataset_in_file_list.append(name)
+        if len(dataset_in_file_list) == 0:
             raise IOError("No datasets found in {0}".format(filename))
+        dataset_read_list = []
         if dataset_name is not None:
-            if dataset_name in dataset_name_list:
-                dataset_name_list = [dataset_name]
-            else:
-                raise IOError(
-                        "Dataset with name {0} not found in the file. "
-                        "Possible datasets are {1}.".format(
-                            dataset_name, ', '.join(dataset_name_list)))
-        for temp_dataset_name in dataset_name_list:
-            group = emd_file[temp_dataset_name]
-            emd._read_signal_from_group(temp_dataset_name, group, lazy)
+            if isinstance(dataset_name, str):
+                dataset_name = [dataset_name]
+
+            for temp_dataset_name in dataset_name:
+                if temp_dataset_name in dataset_in_file_list:
+                    dataset_read_list.append(temp_dataset_name)
+                else:
+                    raise IOError(
+                            "Dataset with name {0} not found in the file. "
+                            "Possible datasets are {1}.".format(
+                                temp_dataset_name,
+                                ', '.join(dataset_in_file_list)))
+        else:
+            dataset_read_list = dataset_in_file_list
+        for dataset_read in dataset_read_list:
+            group = emd_file[dataset_read]
+            emd._read_signal_from_group(dataset_read, group, lazy)
 
         # Close file and return EMD object:
         if not lazy:
