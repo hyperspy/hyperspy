@@ -2735,6 +2735,46 @@ class BaseSignal(FancySlicing,
             getitem[unfolded_axis] = i
             yield(data[tuple(getitem)])
 
+    def _cycle_signal(self):
+        """Cycles over the signal data.
+
+        It is faster than using the signal iterator.
+
+        Warning! could produce a infinite loop.
+
+        """
+        if self.axes_manager.navigation_size < 2:
+            while True:
+                yield self()
+            return
+        self._make_sure_data_is_contiguous()
+        axes = [axis.index_in_array for
+                axis in self.axes_manager.signal_axes]
+        if axes:
+            unfolded_axis = (
+                self.axes_manager.navigation_axes[0].index_in_array)
+            new_shape = [1] * len(self.data.shape)
+            for axis in axes:
+                new_shape[axis] = self.data.shape[axis]
+            new_shape[unfolded_axis] = -1
+        else:  # signal_dimension == 0
+            new_shape = (-1, 1)
+            axes = [1]
+            unfolded_axis = 0
+        # Warning! if the data is not contigous it will make a copy!!
+        data = self.data.reshape(new_shape)
+        getitem = [0] * len(data.shape)
+        for axis in axes:
+            getitem[axis] = slice(None)
+        i = 0
+        Ni = data.shape[unfolded_axis]
+        while True:
+            getitem[unfolded_axis] = i
+            yield(data[tuple(getitem)])
+            i += 1
+            if i == Ni:
+                i = 0
+
     def _remove_axis(self, axes):
         am = self.axes_manager
         axes = am[axes]
