@@ -4385,7 +4385,7 @@ class BaseSignal(FancySlicing,
         """
         self.metadata.Signal.signal_origin = origin
 
-    def print_summary_statistics(self, formatter="%.3f"):
+    def print_summary_statistics(self, formatter="%.3g"):
         """Prints the five-number summary statistics of the data, the mean and
         the standard deviation.
 
@@ -4440,7 +4440,7 @@ class BaseSignal(FancySlicing,
 
     def add_marker(
             self, marker, plot_on_signal=True, plot_marker=True,
-            permanent=False, plot_signal=True):
+            permanent=False, plot_signal=True, render_figure=True):
         """
         Add a marker to the signal or navigator plot.
 
@@ -4546,7 +4546,7 @@ class BaseSignal(FancySlicing,
                     if self._plot.navigator_plot is None:
                         self.plot()
                     self._plot.navigator_plot.add_marker(m)
-                m.plot(update_plot=False)
+                m.plot(render_figure=False)
             if permanent:
                 for marker_object in marker_object_list:
                     if m is marker_object:
@@ -4566,11 +4566,17 @@ class BaseSignal(FancySlicing,
                     "plot_marker=False and permanent=False does nothing")
         if permanent:
             self.metadata.Markers = markers_dict
-        if plot_marker:
-            if self._plot.signal_plot:
-                self._plot.signal_plot.ax.hspy_fig._update_animated()
-            if self._plot.navigator_plot:
-                self._plot.navigator_plot.ax.hspy_fig._update_animated()
+        if plot_marker and render_figure:
+            self._render_figure()
+
+    def _render_figure(self, plot=['signal_plot', 'navigation_plot']):
+        for p in plot:
+            if hasattr(self._plot, p):
+                p = getattr(self._plot, p)
+                if p.figure.canvas.supports_blit:
+                    p.ax.hspy_fig._update_animated()
+                else:
+                    p.ax.hspy_fig._draw_animated()
 
     def _plot_permanent_markers(self):
         marker_name_list = self.metadata.Markers.keys()
@@ -4582,11 +4588,8 @@ class BaseSignal(FancySlicing,
                     self._plot.signal_plot.add_marker(marker)
                 else:
                     self._plot.navigator_plot.add_marker(marker)
-                marker.plot(update_plot=False)
-        if self._plot.signal_plot:
-            self._plot.signal_plot.ax.hspy_fig._update_animated()
-        if self._plot.navigator_plot:
-            self._plot.navigator_plot.ax.hspy_fig._update_animated()
+                marker.plot(render_figure=False)
+        self._render_figure()
 
     def add_poissonian_noise(self, keep_dtype=True):
         """Add Poissonian noise to the data
