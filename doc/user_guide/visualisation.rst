@@ -10,7 +10,7 @@ instance, has a :py:meth:`~.signal.BaseSignal.plot` method that is powerful and
 flexible tools to visualize n-dimensional data. In this chapter, the
 visualisation of multidimensional data  is exemplified with two experimental
 datasets: an EELS spectrum image and an EDX dataset consisting of a secondary
-electron emission image stack and a 3D hyperspectrum , both simoultaneously
+electron emission image stack and a 3D hyperspectrum , both simultaneously
 acquired by recording two signals in parallel in a FIB/SEM.
 
 
@@ -150,7 +150,7 @@ arguments are supported as well:
 
 .. versionadded:: 1.1.2
 
-Same options can be passed to the navigator, albeit separatelly, by specifying
+Same options can be passed to the navigator, albeit separately, by specifying
 them as a dictionary in ``navigator_kwds`` argument when plotting:
 
 .. code-block:: python
@@ -290,7 +290,7 @@ can be used as an external signal for the navigator.
 
 .. code-block:: python
 
-    >>> im = hs.load('Ni_superalloy_0*.tif', stack=True) 
+    >>> im = hs.load('Ni_superalloy_0*.tif', stack=True)
     >>> s = hs.load('Ni_superalloy_0*.rpl', stack=True).as_signal1D(0)
     >>> dim = s.axes_manager.navigation_shape
     >>> #Rebin the image
@@ -958,7 +958,7 @@ Markers
 
 .. versionadded:: 0.8
 
-Hyperspy provides an easy access to the main marker of matplotlib. The markers
+HyperSpy provides an easy access to the main marker of matplotlib. The markers
 can be used in a static way
 
 .. code-block:: python
@@ -1170,7 +1170,7 @@ Permanent markers are stored in the HDF5 file if the signal is saved:
 
     >>> s = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     >>> marker = hs.markers.point(2, 1, color='red')
-    >>> s.add_marker(marker, plot_marker=False, permanent=True) 
+    >>> s.add_marker(marker, plot_marker=False, permanent=True)
     >>> s.metadata.Markers
     └── point = <marker.Point, point (x=2,y=1,color=red,size=20)>
     >>> s.save("storing_marker.hdf5")

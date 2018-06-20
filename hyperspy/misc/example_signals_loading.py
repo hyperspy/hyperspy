@@ -60,10 +60,10 @@ def load_object_hologram():
     - Sample: Fe needle with YOx nanoparticle inclusions [Migunov, V. et al.
     Model-independent measurement of the charge density distribution along an Fe atom probe needle using
     off-axis electron holography without mean inner potential effects. Journal of Applied Physics 117, 134301 (2015).
-    http://dx.doi.org/10.1063/1.4916609]
+    https://doi.org/10.1063/1.4916609]
     - TEM Microscope: FEI Titan G2 60-300 HOLO [Boothroyd, C. et al. FEI Titan G2 60-300 HOLO.
     Journal of large-scale research facilities JLSRF 2, 44 (2016).
-    http://dx.doi.org/10.17815/jlsrf-2-70]
+    https://doi.org/10.17815/jlsrf-2-70]
     """
     from hyperspy.io import load
     file_path = os.sep.join([os.path.dirname(__file__), 'holography',
@@ -80,10 +80,10 @@ def load_reference_hologram():
     - Sample: Fe needle with YOx nanoparticle inclusions [Migunov, V. et al.
     Model-independent measurement of the charge density distribution along an Fe atom probe needle using
     off-axis electron holography without mean inner potential effects. Journal of Applied Physics 117, 134301 (2015).
-    http://dx.doi.org/10.1063/1.4916609]
+    https://doi.org/10.1063/1.4916609]
     - TEM Microscope: FEI Titan G2 60-300 HOLO [Boothroyd, C. et al. FEI Titan G2 60-300 HOLO.
     Journal of large-scale research facilities JLSRF 2, 44 (2016).
-    http://dx.doi.org/10.17815/jlsrf-2-70]
+    https://doi.org/10.17815/jlsrf-2-70]
     """
     from hyperspy.io import load
     file_path = os.sep.join([os.path.dirname(__file__), 'holography',

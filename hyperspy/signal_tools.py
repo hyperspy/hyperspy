@@ -654,9 +654,16 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                            default='full')
     hi = t.Int(0)
 
-    def __init__(self, signal):
+    def __init__(self, signal, background_type='Power Law', polynomial_order=2,
+                 fast=True, show_progressbar=None):
         super(BackgroundRemoval, self).__init__(signal)
+        # setting the polynomial order will change the backgroud_type to
+        # polynomial, so we set it before setting the background type
+        self.polynomial_order = polynomial_order
+        self.background_type = background_type
         self.set_background_estimator()
+        self.fast = fast
+        self.show_progressbar = show_progressbar
         self.bg_line = None
 
     def on_disabling_span_selector(self):
@@ -665,7 +672,6 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.bg_line = None
 
     def set_background_estimator(self):
-
         if self.background_type == 'Power Law':
             self.background_estimator = components1d.PowerLaw()
             self.bg_line_range = 'from_left_range'
@@ -762,7 +768,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             signal_range=(self.ss_left_value, self.ss_right_value),
             background_type=background_type,
             fast=self.fast,
-            polynomial_order=self.polynomial_order)
+            polynomial_order=self.polynomial_order,
+            show_progressbar=self.show_progressbar)
         self.signal.data = new_spectra.data
         self.signal.events.data_changed.trigger(self)
         if plot:
