@@ -1317,7 +1317,7 @@ def animate_legend(figure='last'):
         ax = plt.gca()
     else:
         ax = figure.axes[0]
-    lines = ax.lines
+    lines = ax.lines[::-1]
     lined = dict()
     leg = ax.get_legend()
     for legline, origline in zip(leg.get_lines(), lines):
