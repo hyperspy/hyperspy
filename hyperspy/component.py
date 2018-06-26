@@ -19,6 +19,7 @@
 import os
 
 import numpy as np
+from scipy.ndimage import convolve1d
 from dask.array import Array as dArray
 import traits.api as t
 from traits.trait_numeric import Array
@@ -1011,9 +1012,10 @@ class Component(t.HasTraits):
         -------
         numpy array
         """
-        axis = self.model.axis.axis[self.model.channel_switches]
-        component_array = self.function(axis)
-        return component_array
+        axes = [ax.axis for ax in self.model.axes_manager.signal_axes]
+        mesh = np.meshgrid(*axes)
+        component_array = self.function(*mesh)
+        return component_array[np.where(self.model.channel_switches)]
 
     def _component2plot(self, axes_manager, out_of_range2nans=True):
         old_axes_manager = None
@@ -1183,37 +1185,80 @@ class Component(t.HasTraits):
 
     @property
     def is_linear(self):
-        "Loops through the components free parameters, checks that they are linear"
+        """Loops through the components free parameters,
+        checks that they are linear"""
         linear = True
         for para in self.free_parameters:
             if not para._is_linear:
                 linear = False
         return linear
 
-    @property
-    def constant_term(self):
-        "Get value of the constant term of the component. Returns 0 for most components."
-        return 0
-    
+    def get_constant_term(self, multi=False):
+        """Get value of the constant term of the component.
+        Returns 0 for most components."""
+        if multi:
+            nav_shape = self.model.axes_manager._navigation_shape_in_array
+            sig_dim = self.model.axes_manager.signal_dimension
+            return np.zeros(nav_shape + sig_dim*(1,))
+        else:
+            return 0
+
     @property
     def constant_parameters(self):
         "List all parameters which have a non-signal-axis-dependent parameter"
         return self._constant_parameters
 
-    @property
-    def _free_offset_parameter(self):
-        "Attribute containing any free parameter that acts as an offset"
-        return None
+    def _compute_component(self, multi=False):
+        model = self.model
+        if model.convolved and self.convolved:
+            # TODO: Model2D doesn't support a 2D convolution axis (yet)
+            data = self._convolve(
+                self.function(model.convolution_axis, multi=multi), model=model)
+        else:
+            axes = [ax.axis for ax in model.axes_manager.signal_axes]
+            mesh = np.meshgrid(*axes)
+            not_convolved = self.function(*mesh, multi=multi)
+            data = not_convolved
+        return data.T[np.where(model.channel_switches)[::-1]].T 
 
-    def _check_only_one_linear_parameter(self):
-        """
-        Linear fitters can only work with one linear parameter per component.
-        Checks that this is the case for a given component.
-        """
-        n_free = 0
-        for para in self.free_parameters:
-            if para._is_linear:
-                n_free += 1
-        if n_free > 1:
-            raise AttributeError("Component " + str(self) +
-                                 " has more than one linear component.")
+    def _compute_constant_term(self, multi=False):
+        model = self.model
+        if model.convolved and self.convolved:
+            convolved = self._convolve(self.get_constant_term(multi=multi), model=model)
+            data = convolved
+        else:
+            signal_shape = model.axes_manager.signal_shape[::-1]
+            not_convolved = self.get_constant_term(multi) * np.ones(signal_shape)
+            data = not_convolved
+        return data.T[np.where(model.channel_switches)[::-1]].T 
+
+    def _convolve(self, to_convolve, model=None):
+        '''Convolve component with model convolution axis
+
+        Multiply by np.ones in order to handle constant case - has no effect on
+        the large'''
+
+        if model is None:
+            model = self.model
+        sig = to_convolve * np.ones(model.convolution_axis.shape)
+
+        if not self.model.multicomp:
+            # handle fast case when ll is equal in all pixels
+            ll = model.low_loss(model.axes_manager)
+            convolved = np.convolve(sig, ll, mode="valid")
+        elif self.model.multicomp and self.model._constant_ll:
+            nav_shape = model.axes_manager._navigation_shape_in_array
+            ll = model.low_loss(model.axes_manager)
+            length = max(sig.shape[-1], ll.shape[-1]) - min(sig.shape[-1], ll.shape[-1]) + 1 
+            convolved = np.zeros(nav_shape + (length,)).T
+            convolved[:] = np.convolve(sig, ll, mode="valid")
+            convolved = convolved.T
+        else:
+            nav_shape = model.axes_manager._navigation_shape_in_array
+            ll = model.low_loss.data
+            length = max(sig.shape[-1], ll.shape[-1]) - min(sig.shape[-1], ll.shape[-1]) + 1 
+            convolved = np.zeros(nav_shape + (length,))
+            for index in np.ndindex(nav_shape):
+                convolved[index] = np.convolve(sig[index], ll[index], mode="valid")
+        return convolved
+    

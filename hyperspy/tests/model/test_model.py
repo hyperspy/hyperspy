@@ -585,6 +585,9 @@ class TestModel2D:
         np.testing.assert_allclose(gt.sigma_x.value, 1.)
         np.testing.assert_allclose(gt.sigma_y.value, 2.)
 
+    def test_function_call(self):
+        g = self.g
+        assert assert_array_almost_equal(g(), self.gt)
 
 @lazifyTestClass
 class TestModelFitBinned:

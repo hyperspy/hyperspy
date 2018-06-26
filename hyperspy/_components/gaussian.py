@@ -119,10 +119,17 @@ class Gaussian(Component):
         # Linearity
         self.A._is_linear = True
 
-    def function(self, x):
-        A = self.A.value
-        s = self.sigma.value
-        c = self.centre.value
+    def function(self, x, multi=False):
+        if multi:
+            n = self.model.axes_manager.signal_dimension
+            shape = self.A.map['values'].shape
+            A = self.A.map['values'].reshape(shape + n*(1,))
+            s = self.sigma.map['values'].reshape(shape + n*(1,))
+            c = self.centre.map['values'].reshape(shape + n*(1,))
+        else:
+            A = self.A.value
+            s = self.sigma.value
+            c = self.centre.value
         return A * (1 / (s * sqrt2pi)) * np.exp(-(x - c)**2 / (2 * s**2))
 
     def grad_A(self, x):

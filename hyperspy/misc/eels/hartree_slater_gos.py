@@ -139,17 +139,14 @@ class HartreeSlaterGOS(GOSBase):
             info1_1, info1_2, ncol)
         self.energy_axis = self.rel_energy_axis + self.onset_energy
 
-    def integrateq(self, onset_energy, angle, E0):
+    def integrateq(self, onset_energy, angle, E0, model=None, multi=False,):
         energy_shift = onset_energy - self.onset_energy
         self.energy_shift = energy_shift
-        qint = np.zeros((self.energy_axis.shape[0]))
-        # Calculate the cross section at each energy position of the
-        # tabulated GOS
         gamma = 1 + E0 / 511.06
         T = 511060 * (1 - 1 / gamma ** 2) / 2
-        for i in range(0, self.gos_array.shape[0]):
-            E = self.energy_axis[i] + energy_shift
-            # Calculate the limits of the q integral
+
+        def calculate_qint(E, angle):
+            'Calculate the limits of the q integral'
             qa0sqmin = (E ** 2) / (4 * R * T) + (E ** 3) / (
                 8 * gamma ** 3 * R * T ** 2)
             p02 = T / (R * (1 - 2 * T / 511060))
@@ -161,10 +158,32 @@ class HartreeSlaterGOS(GOSBase):
             # Perform the integration in a log grid
             qaxis, gos = self.get_qaxis_and_gos(i, qmin, qmax)
             logsqa0qaxis = np.log((a0 * qaxis) ** 2)
-            qint[i] = sp.integrate.simps(gos, logsqa0qaxis)
-        E = self.energy_axis + energy_shift
-        # Energy differential cross section in (barn/eV/atom)
-        qint *= (4.0 * np.pi * a0 ** 2.0 * R ** 2 / E / T *
-                 self.subshell_factor) * 1e28
+            return sp.integrate.simps(gos, logsqa0qaxis)
+
+        if multi:
+            nav_shape = model.axes_manager._navigation_shape_in_array
+            qint = np.zeros(nav_shape + (self.energy_axis.shape[0],))           
+            interpolated = np.zeros(nav_shape, dtype='object')
+            for index in np.ndindex(nav_shape):
+                for i in range(0, self.gos_array.shape[0]):
+                    E = self.energy_axis[i] + energy_shift[index]
+                    qint[index][i] = calculate_qint(E, angle[index])
+                E = self.energy_axis + energy_shift[index]
+                # Energy differential cross section in (barn/eV/atom)
+                qint[index] *= (4.0 * np.pi * a0 ** 2.0 * R ** 2 / E / T *
+                        self.subshell_factor) * 1e28
+                interpolated[index] = sp.interpolate.interp1d(E, qint[index], kind=3)
+        else:
+            qint = np.zeros((self.energy_axis.shape[0]))
+            # Calculate the cross section at each energy position of the
+            # tabulated GOS
+            for i in range(0, self.gos_array.shape[0]):
+                E = self.energy_axis[i] + energy_shift
+                qint[i] = calculate_qint(E, angle)
+            E = self.energy_axis + energy_shift
+            # Energy differential cross section in (barn/eV/atom)
+            qint *= (4.0 * np.pi * a0 ** 2.0 * R ** 2 / E / T *
+                    self.subshell_factor) * 1e28
+            interpolated = sp.interpolate.interp1d(E, qint, kind=3)
         self.qint = qint
-        return sp.interpolate.interp1d(E, qint, kind=3)
+        return interpolated

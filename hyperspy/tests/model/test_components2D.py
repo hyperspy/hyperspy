@@ -1,6 +1,6 @@
 import numpy as np
 
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_almost_equal
 
 import hyperspy.api as hs
 
@@ -19,6 +19,7 @@ class TestGaussian2D:
         x = np.arange(-10, 10, 0.01)
         y = np.arange(-10, 10, 0.01)
         X, Y = np.meshgrid(x, y)
+        self.X, self.Y = X, Y
         gt = g.function(X, Y)
         self.g = g
         self.gt = gt
@@ -31,7 +32,6 @@ class TestGaussian2D:
         assert_allclose(gt.max(), 0.0795774715459)
         assert_allclose(gt.argmax(axis=0)[0], 500)
         assert_allclose(gt.argmax(axis=1)[0], 500)
-
 
 class TestExpression2D:
 

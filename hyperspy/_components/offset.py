@@ -104,19 +104,13 @@ class Offset(Component):
             self.fetch_stored_values()
             return True
 
-    @property
-    def constant_term(self):
+    def get_constant_term(self, multi=False):
         "Get value of constant term of component"
         # First get currently constant parameters
         if self.offset.free:
             return 0
         else:
-            return self.offset.value
-
-    @property
-    def _free_offset_parameter(self):
-        "Attribute containing any free parameter that acts as an offset"
-        if self.offset.free:
-            return self.offset
-        else:
-            return None
+            if multi:
+                return self.offset.map['values']
+            else:
+                return self.offset.value

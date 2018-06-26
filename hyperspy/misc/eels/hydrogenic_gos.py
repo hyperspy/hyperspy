@@ -106,28 +106,53 @@ class HydrogenicGOS(GOSBase):
             ("\tOnset Energy = %s " % self.onset_energy))
         _logger.info(info_str)
 
-    def integrateq(self, onset_energy, angle, E0):
+    def integrateq(self, onset_energy, angle, E0, model=None, multi=False):
         energy_shift = onset_energy - self.onset_energy
         self.energy_shift = energy_shift
         gamma = 1 + E0 / 511.06
         T = 511060 * (1 - 1 / gamma ** 2) / 2
-        qint = np.zeros((self.energy_axis.shape[0]))
-        for i, E in enumerate(self.energy_axis + energy_shift):
-            qa0sqmin = (E ** 2) / (4 * R * T) + (E ** 3) / (
-                8 * gamma ** 3 * R * T ** 2)
-            p02 = T / (R * (1 - 2 * T / 511060))
-            pp2 = p02 - E / R * (gamma - E / 1022120)
-            qa0sqmax = qa0sqmin + 4 * np.sqrt(p02 * pp2) * \
-                (math.sin(angle / 2)) ** 2
+           
+        if multi:
+            nav_shape = model.axes_manager._navigation_shape_in_array
+            qint = np.zeros(nav_shape + (self.energy_axis.shape[0],))           
+            interpolated = np.zeros(nav_shape, dtype='object')
+            for index in np.ndindex(nav_shape):
+                for i, E in enumerate(self.energy_axis + energy_shift[index]):
+                    qa0sqmin = (E ** 2) / (4 * R * T) + (E ** 3) / (
+                        8 * gamma ** 3 * R * T ** 2)
+                    p02 = T / (R * (1 - 2 * T / 511060))
+                    pp2 = p02 - E / R * (gamma - E / 1022120)
+                    qa0sqmax = qa0sqmin + 4 * np.sqrt(p02 * pp2) * \
+                        (math.sin(angle[index] / 2)) ** 2
 
-            # dsbyde IS THE ENERGY-DIFFERENTIAL X-SECN (barn/eV/atom)
-            qint[i] = 3.5166e8 * (R / T) * (R / E) * (
-                scipy.integrate.quad(
-                    lambda x: self.gosfunc(E, np.exp(x)),
-                    math.log(qa0sqmin), math.log(qa0sqmax))[0])
-        self.qint = qint
-        return sp.interpolate.interp1d(self.energy_axis + energy_shift,
+                    # dsbyde IS THE ENERGY-DIFFERENTIAL X-SECN (barn/eV/atom)
+                    qint[index, i] = 3.5166e8 * (R / T) * (R / E) * (
+                        scipy.integrate.quad(
+                            lambda x: self.gosfunc(E, np.exp(x), index=index),
+                            math.log(qa0sqmin), math.log(qa0sqmax))[0])
+                interpolated[index] = sp.interpolate.interp1d(self.energy_axis + energy_shift[index],
+                                    qint[index])
+            
+        else:            
+            qint = np.zeros((self.energy_axis.shape[0]))
+            for i, E in enumerate(self.energy_axis + energy_shift):
+                qa0sqmin = (E ** 2) / (4 * R * T) + (E ** 3) / (
+                    8 * gamma ** 3 * R * T ** 2)
+                p02 = T / (R * (1 - 2 * T / 511060))
+                pp2 = p02 - E / R * (gamma - E / 1022120)
+                qa0sqmax = qa0sqmin + 4 * np.sqrt(p02 * pp2) * \
+                    (math.sin(angle / 2)) ** 2
+
+                # dsbyde IS THE ENERGY-DIFFERENTIAL X-SECN (barn/eV/atom)
+                qint[i] = 3.5166e8 * (R / T) * (R / E) * (
+                    scipy.integrate.quad(
+                        lambda x: self.gosfunc(E, np.exp(x)),
+                        math.log(qa0sqmin), math.log(qa0sqmax))[0])
+            
+            interpolated = sp.interpolate.interp1d(self.energy_axis + energy_shift,
                                        qint)
+        self.qint = qint
+        return interpolated
 
     def gosfuncK(self, E, qa02):
         # gosfunc calculates (=DF/DE) which IS PER EV AND PER ATOM
@@ -159,7 +184,7 @@ class HydrogenicGOS(GOSBase):
         return 128 * rnk * E / (
             r * zs ** 4) * c / d * (q + kh2 / 3 + 1 / 3) / (a * r)
 
-    def gosfuncL(self, E, qa02):
+    def gosfuncL(self, E, qa02, index=None):
         # gosfunc calculates (=DF/DE) which IS PER EV AND PER ATOM
         # Note: quad function only works with qa02 due to IF statements in
         # function
@@ -176,8 +201,12 @@ class HydrogenicGOS(GOSBase):
         else:
             # Egerton's correction to the Hydrogenic XS
             u = XU[np.int(iz)]
-        el3 = self.onset_energy_L3 + self.energy_shift
-        el1 = self.onset_energy_L1 + self.energy_shift
+        if index:
+            el3 = self.onset_energy_L3 + self.energy_shift[index]
+            el1 = self.onset_energy_L1 + self.energy_shift[index]
+        else:
+            el3 = self.onset_energy_L3 + self.energy_shift
+            el1 = self.onset_energy_L1 + self.energy_shift
 
         q = qa02 / zs ** 2
         kh2 = E / (r * zs ** 2) - 0.25
