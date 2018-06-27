@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import numpy as np
 import scipy.misc
 import pytest
 import matplotlib.pyplot as plt
@@ -117,6 +118,25 @@ class TestPlotSpectra():
         if figure == '2sig':
             return s2._plot.navigator_plot.figure
 
+    def test_plot_spectra_legend_pick(self, mpl_cleanup):
+        x = np.linspace(0., 2., 512)
+        n = np.arange(1, 5)
+        x_pow_n = x[None,:]**n[:,None]
+        s = hs.signals.Signal1D(x_pow_n)
+        my_legend = [r'x^'+str(io) for io in n]
+        f = plt.figure()
+        ax = hs.plot.plot_spectra(s, legend=my_legend, fig=f)
+        leg = ax.get_legend()
+        leg_artists = leg.get_lines()
+        click = plt.matplotlib.backend_bases.MouseEvent(
+                                   'button_press_event',f.canvas,0,0,'left')
+        for artist, li in zip(leg_artists, ax.lines[::-1]):
+            plt.matplotlib.backends.backend_agg.FigureCanvasBase.pick_event(
+                                                    f.canvas, click, artist)
+            assert not li.get_visible()
+            plt.matplotlib.backends.backend_agg.FigureCanvasBase.pick_event(
+                                                    f.canvas, click, artist)
+
 
 @update_close_figure
 def test_plot_nav0_close():
@@ -141,12 +161,13 @@ def test_plot_nav2_close():
 
 def _test_plot_two_cursors(ndim):
     test_plot = _TestPlot(ndim=ndim, sdim=1)  # sdim=2 not supported
-    test_plot.signal.plot()
     s = test_plot.signal
     s.metadata.General.title = 'Nav %i, Sig 1, two cursor' % ndim
     s.axes_manager[0].index = 4
     s.plot()
     s._plot.add_right_pointer()
+    s._plot.navigator_plot.figure.canvas.draw()
+    s._plot.signal_plot.figure.canvas.draw()
     s._plot.right_pointer.axes_manager[0].index = 2
     if ndim == 2:
         s.axes_manager[1].index = 2

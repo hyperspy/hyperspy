@@ -159,8 +159,8 @@ def file_reader(filename, endianess='<', **kwds):
     if lazy:
         mmap_mode = 'r'
     data = np.memmap(f, mode=mmap_mode, offset=f.tell(),
-                     dtype=get_data_type(std_header['MODE'], endianess)
-                     ).squeeze().reshape((NX, NY, NZ), order='F').T
+                     dtype=get_data_type(std_header['MODE'][0], endianess)
+                     ).squeeze().reshape((NX[0], NY[0], NZ[0]), order='F').T
 
     original_metadata = {'std_header': sarray2dict(std_header)}
     # Convert bytes to unicode
@@ -216,6 +216,7 @@ def file_reader(filename, endianess='<', **kwds):
                   'mapping': mapping}
 
     return [dictionary, ]
+
 
 mapping = {
     'fei_header.a_tilt':

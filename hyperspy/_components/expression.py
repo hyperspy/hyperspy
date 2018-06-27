@@ -27,14 +27,15 @@ def _fill_function_args_2d(fn):
     return fn_wrapped
 
 
-def _parse_substitutions(string, simultaneous=True):
+def _parse_substitutions(string):
     import sympy
     splits = map(str.strip, string.split(';'))
     expr = sympy.sympify(next(splits))
     # We substitute one by one manually, as passing all at the same time does
     # not work as we want (subsitutions inside other substitutions do not work)
     for sub in splits:
-        expr = expr.subs(*tuple(map(str.strip, sub.split('='))))
+        t = tuple(map(str.strip, sub.split('=')))
+        expr = expr.subs(t[0], sympy.sympify(t[1]))
     return expr
 
 
@@ -123,13 +124,18 @@ class Expression(Component):
             self.compile_function(module=module, position=rotation_center)
         # Initialise component
         Component.__init__(self, self._parameter_strings)
-        self._whitelist['expression'] = ('init', expression)
-        self._whitelist['name'] = ('init', name)
-        self._whitelist['position'] = ('init', position)
+        # When creating components using Expression (for example GaussianHF)
+        # we shouldn't add anything else to the _whitelist as the
+        # component should be initizialized with its own kwargs.
+        # An exception is "module"
         self._whitelist['module'] = ('init', module)
-        if self._is2D:
-            self._whitelist['add_rotation'] = ('init', self._add_rotation)
-            self._whitelist['rotation_center'] = ('init', rotation_center)
+        if self.__class__ is Expression:
+            self._whitelist['expression'] = ('init', expression)
+            self._whitelist['name'] = ('init', name)
+            self._whitelist['position'] = ('init', position)
+            if self._is2D:
+                self._whitelist['add_rotation'] = ('init', self._add_rotation)
+                self._whitelist['rotation_center'] = ('init', rotation_center)
         self.name = name
         # Set the position parameter
         if position:
@@ -188,9 +194,10 @@ class Expression(Component):
                            modules=module, dummify=False)
 
         if self._is2D:
-            f = lambda x, y: self._f(x, y, *[p.value for p in self.parameters])
+            def f(x, y): return self._f(
+                x, y, *[p.value for p in self.parameters])
         else:
-            f = lambda x: self._f(x, *[p.value for p in self.parameters])
+            def f(x): return self._f(x, *[p.value for p in self.parameters])
         setattr(self, "function", f)
         parnames = [symbol.name for symbol in parameters]
         self._parameter_strings = parnames

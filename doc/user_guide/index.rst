@@ -3,9 +3,9 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-###########################
-HyperSpy User Guide (DRAFT)
-###########################
+###################
+HyperSpy User Guide
+###################
 
 .. toctree::
     :maxdepth: 2
@@ -20,7 +20,6 @@ HyperSpy User Guide (DRAFT)
     visualisation.rst
     mva.rst
     model.rst
-    samfire.rst
     eels.rst
     eds.rst
     dielectric_function.rst
@@ -29,5 +28,6 @@ HyperSpy User Guide (DRAFT)
     events.rst
     big_data.rst
     metadata_structure.rst
-    credits.rst
     bibliography.rst
+..  samfire.rst
+    credits.rst

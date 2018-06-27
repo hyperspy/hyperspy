@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import math
-
 import numpy as np
 
 from hyperspy.component import Component
@@ -137,7 +135,7 @@ class PowerLaw(Component):
             else:
                 r = np.nan_to_num(r)
                 A = np.nan_to_num(A)
-        except:
+        except BaseException:
             return False
         if only_current is True:
             self.r.value = r

@@ -17,7 +17,6 @@
 
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal
 
 from hyperspy.signals import EDSTEMSpectrum
 from hyperspy.defaults_parser import preferences
@@ -130,6 +129,13 @@ class Test_metadata:
         assert (s.axes_manager.signal_axes[0].scale ==
                 energy_axis.scale)
 
+    def test_are_microscope_parameters_missing(self):
+        assert not self.signal._are_microscope_parameters_missing()
+
+        del self.signal.metadata.Acquisition_instrument.TEM.beam_energy
+        del self.signal.metadata.Acquisition_instrument.TEM.Detector.EDS.live_time
+        assert self.signal._are_microscope_parameters_missing()
+
 
 @lazifyTestClass
 class Test_quantification:
@@ -141,11 +147,10 @@ class Test_quantification:
         energy_axis.units = 'keV'
         energy_axis.name = "Energy"
         s.set_microscope_parameters(beam_energy=200,
-                                    live_time=3.1, tilt_stage=0.0,
-                                    azimuth_angle=None, elevation_angle=35,
-                                    energy_resolution_MnKa=130)
-        s.metadata.Acquisition_instrument.TEM.Detector.EDS.real_time = 2.5
-        s.metadata.Acquisition_instrument.TEM.beam_current = 0.05
+                                    live_time=2.5, tilt_stage=0.0,
+                                    azimuth_angle=0, elevation_angle=35,
+                                    energy_resolution_MnKa=130,
+                                    beam_current=0.05)
         elements = ['Al', 'Zn']
         xray_lines = ['Al_Ka', 'Zn_Ka']
         intensities = [300, 500]
@@ -162,6 +167,22 @@ class Test_quantification:
         s.axes_manager[0].scale = 0.5
         s.axes_manager[1].scale = 0.5
         self.signal = s
+
+    def test_metadata(self):
+        TEM_md = self.signal.metadata.Acquisition_instrument.TEM
+        np.testing.assert_approx_equal(TEM_md.beam_energy, 200)
+        np.testing.assert_approx_equal(TEM_md.beam_current, 0.05)
+        np.testing.assert_approx_equal(TEM_md.Stage.tilt_alpha, 0.0)
+        np.testing.assert_approx_equal(TEM_md.Detector.EDS.live_time, 2.5)
+        np.testing.assert_approx_equal(TEM_md.Detector.EDS.elevation_angle, 35)
+        np.testing.assert_approx_equal(
+            TEM_md.Detector.EDS.energy_resolution_MnKa, 130)
+
+        self.signal.set_microscope_parameters(real_time=3.1)
+        self.signal.set_microscope_parameters(probe_area=1.2)
+        np.testing.assert_approx_equal(
+            TEM_md.probe_area, 1.2)
+        np.testing.assert_approx_equal(TEM_md.Detector.EDS.real_time, 3.1)
 
     def test_quant_lorimer(self):
         s = self.signal

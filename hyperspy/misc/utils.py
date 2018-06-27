@@ -158,9 +158,8 @@ def slugify(value, valid_variable_name=False):
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
     value = value.translate(None, _slugify_strip_re_data).decode().strip()
     value = value.replace(' ', '_')
-    if valid_variable_name is True:
-        if value[:1].isdigit():
-            value = 'Number_' + value
+    if valid_variable_name and not value.isidentifier():
+        value = 'Number_' + value
     return value
 
 
@@ -751,10 +750,6 @@ def closest_power_of_two(n):
     return int(2 ** np.ceil(np.log2(n)))
 
 
-def without_nans(data):
-    return data[~np.isnan(data)]
-
-
 def stack(signal_list, axis=None, new_axis_name='stack_element',
           lazy=None, **kwargs):
     """Concatenate the signals in the list over a given axis or a new axis.
@@ -951,7 +946,7 @@ def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
     from hyperspy.signal import BaseSignal
     from itertools import repeat
 
-    iterators = tuple(signal[1]._iterate_signal()
+    iterators = tuple(signal[1]._cycle_signal()
                       if isinstance(signal[1], BaseSignal) else signal[1]
                       for signal in iterating_kwargs)
     # make all kwargs iterating for simplicity:

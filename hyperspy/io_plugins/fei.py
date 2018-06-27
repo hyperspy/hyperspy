@@ -23,11 +23,7 @@ import os
 from dateutil import parser
 import logging
 import xml.etree.ElementTree as ET
-try:
-    from collections import OrderedDict
-    ordict = True
-except ImportError:
-    ordict = False
+from collections import OrderedDict
 
 import numpy as np
 import traits.api as t
@@ -36,6 +32,7 @@ from hyperspy.misc.array_tools import sarray2dict
 from hyperspy.misc.utils import DictionaryTreeBrowser, multiply
 
 _logger = logging.getLogger(__name__)
+
 
 ser_extensions = ('ser', 'SER')
 emi_extensions = ('emi', 'EMI')
@@ -162,6 +159,7 @@ def get_data_dtype_list(file, offset, record_by):
             ("ArrayLength", "<u4"),
             ("Array", (data_types[str(data_type)], array_size)),
         ]
+        shape = (array_size)
     elif record_by == 'image':  # Untested
         file.seek(offset + 40)
         data_type = readLEShort(file)
@@ -181,7 +179,8 @@ def get_data_dtype_list(file, offset, record_by):
             ("Array",
              (data_types[str(data_type)], (array_size_x, array_size_y))),
         ]
-    return header
+        shape = (array_size_x, array_size_y)
+    return header, shape
 
 
 def get_data_tag_dtype_list(data_type_id):
@@ -313,18 +312,29 @@ def load_ser_file(filename):
         # OffsetArrayOffset can contain 4 or 8 bytes integer depending if the
         # data have been acquired using a 32 or 64 bits platform.
         if header['SeriesVersion'] <= 528:
-            data_offsets = readLELong(f)
+            data_offset = readLELong(f)
+            data_offset_array = np.fromfile(f,
+                                            dtype="<u4",
+                                            count=header["TotalNumberElements"][0])
         else:
-            data_offsets = readLELongLong(f)
-        data_dtype_list = get_data_dtype_list(
+            data_offset = readLELongLong(f)
+            data_offset_array = np.fromfile(f,
+                                            dtype="<u8",
+                                            count=header["TotalNumberElements"][0])
+        data_dtype_list, shape = get_data_dtype_list(
             f,
-            data_offsets,
+            data_offset,
             guess_record_by(header['DataTypeID']))
         tag_dtype_list = get_data_tag_dtype_list(header['TagTypeID'])
-        f.seek(data_offsets)
-        data = np.fromfile(f,
-                           dtype=np.dtype(data_dtype_list + tag_dtype_list),
-                           count=header["TotalNumberElements"][0])
+        f.seek(data_offset)
+        data = np.empty(header["TotalNumberElements"][0],
+                        dtype=np.dtype(data_dtype_list + tag_dtype_list))
+        for i, offset in enumerate(data_offset_array):
+            data[i] = np.fromfile(f,
+                                  dtype=np.dtype(
+                                      data_dtype_list + tag_dtype_list),
+                                  count=1)
+            f.seek(offset)
         _logger.info("Data info:")
         log_struct_array_values(data[0])
     return header, data
@@ -538,7 +548,6 @@ def ser_reader(filename, objects=None, *args, **kwds):
             'size': data['ArraySizeY'][0],
         })
         array_shape.append(data['ArraySizeY'][0])
-
         # X axis
         axes.append({
             'name': 'x',
@@ -549,6 +558,7 @@ def ser_reader(filename, objects=None, *args, **kwds):
             'units': units,
         })
         array_shape.append(data['ArraySizeX'][0])
+
     # FEI seems to use the international system of units (SI) for the
     # spatial scale. However, we prefer to work in nm
     for axis in axes:
@@ -572,10 +582,7 @@ def ser_reader(filename, objects=None, *args, **kwds):
         dc = load_only_data(filename, array_shape, record_by, len(axes),
                             data=data)
 
-    if ordict:
-        original_metadata = OrderedDict()
-    else:
-        original_metadata = {}
+    original_metadata = OrderedDict()
     header_parameters = sarray2dict(header)
     sarray2dict(data, header_parameters)
     # We remove the Array key to save memory avoiding duplication
@@ -678,10 +685,6 @@ def _get_simplified_mode(mode):
         return "TEM"
 
 
-def _get_degree(value):
-    return np.degrees(float(value))
-
-
 def _get_date_time(value):
     dt = parser.parse(value)
     return dt.date().isoformat(), dt.time().isoformat()
@@ -689,6 +692,7 @@ def _get_date_time(value):
 
 def _get_microscope_name(value):
     return value.replace('Microscope ', '')
+
 
 mapping = {
     "ObjectInfo.ExperimentalDescription.High_tension_kV": (
@@ -714,10 +718,10 @@ mapping = {
         None),
     "ObjectInfo.ExperimentalDescription.Stage_A_deg": (
         "Acquisition_instrument.TEM.Stage.tilt_alpha",
-        _get_degree),
+        None),
     "ObjectInfo.ExperimentalDescription.Stage_B_deg": (
         "Acquisition_instrument.TEM.Stage.tilt_beta",
-        _get_degree),
+        None),
     "ObjectInfo.ExperimentalDescription.Stage_X_um": (
         "Acquisition_instrument.TEM.Stage.x",
         lambda x: x * 1e-3),

@@ -58,7 +58,7 @@ def mpfitexpr(func, x, y, err, start_params, check=True, full_output=False,
     def myfunc(p, fjac=None, x=None, y=None, err=None):
         return [0, eval('(y-(%s))/err' % func, hash, locals())]
 
-    myre = "[^a-zA-Z]p\[(\d+)\]"
+    myre = r"[^a-zA-Z]p\[(\d+)\]"
     r = re.compile(myre)
     maxp = -1
     for m in re.finditer(r, func):
