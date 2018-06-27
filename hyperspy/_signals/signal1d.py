@@ -1048,6 +1048,7 @@ _spikes_diagnosis,
             else:
                 result.isig[:signal_range[0]] = 0
         return result
+
     def remove_background(
             self,
             signal_range='interactive',
@@ -1062,7 +1063,8 @@ _spikes_diagnosis,
             br = BackgroundRemoval(self, background_type=background_type,
                                    polynomial_order=polynomial_order,
                                    fast=fast,
-                                   show_progressbar=show_progressbar)
+                                   show_progressbar=show_progressbar,
+                                   zero_fill=zero_fill)
             return br.gui(display=display, toolkit=toolkit)
         else:
             if background_type in ('PowerLaw', 'Power Law'):

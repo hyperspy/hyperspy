@@ -663,7 +663,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
     hi = t.Int(0)
 
     def __init__(self, signal, background_type='Power Law', polynomial_order=2,
-                 fast=True, show_progressbar=None):
+                 fast=True, show_progressbar=None, zero_fill=False):
         super(BackgroundRemoval, self).__init__(signal)
         # setting the polynomial order will change the backgroud_type to
         # polynomial, so we set it before setting the background type
@@ -673,6 +673,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.fast = fast
         self.show_progressbar = show_progressbar
         self.bg_line = None
+        self.zero_fill = zero_fill
 
     def on_disabling_span_selector(self):
         if self.bg_line is not None:
