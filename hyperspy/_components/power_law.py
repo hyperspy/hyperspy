@@ -135,7 +135,7 @@ class PowerLaw(Component):
             else:
                 r = np.nan_to_num(r)
                 A = np.nan_to_num(A)
-        except:
+        except BaseException:
             return False
         if only_current is True:
             self.r.value = r

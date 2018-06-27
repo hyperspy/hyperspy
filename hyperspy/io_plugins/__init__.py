@@ -21,11 +21,11 @@ import logging
 
 from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc, mrcz, ripple,
                                  tiff, semper_unf, blockfile, dens, emd,
-                                 protochips, edax, bcf)
+                                 protochips, edax, bruker)
 
 
 io_plugins = [msa, digital_micrograph, fei, mrc, mrcz, ripple, tiff, semper_unf,
-              blockfile, dens, emd, protochips, edax, bcf]
+              blockfile, dens, emd, protochips, edax, bruker]
 
 
 _logger = logging.getLogger(__name__)

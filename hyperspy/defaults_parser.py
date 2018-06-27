@@ -198,6 +198,7 @@ def dictionary_from_template(template):
         dictionary[section] = traited_class.get()
     return dictionary
 
+
 config = configparser.ConfigParser(allow_no_value=True)
 template2config(template, config)
 rewrite = False
@@ -238,6 +239,7 @@ class Preferences(t.HasTraits):
         config = configparser.ConfigParser(allow_no_value=True)
         template2config(template, config)
         config.write(open(defaults_file, 'w'))
+
 
 preferences = Preferences(
     EELS=template['EELS'],

@@ -49,7 +49,7 @@ def _estimate_gaussian_parameters(signal, x1, x2, only_current):
     if isinstance(data, da.Array):
         _sum = da.sum
         _sqrt = da.sqrt
-        _abs = da.numpy_compat.builtins.abs
+        _abs = abs
     else:
         _sum = np.sum
         _sqrt = np.sqrt

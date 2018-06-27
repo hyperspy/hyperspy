@@ -56,5 +56,5 @@ Cite
 
 |DOI|_
 
-.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.583693.svg
-.. _DOI: http://dx.doi.org/10.5281/zenodo.583693
+.. |DOI| image:: https://zenodo.org/badge/doi/10.5281/zenodo.1221347.svg
+.. _DOI: https://doi.org/10.5281/zenodo.1221347

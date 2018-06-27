@@ -53,7 +53,7 @@ user = {'name': 'John Doe', 'institution': 'TestUniversity',
 microscope = {'name': 'Titan', 'voltage': '300kV'}
 sample = {'material': 'TiO2', 'preparation': 'FIB'}
 comments = {'comment': 'Test'}
-test_title = 'This is a test!'
+test_title = '/signals/This is a test!'
 
 
 def test_signal_3d_loading():
@@ -120,12 +120,103 @@ def test_data_axis_length_1():
     assert signal.data.shape == (5, 1, 5)
 
 
+class TestDatasetName:
+
+    def setup_method(self):
+        tmpdir = tempfile.TemporaryDirectory()
+        hdf5_dataset_path = os.path.join(tmpdir.name, "test_dataset.emd")
+        f = h5py.File(hdf5_dataset_path, mode="w")
+        f.attrs.create('version_major', 0)
+        f.attrs.create('version_minor', 2)
+
+        dataset_name_list = [
+                '/experimental/science_data_0',
+                '/experimental/science_data_1',
+                '/processed/science_data_0']
+        data_size_list = [(50, 50), (20, 10), (16, 32)]
+
+        for dataset_name, data_size in zip(dataset_name_list, data_size_list):
+            group = f.create_group(dataset_name)
+            group.attrs.create('emd_group_type', 1)
+            group.create_dataset(name='data', data=np.random.random(data_size))
+            group.create_dataset(name='dim1', data=range(data_size[0]))
+            group.create_dataset(name='dim2', data=range(data_size[1]))
+
+        f.close()
+
+        self.hdf5_dataset_path = hdf5_dataset_path
+        self.tmpdir = tmpdir
+        self.dataset_name_list = dataset_name_list
+        self.data_size_list = data_size_list
+
+    def teardown_method(self):
+        self.tmpdir.cleanup()
+
+    def test_load_with_dataset_name(self):
+        s = load(self.hdf5_dataset_path)
+        assert len(s) == len(self.dataset_name_list)
+        for dataset_name, data_size in zip(
+                self.dataset_name_list, self.data_size_list):
+            s = load(self.hdf5_dataset_path, dataset_name=dataset_name)
+            assert s.metadata.General.title == dataset_name
+            assert s.data.shape == data_size
+
+    def test_load_with_dataset_name_several(self):
+        dataset_name = self.dataset_name_list[0:2]
+        s = load(self.hdf5_dataset_path, dataset_name=dataset_name)
+        assert len(s) == len(dataset_name)
+        assert s[0].metadata.General.title in dataset_name
+        assert s[1].metadata.General.title in dataset_name
+
+    def test_wrong_dataset_name(self):
+        with pytest.raises(IOError):
+            load(self.hdf5_dataset_path, dataset_name='a_wrong_name')
+        with pytest.raises(IOError):
+            load(self.hdf5_dataset_path,
+                 dataset_name=[self.dataset_name_list[0], 'a_wrong_name'])
+
+
 class TestMinimalSave():
 
     def test_minimal_save(self):
         self.signal = Signal1D([0, 1])
         with tempfile.TemporaryDirectory() as tmp:
             self.signal.save(os.path.join(tmp, 'testfile.emd'))
+
+
+class TestReadSeveralDatasets:
+
+    def setup_method(self):
+        tmpdir = tempfile.TemporaryDirectory()
+        hdf5_dataset_path = os.path.join(tmpdir.name, "test_dataset.emd")
+        f = h5py.File(hdf5_dataset_path, mode="w")
+        f.attrs.create('version_major', 0)
+        f.attrs.create('version_minor', 2)
+
+        group_path_list = ['/exp/data_0', '/exp/data_1', '/calc/data_0']
+
+        for group_path in group_path_list:
+            group = f.create_group(group_path)
+            group.attrs.create('emd_group_type', 1)
+            data = np.random.random((128, 128))
+            group.create_dataset(name='data', data=data)
+            group.create_dataset(name='dim1', data=range(128))
+            group.create_dataset(name='dim2', data=range(128))
+
+        f.close()
+
+        self.group_path_list = group_path_list
+        self.hdf5_dataset_path = hdf5_dataset_path
+        self.tmpdir = tmpdir
+
+    def teardown_method(self):
+        self.tmpdir.cleanup()
+
+    def test_load_file(self):
+        s = load(self.hdf5_dataset_path)
+        assert len(s) == len(self.group_path_list)
+        title_list = [s_temp.metadata.General.title for s_temp in s]
+        assert sorted(self.group_path_list) == sorted(title_list)
 
 
 class TestCaseSaveAndRead():

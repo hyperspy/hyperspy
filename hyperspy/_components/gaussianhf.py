@@ -51,6 +51,11 @@ class GaussianHF(Expression):
         fwhm: float
             The full width half maximum value, i.e. the width of the gaussian
             at half the value of gaussian peak (at centre).
+        **kwargs
+            Extra keyword arguments are passes to the ``Expression`` component.
+            An useful keyword argument that can be used to speed up the
+            component is `module`. See the ``Expression`` component
+            documentation for details.
 
     The helper properties `sigma` and `A` are also defined for compatibility
     with `Gaussian` component.
@@ -61,7 +66,7 @@ class GaussianHF(Expression):
 
     """
 
-    def __init__(self, height=1., fwhm=1., centre=0.):
+    def __init__(self, height=1., fwhm=1., centre=0., **kwargs):
         super(GaussianHF, self).__init__(
             expression="height * exp(-(x - centre)**2 * 4 * log(2)/fwhm**2)",
             name="GaussianHF",
@@ -70,6 +75,7 @@ class GaussianHF(Expression):
             centre=centre,
             position="centre",
             autodoc=False,
+            **kwargs,
         )
 
         # Boundaries
