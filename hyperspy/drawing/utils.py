@@ -347,6 +347,22 @@ def _make_heatmap_subplot(spectra):
     return im._plot.signal_plot.ax
 
 
+def set_xaxis_lims(mpl_ax, hs_axis):
+    """
+    Set the matplotlib axis limits to match that of a HyperSpy axis
+
+    Parameters
+    ----------
+    mpl_ax : :class:`matplotlib.axis.Axis`
+        The ``matplotlib`` axis to change
+    hs_axis : :class:`~hyperspy.axes.DataAxis`
+        The data axis that contains the values that control the scaling
+    """
+    x_axis_lower_lim = hs_axis.axis[0]
+    x_axis_upper_lim = hs_axis.axis[-1]
+    mpl_ax.set_xlim(x_axis_lower_lim, x_axis_upper_lim)
+
+
 def _make_overlap_plot(spectra, ax, color="blue", line_style='-'):
     if isinstance(color, str):
         color = [color] * len(spectra)
@@ -356,6 +372,7 @@ def _make_overlap_plot(spectra, ax, color="blue", line_style='-'):
             zip(spectra, color, line_style)):
         x_axis = spectrum.axes_manager.signal_axes[0]
         ax.plot(x_axis.axis, spectrum.data, color=color, ls=line_style)
+        set_xaxis_lims(ax, x_axis)
     _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.BaseSignal)
                          else spectra[-1], ax)
     ax.set_ylabel('Intensity')
@@ -380,6 +397,7 @@ def _make_cascade_subplot(
         data_to_plot = ((spectrum.data - spectrum.data.min()) /
                         float(max_value) + spectrum_index * padding)
         ax.plot(x_axis.axis, data_to_plot, color=color, ls=line_style)
+        set_xaxis_lims(ax, x_axis)
     _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.BaseSignal)
                          else spectra[-1], ax)
     ax.set_yticks([])
@@ -389,6 +407,7 @@ def _make_cascade_subplot(
 def _plot_spectrum(spectrum, ax, color="blue", line_style='-'):
     x_axis = spectrum.axes_manager.signal_axes[0]
     ax.plot(x_axis.axis, spectrum.data, color=color, ls=line_style)
+    set_xaxis_lims(ax, x_axis)
 
 
 def _set_spectrum_xlabel(spectrum, ax):
