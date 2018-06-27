@@ -677,7 +677,8 @@ class FeiEMDReader(object):
         image_sub_group = image_group[image_sub_group_key]
         original_metadata = _parse_metadata(image_group, image_sub_group_key)
         original_metadata.update(self.original_metadata)
-        self.detector_name = _parse_detector_name(original_metadata)
+        if 'Detector' in original_metadata['BinaryResult'].keys():
+            self.detector_name = _parse_detector_name(original_metadata)
 
         read_stack = (self.load_SI_image_stack or self.im_type == 'Image')
         h5data = image_sub_group['Data']
@@ -747,9 +748,10 @@ class FeiEMDReader(object):
 
         md = self._get_metadata_dict(original_metadata)
         md['Signal']['signal_type'] = 'image'
-        original_metadata['DetectorMetadata'] = _get_detector_metadata_dict(
-            original_metadata,
-            self.detector_name)
+        if self.detector_name is not None:
+            original_metadata['DetectorMetadata'] = _get_detector_metadata_dict(
+                original_metadata,
+                self.detector_name)
         if hasattr(self, 'map_label_dict'):
             if image_sub_group_key in self.map_label_dict:
                 md['General']['title'] = self.map_label_dict[image_sub_group_key]
@@ -928,7 +930,7 @@ class FeiEMDReader(object):
             original_metadata = stream.original_metadata
             original_metadata.update(self.original_metadata)
             self.dictionaries.append({'data': stream.spectrum_image,
-                                      'axes': axes,
+    'axes': axes,
                                       'metadata': md,
                                       'original_metadata': original_metadata,
                                       'mapping': self._get_mapping(
@@ -962,22 +964,23 @@ class FeiEMDReader(object):
         meta_gen['original_filename'] = os.path.split(self.filename)[1]
         if self.detector_name is not None:
             meta_gen['title'] = self.detector_name
-        # We have only one entry in the original_metadata, so we can't use the
-        # mapping of the original_metadata to set the date and time in the
-        # metadata: need to set it manually here
+        # We have only one entry in the original_metadata, so we can't use 
+        # the mapping of the original_metadata to set the date and time in 
+        # the metadata: need to set it manually here
         try:
             if 'AcquisitionStartDatetime' in om['Acquisition'].keys():
-                unix_time = om['Acquisition']['AcquisitionStartDatetime']['DateTime']
+                unix_time = om['Acquisition']['AcquisitionStartDatetime']['DateTime']              
             # Workaround when the 'AcquisitionStartDatetime' key is missing
             # This timestamp corresponds to when the data is stored
-            elif 'Detectors[BM-Ceta].TimeStamp' in om['CustomProperties'].keys():
+            elif (not isinstance(om['CustomProperties'], str) and 
+                  'Detectors[BM-Ceta].TimeStamp' in om['CustomProperties'].keys()):
                 unix_time = float(
                     om['CustomProperties']['Detectors[BM-Ceta].TimeStamp']['value']) / 1E6
             date, time = self._convert_datetime(unix_time).split('T')
             meta_gen['date'] = date
             meta_gen['time'] = time
             meta_gen['time_zone'] = self._get_local_time_zone()
-        except (KeyError, UnboundLocalError):
+        except (UnboundLocalError):
             pass
 
         meta_sig = {}
