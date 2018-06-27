@@ -151,7 +151,11 @@ def load(filenames=None,
     load_SI_image_stack : bool (default False)
        Load the stack of STEM images acquired simultaneously as the EDS 
        spectrum image.
-       
+    dataset_name : string or list, optional
+        For filetypes which support several datasets in the same file, this
+        will only load the specified dataset. Several datasets can be loaded
+        by using a list of strings. Only for EMD (NCEM) files.
+
 
     Returns
     -------
