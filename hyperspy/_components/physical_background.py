@@ -137,11 +137,15 @@ def Mucoef(model,quanti): # this function calculate the absorption coefficient f
             This array is automaticaly created through the Wpercent function
     """	
     weight=quanti
-    t=(np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size/5))
-    
-    Ac=mass_absorption_mixture(elements=model._signal.metadata.Sample.elements ,weight_percent=weight, energies=t)    
-    b=(model._signal.axes_manager.signal_axes[-1].axis)
-    Ac=np.interp(b,t,Ac) # Interpolation allows to gain some time
+
+    if np.sum(quanti)==0:
+        raise ValueError("The quantification cannot be nul but an an array with all weight percents set to 0 have been provided" )
+    else: 
+        t=(np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size/5))
+        
+        Ac=mass_absorption_mixture(elements=model._signal.metadata.Sample.elements ,weight_percent=weight, energies=t)    
+        b=(model._signal.axes_manager.signal_axes[-1].axis)
+        Ac=np.interp(b,t,Ac) # Interpolation allows to gain some time
     
     return Ac
 
