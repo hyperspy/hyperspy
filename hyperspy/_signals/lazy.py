@@ -184,7 +184,9 @@ class LazySignal(BaseSignal):
         if isinstance(self.data, da.Array):
             res = self.data
             if self.data.chunks != new_chunks and rechunk:
-                _logger.info("Rechunking.\nOriginal chunks: %s\nFinal chunks: %s " % (self.data.chunks, new_chunks))
+                _logger.info(
+                    "Rechunking.\nOriginal chunks: %s\nFinal chunks: %s " %
+                    (self.data.chunks, new_chunks))
                 res = self.data.rechunk(new_chunks)
         else:
             if isinstance(self.data, np.ma.masked_array):
@@ -214,7 +216,8 @@ class LazySignal(BaseSignal):
         # Optimize chunking for task
 
         # Find the axes that will not be reduced
-        nr_axes = [axis for axis in self.axes_manager._axes if axis not in axes]
+        nr_axes = [
+            axis for axis in self.axes_manager._axes if axis not in axes]
         # Find if any of those axes are signal axes
         intersection = set(self.axes_manager.signal_axes) & set(nr_axes)
         # If any of the non-reduced axes is a signal axis or there a no axes that won't be reduced,
@@ -228,7 +231,7 @@ class LazySignal(BaseSignal):
             # Only navigation axes will not be reduced. Fit as many as possible in a chunk until
             # reaching the reccomended 100MB / chunk value
             axes_size = 0
-            typesize = self.data.dtype.itemsize / 1e6 # in MB
+            typesize = self.data.dtype.itemsize / 1e6  # in MB
             i = 0
             while axes_size < 100:
                 chunking_axes.append(nr_axes[i])
