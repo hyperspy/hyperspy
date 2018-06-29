@@ -184,6 +184,7 @@ class LazySignal(BaseSignal):
         if isinstance(self.data, da.Array):
             res = self.data
             if self.data.chunks != new_chunks and rechunk:
+                _logger.info("Rechunking.\nOriginal chunks: %s\nFinal chunks: %s " % (self.data.chunks, new_chunks))
                 res = self.data.rechunk(new_chunks)
         else:
             if isinstance(self.data, np.ma.masked_array):
@@ -210,7 +211,32 @@ class LazySignal(BaseSignal):
         ar_axes = tuple(ax.index_in_array for ax in axes)
         if len(ar_axes) == 1:
             ar_axes = ar_axes[0]
-        current_data = self._lazy_data(axis=axes)
+        # Optimize chunking for task
+
+        # Find the axes that will not be reduced
+        nr_axes = [axis for axis in self.axes_manager._axes if axis not in axes]
+        # Find if any of those axes are signal axes
+        intersection = set(self.axes_manager.signal_axes) & set(nr_axes)
+        # If any of the non-reduced axes is a signal axis or there a no axes that won't be reduced,
+        # we set the standard chunking
+        # for the current signal and navigation axes configuration that, in most situation,
+        # will lead to no changes in chunking
+        chunking_axes = []
+        if intersection or not nr_axes:
+            chunking_axes = None
+        else:
+            # Only navigation axes will not be reduced. Fit as many as possible in a chunk until
+            # reaching the reccomended 100MB / chunk value
+            axes_size = 0
+            typesize = self.data.dtype.itemsize / 1e6 # in MB
+            i = 0
+            while axes_size < 100:
+                chunking_axes.append(nr_axes[i])
+                axes_size += chunking_axes[-1].size * typesize
+
+        # Get the (rechunked if needed) data
+        current_data = self._lazy_data(axis=chunking_axes)
+        # Apply reducing function
         new_data = function(current_data, axis=ar_axes)
         if not new_data.ndim:
             new_data = new_data.reshape((1, ))
