@@ -271,7 +271,7 @@ class EDSModel(Model1D):
     @property
     def _active_background_components(self):
         return [bc for bc in self.background_components
-                if bc.coefficients.free]
+                if bc.free_parameters]
 
     def add_polynomial_background(self, order=6):
         """
@@ -295,14 +295,14 @@ class EDSModel(Model1D):
         Free the yscale of the background components.
         """
         for component in self.background_components:
-            component.coefficients.free = True
+            component.set_parameters_free()
 
     def fix_background(self):
         """
         Fix the background components.
         """
         for component in self._active_background_components:
-            component.coefficients.free = False
+            component.set_parameters_not_free()
 
     def enable_xray_lines(self):
         """Enable the X-ray lines components.

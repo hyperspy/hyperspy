@@ -530,10 +530,19 @@ class TestModel1D:
         g4.centre.bmax = -1
         g4.sigma.value = 1
         g4.sigma.bmin = 10
+        p.a.value = 1
+        p.b.value = 2
+        p.c.value = 3
+        p.d.value = 4
+        p.a.bmin = 2
+        p.b.bmin = 2
+        p.c.bmin = 2
+        p.d.bmin = 2
+        p.a.bmax = 3
+        p.b.bmax = 3
+        p.c.bmax = 3
+        p.d.bmax = 3
 
-        p.coefficients.value = (1, 2, 3, 4)
-        p.coefficients.bmin = 2
-        p.coefficients.bmax = 3
         m.ensure_parameters_in_bounds()
         np.testing.assert_allclose(g1.A.value, 3.)
         np.testing.assert_allclose(g2.A.value, 1.)
@@ -550,8 +559,10 @@ class TestModel1D:
         np.testing.assert_allclose(g3.sigma.value, 0.)
         np.testing.assert_allclose(g4.sigma.value, 1)
 
-        np.testing.assert_allclose(p.coefficients.value, (2, 2, 3, 3))
-
+        np.testing.assert_almost_equal(p.a.value, 2)
+        np.testing.assert_almost_equal(p.b.value, 2)
+        np.testing.assert_almost_equal(p.c.value, 3)
+        np.testing.assert_almost_equal(p.d.value, 3)
 
 class TestModel2D:
 
@@ -733,21 +744,21 @@ class TestModelWeighted:
     def test_fit_leastsq_binned(self):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="leastsq", method="ls")
-        for result, expected in zip(self.m[0].coefficients.value,
-                                    (9.9165596693502778, 1.6628238107916631)):
+        for result, expected in zip([self.m[0].a.value, self.m[0].b.value],
+        (9.9165596693502778, 1.6628238107916631)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_odr_binned(self):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="odr", method="ls")
-        for result, expected in zip(self.m[0].coefficients.value,
+        for result, expected in zip([self.m[0].a.value, self.m[0].b.value],
                                     (9.9165596548961972, 1.6628247412317521)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_mpfit_binned(self):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="mpfit", method="ls")
-        for result, expected in zip(self.m[0].coefficients.value,
+        for result, expected in zip([self.m[0].a.value, self.m[0].b.value],
                                     (9.9165596607108739, 1.6628243846485873)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -757,7 +768,7 @@ class TestModelWeighted:
             fitter="Nelder-Mead",
             method="ls",
         )
-        for result, expected in zip(self.m[0].coefficients.value,
+        for result, expected in zip([self.m[0].a.value, self.m[0].b.value],
                                     (9.9137288425667442, 1.8446013472266145)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -765,7 +776,7 @@ class TestModelWeighted:
         self.m.signal.metadata.Signal.binned = False
         self.m.fit(fitter="leastsq", method="ls")
         for result, expected in zip(
-                self.m[0].coefficients.value,
+                [self.m[0].a.value, self.m[0].b.value],
                 (0.99165596391487121, 0.16628254242532492)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -773,7 +784,7 @@ class TestModelWeighted:
         self.m.signal.metadata.Signal.binned = False
         self.m.fit(fitter="odr", method="ls")
         for result, expected in zip(
-                self.m[0].coefficients.value,
+                [self.m[0].a.value, self.m[0].b.value],
                 (0.99165596548961943, 0.16628247412317315)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -781,7 +792,7 @@ class TestModelWeighted:
         self.m.signal.metadata.Signal.binned = False
         self.m.fit(fitter="mpfit", method="ls")
         for result, expected in zip(
-                self.m[0].coefficients.value,
+                [self.m[0].a.value, self.m[0].b.value],
                 (0.99165596295068958, 0.16628257462820528)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -792,7 +803,7 @@ class TestModelWeighted:
             method="ls",
         )
         for result, expected in zip(
-                self.m[0].coefficients.value,
+                [self.m[0].a.value, self.m[0].b.value],
                 (0.99136169230026261, 0.18483060534056939)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
