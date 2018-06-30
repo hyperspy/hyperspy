@@ -57,9 +57,9 @@ class Expression(Component):
         expression: str
             Component function in SymPy text expression format with
             substitutions separated by `;`. See examples and the SymPy
-            documentation for details. The only additional constraint is that
-            the variable(s) must be `x` (for 1D components); or `x` and `y` for
-            2D components. Also, if `module` is "numexpr" the
+            documentation for details. In order to vary the components along the 
+            signal dimensions, the variables `x` and `y` must be included for 1D 
+            or 2D components. Also, if `module` is "numexpr" the
             functions are limited to those that numexpr support. See its
             documentation for details.
         name : str
@@ -156,9 +156,18 @@ class Expression(Component):
     def compile_function(self, module="numpy", position=False):
         import sympy
         from sympy.utilities.lambdify import lambdify
+        try:# Expression is just a constant
+            int(self._str_expression)
+        except:
+            pass
+        else:
+            raise AttributeError('Expression must contain a symbol, i.e. x, a, etc.')
         expr = _parse_substitutions(self._str_expression)
         # Extract x
-        x, = [symbol for symbol in expr.free_symbols if symbol.name == "x"]
+        x = [symbol for symbol in expr.free_symbols if symbol.name == "x"]
+        if not x: # Expression is just a parameter, no x -> Offset
+            x = ['x']
+        x = x[0]
         # Extract y
         y = [symbol for symbol in expr.free_symbols if symbol.name == "y"]
         self._is2D = True if y else False
