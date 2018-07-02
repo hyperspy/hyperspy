@@ -845,16 +845,6 @@ class LazySignal(BaseSignal):
             target.factors = target.factors * rbH.ravel()[:, np.newaxis]
             target.loadings = target.loadings * raG.ravel()[:, np.newaxis]
 
-    def transpose(self, signal_axes=None,
-                  navigation_axes=None, optimize=False):
-        res = super().transpose(
-            signal_axes=signal_axes,
-            navigation_axes=navigation_axes,
-            optimize=False)
-        res._make_lazy(rechunk=optimize)
-        return res
-    transpose.__doc__ = BaseSignal.transpose.__doc__
-
 
 def _reshuffle_mixed_blocks(array, ndim, sshape, nav_chunks):
     """Reshuffles dask block-shuffled array
