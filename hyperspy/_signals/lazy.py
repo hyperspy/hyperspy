@@ -184,8 +184,8 @@ class LazySignal(BaseSignal):
             res = self.data
             if rechunk:
                 new_chunks = self._get_dask_chunks(axis=axis, dtype=dtype)
-            if self.data.chunks != new_chunks:
-                res = self.data.rechunk(new_chunks)
+                if self.data.chunks != new_chunks:
+                    res = self.data.rechunk(new_chunks)
         else:
             if isinstance(self.data, np.ma.masked_array):
                 data = np.where(self.data.mask, np.nan, self.data)
