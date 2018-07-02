@@ -348,7 +348,9 @@ class Test3D:
             cks = s.data.chunks
             assert s.swap_axes(0, 1).data.chunks == (cks[1], cks[0], cks[2])
             # This data shape does not require rechunking
-            assert s.swap_axes(0, 1, optimize=True).data.chunks == (cks[1], cks[0], cks[2]) 
+            assert s.swap_axes(
+                0, 1, optimize=True).data.chunks == (
+                cks[1], cks[0], cks[2])
 
     def test_swap_axes_iteration(self):
         s = self.signal
@@ -873,7 +875,8 @@ class TestTranspose:
 
     def test_optimize(self):
         if self.s._lazy:
-            pytest.skip("LazyS optimization is tested in test_lazy_tranpose_rechunk")
+            pytest.skip(
+                "LazyS optimization is tested in test_lazy_tranpose_rechunk")
         t = self.s.transpose(signal_axes=['f', 'a', 'b'], optimize=False)
         assert t.data.base is self.s.data
 
@@ -884,11 +887,11 @@ class TestTranspose:
 def test_lazy_transpose_rechunks():
     ar = da.ones((50, 50, 256, 256), chunks=(5, 5, 256, 256))
     s = signals.Signal2D(ar).as_lazy()
-    s1 = s.T # By default it does not rechunk
+    s1 = s.T  # By default it does not rechunk
     cks = s.data.chunks
     assert s1.data.chunks == (cks[2], cks[3], cks[0], cks[1])
     s2 = s.transpose(optimize=True)
-    assert s2.data.chunks != s1.data.chunks 
+    assert s2.data.chunks != s1.data.chunks
 
 
 def test_lazy_changetype_rechunk():

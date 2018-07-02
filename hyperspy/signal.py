@@ -4517,7 +4517,8 @@ class BaseSignal(FancySlicing,
             self.data += noise
         self.events.data_changed.trigger(obj=self)
 
-    def transpose(self, signal_axes=None, navigation_axes=None, optimize=False):
+    def transpose(self, signal_axes=None,
+                  navigation_axes=None, optimize=False):
         """Transposes the signal to have the required signal and navigation
         axes.
 
