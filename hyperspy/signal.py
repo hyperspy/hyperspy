@@ -3933,7 +3933,7 @@ class BaseSignal(FancySlicing,
         cs = self.__class__(
             self(),
             axes=self.axes_manager._get_signal_axes_dicts(),
-            metadata=self.metadata.as_dictionary(),
+            metadata=self.metadata.deepcopy().as_dictionary(),
             attributes={'_lazy': False})
 
         if cs.metadata.has_item('Markers'):
