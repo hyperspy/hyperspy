@@ -527,11 +527,14 @@ def get_signal_chunks(shape, dtype, signal_axes=None):
     return tuple(int(x) for x in chunks)
 
 
-def overwrite_dataset(group, data, key, signal_axes=None, **kwds):
-    if signal_axes is None:
-        chunks = True
-    else:
-        chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
+def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
+    if chunks is None:
+        if signal_axes is None:
+            # Use automatic h5py chunking
+            chunks = True
+        else:
+            # Optimise the chunking to contain at least one signal per chunk
+            chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
 
     maxshape = tuple(None for _ in data.shape)
 
@@ -546,6 +549,8 @@ def overwrite_dataset(group, data, key, signal_axes=None, **kwds):
                                    chunks=chunks,
                                    shuffle=True,))
 
+            # If chunks is True, the `chunks` attribute of `dset` below
+            # contains the chunk shape guessed by h5py
             dset = group.require_dataset(key, **these_kwds)
             got_data = True
         except TypeError:
@@ -556,6 +561,7 @@ def overwrite_dataset(group, data, key, signal_axes=None, **kwds):
         # just a reference to already created thing
         pass
     else:
+        _logger.info("Chunks used for saving: %s" % str(dset.chunks))
         if isinstance(data, da.Array):
             da.store(data.rechunk(dset.chunks), dset)
         elif data.flags.c_contiguous:
