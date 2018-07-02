@@ -347,6 +347,28 @@ def test_plot_images_single_image(mpl_cleanup):
     ax = hs.plot.plot_images(image0, saturated_pixels=0.1)
     return ax[0].figure
 
+def test_plot_images_multi_signal_w_axes_replot(mpl_cleanup):
+    imdata = np.random.rand(3, 5, 5)
+    imgs = hs.signals.Signal2D(imdata)
+    img_list = [imgs, imgs.inav[:2], imgs.inav[0]]
+    subplots=hs.plot.plot_images(img_list, axes_decor=None)
+    f = plt.gcf()
+    f.canvas.draw()
+    f.canvas.flush_events()
+
+    tests = []
+    for axi in subplots:
+        imi = axi.images[0].get_array()
+        x, y = axi.transData.transform((2, 2))
+        # Calling base class method because of backends
+        plt.matplotlib.backends.backend_agg.FigureCanvasBase.button_press_event(
+                                                  f.canvas, x, y, 'left',  True)
+        fn = plt.gcf()
+        tests.append(
+            np.allclose(imi, fn.axes[0].images[0].get_array().data) )
+        plt.close(fn)
+    assert np.alltrue(tests)
+    return f
 
 @pytest.mark.parametrize("saturated_pixels", [5.0, [0.0, 20.0, 40.0],
                                               [10.0, 20.0], [10.0, None, 20.0]])

@@ -634,6 +634,14 @@ __ plot.spectra_
     for the ``colorbar`` argument. Such an input will cause a warning and
     instead set the ``colorbar`` argument to ``None``.
 
+.. versionadd: 1.4
+    Double-clicking into an axis in the panel created by ``plot_images``
+    triggers a plot event, creating a new figure in which the selected signal is
+    presented alone. This helps navigating through panels with many figures by
+    selecting and enlarging some of them and allowing comfortable zooming. This
+    functionality is only enabled if a ``matplotlib`` backend that supports the
+    ``button_press_event`` in the figure canvas is being used.
+
 .. _plot.spectra:
 
 Plotting several spectra
