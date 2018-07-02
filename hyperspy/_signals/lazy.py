@@ -843,9 +843,13 @@ class LazySignal(BaseSignal):
             target.factors = target.factors * rbH.ravel()[:, np.newaxis]
             target.loadings = target.loadings * raG.ravel()[:, np.newaxis]
 
-    def transpose(self, signal_axes=None, navigation_axes=None, optimize=False):
-        res = super().transpose(*args, **kwargs)
-        res._make_lazy(rechunk=kwargs["optimize"])
+    def transpose(self, signal_axes=None,
+                  navigation_axes=None, optimize=False):
+        res = super().transpose(
+            signal_axes=signal_axes,
+            navigation_axes=navigation_axes,
+            optimize=False)
+        res._make_lazy(rechunk=optimize)
         return res
     transpose.__doc__ = BaseSignal.transpose.__doc__
 
