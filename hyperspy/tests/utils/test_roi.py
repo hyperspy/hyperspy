@@ -122,7 +122,8 @@ class TestROIs():
         w2.set_bounds(width=30.0)  # above max width
         assert w2._size[0] == 12
 
-        w2.set_bounds(x=10, width=20) # the combination of the two is not valid
+        # the combination of the two is not valid
+        w2.set_bounds(x=10, width=20)
         assert w2._pos[0] == 0
         assert w2._size[0] == 12
 
@@ -211,11 +212,13 @@ class TestROIs():
         with pytest.raises(ValueError):
             w2.height = 101
 
-        w2.set_bounds(x=10, width=20) # the combination of the two is not valid
+        # the combination of the two is not valid
+        w2.set_bounds(x=10, width=20)
         assert w2._pos[0] == 0.0
         assert w2._size[0] == 20.0
 
-        w2.set_bounds(y=40, height=60) # the combination of the two is not valid
+        # the combination of the two is not valid
+        w2.set_bounds(y=40, height=60)
         assert w2._pos[1] == 0
         assert w2._size[1] == 80
 

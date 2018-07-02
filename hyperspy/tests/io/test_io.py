@@ -51,7 +51,7 @@ class TestIOOverwriting:
             os.remove(FULLFILENAME)
 
     def _check_file_is_written(self, filename):
-        # Check that we have a different hash, in case the file have different 
+        # Check that we have a different hash, in case the file have different
         # content from the original, the hash will be different.
         return not self.s_file_hashed == self._hash_file(filename)
 

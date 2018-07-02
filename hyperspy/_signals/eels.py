@@ -1207,7 +1207,7 @@ class EELSSpectrum_mixin:
                 K = (Im / eaxis).sum(axis=axis.index_in_array, keepdims=True) \
                     * axis.scale
                 K = (K / (np.pi / 2) / (1 - 1. / n ** 2))
-                #K = (K / (np.pi / 2) / (1 - 1. / n ** 2)).reshape(
+                # K = (K / (np.pi / 2) / (1 - 1. / n ** 2)).reshape(
                 #    np.insert(K.shape, axis.index_in_array, 1))
                 # Calculate the thickness only if possible and required
                 if zlp is not None and (full_output is True or

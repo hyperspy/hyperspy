@@ -130,9 +130,9 @@ class TestDatasetName:
         f.attrs.create('version_minor', 2)
 
         dataset_name_list = [
-                '/experimental/science_data_0',
-                '/experimental/science_data_1',
-                '/processed/science_data_0']
+            '/experimental/science_data_0',
+            '/experimental/science_data_1',
+            '/processed/science_data_0']
         data_size_list = [(50, 50), (20, 10), (16, 32)]
 
         for dataset_name, data_size in zip(dataset_name_list, data_size_list):
@@ -580,7 +580,10 @@ class TestFeiEMD():
         # TODO: add parsing azimuth_angle
 
     def test_fei_emd_ceta_camera(self):
-        signal = load(os.path.join(self.fei_files_path, '1532 Camera Ceta.emd'))
+        signal = load(
+            os.path.join(
+                self.fei_files_path,
+                '1532 Camera Ceta.emd'))
         assert_allclose(signal.data, np.zeros((64, 64)))
         assert isinstance(signal, Signal2D)
         date, time = self._convert_datetime(1512055942.914275).split('T')
@@ -588,7 +591,10 @@ class TestFeiEMD():
         assert signal.metadata.General.time == time
         assert signal.metadata.General.time_zone == self._get_local_time_zone()
 
-        signal = load(os.path.join(self.fei_files_path, '1854 Camera Ceta.emd'))
+        signal = load(
+            os.path.join(
+                self.fei_files_path,
+                '1854 Camera Ceta.emd'))
         assert_allclose(signal.data, np.zeros((64, 64)))
         assert isinstance(signal, Signal2D)
 
