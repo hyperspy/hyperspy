@@ -141,11 +141,13 @@ class Signal1DFigure(BlittedFigure):
     def update(self):
         for marker in self.ax_markers:
             marker.update()
-        if self.ax_markers:
-            if self.ax.figure.canvas.supports_blit:
-                self.ax.hspy_fig._update_animated()
-            else:
-                self.ax.figure.canvas.draw_idle()
+        for line in self.ax_lines + self.right_ax_lines:
+            # save on figure rendering and do it at the end
+            line.update(render_figure=False)
+        if self.ax.figure.canvas.supports_blit:
+            self.ax.hspy_fig._update_animated()
+        else:
+            self.ax.figure.canvas.draw_idle()
 
 
 class Signal1DLine(object):
