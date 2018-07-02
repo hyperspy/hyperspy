@@ -31,15 +31,23 @@ class DielectricFunction_mixin:
     _alias_signal_types = ["dielectric function"]
 
     def get_number_of_effective_electrons(self, nat, cumulative=False):
-        """Compute the number of effective electrons using the Bethe f-sum
+        r"""Compute the number of effective electrons using the Bethe f-sum
         rule.
 
         The Bethe f-sum rule gives rise to two definitions of the effective
-        number (see [Egerton2011]_):
-        $n_{\mathrm{eff}}\left(-\Im\left(\epsilon^{-1}\right)\right)$ that
-        we'll call neff1 and
-        $n_{\mathrm{eff}}\left(\epsilon_{2}\right)$ that we'll call neff2. This
-        method computes both.
+        number (see [Egerton2011]_), neff1 and neff2:
+
+            .. math::
+
+                n_{\mathrm{eff_{1}}} = n_{\mathrm{eff}}\left(-\Im\left(\epsilon^{-1}\right)\right)
+
+        and:
+
+            .. math::
+
+                n_{\mathrm{eff_{2}}} = n_{\mathrm{eff}}\left(\epsilon_{2}\right)
+
+        This method computes and return both.
 
         Parameters
         ----------
@@ -114,6 +122,7 @@ class DielectricFunction_mixin:
         data = ((-1 / self.data).imag * eels_constant(self, zlp, t).data *
                 self.axes_manager.signal_axes[0].scale)
         s = self._deepcopy_with_new_data(data)
+        s.data = s.data.real
         s.set_signal_type("EELS")
         s.metadata.General.title = ("EELS calculated from " +
                                     self.metadata.General.title)

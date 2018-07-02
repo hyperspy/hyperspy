@@ -31,7 +31,6 @@ from hyperspy.misc.utils import (strlist2enumeration, find_subclasses)
 from hyperspy.misc.utils import stack as stack_method
 from hyperspy.io_plugins import io_plugins, default_write_ext
 from hyperspy.exceptions import VisibleDeprecationWarning
-from hyperspy.defaults_parser import preferences
 from hyperspy.ui_registry import get_gui
 
 _logger = logging.getLogger(__name__)
@@ -54,9 +53,9 @@ def load(filenames=None,
     """
     Load potentially multiple supported file into an hyperspy structure
 
-    Supported formats: hspy (HDF5), msa, Gatan dm3, Ripple (rpl+raw), Bruker bcf,
-    FEI ser and emi, SEMPER unf, EMD, EDAX spd/spc, tif, and a number
-    of image formats.
+    Supported formats: hspy (HDF5), msa, Gatan dm3, Ripple (rpl+raw),
+    Bruker bcf and spx, FEI ser and emi, SEMPER unf, EMD, EDAX spd/spc,
+    tif, and a number of image formats.
 
     Any extra keyword is passed to the corresponding reader. For
     available options see their individual documentation.
@@ -152,7 +151,11 @@ def load(filenames=None,
     load_SI_image_stack : bool (default False)
        Load the stack of STEM images acquired simultaneously as the EDS 
        spectrum image.
-       
+    dataset_name : string or list, optional
+        For filetypes which support several datasets in the same file, this
+        will only load the specified dataset. Several datasets can be loaded
+        by using a list of strings. Only for EMD (NCEM) files.
+
 
     Returns
     -------
@@ -500,9 +503,17 @@ def save(filename, signal, overwrite=None, **kwds):
                           'The following formats can: %s' %
                           strlist2enumeration(yes_we_can))
         ensure_directory(filename)
+        is_file = os.path.isfile(filename)
         if overwrite is None:
-            overwrite = overwrite_method(filename)
-        if overwrite is True:
+            write = overwrite_method(filename) # Ask what to do
+        elif overwrite is True or (overwrite is False and not is_file):
+            write = True # Write the file
+        elif overwrite is False and is_file:
+            write = False # Don't write the file
+        else:
+            raise ValueError("`overwrite` parameter can only be None, True or "
+                             "False.")
+        if write:
             writer.file_writer(filename, signal, **kwds)
             _logger.info('The %s file was created' % filename)
             folder, filename = os.path.split(os.path.abspath(filename))

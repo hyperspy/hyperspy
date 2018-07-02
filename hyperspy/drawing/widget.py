@@ -53,6 +53,7 @@ class WidgetBase(object):
         self.selected = False
         self._selected_artist = None
         self._size = 1.
+        self._pos = 0.
         self.color = 'red'
         self.__is_on = True
         self.background = None
@@ -179,7 +180,9 @@ class WidgetBase(object):
         # Simulate a pick event
         x, y = self.patch[0].get_transform().transform_point((0, 0))
         mouseevent = MouseEvent('pick_event', canvas, x, y)
-        canvas.pick_event(mouseevent, self.patch[0])
+        # when the widget is added programatically, mouseevent can be "empty"
+        if mouseevent.button:
+            canvas.pick_event(mouseevent, self.patch[0])
         self.picked = False
 
     def connect(self, ax):
@@ -217,7 +220,7 @@ class WidgetBase(object):
         for cid in self.cids:
             try:
                 self.ax.figure.canvas.mpl_disconnect(cid)
-            except:
+            except BaseException:
                 pass
         if self._navigating:
             self.disconnect_navigate()
@@ -234,7 +237,7 @@ class WidgetBase(object):
         """
         try:
             if self.blit and hasattr(self.ax, 'hspy_fig'):
-                self.ax.hspy_fig._draw_animated()
+                self.ax.hspy_fig._update_animated()
             elif self.ax.figure is not None:
                 self.ax.figure.canvas.draw_idle()
         except AttributeError:
@@ -269,6 +272,9 @@ class WidgetBase(object):
                 return axis.low_value
             else:
                 raise
+
+    def __str__(self):
+        return "{} with id {}".format(self.__class__.__name__, id(self))
 
 
 class DraggableWidgetBase(WidgetBase):
@@ -548,8 +554,10 @@ class ResizableDraggableWidgetBase(DraggableWidgetBase):
         return tuple(self._size.tolist())
 
     def _set_size(self, value):
-        """Setter for the 'size' property. Calls _size_changed to handle size
-        change, if the value has changed.
+        """Setter for the 'size' property.
+
+        Calls _size_changed to handle size change, if the value has changed.
+
         """
         value = np.minimum(value, [ax.size * ax.scale for ax in self.axes])
         value = np.maximum(value,

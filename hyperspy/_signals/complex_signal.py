@@ -115,8 +115,8 @@ class ComplexSignal_mixin:
 
     @format_title('angle')
     def angle(self, angle, deg=False):
-        """Return the angle (also known as phase or argument). If the data is real, the angle is 0
-        for positive values and 2$\pi$ for negative values.
+        r"""Return the angle (also known as phase or argument). If the data is real, the angle is 0
+        for positive values and :math:`2\pi` for negative values.
 
         Parameters
         ----------
@@ -265,7 +265,7 @@ class LazyComplexSignal(ComplexSignal, LazySignal):
 
     @format_title('absolute')
     def _get_amplitude(self):
-        amplitude = da.numpy_compat.builtins.abs(self)
+        amplitude = abs(self)
         return super(ComplexSignal, self)._get_amplitude(amplitude)
 
     def _get_phase(self):
@@ -293,7 +293,7 @@ class LazyComplexSignal(ComplexSignal, LazySignal):
     def _set_phase(self, phase):
         if isinstance(phase, BaseSignal):
             phase = phase.data.real
-        self.data = da.numpy_compat.builtins.abs(self.data) * \
+        self.data = abs(self.data) * \
             da.exp(1j * phase)
         self.events.data_changed.trigger(self)
 

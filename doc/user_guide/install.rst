@@ -29,16 +29,9 @@ HyperSpy Bundle for Microsoft Windows
 The easiest way to install HyperSpy in Windows is installing the HyperSpy
 Bundle. This is a customised `WinPython <http://winpython.github.io/>`_
 distribution that includes HyperSpy, all its dependencies and many other
-scientific Python packages. HyperSpy Bundle does not interact with any other
-Python installation in your system, so it can be safely installed alongside
-other Python distributions. Moreover it is portable, so it can be installed to
-a USB key. When installing it with administrator rights for all users it adds
-context (right-click) menu  entries to start the
-`Jupyter Notebook <http://jupyter.org>`_ and
-`Juypter QtConsole <http://jupyter.org/qtconsole/stable/>`_ inside the folder
-being clicked. See
-`start_jupyter_cm <https://github.com/hyperspy/start_jupyter_cm>`_ for details.
+scientific Python packages.
 
+For details and download links go to https://github.com/hyperspy/hyperspy-bundle
 
 .. _quick-anaconda-install:
 
@@ -74,21 +67,6 @@ MKL libraries) and the easiest installation. The academic license is free.
     .. code-block:: bash
 
         $ conda install hyperspy-gui-traitsui -c conda-forge
-
-
-    .. note::
-        As of traitsui v5.1.0, traitsui does not support Qt5 and, therefore,
-        in order to use the Qt backend it is necessary to
-        downgrade pyqt. With the standard Anaconda installation this causes
-        a conflict with the anaconda-navigator package and, therefore,
-        it is necessary to remove it in order to install hyperspy_gui_traitsui
-        as follows:
-
-        .. code-block:: bash
-
-            $ conda uninstall anaconda-navigator -y
-            $ conda install hyperspy_gui_traitsui -c conda-forge
-
 
 .. note::
     Since version 0.8.4 HyperSpy only supports Python 3. If you need to
@@ -150,6 +128,10 @@ Alternatively you can select the extra functionalities required:
 * ``gui-traitsui`` to install required libraries to use the GUI elements based
   on `traitsui <http://docs.enthought.com/traitsui/>`_
 * ``test`` to install required libraries to run HyperSpy's unit tests.
+* ``lazy_FEI_EMD`` to install required libraries to load FEI spectrum imgages
+  lazily.
+* ``mrcz-blosc`` to install the blosc library to use compression with the mrcz plugin.
+* ``doc`` to install required libraries to build HyperSpy's documentation.
 
 For example:
 
@@ -274,6 +256,15 @@ HyperSpy using ``pip`` (see :ref:`install-with-python-installers`), if HyperSpy
 is going to be installed from  source, Cython is also required. Also, to
 compile the documentation sphinxcontrib-napoleon and sphinx_rtd_theme are
 required.
+
+In case some of the required libraries are not automatically installed when
+installing from source in a conda environment, these can be obtained beforehand
+by installing and removing hyperspy from that environment;
+
+.. code-block:: bash
+    $ conda install hyperspy
+    $ conda remove hyperspy
+    $ sudo pip install -e ./
 
 .. _known-issues:
 

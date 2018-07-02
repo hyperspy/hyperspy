@@ -29,6 +29,7 @@ in the following sections of this chapter.
     │   │   │       └── real_time (s)
     │   │   ├── beam_current (nA)
     │   │   ├── beam_energy (keV)
+    │   │   ├── probe_area (nm²)
     │   │   ├── convergence_angle (mrad)
     │   │   ├── magnification
     │   │   ├── microscope
@@ -62,6 +63,7 @@ in the following sections of this chapter.
     │       ├── acquisition_mode
     │       ├── beam_current (nA)
     │       ├── beam_energy (keV)
+    │       ├── probe_area (nm²)
     │       ├── camera_length (mm)
     │       ├── convergence_angle (mrad)
     │       ├── magnification
@@ -188,6 +190,11 @@ beam_current
 
     The beam current in nA.
 
+probe_area
+    type: Float
+
+    The illumination area of the electron beam in nm\ :sup:`2`.
+
 dwell_time
     type: Float
 
@@ -227,6 +234,11 @@ beam_current
     type: Float
 
     The beam current in nA.
+
+probe_area
+    type: Float
+
+    The illumination area of the electron beam in nm\ :sup:`2`.
 
 magnification
     type: Float
@@ -421,9 +433,10 @@ signal_origin
 
     Describes the origin of the signal e.g. 'simulation' or 'experiment'.
 
+
 record_by
+    .. deprecated:: 1.2
     type: Str
-    .. deprecated:: 2.1 (HyperSpy v1.0)
 
     One of 'spectrum' or 'image'. It describes how the data is stored in memory.
     If 'spectrum' the spectral data is stored in the faster index.
