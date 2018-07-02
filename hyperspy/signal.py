@@ -2798,6 +2798,7 @@ class BaseSignal(FancySlicing,
         # the axes since the function will consume it/them.
         if not np.iterable(ar_axes):
             ar_axes = (ar_axes,)
+
         ar_axes = sorted(ar_axes)
         new_shape = list(self.data.shape)
         for index in ar_axes[1:]:
@@ -2824,11 +2825,22 @@ class BaseSignal(FancySlicing,
         axes = self.axes_manager[axes]
         if not np.iterable(axes):
             axes = (axes,)
+
         # Use out argument in numpy function when available for operations that
         # do not return scalars in numpy.
         np_out = not len(self.axes_manager._axes) == len(axes)
         ar_axes = tuple(ax.index_in_array for ax in axes)
-        if len(ar_axes) == 1:
+
+        if len(ar_axes) == 0:
+            # no axes is provided, so no operation needs to be done but we 
+            # still need to finished the execution of the function properly.
+            if out:
+                out.data[:] = self.data
+                out.events.data_changed.trigger(obj=out)
+                return
+            else:
+                return self
+        elif len(ar_axes) == 1:
             ar_axes = ar_axes[0]
 
         s = out or self._deepcopy_with_new_data(None)

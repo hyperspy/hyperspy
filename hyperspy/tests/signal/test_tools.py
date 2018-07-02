@@ -745,6 +745,17 @@ class TestOutArg:
         sr = s.sum(axis=('x', 'z',))
         np.testing.assert_array_equal(sr.data.sum(), (~mask).sum())
 
+    @pytest.mark.parametrize('mask', (True, False))
+    def test_sum_no_navigation_axis(self, mask):
+        s = signals.Signal1D(np.arange(100))
+        if mask:
+            s.data = np.ma.masked_array(s.data, mask=(s < 50))
+        # Since s haven't any navigation axis, it returns the same signal as
+        # default
+        np.testing.assert_array_equal(s, s.sum())
+        # When we specify an axis, it actually takes the sum.
+        np.testing.assert_array_equal(s.data.sum(), s.sum(axis=0))
+
     def test_masked_arrays_out(self):
         s = self.s
         if s._lazy:
