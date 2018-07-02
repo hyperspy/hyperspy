@@ -185,7 +185,6 @@ class LazySignal(BaseSignal):
             res = self.data
             if self.data.chunks != new_chunks and rechunk:
                 res = self.data.rechunk(new_chunks)
-                will be applied to all arrays contained in the signal.
         else:
             if isinstance(self.data, np.ma.masked_array):
                 data = np.where(self.data.mask, np.nan, self.data)
@@ -196,7 +195,7 @@ class LazySignal(BaseSignal):
         return res
 
     def _apply_function_on_data_and_remove_axis(self, function, axes,
-                                                out=None, **kwargs):
+                                                out=None, rechunk=True):
         def get_dask_function(numpy_name):
             # Translate from the default numpy to dask functions
             translations = {'amax': 'max', 'amin': 'min'}
@@ -211,7 +210,7 @@ class LazySignal(BaseSignal):
         ar_axes = tuple(ax.index_in_array for ax in axes)
         if len(ar_axes) == 1:
             ar_axes = ar_axes[0]
-        current_data = self._lazy_data(axis=axes, kwargs.get("rechunk", True))
+        current_data = self._lazy_data(axis=axes, rechunk=rechunk)
         new_data = function(current_data, axis=ar_axes)
         if not new_data.ndim:
             new_data = new_data.reshape((1, ))
@@ -844,7 +843,7 @@ class LazySignal(BaseSignal):
             target.factors = target.factors * rbH.ravel()[:, np.newaxis]
             target.loadings = target.loadings * raG.ravel()[:, np.newaxis]
 
-    def transpose(self, *args, **kwargs):
+    def transpose(self, signal_axes=None, navigation_axes=None, optimize=False):
         res = super().transpose(*args, **kwargs)
         res._make_lazy(rechunk=kwargs["optimize"])
         return res
