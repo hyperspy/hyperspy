@@ -180,17 +180,19 @@ class LazySignal(BaseSignal):
     change_dtype.__doc__ = BaseSignal.change_dtype.__doc__
 
     def _lazy_data(self, axis=None, rechunk=True, dtype=None):
-        new_chunks = self._get_dask_chunks(axis=axis, dtype=dtype)
         if isinstance(self.data, da.Array):
             res = self.data
-            if self.data.chunks != new_chunks and rechunk:
+            if rechunk:
+                new_chunks = self._get_dask_chunks(axis=axis, dtype=dtype)
+            if self.data.chunks != new_chunks:
                 res = self.data.rechunk(new_chunks)
         else:
             if isinstance(self.data, np.ma.masked_array):
                 data = np.where(self.data.mask, np.nan, self.data)
             else:
                 data = self.data
-            res = da.from_array(data, chunks=new_chunks)
+            chunks = self._get_dask_chunks(axis=axis, dtype=dtype)
+            res = da.from_array(data, chunks=chunks)
         assert isinstance(res, da.Array)
         return res
 
