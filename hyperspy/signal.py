@@ -2790,7 +2790,7 @@ class BaseSignal(FancySlicing,
         ar_axes = tuple(ax.index_in_array for ax in axes)
 
         if len(ar_axes) == 0:
-            # no axes is provided, so no operation needs to be done but we 
+            # no axes is provided, so no operation needs to be done but we
             # still need to finished the execution of the function properly.
             if out:
                 out.data[:] = self.data
@@ -3935,6 +3935,13 @@ class BaseSignal(FancySlicing,
             axes=self.axes_manager._get_signal_axes_dicts(),
             metadata=self.metadata.as_dictionary(),
             attributes={'_lazy': False})
+
+        if cs.metadata.has_item('Markers'):
+            temp_marker_dict = cs.metadata.Markers.as_dictionary()
+            markers_dict = markers_metadata_dict_to_markers(
+                temp_marker_dict,
+                cs.axes_manager)
+            cs.metadata.Markers = markers_dict
 
         if auto_filename is True and self.tmp_parameters.has_item('filename'):
             cs.tmp_parameters.filename = (self.tmp_parameters.filename +
