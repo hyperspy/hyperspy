@@ -393,10 +393,10 @@ class EMD(object):
                     dataset_read_list.append(temp_dataset_name)
                 else:
                     raise IOError(
-                            "Dataset with name {0} not found in the file. "
-                            "Possible datasets are {1}.".format(
-                                temp_dataset_name,
-                                ', '.join(dataset_in_file_list)))
+                        "Dataset with name {0} not found in the file. "
+                        "Possible datasets are {1}.".format(
+                            temp_dataset_name,
+                            ', '.join(dataset_in_file_list)))
         else:
             dataset_read_list = dataset_in_file_list
         for dataset_read in dataset_read_list:
@@ -948,7 +948,8 @@ class FeiEMDReader(object):
 
     def _get_dispersion_offset(self, original_metadata):
         try:
-            for detectorname, detector in original_metadata['Detectors'].items():
+            for detectorname, detector in original_metadata['Detectors'].items(
+            ):
                 if original_metadata['BinaryResult']['Detector'] in detector['DetectorName']:
                     dispersion = float(
                         detector['Dispersion']) / 1000.0 * self.rebin_energy

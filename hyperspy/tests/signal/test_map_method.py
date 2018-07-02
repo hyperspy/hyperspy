@@ -66,7 +66,7 @@ class TestImage:
     def test_variable_sigma_navdim0(self, parallel):
         s = self.im
 
-        sigma = hs.signals.BaseSignal(np.array([1,]))
+        sigma = hs.signals.BaseSignal(np.array([1, ]))
         sigma.axes_manager.set_signal_dimension(0)
 
         s.map(gaussian_filter,
@@ -80,8 +80,6 @@ class TestImage:
              [[10.68829507, 11.2662213, 11.84414753],
               [12.42207377, 13., 13.57792623],
               [14.15585247, 14.7337787, 15.31170493]]]))
-
-
 
     @pytest.mark.parametrize('parallel',
                              [pytest.param(True, marks=pytest.mark.parallel), False])
@@ -151,7 +149,7 @@ class TestSignal1D:
         s.events.data_changed.connect(m.data_changed)
         s.map(lambda A, B: A - B, B=s, show_progressbar=None,
               parallel=parallel, ragged=self.ragged)
-        np.testing.assert_allclose( s.data, np.zeros_like(s.data) )
+        np.testing.assert_allclose(s.data, np.zeros_like(s.data))
         assert m.data_changed.called
 
     @pytest.mark.parametrize('parallel',
@@ -162,7 +160,7 @@ class TestSignal1D:
         s.events.data_changed.connect(m.data_changed)
         s.map(lambda A, B: A - B, B=s.inav[0], show_progressbar=None,
               parallel=parallel, ragged=self.ragged)
-        np.testing.assert_allclose( s.data, np.array(
+        np.testing.assert_allclose(s.data, np.array(
             ([[0., 0., 0.],
               [3., 3., 3.]])))
         assert m.data_changed.called

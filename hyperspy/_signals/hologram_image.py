@@ -448,7 +448,7 @@ class HologramImage(Signal2D):
             )
             try:
                 ht = self.metadata.Acquisition_instrument.TEM.beam_energy
-            except:
+            except BaseException:
                 raise AttributeError("Please define the beam energy."
                                      "You can do this e.g. by using the "
                                      "set_microscope_parameters method")
@@ -665,13 +665,15 @@ class HologramImage(Signal2D):
         # (exception: reference nav_dim=1):
 
         # Parsing sideband position:
-        (sb_position, sb_position_temp) = _parse_sb_position(self, None, sb_position, sb, high_cf, parallel)
+        (sb_position, sb_position_temp) = _parse_sb_position(
+            self, None, sb_position, sb, high_cf, parallel)
 
         # Calculate carrier frequency in 1/px and fringe sampling:
-        fourier_sampling = 1./np.array(self.axes_manager.signal_shape)
+        fourier_sampling = 1. / np.array(self.axes_manager.signal_shape)
         if single_values:
             carrier_freq_px = calculate_carrier_frequency(_first_nav_pixel_data(self),
-                                                          sb_position=_first_nav_pixel_data(sb_position),
+                                                          sb_position=_first_nav_pixel_data(
+                                                              sb_position),
                                                           scale=fourier_sampling)
         else:
             carrier_freq_px = self.map(calculate_carrier_frequency,
@@ -685,7 +687,8 @@ class HologramImage(Signal2D):
 
         ureg = UnitRegistry()
         try:
-            units = ureg.parse_expression(str(self.axes_manager.signal_axes[0].units))
+            units = ureg.parse_expression(
+                str(self.axes_manager.signal_axes[0].units))
         except UndefinedUnitError:
             raise ValueError('Signal axes units should be defined.')
 
@@ -699,39 +702,42 @@ class HologramImage(Signal2D):
         )
         if single_values:
             carrier_freq_units = calculate_carrier_frequency(_first_nav_pixel_data(self),
-                                                          sb_position=_first_nav_pixel_data(sb_position),
-                                                          scale=f_sampling_units)
+                                                             sb_position=_first_nav_pixel_data(
+                                                                 sb_position),
+                                                             scale=f_sampling_units)
         else:
             carrier_freq_units = self.map(calculate_carrier_frequency,
-                                       sb_position=sb_position,
-                                       scale=f_sampling_units,
-                                       inplace=False,
-                                       ragged=False,
-                                       show_progressbar=show_progressbar,
-                                       parallel=parallel)
+                                          sb_position=sb_position,
+                                          scale=f_sampling_units,
+                                          inplace=False,
+                                          ragged=False,
+                                          show_progressbar=show_progressbar,
+                                          parallel=parallel)
         fringe_spacing = np.divide(1., carrier_freq_units)
 
         # Calculate carrier frequency in mrad:
         try:
             ht = self.metadata.Acquisition_instrument.TEM.beam_energy
-        except:
+        except BaseException:
             raise AttributeError("Please define the beam energy."
                                  "You can do this e.g. by using the "
                                  "set_microscope_parameters method.")
 
         momentum = 2 * constants.m_e * constants.elementary_charge * ht * \
-                   1000 * (1 + constants.elementary_charge * ht *
-                           1000 / (2 * constants.m_e * constants.c ** 2))
+            1000 * (1 + constants.elementary_charge * ht *
+                    1000 / (2 * constants.m_e * constants.c ** 2))
         wavelength = constants.h / np.sqrt(momentum) * 1e9  # in nm
-        carrier_freq_quantity = wavelength * ureg('nm') * carrier_freq_units / units * ureg('rad')
+        carrier_freq_quantity = wavelength * \
+            ureg('nm') * carrier_freq_units / units * ureg('rad')
         carrier_freq_mrad = carrier_freq_quantity.to('mrad').magnitude
 
         # Calculate fringe contrast:
         if fringe_contrast_algorithm == 'fourier':
             if single_values:
                 fringe_contrast = estimate_fringe_contrast_fourier(_first_nav_pixel_data(self),
-                                                               sb_position=_first_nav_pixel_data(sb_position),
-                                                               apodization=apodization)
+                                                                   sb_position=_first_nav_pixel_data(
+                                                                       sb_position),
+                                                                   apodization=apodization)
             else:
                 fringe_contrast = self.map(estimate_fringe_contrast_fourier,
                                            sb_position=sb_position,
@@ -742,11 +748,13 @@ class HologramImage(Signal2D):
                                            parallel=parallel)
         elif fringe_contrast_algorithm == 'statistical':
             if single_values:
-                fringe_contrast = _first_nav_pixel_data(self).std() / _first_nav_pixel_data(self).mean()
+                fringe_contrast = _first_nav_pixel_data(
+                    self).std() / _first_nav_pixel_data(self).mean()
             else:
                 fringe_contrast = _estimate_fringe_contrast_statistical(self)
         else:
-            raise ValueError("fringe_contrast_algorithm can only be set to fourier or statistical.")
+            raise ValueError(
+                "fringe_contrast_algorithm can only be set to fourier or statistical.")
 
         return {'Fringe contrast': fringe_contrast,
                 'Fringe sampling (px)': fringe_sampling,

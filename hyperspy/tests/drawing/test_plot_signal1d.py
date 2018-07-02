@@ -145,21 +145,21 @@ class TestPlotSpectra():
     def test_plot_spectra_legend_pick(self, mpl_cleanup):
         x = np.linspace(0., 2., 512)
         n = np.arange(1, 5)
-        x_pow_n = x[None,:]**n[:,None]
+        x_pow_n = x[None, :]**n[:, None]
         s = hs.signals.Signal1D(x_pow_n)
-        my_legend = [r'x^'+str(io) for io in n]
+        my_legend = [r'x^' + str(io) for io in n]
         f = plt.figure()
         ax = hs.plot.plot_spectra(s, legend=my_legend, fig=f)
         leg = ax.get_legend()
         leg_artists = leg.get_lines()
         click = plt.matplotlib.backend_bases.MouseEvent(
-                                   'button_press_event',f.canvas,0,0,'left')
+            'button_press_event', f.canvas, 0, 0, 'left')
         for artist, li in zip(leg_artists, ax.lines[::-1]):
             plt.matplotlib.backends.backend_agg.FigureCanvasBase.pick_event(
-                                                    f.canvas, click, artist)
+                f.canvas, click, artist)
             assert not li.get_visible()
             plt.matplotlib.backends.backend_agg.FigureCanvasBase.pick_event(
-                                                    f.canvas, click, artist)
+                f.canvas, click, artist)
 
 
 @update_close_figure
