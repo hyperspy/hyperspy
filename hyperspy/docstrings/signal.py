@@ -38,3 +38,8 @@ OPTIMIZE_ARG = \
             See the `transposing` section of the HyperSpy user guide
             for more information. When operating on lazy signals, if `True`
             the chunks are optimised for the new axes configuration."""
+
+RECHUNK_ARG = \
+    """rechunk: bool
+           Only has effect when operating on lazy signal. If `True` (default),
+           the data may be automatically rechunked before performing this operation."""

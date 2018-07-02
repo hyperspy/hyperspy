@@ -50,7 +50,7 @@ from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
-    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG)
+    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG, RECHUNK_ARG)
 from hyperspy.docstrings.plot import BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
@@ -2831,6 +2831,7 @@ class BaseSignal(FancySlicing,
         ----------
         axis %s
         %s
+        %s
 
         Returns
         -------
@@ -2854,7 +2855,7 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
             np.sum, axis, out=out, rechunk=rechunk)
-    sum.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+    sum.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def max(self, axis=None, out=None, rechunk=True):
         """Returns a signal with the maximum of the signal along at least one
@@ -2863,6 +2864,7 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -2887,7 +2889,7 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
             np.max, axis, out=out, rechunk=rechunk)
-    max.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+    max.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def min(self, axis=None, out=None, rechunk=True):
         """Returns a signal with the minimum of the signal along at least one
@@ -2896,6 +2898,7 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -2920,7 +2923,7 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
             np.min, axis, out=out, rechunk=rechunk)
-    min.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+    min.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def mean(self, axis=None, out=None, rechunk=True):
         """Returns a signal with the average of the signal along at least one
@@ -2929,6 +2932,7 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -2953,7 +2957,7 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
             np.mean, axis, out=out, rechunk=rechunk)
-    mean.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+    mean.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def std(self, axis=None, out=None, rechunk=True):
         """Returns a signal with the standard deviation of the signal along
@@ -2962,6 +2966,7 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -2986,7 +2991,7 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
             np.std, axis, out=out, rechunk=rechunk)
-    std.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+    std.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def var(self, axis=None, out=None, rechunk=True):
         """Returns a signal with the variances of the signal along at least one
@@ -2995,6 +3000,7 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -3019,7 +3025,7 @@ class BaseSignal(FancySlicing,
             axis = self.axes_manager.navigation_axes
         return self._apply_function_on_data_and_remove_axis(
             np.var, axis, out=out, rechunk=rechunk)
-    var.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+    var.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def nansum(self, axis=None, out=None, rechunk=True):
         """%s
@@ -3232,6 +3238,7 @@ class BaseSignal(FancySlicing,
         ----------
         axis %s
         %s
+        %s
 
         Returns
         -------
@@ -3254,6 +3261,7 @@ class BaseSignal(FancySlicing,
         """
         return self._apply_function_on_data_and_remove_axis(
             np.argmin, axis, out=out, rechunk=rechunk)
+    indexmin.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def indexmax(self, axis, out=None, rechunk=True):
         """Returns a signal with the index of the maximum along an axis.
@@ -3261,6 +3269,7 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -3284,7 +3293,7 @@ class BaseSignal(FancySlicing,
         """
         return self._apply_function_on_data_and_remove_axis(
             np.argmax, axis, out=out, rechunk=rechunk)
-    indexmax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+    indexmax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def valuemax(self, axis, out=None):
         """Returns a signal with the value of coordinates of the maximum along an axis.
@@ -4225,9 +4234,7 @@ class BaseSignal(FancySlicing,
         ----------
         formatter : bool
            Number formatter.
-        rechunk: bool
-           Only has effect when operating on lazy signal. If `True` (default),
-           the data may be automatically rechunked before performing this operation.
+        %s
 
         See Also
         --------
@@ -4245,6 +4252,7 @@ class BaseSignal(FancySlicing,
         print("median:\t" + formatter % _q2)
         print("Q3:\t" + formatter % _q3)
         print("max:\t" + formatter % _max)
+    print_summary_statistics.__doc__ %= (RECHUNK_ARG)
 
     def _calculate_summary_statistics(self, **kwargs):
         data = self.data
