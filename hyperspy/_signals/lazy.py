@@ -231,7 +231,8 @@ class LazySignal(BaseSignal):
     def swap_axes(self, *args):
         raise lazyerror
 
-    def rebin(self, new_shape=None, scale=None, crop=False, out=None, rechunk=True):
+    def rebin(self, new_shape=None, scale=None,
+              crop=False, out=None, rechunk=True):
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
             scale=scale)
