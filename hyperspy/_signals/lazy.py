@@ -229,9 +229,6 @@ class LazySignal(BaseSignal):
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
 
-    def swap_axes(self, *args):
-        raise lazyerror
-
     def rebin(self, new_shape=None, scale=None,
               crop=False, out=None, rechunk=True):
         factors = self._validate_rebin_args_and_get_factors(

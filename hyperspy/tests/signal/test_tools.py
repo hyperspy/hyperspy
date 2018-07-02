@@ -338,15 +338,20 @@ class Test3D:
     def test_swap_axes_simple(self):
         s = self.signal
         if s._lazy:
-            pytest.skip("LazyS do not support axes swapping")
+            chunks = s.data.chunks
         assert s.swap_axes(0, 1).data.shape == (4, 2, 6)
         assert s.swap_axes(0, 2).axes_manager.shape == (6, 2, 4)
-        assert s.swap_axes(0, 2).data.flags['C_CONTIGUOUS']
+        if not s._lazy:
+            assert not s.swap_axes(0, 2).data.flags['C_CONTIGUOUS']
+            assert s.swap_axes(0, 2, optimize=True).data.flags['C_CONTIGUOUS']
+        else:
+            cks = s.data.chunks
+            assert s.swap_axes(0, 1).data.chunks == (cks[1], cks[0], cks[2])
+            # This data shape does not require rechunking
+            assert s.swap_axes(0, 1, optimize=True).data.chunks == (cks[1], cks[0], cks[2]) 
 
     def test_swap_axes_iteration(self):
         s = self.signal
-        if s._lazy:
-            pytest.skip("LazyS do not support axes swapping")
         s = s.swap_axes(0, 2)
         assert s.axes_manager._getitem_tuple[:2] == (0, 0)
         s.axes_manager.indices = (2, 1)
@@ -508,31 +513,21 @@ class Test4D:
         assert self.s.rollaxis("z", "x").data.shape == (4, 3, 5, 6)
 
     def test_unfold_spectrum(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         self.s.unfold()
         assert self.s.data.shape == (60, 6)
 
     def test_unfold_spectrum_returns_true(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         assert self.s.unfold()
 
     def test_unfold_spectrum_signal_returns_false(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         assert not self.s.unfold_signal_space()
 
     def test_unfold_image(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         im.unfold()
         assert im.data.shape == (30, 12)
 
     def test_image_signal_unfolded_deepcopy(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         im.unfold()
         # The following could fail if the constructor was not taking the fact
@@ -541,21 +536,15 @@ class Test4D:
         im.deepcopy()
 
     def test_image_signal_unfolded_false(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         assert not im.metadata._HyperSpy.Folding.signal_unfolded
 
     def test_image_signal_unfolded_true(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         im.unfold()
         assert im.metadata._HyperSpy.Folding.signal_unfolded
 
     def test_image_signal_unfolded_back_to_false(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         im.unfold()
         im.fold()
@@ -884,7 +873,7 @@ class TestTranspose:
 
     def test_optimize(self):
         if self.s._lazy:
-            pytest.skip("LazyS do not support optimizations")
+            pytest.skip("LazyS optimization is tested in test_lazy_tranpose_rechunk")
         t = self.s.transpose(signal_axes=['f', 'a', 'b'], optimize=False)
         assert t.data.base is self.s.data
 
@@ -895,12 +884,11 @@ class TestTranspose:
 def test_lazy_transpose_rechunks():
     ar = da.ones((50, 50, 256, 256), chunks=(5, 5, 256, 256))
     s = signals.Signal2D(ar).as_lazy()
-    s1 = s.T
-    chunks = s1.data.chunks
-    assert len(chunks[0]) != 1
-    assert len(chunks[1]) != 1
-    assert len(chunks[2]) == 1
-    assert len(chunks[3]) == 1
+    s1 = s.T # By default it does not rechunk
+    cks = s.data.chunks
+    assert s1.data.chunks == (cks[2], cks[3], cks[0], cks[1])
+    s2 = s.transpose(optimize=True)
+    assert s2.data.chunks != s1.data.chunks 
 
 
 def test_lazy_changetype_rechunk():

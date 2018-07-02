@@ -2188,12 +2188,13 @@ class BaseSignal(FancySlicing,
         self.squeeze()
         self.events.data_changed.trigger(obj=self)
 
-    def swap_axes(self, axis1, axis2):
+    def swap_axes(self, axis1, axis2, optimize=False):
         """Swaps the axes.
 
         Parameters
         ----------
         axis1, axis2 %s
+        %s
 
         Returns
         -------
@@ -2213,12 +2214,13 @@ class BaseSignal(FancySlicing,
         am._axes[axis2] = c1
         am._update_attributes()
         am._update_trait_handlers(remove=False)
-        s._make_sure_data_is_contiguous()
+        if optimize:
+            s._make_sure_data_is_contiguous()
         return s
 
-    swap_axes.__doc__ %= ONE_AXIS_PARAMETER
+    swap_axes.__doc__ %= (ONE_AXIS_PARAMETER, OPTIMIZE_ARG)
 
-    def rollaxis(self, axis, to_axis):
+    def rollaxis(self, axis, to_axis, optimize=False):
         """Roll the specified axis backwards, until it lies in a given position.
 
         Parameters
@@ -2227,6 +2229,7 @@ class BaseSignal(FancySlicing,
             The positions of the other axes do not change relative to one another.
         to_axis %s The axis is rolled until it
             lies before this other axis.
+        %s
 
         Returns
         -------
@@ -2263,10 +2266,11 @@ class BaseSignal(FancySlicing,
             index=axis,
             to_index=to_index)
         s.axes_manager._update_attributes()
-        s._make_sure_data_is_contiguous()
+        if optimize:
+            s._make_sure_data_is_contiguous()
         return s
 
-    rollaxis.__doc__ %= (ONE_AXIS_PARAMETER, ONE_AXIS_PARAMETER)
+    rollaxis.__doc__ %= (ONE_AXIS_PARAMETER, ONE_AXIS_PARAMETER, OPTIMIZE_ARG)
 
     @property
     def _data_aligned_with_axes(self):
@@ -4513,8 +4517,7 @@ class BaseSignal(FancySlicing,
             self.data += noise
         self.events.data_changed.trigger(obj=self)
 
-    def transpose(self, signal_axes=None,
-                  navigation_axes=None, optimize=False):
+    def transpose(self, signal_axes=None, navigation_axes=None, optimize=False):
         """Transposes the signal to have the required signal and navigation
         axes.
 
