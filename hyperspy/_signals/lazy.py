@@ -170,12 +170,12 @@ class LazySignal(BaseSignal):
     def _make_lazy(self, axis=None, rechunk=False, dtype=None):
         self.data = self._lazy_data(axis=axis, rechunk=rechunk, dtype=dtype)
 
-    def change_dtype(self, dtype):
+    def change_dtype(self, dtype, rechunk=True):
         from hyperspy.misc import rgb_tools
         if not isinstance(dtype, np.dtype) and (dtype not in
                                                 rgb_tools.rgb_dtypes):
             dtype = np.dtype(dtype)
-            self._make_lazy(rechunk=True, dtype=dtype)
+            self._make_lazy(rechunk=rechunk, dtype=dtype)
         super().change_dtype(dtype)
     change_dtype.__doc__ = BaseSignal.change_dtype.__doc__
 
@@ -185,6 +185,7 @@ class LazySignal(BaseSignal):
             res = self.data
             if self.data.chunks != new_chunks and rechunk:
                 res = self.data.rechunk(new_chunks)
+                will be applied to all arrays contained in the signal.
         else:
             if isinstance(self.data, np.ma.masked_array):
                 data = np.where(self.data.mask, np.nan, self.data)
@@ -230,7 +231,7 @@ class LazySignal(BaseSignal):
     def swap_axes(self, *args):
         raise lazyerror
 
-    def rebin(self, new_shape=None, scale=None, crop=False, out=None):
+    def rebin(self, new_shape=None, scale=None, crop=False, out=None, rechunk=True):
         factors = self._validate_rebin_args_and_get_factors(
             new_shape=new_shape,
             scale=scale)
@@ -246,7 +247,7 @@ class LazySignal(BaseSignal):
                     "original signal shape")
         axis = {ax.index_in_array: ax
                 for ax in self.axes_manager._axes}[factors.argmax()]
-        self._make_lazy(axis=axis)
+        self._make_lazy(axis=axis, rechunk=rechunk)
         return super().rebin(new_shape=new_shape,
                              scale=scale, crop=crop, out=out)
     rebin.__doc__ = BaseSignal.rebin.__doc__
@@ -844,7 +845,7 @@ class LazySignal(BaseSignal):
 
     def transpose(self, *args, **kwargs):
         res = super().transpose(*args, **kwargs)
-        res._make_lazy(rechunk=True)
+        res._make_lazy(rechunk=kwargs.get("rechunk", True))
         return res
     transpose.__doc__ = BaseSignal.transpose.__doc__
 
