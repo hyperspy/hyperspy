@@ -106,6 +106,17 @@ Practical tips
 Despite the limitations detailed below, most HyperSpy operations can be
 performed lazily. Important points of note are:
 
+Chunking
+^^^^^^^^
+
+.. versionadded:: 1.3.2
+
+By default, HyperSpy tries to optimize the chunking for most operations. However,
+it is sometimes possible to manually set a more optimal chunking manually. Therefore,
+many operations take a ``rechunk`` or ``optimize`` keyword argument to disable
+automatic rechunking.
+
+
 Computing lazy signals
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -139,7 +150,7 @@ once, and only pass it for all other plots. Pay attention to the transpose
     >>> s
     <LazySignal2D, title: , dimensions: (200, 200|512, 512)>
     >>> # for fastest results, just pick one signal space pixel
-    >>> nav = s.isig[256, 256].T
+    >>> nav = s.transpose(optimize=True).inav[256, 256]
     >>> # Alternatively, sum as per default behaviour
     >>> nav = s.sum(s.axes_manager.signal_axes).T
     >>> nav
