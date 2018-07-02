@@ -31,10 +31,10 @@ NAN_FUNC = \
 
 OPTIMIZE_ARG = \
     """optimize : bool, default is False
-            If True, the location of the data in memory is optimised for the 
-            fastest iteration over the navigation axes. This operation can 
+            If True, the location of the data in memory is optimised for the
+            fastest iteration over the navigation axes. This operation can
             cause a peak of memory usage and requires considerable processing
             times for large datasets and/or low specification hardware.
-            See the `transposing` section of the HyperSpy user guide 
+            See the `transposing` section of the HyperSpy user guide
             for more information. When operating on lazy signals, if `True`
             the chunks are optimised for the new axes configuration."""
