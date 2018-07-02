@@ -846,7 +846,7 @@ class LazySignal(BaseSignal):
 
     def transpose(self, *args, **kwargs):
         res = super().transpose(*args, **kwargs)
-        res._make_lazy(rechunk=kwargs.get("rechunk", True))
+        res._make_lazy(rechunk=kwargs["optimize"])
         return res
     transpose.__doc__ = BaseSignal.transpose.__doc__
 
