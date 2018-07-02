@@ -4213,7 +4213,7 @@ class BaseSignal(FancySlicing,
         """
         self.metadata.Signal.signal_origin = origin
 
-    def print_summary_statistics(self, formatter="%.3g"):
+    def print_summary_statistics(self, formatter="%.3g", rechunk=True):
         """Prints the five-number summary statistics of the data, the mean and
         the standard deviation.
 
@@ -4225,13 +4225,16 @@ class BaseSignal(FancySlicing,
         ----------
         formatter : bool
            Number formatter.
+        rechunk: bool
+           Only has effect when operating on lazy signal. If `True` (default),
+           the data may be automatically rechunked before performing this operation.
 
         See Also
         --------
         get_histogram
 
         """
-        _mean, _std, _min, _q1, _q2, _q3, _max = self._calculate_summary_statistics()
+        _mean, _std, _min, _q1, _q2, _q3, _max = self._calculate_summary_statistics(rechunk=rechunk)
         print(underline("Summary statistics"))
         print("mean:\t" + formatter % _mean)
         print("std:\t" + formatter % _std)
@@ -4242,7 +4245,7 @@ class BaseSignal(FancySlicing,
         print("Q3:\t" + formatter % _q3)
         print("max:\t" + formatter % _max)
 
-    def _calculate_summary_statistics(self):
+    def _calculate_summary_statistics(self, **kwargs):
         data = self.data
         data = data[~np.isnan(data)]
         _mean = np.nanmean(data)
