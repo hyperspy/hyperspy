@@ -605,6 +605,9 @@ class TestOutArg:
 
     def test_get_histogram(self):
         self._run_single(self.s.get_histogram, self.s, {})
+        if self.s._lazy:
+            self._run_single(self.s.get_histogram, self.s, {"rechunk": False})
+
 
     def test_sum(self):
         self._run_single(self.s.sum, self.s, dict(axis=('x', 'z')))
