@@ -433,6 +433,10 @@ class LazySignal(BaseSignal):
     # _get_signal_signal.__doc__ = BaseSignal._get_signal_signal.__doc__
 
     def _calculate_summary_statistics(self, rechunk=True):
+        if rechunk is True:
+            # Use dask auto rechunk instead of HyperSpy's one, what should be
+            # better for these operations
+            rechunk = "dask_auto"
         data = self._lazy_data(rechunk=rechunk)
         _raveled = data.ravel()
         _mean, _std, _min, _q1, _q2, _q3, _max = da.compute(
