@@ -180,14 +180,33 @@ class LazySignal(BaseSignal):
     change_dtype.__doc__ = BaseSignal.change_dtype.__doc__
 
     def _lazy_data(self, axis=None, rechunk=True, dtype=None):
-        new_chunks = self._get_dask_chunks(axis=axis, dtype=dtype)
+        """Return the data as a dask array, rechunked if necessary.
+
+        Parameters
+        ----------
+        axis: None, DataAxis or tuple of data axes
+            The data axis that must not be broken into chunks when `rechunk`
+            is `True`. If None, it defaults to the current signal axes.
+        rechunk: bool, "dask_auto"
+            If `True`, it rechunks the data if necessary making sure that the
+            axes in ``axis`` are not split into chunks. If `False` it does
+            not rechunk at least the data is not a dask array, in which case
+            it chunks as if rechunk was `True`. If "dask_auto", rechunk if
+            necessary using dask's automatic chunk guessing.
+
+        """
+        if rechunk == "dask_auto":
+            new_chunks = "auto"
+        else:
+            new_chunks = self._get_dask_chunks(axis=axis, dtype=dtype)
         if isinstance(self.data, da.Array):
             res = self.data
             if self.data.chunks != new_chunks and rechunk:
                 _logger.info(
-                    "Rechunking.\nOriginal chunks: %s\nFinal chunks: %s " %
-                    (self.data.chunks, new_chunks))
+                    "Rechunking.\nOriginal chunks: %s" % str(self.data.chunks))
                 res = self.data.rechunk(new_chunks)
+                _logger.info(
+                    "Final chunks: %s " % str(res.chunks))
         else:
             if isinstance(self.data, np.ma.masked_array):
                 data = np.where(self.data.mask, np.nan, self.data)
@@ -213,32 +232,10 @@ class LazySignal(BaseSignal):
         ar_axes = tuple(ax.index_in_array for ax in axes)
         if len(ar_axes) == 1:
             ar_axes = ar_axes[0]
-        # Optimize chunking for task
-
-        # Find the axes that will not be reduced
-        nr_axes = [
-            axis for axis in self.axes_manager._axes if axis not in axes]
-        # Find if any of those axes are signal axes
-        intersection = set(self.axes_manager.signal_axes) & set(nr_axes)
-        # If any of the non-reduced axes is a signal axis or there a no axes that won't be reduced,
-        # we set the standard chunking
-        # for the current signal and navigation axes configuration that, in most situation,
-        # will lead to no changes in chunking
-        chunking_axes = []
-        if intersection or not nr_axes:
-            chunking_axes = None
-        else:
-            # Only navigation axes will not be reduced. Fit as many as possible in a chunk until
-            # reaching the reccomended 100MB / chunk value
-            axes_size = 0
-            typesize = self.data.dtype.itemsize / 1e6  # in MB
-            i = 0
-            while axes_size < 100:
-                chunking_axes.append(nr_axes[i])
-                axes_size += chunking_axes[-1].size * typesize
-
-        # Get the (rechunked if needed) data
-        current_data = self._lazy_data(axis=chunking_axes)
+        # For reduce operations the actual signal and navigation
+        # axes configuration does not matter. Hence we leave
+        # dask guess the chunks
+        current_data = self._lazy_data(rechunk="dask_auto")
         # Apply reducing function
         new_data = function(current_data, axis=ar_axes)
         if not new_data.ndim:
