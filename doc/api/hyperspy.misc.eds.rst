@@ -1,19 +1,19 @@
-hyperspy\.misc\.eds package
-===========================
+hyperspy.misc.eds package
+=========================
 
 Submodules
 ----------
 
-hyperspy\.misc\.eds\.ffast\_mac module
---------------------------------------
+hyperspy.misc.eds.ffast\_mac module
+-----------------------------------
 
 .. automodule:: hyperspy.misc.eds.ffast_mac
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.misc\.eds\.utils module
----------------------------------
+hyperspy.misc.eds.utils module
+------------------------------
 
 .. automodule:: hyperspy.misc.eds.utils
     :members:
