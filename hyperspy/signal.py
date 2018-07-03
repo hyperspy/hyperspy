@@ -3081,7 +3081,7 @@ class BaseSignal(FancySlicing,
             np.nanvar, axis, out=out, rechunk=rechunk)
     nanvar.__doc__ %= (NAN_FUNC.format('var', var.__doc__))
 
-    def diff(self, axis, order=1, out=None):
+    def diff(self, axis, order=1, out=None, rechunk=True):
         """Returns a signal with the n-th order discrete difference along
         given axis.
 
@@ -3090,6 +3090,7 @@ class BaseSignal(FancySlicing,
         axis %s
         order : int
             the order of the derivative
+        %s
         %s
 
         See also
@@ -3120,9 +3121,9 @@ class BaseSignal(FancySlicing,
             return s
         else:
             out.events.data_changed.trigger(obj=out)
-    diff.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+    diff.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def derivative(self, axis, order=1, out=None):
+    def derivative(self, axis, order=1, out=None, rechunk=True):
         """Numerical derivative along the given axis.
 
         Currently only the first order finite difference method is implemented.
@@ -3134,6 +3135,7 @@ class BaseSignal(FancySlicing,
             The order of the derivative. (Note that this is the order of the
             derivative i.e. `order=2` does not use second order finite
             differences method.)
+        %s
         %s
 
         Returns
@@ -3149,7 +3151,7 @@ class BaseSignal(FancySlicing,
 
         """
 
-        der = self.diff(order=order, axis=axis, out=out)
+        der = self.diff(order=order, axis=axis, out=out, rechunk=rechunk)
         der = out or der
         axis = self.axes_manager[axis]
         der.data /= axis.scale ** order
@@ -3157,7 +3159,7 @@ class BaseSignal(FancySlicing,
             return der
         else:
             out.events.data_changed.trigger(obj=out)
-    derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+    derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def integrate_simpson(self, axis, out=None):
         """Returns a signal with the result of calculating the integral

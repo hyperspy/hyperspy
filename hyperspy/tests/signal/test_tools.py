@@ -924,6 +924,13 @@ def test_lazy_reduce_rechunk():
             axis=0, rechunk=False).data.chunks == (
             (2,) * 50,)  # The data has not been rechunked
 
+def test_lazy_diff_rechunk():
+    s = signals.Signal1D(da.ones((10, 100), chunks=(1, 2))).as_lazy()
+    for rm in (s.derivative, s.diff):
+        assert rm(axis=-1).data.chunks ==  ((10,), (99,)) # The data has been rechunked
+        assert rm(axis=-1, rechunk=False).data.chunks ==  ((1,) * 10, (1,) * 99) # The data has not been rechunked
+
+
 
 def test_spikes_removal_tool():
     s = signals.Signal1D(np.ones((2, 3, 30)))
