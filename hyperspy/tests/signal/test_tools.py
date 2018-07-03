@@ -312,17 +312,16 @@ class Test3D:
         assert var.data.shape == (1, 2, 6)
         from hyperspy.misc.array_tools import rebin
 
-        if self.signal._lazy:
-            from distutils.version import LooseVersion
-            import dask
-            if LooseVersion(np.__version__) >= "1.12.0" and \
-               LooseVersion(dask.__version__) <= "0.13.0":
-                pytest.skip("Dask not up to date with new numpy")
-
         np.testing.assert_array_equal(rebin(self.signal.data, scale=(2, 2, 1)),
                                       var.data)
         np.testing.assert_array_equal(rebin(self.signal.data, scale=(2, 2, 1)),
                                       new_s.data)
+        if self.signal._lazy:
+            new_s = self.signal.rebin(scale=(2, 2, 1), rechunk=False)
+            np.testing.assert_array_equal(rebin(self.signal.data, scale=(2, 2, 1)),
+                                        var.data)
+            np.testing.assert_array_equal(rebin(self.signal.data, scale=(2, 2, 1)),
+                                        new_s.data)
 
     def test_rebin_no_variance(self):
         new_s = self.signal.rebin(scale=(2, 2, 1))
