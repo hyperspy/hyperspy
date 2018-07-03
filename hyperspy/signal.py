@@ -2696,13 +2696,11 @@ class BaseSignal(FancySlicing,
                 if isinstance(variance, BaseSignal):
                     variance.fold()
 
-    def _make_sure_data_is_contiguous(self, log=None):
+    def _make_sure_data_is_contiguous(self):
         if self.data.flags['C_CONTIGUOUS'] is False:
-            if log:
-                _logger.warning("{0!r} data is replaced by its optimized copy "
-                                ", see optimize parameter of "
-                                "``Basesignal.transpose`` for more "
-                                "information.".format(self))
+            _logger.info("{0!r} data is replaced by its optimized copy, see "
+                         "optimize parameter of ``Basesignal.transpose`` "
+                         "for more information.".format(self))
             self.data = np.ascontiguousarray(self.data)
 
     def _iterate_signal(self):
@@ -3301,12 +3299,13 @@ class BaseSignal(FancySlicing,
             np.argmax, axis, out=out, rechunk=rechunk)
     indexmax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def valuemax(self, axis, out=None):
+    def valuemax(self, axis, out=None, rechunk=True):
         """Returns a signal with the value of coordinates of the maximum along an axis.
 
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -3335,14 +3334,15 @@ class BaseSignal(FancySlicing,
         else:
             out.data[:] = data
             out.events.data_changed.trigger(obj=out)
-    valuemax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+    valuemax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def valuemin(self, axis, out=None):
+    def valuemin(self, axis, out=None, rechunk=True):
         """Returns a signal with the value of coordinates of the minimum along an axis.
 
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -3362,7 +3362,7 @@ class BaseSignal(FancySlicing,
         else:
             out.data[:] = data
             out.events.data_changed.trigger(obj=out)
-    valuemin.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+    valuemin.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def get_histogram(self, bins='freedman', range_bins=None, out=None,
                       **kwargs):
@@ -3383,6 +3383,7 @@ class BaseSignal(FancySlicing,
         range_bins : tuple or None, optional
             the minimum and maximum range for the histogram. If not specified,
             it will be (x.min(), x.max())
+        %s
         %s
         **kwargs
             other keyword arguments (weight and density) are described in
@@ -3446,7 +3447,7 @@ class BaseSignal(FancySlicing,
             return hist_spec
         else:
             out.events.data_changed.trigger(obj=out)
-    get_histogram.__doc__ %= OUT_ARG
+    get_histogram.__doc__ %= (OUT_ARG, RECHUNK_ARG)
 
     def map(self, function,
             show_progressbar=None,
@@ -3753,7 +3754,7 @@ class BaseSignal(FancySlicing,
     def deepcopy(self):
         return copy.deepcopy(self)
 
-    def change_dtype(self, dtype):
+    def change_dtype(self, dtype, rechunk=True):
         """Change the data type.
 
         Parameters
@@ -3769,6 +3770,7 @@ class BaseSignal(FancySlicing,
             conversion the signal dimension becomes 2. The dtype of images of
             dtype rgbx8(rgbx16) can only be changed to uint8(uint16) and the
             signal dimension becomes 1.
+        %s
 
 
         Examples
@@ -3822,6 +3824,7 @@ class BaseSignal(FancySlicing,
         else:
             self.data = self.data.astype(dtype)
         self._assign_subclass()
+    change_dtype.__doc__ %= (RECHUNK_ARG)
 
     def estimate_poissonian_noise_variance(self,
                                            expected_value=None,
@@ -4666,7 +4669,7 @@ class BaseSignal(FancySlicing,
                                     optimize=optimize)
                 res.metadata.set_item('Signal.Noise_properties.variance', var)
         if optimize:
-            res._make_sure_data_is_contiguous(log=True)
+            res._make_sure_data_is_contiguous()
         if res.metadata.has_item('Markers'):
             # The markers might fail if the navigation dimensions are changed
             # so the safest is simply to not carry them over from the
