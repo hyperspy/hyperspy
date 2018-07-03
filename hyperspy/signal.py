@@ -50,7 +50,7 @@ from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
-    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG)
+    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG, RECHUNK_ARG)
 from hyperspy.docstrings.plot import BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
@@ -2188,12 +2188,13 @@ class BaseSignal(FancySlicing,
         self.squeeze()
         self.events.data_changed.trigger(obj=self)
 
-    def swap_axes(self, axis1, axis2):
+    def swap_axes(self, axis1, axis2, optimize=False):
         """Swaps the axes.
 
         Parameters
         ----------
         axis1, axis2 %s
+        %s
 
         Returns
         -------
@@ -2213,12 +2214,13 @@ class BaseSignal(FancySlicing,
         am._axes[axis2] = c1
         am._update_attributes()
         am._update_trait_handlers(remove=False)
-        s._make_sure_data_is_contiguous()
+        if optimize:
+            s._make_sure_data_is_contiguous()
         return s
 
-    swap_axes.__doc__ %= ONE_AXIS_PARAMETER
+    swap_axes.__doc__ %= (ONE_AXIS_PARAMETER, OPTIMIZE_ARG)
 
-    def rollaxis(self, axis, to_axis):
+    def rollaxis(self, axis, to_axis, optimize=False):
         """Roll the specified axis backwards, until it lies in a given position.
 
         Parameters
@@ -2227,6 +2229,7 @@ class BaseSignal(FancySlicing,
             The positions of the other axes do not change relative to one another.
         to_axis %s The axis is rolled until it
             lies before this other axis.
+        %s
 
         Returns
         -------
@@ -2263,10 +2266,11 @@ class BaseSignal(FancySlicing,
             index=axis,
             to_index=to_index)
         s.axes_manager._update_attributes()
-        s._make_sure_data_is_contiguous()
+        if optimize:
+            s._make_sure_data_is_contiguous()
         return s
 
-    rollaxis.__doc__ %= (ONE_AXIS_PARAMETER, ONE_AXIS_PARAMETER)
+    rollaxis.__doc__ %= (ONE_AXIS_PARAMETER, ONE_AXIS_PARAMETER, OPTIMIZE_ARG)
 
     @property
     def _data_aligned_with_axes(self):
@@ -2777,7 +2781,7 @@ class BaseSignal(FancySlicing,
             return s
 
     def _apply_function_on_data_and_remove_axis(self, function, axes,
-                                                out=None):
+                                                out=None, **kwargs):
         axes = self.axes_manager[axes]
         if not np.iterable(axes):
             axes = (axes,)
@@ -2788,7 +2792,7 @@ class BaseSignal(FancySlicing,
         ar_axes = tuple(ax.index_in_array for ax in axes)
 
         if len(ar_axes) == 0:
-            # no axes is provided, so no operation needs to be done but we 
+            # no axes is provided, so no operation needs to be done but we
             # still need to finished the execution of the function properly.
             if out:
                 out.data[:] = self.data
@@ -2822,12 +2826,13 @@ class BaseSignal(FancySlicing,
             s._remove_axis([ax.index_in_axes_manager for ax in axes])
             return s
 
-    def sum(self, axis=None, out=None):
+    def sum(self, axis=None, out=None, rechunk=True):
         """Sum the data over the given axes.
 
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -2850,17 +2855,18 @@ class BaseSignal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.sum, axis,
-                                                            out=out)
-    sum.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+        return self._apply_function_on_data_and_remove_axis(
+            np.sum, axis, out=out, rechunk=rechunk)
+    sum.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def max(self, axis=None, out=None):
+    def max(self, axis=None, out=None, rechunk=True):
         """Returns a signal with the maximum of the signal along at least one
         axis.
 
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -2883,17 +2889,18 @@ class BaseSignal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.max, axis,
-                                                            out=out)
-    max.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+        return self._apply_function_on_data_and_remove_axis(
+            np.max, axis, out=out, rechunk=rechunk)
+    max.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def min(self, axis=None, out=None):
+    def min(self, axis=None, out=None, rechunk=True):
         """Returns a signal with the minimum of the signal along at least one
         axis.
 
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -2916,17 +2923,18 @@ class BaseSignal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.min, axis,
-                                                            out=out)
-    min.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+        return self._apply_function_on_data_and_remove_axis(
+            np.min, axis, out=out, rechunk=rechunk)
+    min.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def mean(self, axis=None, out=None):
+    def mean(self, axis=None, out=None, rechunk=True):
         """Returns a signal with the average of the signal along at least one
         axis.
 
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -2949,17 +2957,18 @@ class BaseSignal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.mean, axis,
-                                                            out=out)
-    mean.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+        return self._apply_function_on_data_and_remove_axis(
+            np.mean, axis, out=out, rechunk=rechunk)
+    mean.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def std(self, axis=None, out=None):
+    def std(self, axis=None, out=None, rechunk=True):
         """Returns a signal with the standard deviation of the signal along
         at least one axis.
 
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -2982,17 +2991,18 @@ class BaseSignal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.std, axis,
-                                                            out=out)
-    std.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+        return self._apply_function_on_data_and_remove_axis(
+            np.std, axis, out=out, rechunk=rechunk)
+    std.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def var(self, axis=None, out=None):
+    def var(self, axis=None, out=None, rechunk=True):
         """Returns a signal with the variances of the signal along at least one
         axis.
 
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -3015,61 +3025,61 @@ class BaseSignal(FancySlicing,
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.var, axis,
-                                                            out=out)
-    var.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG)
+        return self._apply_function_on_data_and_remove_axis(
+            np.var, axis, out=out, rechunk=rechunk)
+    var.__doc__ %= (MANY_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def nansum(self, axis=None, out=None):
+    def nansum(self, axis=None, out=None, rechunk=True):
         """%s
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.nansum, axis,
-                                                            out=out)
+        return self._apply_function_on_data_and_remove_axis(
+            np.nansum, axis, out=out, rechunk=rechunk)
     nansum.__doc__ %= (NAN_FUNC.format('sum', sum.__doc__))
 
-    def nanmax(self, axis=None, out=None):
+    def nanmax(self, axis=None, out=None, rechunk=True):
         """%s
         """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.nanmax, axis,
-                                                            out=out)
+        return self._apply_function_on_data_and_remove_axis(
+            np.nanmax, axis, out=out, rechunk=rechunk)
     nanmax.__doc__ %= (NAN_FUNC.format('max', max.__doc__))
 
-    def nanmin(self, axis=None, out=None):
+    def nanmin(self, axis=None, out=None, rechunk=True):
         """%s"""
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.nanmin, axis,
-                                                            out=out)
+        return self._apply_function_on_data_and_remove_axis(
+            np.nanmin, axis, out=out, rechunk=rechunk)
     nanmin.__doc__ %= (NAN_FUNC.format('min', min.__doc__))
 
-    def nanmean(self, axis=None, out=None):
+    def nanmean(self, axis=None, out=None, rechunk=True):
         """%s """
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.nanmean, axis,
-                                                            out=out)
+        return self._apply_function_on_data_and_remove_axis(
+            np.nanmean, axis, out=out, rechunk=rechunk)
     nanmean.__doc__ %= (NAN_FUNC.format('mean', mean.__doc__))
 
-    def nanstd(self, axis=None, out=None):
+    def nanstd(self, axis=None, out=None, rechunk=True):
         """%s"""
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.nanstd, axis,
-                                                            out=out)
+        return self._apply_function_on_data_and_remove_axis(
+            np.nanstd, axis, out=out, rechunk=rechunk)
     nanstd.__doc__ %= (NAN_FUNC.format('std', std.__doc__))
 
-    def nanvar(self, axis=None, out=None):
+    def nanvar(self, axis=None, out=None, rechunk=True):
         """%s"""
         if axis is None:
             axis = self.axes_manager.navigation_axes
-        return self._apply_function_on_data_and_remove_axis(np.nanvar, axis,
-                                                            out=out)
+        return self._apply_function_on_data_and_remove_axis(
+            np.nanvar, axis, out=out, rechunk=rechunk)
     nanvar.__doc__ %= (NAN_FUNC.format('var', var.__doc__))
 
-    def diff(self, axis, order=1, out=None):
+    def diff(self, axis, order=1, out=None, rechunk=True):
         """Returns a signal with the n-th order discrete difference along
         given axis.
 
@@ -3078,6 +3088,7 @@ class BaseSignal(FancySlicing,
         axis %s
         order : int
             the order of the derivative
+        %s
         %s
 
         See also
@@ -3108,9 +3119,9 @@ class BaseSignal(FancySlicing,
             return s
         else:
             out.events.data_changed.trigger(obj=out)
-    diff.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+    diff.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def derivative(self, axis, order=1, out=None):
+    def derivative(self, axis, order=1, out=None, rechunk=True):
         """Numerical derivative along the given axis.
 
         Currently only the first order finite difference method is implemented.
@@ -3122,6 +3133,7 @@ class BaseSignal(FancySlicing,
             The order of the derivative. (Note that this is the order of the
             derivative i.e. `order=2` does not use second order finite
             differences method.)
+        %s
         %s
 
         Returns
@@ -3137,7 +3149,7 @@ class BaseSignal(FancySlicing,
 
         """
 
-        der = self.diff(order=order, axis=axis, out=out)
+        der = self.diff(order=order, axis=axis, out=out, rechunk=rechunk)
         der = out or der
         axis = self.axes_manager[axis]
         der.data /= axis.scale ** order
@@ -3145,7 +3157,7 @@ class BaseSignal(FancySlicing,
             return der
         else:
             out.events.data_changed.trigger(obj=out)
-    derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+    derivative.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def integrate_simpson(self, axis, out=None):
         """Returns a signal with the result of calculating the integral
@@ -3223,42 +3235,13 @@ class BaseSignal(FancySlicing,
             return self.sum(axis=axis, out=out)
     integrate1D.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def indexmin(self, axis, out=None):
+    def indexmin(self, axis, out=None, rechunk=True):
         """Returns a signal with the index of the minimum along an axis.
 
         Parameters
         ----------
         axis %s
         %s
-
-        Returns
-        -------
-        s : Signal
-            The data dtype is always int.
-
-        See also
-        --------
-        max, min, sum, mean, std, var, valuemax, amax
-
-        Usage
-        -----
-        >>> import numpy as np
-        >>> s = BaseSignal(np.random.random((64,64,1024)))
-        >>> s.data.shape
-        (64,64,1024)
-        >>> s.indexmax(-1).data.shape
-        (64,64)
-
-        """
-        return self._apply_function_on_data_and_remove_axis(np.argmin, axis,
-                                                            out=out)
-
-    def indexmax(self, axis, out=None):
-        """Returns a signal with the index of the maximum along an axis.
-
-        Parameters
-        ----------
-        axis %s
         %s
 
         Returns
@@ -3280,16 +3263,49 @@ class BaseSignal(FancySlicing,
         (64,64)
 
         """
-        return self._apply_function_on_data_and_remove_axis(np.argmax, axis,
-                                                            out=out)
-    indexmax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+        return self._apply_function_on_data_and_remove_axis(
+            np.argmin, axis, out=out, rechunk=rechunk)
+    indexmin.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def valuemax(self, axis, out=None):
+    def indexmax(self, axis, out=None, rechunk=True):
+        """Returns a signal with the index of the maximum along an axis.
+
+        Parameters
+        ----------
+        axis %s
+        %s
+        %s
+
+        Returns
+        -------
+        s : Signal
+            The data dtype is always int.
+
+        See also
+        --------
+        max, min, sum, mean, std, var, valuemax, amax
+
+        Usage
+        -----
+        >>> import numpy as np
+        >>> s = BaseSignal(np.random.random((64,64,1024)))
+        >>> s.data.shape
+        (64,64,1024)
+        >>> s.indexmax(-1).data.shape
+        (64,64)
+
+        """
+        return self._apply_function_on_data_and_remove_axis(
+            np.argmax, axis, out=out, rechunk=rechunk)
+    indexmax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
+
+    def valuemax(self, axis, out=None, rechunk=True):
         """Returns a signal with the value of coordinates of the maximum along an axis.
 
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -3318,14 +3334,15 @@ class BaseSignal(FancySlicing,
         else:
             out.data[:] = data
             out.events.data_changed.trigger(obj=out)
-    valuemax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+    valuemax.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
-    def valuemin(self, axis, out=None):
+    def valuemin(self, axis, out=None, rechunk=True):
         """Returns a signal with the value of coordinates of the minimum along an axis.
 
         Parameters
         ----------
         axis %s
+        %s
         %s
 
         Returns
@@ -3345,7 +3362,7 @@ class BaseSignal(FancySlicing,
         else:
             out.data[:] = data
             out.events.data_changed.trigger(obj=out)
-    valuemin.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
+    valuemin.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG, RECHUNK_ARG)
 
     def get_histogram(self, bins='freedman', range_bins=None, out=None,
                       **kwargs):
@@ -3366,6 +3383,7 @@ class BaseSignal(FancySlicing,
         range_bins : tuple or None, optional
             the minimum and maximum range for the histogram. If not specified,
             it will be (x.min(), x.max())
+        %s
         %s
         **kwargs
             other keyword arguments (weight and density) are described in
@@ -3429,7 +3447,7 @@ class BaseSignal(FancySlicing,
             return hist_spec
         else:
             out.events.data_changed.trigger(obj=out)
-    get_histogram.__doc__ %= OUT_ARG
+    get_histogram.__doc__ %= (OUT_ARG, RECHUNK_ARG)
 
     def map(self, function,
             show_progressbar=None,
@@ -3736,7 +3754,7 @@ class BaseSignal(FancySlicing,
     def deepcopy(self):
         return copy.deepcopy(self)
 
-    def change_dtype(self, dtype):
+    def change_dtype(self, dtype, rechunk=True):
         """Change the data type.
 
         Parameters
@@ -3752,6 +3770,7 @@ class BaseSignal(FancySlicing,
             conversion the signal dimension becomes 2. The dtype of images of
             dtype rgbx8(rgbx16) can only be changed to uint8(uint16) and the
             signal dimension becomes 1.
+        %s
 
 
         Examples
@@ -3805,6 +3824,7 @@ class BaseSignal(FancySlicing,
         else:
             self.data = self.data.astype(dtype)
         self._assign_subclass()
+    change_dtype.__doc__ %= (RECHUNK_ARG)
 
     def estimate_poissonian_noise_variance(self,
                                            expected_value=None,
@@ -4211,7 +4231,7 @@ class BaseSignal(FancySlicing,
         """
         self.metadata.Signal.signal_origin = origin
 
-    def print_summary_statistics(self, formatter="%.3g"):
+    def print_summary_statistics(self, formatter="%.3g", rechunk=True):
         """Prints the five-number summary statistics of the data, the mean and
         the standard deviation.
 
@@ -4223,13 +4243,15 @@ class BaseSignal(FancySlicing,
         ----------
         formatter : bool
            Number formatter.
+        %s
 
         See Also
         --------
         get_histogram
 
         """
-        _mean, _std, _min, _q1, _q2, _q3, _max = self._calculate_summary_statistics()
+        _mean, _std, _min, _q1, _q2, _q3, _max = self._calculate_summary_statistics(
+            rechunk=rechunk)
         print(underline("Summary statistics"))
         print("mean:\t" + formatter % _mean)
         print("std:\t" + formatter % _std)
@@ -4239,8 +4261,9 @@ class BaseSignal(FancySlicing,
         print("median:\t" + formatter % _q2)
         print("Q3:\t" + formatter % _q3)
         print("max:\t" + formatter % _max)
+    print_summary_statistics.__doc__ %= (RECHUNK_ARG)
 
-    def _calculate_summary_statistics(self):
+    def _calculate_summary_statistics(self, **kwargs):
         data = self.data
         data = data[~np.isnan(data)]
         _mean = np.nanmean(data)
