@@ -917,6 +917,16 @@ def test_lazy_changetype_rechunk():
     chunks_newest = s.data.chunks
     assert chunks_newest == chunks_new
 
+def test_lazy_changetype_rechunk_False():
+    ar = da.ones((50, 50, 256, 256), chunks=(5, 5, 256, 256), dtype='uint8')
+    s = signals.Signal2D(ar).as_lazy()
+    s._make_lazy(rechunk=True)
+    assert s.data.dtype is np.dtype('uint8')
+    chunks_old = s.data.chunks
+    s.change_dtype('float', rechunk=False)
+    assert s.data.dtype is np.dtype('float')
+    assert chunks_old == s.data.chunks
+
 
 def test_lazy_reduce_rechunk():
     s = signals.Signal1D(da.ones((10, 100), chunks=(1, 2))).as_lazy()
