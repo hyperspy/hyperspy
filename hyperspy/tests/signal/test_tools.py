@@ -319,9 +319,9 @@ class Test3D:
         if self.signal._lazy:
             new_s = self.signal.rebin(scale=(2, 2, 1), rechunk=False)
             np.testing.assert_array_equal(rebin(self.signal.data, scale=(2, 2, 1)),
-                                        var.data)
+                                          var.data)
             np.testing.assert_array_equal(rebin(self.signal.data, scale=(2, 2, 1)),
-                                        new_s.data)
+                                          new_s.data)
 
     def test_rebin_no_variance(self):
         new_s = self.signal.rebin(scale=(2, 2, 1))
