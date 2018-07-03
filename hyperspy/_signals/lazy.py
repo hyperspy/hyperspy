@@ -355,8 +355,8 @@ class LazySignal(BaseSignal):
 
     integrate_simpson.__doc__ = BaseSignal.integrate_simpson.__doc__
 
-    def valuemax(self, axis, out=None):
-        idx = self.indexmax(axis)
+    def valuemax(self, axis, out=None, rechunk=True):
+        idx = self.indexmax(axis, rechunk=rechunk)
         old_data = idx.data
         data = old_data.map_blocks(
             lambda x: self.axes_manager[axis].index2value(x))
@@ -369,8 +369,8 @@ class LazySignal(BaseSignal):
 
     valuemax.__doc__ = BaseSignal.valuemax.__doc__
 
-    def valuemin(self, axis, out=None):
-        idx = self.indexmin(axis)
+    def valuemin(self, axis, out=None, rechunk=True):
+        idx = self.indexmin(axis, rechunk=rechunk)
         old_data = idx.data
         data = old_data.map_blocks(
             lambda x: self.axes_manager[axis].index2value(x))
