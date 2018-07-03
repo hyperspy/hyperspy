@@ -910,6 +910,10 @@ def test_lazy_changetype_rechunk():
     chunks_newest = s.data.chunks
     assert chunks_newest == chunks_new
 
+def test_lazy_reduce_rechunk():
+    s = signals.Signal1D(da.ones((10, 100), chunks=(1, 2))).as_lazy()
+    assert s.sum().data.chunks == ((100,),) # The data has been rechunked
+
 
 def test_spikes_removal_tool():
     s = signals.Signal1D(np.ones((2, 3, 30)))
