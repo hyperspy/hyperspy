@@ -116,10 +116,13 @@ class Gaussian(Component):
         self.sigma.grad = self.grad_sigma
         self.centre.grad = self.grad_centre
 
-    def function(self, x):
-        A = self.A.value
-        s = self.sigma.value
-        c = self.centre.value
+    def function(self, x, parameters = None):
+        if parameters is not None:
+            A, s, c = parameters
+        else:
+            A = self.A.value
+            s = self.sigma.value
+            c = self.centre.value
         return A * (1 / (s * sqrt2pi)) * np.exp(-(x - c)**2 / (2 * s**2))
 
     def grad_A(self, x):

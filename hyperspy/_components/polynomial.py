@@ -49,8 +49,11 @@ class Polynomial(Component):
     def get_polynomial_order(self):
         return len(self.coefficients.value) - 1
 
-    def function(self, x):
-        return np.polyval(self.coefficients.value, x)
+    def function(self, x, parameters=None):
+        if parameters is not None:
+            return np.polyval(parameters, x)
+        else:
+            return np.polyval(self.coefficients.value, x)
 
     def grad_one_coefficient(self, x, index):
         """Returns the gradient of one coefficient"""
