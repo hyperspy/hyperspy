@@ -180,19 +180,39 @@ class LazySignal(BaseSignal):
     change_dtype.__doc__ = BaseSignal.change_dtype.__doc__
 
     def _lazy_data(self, axis=None, rechunk=True, dtype=None):
+        """Return the data as a dask array, rechunked if necessary.
+
+        Parameters
+        ----------
+        axis: None, DataAxis or tuple of data axes
+            The data axis that must not be broken into chunks when `rechunk`
+            is `True`. If None, it defaults to the current signal axes.
+        rechunk: bool, "dask_auto"
+            If `True`, it rechunks the data if necessary making sure that the
+            axes in ``axis`` are not split into chunks. If `False` it does
+            not rechunk at least the data is not a dask array, in which case
+            it chunks as if rechunk was `True`. If "dask_auto", rechunk if
+            necessary using dask's automatic chunk guessing.
+
+        """
+        if rechunk == "dask_auto":
+            new_chunks = "auto"
+        else:
+            new_chunks = self._get_dask_chunks(axis=axis, dtype=dtype)
         if isinstance(self.data, da.Array):
             res = self.data
-            if rechunk:
-                new_chunks = self._get_dask_chunks(axis=axis, dtype=dtype)
-                if self.data.chunks != new_chunks:
-                    res = self.data.rechunk(new_chunks)
+            if self.data.chunks != new_chunks and rechunk:
+                _logger.info(
+                    "Rechunking.\nOriginal chunks: %s" % str(self.data.chunks))
+                res = self.data.rechunk(new_chunks)
+                _logger.info(
+                    "Final chunks: %s " % str(res.chunks))
         else:
             if isinstance(self.data, np.ma.masked_array):
                 data = np.where(self.data.mask, np.nan, self.data)
             else:
                 data = self.data
-            chunks = self._get_dask_chunks(axis=axis, dtype=dtype)
-            res = da.from_array(data, chunks=chunks)
+            res = da.from_array(data, chunks=new_chunks)
         assert isinstance(res, da.Array)
         return res
 
@@ -212,7 +232,13 @@ class LazySignal(BaseSignal):
         ar_axes = tuple(ax.index_in_array for ax in axes)
         if len(ar_axes) == 1:
             ar_axes = ar_axes[0]
-        current_data = self._lazy_data(axis=axes, rechunk=rechunk)
+        # For reduce operations the actual signal and navigation
+        # axes configuration does not matter. Hence we leave
+        # dask guess the chunks
+        if rechunk is True:
+            rechunk = "dask_auto"
+        current_data = self._lazy_data(rechunk=rechunk)
+        # Apply reducing function
         new_data = function(current_data, axis=ar_axes)
         if not new_data.ndim:
             new_data = new_data.reshape((1, ))
