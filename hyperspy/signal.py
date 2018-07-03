@@ -2692,13 +2692,11 @@ class BaseSignal(FancySlicing,
                 if isinstance(variance, BaseSignal):
                     variance.fold()
 
-    def _make_sure_data_is_contiguous(self, log=None):
+    def _make_sure_data_is_contiguous(self):
         if self.data.flags['C_CONTIGUOUS'] is False:
-            if log:
-                _logger.warning("{0!r} data is replaced by its optimized copy "
-                                ", see optimize parameter of "
-                                "``Basesignal.transpose`` for more "
-                                "information.".format(self))
+            _logger.info("{0!r} data is replaced by its optimized copy, see "
+                         "optimize parameter of ``Basesignal.transpose`` "
+                         "for more information.".format(self))
             self.data = np.ascontiguousarray(self.data)
 
     def _iterate_signal(self):
@@ -4648,7 +4646,7 @@ class BaseSignal(FancySlicing,
                                     optimize=optimize)
                 res.metadata.set_item('Signal.Noise_properties.variance', var)
         if optimize:
-            res._make_sure_data_is_contiguous(log=True)
+            res._make_sure_data_is_contiguous()
         if res.metadata.has_item('Markers'):
             # The markers might fail if the navigation dimensions are changed
             # so the safest is simply to not carry them over from the
