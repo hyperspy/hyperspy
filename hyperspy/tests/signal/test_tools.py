@@ -158,6 +158,12 @@ class Test2D:
         # Just test if it doesn't raise an exception
         self.signal._print_summary()
 
+    def test_print_summary_statistics(self):
+        # Just test if it doesn't raise an exception
+        self.signal.print_summary_statistics()
+        if self.signal._lazy:
+            self.signal.print_summary_statistics(rechunk=False)
+
     def test_numpy_unfunc_one_arg_titled(self):
         self.signal.metadata.General.title = "yes"
         result = np.exp(self.signal)
