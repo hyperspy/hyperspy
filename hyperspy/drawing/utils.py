@@ -634,11 +634,7 @@ def plot_images(images,
     elif label is 'auto':
         # Use some heuristics to try to get base string of similar titles
 
-        # in case of single image
-        if len(images) > 1:
-            label_list = [x.metadata.General.title for x in images]
-        else:
-            label_list = [images.metadata.General.title]
+        label_list = [x.metadata.General.title for x in images]
 
         # Find the shortest common string between the image titles
         # and pull that out as the base title for the sequence of images
@@ -1071,8 +1067,8 @@ def plot_spectra(
 
     def _reverse_legend(ax_, legend_loc_):
         """
-        Reverse the ordering of a matplotlib legend (to be more consistent 
-        with the default ordering of plots in the 'cascade' and 'overlap' 
+        Reverse the ordering of a matplotlib legend (to be more consistent
+        with the default ordering of plots in the 'cascade' and 'overlap'
         styles
 
         Parameters
@@ -1080,7 +1076,7 @@ def plot_spectra(
         ax_: matplotlib axes
 
         legend_loc_: str or int
-            This parameter controls where the legend is placed on the 
+            This parameter controls where the legend is placed on the
             figure; see the pyplot.legend docstring for valid values
         """
         l = ax_.get_legend()
