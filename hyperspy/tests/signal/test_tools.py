@@ -910,13 +910,18 @@ def test_lazy_changetype_rechunk():
     chunks_newest = s.data.chunks
     assert chunks_newest == chunks_new
 
+
 def test_lazy_reduce_rechunk():
     s = signals.Signal1D(da.ones((10, 100), chunks=(1, 2))).as_lazy()
     reduce_methods = (s.sum, s.mean, s.max, s.std, s.var, s.nansum, s.nanmax, s.nanmin,
-                      s.nanmean, s.nanstd, s.nanvar, s.indexmin, s.indexmax,   )
+                      s.nanmean, s.nanstd, s.nanvar, s.indexmin, s.indexmax,)
     for rm in reduce_methods:
-            assert rm(axis=s.axes_manager.navigation_axes).data.chunks == ((100,),) # The data has been rechunked
-            assert rm(axis=s.axes_manager.navigation_axes, rechunk=False).data.chunks == ((2,) * 50,) # The data has not been rechunked
+        assert rm(
+            axis=s.axes_manager.navigation_axes).data.chunks == (
+            (100,),)  # The data has been rechunked
+        assert rm(
+            axis=s.axes_manager.navigation_axes, rechunk=False).data.chunks == (
+            (2,) * 50,)  # The data has not been rechunked
 
 
 def test_spikes_removal_tool():
