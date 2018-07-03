@@ -329,11 +329,11 @@ class LazySignal(BaseSignal):
 
     diff.__doc__ = BaseSignal.diff.__doc__
 
-    def integrate_simpson(self, axis, out=None, rechunk=True):
+    def integrate_simpson(self, axis, out=None):
         axis = self.axes_manager[axis]
         from scipy import integrate
         axis = self.axes_manager[axis]
-        data = self._lazy_data(axis=axis, rechunk=rechunk)
+        data = self._lazy_data(axis=axis, rechunk=True)
         new_data = data.map_blocks(
             integrate.simps,
             x=axis.axis,
