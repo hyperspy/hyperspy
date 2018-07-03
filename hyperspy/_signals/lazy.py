@@ -280,7 +280,7 @@ class LazySignal(BaseSignal):
     def __array__(self, dtype=None):
         return self.data.__array__(dtype=dtype)
 
-    def _make_sure_data_is_contiguous(self, log=None):
+    def _make_sure_data_is_contiguous(self):
         self._make_lazy(rechunk=True)
 
     def diff(self, axis, order=1, out=None):
