@@ -665,11 +665,15 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.fast = fast
         self.show_progressbar = show_progressbar
         self.bg_line = None
+        self.rm_line = None
 
     def on_disabling_span_selector(self):
         if self.bg_line is not None:
             self.bg_line.close()
             self.bg_line = None
+        if self.rm_line is not None:
+            self.rm_line.close()
+            self.rm_line = None
 
     def set_background_estimator(self):
         if self.background_type == 'Power Law':
@@ -713,6 +717,16 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.bg_line.autoscale = False
         self.bg_line.plot()
 
+        self.rm_line = drawing.signal1d.Signal1DLine()
+        self.rm_line.data_function = self.rm_to_plot
+        self.rm_line.set_line_properties(
+            color='green',
+            type='line',
+            scaley=False)
+        self.signal._plot.signal_plot.add_line(self.rm_line)
+        self.rm_line.autoscale = False
+        self.rm_line.plot()
+
     def bg_to_plot(self, axes_manager=None, fill_with=np.nan):
         # First try to update the estimation
         self.background_estimator.estimate_parameters(
@@ -741,6 +755,35 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             to_return *= self.axis.scale
         return to_return
 
+    def rm_to_plot(self, axes_manager=None, fill_with=np.nan):
+        # First try to update the estimation
+        self.background_estimator.estimate_parameters(
+            self.signal, self.ss_left_value, self.ss_right_value,
+            only_current=True)
+
+        if self.bg_line_range == 'from_left_range':
+            bg_array = np.zeros(self.axis.axis.shape)
+            bg_array[:] = fill_with
+            from_index = self.axis.value2index(self.ss_left_value)
+            bg_array[from_index:] = self.background_estimator.function(
+                self.axis.axis[from_index:])
+        elif self.bg_line_range == 'full':
+            bg_array = self.background_estimator.function(self.axis.axis)
+        elif self.bg_line_range == 'ss_range':
+            bg_array = np.zeros(self.axis.axis.shape)
+            bg_array[:] = fill_with
+            from_index = self.axis.value2index(self.ss_left_value)
+            to_index = self.axis.value2index(self.ss_right_value)
+            bg_array[from_index:] = self.background_estimator.function(
+                self.axis.axis[from_index:to_index])
+
+        if self.signal.metadata.Signal.binned is True:
+            bg_array *= self.axis.scale
+
+        to_return = self.signal() - bg_array
+
+        return to_return
+
     def span_selector_changed(self):
         if self.ss_left_value is np.nan or self.ss_right_value is np.nan or\
                 self.ss_right_value <= self.ss_left_value:
@@ -755,6 +798,14 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.create_background_line()
         else:
             self.bg_line.update()
+        if self.rm_line is None and \
+            self.background_estimator.estimate_parameters(
+                self.signal, self.ss_left_value,
+                self.ss_right_value,
+                only_current=True) is True:
+            self.create_background_line()
+        else:
+            self.rm_line.update()
 
     def apply(self):
         if self.signal._plot:
