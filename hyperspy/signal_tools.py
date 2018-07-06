@@ -761,33 +761,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         return to_return
 
     def rm_to_plot(self, axes_manager=None, fill_with=np.nan):
-        # First try to update the estimation
-        self.background_estimator.estimate_parameters(
-            self.signal, self.ss_left_value, self.ss_right_value,
-            only_current=True)
-
-        if self.bg_line_range == 'from_left_range':
-            bg_array = np.zeros(self.axis.axis.shape)
-            bg_array[:] = fill_with
-            from_index = self.axis.value2index(self.ss_left_value)
-            bg_array[from_index:] = self.background_estimator.function(
-                self.axis.axis[from_index:])
-        elif self.bg_line_range == 'full':
-            bg_array = self.background_estimator.function(self.axis.axis)
-        elif self.bg_line_range == 'ss_range':
-            bg_array = np.zeros(self.axis.axis.shape)
-            bg_array[:] = fill_with
-            from_index = self.axis.value2index(self.ss_left_value)
-            to_index = self.axis.value2index(self.ss_right_value)
-            bg_array[from_index:] = self.background_estimator.function(
-                self.axis.axis[from_index:to_index])
-
-        if self.signal.metadata.Signal.binned is True:
-            bg_array *= self.axis.scale
-
-        to_return = self.signal() - bg_array
-
-        return to_return
+        return self.signal() - self.bg_line.line.get_ydata()
 
     def span_selector_changed(self):
         if self.ss_left_value is np.nan or self.ss_right_value is np.nan or\
