@@ -44,10 +44,16 @@ def get_low_loss_eels_signal():
     return s
 
 
-def get_core_loss_eels_signal():
+def get_core_loss_eels_signal(add_powerlaw=False):
     """Get an artificial core loss electron energy loss spectrum.
 
     Similar to a Mn-L32 edge from a perovskite oxide.
+
+    Parameters
+    ----------
+    add_powerlaw : bool
+        If True, adds a powerlaw background to the spectrum.
+        Default False.
 
     Returns
     -------
@@ -55,7 +61,13 @@ def get_core_loss_eels_signal():
 
     Example
     -------
-    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
+    >>> import hs.datasets.artifical_data as ad
+    >>> s = ad.get_core_loss_eels_signal()
+    >>> s.plot()
+
+    With the powerlaw background
+
+    >>> s = ad.get_core_loss_eels_signal(add_powerlaw=True)
     >>> s.plot()
 
     See also
@@ -76,6 +88,10 @@ def get_core_loss_eels_signal():
     data += mn_l3_g.function(x)
     data += mn_l2_g.function(x)
     data += np.random.random(size=len(x))*0.7
+
+    if add_powerlaw:
+        powerlaw = components1d.PowerLaw(A=10e8, r=3, origin=0)
+        data += powerlaw.function(x)
 
     s = EELSSpectrum(data)
     s.axes_manager[0].offset = x[0]
@@ -187,10 +203,16 @@ def get_core_loss_eels_line_scan_signal():
     return s
 
 
-def get_core_loss_eels_model():
+def get_core_loss_eels_model(add_powerlaw=False):
     """Get an artificial core loss electron energy loss model.
 
     Similar to a Mn-L32 edge from a perovskite oxide.
+
+    Parameters
+    ----------
+    add_powerlaw : bool
+        If True, adds a powerlaw background to the spectrum.
+        Default False.
 
     Returns
     -------
@@ -198,7 +220,13 @@ def get_core_loss_eels_model():
 
     Example
     -------
-    >>> s = hs.datasets.artificial_data.get_core_loss_eels_model()
+    >>> import hs.datasets.artifical_data as ad
+    >>> s = ad.get_core_loss_eels_model()
+    >>> s.plot()
+
+    With the powerlaw background
+
+    >>> s = ad.get_core_loss_eels_model(add_powerlaw=True)
     >>> s.plot()
 
     See also
@@ -207,9 +235,8 @@ def get_core_loss_eels_model():
     get_core_loss_eels_signal : get a model instead of a signal
 
     """
-    s = get_core_loss_eels_signal()
+    s = get_core_loss_eels_signal(add_powerlaw=add_powerlaw)
     m = s.create_model(auto_background=False, GOS='hydrogenic')
-    m.fit()
     return m
 
 
