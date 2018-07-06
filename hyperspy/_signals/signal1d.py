@@ -1045,6 +1045,7 @@ _spikes_diagnosis,
             background_type='Power Law',
             polynomial_order=2,
             fast=True,
+            plot_remainder=True,
             show_progressbar=None, display=True, toolkit=None):
         signal_range = signal_range_from_roi(signal_range)
         self._check_signal_dimension_equals_one()
@@ -1052,6 +1053,7 @@ _spikes_diagnosis,
             br = BackgroundRemoval(self, background_type=background_type,
                                    polynomial_order=polynomial_order,
                                    fast=fast,
+                                   plot_remainder=plot_remainder,
                                    show_progressbar=show_progressbar)
             return br.gui(display=display, toolkit=toolkit)
         else:
@@ -1096,6 +1098,11 @@ _spikes_diagnosis,
             If False, the signal is fitted using non-linear least squares
             afterwards.This is slower compared to the estimation but
             possibly more accurate.
+        plot_remainder : bool
+            If True, add a (green) line previewing the remainder signal after
+            background removal. This preview is obtained from a Fast calculation
+            so the result may be different if a NLLS calculation is finally
+            performed.
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
