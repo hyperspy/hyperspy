@@ -682,11 +682,7 @@ def plot_images(images,
     elif label is 'auto':
         # Use some heuristics to try to get base string of similar titles
 
-        # in case of single image
-        if isinstance(images, list) or len(images) > 1:
-            label_list = [x.metadata.General.title for x in images]
-        else:
-            label_list = [images.metadata.General.title]
+        label_list = [x.metadata.General.title for x in images]
 
         # Find the shortest common string between the image titles
         # and pull that out as the base title for the sequence of images

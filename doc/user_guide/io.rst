@@ -284,7 +284,25 @@ intensity<get_lines_intensity>`):
      <BaseSignal, title: X-ray line intensity of EDS SEM Signal1D: Mn_La at 0.63 keV, dimensions: (|)>,
      <BaseSignal, title: X-ray line intensity of EDS SEM Signal1D: Zr_La at 2.04 keV, dimensions: (|)>]
 
+.. versionadded:: 1.3.1
+    ``chunks`` keyword argument
 
+By default, the data is saved in chunks that are optimised to contain at least one full signal. It is
+possible to customise the chunk shape using the ``chunks`` keyword. For example, to save the data with
+``(20, 20, 256)`` chunks instead of the default ``(7, 7, 2048)`` chunks for this signal:
+
+.. code-block:: python
+    >>> s = hs.signals.Signal1D(np.random.random((100, 100, 2048)))
+    >>> s.save("test_chunks", chunks=(20, 20, 256), overwrite=True)
+
+Note that currently it is not possible to pass different customised chunk shapes to all signals and
+arrays contained in a signal and its metadata. Therefore, the value of ``chunks`` provided on saving 
+will be applied to all arrays contained in the signal.
+
+By passing ``True`` to ``chunks`` the chunk shape is guessed using ``h5py``'s ``guess_chunks`` function
+what, for large signal spaces usually leads to smaller chunks as ``guess_chunks`` does not impose the
+constrain of storing at least one signal per chunks. For example, for the signal in the example above
+passing ``chunks=True`` results in ``(7, 7, 256)`` chunks.
 
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^

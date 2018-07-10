@@ -339,13 +339,23 @@ def test_plot_images_cmap_multi_w_rgb(mpl_cleanup):
                         cmap='mpl_colors')
     return plt.gcf()
 
-
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_images_single_image(mpl_cleanup):
     image0 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
     ax = hs.plot.plot_images(image0, saturated_pixels=0.1)
-    return ax[0].figure
+    return plt.gcf()
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_images_single_image_stack(mpl_cleanup):
+    image0 = hs.signals.Signal2D(np.arange(200).reshape(2, 10, 10))
+    image0.isig[5, 5] = 200
+    image0.metadata.General.title = 'This is the title from the metadata'
+    ax = hs.plot.plot_images(image0, saturated_pixels=0.1)
+    return plt.gcf()
 
 def test_plot_images_multi_signal_w_axes_replot(mpl_cleanup):
     imdata = np.random.rand(3, 5, 5)
