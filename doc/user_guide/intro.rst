@@ -26,13 +26,13 @@ file formats, add graphical user interfaces, provide
 extra blind source separation algorithms etc.
 
 There are multiple HyperSpy extensions. For a list of extensions hosted
-publicacly in GitHub search for the GitHub topic `hyperspy-extension <https://github.com/topics/hyperspy-extension>`_
+publicly in GitHub search for the GitHub topic `hyperspy-extension <https://github.com/topics/hyperspy-extension>`_
 
 .. note::
     From version 2.0, HyperSpy will be split into a core package (HyperSpy)
     that will provide the common infrastructure and a number of HyperSpy
     extensions.
-     
+
 Our vision
 ----------
 

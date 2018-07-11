@@ -20,8 +20,9 @@ import pytest
 
 from hyperspy.misc.test_utils import update_close_figure, sanitize_dict
 from hyperspy.signals import Signal2D, Signal1D
-from hyperspy.utils import markers
+from hyperspy.utils import markers, stack
 from hyperspy.drawing.marker import dict2marker
+from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 
 
 default_tol = 2.0
@@ -462,3 +463,13 @@ def test_plot_line_markers(mpl_cleanup):
 @update_close_figure
 def test_plot_line_markers_close():
     return _test_plot_line_markers()
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_eds_lines():
+    a = EDS_TEM_Spectrum()
+    s = stack([a, a * 5])
+    s.plot(True)
+    s.axes_manager.navigation_axes[0].index = 1
+    return s._plot.signal_plot.figure

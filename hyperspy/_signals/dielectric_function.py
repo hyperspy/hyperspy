@@ -122,6 +122,7 @@ class DielectricFunction_mixin:
         data = ((-1 / self.data).imag * eels_constant(self, zlp, t).data *
                 self.axes_manager.signal_axes[0].scale)
         s = self._deepcopy_with_new_data(data)
+        s.data = s.data.real
         s.set_signal_type("EELS")
         s.metadata.General.title = ("EELS calculated from " +
                                     self.metadata.General.title)

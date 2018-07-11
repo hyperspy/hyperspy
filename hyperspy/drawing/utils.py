@@ -29,8 +29,6 @@ import hyperspy as hs
 from distutils.version import LooseVersion
 import logging
 
-from hyperspy.defaults_parser import preferences
-
 _logger = logging.getLogger(__name__)
 
 
@@ -40,10 +38,11 @@ def contrast_stretching(data, saturated_pixels):
     Parameters
     ----------
     data: numpy array
-    saturated_pixels: scalar
+    saturated_pixels: scalar, None
         The percentage of pixels that are left out of the bounds.  For example,
         the low and high bounds of a value of 1 are the 0.5% and 99.5%
-        percentiles. It must be in the [0, 100] range.
+        percentiles. It must be in the [0, 100] range. If None, set the value
+        to 0.
 
     Returns
     -------
@@ -56,6 +55,8 @@ def contrast_stretching(data, saturated_pixels):
 
     """
     # Sanity check
+    if saturated_pixels is None:
+        saturated_pixels = 0
     if not 0 <= saturated_pixels <= 100:
         raise ValueError(
             "saturated_pixels must be a scalar in the range[0, 100]")
@@ -346,6 +347,22 @@ def _make_heatmap_subplot(spectra):
     return im._plot.signal_plot.ax
 
 
+def set_xaxis_lims(mpl_ax, hs_axis):
+    """
+    Set the matplotlib axis limits to match that of a HyperSpy axis
+
+    Parameters
+    ----------
+    mpl_ax : :class:`matplotlib.axis.Axis`
+        The ``matplotlib`` axis to change
+    hs_axis : :class:`~hyperspy.axes.DataAxis`
+        The data axis that contains the values that control the scaling
+    """
+    x_axis_lower_lim = hs_axis.axis[0]
+    x_axis_upper_lim = hs_axis.axis[-1]
+    mpl_ax.set_xlim(x_axis_lower_lim, x_axis_upper_lim)
+
+
 def _make_overlap_plot(spectra, ax, color="blue", line_style='-'):
     if isinstance(color, str):
         color = [color] * len(spectra)
@@ -355,6 +372,7 @@ def _make_overlap_plot(spectra, ax, color="blue", line_style='-'):
             zip(spectra, color, line_style)):
         x_axis = spectrum.axes_manager.signal_axes[0]
         ax.plot(x_axis.axis, spectrum.data, color=color, ls=line_style)
+        set_xaxis_lims(ax, x_axis)
     _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.BaseSignal)
                          else spectra[-1], ax)
     ax.set_ylabel('Intensity')
@@ -379,6 +397,7 @@ def _make_cascade_subplot(
         data_to_plot = ((spectrum.data - spectrum.data.min()) /
                         float(max_value) + spectrum_index * padding)
         ax.plot(x_axis.axis, data_to_plot, color=color, ls=line_style)
+        set_xaxis_lims(ax, x_axis)
     _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.BaseSignal)
                          else spectra[-1], ax)
     ax.set_yticks([])
@@ -388,6 +407,7 @@ def _make_cascade_subplot(
 def _plot_spectrum(spectrum, ax, color="blue", line_style='-'):
     x_axis = spectrum.axes_manager.signal_axes[0]
     ax.plot(x_axis.axis, spectrum.data, color=color, ls=line_style)
+    set_xaxis_lims(ax, x_axis)
 
 
 def _set_spectrum_xlabel(spectrum, ax):
@@ -476,7 +496,9 @@ def plot_images(images,
             If True the centre of the color scheme is set to zero. This is
             specially useful when using diverging color schemes. If "auto"
             (default), diverging color schemes are automatically centred.
-        saturated_pixels: scalar
+        saturated_pixels: None, scalar or list of scalar, optional, default: 0
+            If list of scalar, the length should match the number of images to
+            show. If provide in the list, set the value to 0.
             The percentage of pixels that are left out of the bounds.  For
             example, the low and high bounds of a value of 1 are the 0.5% and
             99.5% percentiles. It must be in the [0, 100] range.
@@ -562,14 +584,13 @@ def plot_images(images,
     from hyperspy.misc import rgb_tools
     from hyperspy.signal import BaseSignal
 
-    if isinstance(images, BaseSignal) and len(images) is 1:
-        images.plot()
-        ax = plt.gca()
-        return ax
-    elif not isinstance(images, (list, tuple, BaseSignal)):
-        raise ValueError("images must be a list of image signals or "
-                         "multi-dimensional signal."
-                         " " + repr(type(images)) + " was given.")
+    # Check that we have a hyperspy signal
+    im = [images] if not isinstance(images, (list, tuple)) else images
+    for image in im:
+        if not isinstance(image, BaseSignal):
+            raise ValueError("`images` must be a list of image signals or a "
+                             "multi-dimensional signal."
+                             " " + repr(type(images)) + " was given.")
 
     # If input is >= 1D signal (e.g. for multi-dimensional plotting),
     # copy it and put it in a list so labeling works out as (x,y) when plotting
@@ -636,22 +657,19 @@ def plot_images(images,
     centre_colormaps = itertools.cycle(centre_colormaps)
     cmap = itertools.cycle(cmap)
 
-    if isinstance(vmin, list):
-        if len(vmin) != n:
-            _logger.warning('The provided vmin values are ignored because the '
-                            'length of the list does not match the number of '
-                            'images')
-            vmin = [None] * n
-    else:
-        vmin = [vmin] * n
-    if isinstance(vmax, list):
-        if len(vmax) != n:
-            _logger.warning('The provided vmax values are ignored because the '
-                            'length of the list does not match the number of '
-                            'images')
-            vmax = [None] * n
-    else:
-        vmax = [vmax] * n
+    def _check_arg(arg, default_value, arg_name):
+        if isinstance(arg, list):
+            if len(arg) != n:
+                _logger.warning('The provided {} values are ignored because the '
+                                'length of the list does not match the number of '
+                                'images'.format(arg_name))
+                arg = [default_value] * n
+        else:
+            arg = [arg] * n
+        return arg
+    vmin = _check_arg(vmin, None, 'vmin')
+    vmax = _check_arg(vmax, None, 'vmax')
+    saturated_pixels = _check_arg(saturated_pixels, 0, 'saturated_pixels')
 
     # Sort out the labeling:
     div_num = 0
@@ -663,6 +681,7 @@ def plot_images(images,
         pass
     elif label is 'auto':
         # Use some heuristics to try to get base string of similar titles
+
         label_list = [x.metadata.General.title for x in images]
 
         # Find the shortest common string between the image titles
@@ -779,8 +798,17 @@ def plot_images(images,
     # Find global min and max values of all the non-rgb images for use with
     # 'single' scalebar
     if colorbar is 'single':
+        # get a g_saturated_pixels from saturated_pixels
+        if isinstance(saturated_pixels, list):
+            g_saturated_pixels = min(np.array([v for v in saturated_pixels]))
+        else:
+            g_saturated_pixels = saturated_pixels
+
+        # estimate a g_vmin and g_max from saturated_pixels
         g_vmin, g_vmax = contrast_stretching(np.concatenate(
-            [i.data.flatten() for i in non_rgb]), saturated_pixels)
+            [i.data.flatten() for i in non_rgb]), g_saturated_pixels)
+
+        # if vmin and vmax are provided, override g_min and g_max
         if isinstance(vmin, list):
             _logger.warning('vmin have to be a scalar to be compatible with a '
                             'single colorbar')
@@ -791,7 +819,7 @@ def plot_images(images,
                             'single colorbar')
         else:
             g_vmax = vmax if vmax is not None else g_vmax
-        if centre_colormap:
+        if next(centre_colormaps):
             g_vmin, g_vmax = centre_colormap_values(g_vmin, g_vmax)
 
     # Check if we need to add a scalebar for some of the images
@@ -803,6 +831,10 @@ def plot_images(images,
 
     idx = 0
     ax_im_list = [0] * len(isrgb)
+
+    # Replot: create a list to store references to the images
+    replot_ims = []
+
     # Loop through each image, adding subplot for each one
     for i, ims in enumerate(images):
         # Get handles for the signal axes and axes_manager
@@ -810,8 +842,7 @@ def plot_images(images,
         if axes_manager.navigation_dimension > 0:
             ims = ims._deepcopy_with_new_data(ims.data)
         for j, im in enumerate(ims):
-            idx += 1
-            ax = f.add_subplot(rows, per_row, idx)
+            ax = f.add_subplot(rows, per_row, idx + 1)
             axes_list.append(ax)
             data = im.data
             centre = next(centre_colormaps)   # get next value for centreing
@@ -823,9 +854,10 @@ def plot_images(images,
             else:
                 data = im.data
                 # Find min and max for contrast
-                l_vmin, l_vmax = contrast_stretching(data, saturated_pixels)
-                l_vmin = vmin[idx - 1] if vmin[idx - 1] is not None else l_vmin
-                l_vmax = vmax[idx - 1] if vmax[idx - 1] is not None else l_vmax
+                l_vmin, l_vmax = contrast_stretching(
+                    data, saturated_pixels[idx])
+                l_vmin = vmin[idx] if vmin[idx] is not None else l_vmin
+                l_vmax = vmax[idx] if vmax[idx] is not None else l_vmax
                 if centre:
                     l_vmin, l_vmax = centre_colormap_values(l_vmin, l_vmax)
 
@@ -850,8 +882,8 @@ def plot_images(images,
 
             if not isinstance(aspect, (int, float)) and aspect not in [
                     'auto', 'square', 'equal']:
-                print('Did not understand aspect ratio input. '
-                      'Using \'auto\' as default.')
+                _logger.warning("Did not understand aspect ratio input. "
+                                "Using 'auto' as default.")
                 aspect = 'auto'
 
             if aspect is 'auto':
@@ -901,7 +933,7 @@ def plot_images(images,
                     isinstance(xaxis.name, trait_base._Undefined) or \
                     isinstance(yaxis.name, trait_base._Undefined):
                 if axes_decor is 'all':
-                    warnings.warn(
+                    _logger.warning(
                         'Axes labels were requested, but one '
                         'or both of the '
                         'axes units and/or name are undefined. '
@@ -922,9 +954,9 @@ def plot_images(images,
                     if len(ims) == n:
                         # This is true if we are plotting just 1
                         # multi-dimensional Signal2D
-                        title = label_list[idx - 1]
+                        title = label_list[idx]
                     elif user_labels:
-                        title = label_list[idx - 1]
+                        title = label_list[idx]
                     else:
                         title = label_list[i]
 
@@ -943,12 +975,16 @@ def plot_images(images,
                 plt.colorbar(axes_im, cax=cax)
 
             # Add scalebars as necessary
-            if (scalelist and idx - 1 in scalebar) or scalebar is 'all':
+            if (scalelist and idx in scalebar) or scalebar is 'all':
                 ax.scalebar = ScaleBar(
                     ax=ax,
                     units=axes[0].units,
                     color=scalebar_color,
                 )
+            # Replot: store references to the images
+            replot_ims.append(im)
+
+            idx += 1
 
     # If using a single colorbar, add it, and do tight_layout, ensuring that
     # a colorbar is only added based off of non-rgb Images:
@@ -993,6 +1029,36 @@ def plot_images(images,
     # Adjust subplot spacing according to user's specification
     if padding is not None:
         plt.subplots_adjust(**padding)
+
+    # Replot: connect function
+    def on_dblclick(event):
+        # On the event of a double click, replot the selected subplot
+        if not event.inaxes:
+            return
+        if not event.dblclick:
+            return
+        subplots = [axi for axi in f.axes if isinstance(axi, mpl.axes.Subplot)]
+        inx = list(subplots).index(event.inaxes)
+        im = replot_ims[inx]
+
+        # Use some of the info in the subplot
+        cm = subplots[inx].images[0].get_cmap()
+        clim = subplots[inx].images[0].get_clim()
+
+        sbar = False
+        if (scalelist and inx in scalebar) or scalebar is 'all':
+            sbar = True
+
+        im.plot(colorbar=bool(colorbar),
+                vmin=clim[0],
+                vmax=clim[1],
+                no_nans=no_nans,
+                aspect=asp,
+                scalebar=sbar,
+                scalebar_color=scalebar_color,
+                cmap=cm)
+
+    f.canvas.mpl_connect('button_press_event', on_dblclick)
 
     return axes_list
 
@@ -1303,7 +1369,7 @@ def animate_legend(figure='last'):
         ax = plt.gca()
     else:
         ax = figure.axes[0]
-    lines = ax.lines
+    lines = ax.lines[::-1]
     lined = dict()
     leg = ax.get_legend()
     for legline, origline in zip(leg.get_lines(), lines):

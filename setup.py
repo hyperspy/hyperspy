@@ -47,7 +47,7 @@ setup_path = os.path.dirname(__file__)
 import hyperspy.Release as Release
 
 install_req = ['scipy>=0.15',
-               'matplotlib>=1.2, !=2.1.0, !=2.1.1',
+               'matplotlib>=2.0.0, !=2.1.0, !=2.1.1',
                'numpy>=1.10, !=1.13.0',
                'traits>=4.5.0',
                'natsort',
@@ -58,7 +58,7 @@ install_req = ['scipy>=0.15',
                'h5py',
                'python-dateutil>=2.5.0',
                'ipyparallel',
-               'dask[array]>=0.16.1',
+               'dask[array]>=0.18',
                'scikit-image>=0.13',
                'pint>=0.8',
                'statsmodels',
@@ -177,57 +177,6 @@ Installation will continue in 5 sec...""")
     extensions = []
     from time import sleep
     sleep(5)  # wait 5 secs for user to notice the message
-
-
-# HOOKS ######
-post_checkout_hook_file = os.path.join(setup_path, '.git', 'hooks',
-                                       'post-checkout')
-git_dir = os.path.join(setup_path, '.git')
-hook_ignorer = os.path.join(setup_path, '.hook_ignore')
-
-
-def find_post_checkout_cleanup_line():
-    """find the line index in the git post-checkout hooks
-    'rm extension1 extension2 ...'"""
-    with open(post_checkout_hook_file, 'r') as pchook:
-        hook_lines = pchook.readlines()
-        for i in range(1, len(hook_lines), 1):
-            if re.search('#cleanup_cythonized_and_compiled:',
-                         hook_lines[i]) is not None:
-                return i + 1
-
-
-# generate some git hook to clean up and re-build_ext --inplace
-# after changing branches:
-if os.path.exists(git_dir) and (not os.path.exists(hook_ignorer)):
-    exec_str = sys.executable
-    recythonize_str = '"{}" "{}" clean --all build_ext --inplace\n'.format(
-        exec_str, os.path.join(setup_path, 'setup.py'))
-    if (not os.path.exists(post_checkout_hook_file)):
-        with open(post_checkout_hook_file, 'w') as pchook:
-            pchook.write('#!/bin/sh\n')
-            pchook.write('#cleanup_cythonized_and_compiled:\n')
-            pchook.write(
-                'rm ' + ' '.join(['"%s"' % i for i in cleanup_list]) + '\n')
-            pchook.write(recythonize_str)
-        hook_mode = 0o777  # make it executable
-        os.chmod(post_checkout_hook_file, hook_mode)
-    else:
-        with open(post_checkout_hook_file, 'r') as pchook:
-            hook_lines = pchook.readlines()
-        if re.search(r'#!/bin/.*?sh', hook_lines[0]) is not None:
-            line_n = find_post_checkout_cleanup_line()
-            if line_n is not None:
-                hook_lines[line_n] = 'rm ' + \
-                    ' '.join(['"%s"' % i for i in cleanup_list]) + '\n'
-                hook_lines[line_n + 1] = recythonize_str
-            else:
-                hook_lines.append('\n#cleanup_cythonized_and_compiled:\n')
-                hook_lines.append(
-                    'rm ' + ' '.join(['"%s"' % i for i in cleanup_list]) + '\n')
-                hook_lines.append(recythonize_str)
-            with open(post_checkout_hook_file, 'w') as pchook:
-                pchook.writelines(hook_lines)
 
 
 class Recythonize(Command):

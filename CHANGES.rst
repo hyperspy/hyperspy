@@ -8,6 +8,30 @@ We only cover here the main highlights, for a detailed list of all the changes
 see `the commits in the GITHUB milestones
 <https://github.com/hyperspy/hyperspy/milestones?state=closed>`_.
 
+.. _changes_1.3.2:
+v1.3.2
+++++++
+
+This is a maintenance release. Follow the following links for details on all
+the `bugs fixed
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.3.2>`_
+and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3.2+label%3A"type%3A+enhancement">`_.
+
+
+.. _changes_1.3.1:
+v1.3.1
+++++++
+
+This is a maintenance release. Follow the following links for details on all
+the `bugs fixed
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.3.1>`_
+and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3.1+label%3A"type%3A+enhancement">`_.
+
+Starting with this version, the HyperSpy WinPython Bundle distribution is
+no longer released in sync with HyperSpy. For HyperSpy WinPython Bundle
+releases see https://github.com/hyperspy/hyperspy-bundle
+
+
 .. _changes_1.3:
 
 v1.3

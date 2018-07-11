@@ -317,7 +317,7 @@ class EMD(object):
         self.signals[name] = signal
 
     @classmethod
-    def load_from_emd(cls, filename, lazy=False):
+    def load_from_emd(cls, filename, lazy=False, dataset_name=None):
         """Construct :class:`~.EMD` object from an emd-file.
 
         Parameters
@@ -328,6 +328,12 @@ class EMD(object):
         False : bool, optional
             If False (default) loads data to memory. If True, enables loading
             only if requested.
+        dataset_name : string or iterable, optional
+            Only add dataset with specific name. Note, this has to be the full
+            group path in the file. For example `/experimental/science_data'.
+            If the dataset is not found, an IOError with the possible
+            datasets will be raised. Several names can be specified
+            in the form of a list.
 
         Returns
         -------
@@ -366,16 +372,37 @@ class EMD(object):
                     'sample', 'comments']:  # Nodes which are not the data!
             if key in node_list:
                 node_list.pop(node_list.index(key))  # Pop all unwanted nodes!
-        # One node should remain, the data node (named 'data', 'signals',
-        # 'experiments', ...)!
-        assert len(node_list) == 1, 'Dataset location is ambiguous!'
-        data_group = emd_file.get(node_list[0])
-        if data_group is not None:
-            for name, group in data_group.items():
-                if isinstance(group, h5py.Group):
-                    if group.attrs.get('emd_group_type') == 1:
-                        emd._read_signal_from_group(
-                            name, group, lazy)
+        dataset_in_file_list = []
+        for node in node_list:
+            data_group = emd_file.get(node)
+            if data_group is not None:
+                for group in data_group.values():
+                    name = group.name
+                    if isinstance(group, h5py.Group):
+                        if group.attrs.get('emd_group_type') == 1:
+                            dataset_in_file_list.append(name)
+        if len(dataset_in_file_list) == 0:
+            raise IOError("No datasets found in {0}".format(filename))
+        dataset_read_list = []
+        if dataset_name is not None:
+            if isinstance(dataset_name, str):
+                dataset_name = [dataset_name]
+
+            for temp_dataset_name in dataset_name:
+                if temp_dataset_name in dataset_in_file_list:
+                    dataset_read_list.append(temp_dataset_name)
+                else:
+                    raise IOError(
+                        "Dataset with name {0} not found in the file. "
+                        "Possible datasets are {1}.".format(
+                            temp_dataset_name,
+                            ', '.join(dataset_in_file_list)))
+        else:
+            dataset_read_list = dataset_in_file_list
+        for dataset_read in dataset_read_list:
+            group = emd_file[dataset_read]
+            emd._read_signal_from_group(dataset_read, group, lazy)
+
         # Close file and return EMD object:
         if not lazy:
             emd_file.close()
@@ -480,7 +507,7 @@ def _get_keys_from_group(group):
 
 
 def _parse_sub_data_group_metadata(sub_data_group):
-    metadata_array = sub_data_group['Metadata'][:].T[0]
+    metadata_array = sub_data_group['Metadata'][:, 0].T
     mdata_string = metadata_array.tostring().decode("utf-8")
     return json.loads(mdata_string.rstrip('\x00'))
 
@@ -552,7 +579,7 @@ class FeiEMDReader(object):
         elif select_type is None:
             pass
         else:
-            raise ValueError("`select_type` parameter takes only: `None`, ",
+            raise ValueError("`select_type` parameter takes only: `None`, "
                              "'single_spectrum', 'images' or 'spectrum_image'.")
 
         if self.im_type == 'Image':
@@ -681,7 +708,13 @@ class FeiEMDReader(object):
                     chunks=h5data.chunks),
                 axes=[2, 0, 1])
         else:
-            data = np.rollaxis(np.array(h5data), axis=2)
+            # Workaround for a h5py bug https://github.com/h5py/h5py/issues/977
+            # Change back to standard API once issue #977 is fixed.
+            # Preallocate the numpy array and use read_direct method, which is
+            # much faster in case of chunked data.
+            data = np.empty(h5data.shape)
+            h5data.read_direct(data)
+            data = np.rollaxis(data, axis=2)
 
         pix_scale = original_metadata['BinaryResult'].get(
             'PixelSize', {'height': 1.0, 'width': 1.0})
@@ -791,6 +824,8 @@ class FeiEMDReader(object):
         self.original_metadata.update({group_name: d})
 
     def _read_spectrum_stream(self):
+        if not self.load_SI:
+            return
         self.detector_name = 'EDS'
         # Try to read the number of frames from Data/SpectrumImage
         try:
@@ -921,7 +956,8 @@ class FeiEMDReader(object):
 
     def _get_dispersion_offset(self, original_metadata):
         try:
-            for detectorname, detector in original_metadata['Detectors'].items():
+            for detectorname, detector in original_metadata['Detectors'].items(
+            ):
                 if original_metadata['BinaryResult']['Detector'] in detector['DetectorName']:
                     dispersion = float(
                         detector['Dispersion']) / 1000.0 * self.rebin_energy
@@ -1150,7 +1186,7 @@ def file_reader(filename, log_info=False,
         emd = FeiEMDReader(filename, lazy=lazy, **kwds)
         dictionaries = emd.dictionaries
     else:
-        emd = EMD.load_from_emd(filename, lazy)
+        emd = EMD.load_from_emd(filename, lazy, **kwds)
         if log_info:
             emd.log_info()
         for signal in emd.signals.values():
