@@ -231,7 +231,8 @@ man_pages = [
 ]
 
 # Add the hyperspy website to the intersphinx domains
-intersphinx_mapping = {'hyperspyweb': ('http://hyperspy.org/', None)}
+intersphinx_mapping = {'hyperspyweb': ('http://hyperspy.org/', None),
+                       'matplotlib': ('http://matplotlib.org', None)}
 
 
 def setup(app):

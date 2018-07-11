@@ -112,7 +112,7 @@ class BaseModel(list):
 
     A model is constructed as a linear combination of :mod:`components` that
     are added to the model using :meth:`append` or :meth:`extend`. There
-    are many predifined components available in the in the :mod:`components`
+    are many predefined components available in the in the :mod:`components`
     module. If needed, new components can be created easily using the code of
     existing components as a template.
 
@@ -137,7 +137,7 @@ class BaseModel(list):
         Reduced chi-squared.
     components : `ModelComponents` instance
         The components of the model are attributes of this class. This provides
-        a convinient way to access the model components when working in IPython
+        a convenient way to access the model components when working in IPython
         as it enables tab completion.
 
     Methods
@@ -206,7 +206,7 @@ class BaseModel(list):
 
         self.events = Events()
         self.events.fitted = Event("""
-            Event that triggers after fitting changed at least one paramter.
+            Event that triggers after fitting changed at least one parameter.
 
             The event triggers after the fitting step was finished, and only of
             at least one of the parameters changed.
@@ -407,16 +407,17 @@ class BaseModel(list):
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
                   show_progressbar=None, out=None, parallel=None):
         """Returns a recreation of the dataset using the model.
-        the spectral range that is not fitted is filled with nans.
+        The spectral range that is not fitted is filled with nans.
 
         Parameters
         ----------
-        component_list : list of hyperspy components, optional
+        component_list : list of HyperSpy components, optional
             If a list of components is given, only the components given in the
             list is used in making the returned spectrum. The components can
             be specified by name, index or themselves.
         out_of_range_to_nan : bool
             If True the spectral range that is not fitted is filled with nans.
+            Default True.
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
@@ -425,7 +426,7 @@ class BaseModel(list):
             processing. If None (default), creates a new one. If passed, it is
             assumed to be of correct shape and dtype and not checked.
         parallel : bool, int
-            If True or more than 1, perform the recreation parallely using as
+            If True or more than 1, perform the recreation parallel using as
             many threads as specified. If True, as many threads as CPU cores
             available are used.
 
@@ -548,7 +549,7 @@ class BaseModel(list):
 
     @property
     def _plot_active(self):
-        if self._plot is not None and self._plot.is_active() is True:
+        if self._plot is not None and self._plot.is_active:
             return True
         else:
             return False
@@ -776,7 +777,7 @@ class BaseModel(list):
 
         Parameters
         ----------
-        only_fixed : bool
+        only_fixed : bool, optional
             If True, only the fixed parameters are fetched.
 
         See Also
@@ -791,13 +792,12 @@ class BaseModel(list):
                 component.fetch_stored_values(only_fixed=only_fixed)
 
     def _fetch_values_from_p0(self, p_std=None):
-        """Fetch the parameter values from the output of the optimzer `self.p0`
+        """Fetch the parameter values from the output of the optimizer `self.p0`
 
         Parameters
         ----------
-        p_std : array
-            array containing the corresponding standard deviatio
-            n
+        p_std : array, optional
+            array containing the corresponding standard deviation.
 
         """
         comp_p_std = None
@@ -896,7 +896,7 @@ class BaseModel(list):
         fitter : {"leastsq", "mpfit", "odr", "Nelder-Mead",
                  "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B", "TNC",
                  "Differential Evolution"}
-            The optimization algorithm used to perform the fitting. Deafault
+            The optimization algorithm used to perform the fitting. Default
             is "leastsq".
 
                 "leastsq" performs least-squares optimization, and supports
@@ -1211,19 +1211,19 @@ class BaseModel(list):
         Parameters
         ----------
 
-        mask : {None, numpy.array}
+        mask : NumPy array, optional
             To mask (do not fit) at certain position pass a numpy.array
             of type bool where True indicates that the data will not be
             fitted at the given position.
         fetch_only_fixed : bool
             If True, only the fixed parameters values will be updated
-            when changing the positon.
+            when changing the positon. Default False.
         autosave : bool
             If True, the result of the fit will be saved automatically
-            with a frequency defined by autosave_every.
+            with a frequency defined by autosave_every. Default False.
         autosave_every : int
             Save the result of fitting every given number of spectra.
-
+            Default 10.
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
@@ -1586,11 +1586,11 @@ class BaseModel(list):
         Parameters
         ----------
         parameter_name : string
-            Name of the parameter whos value will be changed
+            Name of the parameter whose value will be changed
         value : number
             The new value of the parameter
         component_list : list of hyperspy components, optional
-            A list of components whos parameters will changed. The components
+            A list of components whose parameters will changed. The components
             can be specified by name, index or themselves.
 
         only_current : bool, default False
@@ -1691,7 +1691,7 @@ class BaseModel(list):
         value : bool
             The new value of the 'active' parameter
         component_list : list of hyperspy components, optional
-            A list of components whos parameters will changed. The components
+            A list of components whose parameters will changed. The components
             can be specified by name, index or themselves.
 
         only_current : bool, default False

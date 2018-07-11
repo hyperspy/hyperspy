@@ -46,7 +46,7 @@ setup_path = os.path.dirname(__file__)
 import hyperspy.Release as Release
 
 install_req = ['scipy>=0.15',
-               'matplotlib>=1.2, !=2.1.0, !=2.1.1',
+               'matplotlib>=2.0.0, !=2.1.0, !=2.1.1',
                'numpy>=1.10, !=1.13.0',
                'traits>=4.5.0',
                'natsort',
@@ -57,7 +57,7 @@ install_req = ['scipy>=0.15',
                'h5py',
                'python-dateutil>=2.5.0',
                'ipyparallel',
-               'dask[array]>=0.16.1',
+               'dask[array]>=0.18',
                'scikit-image>=0.13',
                'pint>=0.8',
                'statsmodels',

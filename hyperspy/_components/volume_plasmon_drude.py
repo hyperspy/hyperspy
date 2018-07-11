@@ -23,7 +23,7 @@ from hyperspy.component import Component
 
 class VolumePlasmonDrude(Component):
 
-    r"""Drude volume plasmon energy loss function component, the energy loss 
+    r"""Drude volume plasmon energy loss function component, the energy loss
     function is defined as:
 
     .. math::

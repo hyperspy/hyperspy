@@ -1,11 +1,11 @@
-hyperspy\.misc\.holography package
-==================================
+hyperspy.misc.holography package
+================================
 
 Submodules
 ----------
 
-hyperspy\.misc\.holography\.reconstruct module
-----------------------------------------------
+hyperspy.misc.holography.reconstruct module
+-------------------------------------------
 
 .. automodule:: hyperspy.misc.holography.reconstruct
     :members:
