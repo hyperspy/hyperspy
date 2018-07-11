@@ -681,6 +681,8 @@ class FeiEMDReader(object):
                     chunks=h5data.chunks),
                 axes=[2, 0, 1])
         else:
+            # Workaround for a h5py bug https://github.com/h5py/h5py/issues/977
+            # Change back to standard API once issue #977 is fixed.
             # Preallocate the numpy array and use read_direct method, which is
             # much faster in case of chunked data.
             data = np.empty(h5data.shape)
