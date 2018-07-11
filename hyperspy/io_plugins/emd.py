@@ -317,7 +317,7 @@ class EMD(object):
         self.signals[name] = signal
 
     @classmethod
-    def load_from_emd(cls, filename, lazy=False):
+    def load_from_emd(cls, filename, lazy=False, dataset_name=None):
         """Construct :class:`~.EMD` object from an emd-file.
 
         Parameters
@@ -328,6 +328,12 @@ class EMD(object):
         False : bool, optional
             If False (default) loads data to memory. If True, enables loading
             only if requested.
+        dataset_name : string or iterable, optional
+            Only add dataset with specific name. Note, this has to be the full
+            group path in the file. For example `/experimental/science_data'.
+            If the dataset is not found, an IOError with the possible
+            datasets will be raised. Several names can be specified
+            in the form of a list.
 
         Returns
         -------
@@ -366,8 +372,7 @@ class EMD(object):
                     'sample', 'comments']:  # Nodes which are not the data!
             if key in node_list:
                 node_list.pop(node_list.index(key))  # Pop all unwanted nodes!
-        if len(node_list) == 0:
-            raise IOError("No datasets found in {0}".format(filename))
+        dataset_in_file_list = []
         for node in node_list:
             data_group = emd_file.get(node)
             if data_group is not None:
@@ -375,8 +380,29 @@ class EMD(object):
                     name = group.name
                     if isinstance(group, h5py.Group):
                         if group.attrs.get('emd_group_type') == 1:
-                            emd._read_signal_from_group(
-                                name, group, lazy)
+                            dataset_in_file_list.append(name)
+        if len(dataset_in_file_list) == 0:
+            raise IOError("No datasets found in {0}".format(filename))
+        dataset_read_list = []
+        if dataset_name is not None:
+            if isinstance(dataset_name, str):
+                dataset_name = [dataset_name]
+
+            for temp_dataset_name in dataset_name:
+                if temp_dataset_name in dataset_in_file_list:
+                    dataset_read_list.append(temp_dataset_name)
+                else:
+                    raise IOError(
+                        "Dataset with name {0} not found in the file. "
+                        "Possible datasets are {1}.".format(
+                            temp_dataset_name,
+                            ', '.join(dataset_in_file_list)))
+        else:
+            dataset_read_list = dataset_in_file_list
+        for dataset_read in dataset_read_list:
+            group = emd_file[dataset_read]
+            emd._read_signal_from_group(dataset_read, group, lazy)
+
         # Close file and return EMD object:
         if not lazy:
             emd_file.close()
@@ -922,7 +948,8 @@ class FeiEMDReader(object):
 
     def _get_dispersion_offset(self, original_metadata):
         try:
-            for detectorname, detector in original_metadata['Detectors'].items():
+            for detectorname, detector in original_metadata['Detectors'].items(
+            ):
                 if original_metadata['BinaryResult']['Detector'] in detector['DetectorName']:
                     dispersion = float(
                         detector['Dispersion']) / 1000.0 * self.rebin_energy
@@ -1151,7 +1178,7 @@ def file_reader(filename, log_info=False,
         emd = FeiEMDReader(filename, lazy=lazy, **kwds)
         dictionaries = emd.dictionaries
     else:
-        emd = EMD.load_from_emd(filename, lazy)
+        emd = EMD.load_from_emd(filename, lazy, **kwds)
         if log_info:
             emd.log_info()
         for signal in emd.signals.values():

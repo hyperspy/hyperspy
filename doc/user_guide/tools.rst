@@ -134,7 +134,7 @@ have used a :py:class:`~._signals.signal2d.Signal2D` instead e.g.:
 Indeed, for data analysis purposes,
 one may like to operate with an image stack as if it was a set of spectra or
 viceversa. One can easily switch between these two alternative ways of
-classifiying the dimensions of a three-dimensional dataset by
+classifying the dimensions of a three-dimensional dataset by
 :ref:`transforming between BaseSignal subclasses
 <transforming.signal>`.
 
@@ -915,6 +915,21 @@ The execution can be sped up by passing ``parallel`` keyword to the
     >>> s.map(slow_func, parallel=True)
     100%|██████████████████████████████████████| 20/20 [00:02<00:00,  6.73it/s]
 
+.. versionadded:: 1.4
+    Iterating over signal using a parameter with no navigation dimension.
+
+In this case, the parameter is cyclically iterated over the navigation
+dimension of the input signal. In the example below, signal s is
+multiplied by a cosine parameter d, which is repeated over the
+navigation dimension of s.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.random.rand(10, 512))
+    >>> d = hs.signals.Signal1D(np.cos(np.linspace(0., 2*np.pi, 512)))
+    >>> s.map(lambda A, B: A * B, B=d)
+    100%|██████████| 10/10 [00:00<00:00, 2573.19it/s]
+
 
 Cropping
 ^^^^^^^^
@@ -962,7 +977,7 @@ lazily:
     <LazyEDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|512)>
 
 
-On the other hand, the following rebining operation requires interpolation and
+On the other hand, the following rebinning operation requires interpolation and
 cannot be performed lazily:
 
 .. code-block:: python
@@ -1234,7 +1249,7 @@ The convenience methods :py:meth:`~.signal.BaseSignal.as_signal1D` and
 :py:meth:`~.signal.BaseSignal.transpose`, but always optimize the data
 for iteration over the navigation axes if required. Hence, these methods do not
 always return a view of the original data. If a copy of the data is required
-use 
+use
 :py:meth:`~.signal.BaseSignal.deepcopy` on the output of any of these
 methods e.g.:
 
