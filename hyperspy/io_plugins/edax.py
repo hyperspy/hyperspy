@@ -632,7 +632,7 @@ def get_ipr_dtype_list(endianess='<', version=333):
         -  mppX: 4 byte float; *Microns per pixel in X direction*
         -  mppY: 4 byte float; *Microns per pixel in Y direction*
         -  nTextLines: 2 byte unsigned short; *No. of comment lines *
-        -  charText: (4 x 32) byte character array; *Comment text*
+        -  charText: (4 x 32) byte character array; *Not read to avoid HDF5 bug: https://github.com/hyperspy/hyperspy/issues/1916*
         -  reserved3: 4 byte float; *Not used*
         -  nOverlayElements: 2 byte unsigned short; *No. of overlay elements*
         -  overlayColors: 16 array of 2 byte unsigned short; *Overlay colors*
@@ -691,7 +691,7 @@ def get_ipr_dtype_list(endianess='<', version=333):
             ('mppX', end + 'f4'),
             ('mppY', end + 'f4'),
             ('nTextLines', end + 'u2'),
-            ('charText', end + '4a32'),
+            ('charText', end + 'V128'),
             ('reserved3', end + '4f4'),
             ('nOverlayElements', end + 'u2'),
             ('overlayColors', end + '16u2')]
