@@ -507,7 +507,7 @@ def _get_keys_from_group(group):
 
 
 def _parse_sub_data_group_metadata(sub_data_group):
-    metadata_array = sub_data_group['Metadata'][:].T[0]
+    metadata_array = sub_data_group['Metadata'][:, 0].T
     mdata_string = metadata_array.tostring().decode("utf-8")
     return json.loads(mdata_string.rstrip('\x00'))
 
@@ -579,7 +579,7 @@ class FeiEMDReader(object):
         elif select_type is None:
             pass
         else:
-            raise ValueError("`select_type` parameter takes only: `None`, ",
+            raise ValueError("`select_type` parameter takes only: `None`, "
                              "'single_spectrum', 'images' or 'spectrum_image'.")
 
         if self.im_type == 'Image':
@@ -708,7 +708,13 @@ class FeiEMDReader(object):
                     chunks=h5data.chunks),
                 axes=[2, 0, 1])
         else:
-            data = np.rollaxis(np.array(h5data), axis=2)
+            # Workaround for a h5py bug https://github.com/h5py/h5py/issues/977
+            # Change back to standard API once issue #977 is fixed.
+            # Preallocate the numpy array and use read_direct method, which is
+            # much faster in case of chunked data.
+            data = np.empty(h5data.shape)
+            h5data.read_direct(data)
+            data = np.rollaxis(data, axis=2)
 
         pix_scale = original_metadata['BinaryResult'].get(
             'PixelSize', {'height': 1.0, 'width': 1.0})
@@ -818,6 +824,8 @@ class FeiEMDReader(object):
         self.original_metadata.update({group_name: d})
 
     def _read_spectrum_stream(self):
+        if not self.load_SI:
+            return
         self.detector_name = 'EDS'
         # Try to read the number of frames from Data/SpectrumImage
         try:
