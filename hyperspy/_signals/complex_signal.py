@@ -95,7 +95,7 @@ class ComplexSignal_mixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # _plot_kwargs store the plot kwargs argument for convenience when
-        # plotting ROI in order to use the same plotting options than the 
+        # plotting ROI in order to use the same plotting options than the
         # original plot
         self._plot_kwargs = {}
         if not np.issubdtype(self.data.dtype, np.complexfloating):
@@ -187,7 +187,7 @@ class ComplexSignal_mixin:
             value = np.abs(value)**2
         return value
 
-    def plot(self, power_spectrum=None, navigator="auto", axes_manager=None,
+    def plot(self, power_spectrum=False, navigator="auto", axes_manager=None,
              representation='cartesian', intensity_scale=None, shifted=False,
              same_axes=True, **kwargs):
         """%s
@@ -195,19 +195,8 @@ class ComplexSignal_mixin:
         %s
 
         """
-        # if some of the options are stored in the _plot_kwargs dict, use them
-        # in case they are not explicitely provided.
-        if power_spectrum is None:
-            if 'power_spectrum' in self._plot_kwargs.keys():
-                power_spectrum = self._plot_kwargs['power_spectrum']
-            else:
-                power_spectrum = True if self.metadata.has_item(
-                    'Signal.FFT') else False
         if intensity_scale is None:
-            if 'intensity_scale' in self._plot_kwargs.keys():
-                intensity_scale = self._plot_kwargs['intensity_scale']
-            else:
-                intensity_scale = 'log' if power_spectrum else 'linear'
+            intensity_scale = 'log' if power_spectrum else 'linear'
         metadata_shifted = self.metadata.get_item('Signal.FFT.shifted', False)
         # Determine if we need to shift the data when plotting:
         if shifted is metadata_shifted:
@@ -216,11 +205,12 @@ class ComplexSignal_mixin:
             shift = True
 
         kwargs.update({'intensity_scale': intensity_scale,
-                       'shift':shift,
+                       'shift': shift,
                        'navigator': navigator,
                        'axes_manager': self.axes_manager})
         if representation == 'cartesian':
-            if (same_axes and self.axes_manager.signal_dimension == 1) or power_spectrum:
+            if ((same_axes and self.axes_manager.signal_dimension == 1) or
+                    power_spectrum):
                 kwargs['power_spectrum'] = power_spectrum
                 super().plot(**kwargs)
             else:

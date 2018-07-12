@@ -57,7 +57,7 @@ class Complex2Dmixin:
         self.phase = phase
 
     def plot(self,
-             power_spectrum=None,
+             power_spectrum=False,
              intensity_scale=None,
              shifted=False,
              colorbar=True,

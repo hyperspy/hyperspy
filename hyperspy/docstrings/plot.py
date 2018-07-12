@@ -89,10 +89,9 @@ PLOT2D_DOCSTRING = \
             rectangular."""
 
 COMPLEX_DOCSTRING = \
-    """power_spectrum : {bool, None}, default is None.
+    """power_spectrum : bool, default is False.
             If True, plot the power spectrum instead of the actual signal, if 
             False, plot the real and imaginary parts of the complex signal.
-            If None, plot the power spectrum if the signal is a FFT.
         representation : {'cartesian' or 'polar'}
             Determines if the real and imaginary part of the complex data is plotted ('cartesian',
             default), or if the amplitude and phase should be used ('polar').

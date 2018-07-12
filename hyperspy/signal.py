@@ -1950,8 +1950,8 @@ class BaseSignal(FancySlicing,
                 # If it was already closed it will raise an exception,
                 # but we want to carry on...
                 pass
-        if 'power_spectrum' in kwargs and \
-                not self.metadata.Signal.get_item('FFT', False):
+        if ('power_spectrum' in kwargs and
+            not self.metadata.Signal.get_item('FFT', False)):
             _logger.warning('The option `power_spectrum` is considered only '
                             'for signals in Fourier space.')
             del kwargs['power_spectrum']
