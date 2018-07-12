@@ -188,7 +188,7 @@ class ComplexSignal_mixin:
         return value
 
     def plot(self, power_spectrum=False, navigator="auto", axes_manager=None,
-             representation='cartesian', intensity_scale=None, shifted=False,
+             representation='cartesian', intensity_scale=None, shift=False,
              same_axes=True, **kwargs):
         """%s
         %s
@@ -197,12 +197,6 @@ class ComplexSignal_mixin:
         """
         if intensity_scale is None:
             intensity_scale = 'log' if power_spectrum else 'linear'
-        metadata_shifted = self.metadata.get_item('Signal.FFT.shifted', False)
-        # Determine if we need to shift the data when plotting:
-        if shifted is metadata_shifted:
-            shift = False
-        else:
-            shift = True
 
         kwargs.update({'intensity_scale': intensity_scale,
                        'shift': shift,
@@ -232,7 +226,7 @@ class ComplexSignal_mixin:
         self._plot_kwargs = {'power_spectrum': power_spectrum,
                              'representation': representation,
                              'intensity_scale': intensity_scale,
-                             'shifted': shifted,
+                             'shift': shift,
                              'same_axes': same_axes}
     plot.__doc__ %= BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING
 

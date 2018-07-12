@@ -3253,7 +3253,7 @@ class BaseSignal(FancySlicing,
             return s
     integrate_simpson.__doc__ %= (ONE_AXIS_PARAMETER, OUT_ARG)
 
-    def fft(self, shifted=False, **kwargs):
+    def fft(self, shift=False, **kwargs):
         """Compute the discrete Fourier Transform.
 
         This function computes the discrete Fourier Transform over the signal
@@ -3262,7 +3262,7 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        shifted : bool, optional
+        shift : bool, optional
             If True, the origin of FFT will be shifted in the centre (Default: False).
 
         **kwargs
@@ -3290,14 +3290,14 @@ class BaseSignal(FancySlicing,
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
         if isinstance(self.data, da.Array):
-            if shifted:
+            if shift:
                 im_fft = self._deepcopy_with_new_data(da.fft.fftshift(
                     da.fft.fftn(self.data, axes=axes, **kwargs), axes=axes))
             else:
                 im_fft = self._deepcopy_with_new_data(
                     da.fft.fftn(self.data, axes=axes, **kwargs))
         else:
-            if shifted:
+            if shift:
                 im_fft = self._deepcopy_with_new_data(np.fft.fftshift(
                     np.fft.fftn(self.data, axes=axes, **kwargs), axes=axes))
             else:
@@ -3307,7 +3307,7 @@ class BaseSignal(FancySlicing,
         im_fft.change_dtype("complex")
         im_fft.metadata.General.title = 'FFT of {}'.format(
             im_fft.metadata.General.title)
-        im_fft.metadata.set_item('Signal.FFT.shifted', shifted)
+        im_fft.metadata.set_item('Signal.FFT.shifted', shift)
         if hasattr(self.metadata.Signal, 'quantity'):
             self.metadata.Signal.__delattr__('quantity')
 
@@ -3320,11 +3320,11 @@ class BaseSignal(FancySlicing,
                 axis.units = '{:~}'.format(units.units)
             except UndefinedUnitError:
                 _logger.warning('Units are not set or cannot be recognized')
-            if shifted:
+            if shift:
                 axis.offset = -axis.high_value / 2.
         return im_fft
 
-    def ifft(self, shifted=None, **kwargs):
+    def ifft(self, shift=None, **kwargs):
         """
         Compute the inverse discrete Fourier Transform.
 
@@ -3335,11 +3335,12 @@ class BaseSignal(FancySlicing,
 
         Parameters
         ----------
-        shifted : bool or None, optional
-            If None the shift option will be set to the original status of the FFT using value in metadata.
-            If no FFT entry is present in metadata the parameter will be set to False.
-            If True, the origin of FFT will be shifted in the centre,
-            otherwise the origin would be kept at (0, 0)(Default: None).
+        shift : bool or None, optional
+            If None the shift option will be set to the original status of the 
+            FFT using value in metadata. If no FFT entry is present in 
+            metadata, the parameter will be set to False. If True, the origin 
+            of FFT will be shifted in the centre, otherwise the origin would 
+            be kept at (0, 0)(Default: None).
         **kwargs
             other keyword arguments are described in np.fft.ifftn().
 
@@ -3365,19 +3366,19 @@ class BaseSignal(FancySlicing,
             raise AttributeError("Signal dimension must be at least one.")
         ax = self.axes_manager
         axes = ax.signal_indices_in_array
-        if shifted is None:
-            shifted = self.metadata.get_item('Signal.FFT.shifted', False)
+        if shift is None:
+            shift = self.metadata.get_item('Signal.FFT.shifted', False)
 
         if isinstance(self.data, da.Array):
-            if shifted:
-                fft_data_shifted = da.fft.ifftshift(self.data, axes=axes)
+            if shift:
+                fft_data_shift = da.fft.ifftshift(self.data, axes=axes)
                 im_ifft = self._deepcopy_with_new_data(
-                    da.fft.ifftn(fft_data_shifted, axes=axes, **kwargs))
+                    da.fft.ifftn(fft_data_shift, axes=axes, **kwargs))
             else:
                 im_ifft = self._deepcopy_with_new_data(da.fft.ifftn(
                     self.data, axes=axes, **kwargs))
         else:
-            if shifted:
+            if shift:
                 im_ifft = self._deepcopy_with_new_data(np.fft.ifftn(
                     np.fft.ifftshift(self.data, axes=axes), axes=axes, **kwargs))
             else:
