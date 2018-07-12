@@ -181,14 +181,14 @@ class ComplexSignal_mixin:
             phase.metadata.General.title)
         return phase  # Now unwrapped!
 
-    def __call__(self, axes_manager=None, power_spectrum=False, shifted=False):
-        value = super().__call__(axes_manager=axes_manager, shifted=shifted)
+    def __call__(self, axes_manager=None, power_spectrum=False, shift=False):
+        value = super().__call__(axes_manager=axes_manager, shift=shift)
         if power_spectrum:
             value = np.abs(value)**2
         return value
 
     def plot(self, power_spectrum=None, navigator="auto", axes_manager=None,
-             representation='cartesian', intensity_scale=None, shifted=None,
+             representation='cartesian', intensity_scale=None, shifted=False,
              same_axes=True, **kwargs):
         """%s
         %s
@@ -208,14 +208,15 @@ class ComplexSignal_mixin:
                 intensity_scale = self._plot_kwargs['intensity_scale']
             else:
                 intensity_scale = 'log' if power_spectrum else 'linear'
-        if shifted is None:
-            if 'shifted' in self._plot_kwargs.keys():
-                shifted = self._plot_kwargs['shifted']
-            else:
-                shifted = True if power_spectrum else False
+        metadata_shifted = self.metadata.get_item('Signal.FFT.shifted', False)
+        # Determine if we need to shift the data when plotting:
+        if shifted is metadata_shifted:
+            shift = False
+        else:
+            shift = True
 
         kwargs.update({'intensity_scale': intensity_scale,
-                       'shifted': shifted,
+                       'shift':shift,
                        'navigator': navigator,
                        'axes_manager': self.axes_manager})
         if representation == 'cartesian':

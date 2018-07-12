@@ -59,7 +59,7 @@ class Complex2Dmixin:
     def plot(self,
              power_spectrum=None,
              intensity_scale=None,
-             shifted=None,
+             shifted=False,
              colorbar=True,
              scalebar=True,
              scalebar_color="white",
