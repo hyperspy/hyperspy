@@ -162,11 +162,14 @@ class MVA():
         to_return = None
         # Check if it is the wrong data type
         if self.data.dtype.char not in ['e', 'f', 'd']:  # If not float
-            _logger.warning(
+            _logger.error(
                 'To perform a decomposition the data must be of the float '
-                'type. You can change the type using the change_dtype method'
-                ' e.g. s.change_dtype(\'float64\')\n'
-                'Nothing done.')
+                'type, but the current type is {}. '
+                'To fix this issue, you can change the type using the '
+                'change_dtype method (e.g. s.change_dtype(\'float64\')) '
+                'and then repeat the decomposition.\n'
+                'No decomposition was performed and the data was not '
+                'changed.'.format(self.data.dtype))
             return
 
         if self.axes_manager.navigation_size < 2:
