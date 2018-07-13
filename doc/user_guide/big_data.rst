@@ -3,6 +3,15 @@
 Working with big data
 *********************
 
+.. warning:: All the features described in this chapter are in beta state.
+   Although most of them work, their opearation may not always be optimal,
+   well documented and/or consistent with their in-memory counterparts.
+   Therefore, although efforts will be taken to minimise major disruptions,
+   the syntax and features described here may change in patch and minor
+   HyperSpy releases. If you experience issues with HyperSpy's lazy features
+   please report them to the developers.
+
+
 .. versionadded:: 1.2
 
 HyperSpy makes it possible to analyse data larger than the available memory by
@@ -113,6 +122,17 @@ Practical tips
 Despite the limitations detailed below, most HyperSpy operations can be
 performed lazily. Important points of note are:
 
+Chunking
+^^^^^^^^
+
+.. versionadded:: 1.3.2
+
+By default, HyperSpy tries to optimize the chunking for most operations. However,
+it is sometimes possible to manually set a more optimal chunking manually. Therefore,
+many operations take a ``rechunk`` or ``optimize`` keyword argument to disable
+automatic rechunking.
+
+
 Computing lazy signals
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -146,7 +166,7 @@ once, and only pass it for all other plots. Pay attention to the transpose
     >>> s
     <LazySignal2D, title: , dimensions: (200, 200|512, 512)>
     >>> # for fastest results, just pick one signal space pixel
-    >>> nav = s.isig[256, 256].T
+    >>> nav = s.transpose(optimize=True).inav[256, 256]
     >>> # Alternatively, sum as per default behaviour
     >>> nav = s.sum(s.axes_manager.signal_axes).T
     >>> nav
@@ -230,20 +250,26 @@ Machine learning (decomposition)
 
 :ref:`decomposition` algorithms often performs large matrix manipulations,
 requiring significantly more memory than the data size. To perform
-decomposition operation lazily HyperSpy provides several "online" algorithms.
-These algorithms perform the decomposition by operating serially on chunks of
-data, enabling the lazy decomposition of large datasets.
-
-In line with the standard HyperSpy signals,
+decomposition operation lazily HyperSpy provides several "online" algorithms and
+`dask <https://dask.pydata.org/>`_'s lazy SVD algorithm.
+Online algorithms perform the decomposition by operating serially on chunks of
+data, enabling the lazy decomposition of large datasets. In line with the
+standard HyperSpy signals,
 :py:meth:`~._signals.lazy.LazySignal.decomposition` offers  the following
-implementations:
+online algorithms:
 
 * **PCA** (``algorithm='PCA'``): performs `IncrementalPCA <http://scikit-learn.org/stable/modules/generated/sklearn.decomposition.IncrementalPCA.html#sklearn.decomposition.IncrementalPCA>`_
-  from ``scikit-learn``.
-* **ORPCA** (``algorithm='ORPCA'``): performs Online Robust PCA.
-  (It is also available for regular signals.)
+  from ``scikit-learn``. Please refer to its documentation for a description
+  of the several keyword arguments taken by its :meth:``fit`` method.
+* **ORPCA** (``algorithm='ORPCA'``): performs Online Robust PCA. Please
+  refer to the docstring of :py:meth:`~.learn.rpca.ORPCA` for details on
+  usage and keyword arguments.
 * **NMF** (``algorithm='ONMF'``): performs Online Robust NMF, as per "OPGD"
-  algorithm in :ref:`[Zhao2016] <Zhao2016>`.
+  algorithm in :ref:`[Zhao2016] <Zhao2016>`. Please
+  refer to the docstring of :py:meth:`~.learn.onmf.ONMF` for details on
+  usage and keyword arguments.
+
+
 
 Other minor differences
 ^^^^^^^^^^^^^^^^^^^^^^^

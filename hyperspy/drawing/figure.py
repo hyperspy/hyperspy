@@ -81,6 +81,7 @@ class BlittedFigure(object):
                     ax.draw_artist(artist)
 
     def _update_animated(self):
+        _logger.debug('Updating animated.')
         canvas = self.ax.figure.canvas
         # As the background haven't changed, we can simply restore it.
         canvas.restore_region(self._background)
@@ -99,7 +100,7 @@ class BlittedFigure(object):
         if self.figure is None:
             return  # Already closed
         for marker in self.ax_markers:
-            marker.close(update_plot=False)
+            marker.close(render_figure=False)
         self.events.closed.trigger(obj=self)
         for f in self.events.closed.connected:
             self.events.closed.disconnect(f)
@@ -136,6 +137,5 @@ class BlittedFigure(object):
         for axis, pointer_size in zip(self.axes_manager.navigation_axes,
                                       pointer_size):
             index = axis.index
-            name = "{}: ".format(axis.name) if axis.name != t.Undefined else ""
-            ind.append("{}{}:{}".format(name, index, index + pointer_size))
+            ind.append("{}:{}".format(index, index + pointer_size))
         return "\n".join(ind)

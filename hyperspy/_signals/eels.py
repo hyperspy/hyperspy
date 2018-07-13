@@ -1204,9 +1204,11 @@ class EELSSpectrum_mixin:
                                  "thickness information, not both")
             elif n is not None:
                 # normalize using the refractive index.
-                K = (Im / eaxis).sum(axis=axis.index_in_array) * axis.scale
-                K = (K / (np.pi / 2) / (1 - 1. / n ** 2)).reshape(
-                    np.insert(K.shape, axis.index_in_array, 1))
+                K = (Im / eaxis).sum(axis=axis.index_in_array, keepdims=True) \
+                    * axis.scale
+                K = (K / (np.pi / 2) / (1 - 1. / n ** 2))
+                # K = (K / (np.pi / 2) / (1 - 1. / n ** 2)).reshape(
+                #    np.insert(K.shape, axis.index_in_array, 1))
                 # Calculate the thickness only if possible and required
                 if zlp is not None and (full_output is True or
                                         iterations > 1):
@@ -1284,9 +1286,11 @@ class EELSSpectrum_mixin:
                 self.tmp_parameters.filename +
                 '_CDF_after_Kramers_Kronig_transform')
         if 'thickness' in output:
-            thickness = eps._get_navigation_signal(
-                data=te[self.axes_manager._get_data_slice(
-                    [(axis.index_in_array, 0)])])
+            # As above,prevent errors if the signal is a single spectrum
+            if len(te) != 1:
+                te = te[self.axes_manager._get_data_slice(
+                        [(axis.index_in_array, 0)])]
+            thickness = eps._get_navigation_signal(data=te)
             thickness.metadata.General.title = (
                 self.metadata.General.title + ' thickness '
                 '(calculated using Kramers-Kronig analysis)')

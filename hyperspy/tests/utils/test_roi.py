@@ -1,6 +1,23 @@
-
+# -*- coding: utf-8 -*-
+# Copyright 2007-2016 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import pytest
 
 from hyperspy.signals import Signal2D, Signal1D
 from hyperspy.roi import (Point1DROI, Point2DROI, SpanROI, RectangularROI,
@@ -83,6 +100,47 @@ class TestROIs():
         np.testing.assert_equal(
             sr.data, s.data[:, int(15 / scale):int(30 // scale), ...])
 
+    def test_span_spectrum_nav_boundary_roi(self, mpl_cleanup):
+        s = Signal1D(np.random.rand(60, 4))
+        r = SpanROI(0, 60)
+        # Test adding roi to plot
+        s.plot(navigator='spectrum')
+        r.add_widget(s)
+        np.testing.assert_equal(r(s).data, s.data)
+
+        s.axes_manager[0].scale = 0.2
+        r2 = SpanROI(0, 12)
+        # Test adding roi to plot
+        s.plot(navigator='spectrum')
+        w2 = r2.add_widget(s)
+        np.testing.assert_equal(r2(s).data, s.data)
+
+        w2.set_bounds(x=-10)  # below min x
+        assert w2._pos[0] == 0
+        w2.set_bounds(width=0.1)  # below min width
+        assert w2._size[0] == 0.2
+        w2.set_bounds(width=30.0)  # above max width
+        assert w2._size[0] == 12
+
+        # the combination of the two is not valid
+        w2.set_bounds(x=10, width=20)
+        assert w2._pos[0] == 0
+        assert w2._size[0] == 12
+
+        w2.set_bounds(x=10)
+        w2.set_bounds(width=20)
+        assert w2._pos[0] == 0
+        assert w2._size[0] == 12
+
+    def test_widget_initialisation(self, mpl_cleanup):
+        s = Signal1D(np.arange(2 * 4 * 6).reshape(2, 4, 6))
+        s.axes_manager[0].scale = 0.5
+        s.axes_manager[1].scale = 1.0
+
+        roi_nav = RectangularROI(0, 0, 1, 0.5)
+        s.plot()
+        roi_nav.add_widget(s)
+
     def test_span_spectrum_sig(self):
         s = self.s_s
         r = SpanROI(1, 3)
@@ -107,6 +165,71 @@ class TestROIs():
                 (n[0][1] - n[0][0], n[1][1] - n[1][0]))
         np.testing.assert_equal(
             sr.data, s.data[n[1][0]:n[1][1], n[0][0]:n[0][1], ...])
+
+    def test_rect_image_boundary_roi(self, mpl_cleanup):
+        s = self.s_i
+        r = RectangularROI(0, 0, 100, 100)
+        # Test adding roi to plot
+        s.plot()
+        w = r.add_widget(s)
+        np.testing.assert_equal(r(s).data, s.data)
+
+        # width and height should range between 1 and axes shape
+        with pytest.raises(ValueError):
+            w.width = 101
+        with pytest.raises(ValueError):
+            w.height = 101
+
+        s.axes_manager[0].scale = 0.2
+        s.axes_manager[1].scale = 0.8
+        r2 = RectangularROI(0, 0, 20, 80)
+        # Test adding roi to plot
+        s.plot()
+        w2 = r2.add_widget(s)
+        np.testing.assert_equal(r2(s).data, s.data)
+
+        w2.set_bounds(x=-10)  # below min x
+        assert w2._pos[0] == 0
+        w2.set_bounds(width=0.1)  # below min width
+        assert w2._size[0] == 0.2
+        w2.set_bounds(width=30.0)  # above max width
+        assert w2._size[0] == 20
+
+        w2.set_bounds(y=0)  # min y
+        w2.set_bounds(height=0.7)  # below min height
+        assert w2._size[1] == 0.8
+        w2.set_bounds(height=90.0)  # about max height
+        assert w2._size[1] == 80.0
+
+        # by indices
+        # width and height should range between 1 and axes shape
+        with pytest.raises(ValueError):
+            w2.width = 0
+        with pytest.raises(ValueError):
+            w2.height = 0
+        with pytest.raises(ValueError):
+            w2.width = 101
+        with pytest.raises(ValueError):
+            w2.height = 101
+
+        # the combination of the two is not valid
+        w2.set_bounds(x=10, width=20)
+        assert w2._pos[0] == 0.0
+        assert w2._size[0] == 20.0
+
+        # the combination of the two is not valid
+        w2.set_bounds(y=40, height=60)
+        assert w2._pos[1] == 0
+        assert w2._size[1] == 80
+
+        w2.set_bounds(x=10)
+        w2.set_bounds(width=20)
+        assert w2._pos[0] == 0
+        assert w2._size[0] == 20
+        w2.set_bounds(y=10)
+        w2.set_bounds(height=79.2)
+        assert w2._pos[1] == 0.0
+        assert w2._size[1] == 79.2
 
     def test_circle_spec(self):
         s = self.s_s
@@ -142,6 +265,13 @@ class TestROIs():
         # Check that mask works for sum
         assert np.sum(sr.data) == (n**2 - 3 * 4) * 4
         assert np.sum(sr_ann.data) == 4 * 5 * 4
+
+        s.plot()
+        r_signal = r.interactive(signal=s)
+        r_ann_signal = r_ann.interactive(signal=s)
+
+        assert np.sum(r_signal.sum().data) == (n**2 - 3 * 4) * 4
+        assert np.sum(r_ann_signal.sum().data) == 4 * 5 * 4
 
     def test_2d_line_spec_plot(self):
         r = Line2DROI(10, 10, 150, 50, 5)

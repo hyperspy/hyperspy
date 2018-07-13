@@ -25,7 +25,7 @@ from time import perf_counter, sleep
 try:
     import blosc
     blosc_installed = True
-except:
+except BaseException:
     blosc_installed = False
 
 from hyperspy.io import load, save
@@ -112,7 +112,7 @@ class TestPythonMrcz:
                 except IOError:
                     sleep(0.001)
             print("Time to save file: {} s".format(
-                    perf_counter() - (t_stop - MAX_ASYNC_TIME)))
+                perf_counter() - (t_stop - MAX_ASYNC_TIME)))
             sleep(0.005)
 
         reSignal = load(mrcName)
