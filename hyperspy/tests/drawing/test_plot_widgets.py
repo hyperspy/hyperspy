@@ -19,6 +19,7 @@
 import numpy as np
 import numpy.testing as nt
 import pytest
+import matplotlib
 
 from hyperspy.signals import Signal2D, Signal1D
 from hyperspy.drawing import widgets
@@ -48,14 +49,14 @@ class TestPlotLine2DWidget():
         assert self.line2d.position == ([0.0, 0.0], [1.2, 0.0])
         nt.assert_allclose(self.line2d.indices[0], np.array([0, 0]))
         nt.assert_allclose(self.line2d.indices[1], np.array([1, 0]))
-        nt.assert_allclose(self.line2d.get_centre(), np.array([0.6,  0.]))
+        nt.assert_allclose(self.line2d.get_centre(), np.array([0.6, 0.]))
 
     def test_position(self):
         self.line2d.position = ([12.0, 60.0], [36.0, 96.0])
         assert self.line2d.position == ([12.0, 60.0], [36.0, 96.0])
         nt.assert_allclose(self.line2d.indices[0], np.array([10, 50]))
         nt.assert_allclose(self.line2d.indices[1], np.array([30, 80]))
-        nt.assert_allclose(self.line2d.get_centre(), np.array([24.,  78.]))
+        nt.assert_allclose(self.line2d.get_centre(), np.array([24., 78.]))
 
     def test_position_snap_position(self):
         self.line2d.snap_position = True
@@ -63,24 +64,24 @@ class TestPlotLine2DWidget():
         nt.assert_allclose(self.line2d.position, ([12.0, 61.2], [36.0, 96.0]))
         nt.assert_allclose(self.line2d.indices[0], np.array([10, 51]))
         nt.assert_allclose(self.line2d.indices[1], np.array([30, 80]))
-        nt.assert_allclose(self.line2d.get_centre(), np.array([24.,  78.6]))
+        nt.assert_allclose(self.line2d.get_centre(), np.array([24., 78.6]))
 
     def test_indices(self):
         self.line2d.indices = ([10, 50], [30, 80])
         nt.assert_allclose(self.line2d.indices[0], np.array([10, 50]))
         nt.assert_allclose(self.line2d.indices[1], np.array([30, 80]))
         assert self.line2d.position == ([12.0, 60.0], [36.0, 96.0])
-        nt.assert_allclose(self.line2d.get_centre(), np.array([24.,  78.]))
+        nt.assert_allclose(self.line2d.get_centre(), np.array([24., 78.]))
 
     def test_length(self):
         x = 10
-        self.line2d.position = ([10.0, 10.0], [10.0+x, 10.0])
+        self.line2d.position = ([10.0, 10.0], [10.0 + x, 10.0])
         assert self.line2d.get_line_length() == x
 
         y = 20
-        self.line2d.position = ([20.0, 10.0], [20.0+x, 10+y])
+        self.line2d.position = ([20.0, 10.0], [20.0 + x, 10 + y])
         nt.assert_almost_equal(self.line2d.get_line_length(),
-                               np.sqrt(x**2+y**2))
+                               np.sqrt(x**2 + y**2))
 
     def test_change_size(self, mpl_cleanup):
         # Need to plot the signal to set the mpl axis to the widget
@@ -109,7 +110,7 @@ class TestPlotLine2DWidget():
         assert self.line2d.position == ([12.0, 60.0], [36.0, 96.0])
         nt.assert_allclose(self.line2d.indices[0], np.array([10, 50]))
         nt.assert_allclose(self.line2d.indices[1], np.array([30, 80]))
-        nt.assert_allclose(self.line2d.get_centre(), np.array([24.,  78.]))
+        nt.assert_allclose(self.line2d.get_centre(), np.array([24., 78.]))
         assert self.line2d.size == np.array([0])
 
         self.line2d.size = [3]
@@ -158,30 +159,69 @@ class TestPlotLine2DWidget():
         nt.assert_allclose(line2d_snap_all.size[0], 14.4)
 
         return self.im._plot.signal_plot.figure
-    
 
 
 class TestPlotRangeWidget():
 
     def setup_method(self, method):
-        # Create test image 100x100 pixels:
-        self.s = Signal1D(np.arange(50000).reshape(100, 500))
-        self.s.axes_manager.signal_axes[0].scale = 1.2
-        self.s.axes_manager.navigation_axes[0].scale = 1.2
+        self.s = Signal1D(np.arange(50))
+        self.s.axes_manager[0].scale = 1.2
         self.range = widgets.RangeWidget(self.s.axes_manager)
-        
-    def test_plot_range_widget(self):
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_range(self, mpl_cleanup):
         self.s.plot()
-        self.range.color = 'green'
-        assert self.range.color == 'green'
-        
-        self.range.position = (120, )
-        self.range.size = (300, )
+        self.range.set_mpl_ax(self.s._plot.signal_plot.ax)
+        assert self.range.ax == self.s._plot.signal_plot.ax
+        assert self.range.color == 'red'  # default color
+        assert self.range.position == (0.0, )
+        assert self.range.size == (1.2, )
 
+        w = widgets.RangeWidget(self.s.axes_manager, color='blue')
+        w.set_mpl_ax(self.s._plot.signal_plot.ax)
+        w.set_ibounds(left=4, width=3)
+        assert w.color == 'blue'
+        color_rgba = matplotlib.colors.to_rgba('blue', alpha=0.5)
+        assert w.span.rect.get_fc() == color_rgba
+        assert w.span.rect.get_ec() == color_rgba
+        nt.assert_allclose(w.position[0], 4.8)
+        nt.assert_allclose(w.size[0], 3.6)
 
-#        assert self.range.position == 1a =18.8
-        self.range.set_mpl_ax(self.s._plot.signal_plot.ax)        
-        assert self.line2d.ax == self.s._plot.signal_plot.ax
+        w2 = widgets.RangeWidget(self.s.axes_manager)
+        w2.set_mpl_ax(self.s._plot.signal_plot.ax)
+        assert w2.ax == self.s._plot.signal_plot.ax
 
-        
+        w2.set_bounds(left=24.0, width=12.0)
+        w2.color = 'green'
+        assert w2.color == 'green'
 
+        return self.s._plot.signal_plot.figure
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_ModifiableSpanSelector(self, mpl_cleanup):
+        self.s.plot()
+        from hyperspy.drawing._widgets.range import ModifiableSpanSelector
+        ax = self.s._plot.signal_plot.ax
+        span_v = ModifiableSpanSelector(ax, direction='vertical')
+        span_v.set_initial((15, 20))
+        assert span_v.range == (15, 20)
+
+        span_v.range = (25, 30)
+        assert span_v.range == (25, 30)
+
+        span_h = ModifiableSpanSelector(ax, direction='horizontal', 
+                                        rectprops={'color':'g'})
+        color_rgba = matplotlib.colors.to_rgba('g')
+        assert span_h.rect.get_fc() == color_rgba
+        assert span_h.rect.get_ec() == color_rgba
+        span_h.set_initial((50.4, 55.2))
+        nt.assert_allclose(span_h.range[0], 50.4)
+        nt.assert_allclose(span_h.range[1], 55.2)
+
+        span_h.range = (40, 45)
+        assert span_h.range == (40, 45)
+        ax.figure.canvas.draw_idle()
+
+        return self.s._plot.signal_plot.figure
