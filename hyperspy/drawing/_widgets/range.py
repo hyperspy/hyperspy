@@ -271,8 +271,8 @@ class ModifiableSpanSelector(SpanSelector):
 
     def __init__(self, ax, **kwargs):
         onselect = kwargs.pop('onselect', self.dummy)
-        useblit = kwargs.pop('useblit', False) # is blit not supported?
         direction = kwargs.pop('direction', 'horizontal')
+        useblit = kwargs.pop('useblit', ax.figure.canvas.supports_blit)
         kwargs['span_stays'] = False
         SpanSelector.__init__(self, ax, onselect, direction=direction,
                               useblit=useblit, **kwargs)
@@ -336,7 +336,7 @@ class ModifiableSpanSelector(SpanSelector):
                 self._set_span_width(value[1] - value[0])
                 self.events.resized.trigger(self)
             if moved or resized:
-                self.update()
+                self.draw_patch()
                 self.events.changed.trigger(self)
 
     range = property(_get_range, _set_range)
@@ -390,7 +390,17 @@ class ModifiableSpanSelector(SpanSelector):
             self.canvas.mpl_connect('draw_event', self.update_background))
         self.rect.set_visible(True)
         self.rect.contains = self.contains
-        self.update()
+
+    def draw_patch(self, *args):
+        """Update the patch drawing.
+        """
+        try:
+            if self.useblit and hasattr(self.ax, 'hspy_fig'):
+                self.ax.hspy_fig._update_animated()
+            elif self.ax.figure is not None:
+                self.ax.figure.canvas.draw_idle()
+        except AttributeError:
+            pass  # When figure is None, typically when closing
 
     def contains(self, mouseevent):
         x, y = self.rect.get_transform().inverted().transform_point(
@@ -413,7 +423,6 @@ class ModifiableSpanSelector(SpanSelector):
             return
         self.buttonDown = False
         self.update_range()
-        self.onselect()
         self.set_initial()
 
     def mm_on_press(self, event):
@@ -451,7 +460,6 @@ class ModifiableSpanSelector(SpanSelector):
     def update_range(self):
         self._range = (self._get_span_x(),
                        self._get_span_x() + self._get_span_width())
-        print('in update_range:', self._range)
 
     def switch_left_right(self, x, left_to_right):
         if left_to_right:
@@ -515,7 +523,7 @@ class ModifiableSpanSelector(SpanSelector):
         self.events.changed.trigger(self)
         if self.onmove_callback is not None:
             self.onmove_callback(*self._range)
-        self.update()
+        self.draw_patch()
 
     def move_right(self, event):
         if self.buttonDown is False or self.ignore(event):
@@ -548,7 +556,7 @@ class ModifiableSpanSelector(SpanSelector):
         self.events.changed.trigger(self)
         if self.onmove_callback is not None:
             self.onmove_callback(*self._range)
-        self.update()
+        self.draw_patch()
 
     def move_rect(self, event):
         if self.buttonDown is False or self.ignore(event):
@@ -569,7 +577,7 @@ class ModifiableSpanSelector(SpanSelector):
         self.events.changed.trigger(self)
         if self.onmove_callback is not None:
             self.onmove_callback(*self._range)
-        self.update()
+        self.draw_patch()
 
     def mm_on_release(self, event):
         if self.buttonDown is False or self.ignore(event):

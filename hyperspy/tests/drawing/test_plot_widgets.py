@@ -200,6 +200,24 @@ class TestPlotRangeWidget():
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
+    def test_plot_range_Signal2D(self, mpl_cleanup):
+        im = Signal2D(np.arange(10 * 10).reshape((10, 10)))
+        im.axes_manager[0].scale = 0.1
+        im.axes_manager[1].scale = 5
+        im.plot()
+
+        range_h = widgets.RangeWidget(im.axes_manager, direction='horizontal')
+        range_h.set_mpl_ax(im._plot.signal_plot.ax)
+
+        range_v = widgets.RangeWidget(im.axes_manager, direction='vertical',
+                                      color='blue')
+        range_v.axes = (im.axes_manager[1],)
+        range_v.set_mpl_ax(im._plot.signal_plot.ax)
+
+        return self.s._plot.signal_plot.figure
+
+    @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                                   tolerance=default_tol, style=style_pytest_mpl)
     def test_plot_ModifiableSpanSelector(self, mpl_cleanup):
         self.s.plot()
         from hyperspy.drawing._widgets.range import ModifiableSpanSelector
@@ -211,8 +229,8 @@ class TestPlotRangeWidget():
         span_v.range = (25, 30)
         assert span_v.range == (25, 30)
 
-        span_h = ModifiableSpanSelector(ax, direction='horizontal', 
-                                        rectprops={'color':'g'})
+        span_h = ModifiableSpanSelector(ax, direction='horizontal',
+                                        rectprops={'color': 'g'})
         color_rgba = matplotlib.colors.to_rgba('g')
         assert span_h.rect.get_fc() == color_rgba
         assert span_h.rect.get_ec() == color_rgba
