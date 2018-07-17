@@ -177,6 +177,7 @@ class TestPlotRangeWidget():
         assert self.range.color == 'red'  # default color
         assert self.range.position == (0.0, )
         assert self.range.size == (1.2, )
+        assert self.range.span.rect.get_alpha() == 0.5
 
         w = widgets.RangeWidget(self.s.axes_manager, color='blue')
         w.set_mpl_ax(self.s._plot.signal_plot.ax)
@@ -213,8 +214,14 @@ class TestPlotRangeWidget():
                                       color='blue')
         range_v.axes = (im.axes_manager[1],)
         range_v.set_mpl_ax(im._plot.signal_plot.ax)
+        assert range_v.position == (0.0, )
+        assert range_v.size == (5.0, )
+        
+        range_v.set_bounds(left=20.0, width=15.0)
+        assert range_v.position == (20.0, )
+        assert range_v.size == (15.0, )
 
-        return self.s._plot.signal_plot.figure
+        return im._plot.signal_plot.figure
 
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)

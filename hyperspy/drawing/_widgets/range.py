@@ -405,14 +405,13 @@ class ModifiableSpanSelector(SpanSelector):
     def contains(self, mouseevent):
         x, y = self.rect.get_transform().inverted().transform_point(
             (mouseevent.x, mouseevent.y))
+        v = x if self.direction == 'vertical' else y
         # Assert y is correct first
-        if not (0.0 <= y <= 1.0):
+        if not (0.0 <= v <= 1.0):
             return False, {}
-        invtrans = self.ax.transData.inverted()
-        x_pt = self.tolerance * abs((invtrans.transform((1, 0)) -
-                                     invtrans.transform((0, 0)))[0])
+        x_pt = self._get_point_size_in_data_units()
         hit = self._range[0] - x_pt, self._range[1] + x_pt
-        if hit[0] < mouseevent.xdata < hit[1]:
+        if hit[0] < self._get_mouse_position < hit[1]:
             return True, {}
         return False, {}
 
@@ -425,15 +424,20 @@ class ModifiableSpanSelector(SpanSelector):
         self.update_range()
         self.set_initial()
 
+    def _get_point_size_in_data_units(self):
+        # Calculate the point size in data units
+        invtrans = self.ax.transData.inverted()
+        (x, y) = (1, 0) if self.direction == 'horizontal' else (0, 1)
+        x_pt = self.tolerance * abs((invtrans.transform((x, y)) -
+                                     invtrans.transform((0, 0)))[y])
+        return x_pt
+        
     def mm_on_press(self, event):
         if self.ignore(event) and not self.buttonDown:
             return
         self.buttonDown = True
 
-        # Calculate the point size in data units
-        invtrans = self.ax.transData.inverted()
-        x_pt = self.tolerance * abs((invtrans.transform((1, 0)) -
-                                     invtrans.transform((0, 0)))[0])
+        x_pt = self._get_point_size_in_data_units()
 
         # Determine the size of the regions for moving and stretching
         self.update_range()
@@ -516,7 +520,7 @@ class ModifiableSpanSelector(SpanSelector):
         if self._get_span_width() + width_increment <= 0:
             return
         self._set_span_x(x)
-        self.rect.set_width(self._get_span_width() + width_increment)
+        self._set_span_width(self._get_span_width() + width_increment)
         self.update_range()
         self.events.moved.trigger(self)
         self.events.resized.trigger(self)
@@ -550,7 +554,7 @@ class ModifiableSpanSelector(SpanSelector):
         width_increment = x - self._range[1]
         if self._get_span_width() + width_increment <= 0:
             return
-        self.rect.set_width(self._get_span_width() + width_increment)
+        self._set_span_width(self._get_span_width() + width_increment)
         self.update_range()
         self.events.resized.trigger(self)
         self.events.changed.trigger(self)
