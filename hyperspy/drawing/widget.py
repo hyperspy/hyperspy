@@ -45,7 +45,7 @@ class WidgetBase(object):
     needed.
     """
 
-    def __init__(self, axes_manager=None, color='red', **kwargs):
+    def __init__(self, axes_manager=None, color='red', alpha=1.0, **kwargs):
         self.axes_manager = axes_manager
         self._axes = list()
         self.ax = None
@@ -58,6 +58,7 @@ class WidgetBase(object):
         self.background = None
         self.patch = []
         self.color = color
+        self.alpha = alpha
         self.cids = list()
         self.blit = True
         self.events = Events()
@@ -141,6 +142,16 @@ class WidgetBase(object):
         self._color = color
         for p in self.patch:
             p.set_color(self._color)
+
+    @property
+    def alpha(self):
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha):
+        self._alpha = alpha
+        for p in self.patch:
+            p.set_alpha(self._alpha)
 
     def _set_patch(self):
         """Create the matplotlib patch(es), and store it in self.patch

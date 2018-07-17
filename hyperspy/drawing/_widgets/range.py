@@ -52,13 +52,13 @@ class RangeWidget(ResizableDraggableWidgetBase):
     will always stay within bounds.
     """
 
-    def __init__(self, axes_manager, ax=None, **kwargs):
+    def __init__(self, axes_manager, ax=None, alpha=0.5, **kwargs):
         # Parse all kwargs for the matplotlib SpanSelector
         self._SpanSelector_kwargs = {}
         for key in inspect.signature(SpanSelector).parameters.keys():
             if key in kwargs:
                 self._SpanSelector_kwargs[key] = kwargs.pop(key)
-        super(RangeWidget, self).__init__(axes_manager, **kwargs)
+        super(RangeWidget, self).__init__(axes_manager, alpha=alpha, **kwargs)
         self.span = None
 
     def set_on(self, value):
@@ -88,6 +88,7 @@ class RangeWidget(ResizableDraggableWidgetBase):
         self.span.tolerance = 5
         self.patch = [self.span.rect]
         self.patch[0].set_color(self.color)
+        self.patch[0].set_alpha(self.alpha)
 
     def _span_changed(self, widget):
         r = self._get_range()
@@ -273,9 +274,8 @@ class ModifiableSpanSelector(SpanSelector):
         onselect = kwargs.pop('onselect', self.dummy)
         direction = kwargs.pop('direction', 'horizontal')
         useblit = kwargs.pop('useblit', ax.figure.canvas.supports_blit)
-        kwargs['span_stays'] = False
         SpanSelector.__init__(self, ax, onselect, direction=direction,
-                              useblit=useblit, **kwargs)
+                              useblit=useblit, span_stays=False, **kwargs)
         # The tolerance in points to pick the rectangle sizes
         self.tolerance = 1
         self.on_move_cid = None
@@ -431,7 +431,7 @@ class ModifiableSpanSelector(SpanSelector):
         x_pt = self.tolerance * abs((invtrans.transform((x, y)) -
                                      invtrans.transform((0, 0)))[y])
         return x_pt
-        
+
     def mm_on_press(self, event):
         if self.ignore(event) and not self.buttonDown:
             return

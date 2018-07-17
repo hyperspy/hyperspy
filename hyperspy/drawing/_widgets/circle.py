@@ -112,6 +112,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
             fill=False,
             lw=self.border_thickness,
             ec=self.color,
+            alpha=self.alpha,
             picker=True,)]
         if ri > 0:
             self.patch.append(
@@ -121,6 +122,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
                     fill=False,
                     lw=self.border_thickness,
                     ec=self.color,
+                    alpha=self.alpha,
                     picker=True,))
 
     def _validate_pos(self, value):

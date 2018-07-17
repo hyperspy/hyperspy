@@ -196,6 +196,8 @@ class TestPlotRangeWidget():
         w2.set_bounds(left=24.0, width=12.0)
         w2.color = 'green'
         assert w2.color == 'green'
+        w2.alpha = 0.25
+        assert w2.alpha == 0.25
 
         return self.s._plot.signal_plot.figure
 
@@ -216,7 +218,7 @@ class TestPlotRangeWidget():
         range_v.set_mpl_ax(im._plot.signal_plot.ax)
         assert range_v.position == (0.0, )
         assert range_v.size == (5.0, )
-        
+
         range_v.set_bounds(left=20.0, width=15.0)
         assert range_v.position == (20.0, )
         assert range_v.size == (15.0, )
@@ -237,8 +239,8 @@ class TestPlotRangeWidget():
         assert span_v.range == (25, 30)
 
         span_h = ModifiableSpanSelector(ax, direction='horizontal',
-                                        rectprops={'color': 'g'})
-        color_rgba = matplotlib.colors.to_rgba('g')
+                                        rectprops={'color': 'g', 'alpha': 0.2})
+        color_rgba = matplotlib.colors.to_rgba('g', alpha=0.2)
         assert span_h.rect.get_fc() == color_rgba
         assert span_h.rect.get_ec() == color_rgba
         span_h.set_initial((50.4, 55.2))
