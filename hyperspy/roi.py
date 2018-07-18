@@ -393,7 +393,8 @@ class BaseInteractiveROI(BaseROI):
         self._update_widgets(exclude=(widget,))
         self.events.changed.trigger(self)
 
-    def add_widget(self, signal, axes=None, widget=None, color='green', **kwargs):
+    def add_widget(self, signal, axes=None, widget=None,
+                   color='green', **kwargs):
         """Add a widget to visually represent the ROI, and connect it so any
         changes in either are reflected in the other. Note that only one
         widget can be added per signal/axes combination.
@@ -428,7 +429,9 @@ class BaseInteractiveROI(BaseROI):
         """
         axes = self._parse_axes(axes, signal.axes_manager,)
         if widget is None:
-            widget = self._get_widget_type(axes, signal)(signal.axes_manager, **kwargs)
+            widget = self._get_widget_type(
+                axes, signal)(
+                signal.axes_manager, **kwargs)
             widget.color = color
 
         # Remove existing ROI, if it exsists and axes match
@@ -511,6 +514,7 @@ def guess_vertical_or_horizontal(axes, signal):
         return "vertical"
     else:
         raise ValueError("Could not find valid widget type")
+
 
 @add_gui_method(toolkey="Point1DROI")
 class Point1DROI(BasePointROI):
