@@ -628,30 +628,28 @@ To fit the model to the data at the current coordinates (e.g. to fit one
 spectrum at a particular point in a spectrum-image) use
 :py:meth:`~.model.BaseModel.fit`.
 
-There are two methods of model-fitting available in in HyperSpy.
-**Nonlinear** fitting is used to fit all parameters in the components,
+There are two parent methods of model-fitting available in in HyperSpy.
+**Nonlinear** fitting (default: ``'leastsq'``) is used to fit all parameters in the components,
 minimizing the difference between the fit and the data by successive
 approximations. This difference is typically the squared error term
 (‘ls’), but can also use maximum likelihood estimation (‘ml’) in the
 case of Poisson noise. Nonlinear fitting is slow on large models, but is
 necessary if the components are nonlinear across the data. A component
-is linear when its only free parameter only scales in the y-axis. For
-the example function ``y = a(b*x-c)``, ``a`` is linear whilst ``b`` and
-``c`` is not, as ``b`` and ``c`` stretch or shift the result
-horizontally.
+is linear when its free parameters scale the component only in the y-axis. For
+the example function ``y = a*x**b``, ``a`` is linear whilst ``b`` 
+is not. Components can also be made up of several linear parts. For instance,
+the 2D-polynomial ``y = a*x**2+b*y**2+c*x+d*y+e`` is entirely linear.
 
-If all components in the model are linear (only scale "upwards" with no 
-change in width or position), then **linear** fitting can be used. 
+If all components in the model are linear, then **linear** fitting (default: ``'linear'``)can be used. 
 Linear fitting uses linear regression to solve the relation
 ``Ax = b`` for x, where b is the data and A are the components. It is
-extremely fast, but is less flexible as it assumes that the nonlinear
-parameters are correct. Linear fitting also assumes a Gaussian noise
-model, and so the ‘ml’ method for Poisson noise is not available.
+very fast, but less flexible as it assumes that the nonlinear
+parameters are correct.
 
 A combination of nonlinear and linear fitting can be used to speed up
-the fitting process. Note that ``background`` components are typically nonlinear,
-and need to be estimated by nonlinear fitting first and then fixed before linear 
-fitting can be used.
+the fitting process. For instance, a Gaussian's sigma and centre parameters can 
+be estimated by nonlinear fitting, fixed, and then fitted across a high number
+of pixels by linear fitting.
 
 The following table summarizes the features of the currently available
 optimizers. For more information on the local and global optimization
@@ -663,6 +661,7 @@ algorithms, see the
 .. versionchanged:: 1.1 `leastsq` supports bound constraints. `fmin_XXX`
                     methods changed to the `scipy.optimze.minimize()` notation.
 
+.. versionchanged:: 1.4 Linear fitting `linear` supports added.
 .. _optimizers-table:
 
 .. table:: Features of curve fitting optimizers. They are nonlinear unless specified.
@@ -726,7 +725,6 @@ estimated standard deviation are stored in the following line attributes:
     (0.99246156488437653, 103.67507406125888)
     >>> line.coefficients.std
     (0.11771053738516088, 13.541061301257537)
-
 
 
 When the noise is heterocedastic, only if the

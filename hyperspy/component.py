@@ -758,7 +758,6 @@ class Component(t.HasTraits):
         self._slicing_whitelist = {'_active_array': 'inav'}
         self._slicing_order = ('active', 'active_is_multidimensional',
                                '_active_array',)
-        self._constant_parameters = []
 
     _name = ''
     _active_is_multidimensional = False
@@ -1203,11 +1202,6 @@ class Component(t.HasTraits):
         else:
             return 0
 
-    @property
-    def constant_parameters(self):
-        "List all parameters which have a non-signal-axis-dependent parameter"
-        return self._constant_parameters
-
     def _compute_component(self, multi=False):
         model = self.model
         if model.convolved and self.convolved:
@@ -1219,18 +1213,20 @@ class Component(t.HasTraits):
             mesh = np.meshgrid(*axes)
             not_convolved = self.function(*mesh, multi=multi)
             data = not_convolved
-        return data.T[np.where(model.channel_switches)[::-1]].T 
+        return data.T[np.where(model.channel_switches)[::-1]].T
 
     def _compute_constant_term(self, multi=False):
         model = self.model
         if model.convolved and self.convolved:
-            convolved = self._convolve(self.get_constant_term(multi=multi), model=model)
+            convolved = self._convolve(
+                self.get_constant_term(multi=multi), model=model)
             data = convolved
         else:
             signal_shape = model.axes_manager.signal_shape[::-1]
-            not_convolved = self.get_constant_term(multi) * np.ones(signal_shape)
+            not_convolved = self.get_constant_term(
+                multi) * np.ones(signal_shape)
             data = not_convolved
-        return data.T[np.where(model.channel_switches)[::-1]].T 
+        return data.T[np.where(model.channel_switches)[::-1]].T
 
     def _convolve(self, to_convolve, model=None):
         '''Convolve component with model convolution axis
@@ -1242,23 +1238,25 @@ class Component(t.HasTraits):
             model = self.model
         sig = to_convolve * np.ones(model.convolution_axis.shape)
 
-        if not self.model.multicomp:
+        if not self.model._compute_comp_all_pixels:
             # handle fast case when ll is equal in all pixels
             ll = model.low_loss(model.axes_manager)
             convolved = np.convolve(sig, ll, mode="valid")
-        elif self.model.multicomp and self.model._constant_ll:
+        elif self.model._compute_comp_all_pixels and self.model._constant_ll:
             nav_shape = model.axes_manager._navigation_shape_in_array
             ll = model.low_loss(model.axes_manager)
-            length = max(sig.shape[-1], ll.shape[-1]) - min(sig.shape[-1], ll.shape[-1]) + 1 
+            length = max(sig.shape[-1], ll.shape[-1]) - \
+                min(sig.shape[-1], ll.shape[-1]) + 1
             convolved = np.zeros(nav_shape + (length,)).T
             convolved[:] = np.convolve(sig, ll, mode="valid")
             convolved = convolved.T
         else:
             nav_shape = model.axes_manager._navigation_shape_in_array
             ll = model.low_loss.data
-            length = max(sig.shape[-1], ll.shape[-1]) - min(sig.shape[-1], ll.shape[-1]) + 1 
+            length = max(sig.shape[-1], ll.shape[-1]) - \
+                min(sig.shape[-1], ll.shape[-1]) + 1
             convolved = np.zeros(nav_shape + (length,))
             for index in np.ndindex(nav_shape):
-                convolved[index] = np.convolve(sig[index], ll[index], mode="valid")
+                convolved[index] = np.convolve(
+                    sig[index], ll[index], mode="valid")
         return convolved
-    

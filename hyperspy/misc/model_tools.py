@@ -17,32 +17,60 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import dask.array as da
+
 
 def linear_regression(y, comp_data):
     '''
-    Performs linear regression on single pixels as well 
+    Performs linear regression on single pixels as well
     as multidimensional arrays
 
     Parameters
     ----------
     y : array_like, shape: (signal_axis) or (nav_shape, signal_axis)
         The data to be fit to
-    comp_data : array_like, shape: (number_of_comp, signal_axis) or (nav_shape, number_of_comp, signal_axis)
+    comp_data : array_like, shape: (number_of_comp, signal_axis) or (nav_shape,
+                                    number_of_comp, signal_axis)
         The components to fit to the data
 
     Returns:
     ----------
-    fit_coefficients : array_like, shape: (number_of_comp) or (nav_shape, number_of_comp)
+    fit_coefficients : array_like, 
+                        shape: (number_of_comp) or (nav_shape, number_of_comp)
 
     '''
-    square = np.matmul(comp_data, comp_data.T)
-    square_inv = np.linalg.inv(square)
-    comp_data2 = np.matmul(square_inv, comp_data)
-    return np.dot(y, comp_data2.T)
+    if isinstance(comp_data, da.Array):
+        lazy = True
+        matmul = da.matmul
+        inv = da.linalg.inv
+        dot = da.dot
+    else:
+        lazy = False
+        matmul = np.matmul
+        inv = np.linalg.inv
+        dot = np.dot
+
+    square = matmul(comp_data, comp_data.T)
+    square_inv = inv(square)
+    comp_data2 = matmul(square_inv, comp_data)
+    fit_coefficients = dot(y, comp_data2.T)
+    if lazy:
+        fit_coefficients = fit_coefficients.compute()
+    return fit_coefficients
+
 
 def standard_error_from_covariance(covariance):
-    standard_error = np.sqrt(covariance.diagonal(axis1=-2, axis2=-1))
+    'Get standard error coefficients from the diagonal of the covariance'
+    # dask diag only supports 2D arrays, so we cannot use diag (for now)
+    # if isinstance(data, da.Array):
+    #     sqrt = da.sqrt
+    #     diag = da.diag
+    # else:
+    #     sqrt = np.sqrt
+    #     diag = np.diag
+    standard_error = np.sqrt(np.diagonal(covariance, axis1=-2, axis2=-1))
     return standard_error
+
 
 def get_top_parent_twin(parameter):
     'Get the top parent twin, if there is one'
@@ -50,6 +78,7 @@ def get_top_parent_twin(parameter):
         return get_top_parent_twin(parameter.twin)
     else:
         return parameter
+
 
 def get_full_twin_function(parameter):
     'If there is chaining of twins, get the full twin_function'

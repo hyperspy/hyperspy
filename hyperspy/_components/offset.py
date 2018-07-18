@@ -51,8 +51,6 @@ class Offset(Component):
         # Linearity
         self.offset._is_linear = True
 
-        self._constant_parameters = [self.offset]
-
     def function(self, x, multi=False):
         if multi:
             o = self.offset.map['values'][...,None]

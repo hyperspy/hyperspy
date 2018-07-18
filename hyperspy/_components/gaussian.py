@@ -121,9 +121,9 @@ class Gaussian(Component):
 
     def function(self, x, multi=False):
         if multi:
-            A = self.A.map['values'][...,None]
-            s = self.sigma.map['values'][...,None]
-            c = self.centre.map['values'][...,None]
+            A = self.A.map['values'][..., None]
+            s = self.sigma.map['values'][..., None]
+            c = self.centre.map['values'][..., None]
         else:
             A = self.A.value
             s = self.sigma.value

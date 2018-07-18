@@ -281,17 +281,18 @@ class EELSCLEdge(Component):
     def _integrate_GOS(self):
         # Integration over q using splines
         try:
-            multi = self.model.multicomp
+            multi = self.model._compute_comp_all_pixels
         except:
             multi = False
         if multi:
             angles = self.effective_angle.map['values'] * 1e-3  # in rad
             self.tab_xsection = self.GOS.integrateq(
-                self.onset_energy.map['values'], angles, self.E0, self.model, multi)
+                self.onset_energy.map['values'], angles,
+                self.E0, self.model, multi)
             E1 = self.GOS.energy_axis[-2] + self.GOS.energy_shift
             E2 = self.GOS.energy_axis[-1] + self.GOS.energy_shift
-            y1 = self.GOS.qint[...,-2]  # in m**2/bin */
-            y2 = self.GOS.qint[...,-1]  # in m**2/bin */
+            y1 = self.GOS.qint[..., -2]  # in m**2/bin */
+            y2 = self.GOS.qint[..., -1]  # in m**2/bin */
             self.r = np.log(y2 / y1) / np.log(E1 / E2)
             self.A = y1 / E1 ** -self.r
         else:
@@ -307,21 +308,22 @@ class EELSCLEdge(Component):
             self.A = y1 / E1 ** -self.r
 
     def _calculate_knots(self):
-        if self.model.multi:
+        if self.model._is_multifit:
             start = self.onset_energy.map['values']
         else:
             start = self.onset_energy.value
         stop = start + self.fine_structure_width
 
-        if self.model.multi:
+        if self.model._is_multifit:
             nav_shape = self.model.axes_manager._navigation_shape_in_array
-            self.__knots = np.zeros(nav_shape + (self.fine_structure_coeff._number_of_elements))
-            for index in np.ndindex(self.model.axes_manager._navigation_shape_in_array):
-                self.__knots[index] = np.r_[[start[index]] * 4,np.linspace(start[index],stop[index],
-                    self.fine_structure_coeff._number_of_elements)[2:-2],[stop[index]] * 4]
+            self.__knots = np.zeros(
+                nav_shape + (self.fine_structure_coeff._number_of_elements))
+            for index in np.ndindex(nav_shape):
+                self.__knots[index] = np.r_[[start[index]] * 4, np.linspace(start[index], stop[index],
+                                                                            self.fine_structure_coeff._number_of_elements)[2:-2], [stop[index]] * 4]
         else:
-            self.__knots = np.r_[[start] * 4,np.linspace(start,stop,
-            self.fine_structure_coeff._number_of_elements)[2:-2],[stop] * 4]
+            self.__knots = np.r_[[start] * 4, np.linspace(start, stop,
+                                                          self.fine_structure_coeff._number_of_elements)[2:-2], [stop] * 4]
 
     def function(self, E, multi=False):
         """Returns the number of counts in barns
@@ -329,10 +331,10 @@ class EELSCLEdge(Component):
         """
         if multi:
             nav_shape = self.intensity.map['values'].shape
-            intensity = self.intensity.map['values'][...,None]
-            onset_energy = self.onset_energy.map['values'][...,None]
-            fine_structure_coeff = self.fine_structure_coeff.map['values'][...,None]
-            effective_angle = self.effective_angle.map['values'][...,None]
+            intensity = self.intensity.map['values'][..., None]
+            onset_energy = self.onset_energy.map['values'][..., None]
+            fine_structure_coeff = self.fine_structure_coeff.map['values'][..., None]
+            effective_angle = self.effective_angle.map['values'][..., None]
         else:
             nav_shape = ()
             intensity = self.intensity.value
@@ -347,13 +349,14 @@ class EELSCLEdge(Component):
         # cause an error that enforcing _integrate_GOS here prevents. Note
         # that this is suboptimal because _integrate_GOS is computed twice
         # unnecessarily.
-        
+
         if multi:
-            #if (shift != self.GOS.energy_shift).all():
+            # if (shift != self.GOS.energy_shift).all():
             self._integrate_GOS()
-            Emax = (self.GOS.energy_axis[-1] + self.GOS.energy_shift)[...,None]
+            Emax = (self.GOS.energy_axis[-1] +
+                    self.GOS.energy_shift)[..., None]
         else:
-            #if shift != self.GOS.energy_shift:
+            # if shift != self.GOS.energy_shift:
             self._integrate_GOS()
             Emax = self.GOS.energy_axis[-1] + self.GOS.energy_shift
         cts = np.zeros(nav_shape + (len(E),))
@@ -361,9 +364,8 @@ class EELSCLEdge(Component):
         if self.fine_structure_active is True:
             bfs = bsignal * (
                 E < (onset_energy + self.fine_structure_width))
-            print('fine_structure_active is true',bfs.shape)
-            cts[...,bfs] = splev(
-                E[...,bfs], (
+            cts[..., bfs] = splev(
+                E[..., bfs], (
                     self.__knots,
                     fine_structure_coeff + (0,) * 4, 3))
             bsignal[bfs] = False
@@ -372,18 +374,21 @@ class EELSCLEdge(Component):
         self.itab = itab
         self.E = E
         if multi:
-            for index in np.ndindex(self.model.axes_manager._navigation_shape_in_array):
+            nav_shape = self.model.axes_manager._navigation_shape_in_array
+            for index in np.ndindex(nav_shape):
                 # print(cts.shape)
                 # print(itab.shape)
                 # print(E.shape)
                 # print(E[itab[index]].shape)
-                cts[index][itab[index]] = self.tab_xsection[index](E[itab[index]])
-                cts[index][bsignal[index]] = self.A[index] * E[bsignal[index]] ** -self.r[index]
+                cts[index][itab[index]] = self.tab_xsection[index](
+                    E[itab[index]])
+                cts[index][bsignal[index]] = self.A[index] * \
+                    E[bsignal[index]] ** -self.r[index]
         else:
             cts[itab] = self.tab_xsection(E[itab])
             cts[bsignal] = self.A * E[bsignal] ** -self.r
         bsignal[itab] = False
-        
+
         return cts * intensity
 
     def grad_intensity(self, E):

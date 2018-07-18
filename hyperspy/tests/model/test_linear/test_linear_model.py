@@ -47,7 +47,7 @@ class TestModelFitBinned:
         """
         assert not self.m._check_all_active_components_are_linear()
 
-    def test_fit_lsq_linear(self):
+    def test_fit_linear(self):
         self.m[0].sigma.free = False
         self.m[0].centre.free = False
         self.m.fit(fitter="linear")
