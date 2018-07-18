@@ -776,9 +776,13 @@ Note also that loading a spectrum image can be slow if `numba
 
 .. note::
 
-    To enable lazy loading of spectrum images in this format it may be
+    To enable lazy loading of EDX spectrum images in this format it may be
     necessary to install `sparse <http://sparse.pydata.org/en/latest/>`_. See
-    See also :ref:`install-with-python-installers`.
+    See also :ref:`install-with-python-installers`. Note also that currently
+    only lazy uncompression rather than lazy loading is implemented. This
+    means that it is not currently possible to read EDX SI FEI EMD files with
+    size bigger than the available memory.
+
 
 
 .. warning::
