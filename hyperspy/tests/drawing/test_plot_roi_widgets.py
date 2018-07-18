@@ -44,51 +44,45 @@ class TestPlotROI():
     def test_plot_point1D_axis_0(self, mpl_cleanup):
         self.im.plot()
         p = roi.Point1DROI(0.5)
-        p.add_widget(signal=self.im, axes=[0,], color="cyan")
+        p.add_widget(signal=self.im, axes=[0, ], color="cyan")
         return self.im._plot.navigator_plot.figure
-
 
     @pytest.mark.mpl_image_compare(BASELINE_DIR=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
     def test_plot_point1D_axis_1(self, mpl_cleanup):
         self.im.plot()
         p = roi.Point1DROI(0.05)
-        p.add_widget(signal=self.im, axes=[1,], color="cyan")
+        p.add_widget(signal=self.im, axes=[1, ], color="cyan")
         return self.im._plot.signal_plot.figure
-
 
     @pytest.mark.mpl_image_compare(BASELINE_DIR=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
     def test_plot_point1D_axis_2(self, mpl_cleanup):
         self.im.plot()
         p = roi.Point1DROI(0.005)
-        p.add_widget(signal=self.im, axes=[2,], color="cyan")
+        p.add_widget(signal=self.im, axes=[2, ], color="cyan")
         return self.im._plot.signal_plot.figure
-
 
     @pytest.mark.mpl_image_compare(BASELINE_DIR=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
     def test_plot_spanroi_axis_0(self, mpl_cleanup):
         self.im.plot()
         p = roi.SpanROI(0.5, 0.7)
-        p.add_widget(signal=self.im, axes=[0,], color="cyan")
+        p.add_widget(signal=self.im, axes=[0, ], color="cyan")
         return self.im._plot.navigator_plot.figure
-
 
     @pytest.mark.mpl_image_compare(BASELINE_DIR=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
     def test_plot_spanroi_axis_1(self, mpl_cleanup):
         self.im.plot()
         p = roi.SpanROI(0.05, 0.07)
-        p.add_widget(signal=self.im, axes=[1,], color="cyan")
+        p.add_widget(signal=self.im, axes=[1, ], color="cyan")
         return self.im._plot.signal_plot.figure
-
 
     @pytest.mark.mpl_image_compare(BASELINE_DIR=BASELINE_DIR,
                                    tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
     def test_plot_spanroi_axis_2(self, mpl_cleanup):
         self.im.plot()
         p = roi.SpanROI(0.005, 0.007)
-        p.add_widget(signal=self.im, axes=[2,], color="cyan")
+        p.add_widget(signal=self.im, axes=[2, ], color="cyan")
         return self.im._plot.signal_plot.figure
-
