@@ -83,7 +83,8 @@ def _stream_to_sparse_COO_array_sum_frames(
             navigation_index += 1
             data = 0
 
-    # Store data  at the end if any (there is no final 65535 to mark the end of the stream)
+    # Store data  at the end if any (there is no final 65535 to mark the end
+    # of the stream)
     if data:  # Only store coordinates if the spectrum was not empty
         coords_list.append((
             int(navigation_index // xsize),
@@ -161,7 +162,8 @@ def _stream_to_sparse_COO_array(
             navigation_index += 1
             data = 0
 
-    # Store data at the end if any (there is no final 65535 to mark the end of the stream)
+    # Store data at the end if any (there is no final 65535 to mark the end of
+    # the stream)
     if data:  # Only store coordinates if the spectrum was not empty
         coords.append((
             frame_number - first_frame,
