@@ -29,6 +29,22 @@ BASELINE_DIR = 'plot_roi'
 DEFAULT_TOL = 2.0
 STYLE_PYTEST_MPL = 'default'
 
+def _transpose_space(space, im):
+    if space == "signal":
+        im = im
+        axes = im.axes_manager.signal_axes
+        im.plot()
+        figure = im._plot.signal_plot.figure
+    else:
+        im = im.T
+        axes = im.axes_manager.navigation_axes
+        im.plot()
+        figure = im._plot.navigator_plot.figure
+    return {
+        "im": im,
+        "figure": figure,
+        "axes": axes,
+    }
 
 class TestPlotROI():
 
@@ -86,3 +102,45 @@ class TestPlotROI():
         p = roi.SpanROI(0.005, 0.007)
         p.add_widget(signal=self.im, axes=[2, ], color="cyan")
         return self.im._plot.signal_plot.figure
+
+
+    @pytest.mark.parametrize("space",("signal", "navigation"))
+    @pytest.mark.mpl_image_compare(BASELINE_DIR=BASELINE_DIR,
+                                   tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
+    def test_plot_point2D(self, mpl_cleanup, space):
+        objs = _transpose_space(im=self.im, space=space)
+        p = roi.Point2DROI(0.05, 0.01)
+        p.add_widget(signal=objs["im"], axes=objs["axes"], color="cyan")
+        return objs["figure"]
+
+
+    @pytest.mark.parametrize("space",("signal", "navigation"))
+    @pytest.mark.mpl_image_compare(BASELINE_DIR=BASELINE_DIR,
+                                   tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
+    def test_plot_circle_roi(self, mpl_cleanup, space):
+        self.im.axes_manager[2].scale = 0.01
+        objs = _transpose_space(im=self.im, space=space)
+        p = roi.CircleROI(cx=0.1, cy=0.1, r=0.1)
+        p.add_widget(signal=objs["im"], axes=objs["axes"], color="cyan")
+        return objs["figure"]
+
+
+    @pytest.mark.parametrize("space",("signal", "navigation"))
+    @pytest.mark.mpl_image_compare(BASELINE_DIR=BASELINE_DIR,
+                                   tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
+    def test_plot_rectangular_roi(self, mpl_cleanup, space):
+        objs = _transpose_space(im=self.im, space=space)
+        p = roi.RectangularROI(left=0.01, top=0.01, right=0.1, bottom=0.03)
+        p.add_widget(signal=objs["im"], axes=objs["axes"], color="cyan")
+        return objs["figure"]
+
+
+    @pytest.mark.parametrize("space",("signal", "navigation"))
+    @pytest.mark.mpl_image_compare(BASELINE_DIR=BASELINE_DIR,
+                                   tolerance=DEFAULT_TOL, style=STYLE_PYTEST_MPL)
+    def test_plot_line2d_roi(self, mpl_cleanup, space):
+        objs = _transpose_space(im=self.im, space=space)
+        p = roi.Line2DROI(x1=0.01, y1=0.01, x2=0.1, y2=0.03)
+        p.add_widget(signal=objs["im"], axes=objs["axes"], color="cyan")
+        return objs["figure"]
+
