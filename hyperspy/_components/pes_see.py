@@ -59,7 +59,7 @@ class SEE(Component):
 
         # Resolution functions
         self.gaussian = Gaussian()
-        self.gaussian.origin.free, self.gaussian.A.free = False, False
+        self.gaussian.centre.free, self.gaussian.A.free = False, False
         self.gaussian.sigma.free = True
         self.gaussian.A.value = 1.
 
@@ -69,35 +69,56 @@ class SEE(Component):
     def __repr__(self):
         return 'SEE'
 
-    def function(self, x):
-        """
-        """
-        if self.sigma.value:
-            self.gaussian.sigma.value = self.sigma.value
-            self.gaussian.origin.value = (x[-1] + x[0]) / 2
-            return np.convolve(
-                self.gaussian.function(x),
-                np.where(
-                    x > self.Phi.value,
-                    self.A.value * (
-                        x - self.Phi.value) / (
-                        x - self.Phi.value + self.B.value) ** 4,
-                    0),
-                'same')
+    def function(self, x, multi=False):
+        if multi:
+            nav_shape = self.A.map['values'].shape
+            A = self.A.map['values'][...,None]
+            B = self.B.map['values'][...,None]
+            Phi = self.Phi.map['values'][...,None]
+            Sigma = self.sigma.map['values']
+
+            if np.all(Sigma):
+                # Create temporary model to enable para.map['values']
+                # with correct shape
+                temp_model = self.model.signal.create_model()
+                temp_model.append(self.gaussian)
+
+                convolved = np.zeros(nav_shape + x.shape)
+                self.gaussian.A.map['values'] = self.gaussian.A.value
+                self.gaussian.sigma.map['values'] = Sigma
+                self.gaussian.centre.map['values'] = (x[-1] + x[0]) / 2
+                G = self.gaussian.function(x, multi=True)
+                for index in np.ndindex(nav_shape):
+                    convolved[index] = np.convolve(
+                        G[index], np.where(x > Phi[index], 
+                        A[index]*(x-Phi[index])/(x-Phi[index]+B[index]) ** 4, 0),
+                    'same')
+                del temp_model
+                return convolved
+            else:
+                return np.where(x > Phi, A*(x-Phi)/(x-Phi+B) ** 4, 0)
         else:
-            return np.where(x > self.Phi.value, self.A.value *
-                            (x -
-                             self.Phi.value) /
-                            (x -
-                             self.Phi.value +
-                             self.B.value) ** 4, 0)
+            A = self.A.value
+            B = self.B.value
+            Phi = self.Phi.value
+            Sigma = self.sigma.value
+
+            if Sigma:
+                self.gaussian.sigma.value = Sigma
+                self.gaussian.centre.value = (x[-1] + x[0]) / 2
+                return np.convolve(
+                    self.gaussian.function(x),
+                    np.where(x > Phi, A*(x-Phi)/(x-Phi+B) ** 4, 0),
+                    'same')
+            else:
+                return np.where(x > Phi, A*(x-Phi)/(x-Phi+B) ** 4, 0)
 
     def grad_A(self, x):
         """
         """
         if self.sigma.value:
             self.gaussian.sigma.value = self.sigma.value
-            self.gaussian.origin.value = (x[-1] + x[0]) / 2
+            self.gaussian.centre.value = (x[-1] + x[0]) / 2
             return np.convolve(
                 self.gaussian.function(x),
                 np.where(
@@ -113,7 +134,7 @@ class SEE(Component):
         """
         """
         self.gaussian.sigma.value = self.sigma.value
-        self.gaussian.origin.value = (x[-1] + x[0]) / 2
+        self.gaussian.centre.value = (x[-1] + x[0]) / 2
         return np.convolve(
             self.gaussian.grad_sigma(x),
             np.where(
@@ -127,7 +148,7 @@ class SEE(Component):
         """
         if self.sigma.value:
             self.gaussian.sigma.value = self.sigma.value
-            self.gaussian.origin.value = (x[-1] + x[0]) / 2
+            self.gaussian.centre.value = (x[-1] + x[0]) / 2
             return np.convolve(
                 self.gaussian.function(x),
                 np.where(
@@ -147,7 +168,7 @@ class SEE(Component):
     def grad_B(self, x):
         if self.sigma.value:
             self.gaussian.sigma.value = self.sigma.value
-            self.gaussian.origin.value = (x[-1] + x[0]) / 2
+            self.gaussian.centre.value = (x[-1] + x[0]) / 2
             return np.convolve(
                 self.gaussian.function(x),
                 np.where(

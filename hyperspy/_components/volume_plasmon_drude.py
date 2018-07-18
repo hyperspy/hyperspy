@@ -65,10 +65,15 @@ class VolumePlasmonDrude(Component):
         # Linearity
         self.intensity._is_linear = True
 
-    def function(self, x):
-        plasmon_energy = self.plasmon_energy.value
-        fwhm = self.fwhm.value
-        intensity = self.intensity.value
+    def function(self, x, multi=False):
+        if multi:
+            plasmon_energy = self.plasmon_energy.map['values'][...,None]
+            fwhm = self.fwhm.map['values'][...,None]
+            intensity = self.intensity.map['values'][...,None]
+        else:
+            plasmon_energy = self.plasmon_energy.value
+            fwhm = self.fwhm.value
+            intensity = self.intensity.value
         pe2 = plasmon_energy ** 2
         return np.where(
             x > 0,

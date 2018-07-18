@@ -55,27 +55,36 @@ class PESCoreLineShape(Component):
         self.ab.grad = self.grad_ab
 
         # Linearity
-        self.A._is_linear = False # This is probably linear, but unsure
+        self.A._is_linear = True
 
         # Options
         self.factor = 1.
         self.Shirley = False
 
-    def function(self, x):
+    def function(self, x, multi=False):
         """
         Given an one dimensional array x containing the energies at which
         you want to evaluate the background model, returns the background
         model for the current parameters.
         """
-        a0 = self.A.value
-        a1 = self.origin.value
-        a2 = self.FWHM.value
-        a3 = self.ab.value
-        k = self.shirley.value
-        f = self.factor * a0 * \
-            np.exp(-1 * math.log(2) * ((x - (a1 - a3)) / a2) ** 2)
+        if multi:
+            A = self.A.map['values'][...,None]
+            o = self.origin.map['values'][...,None]
+            fwhm = self.FWHM.map['values'][...,None]
+            ab = self.ab.map['values'][...,None]
+            k = self.shirley.map['values'][...,None]
+            f = (self.factor * A * \
+                np.exp(-1 * math.log(2) * ((x - (o - ab)) / fwhm) ** 2))
+        else:
+            A = self.A.value
+            o = self.origin.value
+            fwhm = self.FWHM.value
+            ab = self.ab.value
+            k = self.shirley.value
+            f = self.factor * A * \
+                np.exp(-1 * math.log(2) * ((x - (o - ab)) / fwhm) ** 2)
         if self.Shirley:
-            cf = np.cumsum(f)
+            cf = np.cumsum(f, axis=-1)
             cf = cf[-1] - cf
             self.cf = cf
             return cf * k + f

@@ -306,14 +306,15 @@ class EELSCLEdge(Component):
             self.r = np.log(y2 / y1) / np.log(E1 / E2)
             self.A = y1 / E1 ** -self.r
 
-    def _calculate_knots(self, multi=False):
-        if multi:
+    def _calculate_knots(self):
+        if self.model.multi:
             start = self.onset_energy.map['values']
         else:
             start = self.onset_energy.value
         stop = start + self.fine_structure_width
 
-        if multi:
+        if self.model.multi:
+            nav_shape = self.model.axes_manager._navigation_shape_in_array
             self.__knots = np.zeros(nav_shape + (self.fine_structure_coeff._number_of_elements))
             for index in np.ndindex(self.model.axes_manager._navigation_shape_in_array):
                 self.__knots[index] = np.r_[[start[index]] * 4,np.linspace(start[index],stop[index],

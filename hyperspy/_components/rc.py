@@ -18,22 +18,22 @@
 
 import numpy as np
 
-from hyperspy.component import Component
+from hyperspy._components.expression import Expression
 
 
-class RC(Component):
+class RC(Expression):
 
     """
+    RC Component:
+    "V0 + V * (1 - exp(-x/tau))"
     """
-
-    def __init__(self, V=1, V0=0, tau=1.):
-        Component.__init__(self, ('Vmax', 'V0', 'tau'))
-        self.Vmax.value, self.V0.value, self.tau.value = V, V0, tau
-        
-    def function(self, x):
-        """
-        """
-        Vmax = self.Vmax.value
-        V0 = self.V0.value
-        tau = self.tau.value
-        return V0 + Vmax * (1 - np.exp(-x / tau))
+    def __init__(self, V=1., V0=1., tau=1., **kwargs):
+        super(RC, self).__init__(
+            expression="V0 + V * (1 - exp(-x/tau))",
+            name="RC",
+            V0=V0,
+            V=V,
+            tau=tau,
+            autodoc=False,
+            **kwargs,
+        )

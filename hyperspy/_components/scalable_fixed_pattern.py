@@ -118,12 +118,21 @@ class ScalableFixedPattern(Component):
             fill_value=fill_value,
             **kwargs)
 
-    def function(self, x):
-        if self.interpolate is True:
-            result = self.yscale.value * self.f(
-                x * self.xscale.value - self.shift.value)
+    def function(self, x, multi=False):
+        if multi:
+            yscale = self.yscale.map['values'][...,None]
+            xscale = self.xscale.map['values'][...,None]
+            shift = self.shift.map['values'][...,None]
         else:
-            result = self.yscale.value * self.signal.data
+            yscale = self.yscale.value
+            xscale = self.xscale.value
+            shift = self.shift.value
+
+        if self.interpolate is True:
+            result = yscale * self.f(
+                x * xscale - shift)
+        else:
+            result = yscale * self.signal.data
         if self.signal.metadata.Signal.binned is True:
             return result / self.signal.axes_manager.signal_axes[0].scale
         else:

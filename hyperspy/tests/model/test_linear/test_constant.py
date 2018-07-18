@@ -17,26 +17,36 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from hyperspy.components1d import Expression, Gaussian
+from hyperspy._signals.signal1d import Signal1D
+import numpy as np
+class TestLinearFitting:
+    def setup_method(self, method):
+        self.s = Signal1D(np.zeros((4,5, 20)))
+        self.m = self.s.create_model()
 
-def test_constant_from_expression():
-    expression = "a * x + b"
-    g = Expression(
-        expression, 
-        name="test_constant",
-        a = 20.0,
-        b = 4.0)
-    g.b.free = False
-    assert g.get_constant_term() == 4.0
+    def test_constant_from_expression(self):
+        expression = "a * x + b"
+        g = Expression(
+            expression, 
+            name="test_constant",
+            a = 20.0,
+            b = 4.0)
+        self.m.append(g)
+        g.b.free = False
+        assert g.get_constant_term() == 4.0
+        g.b.assign_current_value_to_all()
+        assert np.all(g.get_constant_term(multi=True) == 4*np.ones(self.s.axes_manager._navigation_shape_in_array))
 
-def test_constant_from_expression2():
-    expression = "A * exp(-(x-centre)**2/(2*sigma**2))"
-    g = Expression(
-        expression, 
-        name="test_constant2",
-        A = 20.0,
-        centre = 4.0,
-        sigma = 1.0)
-    assert g.get_constant_term() == 0
-    g.centre.free = False
-    g.sigma.free = False
-    assert g.get_constant_term() == 0
+    def test_constant_from_expression2(self):
+        expression = "A * exp(-(x-centre)**2/(2*sigma**2))"
+        h = Expression(
+            expression, 
+            name="test_constant2",
+            A = 20.0,
+            centre = 4.0,
+            sigma = 1.0)
+        self.m.append(h)
+        assert h.get_constant_term() == 0
+        h.centre.free = False
+        h.sigma.free = False
+        assert h.get_constant_term() == 0

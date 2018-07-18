@@ -66,11 +66,9 @@ class PowerLaw(Component):
 
     def function(self, x, multi=False):
         if multi:
-            n = self.model.axes_manager.signal_dimension
-            shape = self.A.map['values'].shape
-            A = self.A.map['values'].reshape(shape + n*(1,))
-            r = self.r.map['values'].reshape(shape + n*(1,))
-            origin = self.origin.map['values'].reshape(shape + n*(1,))
+            A = self.A.map['values'][...,None]
+            r = self.r.map['values'][...,None]
+            origin = self.origin.map['values'][...,None]
         else:
             A = self.A.value
             r = self.r.value

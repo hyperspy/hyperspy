@@ -71,13 +71,11 @@ class Gaussian2D(Component):
 
     def function(self, x, y, multi=False):
         if multi:
-            sig_dim = self.model.axes_manager.signal_dimension
-            shape = self.A.map['values'].shape
-            A = self.A.map['values'].reshape(shape + sig_dim*(1,))
-            sx = self.sigma_x.map['values'].reshape(shape + sig_dim*(1,))
-            sy = self.sigma_y.map['values'].reshape(shape + sig_dim*(1,))
-            x0 = self.centre_x.map['values'].reshape(shape + sig_dim*(1,))
-            y0 = self.centre_y.map['values'].reshape(shape + sig_dim*(1,))
+            A = self.A.map['values'][...,None,None]
+            sx = self.sigma_x.map['values'][...,None,None]
+            sy = self.sigma_y.map['values'][...,None,None]
+            x0 = self.centre_x.map['values'][...,None,None]
+            y0 = self.centre_y.map['values'][...,None,None]
         
         else:
             A = self.A.value

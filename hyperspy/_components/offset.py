@@ -53,8 +53,12 @@ class Offset(Component):
 
         self._constant_parameters = [self.offset]
 
-    def function(self, x):
-        return np.ones((len(x))) * self.offset.value
+    def function(self, x, multi=False):
+        if multi:
+            o = self.offset.map['values'][...,None]
+        else:
+            o = self.offset.value
+        return np.ones((len(x))) * o
 
     @staticmethod
     def grad_offset(x):

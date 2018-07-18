@@ -6,11 +6,14 @@ import pytest
 from hyperspy.misc.eels.eelsdb import eelsdb
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D
-from hyperspy._components.gaussian import Gaussian
-from hyperspy._components.gaussian2d import Gaussian2D
-from hyperspy._components.power_law import PowerLaw
-from hyperspy._components.expression import Expression
-from hyperspy._components.offset import Offset
+
+from hyperspy.components1d import Gaussian, PowerLaw, Expression, Offset, \
+Expression, Offset, ScalableFixedPattern, Lorentzian, Arctan, \
+Erf, Exponential, HeavisideStep, Logistic, PESCoreLineShape, SEE, \
+RC, VolumePlasmonDrude
+
+
+from hyperspy.components2d import Gaussian2D
 
 from hyperspy.datasets.example_signals import EDS_SEM_Spectrum
 from hyperspy.datasets.artificial_data import get_low_loss_eels_signal
@@ -75,7 +78,7 @@ class TestMultifit:
         m.axes_manager.indices = (0,)
         m[0].A.value = 100
 
-    def test_bounded_lsq_linear(self):
+    def test_linear(self):
         m = self.m
         m[0].A.free = True
         m[0].r.free = False
@@ -84,9 +87,198 @@ class TestMultifit:
         m[0].A.value = 2.
         m[0].r.value = 3.
         m[0].r.assign_current_value_to_all()
-        m.multifit(fitter='linear', bounded=True, show_progressbar=None)
+        m.multifit(fitter='linear', show_progressbar=None)
         np.testing.assert_array_almost_equal(self.m[0].A.map['values'],
                                              [4., 4.])
+    
+class TestMultiFitComponents:
+
+    def setup_method(self):
+        ### Scaleablefixedpattern
+
+        x = np.random.random(30)
+        shape = np.random.random((2,3,1))
+        X = shape*x
+        self.s = Signal1D(X)
+        self.m = self.s.create_model()
+
+    def test_arctan(self):
+        m = self.m
+        L = Arctan(x0=15.)
+        L.x0.free = L.k.free = False
+        m.append(L)
+
+        m.fit('linear')
+        single = m.as_signal()
+        m.assign_current_values_to_all()
+        m.multifit(fitter='linear')
+        multi = m.as_signal()
+
+        np.testing.assert_almost_equal(
+            single.inav[0,0].data, multi.inav[0,0].data)
+
+    def test_erf(self):
+        m = self.m
+        L = Erf(origin=15.)
+        L.origin.free = L.sigma.free = False
+        m.append(L)
+
+        m.fit('linear')
+        single = m.as_signal()
+        m.assign_current_values_to_all()
+        m.multifit(fitter='linear')
+        multi = m.as_signal()
+
+        np.testing.assert_almost_equal(
+            single.inav[0,0].data, multi.inav[0,0].data)
+
+    def test_exp(self):
+        m = self.m
+        L = Exponential()
+        L.tau.free = False
+        m.append(L)
+
+        m.fit('linear')
+        single = m.as_signal()
+        m.assign_current_values_to_all()
+        m.multifit(fitter='linear')
+        multi = m.as_signal()
+
+        np.testing.assert_almost_equal(
+            single.inav[0,0].data, multi.inav[0,0].data)
+
+    def test_gaussian(self):
+        m = self.m
+        L = Gaussian(centre=15.)
+        L.centre.free = L.sigma.free = False
+        m.append(L)
+
+        m.fit('linear')
+        single = m.as_signal()
+        m.assign_current_values_to_all()
+        m.multifit(fitter='linear')
+        multi = m.as_signal()
+
+        np.testing.assert_almost_equal(
+            single.inav[0,0].data, multi.inav[0,0].data)
+
+    def test_SFP(self):
+        m = self.m
+        s = self.s
+        S = ScalableFixedPattern(s.inav[0,0])
+        S.xscale.free = False
+        S.shift.free = False
+        m.append(S)
+        m.assign_current_values_to_all()
+        m.multifit(fitter='linear')
+        fit = m.as_signal()
+        np.testing.assert_almost_equal(s.data,fit.data)
+
+    def test_lorentz(self):
+        m = self.m
+        L = Lorentzian(centre=15.)
+        L.centre.free = L.gamma.free = False
+        m.append(L)
+
+        m.fit('linear')
+        single = m.as_signal()
+        m.assign_current_values_to_all()
+        m.multifit(fitter='linear')
+        multi = m.as_signal()
+
+        np.testing.assert_almost_equal(
+            single.inav[0,0].data, multi.inav[0,0].data)
+
+    def test_heaviside(self):
+        m = self.m
+        L = HeavisideStep(n=15.)
+        L.n.free = False
+        m.append(L)
+
+        m.fit('linear')
+        single = m.as_signal()
+        m.assign_current_values_to_all()
+        m.multifit(fitter='linear')
+        multi = m.as_signal()
+
+        np.testing.assert_almost_equal(
+            single.inav[0,0].data, multi.inav[0,0].data)
+
+
+    def test_logistic(self):
+        m = self.m
+        L = Logistic(origin=15.)
+        L.origin.free = L.b.free = L.c.free = False
+        m.append(L)
+
+        m.fit('linear')
+        single = m.as_signal()
+        m.assign_current_values_to_all()
+        m.multifit(fitter='linear')
+        multi = m.as_signal()
+
+        np.testing.assert_almost_equal(
+            single.inav[0,0].data, multi.inav[0,0].data)
+
+    def test_offset(self):
+        m = self.m
+        L = Offset(offset=1.)
+        m.append(L)
+
+        m.fit('linear')
+        single = m.as_signal()
+        m.assign_current_values_to_all()
+        m.multifit(fitter='linear')
+        multi = m.as_signal()
+
+        np.testing.assert_almost_equal(
+            single.inav[0,0].data, multi.inav[0,0].data)
+
+    def test_PES(self):
+        m = self.m
+        L = PESCoreLineShape(origin=15.)
+        L.origin.free = L.FWHM.free = L.ab.free = L.shirley.free = False
+        L.Shirley = True
+        m.append(L)
+
+        m.fit('linear')
+        single = m.as_signal()
+        m.assign_current_values_to_all()
+        m.multifit(fitter='linear')
+        multi = m.as_signal()
+
+        np.testing.assert_almost_equal(
+            single.inav[0,0].data, multi.inav[0,0].data)
+
+    def test_RC(self):
+        m = self.m
+        L = RC()
+        L.tau.free = False
+        m.append(L)
+
+        m.fit('linear')
+        single = m.as_signal()
+        m.assign_current_values_to_all()
+        m.multifit(fitter='linear')
+        multi = m.as_signal()
+
+        np.testing.assert_almost_equal(
+            single.inav[0,0].data, multi.inav[0,0].data)
+
+    def test_volumeplasmondrude(self):
+        m = self.m
+        L = VolumePlasmonDrude()
+        L.plasmon_energy.free = L.fwhm.free = False
+        m.append(L)
+
+        m.fit('linear')
+        single = m.as_signal()
+        m.assign_current_values_to_all()
+        m.multifit(fitter='linear')
+        multi = m.as_signal()
+
+        np.testing.assert_almost_equal(
+            single.inav[0,0].data, multi.inav[0,0].data)
 
 class TestLinearFitting:
     def setup_method(self, method):

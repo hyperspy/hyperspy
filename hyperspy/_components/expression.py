@@ -263,12 +263,9 @@ class Expression(Component):
         for parameter_name in free_symbols:
             para = getattr(self, parameter_name)
             if multi:
-                'doing this'
                 para_values.append(np.reshape(para.map['values'], para.map['values'].shape + signal_dim*(1,)))
             else:
-                'or THIS'
                 para_values.append(para.value)
-        #print(is_variable + free_symbols)
         func = lambdify(is_variable + free_symbols, constant_expr,
                         modules="numpy")
         axes = []
@@ -277,8 +274,6 @@ class Expression(Component):
                 axes.append(axis.axis)
         mesh = np.meshgrid(*axes)
         constant = func(*mesh, *para_values)
-        #print(para_values)
-        #print(constant)
         return constant
 
     def _separate_free_and_fixed_pseudocomponents(self):

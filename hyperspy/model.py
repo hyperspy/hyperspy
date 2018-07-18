@@ -217,6 +217,7 @@ class BaseModel(list):
             obj : Model
                 The Model that the event belongs to
             """, arguments=['obj'])
+        self.multi = False
 
     def __hash__(self):
         # This is needed to simulate a hashable object so that PySide does not
@@ -899,10 +900,10 @@ class BaseModel(list):
             text = "\n".join(text)
             if self.multi:
                 logging.warning('The values of the following parameters is zero.'\
-                'If this is correct, ignore this message, otherwise check para.values["map"]\n{}'.format(text))
+                ' If this is correct, ignore this message, otherwise check para.values["map"]\n{}'.format(text))
             else:
                 logging.warning('The values of the following parameters is zero.'\
-                'If this is correct, ignore this message, otherwise check para.value\n{}'.format(text))
+                ' If this is correct, ignore this message, otherwise check para.value\n{}'.format(text))
 
     def _check_if_ll_constant(self):
         try:

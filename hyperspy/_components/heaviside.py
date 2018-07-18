@@ -50,13 +50,20 @@ class HeavisideStep(Component):
         # Linearity
         self.A._is_linear = True
 
-    def function(self, x):
+    def function(self, x, multi=False):
         x = np.asanyarray(x)
-        return np.where(x < self.n.value,
-                        0,
-                        np.where(x == self.n.value,
-                                 self.A.value * 0.5,
-                                 self.A.value)
+
+        if multi:
+            A = self.A.map['values'][...,None]
+            n = self.n.map['values'][...,None]
+        else:
+            A = self.A.value
+            n = self.n.value
+
+        return np.where(x < n,0,
+                        np.where(x == n,
+                                 A * 0.5,
+                                 A)
                         )
 
     def grad_A(self, x):

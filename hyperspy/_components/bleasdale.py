@@ -35,17 +35,23 @@ class Bleasdale(Component):
 
     """
 
-    def __init__(self):
+    def __init__(self, a=1, b=1, c=1):
         # Define the parameters
         Component.__init__(self, ('a', 'b', 'c'))
         # Define the name of the component
+        self.a.value = a
+        self.b.value = b
+        self.c.value = c
 
-    def function(self, x):
-        """
-        """
-        a = self.a.value
-        b = self.b.value
-        c = self.c.value
+    def function(self, x, multi=False):
+        if multi:
+            a = self.a.map['values'][...,None]
+            b = self.b.map['values'][...,None]
+            c = self.c.map['values'][...,None]
+        else:
+            a = self.a.value
+            b = self.b.value
+            c = self.c.value
         abx = (a + b * x)
         return np.where(abx > 0., abx ** (-1 / c), 0.)
 
