@@ -408,8 +408,6 @@ class BaseInteractiveROI(BaseROI):
         axes : specification of axes to use, default = None
             The axes argument specifies which axes the ROI will be applied on.
             The DataAxis in the collection can be either of the following:
-                * "navigation" or "signal", in which the first axes of that
-                  space's axes will be used.
                 * a tuple of:
                     - DataAxis. These will not be checked with
                       signal.axes_manager.
