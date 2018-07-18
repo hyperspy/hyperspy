@@ -1,4 +1,5 @@
 import numpy as np
+import dask.array as da
 
 from hyperspy.decorators import jit_ifnumba
 
@@ -202,7 +203,9 @@ def stream_to_sparse_COO_array(
             first_frame=first_frame,
             last_frame=last_frame,
         )
-    return DenseSliceCOO(coords=coords, data=data, shape=shape)
+    dense_sparse = DenseSliceCOO(coords=coords, data=data, shape=shape)
+    dask_sparse = da.from_array(dense_sparse, chunks="auto")
+    return dask_sparse
 
 
 @jit_ifnumba()
