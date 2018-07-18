@@ -24,6 +24,7 @@ import numbers
 import numpy as np
 
 from hyperspy.misc.math_tools import anyfloatin
+from hyperspy.decorators import jit_ifnumba
 
 
 _logger = logging.getLogger(__name__)
@@ -200,15 +201,7 @@ def rebin(a, new_shape=None, scale=None, crop=True):
                                  " error")
 
 
-def jit_ifnumba(func):
-    try:
-        import numba
-        return numba.jit(func, nopython=True)
-    except ImportError:
-        return func
-
-
-@jit_ifnumba
+@jit_ifnumba()
 def _linear_bin_loop(result, data, scale):
     for j in range(result.shape[0]):
         # Begin by determining the upper and lower limits of a given new pixel.

@@ -53,16 +53,16 @@ scale = 0.1
 
 def create_sum_of_gaussians(convolved=False):
     param1 = {'A': A_value_gaussian[0],
-              'centre': centre_value_gaussian[0]/scale,
-              'sigma': sigma_value_gaussian[0]/scale}
+              'centre': centre_value_gaussian[0] / scale,
+              'sigma': sigma_value_gaussian[0] / scale}
     gs1 = Gaussian(**param1)
     param2 = {'A': A_value_gaussian[1],
-              'centre': centre_value_gaussian[1]/scale,
-              'sigma': sigma_value_gaussian[1]/scale}
+              'centre': centre_value_gaussian[1] / scale,
+              'sigma': sigma_value_gaussian[1] / scale}
     gs2 = Gaussian(**param2)
     param3 = {'A': A_value_gaussian[2],
-              'centre': centre_value_gaussian[2]/scale,
-              'sigma': sigma_value_gaussian[2]/scale}
+              'centre': centre_value_gaussian[2] / scale,
+              'sigma': sigma_value_gaussian[2] / scale}
     gs3 = Gaussian(**param3)
 
     axis = np.arange(1000)
