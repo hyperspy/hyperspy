@@ -511,7 +511,7 @@ def guess_vertical_or_horizontal(axes, signal):
     elif plotdim == 1:  # It is a spectrum
         return "vertical"
     else:
-        raise ValueError("Could not find valid widget type")
+        raise ValueError("Could not find valid widget type for the given `axes` value")
 
 
 @add_gui_method(toolkey="Point1DROI")
