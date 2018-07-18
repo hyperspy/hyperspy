@@ -137,19 +137,20 @@ def Mucoef(model,quanti): # this function calculate the absorption coefficient f
             This array is automaticaly created through the Wpercent function
     """	
     weight=quanti
-
+    
     if np.sum(quanti)==0:
-        raise ValueError("The quantification cannot be nul but an an array with all weight percents set to 0 have been provided" )
+        raise ValueError("The quantification cannot be nul, but an an array with all weight percents set to 0 have been provided" )
     else: 
-        t=(np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size/5))
-        
-        Ac=mass_absorption_mixture(elements=model._signal.metadata.Sample.elements ,weight_percent=weight, energies=t)    
-        b=(model._signal.axes_manager.signal_axes[-1].axis)
-        Ac=np.interp(b,t,Ac) # Interpolation allows to gain some time
+        t=(np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size))
+        t=t[model.channel_switches]
+        u=t[0::5]
+        Ac=mass_absorption_mixture(elements=model._signal.metadata.Sample.elements ,weight_percent=weight, energies=u)    
+        b=t
+        Ac=np.interp(b,u,Ac) # Interpolation allows to gain some time
     
     return Ac
 
-def Cabsorption(model): # this function calculate the absorption coefficient for all energy. This, correspond to the Mu parameter in the function
+def Cabsorption(model): # this function calculate the absorption coefficient for all energy. This, correspond to the MuC parameter in the function
     """
     Calculate the mass absorption coefficient due to the coating layer for all energy 
     Parameters
@@ -271,17 +272,17 @@ class Physical_background(Component):
  
         b=self.coefficients.value[0]
         a=self.coefficients.value[1]
-        
+    
         
         E0=self.E0.value
         teta=np.radians(self.teta.value)
         Cthickness=self.coating_thickness.value
         
-
         Mu=Mucoef(self.model,self.quanti.value)
-        
         Mu=np.array(Mu,dtype=float)
-        Mu=Mu[self.model.channel_switches]
+        #Mu=Mu[self.model.channel_switches]
+
+        
         
         Window=np.array(self.Window.value,dtype=float)
         Window=Window[self.model.channel_switches]
@@ -300,6 +301,6 @@ class Physical_background(Component):
             coating=1
 	
         if self._whitelist['absorption_model'] is 'quadrilateral':
-            return np.where((x>0.17) & (x<(E0)),(emission*absorption*Window*coating),0) 
+            return np.where((x>0.1) & (x<(E0)),(emission*absorption*Window*coating),0) 
         if self._whitelist['absorption_model'] is 'CL':
-            return np.where((x>0.17) & (x<(E0)),(emission*METabsorption*Window*coating),0)
+            return np.where((x>0.1) & (x<(E0)),(emission*METabsorption*Window*coating),0)
