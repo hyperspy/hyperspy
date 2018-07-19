@@ -38,7 +38,7 @@ class TestChiSquared:
         m = self.model
         g = Gaussian()
         m.append(g)
-        m.fit()
+        m.fit(fitter='leastsq')
         assert np.allclose(m.chisq(), 7.78966223)
 
     def test_dof_with_fit(self):
@@ -47,14 +47,14 @@ class TestChiSquared:
         g1 = Gaussian()
         m.extend((g, g1))
         g1.set_parameters_not_free('A')
-        m.fit()
+        m.fit(fitter='leastsq')
         assert np.equal(m.dof(), 5)
 
     def test_red_chisq_with_fit(self):
         m = self.model
         g = Gaussian()
         m.append(g)
-        m.fit()
+        m.fit(fitter='leastsq')
         assert np.allclose(m.red_chisq(), 1.55793245)
 
     def test_chisq(self):
@@ -94,7 +94,7 @@ class TestChiSquared:
         g = Gaussian()
         m.append(g)
         m.set_signal_range(1, 7)
-        m.fit()
+        m.fit(fitter='leastsq')
         assert np.allclose(m.red_chisq(), 2.87544335)
 
     def test_chisq_with_inactive_components(self):
@@ -104,7 +104,7 @@ class TestChiSquared:
         m.append(ga)
         m.append(gin)
         gin.active = False
-        m.fit()
+        m.fit(fitter='leastsq')
         assert np.allclose(m.chisq(), 7.78966223)
 
     def test_dof_with_inactive_components(self):
@@ -114,5 +114,5 @@ class TestChiSquared:
         m.append(ga)
         m.append(gin)
         gin.active = False
-        m.fit()
+        m.fit(fitter='leastsq')
         assert np.equal(m.dof(), 3)

@@ -19,7 +19,7 @@ ll = hs.load(lowlossSpectrumFileName).to_EELS()
 
 m = s.create_model(ll=ll)
 m.enable_fine_structure()
-m.multifit(kind="smart")
+m.multifit(fitter='leastsq', kind="smart")
 m.plot()
 
 plt.savefig("model_original_spectrum_plot.png")

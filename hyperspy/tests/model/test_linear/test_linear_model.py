@@ -108,7 +108,7 @@ class TestMultiFitComponents:
         L.x0.free = L.k.free = False
         m.append(L)
 
-        m.fit('linear')
+        m.fit(fitter='linear')
         single = m.as_signal()
         m.assign_current_values_to_all()
         m.multifit(fitter='linear')
@@ -123,7 +123,7 @@ class TestMultiFitComponents:
         L.origin.free = L.sigma.free = False
         m.append(L)
 
-        m.fit('linear')
+        m.fit(fitter='linear')
         single = m.as_signal()
         m.assign_current_values_to_all()
         m.multifit(fitter='linear')
@@ -138,7 +138,7 @@ class TestMultiFitComponents:
         L.tau.free = False
         m.append(L)
 
-        m.fit('linear')
+        m.fit(fitter='linear')
         single = m.as_signal()
         m.assign_current_values_to_all()
         m.multifit(fitter='linear')
@@ -153,7 +153,7 @@ class TestMultiFitComponents:
         L.centre.free = L.sigma.free = False
         m.append(L)
 
-        m.fit('linear')
+        m.fit(fitter='linear')
         single = m.as_signal()
         m.assign_current_values_to_all()
         m.multifit(fitter='linear')
@@ -180,7 +180,7 @@ class TestMultiFitComponents:
         L.centre.free = L.gamma.free = False
         m.append(L)
 
-        m.fit('linear')
+        m.fit(fitter='linear')
         single = m.as_signal()
         m.assign_current_values_to_all()
         m.multifit(fitter='linear')
@@ -195,7 +195,7 @@ class TestMultiFitComponents:
         L.n.free = False
         m.append(L)
 
-        m.fit('linear')
+        m.fit(fitter='linear')
         single = m.as_signal()
         m.assign_current_values_to_all()
         m.multifit(fitter='linear')
@@ -211,7 +211,7 @@ class TestMultiFitComponents:
         L.origin.free = L.b.free = L.c.free = False
         m.append(L)
 
-        m.fit('linear')
+        m.fit(fitter='linear')
         single = m.as_signal()
         m.assign_current_values_to_all()
         m.multifit(fitter='linear')
@@ -225,7 +225,7 @@ class TestMultiFitComponents:
         L = Offset(offset=1.)
         m.append(L)
 
-        m.fit('linear')
+        m.fit(fitter='linear')
         single = m.as_signal()
         m.assign_current_values_to_all()
         m.multifit(fitter='linear')
@@ -241,7 +241,7 @@ class TestMultiFitComponents:
         L.Shirley = True
         m.append(L)
 
-        m.fit('linear')
+        m.fit(fitter='linear')
         single = m.as_signal()
         m.assign_current_values_to_all()
         m.multifit(fitter='linear')
@@ -256,7 +256,7 @@ class TestMultiFitComponents:
         L.tau.free = False
         m.append(L)
 
-        m.fit('linear')
+        m.fit(fitter='linear')
         single = m.as_signal()
         m.assign_current_values_to_all()
         m.multifit(fitter='linear')
@@ -271,7 +271,7 @@ class TestMultiFitComponents:
         L.plasmon_energy.free = L.fwhm.free = False
         m.append(L)
 
-        m.fit('linear')
+        m.fit(fitter='linear')
         single = m.as_signal()
         m.assign_current_values_to_all()
         m.multifit(fitter='linear')
@@ -289,12 +289,12 @@ class TestLinearFitting:
 
     def test_linear_fitting_with_offset(self):
         m = self.m
-        m.fit('linear')
+        m.fit(fitter='linear')
         linear = m.as_signal()
         np.testing.assert_allclose(m.p0, np.array(
             [933.234307, 47822.980041, -5867.611809, 56805.51892]))
 
-        m.fit('leastsq')
+        m.fit(fitter='leastsq')
         leastsq = m.as_signal()
         diff = (leastsq - linear)
         np.testing.assert_almost_equal(diff.data.sum(), 0.0, decimal=4)
@@ -314,7 +314,7 @@ class TestLinearFitting:
         c2.a.free = False
         c2.b.free = False
         m.append(c2)
-        m.fit('linear')
+        m.fit(fitter='linear')
         diff = (self.s - m.as_signal())
         np.testing.assert_almost_equal(diff.data.sum(), 0)
 
@@ -331,10 +331,10 @@ class TestLinearEELSFitting:
 
     def test_convolved_and_std_error(self):
         m = self.m_convolved
-        m.fit('linear')
+        m.fit(fitter='linear')
         linear = m.as_signal()
         std_linear = m.p_std
-        m.fit('leastsq')
+        m.fit(fitter='leastsq')
         leastsq = m.as_signal()
         std_leastsq = m.p_std
         diff = linear - leastsq
@@ -343,9 +343,9 @@ class TestLinearEELSFitting:
 
     def test_nonconvolved(self):
         m = self.m
-        m.fit('linear')
+        m.fit(fitter='linear')
         linear = m.as_signal()
-        m.fit('leastsq')
+        m.fit(fitter='leastsq')
         leastsq = m.as_signal()
         diff = linear - leastsq
         np.testing.assert_almost_equal(diff.data.sum(), 0.0, decimal=2)
@@ -357,9 +357,9 @@ class TestLinearEELSFitting:
     #     m = self.m
     #     m[2].parameters[0].twin = m[1].parameters[0]
     #     m[1].parameters[0].twin = m[0].parameters[0]
-    #     m.fit('linear')
+    #     m.fit(fitter='linear')
     #     linear = m.as_signal()
-    #     m.fit('leastsq')
+    #     m.fit(fitter='leastsq')
     #     leastsq = m.as_signal()
     #     diff = linear - leastsq
     #     np.testing.assert_almost_equal(diff.data.sum(), 0.0, decimal=2)
@@ -368,12 +368,12 @@ class TestLinearEELSFitting:
     #     'Fit with twinned components after the top parent twin becomes fixed'
     #     m = self.m_convolved
     #     m.append(Offset()) # Need random free component in the mix as well
-    #     m.fit('linear')
+    #     m.fit(fitter='linear')
     #     data1 = m.as_signal().data
     #     m[2].parameters[0].twin = m[1].parameters[0]
     #     m[1].parameters[0].twin = m[0].parameters[0]
     #     m[0].set_parameters_not_free()
-    #     m.fit('linear')
+    #     m.fit(fitter='linear')
     #     data2 = m.as_signal().data
     #     np.testing.assert_almost_equal(data1, data2)
 
@@ -397,7 +397,7 @@ class TestLinearModel2D:
         for para in G1.free_parameters[1:]:
             para.free = False     
 
-        m.fit('linear')
+        m.fit(fitter='linear')
         diff = (s - m.as_signal(show_progressbar=False))
         np.testing.assert_almost_equal(diff.data.sum(), 0.0, decimal=2)
         assert m.p_std[0] == 0.
@@ -428,7 +428,7 @@ class TestLinearModel2D:
         for para in G2.free_parameters[1:]:
             para.free = False    
 
-        m.fit('linear')
+        m.fit(fitter='linear')
         diff = (s - m.as_signal(show_progressbar=False))
         np.testing.assert_almost_equal(diff.data.sum(), 0.0, decimal=2)
         np.testing.assert_almost_equal(m.p_std, [0.0, 0.0], decimal=2)
@@ -447,7 +447,7 @@ class TestLinearModel2D:
 
         m = s.create_model()
         m.append(P)
-        m.fit('linear')
+        m.fit(fitter='linear')
         diff = (s - m.as_signal(show_progressbar=False))
         np.testing.assert_almost_equal(diff.data.sum(), 0.0, decimal=2)
         np.testing.assert_almost_equal(m.p_std, 0.0, decimal=2)

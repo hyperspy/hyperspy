@@ -33,8 +33,8 @@ class TestModelSelection:
         m2 = s.create_model()
         m1.append(Gaussian())
         m2.append(Lorentzian())
-        m1.fit()
-        m2.fit()
+        m1.fit(fitter='leastsq')
+        m2.fit(fitter='leastsq')
         self.m1 = m1
         self.m2 = m2
 

@@ -313,7 +313,7 @@ class TestSamfireMain:
     @pytest.mark.xfail(
         reason="Sometimes it fails in CirCleCI for no know reason.")
     def test_multiprocessed(self, mpl_cleanup):
-        self.model.fit()
+        self.model.fit(fitter='leastsq')
         samf = self.model.create_samfire(ipyparallel=False)
         samf.plot_every = np.nan
         samf.strategies[0].radii = 1.

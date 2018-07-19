@@ -1,7 +1,7 @@
 import numpy as np
 
 from hyperspy.component import Component
-from hyperspy.axes import AxesManager
+from hyperspy.axes import AxesManager, DataAxis
 from unittest import mock
 
 
@@ -202,17 +202,18 @@ class TestCallMethods:
         c.model = mock.MagicMock()
         c.model.__call__ = mock.MagicMock()
         c.model.channel_switches = np.array([True, False, True])
-        c.model.axis.axis = np.array([0.1, 0.2, 0.3])
+        c.model.axes_manager.signal_axes = [DataAxis(size=3, offset=0.1, scale=0.1)]
+        c.model.axis.axis = c.model.axes_manager.signal_axes[0].axis
         c.function = mock.MagicMock()
-        c.function.return_value = np.array([1.3, ])
+        c.function.return_value = np.array([1.3, 1.3, 1.3])
         c.model.signal.axes_manager.signal_axes = [mock.MagicMock(), ]
         c.model.signal.axes_manager.signal_axes[0].scale = 2.
 
     def test_call(self):
         c = self.c
-        assert 1.3 == c()
-        np.testing.assert_array_equal(c.function.call_args[0][0],
-                                      np.array([0.1, 0.3]))
+        assert (1.3 == c()).all()
+        np.testing.assert_array_almost_equal(c.function.call_args[0][0],
+                                                np.array([0.1, 0.2, 0.3]))
 
     def test_plotting_not_active_component(self):
         c = self.c

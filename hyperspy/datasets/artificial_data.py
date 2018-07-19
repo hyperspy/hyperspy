@@ -209,7 +209,7 @@ def get_core_loss_eels_model():
     """
     s = get_core_loss_eels_signal()
     m = s.create_model(auto_background=False, GOS='hydrogenic')
-    m.fit()
+    m.fit(fitter='leastsq')
     return m
 
 

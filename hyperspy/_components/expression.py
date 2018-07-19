@@ -158,10 +158,11 @@ class Expression(Component):
                 name, sympy.latex(_parse_substitutions(expression)))
 
         for para in self.parameters:
-            para._is_linear = check_parameter_linearity(expression, para.name)
+            para._is_linear = check_parameter_linearity(self._parsed_expr, para.name)
 
     def compile_function(self, module="numpy", position=False):
         expr = _parse_substitutions(self._str_expression)
+        self._parsed_expr = expr
         # Extract x
         x, = [symbol for symbol in expr.free_symbols if symbol.name == "x"]
         # Extract y

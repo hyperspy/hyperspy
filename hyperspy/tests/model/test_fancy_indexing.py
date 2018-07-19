@@ -48,7 +48,7 @@ class TestModelIndexing:
         m.append(g)
         g.active_is_multidimensional = True
         for index in m.axes_manager:
-            m.fit()
+            m.fit(fitter='leastsq')
         self.model = m
 
     def test_model_signal_indexer_slice(self):

@@ -176,7 +176,7 @@ class TestFitBackground:
         self.m.append(hs.model.components1D.Offset())
 
     def test_fit_background_B_C(self):
-        self.m.fit_background()
+        self.m.fit_background(fitter='leastsq')
         assert_allclose(self.m["Offset"].offset.value,
                         1)
         assert self.m["B_K"].active
@@ -184,7 +184,7 @@ class TestFitBackground:
 
     def test_fit_background_C(self):
         self.m["B_K"].active = False
-        self.m.fit_background()
+        self.m.fit_background(fitter='leastsq')
         assert_allclose(self.m["Offset"].offset.value,
                         1.71212121212)
         assert not self.m["B_K"].active
@@ -193,7 +193,7 @@ class TestFitBackground:
     def test_fit_background_no_edge(self):
         self.m["B_K"].active = False
         self.m["C_K"].active = False
-        self.m.fit_background()
+        self.m.fit_background(fitter='leastsq')
         assert_allclose(self.m["Offset"].offset.value,
                         2.13567839196)
         assert not self.m["B_K"].active

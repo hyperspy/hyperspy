@@ -208,7 +208,7 @@ class TestModelDictionary:
         m.append(Gaussian())
         m.append(ScalableFixedPattern(s * 0.3))
         m[0].A.twin = m[1].A
-        m.fit()
+        m.fit(fitter='leastsq')
 
     def test_to_dictionary(self):
         m = self.model

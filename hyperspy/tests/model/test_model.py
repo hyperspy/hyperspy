@@ -556,7 +556,7 @@ class TestModel1D:
 class TestModel2D:
 
     def setup_method(self, method):
-        g = hs.model.components2D.Gaussian2D(
+        self.g = hs.model.components2D.Gaussian2D(
             centre_x=-5.,
             centre_y=-5.,
             sigma_x=1.,
@@ -564,7 +564,7 @@ class TestModel2D:
         x = np.arange(-10, 10, 0.01)
         y = np.arange(-10, 10, 0.01)
         X, Y = np.meshgrid(x, y)
-        im = hs.signals.Signal2D(g.function(X, Y))
+        im = hs.signals.Signal2D(self.g.function(X, Y))
         im.axes_manager[0].scale = 0.01
         im.axes_manager[0].offset = -10
         im.axes_manager[1].scale = 0.01
@@ -579,15 +579,12 @@ class TestModel2D:
                                               sigma_x=0.5,
                                               sigma_y=1.5)
         m.append(gt)
-        m.fit()
+        m.fit(fitter='leastsq')
         np.testing.assert_allclose(gt.centre_x.value, -5.)
         np.testing.assert_allclose(gt.centre_y.value, -5.)
         np.testing.assert_allclose(gt.sigma_x.value, 1.)
         np.testing.assert_allclose(gt.sigma_y.value, 2.)
 
-    def test_function_call(self):
-        g = self.g
-        assert assert_array_almost_equal(g(), self.gt)
 
 @lazifyTestClass
 class TestModelFitBinned:
@@ -719,7 +716,7 @@ class TestModelFitBinned:
         """
         assert not self.m._check_all_active_components_are_linear()
 
-    def test_fit_lsq_linear(self):
+    def test_fit_linear(self):
         self.m[0].sigma.free = False
         self.m[0].centre.free = False
         self.m.fit(fitter="linear")
@@ -1170,4 +1167,4 @@ class TestLinearFitting:
         c = hs.model.components1D.Expression('a*x+b', 'Linear')
         m.append(c)
         m.fit('linear')
-        np.testing.assert_allclose(m.p0, np.array([941.6686498804164, 47773.64289591281, -5902.642841343069, 57056.112565450574]))
+        np.testing.assert_allclose(m.p0, np.array([  933.23430476, 47822.98004313, -5867.61180355, 56805.51887966]))

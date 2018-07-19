@@ -114,7 +114,7 @@ def test_plot_gaussian_eelsmodel(convolved, plot_component, binned):
                                        sigma_value_gaussian):
         set_gaussian(gaussian, centre, sigma)
 
-    m.fit()
+    m.fit(fitter='leastsq')
     m.plot(plot_components=plot_component)
 
     def A_value(s, component, binned):
@@ -145,6 +145,6 @@ def test_fit_EELS_convolved(convolved):
     cl.metadata.General.title = 'Convolved: {}'.format(convolved)
     ll = hs.load(os.path.join(dname, 'Cr_L_ll.hspy')) if convolved else None
     m = cl.create_model(auto_background=False, ll=ll, GOS='hydrogenic')
-    m.fit(kind='smart')
+    m.fit(fitter='leastsq', kind='smart')
     m.plot(plot_components=True)
     return m._plot.signal_plot.figure

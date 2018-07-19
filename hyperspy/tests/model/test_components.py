@@ -289,7 +289,7 @@ class TestScalableFixedPattern:
         m.append(fp)
         with ignore_warning(message="invalid value encountered in sqrt",
                             category=RuntimeWarning):
-            m.fit()
+            m.fit(fitter='leastsq')
         assert abs(fp.yscale.value - 100) <= 0.1
 
     def test_both_binned(self):
@@ -302,7 +302,7 @@ class TestScalableFixedPattern:
         m.append(fp)
         with ignore_warning(message="invalid value encountered in sqrt",
                             category=RuntimeWarning):
-            m.fit()
+            m.fit(fitter='leastsq')
         assert abs(fp.yscale.value - 100) <= 0.1
 
     def test_pattern_unbinned_signal_binned(self):
@@ -315,7 +315,7 @@ class TestScalableFixedPattern:
         m.append(fp)
         with ignore_warning(message="invalid value encountered in sqrt",
                             category=RuntimeWarning):
-            m.fit()
+            m.fit(fitter='leastsq')
         assert abs(fp.yscale.value - 1000) <= 1
 
     def test_pattern_binned_signal_unbinned(self):
@@ -328,7 +328,7 @@ class TestScalableFixedPattern:
         m.append(fp)
         with ignore_warning(message="invalid value encountered in sqrt",
                             category=RuntimeWarning):
-            m.fit()
+            m.fit(fitter='leastsq')
         assert abs(fp.yscale.value - 10) <= .1
 
 

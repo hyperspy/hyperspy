@@ -26,7 +26,7 @@ class TestlineFit:
     def test_fit(self):
         s = self.s
         m = s.create_model()
-        m.fit()
+        m.fit(fitter='leastsq')
         np.testing.assert_allclose([i.data for i in
                                     m.get_lines_intensity()],
                                    [[0.5], [0.2], [0.3]], atol=10 - 4)
@@ -84,8 +84,8 @@ class TestlineFit:
     def test_calibrate_energy_resolution(self):
         s = self.s
         m = s.create_model()
-        m.fit()
-        m.fit_background()
+        m.fit(fitter='leastsq')
+        m.fit_background(fitter='leastsq')
         reso = s.metadata.Acquisition_instrument.TEM.Detector.EDS.\
             energy_resolution_MnKa,
         s.set_microscope_parameters(energy_resolution_MnKa=150)
@@ -97,7 +97,7 @@ class TestlineFit:
     def test_calibrate_energy_scale(self):
         s = self.s
         m = s.create_model()
-        m.fit()
+        m.fit(fitter='leastsq')
         ax = s.axes_manager[-1]
         scale = ax.scale
         ax.scale += 0.0004
@@ -107,7 +107,7 @@ class TestlineFit:
     def test_calibrate_energy_offset(self):
         s = self.s
         m = s.create_model()
-        m.fit()
+        m.fit(fitter='leastsq')
         ax = s.axes_manager[-1]
         offset = ax.offset
         ax.offset += 0.04
@@ -117,7 +117,7 @@ class TestlineFit:
     def test_calibrate_xray_energy(self):
         s = self.s
         m = s.create_model()
-        m.fit()
+        m.fit(fitter='leastsq')
         m['Fe_Ka'].centre.value = 6.39
         m.calibrate_xray_lines(calibrate='energy', xray_lines=['Fe_Ka'],
                                bound=100)
@@ -135,7 +135,7 @@ class TestlineFit:
                          'offset': 4.9})
         s = (s + s1 / 50)
         m = s.create_model()
-        m.fit()
+        m.fit(fitter='leastsq')
         with assert_warns(message='The X-ray line expected to be in the model '
                           'was not found'):
             m.calibrate_xray_lines(calibrate='sub_weight',
@@ -147,7 +147,7 @@ class TestlineFit:
     def test_calibrate_xray_width(self):
         s = self.s
         m = s.create_model()
-        m.fit()
+        m.fit(fitter='leastsq')
         sigma = m['Fe_Ka'].sigma.value
         m['Fe_Ka'].sigma.value = 0.065
         m.calibrate_xray_lines(calibrate='energy', xray_lines=['Fe_Ka'],
@@ -205,7 +205,7 @@ class TestMaps:
     def test_lines_intensity(self):
         s = self.s
         m = s.create_model()
-        m.multifit()    # m.fit() is just too inaccurate
+        m.multifit(fitter='leastsq')    # m.fit() is just too inaccurate
         ws = np.array([0.5, 0.7, 0.3, 0.5])
         w = np.zeros((4,) + self.mix.shape)
         for x in range(self.mix.shape[0]):
