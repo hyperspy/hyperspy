@@ -632,7 +632,7 @@ def get_ipr_dtype_list(endianess='<', version=333):
         -  mppX: 4 byte float; *Microns per pixel in X direction*
         -  mppY: 4 byte float; *Microns per pixel in Y direction*
         -  nTextLines: 2 byte unsigned short; *No. of comment lines *
-        -  charText: (4 x 32) byte character array; *Not read to avoid HDF5 bug: https://github.com/hyperspy/hyperspy/issues/1916*
+        -  charText: (4 x 32) byte character array; *Comment text*
         -  reserved3: 4 byte float; *Not used*
         -  nOverlayElements: 2 byte unsigned short; *No. of overlay elements*
         -  overlayColors: 16 array of 2 byte unsigned short; *Overlay colors*
@@ -691,7 +691,7 @@ def get_ipr_dtype_list(endianess='<', version=333):
             ('mppX', end + 'f4'),
             ('mppY', end + 'f4'),
             ('nTextLines', end + 'u2'),
-            ('charText', end + 'V128'),
+            ('charText', end + '4a32'),
             ('reserved3', end + '4f4'),
             ('nOverlayElements', end + 'u2'),
             ('overlayColors', end + '16u2')]
@@ -921,6 +921,12 @@ def spd_reader(filename,
                           'reading .ipr {}'.format(ipr_fname))
             ipr_header = __get_ipr_header(f, endianess)
             original_metadata['ipr_header'] = sarray2dict(ipr_header)
+
+            # Workaround for type error when saving hdf5:
+            # save as list of strings instead of numpy unicode array
+            original_metadata['ipr_header']['charText'] = \
+                [np.string_(i) for i in
+                 original_metadata['ipr_header']['charText']]
     else:
         _logger.warning('Could not find .ipr file named {}.\n'
                         'No spatial calibration will be loaded.'
