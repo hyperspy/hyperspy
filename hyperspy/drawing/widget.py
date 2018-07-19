@@ -45,7 +45,7 @@ class WidgetBase(object):
     needed.
     """
 
-    def __init__(self, axes_manager=None, **kwargs):
+    def __init__(self, axes_manager=None, color='red', alpha=1.0, **kwargs):
         self.axes_manager = axes_manager
         self._axes = list()
         self.ax = None
@@ -54,10 +54,11 @@ class WidgetBase(object):
         self._selected_artist = None
         self._size = 1.
         self._pos = np.array([0.])
-        self.color = 'red'
         self.__is_on = True
         self.background = None
         self.patch = []
+        self.color = color
+        self.alpha = alpha
         self.cids = list()
         self.blit = True
         self.events = Events()
@@ -131,6 +132,26 @@ class WidgetBase(object):
             if value is False:
                 self.ax = None
         self.__is_on = value
+
+    @property
+    def color(self):
+        return self._color
+
+    @color.setter
+    def color(self, color):
+        self._color = color
+        for p in self.patch:
+            p.set_color(self._color)
+
+    @property
+    def alpha(self):
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, alpha):
+        self._alpha = alpha
+        for p in self.patch:
+            p.set_alpha(self._alpha)
 
     def _set_patch(self):
         """Create the matplotlib patch(es), and store it in self.patch
@@ -868,7 +889,7 @@ class ResizersMixin(object):
         self.resizer_picked = False
         self.pick_offset = (0, 0)
         self.resize_color = 'lime'
-        self.resize_pixel_size = (10, 10)  # Set to None to make one data pixel
+        self.resize_pixel_size = (5, 5)  # Set to None to make one data pixel
         self.resize_tolerance = 10.0
         self._resizers = resizers
         self._resizer_handles = []

@@ -126,15 +126,17 @@ class BlittedFigure(object):
 
     def _get_pointer_text(self, pointer=None):
         ind = []
-        # Temporary workaround for slider, when there is no pointer, needs to
-        # be fixed when range slider are implemented.
+        # For no resizable pointer
+        if pointer is None:
+            pointer = self.pointer
+        # We don't always have a pointer
+        if pointer is None:
+            return
         try:
-            if pointer is None:
-                pointer = self.pointer
             pointer_size = pointer.get_size_in_indices().tolist()
         except AttributeError:
             pointer_size = [1 for i in self.axes_manager.indices]
-        for axis, pointer_size in zip(self.axes_manager.navigation_axes,
+        for axis, pointer_size in zip(pointer.axes_manager.navigation_axes,
                                       pointer_size):
             index = axis.index
             ind.append("{}:{}".format(index, index + pointer_size))

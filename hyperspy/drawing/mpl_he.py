@@ -171,8 +171,10 @@ class MPL_HyperExplorer(object):
             if pointer is not None:
                 self.pointer.set_picker(picker_tolerance)
         self.plot_signal(**kwargs)
-        if self.pointer is not None and self._resizable_pointer:
-            self.pointer.events.resized_am.connect(self.signal_plot.update, [])
+        if self.pointer is not None:
+            if self._resizable_pointer:
+                self.pointer.events.resized_am.connect(
+                        self.signal_plot.update, [])
 
     def assign_pointer(self):
         param_dict = {}
@@ -190,10 +192,14 @@ class MPL_HyperExplorer(object):
                 else:
                     Pointer = widgets.SquareWidget
             else:  # It is the image of a "spectrum stack"
-                # Is Matplotlib SpanSelector compatible with imshow?
-                Pointer = widgets.HorizontalLineWidget
-                self._resizable_pointer = False
-#                param_dict['direction'] = 'vertical'
+                if self._resizable_pointer:
+                    # Is Matplotlib SpanSelector compatible with imshow?
+                    # TODO: Need to check which version of matplotlib are 
+                    # supporting this
+                    Pointer = widgets.RangeWidget
+                    param_dict['direction'] = 'vertical'
+                else:
+                    Pointer = widgets.HorizontalLineWidget
         elif nav_dim == 1:  # It is a spectrum
             if self._resizable_pointer:
                 Pointer = widgets.RangeWidget
@@ -208,11 +214,12 @@ class MPL_HyperExplorer(object):
 
     def _on_navigator_plot_closing(self):
         self.navigator_plot = None
-        # backup the pointer_size to restore it when the plot is reopened
-        if self.pointer is not None and self._resizable_pointer:
-            self._pointer_size = self.pointer.get_size_in_indices()
-            self.pointer.events.resized_am.disconnect(
-                    self.signal_plot.update)
+        if self.pointer is not None:
+            # backup the pointer_size to restore it when the plot is reopened
+            if self._resizable_pointer:
+                self._pointer_size = self.pointer.get_size_in_indices()
+                self.pointer.events.resized_am.disconnect(
+                        self.signal_plot.update)
 
     def close(self):
         if self.signal_plot:

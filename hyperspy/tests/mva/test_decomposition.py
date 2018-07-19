@@ -276,3 +276,17 @@ class TestReturnInfo:
                 algorithm=algorithm,
                 return_info=False,
                 output_dimension=1) is None
+
+
+class TestNonFloatTypeError:
+
+    def setup_method(self, method):
+        self.s_int = signals.Signal1D(
+            (np.random.random((20, 100)) * 20).astype('int'))
+        self.s_float= signals.Signal1D(np.random.random((20, 100)))
+
+    def test_decomposition_error(self):
+        self.s_float.decomposition()
+        with pytest.raises(TypeError):
+            self.s_int.decomposition()
+

@@ -1931,8 +1931,8 @@ class BaseSignal(FancySlicing,
     def __call__(self, axes_manager=None, resizable_pointer=False):
         if axes_manager is None:
             axes_manager = self.axes_manager
-        if resizable_pointer and getattr(self._plot, 'pointer', None) is not None:
-            indices = self._plot.pointer.indices
+        if resizable_pointer and hasattr(self._plot, 'pointer'):
+            indices = axes_manager.indices
             size = self._plot.pointer.get_size_in_indices()
             array_slices = [slice(indices[i], indices[i] + size[i], None)
                             for i in range(len(self._plot.pointer.axes))]
@@ -2079,7 +2079,7 @@ class BaseSignal(FancySlicing,
                         picker_tolerance=picker_tolerance, **kwargs)
         # need both condition: in case we replot without pointer
         # (`pointer_size` from previous plot but `self._plot.pointer` is None)
-        if self._plot.pointer and pointer_size is not None:
+        if self._plot.pointer and resizable_pointer and pointer_size is not None:
             self._plot.pointer.set_size_in_indices(pointer_size)
             self._plot.signal_plot.update()
         self.events.data_changed.connect(self.update_plot, [])
