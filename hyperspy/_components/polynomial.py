@@ -44,7 +44,10 @@ class Polynomial(Expression):
         letters = string.ascii_lowercase
         expr = "+".join(["{}*x**{}".format(letter, power) for letter, power in zip(letters, range(order, -1, -1))])
         name = "{} order Polynomial".format(ordinal(order))
-        Expression.__init__(self, expr, name=name, **kwargs)
+        super(Polynomial, self).__init__(
+            expression=expr, 
+            name=name, 
+            **kwargs)
     
     def get_polynomial_order(self):
         return len(self.parameters) - 1
