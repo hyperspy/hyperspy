@@ -924,6 +924,8 @@ def spd_reader(filename,
 
             # Workaround for type error when saving hdf5:
             # save as list of strings instead of numpy unicode array
+            # see https://github.com/hyperspy/hyperspy/pull/2007 and
+            #     https://github.com/h5py/h5py/issues/289 for context
             original_metadata['ipr_header']['charText'] = \
                 [np.string_(i) for i in
                  original_metadata['ipr_header']['charText']]
