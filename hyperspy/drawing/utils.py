@@ -129,7 +129,7 @@ def create_figure(window_title=None,
         # remove non-alphanumeric characters to prevent file saving problems
         # This is a workaround for:
         #   https://github.com/matplotlib/matplotlib/issues/9056
-        reserved_characters = '<>"/\|?*'
+        reserved_characters = r'<>"/\|?*'
         for c in reserved_characters:
             window_title = window_title.replace(c, '')
         window_title = window_title.replace('\n', ' ')
