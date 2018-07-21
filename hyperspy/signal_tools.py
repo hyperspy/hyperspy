@@ -414,8 +414,9 @@ class SmoothingSavitzkyGolay(Smoothing):
             old,
             new)
 
-    def diff_model2plot(self, axes_manager=None):
-        self.single_spectrum.data = self.signal().copy()
+    def diff_model2plot(self, axes_manager=None, resizable_pointer=True):
+        self.single_spectrum.data = self.signal(
+                resizable_pointer=resizable_pointer).copy()
         self.single_spectrum.smooth_savitzky_golay(
             polynomial_order=self.polynomial_order,
             window_length=self.window_length,
@@ -574,7 +575,7 @@ class ImageContrastEditor(t.HasTraits):
         vmin -= pad
         vmax += pad
         data = self.image.data_function(
-                resizable_pointer=self.resizable_pointer).ravel()
+                resizable_pointer=self.image.resizable_pointer).ravel()
         self.patches = self.ax.hist(data, 100, range=(vmin, vmax),
                                     color='blue')[2]
         self.ax.set_xticks([])

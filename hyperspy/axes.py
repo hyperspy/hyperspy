@@ -1232,12 +1232,14 @@ class AxesManager(t.HasTraits):
         new_axes = am.navigation_axes[::-1] + am.signal_axes[::-1]
         self._axes = list(new_axes)
 
-    def gui_navigation_sliders(self, title="", display=True, toolkit=None):
+    def gui_navigation_sliders(self, title="", resizable_pointer=True, 
+                               display=True, toolkit=None):
         return get_gui(self=self.navigation_axes,
                        toolkey="navigation_sliders",
                        display=display,
                        toolkit=toolkit,
-                       title=title)
+                       title=title,
+                       resizable_pointer=resizable_pointer)
     gui_navigation_sliders.__doc__ = \
         """
         Navigation sliders to control the index of the navigation axes.
