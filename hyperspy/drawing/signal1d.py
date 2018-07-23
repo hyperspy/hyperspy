@@ -95,11 +95,11 @@ class Signal1DFigure(BlittedFigure):
             line.pointer = self.right_pointer
             line.resizable_pointer = self.resizable_pointer
             line.hspy_figure = self
-        line.axes_manager.events.indices_changed.connect(
-            line._auto_update_line, [])
-        self.events.closed.connect(
-            lambda: line.axes_manager.events.indices_changed.disconnect(
-                line._auto_update_line), [])
+            line.axes_manager.events.indices_changed.connect(
+                line._auto_update_line, [])
+            self.events.closed.connect(
+                lambda: line.axes_manager.events.indices_changed.disconnect(
+                    line._auto_update_line), [])
         line.axis = self.axis
         # Automatically asign the color if not defined
         if line.color is None:

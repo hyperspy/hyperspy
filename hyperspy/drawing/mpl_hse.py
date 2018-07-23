@@ -172,6 +172,11 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         rl.pointer = self.right_pointer
         rl.plot()
         self.right_pointer_on = True
+        if rl.resizable_pointer:
+            rl.pointer.events.resized_am.connect(rl._auto_update_line, [])
+            rl.events.closed.connect(
+                lambda: rl.pointer.events.resized_am.disconnect(
+                    rl._auto_update_line), [])
 
     def remove_right_pointer(self):
         for line in self.signal_plot.right_ax_lines:

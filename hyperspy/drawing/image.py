@@ -190,7 +190,6 @@ class ImagePlot(BlittedFigure):
                 self._auto_scalebar = False
                 self._auto_axes_ticks = True
         self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
-        # print(self._aspect)
 
     def optimize_contrast(self, data):
         if (self._vmin_user is not None and self._vmax_user is not None):
