@@ -77,6 +77,7 @@ class DataAxis(t.HasTraits):
     slice = t.Instance(slice)
     navigate = t.Bool(t.Undefined)
     index = t.Range('low_index', 'high_index')
+    width = t.Range('low_index', 'high_index')
     axis = t.Array()
     continuous_value = t.Bool(False)
 
@@ -112,6 +113,14 @@ class DataAxis(t.HasTraits):
             obj : The DataAxis that the event belongs to.
             value : The new value
             """, arguments=["obj", 'value'])
+        self.events.width_changed = Event("""
+            Event that triggers when the width of the `DataAxis` changes
+
+            Arguments:
+            ---------
+            obj : The DataAxis that the event belongs to.
+            width : The new width
+            """, arguments=["obj", 'width'])
         self._suppress_value_changed_trigger = False
         self._suppress_update_value = False
         self.name = name
@@ -122,6 +131,7 @@ class DataAxis(t.HasTraits):
         self.high_index = self.size - 1
         self.low_index = 0
         self.index = 0
+        self.width = 1
         self.update_axis()
         self.navigate = navigate
         self.axes_manager = None
@@ -167,6 +177,9 @@ class DataAxis(t.HasTraits):
                 self.index = new_index
                 self._suppress_update_value = False
 
+    def _width_changed(self, name, old, new):
+        self.events.width_changed.trigger(obj=self, width=self._width)
+
     @property
     def index_in_array(self):
         if self.axes_manager is not None:
@@ -200,6 +213,27 @@ class DataAxis(t.HasTraits):
             return self.value2index(value)
         else:
             return value
+
+    @property
+    def width(self):
+        return self._width
+
+    @width.setter
+    def width(self, value):
+        if value + self.index > self.high_index:
+            value -= self.index
+        self._width = value
+        if self._width != value:
+            # Update range when necessary
+            self.range = (self.index, self._width)
+
+    @property
+    def range(self):
+        return self.index, self.width + self.index
+
+    @range.setter
+    def range(self, value):
+        self.index, self.width = value[0], value[1] - value[0]
 
     def _get_array_slices(self, slice_):
         """Returns a slice to slice the corresponding data axis without
@@ -953,10 +987,10 @@ class AxesManager(t.HasTraits):
 
         keyDict = {
             # axes 0, 1
-            **dict.fromkeys(['left',  dim0_decrease, '4'], (0, -1)),
+            **dict.fromkeys(['left', dim0_decrease, '4'], (0, -1)),
             **dict.fromkeys(['right', dim0_increase, '6'], (0, +1)),
-            **dict.fromkeys(['up',    dim1_decrease, '8'], (1, -1)),
-            **dict.fromkeys(['down',  dim1_increase,  '2'], (1, +1)),
+            **dict.fromkeys(['up', dim1_decrease, '8'], (1, -1)),
+            **dict.fromkeys(['down', dim1_increase, '2'], (1, +1)),
             # axes 2, 3
             **dict.fromkeys([dim2_decrease], (2, -1)),
             **dict.fromkeys([dim2_increase], (2, +1)),
