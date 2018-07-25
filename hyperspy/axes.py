@@ -39,6 +39,13 @@ _logger = logging.getLogger(__name__)
 _ureg = pint.UnitRegistry()
 
 
+FACTOR_DOCSTRING = \
+    """factor : float (default: 0.25)
+            'factor' is an adjustable value used to determine the prefix of 
+            the units. The product `factor * scale * size` is passed to the 
+            pint `to_compact` method to determine the prefix."""
+
+
 class ndindex_nat(np.ndindex):
 
     def __next__(self):
@@ -69,7 +76,7 @@ def generate_axis(offset, scale, size, offset_index=0):
                        size)
 
 
-class UnitConversion(object):
+class UnitConversion:
 
     def __init__(self, units=t.Undefined, scale=1.0, offset=0.0):
         self.units = units
@@ -90,9 +97,11 @@ class UnitConversion(object):
 
     def _convert_compact_units(self, factor=0.25, inplace=True):
         """ Convert units to "human-readable" units, which means with a 
-            convenient prefix. `factor` is a adjustage factor used to 
-            determine the prefix of the units (in combination with the size of 
-            the axis). See to_compact() method of the pint library for details.
+            convenient prefix.
+
+            Parameters
+            ----------
+            %s
         """
         if self._ignore_conversion(self.units):
             return
@@ -101,6 +110,8 @@ class UnitConversion(object):
         converted_units = '{:~}'.format(scale_size.to_compact().units)
         return self._convert_units(converted_units, inplace=inplace)
 
+    _convert_compact_units.__doc__ %= FACTOR_DOCSTRING
+
     def _get_index_from_value_with_units(self, value):
         value = _ureg.parse_expression(value)
         if not hasattr(value, 'units'):
@@ -108,9 +119,6 @@ class UnitConversion(object):
         return self.value2index(value.to(self.units).magnitude)
 
     def _convert_units(self, converted_units, inplace=True):
-        # For ImageJ
-        if isinstance(converted_units, str):
-            converted_units = converted_units.replace('micron', 'µm')
         if self._ignore_conversion(converted_units) or \
                 self._ignore_conversion(self.units):
             return
@@ -129,28 +137,28 @@ class UnitConversion(object):
     def convert_to_units(self, units=None, inplace=True, factor=0.25):
         """ Convert the scale and the units of the current axis. If the unit 
         of measure is not supported by the pint library, the scale and units 
-        are not changed.
+        are not modified.
 
         Parameters
         ----------
         units : {str | None}
             Default = None
             If str, the axis will be converted to the provided units.
-            If `None`, the scale and the units are converted to the appropriate 
-            scale and units to avoid displaying scalebar with >3 digits or too 
-            small number. This can be tweaked by the `factor` argument.
+            If `"auto"`, automatically determine the optimal units to avoid 
+            using too large or too small numbers. This can be tweaked by the 
+            `factor` argument.
         inplace : bool
             If `True`, convert the axis in place. if `False` return the  
             `scale`, `offset` and `units`.
-        factor : float
-            'factor' an adjustable value used to determine the prefix of the 
-            units.
+        %s
         """
         if units is None:
             out = self._convert_compact_units(factor, inplace=inplace)
         else:
             out = self._convert_units(units, inplace=inplace)
         return out
+
+    convert_to_units.__doc__ %= FACTOR_DOCSTRING
 
     def _get_quantity(self, attribute='scale'):
         if attribute == 'scale' or attribute == 'offset':
@@ -1029,9 +1037,7 @@ class AxesManager(t.HasTraits):
             `navigation` or `signal`. By default the converted units of the 
             first axis is used for all axes. If `False`, convert all axes 
             individually.
-        factor : float
-            'factor' an adjustable value used to determine the prefix of the 
-            units.
+        %s
         """
         convert_navigation = convert_signal = True
 
@@ -1080,6 +1086,8 @@ class AxesManager(t.HasTraits):
         else:
             for axis, unit in zip(axes, units):
                 axis.convert_to_units(unit, factor=factor)
+
+    convert_units.__doc__ %= FACTOR_DOCSTRING
 
     def _convert_axes_to_same_units(self, axes, units, factor=0.25):
         # Check if the units are supported
@@ -1223,10 +1231,10 @@ class AxesManager(t.HasTraits):
 
         keyDict = {
             # axes 0, 1
-            **dict.fromkeys(['left',  dim0_decrease, '4'], (0, -1)),
+            **dict.fromkeys(['left', dim0_decrease, '4'], (0, -1)),
             **dict.fromkeys(['right', dim0_increase, '6'], (0, +1)),
-            **dict.fromkeys(['up',    dim1_decrease, '8'], (1, -1)),
-            **dict.fromkeys(['down',  dim1_increase,  '2'], (1, +1)),
+            **dict.fromkeys(['up', dim1_decrease, '8'], (1, -1)),
+            **dict.fromkeys(['down', dim1_increase, '2'], (1, +1)),
             # axes 2, 3
             **dict.fromkeys([dim2_decrease], (2, -1)),
             **dict.fromkeys([dim2_increase], (2, +1)),

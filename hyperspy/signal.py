@@ -1934,8 +1934,8 @@ class BaseSignal(FancySlicing,
         return np.atleast_1d(
             self.data.__getitem__(axes_manager._getitem_tuple))
 
-    def plot(self, navigator="auto", axes_manager=None,
-             convert_units=True, plot_markers=True, **kwargs):
+    def plot(self, navigator="auto", axes_manager=None, plot_markers=True,
+             **kwargs):
         """%s
         %s
 
@@ -1951,8 +1951,6 @@ class BaseSignal(FancySlicing,
 
         if axes_manager is None:
             axes_manager = self.axes_manager
-        if convert_units:
-            self.axes_manager.convert_units()
         if self.is_rgbx is True:
             if axes_manager.navigation_size < 2:
                 navigator = None
@@ -1973,7 +1971,6 @@ class BaseSignal(FancySlicing,
                 "'s.transpose(signal_axes=(1,2)).plot()' "
                 "for plotting as a 2D signal.")
 
-        self._plot.auto_convert_units = convert_units
         self._plot.axes_manager = axes_manager
         self._plot.signal_data_function = self.__call__
         if self.metadata.General.title:
