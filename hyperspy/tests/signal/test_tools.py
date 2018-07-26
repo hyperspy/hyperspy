@@ -339,7 +339,7 @@ class Test3D:
         s = hs.signals.Signal1D(np.arange(1000).reshape(10, 10, 10))
         s.change_dtype(np.uint8)
         s2 = s.rebin(scale=(3, 3, 1), crop=False)
-        assert s.sum() = s2.sum()
+        assert s.sum() == s2.sum()
 
     def test_swap_axes_simple(self):
         s = self.signal
