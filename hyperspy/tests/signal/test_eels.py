@@ -247,3 +247,30 @@ class TestFourierRatioDeconvolution:
         s_ll.axes_manager[0].offset = -50
         s.fourier_ratio_deconvolution(s_ll,
                                       extrapolate_lowloss=extrapolate_lowloss)
+class TestRebin:
+    def setup_method(self, method):
+        # Create an empty spectrum
+        s = EELSSpectrum(np.ones((4, 2, 1024)))
+        self.signal = s
+
+    def test_rebin_without_dwell_time(self):
+        s = self.signal
+        s.rebin(scale=(2,2,1))
+
+    def test_rebin_dwell_time(self):
+        s = self.signal
+        s.metadata.dwell_time = 5.3
+        s.metadata.exposure = 10.2
+        s2 = s.rebin(scale(2, 2, 8)
+        assert(s2.metadata.dwell_time == 5.3 * 2 * 2)
+        assert(s2.metadata.dwell_time == 10.2 * 2 * 2)
+
+    def test_offset_after_rebin(self):
+        s = self.signal
+        s.axesmanager[0].offset = 1
+        s.axesmanager[1].offset = 2
+        s.axesmanager[2].offset = 3
+        s2 = s.rebin(scale(2, 2, 1)
+        assert(s2.axesmanager[0].offset == 1.5)
+        assert(s2.axesmanager[1].offset == 2.5)
+        assert(s2.axesmanager[2].offset == s.axesmanager[2].offset)

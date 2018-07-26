@@ -85,6 +85,16 @@ class Test_metadata:
         assert (old_metadata.as_dictionary() ==
                 self.signal.metadata.as_dictionary()), "Source metadata changed"
 
+    def test_offset_after_rebin(self):
+        s = self.signal
+        s.axesmanager[0].offset = 1
+        s.axesmanager[1].offset = 2
+        s.axesmanager[2].offset = 3
+        s2 = s.rebin(scale(2, 2, 1)
+        assert(s2.axesmanager[0].offset == 1.5)
+        assert(s2.axesmanager[1].offset == 2.5)
+        assert(s2.axesmanager[2].offset == s.axesmanager[2].offset)
+
     def test_add_elements(self):
         s = self.signal
         s.add_elements(['Al', 'Ni'])
