@@ -31,7 +31,7 @@ sys.path.append(os.path.abspath('sphinxext'))
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinxcontrib.napoleon',
+    'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
     'sphinx.ext.imgmath',
     'sphinx.ext.autosummary',
