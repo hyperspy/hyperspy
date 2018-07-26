@@ -50,8 +50,13 @@ the x-axis if 1D:
 To change the current coordinates, click on the pointer (which will be a line
 or a square depending on the dimensions of the data) and drag it around. It is
 also possible to move the pointer by using the numpad arrows **when numlock is
-on and the spectrum or navigator figure is selected**.When using the numpad
+on and the spectrum or navigator figure is selected**. When using the numpad
 arrows the PageUp and PageDown keys change the size of the step.
+
+The current coordinates can be either set by navigating the
+:py:meth:`~.signal.BaseSignal.plot`, or specified by pixel indices
+in ``s.axes_manager.indices`` or as calibrated coordinates in
+``s.axes_manager.coordinates``.
 
 An extra cursor can be added by pressing the ``e`` key. Pressing ``e`` once
 more will disable the extra cursor:
