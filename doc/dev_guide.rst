@@ -171,10 +171,12 @@ First ensure pytest and its plugins are installed by:
 
 .. code:: bash
    
-   # Either
+   # If using a standard hyperspy install
    pip install hyperspy[test]
-   # Or
-   conda install pytest pytest-mpl freetype 
+   # Or, from a hyperspy local development directory
+   pip install -e .[test]
+   # Or just installing the dependencies using conda
+   conda install pytest pytest-mpl 
 
 To run them:
 
