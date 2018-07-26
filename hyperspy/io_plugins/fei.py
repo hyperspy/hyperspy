@@ -44,7 +44,6 @@ full_support = False
 # Recognised file extension
 file_extensions = ser_extensions + emi_extensions
 default_extension = 0
-auto_convert_units = True
 # Writing capabilities
 writes = False
 # ----------------------
@@ -558,6 +557,16 @@ def ser_reader(filename, objects=None, *args, **kwds):
             'units': units,
         })
         array_shape.append(data['ArraySizeX'][0])
+
+    # FEI seems to use the international system of units (SI) for the
+    # spatial scale. However, we prefer to work in nm
+    for axis in axes:
+        if axis['units'] == 'meters':
+            axis['units'] = 'nm'
+            axis['scale'] *= 10 ** 9
+        elif axis['units'] == '1/meters':
+            axis['units'] = '1 / nm'
+            axis['scale'] /= 10 ** 9
 
     # Remove Nones from array_shape caused by squeezing size 1 dimensions
     array_shape = [dim for dim in array_shape if dim is not None]

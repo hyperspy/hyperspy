@@ -191,7 +191,8 @@ class TestSpdMap_070_eds:
 
     @classmethod
     def setup_class(cls):
-        cls.spd = load(os.path.join(TMP_DIR.name, "spd_map.spd"))
+        cls.spd = load(os.path.join(TMP_DIR.name, "spd_map.spd"),
+                       convert_units=True)
 
     @classmethod
     def teardown_class(cls):
@@ -315,7 +316,8 @@ class TestSpdMap_061_xrf:
 
     @classmethod
     def setup_class(cls):
-        cls.spd = load(os.path.join(TMP_DIR.name, "spc0_61-ipr333_xrf.spd"))
+        cls.spd = load(os.path.join(TMP_DIR.name, "spc0_61-ipr333_xrf.spd"),
+                       convert_units=True)
 
     @classmethod
     def teardown_class(cls):

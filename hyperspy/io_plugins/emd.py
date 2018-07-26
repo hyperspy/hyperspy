@@ -49,7 +49,6 @@ full_support = False  # Hopefully?
 # Recognised file extension
 file_extensions = ('emd', 'EMD')
 default_extension = 0
-auto_convert_units = True
 # Reading capabilities
 reads_images = True
 reads_spectrum = True

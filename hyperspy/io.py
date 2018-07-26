@@ -49,7 +49,7 @@ def load(filenames=None,
          stack_axis=None,
          new_axis_name="stack_element",
          lazy=False,
-         convert_units=None,
+         convert_units=False,
          **kwds):
     """
     Load potentially multiple supported file into an hyperspy structure.
@@ -108,10 +108,9 @@ def load(filenames=None,
         Open the data lazily - i.e. without actually reading the data from the
         disk until required. Allows opening arbitrary-sized datasets. The default
         is `False`.
-    convert_units : {None, bool}
+    convert_units : {bool}
         If True, convert the units using the `convert_to_units` method of
-        the `axes_manager`. If False, does nothing. If None, use the default 
-        setting of the file reader used. The default is None
+        the `axes_manager`. If False, does nothing. The default is False.
     print_info: bool
         For SEMPER unf- and EMD (Berkley)-files, if True (default is False)
         additional information read during loading is printed for a quick
@@ -311,15 +310,12 @@ def load_single_file(filename, **kwds):
         return load_with_reader(filename=filename, reader=reader, **kwds)
 
 
-def load_with_reader(filename, reader, signal_type=None, convert_units=None,
+def load_with_reader(filename, reader, signal_type=None, convert_units=False,
                      **kwds):
     lazy = kwds.get('lazy', False)
     file_data_list = reader.file_reader(filename,
                                         **kwds)
     objects = []
-
-    convert_units = convert_units or (
-        convert_units is None and reader.auto_convert_units)
 
     for signal_dict in file_data_list:
         if 'metadata' in signal_dict:

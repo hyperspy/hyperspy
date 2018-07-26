@@ -46,7 +46,6 @@ full_support = False
 # Recognised file extension
 file_extensions = ['spd', 'SPD', 'spc', 'SPC']
 default_extension = 0
-auto_convert_units = True
 # Writing capabilities
 writes = False
 

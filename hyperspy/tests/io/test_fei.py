@@ -89,8 +89,8 @@ class TestFEIReader():
             s0[0].metadata.Acquisition_instrument.TEM.acquisition_mode == 'STEM')
         assert_allclose(s0[0].axes_manager[0].scale, 3.68864, rtol=1E-5)
         assert s0[0].axes_manager[0].units == 'nm'
-        assert_allclose(s0[0].axes_manager[1].scale, 0.005, rtol=1E-5)
-        assert s0[0].axes_manager[1].units == 'keV'
+        assert_allclose(s0[0].axes_manager[1].scale, 5.0, rtol=1E-5)
+        assert s0[0].axes_manager[1].units == 'eV'
         assert (s0[0].axes_manager[0].name == 'x')
         assert (s0[0].axes_manager[1].name == 'Energy')
         # s0[1] contains diffraction patterns
@@ -122,8 +122,8 @@ class TestFEIReader():
         assert s0[0].axes_manager[0].units == 'nm'
         assert_allclose(s0[0].axes_manager[1].scale, -1.87390, rtol=1E-5)
         assert s0[0].axes_manager[1].units == 'nm'
-        assert_allclose(s0[0].axes_manager[2].scale, 0.005, rtol=1E-5)
-        assert s0[0].axes_manager[2].units == 'keV'
+        assert_allclose(s0[0].axes_manager[2].scale, 5.0, rtol=1E-5)
+        assert s0[0].axes_manager[2].units == 'eV'
         # s0[1] contains diffraction patterns
         assert s0[1].data.shape == (5, 5, 256, 256)
         assert s0[1].axes_manager.signal_dimension == 2
@@ -187,8 +187,8 @@ class TestFEIReader():
         assert s0.axes_manager.signal_dimension == 1
         assert (
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode == 'STEM')
-        assert_allclose(s0.axes_manager[0].scale, 123.034, rtol=1E-5)
-        assert s0.axes_manager[0].units == 'pm'
+        assert_allclose(s0.axes_manager[0].scale, 0.123034, rtol=1E-5)
+        assert s0.axes_manager[0].units == 'nm'
         assert_allclose(s0.axes_manager[1].scale, 0.2, rtol=1E-5)
         assert s0.axes_manager[1].units == 'eV'
         assert (s0.axes_manager[0].name == 'x')
@@ -201,8 +201,8 @@ class TestFEIReader():
         assert s1.axes_manager.signal_dimension == 1
         assert (
             s1.metadata.Acquisition_instrument.TEM.acquisition_mode == 'STEM')
-        assert_allclose(s1.axes_manager[0].scale, 166.318, rtol=1E-5)
-        assert s1.axes_manager[0].units == 'pm'
+        assert_allclose(s1.axes_manager[0].scale, 0.166318, rtol=1E-5)
+        assert s1.axes_manager[0].units == 'nm'
         assert_allclose(s1.axes_manager[1].scale, 0.2, rtol=1E-5)
         assert s1.axes_manager[1].units == 'eV'
         assert (s0.axes_manager[0].name == 'x')
@@ -215,10 +215,10 @@ class TestFEIReader():
         assert s0.axes_manager.signal_dimension == 1
         assert (
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode == 'STEM')
-        assert_allclose(s0.axes_manager[0].scale, 120.539, rtol=1E-5)
-        assert s0.axes_manager[0].units == 'pm'
-        assert_allclose(s0.axes_manager[1].scale, -120.539, rtol=1E-5)
-        assert s0.axes_manager[1].units == 'pm'
+        assert_allclose(s0.axes_manager[0].scale, 0.120539, rtol=1E-5)
+        assert s0.axes_manager[0].units == 'nm'
+        assert_allclose(s0.axes_manager[1].scale, -0.120539, rtol=1E-5)
+        assert s0.axes_manager[1].units == 'nm'
         assert_allclose(s0.axes_manager[2].scale, 0.2, rtol=1E-5)
         assert s0.axes_manager[2].units == 'eV'
         assert (s0.axes_manager[2].name == 'Energy')
@@ -237,8 +237,8 @@ class TestFEIReader():
         assert s0.axes_manager[0].units == 'nm'
         assert_allclose(s0.axes_manager[1].scale, -4.25819, rtol=1E-5)
         assert s0.axes_manager[1].units == 'nm'
-        assert_allclose(s0.axes_manager[2].scale, 0.005, rtol=1E-5)
-        assert s0.axes_manager[2].units == 'keV'
+        assert_allclose(s0.axes_manager[2].scale, 5.0, rtol=1E-5)
+        assert s0.axes_manager[2].units == 'eV'
 
     def test_load_search(self):
         fname0 = os.path.join(self.dirpathnew, '128x128-TEM_search.emi')

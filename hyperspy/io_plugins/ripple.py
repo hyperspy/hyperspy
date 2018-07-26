@@ -46,7 +46,6 @@ full_support = False  # but maybe True
 # Recognised file extension
 file_extensions = ['rpl', 'RPL']
 default_extension = 0
-auto_convert_units = False
 # Writing capabilities
 writes = [(1, 0), (1, 1), (1, 2), (2, 0), (2, 1), ]
 # ----------------------

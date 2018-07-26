@@ -33,7 +33,6 @@ full_support = False
 # Recognised file extension
 file_extensions = ['csv', 'CSV']
 default_extension = 0
-auto_convert_units = False
 # Reading capabilities
 reads_images = False
 reads_spectrum = False

@@ -39,7 +39,6 @@ full_support = False
 # Recognised file extension
 file_extensions = ['mrc', 'MRC', 'ALI', 'ali']
 default_extension = 0
-auto_convert_units = True
 # Writing capabilities
 writes = False
 

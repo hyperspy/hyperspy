@@ -40,7 +40,6 @@ description = ('Import/Export standard image formats Christoph Gohlke\'s '
 full_support = False
 file_extensions = ['tif', 'tiff']
 default_extension = 0  # tif
-auto_convert_units = True
 # Writing features
 writes = [(2, 0), (2, 1)]
 # ----------------------

@@ -99,12 +99,26 @@ axes1 = {
         'scale': 12.8, 'size': 2, 'units': 'nm'},
     'axis-2': {
         'name': 'dy', 'navigate': False, 'offset': 0.0,
-        'scale': 0.16061676839061997, 'size': 144, 'units': 'mm'},
+        'scale': 0.016061676839061997, 'size': 144, 'units': 'cm'},
     'axis-3': {
         'name': 'dx', 'navigate': False, 'offset': 0.0,
-        'scale': 0.16061676839061997, 'size': 144, 'units': 'mm'}}
+        'scale': 0.016061676839061997, 'size': 144, 'units': 'cm'}}
 
 axes2 = {
+    'axis-0': {
+        'name': 'y', 'navigate': True, 'offset': 0.0,
+        'scale': 64.0, 'size': 2, 'units': 'nm'},
+    'axis-1': {
+        'name': 'x', 'navigate': True, 'offset': 0.0,
+        'scale': 64.0, 'size': 3, 'units': 'nm'},
+    'axis-2': {
+        'name': 'dy', 'navigate': False, 'offset': 0.0,
+        'scale': 0.016061676839061997, 'size': 5, 'units': 'cm'},
+    'axis-3': {
+        'name': 'dx', 'navigate': False, 'offset': 0.0,
+        'scale': 0.016061676839061997, 'size': 5, 'units': 'cm'}}
+
+axes2_converted = {
     'axis-0': {
         'name': 'y', 'navigate': True, 'offset': 0.0,
         'scale': 64.0, 'size': 2, 'units': 'nm'},
@@ -125,16 +139,19 @@ def test_load1():
     assert s.axes_manager.as_dictionary() == axes1
 
 
-def test_load2():
-    s = hs.load(FILE2)
+@pytest.mark.parametrize(("convert_units"), (True, False))
+def test_load2(convert_units):
+    s = hs.load(FILE2, convert_units=convert_units)
     assert s.data.shape == (2, 3, 5, 5)
-    np.testing.assert_equal(s.axes_manager.as_dictionary(), axes2)
+    axes = axes2_converted if convert_units else axes2
+    np.testing.assert_equal(s.axes_manager.as_dictionary(), axes)
     np.testing.assert_allclose(s.data, ref_data2)
 
 
-def test_save_load_cycle(save_path):
+@pytest.mark.parametrize(("convert_units"), (True, False))
+def test_save_load_cycle(save_path, convert_units):
     sig_reload = None
-    signal = hs.load(FILE2)
+    signal = hs.load(FILE2, convert_units=convert_units)
     serial = signal.original_metadata['blockfile_header']['Acquisition_time']
     date, time, timezone = serial_date_to_ISO_format(serial)
     assert signal.metadata.General.original_filename == 'test2.blo'
@@ -145,7 +162,7 @@ def test_save_load_cycle(save_path):
         signal.metadata.General.notes ==
         "Precession angle : \r\nPrecession Frequency : \r\nCamera gamma : on")
     signal.save(save_path, overwrite=True)
-    sig_reload = hs.load(save_path)
+    sig_reload = hs.load(save_path, convert_units=convert_units)
     np.testing.assert_equal(signal.data, sig_reload.data)
     assert (signal.axes_manager.as_dictionary() ==
             sig_reload.axes_manager.as_dictionary())
@@ -176,7 +193,7 @@ def test_different_x_y_scale_units(save_path):
                     rtol=1E-5)
     assert_allclose(sig_reload.axes_manager[1].scale, 64.0,
                     rtol=1E-5)
-    assert_allclose(sig_reload.axes_manager[2].scale, 160.616,
+    assert_allclose(sig_reload.axes_manager[2].scale, 0.0160616,
                     rtol=1E-5)
 
 

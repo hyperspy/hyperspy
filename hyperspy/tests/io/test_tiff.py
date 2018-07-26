@@ -71,8 +71,8 @@ def test_read_unit_from_imagej():
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ.tif')
     s = hs.load(fname)
-    assert s.axes_manager[0].units == 'um'
-    assert s.axes_manager[1].units == 'um'
+    assert s.axes_manager[0].units == 'µm'
+    assert s.axes_manager[1].units == 'µm'
     assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
 
@@ -83,8 +83,8 @@ def test_read_unit_from_imagej_stack():
     s = hs.load(fname)
     assert s.data.shape == (2, 68, 68)
     assert s.axes_manager[0].units == t.Undefined
-    assert s.axes_manager[1].units == 'um'
-    assert s.axes_manager[2].units == 'um'
+    assert s.axes_manager[1].units == 'µm'
+    assert s.axes_manager[2].units == 'µm'
     assert_allclose(s.axes_manager[0].scale, 2.5, atol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
     assert_allclose(s.axes_manager[2].scale, 0.16867, atol=1E-5)
@@ -96,8 +96,8 @@ def test_read_unit_from_DM_stack():
     s = hs.load(fname)
     assert s.data.shape == (2, 68, 68)
     assert s.axes_manager[0].units == 's'
-    assert s.axes_manager[1].units == 'um'
-    assert s.axes_manager[2].units == 'um'
+    assert s.axes_manager[1].units == 'µm'
+    assert s.axes_manager[2].units == 'µm'
     assert_allclose(s.axes_manager[0].scale, 2.5, atol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
     assert_allclose(s.axes_manager[2].scale, 1.68674, atol=1E-5)
@@ -108,8 +108,8 @@ def test_read_unit_from_DM_stack():
         s2 = hs.load(fname2)
         _compare_signal_shape_data(s, s2)
         assert s2.axes_manager[0].units == s.axes_manager[0].units
-        assert s2.axes_manager[1].units == 'um'
-        assert s2.axes_manager[2].units == 'um'
+        assert s2.axes_manager[1].units == 'µm'
+        assert s2.axes_manager[2].units == 'µm'
         assert_allclose(
             s2.axes_manager[0].scale, s.axes_manager[0].scale, atol=1E-5)
         assert_allclose(
@@ -150,7 +150,7 @@ def test_read_unit_from_imagej_no_scale():
 def test_write_read_unit_imagej():
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ.tif')
-    s = hs.load(fname)
+    s = hs.load(fname, convert_units=True)
     s.axes_manager[0].units = 'µm'
     s.axes_manager[1].units = 'µm'
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -158,8 +158,8 @@ def test_write_read_unit_imagej():
             tmpdir, 'test_loading_image_saved_with_imageJ2.tif')
         s.save(fname2, export_scale=True, overwrite=True)
         s2 = hs.load(fname2)
-        assert s2.axes_manager[0].units == 'um'
-        assert s2.axes_manager[1].units == 'um'
+        assert s2.axes_manager[0].units == 'µm'
+        assert s2.axes_manager[1].units == 'µm'
         assert s.data.shape == s.data.shape
 
 
@@ -182,7 +182,7 @@ def test_write_read_unit_imagej_with_description():
 
         fname3 = os.path.join(tmpdir, 'description2.tif')
         s.save(fname3, export_scale=True, overwrite=True, description='test')
-        s3 = hs.load(fname3)
+        s3 = hs.load(fname3, convert_units=True)
         assert s3.axes_manager[0].units == 'um'
         assert s3.axes_manager[1].units == 'um'
         assert_allclose(s3.axes_manager[0].scale, 0.16867, atol=1E-5)
@@ -349,7 +349,7 @@ def test_write_scale_unit_image_stack():
     with tempfile.TemporaryDirectory() as tmpdir:
         fname = os.path.join(tmpdir, 'test_export_scale_unit_stack2.tif')
         s.save(fname, overwrite=True, export_scale=True)
-        s1 = hs.load(fname)
+        s1 = hs.load(fname, convert_units=True)
         _compare_signal_shape_data(s, s1)
         assert s1.axes_manager[0].units == 'pm'
         # only one unit can be read
@@ -394,7 +394,7 @@ FEI_Helios_metadata = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 
 
 def test_read_FEI_SEM_scale_metadata_8bits():
     fname = os.path.join(MY_PATH2, 'FEI-Helios-Ebeam-8bits.tif')
-    s = hs.load(fname)
+    s = hs.load(fname, convert_units=True)
     assert s.axes_manager[0].units == 'um'
     assert s.axes_manager[1].units == 'um'
     assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
@@ -405,7 +405,7 @@ def test_read_FEI_SEM_scale_metadata_8bits():
 
 def test_read_FEI_SEM_scale_metadata_16bits():
     fname = os.path.join(MY_PATH2, 'FEI-Helios-Ebeam-16bits.tif')
-    s = hs.load(fname)
+    s = hs.load(fname, convert_units=True)
     assert s.axes_manager[0].units == 'um'
     assert s.axes_manager[1].units == 'um'
     assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
@@ -438,7 +438,7 @@ def test_read_Zeiss_SEM_scale_metadata_1k_image():
                                     'unfolded': False}}}
 
     fname = os.path.join(MY_PATH2, 'test_tiff_Zeiss_SEM_1k.tif')
-    s = hs.load(fname)
+    s = hs.load(fname, convert_units=True)
     assert s.axes_manager[0].units == 'um'
     assert s.axes_manager[1].units == 'um'
     assert_allclose(s.axes_manager[0].scale, 2.615, rtol=1E-5)
@@ -463,7 +463,7 @@ def test_read_RGB_Zeiss_optical_scale_metadata():
 
 def test_read_BW_Zeiss_optical_scale_metadata():
     fname = os.path.join(MY_PATH2, 'optical_Zeiss_AxioVision_BW.tif')
-    s = hs.load(fname, force_read_resolution=True)
+    s = hs.load(fname, force_read_resolution=True, convert_units=True)
     assert s.data.dtype == np.uint16
     assert s.data.shape == (10, 13)
     assert s.axes_manager[0].units == 'um'
@@ -487,7 +487,7 @@ def test_read_BW_Zeiss_optical_scale_metadata_convert_units_false():
 
 def test_read_BW_Zeiss_optical_scale_metadata2():
     fname = os.path.join(MY_PATH2, 'optical_Zeiss_AxioVision_BW.tif')
-    s = hs.load(fname, force_read_resolution=True)
+    s = hs.load(fname, force_read_resolution=True, convert_units=True)
     assert s.data.dtype == np.uint16
     assert s.data.shape == (10, 13)
     assert s.axes_manager[0].units == 'um'
@@ -530,7 +530,7 @@ def test_read_TVIPS_metadata():
                                     'signal_unfolded': False,
                                     'unfolded': False}}}
     fname = os.path.join(MY_PATH2, 'TVIPS_bin4.tif')
-    s = hs.load(fname)
+    s = hs.load(fname, convert_units=True)
     assert s.data.dtype == np.uint8
     assert s.data.shape == (1024, 1024)
     assert s.axes_manager[0].units == 'nm'

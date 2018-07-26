@@ -104,12 +104,7 @@ def test_metadata_with_bytes_string():
     f.close()
     assert isinstance(dim1_name, np.bytes_)
     assert isinstance(dim1_units, np.bytes_)
-    with assert_warns(
-            message="not supported for conversion.",
-            category=UserWarning):
-        signal = load(os.path.join(my_path, 'emd_files', filename))
-    signal = load(os.path.join(my_path, 'emd_files', filename),
-                  convert_units=False)
+    signal = load(os.path.join(my_path, 'emd_files', filename))
 
 
 def test_data_numpy_object_dtype():
@@ -252,14 +247,14 @@ class TestCaseSaveAndRead():
         np.testing.assert_equal(signal.axes_manager[1].name, 'y')
         np.testing.assert_equal(signal.axes_manager[2].name, 'z')
         np.testing.assert_equal(signal.axes_manager[0].scale, 2)
-        np.testing.assert_almost_equal(signal.axes_manager[1].scale, 3e3)
-        np.testing.assert_almost_equal(signal.axes_manager[2].scale, 4e6)
+        np.testing.assert_almost_equal(signal.axes_manager[1].scale, 3.0)
+        np.testing.assert_almost_equal(signal.axes_manager[2].scale, 4.0)
         np.testing.assert_equal(signal.axes_manager[0].offset, 10)
-        np.testing.assert_almost_equal(signal.axes_manager[1].offset, 20e3)
-        np.testing.assert_almost_equal(signal.axes_manager[2].offset, 30e6)
+        np.testing.assert_almost_equal(signal.axes_manager[1].offset, 20.0)
+        np.testing.assert_almost_equal(signal.axes_manager[2].offset, 30.0)
         np.testing.assert_equal(signal.axes_manager[0].units, 'nm')
-        np.testing.assert_equal(signal.axes_manager[1].units, 'nm')
-        np.testing.assert_equal(signal.axes_manager[2].units, 'nm')
+        np.testing.assert_equal(signal.axes_manager[1].units, 'µm')
+        np.testing.assert_equal(signal.axes_manager[2].units, 'mm')
         np.testing.assert_equal(signal.metadata.General.title, test_title)
         np.testing.assert_equal(
             signal.metadata.General.user.as_dictionary(), user)
@@ -342,11 +337,11 @@ class TestFeiEMD():
         fei_image = np.load(os.path.join(self.fei_files_path,
                                          'fei_emd_image.npy'))
         assert signal.axes_manager[0].name == 'x'
-        assert signal.axes_manager[0].units == 'nm'
-        assert_allclose(signal.axes_manager[0].scale, 5.30241, rtol=1E-5)
+        assert signal.axes_manager[0].units == 'um'
+        assert_allclose(signal.axes_manager[0].scale, 0.00530241, rtol=1E-5)
         assert signal.axes_manager[1].name == 'y'
-        assert signal.axes_manager[1].units == 'nm'
-        assert_allclose(signal.axes_manager[1].scale, 5.30241, rtol=1E-5)
+        assert signal.axes_manager[1].units == 'um'
+        assert_allclose(signal.axes_manager[1].scale, 0.00530241, rtol=1E-5)
         assert_allclose(signal.data, fei_image)
         assert_deep_almost_equal(signal.metadata.as_dictionary(), md)
         assert isinstance(signal, Signal2D)
