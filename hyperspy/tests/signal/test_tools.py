@@ -336,7 +336,7 @@ class Test3D:
         assert new_s.metadata.Signal.Noise_properties.variance == 0.3
 
     def test_rebin_dtype(self):
-        s = hs.signals.Signal1D(np.arange(1000).reshape(10, 10, 10))
+        s = signals.Signal1D(np.arange(1000).reshape(10, 10, 10))
         s.change_dtype(np.uint8)
         s2 = s.rebin(scale=(3, 3, 1), crop=False)
         assert s.sum() == s2.sum()
