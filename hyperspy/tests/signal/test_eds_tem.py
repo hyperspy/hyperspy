@@ -90,10 +90,10 @@ class Test_metadata:
         s.axesmanager[0].offset = 1
         s.axesmanager[1].offset = 2
         s.axesmanager[2].offset = 3
-        s2 = s.rebin(scale(2, 2, 1)
+        s2 = s.rebin(scale(2, 2, 1))
         assert s2.axesmanager[0].offset == 1.5
         assert s2.axesmanager[1].offset == 2.5
-        assert s2.axesmanager[2].offset == s.axesmanager[2].offset 
+        assert s2.axesmanager[2].offset == s.axesmanager[2].offset
 
     def test_add_elements(self):
         s = self.signal
