@@ -197,12 +197,9 @@ class UnitConversion:
 
     @units.setter
     def units(self, s):
-        if s == t.Undefined:
-            self._units = s
-        elif s == '':
+        if s == '':
             self._units = t.Undefined
-        else:
-            self._units = s.replace('um', 'µm').replace(' ', '')
+        self._units = s
 
 
 @add_gui_method(toolkey="DataAxis")
@@ -636,12 +633,9 @@ class DataAxis(t.HasTraits, UnitConversion):
 
     @units.setter
     def units(self, s):
-        if s == t.Undefined:
-            self._units = s
-        elif s == '':
+        if s == '':
             self._units = t.Undefined
-        else:
-            self._units = s.replace('um', 'µm').replace(' ', '')
+        self._units = s
 
 
 @add_gui_method(toolkey="AxesManager")

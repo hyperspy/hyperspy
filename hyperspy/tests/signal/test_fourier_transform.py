@@ -33,8 +33,8 @@ def test_fft_signal2d(lazy):
     im.axes_manager.signal_axes[1].scale = 10.
 
     im_fft = im.fft()
-    assert im_fft.axes_manager.signal_axes[0].units == '1/nm'
-    assert im_fft.axes_manager.signal_axes[1].units == '1/nm'
+    assert im_fft.axes_manager.signal_axes[0].units == '1 / nm'
+    assert im_fft.axes_manager.signal_axes[1].units == '1 / nm'
     assert im_fft.axes_manager.signal_axes[0].scale == 1. / 5. / 10.
     assert im_fft.axes_manager.signal_axes[1].scale == 1. / 4. / 10.
     assert im_fft.axes_manager.signal_axes[0].offset == 0.
@@ -93,7 +93,7 @@ def test_fft_signal1d(lazy):
     assert s_fft.axes_manager.signal_axes[0].scale == 1. / 5. / 6.
 
     s_ifft = s_fft.ifft()
-    assert s_ifft.axes_manager.signal_axes[0].units == '1/mrad'
+    assert s_ifft.axes_manager.signal_axes[0].units == '1 / mrad'
     assert s_ifft.axes_manager.signal_axes[0].scale == 6.
     assert isinstance(s_fft, ComplexSignal1D)
     assert isinstance(s_ifft, Signal1D)

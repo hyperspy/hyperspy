@@ -89,7 +89,7 @@ def test_hyperspy_wrap():
         hype.axes_manager[1].scale,
         8.7367850619778,
         atol=1E-12)
-    assert hype.axes_manager[1].units == 'µm'
+    assert hype.axes_manager[1].units == 'um'
     assert_allclose(hype.axes_manager[2].scale, 0.010001)
     assert_allclose(hype.axes_manager[2].offset, -0.472397235)
     assert hype.axes_manager[2].units == 'keV'
@@ -148,7 +148,7 @@ def test_hyperspy_wrap_downsampled():
         hype.axes_manager[1].scale,
         43.683925309889,
         atol=1E-12)
-    assert hype.axes_manager[1].units == 'µm'
+    assert hype.axes_manager[1].units == 'um'
 
 
 def test_get_mode():

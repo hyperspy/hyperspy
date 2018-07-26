@@ -72,10 +72,10 @@ class TestFEIReader():
         assert (
             s0.metadata.Acquisition_instrument.TEM.acquisition_mode == 'TEM')
         assert_allclose(s0.axes_manager[0].scale, 0.101571, rtol=1E-5)
-        assert s0.axes_manager[0].units == '1/nm'
+        assert s0.axes_manager[0].units == '1 / nm'
         assert (s0.axes_manager[0].name == 'x')
         assert_allclose(s0.axes_manager[1].scale, 0.101571, rtol=1E-5)
-        assert s0.axes_manager[1].units == '1/nm'
+        assert s0.axes_manager[1].units == '1 / nm'
         assert (s0.axes_manager[1].name == 'y')
 
     def test_load_diffraction_line_scan(self):
@@ -100,12 +100,12 @@ class TestFEIReader():
             s0[1].metadata.Acquisition_instrument.TEM.acquisition_mode == 'STEM')
         assert_allclose(s0[1].axes_manager[0].scale, 3.68864, rtol=1E-5)
         assert s0[1].axes_manager[0].units == 'nm'
-        assert s0[1].axes_manager[1].units == '1/nm'
+        assert s0[1].axes_manager[1].units == '1 / nm'
         assert (s0[1].axes_manager[0].name == 'x')
         assert_allclose(s0[1].axes_manager[1].scale, 0.174353, rtol=1E-5)
         assert_allclose(s0[1].axes_manager[2].scale, 0.174353, rtol=1E-5)
-        assert s0[1].axes_manager[2].units == '1/nm'
-        assert (s0[1].axes_manager[1].units == '1/nm')
+        assert s0[1].axes_manager[2].units == '1 / nm'
+        assert (s0[1].axes_manager[1].units == '1 / nm')
         assert (s0[1].axes_manager[1].name == 'x')
         assert (s0[1].axes_manager[2].name == 'y')
 
@@ -132,7 +132,7 @@ class TestFEIReader():
         assert_allclose(s0[1].axes_manager[0].scale, 1.87390, rtol=1E-5)
         assert s0[1].axes_manager[0].units == 'nm'
         assert_allclose(s0[1].axes_manager[2].scale, 0.174353, rtol=1E-5)
-        assert s0[1].axes_manager[2].units == '1/nm'
+        assert s0[1].axes_manager[2].units == '1 / nm'
         assert (s0[0].axes_manager[0].name == 'x')
         assert (s0[0].axes_manager[1].name == 'y')
         assert (s0[0].axes_manager[2].name == 'Energy')
@@ -143,7 +143,7 @@ class TestFEIReader():
         assert (s0[1].axes_manager[1].name == 'y')
         assert (s0[1].axes_manager[2].name == 'x')
         assert_allclose(s0[1].axes_manager[3].scale, 0.174353, rtol=1E-5)
-        assert (s0[1].axes_manager[3].units == '1/nm')
+        assert (s0[1].axes_manager[3].units == '1 / nm')
         assert (s0[1].axes_manager[3].name == 'y')
 
     def test_load_spectrum_point(self):
@@ -288,9 +288,9 @@ class TestFEIReader():
         assert s2.data.shape == (5, 128, 128)
         assert_allclose(s2.axes_manager[1].scale, 0.042464, rtol=1E-5)
         assert s0.axes_manager[0].units is t.Undefined
-        assert s2.axes_manager[1].units == '1/nm'
+        assert s2.axes_manager[1].units == '1 / nm'
         assert_allclose(s2.axes_manager[2].scale, 0.042464, rtol=1E-5)
-        assert s2.axes_manager[2].units == '1/nm'
+        assert s2.axes_manager[2].units == '1 / nm'
 
         fname1 = os.path.join(
             self.dirpathold, '16x16x5_STEM_BF_DF_preview.emi')
@@ -365,7 +365,7 @@ class TestFEIReader():
         fname1 = os.path.join(self.dirpathold, '64x64_diffraction_acquire.emi')
         s1 = load(fname1)
         assert_allclose(s1.axes_manager[0].scale, 0.101571, rtol=1E-5)
-        assert s1.axes_manager[0].units == '1/nm'
+        assert s1.axes_manager[0].units == '1 / nm'
         assert_allclose(s1.metadata.Acquisition_instrument.TEM.camera_length,
                         490.0, rtol=1E-5)
         # STEM diffraction

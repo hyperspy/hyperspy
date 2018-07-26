@@ -71,8 +71,8 @@ def test_read_unit_from_imagej():
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ.tif')
     s = hs.load(fname)
-    assert s.axes_manager[0].units == 'µm'
-    assert s.axes_manager[1].units == 'µm'
+    assert s.axes_manager[0].units == 'um'
+    assert s.axes_manager[1].units == 'um'
     assert_allclose(s.axes_manager[0].scale, 0.16867, atol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
 
@@ -83,8 +83,8 @@ def test_read_unit_from_imagej_stack():
     s = hs.load(fname)
     assert s.data.shape == (2, 68, 68)
     assert s.axes_manager[0].units == t.Undefined
-    assert s.axes_manager[1].units == 'µm'
-    assert s.axes_manager[2].units == 'µm'
+    assert s.axes_manager[1].units == 'um'
+    assert s.axes_manager[2].units == 'um'
     assert_allclose(s.axes_manager[0].scale, 2.5, atol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
     assert_allclose(s.axes_manager[2].scale, 0.16867, atol=1E-5)
@@ -96,8 +96,8 @@ def test_read_unit_from_DM_stack():
     s = hs.load(fname)
     assert s.data.shape == (2, 68, 68)
     assert s.axes_manager[0].units == 's'
-    assert s.axes_manager[1].units == 'µm'
-    assert s.axes_manager[2].units == 'µm'
+    assert s.axes_manager[1].units == 'um'
+    assert s.axes_manager[2].units == 'um'
     assert_allclose(s.axes_manager[0].scale, 2.5, atol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 0.16867, atol=1E-5)
     assert_allclose(s.axes_manager[2].scale, 1.68674, atol=1E-5)
@@ -108,8 +108,8 @@ def test_read_unit_from_DM_stack():
         s2 = hs.load(fname2)
         _compare_signal_shape_data(s, s2)
         assert s2.axes_manager[0].units == s.axes_manager[0].units
-        assert s2.axes_manager[1].units == 'µm'
-        assert s2.axes_manager[2].units == 'µm'
+        assert s2.axes_manager[1].units == 'um'
+        assert s2.axes_manager[2].units == 'um'
         assert_allclose(
             s2.axes_manager[0].scale, s.axes_manager[0].scale, atol=1E-5)
         assert_allclose(
@@ -158,8 +158,8 @@ def test_write_read_unit_imagej():
             tmpdir, 'test_loading_image_saved_with_imageJ2.tif')
         s.save(fname2, export_scale=True, overwrite=True)
         s2 = hs.load(fname2)
-        assert s2.axes_manager[0].units == 'µm'
-        assert s2.axes_manager[1].units == 'µm'
+        assert s2.axes_manager[0].units == 'um'
+        assert s2.axes_manager[1].units == 'um'
         assert s.data.shape == s.data.shape
 
 
@@ -183,8 +183,8 @@ def test_write_read_unit_imagej_with_description():
         fname3 = os.path.join(tmpdir, 'description2.tif')
         s.save(fname3, export_scale=True, overwrite=True, description='test')
         s3 = hs.load(fname3)
-        assert s3.axes_manager[0].units == 'µm'
-        assert s3.axes_manager[1].units == 'µm'
+        assert s3.axes_manager[0].units == 'um'
+        assert s3.axes_manager[1].units == 'um'
         assert_allclose(s3.axes_manager[0].scale, 0.16867, atol=1E-5)
         assert_allclose(s3.axes_manager[1].scale, 0.16867, atol=1E-5)
 
@@ -353,8 +353,8 @@ def test_write_scale_unit_image_stack():
         _compare_signal_shape_data(s, s1)
         assert s1.axes_manager[0].units == 'pm'
         # only one unit can be read
-        assert s1.axes_manager[1].units == 'µm'
-        assert s1.axes_manager[2].units == 'µm'
+        assert s1.axes_manager[1].units == 'um'
+        assert s1.axes_manager[2].units == 'um'
         assert_allclose(s1.axes_manager[0].scale, 250.0)
         assert_allclose(s1.axes_manager[1].scale, s.axes_manager[1].scale)
         assert_allclose(s1.axes_manager[2].scale, s.axes_manager[2].scale)
@@ -395,8 +395,8 @@ FEI_Helios_metadata = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 
 def test_read_FEI_SEM_scale_metadata_8bits():
     fname = os.path.join(MY_PATH2, 'FEI-Helios-Ebeam-8bits.tif')
     s = hs.load(fname)
-    assert s.axes_manager[0].units == 'µm'
-    assert s.axes_manager[1].units == 'µm'
+    assert s.axes_manager[0].units == 'um'
+    assert s.axes_manager[1].units == 'um'
     assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 3.3724, rtol=1E-5)
     assert s.data.dtype == 'uint8'
@@ -406,8 +406,8 @@ def test_read_FEI_SEM_scale_metadata_8bits():
 def test_read_FEI_SEM_scale_metadata_16bits():
     fname = os.path.join(MY_PATH2, 'FEI-Helios-Ebeam-16bits.tif')
     s = hs.load(fname)
-    assert s.axes_manager[0].units == 'µm'
-    assert s.axes_manager[1].units == 'µm'
+    assert s.axes_manager[0].units == 'um'
+    assert s.axes_manager[1].units == 'um'
     assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 3.3724, rtol=1E-5)
     assert s.data.dtype == 'uint16'
@@ -439,8 +439,8 @@ def test_read_Zeiss_SEM_scale_metadata_1k_image():
 
     fname = os.path.join(MY_PATH2, 'test_tiff_Zeiss_SEM_1k.tif')
     s = hs.load(fname)
-    assert s.axes_manager[0].units == 'µm'
-    assert s.axes_manager[1].units == 'µm'
+    assert s.axes_manager[0].units == 'um'
+    assert s.axes_manager[1].units == 'um'
     assert_allclose(s.axes_manager[0].scale, 2.615, rtol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 2.615, rtol=1E-5)
     assert s.data.dtype == 'uint16'
@@ -466,8 +466,8 @@ def test_read_BW_Zeiss_optical_scale_metadata():
     s = hs.load(fname, force_read_resolution=True)
     assert s.data.dtype == np.uint16
     assert s.data.shape == (10, 13)
-    assert s.axes_manager[0].units == 'µm'
-    assert s.axes_manager[1].units == 'µm'
+    assert s.axes_manager[0].units == 'um'
+    assert s.axes_manager[1].units == 'um'
     assert_allclose(s.axes_manager[0].scale, 169.333, rtol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 169.333, rtol=1E-5)
     assert s.metadata.General.date == '2016-06-13'
@@ -490,8 +490,8 @@ def test_read_BW_Zeiss_optical_scale_metadata2():
     s = hs.load(fname, force_read_resolution=True)
     assert s.data.dtype == np.uint16
     assert s.data.shape == (10, 13)
-    assert s.axes_manager[0].units == 'µm'
-    assert s.axes_manager[1].units == 'µm'
+    assert s.axes_manager[0].units == 'um'
+    assert s.axes_manager[1].units == 'um'
     assert_allclose(s.axes_manager[0].scale, 169.333, rtol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 169.333, rtol=1E-5)
     assert s.metadata.General.date == '2016-06-13'

@@ -39,12 +39,12 @@ class TestUnitConversion:
 
     def test_units_setter(self):
         self.uc.units = ' m'
-        assert self.uc.units == 'm'
+        assert self.uc.units == ' m'
         self.uc.units = 'um'
+        assert self.uc.units == 'um'
+        self.uc.units = 'µm'
         assert self.uc.units == 'µm'
-        self.uc.units = ' µm'
-        assert self.uc.units == 'µm'
-        self.uc.units = ' km'
+        self.uc.units = 'km'
         assert self.uc.units == 'km'
 
     def test_ignore_conversion(self):
@@ -74,7 +74,7 @@ class TestUnitConversion:
         self._set_units_scale_size('m', 1.0E-3)
         out = self.uc._convert_units('µm')
         assert out is None
-        assert self.uc.units == 'µm'
+        assert self.uc.units == 'um'
         nt.assert_almost_equal(self.uc.scale, 1E3)
 
         self._set_units_scale_size('µm', 0.5)
@@ -92,7 +92,7 @@ class TestUnitConversion:
         self._set_units_scale_size('1/µm', 5)
         out = self.uc._convert_units('1/nm')
         assert out is None
-        assert self.uc.units == '1/nm'
+        assert self.uc.units == '1 / nm'
         nt.assert_almost_equal(self.uc.scale, 0.005)
 
         self._set_units_scale_size('eV', 5)
@@ -142,19 +142,19 @@ class TestUnitConversion:
         # typical TEM diffraction
         self._set_units_scale_size('1/m', 0.1E9, 1024)
         self.uc._convert_compact_units()
-        assert self.uc.units == '1/nm'
+        assert self.uc.units == '1 / nm'
         nt.assert_almost_equal(self.uc.scale, 0.1)
 
         # typical TEM diffraction
         self._set_units_scale_size('1/m', 0.01E9, 256)
         self.uc._convert_compact_units()
-        assert self.uc.units == '1/µm'
+        assert self.uc.units == '1 / um'
         nt.assert_almost_equal(self.uc.scale, 10.0)
 
         # high camera length diffraction
         self._set_units_scale_size('1/m', 0.1E9, 4096)
         self.uc._convert_compact_units()
-        assert self.uc.units == '1/nm'
+        assert self.uc.units == '1 / nm'
         nt.assert_almost_equal(self.uc.scale, 0.1)
 
         # typical EDS resolution
@@ -244,7 +244,7 @@ class TestDataAxis:
     def test_convert_to_units(self):
         self.axis.convert_to_units(units='µm')
         nt.assert_almost_equal(self.axis.scale, 12E-6)
-        assert self.axis.units == 'µm'
+        assert self.axis.units == 'um'
         nt.assert_almost_equal(self.axis.offset, 0.005)
 
     def test_units_not_supported_by_pint_warning_raised(self):
@@ -414,14 +414,14 @@ class TestAxesManager:
         nt.assert_almost_equal(self.am['x'].scale, 1.5)
         assert self.am['x'].units == 'nm'
         nt.assert_almost_equal(self.am['y'].scale, 0.5E-3)
-        assert self.am['y'].units == 'µm'
+        assert self.am['y'].units == 'um'
         nt.assert_almost_equal(self.am['energy'].scale, 5E3)
         assert self.am['energy'].units == 'meV'
 
     def test_convert_to_units_list_same_units(self):
         self.am2.convert_units(units=['µm', 'eV', 'meV'], same_units=True)
         nt.assert_almost_equal(self.am2['x'].scale, 0.0015)
-        assert self.am2['x'].units == 'µm'
+        assert self.am2['x'].units == 'um'
         nt.assert_almost_equal(self.am2['energy'].scale,
                                self.axes_list2[1]['scale'])
         assert self.am2['energy'].units == self.axes_list2[1]['units']
@@ -432,7 +432,7 @@ class TestAxesManager:
     def test_convert_to_units_list_signal2D(self):
         self.am2.convert_units(units=['µm', 'eV', 'meV'], same_units=False)
         nt.assert_almost_equal(self.am2['x'].scale, 0.0015)
-        assert self.am2['x'].units == 'µm'
+        assert self.am2['x'].units == 'um'
         nt.assert_almost_equal(self.am2['energy'].scale, 2500)
         assert self.am2['energy'].units == 'meV'
         nt.assert_almost_equal(self.am2['energy2'].scale, 5.0)

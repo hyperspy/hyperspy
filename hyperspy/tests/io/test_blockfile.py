@@ -113,10 +113,10 @@ axes2 = {
         'scale': 64.0, 'size': 3, 'units': 'nm'},
     'axis-2': {
         'name': 'dy', 'navigate': False, 'offset': 0.0,
-        'scale': 160.61676839061997, 'size': 5, 'units': 'µm'},
+        'scale': 160.61676839061997, 'size': 5, 'units': 'um'},
     'axis-3': {
         'name': 'dx', 'navigate': False, 'offset': 0.0,
-        'scale': 160.61676839061997, 'size': 5, 'units': 'µm'}}
+        'scale': 160.61676839061997, 'size': 5, 'units': 'um'}}
 
 
 def test_load1():
