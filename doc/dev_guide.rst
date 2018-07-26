@@ -167,10 +167,13 @@ you do.
 HyperSpy uses the `pytest <http://doc.pytest.org/>`_ library for testing. The
 tests reside in the ``hyperspy.tests`` module. 
 
-First ensure pytest and its plugins are installed:
+First ensure pytest and its plugins are installed by:
 
 .. code:: bash
-
+   
+   # Either
+   pip install hyperspy[test]
+   # Or
    conda install pytest pytest-mpl freetype 
 
 To run them:
