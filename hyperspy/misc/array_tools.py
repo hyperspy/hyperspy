@@ -169,7 +169,7 @@ def rebin(a, new_shape=None, scale=None, crop=True):
         if np.issubdtype(a.dtype, np.integer):
             # The _linear_bin function below requires a float dtype
             # because of the default numpy casting rule ('same_kind').
-            a.astype("float", castin="safe", copy=False)
+            a.astype("float", casting="safe", copy=False)
         return _linear_bin(a, scale, crop)
     else:
         _logger.debug("Using standard rebin with lazy support")
@@ -320,7 +320,7 @@ def _linear_bin(dat, scale, crop=True):
             avoid this.")
         # Set up the result np.array to have a new axis[0] size for after
         # cropping.
-        result = np.zeros((dim,) + dat.shape[1:], dtype=dtype)
+        result = np.zeros((dim,) + dat.shape[1:])
         # Carry out binning over axis[0]
         _linear_bin_loop(result=result, data=dat, scale=s)
         # Swap axis[0] back to the original axis location.
