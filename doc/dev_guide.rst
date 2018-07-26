@@ -1,4 +1,4 @@
-﻿
+﻿﻿
 .. _dev_guide-label:
 
 Developer Guide
@@ -257,7 +257,7 @@ See `pytest-mpl <https://pypi.python.org/pypi/pytest-mpl>`_ for more details.
 Write documentation
 ^^^^^^^^^^^^^^^^^^^
 
-Documentation comes in two parts docstrings and user-guide documentation.
+Documentation comes in two parts: docstrings and user-guide documentation.
 
 Docstrings -- written at the start of a function and give essential information
 about how it should be used, such as which arguments can be passed to it and
@@ -266,14 +266,29 @@ specification <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT
 .rst.txt>`_, as shown in `this example
 <https://github.com/numpy/numpy/blob/master/doc/example.py>`_.
 
-User-guide Documentation -- A description of the functionality of the code and
+User-guide documentation -- A description of the functionality of the code and
 how to use it with examples and links to the relevant code.
 
-Build the documentation -- To check the output of what you wrote, you can build
+Build user-guide documentation
+^^^^^^^^^^^^^^^^^^^
+
+To check the output of what you wrote, you can build
 the documentation, which requires python-sphinx and numpydoc to be installed.
-Run the make command in the ``doc`` to build the documentation. For example
+Run the ``make`` command in the ``hyperspy/doc`` directory to build the documentation. For example
 ``make html`` will build the whole documentation in html format. See the make
 command documentation for more details.
+
+To install the documentation dependencies, run either
+
+   .. code-block:: bash
+
+       $ conda install sphinx numpydoc sphinx_rtd_theme
+
+or
+
+   .. code-block:: bash
+
+       $ pip install -U sphinx numpydoc sphinx_rtd_theme
 
 5. Make your contribution
 -------------------------

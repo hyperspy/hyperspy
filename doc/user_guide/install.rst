@@ -251,8 +251,7 @@ Installing the required libraries
 In addition to the libraries that are automatically installed when installing
 HyperSpy using ``pip`` (see :ref:`install-with-python-installers`), if HyperSpy
 is going to be installed from  source, Cython is also required. Also, to
-compile the documentation sphinxcontrib-napoleon and sphinx_rtd_theme are
-required.
+compile the documentation sphinx_rtd_theme is required.
 
 .. _known-issues:
 
