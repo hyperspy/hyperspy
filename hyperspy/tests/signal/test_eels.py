@@ -260,10 +260,14 @@ class TestRebin:
     def test_rebin_dwell_time(self):
         s = self.signal
         s.metadata.dwell_time = 5.3
-        s.metadata.exposure = 10.2
         s2 = s.rebin(scale = (2, 2, 8))
         assert s2.metadata.dwell_time == (5.3 * 2 * 2)
-        assert s2.metadata.exposure == (10.2 * 2 * 2)
+
+        def test_rebin_exposure(self):
+            s = self.signal
+            s.metadata.exposure = 10.2
+            s2 = s.rebin(scale = (2, 2, 8))
+            assert s2.metadata.exposure == (10.2 * 2 * 2)
 
     def test_offset_after_rebin(self):
         s = self.signal
