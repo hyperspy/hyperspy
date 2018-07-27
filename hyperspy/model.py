@@ -48,7 +48,8 @@ from hyperspy.events import Events, Event, EventSuppressor
 import warnings
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.ui_registry import add_gui_method
-
+from hyperspy.misc.model_tools import current_model_values
+from IPython.display import display_pretty, display
 _logger = logging.getLogger(__name__)
 
 # components is just a container for all (1D and 2D) components, to be able to
@@ -1457,35 +1458,24 @@ class BaseModel(list):
             if only_active is False or component.active:
                 component.plot(only_free=only_free)
 
-    def print_current_values(self, only_free=True, skip_multi=False):
-        """Print the value of each parameter of the model.
-
+    def print_current_values(self, only_free=False, only_active=False, fancy=True):
+        """Prints the current values of the parameters of all components.
         Parameters
         ----------
         only_free : bool
-            If True, only the value of the parameters that are free will
-            be printed.
-        skip_multi : bool
-            If True, parameters with attribute "__iter__" are not printed
-
+            If True, only components with free parameters will be printed. Within these,
+            only parameters which are free will be printed.
+        only_active : bool
+            If True, only values of active components will be printed
+        fancy : bool
+            If True, attempts to print using html rather than text in the notebook.
         """
-        print("Components\tParameter\tValue")
-        for component in self:
-            if component.active:
-                if component.name:
-                    print(component.name)
-                else:
-                    print(component._id_name)
-                parameters = component.free_parameters if only_free \
-                    else component.parameters
-                for parameter in parameters:
-                    if hasattr(parameter.value, '__iter__'):
-                        if not skip_multi:
-                            for idx in range(len(parameter.value)):
-                                print("\t\t%s[%d]\t%g" % (parameter.name, idx,
-                                                          parameter.value[idx]))
-                    else:
-                        print("\t\t%s\t%g" % (parameter.name, parameter.value))
+        if fancy:
+            display(current_model_values(
+                model=self, only_free=only_free, only_active=only_active))
+        else:
+            display_pretty(current_model_values(
+                model=self, only_free=only_free, only_active=only_active))
 
     def set_parameters_not_free(self, component_list=None,
                                 parameter_name_list=None):
