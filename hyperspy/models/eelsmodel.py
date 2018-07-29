@@ -996,6 +996,10 @@ class EELSModel(Model1D):
         Onset energy = Energy(onset value),
         between E(highest value) and E(lowest value).
 
+        See the publication detailing this for more information:
+        https://doi.org/10.1016/j.ultramic.2016.07.004
+        (arXiv version: https://arxiv.org/abs/1608.07814)
+
         Parameters
         ----------
         component : EELSCLEdge component instance
