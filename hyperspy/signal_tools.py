@@ -232,6 +232,38 @@ class Signal1DRangeSelector(SpanSelectorInSignal1D):
     on_close = t.List()
 
 
+@add_gui_method(toolkey="EELSModel.set_coreloss_edge_onset")
+class SetCorelossEdgeOnset(SpanSelectorInSignal1D):
+
+    only_current = t.Bool(
+            True, desc=("Find the onset for the current spectrum."))
+    percent_position = t.Range(low=0., high=1., value=0.1)
+
+
+    def __init__(
+            self, model, component):
+        if model.signal.axes_manager.signal_dimension != 1:
+            raise SignalDimensionError(
+                model.signal.axes_manager.signal_dimension, 1)
+
+        self.signal = model.signal
+        self.axis = self.signal.axes_manager.signal_axes[0]
+        self.span_selector = None
+        self.model = model
+        self.component = component
+        if (not hasattr(self.model, '_plot') or self.model._plot is None or
+            not self.model._plot.is_active):
+            self.model.plot()
+        self.span_selector_switch(on=True)
+
+    def _set_onset_fired(self):
+        signal_range = (self.ss_left_value, self.ss_right_value)
+        self.model._set_coreloss_edge_onset(
+            self.component, signal_range=signal_range,
+            only_current=self.only_current,
+            percent_position=self.percent_position)
+
+
 class Smoothing(t.HasTraits):
     # The following is disabled because as of traits 4.6 the Color trait
     # imports traitsui (!)

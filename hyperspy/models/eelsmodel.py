@@ -26,6 +26,7 @@ from hyperspy.components1d import PowerLaw
 from hyperspy import components1d
 from hyperspy._signals.eels import EELSSpectrum
 from hyperspy.misc.eels.tools import get_edge_onset
+from hyperspy.signal_tools import SetCorelossEdgeOnset
 
 _logger = logging.getLogger(__name__)
 
@@ -979,8 +980,8 @@ class EELSModel(Model1D):
             warnings.warn("Not suspended, nothing to resume.")
 
     def set_coreloss_edge_onset(
-            self, component, signal_range, only_current=False,
-            percent_position=0.1):
+            self, component, signal_range='interactive', only_current=False,
+            percent_position=0.1, display=True, toolkit=None):
         """Set onset energy of an EELS core loss ionization edge component.
 
         The minimum (baseline) and maximum (peak) in the signal range is
@@ -1025,9 +1026,14 @@ class EELSModel(Model1D):
 
         """
         component = self._get_component(component)
-        self._set_coreloss_edge_onset(
-                component=component, signal_range=signal_range,
-                only_current=only_current, percent_position=percent_position)
+        if signal_range == "interactive":
+            cf = SetCorelossEdgeOnset(self, component)
+            cf.gui(display=display, toolkit=toolkit)
+        else:
+            self._set_coreloss_edge_onset(
+                    component=component, signal_range=signal_range,
+                    only_current=only_current,
+                    percent_position=percent_position)
 
     def _set_coreloss_edge_onset(
             self, component, signal_range, only_current=False,
