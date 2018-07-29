@@ -32,7 +32,6 @@ from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import VerticalLineWidget
 from hyperspy import components1d
 from hyperspy.component import Component
-from hyperspy import drawing
 from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
@@ -58,7 +57,7 @@ class SpanSelectorInSignal1D(t.HasTraits):
         pass
 
     def span_selector_switch(self, on):
-        if not self.signal._plot.is_active():
+        if not self.signal._plot.is_active:
             return
 
         if on is True:
@@ -74,7 +73,7 @@ class SpanSelectorInSignal1D(t.HasTraits):
             self.span_selector = None
 
     def update_span_selector_traits(self, *args, **kwargs):
-        if not self.signal._plot.is_active():
+        if not self.signal._plot.is_active:
             return
         self.ss_left_value = self.span_selector.rect.get_x()
         self.ss_right_value = self.ss_left_value + \
@@ -136,7 +135,7 @@ class LineInSignal1D(t.HasTraits):
         self.signal._plot.signal_plot.figure.canvas.draw_idle()
 
     def switch_on_off(self, obj, trait_name, old, new):
-        if not self.signal._plot.is_active():
+        if not self.signal._plot.is_active:
             return
 
         if new is True and old is False:
@@ -153,7 +152,7 @@ class LineInSignal1D(t.HasTraits):
             self.draw()
 
     def update_position(self, *args, **kwargs):
-        if not self.signal._plot.is_active():
+        if not self.signal._plot.is_active:
             return
         self.position = self.axes_manager.coordinates[0]
 
@@ -255,7 +254,7 @@ class Smoothing(t.HasTraits):
                 try:
                     # PySide
                     return np.array(self.line_color.getRgb()) / 255.
-                except:
+                except BaseException:
                     return matplotlib.colors.to_rgb(self.line_color_ipy)
         else:
             return matplotlib.colors.to_rgb(self.line_color_ipy)
@@ -270,8 +269,7 @@ class Smoothing(t.HasTraits):
         self.plot()
 
     def plot(self):
-        if self.signal._plot is None or not \
-                self.signal._plot.is_active():
+        if self.signal._plot is None or not self.signal._plot.is_active:
             self.signal.plot()
         hse = self.signal._plot
         l1 = hse.signal_plot.ax_lines[0]
@@ -300,13 +298,13 @@ class Smoothing(t.HasTraits):
 
         self.signal._plot.signal_plot.create_right_axis()
         self.smooth_diff_line = drawing.signal1d.Signal1DLine()
+        self.smooth_diff_line.axes_manager = self.signal.axes_manager
         self.smooth_diff_line.data_function = self.diff_model2plot
         self.smooth_diff_line.set_line_properties(
             color=self.line_color_rgb,
             type='line')
         self.signal._plot.signal_plot.add_line(self.smooth_diff_line,
                                                ax='right')
-        self.smooth_diff_line.axes_manager = self.signal.axes_manager
 
     def _line_color_ipy_changed(self):
         if hasattr(self, "line_color"):
@@ -321,13 +319,14 @@ class Smoothing(t.HasTraits):
         self.smooth_diff_line = None
 
     def _differential_order_changed(self, old, new):
-        if old == 0:
-            self.turn_diff_line_on(new)
-            self.smooth_diff_line.plot()
         if new == 0:
             self.turn_diff_line_off()
             return
-        self.smooth_diff_line.update(force_replot=False)
+        if old == 0:
+            self.turn_diff_line_on(new)
+            self.smooth_diff_line.plot()
+        else:
+            self.smooth_diff_line.update(force_replot=False)
 
     def _line_color_changed(self, old, new):
         self.smooth_line.line_properties = {
@@ -335,7 +334,12 @@ class Smoothing(t.HasTraits):
         if self.smooth_diff_line is not None:
             self.smooth_diff_line.line_properties = {
                 'color': self.line_color_rgb}
-        self.update_lines()
+        try:
+            # it seems that changing the properties can be done before the
+            # first rendering event, which can cause issue with blitting
+            self.update_lines()
+        except AttributeError:
+            pass
 
     def diff_model2plot(self, axes_manager=None):
         smoothed = np.diff(self.model2plot(axes_manager),
@@ -343,7 +347,7 @@ class Smoothing(t.HasTraits):
         return smoothed
 
     def close(self):
-        if self.signal._plot.is_active():
+        if self.signal._plot.is_active:
             if self.differential_order != 0:
                 self.turn_diff_line_off()
             self.smooth_line.close()
@@ -608,11 +612,8 @@ class IntegrateArea(SpanSelectorInSignal1D):
         self.signal = signal
         self.axis = self.signal.axes_manager.signal_axes[0]
         self.span_selector = None
-        if not hasattr(self.signal, '_plot'):
-            self.signal.plot()
-        elif self.signal._plot is None:
-            self.signal.plot()
-        elif self.signal._plot.is_active() is False:
+        if (not hasattr(self.signal, '_plot') or self.signal._plot is None or
+                not self.signal._plot.is_active):
             self.signal.plot()
         self.span_selector_switch(on=True)
 
@@ -655,9 +656,16 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                            default='full')
     hi = t.Int(0)
 
-    def __init__(self, signal):
+    def __init__(self, signal, background_type='Power Law', polynomial_order=2,
+                 fast=True, show_progressbar=None):
         super(BackgroundRemoval, self).__init__(signal)
+        # setting the polynomial order will change the backgroud_type to
+        # polynomial, so we set it before setting the background type
+        self.polynomial_order = polynomial_order
+        self.background_type = background_type
         self.set_background_estimator()
+        self.fast = fast
+        self.show_progressbar = show_progressbar
         self.bg_line = None
 
     def on_disabling_span_selector(self):
@@ -666,7 +674,6 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.bg_line = None
 
     def set_background_estimator(self):
-
         if self.background_type == 'Power Law':
             self.background_estimator = components1d.PowerLaw()
             self.bg_line_range = 'from_left_range'
@@ -763,7 +770,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             signal_range=(self.ss_left_value, self.ss_right_value),
             background_type=background_type,
             fast=self.fast,
-            polynomial_order=self.polynomial_order)
+            polynomial_order=self.polynomial_order,
+            show_progressbar=self.show_progressbar)
         self.signal.data = new_spectra.data
         self.signal.events.data_changed.trigger(self)
         if plot:
@@ -930,6 +938,8 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                 # This is only available for traitsui, ipywidgets has a
                 # progress bar instead.
                 pass
+            except ValueError as error:
+                _logger.warning(error)
             self.index = 0
             self._reset_line()
             return
@@ -958,7 +968,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self.reset_span_selector()
         self.update_spectrum_line()
         if len(self.coordinates) > 1:
-            self.signal._plot.pointer._update_patch_position()
+            self.signal._plot.pointer._on_navigate(self.signal.axes_manager)
 
     def update_spectrum_line(self):
         self.line.auto_update = True
@@ -1004,6 +1014,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
             color='blue',
             type='line')
         self.signal._plot.signal_plot.add_line(self.interpolated_line)
+        self.interpolated_line.auto_update = False
         self.interpolated_line.autoscale = False
         self.interpolated_line.plot()
 

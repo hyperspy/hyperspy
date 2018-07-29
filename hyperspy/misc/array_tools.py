@@ -1,11 +1,22 @@
-try:
-    from collections import OrderedDict
-    ordict = True
-except ImportError:
-    # happens with Python < 2.7
-    ordict = False
+# Copyright 2007-2016 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>
 
-import warnings
+
+from collections import OrderedDict
 import math as math
 import logging
 import numbers
@@ -13,6 +24,7 @@ import numbers
 import numpy as np
 
 from hyperspy.misc.math_tools import anyfloatin
+from hyperspy.decorators import jit_ifnumba
 
 
 _logger = logging.getLogger(__name__)
@@ -189,15 +201,7 @@ def rebin(a, new_shape=None, scale=None, crop=True):
                                  " error")
 
 
-def jit_ifnumba(func):
-    try:
-        import numba
-        return numba.jit(func)
-    except ImportError:
-        return func
-
-
-@jit_ifnumba
+@jit_ifnumba()
 def _linear_bin_loop(result, data, scale):
     for j in range(result.shape[0]):
         # Begin by determining the upper and lower limits of a given new pixel.
@@ -217,7 +221,7 @@ def _linear_bin_loop(result, data, scale):
             x1 = cx1
             while (x2 - x1) >= 1:
                 # Main binning function to add full pixel values to the data.
-                value += data[x1]
+                value += data[int(x1)]
                 # Update x1 each time.
                 x1 += 1
             if x2 > x1:
@@ -326,12 +330,7 @@ def sarray2dict(sarray, dictionary=None):
 
     """
     if dictionary is None:
-        if ordict:
-            dictionary = OrderedDict()
-        else:
-            warnings.warn(
-                "OrderedDict is not available, using a standard dictionary.")
-            dictionary = {}
+        dictionary = OrderedDict()
     for name in sarray.dtype.names:
         dictionary[name] = sarray[name][0] if len(sarray[name]) == 1 \
             else sarray[name]

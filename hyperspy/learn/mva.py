@@ -26,7 +26,7 @@ from matplotlib.ticker import MaxNLocator, FuncFormatter
 try:
     import mdp
     mdp_installed = True
-except:
+except BaseException:
     mdp_installed = False
 
 
@@ -51,7 +51,7 @@ def centering_and_whitening(X):
     del _
     K = (u / (d / np.sqrt(X.shape[1]))).T
     del u, d
-    X1 = np.dot(K, X)
+    X1 = K @ X
     return X1.T, K
 
 
@@ -162,11 +162,13 @@ class MVA():
         to_return = None
         # Check if it is the wrong data type
         if self.data.dtype.char not in ['e', 'f', 'd']:  # If not float
-            _logger.warning(
+            raise TypeError(
                 'To perform a decomposition the data must be of the float '
-                'type. You can change the type using the change_dtype method'
-                ' e.g. s.change_dtype(\'float64\')\n'
-                'Nothing done.')
+                'type, but the current type is \'{}\'. '
+                'To fix this issue, you can change the type using the '
+                'change_dtype method (e.g. s.change_dtype(\'float64\')) '
+                'and then repeat the decomposition.\n'
+                'No decomposition was performed.'.format(self.data.dtype))
             return
 
         if self.axes_manager.navigation_size < 2:
@@ -327,7 +329,7 @@ class MVA():
                             var_array = np.polyval(
                                 polyfit, dc[
                                     signal_mask, navigation_mask])
-                        except:
+                        except BaseException:
                             raise ValueError(
                                 'var_func must be either a function or an '
                                 'array defining the coefficients of a polynom')
@@ -414,15 +416,15 @@ class MVA():
             if reproject in ('navigation', 'both'):
                 if algorithm not in ('nmf', 'sparse_pca',
                                      'mini_batch_sparse_pca'):
-                    loadings_ = np.dot(dc[:, signal_mask] - mean, factors)
+                    loadings_ = (dc[:, signal_mask] - mean) @ factors
                 else:
                     loadings_ = sk.transform(dc[:, signal_mask])
                 target.loadings = loadings_
             if reproject in ('signal', 'both'):
                 if algorithm not in ('nmf', 'sparse_pca',
                                      'mini_batch_sparse_pca'):
-                    factors = np.dot(np.linalg.pinv(loadings),
-                                     dc[navigation_mask, :] - mean).T
+                    factors = (np.linalg.pinv(loadings) @ (
+                        dc[navigation_mask, :] - mean)).T
                     target.factors = factors
                 else:
                     _logger.info("Reprojecting the signal is not yet "
@@ -477,6 +479,7 @@ class MVA():
                                 mask=None,
                                 on_loadings=False,
                                 pretreatment=None,
+                                compute=False,
                                 **kwargs):
         """Blind source separation (BSS) on the result on the
         decomposition.
@@ -512,6 +515,10 @@ class MVA():
             If True, perform the BSS on the loadings of a previous
             decomposition. If False, performs it on the factors.
         pretreatment: dict
+        compute: bool
+           If the decomposition results are lazy, compute the BSS components
+           so that they are not lazy.
+           Default is False.
 
         **kwargs : extra key word arguments
             Any keyword arguments are passed to the BSS algorithm.
@@ -660,19 +667,19 @@ class MVA():
             lr.bss_node = temp_function(**kwargs)
             lr.bss_node.train(factors)
             unmixing_matrix = lr.bss_node.get_recmatrix()
-        w = np.dot(unmixing_matrix, invsqcovmat)
+        w = unmixing_matrix @ invsqcovmat
         if lr.explained_variance is not None:
             # The output of ICA is not sorted in any way what makes it
             # difficult to compare results from different unmixings. The
             # following code is an experimental attempt to sort them in a
             # more predictable way
-            sorting_indices = np.argsort(np.dot(
-                lr.explained_variance[:number_of_components],
-                np.abs(w.T)))[::-1]
+            sorting_indices = np.argsort(
+                lr.explained_variance[:number_of_components] @ np.abs(w.T)
+            )[::-1]
             w[:] = w[sorting_indices, :]
         lr.unmixing_matrix = w
         lr.on_loadings = on_loadings
-        self._unmix_components()
+        self._unmix_components(compute=compute)
         self._auto_reverse_bss_component(lr)
         lr.bss_algorithm = algorithm
         lr.bss_node = str(lr.bss_node)
@@ -744,6 +751,12 @@ class MVA():
         >>> s.reverse_decomposition_component((0, 2)) # reverse ICs 0 and 2
         """
 
+        if hasattr(self.learning_results.factors, "compute"):
+            # They are lazy
+            _logger.warning(
+                "Component(s) %s not reversed, featured not implemented "
+                "for lazy computations" % component_number)
+            return
         target = self.learning_results
 
         for i in [component_number, ]:
@@ -766,25 +779,33 @@ class MVA():
         >>> s.reverse_bss_component(1) # reverse IC 1
         >>> s.reverse_bss_component((0, 2)) # reverse ICs 0 and 2
         """
-
+        if hasattr(self.learning_results.bss_factors, "compute"):
+            # They are lazy
+            _logger.warning(
+                "Component(s) %s not reversed, featured not implemented "
+                "for lazy computations" % component_number)
+            return
         target = self.learning_results
 
         for i in [component_number, ]:
+            _logger.info("Component %i reversed" % i)
             target.bss_factors[:, i] *= -1
             target.bss_loadings[:, i] *= -1
             target.unmixing_matrix[i, :] *= -1
 
-    def _unmix_components(self):
+    def _unmix_components(self, compute=False):
         lr = self.learning_results
         w = lr.unmixing_matrix
         n = len(w)
         if lr.on_loadings:
-            lr.bss_loadings = np.dot(lr.loadings[:, :n], w.T)
-            lr.bss_factors = np.dot(lr.factors[:, :n], np.linalg.inv(w))
+            lr.bss_loadings = lr.loadings[:, :n] @  w.T
+            lr.bss_factors = lr.factors[:, :n] @ np.linalg.inv(w)
         else:
-
-            lr.bss_factors = np.dot(lr.factors[:, :n], w.T)
-            lr.bss_loadings = np.dot(lr.loadings[:, :n], np.linalg.inv(w))
+            lr.bss_factors = lr.factors[:, :n] @ w.T
+            lr.bss_loadings = lr.loadings[:, :n] @ np.linalg.inv(w)
+        if compute:
+            lr.bss_factors = lr.bss_factors.compute()
+            lr.bss_loadings = lr.bss_loadings.compute()
 
     def _auto_reverse_bss_component(self, target):
         n_components = target.bss_factors.shape[1]
@@ -793,7 +814,6 @@ class MVA():
             maximum = np.nanmax(target.bss_loadings[:, i])
             if minimum < 0 and -minimum > maximum:
                 self.reverse_bss_component(i)
-                _logger.info("IC %i reversed" % i)
 
     def _calculate_recmatrix(self, components=None, mva_type=None,):
         """
@@ -822,7 +842,7 @@ class MVA():
             factors = target.bss_factors
             loadings = target.bss_loadings.T
         if components is None:
-            a = np.dot(factors, loadings)
+            a = factors @ loadings
             signal_name = 'model from %s with %i components' % (
                 mva_type, factors.shape[1])
         elif hasattr(components, '__iter__'):
@@ -831,12 +851,11 @@ class MVA():
             for i in range(len(components)):
                 tfactors[:, i] = factors[:, components[i]]
                 tloadings[i, :] = loadings[components[i], :]
-            a = np.dot(tfactors, tloadings)
+            a = tfactors @ tloadings
             signal_name = 'model from %s with components %s' % (
                 mva_type, components)
         else:
-            a = np.dot(factors[:, :components],
-                       loadings[:components, :])
+            a = factors[:, :components] @ loadings[:components, :]
             signal_name = 'model from %s with %i components' % (
                 mva_type, components)
 
@@ -1144,7 +1163,6 @@ class MVA():
         ax.set_xlabel('Principal component')
         ax.set_ylabel('Cumulative explained variance ratio')
         plt.draw()
-        plt.show()
         return ax
 
     def normalize_poissonian_noise(self, navigation_mask=None,
@@ -1331,16 +1349,29 @@ class LearningResults(object):
                 ("Number of components : %i" % len(self.unmixing_matrix)))
         return summary_str
 
-    def crop_decomposition_dimension(self, n):
+    def crop_decomposition_dimension(self, n, compute=False):
         """
         Crop the score matrix up to the given number.
         It is mainly useful to save memory and reduce the storage size
+
+        Parameters
+        ----------
+        n : int
+            Number of components to keep.
+        compute: bool
+           If the decomposition results are lazy, also compute the results.
+           Default is False.
         """
         _logger.info("trimming to %i dimensions" % n)
         self.loadings = self.loadings[:, :n]
         if self.explained_variance is not None:
             self.explained_variance = self.explained_variance[:n]
         self.factors = self.factors[:, :n]
+        if compute:
+            self.loadings = self.loadings.compute()
+            self.factors = self.factors.compute()
+            if self.explained_variance is not None:
+                self.explained_variance = self.explained_variance.compute()
 
     def _transpose_results(self):
         (self.factors, self.loadings, self.bss_factors,

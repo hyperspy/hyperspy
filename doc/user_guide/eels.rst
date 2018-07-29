@@ -28,30 +28,35 @@ Elemental composition of the sample
 It can be useful to define the elemental composition of the sample for
 archiving purposes or to use some feature (e.g. curve fitting) that requires
 this information.  The elemental composition of the sample can be declared
-using :py:meth:`~._signals.eels.EELSSpectrum_mixin.add_elements`. The information is
-stored in the :py:attr:`~.signal.BaseSignal.metadata` attribute (see
-:ref:`metadata_structure`). This information is saved to file when saving in
-the hspy format (HyperSpy's HDF5 specification).
+using :py:meth:`~._signals.eels.EELSSpectrum_mixin.add_elements`. The
+information is stored in the :py:attr:`~.signal.BaseSignal.metadata`
+attribute (see :ref:`metadata_structure`). This information is saved to file
+when saving in the hspy format (HyperSpy's HDF5 specification).
 
 Thickness estimation
 ^^^^^^^^^^^^^^^^^^^^
 
-The :py:meth:`~._signals.eels.EELSSpectrum_mixin.estimate_thickness` can estimate the
-thickness from a low-loss EELS spectrum using the Log-Ratio method.
+The :py:meth:`~._signals.eels.EELSSpectrum_mixin.estimate_thickness` can
+estimate the thickness from a low-loss EELS spectrum using the Log-Ratio
+method.
 
 Zero-loss peak centre and alignment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :py:meth:`~._signals.eels.EELSSpectrum_mixin.estimate_zero_loss_peak_centre` can be used to estimate the position of the zero-loss peak. The method assumes that the ZLP is the most intense feature in the spectra. For a more general approach see :py:meth:`~.signal.Signal1DTools.find_peaks1D_ohaver`.
+The
+:py:meth:`~._signals.eels.EELSSpectrum_mixin.estimate_zero_loss_peak_centre`
+can be used to estimate the position of the zero-loss peak. The method assumes
+that the ZLP is the most intense feature in the spectra. For a more general
+approach see :py:meth:`~.signal.Signal1DTools.find_peaks1D_ohaver`.
 
 The :py:meth:`~._signals.eels.EELSSpectrum_mixin.align_zero_loss_peak` can
 align the ZLP with subpixel accuracy. It is more robust and easy to use than
 :py:meth:`~.signal.Signal1DTools.align1D` for the task. Note that it is
 possible to apply the same alignment to other spectra using the `also_align`
-argument. This can be useful e.g. to align core-loss spectra acquired quasi-simultaneously.
-If there are other features in the low loss signal which are more intense than the
-ZLP, the `signal_range` argument can narrow down the energy range for searching for the
-ZLP.
+argument. This can be useful e.g. to align core-loss spectra acquired
+quasi-simultaneously. If there are other features in the low loss signal
+which are more intense than the ZLP, the `signal_range` argument can narrow
+down the energy range for searching for the ZLP.
 
 Deconvolutions
 ^^^^^^^^^^^^^^
@@ -93,11 +98,12 @@ Kramers-Kronig Analysis
 
 The single-scattering EEL spectrum is approximately related to the complex
 permittivity of the sample and can be estimated by Kramers-Kronig analysis.
-The :py:meth:`~._signals.eels.EELSSpectrum_mixin.kramers_kronig_analysis` method
-implements the Kramers-Kronig FFT method as in [Egerton2011]_ to estimate the
-complex dielectric function from a low-loss EELS spectrum. In addition, it can
-estimate the thickness if the refractive index is known and approximately
-correct for surface plasmon excitations in layers.
+The :py:meth:`~._signals.eels.EELSSpectrum_mixin.kramers_kronig_analysis`
+method implements the Kramers-Kronig FFT method as in
+:ref:`[Egerton2011] <Egerton2011>` to estimate the complex dielectric function
+from a low-loss EELS spectrum. In addition, it can estimate the thickness if
+the refractive index is known and approximately correct for surface
+plasmon excitations in layers.
 
 
 
@@ -115,8 +121,10 @@ Load the core-loss and low-loss spectra
 
 .. code-block:: python
 
-    >>> s = hs.datasets.eelsdb(title="Hexagonal Boron Nitride", spectrum_type="coreloss")[0]
-    >>> ll = hs.datasets.eelsdb(title="Hexagonal Boron Nitride", spectrum_type="lowloss")[0]
+    >>> s = hs.datasets.eelsdb(title="Hexagonal Boron Nitride",
+    ...                        spectrum_type="coreloss")[0]
+    >>> ll = hs.datasets.eelsdb(title="Hexagonal Boron Nitride",
+    ...                         spectrum_type="lowloss")[0]
 
 
 Set some important experimental information that is missing from the original
@@ -124,7 +132,9 @@ core-loss file
 
 .. code-block:: python
 
-    >>> s.set_microscope_parameters(beam_energy=100, convergence_angle=0.2, collection_angle=2.55)
+    >>> s.set_microscope_parameters(beam_energy=100,
+    ...                             convergence_angle=0.2,
+    ...                             collection_angle=2.55)
 
 .. warning::
 
@@ -139,7 +149,7 @@ Define the chemical composition of the sample
     >>> s.add_elements(('B', 'N'))
 
 
-In order to include the effect of plural scattering we provide the low-loss spectrum to :py:meth:`~._signals.eels.EELSSpectrum_mixin.create_model`:
+In order to include the effect of plural scattering, the model is convolved with the loss loss spectrum in which case the low loss spectrum needs to be provided to :py:meth:`~._signals.eels.EELSSpectrum_mixin.create_model`:
 
 .. code-block:: python
 
@@ -151,11 +161,11 @@ HyperSpy has created the model and configured it automatically:
 .. code-block:: python
 
     >>> m.components
-       # |            Attribute Name |            Component Name |            Component Type
-    ---- | ------------------------- | ------------------------- | -------------------------
-       0 |                  PowerLaw |                  PowerLaw |                  PowerLaw
-       1 |                       N_K |                       N_K |                EELSCLEdge
-       2 |                       B_K |                       B_K |                EELSCLEdge
+       # |       Attribute Name |       Component Name |       Component Type
+    ---- | -------------------- | -------------------- | --------------------
+       0 |             PowerLaw |             PowerLaw |             PowerLaw
+       1 |                  N_K |                  N_K |           EELSCLEdge
+       2 |                  B_K |                  B_K |           EELSCLEdge
 
 Conveniently, all the EELS core-loss components of the added elements are added
 automatically, names after its element symbol.
@@ -183,7 +193,8 @@ to fit EELS core-loss spectra
     >>> m.smart_fit()
 
 
-This fit can also be applied over the entire signal to fit a whole spectrum image
+This fit can also be applied over the entire signal to fit a whole spectrum
+image
 
 .. code-block:: python
 

@@ -23,7 +23,6 @@ import logging
 from hyperspy.models.model1d import Model1D
 from hyperspy.components1d import EELSCLEdge
 from hyperspy.components1d import PowerLaw
-from hyperspy.defaults_parser import preferences
 from hyperspy import components1d
 from hyperspy._signals.eels import EELSSpectrum
 from hyperspy.misc.utils import get_edge_onset
@@ -495,7 +494,6 @@ class EELSModel(Model1D):
         ea = self.axis.axis[self.channel_switches]
         if start_energy is None:
             start_energy = ea[0]
-        preedge_safe_window_width = self._preedge_safe_window_width
         # Declare variables
         active_edges = self._active_edges
         edge = active_edges[edgenumber]

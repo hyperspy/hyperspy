@@ -43,7 +43,7 @@ class ImagePlot(BlittedFigure):
         arguments.
     pixel_units : {None, string}
         The pixel units for the scale bar. Normally
-    scalebar, plot_ticks, colorbar, plot_indices : bool
+    scalebar, colorbar, plot_indices : bool
     title : str
         The title is printed at the top of the image.
     vmin, vmax : float
@@ -67,7 +67,6 @@ class ImagePlot(BlittedFigure):
         super(ImagePlot, self).__init__()
         self.data_function = None
         self.pixel_units = None
-        self.plot_ticks = False
         self.colorbar = True
         self._colorbar = None
         self.quantity_label = ''
@@ -197,23 +196,37 @@ class ImagePlot(BlittedFigure):
         self._vmin_auto, self._vmax_auto = utils.contrast_stretching(
             data, self.saturated_pixels)
 
-    def create_figure(self, max_size=None, min_size=2):
-        if self.scalebar is True:
-            wfactor = 1.0 + plt.rcParams['font.size'] / 100
-        else:
-            wfactor = 1
+    def create_figure(self, max_size=None, min_size=2, **kwargs):
+        """Create matplotlib figure
 
-        height = abs(self._extent[3] - self._extent[2]) * self._aspect
-        width = abs(self._extent[1] - self._extent[0])
-        figsize = np.array((width * wfactor, height)) * \
-            max(plt.rcParams['figure.figsize']) / max(width * wfactor, height)
-        self.figure = utils.create_figure(
-            window_title=("Figure " + self.title
-                          if self.title
-                          else None),
-            figsize=figsize.clip(min_size, max_size))
-        self.figure.canvas.mpl_connect('draw_event', self._on_draw)
-        utils.on_figure_window_close(self.figure, self._on_close)
+        The figure size is automatically computed by default, taking into
+        account the x and y dimensions of the image. Alternatively the figure
+        size can be defined by passing the ``figsize`` keyword argument.
+
+        Parameters
+        ----------
+        max_size, min_size: number
+            The maximum and minimum size of the axes in inches. These have
+            no effect when passing the ``figsize`` keyword to manually set
+            the figure size.
+        **kwargs
+            All keyword arguments are passed to ``plt.figure``.
+
+        """
+        if "figsize" not in kwargs:
+            if self.scalebar is True:
+                wfactor = 1.0 + plt.rcParams['font.size'] / 100
+            else:
+                wfactor = 1
+
+            height = abs(self._extent[3] - self._extent[2]) * self._aspect
+            width = abs(self._extent[1] - self._extent[0])
+            figsize = np.array((width * wfactor, height)) * \
+                max(plt.rcParams['figure.figsize']) / \
+                max(width * wfactor, height)
+            figsize = figsize.clip(min_size, max_size)
+            kwargs["figsize"] = figsize
+        super().create_figure(**kwargs)
 
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
@@ -267,20 +280,19 @@ class ImagePlot(BlittedFigure):
             self._colorbar.ax.yaxis.set_animated(
                 self.figure.canvas.supports_blit)
 
-        self._set_background()
-        self.figure.canvas.draw_idle()
         if hasattr(self.figure, 'tight_layout'):
             try:
                 if self.axes_ticks == 'off' and not self.colorbar:
                     plt.subplots_adjust(0, 0, 1, 1)
                 else:
                     self.figure.tight_layout()
-            except:
+            except BaseException:
                 # tight_layout is a bit brittle, we do this just in case it
                 # complains
                 pass
 
         self.connect()
+        self.figure.canvas.draw()
 
     def update(self, **kwargs):
         ims = self.ax.images
@@ -359,12 +371,7 @@ class ImagePlot(BlittedFigure):
             else:
                 ims[0].changed()
             if self.figure.canvas.supports_blit:
-                self._draw_animated()
-                # It seems that nans they're simply not drawn, so simply replacing
-                # the data does not update the value of the nan pixels to the
-                # background color. We redraw everything as a workaround.
-                if np.isnan(data).any():
-                    self.figure.canvas.draw_idle()
+                self._update_animated()
             else:
                 self.figure.canvas.draw_idle()
         else:
@@ -403,7 +410,6 @@ class ImagePlot(BlittedFigure):
     def connect(self):
         self.figure.canvas.mpl_connect('key_press_event',
                                        self.on_key_press)
-        self.figure.canvas.draw_idle()
         if self.axes_manager:
             self.axes_manager.events.indices_changed.connect(self.update, [])
             self.events.closed.connect(

@@ -1,5 +1,5 @@
-hyperspy\.tests package
-=======================
+hyperspy.tests package
+======================
 
 Subpackages
 -----------
@@ -21,24 +21,24 @@ Subpackages
 Submodules
 ----------
 
-hyperspy\.tests\.test\_dictionary\_tree\_browser module
--------------------------------------------------------
+hyperspy.tests.test\_dictionary\_tree\_browser module
+-----------------------------------------------------
 
 .. automodule:: hyperspy.tests.test_dictionary_tree_browser
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.tests\.test\_events module
-------------------------------------
+hyperspy.tests.test\_events module
+----------------------------------
 
 .. automodule:: hyperspy.tests.test_events
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.tests\.test\_interactive module
------------------------------------------
+hyperspy.tests.test\_interactive module
+---------------------------------------
 
 .. automodule:: hyperspy.tests.test_interactive
     :members:

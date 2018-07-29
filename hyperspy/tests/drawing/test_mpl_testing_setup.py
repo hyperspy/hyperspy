@@ -52,6 +52,6 @@ def test_plotting_test_working(mpl_cleanup):
     ax = fig.add_subplot(1, 1, 1)
     ax.plot([1, 2, 2])
     # to generate a different plot uncomment the next line
-# ax.plot([1, 2, 3, 4]) # Uncomment this line to make sure the test is
-# properly failing
+    # ax.plot([1, 2, 3, 4]) # Uncomment this line to make sure the test is
+    # properly failing
     return fig
