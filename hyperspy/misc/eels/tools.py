@@ -323,7 +323,7 @@ def get_edge_onset(data, start, end, x_axis, percent_position):
         Region where the edge onset will be found, in x_axis values.
     percent_position : float
 	At what fraction of the ELNES signal the onset energy will be
-	placed as in EELSModel.set_coreloss_edge_onset.
+	found. See EELSModel.set_coreloss_edge_onset for more information.
 
     Returns
     -------
@@ -337,6 +337,10 @@ def get_edge_onset(data, start, end, x_axis, percent_position):
     >>> onset = get_edge_onset(data, 600, 700, x_axis, 0.1)
 
     """
+    if not ((percent_position > 0.) and (percent_position < 1.)):
+        raise ValueError(
+                "percent position ({0}) must be between 0 and 1".format(
+                    percent_position))
     start_i = utils.find_nearest_index(x_axis, start)
     end_i = utils.find_nearest_index(x_axis, end)
 

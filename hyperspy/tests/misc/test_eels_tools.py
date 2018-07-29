@@ -39,3 +39,9 @@ class TestGetEdgeOnset:
         data[50:200] = 600
         onset = tools.get_edge_onset(data, 100, 200, x_axis, 0.5)
         assert approx(onset, abs=0.01) == 150
+
+    def test_percent_position_wrong_input(self):
+        with pytest.raises(ValueError):
+            tools.get_edge_onset(self.data, 10, 90, self.x_axis, 1.1)
+        with pytest.raises(ValueError):
+            tools.get_edge_onset(self.data, 10, 90, self.x_axis, -0.1)
