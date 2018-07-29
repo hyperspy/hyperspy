@@ -311,20 +311,45 @@ def eels_constant(s, zlp, t):
     return k
 
 
-def get_edge_onset(data, start, end, energy_range, percent_position):
-    start_i = utils.find_nearest_index(energy_range, start)
-    end_i = utils.find_nearest_index(energy_range, end)
+def get_edge_onset(data, start, end, x_axis, percent_position):
+    """Get the onset energy for a core loss edge.
+
+    Parameters
+    ----------
+    data : NumPy array
+    x_axis : NumPy array
+        Same size as data
+    start, end : scalar
+        Region where the edge onset will be found, in x_axis values.
+    percent_position : float
+	At what fraction of the ELNES signal the onset energy will be
+	placed as in EELSModel.set_coreloss_edge_onset.
+
+    Returns
+    -------
+    onset_energy : scalar
+
+    Examples
+    --------
+    >>> from hyperspy.misc.eels.tools import get_edge_onset
+    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
+    >>> data, x_axis = s.data, s.axes_manager[0].axis
+    >>> onset = get_edge_onset(data, 600, 700, x_axis, 0.1)
+
+    """
+    start_i = utils.find_nearest_index(x_axis, start)
+    end_i = utils.find_nearest_index(x_axis, end)
 
     data = data[start_i:end_i]
-    energy_range = energy_range[start_i:end_i]
+    x_axis = x_axis[start_i:end_i]
 
     data_max = data.max()
     data_min = data.min()
     data_onset_value = (data_max - data_min) * percent_position + data_min
 
-    interpolate = interp1d(energy_range, data)
-    large_energy_array = np.arange(energy_range[0], energy_range[-1], 0.0001)
-    data_interpolated = interpolate(large_energy_array)
+    interpolate = interp1d(x_axis, data, fill_value='extrapolate')
+    x_axis_interp = np.arange(x_axis[0], x_axis[-1], 0.0001)
+    data_interpolated = interpolate(x_axis_interp)
     data_max_i = data_interpolated.argmax()
     data_min_i = data_interpolated.argmin()
 
@@ -338,5 +363,5 @@ def get_edge_onset(data, start, end, energy_range, percent_position):
             data_interpolated[data_min_i:data_max_i],
             data_onset_value,
             threshold=threshold)
-    onset_energy = large_energy_array[data_min_i:data_max_i][data_onset_i]
+    onset_energy = x_axis_interp[data_min_i:data_max_i][data_onset_i]
     return onset_energy
