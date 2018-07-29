@@ -5,9 +5,11 @@ import logging
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import constants
+from scipy.interpolate import interp1d
 
 from hyperspy.misc.array_tools import rebin
 import hyperspy.defaults_parser
+import hyperspy.misc.utils as utils
 
 _logger = logging.getLogger(__name__)
 
@@ -307,3 +309,34 @@ def eels_constant(s, zlp, t):
         data=(t * i0 / (332.5 * ke)) * np.log(1 + (beta * tgt / eaxis) ** 2))
     k.metadata.General.title = "EELS proportionality constant K"
     return k
+
+
+def get_edge_onset(data, start, end, energy_range, percent_position):
+    start_i = utils.find_nearest_index(energy_range, start)
+    end_i = utils.find_nearest_index(energy_range, end)
+
+    data = data[start_i:end_i]
+    energy_range = energy_range[start_i:end_i]
+
+    data_max = data.max()
+    data_min = data.min()
+    data_onset_value = (data_max - data_min) * percent_position + data_min
+
+    interpolate = interp1d(energy_range, data)
+    large_energy_array = np.arange(energy_range[0], energy_range[-1], 0.0001)
+    data_interpolated = interpolate(large_energy_array)
+    data_max_i = data_interpolated.argmax()
+    data_min_i = data_interpolated.argmin()
+
+    if data_max_i < data_min_i:
+        temp_i = data_max_i
+        data_max_i = data_min_i
+        data_min_i = temp_i
+
+    threshold = 0.0001 * (data_max - data_min)
+    data_onset_i = utils.find_nearest_index_from_right(
+            data_interpolated[data_min_i:data_max_i],
+            data_onset_value,
+            threshold=threshold)
+    onset_energy = large_energy_array[data_min_i:data_max_i][data_onset_i]
+    return onset_energy
