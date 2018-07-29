@@ -337,7 +337,7 @@ def get_edge_onset(data, start, end, x_axis, percent_position):
     >>> onset = get_edge_onset(data, 600, 700, x_axis, 0.1)
 
     """
-    if not ((percent_position > 0.) and (percent_position < 1.)):
+    if not ((percent_position >= 0.) and (percent_position <= 1.)):
         raise ValueError(
                 "percent position ({0}) must be between 0 and 1".format(
                     percent_position))

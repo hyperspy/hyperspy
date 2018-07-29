@@ -1000,7 +1000,7 @@ class EELSModel(Model1D):
         component : EELSCLEdge component instance
             The component must be in the model, otherwise an exception
             is raised. The component can be specified by name, index or itself.
-        signal_range : tuple (left_value, right_value)}
+        signal_range : tuple (left_value, right_value)
         only_current : bool
             If False sets the onset for the full dataset. Default is False.
         percent_position : float
@@ -1026,23 +1026,24 @@ class EELSModel(Model1D):
         """
         component = self._get_component(component)
         self._set_coreloss_edge_onset(
-                component, signal_range, only_current, percent_position)
+                component=component, signal_range=signal_range,
+                only_current=only_current, percent_position=percent_position)
 
     def _set_coreloss_edge_onset(
             self, component, signal_range, only_current=False,
             percent_position=0.1):
-        energy_range = self.axes_manager.signal_axes[0].axis
+        x_axis = self.axes_manager.signal_axes[0].axis
 
         if only_current:
             edge_onset_energy = get_edge_onset(
-                self.spectrum(), signal_range[0], signal_range[1],
-                energy_range, percent_position)
+                self.signal(), signal_range[0], signal_range[1],
+                x_axis, percent_position=percent_position)
             component.onset_energy.value = edge_onset_energy
             component.onset_energy.store_current_value_in_array()
         else:
             for index in self.axes_manager:
                 edge_onset_energy = get_edge_onset(
                     self.signal(), signal_range[0], signal_range[1],
-                    energy_range, percent_position)
+                    x_axis, percent_position=percent_position)
                 component.onset_energy.value = edge_onset_energy
                 component.onset_energy.store_current_value_in_array()
