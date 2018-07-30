@@ -143,7 +143,7 @@ class Signal1DFigure(BlittedFigure):
             marker.update()
         for line in self.ax_lines + self.right_ax_lines:
             # save on figure rendering and do it at the end
-            line.update(render_figure=False)
+            line._auto_update_line(render_figure=False)
         if self.ax.figure.canvas.supports_blit:
             self.ax.hspy_fig._update_animated()
         else:
@@ -327,9 +327,10 @@ class Signal1DLine(object):
 
         """
         if self.auto_update:
-            # if markers are plotted, we don't render the figure now but when
-            # once the markers have been updated
-            kwargs['render_figure'] = (len(self.ax.hspy_fig.ax_markers) == 0)
+            if 'render_figure' not in kwargs.keys():
+                # if markers are plotted, we don't render the figure now but 
+                # when once the markers have been updated
+                kwargs['render_figure'] = (len(self.ax.hspy_fig.ax_markers) == 0)
             self.update(self, *args, **kwargs)
 
     def update(self, force_replot=False, render_figure=True):

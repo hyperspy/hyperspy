@@ -920,14 +920,15 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self._reset_line()
         ncoordinates = len(self.coordinates)
         spike = self.detect_spike()
-        while not spike and (
-                (self.index < ncoordinates - 1 and back is False) or
-                (self.index > 0 and back is True)):
-            if back is False:
-                self.index += 1
-            else:
-                self.index -= 1
-            spike = self.detect_spike()
+        with self.signal.axes_manager.events.indices_changed.suppress():
+            while not spike and (
+                    (self.index < ncoordinates - 1 and back is False) or
+                    (self.index > 0 and back is True)):
+                if back is False:
+                    self.index += 1
+                else:
+                    self.index -= 1
+                spike = self.detect_spike()
 
         if spike is False:
             m = SimpleMessage()
