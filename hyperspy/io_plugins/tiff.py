@@ -261,7 +261,7 @@ def _load_data(TF, filename, is_rgb, sl=None, memmap=False, **kwds):
         if is_rgb:
             dc = rgb_tools.regular_array2rgbx(dc)
         if sl is not None:
-            dc = dc[sl]
+            dc = dc[tuple(sl)]
         return dc
 
 
