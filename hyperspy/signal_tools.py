@@ -75,9 +75,14 @@ class SpanSelectorInSignal1D(t.HasTraits):
     def update_span_selector_traits(self, *args, **kwargs):
         if not self.signal._plot.is_active:
             return
-        self.ss_left_value = self.span_selector.rect.get_x()
-        self.ss_right_value = self.ss_left_value + \
-            self.span_selector.rect.get_width()
+        x0 = self.span_selector.rect.get_x()
+        if x0 < self.axis.low_value:
+            x0 = self.axis.low_value
+        self.ss_left_value = x0
+        x1 = self.ss_left_value + self.span_selector.rect.get_width()
+        if x1 > self.axis.high_value:
+            x1 = self.axis.high_value
+        self.ss_right_value = x1
 
     def reset_span_selector(self):
         self.span_selector_switch(False)
