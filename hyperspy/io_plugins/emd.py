@@ -511,13 +511,31 @@ def _get_keys_from_group(group):
 
 
 def _parse_sub_data_group_metadata(sub_data_group):
-    metadata_array = sub_data_group['Metadata'][:].T[0]
+    metadata_array = sub_data_group['Metadata'][:, 0].T
     mdata_string = metadata_array.tostring().decode("utf-8")
     return json.loads(mdata_string.rstrip('\x00'))
 
 
 def _parse_metadata(data_group, sub_group_key):
     return _parse_sub_data_group_metadata(data_group[sub_group_key])
+
+
+def _parse_detector_name(original_metadata):
+    try:
+        name = original_metadata['BinaryResult']['Detector']
+    except KeyError:
+        # if the `BinaryResult/Detector` is not available, there should be
+        # only one detector in `Detectors`
+        name = original_metadata['Detectors']['Detector-01']['DetectorName']
+    return name
+
+
+def _get_detector_metadata_dict(om, detector_name):
+    detectors_dict = om['Detectors']
+    # find detector dict from the detector_name
+    for key in detectors_dict:
+        if detectors_dict[key]['DetectorName'] == detector_name:
+            return detectors_dict[key]
 
 
 class FeiEMDReader(object):
@@ -583,7 +601,7 @@ class FeiEMDReader(object):
         elif select_type is None:
             pass
         else:
-            raise ValueError("`select_type` parameter takes only: `None`, ",
+            raise ValueError("`select_type` parameter takes only: `None`, "
                              "'single_spectrum', 'images' or 'spectrum_image'.")
 
         if self.im_type == 'Image':
@@ -690,15 +708,8 @@ class FeiEMDReader(object):
         image_sub_group = image_group[image_sub_group_key]
         original_metadata = _parse_metadata(image_group, image_sub_group_key)
         original_metadata.update(self.original_metadata)
-        try:
-            if 'Detector' in original_metadata['BinaryResult']:
-                self.detector_name = original_metadata['BinaryResult']['Detector']
-            # if the `BinaryResult/Detector` is not available, there should be
-            # only one detector in `Detectors`
-            elif 'DetectorName' in original_metadata['Detectors']['Detector-01']:
-                self.detector_name = original_metadata['Detectors']['Detector-01']['DetectorName']
-        except KeyError:
-            pass
+        if 'Detector' in original_metadata['BinaryResult'].keys():
+            self.detector_name = _parse_detector_name(original_metadata)
 
         read_stack = (self.load_SI_image_stack or self.im_type == 'Image')
         h5data = image_sub_group['Data']
@@ -712,7 +723,13 @@ class FeiEMDReader(object):
                     chunks=h5data.chunks),
                 axes=[2, 0, 1])
         else:
-            data = np.rollaxis(np.array(h5data), axis=2)
+            # Workaround for a h5py bug https://github.com/h5py/h5py/issues/977
+            # Change back to standard API once issue #977 is fixed.
+            # Preallocate the numpy array and use read_direct method, which is
+            # much faster in case of chunked data.
+            data = np.empty(h5data.shape)
+            h5data.read_direct(data)
+            data = np.rollaxis(data, axis=2)
 
         pix_scale = original_metadata['BinaryResult'].get(
             'PixelSize', {'height': 1.0, 'width': 1.0})
@@ -768,6 +785,10 @@ class FeiEMDReader(object):
 
         md = self._get_metadata_dict(original_metadata)
         md['Signal']['signal_type'] = 'image'
+        if self.detector_name is not None:
+            original_metadata['DetectorMetadata'] = _get_detector_metadata_dict(
+                original_metadata,
+                self.detector_name)
         if hasattr(self, 'map_label_dict'):
             if image_sub_group_key in self.map_label_dict:
                 md['General']['title'] = self.map_label_dict[image_sub_group_key]
@@ -776,7 +797,8 @@ class FeiEMDReader(object):
                 'axes': axes,
                 'metadata': md,
                 'original_metadata': original_metadata,
-                'mapping': self._get_mapping(map_selected_element=False)}
+                'mapping': self._get_mapping(map_selected_element=False,
+                        parse_individual_EDS_detector_metadata=False)}
 
     def _parse_frame_time(self, original_metadata, factor=1):
         try:
@@ -822,6 +844,8 @@ class FeiEMDReader(object):
         self.original_metadata.update({group_name: d})
 
     def _read_spectrum_stream(self):
+        if not self.load_SI:
+            return
         self.detector_name = 'EDS'
         # Try to read the number of frames from Data/SpectrumImage
         try:
@@ -945,10 +969,11 @@ class FeiEMDReader(object):
             original_metadata = stream.original_metadata
             original_metadata.update(self.original_metadata)
             self.dictionaries.append({'data': stream.spectrum_image,
-                                      'axes': axes,
+    'axes': axes,
                                       'metadata': md,
                                       'original_metadata': original_metadata,
-                                      'mapping': self._get_mapping()})
+                                      'mapping': self._get_mapping(
+                                          parse_individual_EDS_detector_metadata=not self.sum_frames)})
 
     def _get_dispersion_offset(self, original_metadata):
         try:
@@ -979,22 +1004,23 @@ class FeiEMDReader(object):
         meta_gen['original_filename'] = os.path.split(self.filename)[1]
         if self.detector_name is not None:
             meta_gen['title'] = self.detector_name
-        # We have only one entry in the original_metadata, so we can't use the
-        # mapping of the original_metadata to set the date and time in the
-        # metadata: need to set it manually here
+        # We have only one entry in the original_metadata, so we can't use 
+        # the mapping of the original_metadata to set the date and time in 
+        # the metadata: need to set it manually here
         try:
             if 'AcquisitionStartDatetime' in om['Acquisition'].keys():
-                unix_time = om['Acquisition']['AcquisitionStartDatetime']['DateTime']
+                unix_time = om['Acquisition']['AcquisitionStartDatetime']['DateTime']              
             # Workaround when the 'AcquisitionStartDatetime' key is missing
             # This timestamp corresponds to when the data is stored
-            elif 'Detectors[BM-Ceta].TimeStamp' in om['CustomProperties'].keys():
+            elif (not isinstance(om['CustomProperties'], str) and 
+                  'Detectors[BM-Ceta].TimeStamp' in om['CustomProperties'].keys()):
                 unix_time = float(
                     om['CustomProperties']['Detectors[BM-Ceta].TimeStamp']['value']) / 1E6
             date, time = self._convert_datetime(unix_time).split('T')
             meta_gen['date'] = date
             meta_gen['time'] = time
             meta_gen['time_zone'] = self._get_local_time_zone()
-        except (KeyError, UnboundLocalError):
+        except (UnboundLocalError):
             pass
 
         meta_sig = {}
@@ -1002,7 +1028,8 @@ class FeiEMDReader(object):
 
         return {'General': meta_gen, 'Signal': meta_sig}
 
-    def _get_mapping(self, map_selected_element=True):
+    def _get_mapping(self, map_selected_element=True,
+                     parse_individual_EDS_detector_metadata=True):
         mapping = {
             'Acquisition.AcquisitionStartDatetime.DateTime': (
                 "General.time_zone", lambda x: self._get_local_time_zone()),
@@ -1016,22 +1043,48 @@ class FeiEMDReader(object):
                 "Acquisition_instrument.TEM.microscope", None),
             'Stage.AlphaTilt': (
                 "Acquisition_instrument.TEM.Stage.tilt_alpha",
-                lambda x: '{:.2f}'.format(float(x))),
+                lambda x: '{:.3f}'.format(np.degrees(float(x)))),
             'Stage.BetaTilt': (
                 "Acquisition_instrument.TEM.Stage.tilt_beta",
-                lambda x: '{:.2f}'.format(float(x))),
+                lambda x: '{:.3f}'.format(np.degrees(float(x)))),
             'Stage.Position.x': (
                 "Acquisition_instrument.TEM.Stage.x",
-                lambda x: '{:.3f}'.format(float(x))),
+                lambda x: '{:.6f}'.format(float(x))
+            ),
             'Stage.Position.y': (
                 "Acquisition_instrument.TEM.Stage.y",
-                lambda x: '{:.3f}'.format(float(x))),
+                lambda x: '{:.6f}'.format(float(x))),
             'Stage.Position.z': (
                 "Acquisition_instrument.TEM.Stage.z",
-                lambda x: '{:.3f}'.format(float(x))),
+                lambda x: '{:.6f}'.format(float(x))),
             'ImportedDataParameter.Number_of_frames': (
-                "Acquisition_instrument.TEM.Detector.EDS.number_of_frames", None)
+                "Acquisition_instrument.TEM.Detector.EDS.number_of_frames", None),
+            'DetectorMetadata.ElevationAngle': (
+                "Acquisition_instrument.TEM.Detector.EDS.elevation_angle",
+                lambda x: '{:.3f}'.format(np.degrees(float(x)))),
+            'DetectorMetadata.Gain': (
+                "Signal.Noise_properties.Variance_linear_model.gain_factor",
+                lambda x: '{:.6f}'.format(float(x))),
+            'DetectorMetadata.Offset': (
+                "Signal.Noise_properties.Variance_linear_model.gain_offset",
+                lambda x: '{:.6f}'.format(float(x))),
         }
+
+        # Parse individual metadata for each EDS detector
+        if parse_individual_EDS_detector_metadata:
+            mapping.update({
+                'DetectorMetadata.AzimuthAngle': (
+                    "Acquisition_instrument.TEM.Detector.EDS.azimuth_angle",
+                    lambda x: '{:.3f}'.format(np.degrees(float(x)))),
+                'DetectorMetadata.LiveTime': (
+                    "Acquisition_instrument.TEM.Detector.EDS.live_time",
+                    lambda x: '{:.6f}'.format(float(x))),
+                'DetectorMetadata.RealTime': (
+                    "Acquisition_instrument.TEM.Detector.EDS.real_time",
+                    lambda x: '{:.6f}'.format(float(x))),
+                'DetectorMetadata.DetectorName': (
+                    "General.title", None),
+            })
 
         # Add selected element
         if map_selected_element:
