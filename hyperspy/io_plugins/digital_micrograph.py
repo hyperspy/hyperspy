@@ -548,10 +548,15 @@ class ImageObject(object):
 
     @property
     def title(self):
-        if "Name" in self.imdict:
-            return self.imdict.Name
-        else:
-            return ''
+        title = self.imdict.get_item("Name")
+        if isinstance(title, list) and len(title) >0:
+            # take the first item of the list hoping for the best...
+            title = title[0]
+        if not isinstance(title, str):
+            # We only want a string, if this is not the case, set to default
+            _logger.info("Title can't be imported.")
+            title = ''
+        return title
 
     @property
     def record_by(self):
