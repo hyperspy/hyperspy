@@ -35,7 +35,6 @@ import warnings
 import os
 import subprocess
 import itertools
-import re
 
 # stuff to check presence of compiler:
 import distutils.sysconfig
@@ -279,7 +278,8 @@ with update_version_when_dev() as version:
                   'hyperspy.samfire_utils.goodness_of_fit_tests',
                   ],
         install_requires=install_req,
-        tests_require=["pytest>=3.0.2"],
+        setup_requires=["pytest-runner"],
+        tests_require=extras_require["test"],
         extras_require=extras_require,
         package_data={
             'hyperspy':
