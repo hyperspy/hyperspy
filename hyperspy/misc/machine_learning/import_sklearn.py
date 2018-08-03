@@ -11,7 +11,7 @@ try:
         warnings.simplefilter("ignore")
         try:
             import sklearn
-        except:
+        except ModuleNotFoundError:
             import scikits.learn as sklearn
         sklearn_version = LooseVersion(sklearn.__version__)
         if sklearn_version < LooseVersion("0.9"):

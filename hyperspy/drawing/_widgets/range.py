@@ -156,8 +156,8 @@ class RangeWidget(ResizableDraggableWidgetBase):
         def warn(obj, parameter, value):
             global already_warn_out_of_range
             if not already_warn_out_of_range:
-                _logger.info('{}: {} is out of range. It is therefore set '
-                             'to the value of {}'.format(obj, parameter, value))
+                _logger.info('{}: {} is out of range. It is therefore set to '
+                             'the value of {}'.format(obj, parameter, value))
                 already_warn_out_of_range = True
 
         x, w = self._parse_bounds_args(args, kwargs)

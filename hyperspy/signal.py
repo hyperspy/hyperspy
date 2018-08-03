@@ -50,7 +50,8 @@ from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
-    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG, RECHUNK_ARG)
+    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
+    RECHUNK_ARG)
 from hyperspy.docstrings.plot import BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
@@ -763,10 +764,10 @@ class MVATools(object):
         ----------
 
         comp_ids : None, int, or list of ints
-            if None (default), returns maps of all components if the output_dimension was defined when
-            executing ``decomposition``. Otherwise it raises a ValueError.
-            if int, returns maps of components with ids from 0 to
-            given int.
+            if None (default), returns maps of all components if the
+            output_dimension was defined when executing ``decomposition``.
+            Otherwise it raises a ValueError. If int, returns maps of
+            components with ids from 0 to given int.
             if list of ints, returns maps of components with ids in
             given list.
 
@@ -902,11 +903,11 @@ class MVATools(object):
         ----------
 
         comp_ids : None, int, or list of ints
-            if None (default), returns maps of all components if the output_dimension was defined when
-            executing ``decomposition``. Otherwise it raises a ValueError.
-            if int, returns maps of components with ids from 0 to
-            given int.
-            if list of ints, returns maps of components with ids in
+            if None (default), returns maps of all components if the
+            output_dimension was defined when executing ``decomposition``.
+            Otherwise it raises a ValueError. If int, returns maps of
+            components with ids from 0 to given int.
+            If list of ints, returns maps of components with ids in
             given list.
 
         calibrate : bool

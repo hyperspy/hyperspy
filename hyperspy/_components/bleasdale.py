@@ -18,7 +18,7 @@
 
 import numpy as np
 
-from hyperspy.component import Component, Parameter
+from hyperspy.component import Component
 
 
 class Bleasdale(Component):

@@ -75,7 +75,7 @@ class Arctan(Component):
         k = self.k.value
         x0 = self.x0.value
         if self.minimum_at_zero:
-            return offset + np.arctan(k * (x - x0))
+            return math.pi / 2 + np.arctan(k * (x - x0))
         else:
             return np.arctan(k * (x - x0))
 

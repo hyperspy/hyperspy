@@ -103,9 +103,10 @@ class ComplexSignal_mixin:
         Parameters
         ----------
         dtype : str or dtype
-            Typecode or data-type to which the array is cast. For complex signals only other
-            complex dtypes are allowed. If real valued properties are required use `real`,
-            `imag`, `amplitude` and `phase` instead.
+            Typecode or data-type to which the array is cast. For complex
+             signals only other complex dtypes are allowed. If real valued
+             properties are required use `real`,`imag`, `amplitude` and
+             `phase` instead.
         """
         if np.issubdtype(dtype, np.complexfloating):
             self.data = self.data.astype(dtype)
@@ -115,8 +116,9 @@ class ComplexSignal_mixin:
 
     @format_title('angle')
     def angle(self, angle, deg=False):
-        r"""Return the angle (also known as phase or argument). If the data is real, the angle is 0
-        for positive values and :math:`2\pi` for negative values.
+        r"""Return the angle (also known as phase or argument).
+        If the data is real, the angle is 0 for positive values and
+        :math:`2\pi` for negative values.
 
         Parameters
         ----------
@@ -141,13 +143,13 @@ class ComplexSignal_mixin:
         ----------
         wrap_around : bool or sequence of bool, optional
             When an element of the sequence is  `True`, the unwrapping process
-            will regard the edges along the corresponding axis of the image to be
-            connected and use this connectivity to guide the phase unwrapping
-            process. If only a single boolean is given, it will apply to all axes.
-            Wrap around is not supported for 1D arrays.
+            will regard the edges along the corresponding axis of the image to
+            be connected and use this connectivity to guide the phase
+            unwrapping process. If only a single boolean is given, it will
+            apply to all axes. Wrap around is not supported for 1D arrays.
         seed : int, optional
-            Unwrapping 2D or 3D images uses random initialization. This sets the
-            seed of the PRNG to achieve deterministic behavior.
+            Unwrapping 2D or 3D images uses random initialization. This sets
+            the seed of the PRNG to achieve deterministic behavior.
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
@@ -161,11 +163,12 @@ class ComplexSignal_mixin:
 
         Notes
         -----
-        Uses the :func:`~skimage.restoration.unwrap_phase` function from `skimage`.
-        The algorithm is based on Miguel Arevallilo Herraez, David R. Burton, Michael J. Lalor,
-        and Munther A. Gdeisat, “Fast two-dimensional phase-unwrapping algorithm based on sorting
-        by reliability following a noncontinuous path”, Journal Applied Optics,
-        Vol. 41, No. 35, pp. 7437, 2002
+        Uses the :func:`~skimage.restoration.unwrap_phase` function from
+        `skimage`. The algorithm is based on Miguel Arevallilo Herraez,
+        David R. Burton, Michael J. Lalor, and Munther A. Gdeisat,
+        “Fast two-dimensional phase-unwrapping algorithm based on sorting
+        by reliability following a noncontinuous path”,
+        Journal Applied Optics, Vol. 41, No. 35, pp. 7437, 2002
 
         """
         from skimage.restoration import unwrap_phase
@@ -213,7 +216,8 @@ class ComplexSignal_mixin:
                     **kwargs)
         else:
             raise ValueError('{}'.format(representation) +
-                             'is not a valid input for representation (use "cartesian" or "polar")!')
+                             'is not a valid input for representation "
+                             "(use "cartesian" or "polar")!')
     plot.__doc__ %= BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING
 
 

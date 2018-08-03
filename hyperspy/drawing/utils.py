@@ -458,8 +458,8 @@ def plot_images(images,
             Control the title labeling of the plotted images.
             If None, no titles will be shown.
             If 'auto' (default), function will try to determine suitable titles
-            using Signal2D titles, falling back to the 'titles' option if no good
-            short titles are detected.
+            using Signal2D titles, falling back to the 'titles' option if no
+            good short titles are detected.
             Works best if all images to be plotted have the same beginning
             to their titles.
             If 'titles', the title from each image's metadata.General.title
@@ -612,9 +612,9 @@ def plot_images(images,
     def _check_arg(arg, default_value, arg_name):
         if isinstance(arg, list):
             if len(arg) != n:
-                _logger.warning('The provided {} values are ignored because the '
-                                'length of the list does not match the number of '
-                                'images'.format(arg_name))
+                _logger.warning('The provided {} values are ignored because '
+                                'the length of the list does not match the '
+                                'number of images'.format(arg_name))
                 arg = [default_value] * n
         else:
             arg = [arg] * n
@@ -1079,9 +1079,9 @@ def plot_spectra(
             This parameter controls where the legend is placed on the
             figure; see the pyplot.legend docstring for valid values
         """
-        l = ax_.get_legend()
-        labels = [lb.get_text() for lb in list(l.get_texts())]
-        handles = l.legendHandles
+        legend = ax_.get_legend()
+        labels = [lb.get_text() for lb in list(legend.get_texts())]
+        handles = legend.legendHandles
         ax_.legend(handles[::-1], labels[::-1], loc=legend_loc_)
 
     # Before v1.3 default would read the value from prefereces.

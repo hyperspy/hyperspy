@@ -49,8 +49,8 @@ def estimate_sideband_position(
 
     f_freq = freq_array(holo_data.shape, holo_sampling)
 
-    # If aperture radius of centerband is not given, it will be set to 5 % of the Nyquist
-    # frequency.
+    # If aperture radius of centerband is not given, it will be set
+    # to 5 % of the Nyquist frequency.
     if central_band_mask_radius is None:
         central_band_mask_radius = 1 / 20. * np.max(f_freq)
 
@@ -106,8 +106,9 @@ def estimate_sideband_size(sb_position, holo_shape, sb_size_ratio=0.5):
     return np.min(np.linalg.norm(h, axis=1))
 
 
-def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness, output_shape=None,
-                plotting=False):
+def reconstruct(
+        holo_data, holo_sampling, sb_size, sb_position, sb_smoothness,
+        output_shape=None, plotting=False):
     """Core function for holographic reconstruction.
 
     Parameters
@@ -160,10 +161,10 @@ def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness, o
             s=10,
             color='red',
             marker='x')
-        axs.set_xlim(int(holo_size[0] / 2) - sb_size / np.mean(f_sampling), int(holo_size[0] / 2) +
-                     sb_size / np.mean(f_sampling))
-        axs.set_ylim(int(holo_size[1] / 2) - sb_size / np.mean(f_sampling), int(holo_size[1] / 2) +
-                     sb_size / np.mean(f_sampling))
+        axs.set_xlim(int(holo_size[0] / 2) - sb_size / np.mean(f_sampling),
+                     int(holo_size[0] / 2) + sb_size / np.mean(f_sampling))
+        axs.set_ylim(int(holo_size[1] / 2) - sb_size / np.mean(f_sampling),
+                     int(holo_size[1] / 2) + sb_size / np.mean(f_sampling))
         plt.show()
 
     if output_shape is not None:
@@ -183,16 +184,19 @@ def reconstruct(holo_data, holo_sampling, sb_size, sb_position, sb_smoothness, o
 
 def aperture_function(r, apradius, rsmooth):
     """
-    A smooth aperture function that decays from apradius-rsmooth to apradius+rsmooth.
+    A smooth aperture function that decays from
+    apradius-rsmooth to apradius+rsmooth.
 
     Parameters
     ----------
     r : ndarray
         Array of input data (e.g. frequencies)
     apradius : float
-        Radius (center) of the smooth aperture. Decay starts at apradius - rsmooth.
+        Radius (center) of the smooth aperture. Decay starts
+        at apradius - rsmooth.
     rsmooth : float
-        Smoothness in halfwidth. rsmooth = 1 will cause a decay from 1 to 0 over 2 pixel.
+        Smoothness in halfwidth. rsmooth = 1 will cause a decay
+        from 1 to 0 over 2 pixel.
     """
 
     return 0.5 * (1. - np.tanh((np.absolute(r) - apradius) / (0.5 * rsmooth)))

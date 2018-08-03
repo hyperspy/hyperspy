@@ -195,9 +195,9 @@ def rebin(a, new_shape=None, scale=None, crop=True):
                                               for i, f in enumerate(scale)})
             # we provide slightly better error message in hypersy context
             except ValueError:
-                raise ValueError("Rebinning does not align with data dask chunks."
-                                 " Rebin fewer dimensions at a time to avoid this"
-                                 " error")
+                raise ValueError("Rebinning does not align with data dask "
+                                 "chunks. Rebin fewer dimensions at a time "
+                                 "to avoid this error")
 
 
 def jit_ifnumba(func):
@@ -221,8 +221,8 @@ def _linear_bin_loop(result, data, scale):
             # left over from it being non-integer binning e.g. when x1=1.4
             cx1 = math.ceil(x1)
             rem = cx1 - x1
-            # This will add a value of fractional pixel to the bin, eg if x1=1.4,
-            # the fist step will be to add 0.6*data[1]
+            # This will add a value of fractional pixel to the bin,
+            # eg if x1=1.4, the fist step will be to add 0.6*data[1]
             value += data[math.floor(x1)] * rem
             # Update x1 to remove the part of the bin we have just added.
             x1 = cx1
@@ -242,8 +242,8 @@ def _linear_bin_loop(result, data, scale):
                 # If our step is smaller than rounding up to the nearest whole
                 # number.
                 value += data[fx1] * (cx1 - x1)
-                x1 = cx1  # This step is needed when this particular bin straddes
-                # two neighbouring pixels.
+                x1 = cx1  # This step is needed when this particular bin
+                # straddes two neighbouring pixels.
             if x1 < x2:
                 # The standard upsampling function where each new pixel is a
                 # fraction of the original pixel.
@@ -298,9 +298,9 @@ def _linear_bin(dat, scale, crop=True):
         # For each iteration of linear_bin the axis being interated over has to
         # be switched to axis[0] in order to carry out the interation loop.
         dat = np.swapaxes(dat, 0, axis)
-        # The new dimension size is old_size/step, this is rounded down normally
-        # but if crop is switched off it is rounded up to the nearest whole
-        # number.
+        # The new dimension size is old_size/step, this is rounded down
+        # normally but if crop is switched off it is rounded up to the
+        # nearest whole number.
         dim = (math.floor(dat.shape[0] / s) if crop
                else math.ceil(dat.shape[0] / s))
         # check function wont bin to zero.

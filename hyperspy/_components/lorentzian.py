@@ -80,8 +80,11 @@ class Lorentzian(Component):
     def grad_gamma(self, x):
         """
         """
-        return self.A.value / (np.pi * (self.gamma.value ** 2 + (x - self.centre.value) ** 2)) - (
-            (2 * self.A.value * self.gamma.value ** 2) / (np.pi * (self.gamma.value ** 2 + (x - self.centre.value) ** 2) ** 2))
+        part1 = self.A.value / (np.pi * (
+            self.gamma.value ** 2 + (x - self.centre.value) ** 2))
+        part2 = ((2 * self.A.value * self.gamma.value ** 2) / (
+            np.pi * (self.gamma.value ** 2 + (x - self.centre.value) ** 2) ** 2))
+        return part1 - part2
 
     def grad_centre(self, x):
         """

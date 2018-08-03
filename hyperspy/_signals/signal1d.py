@@ -799,8 +799,8 @@ _spikes_diagnosis,
         from hyperspy.misc.utils import deprecation_warning
         msg = (
             "The `Signal1D.integrate_in_range` method is deprecated and will "
-            "be removed in v2.0. Use a `roi.SpanRoi` followed by `integrate1D` "
-            "instead.")
+            "be removed in v2.0. Use a `roi.SpanRoi` followed by "
+            "`integrate1D` instead.")
         deprecation_warning(msg)
         signal_range = signal_range_from_roi(signal_range)
 
@@ -1099,7 +1099,8 @@ _spikes_diagnosis,
         >>> s.remove_background() #doctest: +SKIP
 
         Using command line, returns a spectrum
-        >>> s1 = s.remove_background(signal_range=(400,450), background_type='PowerLaw')
+        >>> s1 = s.remove_background(
+        ...     signal_range=(400,450), background_type='PowerLaw')
 
         Using a full model to fit the background
         >>> s1 = s.remove_background(signal_range=(400,450), fast=False)

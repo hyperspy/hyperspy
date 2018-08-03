@@ -15,12 +15,14 @@ class GOSBase(object):
         if (element in elements) is not True:
             raise ValueError("The given element " + element +
                              " is not in the database.")
-        elif subshell not in elements[element]['Atomic_properties']['Binding_energies']:
+        elif subshell not in elements[element]['Atomic_properties'][
+                'Binding_energies']:
             raise ValueError(
                 "The given subshell " + subshell +
                 " is not in the database.\n" +
                 "The available subshells are:\n" +
-                str(list(elements[element]['Atomic_properties']['subshells'].keys())))
+                str(list(elements[element]['Atomic_properties'][
+                    'subshells'].keys())))
 
         self.onset_energy = \
             elements[

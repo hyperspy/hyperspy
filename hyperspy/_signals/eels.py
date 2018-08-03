@@ -299,9 +299,9 @@ class EELSSpectrum_mixin:
         for signal in also_align + [self]:
             shift_array = -zlpc.data + mean_
             if zlpc._lazy:
-                # We must compute right now because otherwise any changes to the
-                # axes_manager of the signal later in the workflow may result in
-                # a wrong shift_array
+                # We must compute right now because otherwise any changes to
+                # the axes_manager of the signal later in the workflow may
+                # result in a wrong shift_array
                 shift_array = shift_array.compute()
             signal.shift1D(
                 shift_array, crop=crop, show_progressbar=show_progressbar)
@@ -807,8 +807,8 @@ class EELSSpectrum_mixin:
             If True, display a progress bar. If None the default is set in
             `preferences`.
         parallel : {None,bool,int}
-            if True, the deconvolution will be performed in a threaded (parallel)
-            manner.
+            if True, the deconvolution will be performed in a threaded
+            (parallel) manner.
 
         Notes:
         -----
@@ -823,7 +823,6 @@ class EELSSpectrum_mixin:
         self._check_signal_dimension_equals_one()
         psf_size = psf.axes_manager.signal_axes[0].size
         kernel = psf()
-        imax = kernel.argmax()
         maxval = self.axes_manager.navigation_size
         show_progressbar = show_progressbar and (maxval > 0)
 
@@ -849,7 +848,7 @@ class EELSSpectrum_mixin:
                 '_after_R-L_deconvolution_%iiter' % iterations)
         return ds
 
-    def _are_microscope_parameters_missing(self, ignore_parameters=[]):
+    def _are_microscope_parameters_missing(self, ignore_parameters=None):
         """
         Check if the EELS parameters necessary to calculate the GOS
         are defined in metadata. If not, in interactive mode
@@ -860,10 +859,12 @@ class EELSSpectrum_mixin:
             'Acquisition_instrument.TEM.convergence_angle',
             'Acquisition_instrument.TEM.beam_energy',
             'Acquisition_instrument.TEM.Detector.EELS.collection_angle',)
+        if ignore_paramters is None:
+            ignore_parameters = []
         missing_parameters = []
         for item in must_exist:
-            exists = self.metadata.has_item(item)
-            if exists is False and item.split('.')[-1] not in ignore_parameters:
+            exist = self.metadata.has_item(item)
+            if exist is False and item.split('.')[-1] not in ignore_parameters:
                 missing_parameters.append(item)
         if missing_parameters:
             _logger.info("Missing parameters {}".format(missing_parameters))

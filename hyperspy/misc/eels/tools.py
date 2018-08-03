@@ -52,13 +52,13 @@ def _estimate_gain(ns, cs,
         s = Signal1D(variance2fit)
         s.axes_manager.signal_axes[0].axis = average2fit
         m = Model1D(s)
-        l = Line()
-        l.a.value = fit[1]
-        l.b.value = fit[0]
-        m.append(l)
+        li = Line()
+        li.a.value = fit[1]
+        li.b.value = fit[0]
+        m.append(li)
         m.fit(weights=True)
-        fit[0] = l.b.value
-        fit[1] = l.a.value
+        fit[0] = li.b.value
+        fit[1] = li.a.value
 
     if plot_results is True:
         plt.figure()
@@ -182,7 +182,8 @@ def power_law_perc_area(E1, E2, r):
     a = E1
     b = E2
     return 100 * ((a ** r * r - a ** r) * (a / (a ** r * r - a ** r) -
-                                           (b + a) / ((b + a) ** r * r - (b + a) ** r))) / a
+                                           (b + a) / ((b + a) ** r * r -
+                                           (b + a) ** r))) / a
 
 
 def rel_std_of_fraction(a, std_a, b, std_b, corr_factor=1):
@@ -249,14 +250,14 @@ def eels_constant(s, zlp, t):
     # Mapped parameters
     try:
         e0 = s.metadata.Acquisition_instrument.TEM.beam_energy
-    except:
+    except AttributeError:
         raise AttributeError("Please define the beam energy."
                              "You can do this e.g. by using the "
                              "set_microscope_parameters method")
     try:
         beta = s.metadata.Acquisition_instrument.\
             TEM.Detector.EELS.collection_angle
-    except:
+    except AttributeError:
         raise AttributeError("Please define the collection semi-angle."
                              "You can do this e.g. by using the "
                              "set_microscope_parameters method")
