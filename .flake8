@@ -18,3 +18,4 @@ exclude =
     hyperspy/misc/eds/ffast_mac.py
     hyperspy/misc/elements.py
     hyperspy/datasets/example_signals.py
+    hyperspy/misc/machine_learning/import_sklearn.py

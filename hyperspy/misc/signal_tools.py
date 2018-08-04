@@ -28,13 +28,15 @@ def _get_shapes(am, ignore_axis):
             ignore_axis = am[ignore_axis]
         except ValueError:
             pass
-    sigsh = tuple(axis.size if (ignore_axis is None or axis is not
-                                ignore_axis)
-                  else 1 for axis in am.signal_axes) if am.signal_dimension != 0 else ()
+    sig_ax = am.signal_axes
+    sigsh = tuple(axis.size if (
+        ignore_axis is None or axis is not ignore_axis)
+        else 1 for axis in sig_ax) if am.signal_dimension != 0 else ()
 
-    navsh = tuple(axis.size if (ignore_axis is None or axis is not
-                                ignore_axis)
-                  else 1 for axis in am.navigation_axes) if am.navigation_dimension != 0 else ()
+    nav_ax = am.navigation_axes
+    navsh = tuple(axis.size if (
+        ignore_axis is None or axis is not ignore_axis)
+        else 1 for axis in nav_ax) if am.navigation_dimension != 0 else ()
     return sigsh, navsh
 
 

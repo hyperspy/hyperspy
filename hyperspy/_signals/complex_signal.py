@@ -112,7 +112,7 @@ class ComplexSignal_mixin:
             self.data = self.data.astype(dtype)
         else:
             raise AttributeError(
-                'Complex data can only be converted into other complex dtypes!')
+                'Complex data can only be converted into other complex dtypes')
 
     @format_title('angle')
     def angle(self, angle, deg=False):
@@ -128,8 +128,8 @@ class ComplexSignal_mixin:
         Returns
         -------
         angle : HyperSpy signal
-            The counterclockwise angle from the positive real axis on the complex plane,
-            with dtype as numpy.float64.
+            The counterclockwise angle from the positive real axis on the
+            complex plane, with dtype as numpy.float64.
 
         """
         angle.set_signal_type('')
@@ -215,9 +215,9 @@ class ComplexSignal_mixin:
                     axes_manager=self.axes_manager,
                     **kwargs)
         else:
-            raise ValueError('{}'.format(representation) +
-                             'is not a valid input for representation "
-                             "(use "cartesian" or "polar")!')
+            raise ValueError(
+                    '{0} is not a valid input for representation '
+                    '(use "cartesian" or "polar")'.format(representation))
     plot.__doc__ %= BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING
 
 

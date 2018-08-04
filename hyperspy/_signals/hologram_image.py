@@ -208,7 +208,8 @@ class HologramImage(Signal2D):
             Sideband radius of the aperture in corresponding unit (see
             'sb_unit'). If None, the radius of the aperture is set to 1/3 of
             the distance between sideband and center band.
-        sb_smoothness : float, ndarray, :class:`~hyperspy.signals.BaseSignal, None
+        sb_smoothness : float, ndarray, :class:`~hyperspy.signals.BaseSignal,
+                        None
             Smoothness of the aperture in the same unit as sb_size.
         sb_unit : str, None
             Unit of the two sideband parameters 'sb_size' and 'sb_smoothness'.
@@ -285,7 +286,8 @@ class HologramImage(Signal2D):
                              'reference holograms do not match')
 
         signal_shape = self.axes_manager.signal_shape
-        if reference and not reference.axes_manager.signal_shape == signal_shape:
+        if reference and not (
+                reference.axes_manager.signal_shape == signal_shape):
 
             raise ValueError('The signal dimensions of object and reference'
                              ' holograms do not match')

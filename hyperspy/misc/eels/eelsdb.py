@@ -27,7 +27,8 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None,
         correspond with a valid element symbol.
     formula: string
         Chemical formula of the sample.
-    edge: {'K', 'L1', 'L2,3', 'M2,3', 'M4,5', 'N2,3', 'N4,5' 'O2,3', 'O4,5'}, optional
+    edge: {'K', 'L1', 'L2,3', 'M2,3', 'M4,5', 'N2,3', 'N4,5' 'O2,3', 'O4,5'},
+          optional
         Filter for spectra with a specific class of edge.
     min_energy, max_energy: float, optional
         Minimum and maximum energy in eV.

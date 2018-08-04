@@ -242,7 +242,8 @@ def plot_signals(signal_list, sync=True, navigator="auto",
         If True: the signals will share navigation, all the signals
         must have the same navigation shape for this to work, but not
         necessarily the same signal shape.
-    navigator : {"auto", None, "spectrum", "slider", BaseSignal}, default "auto"
+    navigator : {"auto", None, "spectrum", "slider", BaseSignal},
+                default "auto"
         See signal.plot docstring for full description
     navigator_list : {List of navigator arguments, None}, default None
         Set different navigator options for the signals. Must use valid

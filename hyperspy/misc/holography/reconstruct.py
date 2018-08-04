@@ -99,10 +99,11 @@ def estimate_sideband_size(sb_position, holo_shape, sb_size_ratio=0.5):
 
     """
 
-    h = np.array((np.asarray(sb_position) - np.asarray([0, 0]),
-                  np.asarray(sb_position) - np.asarray([0, holo_shape[1]]),
-                  np.asarray(sb_position) - np.asarray([holo_shape[0], 0]),
-                  np.asarray(sb_position) - np.asarray(holo_shape))) * sb_size_ratio
+    h = np.array((
+        np.asarray(sb_position) - np.asarray([0, 0]),
+        np.asarray(sb_position) - np.asarray([0, holo_shape[1]]),
+        np.asarray(sb_position) - np.asarray([holo_shape[0], 0]),
+        np.asarray(sb_position) - np.asarray(holo_shape))) * sb_size_ratio
     return np.min(np.linalg.norm(h, axis=1))
 
 

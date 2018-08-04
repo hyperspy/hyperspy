@@ -216,15 +216,15 @@ def eels_constant(s, zlp, t):
 
         .. math::
 
-            S(E)=\frac{I_{0}t}{\pi a_{0}m_{0}v^{2}}\ln\left[1+\left(\frac{\beta}
-            {\theta_{E}}\right)^{2}\right]\Im(\frac{-1}{\epsilon(E)})=
-            k\Im(\frac{-1}{\epsilon(E)})
+            S(E)=\frac{I_{0}t}{\pi a_{0}m_{0}v^{2}}\ln\left[1+\left(
+            \frac{\beta}{\theta_{E}}\right)^{2}\right]\Im(
+            \frac{-1}{\epsilon(E)})=k\Im(\frac{-1}{\epsilon(E)})
 
 
     Parameters
     ----------
     zlp: {number, BaseSignal}
-        If the ZLP is the same for all spectra, the intengral of the ZLP
+        If the ZLP is the same for all spectra, the integral of the ZLP
         can be provided as a number. Otherwise, if the ZLP intensity is not
         the same for all spectra, it can be provided as i) a Signal
         of the same dimensions as the current signal containing the ZLP

@@ -859,7 +859,7 @@ class EELSSpectrum_mixin:
             'Acquisition_instrument.TEM.convergence_angle',
             'Acquisition_instrument.TEM.beam_energy',
             'Acquisition_instrument.TEM.Detector.EELS.collection_angle',)
-        if ignore_paramters is None:
+        if ignore_paramaters is None:
             ignore_parameters = []
         missing_parameters = []
         for item in must_exist:

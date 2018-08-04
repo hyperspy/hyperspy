@@ -24,7 +24,6 @@ import types
 from io import StringIO
 import codecs
 import collections
-import tempfile
 import unicodedata
 from contextlib import contextmanager
 from hyperspy.misc.signal_tools import broadcast_signals
@@ -792,7 +791,6 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]])
 
     """
-    from itertools import zip_longest
     from hyperspy.signals import BaseSignal
     import dask.array as da
     from numbers import Number
@@ -809,7 +807,8 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     # Get the real signal with the most axes to get metadata/class/etc
     # first = sorted(filter(lambda _s: isinstance(_s, BaseSignal), signal_list),
     #                key=lambda _s: _s.data.ndim)[-1]
-    first = next(filter(lambda _s: isinstance(_s, BaseSignal), signal_list))
+    first = next(filter(
+        lambda _s: isinstance(_s, BaseSignal), signal_list))
 
     # Cast numbers as signals. Will broadcast later
 
@@ -887,9 +886,11 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
                 s.metadata.has_item('Signal.Noise_properties.variance')
                 for s in signal_list
         ]):
-            variance = stack([
-                s.metadata.Signal.Noise_properties.variance for s in signal_list
-            ], axis)
+            variance_list = []
+            for s in signal_list:
+                variance_list.append(
+                        s.metadata.Signal.Noise_properties.variance)
+            variance = stack([variance_list], axis)
             signal.metadata.set_item(
                 'Signal.Noise_properties.variance', variance)
     else:
