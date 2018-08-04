@@ -1,0 +1,20 @@
+[flake8]
+exclude =
+    .git
+    .cache
+    examples
+    doc
+    # Ignore files which just import functions
+    hyperspy/drawing/widgets.py
+    hyperspy/utils/model.py
+    hyperspy/utils/markers.py
+    hyperspy/utils/__init__.py
+    hyperspy/utils/samfire.py
+    hyperspy/utils/material.py
+    hyperspy/utils/plot.py
+    hyperspy/utils/roi.py
+    hyperspy/utils/eds.py
+    # Ignore files which contains constants or physical values
+    hyperspy/misc/eds/ffast_mac.py
+    hyperspy/misc/elements.py
+    hyperspy/datasets/example_signals.py
