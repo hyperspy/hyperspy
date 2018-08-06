@@ -14,8 +14,30 @@ exclude =
     hyperspy/utils/plot.py
     hyperspy/utils/roi.py
     hyperspy/utils/eds.py
+    hyperspy/datasets/example_signals.py
+    hyperspy/misc/machine_learning/import_sklearn.py
+    hyperspy/samfire_utils/fit_tests.py
     # Ignore files which contains constants or physical values
     hyperspy/misc/eds/ffast_mac.py
     hyperspy/misc/elements.py
-    hyperspy/datasets/example_signals.py
-    hyperspy/misc/machine_learning/import_sklearn.py
+    # Files with unresolved issues
+    hyperspy/misc/eels/tools.py
+    hyperspy/misc/eels/eelsdb.py
+    hyperspy/misc/io/tools.py
+    hyperspy/misc/example_signals_loading.py
+    hyperspy/misc/utils.py
+    hyperspy/misc/material.py
+    hyperspy/_components/lorentzian.py
+    hyperspy/_components/gaussianhf.py
+    hyperspy/_components/expression.py
+    hyperspy/_components/gaussian.py
+    hyperspy/io_plugins/protochips.py
+    hyperspy/io_plugins/msa.py
+    hyperspy/io_plugins/bcf.py
+    hyperspy/io_plugins/digital_micrograph.py
+    hyperspy/io_plugins/tiff.py
+    hyperspy/io_plugins/ripple.py
+    hyperspy/io_plugins/blockfile.py
+    hyperspy/samfire_utils/samfire_kernel.py
+    hyperspy/samfire_utils/samfire_worker.py
+    hyperspy/external/mpfit/test_mpfit.py

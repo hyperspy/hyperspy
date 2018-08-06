@@ -59,8 +59,11 @@ def test_linfit():
 
 def myfunctrosenbrock(p, fjac=None):
     # rosenbrock function
-    res = N.array(
-        [1 - p[0], -(1 - p[0]), 10 * (p[1] - p[0] ** 2), -10 * (p[1] - p[0] ** 2)])
+    res = N.array([
+        1 - p[0], -(1 - p[0]),
+        10 * (p[1] - p[0] ** 2),
+        -10 * (p[1] - p[0] ** 2)
+        ])
     status = 0
     return [status, res]
 
@@ -75,6 +78,7 @@ def test_rosenbrock():
     assert N.allclose(m.params, pactual)
     assert N.allclose(m.fnorm, 0)
     return
+
 
 if __name__ == "__main__":
     run_module_suite()

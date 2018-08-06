@@ -29,7 +29,8 @@ import numpy as np
 import traits.api as t
 
 import hyperspy.misc.io.utils_readfile as iou
-from hyperspy.exceptions import DM3TagIDError, DM3DataTypeError, DM3TagTypeError
+from hyperspy.exceptions import (
+        DM3TagIDError, DM3DataTypeError, DM3TagTypeError)
 import hyperspy.misc.io.tools
 from hyperspy.misc.utils import DictionaryTreeBrowser
 from hyperspy.docstrings.signal import OPTIMIZE_ARG

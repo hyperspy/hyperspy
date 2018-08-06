@@ -64,7 +64,7 @@ class RangeWidget(ResizableDraggableWidgetBase):
                 self.disconnect()
             try:
                 self.ax.figure.canvas.draw_idle()
-            except:  # figure does not exist
+            except AttributeError:  # figure does not exist
                 pass
             if value is False:
                 self.ax = None

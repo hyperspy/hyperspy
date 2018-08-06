@@ -41,13 +41,13 @@ writes = [(2, 0), ]
 def file_writer(filename, signal, file_format='png', **kwds):
     """Writes data to any format supported by PIL
 
-        Parameters
-        ----------
-        filename: str
-        signal: a Signal instance
-        file_format : str
-            The fileformat defined by its extension that is any one supported by
-            PIL.
+    Parameters
+    ----------
+    filename: str
+    signal: a Signal instance
+    file_format : str
+        The fileformat defined by its extension that is any one supported by
+        PIL.
     """
     imsave(filename, signal.data)
 
