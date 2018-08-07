@@ -41,21 +41,21 @@ class GaussianHF(Expression):
 
 
     Parameters
-    -----------
-        height: float
-            The height of the peak. If there is no binning, this corresponds
-            directly to the maximum, otherwise the maximum divided by
-            signal_axis.scale
-        centre: float
-            Location of the gaussian maximum, also the mean position.
-        fwhm: float
-            The full width half maximum value, i.e. the width of the gaussian
-            at half the value of gaussian peak (at centre).
-        **kwargs
-            Extra keyword arguments are passes to the ``Expression`` component.
-            An useful keyword argument that can be used to speed up the
-            component is `module`. See the ``Expression`` component
-            documentation for details.
+    ----------
+    height: float
+        The height of the peak. If there is no binning, this corresponds
+        directly to the maximum, otherwise the maximum divided by
+        signal_axis.scale
+    centre: float
+        Location of the gaussian maximum, also the mean position.
+    fwhm: float
+        The full width half maximum value, i.e. the width of the gaussian
+        at half the value of gaussian peak (at centre).
+    **kwargs
+        Extra keyword arguments are passes to the ``Expression`` component.
+        An useful keyword argument that can be used to speed up the
+        component is `module`. See the ``Expression`` component
+        documentation for details.
 
     The helper properties `sigma` and `A` are also defined for compatibility
     with `Gaussian` component.

@@ -268,8 +268,8 @@ class LazySignal(BaseSignal):
                     "(10| 6), new_shape=(5| 3) is valid, (3 | 4) is not.")
             else:
                 raise NotImplementedError(
-                    "Lazy rebin requires scale to be integer and divisor of the "
-                    "original signal shape")
+                    "Lazy rebin requires scale to be integer and divisor of "
+                    "the original signal shape")
         axis = {ax.index_in_array: ax
                 for ax in self.axes_manager._axes}[factors.argmax()]
         self._make_lazy(axis=axis, rechunk=rechunk)
@@ -425,7 +425,8 @@ class LazySignal(BaseSignal):
     # def _get_navigation_signal(self, data=None, dtype=None):
     # return super()._get_navigation_signal(data=data, dtype=dtype).as_lazy()
 
-    # _get_navigation_signal.__doc__ = BaseSignal._get_navigation_signal.__doc__
+    # get_nav_sig_doc = BaseSignal._get_navigation_signal.__doc__
+    # _get_navigation_signal.__doc__ = get_nav_sig_doc
 
     # def _get_signal_signal(self, data=None, dtype=None):
     #     return super()._get_signal_signal(data=data, dtype=dtype).as_lazy()

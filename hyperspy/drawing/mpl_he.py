@@ -21,7 +21,6 @@ import logging
 from traits.api import Undefined
 
 from hyperspy.drawing import widgets, signal1d, image
-from hyperspy.ui_registry import get_gui
 
 
 _logger = logging.getLogger(__name__)
@@ -70,7 +69,8 @@ class MPL_HyperExplorer(object):
         if self.navigator_data_function is "slider":
             self._get_navigation_sliders()
             return
-        title = title or self.signal_title + " Navigator" if self.signal_title else ""
+        signal_title = self.signal_title
+        title = title or signal_title + " Navigator" if signal_title else ""
         if self.navigator_plot is not None:
             self.navigator_plot.plot()
             return

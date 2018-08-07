@@ -23,7 +23,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from hyperspy.drawing.figure import BlittedFigure
-from hyperspy.drawing import utils
 
 
 class HistogramTilePlot(BlittedFigure):
@@ -78,7 +77,8 @@ class HistogramTilePlot(BlittedFigure):
                         **kwargs)
                     width = bin_edges[-1] - bin_edges[0]
                     ax.set_xlim(
-                        bin_edges[0] - width * 0.1, bin_edges[-1] + width * 0.1)
+                        bin_edges[0] - width * 0.1,
+                        bin_edges[-1] + width * 0.1)
                     ax.set_ylim(0, np.max(hist) * 1.1)
                     # ax.set_title(c_n + ' ' + p_n)
         self.figure.canvas.draw_idle()

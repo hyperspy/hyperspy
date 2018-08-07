@@ -62,7 +62,7 @@ def ignore_warning(message="", category=None):
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 # DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT,
 # INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-#(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
 # SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
 # HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
@@ -145,7 +145,8 @@ def assert_warns(message=None, category=None):
     that may produce different warnings.  The behaviors can be combined.
     If you pass multiple patterns, you get an orderless "and", where all of the
     warnings must be raised.
-    If you use the "|" operator in a pattern, you can catch one of several warnings.
+    If you use the "|" operator in a pattern, you can catch one of several
+    warnings.
     Finally, you can use "|\A\Z" in a pattern to signify it as optional.
     """
     if isinstance(message, (str, re._pattern_type)):
@@ -203,7 +204,7 @@ def assert_deep_almost_equal(actual, expected, *args, **kwargs):
 
     expected: lists, dicts or tuples
     """
-    is_root = not '__trace' in kwargs
+    is_root = '__trace' not in kwargs
     trace = kwargs.pop('__trace', 'ROOT')
     try:
         if isinstance(expected, (int, float, complex)):

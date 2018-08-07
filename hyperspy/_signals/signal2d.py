@@ -273,11 +273,13 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
     def create_model(self, dictionary=None):
         """Create a model for the current signal
+
         Parameters
-        __________
+        ----------
         dictionary : {None, dict}, optional
-            A dictionary to be used to recreate a model. Usually generated using
-            :meth:`hyperspy.model.as_dictionary`
+            A dictionary to be used to recreate a model.
+            Usually generated using :meth:`hyperspy.model.as_dictionary`
+
         Returns
         -------
         A Model class
@@ -632,11 +634,12 @@ class Signal2D(BaseSignal, CommonSignal2D):
             Slope of the ramp in y-direction.
         offset: float, optional
             Offset of the ramp at the signal fulcrum.
+
         Notes
         -----
-            The fulcrum of the linear ramp is at the origin and the slopes are given in units of
-            the axis with the according scale taken into account. Both are available via the
-            `axes_manager` of the signal.
+        The fulcrum of the linear ramp is at the origin and the slopes are
+        given in units of the axis with the according scale taken into account.
+        Both are available via the `axes_manager` of the signal.
 
         """
         yy, xx = np.indices(self.axes_manager._signal_shape_in_array)

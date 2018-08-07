@@ -23,6 +23,21 @@
 #  SFS (Single File System) (used in bcf technology) is present in
 #  the same library.
 
+import io
+
+from collections import defaultdict
+import xml.etree.ElementTree as ET
+import codecs
+from ast import literal_eval
+from datetime import datetime, timedelta
+import numpy as np
+import dask.array as da
+import dask.delayed as dd
+from struct import unpack as strct_unp
+from zlib import decompress as unzip_block
+import logging
+import re
+from math import ceil
 
 # Plugin characteristics
 # ----------------------
@@ -42,22 +57,6 @@ reads_spectrum_image = True
 # Writing capabilities
 writes = False
 
-import io
-
-from collections import defaultdict
-import xml.etree.ElementTree as ET
-import codecs
-from ast import literal_eval
-from datetime import datetime, timedelta
-import numpy as np
-import dask.array as da
-import dask.delayed as dd
-from struct import unpack as strct_unp
-from zlib import decompress as unzip_block
-import logging
-import re
-from math import ceil
-
 _logger = logging.getLogger(__name__)
 
 warn_once = True
@@ -76,7 +75,7 @@ Falling back to slow python only backend.""")
 # without minus sign, second group looks for numeric value with following
 # closing <\tag> (the '<' char); '([Ee]-?\d*)' part (optionally a third group)
 # checks for scientific notation (e.g. 8,843E-7 -> 'E-7');
-# compiled pattern is binary, as raw xml string is binary.: 
+# compiled pattern is binary, as raw xml string is binary.:
 fix_dec_patterns = re.compile(b'(>-?\\d+),(\\d*([Ee]-?\\d*)?<)')
 
 
@@ -314,9 +313,9 @@ class SFS_reader(object):
             if a != b'AAMVHFSS':
                 raise TypeError(
                     "file '{0}' is not SFS container".format(filename))
-            fn.seek(0x124)  # this looks to be version, as float value is always
-            # nicely rounded and at older bcf versions (<1.9) it was 2.40,
-            # at new (v2) - 2.60
+            fn.seek(0x124)  # this looks to be version, as float value is
+            # always nicely rounded and at older bcf versions (<1.9) it
+            # was 2.40, at new (v2) - 2.60
             version, self.chunksize = strct_unp('<fI', fn.read(8))
             self.sfs_version = '{0:4.2f}'.format(version)
             self.usable_chunk = self.chunksize - 32
@@ -335,7 +334,7 @@ class SFS_reader(object):
         SFSTreeItem
         """
         with open(self.filename, 'rb') as fn:
-            #check if file tree do not exceed one chunk:
+            # check if file tree do not exceed one chunk:
             n_file_tree_chunks = ceil((self.n_tree_items * 0x200) /
                                       (self.chunksize - 0x20))
             if n_file_tree_chunks == 1:
@@ -356,8 +355,10 @@ class SFS_reader(object):
                 temp_str.seek(0)
                 raw_tree = temp_str.read(self.n_tree_items * 0x200)
                 temp_str.close()
-            temp_item_list = [SFSTreeItem(raw_tree[i * 0x200:(i + 1) * 0x200],
-                                          self) for i in range(self.n_tree_items)]
+            temp_item_list = [
+                    SFSTreeItem(
+                        raw_tree[i * 0x200:(i + 1) * 0x200],
+                        self) for i in range(self.n_tree_items)]
             # temp list with parents of items
             paths = [[h.parent] for h in temp_item_list]
         # checking the compression header which can be different per file:
@@ -464,14 +465,15 @@ def dictionarize(t):
         for dc in map(dictionarize, children):
             for k, v in dc.items():
                 dd[k].append(v)
-        d = {t.tag: {k:interpret(v[0]) if len(v) == 1 else v for k, v in dd.items()}}
+        d = {t.tag: {
+            k: interpret(v[0]) if len(v) == 1 else v for k, v in dd.items()}}
     if t.attrib:
         d[t.tag].update(('XmlClass' + k if list(t) else k, interpret(v)) for k, v in t.attrib.items())
     if t.text:
         text = t.text.strip()
         if children or t.attrib:
             if text:
-              d[t.tag]['#text'] = interpret(text)
+                d[t.tag]['#text'] = interpret(text)
         else:
             d[t.tag] = interpret(text)
     if 'ClassInstance' in d:
@@ -529,7 +531,7 @@ class EDXSpectrum(object):
         self.spectrum_metadata = dictionarize(spectrum_header)
         self.offset = self.spectrum_metadata['CalibAbs']
         self.scale = self.spectrum_metadata['CalibLin']
-        
+
         # main data:
         self.data = np.fromstring(spectrum.find('./Channels').text,
                                   dtype='Q', sep=",")
@@ -588,7 +590,7 @@ class HyperHeader(object):
         self.line_counter = interpret(root.find('./LineCounter').text)
         self.channel_count = int(root.find('./ChCount').text)
         self.mapping_count = int(root.find('./DetectorCount').text)
-        #self.channel_factors = {}
+        # self.channel_factors = {}
         self.spectra_data = {}
         self._set_sum_edx(root, indexes)
 
@@ -638,7 +640,7 @@ class HyperHeader(object):
                 "keyword.")
 
     def get_acq_instrument_dict(self, detector=False, **kwargs):
-        """return python dictionary with aquisition instrument
+        """Return python dictionary with acquisition instrument
         mandatory data
         """
         acq_inst = {'beam_energy': self.hv}
@@ -652,37 +654,42 @@ class HyperHeader(object):
                 'real_time': self.calc_real_time()}}
             if 'AzimutAngle' in eds_metadata.esma_metadata:
                 acq_inst['Detector']['EDS'][
-                    'azimuth_angle'] = eds_metadata.esma_metadata['AzimutAngle']
+                    'azimuth_angle'] = eds_metadata.esma_metadata[
+                            'AzimutAngle']
         return acq_inst
 
     def _parse_image(self, xml_node, overview=False):
         """parse image from bruker xml image node."""
         if overview:
-            rect_node = xml_node.find("./ChildClassInstances"
-                "/ClassInstance["
-                #"@Type='TRTRectangleOverlayElement' and "
-                "@Name='Map']/TRTSolidOverlayElement/"
-                "TRTBasicLineOverlayElement/TRTOverlayElement")
+            rect_node = xml_node.find(
+                    "./ChildClassInstances"
+                    "/ClassInstance["
+                    # "@Type='TRTRectangleOverlayElement' and "
+                    "@Name='Map']/TRTSolidOverlayElement/"
+                    "TRTBasicLineOverlayElement/TRTOverlayElement")
             if rect_node is not None:
-                over_rect = dictionarize(rect_node)['TRTOverlayElement']['Rect']
+                over_rect = dictionarize(rect_node)[
+                        'TRTOverlayElement']['Rect']
                 rect = {'y1': over_rect['Top'] * self.y_res,
                         'x1': over_rect['Left'] * self.x_res,
                         'y2': over_rect['Bottom'] * self.y_res,
                         'x2': over_rect['Right'] * self.x_res}
                 over_dict = {'marker_type': 'Rectangle',
-                            'plot_on_signal': True,
-                            'data': rect,
-                            'marker_properties': {'color': 'yellow',
-                                                'linewidth': 2}}
+                             'plot_on_signal': True,
+                             'data': rect,
+                             'marker_properties': {'color': 'yellow',
+                                                   'linewidth': 2}}
         image = Container()
         image.width = int(xml_node.find('./Width').text)  # in pixels
         image.height = int(xml_node.find('./Height').text)  # in pixels
-        image.dtype = 'u' + xml_node.find('./ItemSize').text  # in bytes ('u1','u2','u4') 
+        # in bytes ('u1','u2','u4')
+        image.dtype = 'u' + xml_node.find('./ItemSize').text
         image.plane_count = int(xml_node.find('./PlaneCount').text)
         image.images = []
         for i in range(image.plane_count):
             img = xml_node.find("./Plane" + str(i))
-            raw = codecs.decode((img.find('./Data').text).encode('ascii'),'base64')
+            raw = codecs.decode(
+                    (img.find('./Data').text).encode('ascii'), 'base64')
             array1 = np.frombuffer(raw, dtype=image.dtype)
             if any(array1):
                 item = self.gen_hspy_item_dict_basic()
@@ -714,7 +721,7 @@ class HyperHeader(object):
                 "./ClassInstance[@Type='TRTContainerClass']"
                 "/ChildClassInstances"
                 "/ClassInstance["
-                #"@Type='TRTContainerClass' and "
+                # "@Type='TRTContainerClass' and "
                 "@Name='OverviewImages']"
                 "/ChildClassInstances"
                 "/ClassInstance[@Type='TRTImageData']")
@@ -736,9 +743,10 @@ class HyperHeader(object):
             for j in elements.findall(
                     "./ClassInstance[@Type='TRTSpectrumRegion']"):
                 tmp_d = dictionarize(j)
-                self.elements[tmp_d['XmlClassName']] = {'line': tmp_d['Line'],
-                                                 'energy': tmp_d['Energy'],
-                                                 'width': tmp_d['Width']}
+                self.elements[tmp_d['XmlClassName']] = {
+                        'line': tmp_d['Line'],
+                        'energy': tmp_d['Energy'],
+                        'width': tmp_d['Width']}
         except AttributeError:
             _logger.info('no element selection present in the spectra..')
 
@@ -837,7 +845,8 @@ class HyperHeader(object):
         pix_avg = self.dsp_metadata['PixelAverage']
         pix_time = self.dsp_metadata['PixelTime']
         width = self.image.width
-        real_time = line_cnt_sum * line_avg * pix_avg * pix_time * width / 1000000.0
+        real_time = (line_cnt_sum * line_avg * pix_avg *
+                     pix_time * width) / 1000000.0
         return float(real_time)
 
     def gen_hspy_item_dict_basic(self):
@@ -891,18 +900,21 @@ class BCF_reader(SFS_reader):
         self.def_index = min(self.available_indexes)
         header_byte_str = header_file.get_as_BytesIO_string().getvalue()
         hd_bt_str = fix_dec_patterns.sub(b'\\1.\\2', header_byte_str)
-        self.header = HyperHeader(hd_bt_str, self.available_indexes, instrument=instrument)
+        self.header = HyperHeader(hd_bt_str, self.available_indexes,
+                                  instrument=instrument)
         self.hypermap = {}
 
     def check_index_valid(self, index):
-        """check and return if index is valid""" 
+        """check and return if index is valid"""
         if type(index) != int:
             raise TypeError("provided index should be integer")
         if index not in self.available_indexes:
-            raise IndexError("requisted index is not in the list of available indexes. "
-                "Available maps are under indexes: {0}".format(str(self.available_indexes)))
+            raise IndexError(
+                    "requisted index is not in the list of available indexes. "
+                    "Available maps are under indexes: {0}".format(
+                        str(self.available_indexes)))
         return index
-    
+
     def parse_hypermap(self, index=None,
                        downsample=1, cutoff_at_kV=None,
                        lazy=False):
@@ -910,16 +922,16 @@ class BCF_reader(SFS_reader):
         numpy array in memory efficient way.
 
         Pure python/numpy implementation -- slow, or
-        cython/memoryview/numpy implimentation if compilied and present
+        cython/memoryview/numpy implementation if compiled and present
         (fast) is used.
 
         Arguments:
         index -- the index of hypermap in bcf if there is more than one
             hyper map in file.
-        downsample -- downsampling factor (integer). Diferently than
+        downsample -- downsampling factor (integer). Differently than
             block_reduce from skimage.measure, the parser populates
-            reduced array by suming results of pixels, thus having lower
-            memory requiriments. (default 1)
+            reduced array by summing results of pixels, thus having lower
+            memory requirements. (default 1)
         cutoff_at_kV -- value in keV to truncate the array at. Helps reducing
           size of array. (default None)
         lazy -- return dask.array (True) or numpy.array (False) (default False)
@@ -1074,7 +1086,7 @@ def py_parse_hypermap(virtual_file, shape, dtype, downsample=1):
                 the_end = offset + data_size2 - 4
                 while offset < the_end:
                     # this would work on py3
-                    #size_p, channels = buffer1[offset:offset + 2]
+                    # size_p, channels = buffer1[offset:offset + 2]
                     # this is needed on py2:
                     size_p, channels = strct_unp('<BB',
                                                  buffer1[offset:offset + 2])
@@ -1089,7 +1101,7 @@ def py_parse_hypermap(virtual_file, shape, dtype, downsample=1):
                             # special case with nibble switching
                             length = ceil(channels / 2)
                             # valid py3 code
-                            #a = list(buffer1[offset:offset + length])
+                            # a = list(buffer1[offset:offset + length])
                             # this have to be used on py2:
                             a = strct_unp('<' + 'B' * length,
                                           buffer1[offset:offset + length])
@@ -1155,8 +1167,8 @@ def file_reader(filename, select_type=None, index=None, downsample=1,     # noqa
       loads everything, else if specified, loads either just sem imagery,
       or just hyper spectral mapping data (default None).
     index -- index of dataset in bcf v2 can be None integer and 'all'
-      (default None); None will select first available mapping if more than one.
-      'all' will return all maps if more than one present;
+      (default None); None will select first available mapping if more than
+       one. 'all' will return all maps if more than one present;
       integer will return only selected map.
     downsample -- the downsample ratio of hyperspectral array (downsampling
       height and width only), can be integer from 1 to inf, where '1' means
@@ -1205,11 +1217,14 @@ def bcf_hyperspectra(obj_bcf, index=None, downsample=None, cutoff_at_kV=None,  #
     hyperspectra and metadata.
     """
     global warn_once
-    if (fast_unbcf == False) and warn_once:
-        _logger.warning("""unbcf_fast library is not present...
-Parsing BCF with Python-only backend, which is slow... please wait.
-If parsing is uncomfortably slow, first install cython, then reinstall hyperspy.
-For more information, check the 'Installing HyperSpy' section in the documentation.""")
+    if (fast_unbcf is False) and warn_once:
+        _logger.warning(
+                "unbcf_fast library is not present... "
+                "Parsing BCF with Python-only backend, which is slow... "
+                "please wait. If parsing is uncomfortably slow, "
+                " first install cython, then reinstall hyperspy. "
+                "For more information, check the 'Installing HyperSpy' "
+                "section in the documentation.")
         warn_once = False
     if index is None:
         indexes = [obj_bcf.def_index]
@@ -1226,52 +1241,60 @@ For more information, check the 'Installing HyperSpy' section in the documentati
                                           cutoff_at_kV=cutoff_at_kV,
                                           lazy=lazy)
         eds_metadata = obj_bcf.header.get_spectra_metadata(index=index)
-        hyperspectra.append(
-            {'data': hypermap,
-             'axes': [{'name': 'height',
-                       'size': hypermap.shape[0],
-                       'offset': 0,
-                       'scale': obj_bcf.header.y_res * downsample,
-                       'units': obj_bcf.header.units},
-                      {'name': 'width',
-                       'size': hypermap.shape[1],
-                       'offset': 0,
-                       'scale': obj_bcf.header.y_res * downsample,
-                       'units': obj_bcf.header.units},
-                      {'name': 'Energy',
-                       'size': hypermap.shape[2],
-                       'offset': eds_metadata.offset,
-                       'scale': eds_metadata.scale,
-                       'units': 'keV'}],
-             'metadata':
-                     # where is no way to determine what kind of instrument was used:
-                     # TEM or SEM
-                     {'Acquisition_instrument': {
-                         mode: obj_bcf.header.get_acq_instrument_dict(
-                             detector=True,
-                             index=index)
-                     },
-        'General': {'original_filename': obj_bcf.filename.split('/')[-1],
-                         'title': 'EDX',
-                         'date': obj_bcf.header.date,
-                         'time': obj_bcf.header.time},
-        'Sample': {'name': obj_bcf.header.name,
-                         'elements': sorted(list(obj_bcf.header.elements)),
-                         'xray_lines': sorted(gen_elem_list(obj_bcf.header.elements))},
-        'Signal': {'signal_type': 'EDS_%s' % mode,
-                         'record_by': 'spectrum',
-                         'quantity': 'X-rays (Counts)'}
-    },
-        'original_metadata': {'Hardware': eds_metadata.hardware_metadata,
-                              'Detector': eds_metadata.detector_metadata,
-                              'Analysis': eds_metadata.esma_metadata,
-                              'Spectrum': eds_metadata.spectrum_metadata,
-                              'DSP Configuration': obj_bcf.header.dsp_metadata,
-                              'Line counter': obj_bcf.header.line_counter,
-                              'Stage': obj_bcf.header.stage_metadata,
-                              'Microscope': obj_bcf.header.sem_metadata},
-        'mapping': mapping,
-    })
+        axes_list = [{'name': 'height',
+                      'size': hypermap.shape[0],
+                      'offset': 0,
+                      'scale': obj_bcf.header.y_res * downsample,
+                      'units': obj_bcf.header.units},
+                     {'name': 'width',
+                      'size': hypermap.shape[1],
+                      'offset': 0,
+                      'scale': obj_bcf.header.y_res * downsample,
+                      'units': obj_bcf.header.units},
+                     {'name': 'Energy',
+                      'size': hypermap.shape[2],
+                      'offset': eds_metadata.offset,
+                      'scale': eds_metadata.scale,
+                      'units': 'keV'}]
+        metadata_dict = {
+                # where is no way to determine what kind of instrument
+                # was used: TEM or SEM
+                'Acquisition_instrument': {
+                    mode: obj_bcf.header.get_acq_instrument_dict(
+                        detector=True, index=index)
+                    },
+                'General': {
+                    'original_filename': obj_bcf.filename.split('/')[-1],
+                    'title': 'EDX',
+                    'date': obj_bcf.header.date,
+                    'time': obj_bcf.header.time
+                    },
+                'Sample': {
+                    'name': obj_bcf.header.name,
+                    'elements': sorted(list(obj_bcf.header.elements)),
+                    'xray_lines': sorted(gen_elem_list(
+                        obj_bcf.header.elements))
+                    },
+                'Signal': {'signal_type': 'EDS_%s' % mode,
+                           'record_by': 'spectrum',
+                           'quantity': 'X-rays (Counts)'
+                           }
+                }
+        hyperspectra.append({
+            'data': hypermap,
+            'axes': axes_list,
+            'metadata': metadata_dict,
+            'original_metadata': {
+                'Hardware': eds_metadata.hardware_metadata,
+                'Detector': eds_metadata.detector_metadata,
+                'Analysis': eds_metadata.esma_metadata,
+                'Spectrum': eds_metadata.spectrum_metadata,
+                'DSP Configuration': obj_bcf.header.dsp_metadata,
+                'Line counter': obj_bcf.header.line_counter,
+                'Stage': obj_bcf.header.stage_metadata,
+                'Microscope': obj_bcf.header.sem_metadata},
+            'mapping': mapping,
+        })
     return hyperspectra
 
 
@@ -1280,7 +1303,7 @@ def gen_elem_list(the_dict):
 
 
 def parse_line(line_string):
-    """standardize line describtion.
+    """Standardize line description.
 
     Bruker saves line description in all caps
     and omits the type if only one exists instead of

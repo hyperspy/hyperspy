@@ -37,12 +37,10 @@ def effective_angle(E0, E, alpha, beta):
     B2 = beta * beta * 1e-6
     T2 = thetaE * thetaE * 1e-6
     eta1 = math.sqrt((A2 + B2 + T2) ** 2 - 4. * A2 * B2) - A2 - B2 - T2
-    eta2 = 2. * B2 * \
-        math.log(
-            0.5 / T2 * (math.sqrt((A2 + T2 - B2) ** 2 + 4. * B2 * T2) + A2 + T2 - B2))
-    eta3 = 2. * A2 * \
-        math.log(
-            0.5 / T2 * (math.sqrt((B2 + T2 - A2) ** 2 + 4. * A2 * T2) + B2 + T2 - A2))
+    eta2 = 2. * B2 * math.log(0.5 / T2 * (
+        math.sqrt((A2 + T2 - B2) ** 2 + 4. * B2 * T2) + A2 + T2 - B2))
+    eta3 = 2. * A2 * math.log(0.5 / T2 * (
+        math.sqrt((B2 + T2 - A2) ** 2 + 4. * A2 * T2) + B2 + T2 - A2))
 #    ETA=(eta1+eta2+eta3)/A2/math.log(4./T2)
     F1 = (eta1 + eta2 + eta3) / 2 / A2 / math.log(1. + B2 / T2)
     F2 = F1

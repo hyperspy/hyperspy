@@ -131,7 +131,7 @@ class MVA():
             Only has effect when using the svd of fast_svd algorithms.
         navigation_mask : boolean numpy array
             The navigation locations marked as True are not used in the
-            decompostion.
+            decomposition.
         signal_mask : boolean numpy array
             The signal locations marked as True are not used in the
             decomposition.
@@ -139,20 +139,23 @@ class MVA():
             Array of variance for the maximum likelihood PCA algorithm
         var_func : function or numpy array
             If function, it will apply it to the dataset to obtain the
-            var_array. Alternatively, it can a an array with the coefficients
+            var_array. Alternatively, it can an array with the coefficients
             of a polynomial.
         reproject : None | signal | navigation | both
             If not None, the results of the decomposition will be projected in
             the selected masked area.
         return_info: bool, default False
-            The result of the decomposition is stored internally. However, some algorithms generate some extra
-            information that is not stored. If True (the default is False) return any extra information if available
+            The result of the decomposition is stored internally.
+            However, some algorithms generate some extra information that
+            is not stored. If True (the default is False) return any extra
+            information if available
 
         Returns
         -------
         (X, E) : (numpy array, numpy array)
-            If 'algorithm' == 'RPCA_GoDec' or 'ORPCA' and 'return_info' is True,
-            returns the low-rank (X) and sparse (E) matrices from robust PCA.
+            If 'algorithm' == 'RPCA_GoDec' or 'ORPCA' and 'return_info'
+            is True, returns the low-rank (X) and sparse (E) matrices from
+            robust PCA.
 
         See also
         --------
@@ -191,9 +194,10 @@ class MVA():
                                  "output_dimension must be specified")
         if algorithm == 'RPCA_GoDec' or algorithm == 'ORPCA':
             if output_dimension is None:
-                raise ValueError("With the robust PCA algorithms ('RPCA_GoDec' "
-                                 "and 'ORPCA'), the output_dimension "
-                                 "must be specified")
+                raise ValueError(
+                        "With the robust PCA algorithms ('RPCA_GoDec' "
+                        "and 'ORPCA'), the output_dimension "
+                        "must be specified")
 
         # Apply pre-treatments
         # Transform the data in a line spectrum
@@ -230,7 +234,7 @@ class MVA():
                 signal_mask = ~signal_mask
 
             # WARNING: signal_mask and navigation_mask values are now their
-            # negaties i.e. True -> False and viceversa. However, the
+            # negatives i.e. True -> False and viceversa. However, the
             # stored value (at the end of the method) coincides with the
             # input masks
 
@@ -546,9 +550,8 @@ class MVA():
         # Check factors
         if not isinstance(factors, BaseSignal):
             raise ValueError(
-                "`factors` must be a BaseSignal instance, but an object of type "
-                "%s was provided." %
-                type(factors))
+                "`factors` must be a BaseSignal instance, but an object of "
+                "type %s was provided." % type(factors))
 
         # Check factor dimensions
         if factors.axes_manager.navigation_dimension != 1:

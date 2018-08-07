@@ -38,7 +38,8 @@ def _first_nav_pixel_data(s):
 
 
 class HologramImage(Signal2D):
-    """Image subclass for holograms acquired via off-axis electron holography."""
+    """Image subclass for holograms acquired via off-axis electron holography.
+    """
 
     _signal_type = 'hologram'
 
@@ -98,13 +99,15 @@ class HologramImage(Signal2D):
         sb : str, optional
             Chooses which sideband is taken. 'lower' or 'upper'
         show_progressbar : boolean
-            Shows progressbar while iterating over different slices of the signal (passes the parameter to map method).
+            Shows progressbar while iterating over different slices of the
+            signal (passes the parameter to map method).
         parallel : bool
             Estimate the positions in parallel
 
         Returns
         -------
-        Signal1D instance of sideband positions (y, x), referred to the unshifted FFT.
+        Signal1D instance of sideband positions (y, x), referred to the
+        unshifted FFT.
 
         Examples
         --------
@@ -145,7 +148,8 @@ class HologramImage(Signal2D):
         sb_position : :class:`~hyperspy.signals.BaseSignal
             The sideband position (y, x), referred to the non-shifted FFT.
         show_progressbar: boolean
-            Shows progressbar while iterating over different slices of the signal (passes the parameter to map method).
+            Shows progressbar while iterating over different slices of the
+            signal (passes the parameter to map method).
         parallel : bool
             Estimate the sizes in parallel
 
@@ -204,7 +208,8 @@ class HologramImage(Signal2D):
             Sideband radius of the aperture in corresponding unit (see
             'sb_unit'). If None, the radius of the aperture is set to 1/3 of
             the distance between sideband and center band.
-        sb_smoothness : float, ndarray, :class:`~hyperspy.signals.BaseSignal, None
+        sb_smoothness : float, ndarray, :class:`~hyperspy.signals.BaseSignal,
+                        None
             Smoothness of the aperture in the same unit as sb_size.
         sb_unit : str, None
             Unit of the two sideband parameters 'sb_size' and 'sb_smoothness'.
@@ -243,7 +248,8 @@ class HologramImage(Signal2D):
         >>> sb_position = s.estimate_sideband_position()
         >>> sb_size = s.estimate_sideband_size(sb_position)
         >>> sb_size.data
-        >>> wave = s.reconstruct_phase(sb_position=sb_position, sb_size=sb_size)
+        >>> wave = s.reconstruct_phase(
+        ...     sb_position=sb_position, sb_size=sb_size)
 
         """
 
@@ -279,7 +285,9 @@ class HologramImage(Signal2D):
             raise ValueError('The navigation dimensions of object and '
                              'reference holograms do not match')
 
-        if reference and not reference.axes_manager.signal_shape == self.axes_manager.signal_shape:
+        signal_shape = self.axes_manager.signal_shape
+        if reference and not (
+                reference.axes_manager.signal_shape == signal_shape):
 
             raise ValueError('The signal dimensions of object and reference'
                              ' holograms do not match')
@@ -309,7 +317,8 @@ class HologramImage(Signal2D):
             if not sb_position.axes_manager.signal_size == 2:
                 raise ValueError('sb_position should to have signal size of 2')
 
-        if sb_position.axes_manager.navigation_size != self.axes_manager.navigation_size:
+        nav_size = self.axes_manager.navigation_size
+        if sb_position.axes_manager.navigation_size != nav_size:
             if sb_position.axes_manager.navigation_size:
                 raise ValueError('Sideband position dimensions do not match'
                                  ' neither reference nor hologram dimensions.')
@@ -340,7 +349,7 @@ class HologramImage(Signal2D):
                 if isinstance(sb_size.data, daArray):
                     sb_size = sb_size.as_lazy()
 
-        if sb_size.axes_manager.navigation_size != self.axes_manager.navigation_size:
+        if sb_size.axes_manager.navigation_size != nav_size:
             if sb_size.axes_manager.navigation_size:
                 raise ValueError('Sideband size dimensions do not match '
                                  'neither reference nor hologram dimensions.')
@@ -364,7 +373,7 @@ class HologramImage(Signal2D):
                 if isinstance(sb_smoothness.data, daArray):
                     sb_smoothness = sb_smoothness.as_lazy()
 
-        if sb_smoothness.axes_manager.navigation_size != self.axes_manager.navigation_size:
+        if sb_smoothness.axes_manager.navigation_size != nav_size:
             if sb_smoothness.axes_manager.navigation_size:
                 raise ValueError('Sideband smoothness dimensions do not match'
                                  ' neither reference nor hologram '
@@ -397,7 +406,7 @@ class HologramImage(Signal2D):
             )
             try:
                 ht = self.metadata.Acquisition_instrument.TEM.beam_energy
-            except:
+            except AttributeError:
                 raise AttributeError("Please define the beam energy."
                                      "You can do this e.g. by using the "
                                      "set_microscope_parameters method")
@@ -415,9 +424,11 @@ class HologramImage(Signal2D):
         if output_shape is None:
             # Future improvement will give a possibility to choose
             # if sb_size.axes_manager.navigation_size > 0:
-            #     output_shape = (np.int(sb_size.inav[0].data*2), np.int(sb_size.inav[0].data*2))
+            #     output_shape = (np.int(sb_size.inav[0].data*2),
+            #                     np.int(sb_size.inav[0].data*2))
             # else:
-            #     output_shape = (np.int(sb_size.data*2), np.int(sb_size.data*2))
+            #     output_shape = (np.int(sb_size.data*2),
+            #                     np.int(sb_size.data*2))
             output_shape = self.axes_manager.signal_shape
             output_shape = output_shape[::-1]
 
@@ -449,7 +460,7 @@ class HologramImage(Signal2D):
         if reference is None:
             wave_reference = 1
         # case when reference is 1d
-        elif reference.axes_manager.navigation_size != self.axes_manager.navigation_size:
+        elif reference.axes_manager.navigation_size != nav_size:
 
             # Prepare parameters for reconstruction of the reference wave:
 
@@ -524,11 +535,11 @@ class HologramImage(Signal2D):
             rec_param_dict = OrderedDict(
                 [('sb_position', sb_position_temp), ('sb_size', sb_size_temp),
                  ('sb_units', sb_unit), ('sb_smoothness', sb_smoothness_temp)])
-            wave_image.metadata.Signal.add_node('Holography')
-            wave_image.metadata.Signal.Holography.add_node(
-                'Reconstruction_parameters')
-            wave_image.metadata.Signal.Holography.Reconstruction_parameters.add_dictionary(
-                rec_param_dict)
+            md_sig = wave_image.metadata.Signal
+            md_sig.add_node('Holography')
+            md_sig.Holography.add_node('Reconstruction_parameters')
+            md_sig.Holography.Reconstruction_parameters.add_dictionary(
+                    rec_param_dict)
             _logger.info('Reconstruction parameters stored in metadata')
 
         return wave_image

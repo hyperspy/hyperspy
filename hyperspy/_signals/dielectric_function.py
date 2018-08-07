@@ -37,15 +37,15 @@ class DielectricFunction_mixin:
         The Bethe f-sum rule gives rise to two definitions of the effective
         number (see [Egerton2011]_), neff1 and neff2:
 
-            .. math::
+        .. math::
 
-                n_{\mathrm{eff_{1}}} = n_{\mathrm{eff}}\left(-\Im\left(\epsilon^{-1}\right)\right)
+            n_{\mathrm{eff_{1}}} = n_{\mathrm{eff}}\left(-\Im\left(\epsilon^{-1}\right)\right)
 
         and:
 
-            .. math::
+        .. math::
 
-                n_{\mathrm{eff_{2}}} = n_{\mathrm{eff}}\left(\epsilon_{2}\right)
+            n_{\mathrm{eff_{2}}} = n_{\mathrm{eff}}\left(\epsilon_{2}\right)
 
         This method computes and return both.
 

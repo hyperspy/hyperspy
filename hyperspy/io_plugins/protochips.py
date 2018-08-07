@@ -112,13 +112,15 @@ class ProtochipsCSV(object):
 
     def _get_metadata(self, quantity):
         date, time = np.datetime_as_string(self.start_datetime).split('T')
-        return {'General': {'original_filename': os.path.split(self.filename)[1],
-                            'title': '%s (%s)' % (quantity,
-                                                  self._parse_quantity_units(quantity)),
-                            'date': date,
-                            'time': time},
-                "Signal": {'signal_type': '',
-                           'quantity': self._parse_quantity(quantity)}}
+        return {'General': {
+                    'original_filename': os.path.split(self.filename)[1],
+                    'title': '%s (%s)' % (quantity,
+                                          self._parse_quantity_units(quantity)),
+                    'date': date,
+                    'time': time},
+                "Signal": {
+                    'signal_type': '',
+                    'quantity': self._parse_quantity(quantity)}}
 
     def _get_mapping(self):
         mapping = {
@@ -138,7 +140,7 @@ class ProtochipsCSV(object):
     def _read_data(self, header_line_number):
         names = [name.replace(' ', '_') for name in self.column_name]
         # Necessary for numpy >= 1.14
-        kwargs = {'encoding':'latin1'} if np.__version__ >= LooseVersion("1.14") else {}
+        kwargs = {'encoding': 'latin1'} if np.__version__ >= LooseVersion("1.14") else {}
         data = np.genfromtxt(self.filename, delimiter=',', dtype=None,
                              names=names,
                              skip_header=header_line_number,
@@ -159,7 +161,7 @@ class ProtochipsCSV(object):
         return np.compress(arr[1] != '', arr, axis=1)
 
     def _parse_calibration_filepath(self):
-         # for the gas cell, the calibration is saved in the notes colunm
+        # for the gas cell, the calibration is saved in the notes colunm
         if hasattr(self, "calibration_file"):
             calibration_file = self.calibration_file
         else:
@@ -182,7 +184,8 @@ class ProtochipsCSV(object):
             # Once we support non-linear axis, don't forgot to update the
             # documentation of the protochips reader
             _logger.warning("The time axis is not linear, the time step is "
-                            "thus extrapolated to {0} {1}. The maximal step in time step is {2} {1}".format(
+                            "thus extrapolated to {0} {1}. The maximal step "
+                            "in time step is {2} {1}".format(
                                 scale, units, max_diff))
         else:
             warnings.warn("Time units not recognised, assuming second.")
@@ -226,7 +229,8 @@ class ProtochipsCSV(object):
             i += 1
             try:
                 param, value = self._parse_metadata_header(self.raw_header[i])
-            except ValueError:  # when the last line of header does not contain 'User'
+            except ValueError:
+                # when the last line of header does not contain 'User'
                 self.user = None
                 break
             except IndexError:

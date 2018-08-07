@@ -8,9 +8,9 @@ from hyperspy.io import dict2signal
 _logger = logging.getLogger(__name__)
 
 
-def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=None,
-           edge=None, min_energy=None, max_energy=None, resolution=None,
-           min_energy_compare="gt", max_energy_compare="lt",
+def eelsdb(spectrum_type=None, title=None, author=None, element=None,
+           formula=None, edge=None, min_energy=None, max_energy=None,
+           resolution=None, min_energy_compare="gt", max_energy_compare="lt",
            resolution_compare="lt", max_n=-1, monochromated=None, order=None,
            order_direction="ASC"):
     r"""Download spectra from the EELS Data Base.
@@ -27,7 +27,8 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
         correspond with a valid element symbol.
     formula: string
         Chemical formula of the sample.
-    edge: {'K', 'L1', 'L2,3', 'M2,3', 'M4,5', 'N2,3', 'N4,5' 'O2,3', 'O4,5'}, optional
+    edge: {'K', 'L1', 'L2,3', 'M2,3', 'M4,5', 'N2,3', 'N4,5' 'O2,3', 'O4,5'},
+          optional
         Filter for spectra with a specific class of edge.
     min_energy, max_energy: float, optional
         Minimum and maximum energy in eV.
@@ -105,8 +106,9 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
     # Verify arguments
     if spectrum_type is not None and spectrum_type not in {
             'coreloss', 'lowloss', 'zeroloss', 'xrayabs'}:
-        raise ValueError("spectrum_type must be one of \'coreloss\', \'lowloss\', "
-                         "\'zeroloss\', \'xrayabs\'.")
+        raise ValueError(
+                "spectrum_type must be one of \'coreloss\', \'lowloss\', "
+                "\'zeroloss\', \'xrayabs\'.")
     valid_edges = [
         'K', 'L1', 'L2,3', 'M2,3', 'M4,5', 'N2,3', 'N4,5', 'O2,3', 'O4,5']
     valid_order_keys = [
@@ -224,8 +226,8 @@ def eelsdb(spectrum_type=None, title=None, author=None, element=None, formula=No
                 (json_spectrum["title"], json_spectrum["id"]))
     if not spectra:
         _logger.info(
-            "The EELS database does not contain any spectra matching your query"
-            ". If you have some, why not submitting them "
+            "The EELS database does not contain any spectra matching your "
+            "query. If you have some, why not submitting them "
             "https://eelsdb.eu/submit-data/ ?\n")
     else:
         # Add some info from json to metadata

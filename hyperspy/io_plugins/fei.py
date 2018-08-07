@@ -313,14 +313,12 @@ def load_ser_file(filename):
         # data have been acquired using a 32 or 64 bits platform.
         if header['SeriesVersion'] <= 528:
             data_offset = readLELong(f)
-            data_offset_array = np.fromfile(f,
-                                            dtype="<u4",
-                                            count=header["TotalNumberElements"][0])
+            data_offset_array = np.fromfile(
+                    f, dtype="<u4", count=header["TotalNumberElements"][0])
         else:
             data_offset = readLELongLong(f)
-            data_offset_array = np.fromfile(f,
-                                            dtype="<u8",
-                                            count=header["TotalNumberElements"][0])
+            data_offset_array = np.fromfile(
+                    f, dtype="<u8", count=header["TotalNumberElements"][0])
         data_dtype_list, shape = get_data_dtype_list(
             f,
             data_offset,

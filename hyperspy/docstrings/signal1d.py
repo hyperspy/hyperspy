@@ -5,4 +5,5 @@
 
 CROP_PARAMETER_DOC = \
     """crop : bool
-            If True automatically crop the signal axis at both ends if needed."""
+            If True automatically crop the signal axis at both ends if needed.
+            """

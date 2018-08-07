@@ -32,7 +32,7 @@ def _parse_substitutions(string):
     splits = map(str.strip, string.split(';'))
     expr = sympy.sympify(next(splits))
     # We substitute one by one manually, as passing all at the same time does
-    # not work as we want (subsitutions inside other substitutions do not work)
+    # not work as we want (substitutions inside other substitutions do not work)
     for sub in splits:
         t = tuple(map(str.strip, sub.split('=')))
         expr = expr.subs(t[0], sympy.sympify(t[1]))
@@ -66,7 +66,7 @@ class Expression(Component):
             Name of the component.
         position: str, optional
             The parameter name that defines the position of the component if
-            applicable. It enables interative adjustment of the position of the
+            applicable. It enables interactive adjustment of the position of the
             component in the model. For 2D components, a tuple must be passed
             with the name of the two parameters e.g. `("x0", "y0")`.
         module: {"numpy", "numexpr"}, default "numpy"
@@ -76,17 +76,17 @@ class Expression(Component):
             This is only relevant for 2D components. If `True` it automatically
             adds `rotation_angle` parameter.
         rotation_center: {None, tuple}
-            If None, the rotation center is the center i.e. (0, 0) if `position`
-            is not defined, otherwise the center is the coordinates specified
-            by `position`. Alternatively a tuple with the (x, y) coordinates
-            of the center can be provided.
+            If None, the rotation center is the center i.e. (0, 0) if
+            `position` is not defined, otherwise the center is the coordinates
+            specified by `position`. Alternatively a tuple with the (x, y)
+            coordinates of the center can be provided.
         **kwargs
              Keyword arguments can be used to initialise the value of the
              parameters.
 
         Methods
         -------
-        recompile: useful to recompile the function and gradient with a
+        recompile: useful to recompile the function and gradient with
             a different module.
 
         Examples

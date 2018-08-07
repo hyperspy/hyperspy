@@ -18,7 +18,8 @@
 
 import numpy as np
 
-from hyperspy.samfire_utils.goodness_of_fit_tests.test_general import goodness_test
+from hyperspy.samfire_utils.goodness_of_fit_tests.test_general import (
+        goodness_test)
 
 
 class red_chisq_test(goodness_test):

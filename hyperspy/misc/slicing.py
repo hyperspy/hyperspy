@@ -74,9 +74,9 @@ def copy_slice_from_whitelist(
         if the slicing operation is performed on navigation dimensions of the
         object
     order : tuple, None
-        if given, performs the copying in the order given. If not all attributes
-        given, the rest is random (the order a whitelist.keys() returns them).
-        If given in the object, _slicing_order is looked up.
+        if given, performs the copying in the order given. If not all
+        attributes given, the rest is random (the order a whitelist.keys()
+        returns them). If given in the object, _slicing_order is looked up.
     """
 
     def make_slice_navigation_decision(flags, isnav):

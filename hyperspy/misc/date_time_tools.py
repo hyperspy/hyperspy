@@ -56,7 +56,8 @@ def get_date_time_from_metadata(metadata, formatting='ISO'):
         '1991-10-01T12:00:00'
         >>> s = get_date_time_from_metadata(s.metadata, formatting='datetime')
 
-        >>> s = get_date_time_from_metadata(s.metadata, formatting='datetime64')
+        >>> s = get_date_time_from_metadata(
+        ...     s.metadata, formatting='datetime64')
 
     """
     date = metadata.get_item('General.date')
@@ -145,7 +146,9 @@ def serial_date_to_ISO_format(serial):
     """
     dt_utc = serial_date_to_datetime(serial)
     dt_local = dt_utc.astimezone(tz.tzlocal())
-    return dt_local.date().isoformat(), dt_local.time().isoformat(), dt_local.tzname()
+    local_date = dt_local.date().isoformat()
+    local_time = dt_local.time().isoformat()
+    return local_date, local_time, dt_local.tzname()
 
 
 def ISO_format_to_serial_date(date, time, timezone='UTC'):

@@ -312,12 +312,13 @@ class Signal1DLine(object):
         if self.plot_indices is True:
             if self.text is not None:
                 self.text.remove()
-            self.text = self.ax.text(*self.text_position,
-                                     s=str(self.axes_manager.indices),
-                                     transform=self.ax.transAxes,
-                                     fontsize=12,
-                                     color=self.line.get_color(),
-                                     animated=self.ax.figure.canvas.supports_blit)
+            self.text = self.ax.text(
+                    *self.text_position,
+                    s=str(self.axes_manager.indices),
+                    transform=self.ax.transAxes,
+                    fontsize=12,
+                    color=self.line.get_color(),
+                    animated=self.ax.figure.canvas.supports_blit)
         self.ax.figure.canvas.draw_idle()
 
     def _auto_update_line(self, *args, **kwargs):

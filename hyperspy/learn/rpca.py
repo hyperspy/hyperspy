@@ -323,8 +323,9 @@ class ORPCA:
         if self.init in ('qr', 'rand'):
             if self.init == 'qr':
                 if iterating:
-                    Y2 = np.stack([next(X) for _ in range(self.training_samples)],
-                                  axis=-1)
+                    Y2 = np.stack(
+                            [next(X) for _ in range(self.training_samples)],
+                            axis=-1)
                     X = chain(iter(Y2.T.copy()), X)
                 else:
                     Y2 = X[:self.training_samples, :].T

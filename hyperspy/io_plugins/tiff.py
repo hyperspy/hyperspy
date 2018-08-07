@@ -124,8 +124,8 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
     force_read_resolution: Bool
         Default: False.
         Force reading the x_resolution, y_resolution and the resolution_unit
-        of the tiff tags.
-        See http://www.awaresystems.be/imaging/tiff/tifftags/resolutionunit.html
+        of the tiff tags. See:
+        http://www.awaresystems.be/imaging/tiff/tifftags/resolutionunit.html
     **kwds, optional
     """
 
@@ -450,7 +450,7 @@ def _get_dm_kwargs_extratag(signal, scales, units, offsets):
         extratags.extend([(65005, 's', 3, units[0], False),  # z unit
                           (65008, 'd', 1, offsets[0], False),  # z origin
                           (65011, 'd', 1, float(scales[0]), False),  # z scale
-                          #(65014, 's', 3, units[0], False), # z unit full name
+                          # (65014, 's', 3, units[0], False),# z unit full name
                           (65017, 'i', 1, 1, False)])
     return extratags
 
@@ -549,7 +549,8 @@ class Metadata:
         # mapping FEI metadata
         mapping_FEI = {
             'fei_metadata.Beam.HV':
-            ("Acquisition_instrument.SEM.beam_energy", lambda x: float(x) * 1e-3),
+            ("Acquisition_instrument.SEM.beam_energy",
+                lambda x: float(x) * 1e-3),
             'fei_metadata.Stage.StageX':
             ("Acquisition_instrument.SEM.Stage.x", None),
             'fei_metadata.Stage.StageY':
@@ -561,12 +562,13 @@ class Metadata:
             'fei_metadata.Stage.StageT':
             ("Acquisition_instrument.SEM.Stage.tilt", None),
             'fei_metadata.Stage.WorkingDistance':
-            ("Acquisition_instrument.SEM.working_distance", lambda x: float(x) * 1e3),
+            ("Acquisition_instrument.SEM.working_distance",
+                lambda x: float(x) * 1e3),
             'fei_metadata.Scan.Dwelltime':
             ("Acquisition_instrument.SEM.dwell_time", None),
             'fei_metadata.EBeam.BeamCurrent':
             ("Acquisition_instrument.SEM.beam_current",
-             self._parse_beam_current_FEI),
+                self._parse_beam_current_FEI),
             'fei_metadata.System.SystemType':
             ("Acquisition_instrument.SEM.microscope", None),
             'fei_metadata.User.Date':
@@ -582,9 +584,11 @@ class Metadata:
         # mapping Zeiss metadata
         mapping_Zeiss = {
             'sem_metadata.ap_actualkv':
-            ("Acquisition_instrument.SEM.beam_energy", self._parse_tuple_Zeiss),
+            ("Acquisition_instrument.SEM.beam_energy",
+                self._parse_tuple_Zeiss),
             'sem_metadata.ap_mag':
-            ("Acquisition_instrument.SEM.magnification", self._parse_tuple_Zeiss),
+            ("Acquisition_instrument.SEM.magnification",
+                self._parse_tuple_Zeiss),
             'sem_metadata.ap_stage_at_x':
             ("Acquisition_instrument.SEM.Stage.x", self._parse_tuple_Zeiss),
             'sem_metadata.ap_stage_at_y':
@@ -592,25 +596,31 @@ class Metadata:
             'sem_metadata.ap_stage_at_z':
             ("Acquisition_instrument.SEM.Stage.z", self._parse_tuple_Zeiss),
             'sem_metadata.ap_stage_at_r':
-            ("Acquisition_instrument.SEM.Stage.rotation", self._parse_tuple_Zeiss),
+            ("Acquisition_instrument.SEM.Stage.rotation",
+                self._parse_tuple_Zeiss),
             'sem_metadata.ap_stage_at_t':
             ("Acquisition_instrument.SEM.Stage.tilt", self._parse_tuple_Zeiss),
             'sem_metadata.ap_free_wd':
             ("Acquisition_instrument.SEM.working_distance",
-             lambda tup: self._parse_tuple_Zeiss_with_units(tup, to_units='mm')),
+             lambda tup: self._parse_tuple_Zeiss_with_units(
+                 tup, to_units='mm')),
             'sem_metadata.dp_dwell_time':
             ("Acquisition_instrument.SEM.dwell_time",
-             lambda tup: self._parse_tuple_Zeiss_with_units(tup, to_units='s')),
+             lambda tup: self._parse_tuple_Zeiss_with_units(
+                 tup, to_units='s')),
             'sem_metadata.ap_beam_current':
             ("Acquisition_instrument.SEM.beam_current",
-             lambda tup: self._parse_tuple_Zeiss_with_units(tup, to_units='nA')),
+             lambda tup: self._parse_tuple_Zeiss_with_units(
+                 tup, to_units='nA')),
             'sem_metadata.sv_serial_number':
             ("Acquisition_instrument.SEM.microscope", self._parse_tuple_Zeiss),
             # I have not find the corresponding metadata....
-            #'sem_metadata.???':
-            #("General.date", lambda tup: parser.parse(tup[1]).date().isoformat()),
-            #'sem_metadata.???':
-            #("General.time", lambda tup: parser.parse(tup[1]).time().isoformat()),
+            # 'sem_metadata.???':
+            # ("General.date", lambda tup: parser.parse(
+            #   tup[1]).date().isoformat()),
+            # 'sem_metadata.???':
+            # ("General.time", lambda tup: parser.parse(
+            #   tup[1]).time().isoformat()),
             'sem_metadata.sv_user_name':
             ("General.authors", self._parse_tuple_Zeiss),
         }
@@ -633,9 +643,10 @@ class Metadata:
             ("Acquisition_instrument.TEM.Detector.Camera.name", None),
             'tvips_metadata.exposure_time':
             ("Acquisition_instrument.TEM.Detector.Camera.exposure",
-             lambda x: float(x) * 1e-3),
+                lambda x: float(x) * 1e-3),
             'tvips_metadata.tem_high_tension':
-            ("Acquisition_instrument.TEM.beam_energy", lambda x: float(x) * 1e-3),
+            ("Acquisition_instrument.TEM.beam_energy",
+                lambda x: float(x) * 1e-3),
             'tvips_metadata.comment':
             ("General.notes", self._parse_string),
             'tvips_metadata.date':

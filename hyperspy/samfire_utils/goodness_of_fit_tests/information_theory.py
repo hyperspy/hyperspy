@@ -30,6 +30,7 @@ def notexp_o(x):
     else:
         return 2. / ((x * x + 1.) * np.exp(1.))
 
+
 notexp = np.vectorize(notexp_o)
 
 

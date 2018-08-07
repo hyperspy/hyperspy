@@ -580,7 +580,8 @@ class EDSTEM_mixin:
         beam_current: float
             Probe current in nA
         live_time: float
-            Acquisiton time in s, compensated for the dead time of the detector.
+            Acquisiton time in s, compensated for the dead time of the
+            detector.
         probe_area: float
             The illumination area of the electron beam in nm\xB2.
             If not set the value is extracted from the scale axes_manager.

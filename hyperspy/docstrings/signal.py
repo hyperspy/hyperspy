@@ -42,4 +42,5 @@ OPTIMIZE_ARG = \
 RECHUNK_ARG = \
     """rechunk: bool
            Only has effect when operating on lazy signal. If `True` (default),
-           the data may be automatically rechunked before performing this operation."""
+           the data may be automatically rechunked before performing this
+           operation."""
