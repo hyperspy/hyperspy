@@ -49,6 +49,9 @@ def get_core_loss_eels_signal(add_powerlaw=False):
 
     Similar to a Mn-L32 edge from a perovskite oxide.
 
+    Some random noise is also added to the spectrum, to simulate
+    experimental noise.
+
     Parameters
     ----------
     add_powerlaw : bool
@@ -69,6 +72,16 @@ def get_core_loss_eels_signal(add_powerlaw=False):
 
     >>> s = ad.get_core_loss_eels_signal(add_powerlaw=True)
     >>> s.plot()
+
+    To make the noise the same for multiple spectra, which can
+    be useful for testing fitting routines
+
+    >>> np.random.seed(seed=10)
+    >>> s1 = ad.get_core_loss_eels_signal()
+    >>> np.random.seed(seed=10)
+    >>> s2 = ad.get_core_loss_eels_signal()
+    >>> (s1.data == s2.data).all()
+    True
 
     See also
     --------
