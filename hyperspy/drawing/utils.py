@@ -682,11 +682,7 @@ def plot_images(images,
     elif label is 'auto':
         # Use some heuristics to try to get base string of similar titles
 
-        # in case of single image
-        if isinstance(images, list) or len(images) > 1:
-            label_list = [x.metadata.General.title for x in images]
-        else:
-            label_list = [images.metadata.General.title]
+        label_list = [x.metadata.General.title for x in images]
 
         # Find the shortest common string between the image titles
         # and pull that out as the base title for the sequence of images
@@ -835,6 +831,10 @@ def plot_images(images,
 
     idx = 0
     ax_im_list = [0] * len(isrgb)
+
+    # Replot: create a list to store references to the images
+    replot_ims = []
+
     # Loop through each image, adding subplot for each one
     for i, ims in enumerate(images):
         # Get handles for the signal axes and axes_manager
@@ -981,6 +981,9 @@ def plot_images(images,
                     units=axes[0].units,
                     color=scalebar_color,
                 )
+            # Replot: store references to the images
+            replot_ims.append(im)
+
             idx += 1
 
     # If using a single colorbar, add it, and do tight_layout, ensuring that
@@ -1026,6 +1029,36 @@ def plot_images(images,
     # Adjust subplot spacing according to user's specification
     if padding is not None:
         plt.subplots_adjust(**padding)
+
+    # Replot: connect function
+    def on_dblclick(event):
+        # On the event of a double click, replot the selected subplot
+        if not event.inaxes:
+            return
+        if not event.dblclick:
+            return
+        subplots = [axi for axi in f.axes if isinstance(axi, mpl.axes.Subplot)]
+        inx = list(subplots).index(event.inaxes)
+        im = replot_ims[inx]
+
+        # Use some of the info in the subplot
+        cm = subplots[inx].images[0].get_cmap()
+        clim = subplots[inx].images[0].get_clim()
+
+        sbar = False
+        if (scalelist and inx in scalebar) or scalebar is 'all':
+            sbar = True
+
+        im.plot(colorbar=bool(colorbar),
+                vmin=clim[0],
+                vmax=clim[1],
+                no_nans=no_nans,
+                aspect=asp,
+                scalebar=sbar,
+                scalebar_color=scalebar_color,
+                cmap=cm)
+
+    f.canvas.mpl_connect('button_press_event', on_dblclick)
 
     return axes_list
 

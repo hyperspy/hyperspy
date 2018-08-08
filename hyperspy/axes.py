@@ -28,6 +28,7 @@ from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
 from hyperspy.ui_registry import add_gui_method, get_gui, DISPLAY_DT, TOOLKIT_DT
+from hyperspy.defaults_parser import preferences
 
 import warnings
 
@@ -925,27 +926,62 @@ class AxesManager(t.HasTraits):
             axis.navigate = tl.pop(0)
 
     def key_navigator(self, event):
-        if len(self.navigation_axes) not in (1, 2):
+        'Set hotkeys for controlling the indices of the navigator plot'
+
+        if self.navigation_dimension == 0:
+            # No hotkeys exist that do anything in this case
             return
-        x = self.navigation_axes[0]
-        try:
-            if event.key == "right" or event.key == "6":
-                x.index += self._step
-            elif event.key == "left" or event.key == "4":
-                x.index -= self._step
-            elif event.key == "pageup":
-                self._step += 1
-            elif event.key == "pagedown":
-                if self._step > 1:
-                    self._step -= 1
-            if len(self.navigation_axes) == 2:
-                y = self.navigation_axes[1]
-                if event.key == "up" or event.key == "8":
-                    y.index -= self._step
-                elif event.key == "down" or event.key == "2":
-                    y.index += self._step
-        except TraitError:
-            pass
+
+        # keyDict values are (axis_index, direction)
+        # Using arrow keys without Ctrl will be deprecated in 2.0
+        mod01 = preferences.Plot.modifier_dims_01
+        mod23 = preferences.Plot.modifier_dims_23
+        mod45 = preferences.Plot.modifier_dims_45
+
+        dim0_decrease = mod01 + '+' + preferences.Plot.dims_024_decrease
+        dim0_increase = mod01 + '+' + preferences.Plot.dims_024_increase
+        dim1_decrease = mod01 + '+' + preferences.Plot.dims_135_decrease
+        dim1_increase = mod01 + '+' + preferences.Plot.dims_135_increase
+        dim2_decrease = mod23 + '+' + preferences.Plot.dims_024_decrease
+        dim2_increase = mod23 + '+' + preferences.Plot.dims_024_increase
+        dim3_decrease = mod23 + '+' + preferences.Plot.dims_135_decrease
+        dim3_increase = mod23 + '+' + preferences.Plot.dims_135_increase
+        dim4_decrease = mod45 + '+' + preferences.Plot.dims_024_decrease
+        dim4_increase = mod45 + '+' + preferences.Plot.dims_024_increase
+        dim5_decrease = mod45 + '+' + preferences.Plot.dims_135_decrease
+        dim5_increase = mod45 + '+' + preferences.Plot.dims_135_increase
+
+        keyDict = {
+            # axes 0, 1
+            **dict.fromkeys(['left',  dim0_decrease, '4'], (0, -1)),
+            **dict.fromkeys(['right', dim0_increase, '6'], (0, +1)),
+            **dict.fromkeys(['up',    dim1_decrease, '8'], (1, -1)),
+            **dict.fromkeys(['down',  dim1_increase,  '2'], (1, +1)),
+            # axes 2, 3
+            **dict.fromkeys([dim2_decrease], (2, -1)),
+            **dict.fromkeys([dim2_increase], (2, +1)),
+            **dict.fromkeys([dim3_decrease], (3, -1)),
+            **dict.fromkeys([dim3_increase], (3, +1)),
+            # axes 4, 5
+            **dict.fromkeys([dim4_decrease], (4, -1)),
+            **dict.fromkeys([dim4_increase], (4, +1)),
+            **dict.fromkeys([dim5_decrease], (5, -1)),
+            **dict.fromkeys([dim5_increase], (5, +1)),
+        }
+
+        if event.key == 'pageup':
+            self._step += 1
+        elif event.key == 'pagedown':
+            if self._step > 1:
+                self._step -= 1
+        else:
+            try:
+                # may raise keyerror
+                axes_index, direction = keyDict[event.key]
+                axes = self.navigation_axes[axes_index]  # may raise indexerror
+                axes.index += direction * self._step  # may raise traiterror
+            except (KeyError, IndexError, TraitError):
+                pass
 
     def copy(self):
         return copy.copy(self)

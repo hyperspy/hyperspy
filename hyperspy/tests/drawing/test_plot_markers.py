@@ -464,12 +464,12 @@ def test_plot_line_markers(mpl_cleanup):
 def test_plot_line_markers_close():
     return _test_plot_line_markers()
 
+
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_eds_lines():
     a = EDS_TEM_Spectrum()
-    s = stack([a, a*5])
+    s = stack([a, a * 5])
     s.plot(True)
     s.axes_manager.navigation_axes[0].index = 1
     return s._plot.signal_plot.figure
-    

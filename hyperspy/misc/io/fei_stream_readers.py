@@ -1,4 +1,5 @@
 import numpy as np
+import dask.array as da
 
 from hyperspy.decorators import jit_ifnumba
 
@@ -82,6 +83,16 @@ def _stream_to_sparse_COO_array_sum_frames(
             navigation_index += 1
             data = 0
 
+    # Store data  at the end if any (there is no final 65535 to mark the end
+    # of the stream)
+    if data:  # Only store coordinates if the spectrum was not empty
+        coords_list.append((
+            int(navigation_index // xsize),
+            int(navigation_index % xsize),
+            int(count_channel // rebin_energy))
+        )
+        data_list.append(data)
+
     final_shape = (ysize, xsize, channels // rebin_energy)
     coords = np.array(coords_list).T
     data = np.array(data_list)
@@ -151,6 +162,17 @@ def _stream_to_sparse_COO_array(
             navigation_index += 1
             data = 0
 
+    # Store data at the end if any (there is no final 65535 to mark the end of
+    # the stream)
+    if data:  # Only store coordinates if the spectrum was not empty
+        coords.append((
+            frame_number - first_frame,
+            int(navigation_index // xsize),
+            int(navigation_index % xsize),
+            int(count_channel // rebin_energy))
+        )
+        data_list.append(data)
+
     final_shape = (last_frame - first_frame, ysize, xsize,
                    channels // rebin_energy)
     coords = np.array(coords).T
@@ -181,9 +203,6 @@ def stream_to_sparse_COO_array(
             "The python-sparse package is not installed and it is required "
             "for lazy loading of SIs stored in FEI EMD stream format."
         )
-    # The stream format does not add a final mark. We add to simplify the
-    # reading code in this case
-    stream_data = np.hstack((stream_data, 65535))
     if sum_frames:
         coords, data, shape = _stream_to_sparse_COO_array_sum_frames(
             stream_data=stream_data,
@@ -202,7 +221,9 @@ def stream_to_sparse_COO_array(
             first_frame=first_frame,
             last_frame=last_frame,
         )
-    return DenseSliceCOO(coords=coords, data=data, shape=shape)
+    dense_sparse = DenseSliceCOO(coords=coords, data=data, shape=shape)
+    dask_sparse = da.from_array(dense_sparse, chunks="auto")
+    return dask_sparse
 
 
 @jit_ifnumba()

@@ -1,43 +1,43 @@
-hyperspy\.learn package
-=======================
+hyperspy.learn package
+======================
 
 Submodules
 ----------
 
-hyperspy\.learn\.mlpca module
------------------------------
+hyperspy.learn.mlpca module
+---------------------------
 
 .. automodule:: hyperspy.learn.mlpca
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.learn\.mva module
----------------------------
+hyperspy.learn.mva module
+-------------------------
 
 .. automodule:: hyperspy.learn.mva
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.learn\.onmf module
-----------------------------
+hyperspy.learn.onmf module
+--------------------------
 
 .. automodule:: hyperspy.learn.onmf
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.learn\.rpca module
-----------------------------
+hyperspy.learn.rpca module
+--------------------------
 
 .. automodule:: hyperspy.learn.rpca
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.learn\.svd\_pca module
---------------------------------
+hyperspy.learn.svd\_pca module
+------------------------------
 
 .. automodule:: hyperspy.learn.svd_pca
     :members:

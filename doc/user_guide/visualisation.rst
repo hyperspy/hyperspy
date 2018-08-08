@@ -7,10 +7,10 @@ Data visualization
 
 The object returned by :py:func:`~.io.load`, a :py:class:`~.signal.BaseSignal`
 instance, has a :py:meth:`~.signal.BaseSignal.plot` method that is powerful and
-flexible tools to visualize n-dimensional data. In this chapter, the
-visualisation of multidimensional data  is exemplified with two experimental
+flexible to visualize n-dimensional data. In this chapter, the
+visualisation of multidimensional data is exemplified with two experimental
 datasets: an EELS spectrum image and an EDX dataset consisting of a secondary
-electron emission image stack and a 3D hyperspectrum , both simultaneously
+electron emission image stack and a 3D hyperspectral image, both simultaneously
 acquired by recording two signals in parallel in a FIB/SEM.
 
 
@@ -50,12 +50,24 @@ the x-axis if 1D:
 To change the current coordinates, click on the pointer (which will be a line
 or a square depending on the dimensions of the data) and drag it around. It is
 also possible to move the pointer by using the numpad arrows **when numlock is
-on and the spectrum or navigator figure is selected**.When using the numpad
-arrows the PageUp and PageDown keys change the size of the step.
+on and the spectrum or navigator figure is selected**. When using the keyboard
+arrows the PageUp and PageDown keys change the stepsize.
 
 An extra cursor can be added by pressing the ``e`` key. Pressing ``e`` once
 more will disable the extra cursor:
 
+In matplotlib, left and right arrow keys are by default set to navigate the 
+"zoom" history. To avoid the problem of changing zoom while navigating, 
+Ctrl + arrows can be used instead. Navigating without using the modifier keys
+will be deprecated in version 2.0.
+
+To navigate navigation dimensions larger than 2, modifier keys can be used.
+The defaults are Shift + left/right and Shift + up/down, (Alt + left/right and Alt + up/down) 
+for navigating dimensions 2 and 3 (4 and 5) respectively. Modifier keys do not work with the numpad.
+
+Hotkeys and modifier keys for navigating the plot can be set in the ``hs.preferences.gui()``.
+Note that some combinations will not work for all platforms, as some systems reserve them for
+other purposes.
 .. _second_pointer.png:
 
 .. figure::  images/second_pointer.png
@@ -69,17 +81,19 @@ can be too small to be dragged or even seen. It
 is possible to change the size of the cursors by pressing the ``+`` and ``-``
 keys  **when the navigator window is selected**.
 
-=========   =============================
-key         function
-=========   =============================
-e           Switch second pointer on/off
-Arrows      Change coordinates
-PageUp      Increase step size
-PageDown    Decrease step size
-``+``           Increase pointer size
-``-``           Decrease pointer size
-``h``       Launch the contrast adjustment tool (only for Signal2D)
-=========   =============================
+=======================   =============================
+key                       function
+=======================   =============================
+e                         Switch second pointer on/off
+Ctrl + Arrows             Change coordinates for dimensions 0 and 1 (typically x and y)
+Shift + Arrows            Change coordinates for dimensions 2 and 3
+Alt + Arrows              Change coordinates for dimensions 4 and 5
+PageUp                    Increase step size
+PageDown                  Decrease step size
+``+``                         Increase pointer size
+``-``                         Decrease pointer size
+``h``                     Launch the contrast adjustment tool (only for Signal2D)
+=======================   =============================
 
 To close all the figures run the following command:
 
@@ -182,11 +196,11 @@ them as a dictionary in ``navigator_kwds`` argument when plotting:
 .. versionadded:: 0.8.1
 
 When plotting using divergent colormaps, if ``centre_colormap`` is ``True``
-(default) the constrast is automatically adjusted so that zero corresponds to
+(default) the contrast is automatically adjusted so that zero corresponds to
 the center of the colormap (usually white). This can be useful e.g. when
 displaying images that contain pixels with both positive and negative values.
 
-The following example shows the effect of centering the color map:
+The following example shows the effect of centring the color map:
 
 .. code-block:: python
 
@@ -633,6 +647,14 @@ __ plot.spectra_
     other iterable type for the ``cmap`` argument together with ``'single'``
     for the ``colorbar`` argument. Such an input will cause a warning and
     instead set the ``colorbar`` argument to ``None``.
+
+.. versionadd: 1.4
+    Double-clicking into an axis in the panel created by ``plot_images``
+    triggers a plot event, creating a new figure in which the selected signal is
+    presented alone. This helps navigating through panels with many figures by
+    selecting and enlarging some of them and allowing comfortable zooming. This
+    functionality is only enabled if a ``matplotlib`` backend that supports the
+    ``button_press_event`` in the figure canvas is being used.
 
 .. _plot.spectra:
 
