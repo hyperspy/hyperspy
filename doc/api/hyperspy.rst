@@ -23,184 +23,184 @@ Subpackages
 Submodules
 ----------
 
-hyperspy\.Release module
-------------------------
+hyperspy.Release module
+-----------------------
 
 .. automodule:: hyperspy.Release
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.\_lazy\_signals module
---------------------------------
+hyperspy.\_lazy\_signals module
+-------------------------------
 
 .. automodule:: hyperspy._lazy_signals
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.api module
---------------------
+hyperspy.api module
+-------------------
 
 .. automodule:: hyperspy.api
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.api\_nogui module
----------------------------
+hyperspy.api\_nogui module
+--------------------------
 
 .. automodule:: hyperspy.api_nogui
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.axes module
----------------------
+hyperspy.axes module
+--------------------
 
 .. automodule:: hyperspy.axes
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.component module
---------------------------
+hyperspy.component module
+-------------------------
 
 .. automodule:: hyperspy.component
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.components1d module
------------------------------
+hyperspy.components1d module
+----------------------------
 
 .. automodule:: hyperspy.components1d
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.components2d module
------------------------------
+hyperspy.components2d module
+----------------------------
 
 .. automodule:: hyperspy.components2d
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.conftest module
--------------------------
+hyperspy.conftest module
+------------------------
 
 .. automodule:: hyperspy.conftest
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.decorators module
----------------------------
+hyperspy.decorators module
+--------------------------
 
 .. automodule:: hyperspy.decorators
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.defaults\_parser module
----------------------------------
+hyperspy.defaults\_parser module
+--------------------------------
 
 .. automodule:: hyperspy.defaults_parser
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.events module
------------------------
+hyperspy.events module
+----------------------
 
 .. automodule:: hyperspy.events
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.exceptions module
----------------------------
+hyperspy.exceptions module
+--------------------------
 
 .. automodule:: hyperspy.exceptions
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.interactive module
-----------------------------
+hyperspy.interactive module
+---------------------------
 
 .. automodule:: hyperspy.interactive
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.io module
--------------------
+hyperspy.io module
+------------------
 
 .. automodule:: hyperspy.io
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.logger module
------------------------
+hyperspy.logger module
+----------------------
 
 .. automodule:: hyperspy.logger
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.model module
-----------------------
+hyperspy.model module
+---------------------
 
 .. automodule:: hyperspy.model
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.roi module
---------------------
+hyperspy.roi module
+-------------------
 
 .. automodule:: hyperspy.roi
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.samfire module
-------------------------
+hyperspy.samfire module
+-----------------------
 
 .. automodule:: hyperspy.samfire
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.signal module
------------------------
+hyperspy.signal module
+----------------------
 
 .. automodule:: hyperspy.signal
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.signal\_tools module
-------------------------------
+hyperspy.signal\_tools module
+-----------------------------
 
 .. automodule:: hyperspy.signal_tools
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.signals module
-------------------------
+hyperspy.signals module
+-----------------------
 
 .. automodule:: hyperspy.signals
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.ui\_registry module
------------------------------
+hyperspy.ui\_registry module
+----------------------------
 
 .. automodule:: hyperspy.ui_registry
     :members:
