@@ -1033,11 +1033,26 @@ _spikes_diagnosis,
             signal_range[0],
             signal_range[1],
             only_current=False)
-        if not fast:
+        if fast:
+            try:
+                if not self._lazy:
+                    return Signal1D(self.data - self._extrapolate_background(
+                            background_estimator))
+            except MemoryError:
+                pass
+        else:
             model.set_signal_range(signal_range[0], signal_range[1])
             model.multifit(show_progressbar=show_progressbar)
             model.reset_signal_range()
         return self - model.as_signal(show_progressbar=show_progressbar)
+
+    def _extrapolate_background(self, background_estimator):
+        signal_axis = self.axes_manager.signal_axes[0]
+        if isinstance(background_estimator, components1d.PowerLaw):
+            factor = signal_axis.scale
+        else:
+            factor = 1
+        return factor * background_estimator.array(signal_axis.axis)
 
     def remove_background(
             self,
@@ -1046,7 +1061,6 @@ _spikes_diagnosis,
             polynomial_order=2,
             fast=True,
             show_progressbar=None, display=True, toolkit=None):
-        signal_range = signal_range_from_roi(signal_range)
         self._check_signal_dimension_equals_one()
         if signal_range == 'interactive':
             br = BackgroundRemoval(self, background_type=background_type,

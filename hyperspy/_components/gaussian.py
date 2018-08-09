@@ -22,6 +22,7 @@ import numpy as np
 import dask.array as da
 
 from hyperspy.component import Component
+from hyperspy.docstrings.parameters import ARRAY_DOCSTRING
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
@@ -120,6 +121,9 @@ class Gaussian(Component):
         A = self.A.value
         s = self.sigma.value
         c = self.centre.value
+        return self._function(x, A, s, c)
+
+    def _function(self, x, A, s, c):
         return A * (1 / (s * sqrt2pi)) * np.exp(-(x - c)**2 / (2 * s**2))
 
     def grad_A(self, x):
@@ -209,3 +213,15 @@ class Gaussian(Component):
     @fwhm.setter
     def fwhm(self, value):
         self.sigma.value = value / sigma2fwhm
+
+    def array(self, axis):
+        """%s
+
+        """
+        x = axis[np.newaxis, :]
+        A = self.A.map['values'][..., np.newaxis]
+        s = self.sigma.map['values'][..., np.newaxis]
+        c = self.centre.map['values'][..., np.newaxis]
+        return self._function(x, A, s, c)
+
+    array.__doc__ %= ARRAY_DOCSTRING

@@ -19,6 +19,7 @@
 import numpy as np
 
 from hyperspy.component import Component
+from hyperspy.docstrings.parameters import ARRAY_DOCSTRING
 
 
 class PowerLaw(Component):
@@ -62,8 +63,10 @@ class PowerLaw(Component):
         self.convolved = False
 
     def function(self, x):
-        return np.where(x > self.left_cutoff, self.A.value *
-                        (x - self.origin.value) ** (-self.r.value), 0)
+        return self._function(x, self.A.value, self.r.value, self.origin.value)
+
+    def _function(self, x, A, r, o):
+        return np.where(x > self.left_cutoff, A * (x - o) ** (-r), 0)
 
     def grad_A(self, x):
         return self.function(x) / self.A.value
@@ -152,3 +155,15 @@ class PowerLaw(Component):
             self.r.map['is_set'][:] = True
             self.fetch_stored_values()
             return True
+
+    def array(self, axis):
+        """%s
+
+        """
+        x = axis[np.newaxis, :]
+        A = self.A.map['values'][..., np.newaxis]
+        r = self.r.map['values'][..., np.newaxis]
+        o = self.origin.map['values'][..., np.newaxis]
+        return self._function(x, A, r, o)
+
+    array.__doc__ %= ARRAY_DOCSTRING

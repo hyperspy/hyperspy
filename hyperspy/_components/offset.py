@@ -20,6 +20,7 @@
 import numpy as np
 
 from hyperspy.component import Component
+from hyperspy.docstrings.parameters import ARRAY_DOCSTRING
 
 
 class Offset(Component):
@@ -49,11 +50,14 @@ class Offset(Component):
         self.offset.grad = self.grad_offset
 
     def function(self, x):
-        return np.ones((len(x))) * self.offset.value
+        return self._function(x, self.offset.value)
+
+    def _function(self, x, o):
+        return np.ones_like(x) * o
 
     @staticmethod
     def grad_offset(x):
-        return np.ones((len(x)))
+        return np.ones_like(x)
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the parameters by the two area method
@@ -98,3 +102,13 @@ class Offset(Component):
             self.offset.map['is_set'][:] = True
             self.fetch_stored_values()
             return True
+
+    def array(self, axis):
+        """%s
+
+        """
+        x = axis[np.newaxis, :]
+        o = self.offset.map['values'][..., np.newaxis]
+        return self._function(x, o)
+
+    array.__doc__ %= ARRAY_DOCSTRING
