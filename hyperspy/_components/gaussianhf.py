@@ -182,9 +182,8 @@ class GaussianHF(Expression):
 
         """
         x = axis[np.newaxis, :]
-        height = self.height.map['values'][..., np.newaxis]
-        fwhm = self.fwhm.map['values'][..., np.newaxis]
-        centre = self.centre.map['values'][..., np.newaxis]
-        return self._f(x, height, fwhm, centre)
+        return self._f(x, 
+                       *[p.map['values'][..., np.newaxis] 
+                       for p in self.parameters])
 
     array.__doc__ %= ARRAY_DOCSTRING
