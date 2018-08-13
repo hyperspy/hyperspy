@@ -17,9 +17,11 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
+import numpy as np
 
 from hyperspy._components.expression import Expression
 from hyperspy._components.gaussian import _estimate_gaussian_parameters
+from hyperspy.docstrings.parameters import ARRAY_DOCSTRING
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
@@ -125,6 +127,7 @@ class GaussianHF(Expression):
 
         """
 
+        super(GaussianHF, self)._estimate_parameters(signal)
         binned = signal.metadata.Signal.binned
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
@@ -174,3 +177,15 @@ class GaussianHF(Expression):
         """
         return (self.height.as_signal() * self.fwhm.as_signal() *
                 sqrt2pi / sigma2fwhm)
+
+    def array(self, axis):
+        """%s
+
+        """
+        x = axis[np.newaxis, :]
+        height = self.height.map['values'][..., np.newaxis]
+        fwhm = self.fwhm.map['values'][..., np.newaxis]
+        centre = self.centre.map['values'][..., np.newaxis]
+        return self._f(x, height, fwhm, centre)
+
+    array.__doc__ %= ARRAY_DOCSTRING
