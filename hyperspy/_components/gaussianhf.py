@@ -128,7 +128,6 @@ class GaussianHF(Expression):
         """
 
         super(GaussianHF, self)._estimate_parameters(signal)
-        binned = signal.metadata.Signal.binned
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
                                                               only_current)
@@ -137,7 +136,7 @@ class GaussianHF(Expression):
             self.centre.value = centre
             self.fwhm.value = sigma * sigma2fwhm
             self.height.value = float(height)
-            if binned is True:
+            if self.binned:
                 self.height.value /= axis.scale
             return True
         else:
@@ -145,7 +144,7 @@ class GaussianHF(Expression):
                 self._create_arrays()
             self.height.map['values'][:] = height
 
-            if binned is True:
+            if self.binned:
                 self.height.map['values'][:] /= axis.scale
             self.height.map['is_set'][:] = True
             self.fwhm.map['values'][:] = sigma * sigma2fwhm

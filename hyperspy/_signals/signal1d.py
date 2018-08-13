@@ -1036,8 +1036,9 @@ _spikes_diagnosis,
         if fast:
             try:
                 if not self._lazy:
-                    return Signal1D(self.data - self._extrapolate_background(
-                            background_estimator))
+                    axis = self.axes_manager.signal_axes[0].axis
+                    return Signal1D(self.data - 
+                                    background_estimator.array(axis))
             except MemoryError:
                 pass
         else:
@@ -1045,15 +1046,7 @@ _spikes_diagnosis,
             model.multifit(show_progressbar=show_progressbar)
             model.reset_signal_range()
         return self - model.as_signal(show_progressbar=show_progressbar)
-
-    def _extrapolate_background(self, background_estimator):
-        signal_axis = self.axes_manager.signal_axes[0]
-        if isinstance(background_estimator, components1d.PowerLaw):
-            factor = signal_axis.scale
-        else:
-            factor = 1
-        return factor * background_estimator.array(signal_axis.axis)
-
+    
     def remove_background(
             self,
             signal_range='interactive',

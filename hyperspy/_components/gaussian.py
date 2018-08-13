@@ -180,7 +180,6 @@ class Gaussian(Component):
 
         """
         super(Gaussian, self)._estimate_parameters(signal)
-        binned = signal.metadata.Signal.binned
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
                                                               only_current)
@@ -188,7 +187,7 @@ class Gaussian(Component):
             self.centre.value = centre
             self.sigma.value = sigma
             self.A.value = height * sigma * sqrt2pi
-            if binned is True:
+            if self.binned:
                 self.A.value /= axis.scale
             return True
         else:
@@ -196,7 +195,7 @@ class Gaussian(Component):
                 self._create_arrays()
             self.A.map['values'][:] = height * sigma * sqrt2pi
 
-            if binned is True:
+            if self.binned:
                 self.A.map['values'] /= axis.scale
             self.A.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma

@@ -82,12 +82,11 @@ class Offset(Component):
         """
         super(Offset, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        binned = signal.metadata.Signal.binned
         i1, i2 = axis.value_range_to_indices(x1, x2)
 
         if only_current is True:
             self.offset.value = signal()[i1:i2].mean()
-            if binned is True:
+            if self.binned:
                 self.offset.value /= axis.scale
             return True
         else:
@@ -97,7 +96,7 @@ class Offset(Component):
             gi = [slice(None), ] * len(dc.shape)
             gi[axis.index_in_array] = slice(i1, i2)
             self.offset.map['values'][:] = dc[gi].mean(axis.index_in_array)
-            if binned is True:
+            if self.binned:
                 self.offset.map['values'] /= axis.scale
             self.offset.map['is_set'][:] = True
             self.fetch_stored_values()

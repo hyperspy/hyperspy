@@ -164,6 +164,12 @@ class PowerLaw(Component):
         A = self.A.map['values'][..., np.newaxis]
         r = self.r.map['values'][..., np.newaxis]
         o = self.origin.map['values'][..., np.newaxis]
-        return self._function(x, A, r, o)
+        # Since no parameter can be used to normalise for binned data, we do 
+        # it here.
+        if self.binned:
+            factor = self._axes_manager.signal_axes[0].scale
+        else:
+            factor = 1
+        return factor * self._function(x, A, r, o)
 
     array.__doc__ %= ARRAY_DOCSTRING
