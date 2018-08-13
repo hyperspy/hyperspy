@@ -23,7 +23,7 @@ import pytest
 
 from hyperspy.components1d import GaussianHF
 from hyperspy.signals import Signal1D
-from hyperspy.tests.model.test_components import _generate_parameters
+from hyperspy.tests.component.test_components import _generate_parameters
 from hyperspy.utils import stack
 
 sqrt2pi = np.sqrt(2 * np.pi)
