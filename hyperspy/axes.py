@@ -153,11 +153,15 @@ class BaseDataAxis(t.HasTraits):
         self.index = 0
         self.navigate = navigate
         self.axes_manager = None
-        self.is_linear = False
+        self._is_linear = False
 
         # The slice must be updated even if the default value did not
         # change to correctly set its value.
         self._update_slice(self.navigate)
+
+    @property
+    def is_linear(self):
+        return self._is_linear
 
     def _index_changed(self, name, old, new):
         self.events.index_changed.trigger(obj=self, index=self.index)
@@ -434,7 +438,7 @@ class DataAxis(BaseDataAxis):
                 axis = np.asarray(axis)
             steps = axis[1:] - axis[:-1]
             # check axis is ordered
-            if not np.all(steps > 0):
+            if not (np.all(steps > 0) or np.all(steps < 0)):
                 raise ValueError('The non-linear axis needs to be ordered.')
         self.axis = axis
         self.size = len(self.axis)
@@ -614,7 +618,7 @@ class LinearDataAxis(FunctionalDataAxis):
         self.update_axis()
         self.on_trait_change(self.update_axis,
                              ['scale', 'offset', 'size'])
-        self.is_linear = True
+        self._is_linear = True
 
     def _slice_me(self, slice_):
         """Returns a slice to slice the corresponding data axis and
