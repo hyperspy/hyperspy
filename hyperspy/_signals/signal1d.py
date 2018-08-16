@@ -62,19 +62,19 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                       medfilt_radius=5, maxpeakn=30000, peakgroup=10,
                       subchannel=True,):
     """Find peaks along a 1D line.
-    
+
     Function to locate the positive peaks in a noisy x-y data set.
     Detects peaks by looking for downward zero-crossings in the first
     derivative that exceed 'slope_thresh'.
     Returns an array containing position, height, and width of each peak.
     Sorted by position.
-    'slope_thresh' and 'amp_thresh', control sensitivity: higher values 
-    will neglect wider peaks (slope) and smaller features (amp), 
+    'slope_thresh' and 'amp_thresh', control sensitivity: higher values
+    will neglect wider peaks (slope) and smaller features (amp),
     respectively.
-    
+
     Parameters
     ----------
-    
+
     y : array
         1D input array, e.g. a spectrum
     x : array (optional)
@@ -93,10 +93,10 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                      if 0, no filter will be applied;
                      default is set to 5.
     peakgroup : int (optional)
-                number of points around the "top part" of the peak that 
-                are taken to estimate the peak height; for spikes or 
-                very narrow peaks, keep PeakGroup=1 or 2; for broad or 
-                noisy peaks, make PeakGroup larger to reduce the effect 
+                number of points around the "top part" of the peak that
+                are taken to estimate the peak height; for spikes or
+                very narrow peaks, keep PeakGroup=1 or 2; for broad or
+                noisy peaks, make PeakGroup larger to reduce the effect
                 of noise;
                 default is set to 10.
     maxpeakn : int (optional)
@@ -106,9 +106,9 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
              default is set to True.
     Returns
     -------
-    P : structured array of shape (npeaks) 
+    P : structured array of shape (npeaks)
         contains fields: 'position', 'width', and 'height' for each peak.
-    
+
     Examples
     --------
     >>> x = np.arange(0,50,0.01)
@@ -1263,12 +1263,12 @@ _spikes_diagnosis,
         peak.
 
         'slope_thresh' and 'amp_thresh', control sensitivity: higher
-        values will neglect broad peaks (slope) and smaller features (amp), 
+        values will neglect broad peaks (slope) and smaller features (amp),
         respectively.
 
-        peakgroup is the number of points around the top of the peak 
-        that are taken to estimate the peak height. For spikes or very 
-        narrow peaks, keep PeakGroup=1 or 2; for broad or noisy peaks, 
+        peakgroup is the number of points around the top of the peak
+        that are taken to estimate the peak height. For spikes or very
+        narrow peaks, keep PeakGroup=1 or 2; for broad or noisy peaks,
         make PeakGroup larger to reduce the effect of noise.
 
         Parameters
@@ -1291,7 +1291,7 @@ _spikes_diagnosis,
                      default is set to 5.
 
         peakgroup : int (optional)
-                    number of points around the "top part" of the peak 
+                    number of points around the "top part" of the peak
                     that are taken to estimate the peak height;
                     default is set to 10
 

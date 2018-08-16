@@ -553,7 +553,7 @@ Messages log
 
 HyperSpy writes messages to the `Python logger
 <https://docs.python.org/3/howto/logging.html#logging-basic-tutorial>`_. The
-deafault log level is "WARNING", meaning that only warnings and more severe
+default log level is "WARNING", meaning that only warnings and more severe
 event messages will be displayed. The default can be set in the
 :ref:`preferences <configuring-hyperspy-label>`. Alternatively, it can be set
 using :py:func:`~.logger.set_log_level` e.g.:

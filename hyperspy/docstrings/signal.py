@@ -36,4 +36,10 @@ OPTIMIZE_ARG = \
             cause a peak of memory usage and requires considerable processing
             times for large datasets and/or low specification hardware.
             See the `transposing` section of the HyperSpy user guide
-            for more information."""
+            for more information. When operating on lazy signals, if `True`
+            the chunks are optimised for the new axes configuration."""
+
+RECHUNK_ARG = \
+    """rechunk: bool
+           Only has effect when operating on lazy signal. If `True` (default),
+           the data may be automatically rechunked before performing this operation."""

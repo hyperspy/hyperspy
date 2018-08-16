@@ -70,8 +70,7 @@ class Signal1DFigure(BlittedFigure):
         if self.right_ax is None:
             self.right_ax = self.ax.twinx()
             self.right_ax.hspy_fig = self
-            self.right_ax.yaxis.set_animated(
-                self.figure.canvas.supports_blit)
+            self.right_ax.yaxis.set_animated(self.figure.canvas.supports_blit)
         plt.tight_layout()
 
     def add_line(self, line, ax='left'):
@@ -115,8 +114,13 @@ class Signal1DFigure(BlittedFigure):
             x_axis_lower_lims.append(line.axis.axis[0])
             x_axis_upper_lims.append(line.axis.axis[-1])
         for marker in self.ax_markers:
-            marker.plot()
+            marker.plot(render_figure=False)
         plt.xlim(np.min(x_axis_lower_lims), np.max(x_axis_upper_lims))
+        self.axes_manager.events.indices_changed.connect(self.update, [])
+        self.events.closed.connect(
+            lambda: self.axes_manager.events.indices_changed.disconnect(
+                self.update), [])
+
         self.ax.figure.canvas.draw_idle()
         if hasattr(self.figure, 'tight_layout'):
             try:
@@ -137,9 +141,13 @@ class Signal1DFigure(BlittedFigure):
     def update(self):
         for marker in self.ax_markers:
             marker.update()
-        for line in self.ax_lines + \
-                self.right_ax_lines:
-            line.update()
+        for line in self.ax_lines + self.right_ax_lines:
+            # save on figure rendering and do it at the end
+            line.update(render_figure=False)
+        if self.ax.figure.canvas.supports_blit:
+            self.ax.hspy_fig._update_animated()
+        else:
+            self.ax.figure.canvas.draw_idle()
 
 
 class Signal1DLine(object):
@@ -319,9 +327,12 @@ class Signal1DLine(object):
 
         """
         if self.auto_update:
+            # if markers are plotted, we don't render the figure now but when
+            # once the markers have been updated
+            kwargs['render_figure'] = (len(self.ax.hspy_fig.ax_markers) == 0)
             self.update(self, *args, **kwargs)
 
-    def update(self, force_replot=False):
+    def update(self, force_replot=False, render_figure=True):
         """Update the current spectrum figure"""
         if force_replot is True:
             self.close()
@@ -356,10 +367,11 @@ class Signal1DLine(object):
             self.ax.set_ylim(y_min, y_max)
         if self.plot_indices is True:
             self.text.set_text(self.axes_manager.indices)
-        if self.ax.figure.canvas.supports_blit:
-            self.ax.hspy_fig._update_animated()
-        else:
-            self.ax.figure.canvas.draw_idle()
+        if render_figure:
+            if self.ax.figure.canvas.supports_blit:
+                self.ax.hspy_fig._update_animated()
+            else:
+                self.ax.figure.canvas.draw_idle()
 
     def close(self):
         if self.line in self.ax.lines:
