@@ -540,7 +540,8 @@ class FunctionalDataAxis(BaseDataAxis):
         self.size = size
 
         self.parameters_list = [key for key in parameters.keys()]
-        self.compile_function(expression)
+        self._expression = expression
+        self.compile_function()
 
         # Set the value of the parameters
         for kwarg, value in parameters.items():
@@ -548,10 +549,10 @@ class FunctionalDataAxis(BaseDataAxis):
 
         self.update_axis()
 
-    def compile_function(self, expression):
+    def compile_function(self):
         from sympy.utilities.lambdify import lambdify
         from hyperspy._components.expression import _parse_substitutions
-        expr = _parse_substitutions(expression)
+        expr = _parse_substitutions(self._expression)
 
         variables = ["x"]
         parameters = [symbol for symbol in expr.free_symbols
@@ -567,6 +568,7 @@ class FunctionalDataAxis(BaseDataAxis):
         self.axis = self.function(x=np.arange(self.size), **kwargs)
         # Set not valid values to np.nan
         self.axis[np.logical_not(np.isfinite(self.axis))] = np.nan
+        self.size = len(self.axis)
 
     def update_from(self, axis, attributes=None):
         """Copy values of specified axes fields from the passed AxesManager.
@@ -590,6 +592,8 @@ class FunctionalDataAxis(BaseDataAxis):
 
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
+        d['expression'] = self._expression
+        d['size'] = self.size
         for kwarg in self.parameters_list:
             d[kwarg] = getattr(self, kwarg)
         return d
@@ -612,9 +616,10 @@ class LinearDataAxis(FunctionalDataAxis):
                  size=1.,
                  scale=1.,
                  offset=0.):
-        expression = "scale * x + offset"
+        self.expression = "scale * x + offset"
         super().__init__(index_in_array, name, units, navigate, size=size,
-                         expression=expression, scale=scale, offset=offset)
+                         expression=self.expression, scale=scale, 
+                         offset=offset)
         self.update_axis()
         self.on_trait_change(self.update_axis,
                              ['scale', 'offset', 'size'])
@@ -649,6 +654,7 @@ class LinearDataAxis(FunctionalDataAxis):
 
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
+        del d['expression']
         d.update({'size': self.size,
                   'scale': self.scale,
                   'offset': self.offset})

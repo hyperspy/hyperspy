@@ -8,7 +8,7 @@ import traits.api as t
 import pytest
 
 from hyperspy.axes import (BaseDataAxis, DataAxis, FunctionalDataAxis,
-                           LinearDataAxis)
+                           LinearDataAxis, create_axis)
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
@@ -40,7 +40,19 @@ class TestBaseDataAxis:
 class TestDataAxis:
 
     def setup_method(self, method):
-        self.axis = DataAxis(axis=np.arange(16)**2)
+        self._axis = np.arange(16)**2
+        self.axis = DataAxis(axis=self._axis)
+
+    def _test_initialisation_parameters(self, axis):
+        np.testing.assert_allclose(axis.axis, self._axis)
+
+    def test_initialisation_parameters(self):
+        self._test_initialisation_parameters(self.axis)
+
+    def test_create_axis(self):
+        axis = create_axis(**self.axis.get_axis_dictionary())
+        assert isinstance(axis, DataAxis)
+        self._test_initialisation_parameters(axis)
 
     def test_axis_value(self):
         assert_allclose(self.axis.axis, np.arange(16)**2)
@@ -118,15 +130,23 @@ class TestDataAxis:
 class TestFunctionalDataAxis:
 
     def setup_method(self, method):
-        expression = "scale * x + offset"
+        expression = "a * x + b"
         self.axis = FunctionalDataAxis(size=10, expression=expression,
-                                       scale=0.1, offset=10)
+                                       a=0.1, b=10)
+
+    def _test_initialisation_parameters(self, axis):
+        assert axis.a == 0.1
+        assert axis.b == 10
+        assert hasattr(axis, 'function')
+        np.testing.assert_allclose(axis.axis, np.linspace(10, 10.9, 10))
 
     def test_initialisation_parameters(self):
-        assert self.axis.scale == 0.1
-        assert self.axis.offset == 10
-        assert hasattr(self.axis, 'function')
-        np.testing.assert_allclose(self.axis.axis, np.linspace(10, 10.9, 10))
+        self._test_initialisation_parameters(self.axis)
+
+    def test_create_axis(self):
+        axis = create_axis(**self.axis.get_axis_dictionary())
+        assert isinstance(axis, FunctionalDataAxis)
+        self._test_initialisation_parameters(axis)
 
 
 class TestReciprocalDataAxis:
@@ -136,18 +156,43 @@ class TestReciprocalDataAxis:
         self.axis = FunctionalDataAxis(size=10, expression=expression,
                                        a=0.1, b=10)
 
-    def test_initialisation_parameters(self):
-        assert self.axis.a == 0.1
-        assert self.axis.b == 10
-        assert hasattr(self.axis, 'function')
+    def _test_initialisation_parameters(self, axis):
+        assert axis.a == 0.1
+        assert axis.b == 10
+        assert hasattr(axis, 'function')
+        assert hasattr(axis, '_expression')
         def func(x): return 0.1 / (x + 1) + 10
-        np.testing.assert_allclose(self.axis.axis, func(np.arange(10)))
+        np.testing.assert_allclose(axis.axis, func(np.arange(10)))
 
+    def test_initialisation_parameters(self):
+        self._test_initialisation_parameters(self.axis)
+
+    def test_create_axis(self):
+        axis = create_axis(**self.axis.get_axis_dictionary())
+        assert isinstance(axis, FunctionalDataAxis)
+        self._test_initialisation_parameters(axis)        
+        
 
 class TestLinearDataAxis:
 
     def setup_method(self, method):
         self.axis = LinearDataAxis(size=10, scale=0.1, offset=10)
+
+    def _test_initialisation_parameters(self, axis):
+        assert axis.scale == 0.1
+        assert axis.offset == 10
+        assert hasattr(axis, 'function')
+        assert hasattr(axis, '_expression')
+        def func(x): return axis.scale* x + axis.offset
+        np.testing.assert_allclose(axis.axis, func(np.arange(10)))
+
+    def test_initialisation_parameters(self):
+        self._test_initialisation_parameters(self.axis)
+
+    def test_create_axis(self):
+        axis = create_axis(**self.axis.get_axis_dictionary())
+        assert isinstance(axis, LinearDataAxis)
+        self._test_initialisation_parameters(axis)  
 
     def test_value_range_to_indices_in_range(self):
         assert self.axis.is_linear
