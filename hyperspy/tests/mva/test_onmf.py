@@ -46,3 +46,10 @@ def test_corrupted_robust():
     res = compare(np.dot(W, H), X.T)
     print(res)
     assert res < 0.1
+
+
+def test_subspace_tracking():
+    W, H = onmf(X, r, subspace_tracking=True)
+    res = compare(np.dot(W, H), X.T)
+    print(res)
+    assert res < 0.06

@@ -128,10 +128,14 @@ class ONMF:
     able to deal with sparse corruptions and/or outliers slightly faster
     (please see ORPCA implementation for details).
 
+    A further modification has been made to allow for a changing subspace W,
+    where X ~= WH^T + E in the ONMF framework.
+
     """
 
     def __init__(self, rank, lambda1=1., kappa=1., store_r=False,
-                 robust=False):
+                 robust=False, subspace_tracking=False,
+                 subspace_learning_rate=1., subspace_momentum=0.5):
         """Creates Online Robust NMF instance that can learn a representation
 
         Parameters
@@ -148,6 +152,14 @@ class ONMF:
             If True, the original OPGD implementation is used for
             corruption/outlier regularization, otherwise L2-norm. False by
             default.
+        subspace_tracking : bool
+            If True, uses stochastic gradient descent to accommodate a changing
+            subspace, W. False by default
+        subspace_learning_rate : float
+            Learning rate for stochastic gradient descent.
+        subspace_momentum : float
+            Momentum parameter for stochastic gradient descent. Must be in
+            range 0 <= x <= 1.
 
         """
         self.robust = robust
@@ -156,13 +168,26 @@ class ONMF:
         self.lambda1 = lambda1
         self.kappa = kappa
         self.H = []
+        self.t = 0
+
+        if robust and subspace_tracking:
+            raise NotImplementedError('"subspace_tracking" is not supported '
+                                      'with "robust"=True')
+
+        if subspace_momentum < 0. or subspace_momentum > 1:
+            raise ValueError('"subspace_momentum" must be in range [0, 1]')
+
+        self.subspace_tracking = subspace_tracking
+        self.subspace_learning_rate = learning_rate
+        self.subspace_momentum = subspace_momentum
+
         if store_r:
             self.R = []
         else:
             self.R = None
 
     def _setup(self, X, normalize=False):
-        self.h, self.r = None, None
+        self.h, self.r, self.v = None, None, None
         if isinstance(X, np.ndarray):
             n, m = X.shape
             if normalize:
@@ -187,6 +212,9 @@ class ONMF:
 
         self.W = np.abs(avg * halfnorm.rvs(size=(self.nfeatures, self.rank)) /
                         np.sqrt(self.rank))
+
+        if self.subspace_tracking:
+            self.vnew = np.zeros_like(self.W)
 
         self.A = np.zeros((self.rank, self.rank))
         self.B = np.zeros((self.nfeatures, self.rank))
@@ -223,13 +251,19 @@ class ONMF:
         r, h = self.r, self.h
         for v in progressbar(X, leave=False, total=num, disable=num == 1):
             h, r = _solveproj(v, self.W, self.lambda1, self.kappa, r=r, h=h)
+            self.v = v
+            self.r = r
+            self.h = h
             self.H.append(h)
             if self.R is not None:
                 self.R.append(r)
 
-            self.A += prod(h, h.T)
-            self.B += prod((v.T - r), h.T)
+            # Only update A, B when not tracking subspace
+            if not self.subspace_tracking:
+                self.A += prod(h, h.T)
+                self.B += prod((v.T - r), h.T)
             self._solve_W()
+            self.t += 1
         self.r = r
         self.h = h
 
@@ -248,8 +282,16 @@ class ONMF:
                 lasttwo[1] = 0.5 * np.trace(self.W.T.dot(self.W).dot(self.A)) - \
                     np.trace(self.W.T.dot(self.B))
         else:
-            # Tom's approach
-            self.W -= eta * (np.dot(self.W, self.A) - self.B)
+            # Tom Furnival (@tjof2) approach
+            if self.subspace_tracking:
+                learn = self.learning_rate * (1 + self.subspace_learning_rate *
+                                              self.lambda1 * self.t)
+                vold = self.momentum * self.vnew
+                self.vnew = (np.dot(self.W, np.outer(self.h, self.h.T))
+                             - np.outer((self.v.T - self.r), self.h.T)) / learn
+                self.W -= (vold + self.vnew)
+            else:
+                self.W -= eta * (np.dot(self.W, self.A) - self.B)
             np.maximum(self.W, 0.0, out=self.W)
             self.W /= max(np.linalg.norm(self.W, 'fro'), 1.0)
 
