@@ -258,7 +258,7 @@ class ONMF:
             if self.R is not None:
                 self.R.append(r)
 
-            # Only update A, B when not tracking subspace
+            # Only need to update A, B when not tracking subspace
             if not self.subspace_tracking:
                 self.A += prod(h, h.T)
                 self.B += prod((v.T - r), h.T)
@@ -284,12 +284,12 @@ class ONMF:
         else:
             # Tom Furnival (@tjof2) approach
             if self.subspace_tracking:
-                learn = self.learning_rate * (1 + self.subspace_learning_rate *
-                                              self.lambda1 * self.t)
+                learn = self.subspace_learning_rate * (
+                    1 + self.subspace_learning_rate * self.lambda1 * self.t)
                 vold = self.momentum * self.vnew
                 self.vnew = (np.dot(self.W, np.outer(self.h, self.h.T))
                              - np.outer((self.v.T - self.r), self.h.T)) / learn
-                self.W -= (vold + self.vnew)
+                self.W -= (vold + (1 - self.momentum) * self.vnew)
             else:
                 self.W -= eta * (np.dot(self.W, self.A) - self.B)
             np.maximum(self.W, 0.0, out=self.W)
