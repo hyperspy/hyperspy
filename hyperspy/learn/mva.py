@@ -382,7 +382,7 @@ class MVA():
                         dc[:, signal_mask][navigation_mask, :],
                         rank=output_dimension, store_r=True, **kwargs)
                 else:
-                    W, H = orpca(
+                    W, H = onmf(
                         dc[:, signal_mask][navigation_mask, :],
                         rank=output_dimension,  **kwargs)
 
