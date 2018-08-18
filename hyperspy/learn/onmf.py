@@ -362,4 +362,8 @@ def onmf(X, rank,
         H = _onmf.project(X)
     else:
         W, H = _onmf.finish()
-    return W, H
+
+    if store_r:
+        return np.dot(W, H), _onmf.R, W, H
+    else:
+        return W, H
