@@ -268,7 +268,9 @@ class ONMF:
         self.h = h
 
     def _solve_W(self):
-        eta = self.kappa / np.linalg.norm(self.A, 'fro')
+        if not self.subspace_tracking:
+            eta = self.kappa / np.linalg.norm(self.A, 'fro')
+
         if self.robust:
             # exactly as in the paper
             n = 0
@@ -286,7 +288,7 @@ class ONMF:
             if self.subspace_tracking:
                 learn = self.subspace_learning_rate * (
                     1 + self.subspace_learning_rate * self.lambda1 * self.t)
-                vold = self.momentum * self.vnew
+                vold = self.subspace_momentum * self.vnew
                 self.vnew = (np.dot(self.W, np.outer(self.h, self.h.T))
                              - np.outer((self.v.T - self.r), self.h.T)) / learn
                 self.W -= (vold + self.vnew)
