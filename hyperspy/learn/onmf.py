@@ -349,13 +349,19 @@ def onmf(X, rank,
          kappa=1,
          store_r=False,
          project=False,
-         robust=False):
+         robust=False,
+         subspace_tracking=False,
+         subspace_learning_rate=1.,
+         subspace_momentum=0.5):
 
     _onmf = ONMF(rank,
                  lambda1=lambda1,
                  kappa=kappa,
                  store_r=store_r,
-                 robust=robust)
+                 robust=robust,
+                 subspace_tracking=subspace_tracking,
+                 subspace_learning_rate=subspace_learning_rate,
+                 subspace_momentum=subspace_momentum)
     _onmf.fit(X)
     if project:
         W = _onmf.W
