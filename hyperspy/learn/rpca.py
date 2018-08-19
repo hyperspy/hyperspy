@@ -395,7 +395,7 @@ class ORPCA:
                 self.vnew = (np.dot(self.L, np.outer(r, r.T))
                              - np.outer((z - e), r.T)
                              + thislambda1 * self.L) / learn
-                self.L -= (vold + (1 - self.momentum) * self.vnew)
+                self.L -= (vold + self.vnew)
             self.t += 1
 
     def project(self, X):

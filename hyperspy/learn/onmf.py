@@ -178,7 +178,7 @@ class ONMF:
             raise ValueError('"subspace_momentum" must be in range [0, 1]')
 
         self.subspace_tracking = subspace_tracking
-        self.subspace_learning_rate = learning_rate
+        self.subspace_learning_rate = subspace_learning_rate
         self.subspace_momentum = subspace_momentum
 
         if store_r:
@@ -289,7 +289,7 @@ class ONMF:
                 vold = self.momentum * self.vnew
                 self.vnew = (np.dot(self.W, np.outer(self.h, self.h.T))
                              - np.outer((self.v.T - self.r), self.h.T)) / learn
-                self.W -= (vold + (1 - self.momentum) * self.vnew)
+                self.W -= (vold + self.vnew)
             else:
                 self.W -= eta * (np.dot(self.W, self.A) - self.B)
             np.maximum(self.W, 0.0, out=self.W)
