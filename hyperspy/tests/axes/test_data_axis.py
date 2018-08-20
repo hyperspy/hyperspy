@@ -61,18 +61,21 @@ class TestDataAxis:
 
     def test_update_axes(self):
         values = np.arange(20)**2
-        self.axis.update_axis(values.tolist())
+        self.axis.axis = values.tolist()
+        self.axis.update_axis()
         assert self.axis.size == 20
         assert_allclose(self.axis.axis, values)
 
     def test_update_axes2(self):
         values = np.array([3, 4, 10, 40])
-        self.axis.update_axis(values)
+        self.axis.axis = values
+        self.axis.update_axis()
         assert_allclose(self.axis.axis, values)
 
     def test_update_axis_from_list(self):
         values = np.arange(16)**2
-        self.axis.update_axis(values.tolist())
+        self.axis.axis = values.tolist()
+        self.axis.update_axis()
         assert_allclose(self.axis.axis, values)
 
     def test_unsorted_axis(self):
@@ -125,6 +128,10 @@ class TestDataAxis:
         assert self.axis.offset == 0
         assert self.axis.low_value == 0
         assert self.axis.high_value == 15 * scale
+
+    def test_value2index(self):
+        assert self.axis.value2index(10.15) == 3
+        assert self.axis.value2index(60) == 8
 
 
 class TestFunctionalDataAxis:

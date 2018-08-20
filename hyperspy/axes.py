@@ -236,6 +236,11 @@ class BaseDataAxis(t.HasTraits):
         my_slice : slice
 
         """
+        if isinstance(slice_, slice):
+            if not self.is_linear and isfloat(slice_.step):
+                raise ValueError(
+                    "Float steps are only supported for linear axes.")
+        
         v2i = self.value2index
 
         if isinstance(slice_, slice):
@@ -286,6 +291,33 @@ class BaseDataAxis(t.HasTraits):
             raise ValueError("slice step cannot be zero")
 
         return slice(start, stop, step)
+
+    def _slice_me(self, slice_):
+        """Returns a slice to slice the corresponding data axis and set the 
+        axis accordingly.
+
+        Parameters
+        ----------
+        slice_ : {int, slice}
+
+        Returns
+        -------
+        my_slice : slice
+
+        """
+        my_slice = self._get_array_slices(slice_)
+        start, step = my_slice.start, my_slice.step
+
+        if start is None:
+            if step is None or step > 0:
+                start = 0
+            else:
+                start = self.size - 1
+
+        self.axis = self.axis[my_slice]
+        self.update_axis()
+
+        return my_slice
 
     def _get_name(self):
         name = (self.name
@@ -348,6 +380,29 @@ class BaseDataAxis(t.HasTraits):
         else:
             return self.axis[index]
 
+    def value2index(self, value, rounding=round):
+        """Return the closest index to the given value if between the limit.
+
+        Parameters
+        ----------
+        value : number or numpy array
+
+        Returns
+        -------
+        index : integer or numpy array
+
+        Raises
+        ------
+        ValueError if any value is out of the axis limits.
+
+        """
+        if value is None:
+            return None
+        if self.low_value <= value <= self.high_value:
+            return (np.abs(self.axis - value)).argmin()
+        else:
+            raise ValueError("The value is out of the axis limits")
+
     def value_range_to_indices(self, v1, v2):
         """Convert the given range to index range.
 
@@ -399,6 +454,9 @@ class BaseDataAxis(t.HasTraits):
             any_changes = True
         return any_changes
 
+    def calibrate(self, *args, **kwargs):
+        raise TypeError("This function works only for linear axes.")
+
     def convert_to_linear_axis(self):
         scale = (self.high_value - self.low_value) / self.size
         d = self._get_axis_dictionary()
@@ -419,9 +477,10 @@ class DataAxis(BaseDataAxis):
                  navigate=t.Undefined,
                  axis=[1]):
         super().__init__(index_in_array, name, units, navigate)
-        self.update_axis(axis)
+        self.axis = axis
+        self.update_axis()
 
-    def update_axis(self, axis):
+    def update_axis(self):
         """Set the value of a axis. The axis value needs to be ordered.
 
         Parameters
@@ -433,79 +492,19 @@ class DataAxis(BaseDataAxis):
         ValueError if the axis values are not ordered.
 
         """
-        if len(axis) > 1:
-            if isinstance(axis, list):
-                axis = np.asarray(axis)
-            steps = axis[1:] - axis[:-1]
+        if len(self.axis) > 1:
+            if isinstance(self.axis, list):
+                self.axis = np.asarray(self.axis)
+            steps = self.axis[1:] - self.axis[:-1]
             # check axis is ordered
             if not (np.all(steps > 0) or np.all(steps < 0)):
                 raise ValueError('The non-linear axis needs to be ordered.')
-        self.axis = axis
         self.size = len(self.axis)
-
-    def _get_array_slices(self, slice_):
-        if isinstance(slice_, slice):
-            if isfloat(slice_.step):
-                raise ValueError(
-                    "Float steps are not supported for non-linear axes.")
-        return super()._get_array_slices(slice_)
-
-    def _slice_me(self, slice_):
-        """Returns a slice to slice the corresponding data axis and set the 
-        axis accordingly.
-
-        Parameters
-        ----------
-        slice_ : {int, slice}
-
-        Returns
-        -------
-        my_slice : slice
-
-        """
-        my_slice = self._get_array_slices(slice_)
-        start, step = my_slice.start, my_slice.step
-
-        if start is None:
-            if step is None or step > 0:
-                start = 0
-            else:
-                start = self.size - 1
-
-        self.update_axis(self.axis[my_slice])
-
-        return my_slice
 
     def get_axis_dictionary(self):
         d = super().get_axis_dictionary()
         d.update({'axis': self.axis})
         return d
-
-    def value2index(self, value, rounding=round):
-        """Return the closest index to the given value if between the limit.
-
-        Parameters
-        ----------
-        value : number or numpy array
-
-        Returns
-        -------
-        index : integer or numpy array
-
-        Raises
-        ------
-        ValueError if any value is out of the axis limits.
-
-        """
-        if value is None:
-            return None
-        if self.low_value <= value <= self.high_value:
-            return (np.abs(self.axis - value)).argmin()
-        else:
-            raise ValueError("The value is out of the axis limits")
-
-    def calibrate(self, *args, **kwargs):
-        raise TypeError("This function works only for linear axes.")
 
     def update_from(self, axis, attributes=["units"]):
         """Copy values of specified axes fields from the passed AxesManager.
