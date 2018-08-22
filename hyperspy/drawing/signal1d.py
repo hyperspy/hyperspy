@@ -329,7 +329,7 @@ class Signal1DLine(object):
         if self.auto_update:
             if 'render_figure' not in kwargs.keys():
                 # if markers are plotted, we don't render the figure now but 
-                # when once the markers have been updated
+                # once the markers have been updated
                 kwargs['render_figure'] = (len(self.ax.hspy_fig.ax_markers) == 0)
             self.update(self, *args, **kwargs)
 
