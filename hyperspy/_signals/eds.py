@@ -917,7 +917,7 @@ class EDS_mixin:
             xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
                 xray_lines)
             for xray in xray_not_here:
-                _logger.warn("%s is not in the data energy range." % xray)
+                _logger.warning("%s is not in the data energy range." % xray)
             xray_lines = np.unique(xray_lines)
             self.add_xray_lines_markers(xray_lines)
             if background_windows is not None:
