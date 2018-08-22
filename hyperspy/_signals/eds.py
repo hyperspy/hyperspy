@@ -912,7 +912,7 @@ class EDS_mixin:
                         only_one=only_one,
                         only_lines=only_lines)
                 else:
-                    raise ValueError(
+                    _logger.warning(
                         "No elements defined, set them with `add_elements`")
             xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
                 xray_lines)
