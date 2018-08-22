@@ -146,8 +146,12 @@ class EDS_mixin:
         ax = self.axes_manager.signal_axes[0]
         low_value = ax.low_value
         high_value = ax.high_value
-        if self._get_beam_energy() < high_value:
-            high_value = self._get_beam_energy()
+        try:
+            if self._get_beam_energy() < high_value:
+                high_value = self._get_beam_energy()
+        except AttributeError:
+            # in case the beam energy is not defined in the metadata
+            pass
         xray_lines_in_range = []
         xray_lines_not_in_range = []
         for xray_line in xray_lines:
@@ -283,7 +287,7 @@ class EDS_mixin:
                     only_lines=only_lines)
             else:
                 raise ValueError(
-                    "Not X-ray line, set them with `add_elements`")
+                    "Not X-ray line, set them with `add_elements`.")
         return xray_lines
 
     def set_lines(self,
@@ -468,7 +472,11 @@ class EDS_mixin:
         """
 
         only_lines = utils_eds._parse_only_lines(only_lines)
-        beam_energy = self._get_beam_energy()
+        try:
+            beam_energy = self._get_beam_energy()
+        except:
+            # Fall back to the high_value of the energy axis
+            beam_energy = self.axes_manager.signal_axes[0].high_value
         lines = []
         elements = [el if isinstance(el, str) else el.decode()
                     for el in elements]
@@ -914,6 +922,8 @@ class EDS_mixin:
                 else:
                     _logger.warning(
                         "No elements defined, set them with `add_elements`")
+                    # No X-rays lines, nothing to do then
+                    return
             xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
                 xray_lines)
             for xray in xray_not_here:
