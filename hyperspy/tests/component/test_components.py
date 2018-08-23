@@ -48,8 +48,8 @@ class TestPowerLaw:
         assert s.metadata.Signal.binned == binned
         g = hs.model.components1D.PowerLaw()
         g.estimate_parameters(s, None, None, only_current=only_current)
-        A_value = 10.084913947965161 if binned else 10.064378823244837
-        r_value = 4.0017676988807409 if binned else 4.0017522876514304
+        A_value = 10.084913 if binned else 10.064378
+        r_value = 4.0017676 if binned else 4.0017522
         assert_allclose(g.A.value, A_value)
         assert_allclose(g.r.value, r_value)
 

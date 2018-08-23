@@ -18,26 +18,15 @@
 
 import numpy as np
 
-from hyperspy.component import Component
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
+from hyperspy._components.expression import Expression
 
 
-class PowerLaw(Component):
+class PowerLaw(Expression):
 
     """Power law component
 
-    f(x) = A*(x-x0)^-r
-
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |     A      |     A     |
-    +------------+-----------+
-    |     r      |     r     |
-    +------------+-----------+
-    |    x0      |  origin   |
-    +------------+-----------+
+    f(x) = A*(x-origin)^-r
 
     The left_cutoff parameter can be used to set a lower threshold from which
     the component will return 0.
@@ -45,11 +34,18 @@ class PowerLaw(Component):
 
     """
 
-    def __init__(self, A=10e5, r=3., origin=0.):
-        Component.__init__(self, ('A', 'r', 'origin'))
-        self.A.value = A
-        self.r.value = r
-        self.origin.value = origin
+    def __init__(self, A=10e5, r=3., origin=0., **kwargs):
+        super(PowerLaw, self).__init__(
+            expression="A*(x-origin)^-r",
+            name="PowerLaw",
+            A=A,
+            r=r,
+            origin=origin,
+            position="origin",
+            autodoc=False,
+            **kwargs,
+        )
+
         self.origin.free = False
         self.left_cutoff = 0.
 
@@ -63,23 +59,15 @@ class PowerLaw(Component):
         self.convolved = False
 
     def function(self, x):
-        return self._function(x, self.A.value, self.r.value, self.origin.value)
+        return np.where(x > self.left_cutoff, super().function(x), 0)
 
-    def _function(self, x, A, r, o):
-        return np.where(x > self.left_cutoff, A * (x - o) ** (-r), 0)
+    def function_nd(self, axis):
+        """%s
 
-    def grad_A(self, x):
-        return self.function(x) / self.A.value
+        """
+        return np.where(axis > self.left_cutoff, super().function_nd(axis), 0)
 
-    def grad_r(self, x):
-        return np.where(x > self.left_cutoff, -self.A.value *
-                        np.log(x - self.origin.value) *
-                        (x - self.origin.value) ** (-self.r.value), 0)
-
-    def grad_origin(self, x):
-        return np.where(x > self.left_cutoff, self.r.value *
-                        (x - self.origin.value) ** (-self.r.value - 1) *
-                        self.A.value, 0)
+    function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
 
     def estimate_parameters(self, signal, x1, x2, only_current=False,
                             out=False):
@@ -155,21 +143,3 @@ class PowerLaw(Component):
             self.r.map['is_set'][:] = True
             self.fetch_stored_values()
             return True
-
-    def function_nd(self, axis):
-        """%s
-
-        """
-        x = axis[np.newaxis, :]
-        A = self.A.map['values'][..., np.newaxis]
-        r = self.r.map['values'][..., np.newaxis]
-        o = self.origin.map['values'][..., np.newaxis]
-        # Since no parameter can be used to normalise for binned data, we do 
-        # it here.
-        if self.binned:
-            factor = self._axes_manager.signal_axes[0].scale
-        else:
-            factor = 1
-        return factor * self._function(x, A, r, o)
-
-    function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
