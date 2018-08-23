@@ -232,13 +232,13 @@ def parse_msa_string(string, filename=None):
             mapped.set_item('General.time', time.time().isoformat())
         except:
             if 'TIME' in parameters and parameters['TIME']:
-                _logger.warn('The time information could not be retrieved')
+                _logger.warning('The time information could not be retrieved')
         try:
             date = dt.strptime(parameters['DATE'], "%d-%b-%Y")
             mapped.set_item('General.date', date.date().isoformat())
         except:
             if 'DATE' in parameters and parameters['DATE']:
-                _logger.warn('The date information could not be retrieved')
+                _logger.warning('The date information could not be retrieved')
     except:
         warnings.warn("I couldn't read the date information due to"
                       "an unexpected error. Please report this error to "
