@@ -1038,7 +1038,7 @@ _spikes_diagnosis,
                 if not self._lazy:
                     axis = self.axes_manager.signal_axes[0].axis
                     return Signal1D(self.data - 
-                                    background_estimator.array(axis))
+                                    background_estimator.function_nd(axis))
             except MemoryError:
                 pass
         else:

@@ -22,7 +22,7 @@ import numpy as np
 import dask.array as da
 
 from hyperspy.component import Component
-from hyperspy.docstrings.parameters import ARRAY_DOCSTRING
+from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
@@ -213,7 +213,7 @@ class Gaussian(Component):
     def fwhm(self, value):
         self.sigma.value = value / sigma2fwhm
 
-    def array(self, axis):
+    def function_nd(self, axis):
         """%s
 
         """
@@ -223,4 +223,5 @@ class Gaussian(Component):
         c = self.centre.map['values'][..., np.newaxis]
         return self._function(x, A, s, c)
 
-    array.__doc__ %= ARRAY_DOCSTRING
+    function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
+

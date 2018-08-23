@@ -17,17 +17,20 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import itertools
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
 from hyperspy.components1d import GaussianHF
 from hyperspy.signals import Signal1D
-from hyperspy.tests.component.test_components import _generate_parameters
 from hyperspy.utils import stack
 
 sqrt2pi = np.sqrt(2 * np.pi)
 sigma2fwhm = 2 * np.sqrt(2 * np.log(2))
+
+
+TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 
 
 def test_function():
@@ -56,8 +59,7 @@ def test_integral_as_signal():
     assert_allclose(s_out.data, ref)  
 
 
-@pytest.mark.parametrize(("only_current", "binned"), 
-                         _generate_parameters())
+@pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
 def test_estimate_parameters_binned(only_current, binned):
     s = Signal1D(np.empty((100,)))
     s.metadata.Signal.binned = binned
@@ -77,7 +79,7 @@ def test_estimate_parameters_binned(only_current, binned):
 
 
 @pytest.mark.parametrize(("binned"), (True, False))
-def test_array(binned):
+def test_function_nd(binned):
     s = Signal1D(np.empty((100,)))
     axis = s.axes_manager.signal_axes[0]
     axis.scale = 2.
@@ -92,7 +94,7 @@ def test_array(binned):
     g2.estimate_parameters(s2, axis.low_value, axis.high_value, False)
     assert g2.binned == binned
     # TODO: sort out while the rtol to be so high...
-    assert_allclose(g2.array(axis.axis) * factor, s2.data, rtol=0.05)
+    assert_allclose(g2.function_nd(axis.axis) * factor, s2.data, rtol=0.05)
 
 
 def test_util_sigma_set():

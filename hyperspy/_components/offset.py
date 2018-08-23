@@ -20,7 +20,7 @@
 import numpy as np
 
 from hyperspy.component import Component
-from hyperspy.docstrings.parameters import ARRAY_DOCSTRING
+from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 
 
 class Offset(Component):
@@ -102,7 +102,7 @@ class Offset(Component):
             self.fetch_stored_values()
             return True
 
-    def array(self, axis):
+    def function_nd(self, axis):
         """%s
 
         """
@@ -110,4 +110,4 @@ class Offset(Component):
         o = self.offset.map['values'][..., np.newaxis]
         return self._function(x, o)
 
-    array.__doc__ %= ARRAY_DOCSTRING
+    function_nd.__doc__ %= FUNCTION_ND_DOCSTRING

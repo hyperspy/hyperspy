@@ -20,7 +20,7 @@ import numpy as np
 
 from hyperspy.component import Component
 from hyperspy.misc.utils import ordinal
-from hyperspy.docstrings.parameters import ARRAY_DOCSTRING
+from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 
 
 class Polynomial(Component):
@@ -128,7 +128,7 @@ class Polynomial(Component):
             self.fetch_stored_values()
             return True
 
-    def array(self, axis):
+    def function_nd(self, axis):
         """%s
 
         """
@@ -136,4 +136,4 @@ class Polynomial(Component):
         coefficients = self.coefficients.map["values"][..., np.newaxis]
         return self._function(x, coefficients)
 
-    array.__doc__ %= ARRAY_DOCSTRING
+    function_nd.__doc__ %= FUNCTION_ND_DOCSTRING

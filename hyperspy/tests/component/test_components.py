@@ -1,3 +1,22 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2016 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
+import itertools
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
@@ -7,12 +26,7 @@ from hyperspy.models.model1d import Model1D
 from hyperspy.misc.test_utils import ignore_warning
 
 
-def _generate_parameters():
-    paramater_list = []
-    for only_current in (True, False):
-        for binned in (True, False):
-            paramater_list.append([only_current, binned])
-    return paramater_list
+TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 
 
 class TestPowerLaw:
@@ -27,8 +41,7 @@ class TestPowerLaw:
         m[0].r.value = 4
         self.m = m
 
-    @pytest.mark.parametrize(("only_current", "binned"),
-                              _generate_parameters())
+    @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
     def test_estimate_parameters(self, only_current, binned):
         self.m.signal.metadata.Signal.binned = binned
         s = self.m.as_signal(show_progressbar=None, parallel=False)
@@ -59,8 +72,7 @@ class TestOffset:
         m[0].offset.value = 10
         self.m = m
 
-    @pytest.mark.parametrize(("only_current", "binned"),
-                             _generate_parameters())
+    @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
     def test_estimate_parameters(self, only_current, binned):
         self.m.signal.metadata.Signal.binned = binned
         s = self.m.as_signal(show_progressbar=None, parallel=False)
@@ -97,8 +109,7 @@ class TestPolynomial:
                                              np.array([[6, ], [4.5], [3.5]]))
         assert c.grad_coefficients(np.arange(10)).shape == (3, 10)
 
-    @pytest.mark.parametrize(("only_current", "binned"),
-                             _generate_parameters())
+    @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
     def test_estimate_parameters(self, only_current, binned):
         self.m.signal.metadata.Signal.binned = binned
         s = self.m.as_signal(show_progressbar=None, parallel=False)
@@ -143,8 +154,7 @@ class TestGaussian:
         m[0].A.value = 2
         self.m = m
 
-    @pytest.mark.parametrize(("only_current", "binned"),
-                             _generate_parameters())
+    @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
     def test_estimate_parameters_binned(self, only_current, binned):
         self.m.signal.metadata.Signal.binned = binned
         s = self.m.as_signal(show_progressbar=None, parallel=False)
@@ -156,7 +166,7 @@ class TestGaussian:
         assert_allclose(g.centre.value, 1)
 
     @pytest.mark.parametrize("binned", (True, False))
-    def test_array(self, binned):
+    def test_function_nd(self, binned):
         self.m.signal.metadata.Signal.binned = binned
         s = self.m.as_signal(show_progressbar=None, parallel=False)
         s2 = hs.stack([s]*2)
@@ -165,7 +175,7 @@ class TestGaussian:
         assert g.binned == binned
         axis = s.axes_manager.signal_axes[0]
         factor = axis.scale if binned else 1
-        assert_allclose(g.array(axis.axis) * factor, s2.data)
+        assert_allclose(g.function_nd(axis.axis) * factor, s2.data)
 
 
 class TestExpression:

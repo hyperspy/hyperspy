@@ -19,7 +19,7 @@
 import numpy as np
 
 from hyperspy.component import Component
-from hyperspy.docstrings.parameters import ARRAY_DOCSTRING
+from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 
 
 class PowerLaw(Component):
@@ -156,7 +156,7 @@ class PowerLaw(Component):
             self.fetch_stored_values()
             return True
 
-    def array(self, axis):
+    def function_nd(self, axis):
         """%s
 
         """
@@ -172,4 +172,4 @@ class PowerLaw(Component):
             factor = 1
         return factor * self._function(x, A, r, o)
 
-    array.__doc__ %= ARRAY_DOCSTRING
+    function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
