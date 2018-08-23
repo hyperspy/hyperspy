@@ -863,7 +863,8 @@ class EELSSpectrum_mixin:
         missing_parameters = []
         for item in must_exist:
             exists = self.metadata.has_item(item)
-            if exists is False and item.split('.')[-1] not in ignore_parameters:
+            if exists is False and item.split(
+                    '.')[-1] not in ignore_parameters:
                 missing_parameters.append(item)
         if missing_parameters:
             _logger.info("Missing parameters {}".format(missing_parameters))
