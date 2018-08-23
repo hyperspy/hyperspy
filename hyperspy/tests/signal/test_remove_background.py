@@ -1,4 +1,23 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2016 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 import numpy as np
+import pytest
 
 from hyperspy import signals
 from hyperspy import components1d
@@ -45,10 +64,12 @@ class TestRemoveBackground1DPowerLaw:
         self.signal.axes_manager[0].offset = 100
         self.signal.metadata.Signal.binned = False
 
-    def test_background_remove_pl(self):
+    @pytest.mark.parametrize(("module"), (None, "numpy", "numexpr"))
+    def test_background_remove_pl(self, module):
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='PowerLaw',
+            module=module,
             show_progressbar=None)
         assert np.allclose(s1.data, np.zeros(len(s1.data)), atol=60)
 

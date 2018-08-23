@@ -1053,19 +1053,28 @@ _spikes_diagnosis,
             background_type='Power Law',
             polynomial_order=2,
             fast=True,
+            module=None,
             show_progressbar=None, display=True, toolkit=None):
+
+        if module is None:
+            try:
+                import numexpr
+                module = "numexpr"
+            except:
+                module = "numpy"
         self._check_signal_dimension_equals_one()
         if signal_range == 'interactive':
             br = BackgroundRemoval(self, background_type=background_type,
                                    polynomial_order=polynomial_order,
                                    fast=fast,
+                                   module=module,
                                    show_progressbar=show_progressbar)
             return br.gui(display=display, toolkit=toolkit)
         else:
             if background_type in ('PowerLaw', 'Power Law'):
-                background_estimator = components1d.PowerLaw()
+                background_estimator = components1d.PowerLaw(module=module)
             elif background_type == 'Gaussian':
-                background_estimator = components1d.Gaussian()
+                background_estimator = components1d.Gaussian(module=module)
             elif background_type == 'Offset':
                 background_estimator = components1d.Offset()
             elif background_type == 'Polynomial':
@@ -1103,6 +1112,10 @@ _spikes_diagnosis,
             If False, the signal is fitted using non-linear least squares
             afterwards.This is slower compared to the estimation but
             possibly more accurate.
+        module: {"numpy", "numexpr"}, default None
+            Module used to evaluate the function. numexpr is faster than numpy
+            and is not installed by default. 
+            If None, use numexpr if installed.
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
