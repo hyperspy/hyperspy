@@ -403,7 +403,7 @@ class BaseInteractiveROI(BaseROI):
         ----------
         signal : Signal
             The signal to witch the widget is added. This is used to determine
-            with plot to add the widget to, and it supplies the axes_manager
+            which plot to add the widget to, and it supplies the axes_manager
             for the widget.
         axes : specification of axes to use, default = None
             The axes argument specifies which axes the ROI will be applied on.
