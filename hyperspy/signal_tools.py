@@ -216,12 +216,12 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
 
     def apply(self):
         if np.isnan(self.ss_left_value) or np.isnan(self.ss_right_value):
-            _logger.warn("Select a range by clicking on the signal figure "
-                         "and dragging before pressing Apply.")
+            _logger.warning("Select a range by clicking on the signal figure "
+                            "and dragging before pressing Apply.")
             return
         elif self.left_value is t.Undefined or self.right_value is t.Undefined:
-            _logger.warn("Select the new left and right values before "
-                         "pressing apply.")
+            _logger.warning("Select the new left and right values before "
+                            "pressing apply.")
             return
         axis = self.axis
         axis.scale = self.scale
@@ -392,13 +392,13 @@ class SmoothingSavitzkyGolay(Smoothing):
         if nwl > self.polynomial_order:
             self.window_length = nwl
         else:
-            _logger.warn(
+            _logger.warning(
                 "The window length must be greater than the polynomial order")
 
     def _polynomial_order_changed(self, old, new):
         if self.window_length <= new:
             self.window_length = new + 2 if new % 2 else new + 1
-            _logger.warn(
+            _logger.warning(
                 "Polynomial order must be < window length. "
                 "Window length set to %i.", self.window_length)
         self.update_lines()
@@ -409,7 +409,7 @@ class SmoothingSavitzkyGolay(Smoothing):
     def _differential_order_changed(self, old, new):
         if new > self.polynomial_order:
             self.polynomial_order += 1
-            _logger.warn(
+            _logger.warning(
                 "Differential order must be <= polynomial order. "
                 "Polynomial order set to %i.", self.polynomial_order)
         super(
