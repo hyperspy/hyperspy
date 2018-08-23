@@ -62,6 +62,37 @@ class TestPowerLaw:
         assert_allclose(g.r.map["values"][1], r_value)
 
 
+class TestDoublePowerLaw:
+
+    def setup_method(self, method):
+        s = hs.signals.Signal1D(np.zeros(1024))
+        s.axes_manager[0].offset = 100
+        s.axes_manager[0].scale = 0.1
+        m = s.create_model()
+        m.append(hs.model.components1D.DoublePowerLaw())
+        m[0].A.value = 1000
+        m[0].r.value = 4
+        m[0].ratio.value = 200
+        self.m = m
+
+    @pytest.mark.parametrize(("module"), ("numexpr", "numpy"))
+    @pytest.mark.parametrize(("binned"), (True, False))
+    def test_fit(self, module, binned):
+        self.m.signal.metadata.Signal.binned = binned
+        s = self.m.as_signal(show_progressbar=None, parallel=False)
+        assert s.metadata.Signal.binned == binned
+        g = hs.model.components1D.DoublePowerLaw(module=module)
+        # Fix the ratio parameter to test the fit
+        g.ratio.free = False
+        g.ratio.value = 200
+        m = s.create_model()
+        m.append(g)
+        m.fit_component(g, signal_range=(None, None))
+        assert_allclose(g.A.value, 1000.0)
+        assert_allclose(g.r.value, 4.0)
+        assert_allclose(g.ratio.value, 200.)
+
+
 class TestOffset:
 
     def setup_method(self, method):
