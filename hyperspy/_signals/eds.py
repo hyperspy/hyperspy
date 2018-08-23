@@ -474,7 +474,7 @@ class EDS_mixin:
         only_lines = utils_eds._parse_only_lines(only_lines)
         try:
             beam_energy = self._get_beam_energy()
-        except:
+        except BaseException:
             # Fall back to the high_value of the energy axis
             beam_energy = self.axes_manager.signal_axes[0].high_value
         lines = []
