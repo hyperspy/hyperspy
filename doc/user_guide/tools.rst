@@ -1066,6 +1066,9 @@ to reverse the :py:func:`~.utils.stack` function:
 
   Splitting example.
 
+
+.. _signal.fft:
+
 FFT and iFFT
 ^^^^^^^^^^^^
 

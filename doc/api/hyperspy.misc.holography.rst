@@ -12,6 +12,14 @@ hyperspy.misc.holography.reconstruct module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.misc.holography.tools module
+-------------------------------------
+
+.. automodule:: hyperspy.misc.holography.tools
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

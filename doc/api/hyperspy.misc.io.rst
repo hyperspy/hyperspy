@@ -4,6 +4,14 @@ hyperspy.misc.io package
 Submodules
 ----------
 
+hyperspy.misc.io.fei\_stream\_readers module
+--------------------------------------------
+
+.. automodule:: hyperspy.misc.io.fei_stream_readers
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.misc.io.tools module
 -----------------------------
 

@@ -22,6 +22,9 @@ acquired by recording two signals in parallel in a FIB/SEM.
 if the object is single spectrum or an image one window will appear when
 calling the plot method.
 
+
+.. _visualization_md:
+
 Multidimensional spectral data
 ==============================
 
@@ -46,6 +49,10 @@ the x-axis if 1D:
    :width:   500
 
    Visualisation of a 1D spectrum image.
+
+
+.. versionadded:: 1.4
+   Customizable keyboard shortcuts to navigate multi-dimensional datasets.
 
 To change the current coordinates, click on the pointer (which will be a line
 or a square depending on the dimensions of the data) and drag it around. It is

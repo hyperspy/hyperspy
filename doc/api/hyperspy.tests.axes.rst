@@ -12,6 +12,14 @@ hyperspy.tests.axes.test\_axes\_manager module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.axes.test\_conversion\_units module
+--------------------------------------------------
+
+.. automodule:: hyperspy.tests.axes.test_conversion_units
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.axes.test\_data\_axis module
 -------------------------------------------
 

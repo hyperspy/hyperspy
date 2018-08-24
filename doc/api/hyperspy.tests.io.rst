@@ -12,18 +12,18 @@ hyperspy.tests.io.generate\_dm\_testing\_files module
     :undoc-members:
     :show-inheritance:
 
-hyperspy.tests.io.test\_bcf module
-----------------------------------
-
-.. automodule:: hyperspy.tests.io.test_bcf
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 hyperspy.tests.io.test\_blockfile module
 ----------------------------------------
 
 .. automodule:: hyperspy.tests.io.test_blockfile
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.tests.io.test\_bruker module
+-------------------------------------
+
+.. automodule:: hyperspy.tests.io.test_bruker
     :members:
     :undoc-members:
     :show-inheritance:
@@ -88,6 +88,14 @@ hyperspy.tests.io.test\_io module
 ---------------------------------
 
 .. automodule:: hyperspy.tests.io.test_io
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.tests.io.test\_mrcz module
+-----------------------------------
+
+.. automodule:: hyperspy.tests.io.test_mrcz
     :members:
     :undoc-members:
     :show-inheritance:

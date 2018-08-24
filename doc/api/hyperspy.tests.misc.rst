@@ -20,6 +20,14 @@ hyperspy.tests.misc.test\_date\_time\_tools module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.misc.test\_fei\_stream\_readers module
+-----------------------------------------------------
+
+.. automodule:: hyperspy.tests.misc.test_fei_stream_readers
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.misc.test\_image\_tools module
 ---------------------------------------------
 

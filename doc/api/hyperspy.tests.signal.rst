@@ -100,6 +100,14 @@ hyperspy.tests.signal.test\_folding module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.signal.test\_fourier\_transform module
+-----------------------------------------------------
+
+.. automodule:: hyperspy.tests.signal.test_fourier_transform
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.signal.test\_hologram\_image module
 --------------------------------------------------
 

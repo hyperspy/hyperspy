@@ -4,18 +4,18 @@ hyperspy.io\_plugins package
 Submodules
 ----------
 
-hyperspy.io\_plugins.bcf module
--------------------------------
-
-.. automodule:: hyperspy.io_plugins.bcf
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 hyperspy.io\_plugins.blockfile module
 -------------------------------------
 
 .. automodule:: hyperspy.io_plugins.blockfile
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.io\_plugins.bruker module
+----------------------------------
+
+.. automodule:: hyperspy.io_plugins.bruker
     :members:
     :undoc-members:
     :show-inheritance:
@@ -84,16 +84,16 @@ hyperspy.io\_plugins.mrc module
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.io\_plugins\.mrcz module
----------------------------------
+hyperspy.io\_plugins.mrcz module
+--------------------------------
 
 .. automodule:: hyperspy.io_plugins.mrcz
     :members:
     :undoc-members:
     :show-inheritance:
 
-hyperspy\.io\_plugins\.msa module
----------------------------------
+hyperspy.io\_plugins.msa module
+-------------------------------
 
 .. automodule:: hyperspy.io_plugins.msa
     :members:

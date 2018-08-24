@@ -36,10 +36,26 @@ hyperspy.tests.drawing.test\_plot\_model module
     :undoc-members:
     :show-inheritance:
 
+hyperspy.tests.drawing.test\_plot\_model1d module
+-------------------------------------------------
+
+.. automodule:: hyperspy.tests.drawing.test_plot_model1d
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 hyperspy.tests.drawing.test\_plot\_mva module
 ---------------------------------------------
 
 .. automodule:: hyperspy.tests.drawing.test_plot_mva
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+hyperspy.tests.drawing.test\_plot\_roi\_widgets module
+------------------------------------------------------
+
+.. automodule:: hyperspy.tests.drawing.test_plot_roi_widgets
     :members:
     :undoc-members:
     :show-inheritance:
