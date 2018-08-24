@@ -77,10 +77,8 @@ analysing large files. To load a file without loading it to memory simply set
 
 The units of the navigation and signal axes can be converted automatically 
 during loading using the ``convert_units`` parameter. If `True`, the 
-``convert_to_units`` method of the ``axes_manager`` will be used for the conversion.
-If `None` (default), the default setting of the file reader will be used to 
-determine if the units need to be converted. If `False`, the units will not be 
-converted, regardless of the reader default setting.
+``convert_to_units`` method of the ``axes_manager`` will be used for the conversion 
+and if set to `False`, the units will not be converted. The default is `False`.
 
 .. code-block:: python
 
