@@ -340,6 +340,12 @@ class Test3D:
         new_s = self.signal.rebin(scale=(2, 2, 1))
         assert new_s.metadata.Signal.Noise_properties.variance == 0.3
 
+    def test_rebin_dtype(self):
+        s = signals.Signal1D(np.arange(1000).reshape(10, 10, 10))
+        s.change_dtype(np.uint8)
+        s2 = s.rebin(scale=(3, 3, 1), crop=False)
+        assert s.sum() == s2.sum()
+
     def test_swap_axes_simple(self):
         s = self.signal
         if s._lazy:
