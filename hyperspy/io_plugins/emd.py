@@ -49,8 +49,12 @@ full_support = False  # Hopefully?
 # Recognised file extension
 file_extensions = ('emd', 'EMD')
 default_extension = 0
+# Reading capabilities
+reads_images = True
+reads_spectrum = True
+reads_spectrum_image = True
 # Writing features
-writes = True
+writes = True # Only Berkeley emd
 EMD_VERSION = '0.2'
 # ----------------------
 

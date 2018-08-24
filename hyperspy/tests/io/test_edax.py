@@ -8,6 +8,8 @@ from numpy.testing import assert_allclose, assert_equal
 
 from hyperspy.io import load
 from hyperspy import signals
+from hyperspy.misc.test_utils import assert_deep_almost_equal
+
 
 MY_PATH = os.path.dirname(__file__)
 TMP_DIR = tempfile.TemporaryDirectory()
@@ -189,7 +191,8 @@ class TestSpdMap_070_eds:
 
     @classmethod
     def setup_class(cls):
-        cls.spd = load(os.path.join(TMP_DIR.name, "spd_map.spd"))
+        cls.spd = load(os.path.join(TMP_DIR.name, "spd_map.spd"),
+                       convert_units=True)
 
     @classmethod
     def teardown_class(cls):
@@ -260,15 +263,15 @@ class TestSpdMap_070_eds:
         spd_ax_manager = {'axis-0': {'name': 'y',
                                      'navigate': True,
                                      'offset': 0.0,
-                                     'scale': 0.014227345585823059,
+                                     'scale': 14.227345585823057,
                                      'size': 200,
-                                     'units': '$\\mu m$'},
+                                     'units': 'nm'},
                           'axis-1': {'name': 'x',
                                      'navigate': True,
                                      'offset': 0.0,
-                                     'scale': 0.014235896058380604,
+                                     'scale': 14.235896058380602,
                                      'size': 256,
-                                     'units': '$\\mu m$'},
+                                     'units': 'nm'},
                           'axis-2': {'name': 'Energy',
                                      'navigate': False,
                                      'offset': 0.0,
@@ -313,7 +316,8 @@ class TestSpdMap_061_xrf:
 
     @classmethod
     def setup_class(cls):
-        cls.spd = load(os.path.join(TMP_DIR.name, "spc0_61-ipr333_xrf.spd"))
+        cls.spd = load(os.path.join(TMP_DIR.name, "spc0_61-ipr333_xrf.spd"),
+                       convert_units=True)
 
     @classmethod
     def teardown_class(cls):
@@ -384,15 +388,15 @@ class TestSpdMap_061_xrf:
         spd_ax_manager = {'axis-0': {'name': 'y',
                                      'navigate': True,
                                      'offset': 0.0,
-                                     'scale': 565.1920166015625,
+                                     'scale': 0.5651920166015625,
                                      'size': 200,
-                                     'units': '$\\mu m$'},
+                                     'units': 'mm'},
                           'axis-1': {'name': 'x',
                                      'navigate': True,
                                      'offset': 0.0,
-                                     'scale': 565.1920166015625,
+                                     'scale': 0.5651920166015625,
                                      'size': 256,
-                                     'units': '$\\mu m$'},
+                                     'units': 'mm'},
                           'axis-2': {'name': 'Energy',
                                      'navigate': False,
                                      'offset': 0.0,

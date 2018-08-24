@@ -36,7 +36,7 @@ import pytest
 
 from hyperspy.io import load
 from hyperspy.signals import BaseSignal, Signal2D, Signal1D, EDSTEMSpectrum
-from hyperspy.misc.test_utils import assert_deep_almost_equal
+from hyperspy.misc.test_utils import assert_warns, assert_deep_almost_equal
 from hyperspy.misc.io.fei_stream_readers import sparse_installed
 
 
@@ -94,6 +94,7 @@ def test_metadata():
 
 
 def test_metadata_with_bytes_string():
+    pytest.importorskip("natsort", minversion="5.1.0")
     filename = os.path.join(
         my_path, 'emd_files', 'example_bytes_string_metadata.emd')
     f = h5py.File(filename, 'r')
@@ -233,26 +234,27 @@ class TestCaseSaveAndRead():
         signal_ref.axes_manager[0].offset = 10
         signal_ref.axes_manager[1].offset = 20
         signal_ref.axes_manager[2].offset = 30
-        signal_ref.axes_manager[0].units = 'nmx'
-        signal_ref.axes_manager[1].units = 'nmy'
-        signal_ref.axes_manager[2].units = 'nmz'
-        signal_ref.save(os.path.join(my_path, 'emd_files', 'example_temp.emd'), overwrite=True,
-                        signal_metadata=sig_metadata, user=user, microscope=microscope,
-                        sample=sample, comments=comments)
+        signal_ref.axes_manager[0].units = 'nm'
+        signal_ref.axes_manager[1].units = 'µm'
+        signal_ref.axes_manager[2].units = 'mm'
+        signal_ref.save(os.path.join(my_path, 'emd_files', 'example_temp.emd'),
+                        overwrite=True, signal_metadata=sig_metadata,
+                        user=user, microscope=microscope, sample=sample,
+                        comments=comments)
         signal = load(os.path.join(my_path, 'emd_files', 'example_temp.emd'))
         np.testing.assert_equal(signal.data, signal_ref.data)
         np.testing.assert_equal(signal.axes_manager[0].name, 'x')
         np.testing.assert_equal(signal.axes_manager[1].name, 'y')
         np.testing.assert_equal(signal.axes_manager[2].name, 'z')
         np.testing.assert_equal(signal.axes_manager[0].scale, 2)
-        np.testing.assert_equal(signal.axes_manager[1].scale, 3)
-        np.testing.assert_equal(signal.axes_manager[2].scale, 4)
+        np.testing.assert_almost_equal(signal.axes_manager[1].scale, 3.0)
+        np.testing.assert_almost_equal(signal.axes_manager[2].scale, 4.0)
         np.testing.assert_equal(signal.axes_manager[0].offset, 10)
-        np.testing.assert_equal(signal.axes_manager[1].offset, 20)
-        np.testing.assert_equal(signal.axes_manager[2].offset, 30)
-        np.testing.assert_equal(signal.axes_manager[0].units, 'nmx')
-        np.testing.assert_equal(signal.axes_manager[1].units, 'nmy')
-        np.testing.assert_equal(signal.axes_manager[2].units, 'nmz')
+        np.testing.assert_almost_equal(signal.axes_manager[1].offset, 20.0)
+        np.testing.assert_almost_equal(signal.axes_manager[2].offset, 30.0)
+        np.testing.assert_equal(signal.axes_manager[0].units, 'nm')
+        np.testing.assert_equal(signal.axes_manager[1].units, 'µm')
+        np.testing.assert_equal(signal.axes_manager[2].units, 'mm')
         np.testing.assert_equal(signal.metadata.General.title, test_title)
         np.testing.assert_equal(
             signal.metadata.General.user.as_dictionary(), user)
@@ -336,10 +338,10 @@ class TestFeiEMD():
                                          'fei_emd_image.npy'))
         assert signal.axes_manager[0].name == 'x'
         assert signal.axes_manager[0].units == 'um'
-        assert_allclose(signal.axes_manager[0].scale, 0.005302, atol=1E-5)
+        assert_allclose(signal.axes_manager[0].scale, 0.00530241, rtol=1E-5)
         assert signal.axes_manager[1].name == 'y'
         assert signal.axes_manager[1].units == 'um'
-        assert_allclose(signal.axes_manager[1].scale, 0.005302, atol=1E-5)
+        assert_allclose(signal.axes_manager[1].scale, 0.00530241, rtol=1E-5)
         assert_allclose(signal.data, fei_image)
         assert_deep_almost_equal(signal.metadata.as_dictionary(), md)
         assert isinstance(signal, Signal2D)

@@ -47,14 +47,14 @@ class _TestPlot:
         s = hs.signals.__dict__['%sSignal%iD' % (dtype, sdim)](data)
         if sdim == 1:
             s.axes_manager = self._set_signal_axes(s.axes_manager, name='Energy',
-                                                   units='eV', scale=500.0, offset=300.0)
+                                                   units='keV', scale=.5, offset=0.3)
         elif sdim == 2:
             s.axes_manager = self._set_signal_axes(s.axes_manager, name='Reciprocal distance',
                                                    units='1/nm', scale=1, offset=0.0)
         if ndim > 0:
             s.axes_manager = self._set_navigation_axes(s.axes_manager, name='',
-                                                       units='m', scale=1E-6,
-                                                       offset=5E-6)
+                                                       units='nm', scale=1.0,
+                                                       offset=5.0)
         s.metadata.General.title = title
         # workaround to be able to access the figure in case of complex 2d
         # signals

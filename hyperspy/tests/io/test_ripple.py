@@ -190,6 +190,7 @@ def test_data(pdict):
                         stest.metadata.get_item(mdpath))
                 for saxis, taxis in zip(
                         s.axes_manager._axes, stest.axes_manager._axes):
+                    taxis.convert_to_units()
                     assert saxis.scale == taxis.scale
                     assert saxis.offset == taxis.offset
                     assert saxis.units == taxis.units
