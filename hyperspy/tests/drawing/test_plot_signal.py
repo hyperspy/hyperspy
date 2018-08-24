@@ -18,6 +18,7 @@
 import numpy as np
 import traits.api as t
 import pytest
+import matplotlib.pyplot as plt
 
 from hyperspy.misc.test_utils import update_close_figure
 import hyperspy.api as hs
@@ -108,6 +109,20 @@ def test_plot_sig_nav(mpl_cleanup, ndim, sdim, plot_type, data_type):
     test_plot = _TestPlot(ndim, sdim, data_type)
     test_plot.signal.plot()
     return _get_figure(test_plot, data_type, plot_type)
+
+
+@pytest.mark.parametrize("sdim", [1, 2])
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_data_changed_event(sdim):
+    if sdim == 2:
+        s = hs.signals.Signal2D(np.arange(25).reshape((5, 5)))
+    else:
+        s = hs.signals.Signal1D(np.arange(25))
+    s.plot()
+    s.data *= -2
+    s.events.data_changed.trigger(obj=s)
+    return plt.gcf()
 
 
 def _get_figure(test_plot, data_type, plot_type):

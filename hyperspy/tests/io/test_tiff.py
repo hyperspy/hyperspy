@@ -4,6 +4,7 @@ import tempfile
 import numpy as np
 import traits.api as t
 from numpy.testing import assert_allclose
+import pytest
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import assert_deep_almost_equal
@@ -90,10 +91,11 @@ def test_read_unit_from_imagej_stack():
     assert_allclose(s.axes_manager[2].scale, 0.16867, atol=1E-5)
 
 
-def test_read_unit_from_DM_stack():
+@pytest.mark.parametrize("lazy", [True, False])
+def test_read_unit_from_DM_stack(lazy):
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_DM_stack.tif')
-    s = hs.load(fname)
+    s = hs.load(fname, lazy=lazy)
     assert s.data.shape == (2, 68, 68)
     assert s.axes_manager[0].units == 's'
     assert s.axes_manager[1].units == 'µm'

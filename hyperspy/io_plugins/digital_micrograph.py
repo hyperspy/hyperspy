@@ -548,10 +548,11 @@ class ImageObject(object):
 
     @property
     def title(self):
-        if "Name" in self.imdict:
-            return self.imdict.Name
-        else:
-            return ''
+        title = self.imdict.get_item("Name", "")
+        # ``if title else ""`` below is there to account for when Name
+        # contains an empty list.
+        # See https://github.com/hyperspy/hyperspy/issues/1937
+        return title if title else ""
 
     @property
     def record_by(self):
