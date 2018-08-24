@@ -1350,20 +1350,15 @@ class EELSSpectrum_mixin:
                                for axis in m.axes_manager.navigation_axes])
         mdeels = m.metadata
         m.get_dimensions_from_data()
-        if "Acquisition_instrument" in m.metadata:
-            mdeels = m.metadat.Acquisition_instrument
-            if "Acquisition_instrument.TEM.Detector.EELS.dwell_time" in m.metadata:
-                mdeels.TEM.Detector.EELS.dwell_time *= time_factor
-            elif "Acquisition_instrument.TEM.Detector.EELS.exposure" in m.metadata:
-                mdeels.TEM.Detector.EELS.exposure *= time_factor
-            elif "Acquisition_instrument.TEM.Detector.Camera.exposure" in m.metadata:
-                mdeels.TEM.Detector.Camera.exposure *= time_factor
-        elif "dwell_time" in m.metadata:
-            m.metadata.dwell_time *= time_factor
-        elif "exposure" in m.metadata:
-            m.metadata.exposure *= time_factor
+        if m.metadata.get_item("Acquisition_instrument.TEM.Detector.EELS"):
+            mdeels = m.metadata.Acquisition_instrument.TEM.Detector.EELS
+            if "dwell_time" in mdeels:
+                mdeels.dwell_time *= time_factor
+            if "exposure" in mdeels:
+                mdeels.exposure *= time_factor
         else:
-            _logger.info('No dwell_time could be found in the metadata so this has not been updated.')
+            _logger.info('No dwell_time could be found in the metadata so '
+                         'this has not been updated.')
         if out is None:
             return m
         else:

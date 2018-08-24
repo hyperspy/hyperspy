@@ -259,9 +259,14 @@ class TestRebin:
 
     def test_rebin_dwell_time(self):
         s = self.signal
-        s.metadata.dwell_time = 5.3
+        s.metadata.add_node("Acquisition_instrument.TEM.Detector.EELS")
+        s_mdEELS = s.metadata.Acquisition_instrument.TEM.Detector.EELS
+        s_mdEELS.dwell_time = 0.1
+        s_mdEELS.exposure = 0.5
         s2 = s.rebin(scale = (2, 2, 8))
-        assert s2.metadata.dwell_time == (5.3 * 2 * 2)
+        s2_mdEELS = s2.metadata.Acquisition_instrument.TEM.Detector.EELS
+        assert s2_mdEELS.dwell_time == (0.1 * 2 * 2)
+        assert s2_mdEELS.exposure == (0.5 * 2 * 2)
 
         def test_rebin_exposure(self):
             s = self.signal

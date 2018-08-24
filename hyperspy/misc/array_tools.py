@@ -169,7 +169,7 @@ def rebin(a, new_shape=None, scale=None, crop=True):
         if np.issubdtype(a.dtype, np.integer):
             # The _linear_bin function below requires a float dtype
             # because of the default numpy casting rule ('same_kind').
-            a.astype("float", casting="safe", copy=False)
+            a = a.astype("float", casting="safe", copy=False)
         return _linear_bin(a, scale, crop)
     else:
         _logger.debug("Using standard rebin with lazy support")
@@ -200,7 +200,7 @@ def rebin(a, new_shape=None, scale=None, crop=True):
             try:
                 return da.coarsen(np.sum, a, {i: int(f)
                                               for i, f in enumerate(scale)})
-            # we provide slightly better error message in hypersy context
+            # we provide slightly better error message in hyperspy context
             except ValueError:
                 raise ValueError("Rebinning does not align with data dask chunks."
                                  " Rebin fewer dimensions at a time to avoid this"
@@ -296,10 +296,6 @@ def _linear_bin(dat, scale, crop=True):
 
     if not hasattr(_linear_bin_loop, "__numba__"):
         _logger.warning("Install numba to speed up the computation of `rebin`")
-
-    all_integer = np.all([isinstance(n, numbers.Integral) for n in scale])
-    dtype = (dat.dtype if (all_integer or "complex" in dat.dtype.name)
-             else "float")
 
     for axis, s in enumerate(scale):
         # For each iteration of linear_bin the axis being interated over has to
