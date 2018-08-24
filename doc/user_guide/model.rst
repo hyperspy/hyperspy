@@ -911,6 +911,21 @@ To fit the model to all the elements of a multidimensional dataset use
 store the result of the fit internally and move to the next position until
 reaching the end of the dataset.
 
+.. NOTE::
+
+    Sometimes this method can fail, especially in the case of a TEM spectrum
+    image of a particle surrounded by vacuum (since in that case the
+    top-left pixel will typically be an empty signal). To get sensible
+    starting parameters, you can do a single
+    :py:meth:`~.model.BaseModel.fit` after changing the active position
+    within the spectrum image (either using the plotting GUI or by directly
+    modifying ``s.axes_manager.indices`` as in :ref:`Setting_axis_properties`).
+    After doing this, you can initialize the model at every pixel to the
+    values from the single pixel fit using
+    ``m.assign_current_values_to_all()``, and then use
+    :py:meth:`~.model.BaseModel.multifit` to perform the fit over the entire
+    spectrum image.
+
 Sometimes one may like to store and fetch the value of the parameters at a
 given position manually. This is possible using
 :py:meth:`~.model.BaseModel.store_current_values` and
