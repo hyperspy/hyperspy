@@ -849,10 +849,13 @@ class EELSSpectrum_mixin:
                 '_after_R-L_deconvolution_%iiter' % iterations)
         return ds
 
-    def _are_microscope_parameters_missing(self):
-        """Check if the EELS parameters necessary to calculate the GOS
+    def _are_microscope_parameters_missing(self, ignore_parameters=[]):
+        """
+        Check if the EELS parameters necessary to calculate the GOS
         are defined in metadata. If not, in interactive mode
-        raises an UI item to fill the values"""
+        raises an UI item to fill the values.
+        The `ignore_parameters` list can be to ignore parameters.
+        """
         must_exist = (
             'Acquisition_instrument.TEM.convergence_angle',
             'Acquisition_instrument.TEM.beam_energy',
@@ -860,7 +863,8 @@ class EELSSpectrum_mixin:
         missing_parameters = []
         for item in must_exist:
             exists = self.metadata.has_item(item)
-            if exists is False:
+            if exists is False and item.split(
+                    '.')[-1] not in ignore_parameters:
                 missing_parameters.append(item)
         if missing_parameters:
             _logger.info("Missing parameters {}".format(missing_parameters))
@@ -1128,19 +1132,11 @@ class EELSSpectrum_mixin:
             'electron mass energy equivalent in MeV') * 1e3  # keV
 
         # Mapped parameters
-        try:
-            e0 = s.metadata.Acquisition_instrument.TEM.beam_energy
-        except BaseException:
-            raise AttributeError("Please define the beam energy."
-                                 "You can do this e.g. by using the "
-                                 "set_microscope_parameters method")
-        try:
-            beta = s.metadata.Acquisition_instrument.TEM.Detector.\
-                EELS.collection_angle
-        except BaseException:
-            raise AttributeError("Please define the collection semi-angle. "
-                                 "You can do this e.g. by using the "
-                                 "set_microscope_parameters method")
+        self._are_microscope_parameters_missing(
+            ignore_parameters=['convergence_angle'])
+        e0 = s.metadata.Acquisition_instrument.TEM.beam_energy
+        beta = s.metadata.Acquisition_instrument.TEM.Detector.EELS.\
+            collection_angle
 
         axis = s.axes_manager.signal_axes[0]
         eaxis = axis.axis.copy()

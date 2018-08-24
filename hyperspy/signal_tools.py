@@ -75,9 +75,14 @@ class SpanSelectorInSignal1D(t.HasTraits):
     def update_span_selector_traits(self, *args, **kwargs):
         if not self.signal._plot.is_active:
             return
-        self.ss_left_value = self.span_selector.rect.get_x()
-        self.ss_right_value = self.ss_left_value + \
-            self.span_selector.rect.get_width()
+        x0 = self.span_selector.rect.get_x()
+        if x0 < self.axis.low_value:
+            x0 = self.axis.low_value
+        self.ss_left_value = x0
+        x1 = self.ss_left_value + self.span_selector.rect.get_width()
+        if x1 > self.axis.high_value:
+            x1 = self.axis.high_value
+        self.ss_right_value = x1
 
     def reset_span_selector(self):
         self.span_selector_switch(False)
@@ -211,12 +216,12 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
 
     def apply(self):
         if np.isnan(self.ss_left_value) or np.isnan(self.ss_right_value):
-            _logger.warn("Select a range by clicking on the signal figure "
-                         "and dragging before pressing Apply.")
+            _logger.warning("Select a range by clicking on the signal figure "
+                            "and dragging before pressing Apply.")
             return
         elif self.left_value is t.Undefined or self.right_value is t.Undefined:
-            _logger.warn("Select the new left and right values before "
-                         "pressing apply.")
+            _logger.warning("Select the new left and right values before "
+                            "pressing apply.")
             return
         axis = self.axis
         axis.scale = self.scale
@@ -387,13 +392,13 @@ class SmoothingSavitzkyGolay(Smoothing):
         if nwl > self.polynomial_order:
             self.window_length = nwl
         else:
-            _logger.warn(
+            _logger.warning(
                 "The window length must be greater than the polynomial order")
 
     def _polynomial_order_changed(self, old, new):
         if self.window_length <= new:
             self.window_length = new + 2 if new % 2 else new + 1
-            _logger.warn(
+            _logger.warning(
                 "Polynomial order must be < window length. "
                 "Window length set to %i.", self.window_length)
         self.update_lines()
@@ -404,7 +409,7 @@ class SmoothingSavitzkyGolay(Smoothing):
     def _differential_order_changed(self, old, new):
         if new > self.polynomial_order:
             self.polynomial_order += 1
-            _logger.warn(
+            _logger.warning(
                 "Differential order must be <= polynomial order. "
                 "Polynomial order set to %i.", self.polynomial_order)
         super(
@@ -920,14 +925,15 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self._reset_line()
         ncoordinates = len(self.coordinates)
         spike = self.detect_spike()
-        while not spike and (
-                (self.index < ncoordinates - 1 and back is False) or
-                (self.index > 0 and back is True)):
-            if back is False:
-                self.index += 1
-            else:
-                self.index -= 1
-            spike = self.detect_spike()
+        with self.signal.axes_manager.events.indices_changed.suppress():
+            while not spike and (
+                    (self.index < ncoordinates - 1 and back is False) or
+                    (self.index > 0 and back is True)):
+                if back is False:
+                    self.index += 1
+                else:
+                    self.index -= 1
+                spike = self.detect_spike()
 
         if spike is False:
             m = SimpleMessage()

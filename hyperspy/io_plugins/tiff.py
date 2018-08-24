@@ -201,7 +201,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
                 elif name in ['depth', 'image series', 'time']:
                     scales[i], units[i] = scales_d['z'], units_d['z']
                     offsets[i] = offsets_d['z']
-        except:
+        except BaseException:
             _logger.info("Scale and units could not be imported")
 
         axes = [{'size': size,
@@ -261,7 +261,7 @@ def _load_data(TF, filename, is_rgb, sl=None, memmap=False, **kwds):
         if is_rgb:
             dc = rgb_tools.regular_array2rgbx(dc)
         if sl is not None:
-            dc = dc[sl]
+            dc = dc[tuple(sl)]
         return dc
 
 
@@ -430,7 +430,7 @@ def _get_dm_kwargs_extratag(signal, scales, units, offsets):
     if md.has_item('Signal.quantity'):
         try:
             intensity_units = md.Signal.quantity
-        except:
+        except BaseException:
             _logger.info("The units of the 'intensity axes' couldn't be"
                          "retrieved, please report the bug.")
             intensity_units = ""
@@ -441,7 +441,7 @@ def _get_dm_kwargs_extratag(signal, scales, units, offsets):
             dic = md.Signal.Noise_properties.Variance_linear_model
             intensity_offset = dic.gain_offset
             intensity_scale = dic.gain_factor
-        except:
+        except BaseException:
             _logger.info("The scale or the offset of the 'intensity axes'"
                          "couldn't be retrieved, please report the bug.")
             intensity_offset = 0.0
@@ -491,7 +491,7 @@ def _imagej_description(version='1.11a', **kwargs):
 def _decode_string(string):
     try:
         string = string.decode('utf8')
-    except:
+    except BaseException:
         # Sometimes the strings are encoded in latin-1 instead of utf8
         string = string.decode('latin-1', errors='ignore')
     return string

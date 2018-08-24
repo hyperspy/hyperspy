@@ -903,6 +903,14 @@ def spd_reader(filename,
                           'reading .ipr {}'.format(ipr_fname))
             ipr_header = __get_ipr_header(f, endianess)
             original_metadata['ipr_header'] = sarray2dict(ipr_header)
+
+            # Workaround for type error when saving hdf5:
+            # save as list of strings instead of numpy unicode array
+            # see https://github.com/hyperspy/hyperspy/pull/2007 and
+            #     https://github.com/h5py/h5py/issues/289 for context
+            original_metadata['ipr_header']['charText'] = \
+                [np.string_(i) for i in
+                 original_metadata['ipr_header']['charText']]
     else:
         _logger.warning('Could not find .ipr file named {}.\n'
                         'No spatial calibration will be loaded.'
