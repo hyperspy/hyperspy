@@ -33,7 +33,7 @@ before_install:
 install:
 
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      DEPS="pip numpy scipy matplotlib>=2.0.2 ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython lxml ipyparallel dask traits traitsui";
+      DEPS="pip numpy scipy matplotlib>=2.0.2 ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython ipyparallel dask traits traitsui";
     else DEPS="pip ipython numpy scipy matplotlib>=2.0.2 h5py sympy scikit-image";
     fi
   - conda create -n testenv --yes python=$PYTHON;

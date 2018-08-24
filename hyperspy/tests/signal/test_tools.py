@@ -28,19 +28,25 @@ class Test1D:
         gaussian.A.value = 20
         gaussian.sigma.value = 10
         gaussian.centre.value = 50
-        self.signal = signals.Signal1D(gaussian.function(np.arange(0, 100, 0.01)))
+        self.signal = signals.Signal1D(
+            gaussian.function(np.arange(0, 100, 0.01)))
         self.signal.axes_manager[0].scale = 0.01
 
     def test_integrate1D(self):
         integrated_signal = self.signal.integrate1D(axis=0)
         assert np.allclose(integrated_signal.data, 20,)
-        
+
 
 @lazifyTestClass
 class Test2D:
 
     def setup_method(self, method):
-        self.signal = signals.Signal1D(np.arange(5 * 10).reshape(5, 10))
+        self.signal = signals.Signal1D(
+            np.arange(
+                5 *
+                10).reshape(
+                5,
+                10))  # dtype int
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "E"
         self.signal.axes_manager[0].scale = 0.5
@@ -152,6 +158,12 @@ class Test2D:
         # Just test if it doesn't raise an exception
         self.signal._print_summary()
 
+    def test_print_summary_statistics(self):
+        # Just test if it doesn't raise an exception
+        self.signal.print_summary_statistics()
+        if self.signal._lazy:
+            self.signal.print_summary_statistics(rechunk=False)
+
     def test_numpy_unfunc_one_arg_titled(self):
         self.signal.metadata.General.title = "yes"
         result = np.exp(self.signal)
@@ -183,6 +195,49 @@ class Test2D:
         result = np.angle(self.signal)
         assert isinstance(result, np.ndarray)
         np.testing.assert_array_equal(result, np.angle(self.signal.data))
+
+    def test_add_gaussian_noise(self):
+        s = self.signal
+        s.change_dtype("float64")
+        kwargs = {}
+        if s._lazy:
+            data = s.data.compute()
+            from dask.array.random import seed, normal
+            kwargs["chunks"] = s.data.chunks
+        else:
+            data = s.data.copy()
+            from numpy.random import seed, normal
+        seed(1)
+        s.add_gaussian_noise(std=1.0)
+        seed(1)
+        if s._lazy:
+            s.compute()
+        np.testing.assert_array_almost_equal(
+            s.data - data, normal(scale=1.0, size=data.shape, **kwargs))
+
+    def test_add_poisson_noise(self):
+        s = self.signal
+        kwargs = {}
+        if s._lazy:
+            data = s.data.compute()
+            from dask.array.random import seed, poisson
+            kwargs["chunks"] = s.data.chunks
+        else:
+            data = s.data.copy()
+            from numpy.random import seed, poisson
+        seed(1)
+        s.add_poissonian_noise(keep_dtype=False)
+        if s._lazy:
+            s.compute()
+        seed(1)
+        np.testing.assert_array_almost_equal(
+            s.data, poisson(lam=data, **kwargs))
+        s.change_dtype("float64")
+        seed(1)
+        s.add_poissonian_noise(keep_dtype=True)
+        if s._lazy:
+            s.compute()
+        assert s.data.dtype == np.dtype("float64")
 
 
 def _test_default_navigation_signal_operations_over_many_axes(self, op):
@@ -263,17 +318,16 @@ class Test3D:
         assert var.data.shape == (1, 2, 6)
         from hyperspy.misc.array_tools import rebin
 
-        if self.signal._lazy:
-            from distutils.version import LooseVersion
-            import dask
-            if LooseVersion(np.__version__) >= "1.12.0" and \
-               LooseVersion(dask.__version__) <= "0.13.0":
-                pytest.skip("Dask not up to date with new numpy")
-
         np.testing.assert_array_equal(rebin(self.signal.data, scale=(2, 2, 1)),
                                       var.data)
         np.testing.assert_array_equal(rebin(self.signal.data, scale=(2, 2, 1)),
                                       new_s.data)
+        if self.signal._lazy:
+            new_s = self.signal.rebin(scale=(2, 2, 1), rechunk=False)
+            np.testing.assert_array_equal(rebin(self.signal.data, scale=(2, 2, 1)),
+                                          var.data)
+            np.testing.assert_array_equal(rebin(self.signal.data, scale=(2, 2, 1)),
+                                          new_s.data)
 
     def test_rebin_no_variance(self):
         new_s = self.signal.rebin(scale=(2, 2, 1))
@@ -289,15 +343,22 @@ class Test3D:
     def test_swap_axes_simple(self):
         s = self.signal
         if s._lazy:
-            pytest.skip("LazyS do not support axes swapping")
+            chunks = s.data.chunks
         assert s.swap_axes(0, 1).data.shape == (4, 2, 6)
         assert s.swap_axes(0, 2).axes_manager.shape == (6, 2, 4)
-        assert s.swap_axes(0, 2).data.flags['C_CONTIGUOUS']
+        if not s._lazy:
+            assert not s.swap_axes(0, 2).data.flags['C_CONTIGUOUS']
+            assert s.swap_axes(0, 2, optimize=True).data.flags['C_CONTIGUOUS']
+        else:
+            cks = s.data.chunks
+            assert s.swap_axes(0, 1).data.chunks == (cks[1], cks[0], cks[2])
+            # This data shape does not require rechunking
+            assert s.swap_axes(
+                0, 1, optimize=True).data.chunks == (
+                cks[1], cks[0], cks[2])
 
     def test_swap_axes_iteration(self):
         s = self.signal
-        if s._lazy:
-            pytest.skip("LazyS do not support axes swapping")
         s = s.swap_axes(0, 2)
         assert s.axes_manager._getitem_tuple[:2] == (0, 0)
         s.axes_manager.indices = (2, 1)
@@ -459,31 +520,21 @@ class Test4D:
         assert self.s.rollaxis("z", "x").data.shape == (4, 3, 5, 6)
 
     def test_unfold_spectrum(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         self.s.unfold()
         assert self.s.data.shape == (60, 6)
 
     def test_unfold_spectrum_returns_true(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         assert self.s.unfold()
 
     def test_unfold_spectrum_signal_returns_false(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         assert not self.s.unfold_signal_space()
 
     def test_unfold_image(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         im.unfold()
         assert im.data.shape == (30, 12)
 
     def test_image_signal_unfolded_deepcopy(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         im.unfold()
         # The following could fail if the constructor was not taking the fact
@@ -492,21 +543,15 @@ class Test4D:
         im.deepcopy()
 
     def test_image_signal_unfolded_false(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         assert not im.metadata._HyperSpy.Folding.signal_unfolded
 
     def test_image_signal_unfolded_true(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         im.unfold()
         assert im.metadata._HyperSpy.Folding.signal_unfolded
 
     def test_image_signal_unfolded_back_to_false(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         im.unfold()
         im.fold()
@@ -566,6 +611,8 @@ class TestOutArg:
 
     def test_get_histogram(self):
         self._run_single(self.s.get_histogram, self.s, {})
+        if self.s._lazy:
+            self._run_single(self.s.get_histogram, self.s, {"rechunk": False})
 
     def test_sum(self):
         self._run_single(self.s.sum, self.s, dict(axis=('x', 'z')))
@@ -696,6 +743,17 @@ class TestOutArg:
         sr = s.sum(axis=('x', 'z',))
         np.testing.assert_array_equal(sr.data.sum(), (~mask).sum())
 
+    @pytest.mark.parametrize('mask', (True, False))
+    def test_sum_no_navigation_axis(self, mask):
+        s = signals.Signal1D(np.arange(100))
+        if mask:
+            s.data = np.ma.masked_array(s.data, mask=(s < 50))
+        # Since s haven't any navigation axis, it returns the same signal as
+        # default
+        np.testing.assert_array_equal(s, s.sum())
+        # When we specify an axis, it actually takes the sum.
+        np.testing.assert_array_equal(s.data.sum(), s.sum(axis=0))
+
     def test_masked_arrays_out(self):
         s = self.s
         if s._lazy:
@@ -824,7 +882,8 @@ class TestTranspose:
 
     def test_optimize(self):
         if self.s._lazy:
-            pytest.skip("LazyS do not support optimizations")
+            pytest.skip(
+                "LazyS optimization is tested in test_lazy_tranpose_rechunk")
         t = self.s.transpose(signal_axes=['f', 'a', 'b'], optimize=False)
         assert t.data.base is self.s.data
 
@@ -835,12 +894,11 @@ class TestTranspose:
 def test_lazy_transpose_rechunks():
     ar = da.ones((50, 50, 256, 256), chunks=(5, 5, 256, 256))
     s = signals.Signal2D(ar).as_lazy()
-    s1 = s.T
-    chunks = s1.data.chunks
-    assert len(chunks[0]) != 1
-    assert len(chunks[1]) != 1
-    assert len(chunks[2]) == 1
-    assert len(chunks[3]) == 1
+    s1 = s.T  # By default it does not rechunk
+    cks = s.data.chunks
+    assert s1.data.chunks == (cks[2], cks[3], cks[0], cks[1])
+    s2 = s.transpose(optimize=True)
+    assert s2.data.chunks != s1.data.chunks
 
 
 def test_lazy_changetype_rechunk():
@@ -858,6 +916,40 @@ def test_lazy_changetype_rechunk():
     assert s.data.dtype is np.dtype('uint8')
     chunks_newest = s.data.chunks
     assert chunks_newest == chunks_new
+
+
+def test_lazy_changetype_rechunk_False():
+    ar = da.ones((50, 50, 256, 256), chunks=(5, 5, 256, 256), dtype='uint8')
+    s = signals.Signal2D(ar).as_lazy()
+    s._make_lazy(rechunk=True)
+    assert s.data.dtype is np.dtype('uint8')
+    chunks_old = s.data.chunks
+    s.change_dtype('float', rechunk=False)
+    assert s.data.dtype is np.dtype('float')
+    assert chunks_old == s.data.chunks
+
+
+def test_lazy_reduce_rechunk():
+    s = signals.Signal1D(da.ones((10, 100), chunks=(1, 2))).as_lazy()
+    reduce_methods = (s.sum, s.mean, s.max, s.std, s.var, s.nansum, s.nanmax, s.nanmin,
+                      s.nanmean, s.nanstd, s.nanvar, s.indexmin, s.indexmax, s.valuemax,
+                      s.valuemin)
+    for rm in reduce_methods:
+        assert rm(
+            axis=0).data.chunks == (
+            (100,),)  # The data has been rechunked
+        assert rm(
+            axis=0, rechunk=False).data.chunks == (
+            (2,) * 50,)  # The data has not been rechunked
+
+
+def test_lazy_diff_rechunk():
+    s = signals.Signal1D(da.ones((10, 100), chunks=(1, 2))).as_lazy()
+    for rm in (s.derivative, s.diff):
+        # The data has been rechunked
+        assert rm(axis=-1).data.chunks == ((10,), (99,))
+        assert rm(axis=-1, rechunk=False).data.chunks == ((1,) *
+                                                          10, (1,) * 99)  # The data has not been rechunked
 
 
 def test_spikes_removal_tool():

@@ -13,13 +13,13 @@ Loading files: the load function
 
 HyperSpy can read and write to multiple formats (see :ref:`supported-formats`).
 To load data use the :py:func:`~.io.load` command. For example, to load the
-image lena.jpg you can type:
+image ascent.jpg you can type:
 
 .. code-block:: python
 
-    >>> s = hs.load("lena.jpg")
+    >>> s = hs.load("ascent.jpg")
 
-If the loading was successful, the variable :guilabel:`s` contains a generic
+If the loading was successful, the variable ``s`` contains a generic
 :py:class:`~.signal.BaseSignal`, a :py:class:`~._signals.signal1d.Signal1D` or
 an :py:class:`~._signals.signal2d.Signal2D`.
 
@@ -40,10 +40,11 @@ providing the ``signal`` keyword, which has to be one of: ``spectrum``,
 
 Some file formats store some extra information about the data, which can be
 stored in "attributes". If HyperSpy manages to read some extra information
-about the data it stores it in `~.signal.BaseSignal.original_metadata`
-attribute. Also, it is possible that other information will be mapped by
-HyperSpy to a standard location where it can be used by some standard routines,
-the :py:attr:`~.signal.BaseSignal.metadata` attribute.
+about the data it stores it in the
+:py:attr:`~.signal.BaseSignal.original_metadata` attribute. Also, it is
+possible that other information will be mapped by HyperSpy to a standard
+location where it can be used by some standard routines, the
+:py:attr:`~.signal.BaseSignal.metadata` attribute.
 
 To print the content of the parameters simply:
 
@@ -51,8 +52,7 @@ To print the content of the parameters simply:
 
     >>> s.metadata
 
-::
-Th :py:attr:`~.signal.BaseSignal.original_metadata` and
+The :py:attr:`~.signal.BaseSignal.original_metadata` and
 :py:attr:`~.signal.BaseSignal.metadata` can be exported to  text files
 using the :py:meth:`~.misc.utils.DictionaryTreeBrowser.export` method, e.g.:
 
@@ -175,7 +175,7 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +--------------------+--------+--------+--------+
     | HDF5               |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
-    | Image: jpg..       |    Yes |    Yes |    Yes |
+    | Image: jpg         |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
     | TIFF               |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
@@ -278,7 +278,25 @@ intensity<get_lines_intensity>`):
      <BaseSignal, title: X-ray line intensity of EDS SEM Signal1D: Mn_La at 0.63 keV, dimensions: (|)>,
      <BaseSignal, title: X-ray line intensity of EDS SEM Signal1D: Zr_La at 2.04 keV, dimensions: (|)>]
 
+.. versionadded:: 1.3.1
+    ``chunks`` keyword argument
 
+By default, the data is saved in chunks that are optimised to contain at least one full signal. It is
+possible to customise the chunk shape using the ``chunks`` keyword. For example, to save the data with
+``(20, 20, 256)`` chunks instead of the default ``(7, 7, 2048)`` chunks for this signal:
+
+.. code-block:: python
+    >>> s = hs.signals.Signal1D(np.random.random((100, 100, 2048)))
+    >>> s.save("test_chunks", chunks=(20, 20, 256), overwrite=True)
+
+Note that currently it is not possible to pass different customised chunk shapes to all signals and
+arrays contained in a signal and its metadata. Therefore, the value of ``chunks`` provided on saving 
+will be applied to all arrays contained in the signal.
+
+By passing ``True`` to ``chunks`` the chunk shape is guessed using ``h5py``'s ``guess_chunks`` function
+what, for large signal spaces usually leads to smaller chunks as ``guess_chunks`` does not impose the
+constrain of storing at least one signal per chunks. For example, for the signal in the example above
+passing ``chunks=True`` results in ``(7, 7, 256)`` chunks.
 
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -293,7 +311,7 @@ NetCDF
 ------
 
 This was the default format in HyperSpy's predecessor, EELSLab, but it has been
-superseeded by :ref:`HDF5` in HyperSpy. We provide only reading capabilities
+superseded by :ref:`HDF5` in HyperSpy. We provide only reading capabilities
 but we do not support writing to this format.
 
 Note that only NetCDF files written by EELSLab are supported.
@@ -337,7 +355,7 @@ Digital Micrograph.
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-For the MSA format the msa_format argument is used to specify whether the
+For the MSA format the ``format`` argument is used to specify whether the
 energy axis should also be saved with the data.  The default, 'Y' omits the
 energy axis in the file.  The alternative, 'XY', saves a second column with the
 calibrated energy data. It  is possible to personalise the separator with the
@@ -417,9 +435,9 @@ bio-scientific imaging. See `the library webpage
 
 Currently HyperSpy has limited support for reading and saving the TIFF tags.
 However, the way that HyperSpy reads and saves the scale and the units of tiff
-files is compatible with ImageJ/Fiji and Gatan Digital Micrograph softwares.
+files is compatible with ImageJ/Fiji and Gatan Digital Micrograph software.
 HyperSpy can also import the scale and the units from tiff files saved using
-FEI and Zeiss SEM softwares.
+FEI and Zeiss SEM software.
 
 .. code-block:: python
 
@@ -454,6 +472,14 @@ the format). That said, we understand that this is an important feature and if
 loading a particular Digital Micrograph file fails for you, please report it as
 an issue in the `issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make
 us aware of the problem.
+
+Extra loading arguments
+^^^^^^^^^^^^^^^^^^^^^^^
+
+optimize: bool, default is True. During loading, the data is replaced by its
+:ref:`optimized copy <signal.transpose_optimize>` to speed up operations,
+e. g. iteration over navigation axes. The cost of this speed improvement is to
+double the memory requirement during data loading.
 
 .. _edax-format:
 
@@ -575,18 +601,20 @@ currently supported by HyperSpy.
 
 Extra loading arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
-select_type: One of ('spectrum', 'image'). If specified just selected type of
-data is returned. (default None)
+select_type: one of (None, 'spectrum', 'image'). If specified, only the corresponding
+type of data, either spectrum or image, is returned. By default (None), all data are loaded.
 
-index: index of dataset in bcf v2 files, which can hold few datasets (delaut 0)
+index: one of (None, int, "all"). Allow to select the index of the dataset in the bcf file,
+which can contains several datasets. Default None value result in loading the first dataset.
+When set to 'all', all available datasets will be loaded and returned as separate signals.
 
-downsample: the downsample ratio of hyperspectral array (hight and width only),
+downsample: the downsample ratio of hyperspectral array (height and width only),
 can be integer >=1, where '1' results in no downsampling (default 1). The
 underlying method of downsampling is unchangeable: sum. Differently than
 block_reduce from skimage.measure it is memory efficient (does not creates
 intermediate arrays, works inplace).
 
-cutoff_at_kV: if set (can be int of float >= 0) can be used either to crop or
+cutoff_at_kV: if set (can be int or float >= 0) can be used either to crop or
 enlarge energy (or channels) range at max values. (default None)
 
 Example of loading reduced (downsampled, and with energy range cropped)
@@ -647,3 +675,44 @@ to a quantity. Since there is a small fluctuation in the step of the time axis,
 the reader assumes that the step is constant and takes its mean, which is a
 good approximation. Further release of HyperSpy will read the time axis more
 precisely by supporting non-linear axis.
+
+
+Reading data generated by HyperSpy using other software packages
+================================================================
+
+The following scripts may help reading data generated by HyperSpy using
+other software packages.
+
+.. _import-rpl:
+
+ImportRPL Digital Micrograph plugin
+-----------------------------------
+
+
+This Digital Micrograph plugin is designed to import Ripple files into Digital Micrograph.
+It is used to ease data transit between DigitalMicrograph and HyperSpy without losing
+the calibration using the extra keywords that HyperSpy adds to the standard format.
+
+When executed it will ask for 2 files:
+
+#. The riple file with the data  format and calibrations
+#. The data itself in raw format.
+
+If a file with the same name and path as the riple file exits
+with raw or bin extension it is opened directly without prompting
+
+ImportRPL was written by Luiz Fernando Zagonel.
+
+
+`Download ImportRPL <https://github.com/downloads/hyperspy/ImportRPL/ImportRPL.s>`_
+
+.. _hyperspy-matlab:
+
+readHyperSpyH5 MATLAB Plugin
+----------------------------
+
+This MATLAB script is designed to import HyperSpy's saved HDF5 files (``.hspy`` extension).
+Like the Digital Micrograph script above, it is used to easily transfer data
+from HyperSpy to MATLAB, while retaining spatial calibration information.
+
+Download ``readHyperSpyH5`` from its `Github repository <https://github.com/jat255/readHyperSpyH5>`_.

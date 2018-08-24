@@ -89,7 +89,8 @@ Data smoothing
 The following methods (that include user interfaces when no arguments are
 passed) can perform data smoothing with different algorithms:
 
-* :py:meth:`~._signals.signal1d.Signal1D.smooth_lowess` (requires install statsmodels)
+* :py:meth:`~._signals.signal1d.Signal1D.smooth_lowess`
+  (requires ``statsmodels`` to be installed)
 * :py:meth:`~._signals.signal1d.Signal1D.smooth_tv`
 * :py:meth:`~._signals.signal1d.Signal1D.smooth_savitzky_golay`
 

@@ -146,8 +146,12 @@ class EDS_mixin:
         ax = self.axes_manager.signal_axes[0]
         low_value = ax.low_value
         high_value = ax.high_value
-        if self._get_beam_energy() < high_value:
-            high_value = self._get_beam_energy()
+        try:
+            if self._get_beam_energy() < high_value:
+                high_value = self._get_beam_energy()
+        except AttributeError:
+            # in case the beam energy is not defined in the metadata
+            pass
         xray_lines_in_range = []
         xray_lines_not_in_range = []
         for xray_line in xray_lines:
@@ -283,7 +287,7 @@ class EDS_mixin:
                     only_lines=only_lines)
             else:
                 raise ValueError(
-                    "Not X-ray line, set them with `add_elements`")
+                    "Not X-ray line, set them with `add_elements`.")
         return xray_lines
 
     def set_lines(self,
@@ -468,7 +472,11 @@ class EDS_mixin:
         """
 
         only_lines = utils_eds._parse_only_lines(only_lines)
-        beam_energy = self._get_beam_energy()
+        try:
+            beam_energy = self._get_beam_energy()
+        except:
+            # Fall back to the high_value of the energy axis
+            beam_energy = self.axes_manager.signal_axes[0].high_value
         lines = []
         elements = [el if isinstance(el, str) else el.decode()
                     for el in elements]
@@ -912,12 +920,14 @@ class EDS_mixin:
                         only_one=only_one,
                         only_lines=only_lines)
                 else:
-                    raise ValueError(
+                    _logger.warning(
                         "No elements defined, set them with `add_elements`")
+                    # No X-rays lines, nothing to do then
+                    return
             xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
                 xray_lines)
             for xray in xray_not_here:
-                _logger.warn("%s is not in the data energy range." % xray)
+                _logger.warning("%s is not in the data energy range." % xray)
             xray_lines = np.unique(xray_lines)
             self.add_xray_lines_markers(xray_lines)
             if background_windows is not None:
@@ -953,7 +963,8 @@ class EDS_mixin:
                 plt.rcParams['axes.color_cycle'] * per_xray))
         for x, color in zip(np.ravel(position), colors):
             line = markers.vertical_line(x=x, color=color, **kwargs)
-            self.add_marker(line)
+            self.add_marker(line, render_figure=False)
+        self._render_figure(plot=['signal_plot'])
 
     def add_xray_lines_markers(self, xray_lines):
         """
@@ -978,16 +989,17 @@ class EDS_mixin:
         for i in range(len(line_energy)):
             line = markers.vertical_line_segment(
                 x=line_energy[i], y1=None, y2=intensity[i] * 0.8)
-            self.add_marker(line)
+            self.add_marker(line, render_figure=False)
             string = (r'$\mathrm{%s}_{\mathrm{%s}}$' %
                       utils_eds._get_element_and_line(xray_lines[i]))
             text = markers.text(
                 x=line_energy[i], y=intensity[i] * 1.1, text=string,
                 rotation=90)
-            self.add_marker(text)
+            self.add_marker(text, render_figure=False)
             self._xray_markers[xray_lines[i]] = [line, text]
             line.events.closed.connect(self._xray_marker_closed)
             text.events.closed.connect(self._xray_marker_closed)
+        self._render_figure(plot=['signal_plot'])
 
     def _xray_marker_closed(self, obj):
         marker = obj
@@ -1013,7 +1025,8 @@ class EDS_mixin:
                 line_markers = self._xray_markers[xray_line]
                 while line_markers:
                     m = line_markers.pop()
-                    m.close()
+                    m.close(render_figure=False)
+        self._render_figure(plot=['signal_plot'])
 
     def _add_background_windows_markers(self,
                                         windows_position):
@@ -1050,7 +1063,8 @@ class EDS_mixin:
             line = markers.line_segment(
                 x1=(bw[0] + bw[1]) / 2., x2=(bw[2] + bw[3]) / 2.,
                 y1=y1, y2=y2, color='black')
-            self.add_marker(line)
+            self.add_marker(line, render_figure=False)
+        self._render_figure(plot=['signal_plot'])
 
 
 class EDSSpectrum(EDS_mixin, Signal1D):

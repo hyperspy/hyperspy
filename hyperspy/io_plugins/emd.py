@@ -180,7 +180,7 @@ class EMD(object):
             axis_units = dim.attrs.get('units', '')
             if isinstance(axis_units, bytes):
                 axis_units = axis_units.decode('utf-8')
-            units = re.findall('[^_\W]+', axis_units)
+            units = re.findall(r'[^_\W]+', axis_units)
             axis.units = ''.join(units)
             try:
                 if len(dim) == 1:

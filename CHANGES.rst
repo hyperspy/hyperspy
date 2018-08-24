@@ -1,14 +1,41 @@
 What's new
 **********
 
+Current Version
+===============
+
 We only cover here the main highlights, for a detailed list of all the changes
 see `the commits in the GITHUB milestones
 <https://github.com/hyperspy/hyperspy/milestones?state=closed>`_.
 
+.. _changes_1.3.2:
+v1.3.2
+++++++
+
+This is a maintenance release. Follow the following links for details on all
+the `bugs fixed
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.3.2>`_
+and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3.2+label%3A"type%3A+enhancement">`_.
+
+
+.. _changes_1.3.1:
+v1.3.1
+++++++
+
+This is a maintenance release. Follow the following links for details on all
+the `bugs fixed
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.3.1>`_
+and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.3.1+label%3A"type%3A+enhancement">`_.
+
+Starting with this version, the HyperSpy WinPython Bundle distribution is
+no longer released in sync with HyperSpy. For HyperSpy WinPython Bundle
+releases see https://github.com/hyperspy/hyperspy-bundle
+
+
 .. _changes_1.3:
 
 v1.3
-====
+++++
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
@@ -114,10 +141,16 @@ For developers
   and ipywidgets GUI elements.
 
 
+Changelog
+*********
+
+Previous Versions
+=================
+
 .. _changes_1.2:
 
 v1.2
-====
+++++
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
@@ -169,7 +202,7 @@ For developers
 
 .. _changes_1.1.2:
 v1.1.2
-======
+++++++
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -179,7 +212,7 @@ and `enhancements <https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+mil
 
 .. _changes_1.1.1:
 v1.1.1
-======
+++++++
 
 This is a maintenance release. Follow the following link for details on all
 the `bugs fixed
@@ -200,7 +233,7 @@ Enhancements
 
 .. _changes_1.1:
 v1.1
-====
+++++
 
 This is a minor release. Follow the following links for details on all
 the `bugs fixed
@@ -226,7 +259,7 @@ Enhancements
 
 
 v1.0.1
-======
+++++++
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -234,7 +267,7 @@ the `bugs fixed
 
 
 v1.0
-====
+++++
 
 This is a major release. Here we only list the highlist. A detailed list of
 changes `is available in github
@@ -307,7 +340,7 @@ API changes
 
 
 v0.8.5
-======
+++++++
 
 
 This is a maintenance release. Follow the following links for details on all
@@ -342,13 +375,13 @@ deprecate `as_signal1D`, `as_signal2D`, `to_spectrum` and `to_image`. See `#963
 
 
 v0.8.4
-======
+++++++
 
 This release adds support for Python 3 and drops support for Python 2. In all
 other respects it is identical to v0.8.3.
 
 v0.8.3
-======
+++++++
 
 This is a maintenance release that includes fixes for multiple bugs, some
 enhancements, new features and API changes. This is set to be the last HyperSpy
@@ -375,14 +408,14 @@ Follow the following links for details on all the `bugs fixed
 .. _changes_0.8.2:
 
 v0.8.2
-======
+++++++
 
 This is a maintenance release that fixes an issue with the Python installers. Those who have successfully installed v0.8.1 do not need to upgrade.
 
 .. _changes_0.8.1:
 
 v0.8.1
-======
+++++++
 
 This is a maintenance release. Follow the following links for details on all
 the `bugs fixed
@@ -437,7 +470,7 @@ API changes
 .. _changes_0.8:
 
 v0.8
-====
+++++
 
 New features
 ------------
@@ -494,7 +527,7 @@ API changes
     + ``add_axes`` -> ``set_mpl_ax``
 
 v0.7.3
-======
+++++++
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.3 milestone
@@ -504,7 +537,7 @@ in the github repository.
 .. _changes_0.7.2:
 
 v0.7.2
-======
+++++++
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.2 milestone
@@ -514,7 +547,7 @@ in the github repository.
 .. _changes_0.7.1:
 
 v0.7.1
-======
+++++++
 
 This is a maintenance release. A list of fixed issues is available in the
 `0.7.1 milestone
@@ -529,7 +562,7 @@ New features
 * Add suspend/resume model plot updating. See :ref:`model.visualization`.
 
 v0.7
-====
+++++
 
 New features
 ------------
@@ -674,7 +707,7 @@ API changes
 .. _changes_0.6:
 
 v0.6
-====
+++++
 
 New features
 ------------
@@ -758,7 +791,7 @@ API changes
 .. _changes_0.5.1:
 
 v0.5.1
-======
+++++++
 
 New features
 ------------
@@ -791,7 +824,7 @@ API changes
 .. _changes_0.5:
 
 v0.5
-====
+++++
 
 New features
 ------------
@@ -853,7 +886,7 @@ API changes
 .. _changes_0.4.1:
 
 v0.4.1
-======
+++++++
 
 New features
 ------------
@@ -884,7 +917,7 @@ Syntax changes
 .. _changes_0.4:
 
 v0.4
-====
+++++
 
 New features
 ------------

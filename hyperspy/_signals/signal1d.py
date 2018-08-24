@@ -29,7 +29,7 @@ from scipy.ndimage.filters import gaussian_filter1d
 try:
     from statsmodels.nonparametric.smoothers_lowess import lowess
     statsmodels_installed = True
-except:
+except BaseException:
     statsmodels_installed = False
 
 from hyperspy.signal import BaseSignal
@@ -53,6 +53,7 @@ from hyperspy.decorators import interactive_range_selector
 from hyperspy.signal_tools import IntegrateArea
 from hyperspy import components1d
 from hyperspy._signals.lazy import LazySignal
+from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 
 _logger = logging.getLogger(__name__)
 
@@ -223,7 +224,9 @@ def _estimate_shift1D(data, **kwargs):
     ip = kwargs.get('ip', 5)
     data_slice = kwargs.get('data_slice', slice(None))
     if bool(mask):
-        return np.nan
+        # asarray is required for consistensy as argmax
+        # returns a numpy scalar array
+        return np.asarray(np.nan)
     data = data[data_slice]
     if interpolate is True:
         data = interpolate1D(ip, data)
@@ -238,7 +241,7 @@ def _shift1D(data, **kwargs):
     offset = kwargs.get('offset', 0.)
     scale = kwargs.get('scale', 1.)
     size = kwargs.get('size', 2)
-    if np.isnan(shift):
+    if np.isnan(shift) or shift == 0:
         return data
     axis = np.linspace(offset, offset + scale * (size - 1), size)
 
@@ -389,6 +392,7 @@ spikes_diagnosis,
                 show_progressbar=None):
         """Shift the data in place over the signal axis by the amount specified
         by an array.
+
         Parameters
         ----------
         shift_array : numpy array
@@ -399,9 +403,7 @@ spikes_diagnosis,
             'nearest', 'zero', 'slinear', 'quadratic, 'cubic') or as an
             integer specifying the order of the spline interpolator to
             use.
-        crop : bool
-            If True automatically crop the signal axis at both ends if
-            needed.
+        %s
         expand : bool
             If True, the data will be expanded to fit all data after alignment.
             Overrides `crop`.
@@ -415,6 +417,7 @@ spikes_diagnosis,
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
+
         """
         if not np.any(shift_array):
             # Nothing to do, the shift array if filled with zeros
@@ -489,11 +492,14 @@ spikes_diagnosis,
                           ragged=False)
 
         if crop and not expand:
+            _logger.debug("Cropping %s from index %i to %i"
+                          % (self, ilow, ihigh))
             self.crop(axis.index_in_axes_manager,
                       ilow,
                       ihigh)
 
         self.events.data_changed.trigger(obj=self)
+    shift1D.__doc__ %= CROP_PARAMETER_DOC
 
     def interpolate_in_between(self, start, end, delta=3, parallel=None,
                                show_progressbar=None, **kwargs):
@@ -597,10 +603,15 @@ spikes_diagnosis,
             `preferences`.
         Returns
         -------
-        An array with the result of the estimation in the axis units.
+        An array with the result of the estimation in the axis units. although
+        the computation is performed in batches if the signal is lazy, the
+        result is computed in memory because it depends on the current state
+        of the axes that could change later on in the workflow.
+
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
+
         """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
@@ -627,7 +638,6 @@ spikes_diagnosis,
             _estimate_shift1D,
             iterating_kwargs=iterating_kwargs,
             data_slice=slice(i1, i2),
-            mask=None,
             ref=ref,
             ip=ip,
             interpolate=interpolate,
@@ -643,6 +653,11 @@ spikes_diagnosis,
         if interpolate is True:
             shift_array = shift_array / ip
         shift_array *= axis.scale
+        if self._lazy:
+            # We must compute right now because otherwise any changes to the
+            # axes_manager of the signal later in the workflow may result in
+            # a wrong shift_array
+            shift_array = shift_array.compute()
         return shift_array
 
     def align1D(self,
@@ -664,10 +679,12 @@ spikes_diagnosis,
         This method can only estimate the shift by comparing
         unidimensional
         features that should not change the position.
+
         To decrease memory usage, time of computation and improve
         accuracy it is convenient to select the feature of interest
         setting the `start` and `end` keywords. By default interpolation is
         used to obtain subpixel precision.
+
         Parameters
         ----------
         start, end : {int | float | None}
@@ -690,9 +707,7 @@ spikes_diagnosis,
             'nearest', 'zero', 'slinear', 'quadratic, 'cubic') or as an
             integer specifying the order of the spline interpolator to
             use.
-        crop : bool
-            If True automatically crop the signal axis at both ends if
-            needed.
+        %s
         expand : bool
             If True, the data will be expanded to fit all data after alignment.
             Overrides `crop`.
@@ -748,6 +763,7 @@ spikes_diagnosis,
                            fill_value=fill_value,
                            expand=expand,
                            show_progressbar=show_progressbar)
+    align1D.__doc__ %= CROP_PARAMETER_DOC
 
     def integrate_in_range(self, signal_range='interactive',
                            display=True, toolkit=None):
@@ -1018,22 +1034,26 @@ spikes_diagnosis,
         if not fast:
             model.set_signal_range(signal_range[0], signal_range[1])
             model.multifit(show_progressbar=show_progressbar)
+            model.reset_signal_range()
         return self - model.as_signal(show_progressbar=show_progressbar)
 
     def remove_background(
             self,
             signal_range='interactive',
-            background_type='PowerLaw',
+            background_type='Power Law',
             polynomial_order=2,
             fast=True,
             show_progressbar=None, display=True, toolkit=None):
         signal_range = signal_range_from_roi(signal_range)
         self._check_signal_dimension_equals_one()
         if signal_range == 'interactive':
-            br = BackgroundRemoval(self)
+            br = BackgroundRemoval(self, background_type=background_type,
+                                   polynomial_order=polynomial_order,
+                                   fast=fast,
+                                   show_progressbar=show_progressbar)
             return br.gui(display=display, toolkit=toolkit)
         else:
-            if background_type == 'PowerLaw':
+            if background_type in ('PowerLaw', 'Power Law'):
                 background_estimator = components1d.PowerLaw()
             elif background_type == 'Gaussian':
                 background_estimator = components1d.Gaussian()
@@ -1171,6 +1191,11 @@ spikes_diagnosis,
         SignalDimensionError if the signal dimension is not 1.
 
         """
+        if not np.issubdtype(self.data.dtype, np.floating):
+            raise TypeError("The data dtype should be `float`. It can be "
+                            "changed by using the `change_dtype('float')` "
+                            "method of the signal.")
+
         # TODO: generalize it
         self._check_signal_dimension_equals_one()
         if channels is None:
@@ -1188,6 +1213,7 @@ spikes_diagnosis,
                 nav_chunks = dc.chunks[:-1]
             zeros = da.zeros(nav_shape + (offset,),
                              chunks=nav_chunks + ((offset,),))
+
         if side == 'left' or side == 'both':
             if self._lazy:
                 tapered = dc[..., offset:channels + offset]
@@ -1215,6 +1241,7 @@ spikes_diagnosis,
                     np.hanning(2 * channels)[-channels:])
                 if offset != 0:
                     dc[..., -offset:] *= 0.
+
         if self._lazy:
             self.data = dc
         self.events.data_changed.trigger(obj=self)
