@@ -43,7 +43,7 @@ class ImagePlot(BlittedFigure):
         arguments.
     pixel_units : {None, string}
         The pixel units for the scale bar. Normally
-    scalebar, colorbar, plot_indices : bool
+    scalebar, plot_ticks, colorbar, plot_indices : bool
     title : str
         The title is printed at the top of the image.
     vmin, vmax : float
@@ -83,6 +83,7 @@ class ImagePlot(BlittedFigure):
         self._text = None
         self._text_position = (0, 1.05,)
         self.axes_manager = None
+        self.axes_off = False
         self._aspect = 1
         self._extent = None
         self.xaxis = None
@@ -123,7 +124,10 @@ class ImagePlot(BlittedFigure):
     @property
     def axes_ticks(self):
         if self._user_axes_ticks is None:
-            return self._auto_axes_ticks
+            if self.scalebar is False:
+                return True
+            else:
+                return self._auto_axes_ticks
         else:
             return self._user_axes_ticks
 
@@ -252,6 +256,8 @@ class ImagePlot(BlittedFigure):
             self.ax.set_xticks([])
             self.ax.set_yticks([])
         self.ax.hspy_fig = self
+        if self.axes_off:
+            self.ax.axis('off')
 
     def plot(self, **kwargs):
         self.configure()

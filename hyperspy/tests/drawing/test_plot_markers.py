@@ -473,3 +473,16 @@ def test_plot_eds_lines():
     s.plot(True)
     s.axes_manager.navigation_axes[0].index = 1
     return s._plot.signal_plot.figure
+
+
+@update_close_figure
+def test_plot_eds_markers_close():
+    s = EDS_TEM_Spectrum()
+    s.plot(True)
+    return s
+
+
+def test_plot_eds_markers_no_energy():
+    s = EDS_TEM_Spectrum()
+    del s.metadata.Acquisition_instrument.TEM.beam_energy
+    s.plot(True)

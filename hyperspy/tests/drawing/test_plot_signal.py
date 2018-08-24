@@ -18,6 +18,7 @@
 import numpy as np
 import traits.api as t
 import pytest
+import matplotlib.pyplot as plt
 
 from hyperspy.misc.test_utils import update_close_figure
 import hyperspy.api as hs
@@ -46,14 +47,14 @@ class _TestPlot:
         s = hs.signals.__dict__['%sSignal%iD' % (dtype, sdim)](data)
         if sdim == 1:
             s.axes_manager = self._set_signal_axes(s.axes_manager, name='Energy',
-                                                   units='eV', scale=500.0, offset=300.0)
+                                                   units='keV', scale=.5, offset=0.3)
         elif sdim == 2:
             s.axes_manager = self._set_signal_axes(s.axes_manager, name='Reciprocal distance',
                                                    units='1/nm', scale=1, offset=0.0)
         if ndim > 0:
             s.axes_manager = self._set_navigation_axes(s.axes_manager, name='',
-                                                       units='m', scale=1E-6,
-                                                       offset=5E-6)
+                                                       units='nm', scale=1.0,
+                                                       offset=5.0)
         s.metadata.General.title = title
         # workaround to be able to access the figure in case of complex 2d
         # signals
@@ -108,6 +109,20 @@ def test_plot_sig_nav(mpl_cleanup, ndim, sdim, plot_type, data_type):
     test_plot = _TestPlot(ndim, sdim, data_type)
     test_plot.signal.plot()
     return _get_figure(test_plot, data_type, plot_type)
+
+
+@pytest.mark.parametrize("sdim", [1, 2])
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_data_changed_event(sdim):
+    if sdim == 2:
+        s = hs.signals.Signal2D(np.arange(25).reshape((5, 5)))
+    else:
+        s = hs.signals.Signal1D(np.arange(25))
+    s.plot()
+    s.data *= -2
+    s.events.data_changed.trigger(obj=s)
+    return plt.gcf()
 
 
 def _get_figure(test_plot, data_type, plot_type):
