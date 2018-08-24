@@ -77,6 +77,7 @@ class ImagePlot(BlittedFigure):
         self._text = None
         self._text_position = (0, 1.05,)
         self.axes_manager = None
+        self.axes_off = False
         self._aspect = 1
         self._extent = None
         self.xaxis = None
@@ -118,7 +119,10 @@ class ImagePlot(BlittedFigure):
     @property
     def axes_ticks(self):
         if self._user_axes_ticks is None:
-            return self._auto_axes_ticks
+            if self.scalebar is False:
+                return True
+            else:
+                return self._auto_axes_ticks
         else:
             return self._user_axes_ticks
 
@@ -143,14 +147,6 @@ class ImagePlot(BlittedFigure):
     def configure(self):
         xaxis = self.xaxis
         yaxis = self.yaxis
-        # Signal2D labels
-        self._xlabel = '%s' % str(xaxis)
-        if xaxis.units is not Undefined:
-            self._xlabel += ' (%s)' % xaxis.units
-
-        self._ylabel = '%s' % str(yaxis)
-        if yaxis.units is not Undefined:
-            self._ylabel += ' (%s)' % yaxis.units
 
         if (xaxis.units == yaxis.units) and (xaxis.scale == yaxis.scale):
             self._auto_scalebar = True
@@ -159,6 +155,15 @@ class ImagePlot(BlittedFigure):
         else:
             self._auto_scalebar = False
             self._auto_axes_ticks = True
+
+        # Signal2D labels
+        self._xlabel = '{}'.format(xaxis)
+        if xaxis.units is not Undefined:
+            self._xlabel += ' ({})'.format(xaxis.units)
+
+        self._ylabel = '{}'.format(yaxis)
+        if yaxis.units is not Undefined:
+            self._ylabel += ' ({})'.format(yaxis.units)
 
         # Calibrate the axes of the navigator image
         self._extent = (xaxis.axis[0] - xaxis.scale / 2.,
@@ -233,6 +238,8 @@ class ImagePlot(BlittedFigure):
             self.ax.set_xticks([])
             self.ax.set_yticks([])
         self.ax.hspy_fig = self
+        if self.axes_off:
+            self.ax.axis('off')
 
     def plot(self, data_function_kwargs={}, **kwargs):
         self.data_function_kwargs = data_function_kwargs

@@ -35,7 +35,6 @@ import warnings
 import os
 import subprocess
 import itertools
-import re
 
 # stuff to check presence of compiler:
 import distutils.sysconfig
@@ -47,7 +46,7 @@ setup_path = os.path.dirname(__file__)
 import hyperspy.Release as Release
 
 install_req = ['scipy>=0.15',
-               'matplotlib>=2.0.0, !=2.1.0, !=2.1.1',
+               'matplotlib>=2.2.3',
                'numpy>=1.10, !=1.13.0',
                'traits>=4.5.0',
                'natsort',
@@ -295,6 +294,7 @@ with update_version_when_dev() as version:
                 'tests/drawing/plot_markers/*.png',
                 'tests/drawing/plot_model1d/*.png',
                 'tests/drawing/plot_model/*.png',
+                'tests/drawing/plot_roi/*.png',
                 'misc/eds/example_signals/*.hdf5',
                 'misc/holography/example_signals/*.hdf5',
                 'tests/drawing/plot_mva/*.png',

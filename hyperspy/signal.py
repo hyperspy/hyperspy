@@ -1937,8 +1937,8 @@ class BaseSignal(FancySlicing,
             value = np.fft.fftshift(value)
         return value
 
-    def plot(self, navigator="auto", axes_manager=None,
-             plot_markers=True, **kwargs):
+    def plot(self, navigator="auto", axes_manager=None, plot_markers=True,
+             **kwargs):
         """%s
         %s
 
@@ -2171,7 +2171,7 @@ class BaseSignal(FancySlicing,
         for axis in self.axes_manager._axes:
             axis.size = int(dc.shape[axis.index_in_array])
 
-    def crop(self, axis, start=None, end=None):
+    def crop(self, axis, start=None, end=None, convert_units=False):
         """Crops the data in a given axis. The range is given in pixels
 
         Parameters
@@ -2185,6 +2185,10 @@ class BaseSignal(FancySlicing,
             the value is taken as the axis index. If float the index
             is calculated using the axis calibration. If start/end is
             None crop from/to the low/high end of the axis.
+        convert_units : bool
+            Default is False
+            If True, convert the units using the 'convert_to_units' method of
+            the 'axes_manager'. If False, does nothing.
 
         """
         axis = self.axes_manager[axis]
@@ -2201,6 +2205,8 @@ class BaseSignal(FancySlicing,
         self.get_dimensions_from_data()
         self.squeeze()
         self.events.data_changed.trigger(obj=self)
+        if convert_units:
+            self.axes_manager.convert_units(axis)
 
     def swap_axes(self, axis1, axis2, optimize=False):
         """Swaps the axes.

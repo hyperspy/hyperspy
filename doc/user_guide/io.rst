@@ -75,6 +75,11 @@ Almost all file readers support accessing the data without reading it to memory
 analysing large files. To load a file without loading it to memory simply set
 ``lazy`` to ``True`` e.g.:
 
+The units of the navigation and signal axes can be converted automatically 
+during loading using the ``convert_units`` parameter. If `True`, the 
+``convert_to_units`` method of the ``axes_manager`` will be used for the conversion 
+and if set to `False`, the units will not be converted. The default is `False`.
+
 .. code-block:: python
 
     >>> s = hs.load("filename.hspy", lazy=True)
@@ -573,6 +578,19 @@ available publicly available from EDAX and are on Github
 SpcMap-spd.file.format.pdf>`_, and
 `.ipr <https://github.com/hyperspy/hyperspy/files/29507/ImageIPR.pdf>`_).
 
+Extra loading arguments for ``.spd`` file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- `spc_fname` : {None, str}, name of file from which to read the spectral calibration. If data was exported fully from EDAX TEAM software, an .spc file with the same name as the .spd should be present. If `None`, the default filename will be searched for. Otherwise, the name of the ``.spc`` file to use for calibration can be explicitly given as a string.
+- `ipr_fname` : {None, str}, name of file from which to read the spatial calibration. If data was exported fully from EDAX TEAM software, an ``.ipr`` file with the same name as the ``.spd`` (plus a "_Img" suffix) should be present.  If `None`, the default filename will be searched for. Otherwise, the name of the ``.ipr`` file to use for spatial calibration can be explicitly given as a string.
+- **kwargs: remaining arguments are passed to the Numpy ``memmap`` function.
+
+Extra loading arguments for ``.spd`` and ``.spc`` files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+
+- `load_all_spc` : bool, switch to control if all of the ``.spc`` header is read, or just the important parts for import into HyperSpy.
+
+
 .. _fei-format:
 
 FEI TIA ser and emi
@@ -776,9 +794,13 @@ Note also that loading a spectrum image can be slow if `numba
 
 .. note::
 
-    To enable lazy loading of spectrum images in this format it may be
+    To enable lazy loading of EDX spectrum images in this format it may be
     necessary to install `sparse <http://sparse.pydata.org/en/latest/>`_. See
-    See also :ref:`install-with-python-installers`.
+    See also :ref:`install-with-python-installers`. Note also that currently
+    only lazy uncompression rather than lazy loading is implemented. This
+    means that it is not currently possible to read EDX SI FEI EMD files with
+    size bigger than the available memory.
+
 
 
 .. warning::
