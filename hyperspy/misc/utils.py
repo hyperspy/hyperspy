@@ -903,53 +903,6 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
     return signal
 
 
-def find_nearest_index(array, value):
-    idx = (np.abs(array-value)).argmin()
-    return idx
-
-
-def find_nearest_index_from_right(array, value, threshold=0.1):
-    """Returns the index in an array closest to a value, within a threshold.
-
-    If several values in the array are within this threshold the one with
-    the highest index is chosen. If none of the values in the array are
-    within the threshold, the index of the value closest to value in returned.
-
-    Parameters
-    ----------
-    array : Numpy array
-    value : float
-    threshold : float, default 0.1
-        Must be positive
-
-    Returns
-    -------
-    closest_index : int
-
-    Examples
-    --------
-    Make an array with zero point in the middle, and increasing value
-    to the left and right. Values to the right are smaller than the
-    values to the left.
-
-    >>> from hyperspy.misc.utils import find_nearest_index_from_right
-    >>> array = np.append(np.arange(0, 50)[::-1] * 2, np.arange(0, 50))
-    >>> find_nearest_index_from_right(array, 20)
-    70
-    >>> find_nearest_index_from_right(array, 60)
-    19
-
-    """
-    if threshold < 0:
-        raise ValueError("threshold ({0}) must be positive".format(threshold))
-    index_within_threshold = np.where(
-            (array > value-threshold) & (array < value+threshold))[0]
-    if len(index_within_threshold):
-        return index_within_threshold[-1]
-    else:
-        return find_nearest_index(array, value)
-
-
 def shorten_name(name, req_l):
     if len(name) > req_l:
         return name[:req_l - 2] + '..'
