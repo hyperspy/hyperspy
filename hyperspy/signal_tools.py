@@ -232,8 +232,8 @@ class Signal1DRangeSelector(SpanSelectorInSignal1D):
     on_close = t.List()
 
 
-@add_gui_method(toolkey="EELSModel.set_coreloss_edge_onset")
-class SetCorelossEdgeOnset(SpanSelectorInSignal1D):
+@add_gui_method(toolkey="EELSModel.estimate_and_set_coreloss_edge_onset")
+class EstimateAndSetCorelossEdgeOnset(SpanSelectorInSignal1D):
 
     only_current = t.Bool(
             True, desc=("Find the onset for the current spectrum."))
@@ -257,7 +257,7 @@ class SetCorelossEdgeOnset(SpanSelectorInSignal1D):
 
     def _set_onset_fired(self):
         signal_range = (self.ss_left_value, self.ss_right_value)
-        self.model._set_coreloss_edge_onset(
+        self.model._estimate_and_set_coreloss_edge_onset(
             self.component, signal_range=signal_range,
             only_current=self.only_current,
             percent_position=self.percent_position)

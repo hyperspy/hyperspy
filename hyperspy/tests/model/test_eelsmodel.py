@@ -205,7 +205,7 @@ class TestFitBackground:
 
 
 @lazifyTestClass
-class TestSetEdgeOnsetArctan:
+class TestEstimateAndSetEdgeOnsetArctan:
 
     def setup_method(self):
         xaxis = np.arange(500, 800, 0.5)
@@ -226,13 +226,13 @@ class TestSetEdgeOnsetArctan:
 
     def test_only_current(self):
         m = self.m
-        m.set_coreloss_edge_onset(
+        m.estimate_and_set_coreloss_edge_onset(
                 m.components.Mn_L3, signal_range=(540, 760),
                 percent_position=0.5, only_current=True)
         onset = m.components.Mn_L3.onset_energy.as_signal().data
         assert approx(onset[0], abs=0.01) == self.x0_list[0]
 
-        m.set_coreloss_edge_onset(
+        m.estimate_and_set_coreloss_edge_onset(
                 m.components.Mn_L3, signal_range=(540, 760),
                 percent_position=0.5, only_current=False)
         onset = m.components.Mn_L3.onset_energy.as_signal().data
@@ -240,18 +240,18 @@ class TestSetEdgeOnsetArctan:
 
     def test_percent_position(self):
         m = self.m
-        m.set_coreloss_edge_onset(
+        m.estimate_and_set_coreloss_edge_onset(
                 m.components.Mn_L3, signal_range=(540, 760),
                 percent_position=0.5, only_current=False)
         onset_50 = m.components.Mn_L3.onset_energy.as_signal().deepcopy().data
 
-        m.set_coreloss_edge_onset(
+        m.estimate_and_set_coreloss_edge_onset(
                 m.components.Mn_L3, signal_range=(540, 760),
                 percent_position=0.1, only_current=False)
         onset_10 = m.components.Mn_L3.onset_energy.as_signal().deepcopy().data
         assert (onset_50 > onset_10).all()
 
-        m.set_coreloss_edge_onset(
+        m.estimate_and_set_coreloss_edge_onset(
                 m.components.Mn_L3, signal_range=(540, 760),
                 percent_position=0.9, only_current=False)
         onset_90 = m.components.Mn_L3.onset_energy.as_signal().deepcopy().data
@@ -262,13 +262,13 @@ class TestSetEdgeOnsetArctan:
         data = np.zeros_like(m.signal.data)
         data[:, 10:30] = 1000
         m.signal.data += data
-        m.set_coreloss_edge_onset(
+        m.estimate_and_set_coreloss_edge_onset(
                 m.components.Mn_L3, signal_range=(540, 760),
                 percent_position=0.5, only_current=False)
         onset = m.components.Mn_L3.onset_energy.as_signal().data
         assert_allclose(onset, np.array(self.x0_list), atol=0.01)
 
-        m.set_coreloss_edge_onset(
+        m.estimate_and_set_coreloss_edge_onset(
                 m.components.Mn_L3, signal_range=(501, 515),
                 percent_position=0.5, only_current=False)
         onset = m.components.Mn_L3.onset_energy.as_signal().data
@@ -278,7 +278,7 @@ class TestSetEdgeOnsetArctan:
 
 
 @lazifyTestClass
-class TestSetEdgeOnsetGaussian:
+class TestEstimateAndSetEdgeOnsetGaussian:
 
     def setup_method(self, method):
         g = Gaussian()
@@ -304,7 +304,7 @@ class TestSetEdgeOnsetGaussian:
         top_point = self.top_point
         percent_position = 1.0
 
-        m.set_coreloss_edge_onset(
+        m.estimate_and_set_coreloss_edge_onset(
                 m[0], signal_range=(1000, 5500),
                 percent_position=percent_position)
         np.testing.assert_allclose(
@@ -317,7 +317,7 @@ class TestSetEdgeOnsetGaussian:
         g = self.g
         top_point = self.top_point
         percent_position = 0.5
-        m.set_coreloss_edge_onset(
+        m.estimate_and_set_coreloss_edge_onset(
                 m[0], signal_range=(1000, 5500),
                 percent_position=percent_position)
         np.testing.assert_allclose(
@@ -331,7 +331,7 @@ class TestSetEdgeOnsetGaussian:
         top_point = self.top_point
         percent_position = 0.1
 
-        m.set_coreloss_edge_onset(
+        m.estimate_and_set_coreloss_edge_onset(
                 m[0], signal_range=(1000, 5500),
                 percent_position=percent_position)
         np.testing.assert_allclose(
@@ -345,7 +345,7 @@ class TestSetEdgeOnsetGaussian:
         top_point = self.top_point
         percent_position = 0.01
 
-        m.set_coreloss_edge_onset(
+        m.estimate_and_set_coreloss_edge_onset(
                 m[0], signal_range=(1000, 5500),
                 percent_position=percent_position)
         np.testing.assert_allclose(

@@ -26,7 +26,7 @@ from hyperspy.components1d import PowerLaw
 from hyperspy import components1d
 from hyperspy._signals.eels import EELSSpectrum
 from hyperspy.misc.eels.tools import get_edge_onset
-from hyperspy.signal_tools import SetCorelossEdgeOnset
+from hyperspy.signal_tools import EstimateAndSetCorelossEdgeOnset
 
 _logger = logging.getLogger(__name__)
 
@@ -979,7 +979,7 @@ class EELSModel(Model1D):
         else:
             warnings.warn("Not suspended, nothing to resume.")
 
-    def set_coreloss_edge_onset(
+    def estimate_and_set_coreloss_edge_onset(
             self, component, signal_range='interactive', only_current=False,
             percent_position=0.1, display=True, toolkit=None):
         """Set onset energy of an EELS core loss ionization edge component.
@@ -1020,11 +1020,12 @@ class EELSModel(Model1D):
         >>> s.set_microscope_parameters(
         ...     convergence_angle=24., collection_angle=26.)
         >>> m = s.create_model()
-        >>> m.set_coreloss_edge_onset(Mn_L3, signal_range=(625.,643.))
+        >>> m.estimate_and_set_coreloss_edge_onset(
+        ...     Mn_L3, signal_range=(625.,643.))
 
         All the parameters
 
-        >>> m.set_coreloss_edge_onset(
+        >>> m.estimate_and_set_coreloss_edge_onset(
         ...     Mn_L3, signal_range=(625.,643.), only_current=True,
         ...     percent_position=0.2)
 
@@ -1034,12 +1035,12 @@ class EELSModel(Model1D):
             cf = SetCorelossEdgeOnset(self, component)
             cf.gui(display=display, toolkit=toolkit)
         else:
-            self._set_coreloss_edge_onset(
+            self._estimate_and_set_coreloss_edge_onset(
                     component=component, signal_range=signal_range,
                     only_current=only_current,
                     percent_position=percent_position)
 
-    def _set_coreloss_edge_onset(
+    def _estimate_and_set_coreloss_edge_onset(
             self, component, signal_range, only_current=False,
             percent_position=0.1):
         x_axis = self.axes_manager.signal_axes[0].axis
