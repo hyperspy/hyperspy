@@ -1032,7 +1032,7 @@ class EELSModel(Model1D):
         """
         component = self._get_component(component)
         if signal_range == "interactive":
-            cf = SetCorelossEdgeOnset(self, component)
+            cf = EstimateAndSetCorelossEdgeOnset(self, component)
             cf.gui(display=display, toolkit=toolkit)
         else:
             self._estimate_and_set_coreloss_edge_onset(
