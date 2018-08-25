@@ -35,7 +35,8 @@ class TestGetEdgeOnset:
 
     def test_arctan_onset_with_noise(self):
         x_axis = np.arange(100, 200, step=0.01)
-        data = Arctan(A=300, k=1., x0=150, minimum_at_zero=True).function(x_axis)
+        arctan = Arctan(A=300, k=1., x0=150, minimum_at_zero=True)
+        data = arctan.function(x_axis)
         data[50:200] = 600
         onset = tools.get_edge_onset(data, 100, 200, x_axis, 0.5)
         assert approx(onset, abs=0.01) == 150

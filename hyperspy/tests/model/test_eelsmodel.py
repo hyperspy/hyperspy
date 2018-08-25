@@ -227,14 +227,14 @@ class TestSetEdgeOnsetArctan:
     def test_only_current(self):
         m = self.m
         m.set_coreloss_edge_onset(
-                m.components.Mn_L3, signal_range=(540, 760), percent_position=0.5,
-                only_current=True)
+                m.components.Mn_L3, signal_range=(540, 760),
+                percent_position=0.5, only_current=True)
         onset = m.components.Mn_L3.onset_energy.as_signal().data
         assert approx(onset[0], abs=0.01) == self.x0_list[0]
 
         m.set_coreloss_edge_onset(
-                m.components.Mn_L3, signal_range=(540, 760), percent_position=0.5,
-                only_current=False)
+                m.components.Mn_L3, signal_range=(540, 760),
+                percent_position=0.5, only_current=False)
         onset = m.components.Mn_L3.onset_energy.as_signal().data
         assert_allclose(onset, np.array(self.x0_list), atol=0.01)
 
@@ -263,14 +263,14 @@ class TestSetEdgeOnsetArctan:
         data[:, 10:30] = 1000
         m.signal.data += data
         m.set_coreloss_edge_onset(
-                m.components.Mn_L3, signal_range=(540, 760), percent_position=0.5,
-                only_current=False)
+                m.components.Mn_L3, signal_range=(540, 760),
+                percent_position=0.5, only_current=False)
         onset = m.components.Mn_L3.onset_energy.as_signal().data
         assert_allclose(onset, np.array(self.x0_list), atol=0.01)
 
         m.set_coreloss_edge_onset(
-                m.components.Mn_L3, signal_range=(501, 515), percent_position=0.5,
-                only_current=False)
+                m.components.Mn_L3, signal_range=(501, 515),
+                percent_position=0.5, only_current=False)
         onset = m.components.Mn_L3.onset_energy.as_signal().data
         for onset_value in onset:
             assert approx(onset_value) == onset[0]

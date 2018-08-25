@@ -239,7 +239,6 @@ class SetCorelossEdgeOnset(SpanSelectorInSignal1D):
             True, desc=("Find the onset for the current spectrum."))
     percent_position = t.Range(low=0., high=1., value=0.1)
 
-
     def __init__(
             self, model, component):
         if model.signal.axes_manager.signal_dimension != 1:
@@ -252,7 +251,7 @@ class SetCorelossEdgeOnset(SpanSelectorInSignal1D):
         self.model = model
         self.component = component
         if (not hasattr(self.model, '_plot') or self.model._plot is None or
-            not self.model._plot.is_active):
+           not self.model._plot.is_active):
             self.model.plot()
         self.span_selector_switch(on=True)
 
