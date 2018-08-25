@@ -5,11 +5,10 @@ import logging
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import constants
-from scipy.interpolate import interp1d
+from scipy.interpolate import InterpolatedUnivariateSpline
 
 from hyperspy.misc.array_tools import rebin
 import hyperspy.defaults_parser
-import hyperspy.misc.utils as utils
 
 _logger = logging.getLogger(__name__)
 
@@ -322,8 +321,8 @@ def get_edge_onset(data, start, end, x_axis, percent_position):
     start, end : scalar
         Region where the edge onset will be found, in x_axis values.
     percent_position : float
-	At what fraction of the ELNES signal the onset energy will be
-	found. See EELSModel.set_coreloss_edge_onset for more information.
+        At what fraction of the ELNES signal the onset energy will be
+        found. See EELSModel.set_coreloss_edge_onset for more information.
 
     Returns
     -------
@@ -341,31 +340,28 @@ def get_edge_onset(data, start, end, x_axis, percent_position):
         raise ValueError(
                 "percent position ({0}) must be between 0 and 1".format(
                     percent_position))
-    start_i = utils.find_nearest_index(x_axis, start)
-    end_i = utils.find_nearest_index(x_axis, end)
+    start_i = np.argmax(x_axis > start)
+    end_i = np.argmax(x_axis > end)
+    if end_i == 0:
+        end_i = len(x_axis)
 
     data = data[start_i:end_i]
     x_axis = x_axis[start_i:end_i]
 
     data_max = data.max()
     data_min = data.min()
+    data_max_i = data.argmax()
+    data_min_i = data.argmin()
     data_onset_value = (data_max - data_min) * percent_position + data_min
 
-    interpolate = interp1d(x_axis, data, fill_value='extrapolate')
-    x_axis_interp = np.arange(x_axis[0], x_axis[-1], 0.0001)
-    data_interpolated = interpolate(x_axis_interp)
-    data_max_i = data_interpolated.argmax()
-    data_min_i = data_interpolated.argmin()
+    data_crop = data[data_min_i:data_max_i][::-1]
+    data_onset_i = np.argmax(data_crop < data_onset_value)
+    data_onset_i = len(data_crop) - data_onset_i
 
-    if data_max_i < data_min_i:
-        temp_i = data_max_i
-        data_max_i = data_min_i
-        data_min_i = temp_i
+    onset_slice = slice(data_min_i + data_onset_i - 1,
+                        data_min_i + data_onset_i + 1)
 
-    threshold = 0.0001 * (data_max - data_min)
-    data_onset_i = utils.find_nearest_index_from_right(
-            data_interpolated[data_min_i:data_max_i],
-            data_onset_value,
-            threshold=threshold)
-    onset_energy = x_axis_interp[data_min_i:data_max_i][data_onset_i]
+    spline = InterpolatedUnivariateSpline(
+            x=data[onset_slice], y=x_axis[onset_slice], k=1)
+    onset_energy = spline(data_onset_value)
     return onset_energy

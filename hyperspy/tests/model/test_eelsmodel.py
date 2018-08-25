@@ -272,10 +272,9 @@ class TestSetEdgeOnsetArctan:
                 m.components.Mn_L3, signal_range=(501, 515), percent_position=0.5,
                 only_current=False)
         onset = m.components.Mn_L3.onset_energy.as_signal().data
-        onset = set(onset)
-        assert len(onset) == 1
-        onset = onset.pop()
-        assert (501 < onset) and (515 > onset)
+        for onset_value in onset:
+            assert approx(onset_value) == onset[0]
+            assert (501 < onset_value) and (515 > onset_value)
 
 
 @lazifyTestClass
