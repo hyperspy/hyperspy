@@ -363,5 +363,5 @@ def get_edge_onset(data, start, end, x_axis, percent_position):
 
     spline = InterpolatedUnivariateSpline(
             x=data[onset_slice], y=x_axis[onset_slice], k=1)
-    onset_energy = spline(data_onset_value)
+    onset_energy = spline(data_onset_value)[()]
     return onset_energy
