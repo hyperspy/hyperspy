@@ -4,9 +4,9 @@ For use in things like docstrings or to test HyperSpy functionalities.
 
 """
 
-import numpy as np from
-hyperspy import components1d, components2d from hyperspy.signals import
-EELSSpectrum, Signal2D
+import numpy as np
+from hyperspy import components1d, components2d
+from hyperspy.signals import EELSSpectrum, Signal2D
 
 
 def get_low_loss_eels_signal():
