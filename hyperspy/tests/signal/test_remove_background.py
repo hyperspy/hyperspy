@@ -71,7 +71,9 @@ class TestRemoveBackground1DPowerLaw:
             background_type='PowerLaw',
             module=module,
             show_progressbar=None)
-        assert np.allclose(s1.data, np.zeros(len(s1.data)), atol=60)
+        # since we compare to zero, rtol can't be used (see np.allclose doc)
+        atol = 0.04*abs(self.signal.data).max()
+        assert np.allclose(s1.data, np.zeros(len(s1.data)), atol=atol)
 
     def test_background_remove_pl_int(self):
         self.signal.change_dtype("int")
@@ -79,4 +81,6 @@ class TestRemoveBackground1DPowerLaw:
             signal_range=(None, None),
             background_type='PowerLaw',
             show_progressbar=None)
-        assert np.allclose(s1.data, np.zeros(len(s1.data)), atol=60)
+        # since we compare to zero, rtol can't be used (see np.allclose doc)
+        atol = 0.04*abs(self.signal.data).max()
+        assert np.allclose(s1.data, np.zeros(len(s1.data)), atol=atol)

@@ -37,7 +37,7 @@ class TestPowerLaw:
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
         m.append(hs.model.components1D.PowerLaw())
-        m[0].A.value = 10
+        m[0].A.value = 1000
         m[0].r.value = 4
         self.m = m
 
@@ -48,8 +48,8 @@ class TestPowerLaw:
         assert s.metadata.Signal.binned == binned
         g = hs.model.components1D.PowerLaw()
         g.estimate_parameters(s, None, None, only_current=only_current)
-        A_value = 10.084913 if binned else 10.064378
-        r_value = 4.0017676 if binned else 4.0017522
+        A_value = 1008.4914
+        r_value = 4.0017676
         assert_allclose(g.A.value, A_value)
         assert_allclose(g.r.value, r_value)
 

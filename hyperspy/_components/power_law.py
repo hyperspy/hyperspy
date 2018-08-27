@@ -109,12 +109,14 @@ class PowerLaw(Expression):
             s = signal.get_current_signal()
         else:
             s = signal
-        I1 = s.isig[i1:i3].integrate1D(2j).data.astype("float")
-        I2 = s.isig[i3:i2].integrate1D(2j).data.astype("float")
         if s._lazy:
             import dask.array as da
             log = da.log
+            I1 = s.isig[i1:i3].integrate1D(2j).data.astype("float")
+            I2 = s.isig[i3:i2].integrate1D(2j).data.astype("float")
         else:
+            I1 = s.data[..., i1:i3].sum(-1)
+            I2 = s.data[..., i3:i2].sum(-1)
             log = np.log
         try:
             r = 2 * log(I1 / I2) / log(x2 / x1)
@@ -128,6 +130,8 @@ class PowerLaw(Expression):
                 A = np.nan_to_num(A)
         except BaseException:
             return False
+        if not self.binned and not s._lazy:
+            A *= axis.scale
         if only_current is True:
             self.r.value = r
             self.A.value = A
