@@ -245,6 +245,9 @@ class TestExpression:
             self.g.grad_fwhm(2),
             0.00033845077175778578)
 
+    def test_function_nd(self):
+        assert self.g.function_nd(0) == 1
+
 
 def test_expression_substitution():
     expr = 'A / B; A = x+2; B = x-c'

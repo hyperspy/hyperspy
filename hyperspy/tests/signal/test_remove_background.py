@@ -74,6 +74,7 @@ class TestRemoveBackground1DPowerLaw:
         # since we compare to zero, rtol can't be used (see np.allclose doc)
         atol = 0.04*abs(self.signal.data).max()
         assert np.allclose(s1.data, np.zeros(len(s1.data)), atol=atol)
+        assert s1.axes_manager.navigation_dimension == 0
 
     def test_background_remove_pl_int(self):
         self.signal.change_dtype("int")
