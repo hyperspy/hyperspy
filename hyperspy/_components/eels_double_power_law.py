@@ -56,7 +56,6 @@ class DoublePowerLaw(Expression):
         self.isbackground = True
         self.convolved = False
 
-
     def function(self, x):
         return np.where(x > self.left_cutoff, super().function(x), 0)
 

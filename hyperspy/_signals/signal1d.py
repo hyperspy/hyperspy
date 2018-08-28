@@ -1037,7 +1037,7 @@ _spikes_diagnosis,
             try:
                 if not self._lazy:
                     axis = self.axes_manager.signal_axes[0].axis
-                    return Signal1D(self.data - 
+                    return Signal1D(self.data -
                                     background_estimator.function_nd(axis))
             except MemoryError:
                 pass
@@ -1046,7 +1046,7 @@ _spikes_diagnosis,
             model.multifit(show_progressbar=show_progressbar)
             model.reset_signal_range()
         return self - model.as_signal(show_progressbar=show_progressbar)
-    
+
     def remove_background(
             self,
             signal_range='interactive',

@@ -56,7 +56,7 @@ def test_integral_as_signal():
     m.multifit()
     s_out = g2.integral_as_signal()
     ref = (h_ref * 3.33 * sqrt2pi / sigma2fwhm).reshape(s_out.data.shape)
-    assert_allclose(s_out.data, ref)  
+    assert_allclose(s_out.data, ref)
 
 
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
@@ -85,7 +85,7 @@ def test_function_nd(binned):
     axis.scale = 2.
     axis.offset = -30
     g1 = GaussianHF(50015.156, 23, 10)
-    s.data = g1.function(axis.axis)   
+    s.data = g1.function(axis.axis)
     s.metadata.Signal.binned = binned
 
     s2 = stack([s]*2)

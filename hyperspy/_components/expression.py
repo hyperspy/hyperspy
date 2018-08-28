@@ -246,8 +246,8 @@ class Expression(Component):
                     )
 
     def _is_navigation_multidimensional(self):
-        if (self._axes_manager is None or not 
-            self._axes_manager.navigation_dimension):
+        if (self._axes_manager is None or not
+                self._axes_manager.navigation_dimension):
             return False
         else:
             return True
@@ -264,7 +264,7 @@ class Expression(Component):
             else:
                 return self._f(x[np.newaxis, ...], y[np.newaxis, ...],
                                *[p.map['values'][..., np.newaxis, np.newaxis]
-                               for p in self.parameters])
+                                 for p in self.parameters])
         else:
             x = args[0]
             if not self._is_navigation_multidimensional():
@@ -272,5 +272,5 @@ class Expression(Component):
             else:
                 return self._f(x[np.newaxis, ...],
                                *[p.map['values'][..., np.newaxis]
-                               for p in self.parameters])
+                                 for p in self.parameters])
     function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
