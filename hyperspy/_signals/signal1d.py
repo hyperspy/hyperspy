@@ -1055,7 +1055,7 @@ _spikes_diagnosis,
             background_type='Power Law',
             polynomial_order=2,
             fast=True,
-            zero_fill=False,,
+            zero_fill=False,
             plot_remainder=True,
             show_progressbar=None, display=True, toolkit=None):
         signal_range = signal_range_from_roi(signal_range)
