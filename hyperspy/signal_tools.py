@@ -652,9 +652,16 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
     polynomial_order = t.Range(1, 10)
     fast = t.Bool(True,
                   desc=("Perform a fast (analytic, but possibly less accurate)"
-                        " estimation of the background. Otherwise use "
-                        "non-linear least squares."))
-
+                        " estimation \nof the background. "
+                        "Otherwise use non-linear least "
+                        "squares."))
+    zero_fill = t.Bool(
+                 False,
+                 desc=("Set all spectral channels lower than the lower \n"
+                       "bound of the fitting range to zero (this is the \n"
+                       "default behavior of Gatan's DigitalMicrograph). \n"
+                       "Otherwise leave the pre-fitting region as-is \n"
+                       "(useful for inspecting quality of background fit)."))
     background_estimator = t.Instance(Component)
     bg_line_range = t.Enum('from_left_range',
                            'full',
@@ -663,7 +670,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
     hi = t.Int(0)
 
     def __init__(self, signal, background_type='Power Law', polynomial_order=2,
-                 fast=True, plot_remainder=True, show_progressbar=None):
+                 fast=True, plot_remainder=True, zero_fill=False, show_progressbar=None):
         super(BackgroundRemoval, self).__init__(signal)
         # setting the polynomial order will change the backgroud_type to
         # polynomial, so we set it before setting the background type
@@ -672,6 +679,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.set_background_estimator()
         self.fast = fast
         self.plot_remainder = plot_remainder
+        self.zero_fill = zero_fill
         self.show_progressbar = show_progressbar
         self.bg_line = None
         self.rm_line = None
@@ -804,6 +812,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             signal_range=(self.ss_left_value, self.ss_right_value),
             background_type=background_type,
             fast=self.fast,
+            zero_fill=self.zero_fill,
             polynomial_order=self.polynomial_order,
             show_progressbar=self.show_progressbar)
         self.signal.data = new_spectra.data
