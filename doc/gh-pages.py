@@ -79,7 +79,6 @@ def init_repo(path):
 # Script starts
 #-----------------------------------------------------------------------------
 if __name__ == '__main__':
-    sh('./generate_api_doc.sh')
     # The tag can be given as a positional argument
     try:
         tag = sys.argv[1]
