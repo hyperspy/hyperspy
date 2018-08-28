@@ -237,6 +237,8 @@ intersphinx_mapping = {'hyperspyweb': ('http://hyperspy.org/', None),
 # -- Options for Sphinx API doc ----------------------------------------------
 # Adapted from https://github.com/isogeo/isogeo-api-py-minsdk/blob/master/docs/conf.py
 # run api doc
+
+
 def run_apidoc(_):
     from sphinx.ext.apidoc import main
 
@@ -244,6 +246,7 @@ def run_apidoc(_):
     output_path = os.path.join(cur_dir, 'api')
     modules = os.path.normpath(os.path.join(cur_dir, "../hyperspy"))
     main(['-e', '-f', '-P', '-o', output_path, modules])
+
 
 def setup(app):
     app.connect('builder-inited', run_apidoc)
