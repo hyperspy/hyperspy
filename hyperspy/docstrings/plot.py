@@ -99,7 +99,7 @@ COMPLEX_DOCSTRING = \
             If True (default) plot the real and
             imaginary parts (or amplitude and phase) in the same figure if
             the signal is one-dimensional.
-        shift : bool, default False
+        fft_shift : bool, default False
             If True, shift the zero-frequency component. 
             See `numpy.fft.fftshift` for more details.
         """

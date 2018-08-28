@@ -361,7 +361,7 @@ class BaseInteractiveROI(BaseROI):
             # in case of complex signal, it is possible to shift the signal 
             # during plotting, if so this is currently not supported and we 
             # raise a NotImplementedError
-            if signal._plot.signal_data_function_kwargs.get('shift', False):
+            if signal._plot.signal_data_function_kwargs.get('fft_shift', False):
                 raise NotImplementedError('ROIs are not supported when data '
                                           'are shifted during plotting.')
         if isinstance(navigation_signal, str) and navigation_signal == "same":

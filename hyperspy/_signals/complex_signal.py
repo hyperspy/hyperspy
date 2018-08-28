@@ -181,14 +181,16 @@ class ComplexSignal_mixin:
             phase.metadata.General.title)
         return phase  # Now unwrapped!
 
-    def __call__(self, axes_manager=None, power_spectrum=False, shift=False):
-        value = super().__call__(axes_manager=axes_manager, shift=shift)
+    def __call__(self, axes_manager=None, power_spectrum=False,
+                 fft_shift=False):
+        value = super().__call__(axes_manager=axes_manager,
+                     fft_shift=fft_shift)
         if power_spectrum:
             value = np.abs(value)**2
         return value
 
     def plot(self, power_spectrum=False, navigator="auto", axes_manager=None,
-             representation='cartesian', intensity_scale=None, shift=False,
+             representation='cartesian', intensity_scale=None, fft_shift=False,
              same_axes=True, **kwargs):
         """%s
         %s
@@ -199,7 +201,7 @@ class ComplexSignal_mixin:
             intensity_scale = 'log' if power_spectrum else 'linear'
 
         kwargs.update({'intensity_scale': intensity_scale,
-                       'shift': shift,
+                       'fft_shift': fft_shift,
                        'navigator': navigator,
                        'axes_manager': self.axes_manager})
         if representation == 'cartesian':
@@ -226,7 +228,7 @@ class ComplexSignal_mixin:
         self._plot_kwargs = {'power_spectrum': power_spectrum,
                              'representation': representation,
                              'intensity_scale': intensity_scale,
-                             'shift': shift,
+                             'fft_shift': fft_shift,
                              'same_axes': same_axes}
     plot.__doc__ %= BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING
 

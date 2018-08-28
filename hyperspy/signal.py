@@ -1928,12 +1928,12 @@ class BaseSignal(FancySlicing,
             axes.append({'size': int(s), })
         return axes
 
-    def __call__(self, axes_manager=None, shift=False):
+    def __call__(self, axes_manager=None, fft_shift=False):
         if axes_manager is None:
             axes_manager = self.axes_manager
         value = np.atleast_1d(self.data.__getitem__(
             axes_manager._getitem_tuple))
-        if shift:
+        if fft_shift:
             value = np.fft.fftshift(value)
         return value
 

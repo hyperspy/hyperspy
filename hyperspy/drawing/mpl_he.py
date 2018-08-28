@@ -53,7 +53,7 @@ class MPL_HyperExplorer(object):
         # Doing nothing is good enough for signal_dimension==0 though.
         if self.axes_manager.signal_dimension == 0:
             return
-        if self.signal_data_function_kwargs.get('shift', False):
+        if self.signal_data_function_kwargs.get('fft_shift', False):
             self.axes_manager = self.axes_manager.deepcopy()
             for axis in self.axes_manager.signal_axes:
                 axis.offset = -axis.high_value / 2.
@@ -162,7 +162,7 @@ class MPL_HyperExplorer(object):
 
     def plot(self, **kwargs):
         # Parse the kwargs for plotting complex data
-        for key in ['power_spectrum', 'shift']:
+        for key in ['power_spectrum', 'fft_shift']:
             if key in kwargs:
                 self.signal_data_function_kwargs[key] = kwargs.pop(key)
         if self.pointer is None:

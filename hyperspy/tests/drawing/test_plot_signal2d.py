@@ -120,13 +120,13 @@ def test_plot_log_scale(mpl_cleanup):
     return test_plot.signal._plot.signal_plot.figure
 
 
-@pytest.mark.parametrize("shift", [True, False])
+@pytest.mark.parametrize("fft_shift", [True, False])
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_FFT(mpl_cleanup, shift):
+def test_plot_FFT(mpl_cleanup, fft_shift):
     s = hs.datasets.example_signals.object_hologram()
     s2 = s.isig[:128,:128].fft()
-    s2.plot(shift=shift, axes_ticks=True, power_spectrum=True)
+    s2.plot(fft_shift=fft_shift, axes_ticks=True, power_spectrum=True)
     return s2._plot.signal_plot.figure
 
 
