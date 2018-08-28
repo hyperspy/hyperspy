@@ -102,7 +102,9 @@ def test_update_date_time_in_metadata():
     md12 = dtt.update_date_time_in_metadata(dt1, md.deepcopy())
     assert_deep_almost_equal(md12.General.date, md1.General.date)
     assert_deep_almost_equal(md12.General.time, md1.General.time)
-    assert md12.General.time_zone in ('UTC', 'Coordinated Universal Time')
+    import locale
+    if locale.getlocale()[0] in ['en_GB', 'en_US']:
+        assert md12.General.time_zone in ('UTC', 'Coordinated Universal Time')
 
     md13 = dtt.update_date_time_in_metadata(iso2, md.deepcopy())
     assert_deep_almost_equal(md13.General.date, md2.General.date)

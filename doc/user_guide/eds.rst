@@ -17,30 +17,31 @@ spectrum (SEM or TEM).
 Spectrum loading and parameters
 -------------------------------
 
-The sample and  data used in this section are described in [Burdet2013]_, and can be
-downloaded using:
+The sample and  data used in this section are described in
+:ref:`[Burdet2013] <[Burdet2013]>`,
+and can be downloaded using:
 
 .. code-block:: python
 
     >>> #Download the data (130MB)
     >>> from urllib.request import urlretrieve, urlopen
     >>> from zipfile import ZipFile
-    >>> files = urlretrieve("https://www.dropbox.com/s/s7cx92mfh2zvt3x/HyperSpy_demos_EDX_SEM_files.zip?raw=1", "./HyperSpy_demos_EDX_SEM_files.zip")
+    >>> files = urlretrieve("https://www.dropbox.com/s/s7cx92mfh2zvt3x/"
+    ...                     "HyperSpy_demos_EDX_SEM_files.zip?raw=1",
+    ...                     "./HyperSpy_demos_EDX_SEM_files.zip")
     >>> with ZipFile("HyperSpy_demos_EDX_SEM_files.zip") as z:
     >>>     z.extractall()
-    >>> urlretrieve(url + 'Ni_superalloy_1pix.msa', 'Ni_superalloy_1pix.msa')
-    >>> urlretrieve(url + 'Ni_superalloy_010.rpl', 'Ni_superalloy_010.rpl')
-    >>> urlretrieve(url + 'Ni_superalloy_010.raw', 'Ni_superalloy_010.raw')
 
 Loading data
 ^^^^^^^^^^^^
 
-All data are loaded with the :py:func:`~.io.load` function, as described in detail in
-:ref:`Loading files<loading_files>`. HyperSpy is able to import different formats,
-among them ".msa" and ".rpl" (the raw format of Oxford Instruments and Brucker).
+All data are loaded with the :py:func:`~.io.load` function, as described in
+detail in :ref:`Loading files<loading_files>`. HyperSpy is able to import
+different formats, among them ".msa" and ".rpl" (the raw format of Oxford
+Instruments and Brucker).
 
-Here are three example for files exported by Oxford Instruments software (INCA).
-For a single spectrum:
+Here are three example for files exported by Oxford Instruments software
+(INCA). For a single spectrum:
 
 .. code-block:: python
 
@@ -73,8 +74,8 @@ Microscope and detector parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 First, the signal type ("EDS_TEM" or "EDS_SEM") needs to be set with the
-:py:meth:`~.signal.BaseSignal.set_signal_type` method. By assigning the class of
-the object, specific EDS methods are made available.
+:py:meth:`~.signal.BaseSignal.set_signal_type` method. By assigning the
+class of the object, specific EDS methods are made available.
 
 .. code-block:: python
 
@@ -172,7 +173,8 @@ or adjusted manually with the :py:class:`~.axes.AxesManager`
 
 .. code-block:: python
 
-    >>> si = hs.load("Ni_superalloy_010.rpl", signal_type="EDS_TEM").as_signal1D(0)
+    >>> si = hs.load("Ni_superalloy_010.rpl",
+    ...              signal_type="EDS_TEM").as_signal1D(0)
     >>> si.axes_manager[-1].name = 'E'
     >>> si.axes_manager['E'].units = 'keV'
     >>> si.axes_manager['E'].scale = 0.01
@@ -204,7 +206,8 @@ method.
     >>> s1pixel = hs.load("Ni_superalloy_1pix.msa", signal_type="EDS_TEM")
     >>>
     >>> # si contains no parameters
-    >>> si = hs.load("Ni_superalloy_010.rpl", signal_type="EDS_TEM").as_signal1D(0)
+    >>> si = hs.load("Ni_superalloy_010.rpl",
+    ...              signal_type="EDS_TEM").as_signal1D(0)
     >>>
     >>> # Copy all the properties of s1pixel to si
     >>> si.get_calibration_from(s1pixel)
@@ -292,7 +295,8 @@ overvoltage of 2 (< beam energy / 2)):
     ├── elements = ['Al', 'Cu', 'Mn']
     └── xray_lines = ['Al_Ka', 'Cu_La', 'Mn_La']
 
-A warning is raised if you try to set an X-ray line higher than the beam energy:
+A warning is raised if you try to set an X-ray line higher than the beam
+energy:
 
 .. code-block:: python
 
@@ -306,7 +310,8 @@ A warning is raised if you try to set an X-ray line higher than the beam energy:
 Elemental database
 ^^^^^^^^^^^^^^^^^^
 
-HyperSpy includes an elemental database, which contains the energy of the X-ray lines.
+HyperSpy includes an elemental database, which contains the energy of the
+X-ray lines.
 
 .. code-block:: python
 
@@ -362,7 +367,8 @@ be limited by additional, optional arguments.
 Mass absorption coefficient database
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A mass absorption coefficient database [Chantler2005]_ is available:
+A mass absorption coefficient database :ref:`[Chantler2005] <Chantler2005>`
+is available:
 
 .. code-block:: python
 
@@ -381,8 +387,9 @@ A mass absorption coefficient database [Chantler2005]_ is available:
 Plotting
 --------
 
-You can visualize an EDS spectrum using the :py:meth:`~._signals.eds.EDSSpectrum.plot`
-method (see :ref:`visualisation<visualization-label>`). For example:
+You can visualize an EDS spectrum using the
+:py:meth:`~._signals.eds.EDSSpectrum.plot` method (see
+:ref:`visualisation<visualization-label>`). For example:
 
 .. code-block:: python
 
@@ -406,10 +413,11 @@ Plotting X-ray lines
 
 .. versionadded:: 0.8
 
-X-ray lines can be added as plot labels with :py:meth:`~._signals.eds.EDSSpectrum.plot`.
-The lines are either retrieved from "metadata.Sample.Xray_lines",
-or selected with the same method as :py:meth:`~._signals.eds.EDS_mixin.add_lines`
-using the elements in "metadata.Sample.elements".
+X-ray lines can be added as plot labels with
+:py:meth:`~._signals.eds.EDSSpectrum.plot`. The lines are either retrieved
+from "metadata.Sample.Xray_lines", or selected with the same method as
+:py:meth:`~._signals.eds.EDS_mixin.add_lines` using the elements in
+"metadata.Sample.elements".
 
 .. code-block:: python
 
@@ -445,15 +453,17 @@ Geting the intensity of an X-ray line
 
 .. versionadded:: 0.8
 
-The sample and data used in this section are described in [Rossouw2015]_, and
-can be downloaded using:
+The sample and data used in this section are described in
+:ref:`[Rossouw2015] <Rossouw2015>`, and can be downloaded using:
 
 .. code-block:: python
 
     >>> #Download the data (1MB)
     >>> from urllib.request import urlretrieve, urlopen
     >>> from zipfile import ZipFile
-    >>> files = urlretrieve("https://www.dropbox.com/s/ecdlgwxjq04m5mx/HyperSpy_demos_EDS_TEM_files.zip?raw=1", "./HyperSpy_demos_EDX_TEM_files.zip")
+    >>> files = urlretrieve("https://www.dropbox.com/s/ecdlgwxjq04m5mx/"
+    ...                     "HyperSpy_demos_EDS_TEM_files.zip?raw=1",
+    ...                     "./HyperSpy_demos_EDX_TEM_files.zip")
     >>> with ZipFile("HyperSpy_demos_EDX_TEM_files.zip") as z:
     >>>     z.extractall()
 
@@ -482,7 +492,8 @@ are used by default:
     [<Signal2D, title: X-ray line intensity of Core shell: Fe_Ka at 6.40 keV, dimensions: (|64, 64)>,
     <Signal2D, title: X-ray line intensity of Core shell: Pt_La at 9.44 keV, dimensions: (|64, 64)>]
 
-Finally, the windows of integration can be visualised using :py:meth:`~._signals.eds.EDS_mixin.plot` method:
+Finally, the windows of integration can be visualised using
+:py:meth:`~._signals.eds.EDS_mixin.plot` method:
 
 .. code-block:: python
 
@@ -540,31 +551,36 @@ HyperSpy now includes three methods for EDS quantification:
 * Zeta-factors
 * Ionization cross sections
 
-Quantification must be applied to the background-subtracted intensities, which can
-be found using :py:meth:`~._signals.eds.EDS_mixin.get_lines_intensity`.
+Quantification must be applied to the background-subtracted intensities, which
+can be found using :py:meth:`~._signals.eds.EDS_mixin.get_lines_intensity`.
 The quantification of these intensities can then be calculated using
 :py:meth:`~._signals.eds_tem.EDSTEM_mixin.quantification`.
 
-The quantification method needs be specified as either 'CL', 'zeta', or 'cross_section'.
-If no method is specified, the function will raise an exception.
+The quantification method needs be specified as either 'CL', 'zeta', or
+'cross_section'. If no method is specified, the function will raise an
+exception.
 
-A list of factors or cross sections should be supplied in the same order as the listed intensities
-(please note that HyperSpy intensities in :py:meth:`~._signals.eds.EDS_mixin.get_lines_intensity`
-are in alphabetical order).
+A list of factors or cross sections should be supplied in the same order as
+the listed intensities (please note that HyperSpy intensities in
+:py:meth:`~._signals.eds.EDS_mixin.get_lines_intensity` are in alphabetical
+order).
 
 A set of k-factors can be usually found in the EDS manufacturer software
 although determination from standard samples for the particular instrument used
-is usually preferable. In the case of zeta-factors and cross sections, these must
-be determined experimentally using standards.
+is usually preferable. In the case of zeta-factors and cross sections, these
+must be determined experimentally using standards.
 
 Zeta-factors should be provided in units of kg/m^2. The method is described
-further in [Watanabe1996]_ and [Watanabe2006]_ . Cross sections should be
+further in :ref:`[Watanabe1996] <Watanabe1996>`
+and :ref:`[Watanabe2006] <Watanabe2006>`. Cross sections should be
 provided in units of barns (b). Further details on the cross section method can
-be found in [MacArthur2016]_ . Conversion between zeta-factors and cross
-sections is possible using :py:func:`~.misc.eds.utils.edx_cross_section_to_zeta`
-or :py:func:`~.misc.eds.utils.zeta_to_edx_cross_section`.
+be found in :ref:`[MacArthur2016] <MacArthur2016>`. Conversion between
+zeta-factors and cross sections is possible using
+:py:func:`~.misc.eds.utils.edx_cross_section_to_zeta` or
+:py:func:`~.misc.eds.utils.zeta_to_edx_cross_section`.
 
-Using the Cliff-Lorimer method as an example, quantification can be carried out as follows:
+Using the Cliff-Lorimer method as an example, quantification can be carried
+out as follows:
 
 .. code-block:: python
 
@@ -573,12 +589,14 @@ Using the Cliff-Lorimer method as an example, quantification can be carried out 
     >>> kfactors = [1.450226, 5.075602] #For Fe Ka and Pt La
     >>> bw = s.estimate_background_windows(line_width=[5.0, 2.0])
     >>> intensities = s.get_lines_intensity(background_windows=bw)
-    >>> atomic_percent = s.quantification(intensities, method='CL', factors=kfactors)
+    >>> atomic_percent = s.quantification(intensities, method='CL',
+    ...                                   factors=kfactors)
     Fe (Fe_Ka): Composition = 15.41 atomic percent
     Pt (Pt_La): Composition = 84.59 atomic percent
 
 The obtained composition is in atomic percent, by default. However, it can be
-transformed into weight percent either with the option :py:meth:`~._signals.eds_tem.EDSTEM_mixin.quantification`:
+transformed into weight percent either with the option
+:py:meth:`~._signals.eds_tem.EDSTEM_mixin.quantification`:
 
 .. code-block:: python
 
@@ -597,9 +615,10 @@ or using :py:func:`~.misc.material.atomic_to_weight`:
 
 The reverse method is :py:func:`~.misc.material.weight_to_atomic`.
 
-The zeta-factor method needs both the 'beam_current' (in nA) and the acquisition
-or dwell time (referred to as 'real_time' in seconds) in order to obtain an accurate
-quantification. Both of the these parameters can be assigned to the metadata using:
+The zeta-factor method needs both the 'beam_current' (in nA) and the
+acquisition or dwell time (referred to as 'real_time' in seconds) in order
+to obtain an accurate quantification. Both of the these parameters can be
+assigned to the metadata using:
 
 .. code-block:: python
 
@@ -608,41 +627,45 @@ quantification. Both of the these parameters can be assigned to the metadata usi
 
 If these parameters are not set, the code will produce an error.
 The zeta-factor method will produce two sets of results. Index [0] contains the
-composition maps for each element in atomic percent, and index [1] contains the mass-thickness map.
+composition maps for each element in atomic percent, and index [1] contains the
+mass-thickness map.
 
-The cross section method needs the 'beam_current', dwell time ('real_time') and probe area
-in order to obtain an accurate quantification. The 'beam_current' and 'real_time' can be set as shown above.
-The 'probe_area' (in nm^2) can be defined in two different ways.
+The cross section method needs the 'beam_current', dwell time ('real_time') and
+probe area in order to obtain an accurate quantification. The 'beam_current'
+and 'real_time' can be set as shown above. The 'probe_area' (in nm^2) can
+be defined in two different ways.
 
 If the probe diameter is narrower than the pixel width, then the probe is being
-under-sampled and an estimation of the probe area needs to be used. This can be added
-to the metadata with:
+under-sampled and an estimation of the probe area needs to be used. This can
+be added to the metadata with:
 
 .. code-block: python
 
     >>> s.set_microscope_parameters(probe_area=0.00125)
 
 Alternatively, if sub-pixel scanning is used (or the spectrum map was recorded
-at a high spatial sampling and subsequently binned into much larger pixels) then
-the illumination area becomes the pixel area of the spectrum image. This is a much
-more accurate approach for quantitative EDS and should be used where possible.
-The pixel width could either be added to the metadata by putting the pixel area
-in as the 'probe_area' (above) or by calibrating the spectrum image
-(see :ref:`Setting axis properties`).
+at a high spatial sampling and subsequently binned into much larger pixels)
+then the illumination area becomes the pixel area of the spectrum image.
+This is a much more accurate approach for quantitative EDS and should be
+used where possible. The pixel width could either be added to the metadata
+by putting the pixel area in as the 'probe_area' (above) or by calibrating
+the spectrum image (see :ref:`Setting axis properties`).
 
 Either approach will provide an illumination area for the cross_section
 quantification. If the pixel width is not set, the code will still run with the
-default value of 1 nm with a warning message to remind the user that this is the case.
+default value of 1 nm with a warning message to remind the user that this is
+the case.
 
-The cross section method will produce two sets of results. Index [0] contains the
-composition maps for each element in atomic percent and index [1] is the
+The cross section method will produce two sets of results. Index [0] contains
+the composition maps for each element in atomic percent and index [1] is the
 number of atoms per pixel for each element.
 
 .. NOTE::
 
-    Please note that the function does not assume square pixels, so both the x and y pixel
-    dimensions must be set. For quantification of line scans, rather than spectrum images,
-    the pixel area should be added to the metadata as above.
+    Please note that the function does not assume square pixels, so both the
+    x and y pixel dimensions must be set. For quantification of line scans,
+    rather than spectrum images, the pixel area should be added to the
+    metadata as above.
 
 
 .. _eds_fitting-label:
@@ -710,30 +733,34 @@ background.
     Zr_Lb3
     background_order_6
 
-The width and the energies are fixed, while the heights of the sub-X-ray lines are linked
-to the main X-ray lines (alpha lines). The model can now be fitted:
+The width and the energies are fixed, while the heights of the sub-X-ray
+lines are linked to the main X-ray lines (alpha lines). The model can now be
+fitted:
 
 .. code-block:: python
 
     >>> m.fit()
 
-The background fitting can be improved with :py:meth:`~.models.edsmodel.EDSModel.fit_background`
-by enabling only energy ranges containing no X-ray lines:
+The background fitting can be improved with
+:py:meth:`~.models.edsmodel.EDSModel.fit_background` by enabling only energy
+ranges containing no X-ray lines:
 
 .. code-block:: python
 
     >>> m.fit_background()
 
-The width of the X-ray lines is defined from the energy resolution (FWHM at Mn Ka)
-provided by `energy_resolution_MnKa` in `metadata`. This parameters can be calibrated
-by fitting with :py:meth:`~.models.edsmodel.EDSModel.calibrate_energy_axis`:
+The width of the X-ray lines is defined from the energy resolution (FWHM at
+Mn Ka) provided by `energy_resolution_MnKa` in `metadata`. This parameters
+can be calibrated by fitting with
+:py:meth:`~.models.edsmodel.EDSModel.calibrate_energy_axis`:
 
 .. code-block:: python
 
     >>> m.calibrate_energy_axis(calibrate='resolution')
     Energy resolution (FWHM at Mn Ka) changed from 130.000000 to 131.927922 eV
 
-Fine-tuning of specific X-ray lines can be achieved using :py:meth:`~.models.edsmodel.EDSModel.calibrate_xray_lines`:
+Fine-tuning of specific X-ray lines can be achieved using
+:py:meth:`~.models.edsmodel.EDSModel.calibrate_xray_lines`:
 
 .. code-block:: python
 
@@ -741,7 +768,8 @@ Fine-tuning of specific X-ray lines can be achieved using :py:meth:`~.models.eds
     >>> m.calibrate_xray_lines('width', ['Ar_Ka'], bound=10)
     >>> m.calibrate_xray_lines('sub_weight', ['Mn_La'], bound=10)
 
-The result of the fit is obtained with the :py:meth:`~.models.edsmodel.EDSModel.get_lines_intensity` method.
+The result of the fit is obtained with the
+:py:meth:`~.models.edsmodel.EDSModel.get_lines_intensity` method.
 
 .. code-block:: python
 
@@ -765,8 +793,8 @@ Finally, we visualize the result:
    :align:   center
    :width:   500
 
-The following methods can be used to enable/disable different functionalities of
-X-ray lines when fitting:
+The following methods can be used to enable/disable different
+functionalities of X-ray lines when fitting:
 
 * :py:meth:`~.models.edsmodel.EDSModel.free_background`
 * :py:meth:`~.models.edsmodel.EDSModel.fix_background`

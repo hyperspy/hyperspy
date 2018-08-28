@@ -24,7 +24,6 @@ import types
 from io import StringIO
 import codecs
 import collections
-import tempfile
 import unicodedata
 from contextlib import contextmanager
 from hyperspy.misc.signal_tools import broadcast_signals
@@ -152,15 +151,14 @@ def slugify(value, valid_variable_name=False):
         try:
             # Convert to unicode using the default encoding
             value = str(value)
-        except:
+        except BaseException:
             # Try latin1. If this does not work an exception is raised.
             value = str(value, "latin1")
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
     value = value.translate(None, _slugify_strip_re_data).decode().strip()
     value = value.replace(' ', '_')
-    if valid_variable_name is True:
-        if value[:1].isdigit():
-            value = 'Number_' + value
+    if valid_variable_name and not value.isidentifier():
+        value = 'Number_' + value
     return value
 
 
@@ -594,7 +592,7 @@ def ensure_unicode(stuff, encoding='utf8', encoding2='latin-1'):
         string = stuff
     try:
         string = string.decode(encoding)
-    except:
+    except BaseException:
         string = string.decode(encoding2, errors='ignore')
     return string
 
@@ -749,10 +747,6 @@ def underline(line, character="-"):
 
 def closest_power_of_two(n):
     return int(2 ** np.ceil(np.log2(n)))
-
-
-def without_nans(data):
-    return data[~np.isnan(data)]
 
 
 def stack(signal_list, axis=None, new_axis_name='stack_element',
@@ -951,7 +945,7 @@ def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
     from hyperspy.signal import BaseSignal
     from itertools import repeat
 
-    iterators = tuple(signal[1]._iterate_signal()
+    iterators = tuple(signal[1]._cycle_signal()
                       if isinstance(signal[1], BaseSignal) else signal[1]
                       for signal in iterating_kwargs)
     # make all kwargs iterating for simplicity:

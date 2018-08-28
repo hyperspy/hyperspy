@@ -1,11 +1,11 @@
-hyperspy\.tests\.datasets package
-=================================
+hyperspy.tests.datasets package
+===============================
 
 Submodules
 ----------
 
-hyperspy\.tests\.datasets\.test\_eelsdb module
-----------------------------------------------
+hyperspy.tests.datasets.test\_eelsdb module
+-------------------------------------------
 
 .. automodule:: hyperspy.tests.datasets.test_eelsdb
     :members:
