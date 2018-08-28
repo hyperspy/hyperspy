@@ -1985,9 +1985,6 @@ class BaseSignal(FancySlicing,
             self._plot.quantity_label = self.metadata.Signal.quantity
         if self.metadata.General.title:
             title = self.metadata.General.title
-            if kwargs.get('power_spectrum', False):
-                title = title.replace('FFT', 'Power spectrum')
-                self._plot.quantity_label = 'Power spectral density'
             self._plot.signal_title = title
         elif self.tmp_parameters.has_item('filename'):
             self._plot.signal_title = self.tmp_parameters.filename
@@ -3269,7 +3266,7 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         shift : bool, optional
-            If True, the origin of FFT will be shifted in the centre (Default: False).
+            If True, the origin of FFT will be shifted to the centre (Default: False).
 
         **kwargs
             other keyword arguments are described in np.fft.fftn().
@@ -3345,7 +3342,7 @@ class BaseSignal(FancySlicing,
             If None the shift option will be set to the original status of the 
             FFT using value in metadata. If no FFT entry is present in 
             metadata, the parameter will be set to False. If True, the origin 
-            of FFT will be shifted in the centre, otherwise the origin would 
+            of FFT will be shifted to the centre, otherwise the origin would 
             be kept at (0, 0)(Default: None).
         **kwargs
             other keyword arguments are described in np.fft.ifftn().

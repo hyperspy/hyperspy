@@ -300,6 +300,7 @@ class ImagePlot(BlittedFigure):
 
     def _add_colorbar(self):
         self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
+        self.set_quantity_label()
         self._colorbar.set_label(
             self.quantity_label, rotation=-90, va='bottom')
         self._colorbar.ax.yaxis.set_animated(
@@ -448,15 +449,31 @@ class ImagePlot(BlittedFigure):
         if event.key == 'h':
             self.gui_adjust_contrast()
         if event.key == 'l':
-            self.set_norm(event)
+            self.toggle_norm()
 
-    def set_norm(self, event):
+    def toggle_norm(self):
         self.norm = 'linear' if self.norm == 'log' else 'log'
         self.update()
         if self.colorbar:
             self._colorbar.remove()
             self._add_colorbar()
             self.figure.canvas.draw_idle()
+
+    def set_quantity_label(self):
+        if 'power_spectrum' in self.data_function_kwargs.keys():
+            if self.norm == 'log':
+                if 'FFT' in self.quantity_label:
+                    self.quantity_label = self.quantity_label.replace(
+                        'Power spectral density', 'FFT')
+                else:
+                    of = ' of ' if self.quantity_label else ''
+                    self.quantity_label = 'Power spectral density' + of + \
+                        self.quantity_label
+            else:
+                self.quantity_label = self.quantity_label.replace(
+                        'Power spectral density of ', '')
+                self.quantity_label = self.quantity_label.replace(
+                        'Power spectral density', '')
 
     def set_contrast(self, vmin, vmax):
         self.vmin, self.vmax = vmin, vmax
