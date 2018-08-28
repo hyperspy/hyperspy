@@ -175,7 +175,7 @@ class Test2D:
         s.axes_manager[1].name = 'y'
         s.axes_manager[1].scale = 0.01
         s.axes_manager[1].units = 'µm'
-        s.crop(0, 0.0, 0.5, convert_units=True) # also convert the other axis
+        s.crop(0, 0.0, 0.5, convert_units=True)  # also convert the other axis
         s.crop(1, 0.0, 500.0, convert_units=True)
         nt.assert_almost_equal(s.axes_manager[0].scale, 10.0)
         nt.assert_almost_equal(s.axes_manager[1].scale, 10.0)
@@ -216,7 +216,7 @@ class Test2D:
         assert s.axes_manager[0].units == 'µm'
         assert s.axes_manager[1].units == 'µm'
         nt.assert_allclose(s.data, d[:50, :50])
-        
+
         # Should convert the unit to nm
         d = np.arange(512 * 512).reshape(512, 512)
         s = signals.Signal2D(d)
