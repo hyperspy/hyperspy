@@ -13,6 +13,7 @@ import hyperspy.api as hs
 
 
 matplotlib.rcParams['figure.max_open_warning'] = 25
+matplotlib.rcParams['interactive'] = False
 
 
 @pytest.fixture(autouse=True)

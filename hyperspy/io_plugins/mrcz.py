@@ -29,7 +29,6 @@ full_support = False
 # Recognised file extension
 file_extensions = ['mrc', 'MRC', 'mrcz', 'MRCZ']
 default_extension = 2
-
 # Writing capabilities:
 writes = True
 

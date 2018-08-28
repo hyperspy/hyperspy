@@ -1190,8 +1190,8 @@ def file_reader(filename, *args, **kwds):
         return spx_reader(filename, *args, **kwds)
 
 
-def bcf_reader(filename, select_type=None, index=None, downsample=1,  # noqa
-               cutoff_at_kV=None, instrument=None, lazy=False):
+def bcf_reader(filename, select_type=None, index=None,  # noqa
+               downsample=1, cutoff_at_kV=None, instrument=None, lazy=False):
     """Reads a bruker bcf file and loads the data into the appropriate class,
     then wraps it into appropriate hyperspy required list of dictionaries
     used by hyperspy.api.load() method.

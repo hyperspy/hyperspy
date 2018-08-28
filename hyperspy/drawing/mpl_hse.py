@@ -23,7 +23,7 @@ import numpy as np
 from traits.api import Undefined
 
 from hyperspy.drawing.mpl_he import MPL_HyperExplorer
-from hyperspy.drawing import signal1d, utils
+from hyperspy.drawing import signal1d
 
 
 class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
@@ -78,19 +78,22 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             self.signal_plot.plot()
             return
         # Create the figure
-        self.xlabel = '%s' % str(self.axes_manager.signal_axes[0])
-        if self.axes_manager.signal_axes[0].units is not Undefined:
-            self.xlabel += ' (%s)' % self.axes_manager.signal_axes[0].units
-        self.ylabel = self.quantity_label
         self.axis = self.axes_manager.signal_axes[0]
         sf = signal1d.Signal1DFigure(title=self.signal_title +
                                      " Signal")
-        sf.xlabel = self.xlabel
-        sf.ylabel = self.ylabel
         sf.axis = self.axis
         if sf.ax is None:
             sf.create_axis()
         sf.axes_manager = self.axes_manager
+        self.xlabel = '{}'.format(self.axes_manager.signal_axes[0])
+        if self.axes_manager.signal_axes[0].units is not Undefined:
+            self.xlabel += ' ({})'.format(
+                self.axes_manager.signal_axes[0].units)
+        self.ylabel = self.quantity_label if self.quantity_label is not '' \
+            else 'Intensity'
+        sf.xlabel = self.xlabel
+        sf.ylabel = self.ylabel
+
         self.signal_plot = sf
         # Create a line to the left axis with the default indices
         sl = signal1d.Signal1DLine()

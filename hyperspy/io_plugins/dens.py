@@ -32,10 +32,8 @@ full_support = False
 # Recognised file extension
 file_extensions = ['dens', 'DENS']
 default_extension = 0
-
 # Writing capabilities
 writes = False
-
 
 def _cnv_time(timestr):
     try:

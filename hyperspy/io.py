@@ -49,9 +49,10 @@ def load(filenames=None,
          stack_axis=None,
          new_axis_name="stack_element",
          lazy=False,
+         convert_units=False,
          **kwds):
     """
-    Load potentially multiple supported file into an hyperspy structure
+    Load potentially multiple supported file into an hyperspy structure.
 
     Supported formats: hspy (HDF5), msa, Gatan dm3, Ripple (rpl+raw),
     Bruker bcf and spx, FEI ser and emi, SEMPER unf, EMD, EDAX spd/spc,
@@ -105,13 +106,15 @@ def load(filenames=None,
         until it finds a name that is not yet in use.
     lazy : {None, bool}
         Open the data lazily - i.e. without actually reading the data from the
-        disk until required. Allows opening arbitrary-sized datasets. default
+        disk until required. Allows opening arbitrary-sized datasets. The default
         is `False`.
+    convert_units : {bool}
+        If True, convert the units using the `convert_to_units` method of
+        the `axes_manager`. If False, does nothing. The default is False.
     print_info: bool
         For SEMPER unf- and EMD (Berkley)-files, if True (default is False)
         additional information read during loading is printed for a quick
         overview.
-
     downsample : int (1–4095)
         For Bruker bcf files, if set to integer (>=2) (default 1)
         bcf is parsed into down-sampled size array by given integer factor,
@@ -188,7 +191,7 @@ def load(filenames=None,
             warnings.warn(warn_str.format(k), VisibleDeprecationWarning)
             del kwds[k]
     kwds['signal_type'] = signal_type
-
+    kwds['convert_units'] = convert_units
     if filenames is None:
         from hyperspy.signal_tools import Load
         load_ui = Load()
@@ -274,9 +277,7 @@ def load(filenames=None,
     return objects
 
 
-def load_single_file(filename,
-                     signal_type=None,
-                     **kwds):
+def load_single_file(filename, **kwds):
     """
     Load any supported file into an HyperSpy structure
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw),
@@ -300,22 +301,16 @@ def load_single_file(filename,
         try:
             from hyperspy.io_plugins import image
             reader = image
-            return load_with_reader(filename, reader,
-                                    signal_type=signal_type, **kwds)
+            return load_with_reader(filename, reader, **kwds)
         except BaseException:
             raise IOError('If the file format is supported'
                           ' please report this error')
     else:
         reader = io_plugins[i]
-        return load_with_reader(filename=filename,
-                                reader=reader,
-                                signal_type=signal_type,
-                                **kwds)
+        return load_with_reader(filename=filename, reader=reader, **kwds)
 
 
-def load_with_reader(filename,
-                     reader,
-                     signal_type=None,
+def load_with_reader(filename, reader, signal_type=None, convert_units=False,
                      **kwds):
     lazy = kwds.get('lazy', False)
     file_data_list = reader.file_reader(filename,
@@ -334,6 +329,8 @@ def load_with_reader(filename,
             objects[-1].tmp_parameters.folder = folder
             objects[-1].tmp_parameters.filename = filename
             objects[-1].tmp_parameters.extension = extension.replace('.', '')
+            if convert_units:
+                objects[-1].axes_manager.convert_units()
         else:
             # it's a standalone model
             continue
