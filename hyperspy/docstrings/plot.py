@@ -53,10 +53,13 @@ BASE_PLOT_DOCSTRING = \
         plot_markers : bool, default True
             Plot markers added using s.add_marker(marker, permanent=True).
             Note, a large number of markers might lead to very slow plotting.
-        intensity_scale : {None, 'linear', 'log'}, default is None.
-            Plot the intensity scale on a linear or logarithmic scale. If None,
-            plot the intensity on a linear scale except when `power_spectrum` 
-            = True, which can be used only for compatible signal.
+        norm : {'auto', 'linear', 'log', mpl `Normalize` instance or subclass}, 
+            default is 'auto'.
+            Plot the intensity scale on a linear or logarithmic scale. If 
+            'auto', plot the intensity on a linear scale except when 
+            `power_spectrum` is True, which can be used only for compatible 
+            signal. For Signal2D, a matplotlib `Normalize` subclass or 
+            instance can be provided. 
             """
 
 PLOT2D_DOCSTRING = \

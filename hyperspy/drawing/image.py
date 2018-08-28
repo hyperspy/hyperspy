@@ -20,8 +20,11 @@ import math
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize, LogNorm
 from traits.api import Undefined
 import logging
+import inspect
+import copy
 
 from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
@@ -92,7 +95,7 @@ class ImagePlot(BlittedFigure):
         self._auto_axes_ticks = True
         self.no_nans = False
         self.centre_colormap = "auto"
-        self.intensity_scale = None
+        self.norm = "auto"
 
     @property
     def vmax(self):
@@ -364,17 +367,18 @@ class ImagePlot(BlittedFigure):
         else:
             vmin, vmax = self.vmin, self.vmax
 
-        # set the image normalisation
-        if self.intensity_scale == 'log':
-            from matplotlib.colors import LogNorm
+        norm = copy.copy(self.norm)
+        if norm == 'log':
             norm = LogNorm(vmin=self.vmin, vmax=self.vmax)
+        elif inspect.isclass(norm) and issubclass(norm, Normalize):
+            norm = norm(vmin=self.vmin, vmax=self.vmax)
+        elif norm not in ['auto', 'linear']:
+            raise ValueError("`norm` paramater should be 'auto', 'linear', "
+                             "'log' or a matplotlib Normalize instance or "
+                             "subclass.")
         else:
-            if self.intensity_scale not in ['linear', None]:
-                _logger.warning('The provided `intensity_scale` argument is '
-                                'not supported, falling back to the default '
-                                '(linear).')
-            # if the `norm` kwargs is passed to matplotlib, we use it
-            norm = kwargs.pop('norm', None)
+            # set back to matplotlib default
+            norm = None
 
         if ims:  # the images has already been drawn previously
             ims[0].set_data(data)
@@ -444,10 +448,10 @@ class ImagePlot(BlittedFigure):
         if event.key == 'h':
             self.gui_adjust_contrast()
         if event.key == 'l':
-            self.set_intensity_scale(event)
+            self.set_norm(event)
 
-    def set_intensity_scale(self, event):
-        self.intensity_scale = 'linear' if self.intensity_scale == 'log' else 'log'
+    def set_norm(self, event):
+        self.norm = 'linear' if self.norm == 'log' else 'log'
         self.update()
         if self.colorbar:
             self._colorbar.remove()

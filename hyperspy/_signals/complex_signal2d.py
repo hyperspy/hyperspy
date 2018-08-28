@@ -58,7 +58,7 @@ class Complex2Dmixin:
 
     def plot(self,
              power_spectrum=False,
-             intensity_scale=None,
+             norm="auto",
              fft_shift=False,
              colorbar=True,
              scalebar=True,
@@ -79,7 +79,7 @@ class Complex2Dmixin:
         """
         super().plot(
             power_spectrum=power_spectrum,
-            intensity_scale=intensity_scale,
+            norm=norm,
             fft_shift=fft_shift,
             colorbar=colorbar,
             scalebar=scalebar,

@@ -116,7 +116,7 @@ def _generate_parameter_plot_images():
 def test_plot_log_scale(mpl_cleanup):
     test_plot = _TestPlot(ndim=0, sdim=2)
     test_plot.signal += 1 # need to avoid zeros in log 
-    test_plot.signal.plot(intensity_scale='log')
+    test_plot.signal.plot(norm='log')
     return test_plot.signal._plot.signal_plot.figure
 
 

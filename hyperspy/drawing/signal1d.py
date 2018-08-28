@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import logging
+import inspect
 
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.drawing import utils
@@ -203,7 +204,7 @@ class Signal1DLine(object):
         self.axes_manager = None
         self.auto_update = True
         self._plot_imag = False
-        self.intensity_scale = 'linear'
+        self.norm = 'linear'
 
         # Properties
         self.line = None
@@ -303,20 +304,24 @@ class Signal1DLine(object):
             plt.setp(self.line, **self.line_properties)
             self.ax.figure.canvas.draw_idle()
 
-    def plot(self, data=1, data_function_kwargs={}, intensity_scale='linear'):
+    def plot(self, data=1, data_function_kwargs={}, norm='linear'):
         self.data_function_kwargs = data_function_kwargs
-        self.intensity_scale = intensity_scale
+        self.norm = norm
         data = self._get_data()
         if self.line is not None:
             self.line.remove()
 
-        if self.intensity_scale == 'log':
+        if norm == 'log':
             plot = self.ax.semilogy
+        elif (isinstance(norm, mpl.colors.Normalize) or 
+              (inspect.isclass(norm) and issubclass(norm, mpl.colors.Normalize))
+              ):
+            raise ValueError("Matplotlib Normalize instance or subclass can "
+                             "be used for Signal2D only.")
+        elif norm not in ["auto", "linear"]:
+            raise ValueError("`norm` paramater should be 'auto', 'linear' or "
+                             "'log' for Signal1D.")
         else:
-            if intensity_scale not in ['linear', None]:
-                _logger.warning('The `intensity_scale` is not set correctly, '
-                                'the intensity scale is set to the default '
-                                '(linear).')
             plot = self.ax.plot
         self.line, = plot(self.axis.axis, data, **self.line_properties)
         self.line.set_animated(self.ax.figure.canvas.supports_blit)
@@ -360,7 +365,7 @@ class Signal1DLine(object):
         if force_replot is True:
             self.close()
             self.plot(data_function_kwargs=self.data_function_kwargs,
-                      intensity_scale=self.intensity_scale)
+                      norm=self.norm)
 
         ydata = self._get_data()
         old_xaxis = self.line.get_xdata()
