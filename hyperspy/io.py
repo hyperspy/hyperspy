@@ -49,9 +49,10 @@ def load(filenames=None,
          stack_axis=None,
          new_axis_name="stack_element",
          lazy=False,
+         convert_units=False,
          **kwds):
     """
-    Load potentially multiple supported file into an hyperspy structure
+    Load potentially multiple supported file into an hyperspy structure.
 
     Supported formats: hspy (HDF5), msa, Gatan dm3, Ripple (rpl+raw),
     Bruker bcf and spx, FEI ser and emi, SEMPER unf, EMD, EDAX spd/spc,
@@ -105,13 +106,15 @@ def load(filenames=None,
         until it finds a name that is not yet in use.
     lazy : {None, bool}
         Open the data lazily - i.e. without actually reading the data from the
-        disk until required. Allows opening arbitrary-sized datasets. default
+        disk until required. Allows opening arbitrary-sized datasets. The default
         is `False`.
+    convert_units : {bool}
+        If True, convert the units using the `convert_to_units` method of
+        the `axes_manager`. If False, does nothing. The default is False.
     print_info: bool
         For SEMPER unf- and EMD (Berkley)-files, if True (default is False)
         additional information read during loading is printed for a quick
         overview.
-
     downsample : int (1–4095)
         For Bruker bcf files, if set to integer (>=2) (default 1)
         bcf is parsed into down-sampled size array by given integer factor,
@@ -123,35 +126,39 @@ def load(filenames=None,
        bcf is parsed into array with depth cutoff at coresponding given energy.
        This allows to conserve the memory, with cutting-off unused spectra's
        tail, or force enlargement of the spectra size.
-    select_type: {'spectrum_image', 'image', 'single_spectrum', None} 
-       If `None` (default), all data are loaded. 
-       For Bruker bcf and FEI emd files: if one of 'spectrum_image', 'image' or 
-       'single_spectrum', the loader return single_spectrumns either only the 
-       spectrum image or only the images (including EDS map for FEI emd files) 
+    select_type: {'spectrum_image', 'image', 'single_spectrum', None}
+       If `None` (default), all data are loaded.
+       For Bruker bcf and FEI emd files: if one of 'spectrum_image', 'image' or
+       'single_spectrum', the loader return single_spectrumns either only the
+       spectrum image or only the images (including EDS map for FEI emd files)
        or only the single spectra (for FEI emd files).
     first_frame : int (default 0)
-       Only for FEI emd files: load only the data acquired after the specified 
+       Only for FEI emd files: load only the data acquired after the specified
        fname.
     last_frame : None or int (default None)
-       Only for FEI emd files: load only the data acquired up to specified 
+       Only for FEI emd files: load only the data acquired up to specified
        fname. If None, load up the data to the end.
     sum_frames : bool (default is True)
        Only for FEI emd files: load each EDS frame individually.
     sum_EDS_detectors : bool (default is True)
-       Only for FEI emd files: load each frame individually. If True, the signal 
-       from the different detector are summed. If False, a distinct signal is 
+       Only for FEI emd files: load each frame individually. If True, the signal
+       from the different detector are summed. If False, a distinct signal is
        returned for each EDS detectors.
     rebin_energy : int, a multiple of the length of the energy dimension (default 1)
-       Only for FEI emd files: rebin the energy axis by the integer provided 
+       Only for FEI emd files: rebin the energy axis by the integer provided
        during loading in order to save memory space.
     SI_data_dtype : numpy.dtype
-       Only for FEI emd files: set the dtype of the spectrum image data in 
-       order to save memory space. If None, the default dtype from the FEI emd 
+       Only for FEI emd files: set the dtype of the spectrum image data in
+       order to save memory space. If None, the default dtype from the FEI emd
        file is used.
     load_SI_image_stack : bool (default False)
-       Load the stack of STEM images acquired simultaneously as the EDS 
+       Load the stack of STEM images acquired simultaneously as the EDS
        spectrum image.
-       
+    dataset_name : string or list, optional
+        For filetypes which support several datasets in the same file, this
+        will only load the specified dataset. Several datasets can be loaded
+        by using a list of strings. Only for EMD (NCEM) files.
+
 
     Returns
     -------
@@ -184,7 +191,7 @@ def load(filenames=None,
             warnings.warn(warn_str.format(k), VisibleDeprecationWarning)
             del kwds[k]
     kwds['signal_type'] = signal_type
-
+    kwds['convert_units'] = convert_units
     if filenames is None:
         from hyperspy.signal_tools import Load
         load_ui = Load()
@@ -270,9 +277,7 @@ def load(filenames=None,
     return objects
 
 
-def load_single_file(filename,
-                     signal_type=None,
-                     **kwds):
+def load_single_file(filename, **kwds):
     """
     Load any supported file into an HyperSpy structure
     Supported formats: netCDF, msa, Gatan dm3, Ripple (rpl+raw),
@@ -296,22 +301,16 @@ def load_single_file(filename,
         try:
             from hyperspy.io_plugins import image
             reader = image
-            return load_with_reader(filename, reader,
-                                    signal_type=signal_type, **kwds)
+            return load_with_reader(filename, reader, **kwds)
         except BaseException:
             raise IOError('If the file format is supported'
                           ' please report this error')
     else:
         reader = io_plugins[i]
-        return load_with_reader(filename=filename,
-                                reader=reader,
-                                signal_type=signal_type,
-                                **kwds)
+        return load_with_reader(filename=filename, reader=reader, **kwds)
 
 
-def load_with_reader(filename,
-                     reader,
-                     signal_type=None,
+def load_with_reader(filename, reader, signal_type=None, convert_units=False,
                      **kwds):
     lazy = kwds.get('lazy', False)
     file_data_list = reader.file_reader(filename,
@@ -330,6 +329,8 @@ def load_with_reader(filename,
             objects[-1].tmp_parameters.folder = folder
             objects[-1].tmp_parameters.filename = filename
             objects[-1].tmp_parameters.extension = extension.replace('.', '')
+            if convert_units:
+                objects[-1].axes_manager.convert_units()
         else:
             # it's a standalone model
             continue
@@ -501,11 +502,11 @@ def save(filename, signal, overwrite=None, **kwds):
         ensure_directory(filename)
         is_file = os.path.isfile(filename)
         if overwrite is None:
-            write = overwrite_method(filename) # Ask what to do
+            write = overwrite_method(filename)  # Ask what to do
         elif overwrite is True or (overwrite is False and not is_file):
-            write = True # Write the file
+            write = True  # Write the file
         elif overwrite is False and is_file:
-            write = False # Don't write the file
+            write = False  # Don't write the file
         else:
             raise ValueError("`overwrite` parameter can only be None, True or "
                              "False.")

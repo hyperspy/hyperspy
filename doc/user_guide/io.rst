@@ -75,6 +75,11 @@ Almost all file readers support accessing the data without reading it to memory
 analysing large files. To load a file without loading it to memory simply set
 ``lazy`` to ``True`` e.g.:
 
+The units of the navigation and signal axes can be converted automatically 
+during loading using the ``convert_units`` parameter. If `True`, the 
+``convert_to_units`` method of the ``axes_manager`` will be used for the conversion 
+and if set to `False`, the units will not be converted. The default is `False`.
+
 .. code-block:: python
 
     >>> s = hs.load("filename.hspy", lazy=True)
@@ -284,7 +289,25 @@ intensity<get_lines_intensity>`):
      <BaseSignal, title: X-ray line intensity of EDS SEM Signal1D: Mn_La at 0.63 keV, dimensions: (|)>,
      <BaseSignal, title: X-ray line intensity of EDS SEM Signal1D: Zr_La at 2.04 keV, dimensions: (|)>]
 
+.. versionadded:: 1.3.1
+    ``chunks`` keyword argument
 
+By default, the data is saved in chunks that are optimised to contain at least one full signal. It is
+possible to customise the chunk shape using the ``chunks`` keyword. For example, to save the data with
+``(20, 20, 256)`` chunks instead of the default ``(7, 7, 2048)`` chunks for this signal:
+
+.. code-block:: python
+    >>> s = hs.signals.Signal1D(np.random.random((100, 100, 2048)))
+    >>> s.save("test_chunks", chunks=(20, 20, 256), overwrite=True)
+
+Note that currently it is not possible to pass different customised chunk shapes to all signals and
+arrays contained in a signal and its metadata. Therefore, the value of ``chunks`` provided on saving 
+will be applied to all arrays contained in the signal.
+
+By passing ``True`` to ``chunks`` the chunk shape is guessed using ``h5py``'s ``guess_chunks`` function
+what, for large signal spaces usually leads to smaller chunks as ``guess_chunks`` does not impose the
+constrain of storing at least one signal per chunks. For example, for the signal in the example above
+passing ``chunks=True`` results in ``(7, 7, 256)`` chunks.
 
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -555,6 +578,19 @@ available publicly available from EDAX and are on Github
 SpcMap-spd.file.format.pdf>`_, and
 `.ipr <https://github.com/hyperspy/hyperspy/files/29507/ImageIPR.pdf>`_).
 
+Extra loading arguments for ``.spd`` file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- `spc_fname` : {None, str}, name of file from which to read the spectral calibration. If data was exported fully from EDAX TEAM software, an .spc file with the same name as the .spd should be present. If `None`, the default filename will be searched for. Otherwise, the name of the ``.spc`` file to use for calibration can be explicitly given as a string.
+- `ipr_fname` : {None, str}, name of file from which to read the spatial calibration. If data was exported fully from EDAX TEAM software, an ``.ipr`` file with the same name as the ``.spd`` (plus a "_Img" suffix) should be present.  If `None`, the default filename will be searched for. Otherwise, the name of the ``.ipr`` file to use for spatial calibration can be explicitly given as a string.
+- **kwargs: remaining arguments are passed to the Numpy ``memmap`` function.
+
+Extra loading arguments for ``.spd`` and ``.spc`` files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+
+- `load_all_spc` : bool, switch to control if all of the ``.spc`` header is read, or just the important parts for import into HyperSpy.
+
+
 .. _fei-format:
 
 FEI TIA ser and emi
@@ -714,6 +750,23 @@ EMD (NCEM)
 This EMD format was developed by Colin Ophus at the National Center for
 Electron Microscopy (NCEM). See http://emdatasets.com/ for more information.
 
+For files containing several datasets, the `dataset_name` argument can be
+used to select a specific one:
+
+.. code-block:: python
+
+    >>> s = hs.load("adatafile.emd", dataset_name="/experimental/science_data_1")
+
+
+Or several by using a list:
+
+.. code-block:: python
+
+    >>> s = hs.load("adatafile.emd",
+    ...             dataset_name=[
+    ...                 "/experimental/science_data_1",
+    ...                 "/experimental/science_data_1"])
+
 
 EMD (FEI)
 ^^^^^^^^^
@@ -741,9 +794,13 @@ Note also that loading a spectrum image can be slow if `numba
 
 .. note::
 
-    To enable lazy loading of spectrum images in this format it may be
+    To enable lazy loading of EDX spectrum images in this format it may be
     necessary to install `sparse <http://sparse.pydata.org/en/latest/>`_. See
-    See also :ref:`install-with-python-installers`.
+    See also :ref:`install-with-python-installers`. Note also that currently
+    only lazy uncompression rather than lazy loading is implemented. This
+    means that it is not currently possible to read EDX SI FEI EMD files with
+    size bigger than the available memory.
+
 
 
 .. warning::

@@ -93,8 +93,8 @@ class Line2DWidget(ResizableDraggableWidgetBase):
     FUNC_A = 32         # Resize/rotate by first vertex
     FUNC_B = 64         # Resize/rotate by second vertex
 
-    def __init__(self, axes_manager):
-        super(Line2DWidget, self).__init__(axes_manager)
+    def __init__(self, axes_manager, **kwargs):
+        super(Line2DWidget, self).__init__(axes_manager, **kwargs)
         self.linewidth = 1
         self.radius_move = self.radius_resize = 5
         self.radius_rotate = 15
@@ -255,6 +255,7 @@ class Line2DWidget(ResizableDraggableWidgetBase):
             animated=self.blit,
             lw=self.linewidth,
             c=self.color,
+            alpha=self.alpha,
             marker='s',
             markersize=self.radius_resize,
             mew=0.1,

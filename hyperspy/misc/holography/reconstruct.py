@@ -49,28 +49,41 @@ def estimate_sideband_position(
     """
     sb_position = (0, 0)
     f_freq = freq_array(holo_data.shape, holo_sampling)
-    # If aperture radius of centerband is not given, it will be set to 5 % of the Nyquist frequ.:
+    # If aperture radius of centerband is not given, it will be set to 5 % of
+    # the Nyquist frequ.:
     if central_band_mask_radius is None:
         central_band_mask_radius = 0.05 * np.max(f_freq)
     # A small aperture masking out the centerband.
     ap_cb = 1.0 - aperture_function(f_freq, central_band_mask_radius, 1e-6)
     if not high_cf:  # Cut out higher frequencies, if necessary:
-        ap_cb *= aperture_function(f_freq, np.max(f_freq) / (2 * np.sqrt(2)), 1e-6)
+        ap_cb *= aperture_function(f_freq,
+                                   np.max(f_freq) / (2 * np.sqrt(2)),
+                                   1e-6)
     # Imitates 0:
     fft_holo = fft2(holo_data) / np.prod(holo_data.shape)
     fft_filtered = fft_holo * ap_cb
     # Sideband position in pixels referred to unshifted FFT
-    cb_position = (fft_filtered.shape[0] // 2, fft_filtered.shape[1] // 2)  # cb: center band
+    cb_position = (
+        fft_filtered.shape[0] //
+        2,
+        fft_filtered.shape[1] //
+        2)  # cb: center band
     if sb == 'lower':
         fft_sb = np.abs(fft_filtered[:cb_position[0], :])
-        sb_position = np.asarray(np.unravel_index(fft_sb.argmax(), fft_sb.shape))
+        sb_position = np.asarray(
+            np.unravel_index(
+                fft_sb.argmax(),
+                fft_sb.shape))
     elif sb == 'upper':
         fft_sb = np.abs(fft_filtered[cb_position[0]:, :])
         sb_position = (np.unravel_index(fft_sb.argmax(), fft_sb.shape))
         sb_position = np.asarray(np.add(sb_position, (cb_position[0], 0)))
     elif sb == 'left':
         fft_sb = np.abs(fft_filtered[:, :cb_position[1]])
-        sb_position = np.asarray(np.unravel_index(fft_sb.argmax(), fft_sb.shape))
+        sb_position = np.asarray(
+            np.unravel_index(
+                fft_sb.argmax(),
+                fft_sb.shape))
     elif sb == 'right':
         fft_sb = np.abs(fft_filtered[:, cb_position[1]:])
         sb_position = (np.unravel_index(fft_sb.argmax(), fft_sb.shape))

@@ -4,7 +4,6 @@ from hyperspy import signals
 from hyperspy import components1d
 from hyperspy.decorators import lazifyTestClass
 
-
 @lazifyTestClass
 class TestRemoveBackground1DGaussian:
 

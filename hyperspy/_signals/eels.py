@@ -849,10 +849,13 @@ class EELSSpectrum_mixin:
                 '_after_R-L_deconvolution_%iiter' % iterations)
         return ds
 
-    def _are_microscope_parameters_missing(self):
-        """Check if the EELS parameters necessary to calculate the GOS
+    def _are_microscope_parameters_missing(self, ignore_parameters=[]):
+        """
+        Check if the EELS parameters necessary to calculate the GOS
         are defined in metadata. If not, in interactive mode
-        raises an UI item to fill the values"""
+        raises an UI item to fill the values.
+        The `ignore_parameters` list can be to ignore parameters.
+        """
         must_exist = (
             'Acquisition_instrument.TEM.convergence_angle',
             'Acquisition_instrument.TEM.beam_energy',
@@ -860,7 +863,8 @@ class EELSSpectrum_mixin:
         missing_parameters = []
         for item in must_exist:
             exists = self.metadata.has_item(item)
-            if exists is False:
+            if exists is False and item.split(
+                    '.')[-1] not in ignore_parameters:
                 missing_parameters.append(item)
         if missing_parameters:
             _logger.info("Missing parameters {}".format(missing_parameters))
@@ -1128,19 +1132,11 @@ class EELSSpectrum_mixin:
             'electron mass energy equivalent in MeV') * 1e3  # keV
 
         # Mapped parameters
-        try:
-            e0 = s.metadata.Acquisition_instrument.TEM.beam_energy
-        except BaseException:
-            raise AttributeError("Please define the beam energy."
-                                 "You can do this e.g. by using the "
-                                 "set_microscope_parameters method")
-        try:
-            beta = s.metadata.Acquisition_instrument.TEM.Detector.\
-                EELS.collection_angle
-        except BaseException:
-            raise AttributeError("Please define the collection semi-angle. "
-                                 "You can do this e.g. by using the "
-                                 "set_microscope_parameters method")
+        self._are_microscope_parameters_missing(
+            ignore_parameters=['convergence_angle'])
+        e0 = s.metadata.Acquisition_instrument.TEM.beam_energy
+        beta = s.metadata.Acquisition_instrument.TEM.Detector.EELS.\
+            collection_angle
 
         axis = s.axes_manager.signal_axes[0]
         eaxis = axis.axis.copy()
@@ -1207,7 +1203,7 @@ class EELSSpectrum_mixin:
                 K = (Im / eaxis).sum(axis=axis.index_in_array, keepdims=True) \
                     * axis.scale
                 K = (K / (np.pi / 2) / (1 - 1. / n ** 2))
-                #K = (K / (np.pi / 2) / (1 - 1. / n ** 2)).reshape(
+                # K = (K / (np.pi / 2) / (1 - 1. / n ** 2)).reshape(
                 #    np.insert(K.shape, axis.index_in_array, 1))
                 # Calculate the thickness only if possible and required
                 if zlp is not None and (full_output is True or
@@ -1352,12 +1348,17 @@ class EELSSpectrum_mixin:
         m = out or m
         time_factor = np.prod([factors[axis.index_in_array]
                                for axis in m.axes_manager.navigation_axes])
-        mdeels = m.metadata.Acquisition_instrument.TEM.Detector.EELS
+        mdeels = m.metadata
         m.get_dimensions_from_data()
-        if "Acquisition_instrument.TEM.Detector.EELS.dwell_time" in m.metadata:
-            mdeels.dwell_time *= time_factor
-        if "Acquisition_instrument.TEM.Detector.EELS.exposure" in m.metadata:
-            mdeels.exposure *= time_factor
+        if m.metadata.get_item("Acquisition_instrument.TEM.Detector.EELS"):
+            mdeels = m.metadata.Acquisition_instrument.TEM.Detector.EELS
+            if "dwell_time" in mdeels:
+                mdeels.dwell_time *= time_factor
+            if "exposure" in mdeels:
+                mdeels.exposure *= time_factor
+        else:
+            _logger.info('No dwell_time could be found in the metadata so '
+                         'this has not been updated.')
         if out is None:
             return m
         else:
