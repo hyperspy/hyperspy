@@ -3,9 +3,8 @@ import numpy as np
 from hyperspy import signals
 from hyperspy import components1d
 from hyperspy.decorators import lazifyTestClass
-from hyperspy.misc.test_utils import update_close_figure
-
 from hyperspy._signals.signal1d import BackgroundRemoval
+
 
 @lazifyTestClass
 class TestRemoveBackground1DGaussian:
@@ -62,7 +61,7 @@ class TestRemoveBackground1DPowerLaw:
             show_progressbar=None)
         assert np.allclose(s1.data, np.zeros(len(s1.data)), atol=60)
 
-#@update_close_figure
+
 def test_BackgroundRemoval_gui():
     # create a signal
     axd = {'name':'some',
