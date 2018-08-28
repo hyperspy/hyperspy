@@ -279,7 +279,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         Parameters
         ----------
         dictionary : {None, dict}, optional
-            A dictionary to be used to recreate a model. Usually generated 
+            A dictionary to be used to recreate a model. Usually generated
             using :meth:`hyperspy.model.as_dictionary`
 
         Returns
@@ -625,7 +625,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             converted to indices.
         convert_units : bool
             Default is False
-            If True, convert the signal units using the 'convert_to_units' 
+            If True, convert the signal units using the 'convert_to_units'
             method of the 'axes_manager'. If False, does nothing.
 
         See also:
@@ -657,8 +657,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
         Notes
         -----
-            The fulcrum of the linear ramp is at the origin and the slopes are 
-            given in units of the axis with the according scale taken into 
+            The fulcrum of the linear ramp is at the origin and the slopes are
+            given in units of the axis with the according scale taken into
             account. Both are available via the `axes_manager` of the signal.
 
         """

@@ -388,7 +388,7 @@ class ModifiableSpanSelector(SpanSelector):
         self.rect.contains = self.contains
 
     def update(self, *args):
-        # Override the SpanSelector `update` method to blit properly all 
+        # Override the SpanSelector `update` method to blit properly all
         # artirts before we go to "modify mode" in `set_initial`.
         self.draw_patch()
 

@@ -56,7 +56,7 @@ def test_read_convert_units():
     assert_allclose(s.axes_manager[0].scale, 0.33)
     assert_allclose(s.axes_manager[0].offset, 50077.68)
     assert s.axes_manager[0].units == 's'
-    
+
     s = hs.load(file1, convert_units=False)
     assert_allclose(s.axes_manager[0].scale, 0.33)
     assert_allclose(s.axes_manager[0].offset, 50077.68)

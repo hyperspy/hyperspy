@@ -64,6 +64,7 @@ components = DummyComponentsContainer()
 components.__dict__.update(components1d.__dict__)
 components.__dict__.update(components2d.__dict__)
 
+
 def reconstruct_component(comp_dictionary, **init_args):
     _id = comp_dictionary['_id_name']
     try:
@@ -813,7 +814,6 @@ class BaseModel(list):
         """
         self.p0 = array
         self._fetch_values_from_p0(p_std=array_std)
-
 
     def _fetch_values_from_p0(self, p_std=None):
         """Fetch the parameter values from the output of the optimizer `self.p0`

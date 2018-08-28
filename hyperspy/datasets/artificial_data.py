@@ -31,7 +31,7 @@ def get_low_loss_eels_signal():
 
     data = zero_loss.function(x)
     data += plasmon.function(x)
-    data += np.random.random(size=len(x))*0.7
+    data += np.random.random(size=len(x)) * 0.7
 
     s = EELSSpectrum(data)
     s.axes_manager[0].offset = x[0]
@@ -40,7 +40,7 @@ def get_low_loss_eels_signal():
     s.axes_manager[0].name = 'Electron energy loss'
     s.axes_manager[0].units = 'eV'
     s.set_microscope_parameters(
-            beam_energy=200, convergence_angle=26, collection_angle=20)
+        beam_energy=200, convergence_angle=26, collection_angle=20)
     return s
 
 
@@ -75,7 +75,7 @@ def get_core_loss_eels_signal():
     data = arctan.function(x)
     data += mn_l3_g.function(x)
     data += mn_l2_g.function(x)
-    data += np.random.random(size=len(x))*0.7
+    data += np.random.random(size=len(x)) * 0.7
 
     s = EELSSpectrum(data)
     s.axes_manager[0].offset = x[0]
@@ -83,7 +83,7 @@ def get_core_loss_eels_signal():
     s.axes_manager[0].name = 'Electron energy loss'
     s.axes_manager[0].units = 'eV'
     s.set_microscope_parameters(
-            beam_energy=200, convergence_angle=26, collection_angle=20)
+        beam_energy=200, convergence_angle=26, collection_angle=20)
     return s
 
 
@@ -117,7 +117,7 @@ def get_low_loss_eels_line_scan_signal():
     data = np.zeros((12, len(x)))
     for i in range(12):
         data[i] += data_signal
-        data[i] += np.random.random(size=len(x))*0.7
+        data[i] += np.random.random(size=len(x)) * 0.7
 
     s = EELSSpectrum(data)
     s.axes_manager.signal_axes[0].offset = x[0]
@@ -128,7 +128,7 @@ def get_low_loss_eels_line_scan_signal():
     s.axes_manager.navigation_axes[0].name = 'Probe position'
     s.axes_manager.navigation_axes[0].units = 'nm'
     s.set_microscope_parameters(
-            beam_energy=200, convergence_angle=26, collection_angle=20)
+        beam_energy=200, convergence_angle=26, collection_angle=20)
     return s
 
 
@@ -173,7 +173,7 @@ def get_core_loss_eels_line_scan_signal():
         data[i] += arctan_fe.function(x) * fe_intensity[i]
         data[i] += fe_l3_g.function(x) * fe_intensity[i]
         data[i] += fe_l2_g.function(x) * fe_intensity[i]
-        data[i] += np.random.random(size=len(x))*0.7
+        data[i] += np.random.random(size=len(x)) * 0.7
 
     s = EELSSpectrum(data)
     s.axes_manager.signal_axes[0].offset = x[0]
@@ -183,7 +183,7 @@ def get_core_loss_eels_line_scan_signal():
     s.axes_manager.navigation_axes[0].name = 'Probe position'
     s.axes_manager.navigation_axes[0].units = 'nm'
     s.set_microscope_parameters(
-            beam_energy=200, convergence_angle=26, collection_angle=20)
+        beam_energy=200, convergence_angle=26, collection_angle=20)
     return s
 
 
