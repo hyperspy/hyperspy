@@ -57,6 +57,12 @@ from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 
 _logger = logging.getLogger(__name__)
 
+try:
+    import numexpr
+    NUMEXPR_INSTALLED = True
+except:
+    NUMEXPR_INSTALLED = False
+
 
 def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                       medfilt_radius=5, maxpeakn=30000, peakgroup=10,
@@ -1057,11 +1063,7 @@ _spikes_diagnosis,
             show_progressbar=None, display=True, toolkit=None):
 
         if module is None:
-            try:
-                import numexpr
-                module = "numexpr"
-            except:
-                module = "numpy"
+            module = "numexpr" if NUMEXPR_INSTALLED else "numpy"
         self._check_signal_dimension_equals_one()
         if signal_range == 'interactive':
             br = BackgroundRemoval(self, background_type=background_type,

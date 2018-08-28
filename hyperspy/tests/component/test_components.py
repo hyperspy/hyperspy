@@ -24,6 +24,7 @@ import pytest
 import hyperspy.api as hs
 from hyperspy.models.model1d import Model1D
 from hyperspy.misc.test_utils import ignore_warning
+from hyperspy._signals.signal1d import NUMEXPR_INSTALLED
 
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
@@ -78,6 +79,8 @@ class TestDoublePowerLaw:
     @pytest.mark.parametrize(("module"), ("numexpr", "numpy"))
     @pytest.mark.parametrize(("binned"), (True, False))
     def test_fit(self, module, binned):
+        if module == 'numexpr' and not NUMEXPR_INSTALLED:
+            pytest.skip("The numexpr package is not installed.")
         self.m.signal.metadata.Signal.binned = binned
         s = self.m.as_signal(show_progressbar=None, parallel=False)
         assert s.metadata.Signal.binned == binned
