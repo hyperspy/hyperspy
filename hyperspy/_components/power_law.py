@@ -20,6 +20,7 @@ import numpy as np
 
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 from hyperspy._components.expression import Expression
+from hyperspy import signals
 
 
 class PowerLaw(Expression):
@@ -113,11 +114,17 @@ class PowerLaw(Expression):
         if s._lazy:
             import dask.array as da
             log = da.log
-            I1 = s.isig[i1:i3].integrate1D(2j).data.astype("float")
-            I2 = s.isig[i3:i2].integrate1D(2j).data.astype("float")
+            I1 = s.isig[i1:i3].integrate1D(2j).data
+            I2 = s.isig[i3:i2].integrate1D(2j).data
         else:
-            I1 = s.data[..., i1:i3].sum(-1)
-            I2 = s.data[..., i3:i2].sum(-1)
+            shape = s.data.shape[:-1]
+            I1_s = signals.BaseSignal(np.empty(shape, dtype='float'))
+            I2_s = signals.BaseSignal(np.empty(shape, dtype='float'))
+            # Use the `out` parameters to avoid doing the deepcopy
+            s.isig[i1:i3].integrate1D(2j, out=I1_s)
+            s.isig[i3:i2].integrate1D(2j, out=I2_s)
+            I1 = I1_s.data
+            I2 = I2_s.data
             log = np.log
         try:
             r = 2 * log(I1 / I2) / log(x2 / x1)
