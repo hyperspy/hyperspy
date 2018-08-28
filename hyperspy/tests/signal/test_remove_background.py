@@ -22,7 +22,6 @@ import pytest
 from hyperspy import signals
 from hyperspy import components1d
 from hyperspy.decorators import lazifyTestClass
-from hyperspy._signals.signal1d import NUMEXPR_INSTALLED
 
 
 @lazifyTestClass
@@ -65,14 +64,10 @@ class TestRemoveBackground1DPowerLaw:
         self.signal.axes_manager[0].offset = 100
         self.signal.metadata.Signal.binned = False
 
-    @pytest.mark.parametrize(("module"), (None, "numpy", "numexpr"))
-    def test_background_remove_pl(self, module):
-        if module == 'numexpr' and not NUMEXPR_INSTALLED:
-            pytest.skip("The numexpr package is not installed.")
+    def test_background_remove_pl(self):
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='PowerLaw',
-            module=module,
             show_progressbar=None)
         # since we compare to zero, rtol can't be used (see np.allclose doc)
         atol = 0.04*abs(self.signal.data).max()

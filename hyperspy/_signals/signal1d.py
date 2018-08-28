@@ -57,12 +57,6 @@ from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 
 _logger = logging.getLogger(__name__)
 
-try:
-    import numexpr
-    NUMEXPR_INSTALLED = True
-except:
-    NUMEXPR_INSTALLED = False
-
 
 def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                       medfilt_radius=5, maxpeakn=30000, peakgroup=10,
@@ -1059,24 +1053,20 @@ _spikes_diagnosis,
             background_type='Power Law',
             polynomial_order=2,
             fast=True,
-            module=None,
             show_progressbar=None, display=True, toolkit=None):
 
-        if module is None:
-            module = "numexpr" if NUMEXPR_INSTALLED else "numpy"
         self._check_signal_dimension_equals_one()
         if signal_range == 'interactive':
             br = BackgroundRemoval(self, background_type=background_type,
                                    polynomial_order=polynomial_order,
                                    fast=fast,
-                                   module=module,
                                    show_progressbar=show_progressbar)
             return br.gui(display=display, toolkit=toolkit)
         else:
             if background_type in ('PowerLaw', 'Power Law'):
-                background_estimator = components1d.PowerLaw(module=module)
+                background_estimator = components1d.PowerLaw()
             elif background_type == 'Gaussian':
-                background_estimator = components1d.Gaussian(module=module)
+                background_estimator = components1d.Gaussian()
             elif background_type == 'Offset':
                 background_estimator = components1d.Offset()
             elif background_type == 'Polynomial':

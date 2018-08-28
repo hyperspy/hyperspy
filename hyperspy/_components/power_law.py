@@ -34,7 +34,7 @@ class PowerLaw(Expression):
 
     """
 
-    def __init__(self, A=10e5, r=3., origin=0., **kwargs):
+    def __init__(self, A=10e5, r=3., origin=0., module="numexpr", **kwargs):
         super(PowerLaw, self).__init__(
             expression="A *( x - origin) ** -r",
             name="PowerLaw",
@@ -42,6 +42,7 @@ class PowerLaw(Expression):
             r=r,
             origin=origin,
             position="origin",
+            module=module,
             autodoc=False,
             **kwargs,
         )
