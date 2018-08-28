@@ -278,6 +278,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
              scalebar=True,
              scalebar_color="white",
              axes_ticks=None,
+             axes_off=False,
              saturated_pixels=0,
              vmin=None,
              vmax=None,
@@ -295,6 +296,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             scalebar=scalebar,
             scalebar_color=scalebar_color,
             axes_ticks=axes_ticks,
+            axes_off=axes_off,
             saturated_pixels=saturated_pixels,
             vmin=vmin,
             vmax=vmax,
@@ -306,14 +308,17 @@ class Signal2D(BaseSignal, CommonSignal2D):
 
     def create_model(self, dictionary=None):
         """Create a model for the current signal
+
         Parameters
-        __________
+        ----------
         dictionary : {None, dict}, optional
             A dictionary to be used to recreate a model. Usually generated
             using :meth:`hyperspy.model.as_dictionary`
+
         Returns
         -------
         A Model class
+
         """
         from hyperspy.models.model2d import Model2D
         return Model2D(self, dictionary=dictionary)
@@ -556,6 +561,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             The order of the spline interpolation. Default is 1, linear
             interpolation.
         parallel : {None, bool}
+
         Returns
         -------
         shifts : np.array
@@ -658,13 +664,18 @@ class Signal2D(BaseSignal, CommonSignal2D):
             return shifts
 
     def crop_image(self, top=None, bottom=None,
-                   left=None, right=None):
+                   left=None, right=None, convert_units=False):
         """Crops an image in place.
 
-        top, bottom, left, right : int or float
-
+        Parameters
+        ----------
+        top, bottom, left, right : {int | float}
             If int the values are taken as indices. If float the values are
             converted to indices.
+        convert_units : bool
+            Default is False
+            If True, convert the signal units using the 'convert_to_units'
+            method of the 'axes_manager'. If False, does nothing.
 
         See also:
         ---------
@@ -678,6 +689,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
         self.crop(self.axes_manager.signal_axes[0].index_in_axes_manager,
                   left,
                   right)
+        if convert_units:
+            self.axes_manager.convert_units('signal')
 
     def add_ramp(self, ramp_x, ramp_y, offset=0):
         """Add a linear ramp to the signal.
@@ -690,11 +703,12 @@ class Signal2D(BaseSignal, CommonSignal2D):
             Slope of the ramp in y-direction.
         offset: float, optional
             Offset of the ramp at the signal fulcrum.
+
         Notes
         -----
-            The fulcrum of the linear ramp is at the origin and the slopes are given in units of
-            the axis with the according scale taken into account. Both are available via the
-            `axes_manager` of the signal.
+            The fulcrum of the linear ramp is at the origin and the slopes are
+            given in units of the axis with the according scale taken into
+            account. Both are available via the `axes_manager` of the signal.
 
         """
         yy, xx = np.indices(self.axes_manager._signal_shape_in_array)

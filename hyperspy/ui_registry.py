@@ -174,6 +174,7 @@ def get_partial_gui(toolkey):
                        toolkit=toolkit, **kwargs)
     return pg
 
+
 DISPLAY_DT = """display: bool
     If True, display the user interface widgets. If False, return the widgets
     container in a dictionary, usually for customisation or testing."""

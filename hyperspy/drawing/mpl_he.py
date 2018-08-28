@@ -146,8 +146,9 @@ class MPL_HyperExplorer(object):
         if self.navigator_plot:
             self.navigator_plot.close()
 
+    @property
     def is_active(self):
-        if self.signal_plot and self.signal_plot.figure:
+        if self.signal_plot and self.signal_plot.figure is not None:
             return True
         else:
             return False

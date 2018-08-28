@@ -46,7 +46,6 @@ full_support = False
 # Recognised file extension
 file_extensions = ('dm3', 'DM3', 'dm4', 'DM4')
 default_extension = 0
-
 # Writing features
 writes = False
 # ----------------------
@@ -548,10 +547,11 @@ class ImageObject(object):
 
     @property
     def title(self):
-        if "Name" in self.imdict:
-            return self.imdict.Name
-        else:
-            return ''
+        title = self.imdict.get_item("Name", "")
+        # ``if title else ""`` below is there to account for when Name
+        # contains an empty list.
+        # See https://github.com/hyperspy/hyperspy/issues/1937
+        return title if title else ""
 
     @property
     def record_by(self):
