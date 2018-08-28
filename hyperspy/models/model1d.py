@@ -54,7 +54,7 @@ class ComponentFit(SpanSelectorInSignal1D):
         self.only_current = only_current
         if signal_range == "interactive":
             if (not hasattr(self.model, '_plot') or self.model._plot is None or
-                not self.model._plot.is_active):
+                    not self.model._plot.is_active):
                 self.model.plot()
             self.span_selector_switch(on=True)
 

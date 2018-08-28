@@ -165,7 +165,7 @@ def copy_slice_from_whitelist(
 class SpecialSlicers(object):
 
     def __init__(self, obj, isNavigation):
-        """Create a slice of the signal. The indexing supports integer, 
+        """Create a slice of the signal. The indexing supports integer,
         decimal numbers or strings (containing a decimal number and an units).
 
         >>> s = hs.signals.Signal1D(np.arange(10))

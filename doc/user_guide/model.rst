@@ -641,34 +641,37 @@ algorithms, see the
 
 .. table:: Features of curve fitting optimizers.
 
-    +--------------------------+--------+------------------+------------+--------+
-    | Optimizer                | Bounds | Error estimation | Method     | Type   |
-    +==========================+========+==================+============+========+
-    | "leastsq"                |  Yes   | Yes              | 'ls'       | local  |
-    +--------------------------+--------+------------------+------------+--------+
-    | "mpfit"                  |  Yes   | Yes              | 'ls'       | local  |
-    +--------------------------+--------+------------------+------------+--------+
-    | "odr"                    |  No    | Yes              | 'ls'       | local  |
-    +--------------------------+--------+------------------+------------+--------+
-    | "Nelder-Mead"            |  No    | No               | 'ls', 'ml' | local  |
-    +--------------------------+--------+------------------+------------+--------+
-    | "Powell"                 |  No    | No               | 'ls', 'ml' | local  |
-    +--------------------------+--------+------------------+------------+--------+
-    | "CG"                     |  No    | No               | 'ls', 'ml' | local  |
-    +--------------------------+--------+------------------+------------+--------+
-    | "BFGS"                   |  No    | No               | 'ls', 'ml' | local  |
-    +--------------------------+--------+------------------+------------+--------+
-    | "Newton-CG"              |  No    | No               | 'ls', 'ml' | local  |
-    +--------------------------+--------+------------------+------------+--------+
-    | "L-BFGS-B"               |  Yes   | No               | 'ls', 'ml' | local  |
-    +--------------------------+--------+------------------+------------+--------+
-    | "TNC"                    |  Yes   | No               | 'ls', 'ml' | local  |
-    +--------------------------+--------+------------------+------------+--------+
-    | "Differential Evolution" |  Yes   | No               | 'ls', 'ml' | global |
-    +--------------------------+--------+------------------+------------+--------+
+    +--------------------------+--------+------------------+----------------------+--------+
+    | Optimizer                | Bounds | Error estimation | Method               | Type   |
+    +==========================+========+==================+======================+========+
+    | "leastsq"                |  Yes   | Yes              | 'ls'                 | local  |
+    +--------------------------+--------+------------------+----------------------+--------+
+    | "mpfit"                  |  Yes   | Yes              | 'ls'                 | local  |
+    +--------------------------+--------+------------------+----------------------+--------+
+    | "odr"                    |  No    | Yes              | 'ls'                 | local  |
+    +--------------------------+--------+------------------+----------------------+--------+
+    | "Nelder-Mead"            |  No    | No               | 'ls', 'ml', 'custom' | local  |
+    +--------------------------+--------+------------------+----------------------+--------+
+    | "Powell"                 |  No    | No               | 'ls', 'ml', 'custom' | local  |
+    +--------------------------+--------+------------------+----------------------+--------+
+    | "CG"                     |  No    | No               | 'ls', 'ml', 'custom' | local  |
+    +--------------------------+--------+------------------+----------------------+--------+
+    | "BFGS"                   |  No    | No               | 'ls', 'ml', 'custom' | local  |
+    +--------------------------+--------+------------------+----------------------+--------+
+    | "Newton-CG"              |  No    | No               | 'ls', 'ml', 'custom' | local  |
+    +--------------------------+--------+------------------+----------------------+--------+
+    | "L-BFGS-B"               |  Yes   | No               | 'ls', 'ml', 'custom' | local  |
+    +--------------------------+--------+------------------+----------------------+--------+
+    | "TNC"                    |  Yes   | No               | 'ls', 'ml', 'custom' | local  |
+    +--------------------------+--------+------------------+----------------------+--------+
+    | "Differential Evolution" |  Yes   | No               | 'ls', 'ml', 'custom' | global |
+    +--------------------------+--------+------------------+----------------------+--------+
 
 
-The following example shows how to perform least squares with error estimation.
+Least squares with error estimation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following example shows how to perfom least squares optimisation with error estimation.
 
 First we create data consisting of a line line ``y = a*x + b`` with ``a = 1``
 and ``b = 100`` and we add white noise to it:
@@ -712,6 +715,10 @@ However, the value won't be correct unless an accurate value of the variance is
 defined in ``metadata.Signal.Noise_properties.variance``. See
 :ref:`signal.noise_properties` for more information.
 
+
+Weighted least squares with error estimation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 In the following example, we add poissonian noise to the data instead of
 gaussian noise and proceed to fit as in the previous example.
 
@@ -744,6 +751,10 @@ approximation in most cases.
    >>> line.coefficients.std
    (0.0055752036447948173, 0.46950832982673557)
 
+
+Maximum likelihood optimisation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 We can use Poisson maximum likelihood estimation
 instead, which is an unbiased estimator for poissonian noise.
 To do so, we use a general optimizer called "Nelder-Mead".
@@ -753,6 +764,96 @@ To do so, we use a general optimizer called "Nelder-Mead".
    >>> m.fit(fitter="Nelder-Mead", method="ml")
    >>> line.coefficients.value
    (1.0030718094185611, -0.63590210946134107)
+
+Custom optimisations
+^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 1.4 Custom optimiser functions
+
+Instead of the in-built least squares (``'ls'``) and maximum likelihood
+(``'ml'``) optimisation functions, a custom function can be passed to the
+model:
+
+.. code-block:: python
+
+    >>> def my_custom_function(model, values, data, weights=None):
+    ...    """
+    ...    Parameters
+    ...    ----------
+    ...    model : Model instance
+    ...        the model that is fitted.
+    ...    values : np.ndarray
+    ...        A one-dimensional array with free parameter values suggested by the
+    ...        optimiser (that are not yet stored in the model).
+    ...    data : np.ndarray
+    ...        A one-dimensional array with current data that is being fitted.
+    ...    weights : {np.ndarray, None}
+    ...        An optional one-dimensional array with parameter weights.
+    ...
+    ...    Returns
+    ...    -------
+    ...    score : float
+    ...        A signle float value, representing a score of the fit, with
+    ...        lower values corresponding to better fits.
+    ...    """
+    ...    # Almost any operation can be performed, for example:
+    ...    # First we store the suggested values in the model
+    ...    model.fetch_values_from_array(values)
+    ...
+    ...    # Evaluate the current model
+    ...    cur_value = model(onlyactive=True)
+    ...
+    ...    # Calculate the weighted difference with data
+    ...    if weights is None:
+    ...        weights = 1
+    ...    difference = (data - cur_value) * weights
+    ...
+    ...    # Return squared and summed weighted difference
+    ...    return (difference**2).sum()
+    >>> m.fit(fitter='TNC', method='custom', min_function=my_custom_function)
+
+If the optimiser requires a gradient estimation function, it can be similarly
+passed, using the following signature:
+
+.. code-block:: python
+
+    >>> def my_custom_gradient_function(model, values, data, weights=None):
+    ...    """
+    ...    Parameters
+    ...    ----------
+    ...    model : Model instance
+    ...        the model that is fitted.
+    ...    values : np.ndarray
+    ...        A one-dimensional array with free parameter values suggested by the
+    ...        optimiser (that are not yet stored in the model).
+    ...    data : np.ndarray
+    ...        A one-dimensional array with current data that is being fitted.
+    ...    weights : {np.ndarray, None}
+    ...        An optional one-dimensional array with parameter weights.
+    ...
+    ...    Returns
+    ...    -------
+    ...    gradients : np.ndarray
+    ...        a one-dimensional array of gradients, the size of `values`,
+    ...        containing each parameter gradient with the given values
+    ...    """
+    ...    # As an example, estimate maximum likelihood gradient:
+    ...    model.fetch_values_from_array(values)
+    ...    cur_value = model(onlyactive=True)
+    ...
+    ...    # We use in-built jacobian estimation
+    ...    jac = model._jacobian(values, data)
+    ...
+    ...    return -(jac * (data / cur_value - 1)).sum(1)
+    >>> m.fit(method='custom',
+    ...       grad=True,
+    ...       fitter='BFGS', # an optimiser that requires gradient estimation
+    ...       min_function=my_custom_function,
+    ...       min_function_grad=my_custom_gradient_function)
+
+
+Bounded optimisation
+^^^^^^^^^^^^^^^^^^^^
 
 Problems of ill-conditioning and divergence can be ameliorated by using bounded
 optimization. Currently, not all optimizers support bounds - see the
@@ -780,7 +881,8 @@ component using mpfit and bounds on the ``centre`` parameter.
             A   99918.7
             centre  9.99976
 
-
+Goodness of fit
+^^^^^^^^^^^^^^^
 
 .. versionadded:: 0.7 chi-squared and reduced chi-squared
 

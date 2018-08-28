@@ -39,6 +39,7 @@ def _get_example(date, time, time_zone=None):
         dt = parser.parse(iso)
     return md, dt, iso
 
+
 md1, dt1, iso1 = _get_example('2014-12-27', '00:00:00', 'UTC')
 serial1 = 42000.00
 

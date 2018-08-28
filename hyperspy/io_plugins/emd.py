@@ -54,7 +54,7 @@ reads_images = True
 reads_spectrum = True
 reads_spectrum_image = True
 # Writing features
-writes = True # Only Berkeley emd
+writes = True  # Only Berkeley emd
 EMD_VERSION = '0.2'
 # ----------------------
 
@@ -798,7 +798,7 @@ class FeiEMDReader(object):
                 'metadata': md,
                 'original_metadata': original_metadata,
                 'mapping': self._get_mapping(map_selected_element=False,
-                        parse_individual_EDS_detector_metadata=False)}
+                                             parse_individual_EDS_detector_metadata=False)}
 
     def _parse_frame_time(self, original_metadata, factor=1):
         try:
@@ -969,7 +969,7 @@ class FeiEMDReader(object):
             original_metadata = stream.original_metadata
             original_metadata.update(self.original_metadata)
             self.dictionaries.append({'data': stream.spectrum_image,
-    'axes': axes,
+                                      'axes': axes,
                                       'metadata': md,
                                       'original_metadata': original_metadata,
                                       'mapping': self._get_mapping(
@@ -1004,15 +1004,15 @@ class FeiEMDReader(object):
         meta_gen['original_filename'] = os.path.split(self.filename)[1]
         if self.detector_name is not None:
             meta_gen['title'] = self.detector_name
-        # We have only one entry in the original_metadata, so we can't use 
-        # the mapping of the original_metadata to set the date and time in 
+        # We have only one entry in the original_metadata, so we can't use
+        # the mapping of the original_metadata to set the date and time in
         # the metadata: need to set it manually here
         try:
             if 'AcquisitionStartDatetime' in om['Acquisition'].keys():
-                unix_time = om['Acquisition']['AcquisitionStartDatetime']['DateTime']              
+                unix_time = om['Acquisition']['AcquisitionStartDatetime']['DateTime']
             # Workaround when the 'AcquisitionStartDatetime' key is missing
             # This timestamp corresponds to when the data is stored
-            elif (not isinstance(om['CustomProperties'], str) and 
+            elif (not isinstance(om['CustomProperties'], str) and
                   'Detectors[BM-Ceta].TimeStamp' in om['CustomProperties'].keys()):
                 unix_time = float(
                     om['CustomProperties']['Detectors[BM-Ceta].TimeStamp']['value']) / 1E6
