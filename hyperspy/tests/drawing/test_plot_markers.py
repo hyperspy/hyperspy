@@ -473,7 +473,6 @@ def test_plot_eds_lines():
     s.axes_manager.navigation_axes[0].index = 1
     return s._plot.signal_plot.figure
 
-@update_close_figure
 def test_iterate_markers():
     from skimage.feature import peak_local_max
     import scipy.misc
@@ -510,4 +509,3 @@ def test_iterate_markers():
             assert mo.get_data_position('text')  == mi.get_data_position('text')
             assert mo.marker_properties['color'] == \
                                                    mi.marker_properties['color']
-    return ims
