@@ -782,21 +782,19 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             return
         if self.background_estimator is None:
             return
-        if self.bg_line is None and \
-            self.background_estimator.estimate_parameters(
+        res = self.background_estimator.estimate_parameters(
                 self.signal, self.ss_left_value,
                 self.ss_right_value,
-                only_current=True) is True:
-            self.create_background_line()
+                only_current=True)
+        if self.bg_line is None:
+            if res:
+                self.create_background_line()
         else:
             self.bg_line.update()
         if self.plot_remainder:
-            if self.rm_line is None and \
-                self.background_estimator.estimate_parameters(
-                    self.signal, self.ss_left_value,
-                    self.ss_right_value,
-                    only_current=True) is True:
-                self.create_remainder_line()
+            if self.rm_line is None:
+                if res:
+                    self.create_remainder_line()
             else:
                 self.rm_line.update()
 

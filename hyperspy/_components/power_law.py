@@ -17,10 +17,14 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import logging
 
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 from hyperspy._components.expression import Expression
 from hyperspy import signals
+
+
+_logger = logging.getLogger(__name__)
 
 
 class PowerLaw(Expression):
@@ -126,18 +130,21 @@ class PowerLaw(Expression):
             I1 = I1_s.data
             I2 = I2_s.data
             log = np.log
-        try:
-            r = 2 * log(I1 / I2) / log(x2 / x1)
-            k = 1 - r
-            A = k * I2 / (x2 ** k - x3 ** k)
-            if s._lazy:
-                r = r.map_blocks(np.nan_to_num)
-                A = A.map_blocks(np.nan_to_num)
-            else:
-                r = np.nan_to_num(r)
-                A = np.nan_to_num(A)
-        except BaseException:
-            return False
+        with np.errstate(divide='raise'):
+            try:
+                r = 2 * log(I1 / I2) / log(x2 / x1)                    
+                k = 1 - r
+                A = k * I2 / (x2 ** k - x3 ** k)
+                if s._lazy:
+                    r = r.map_blocks(np.nan_to_num)
+                    A = A.map_blocks(np.nan_to_num)
+                else:
+                    r = np.nan_to_num(r)
+                    A = np.nan_to_num(A)
+            except (RuntimeWarning, FloatingPointError):
+                _logger.warning('Power law paramaters estimation failed '
+                                'because of a "divide by zero" error.')
+                return False
         if only_current is True:
             self.r.value = r
             self.A.value = A
