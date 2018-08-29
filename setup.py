@@ -76,8 +76,8 @@ extras_require = {
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
 # the hack to deal with setuptools + installing the package in ReadTheDoc:
-if 'readthedocs.org' in sys.executable:
-    install_req = []
+# if 'readthedocs.org' in sys.executable:
+#     install_req = []
 
 
 def update_version(version):
