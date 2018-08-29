@@ -30,6 +30,8 @@ from hyperspy.misc.date_time_tools import get_date_time_from_metadata
 from hyperspy.misc.utils import DictionaryTreeBrowser
 
 _logger = logging.getLogger(__name__)
+
+
 # Plugin characteristics
 # ----------------------
 format_name = 'TIFF'
@@ -38,11 +40,10 @@ description = ('Import/Export standard image formats Christoph Gohlke\'s '
 full_support = False
 file_extensions = ['tif', 'tiff']
 default_extension = 0  # tif
-
-
 # Writing features
 writes = [(2, 0), (2, 1)]
 # ----------------------
+
 
 axes_label_codes = {
     'X': "width",
@@ -63,6 +64,7 @@ axes_label_codes = {
     'Q': t.Undefined,
     '_': t.Undefined}
 
+
 ureg = pint.UnitRegistry()
 
 
@@ -77,8 +79,6 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
         default: True
         Export the scale and the units (compatible with DM and ImageJ) to
         appropriate tags.
-        If the scikit-image version is too old, use the hyperspy embedded
-        tifffile library to allow exporting the scale and the unit.
     """
     _logger.debug('************* Saving *************')
     data = signal.data
@@ -201,7 +201,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
                 elif name in ['depth', 'image series', 'time']:
                     scales[i], units[i] = scales_d['z'], units_d['z']
                     offsets[i] = offsets_d['z']
-        except:
+        except BaseException:
             _logger.info("Scale and units could not be imported")
 
         axes = [{'size': size,
@@ -261,7 +261,7 @@ def _load_data(TF, filename, is_rgb, sl=None, memmap=False, **kwds):
         if is_rgb:
             dc = rgb_tools.regular_array2rgbx(dc)
         if sl is not None:
-            dc = dc[sl]
+            dc = dc[tuple(sl)]
         return dc
 
 
@@ -271,6 +271,27 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
     offsets = {axis: 0.0 for axis in axes_l}
     units = {axis: t.Undefined for axis in axes_l}
     intensity_axis = {}
+
+    # for files created with imageJ
+    if tiff[0].is_imagej:
+        image_description = _decode_string(op["image_description"])
+        if "image_description_1" in op:
+            image_description = _decode_string(op["image_description_1"])
+        _logger.debug(
+            "Image_description tag: {0}".format(image_description))
+        if 'ImageJ' in image_description:
+            _logger.debug("Reading ImageJ tif metadata")
+            # ImageJ write the unit in the image description
+            if 'unit' in image_description:
+                unit = image_description.split('unit=')[1].splitlines()[0]
+                if unit == 'micron':
+                    unit = 'µm'
+                for key in ['x', 'y']:
+                    units[key] = unit
+                scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op)
+            if 'spacing' in image_description:
+                scales['z'] = float(
+                    image_description.split('spacing=')[1].splitlines()[0])
 
     # for files created with DM
     if '65003' in op:
@@ -299,25 +320,6 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
         intensity_axis['offset'] = op['65024']   # intensity offset
     if '65025' in op:
         intensity_axis['scale'] = op['65025']   # intensity scale
-
-    # for files created with imageJ
-    if tiff[0].is_imagej:
-        image_description = _decode_string(op["image_description"])
-        if "image_description_1" in op:
-            image_description = _decode_string(op["image_description_1"])
-        _logger.debug(
-            "Image_description tag: {0}".format(image_description))
-        if 'ImageJ' in image_description:
-            _logger.debug("Reading ImageJ tif metadata")
-            # ImageJ write the unit in the image description
-            if 'unit' in image_description:
-                unit = image_description.split('unit=')[1].splitlines()[0]
-                for key in ['x', 'y']:
-                    units[key] = unit
-                scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op)
-            if 'spacing' in image_description:
-                scales['z'] = float(
-                    image_description.split('spacing=')[1].splitlines()[0])
 
     # for FEI Helios tiff files (apparently, works also for Quanta):
     elif 'helios_metadata' in op or 'sfeg_metadata' in op:
@@ -428,7 +430,7 @@ def _get_dm_kwargs_extratag(signal, scales, units, offsets):
     if md.has_item('Signal.quantity'):
         try:
             intensity_units = md.Signal.quantity
-        except:
+        except BaseException:
             _logger.info("The units of the 'intensity axes' couldn't be"
                          "retrieved, please report the bug.")
             intensity_units = ""
@@ -439,7 +441,7 @@ def _get_dm_kwargs_extratag(signal, scales, units, offsets):
             dic = md.Signal.Noise_properties.Variance_linear_model
             intensity_offset = dic.gain_offset
             intensity_scale = dic.gain_factor
-        except:
+        except BaseException:
             _logger.info("The scale or the offset of the 'intensity axes'"
                          "couldn't be retrieved, please report the bug.")
             intensity_offset = 0.0
@@ -489,7 +491,7 @@ def _imagej_description(version='1.11a', **kwargs):
 def _decode_string(string):
     try:
         string = string.decode('utf8')
-    except:
+    except BaseException:
         # Sometimes the strings are encoded in latin-1 instead of utf8
         string = string.decode('latin-1', errors='ignore')
     return string

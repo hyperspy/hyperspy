@@ -112,6 +112,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
             fill=False,
             lw=self.border_thickness,
             ec=self.color,
+            alpha=self.alpha,
             picker=True,)]
         if ri > 0:
             self.patch.append(
@@ -121,6 +122,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
                     fill=False,
                     lw=self.border_thickness,
                     ec=self.color,
+                    alpha=self.alpha,
                     picker=True,))
 
     def _validate_pos(self, value):
@@ -154,7 +156,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
             if ri > 0:
                 # Add the inner circle
                 if len(self.patch) == 1:
-                    # Need to remove the previous patch before using 
+                    # Need to remove the previous patch before using
                     # `_add_patch_to`
                     self.ax.artists.remove(self.patch[0])
                     self.patch = []

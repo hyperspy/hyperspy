@@ -8,8 +8,8 @@
 .. |AppVeyor| image:: https://ci.appveyor.com/api/projects/status/github/hyperspy/hyperspy?svg=true&branch=RELEASE_next_patch
 .. _AppVeyor: https://ci.appveyor.com/project/hyperspy/hyperspy/branch/RELEASE_next_patch
 
-.. |Coveralls| image:: https://coveralls.io/repos/github/hyperspy/hyperspy/badge.svg?branch=RELEASE_next_patch
-.. _Coveralls: https://coveralls.io/github/hyperspy/hyperspy?branch=RELEASE_next_patch
+.. |Coveralls| image:: https://coveralls.io/repos/github/hyperspy/hyperspy/badge.svg?branch=RELEASE_next_minor
+.. _Coveralls: https://coveralls.io/github/hyperspy/hyperspy?branch=RELEASE_next_minor
 
 .. |pypi_version| image:: http://img.shields.io/pypi/v/hyperspy.svg?style=flat
 .. _pypi_version: https://pypi.python.org/pypi/hyperspy
@@ -43,6 +43,13 @@ HyperSpy is released under the GPL v3 license.
 
     **Since version 0.8.4 HyperSpy only supports Python 3. If you need to install
     HyperSpy in Python 2.7 install HyperSpy 0.8.3.**
+
+
+Contributing
+------------
+
+Everyone is welcome to contribute. Please read our
+`contributing guidelines <https://github.com/hyperspy/hyperspy/blob/RELEASE_next_minor/.github/CONTRIBUTING.md>`_ and get started!
 
 Cite
 ----

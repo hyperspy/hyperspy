@@ -87,6 +87,11 @@ artifacts:
   - path: dist\*.whl
     name: win_wheels
 
+on_failure:
+  - ps: $Env:image_comparison_filename = 'image_comparison_' + $Env:PYTHON_VERSION + '_' + $Env:PYTHON_ARCH + 'bits.zip'
+  - ps: 7z a -r $Env:image_comparison_filename C:\Users\appveyor\AppData\Local\Temp\1\*png
+  - ps: Push-AppveyorArtifact $Env:image_comparison_filename
+
 deploy:
   provider: GitHub
   auth_token:

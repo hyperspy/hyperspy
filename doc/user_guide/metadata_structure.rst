@@ -127,12 +127,13 @@ time_zone
 time
     type: Str
 
-    The acquisition or creation time in ISO 8601 time format.
+    The acquisition or creation time in ISO 8601 time format, e.g. '13:29:10'.
 
 date
     type: Str
 
-    The acquisition or creation date in ISO 8601 date format
+    The acquisition or creation date in ISO 8601 date format, e.g.
+    '2018-01-28'.
 
 
 authors

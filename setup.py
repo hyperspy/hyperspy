@@ -35,7 +35,6 @@ import warnings
 import os
 import subprocess
 import itertools
-import re
 
 # stuff to check presence of compiler:
 import distutils.sysconfig
@@ -47,7 +46,7 @@ setup_path = os.path.dirname(__file__)
 import hyperspy.Release as Release
 
 install_req = ['scipy>=0.15',
-               'matplotlib>=1.2, !=2.1.0, !=2.1.1',
+               'matplotlib>=2.2.3',
                'numpy>=1.10, !=1.13.0',
                'traits>=4.5.0',
                'natsort',
@@ -56,18 +55,21 @@ install_req = ['scipy>=0.15',
                'sympy',
                'dill',
                'h5py',
-               'python-dateutil',
+               'python-dateutil>=2.5.0',
                'ipyparallel',
                'dask[array]>=0.18',
                'scikit-image>=0.13',
-               'pint>0.7',
+               'pint>=0.8',
                'statsmodels',
+               'mrcz>=0.3.6',
                ]
 
 extras_require = {
     "learning": ['scikit-learn'],
     "gui-jupyter": ["hyperspy_gui_ipywidgets"],
     "gui-traitsui": ["hyperspy_gui_traitsui"],
+    "mrcz-blosc": ["blosc>=1.5"],
+    "lazy_FEI_EMD": ['sparse'],
     "test": ["pytest>=3", "pytest-mpl", "matplotlib>=2.0.2"],
     "doc": ["sphinx", "numpydoc", "sphinxcontrib-napoleon", "sphinx_rtd_theme"],
 }
@@ -290,7 +292,9 @@ with update_version_when_dev() as version:
                 'tests/drawing/plot_signal1d/*.png',
                 'tests/drawing/plot_signal2d/*.png',
                 'tests/drawing/plot_markers/*.png',
+                'tests/drawing/plot_model1d/*.png',
                 'tests/drawing/plot_model/*.png',
+                'tests/drawing/plot_roi/*.png',
                 'misc/eds/example_signals/*.hdf5',
                 'misc/holography/example_signals/*.hdf5',
                 'tests/drawing/plot_mva/*.png',
@@ -323,12 +327,14 @@ with update_version_when_dev() as version:
                 'tests/io/tiff_files/*.dm3',
                 'tests/io/npy_files/*.npy',
                 'tests/io/unf_files/*.unf',
-                'tests/io/bcf_data/*.bcf',
-                'tests/io/bcf_data/*.json',
-                'tests/io/bcf_data/*.npy',
+                'tests/io/bruker_data/*.bcf',
+                'tests/io/bruker_data/*.json',
+                'tests/io/bruker_data/*.npy',
+                'tests/io/bruker_data/*.spx',
                 'tests/io/ripple_files/*.rpl',
                 'tests/io/ripple_files/*.raw',
                 'tests/io/emd_files/*.emd',
+                'tests/io/emd_files/fei_emd_files.zip',
                 'tests/io/protochips_data/*.npy',
                 'tests/io/protochips_data/*.csv',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',

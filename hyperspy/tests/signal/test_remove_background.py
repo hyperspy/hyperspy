@@ -4,7 +4,6 @@ from hyperspy import signals
 from hyperspy import components1d
 from hyperspy.decorators import lazifyTestClass
 
-
 @lazifyTestClass
 class TestRemoveBackground1DGaussian:
 
@@ -45,12 +44,24 @@ class TestRemoveBackground1DPowerLaw:
         self.signal.axes_manager[0].offset = 100
         self.signal.metadata.Signal.binned = False
 
+        self.signal_noisy = self.signal.deepcopy()
+        self.signal_noisy.add_gaussian_noise(1)
+
     def test_background_remove_pl(self):
         s1 = self.signal.remove_background(
             signal_range=(None, None),
             background_type='PowerLaw',
             show_progressbar=None)
         assert np.allclose(s1.data, np.zeros(len(s1.data)), atol=60)
+
+    def test_background_remove_pl_zero(self):
+        s1 = self.signal_noisy.remove_background(
+            signal_range=(110.0, 190.0),
+            background_type='PowerLaw',
+            zero_fill=True,
+            show_progressbar=None)
+        assert np.allclose(s1.sum(-1).data, np.array([3787]), atol=200)
+        assert np.allclose(s1.data[:10], np.zeros(10), atol=0.5)
 
     def test_background_remove_pl_int(self):
         self.signal.change_dtype("int")
@@ -59,3 +70,13 @@ class TestRemoveBackground1DPowerLaw:
             background_type='PowerLaw',
             show_progressbar=None)
         assert np.allclose(s1.data, np.zeros(len(s1.data)), atol=60)
+
+    def test_background_remove_pl_int_zero(self):
+        self.signal_noisy.change_dtype("int")
+        s1 = self.signal_noisy.remove_background(
+            signal_range=(110.0, 190.0),
+            background_type='PowerLaw',
+            zero_fill=True,
+            show_progressbar=None)
+        assert np.allclose(s1.sum(-1).data, np.array([3787]), atol=200)
+        assert np.allclose(s1.data[:10], np.zeros(10), atol=0.5)
