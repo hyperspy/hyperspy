@@ -5,7 +5,6 @@ import logging
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import constants
-from scipy.interpolate import InterpolatedUnivariateSpline
 
 from hyperspy.misc.array_tools import rebin
 import hyperspy.defaults_parser
@@ -353,6 +352,9 @@ def get_edge_onset(data, start, end, x_axis, percent_position):
         raise ValueError(
                 "end ({0}) in out of bounds of x_axis ({1} to {2})".format(
                     end, x_axis[0], x_axis[-1]))
+    if len(data.shape) != 1:
+        raise ValueError("data must be 1 dimension, not {0}".format(
+            len(data.shape)))
 
     start_i = np.argmax(x_axis > start)
     if end == x_axis[-1]:
@@ -363,20 +365,20 @@ def get_edge_onset(data, start, end, x_axis, percent_position):
     data = data[start_i:end_i]
     x_axis = x_axis[start_i:end_i]
 
-    data_max = data.max()
-    data_min = data.min()
-    data_max_i = data.argmax()
-    data_min_i = data.argmin()
+    data_max = data.max(-1)
+    data_min = data.min(-1)
+    data_max_i = data.argmax(-1)
     data_onset_value = (data_max - data_min) * percent_position + data_min
 
-    data_crop = data[data_min_i:data_max_i][::-1]
-    data_onset_i = np.argmax(data_crop < data_onset_value)
-    data_onset_i = len(data_crop) - data_onset_i
+    bool_array = data < data_onset_value
+    bool_array[data_max_i:] = False
+    data_onset_i = len(bool_array) - np.argmax(bool_array[::-1])
 
-    onset_slice = slice(data_min_i + data_onset_i - 1,
-                        data_min_i + data_onset_i + 1)
+    data_onset_i0 = data_onset_i - 1
 
-    spline = InterpolatedUnivariateSpline(
-            x=data[onset_slice], y=x_axis[onset_slice], k=1)
-    onset_energy = spline(data_onset_value)[()]
+    x0, x1 = x_axis[data_onset_i0], x_axis[data_onset_i]
+    y0, y1 = data[data_onset_i0], data[data_onset_i]
+    a = (y1 - y0)/(x1 - x0)
+    b = -a * x0 + y0
+    onset_energy = (data_onset_value - b) / a
     return onset_energy
