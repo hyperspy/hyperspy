@@ -46,7 +46,6 @@ full_support = False
 # Recognised file extension
 file_extensions = ('dm3', 'DM3', 'dm4', 'DM4')
 default_extension = 0
-
 # Writing features
 writes = False
 # ----------------------

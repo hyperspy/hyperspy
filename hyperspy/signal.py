@@ -1934,8 +1934,8 @@ class BaseSignal(FancySlicing,
         return np.atleast_1d(
             self.data.__getitem__(axes_manager._getitem_tuple))
 
-    def plot(self, navigator="auto", axes_manager=None,
-             plot_markers=True, **kwargs):
+    def plot(self, navigator="auto", axes_manager=None, plot_markers=True,
+             **kwargs):
         """%s
         %s
 
@@ -2159,7 +2159,7 @@ class BaseSignal(FancySlicing,
         for axis in self.axes_manager._axes:
             axis.size = int(dc.shape[axis.index_in_array])
 
-    def crop(self, axis, start=None, end=None):
+    def crop(self, axis, start=None, end=None, convert_units=False):
         """Crops the data in a given axis. The range is given in pixels
 
         Parameters
@@ -2173,6 +2173,10 @@ class BaseSignal(FancySlicing,
             the value is taken as the axis index. If float the index
             is calculated using the axis calibration. If start/end is
             None crop from/to the low/high end of the axis.
+        convert_units : bool
+            Default is False
+            If True, convert the units using the 'convert_to_units' method of
+            the 'axes_manager'. If False, does nothing.
 
         """
         axis = self.axes_manager[axis]
@@ -2189,6 +2193,8 @@ class BaseSignal(FancySlicing,
         self.get_dimensions_from_data()
         self.squeeze()
         self.events.data_changed.trigger(obj=self)
+        if convert_units:
+            self.axes_manager.convert_units(axis)
 
     def swap_axes(self, axis1, axis2, optimize=False):
         """Swaps the axes.
@@ -2381,6 +2387,9 @@ class BaseSignal(FancySlicing,
         else:
             s.data = data
         s.get_dimensions_from_data()
+        for i, factor in enumerate(factors):
+            s.axes_manager[i].offset += ((factor - 1)
+                                         * s.axes_manager[i].scale) / 2
         for axis, axis_src in zip(s.axes_manager._axes,
                                   self.axes_manager._axes):
             axis.scale = axis_src.scale * factors[axis.index_in_array]

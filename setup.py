@@ -35,7 +35,6 @@ import warnings
 import os
 import subprocess
 import itertools
-import re
 
 # stuff to check presence of compiler:
 import distutils.sysconfig

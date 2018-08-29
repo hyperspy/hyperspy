@@ -24,7 +24,6 @@ import types
 from io import StringIO
 import codecs
 import collections
-import tempfile
 import unicodedata
 from contextlib import contextmanager
 from hyperspy.misc.signal_tools import broadcast_signals

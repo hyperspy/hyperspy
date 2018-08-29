@@ -156,7 +156,7 @@ class CircleWidget(Widget2DBase, ResizersMixin):
             if ri > 0:
                 # Add the inner circle
                 if len(self.patch) == 1:
-                    # Need to remove the previous patch before using 
+                    # Need to remove the previous patch before using
                     # `_add_patch_to`
                     self.ax.artists.remove(self.patch[0])
                     self.patch = []

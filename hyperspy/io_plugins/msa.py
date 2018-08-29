@@ -39,7 +39,7 @@ description = ''
 full_support = False
 file_extensions = ('msa', 'ems', 'mas', 'emsa', 'EMS', 'MAS', 'EMSA', 'MSA')
 default_extension = 0
-
+# Writing capabilities
 writes = [(1, 0), ]
 # ----------------------
 

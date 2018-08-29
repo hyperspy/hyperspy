@@ -138,8 +138,6 @@ class PowerLaw(Expression):
                 A = np.nan_to_num(A)
         except BaseException:
             return False
-        if not self.binned and not s._lazy:
-            A *= axis.scale
         if only_current is True:
             self.r.value = r
             self.A.value = A

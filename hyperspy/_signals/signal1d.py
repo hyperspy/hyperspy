@@ -1023,7 +1023,7 @@ _spikes_diagnosis,
 
     def _remove_background_cli(
             self, signal_range, background_estimator, fast=True,
-            show_progressbar=None):
+            zero_fill=False, show_progressbar=None):
         signal_range = signal_range_from_roi(signal_range)
         from hyperspy.models.model1d import Model1D
         model = Model1D(self)
@@ -1033,19 +1033,29 @@ _spikes_diagnosis,
             signal_range[0],
             signal_range[1],
             only_current=False)
-        if fast:
+        if fast and not self._lazy:
             try:
-                if not self._lazy:
-                    axis = self.axes_manager.signal_axes[0].axis
-                    return Signal1D(self.data -
-                                    background_estimator.function_nd(axis))
+                axis = self.axes_manager.signal_axes[0].axis
+                result = Signal1D(self.data -
+                                  background_estimator.function_nd(axis))
             except MemoryError:
-                pass
+                result = self - model.as_signal(
+                        show_progressbar=show_progressbar)
         else:
             model.set_signal_range(signal_range[0], signal_range[1])
             model.multifit(show_progressbar=show_progressbar)
             model.reset_signal_range()
-        return self - model.as_signal(show_progressbar=show_progressbar)
+            result = self - model.as_signal(show_progressbar=show_progressbar)
+
+        if zero_fill:
+            if self._lazy:
+                low_idx = result.axes_manager[-1].value2index(signal_range[0])
+                z = da.zeros(low_idx, chunks=(low_idx,))
+                cropped_da = result.data[low_idx:]
+                result.data = da.concatenate([z, cropped_da])
+            else:
+                result.isig[:signal_range[0]] = 0
+        return result
 
     def remove_background(
             self,
@@ -1053,6 +1063,8 @@ _spikes_diagnosis,
             background_type='Power Law',
             polynomial_order=2,
             fast=True,
+            zero_fill=False,
+            plot_remainder=True,
             show_progressbar=None, display=True, toolkit=None):
 
         self._check_signal_dimension_equals_one()
@@ -1060,7 +1072,9 @@ _spikes_diagnosis,
             br = BackgroundRemoval(self, background_type=background_type,
                                    polynomial_order=polynomial_order,
                                    fast=fast,
-                                   show_progressbar=show_progressbar)
+                                   plot_remainder=plot_remainder,
+                                   show_progressbar=show_progressbar,
+                                   zero_fill=zero_fill)
             return br.gui(display=display, toolkit=toolkit)
         else:
             if background_type in ('PowerLaw', 'Power Law'):
@@ -1081,6 +1095,7 @@ _spikes_diagnosis,
                 signal_range=signal_range,
                 background_estimator=background_estimator,
                 fast=fast,
+                zero_fill=zero_fill,
                 show_progressbar=show_progressbar)
             return spectra
     remove_background.__doc__ = \
@@ -1104,10 +1119,17 @@ _spikes_diagnosis,
             If False, the signal is fitted using non-linear least squares
             afterwards.This is slower compared to the estimation but
             possibly more accurate.
-        module: {"numpy", "numexpr"}, default None
-            Module used to evaluate the function. numexpr is faster than numpy
-            and is not installed by default. 
-            If None, use numexpr if installed.
+        zero_fill : bool
+            If True, all spectral channels lower than the lower bound of the
+            fitting range will be set to zero (this is the default behavior 
+            of Gatan's DigitalMicrograph). Setting this value to False 
+            allows for inspection of the quality of background fit throughout 
+            the pre-fitting region.
+        plot_remainder : bool
+            If True, add a (green) line previewing the remainder signal after
+            background removal. This preview is obtained from a Fast calculation
+            so the result may be different if a NLLS calculation is finally
+            performed.
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.

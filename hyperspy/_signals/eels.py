@@ -1348,12 +1348,17 @@ class EELSSpectrum_mixin:
         m = out or m
         time_factor = np.prod([factors[axis.index_in_array]
                                for axis in m.axes_manager.navigation_axes])
-        mdeels = m.metadata.Acquisition_instrument.TEM.Detector.EELS
+        mdeels = m.metadata
         m.get_dimensions_from_data()
-        if "Acquisition_instrument.TEM.Detector.EELS.dwell_time" in m.metadata:
-            mdeels.dwell_time *= time_factor
-        if "Acquisition_instrument.TEM.Detector.EELS.exposure" in m.metadata:
-            mdeels.exposure *= time_factor
+        if m.metadata.get_item("Acquisition_instrument.TEM.Detector.EELS"):
+            mdeels = m.metadata.Acquisition_instrument.TEM.Detector.EELS
+            if "dwell_time" in mdeels:
+                mdeels.dwell_time *= time_factor
+            if "exposure" in mdeels:
+                mdeels.exposure *= time_factor
+        else:
+            _logger.info('No dwell_time could be found in the metadata so '
+                         'this has not been updated.')
         if out is None:
             return m
         else:
