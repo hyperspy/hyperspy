@@ -341,10 +341,24 @@ def get_edge_onset(data, start, end, x_axis, percent_position):
         raise ValueError(
                 "percent position ({0}) must be between 0 and 1".format(
                     percent_position))
+    if start > end:
+        raise ValueError(
+                "start ({0}) can not be larger than end ({1})".format(
+                    start, end))
+    if not (x_axis[0] <= start <= x_axis[-1]):
+        raise ValueError(
+                "start ({0}) in out of bounds of x_axis ({1} to {2})".format(
+                    start, x_axis[0], x_axis[-1]))
+    if not (x_axis[0] <= end <= x_axis[-1]):
+        raise ValueError(
+                "end ({0}) in out of bounds of x_axis ({1} to {2})".format(
+                    end, x_axis[0], x_axis[-1]))
+
     start_i = np.argmax(x_axis > start)
-    end_i = np.argmax(x_axis > end)
-    if end_i == 0:
+    if end == x_axis[-1]:
         end_i = len(x_axis)
+    else:
+        end_i = np.argmax(x_axis > end)
 
     data = data[start_i:end_i]
     x_axis = x_axis[start_i:end_i]

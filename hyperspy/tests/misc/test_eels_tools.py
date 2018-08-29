@@ -8,7 +8,7 @@ from hyperspy._components.arctan import Arctan
 class TestGetEdgeOnset:
 
     def setup_method(self):
-        self.x_axis = np.arange(0, 100, 0.01)
+        self.x_axis = np.linspace(0, 100, 10000, endpoint=True)
         self.data = self.x_axis
 
     @pytest.mark.parametrize("start,end,output", [
@@ -34,7 +34,7 @@ class TestGetEdgeOnset:
         assert approx(onset, abs=0.01) == 150
 
     def test_arctan_onset_with_noise(self):
-        x_axis = np.arange(100, 200, step=0.01)
+        x_axis = np.linspace(100, 200, 10000, endpoint=True)
         arctan = Arctan(A=300, k=1., x0=150, minimum_at_zero=True)
         data = arctan.function(x_axis)
         data[50:200] = 600
