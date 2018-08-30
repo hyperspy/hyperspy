@@ -209,7 +209,7 @@ class DigitalMicrographReader(object):
                 _logger.debug(
                     'Reading Tag group at address: %s',
                     self.f.tell())
-                ntags = self.parse_tag_group(skip4=2)[2]
+                ntags = self.parse_tag_group(size=True)[2]
                 group_dict[tag_name] = {}
                 self.parse_tags(
                     ntags=ntags,
@@ -397,15 +397,16 @@ class DigitalMicrographReader(object):
                         for element in range(size)]
         return data
 
-    def parse_tag_group(self, skip4=0):
+    def parse_tag_group(self, size=False):
         """Parse the root TagGroup of the given DM3 file f.
         Returns the tuple (is_sorted, is_open, n_tags).
         endian can be either 'big' or 'little'.
         """
         is_sorted = iou.read_byte(self.f, "big")
         is_open = iou.read_byte(self.f, "big")
-        if skip4:
-            self.skipif4(n=skip4)
+        if self.dm_version == 4 and size:
+            # Just guessing that this is the size
+            size = self.read_l_or_q(self.f, "big") 
         n_tags = self.read_l_or_q(self.f, "big")
         return bool(is_sorted), bool(is_open), n_tags
 

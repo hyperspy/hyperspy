@@ -45,6 +45,9 @@ L_ushort = struct.Struct('<H')
 B_long = struct.Struct('>l')
 L_long = struct.Struct('<l')
 
+B_long_long = struct.Struct('>q')
+L_long_long = struct.Struct('<q')
+
 B_ulong = struct.Struct('>L')
 L_ulong = struct.Struct('<L')
 
@@ -124,11 +127,11 @@ def read_long_long(f, endian):
         _logger.debug('File address:', f.tell())
         raise ByteOrderError(endian)
     else:
-        data = f.read(4)
+        data = f.read(8)
         if endian == 'big':
-            s = B_long.replace("l", "q")
+            s = B_long_long
         elif endian == 'little':
-            s = L_long.replace("l", "q")
+            s = L_long_long
         return s.unpack(data)[0]
 
 
