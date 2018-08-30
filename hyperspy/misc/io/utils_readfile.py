@@ -114,6 +114,21 @@ def read_long(f, endian):
             s = L_long
         return s.unpack(data)[0]
 
+def read_long_long(f, endian):
+    """Read a 8-Byte integer from file f
+    with a given endianness (byte order).
+    endian can be either 'big' or 'little'.
+    """
+    if (endian != 'little') and (endian != 'big'):
+        _logger.debug('File address:', f.tell())
+        raise ByteOrderError(endian)
+    else:
+        data = f.read(4)
+        if endian == 'big':
+            s = B_long.replace("l", "q")
+        elif endian == 'little':
+            s = L_long.replace("l", "q")
+        return s.unpack(data)[0]
 
 def read_ulong(f, endian):
     """Read a 4-Byte integer from file f

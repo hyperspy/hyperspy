@@ -94,8 +94,7 @@ class DigitalMicrographReader(object):
                 "Currently we only support reading DM versions 3 and 4 but "
                 "this file "
                 "seems to be version %s " % self.dm_version)
-        self.skipif4()
-        filesizeB = iou.read_long(self.f, "big")
+        filesizeB = self.read_l_or_q(self.f, "big")
         is_little_endian = iou.read_long(self.f, "big")
 
         _logger.info('DM version: %i', self.dm_version)
@@ -132,17 +131,15 @@ class DigitalMicrographReader(object):
                 # Start reading the data
                 # Raises IOError if it is wrong
                 self.check_data_tag_delimiter()
-                self.skipif4()
-                infoarray_size = iou.read_long(self.f, 'big')
+                infoarray_size = self.read_l_or_q(self.f, 'big')
                 _logger.debug("Infoarray size: %s", infoarray_size)
-                self.skipif4()
                 if infoarray_size == 1:  # Simple type
                     _logger.debug("Reading simple data")
-                    etype = iou.read_long(self.f, "big")
+                    etype = self.read_l_or_q(self.f, "big")
                     data = self.read_simple_data(etype)
                 elif infoarray_size == 2:  # String
                     _logger.debug("Reading string")
-                    enctype = iou.read_long(self.f, "big")
+                    enctype = self.read_l_or_q(self.f, "big")
                     if enctype != 18:
                         raise IOError("Expected 18 (string), got %i" % enctype)
                     string_length = self.parse_string_definition()
@@ -150,13 +147,13 @@ class DigitalMicrographReader(object):
                 elif infoarray_size == 3:  # Array of simple type
                     _logger.debug("Reading simple array")
                     # Read array header
-                    enctype = iou.read_long(self.f, "big")
+                    enctype = self.read_l_or_q(self.f, "big")
                     if enctype != 20:  # Should be 20 if it is an array
                         raise IOError("Expected 20 (string), got %i" % enctype)
                     size, enc_eltype = self.parse_array_definition()
                     data = self.read_array(size, enc_eltype, skip=skip)
                 elif infoarray_size > 3:
-                    enctype = iou.read_long(self.f, "big")
+                    enctype = self.read_l_or_q(self.f, "big")
                     if enctype == 15:  # It is a struct
                         _logger.debug("Reading struct")
                         definition = self.parse_struct_definition()
@@ -167,13 +164,11 @@ class DigitalMicrographReader(object):
                         # The structure is
                         # 20 <4>, ?  <4>, enc_dtype <4>, definition <?>,
                         # size <4>
-                        self.skipif4()
-                        enc_eltype = iou.read_long(self.f, "big")
+                        enc_eltype = self.read_l_or_q(self.f, "big")
                         if enc_eltype == 15:  # Array of structs
                             _logger.debug("Reading array of structs")
                             definition = self.parse_struct_definition()
-                            self.skipif4()  # Padding?
-                            size = iou.read_long(self.f, "big")
+                            size = self.read_l_or_q(self.f, "big")
                             _logger.debug("Struct definition: %s", definition)
                             _logger.debug("Array size: %s", size)
                             data = self.read_array(
@@ -214,7 +209,7 @@ class DigitalMicrographReader(object):
                 _logger.debug(
                     'Reading Tag group at address: %s',
                     self.f.tell())
-                ntags = self.parse_tag_group(skip4=3)[2]
+                ntags = self.parse_tag_group(skip4=2)[2]
                 group_dict[tag_name] = {}
                 self.parse_tags(
                     ntags=ntags,
@@ -252,6 +247,12 @@ class DigitalMicrographReader(object):
     def skipif4(self, n=1):
         if self.dm_version == 4:
             self.f.seek(4 * n, 1)
+    @property
+    def read_l_or_q(self):
+        if self.dm_version == 4:
+            return iou.read_long_long
+        else:
+            return iou.read_long
 
     def parse_array_definition(self):
         """Reads and returns the element type and length of the array.
@@ -260,10 +261,8 @@ class DigitalMicrographReader(object):
         array encoded dtype.
 
         """
-        self.skipif4()
-        enc_eltype = iou.read_long(self.f, "big")
-        self.skipif4()
-        length = iou.read_long(self.f, "big")
+        enc_eltype = self.read_l_or_q(self.f, "big")
+        length = self.read_l_or_q(self.f, "big")
         return length, enc_eltype
 
     def parse_string_definition(self):
@@ -272,8 +271,7 @@ class DigitalMicrographReader(object):
         The position in the file must be just after the
         string encoded dtype.
         """
-        self.skipif4()
-        return iou.read_long(self.f, "big")
+        return self.read_l_or_q(self.f, "big")
 
     def parse_struct_definition(self):
         """Reads and returns the struct definition tuple.
@@ -283,13 +281,13 @@ class DigitalMicrographReader(object):
 
         """
         self.f.seek(4, 1)  # Skip the name length
-        self.skipif4(2)
-        nfields = iou.read_long(self.f, "big")
+        self.skipif4(1)
+        nfields = self.read_l_or_q(self.f, "big")
         definition = ()
         for ifield in range(nfields):
             self.f.seek(4, 1)
-            self.skipif4(2)
-            definition += (iou.read_long(self.f, "big"),)
+            self.skipif4(1)
+            definition += (self.read_l_or_q(self.f, "big"),)
 
         return definition
 
@@ -398,15 +396,16 @@ class DigitalMicrographReader(object):
                         for element in range(size)]
         return data
 
-    def parse_tag_group(self, skip4=1):
+    def parse_tag_group(self, skip4=0):
         """Parse the root TagGroup of the given DM3 file f.
         Returns the tuple (is_sorted, is_open, n_tags).
         endian can be either 'big' or 'little'.
         """
         is_sorted = iou.read_byte(self.f, "big")
         is_open = iou.read_byte(self.f, "big")
-        self.skipif4(n=skip4)
-        n_tags = iou.read_long(self.f, "big")
+        if skip4:
+            self.skipif4(n=skip4)
+        n_tags = self.read_l_or_q(self.f, "big")
         return bool(is_sorted), bool(is_open), n_tags
 
     def find_next_tag(self):
