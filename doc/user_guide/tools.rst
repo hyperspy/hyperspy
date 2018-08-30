@@ -1073,23 +1073,23 @@ The Fast Fourier transform and its inverse can be applied on a signal with the :
 
 .. code-block:: python
 
-    >>> import numpy as np
     >>> im = hs.datasets.example_signals.object_hologram()
-    >>> np.log(im.fft(shifted=True).amplitude).plot()
+    >>> im.fft().plot()
 
 .. figure::  images/hologram_fft.png
   :align:   center
   :width:   400
 
-Note that for visual inspection of FFT it is common to plot logarithm of amplitude rather than FFT itself as it is done
-    in the example above.
+Note that for visual inspection of FFT, it is common to plot the power spectrum (absolute value of the complex signal) on a logarithmic scale rather than the FFT itself as it is done in the example above.
+By default, in case of FFT, HyperSpy plots the power spectrum and shifts the zero frequency component to the center of the signal. This can be changed 
+by setting ``power_spectrum=False`` and ``fft_shift=False`` parameters of the plot method.
 
-By default both methods calculate FFT and IFFT with origin at (0, 0) (not in the centre of FFT). Use `shifted=True` option to
-calculate FFT and the inverse with origin shifted in the centre.
+By default, both methods calculate FFT and IFFT with origin at (0, 0) (not in the centre of FFT). Use ``fft_shift=True`` option to
+calculate FFT and the inverse with origin shifted in the centre. ROIs doesn't work when the FFT is plotted with ``fft_shift=True``.
 
 .. code-block:: python
 
-    >>> im_ifft = im.fft(shifted=True).ifft(shifted=True)
+    >>> im_ifft = im.fft(fft_shift=True).ifft(fft_shift=True)
 
 .. _signal.change_dtype:
 

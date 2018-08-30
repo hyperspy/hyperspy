@@ -73,9 +73,10 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         else:
             self.remove_right_pointer()
 
-    def plot_signal(self):
+    def plot_signal(self, **kwargs):
+        super().plot_signal()
         if self.signal_plot is not None:
-            self.signal_plot.plot()
+            self.signal_plot.plot(**kwargs)
             return
         # Create the figure
         self.axis = self.axes_manager.signal_axes[0]
@@ -100,6 +101,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         is_complex = np.iscomplexobj(self.signal_data_function())
         sl.autoscale = True if not is_complex else False
         sl.data_function = self.signal_data_function
+        kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
         sl.plot_indices = True
         if self.pointer is not None:
             color = self.pointer.color
@@ -121,7 +123,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
             sf.add_line(sl)
 
         self.signal_plot = sf
-        sf.plot()
+        sf.plot(**kwargs)
         if sf.figure is not None:
             if self.axes_manager.navigation_axes:
                 self.signal_plot.figure.canvas.mpl_connect(
@@ -141,7 +143,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         if event.key == "e":
             self.right_pointer_on = not self.right_pointer_on
 
-    def add_right_pointer(self):
+    def add_right_pointer(self, **kwargs):
         if self.signal_plot.right_axes_manager is None:
             self.signal_plot.right_axes_manager = \
                 copy.deepcopy(self.axes_manager)
@@ -171,8 +173,15 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         self.signal_plot.add_line(rl, ax='right')
         rl.plot_indices = True
         rl.text_position = (1., 1.05,)
-        rl.plot()
+        rl.plot(**kwargs)
         self.right_pointer_on = True
+        if hasattr(self.signal_plot.figure, 'tight_layout'):
+            try:
+                self.signal_plot.figure.tight_layout()
+            except:
+                # tight_layout is a bit brittle, we do this just in case it
+                # complains
+                pass
 
     def remove_right_pointer(self):
         for line in self.signal_plot.right_ax_lines:

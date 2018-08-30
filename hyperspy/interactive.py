@@ -74,11 +74,15 @@ class Interactive:
         self.f = f
         self.args = args
         self.kwargs = kwargs
+        _plot_kwargs = self.kwargs.pop('_plot_kwargs', None)
         if 'out' in self.kwargs:
             self.f(*self.args, **self.kwargs)
             self.out = self.kwargs.pop('out')
         else:
             self.out = self.f(*self.args, **self.kwargs)
+        # Reuse the `_plot_kwargs` for the roi if available 
+        if _plot_kwargs and 'signal' in self.kwargs:
+            self.out._plot_kwargs = self.kwargs['signal']._plot_kwargs
         try:
             fargs = list(inspect.signature(self.f).parameters.keys())
         except TypeError:

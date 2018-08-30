@@ -65,7 +65,7 @@ def test_fft_signal2d(lazy):
     assert_allclose(im.inav[0, 0].data, im_ifft.data, atol=1e-3)
     assert_allclose(im_fft.data, np.fft.fft2(im.inav[0, 0]).data)
 
-    im_fft = im.inav[0, 0].fft(shifted=True)
+    im_fft = im.inav[0, 0].fft(shift=True)
     axis = im_fft.axes_manager.signal_axes[0]
     assert axis.offset == -axis.high_value
 
@@ -113,8 +113,8 @@ def test_fft_signal1d(lazy):
     assert_allclose(s.inav[0, 0, 0].data, s_ifft.data, atol=1e-3)
     assert_allclose(np.fft.fft(s.inav[0, 0, 0].data), s_fft.data)
 
-    s_fft = s.inav[0, 0, 0].fft(shifted=True)
-    s_ifft = s_fft.ifft(shifted=True)
+    s_fft = s.inav[0, 0, 0].fft(shift=True)
+    s_ifft = s_fft.ifft(shift=True)
     assert_allclose(s.inav[0, 0, 0].data, s_ifft.data, atol=1e-3)
     assert_allclose(np.fft.fftshift(
         np.fft.fft(s.inav[0, 0, 0].data)), s_fft.data)
