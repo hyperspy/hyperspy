@@ -247,6 +247,7 @@ class DigitalMicrographReader(object):
     def skipif4(self, n=1):
         if self.dm_version == 4:
             self.f.seek(4 * n, 1)
+
     @property
     def read_l_or_q(self):
         if self.dm_version == 4:
