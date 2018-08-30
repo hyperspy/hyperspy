@@ -4146,11 +4146,34 @@ class BaseSignal(FancySlicing,
         <Signal2D, title:  (2, 1), dimensions: (32, 32)>
 
         """
+
+        metadata = self.metadata.deepcopy()
+
+        # Check if marker update
+        if metadata.has_item('Markers'):
+            marker_name_list = metadata.Markers.keys()
+            markers_dict = metadata.Markers.__dict__
+            for marker_name in marker_name_list:
+                marker = markers_dict[marker_name]['_dtb_value_']
+                if marker.auto_update:
+                    marker.axes_manager = self.axes_manager
+                    key_dict = {}
+                    for key in marker.data.dtype.names:
+                        key_dict[key] = marker.get_data_position(key)
+                    marker.set_data(**key_dict)
+
         cs = self.__class__(
             self(),
             axes=self.axes_manager._get_signal_axes_dicts(),
-            metadata=self.metadata.as_dictionary(),
+            metadata=metadata.as_dictionary(),
             attributes={'_lazy': False})
+
+        if cs.metadata.has_item('Markers'):
+            temp_marker_dict = cs.metadata.Markers.as_dictionary()
+            markers_dict = markers_metadata_dict_to_markers(
+                temp_marker_dict,
+                cs.axes_manager)
+            cs.metadata.Markers = markers_dict
 
         if auto_filename is True and self.tmp_parameters.has_item('filename'):
             cs.tmp_parameters.filename = (self.tmp_parameters.filename +
