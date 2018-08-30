@@ -406,7 +406,7 @@ class DigitalMicrographReader(object):
         is_open = iou.read_byte(self.f, "big")
         if self.dm_version == 4 and size:
             # Just guessing that this is the size
-            size = self.read_l_or_q(self.f, "big") 
+            size = self.read_l_or_q(self.f, "big")
         n_tags = self.read_l_or_q(self.f, "big")
         return bool(is_sorted), bool(is_open), n_tags
 
