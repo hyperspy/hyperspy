@@ -180,7 +180,7 @@ class DigitalMicrographReader(object):
                             _logger.debug("Reading array of strings")
                             string_length = \
                                 self.parse_string_definition()
-                            size = iou.read_long(self.f, "big")
+                            size = self.read_l_or_q(self.f, "big")
                             data = self.read_array(
                                 size=size,
                                 enc_eltype=enc_eltype,
@@ -190,7 +190,7 @@ class DigitalMicrographReader(object):
                             _logger.debug("Reading array of arrays")
                             el_length, enc_eltype = \
                                 self.parse_array_definition()
-                            size = iou.read_long(self.f, "big")
+                            size = self.read_l_or_q(self.f, "big")
                             data = self.read_array(
                                 size=size,
                                 enc_eltype=enc_eltype,
