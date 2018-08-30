@@ -301,6 +301,6 @@ class Physical_background(Component):
             coating=1
 	
         if self._whitelist['absorption_model'] is 'quadrilateral':
-            return np.where((x>0.1) & (x<(E0)),(emission*absorption*Window*coating),0) 
+            return np.where((x>0.17) & (x<(E0)),(emission*absorption*Window*coating),0) 
         if self._whitelist['absorption_model'] is 'CL':
-            return np.where((x>0.1) & (x<(E0)),(emission*METabsorption*Window*coating),0)
+            return np.where((x>0.17) & (x<(E0)),(emission*METabsorption*Window*coating),0)
