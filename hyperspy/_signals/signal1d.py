@@ -1033,12 +1033,20 @@ _spikes_diagnosis,
             signal_range[0],
             signal_range[1],
             only_current=False)
-        if not fast:
+        if fast and not self._lazy:
+            try:
+                axis = self.axes_manager.signal_axes[0].axis
+                result = Signal1D(self.data -
+                                  background_estimator.function_nd(axis))
+            except MemoryError:
+                result = self - model.as_signal(
+                        show_progressbar=show_progressbar)
+        else:
             model.set_signal_range(signal_range[0], signal_range[1])
             model.multifit(show_progressbar=show_progressbar)
             model.reset_signal_range()
-        result = self - model.as_signal(show_progressbar=show_progressbar)
-        
+            result = self - model.as_signal(show_progressbar=show_progressbar)
+
         if zero_fill:
             if self._lazy:
                 low_idx = result.axes_manager[-1].value2index(signal_range[0])
@@ -1058,7 +1066,7 @@ _spikes_diagnosis,
             zero_fill=False,
             plot_remainder=True,
             show_progressbar=None, display=True, toolkit=None):
-        signal_range = signal_range_from_roi(signal_range)
+
         self._check_signal_dimension_equals_one()
         if signal_range == 'interactive':
             br = BackgroundRemoval(self, background_type=background_type,

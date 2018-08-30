@@ -35,6 +35,18 @@ class TestGaussian2D:
 
 class TestExpression2D:
 
+    def setup_method(self, method):
+        self.array0 = np.array([[1.69189792e-10, 3.72665317e-06, 1.50343919e-03,
+                                 1.11089965e-02, 1.50343919e-03],
+                                [2.06115362e-09, 4.53999298e-05, 1.83156389e-02,
+                                 1.35335283e-01, 1.83156389e-02],
+                                [9.23744966e-09, 2.03468369e-04, 8.20849986e-02,
+                                 6.06530660e-01, 8.20849986e-02],
+                                [1.52299797e-08, 3.35462628e-04, 1.35335283e-01,
+                                 1.00000000e+00, 1.35335283e-01],
+                                [9.23744966e-09, 2.03468369e-04, 8.20849986e-02,
+                                 6.06530660e-01, 8.20849986e-02]])
+
     def test_with_rotation(self):
         g = hs.model.components2D.Expression(
             GAUSSIAN2D_EXPR, name="gaussian2d", add_rotation=True,
@@ -155,19 +167,7 @@ class TestExpression2D:
         g.y0.value = 1
         l = np.linspace(-2, 2, 5)
         x, y = np.meshgrid(l, l)
-        assert_allclose(
-            g.function(x, y),
-            np.array([[1.69189792e-10, 3.72665317e-06, 1.50343919e-03,
-                       1.11089965e-02, 1.50343919e-03],
-                      [2.06115362e-09, 4.53999298e-05, 1.83156389e-02,
-                       1.35335283e-01, 1.83156389e-02],
-                      [9.23744966e-09, 2.03468369e-04, 8.20849986e-02,
-                       6.06530660e-01, 8.20849986e-02],
-                      [1.52299797e-08, 3.35462628e-04, 1.35335283e-01,
-                       1.00000000e+00, 1.35335283e-01],
-                      [9.23744966e-09, 2.03468369e-04, 8.20849986e-02,
-                       6.06530660e-01, 8.20849986e-02]])
-        )
+        assert_allclose(g.function(x, y), self.array0)
         assert_allclose(
             g.grad_sx(x, y),
             np.array([[1.21816650e-08, 1.19252902e-04, 1.20275135e-02,
@@ -182,3 +182,36 @@ class TestExpression2D:
                        0.00000000e+00, 6.56679989e-01]])
 
         )
+
+    def test_no_function_nd(self):
+        g = hs.model.components2D.Expression(
+            GAUSSIAN2D_EXPR, name="gaussian2d", add_rotation=False,
+            position=("x0", "y0"),)
+        g.sy.value = .1
+        g.sx.value = 0.5
+        g.sy.value = 1
+        g.x0.value = 1
+        g.y0.value = 1
+        l = np.linspace(-2, 2, 5)
+        x, y = np.meshgrid(l, l)
+        assert_allclose(g.function_nd(x, y), self.array0)
+
+    def test_no_function_nd_signal(self):
+        g = hs.model.components2D.Expression(
+            GAUSSIAN2D_EXPR, name="gaussian2d", add_rotation=False,
+            position=("x0", "y0"),)
+        g.sy.value = .1
+        g.sx.value = 0.5
+        g.sy.value = 1
+        g.x0.value = 1
+        g.y0.value = 1
+        l = np.arange(0, 3)
+        x, y = np.meshgrid(l, l)
+        s = hs.signals.Signal2D(g.function(x, y))
+        s2 = hs.stack([s]*2)
+        m = s2.create_model()
+        m.append(g)
+        m.multifit()
+        res = g.function_nd(x, y)
+        assert res.shape == (2, 3, 3)
+        assert_allclose(res, s2.data)

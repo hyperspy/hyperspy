@@ -652,9 +652,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
     polynomial_order = t.Range(1, 10)
     fast = t.Bool(True,
                   desc=("Perform a fast (analytic, but possibly less accurate)"
-                        " estimation \nof the background. "
-                        "Otherwise use non-linear least "
-                        "squares."))
+                        " estimation of the background. Otherwise use "
+                        "use non-linear least squares."))
     zero_fill = t.Bool(
                  False,
                  desc=("Set all spectral channels lower than the lower \n"
@@ -670,7 +669,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
     hi = t.Int(0)
 
     def __init__(self, signal, background_type='Power Law', polynomial_order=2,
-                 fast=True, plot_remainder=True, zero_fill=False, show_progressbar=None):
+                 fast=True, plot_remainder=True, zero_fill=False,
+                 show_progressbar=None):
         super(BackgroundRemoval, self).__init__(signal)
         # setting the polynomial order will change the backgroud_type to
         # polynomial, so we set it before setting the background type
@@ -782,21 +782,19 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             return
         if self.background_estimator is None:
             return
-        if self.bg_line is None and \
-            self.background_estimator.estimate_parameters(
+        res = self.background_estimator.estimate_parameters(
                 self.signal, self.ss_left_value,
                 self.ss_right_value,
-                only_current=True) is True:
-            self.create_background_line()
+                only_current=True)
+        if self.bg_line is None:
+            if res:
+                self.create_background_line()
         else:
             self.bg_line.update()
         if self.plot_remainder:
-            if self.rm_line is None and \
-                self.background_estimator.estimate_parameters(
-                    self.signal, self.ss_left_value,
-                    self.ss_right_value,
-                    only_current=True) is True:
-                self.create_remainder_line()
+            if self.rm_line is None:
+                if res:
+                    self.create_remainder_line()
             else:
                 self.rm_line.update()
 

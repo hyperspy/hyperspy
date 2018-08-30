@@ -8,6 +8,9 @@ from hyperspy.misc.utils import slugify
 from hyperspy.decorators import lazifyTestClass
 
 
+RTOL = 1E-6
+
+
 class TestModelJacobians:
 
     def setup_method(self, method):
@@ -472,7 +475,7 @@ class TestModel1D:
             getattr(m.components,
                     slugify(g1.name, valid_variable_name=True)) is g1)
 
-    def test_components_class_change_name_del_default(self):
+    def test_components_class_change_name_del_default2(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
         m.append(g1)
@@ -620,13 +623,13 @@ class TestModelFitBinned:
 
     def test_fit_leastsq(self):
         self.m.fit(fitter="leastsq")
-        np.testing.assert_allclose(self.m[0].A.value, 9976.14526082, 1)
-        np.testing.assert_allclose(self.m[0].centre.value, -0.110610727064)
-        np.testing.assert_allclose(self.m[0].sigma.value, 1.98380707571, 5)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14526082, RTOL)
+        np.testing.assert_allclose(self.m[0].centre.value, -0.110610727064, RTOL)
+        np.testing.assert_allclose(self.m[0].sigma.value, 1.98380707571, RTOL)
 
     def test_fit_mpfit(self):
         self.m.fit(fitter="mpfit")
-        np.testing.assert_allclose(self.m[0].A.value, 9976.14526286, 5)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14526286)
         np.testing.assert_allclose(self.m[0].centre.value, -0.110610718444,
                                    atol=1E-6)
         np.testing.assert_allclose(self.m[0].sigma.value, 1.98380707614,
@@ -634,7 +637,7 @@ class TestModelFitBinned:
 
     def test_fit_odr(self):
         self.m.fit(fitter="odr")
-        np.testing.assert_allclose(self.m[0].A.value, 9976.14531979, 3)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14531979)
         np.testing.assert_allclose(self.m[0].centre.value, -0.110610724054,
                                    atol=1e-7)
         np.testing.assert_allclose(self.m[0].sigma.value, 1.98380709939)
@@ -653,7 +656,7 @@ class TestModelFitBinned:
 
     def test_fit_odr_grad(self):
         self.m.fit(fitter="odr", grad=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9976.14531979, 3)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14531979)
         np.testing.assert_allclose(self.m[0].centre.value, -0.110610724054,
                                    atol=1e-7)
         np.testing.assert_allclose(self.m[0].sigma.value, 1.98380709939)
@@ -662,7 +665,7 @@ class TestModelFitBinned:
         self.m[0].centre.bmin = 0.5
         # self.m[0].bounded = True
         self.m.fit(fitter="mpfit", bounded=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046)
         np.testing.assert_allclose(self.m[0].centre.value, 0.5)
         np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
@@ -671,15 +674,15 @@ class TestModelFitBinned:
         self.m[0].centre.bmin = 0.5
         # self.m[0].bounded = True
         self.m.fit(fitter="leastsq", bounded=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 3)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046)
         np.testing.assert_allclose(self.m[0].centre.value, 0.5)
-        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
+        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966, RTOL)
 
     def test_fit_bounded_lbfgs(self):
         self.m[0].centre.bmin = 0.5
         # self.m[0].bounded = True
         self.m.fit(fitter="L-BFGS-B", bounded=True, grad=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046)
         np.testing.assert_allclose(self.m[0].centre.value, 0.5)
         np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
@@ -688,7 +691,7 @@ class TestModelFitBinned:
         self.m[0].centre.value = -1
         # self.m[0].bounded = True
         self.m.fit(fitter="mpfit", bounded=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046)
         np.testing.assert_allclose(self.m[0].centre.value, 0.5)
         np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
@@ -697,16 +700,16 @@ class TestModelFitBinned:
         self.m[0].centre.value = -1
         # self.m[0].bounded = True
         self.m.fit(fitter="leastsq", bounded=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 3)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046)
         np.testing.assert_allclose(self.m[0].centre.value, 0.5)
-        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
+        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966, RTOL)
 
     def test_fit_bounded_bad_starting_values_lbfgs(self):
         self.m[0].centre.bmin = 0.5
         self.m[0].centre.value = -1
         # self.m[0].bounded = True
         self.m.fit(fitter="L-BFGS-B", bounded=True, grad=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046)
         np.testing.assert_allclose(self.m[0].centre.value, 0.5)
         np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
