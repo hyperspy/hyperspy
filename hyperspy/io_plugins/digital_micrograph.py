@@ -282,13 +282,11 @@ class DigitalMicrographReader(object):
         struct encoded dtype.
 
         """
-        self.f.seek(4, 1)  # Skip the name length
-        self.skipif4(1)
+        length = self.read_l_or_q(self.f, "big")
         nfields = self.read_l_or_q(self.f, "big")
         definition = ()
         for ifield in range(nfields):
-            self.f.seek(4, 1)
-            self.skipif4(1)
+            length2 = self.read_l_or_q(self.f, "big")
             definition += (self.read_l_or_q(self.f, "big"),)
 
         return definition
