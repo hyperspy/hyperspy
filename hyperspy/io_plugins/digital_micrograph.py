@@ -237,7 +237,8 @@ class DigitalMicrographReader(object):
             9: (iou.read_char, 1, 'b'),
             10: (iou.read_byte, 1, 'b'),   # 0x0a
             11: (iou.read_long_long, 8, 'q'),  # long long, new in DM4
-            12: (iou.read_ulong_long, 8, 'Q'),  # unsigned long long, new in DM4
+            # unsigned long long, new in DM4
+            12: (iou.read_ulong_long, 8, 'Q'),
             15: (self.read_struct, None, 'struct',),  # 0x0f
             18: (self.read_string, None, 'c'),  # 0x12
             20: (self.read_array, None, 'array'),  # 0x14

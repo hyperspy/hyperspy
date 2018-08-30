@@ -172,7 +172,6 @@ def read_ulong_long(f, endian):
         return s.unpack(data)[0]
 
 
-
 def read_float(f, endian):
     """Read a 4-Byte floating point from file f
     with a given endianness (byte order).
