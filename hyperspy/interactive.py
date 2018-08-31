@@ -80,7 +80,7 @@ class Interactive:
             self.out = self.kwargs.pop('out')
         else:
             self.out = self.f(*self.args, **self.kwargs)
-        # Reuse the `_plot_kwargs` for the roi if available 
+        # Reuse the `_plot_kwargs` for the roi if available
         if _plot_kwargs and 'signal' in self.kwargs:
             self.out._plot_kwargs = self.kwargs['signal']._plot_kwargs
         try:
@@ -130,5 +130,6 @@ class Interactive:
 def interactive(f, event="auto", recompute_out_event="auto", *args, **kwargs):
     cls = Interactive(f, event, recompute_out_event, *args, **kwargs)
     return cls.out
+
 
 interactive.__doc__ = Interactive.__init__.__doc__

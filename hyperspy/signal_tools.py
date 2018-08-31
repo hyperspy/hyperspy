@@ -655,12 +655,12 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                         " estimation of the background. Otherwise use "
                         "use non-linear least squares."))
     zero_fill = t.Bool(
-                 False,
-                 desc=("Set all spectral channels lower than the lower \n"
-                       "bound of the fitting range to zero (this is the \n"
-                       "default behavior of Gatan's DigitalMicrograph). \n"
-                       "Otherwise leave the pre-fitting region as-is \n"
-                       "(useful for inspecting quality of background fit)."))
+        False,
+        desc=("Set all spectral channels lower than the lower \n"
+              "bound of the fitting range to zero (this is the \n"
+              "default behavior of Gatan's DigitalMicrograph). \n"
+              "Otherwise leave the pre-fitting region as-is \n"
+              "(useful for inspecting quality of background fit)."))
     background_estimator = t.Instance(Component)
     bg_line_range = t.Enum('from_left_range',
                            'full',
@@ -783,9 +783,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         if self.background_estimator is None:
             return
         res = self.background_estimator.estimate_parameters(
-                self.signal, self.ss_left_value,
-                self.ss_right_value,
-                only_current=True)
+            self.signal, self.ss_left_value,
+            self.ss_right_value,
+            only_current=True)
         if self.bg_line is None:
             if res:
                 self.create_background_line()

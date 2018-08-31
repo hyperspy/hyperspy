@@ -132,7 +132,7 @@ class PowerLaw(Expression):
             log = np.log
         with np.errstate(divide='raise'):
             try:
-                r = 2 * log(I1 / I2) / log(x2 / x1)                    
+                r = 2 * log(I1 / I2) / log(x2 / x1)
                 k = 1 - r
                 A = k * I2 / (x2 ** k - x3 ** k)
                 if s._lazy:

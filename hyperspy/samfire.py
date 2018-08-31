@@ -237,7 +237,8 @@ class Samfire:
         if 'min_function' in kwargs:
             kwargs['min_function'] = dill.dumps(kwargs['min_function'])
         if 'min_function_grad' in kwargs:
-            kwargs['min_function_grad'] = dill.dumps(kwargs['min_function_grad'])
+            kwargs['min_function_grad'] = dill.dumps(
+                kwargs['min_function_grad'])
         self._args = kwargs
         num_of_strat = len(self.strategies)
         total_size = self.model.axes_manager.navigation_size - self.pixels_done
@@ -613,7 +614,7 @@ class Samfire:
             if self.strategies:
                 try:
                     self._figure = self.active_strategy.plot(self._figure)
-                except:
+                except BaseException:
                     self._figure = None
                     self._figure = self.active_strategy.plot(self._figure)
 

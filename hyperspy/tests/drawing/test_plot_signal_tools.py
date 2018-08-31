@@ -47,4 +47,3 @@ def test_plot_BackgroundRemoval():
     br.span_selector.onmove_callback()
 
     return br.signal._plot.signal_plot.figure
-

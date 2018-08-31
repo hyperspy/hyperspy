@@ -1040,7 +1040,7 @@ _spikes_diagnosis,
                                   background_estimator.function_nd(axis))
             except MemoryError:
                 result = self - model.as_signal(
-                        show_progressbar=show_progressbar)
+                    show_progressbar=show_progressbar)
         else:
             model.set_signal_range(signal_range[0], signal_range[1])
             model.multifit(show_progressbar=show_progressbar)
@@ -1121,9 +1121,9 @@ _spikes_diagnosis,
             possibly more accurate.
         zero_fill : bool
             If True, all spectral channels lower than the lower bound of the
-            fitting range will be set to zero (this is the default behavior 
-            of Gatan's DigitalMicrograph). Setting this value to False 
-            allows for inspection of the quality of background fit throughout 
+            fitting range will be set to zero (this is the default behavior
+            of Gatan's DigitalMicrograph). Setting this value to False
+            allows for inspection of the quality of background fit throughout
             the pre-fitting region.
         plot_remainder : bool
             If True, add a (green) line previewing the remainder signal after

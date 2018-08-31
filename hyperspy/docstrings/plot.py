@@ -53,13 +53,13 @@ BASE_PLOT_DOCSTRING = \
         plot_markers : bool, default True
             Plot markers added using s.add_marker(marker, permanent=True).
             Note, a large number of markers might lead to very slow plotting.
-        norm : {'auto', 'linear', 'log', mpl `Normalize` instance or subclass}, 
+        norm : {'auto', 'linear', 'log', mpl `Normalize` instance or subclass},
             default is 'auto'.
-            Plot the intensity scale on a linear or logarithmic scale. If 
-            'auto', plot the intensity on a linear scale except when 
-            `power_spectrum` is True, which can be used only for compatible 
-            signal. For Signal2D, a matplotlib `Normalize` subclass or 
-            instance can be provided. 
+            Plot the intensity scale on a linear or logarithmic scale. If
+            'auto', plot the intensity on a linear scale except when
+            `power_spectrum` is True, which can be used only for compatible
+            signal. For Signal2D, a matplotlib `Normalize` subclass or
+            instance can be provided.
             """
 
 PLOT2D_DOCSTRING = \
@@ -93,7 +93,7 @@ PLOT2D_DOCSTRING = \
 
 COMPLEX_DOCSTRING = \
     """power_spectrum : bool, default is False.
-            If True, plot the power spectrum instead of the actual signal, if 
+            If True, plot the power spectrum instead of the actual signal, if
             False, plot the real and imaginary parts of the complex signal.
         representation : {'cartesian' or 'polar'}
             Determines if the real and imaginary part of the complex data is plotted ('cartesian',
@@ -103,7 +103,7 @@ COMPLEX_DOCSTRING = \
             imaginary parts (or amplitude and phase) in the same figure if
             the signal is one-dimensional.
         fft_shift : bool, default False
-            If True, shift the zero-frequency component. 
+            If True, shift the zero-frequency component.
             See `numpy.fft.fftshift` for more details.
         """
 
