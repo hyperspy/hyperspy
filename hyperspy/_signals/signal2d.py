@@ -157,6 +157,22 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         containing the estimate shifts
     max_value : float
         The maximum value of the correlation
+    
+    Notes
+    -----
+
+    The statistical analysis approach to the translation estimation
+    when using `reference`='stat' roughly follows [1]_ . If you use
+    it please cite their article.
+
+    References
+    ----------
+
+    .. [1] Bernhard Schaffer, Werner Grogger and Gerald
+        Kothleitner. “Automated Spatial Drift Correction for EFTEM
+        Image Series.”
+        Ultramicroscopy 102, no. 1 (December 2004): 27–36.
+
 
     """
 
@@ -577,10 +593,10 @@ class Signal2D(BaseSignal, CommonSignal2D):
         References
         ----------
 
-        .. [1] Schaffer, Bernhard, Werner Grogger, and Gerald
-        Kothleitner. “Automated Spatial Drift Correction for EFTEM
-        Image Series.”
-        Ultramicroscopy 102, no. 1 (December 2004): 27–36.
+        .. [1] Bernhard Schaffer, Werner Grogger and Gerald
+           Kothleitner. “Automated Spatial Drift Correction for EFTEM
+           Image Series.”
+           Ultramicroscopy 102, no. 1 (December 2004): 27–36.
 
         """
         self._check_signal_dimension_equals_two()
