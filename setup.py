@@ -63,6 +63,7 @@ install_req = ['scipy>=0.15',
                'statsmodels',
                'mrcz>=0.3.6',
                'numexpr',
+               'sparse',
                ]
 
 extras_require = {
@@ -70,7 +71,6 @@ extras_require = {
     "gui-jupyter": ["hyperspy_gui_ipywidgets"],
     "gui-traitsui": ["hyperspy_gui_traitsui"],
     "mrcz-blosc": ["blosc>=1.5"],
-    "lazy_FEI_EMD": ['sparse'],
     "test": ["pytest>=3", "pytest-mpl", "matplotlib>=2.0.2"],
     "doc": ["sphinx>=1.7", "sphinx_rtd_theme"],
 }
