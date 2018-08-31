@@ -41,6 +41,7 @@ import distutils.sysconfig
 import distutils.ccompiler
 from distutils.errors import CompileError, DistutilsPlatformError
 
+
 setup_path = os.path.dirname(__file__)
 
 import hyperspy.Release as Release
@@ -299,6 +300,7 @@ with update_version_when_dev() as version:
                 'tests/drawing/plot_signal2d/*.png',
                 'tests/drawing/plot_markers/*.png',
                 'tests/drawing/plot_widgets/*.png',
+                'tests/drawing/plot_signal_tools/*.png',
                 'tests/io/blockfile_data/*.blo',
                 'tests/io/dens_data/*.dens',
                 'tests/io/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3',
