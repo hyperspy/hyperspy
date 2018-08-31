@@ -1634,7 +1634,7 @@ selected features with respect to vertical or horizontal axis:
 
 .. code-block:: python
 
->>> holo.map(scipy.ndimage.rotate, angle=roi.angle(axis='x'), inplace=False).plot()
+>>> holo.map(scipy.ndimage.rotate, angle=roi.angle(axis='horizontal'), inplace=False).plot()
 
 .. figure::  images/roi_line2d_rotate.png
   :align:   center
