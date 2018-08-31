@@ -34,13 +34,23 @@ NEW
 Enhancements
 ------------
 
-* :py:func:`~.drawing.utils.plot_images` improvements (see :ref:`plot.images`for details):
+* :py:func:`~.drawing.utils.plot_images` improvements (see :ref:`plot.images` for details):
     * The ``cmap`` option of :py:func:`~.drawing.utils.plot_images`
      supports iterable types, allowing the user to specify different colormaps
      for the different images that are plotted by providing a list or other
      generator.
     * Clicking on an individual image updates it.
-* New customizable keyboard shortcuts to navigate multi-dimensional datasets. See :ref:`visualization_md`.
+* New customizable keyboard shortcuts to navigate multi-dimensional datasets. See :ref:`visualization-label`.
+* The :py:meth:`~._signals.signal1d.Signal1D.remove_background` method now operates much faster 
+  in multi-dimensional datasets and adds the options to interatively plot the remainder of the operation and
+  to set the removed background to zero. See :ref:`signal1D.remove_background` for details.
+* The  :py:meth:`~._signals.Signal2D.plot` method now takes a ``norm`` keyword that can be "linear", "log",
+  "auto"  or a matplotlib norm. See :ref:`plot.customize_images` for details.
+  Moreover, there are three new extra keyword
+  arguments, ``fft_shift`` and ``power_spectrum``, that are useful when plotting fourier transforms. See
+  :ref:`signal.fft`.
+* The :py:meth:`~._signals.signal2d.Signal2D.align2D` and :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D`
+  can operate with sub-pixel accuracy using skimage's upsampled matrix-multiplication DFT. See :ref:`signal2D.align`.
 
 
 
