@@ -1619,6 +1619,44 @@ parameters:
   :align:   center
   :width:   100%
 
+.. versionadded:: 1.4
+    :meth:`~.roi.Line2DROI.angle` can be used to calculate an angle between
+    ROI line and one of the axes providing its name through optional argument ``axis``:
+
+.. code-block:: python
+
+    >>> import scipy
+    >>> holo = hs.datasets.example_signals.object_hologram()
+    >>> roi = hs.roi.Line2DROI(x1=465.577, y1=445.15, x2=169.4, y2=387.731, linewidth=0)
+    >>> holo.plot()
+    >>> ss = roi.interactive(holo)
+
+.. figure::  images/roi_line2d_holo.png
+  :align:   center
+  :width:   500
+
+.. code-block:: python
+
+    >>> roi.angle(axis='y')
+    -100.97166759025453
+
+By default output of the method is in degrees, though radians can be selected as follows:
+
+.. code-block:: python
+
+    >>> roi.angle(axis='vertical', units='radians')
+    -1.7622880506791903
+
+Conveniently, :meth:`~.roi.Line2DROI.angle` can be used to rotate image to align
+selected features with respect to vertical or horizontal axis:
+
+.. code-block:: python
+
+>>> holo.map(scipy.ndimage.rotate, angle=roi.angle(axis='horizontal'), inplace=False).plot()
+
+.. figure::  images/roi_line2d_rotate.png
+  :align:   center
+  :width:   500
 
 .. _complex_data-label:
 
