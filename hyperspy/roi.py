@@ -1045,7 +1045,7 @@ class Line2DROI(BaseInteractiveROI):
 
         Parameters
         ----------
-        axis : str, {'horizontal', 'vertical', 'x', 'y'}, optional
+        axis : str, {'horizontal', 'vertical'}, optional
             Select axis against which the angle of the ROI line is measured.
             'x' is alias to 'horizontal' and 'y' is 'vertical'
             (Default: 'horizontal')
@@ -1056,7 +1056,6 @@ class Line2DROI(BaseInteractiveROI):
         Returns
         -------
         angle : float
-            Angle in a range of [-pi, pi]
 
         Examples
         --------
@@ -1076,13 +1075,13 @@ class Line2DROI(BaseInteractiveROI):
         else:
             raise ValueError("Units are not recognized. Use  either 'degrees' or 'radians'.")
 
-        if any(axis == a for a in ['horizontal', 'x']):
+        if axis == 'horizontal':
             return np.arctan2(y, x) * conversation
-        elif any(axis == a for a in ['vertical', 'y']):
+        elif axis == 'vertical':
             return np.arctan2(x, y) * conversation
         else:
             raise ValueError("Axis is not recognized. "
-                             "Use  either 'horizontal', 'vertical', 'x' or 'y'.")
+                             "Use  either 'horizontal' or 'vertical'.")
 
     @staticmethod
     def profile_line(img, src, dst, axes, linewidth=1,

@@ -319,15 +319,11 @@ class TestROIs():
         r_angles = np.array([rr.angle(axis='vertical') for rr in r])
         assert np.allclose(r_angles, angles_v)
 
-        # 2. Testing axis aliases:
+        # 2. Testing unit conversation
         r = Line2DROI(np.random.rand(), np.random.rand(), np.random.rand(), np.random.rand())
-        assert r.angle(axis='horizontal') == r.angle(axis='x')
-        assert r.angle(axis='vertical') == r.angle(axis='y')
-
-        # 3. Testing unit conversation
         assert r.angle(units='degrees') == (r.angle(units='radians') / np.pi * 180.)
 
-        # 4. Testing raises:
+        # 3. Testing raises:
         with pytest.raises(ValueError):
             r.angle(units='meters')
         with pytest.raises(ValueError):
