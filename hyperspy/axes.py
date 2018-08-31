@@ -628,7 +628,6 @@ class DataAxis(t.HasTraits, UnitConversion):
         self._set_quantity(value, 'offset')
 
 
-
 @add_gui_method(toolkey="AxesManager")
 class AxesManager(t.HasTraits):
 
