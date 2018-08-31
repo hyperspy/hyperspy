@@ -41,8 +41,8 @@ _ureg = pint.UnitRegistry()
 
 FACTOR_DOCSTRING = \
     """factor : float (default: 0.25)
-            'factor' is an adjustable value used to determine the prefix of 
-            the units. The product `factor * scale * size` is passed to the 
+            'factor' is an adjustable value used to determine the prefix of
+            the units. The product `factor * scale * size` is passed to the
             pint `to_compact` method to determine the prefix."""
 
 
@@ -96,7 +96,7 @@ class UnitConversion:
         return False
 
     def _convert_compact_units(self, factor=0.25, inplace=True):
-        """ Convert units to "human-readable" units, which means with a 
+        """ Convert units to "human-readable" units, which means with a
             convenient prefix.
 
             Parameters
@@ -135,8 +135,8 @@ class UnitConversion:
             return scale, offset, units
 
     def convert_to_units(self, units=None, inplace=True, factor=0.25):
-        """ Convert the scale and the units of the current axis. If the unit 
-        of measure is not supported by the pint library, the scale and units 
+        """ Convert the scale and the units of the current axis. If the unit
+        of measure is not supported by the pint library, the scale and units
         are not modified.
 
         Parameters
@@ -144,11 +144,11 @@ class UnitConversion:
         units : {str | None}
             Default = None
             If str, the axis will be converted to the provided units.
-            If `"auto"`, automatically determine the optimal units to avoid 
-            using too large or too small numbers. This can be tweaked by the 
+            If `"auto"`, automatically determine the optimal units to avoid
+            using too large or too small numbers. This can be tweaked by the
             `factor` argument.
         inplace : bool
-            If `True`, convert the axis in place. if `False` return the  
+            If `True`, convert the axis in place. if `False` return the
             `scale`, `offset` and `units`.
         %s
         """
@@ -1003,8 +1003,8 @@ class AxesManager(t.HasTraits):
 
     def convert_units(self, axes=None, units=None, same_units=True,
                       factor=0.25):
-        """ Convert the scale and the units of the selected axes. If the unit 
-        of measure is not supported by the pint library, the scale and units 
+        """ Convert the scale and the units of the selected axes. If the unit
+        of measure is not supported by the pint library, the scale and units
         are not changed.
 
         Parameters
@@ -1020,16 +1020,16 @@ class AxesManager(t.HasTraits):
         units : {list of string of the same length than axes | str | None}
             Default = None
             If list, the selected axes will be converted to the provided units.
-            If str, the navigation or signal axes will be converted to the 
+            If str, the navigation or signal axes will be converted to the
             provided units.
-            If `None`, the scale and the units are converted to the appropriate 
-            scale and units to avoid displaying scalebar with >3 digits or too 
+            If `None`, the scale and the units are converted to the appropriate
+            scale and units to avoid displaying scalebar with >3 digits or too
             small number. This can be tweaked by the `factor` argument.
         same_units : bool
             If `True`, force to keep the same units if the units of
-            the axes differs. It only applies for the same kind of axis, 
-            `navigation` or `signal`. By default the converted units of the 
-            first axis is used for all axes. If `False`, convert all axes 
+            the axes differs. It only applies for the same kind of axis,
+            `navigation` or `signal`. By default the converted units of the
+            first axis is used for all axes. If `False`, convert all axes
             individually.
         %s
         """

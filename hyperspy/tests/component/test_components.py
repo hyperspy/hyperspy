@@ -1,10 +1,32 @@
-import numpy as np
+# -*- coding: utf-8 -*-
+# Copyright 2007-2016 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import itertools
+import numpy as np
 from numpy.testing import assert_allclose
+import pytest
 
 import hyperspy.api as hs
 from hyperspy.models.model1d import Model1D
 from hyperspy.misc.test_utils import ignore_warning
+
+
+TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 
 
 class TestPowerLaw:
@@ -15,65 +37,59 @@ class TestPowerLaw:
         s.axes_manager[0].scale = 0.01
         m = s.create_model()
         m.append(hs.model.components1D.PowerLaw())
-        m[0].A.value = 10
+        m[0].A.value = 1000
         m[0].r.value = 4
         self.m = m
 
-    def test_estimate_parameters_binned_only_current(self):
-        self.m.signal.metadata.Signal.binned = True
+    @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
+    def test_estimate_parameters(self, only_current, binned):
+        self.m.signal.metadata.Signal.binned = binned
         s = self.m.as_signal(show_progressbar=None, parallel=False)
-        s.metadata.Signal.binned = True
+        assert s.metadata.Signal.binned == binned
         g = hs.model.components1D.PowerLaw()
-        g.estimate_parameters(s,
-                              None,
-                              None,
-                              only_current=True)
-        assert_allclose(g.A.value, 10.084913947965161)
-        assert_allclose(g.r.value, 4.0017676988807409)
+        g.estimate_parameters(s, None, None, only_current=only_current)
+        A_value = 1008.4913 if binned else 1006.4378
+        r_value = 4.001768 if binned else 4.001752
+        assert_allclose(g.A.value, A_value)
+        assert_allclose(g.r.value, r_value)
 
-    def test_estimate_parameters_unbinned_only_current(self):
-        self.m.signal.metadata.Signal.binned = False
-        s = self.m.as_signal(show_progressbar=None, parallel=False)
-        s.metadata.Signal.binned = False
-        g = hs.model.components1D.PowerLaw()
-        g.estimate_parameters(s,
-                              None,
-                              None,
-                              only_current=True)
-        assert_allclose(g.A.value, 10.064378823244837)
-        assert_allclose(g.r.value, 4.0017522876514304)
-
-    def test_estimate_parameters_binned(self):
-        self.m.signal.metadata.Signal.binned = True
-        s = self.m.as_signal(show_progressbar=None, parallel=False)
-        s.metadata.Signal.binned = True
-        g = hs.model.components1D.PowerLaw()
-        g.estimate_parameters(s,
-                              None,
-                              None,
-                              only_current=False)
-        assert_allclose(g.A.value, 10.084913947965161)
-        assert_allclose(g.r.value, 4.0017676988807409)
-
-    def test_estimate_parameters_unbinned(self):
-        self.m.signal.metadata.Signal.binned = False
-        s = self.m.as_signal(show_progressbar=None, parallel=False)
-        s.metadata.Signal.binned = False
-        g = hs.model.components1D.PowerLaw()
-        g.estimate_parameters(s,
-                              None,
-                              None,
-                              only_current=False)
-        assert_allclose(g.A.value, 10.064378823244837)
-        assert_allclose(g.r.value, 4.0017522876514304)
+        if only_current:
+            A_value, r_value = 0, 0
         # Test that it all works when calling it with a different signal
         s2 = hs.stack((s, s))
-        g.estimate_parameters(s2,
-                              None,
-                              None,
-                              only_current=False)
-        assert_allclose(g.A.map["values"][1], 10.064378823244837)
-        assert_allclose(g.r.map["values"][0], 4.0017522876514304)
+        g.estimate_parameters(s2, None, None, only_current=only_current)
+        assert_allclose(g.A.map["values"][1], A_value)
+        assert_allclose(g.r.map["values"][1], r_value)
+
+
+class TestDoublePowerLaw:
+
+    def setup_method(self, method):
+        s = hs.signals.Signal1D(np.zeros(1024))
+        s.axes_manager[0].offset = 100
+        s.axes_manager[0].scale = 0.1
+        m = s.create_model()
+        m.append(hs.model.components1D.DoublePowerLaw())
+        m[0].A.value = 1000
+        m[0].r.value = 4
+        m[0].ratio.value = 200
+        self.m = m
+
+    @pytest.mark.parametrize(("binned"), (True, False))
+    def test_fit(self, binned):
+        self.m.signal.metadata.Signal.binned = binned
+        s = self.m.as_signal(show_progressbar=None, parallel=False)
+        assert s.metadata.Signal.binned == binned
+        g = hs.model.components1D.DoublePowerLaw()
+        # Fix the ratio parameter to test the fit
+        g.ratio.free = False
+        g.ratio.value = 200
+        m = s.create_model()
+        m.append(g)
+        m.fit_component(g, signal_range=(None, None))
+        assert_allclose(g.A.value, 1000.0)
+        assert_allclose(g.r.value, 4.0)
+        assert_allclose(g.ratio.value, 200.)
 
 
 class TestOffset:
@@ -86,26 +102,13 @@ class TestOffset:
         m[0].offset.value = 10
         self.m = m
 
-    def test_estimate_parameters_binned(self):
-        self.m.signal.metadata.Signal.binned = True
+    @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
+    def test_estimate_parameters(self, only_current, binned):
+        self.m.signal.metadata.Signal.binned = binned
         s = self.m.as_signal(show_progressbar=None, parallel=False)
-        s.metadata.Signal.binned = True
+        assert s.metadata.Signal.binned == binned
         g = hs.model.components1D.Offset()
-        g.estimate_parameters(s,
-                              None,
-                              None,
-                              only_current=True)
-        assert_allclose(g.offset.value, 10)
-
-    def test_estimate_parameters_unbinned(self):
-        self.m.signal.metadata.Signal.binned = False
-        s = self.m.as_signal(show_progressbar=None, parallel=False)
-        s.metadata.Signal.binned = False
-        g = hs.model.components1D.Offset()
-        g.estimate_parameters(s,
-                              None,
-                              None,
-                              only_current=True)
+        g.estimate_parameters(s, None, None, only_current=only_current)
         assert_allclose(g.offset.value, 10)
 
 
@@ -136,28 +139,13 @@ class TestPolynomial:
                                              np.array([[6, ], [4.5], [3.5]]))
         assert c.grad_coefficients(np.arange(10)).shape == (3, 10)
 
-    def test_estimate_parameters_binned(self):
-        self.m.signal.metadata.Signal.binned = True
+    @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
+    def test_estimate_parameters(self, only_current, binned):
+        self.m.signal.metadata.Signal.binned = binned
         s = self.m.as_signal(show_progressbar=None, parallel=False)
-        s.metadata.Signal.binned = True
+        assert s.metadata.Signal.binned == binned
         g = hs.model.components1D.Polynomial(order=2)
-        g.estimate_parameters(s,
-                              None,
-                              None,
-                              only_current=True)
-        assert_allclose(g.coefficients.value[0], 0.5)
-        assert_allclose(g.coefficients.value[1], 2)
-        assert_allclose(g.coefficients.value[2], 3)
-
-    def test_estimate_parameters_unbinned(self):
-        self.m.signal.metadata.Signal.binned = False
-        s = self.m.as_signal(show_progressbar=None, parallel=False)
-        s.metadata.Signal.binned = False
-        g = hs.model.components1D.Polynomial(order=2)
-        g.estimate_parameters(s,
-                              None,
-                              None,
-                              only_current=True)
+        g.estimate_parameters(s, None, None, only_current=only_current)
         assert_allclose(g.coefficients.value[0], 0.5)
         assert_allclose(g.coefficients.value[1], 2)
         assert_allclose(g.coefficients.value[2], 3)
@@ -196,31 +184,28 @@ class TestGaussian:
         m[0].A.value = 2
         self.m = m
 
-    def test_estimate_parameters_binned(self):
-        self.m.signal.metadata.Signal.binned = True
+    @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
+    def test_estimate_parameters_binned(self, only_current, binned):
+        self.m.signal.metadata.Signal.binned = binned
         s = self.m.as_signal(show_progressbar=None, parallel=False)
-        s.metadata.Signal.binned = True
+        assert s.metadata.Signal.binned == binned
         g = hs.model.components1D.Gaussian()
-        g.estimate_parameters(s,
-                              None,
-                              None,
-                              only_current=True)
+        g.estimate_parameters(s, None, None, only_current=only_current)
         assert_allclose(g.sigma.value, 0.5)
         assert_allclose(g.A.value, 2)
         assert_allclose(g.centre.value, 1)
 
-    def test_estimate_parameters_unbinned(self):
-        self.m.signal.metadata.Signal.binned = False
+    @pytest.mark.parametrize("binned", (True, False))
+    def test_function_nd(self, binned):
+        self.m.signal.metadata.Signal.binned = binned
         s = self.m.as_signal(show_progressbar=None, parallel=False)
-        s.metadata.Signal.binned = False
+        s2 = hs.stack([s]*2)
         g = hs.model.components1D.Gaussian()
-        g.estimate_parameters(s,
-                              None,
-                              None,
-                              only_current=True)
-        assert_allclose(g.sigma.value, 0.5)
-        assert_allclose(g.A.value, 2)
-        assert_allclose(g.centre.value, 1)
+        g.estimate_parameters(s2, None, None, only_current=False)
+        assert g.binned == binned
+        axis = s.axes_manager.signal_axes[0]
+        factor = axis.scale if binned else 1
+        assert_allclose(g.function_nd(axis.axis) * factor, s2.data)
 
 
 class TestExpression:
@@ -258,6 +243,9 @@ class TestExpression:
         assert_allclose(
             self.g.grad_fwhm(2),
             0.00033845077175778578)
+
+    def test_function_nd(self):
+        assert self.g.function_nd(0) == 1
 
 
 def test_expression_substitution():

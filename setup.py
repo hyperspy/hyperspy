@@ -62,6 +62,7 @@ install_req = ['scipy>=0.15',
                'pint>=0.8',
                'statsmodels',
                'mrcz>=0.3.6',
+               'numexpr',
                ]
 
 extras_require = {
@@ -71,13 +72,9 @@ extras_require = {
     "mrcz-blosc": ["blosc>=1.5"],
     "lazy_FEI_EMD": ['sparse'],
     "test": ["pytest>=3", "pytest-mpl", "matplotlib>=2.0.2"],
-    "doc": ["sphinx", "numpydoc", "sphinxcontrib-napoleon", "sphinx_rtd_theme"],
+    "doc": ["sphinx>=1.7", "sphinx_rtd_theme"],
 }
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
-
-# the hack to deal with setuptools + installing the package in ReadTheDoc:
-if 'readthedocs.org' in sys.executable:
-    install_req = []
 
 
 def update_version(version):
