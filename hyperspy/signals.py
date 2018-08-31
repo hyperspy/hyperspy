@@ -45,6 +45,7 @@ from hyperspy._signals.signal2d import Signal2D
 from hyperspy._signals.eels import EELSSpectrum
 from hyperspy._signals.eds_sem import EDSSEMSpectrum
 from hyperspy._signals.eds_tem import EDSTEMSpectrum
+from hyperspy._signals.eds_xrf import EDSXRFSpectrum
 from hyperspy._signals.complex_signal import ComplexSignal
 from hyperspy._signals.complex_signal1d import ComplexSignal1D
 from hyperspy._signals.complex_signal2d import ComplexSignal2D
