@@ -61,7 +61,6 @@ install_req = ['scipy>=0.15',
                'scikit-image>=0.13',
                'pint>=0.8',
                'statsmodels',
-               'mrcz>=0.3.6',
                'numexpr',
                'sparse',
                ]
@@ -70,7 +69,7 @@ extras_require = {
     "learning": ['scikit-learn'],
     "gui-jupyter": ["hyperspy_gui_ipywidgets"],
     "gui-traitsui": ["hyperspy_gui_traitsui"],
-    "mrcz-blosc": ["blosc>=1.5"],
+    "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
     "test": ["pytest>=3", "pytest-mpl", "matplotlib>=2.0.2"],
     "doc": ["sphinx>=1.7", "sphinx_rtd_theme"],
 }
