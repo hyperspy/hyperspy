@@ -157,7 +157,7 @@ def estimate_image_shift(ref, image, roi=None, sobel=True,
         containing the estimate shifts
     max_value : float
         The maximum value of the correlation
-    
+
     Notes
     -----
 
