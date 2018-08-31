@@ -1046,17 +1046,17 @@ class Line2DROI(BaseInteractiveROI):
         Parameters
         ----------
         axis : str, {'horizontal', 'vertical', 'x', 'y'}, optional
-            Select axis with respect to which teh angle to be measured.
+            Select axis against which the angle of the ROI line is measured.
             'x' is alias to 'horizontal' and 'y' is 'vertical'
             (Default: 'horizontal')
         units : str, {'degrees', 'radians'}
-            Select units in which the angle to be calculated
+            The angle units of the output
             (Default: 'degrees')
 
         Returns
         -------
         angle : float
-            Angle in radians or degrees in range [-pi, pi]
+            Angle in a range of [-pi, pi]
 
         Examples
         --------
@@ -1081,7 +1081,7 @@ class Line2DROI(BaseInteractiveROI):
         elif any(axis == a for a in ['vertical', 'y']):
             return np.arctan2(x, y) * conversation
         else:
-            raise ValueError("Axis is not recognized."
+            raise ValueError("Axis is not recognized. "
                              "Use  either 'horizontal', 'vertical', 'x' or 'y'.")
 
     @staticmethod
