@@ -130,6 +130,7 @@ Alternatively you can select the extra functionalities required:
 * ``test`` to install required libraries to run HyperSpy's unit tests.
 * ``mrcz`` to install the mrcz plugin.
 * ``doc`` to install required libraries to build HyperSpy's documentation.
+* ``speed`` install optional libraries that speed up some functionalities.
 
 For example:
 

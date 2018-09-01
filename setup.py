@@ -73,6 +73,8 @@ extras_require = {
     "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
     "test": ["pytest>=3", "pytest-mpl", "matplotlib>=2.0.2"],
     "doc": ["sphinx>=1.7", "sphinx_rtd_theme"],
+    "speed": ["numba<0.39"],
+
 }
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
