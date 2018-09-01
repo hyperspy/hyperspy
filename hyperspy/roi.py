@@ -1071,6 +1071,49 @@ class Line2DROI(BaseInteractiveROI):
         d_row, d_col = p1 - p0
         return np.hypot(d_row, d_col)
 
+    def angle(self, axis='horizontal', units='degrees'):
+        """"Angle between ROI line and selected axis
+
+        Parameters
+        ----------
+        axis : str, {'horizontal', 'vertical'}, optional
+            Select axis against which the angle of the ROI line is measured.
+            'x' is alias to 'horizontal' and 'y' is 'vertical'
+            (Default: 'horizontal')
+        units : str, {'degrees', 'radians'}
+            The angle units of the output
+            (Default: 'degrees')
+
+        Returns
+        -------
+        angle : float
+
+        Examples
+        --------
+        >>> import hyperspy.api as hs
+        >>> hs.roi.Line2DROI(0., 0., 1., 2., 1)
+        >>> r.angle()
+        63.43494882292201
+        """
+
+        x = self.x2 - self.x1
+        y = self.y2 - self.y1
+
+        if units == 'degrees':
+            conversation = 180. / np.pi
+        elif units == 'radians':
+            conversation = 1.
+        else:
+            raise ValueError("Units are not recognized. Use  either 'degrees' or 'radians'.")
+
+        if axis == 'horizontal':
+            return np.arctan2(y, x) * conversation
+        elif axis == 'vertical':
+            return np.arctan2(x, y) * conversation
+        else:
+            raise ValueError("Axis is not recognized. "
+                             "Use  either 'horizontal' or 'vertical'.")
+
     @staticmethod
     def profile_line(img, src, dst, axes, linewidth=1,
                      order=1, mode='constant', cval=0.0):
