@@ -30,6 +30,7 @@ NEW
 * New :meth:`~._signals.hologram_image.HologramImage.statistics` method to compute useful hologram parameters. See :ref:`holography.stats-label`.
 * Automatic axes units conversion and better units handling using `pint <https://pint.readthedocs.io/en/latest/>`_.
   See :ref:`quantity_and_converting_units`.
+* New :class:`~.roi.Line2DROI` :meth:`~.roi.Line2DROI.angle` method. See :ref:`roi-label` for details.
 
 Enhancements
 ------------
@@ -41,7 +42,7 @@ Enhancements
      generator.
     * Clicking on an individual image updates it.
 * New customizable keyboard shortcuts to navigate multi-dimensional datasets. See :ref:`visualization-label`.
-* The :py:meth:`~._signals.signal1d.Signal1D.remove_background` method now operates much faster 
+* The :py:meth:`~._signals.signal1d.Signal1D.remove_background` method now operates much faster
   in multi-dimensional datasets and adds the options to interatively plot the remainder of the operation and
   to set the removed background to zero. See :ref:`signal1D.remove_background` for details.
 * The  :py:meth:`~._signals.Signal2D.plot` method now takes a ``norm`` keyword that can be "linear", "log",
