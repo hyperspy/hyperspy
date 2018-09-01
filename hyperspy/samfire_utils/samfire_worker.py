@@ -115,7 +115,7 @@ class Worker:
                     try:
                         getattr(self.model[comp_name],
                                 parameter_name).value = value
-                    except:
+                    except BaseException:
                         e = sys.exc_info()[0]
                         to_send = ('Error',
                                    (self.identity,

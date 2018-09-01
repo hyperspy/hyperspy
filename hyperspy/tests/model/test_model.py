@@ -624,7 +624,8 @@ class TestModelFitBinned:
     def test_fit_leastsq(self):
         self.m.fit(fitter="leastsq")
         np.testing.assert_allclose(self.m[0].A.value, 9976.14526082, RTOL)
-        np.testing.assert_allclose(self.m[0].centre.value, -0.110610727064, RTOL)
+        np.testing.assert_allclose(
+            self.m[0].centre.value, -0.110610727064, RTOL)
         np.testing.assert_allclose(self.m[0].sigma.value, 1.98380707571, RTOL)
 
     def test_fit_mpfit(self):

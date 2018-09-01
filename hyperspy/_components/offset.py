@@ -95,7 +95,8 @@ class Offset(Component):
             dc = signal.data
             gi = [slice(None), ] * len(dc.shape)
             gi[axis.index_in_array] = slice(i1, i2)
-            self.offset.map['values'][:] = dc[tuple(gi)].mean(axis.index_in_array)
+            self.offset.map['values'][:] = dc[tuple(
+                gi)].mean(axis.index_in_array)
             if self.binned:
                 self.offset.map['values'] /= axis.scale
             self.offset.map['is_set'][:] = True

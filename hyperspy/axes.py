@@ -627,16 +627,6 @@ class DataAxis(t.HasTraits, UnitConversion):
     def offset_as_quantity(self, value):
         self._set_quantity(value, 'offset')
 
-    @property
-    def units(self):
-        return self._units
-
-    @units.setter
-    def units(self, s):
-        if s == '':
-            self._units = t.Undefined
-        self._units = s
-
 
 @add_gui_method(toolkey="AxesManager")
 class AxesManager(t.HasTraits):

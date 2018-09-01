@@ -313,7 +313,7 @@ class Signal1DLine(object):
 
         if norm == 'log':
             plot = self.ax.semilogy
-        elif (isinstance(norm, mpl.colors.Normalize) or 
+        elif (isinstance(norm, mpl.colors.Normalize) or
               (inspect.isclass(norm) and issubclass(norm, mpl.colors.Normalize))
               ):
             raise ValueError("Matplotlib Normalize instance or subclass can "
@@ -340,11 +340,11 @@ class Signal1DLine(object):
 
     def _get_data(self, real_part=False):
         if self._plot_imag and not real_part:
-            ydata = self.data_function(axes_manager=self.axes_manager, 
+            ydata = self.data_function(axes_manager=self.axes_manager,
                                        **self.data_function_kwargs).imag
         else:
             ydata = self.data_function(axes_manager=self.axes_manager,
-                                       **self.data_function_kwargs).real  
+                                       **self.data_function_kwargs).real
         return ydata
 
     def _auto_update_line(self, *args, **kwargs):

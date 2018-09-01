@@ -1066,8 +1066,15 @@ to reverse the :py:func:`~.utils.stack` function:
 
   Splitting example.
 
+
+.. _signal.fft:
+
 FFT and iFFT
 ^^^^^^^^^^^^
+
+.. versionadded:: 1.4 
+   :py:meth:`~.signal.BaseSignal.fft` and :py:meth:`~.signal.BaseSignal.ifft` method and ``fft_shift`` and ``power_spectrum``
+   ``plot`` keyword arguments.
 
 The Fast Fourier transform and its inverse can be applied on a signal with the :py:meth:`~.signal.BaseSignal.fft` and the :py:meth:`~.signal.BaseSignal.ifft` methods.
 

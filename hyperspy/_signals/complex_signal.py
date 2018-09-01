@@ -184,13 +184,13 @@ class ComplexSignal_mixin:
     def __call__(self, axes_manager=None, power_spectrum=False,
                  fft_shift=False):
         value = super().__call__(axes_manager=axes_manager,
-                     fft_shift=fft_shift)
+                                 fft_shift=fft_shift)
         if power_spectrum:
             value = np.abs(value)**2
         return value
 
     def plot(self, power_spectrum=False, navigator="auto", axes_manager=None,
-             representation='cartesian', norm="auto", fft_shift=False, 
+             representation='cartesian', norm="auto", fft_shift=False,
              same_axes=True, **kwargs):
         """%s
         %s

@@ -120,7 +120,7 @@ def create_figure(window_title=None,
     ----------
     window_title : string
     _on_figure_window_close : function
-    disable_xyscale_keys : bool, disable the `k`, `l` and `L` shortcuts which 
+    disable_xyscale_keys : bool, disable the `k`, `l` and `L` shortcuts which
     toggle the x or y axis between linear and log scale.
 
     Returns

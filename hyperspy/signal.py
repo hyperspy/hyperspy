@@ -1951,7 +1951,7 @@ class BaseSignal(FancySlicing,
                 # but we want to carry on...
                 pass
         if ('power_spectrum' in kwargs and
-            not self.metadata.Signal.get_item('FFT', False)):
+                not self.metadata.Signal.get_item('FFT', False)):
             _logger.warning('The option `power_spectrum` is considered only '
                             'for signals in Fourier space.')
             del kwargs['power_spectrum']
@@ -3342,10 +3342,10 @@ class BaseSignal(FancySlicing,
         Parameters
         ----------
         shift : bool or None, optional
-            If None the shift option will be set to the original status of the 
-            FFT using value in metadata. If no FFT entry is present in 
-            metadata, the parameter will be set to False. If True, the origin 
-            of FFT will be shifted to the centre, otherwise the origin would 
+            If None the shift option will be set to the original status of the
+            FFT using value in metadata. If no FFT entry is present in
+            metadata, the parameter will be set to False. If True, the origin
+            of FFT will be shifted to the centre, otherwise the origin would
             be kept at (0, 0)(Default: None).
         **kwargs
             other keyword arguments are described in np.fft.ifftn().

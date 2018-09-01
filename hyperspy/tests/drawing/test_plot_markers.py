@@ -474,19 +474,20 @@ def test_plot_eds_lines():
     s.axes_manager.navigation_axes[0].index = 1
     return s._plot.signal_plot.figure
 
+
 def test_iterate_markers():
     from skimage.feature import peak_local_max
     import scipy.misc
-    ims = BaseSignal(scipy.misc.face()).as_signal2D([1,2])
+    ims = BaseSignal(scipy.misc.face()).as_signal2D([1, 2])
     index = np.array([peak_local_max(im.data, min_distance=100,
-                             num_peaks=4) for im in ims])
+                                     num_peaks=4) for im in ims])
     # Add multiple markers
     for i in range(4):
         xs = index[:, i, 1]
         ys = index[:, i, 0]
         m = markers.point(x=xs, y=ys, color='red')
         ims.add_marker(m, plot_marker=True, permanent=True)
-        m = markers.text(x=10+xs, y=10+ys, text=str(i), color='k')
+        m = markers.text(x=10 + xs, y=10 + ys, text=str(i), color='k')
         ims.add_marker(m, plot_marker=True, permanent=True)
     xs = index[:, :, 1]
     ys = index[:, :, 0]
@@ -503,13 +504,14 @@ def test_iterate_markers():
         for key in m_original.keys():
             mo = m_original[key]
             mi = m_iterated[key]
-            assert mo.__class__.__name__         == mi.__class__.__name__
-            assert mo.name                       == mi.name
-            assert mo.get_data_position('x1')    == mi.get_data_position('x1')
-            assert mo.get_data_position('y1')    == mi.get_data_position('y1')
-            assert mo.get_data_position('text')  == mi.get_data_position('text')
+            assert mo.__class__.__name__ == mi.__class__.__name__
+            assert mo.name == mi.name
+            assert mo.get_data_position('x1') == mi.get_data_position('x1')
+            assert mo.get_data_position('y1') == mi.get_data_position('y1')
+            assert mo.get_data_position('text') == mi.get_data_position('text')
             assert mo.marker_properties['color'] == \
-                                                   mi.marker_properties['color']
+                mi.marker_properties['color']
+
 
 @update_close_figure
 def test_plot_eds_markers_close():

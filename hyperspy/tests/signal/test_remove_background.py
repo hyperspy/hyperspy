@@ -23,6 +23,7 @@ from hyperspy import signals
 from hyperspy import components1d
 from hyperspy.decorators import lazifyTestClass
 
+
 @lazifyTestClass
 class TestRemoveBackground1DGaussian:
 
@@ -66,8 +67,8 @@ class TestRemoveBackground1DPowerLaw:
         self.signal_noisy = self.signal.deepcopy()
         self.signal_noisy.add_gaussian_noise(1)
 
-        self.atol = 0.04*abs(self.signal.data).max()
-        self.atol_zero_fill = 0.04*abs(self.signal.isig[10:].data).max()
+        self.atol = 0.04 * abs(self.signal.data).max()
+        self.atol_zero_fill = 0.04 * abs(self.signal.isig[10:].data).max()
 
     def test_background_remove_pl(self):
         s1 = self.signal.remove_background(
@@ -85,7 +86,7 @@ class TestRemoveBackground1DPowerLaw:
             zero_fill=True,
             show_progressbar=None)
         # since we compare to zero, rtol can't be used (see np.allclose doc)
-        assert np.allclose(s1.isig[10:], np.zeros(len(s1.data[10:])), 
+        assert np.allclose(s1.isig[10:], np.zeros(len(s1.data[10:])),
                            atol=self.atol_zero_fill)
         assert np.allclose(s1.data[:10], np.zeros(10))
 

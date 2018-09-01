@@ -367,6 +367,9 @@ PyPI:       https://pypi.python.org/pypi/mrcz
 Citation:   Submitted.
 Preprint:   http://www.biorxiv.org/content/early/2017/03/13/116533
 
+Support for this format is not enabled by default. In order to enable it
+install the `mrcz` and optionally the `blosc` Python packages.
+
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -767,6 +770,10 @@ Or several by using a list:
     ...                 "/experimental/science_data_1",
     ...                 "/experimental/science_data_1"])
 
+
+asdf
+
+.. _emd_fei-format:
 
 EMD (FEI)
 ^^^^^^^^^

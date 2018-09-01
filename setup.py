@@ -41,6 +41,7 @@ import distutils.sysconfig
 import distutils.ccompiler
 from distutils.errors import CompileError, DistutilsPlatformError
 
+
 setup_path = os.path.dirname(__file__)
 
 import hyperspy.Release as Release
@@ -61,18 +62,19 @@ install_req = ['scipy>=0.15',
                'scikit-image>=0.13',
                'pint>=0.8',
                'statsmodels',
-               'mrcz>=0.3.6',
                'numexpr',
+               'sparse',
                ]
 
 extras_require = {
     "learning": ['scikit-learn'],
     "gui-jupyter": ["hyperspy_gui_ipywidgets"],
     "gui-traitsui": ["hyperspy_gui_traitsui"],
-    "mrcz-blosc": ["blosc>=1.5"],
-    "lazy_FEI_EMD": ['sparse'],
+    "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
     "test": ["pytest>=3", "pytest-mpl", "matplotlib>=2.0.2"],
     "doc": ["sphinx>=1.7", "sphinx_rtd_theme"],
+    "speed": ["numba<0.39"],
+
 }
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
@@ -300,6 +302,7 @@ with update_version_when_dev() as version:
                 'tests/drawing/plot_signal2d/*.png',
                 'tests/drawing/plot_markers/*.png',
                 'tests/drawing/plot_widgets/*.png',
+                'tests/drawing/plot_signal_tools/*.png',
                 'tests/io/blockfile_data/*.blo',
                 'tests/io/dens_data/*.dens',
                 'tests/io/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3',

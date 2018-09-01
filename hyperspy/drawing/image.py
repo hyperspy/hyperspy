@@ -471,9 +471,9 @@ class ImagePlot(BlittedFigure):
                         self.quantity_label
             else:
                 self.quantity_label = self.quantity_label.replace(
-                        'Power spectral density of ', '')
+                    'Power spectral density of ', '')
                 self.quantity_label = self.quantity_label.replace(
-                        'Power spectral density', '')
+                    'Power spectral density', '')
 
     def set_contrast(self, vmin, vmax):
         self.vmin, self.vmax = vmin, vmax

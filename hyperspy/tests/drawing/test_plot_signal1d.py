@@ -212,7 +212,7 @@ def _generate_parameter():
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_log_scale(mpl_cleanup):
-    s = Signal1D(np.exp(-np.arange(100)/5.0))
+    s = Signal1D(np.exp(-np.arange(100) / 5.0))
     s.plot(norm='log')
     return s._plot.signal_plot.figure
 

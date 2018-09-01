@@ -88,7 +88,7 @@ def test_function_nd(binned):
     s.data = g1.function(axis.axis)
     s.metadata.Signal.binned = binned
 
-    s2 = stack([s]*2)
+    s2 = stack([s] * 2)
     g2 = GaussianHF()
     factor = axis.scale if binned else 1
     g2.estimate_parameters(s2, axis.low_value, axis.high_value, False)

@@ -178,7 +178,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         if hasattr(self.signal_plot.figure, 'tight_layout'):
             try:
                 self.signal_plot.figure.tight_layout()
-            except:
+            except BaseException:
                 # tight_layout is a bit brittle, we do this just in case it
                 # complains
                 pass
