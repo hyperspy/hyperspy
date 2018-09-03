@@ -2,7 +2,6 @@ import os.path
 import os
 import tempfile
 import gc
-import urllib.request
 import zipfile
 import hashlib
 
