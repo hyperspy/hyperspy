@@ -41,8 +41,8 @@ if not TEST_FILES_OK:
             TEST_FILES_OK = True
         else:
             REASON = "wrong sha256sum of downloaded file. Expected: %s, got: %s" % SHA256SUM, SHA256SUM_GOT
-    except BaseException:
-        REASON = "download of EDAX test files failed"
+    except BaseException as e:
+        REASON = "download of EDAX test files failed: %s" % e
 
 
 def setup_module():
