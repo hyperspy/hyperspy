@@ -27,12 +27,14 @@ TEST_FILES_OK = os.path.isfile(ZIPF)
 # and skip the tests if the download fails.
 if not TEST_FILES_OK:
     try:
-        r = requests.get("https://github.com/hyperspy/hyperspy/blob/e7a323a3bb9b237c24bd9267d2cc4fcb31bb99f3/hyperspy/tests/io/edax_files.zip?raw=true")
-        with open(ZIPF, 'wb') as f:  
+        r = requests.get(
+            "https://github.com/hyperspy/hyperspy/blob/e7a323a3bb9b237c24bd9267d2cc4fcb31bb99f3/hyperspy/tests/io/edax_files.zip?raw=true")
+        with open(ZIPF, 'wb') as f:
             f.write(r.content)
             TEST_FILES_OK = os.path.isfile(ZIPF)
-    except:
+    except BaseException:
         pass
+
 
 def setup_module():
     if TEST_FILES_OK:
@@ -41,8 +43,7 @@ def setup_module():
 
 
 pytestmark = pytest.mark.skipif(not TEST_FILES_OK,
-    reason="download of EDAX test files failed")
-
+                                reason="download of EDAX test files failed")
 
 
 def teardown_module():
