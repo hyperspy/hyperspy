@@ -34,7 +34,7 @@ if not TEST_FILES_OK:
             "https://github.com/hyperspy/hyperspy/blob/e7a323a3bb9b237c24bd9267d2cc4fcb31bb99f3/hyperspy/tests/io/edax_files.zip?raw=true")
         with open(ZIPF, 'wb') as f:
             SHA256SUM_GOT = hashlib.sha256(r.content).hexdigest()
-            if SHA256SUM_GOT == SHA256SUM: 
+            if SHA256SUM_GOT == SHA256SUM:
                 TEST_FILES_OK = True
                 f.write(r.content)
             else:
