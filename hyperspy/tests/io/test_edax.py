@@ -4,6 +4,7 @@ import tempfile
 import gc
 import urllib.request
 import zipfile
+import hashlib
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
@@ -19,6 +20,8 @@ MY_PATH = os.path.dirname(__file__)
 ZIPF = os.path.join(MY_PATH, "edax_files.zip")
 TMP_DIR = tempfile.TemporaryDirectory()
 TEST_FILES_OK = os.path.isfile(ZIPF)
+REASON = ""
+SHA256SUM = "e217c71efbd208da4b52e9cf483443f9da2175f2924a96447ed393086fe32008"
 
 
 # The test files are not included in HyperSpy v1.4 because their file size is 36.5MB
@@ -30,10 +33,14 @@ if not TEST_FILES_OK:
         r = requests.get(
             "https://github.com/hyperspy/hyperspy/blob/e7a323a3bb9b237c24bd9267d2cc4fcb31bb99f3/hyperspy/tests/io/edax_files.zip?raw=true")
         with open(ZIPF, 'wb') as f:
-            f.write(r.content)
-            TEST_FILES_OK = os.path.isfile(ZIPF)
+            SHA256SUM_GOT = hashlib.sha256(r.content).hexdigest()
+            if SHA256SUM_GOT == SHA256SUM: 
+                TEST_FILES_OK = True
+                f.write(r.content)
+            else:
+                REASON = "wrong sha256sum of downloaded file. Expected: %s, got: %s" % SHA256SUM, SHA256SUM_GOT
     except BaseException:
-        pass
+        REASON = "download of EDAX test files failed"
 
 
 def setup_module():
@@ -43,7 +50,7 @@ def setup_module():
 
 
 pytestmark = pytest.mark.skipif(not TEST_FILES_OK,
-                                reason="download of EDAX test files failed")
+                                reason=REASON)
 
 
 def teardown_module():
