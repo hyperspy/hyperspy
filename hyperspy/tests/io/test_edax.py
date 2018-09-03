@@ -32,7 +32,7 @@ if not TEST_FILES_OK:
     try:
         r = requests.get(
             "https://github.com/hyperspy/hyperspy/blob/e7a323a3bb9b237c24bd9267d2cc4fcb31bb99f3/hyperspy/tests/io/edax_files.zip?raw=true")
-        
+
         SHA256SUM_GOT = hashlib.sha256(r.content).hexdigest()
         if SHA256SUM_GOT == SHA256SUM:
             ZIPF = os.path.join(TMP_DIR.name, "edax_files.zip")
