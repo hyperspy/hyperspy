@@ -21,7 +21,7 @@ NEW
 
 * Support for three new file formats:
     * Reading FEI's Velox EMD file format based on the HDF5 open standard. See :ref:`emd_fei-format`.
-    * Reding Burcker's SPX format. See :ref:`spx-format`.
+    * Reading Bruker's SPX format. See :ref:`spx-format`.
     * Reading and writing the mrcz open format. See :ref:`mrcz-format`.
 * New :mod:`~.datasets.artificial_data` module which contains functions for generating
   artificial data, for use in things like docstrings or for people to test
