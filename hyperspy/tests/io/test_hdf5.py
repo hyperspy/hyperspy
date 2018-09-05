@@ -18,6 +18,7 @@
 
 import os.path
 from os import remove
+import sys
 import gc
 import time
 import tempfile
@@ -225,6 +226,8 @@ class TestSavingMetadataContainers:
         assert isinstance(l.metadata.test[0], list)
         assert isinstance(l.metadata.test[1], tuple)
 
+    @pytest.mark.xfail(sys.platform == 'win32',
+                   reason="randomly fails in win32")
     def test_numpy_general_type(self, tmpfilepath):
         s = self.s
         s.metadata.set_item('test', [[1., 2], ['3', 4]])
@@ -235,6 +238,8 @@ class TestSavingMetadataContainers:
         assert isinstance(l.metadata.test[1][0], str)
         assert isinstance(l.metadata.test[1][1], str)
 
+    @pytest.mark.xfail(sys.platform == 'win32',
+                   reason="randomly fails in win32")
     def test_general_type_not_working(self, tmpfilepath):
         s = self.s
         s.metadata.set_item('test', (BaseSignal([1]), 0.1, 'test_string'))

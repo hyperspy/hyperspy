@@ -843,7 +843,7 @@ def spd_reader(filename,
     list
         list with dictionary of signal information to be passed back to
         hyperspy.io.load_with_reader
-    """   
+    """
     with open(filename, 'rb') as f:
         spd_header = np.fromfile(f,
                                  dtype=get_spd_dtype_list(endianess),

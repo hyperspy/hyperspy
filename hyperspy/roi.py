@@ -356,6 +356,15 @@ class BaseInteractiveROI(BaseROI):
             interactivel on any roi attribute change.
 
         """
+        if hasattr(signal, '_plot_kwargs'):
+            kwargs.update({'_plot_kwargs': signal._plot_kwargs})
+            # in case of complex signal, it is possible to shift the signal
+            # during plotting, if so this is currently not supported and we
+            # raise a NotImplementedError
+            if signal._plot.signal_data_function_kwargs.get(
+                    'fft_shift', False):
+                raise NotImplementedError('ROIs are not supported when data '
+                                          'are shifted during plotting.')
         if isinstance(navigation_signal, str) and navigation_signal == "same":
             navigation_signal = signal
         if navigation_signal is not None:
@@ -1061,6 +1070,49 @@ class Line2DROI(BaseInteractiveROI):
         p1 = np.array((self.x2, self.y2), dtype=np.float)
         d_row, d_col = p1 - p0
         return np.hypot(d_row, d_col)
+
+    def angle(self, axis='horizontal', units='degrees'):
+        """"Angle between ROI line and selected axis
+
+        Parameters
+        ----------
+        axis : str, {'horizontal', 'vertical'}, optional
+            Select axis against which the angle of the ROI line is measured.
+            'x' is alias to 'horizontal' and 'y' is 'vertical'
+            (Default: 'horizontal')
+        units : str, {'degrees', 'radians'}
+            The angle units of the output
+            (Default: 'degrees')
+
+        Returns
+        -------
+        angle : float
+
+        Examples
+        --------
+        >>> import hyperspy.api as hs
+        >>> hs.roi.Line2DROI(0., 0., 1., 2., 1)
+        >>> r.angle()
+        63.43494882292201
+        """
+
+        x = self.x2 - self.x1
+        y = self.y2 - self.y1
+
+        if units == 'degrees':
+            conversation = 180. / np.pi
+        elif units == 'radians':
+            conversation = 1.
+        else:
+            raise ValueError("Units are not recognized. Use  either 'degrees' or 'radians'.")
+
+        if axis == 'horizontal':
+            return np.arctan2(y, x) * conversation
+        elif axis == 'vertical':
+            return np.arctan2(x, y) * conversation
+        else:
+            raise ValueError("Axis is not recognized. "
+                             "Use  either 'horizontal' or 'vertical'.")
 
     @staticmethod
     def profile_line(img, src, dst, axes, linewidth=1,

@@ -91,6 +91,8 @@ in the following sections of this chapter.
     │   ├── thickness
     │   └── xray_lines
     └── Signal
+        ├── FFT
+        │   └── shifted
         ├── Noise_properties
         │   ├── Variance_linear_model
         │   │   ├── correlation_factor
@@ -446,6 +448,17 @@ quantity
 
     The name of the quantity of the "intensity axis" with the units in round
     brackets if required, for example Temperature (K).
+
+
+FFT
+---
+
+shifted
+    type: bool.
+
+    Specify if the FFT has the zero-frequency component shifted to the center of 
+    the signal.
+
 
 Noise_properties
 ----------------

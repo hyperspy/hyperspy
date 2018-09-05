@@ -408,6 +408,17 @@ axes) you could use the navigation sliders:
 
    Navigation sliders ipywidgets GUI.
 
+Alternatively, the "current position" can be changed programmatically by
+directly accessing ``indices`` attribute of a Signal's
+:py:class:`~.axes.AxesManager`. This is particularly useful if trying to set
+a specific location with which to initialize a model's parameters to
+sensible values before preforming a fit over an entire spectrum image. The
+``indices`` must be provided as a tuple, with the same length as the number of
+navigation dimensions:
+
+.. code-block:: python
+
+    >>> s.axes_manager.indices = (5, 4)
 
 .. _quantity_and_converting_units:
 

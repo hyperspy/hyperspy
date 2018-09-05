@@ -21,9 +21,11 @@ import pytest
 import matplotlib.pyplot as plt
 import os
 from shutil import copyfile
+import numpy as np
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import update_close_figure
+from hyperspy.signals import Signal1D
 from hyperspy.tests.drawing.test_plot_signal import _TestPlot
 
 
@@ -205,6 +207,14 @@ def _generate_parameter():
         for plot_type in ['nav', 'sig']:
             parameters.append([ndim, plot_type])
     return parameters
+
+
+@pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
+                               tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_log_scale(mpl_cleanup):
+    s = Signal1D(np.exp(-np.arange(100) / 5.0))
+    s.plot(norm='log')
+    return s._plot.signal_plot.figure
 
 
 @pytest.mark.parametrize(("ndim", "plot_type"),
