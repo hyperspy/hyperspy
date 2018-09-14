@@ -133,7 +133,6 @@ def test_hyperspy_wrap():
             'signal_unfolded': False,
             'unfolded': False}}}
 
-    #md_ref['General']['original_filename'] = hype.metadata.General.original_filename #NANI???
     filename_omd = os.path.join(my_path,
                                 'bruker_data',
                                 '16x16_original_metadata.json')
