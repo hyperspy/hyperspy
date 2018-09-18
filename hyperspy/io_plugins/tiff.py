@@ -21,7 +21,7 @@ import logging
 from datetime import datetime, timedelta
 from dateutil import parser
 import pint
-from skimage.external.tifffile import imsave, TiffFile
+from tifffile import imsave, TiffFile
 
 import numpy as np
 import traits.api as t
@@ -133,7 +133,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
     # For testing the use of local and skimage tifffile library
 
     lazy = kwds.pop('lazy', False)
-    memmap = kwds.pop('memmap', False)
+    memmap = kwds.pop('memmap', None)
     with TiffFile(filename, **kwds) as tiff:
 
         # change in the Tifffiles API
@@ -143,8 +143,8 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
         else:
             # old version
             axes = tiff.series[0]['axes']
-        is_rgb = tiff.is_rgb
-        _logger.debug("Is RGB: %s" % is_rgb)
+        #is_rgb = tiff.is_rgb
+        #_logger.debug("Is RGB: %s" % is_rgb)
         series = tiff.series[0]
         if hasattr(series, 'shape'):
             shape = series.shape
@@ -152,36 +152,36 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
         else:
             shape = series['shape']
             dtype = series['dtype']
-        if is_rgb:
-            axes = axes[:-1]
-            names = ['R', 'G', 'B', 'A']
-            lastshape = shape[-1]
-            dtype = np.dtype({'names': names[:lastshape],
-                              'formats': [dtype] * lastshape})
-            shape = shape[:-1]
+       # if is_rgb:
+       #     axes = axes[:-1]
+       #     names = ['R', 'G', 'B', 'A']
+       #     lastshape = shape[-1]
+       #     dtype = np.dtype({'names': names[:lastshape],
+       #                       'formats': [dtype] * lastshape})
+       #     shape = shape[:-1]
         op = {}
-        for key, tag in tiff[0].tags.items():
+        for key, tag in tiff.pages[0].tags.items():
             op[key] = tag.value
         names = [axes_label_codes[axis] for axis in axes]
 
         _logger.debug('Tiff tags list: %s' % op)
-        _logger.debug("Photometric: %s" % op['photometric'])
-        _logger.debug('is_imagej: {}'.format(tiff[0].is_imagej))
+        #_logger.debug("Photometric: %s" % op['photometric'])
+        _logger.debug('is_imagej: {}'.format(tiff.pages[0].is_imagej))
 
         # workaround for 'palette' photometric, keep only 'X' and 'Y' axes
-        sl = None
-        if op['photometric'] == 3:
-            sl = [0] * len(shape)
-            names = []
-            for i, axis in enumerate(axes):
-                if axis == 'X' or axis == 'Y':
-                    sl[i] = slice(None)
-                    names.append(axes_label_codes[axis])
-                else:
-                    axes.replace(axis, '')
-            shape = tuple(_sh for _s, _sh in zip(sl, shape)
-                          if isinstance(_s, slice))
-        _logger.debug("names: {0}".format(names))
+        #sl = None
+        #if op['photometric'] == 3:
+        #    sl = [0] * len(shape)
+        #    names = []
+        #    for i, axis in enumerate(axes):
+        #        if axis == 'X' or axis == 'Y':
+        #            sl[i] = slice(None)
+        #            names.append(axes_label_codes[axis])
+        #        else:
+        #           axes.replace(axis, '')
+        #    shape = tuple(_sh for _s, _sh in zip(sl, shape)
+        #                  if isinstance(_s, slice))
+        #_logger.debug("names: {0}".format(names))
 
         scales = [1.0] * len(names)
         offsets = [0.0] * len(names)
@@ -232,11 +232,11 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
                    'gain_offset': intensity_axis['offset']}
             md['Signal']['Noise_properties'] = {'Variance_linear_model': dic}
 
-    data_args = TiffFile, filename, is_rgb, sl
+    data_args = TiffFile, filename
     if lazy:
         from dask import delayed
         from dask.array import from_delayed
-        memmap = True
+        memmap = 'memmap'
         val = delayed(_load_data, pure=True)(*data_args, memmap=memmap, **kwds)
         dc = from_delayed(val, dtype=dtype, shape=shape)
         # TODO: maybe just pass the memmap from tiffile?
@@ -254,12 +254,12 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
              }]
 
 
-def _load_data(TF, filename, is_rgb, sl=None, memmap=False, **kwds):
+def _load_data(TF, filename, sl=None, memmap=None, **kwds):
     with TF(filename, **kwds) as tiff:
-        dc = tiff.asarray(memmap=memmap)
+        dc = tiff.asarray(out=memmap)
         _logger.debug("data shape: {0}".format(dc.shape))
-        if is_rgb:
-            dc = rgb_tools.regular_array2rgbx(dc)
+        #if is_rgb:
+        #    dc = rgb_tools.regular_array2rgbx(dc)
         if sl is not None:
             dc = dc[tuple(sl)]
         return dc
@@ -336,10 +336,10 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
             units[key] = 'm'
 
     # for Zeiss SEM tiff files:
-    elif 'sem_metadata' in op:
+    elif 'CZ_SEM' in op:
         _logger.debug("Reading Zeiss tif metadata")
-        if 'ap_pixel_size' in op['sem_metadata']:
-            (ps, units0) = op['sem_metadata']['ap_pixel_size'][1:]
+        if 'ap_pixel_size' in op['CZ_SEM']:
+            (ps, units0) = op['CZ_SEM']['ap_pixel_size'][1:]
             for key in ['x', 'y']:
                 scales[key] = ps
                 units[key] = units0
@@ -583,37 +583,37 @@ class Metadata:
     def get_mapping_Zeiss(self):
         # mapping Zeiss metadata
         mapping_Zeiss = {
-            'sem_metadata.ap_actualkv':
+            'CZ_SEM.ap_actualkv':
             ("Acquisition_instrument.SEM.beam_energy", self._parse_tuple_Zeiss),
-            'sem_metadata.ap_mag':
+            'CZ_SEM.ap_mag':
             ("Acquisition_instrument.SEM.magnification", self._parse_tuple_Zeiss),
-            'sem_metadata.ap_stage_at_x':
+            'CZ_SEM.ap_stage_at_x':
             ("Acquisition_instrument.SEM.Stage.x", self._parse_tuple_Zeiss),
-            'sem_metadata.ap_stage_at_y':
+            'CZ_SEM.ap_stage_at_y':
             ("Acquisition_instrument.SEM.Stage.y", self._parse_tuple_Zeiss),
-            'sem_metadata.ap_stage_at_z':
+            'CZ_SEM.ap_stage_at_z':
             ("Acquisition_instrument.SEM.Stage.z", self._parse_tuple_Zeiss),
-            'sem_metadata.ap_stage_at_r':
+            'CZ_SEM.ap_stage_at_r':
             ("Acquisition_instrument.SEM.Stage.rotation", self._parse_tuple_Zeiss),
-            'sem_metadata.ap_stage_at_t':
+            'CZ_SEM.ap_stage_at_t':
             ("Acquisition_instrument.SEM.Stage.tilt", self._parse_tuple_Zeiss),
-            'sem_metadata.ap_free_wd':
+            'CZ_SEM.ap_free_wd':
             ("Acquisition_instrument.SEM.working_distance",
              lambda tup: self._parse_tuple_Zeiss_with_units(tup, to_units='mm')),
-            'sem_metadata.dp_dwell_time':
+            'CZ_SEM.dp_dwell_time':
             ("Acquisition_instrument.SEM.dwell_time",
              lambda tup: self._parse_tuple_Zeiss_with_units(tup, to_units='s')),
-            'sem_metadata.ap_beam_current':
+            'CZ_SEM.ap_beam_current':
             ("Acquisition_instrument.SEM.beam_current",
              lambda tup: self._parse_tuple_Zeiss_with_units(tup, to_units='nA')),
-            'sem_metadata.sv_serial_number':
+            'CZ_SEM.sv_serial_number':
             ("Acquisition_instrument.SEM.microscope", self._parse_tuple_Zeiss),
             # I have not find the corresponding metadata....
-            #'sem_metadata.???':
+            #'CZ_SEM.???':
             #("General.date", lambda tup: parser.parse(tup[1]).date().isoformat()),
-            #'sem_metadata.???':
+            #'CZ_SEM.???':
             #("General.time", lambda tup: parser.parse(tup[1]).time().isoformat()),
-            'sem_metadata.sv_user_name':
+            'CZ_SEM.sv_user_name':
             ("General.authors", self._parse_tuple_Zeiss),
         }
         self.mapping.update(mapping_Zeiss)
