@@ -273,7 +273,7 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
     intensity_axis = {}
 
     # for files created with imageJ
-    if tiff[0].is_imagej:
+    if tiff.pages[0].is_imagej:
         image_description = _decode_string(op["image_description"])
         if "image_description_1" in op:
             image_description = _decode_string(op["image_description_1"])
@@ -339,7 +339,7 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
     elif 'CZ_SEM' in op:
         _logger.debug("Reading Zeiss tif metadata")
         if 'ap_image_pixel_size' in op['CZ_SEM']:
-            (ps, units0) = op['CZ_SEM']['ap_pixel_size'][1:]
+            (ps, units0) = op['CZ_SEM']['ap_image_pixel_size'][1:]
             for key in ['x', 'y']:
                 scales[key] = ps
                 units[key] = units0
