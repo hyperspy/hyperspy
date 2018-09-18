@@ -338,7 +338,7 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
     # for Zeiss SEM tiff files:
     elif 'CZ_SEM' in op:
         _logger.debug("Reading Zeiss tif metadata")
-        if 'ap_pixel_size' in op['CZ_SEM']:
+        if 'ap_image_pixel_size' in op['CZ_SEM']:
             (ps, units0) = op['CZ_SEM']['ap_pixel_size'][1:]
             for key in ['x', 'y']:
                 scales[key] = ps
