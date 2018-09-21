@@ -111,6 +111,25 @@ def _generate_parameter_plot_images():
     return vmin, vmax
 
 
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_log_scale(mpl_cleanup):
+    test_plot = _TestPlot(ndim=0, sdim=2)
+    test_plot.signal += 1  # need to avoid zeros in log
+    test_plot.signal.plot(norm='log')
+    return test_plot.signal._plot.signal_plot.figure
+
+
+@pytest.mark.parametrize("fft_shift", [True, False])
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_FFT(mpl_cleanup, fft_shift):
+    s = hs.datasets.example_signals.object_hologram()
+    s2 = s.isig[:128, :128].fft()
+    s2.plot(fft_shift=fft_shift, axes_ticks=True, power_spectrum=True)
+    return s2._plot.signal_plot.figure
+
+
 @pytest.mark.parametrize(("vmin", "vmax"), (_generate_parameter_plot_images(),
                                             (None, None)))
 @pytest.mark.mpl_image_compare(
@@ -340,12 +359,48 @@ def test_plot_images_cmap_multi_w_rgb(mpl_cleanup):
     return plt.gcf()
 
 
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
 def test_plot_images_single_image(mpl_cleanup):
     image0 = hs.signals.Signal2D(np.arange(100).reshape(10, 10))
     image0.isig[5, 5] = 200
     image0.metadata.General.title = 'This is the title from the metadata'
     ax = hs.plot.plot_images(image0, saturated_pixels=0.1)
-    return ax[0].figure
+    return plt.gcf()
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_images_single_image_stack(mpl_cleanup):
+    image0 = hs.signals.Signal2D(np.arange(200).reshape(2, 10, 10))
+    image0.isig[5, 5] = 200
+    image0.metadata.General.title = 'This is the title from the metadata'
+    ax = hs.plot.plot_images(image0, saturated_pixels=0.1)
+    return plt.gcf()
+
+
+def test_plot_images_multi_signal_w_axes_replot(mpl_cleanup):
+    imdata = np.random.rand(3, 5, 5)
+    imgs = hs.signals.Signal2D(imdata)
+    img_list = [imgs, imgs.inav[:2], imgs.inav[0]]
+    subplots = hs.plot.plot_images(img_list, axes_decor=None)
+    f = plt.gcf()
+    f.canvas.draw()
+    f.canvas.flush_events()
+
+    tests = []
+    for axi in subplots:
+        imi = axi.images[0].get_array()
+        x, y = axi.transData.transform((2, 2))
+        # Calling base class method because of backends
+        plt.matplotlib.backends.backend_agg.FigureCanvasBase.button_press_event(
+            f.canvas, x, y, 'left', True)
+        fn = plt.gcf()
+        tests.append(
+            np.allclose(imi, fn.axes[0].images[0].get_array().data))
+        plt.close(fn)
+    assert np.alltrue(tests)
+    return f
 
 
 @pytest.mark.parametrize("saturated_pixels", [5.0, [0.0, 20.0, 40.0],

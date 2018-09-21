@@ -37,8 +37,8 @@ class SquareWidget(Widget2DBase):
     bounds only correspond to pure indices for odd sizes.
     """
 
-    def __init__(self, axes_manager):
-        super(SquareWidget, self).__init__(axes_manager)
+    def __init__(self, axes_manager, **kwargs):
+        super(SquareWidget, self).__init__(axes_manager, **kwargs)
 
     def _set_patch(self):
         """Sets the patch to a matplotlib Rectangle with the correct geometry.
@@ -52,6 +52,7 @@ class SquareWidget(Widget2DBase):
             fill=False,
             lw=self.border_thickness,
             ec=self.color,
+            alpha=self.alpha,
             picker=True,)]
         super(SquareWidget, self)._set_patch()
 

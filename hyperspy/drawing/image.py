@@ -20,7 +20,11 @@ import math
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize, LogNorm
 from traits.api import Undefined
+import logging
+import inspect
+import copy
 
 from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
@@ -29,6 +33,10 @@ from hyperspy.misc import math_tools
 from hyperspy.misc import rgb_tools
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
+from hyperspy.docstrings.plot import PLOT2D_DOCSTRING
+
+
+_logger = logging.getLogger(__name__)
 
 
 class ImagePlot(BlittedFigure):
@@ -41,31 +49,20 @@ class ImagePlot(BlittedFigure):
     data_fuction : function or method
         A function that returns a 2D array when called without any
         arguments.
+    %s
     pixel_units : {None, string}
-        The pixel units for the scale bar. Normally
-    scalebar, colorbar, plot_indices : bool
+        The pixel units for the scale bar.
+    plot_indices : bool
     title : str
         The title is printed at the top of the image.
-    vmin, vmax : float
-        Limit the range of the color map scale to the given values.
-    min_aspect : float
-        Set the minimum aspect ratio of the image and the figure. To
-        keep the image in the aspect limit the pixels are made
-        rectangular.
-    saturated_pixels: scalar
-        The percentage of pixels that are left out of the bounds.  For example,
-        the low and high bounds of a value of 1 are the 0.5% and 99.5%
-        percentiles. It must be in the [0, 100] range.
-    centre_colormap : {"auto", True, False}
-        If True the centre of the color scheme is set to zero. This is
-        specially useful when using diverging color schemes. If "auto"
-        (default), diverging color schemes are automatically centred.
 
-    """
+    """ % PLOT2D_DOCSTRING
 
     def __init__(self):
         super(ImagePlot, self).__init__()
         self.data_function = None
+        # Args to pass to `__call__`
+        self.data_function_kwargs = {}
         self.pixel_units = None
         self.colorbar = True
         self._colorbar = None
@@ -83,6 +80,7 @@ class ImagePlot(BlittedFigure):
         self._text = None
         self._text_position = (0, 1.05,)
         self.axes_manager = None
+        self.axes_off = False
         self._aspect = 1
         self._extent = None
         self.xaxis = None
@@ -97,6 +95,7 @@ class ImagePlot(BlittedFigure):
         self._auto_axes_ticks = True
         self.no_nans = False
         self.centre_colormap = "auto"
+        self.norm = "auto"
 
     @property
     def vmax(self):
@@ -123,7 +122,10 @@ class ImagePlot(BlittedFigure):
     @property
     def axes_ticks(self):
         if self._user_axes_ticks is None:
-            return self._auto_axes_ticks
+            if self.scalebar is False:
+                return True
+            else:
+                return self._auto_axes_ticks
         else:
             return self._user_axes_ticks
 
@@ -148,14 +150,6 @@ class ImagePlot(BlittedFigure):
     def configure(self):
         xaxis = self.xaxis
         yaxis = self.yaxis
-        # Signal2D labels
-        self._xlabel = '%s' % str(xaxis)
-        if xaxis.units is not Undefined:
-            self._xlabel += ' (%s)' % xaxis.units
-
-        self._ylabel = '%s' % str(yaxis)
-        if yaxis.units is not Undefined:
-            self._ylabel += ' (%s)' % yaxis.units
 
         if (xaxis.units == yaxis.units) and (xaxis.scale == yaxis.scale):
             self._auto_scalebar = True
@@ -164,6 +158,15 @@ class ImagePlot(BlittedFigure):
         else:
             self._auto_scalebar = False
             self._auto_axes_ticks = True
+
+        # Signal2D labels
+        self._xlabel = '{}'.format(xaxis)
+        if xaxis.units is not Undefined:
+            self._xlabel += ' ({})'.format(xaxis.units)
+
+        self._ylabel = '{}'.format(yaxis)
+        if yaxis.units is not Undefined:
+            self._ylabel += ' ({})'.format(yaxis.units)
 
         # Calibrate the axes of the navigator image
         self._extent = (xaxis.axis[0] - xaxis.scale / 2.,
@@ -224,8 +227,9 @@ class ImagePlot(BlittedFigure):
             figsize = np.array((width * wfactor, height)) * \
                 max(plt.rcParams['figure.figsize']) / \
                 max(width * wfactor, height)
-            figsize = figsize.clip(min_size, max_size)
-            kwargs["figsize"] = figsize
+            kwargs["figsize"] = figsize.clip(min_size, max_size)
+        if "disable_xyscale_keys" not in kwargs:
+            kwargs["disable_xyscale_keys"] = True
         super().create_figure(**kwargs)
 
     def create_axis(self):
@@ -237,13 +241,17 @@ class ImagePlot(BlittedFigure):
             self.ax.set_xticks([])
             self.ax.set_yticks([])
         self.ax.hspy_fig = self
+        if self.axes_off:
+            self.ax.axis('off')
 
-    def plot(self, **kwargs):
+    def plot(self, data_function_kwargs={}, **kwargs):
+        self.data_function_kwargs = data_function_kwargs
         self.configure()
         if self.figure is None:
             self.create_figure()
             self.create_axis()
-        data = self.data_function(axes_manager=self.axes_manager)
+        data = self.data_function(axes_manager=self.axes_manager,
+                                  **self.data_function_kwargs)
         if rgb_tools.is_rgbx(data):
             self.colorbar = False
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
@@ -273,12 +281,8 @@ class ImagePlot(BlittedFigure):
                     color=self.scalebar_color,
                 )
 
-        if self.colorbar is True:
-            self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
-            self._colorbar.set_label(
-                self.quantity_label, rotation=-90, va='bottom')
-            self._colorbar.ax.yaxis.set_animated(
-                self.figure.canvas.supports_blit)
+        if self.colorbar:
+            self._add_colorbar()
 
         if hasattr(self.figure, 'tight_layout'):
             try:
@@ -293,6 +297,14 @@ class ImagePlot(BlittedFigure):
 
         self.connect()
         self.figure.canvas.draw()
+
+    def _add_colorbar(self):
+        self._colorbar = plt.colorbar(self.ax.images[0], ax=self.ax)
+        self.set_quantity_label()
+        self._colorbar.set_label(
+            self.quantity_label, rotation=-90, va='bottom')
+        self._colorbar.ax.yaxis.set_animated(
+            self.figure.canvas.supports_blit)
 
     def update(self, **kwargs):
         ims = self.ax.images
@@ -316,7 +328,8 @@ class ImagePlot(BlittedFigure):
                 self.centre_colormap = False
         redraw_colorbar = False
         data = rgb_tools.rgbx2regular_array(
-            self.data_function(axes_manager=self.axes_manager),
+            self.data_function(axes_manager=self.axes_manager,
+                               **self.data_function_kwargs),
             plot_friendly=True)
         numrows, numcols = data.shape[:2]
         for marker in self.ax_markers:
@@ -354,15 +367,30 @@ class ImagePlot(BlittedFigure):
             vmin, vmax = utils.centre_colormap_values(self.vmin, self.vmax)
         else:
             vmin, vmax = self.vmin, self.vmax
-        if ims:
+
+        norm = copy.copy(self.norm)
+        if norm == 'log':
+            norm = LogNorm(vmin=self.vmin, vmax=self.vmax)
+        elif inspect.isclass(norm) and issubclass(norm, Normalize):
+            norm = norm(vmin=self.vmin, vmax=self.vmax)
+        elif norm not in ['auto', 'linear']:
+            raise ValueError("`norm` paramater should be 'auto', 'linear', "
+                             "'log' or a matplotlib Normalize instance or "
+                             "subclass.")
+        else:
+            # set back to matplotlib default
+            norm = None
+
+        if ims:  # the images has already been drawn previously
             ims[0].set_data(data)
             self.ax.set_xlim(self._extent[:2])
             self.ax.set_ylim(self._extent[2:])
             ims[0].set_extent(self._extent)
             self._calculate_aspect()
             self.ax.set_aspect(self._aspect)
+            ims[0].set_norm(norm)
             ims[0].norm.vmax, ims[0].norm.vmin = vmax, vmin
-            if redraw_colorbar is True:
+            if redraw_colorbar:
                 # ims[0].autoscale()
                 self._colorbar.draw_all()
                 self._colorbar.solids.set_animated(
@@ -374,13 +402,14 @@ class ImagePlot(BlittedFigure):
                 self._update_animated()
             else:
                 self.figure.canvas.draw_idle()
-        else:
+        else:  # no signal have been drawn yet
             new_args = {'interpolation': 'nearest',
                         'vmin': vmin,
                         'vmax': vmax,
                         'extent': self._extent,
                         'aspect': self._aspect,
-                        'animated': self.figure.canvas.supports_blit}
+                        'animated': self.figure.canvas.supports_blit,
+                        'norm': norm}
             new_args.update(kwargs)
             self.ax.imshow(data,
                            **new_args)
@@ -419,6 +448,32 @@ class ImagePlot(BlittedFigure):
     def on_key_press(self, event):
         if event.key == 'h':
             self.gui_adjust_contrast()
+        if event.key == 'l':
+            self.toggle_norm()
+
+    def toggle_norm(self):
+        self.norm = 'linear' if self.norm == 'log' else 'log'
+        self.update()
+        if self.colorbar:
+            self._colorbar.remove()
+            self._add_colorbar()
+            self.figure.canvas.draw_idle()
+
+    def set_quantity_label(self):
+        if 'power_spectrum' in self.data_function_kwargs.keys():
+            if self.norm == 'log':
+                if 'FFT' in self.quantity_label:
+                    self.quantity_label = self.quantity_label.replace(
+                        'Power spectral density', 'FFT')
+                else:
+                    of = ' of ' if self.quantity_label else ''
+                    self.quantity_label = 'Power spectral density' + of + \
+                        self.quantity_label
+            else:
+                self.quantity_label = self.quantity_label.replace(
+                    'Power spectral density of ', '')
+                self.quantity_label = self.quantity_label.replace(
+                    'Power spectral density', '')
 
     def set_contrast(self, vmin, vmax):
         self.vmin, self.vmax = vmin, vmax

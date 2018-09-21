@@ -53,7 +53,6 @@ from hyperspy._components.polynomial import Polynomial
 from hyperspy._components.pes_core_line_shape import PESCoreLineShape
 from hyperspy._components.volume_plasmon_drude import VolumePlasmonDrude
 from hyperspy._components.expression import Expression
-from hyperspy._components.physical_background import Physical_background
 
 # Generating the documentation
 

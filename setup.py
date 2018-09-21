@@ -35,19 +35,19 @@ import warnings
 import os
 import subprocess
 import itertools
-import re
 
 # stuff to check presence of compiler:
 import distutils.sysconfig
 import distutils.ccompiler
 from distutils.errors import CompileError, DistutilsPlatformError
 
+
 setup_path = os.path.dirname(__file__)
 
 import hyperspy.Release as Release
 
 install_req = ['scipy>=0.15',
-               'matplotlib>=1.2, !=2.1.0, !=2.1.1',
+               'matplotlib>=2.2.3',
                'numpy>=1.10, !=1.13.0',
                'traits>=4.5.0',
                'natsort',
@@ -58,27 +58,25 @@ install_req = ['scipy>=0.15',
                'h5py',
                'python-dateutil>=2.5.0',
                'ipyparallel',
-               'dask[array]>=0.16.1',
+               'dask[array]>=0.18',
                'scikit-image>=0.13',
                'pint>=0.8',
                'statsmodels',
-               'mrcz>=0.3.6',
+               'numexpr',
+               'sparse',
                ]
 
 extras_require = {
     "learning": ['scikit-learn'],
     "gui-jupyter": ["hyperspy_gui_ipywidgets"],
     "gui-traitsui": ["hyperspy_gui_traitsui"],
-    "mrcz-blosc": ["blosc>=1.5"],
-    "lazy_FEI_EMD": ['sparse'],
+    "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
     "test": ["pytest>=3", "pytest-mpl", "matplotlib>=2.0.2"],
-    "doc": ["sphinx", "numpydoc", "sphinxcontrib-napoleon", "sphinx_rtd_theme"],
+    "doc": ["sphinx>=1.7", "sphinx_rtd_theme"],
+    "speed": ["numba<0.39"],
+
 }
 extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
-
-# the hack to deal with setuptools + installing the package in ReadTheDoc:
-if 'readthedocs.org' in sys.executable:
-    install_req = []
 
 
 def update_version(version):
@@ -295,6 +293,7 @@ with update_version_when_dev() as version:
                 'tests/drawing/plot_markers/*.png',
                 'tests/drawing/plot_model1d/*.png',
                 'tests/drawing/plot_model/*.png',
+                'tests/drawing/plot_roi/*.png',
                 'misc/eds/example_signals/*.hdf5',
                 'misc/holography/example_signals/*.hdf5',
                 'tests/drawing/plot_mva/*.png',
@@ -303,6 +302,7 @@ with update_version_when_dev() as version:
                 'tests/drawing/plot_signal2d/*.png',
                 'tests/drawing/plot_markers/*.png',
                 'tests/drawing/plot_widgets/*.png',
+                'tests/drawing/plot_signal_tools/*.png',
                 'tests/io/blockfile_data/*.blo',
                 'tests/io/dens_data/*.dens',
                 'tests/io/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3',
@@ -313,7 +313,6 @@ with update_version_when_dev() as version:
                 'tests/io/dm4_2D_data/*.dm4',
                 'tests/io/dm4_3D_data/*.dm4',
                 'tests/io/dm3_locale/*.dm3',
-                'tests/io/edax_files.zip',
                 'tests/io/FEI_new/*.emi',
                 'tests/io/FEI_new/*.ser',
                 'tests/io/FEI_new/*.npy',

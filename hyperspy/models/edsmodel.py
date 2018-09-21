@@ -32,7 +32,6 @@ from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 import hyperspy.components1d as create_component
 
-
 _logger = logging.getLogger(__name__)
 
 eV2keV = 1000.
@@ -287,48 +286,6 @@ class EDSModel(Model1D):
         """
         background = create_component.Polynomial(order=order)
         background.name = 'background_order_' + str(order)
-        background.isbackground = True
-        self.append(background)
-        self.background_components.append(background)
-
-    def add_physical_background(self, E0='from_metadata', detector='Polymer_C', quantification=None):
-        """
-        Add a background based on physical property of the interraction e-/mater
-    
-        the background is added to self.background_components
-
-        Parameters
-        ----------
-        E0: int
-            The Beam energy
-            If `from_metadata` contains `beam_energy` referenced in the metadata
-            If an integer is write, this value will used during the fit
-        detector: str
-            The Acquisition detector of the correponding Dataset
-            String can be 'Polymer_C' / 'Super_X' / '12µm_BE' / '25µm_BE' / '100µm_BE' / 'Polymer_C2' / 'Polymer_C3' 
-        Quantification: None or Muti_Base_Signal
-            If quantification is None, an approximation based on peaks ratio is used
-            However if the acquisition instrument is a TEM it is more consistent to perform a quantification before the use of "add_physical_background"
-            In this case the name of the variable which contain the result of the quantification have to be renseigned
-            The function automatically detect if data are in weight_percent or in atomic_percent
-
-        Example:
-            s = hs.datasets.example_signals.EDS_TEM_Spectrum()
-            s.add_lines()
-            kfactors = [1.450226, 5.075602] #For Fe Ka and Pt La
-            bw = s.estimate_background_windows(line_width=[5.0, 2.0])
-            intensities = s.get_lines_intensity(background_windows=bw)
-            Weight_percent = s.quantification(intensities, method='CL', factors=kfactors,composition_units='weight' )
-
-            m=s.create_model(auto_background=False)
-            m.add_physical_background(quantification=Weight_percent)
-            
-        """
-        if E0 == 'from_metadata':
-            E0 = self.signal._get_beam_energy()
-            
-        background = create_component.Physical_background(E0=E0,detector=detector, quantification=quantification)
-        background.name = "Bremsstrahlung"
         background.isbackground = True
         self.append(background)
         self.background_components.append(background)

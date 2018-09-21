@@ -45,6 +45,8 @@ The following 2D ROIs are available:
 
 """
 
+from functools import partial
+
 import traits.api as t
 import numpy as np
 
@@ -354,6 +356,15 @@ class BaseInteractiveROI(BaseROI):
             interactivel on any roi attribute change.
 
         """
+        if hasattr(signal, '_plot_kwargs'):
+            kwargs.update({'_plot_kwargs': signal._plot_kwargs})
+            # in case of complex signal, it is possible to shift the signal
+            # during plotting, if so this is currently not supported and we
+            # raise a NotImplementedError
+            if signal._plot.signal_data_function_kwargs.get(
+                    'fft_shift', False):
+                raise NotImplementedError('ROIs are not supported when data '
+                                          'are shifted during plotting.')
         if isinstance(navigation_signal, str) and navigation_signal == "same":
             navigation_signal = signal
         if navigation_signal is not None:
@@ -391,7 +402,8 @@ class BaseInteractiveROI(BaseROI):
         self._update_widgets(exclude=(widget,))
         self.events.changed.trigger(self)
 
-    def add_widget(self, signal, axes=None, widget=None, color='green'):
+    def add_widget(self, signal, axes=None, widget=None,
+                   color='green', **kwargs):
         """Add a widget to visually represent the ROI, and connect it so any
         changes in either are reflected in the other. Note that only one
         widget can be added per signal/axes combination.
@@ -405,8 +417,6 @@ class BaseInteractiveROI(BaseROI):
         axes : specification of axes to use, default = None
             The axes argument specifies which axes the ROI will be applied on.
             The DataAxis in the collection can be either of the following:
-                * "navigation" or "signal", in which the first axes of that
-                  space's axes will be used.
                 * a tuple of:
                     - DataAxis. These will not be checked with
                       signal.axes_manager.
@@ -421,10 +431,14 @@ class BaseInteractiveROI(BaseROI):
             The color for the widget. Any format that matplotlib uses should be
             ok. This will not change the color fo any widget passed with the
             'widget' argument.
+        kwargs:
+            All keyword argument are passed to the widget constructor.
         """
         axes = self._parse_axes(axes, signal.axes_manager,)
         if widget is None:
-            widget = self._get_widget_type(axes, signal)(signal.axes_manager)
+            widget = self._get_widget_type(
+                axes, signal)(
+                signal.axes_manager, **kwargs)
             widget.color = color
 
         # Remove existing ROI, if it exsists and axes match
@@ -486,6 +500,30 @@ class BasePointROI(BaseInteractiveROI):
         return s
 
 
+def guess_vertical_or_horizontal(axes, signal):
+    # Figure out whether to use horizontal or veritcal line:
+    if axes[0].navigate:
+        plotdim = len(signal._plot.navigator_data_function().shape)
+        axdim = signal.axes_manager.navigation_dimension
+        idx = signal.axes_manager.navigation_axes.index(axes[0])
+    else:
+        plotdim = len(signal._plot.signal_data_function().shape)
+        axdim = signal.axes_manager.signal_dimension
+        idx = signal.axes_manager.signal_axes.index(axes[0])
+
+    if plotdim == 2:  # Plot is an image
+        # axdim == 1 and plotdim == 2 indicates "spectrum stack"
+        if idx == 0 and axdim != 1:    # Axis is horizontal
+            return "vertical"
+        else:  # Axis is vertical
+            return "horizontal"
+    elif plotdim == 1:  # It is a spectrum
+        return "vertical"
+    else:
+        raise ValueError(
+            "Could not find valid widget type for the given `axes` value")
+
+
 @add_gui_method(toolkey="Point1DROI")
 class Point1DROI(BasePointROI):
 
@@ -516,26 +554,13 @@ class Point1DROI(BasePointROI):
         widget.position = (self.value,)
 
     def _get_widget_type(self, axes, signal):
-        # Figure out whether to use horizontal or veritcal line:
-        if axes[0].navigate:
-            plotdim = len(signal._plot.navigator_data_function().shape)
-            axdim = signal.axes_manager.navigation_dimension
-            idx = signal.axes_manager.navigation_axes.index(axes[0])
-        else:
-            plotdim = len(signal._plot.signal_data_function().shape)
-            axdim = signal.axes_manager.signal_dimension
-            idx = signal.axes_manager.signal_axes.index(axes[0])
-
-        if plotdim == 2:  # Plot is an image
-            # axdim == 1 and plotdim == 2 indicates "spectrum stack"
-            if idx == 0 and axdim != 1:    # Axis is horizontal
-                return widgets.VerticalLineWidget
-            else:  # Axis is vertical
-                return widgets.HorizontalLineWidget
-        elif plotdim == 1:  # It is a spectrum
+        direction = guess_vertical_or_horizontal(axes=axes, signal=signal)
+        if direction == "vertical":
             return widgets.VerticalLineWidget
+        elif direction == "horizontal":
+            return widgets.HorizontalLineWidget
         else:
-            raise ValueError("Could not find valid widget type")
+            raise ValueError("direction must be either horizontal or vertical")
 
     def __repr__(self):
         return "%s(value=%g)" % (
@@ -628,7 +653,13 @@ class SpanROI(BaseInteractiveROI):
         widget.set_bounds(left=self.left, right=self.right)
 
     def _get_widget_type(self, axes, signal):
-        return widgets.RangeWidget
+        direction = guess_vertical_or_horizontal(axes=axes, signal=signal)
+        if direction == "vertical":
+            return partial(widgets.RangeWidget, direction="horizontal")
+        elif direction == "horizontal":
+            return partial(widgets.RangeWidget, direction="vertical")
+        else:
+            raise ValueError("direction must be either horizontal or vertical")
 
     def __repr__(self):
         return "%s(left=%g, right=%g)" % (
@@ -1039,6 +1070,49 @@ class Line2DROI(BaseInteractiveROI):
         p1 = np.array((self.x2, self.y2), dtype=np.float)
         d_row, d_col = p1 - p0
         return np.hypot(d_row, d_col)
+
+    def angle(self, axis='horizontal', units='degrees'):
+        """"Angle between ROI line and selected axis
+
+        Parameters
+        ----------
+        axis : str, {'horizontal', 'vertical'}, optional
+            Select axis against which the angle of the ROI line is measured.
+            'x' is alias to 'horizontal' and 'y' is 'vertical'
+            (Default: 'horizontal')
+        units : str, {'degrees', 'radians'}
+            The angle units of the output
+            (Default: 'degrees')
+
+        Returns
+        -------
+        angle : float
+
+        Examples
+        --------
+        >>> import hyperspy.api as hs
+        >>> hs.roi.Line2DROI(0., 0., 1., 2., 1)
+        >>> r.angle()
+        63.43494882292201
+        """
+
+        x = self.x2 - self.x1
+        y = self.y2 - self.y1
+
+        if units == 'degrees':
+            conversation = 180. / np.pi
+        elif units == 'radians':
+            conversation = 1.
+        else:
+            raise ValueError("Units are not recognized. Use  either 'degrees' or 'radians'.")
+
+        if axis == 'horizontal':
+            return np.arctan2(y, x) * conversation
+        elif axis == 'vertical':
+            return np.arctan2(x, y) * conversation
+        else:
+            raise ValueError("Axis is not recognized. "
+                             "Use  either 'horizontal' or 'vertical'.")
 
     @staticmethod
     def profile_line(img, src, dst, axes, linewidth=1,

@@ -24,6 +24,7 @@ data/octave-core
 .spyderproject
 doc/_build/*
 doc/.build/*
+doc/api/*
 doc/user_guide/_build/*
 doc/user_guide/.build/*
 setup/windows/requires/*
@@ -42,21 +43,10 @@ hyperspy/io_plugins/unbcf_fast.c
 hyperspy/misc/etc/test_compilers.obj
 /.cache/
 /.spyproject/
-test/test background.ipynb
-*.ipynb
-test/Albite15.msa
-*.rst
-doc/api/hyperspy._components.rst
-doc/api/hyperspy._signals.rst
-doc/api/hyperspy._components.rst
-doc/api/hyperspy._components.rst
-*.rst
-test/Polymer_window.msa
-test/Polymer_window.txt
-hyperspy/_components/Polymer_window.txt
-hyperspy/_components/Polymer_window.txt
-hyperspy/_components/Polymer_window.txt
-hyperspy/_components/Polymer_window.txt
-*.txt
-test/rimext 1.msa
-test/rimint.msa
+
+### Code ###
+# Visual Studio Code - https://code.visualstudio.com/
+.settings/
+.vscode/
+tsconfig.json
+jsconfig.json
