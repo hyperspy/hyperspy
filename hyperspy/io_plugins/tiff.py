@@ -143,8 +143,8 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
         else:
             # old version
             axes = tiff.series[0]['axes']
-        #is_rgb = tiff.is_rgb
-        #_logger.debug("Is RGB: %s" % is_rgb)
+        is_rgb = tiff.pages[0].photometric == tiff.pages[0].photometric.RGB
+        _logger.debug("Is RGB: %s" % is_rgb)
         series = tiff.series[0]
         if hasattr(series, 'shape'):
             shape = series.shape
@@ -152,20 +152,20 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
         else:
             shape = series['shape']
             dtype = series['dtype']
-       # if is_rgb:
-       #     axes = axes[:-1]
-       #     names = ['R', 'G', 'B', 'A']
-       #     lastshape = shape[-1]
-       #     dtype = np.dtype({'names': names[:lastshape],
-       #                       'formats': [dtype] * lastshape})
-       #     shape = shape[:-1]
+        if is_rgb:
+            axes = axes[:-1]
+            names = ['R', 'G', 'B', 'A']
+            lastshape = shape[-1]
+            dtype = np.dtype({'names': names[:lastshape],
+                              'formats': [dtype] * lastshape})
+            shape = shape[:-1]
         op = {}
         for key, tag in tiff.pages[0].tags.items():
             op[key] = tag.value
         names = [axes_label_codes[axis] for axis in axes]
 
         _logger.debug('Tiff tags list: %s' % op)
-        #_logger.debug("Photometric: %s" % op['photometric'])
+        _logger.debug("Photometric: %s" % op['PhotometricInterpretation'])
         _logger.debug('is_imagej: {}'.format(tiff.pages[0].is_imagej))
 
         # workaround for 'palette' photometric, keep only 'X' and 'Y' axes
@@ -178,7 +178,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
         #            sl[i] = slice(None)
         #            names.append(axes_label_codes[axis])
         #        else:
-        #           axes.replace(axis, '')
+        #            axes.replace(axis, '')
         #    shape = tuple(_sh for _s, _sh in zip(sl, shape)
         #                  if isinstance(_s, slice))
         #_logger.debug("names: {0}".format(names))
@@ -232,7 +232,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
                    'gain_offset': intensity_axis['offset']}
             md['Signal']['Noise_properties'] = {'Variance_linear_model': dic}
 
-    data_args = TiffFile, filename
+    data_args = TiffFile, filename, is_rgb
     if lazy:
         from dask import delayed
         from dask.array import from_delayed
@@ -254,12 +254,12 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
              }]
 
 
-def _load_data(TF, filename, sl=None, memmap=None, **kwds):
+def _load_data(TF, filename, is_rgb, sl=None, memmap=None, **kwds):
     with TF(filename, **kwds) as tiff:
         dc = tiff.asarray(out=memmap)
         _logger.debug("data shape: {0}".format(dc.shape))
-        #if is_rgb:
-        #    dc = rgb_tools.regular_array2rgbx(dc)
+        if is_rgb:
+            dc = rgb_tools.regular_array2rgbx(dc)
         if sl is not None:
             dc = dc[tuple(sl)]
         return dc
