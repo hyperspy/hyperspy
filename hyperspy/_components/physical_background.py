@@ -213,7 +213,7 @@ class Physical_background(Component):
 	This dictionnary is call in the function Wpercent() to calculate an array of weight percent with the same dimension than the model and a length which correspond to the number of elements filled in the metadata
     """
 
-    def __init__(self, E0, detector, quantification, absorption_model,TOA ,coating_thickness, coefficients=1, Window=0, quanti=0, MuC=0):
+    def __init__(self, E0, detector, quantification, absorption_model,TOA ,coating_thickness=1, coefficients=1, Window=1, quanti=1, MuC=1):
         Component.__init__(self,['coefficients','E0','Window','MuC','quanti','teta','coating_thickness'])
 
         self.coefficients._number_of_elements = 2
