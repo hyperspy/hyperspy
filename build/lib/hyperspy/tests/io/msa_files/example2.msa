@@ -1,0 +1,61 @@
+#FORMAT      : EMSA/MAS SPECTRAL DATA STANDARD
+#VERSION     : 1.0
+#TITLE       : NIO Windowless Spectra OK NiL
+#DATE        : 01-OCT-1991 
+#TIME        : 12:00
+#OWNER       : EMSA/MAS TASK FORCE
+#NPOINTS     : 80.
+#NCOLUMNS    : 5.
+#XUNITS      : eV
+#XLABEL      : Energy
+#YUNITS      : Intensity
+#DATATYPE    : Y
+#XPERCHAN    : 10.
+#OFFSET      : 200.
+#CHOFFSET    : -20.
+#SIGNALTYPE  : EDS
+#XLABEL      : X-RAY ENERGY
+#YLABEL      : X-RAY INTENSITY
+#BEAMKV   -kV: 120.0
+#EMISSION -uA: 5.5
+#PROBECUR -nA: 12.345
+#BEAMDIAM -nm: 100.0
+#MAGCAM      : 100
+#OPERMODE    : IMAG
+#THICKNESS-nm: 50    
+#XTILTSTGE-dg: 45.
+#YTILTSTGE-dg: 20.
+#XPOSITION   : 123.
+#YPOSITION   : 456.
+#ZPOSITION   : 000
+#ELEVANGLE-dg: 20.
+#AZIMANGLE-dg: 90.
+#SOLIDANGL-sR: 0.13
+#LIVETIME  -s: 100.
+#REALTIME  -s: 150.
+#TBEWIND  -cm: 0.00
+#TAUWIND  -cm: 2.0 E-06
+#TDEADLYR -cm: 1.0 E-06
+#TACTLYR  -cm: 0.3
+#EDSDET      : SIWLS
+#COMMENT     : The next two lines are User Defined Keywords and values
+##ALPHA-1    : 3.1415926535
+##RESTMASS   : 511.030
+#SPECTRUM    : DATA BEGINS HERE                                  
+65.820,      67.872,      65.626,      68.762,      71.395,     
+74.996,      78.132,      78.055,      77.861,      84.598,     
+83.088,      85.372,      89.786,      93.464,      93.387,     
+97.452,     109.96,     111.08,     119.64,     128.77,     
+138.38,     152.35,     176.01,     192.12,     222.12,     
+254.22,     281.55,     328.33,     348.92,     375.33,     
+385.51,     389.54,     378.77,     353.80,     328.91,     
+290.07,     246.09,     202.73,     176.47,     137.64,     
+119.56,     106.40,     92.496,     96.213,     94.664,     
+101.13,     114.57,     118.82,     131.68,     145.04,     
+165.44,     187.51,     207.49,     238.04,     269.71,     
+301.46,     348.65,     409.36,     475.30,     554.51,     
+631.64,     715.19,     793.44,     847.99,     872.97,     
+862.59,     834.87,     778.49,     688.63,     599.39,     
+495.39,     403.48,     312.88,     237.34,     184.14,     
+129.86,     101.59,     80.107,     58.657,     49.442,     
+#ENDOFDATA   :"""
