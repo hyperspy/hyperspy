@@ -49,4 +49,3 @@ hyperspy/misc/etc/test_compilers.obj
 .settings/
 .vscode/
 tsconfig.json
-jsconfig.json
