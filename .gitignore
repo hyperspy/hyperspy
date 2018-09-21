@@ -44,15 +44,9 @@ hyperspy/misc/etc/test_compilers.obj
 
 /.spyproject/
 
-
 ### Code ###
-
 # Visual Studio Code - https://code.visualstudio.com/
-
 .settings/
-
 .vscode/
-
-tsconfig.
-json
+tsconfig.json
 jsconfig.json
