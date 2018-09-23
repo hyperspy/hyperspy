@@ -3,7 +3,7 @@ import sys
 
 import numpy as np
 import dask.array as da
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_almost_equal
 import pytest
 import numpy.testing as nt
 
@@ -1118,8 +1118,10 @@ def test_lazy_diff_rechunk():
                                                           10, (1,) * 99)  # The data has not been rechunked
 
 
-def test_spikes_removal_tool():
+def test_spikes_removal_tool(mpl_cleanup):
     s = signals.Signal1D(np.ones((2, 3, 30)))
+    np.random.seed(1)
+    s.add_gaussian_noise(1E-5)
     # Add three spikes
     s.data[1, 0, 1] += 2
     s.data[0, 2, 29] += 1
@@ -1139,17 +1141,18 @@ def test_spikes_removal_tool():
     assert s.axes_manager.indices == (2, 0)
     sr.add_noise = False
     sr.apply()
-    assert s.data[0, 2, 29] == 1
+    assert_almost_equal(s.data[0, 2, 29], 1, decimal=5)
     assert s.axes_manager.indices == (0, 1)
     sr.apply()
-    assert s.data[1, 0, 1] == 1
+    assert_almost_equal(s.data[1, 0, 1], 1, decimal=5)
     assert s.axes_manager.indices == (2, 1)
     np.random.seed(1)
     sr.add_noise = True
+    sr.default_spike_width = 3
     sr.interpolator_kind = "Spline"
     sr.spline_order = 3
     sr.apply()
-    assert s.data[1, 2, 14] == 0
+    assert_almost_equal(s.data[1, 2, 14], 1, decimal=5)
     assert s.axes_manager.indices == (0, 0)
 
 
