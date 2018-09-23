@@ -21,7 +21,6 @@ import logging
 
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 from hyperspy._components.expression import Expression
-from hyperspy import signals
 
 
 _logger = logging.getLogger(__name__)
@@ -121,9 +120,10 @@ class PowerLaw(Expression):
             I1 = s.isig[i1:i3].integrate1D(2j).data
             I2 = s.isig[i3:i2].integrate1D(2j).data
         else:
+            from hyperspy.signal import BaseSignal
             shape = s.data.shape[:-1]
-            I1_s = signals.BaseSignal(np.empty(shape, dtype='float'))
-            I2_s = signals.BaseSignal(np.empty(shape, dtype='float'))
+            I1_s = BaseSignal(np.empty(shape, dtype='float'))
+            I2_s = BaseSignal(np.empty(shape, dtype='float'))
             # Use the `out` parameters to avoid doing the deepcopy
             s.isig[i1:i3].integrate1D(2j, out=I1_s)
             s.isig[i3:i2].integrate1D(2j, out=I2_s)
