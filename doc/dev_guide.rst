@@ -182,7 +182,7 @@ To run them:
 
 .. code:: bash
 
-   pytest --pyargs hyperspy
+   pytest --mpl --pyargs hyperspy
 
 Or, from HyperSpy's project folder simply:
 
