@@ -22,9 +22,10 @@ from datetime import datetime, timedelta
 from dateutil import parser
 import pint
 from tifffile import imsave, TiffFile
+from tifffile.tifffile import TIFF  # lazy constants
 
 import numpy as np
-import traits.api as t
+#import traits.api as t
 from hyperspy.misc import rgb_tools
 from hyperspy.misc.date_time_tools import get_date_time_from_metadata
 from hyperspy.misc.utils import DictionaryTreeBrowser
@@ -61,8 +62,8 @@ axes_label_codes = {
     'H': "lifetime",
     'L': "exposure",
     'V': "event",
-    'Q': t.Undefined,
-    '_': t.Undefined}
+    'Q': "undefined",
+    '_': "undefined"}
 
 
 ureg = pint.UnitRegistry()
@@ -84,9 +85,9 @@ def file_writer(filename, signal, export_scale=True, extratags=[], **kwds):
     data = signal.data
     if signal.is_rgbx is True:
         data = rgb_tools.rgbx2regular_array(data)
-        photometric = "rgb"
+        photometric = "RGB"
     else:
-        photometric = "minisblack"
+        photometric = "MINISBLACK"
     if 'description' in kwds and export_scale:
         kwds.pop('description')
         _logger.warning(
@@ -143,7 +144,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
         else:
             # old version
             axes = tiff.series[0]['axes']
-        is_rgb = tiff.pages[0].photometric == tiff.pages[0].photometric.RGB
+        is_rgb = tiff.pages[0].photometric == TIFF.PHOTOMETRIC.RGB
         _logger.debug("Is RGB: %s" % is_rgb)
         series = tiff.series[0]
         if hasattr(series, 'shape'):
@@ -168,24 +169,9 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
         _logger.debug("Photometric: %s" % op['PhotometricInterpretation'])
         _logger.debug('is_imagej: {}'.format(tiff.pages[0].is_imagej))
 
-        # workaround for 'palette' photometric, keep only 'X' and 'Y' axes
-        #sl = None
-        #if op['photometric'] == 3:
-        #    sl = [0] * len(shape)
-        #    names = []
-        #    for i, axis in enumerate(axes):
-        #        if axis == 'X' or axis == 'Y':
-        #            sl[i] = slice(None)
-        #            names.append(axes_label_codes[axis])
-        #        else:
-        #            axes.replace(axis, '')
-        #    shape = tuple(_sh for _s, _sh in zip(sl, shape)
-        #                  if isinstance(_s, slice))
-        #_logger.debug("names: {0}".format(names))
-
         scales = [1.0] * len(names)
         offsets = [0.0] * len(names)
-        units = [t.Undefined] * len(names)
+        units = ['undefined'] * len(names)
         intensity_axis = {}
         try:
             scales_d, units_d, offsets_d, intensity_axis, op = \
@@ -203,6 +189,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
                     offsets[i] = offsets_d['z']
         except BaseException:
             _logger.info("Scale and units could not be imported")
+            raise #TEMP
 
         axes = [{'size': size,
                  'name': str(name),
@@ -220,9 +207,8 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
                          },
               }
 
-        if 'datetime' in op:
-            dt = datetime.strptime(_decode_string(
-                op['datetime']), "%Y:%m:%d %H:%M:%S")
+        if 'DateTime' in op:
+            dt = datetime.strptime(op['DateTime'], "%Y:%m:%d %H:%M:%S")
             md['General']['date'] = dt.date().isoformat()
             md['General']['time'] = dt.time().isoformat()
         if 'units' in intensity_axis:
@@ -269,14 +255,14 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
     axes_l = ['x', 'y', 'z']
     scales = {axis: 1.0 for axis in axes_l}
     offsets = {axis: 0.0 for axis in axes_l}
-    units = {axis: t.Undefined for axis in axes_l}
+    units = {axis: 'undefined' for axis in axes_l}
     intensity_axis = {}
 
     # for files created with imageJ
     if tiff.pages[0].is_imagej:
-        image_description = _decode_string(op["image_description"])
-        if "image_description_1" in op:
-            image_description = _decode_string(op["image_description_1"])
+        image_description = op["ImageDescription"]
+        if "image_description_1" in op:                                       #NANI?
+            image_description = op["image_description_1"]
         _logger.debug(
             "Image_description tag: {0}".format(image_description))
         if 'ImageJ' in image_description:
@@ -296,11 +282,11 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
     # for files created with DM
     if '65003' in op:
         _logger.debug("Reading Gatan DigitalMicrograph tif metadata")
-        units['y'] = _decode_string(op['65003'])  # x units
+        units['y'] = op['65003']  # x units
     if '65004' in op:
-        units['x'] = _decode_string(op['65004'])  # y units
+        units['x'] = op['65004']  # y units
     if '65005' in op:
-        units['z'] = _decode_string(op['65005'])  # z units
+        units['z'] = op['65005']  # z units
     if '65009' in op:
         scales['y'] = op['65009']   # x scales
     if '65010' in op:
@@ -314,22 +300,21 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
     if '65008' in op:
         offsets['z'] = op['65008']   # z offset
     if '65022' in op:
-        intensity_axis['units'] = _decode_string(
-            op['65022'])   # intensity units
+        intensity_axis['units'] = op['65022']   # intensity units
     if '65024' in op:
         intensity_axis['offset'] = op['65024']   # intensity offset
     if '65025' in op:
         intensity_axis['scale'] = op['65025']   # intensity scale
 
     # for FEI Helios tiff files (apparently, works also for Quanta):
-    elif 'helios_metadata' in op or 'sfeg_metadata' in op:
+    elif 'FEI_HELIOS' in op or 'FEI_SFEG' in op:
         _logger.debug("Reading FEI tif metadata")
         try:
-            op['fei_metadata'] = op['helios_metadata']
-            del op['helios_metadata']
+            op['fei_metadata'] = op['FEI_HELIOS']
+            del op['FEI_HELIOS']
         except KeyError:
-            op['fei_metadata'] = op['sfeg_metadata']
-            del op['sfeg_metadata']
+            op['fei_metadata'] = op['FEI_SFEG']
+            del op['FEI_SFEG']
         scales['x'] = float(op['fei_metadata']['Scan']['PixelWidth'])
         scales['y'] = float(op['fei_metadata']['Scan']['PixelHeight'])
         for key in ['x', 'y']:
@@ -358,17 +343,18 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
         for key in ['x', 'y']:
             units[key] = 'm'
 
-    if force_read_resolution and 'resolution_unit' in op \
-            and 'x_resolution' in op:
-        res_unit_tag = op['resolution_unit']
-        if res_unit_tag != 1:
+    if force_read_resolution and 'ResolutionUnit' in op \
+            and 'XResolution' in op:
+        res_unit_tag = op['ResolutionUnit']
+        if res_unit_tag != TIFF.RESUNIT.NONE:
             _logger.debug("Resolution unit: %s" % res_unit_tag)
             scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op)
-            if res_unit_tag == 2:  # unit is in inch, conversion to um
+            # conversion to µm:
+            if res_unit_tag == TIFF.RESUNIT.INCH:
                 for key in ['x', 'y']:
                     units[key] = 'µm'
                     scales[key] = scales[key] * 25400
-            if res_unit_tag == 3:  # unit is in cm, conversion to um
+            if res_unit_tag == TIFF.RESUNIT.CENTIMETER:  
                 for key in ['x', 'y']:
                     units[key] = 'µm'
                     scales[key] = scales[key] * 10000
@@ -377,8 +363,8 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
 
 
 def _get_scales_from_x_y_resolution(op, factor=1):
-    scales = (op["y_resolution"][1] / op["y_resolution"][0] * factor,
-              op["x_resolution"][1] / op["x_resolution"][0] * factor)
+    scales = (op["YResolution"][1] / op["YResolution"][0] * factor,
+              op["XResolution"][1] / op["XResolution"][0] * factor)
     return scales
 
 
@@ -465,7 +451,7 @@ def _get_scale_unit(signal, encoding=None):
     units = [signal_axis.units for signal_axis in signal_axes]
     offsets = [signal_axis.offset for signal_axis in signal_axes]
     for i, unit in enumerate(units):
-        if unit == t.Undefined:
+        if unit == 'undefined':
             units[i] = ''
         if encoding is not None:
             units[i] = units[i].encode(encoding)
@@ -488,15 +474,6 @@ def _imagej_description(version='1.11a', **kwargs):
     return '\n'.join(result + append + [''])
 
 
-def _decode_string(string):
-    try:
-        string = string.decode('utf8')
-    except BaseException:
-        # Sometimes the strings are encoded in latin-1 instead of utf8
-        string = string.decode('latin-1', errors='ignore')
-    return string
-
-
 class Metadata:
 
     def __init__(self, original_metadata):
@@ -504,12 +481,12 @@ class Metadata:
         self.mapping = {}
         self.get_mapping_FEI()
         self.get_mapping_Zeiss()
-        if 'tvips_metadata' in self.original_metadata:
+        if 'TVPIS' in self.original_metadata:
             self.get_mapping_TVIPS()
 
     def get_additional_metadata(self):
         self.md = DictionaryTreeBrowser()
-        if 'tvips_metadata' in self.original_metadata:
+        if 'TVIPS' in self.original_metadata:
             self._get_additional_metadata_TVIPS()
         return self.md.as_dictionary()
 
@@ -620,7 +597,7 @@ class Metadata:
 
     def get_mapping_TVIPS(self):
         try:
-            if self.original_metadata['tvips_metadata']['tem_mode'] == 3:
+            if self.original_metadata['TVIPS']['tem_mode'] == 3:
                 mapped_magnification = 'camera_length'
             else:
                 mapped_magnification = 'magnification'
@@ -629,28 +606,28 @@ class Metadata:
 
         # mapping TVIPSs metadata
         mapping_TVIPS = {
-            'tvips_metadata.tem_magnification':
+            'TVIPS.tem_magnification':
             ("Acquisition_instrument.TEM.%s" % mapped_magnification, None),
-            'tvips_metadata.camera_type':
+            'TVIPS.camera_type':
             ("Acquisition_instrument.TEM.Detector.Camera.name", None),
-            'tvips_metadata.exposure_time':
+            'TVIPS.exposure_time':
             ("Acquisition_instrument.TEM.Detector.Camera.exposure",
              lambda x: float(x) * 1e-3),
-            'tvips_metadata.tem_high_tension':
+            'TVIPS.tem_high_tension':
             ("Acquisition_instrument.TEM.beam_energy", lambda x: float(x) * 1e-3),
-            'tvips_metadata.comment':
+            'TVIPS.comment':
             ("General.notes", self._parse_string),
-            'tvips_metadata.date':
+            'TVIPS.date':
             ("General.date", self._parse_tvips_date),
-            'tvips_metadata.time':
+            'TVIPS.time':
             ("General.time", self._parse_tvips_time),
         }
         self.mapping.update(mapping_TVIPS)
 
     def _get_additional_metadata_TVIPS(self):
-        if 'tem_stage_position' in self.original_metadata['tvips_metadata']:
+        if 'tem_stage_position' in self.original_metadata['TVIPS']:
             stage = self.original_metadata[
-                'tvips_metadata']['tem_stage_position']
+                'TVIPS']['tem_stage_position']
             # Guess on what is x, y, z, tilt_alpha and tilt_beta...
             self.md.set_item(
                 "Acquisition_instrument.TEM.Stage.x", stage[0] * 1E3)
