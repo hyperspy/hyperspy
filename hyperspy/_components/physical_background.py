@@ -143,10 +143,8 @@ def Mucoef(model,quanti): # this function calculate the absorption coefficient f
     else: 
         t=(np.linspace(model._signal.axes_manager[-1].offset,model._signal.axes_manager[-1].size*model._signal.axes_manager[-1].scale,model._signal.axes_manager[-1].size))
         t=t[model.channel_switches]
-        u=t[0::5]
-        Ac=mass_absorption_mixture(elements=model._signal.metadata.Sample.elements ,weight_percent=weight, energies=u)    
-        b=t
-        Ac=np.interp(b,u,Ac) # Interpolation allows to gain some time
+        Ac=mass_absorption_mixture(elements=model._signal.metadata.Sample.elements ,weight_percent=weight, energies=t)    
+        
     
     return Ac
 
