@@ -64,7 +64,6 @@ install_req = ['scipy>=0.15',
                'statsmodels',
                'numexpr',
                'sparse',
-               'tifffile',
                ]
 
 extras_require = {
