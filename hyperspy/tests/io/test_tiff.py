@@ -204,7 +204,7 @@ def test_saving_with_custom_tag():
         s.save(fname, extratags=extratag, overwrite=True)
         s2 = hs.load(fname)
         assert (s2.original_metadata['Number_65000'] ==
-                b"Random metadata")
+                "Random metadata")
 
 
 def _test_read_unit_from_dm():
@@ -466,7 +466,7 @@ def test_read_RGB_Zeiss_optical_scale_metadata():
 def test_read_BW_Zeiss_optical_scale_metadata():
     fname = os.path.join(MY_PATH2, 'optical_Zeiss_AxioVision_BW.tif')
     s = hs.load(fname, force_read_resolution=True, convert_units=True)
-    assert s.data.dtype == np.uint16
+    assert s.data.dtype == np.uint8
     assert s.data.shape == (10, 13)
     assert s.axes_manager[0].units == 'um'
     assert s.axes_manager[1].units == 'um'
@@ -479,7 +479,7 @@ def test_read_BW_Zeiss_optical_scale_metadata():
 def test_read_BW_Zeiss_optical_scale_metadata_convert_units_false():
     fname = os.path.join(MY_PATH2, 'optical_Zeiss_AxioVision_BW.tif')
     s = hs.load(fname, force_read_resolution=True, convert_units=False)
-    assert s.data.dtype == np.uint16
+    assert s.data.dtype == np.uint8
     assert s.data.shape == (10, 13)
     assert s.axes_manager[0].units == 'µm'
     assert s.axes_manager[1].units == 'µm'
@@ -490,7 +490,7 @@ def test_read_BW_Zeiss_optical_scale_metadata_convert_units_false():
 def test_read_BW_Zeiss_optical_scale_metadata2():
     fname = os.path.join(MY_PATH2, 'optical_Zeiss_AxioVision_BW.tif')
     s = hs.load(fname, force_read_resolution=True, convert_units=True)
-    assert s.data.dtype == np.uint16
+    assert s.data.dtype == np.uint8
     assert s.data.shape == (10, 13)
     assert s.axes_manager[0].units == 'um'
     assert s.axes_manager[1].units == 'um'
@@ -503,7 +503,7 @@ def test_read_BW_Zeiss_optical_scale_metadata2():
 def test_read_BW_Zeiss_optical_scale_metadata3():
     fname = os.path.join(MY_PATH2, 'optical_Zeiss_AxioVision_BW.tif')
     s = hs.load(fname, force_read_resolution=False)
-    assert s.data.dtype == np.uint16
+    assert s.data.dtype == np.uint8
     assert s.data.shape == (10, 13)
     assert s.axes_manager[0].units == t.Undefined
     assert s.axes_manager[1].units == t.Undefined
