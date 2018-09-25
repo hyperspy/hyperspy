@@ -4,6 +4,7 @@ import tempfile
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
+import traits.api as t
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import assert_deep_almost_equal
@@ -16,9 +17,9 @@ def test_rgba16():
     s = hs.load(os.path.join(MY_PATH2, "test_rgba16.tif"))
     data = np.load(os.path.join(MY_PATH, "npy_files", "test_rgba16.npy"))
     assert (s.data == data).all()
-    assert s.axes_manager[0].units == 'undefined'
-    assert s.axes_manager[1].units == 'undefined'
-    assert s.axes_manager[2].units == 'undefined'
+    assert s.axes_manager[0].units == t.Undefined
+    assert s.axes_manager[1].units == t.Undefined
+    assert s.axes_manager[2].units == t.Undefined
     assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-5)
     assert_allclose(s.axes_manager[2].scale, 1.0, atol=1E-5)
@@ -82,7 +83,7 @@ def test_read_unit_from_imagej_stack():
                          'test_loading_image_saved_with_imageJ_stack.tif')
     s = hs.load(fname)
     assert s.data.shape == (2, 68, 68)
-    assert s.axes_manager[0].units == 'undefined'
+    assert s.axes_manager[0].units == t.Undefined
     assert s.axes_manager[1].units == 'µm'
     assert s.axes_manager[2].units == 'µm'
     assert_allclose(s.axes_manager[0].scale, 2.5, atol=1E-5)
@@ -130,9 +131,9 @@ def test_read_unit_from_imagej_stack_no_scale():
                          'test_loading_image_saved_with_imageJ_stack_no_scale.tif')
     s = hs.load(fname)
     assert s.data.shape == (2, 68, 68)
-    assert s.axes_manager[0].units == 'undefined'
-    assert s.axes_manager[1].units == 'undefined'
-    assert s.axes_manager[2].units == 'undefined'
+    assert s.axes_manager[0].units == t.Undefined
+    assert s.axes_manager[1].units == t.Undefined
+    assert s.axes_manager[2].units == t.Undefined
     assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-5)
     assert_allclose(s.axes_manager[2].scale, 1.0, atol=1E-5)
@@ -142,8 +143,8 @@ def test_read_unit_from_imagej_no_scale():
     fname = os.path.join(MY_PATH, 'tiff_files',
                          'test_loading_image_saved_with_imageJ_no_scale.tif')
     s = hs.load(fname)
-    assert s.axes_manager[0].units == 'undefined'
-    assert s.axes_manager[1].units == 'undefined'
+    assert s.axes_manager[0].units == t.Undefined
+    assert s.axes_manager[1].units == t.Undefined
     assert_allclose(s.axes_manager[0].scale, 1.0, atol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 1.0, atol=1E-5)
 
@@ -176,8 +177,8 @@ def test_write_read_unit_imagej_with_description():
         fname2 = os.path.join(tmpdir, 'description.tif')
         s.save(fname2, export_scale=False, overwrite=True, description='test')
         s2 = hs.load(fname2)
-        assert s2.axes_manager[0].units == 'undefined'
-        assert s2.axes_manager[1].units == 'undefined'
+        assert s2.axes_manager[0].units == t.Undefined
+        assert s2.axes_manager[1].units == t.Undefined
         assert_allclose(s2.axes_manager[0].scale, 1.0, atol=1E-5)
         assert_allclose(s2.axes_manager[1].scale, 1.0, atol=1E-5)
 
@@ -454,8 +455,8 @@ def test_read_RGB_Zeiss_optical_scale_metadata():
     dtype = np.dtype([('R', 'u1'), ('G', 'u1'), ('B', 'u1')])
     assert s.data.dtype == dtype
     assert s.data.shape == (10, 13)
-    assert s.axes_manager[0].units == 'undefined'
-    assert s.axes_manager[1].units == 'undefined'
+    assert s.axes_manager[0].units == t.Undefined
+    assert s.axes_manager[1].units == t.Undefined
     assert_allclose(s.axes_manager[0].scale, 1.0, rtol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 1.0, rtol=1E-5)
     assert s.metadata.General.date == '2016-06-13'
@@ -504,8 +505,8 @@ def test_read_BW_Zeiss_optical_scale_metadata3():
     s = hs.load(fname, force_read_resolution=False)
     assert s.data.dtype == np.uint16
     assert s.data.shape == (10, 13)
-    assert s.axes_manager[0].units == 'undefined'
-    assert s.axes_manager[1].units == 'undefined'
+    assert s.axes_manager[0].units == t.Undefined
+    assert s.axes_manager[1].units == t.Undefined
     assert_allclose(s.axes_manager[0].scale, 1.0, rtol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 1.0, rtol=1E-5)
     assert s.metadata.General.date == '2016-06-13'

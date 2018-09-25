@@ -25,7 +25,7 @@ from tifffile import imsave, TiffFile
 from tifffile.tifffile import TIFF  # lazy constants
 
 import numpy as np
-#import traits.api as t
+import traits.api as t
 from hyperspy.misc import rgb_tools
 from hyperspy.misc.date_time_tools import get_date_time_from_metadata
 from hyperspy.misc.utils import DictionaryTreeBrowser
@@ -171,7 +171,7 @@ def file_reader(filename, record_by='image', force_read_resolution=False,
 
         scales = [1.0] * len(names)
         offsets = [0.0] * len(names)
-        units = ['undefined'] * len(names)
+        units = [t.Undefined] * len(names)
         intensity_axis = {}
         try:
             scales_d, units_d, offsets_d, intensity_axis, op = \
@@ -255,7 +255,7 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
     axes_l = ['x', 'y', 'z']
     scales = {axis: 1.0 for axis in axes_l}
     offsets = {axis: 0.0 for axis in axes_l}
-    units = {axis: 'undefined' for axis in axes_l}
+    units = {axis: t.Undefined for axis in axes_l}
     intensity_axis = {}
 
     # for files created with imageJ
@@ -451,7 +451,7 @@ def _get_scale_unit(signal, encoding=None):
     units = [signal_axis.units for signal_axis in signal_axes]
     offsets = [signal_axis.offset for signal_axis in signal_axes]
     for i, unit in enumerate(units):
-        if unit == 'undefined':
+        if unit == t.Undefined:
             units[i] = ''
         if encoding is not None:
             units[i] = units[i].encode(encoding)
