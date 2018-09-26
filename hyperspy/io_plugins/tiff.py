@@ -260,8 +260,8 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
     # for files created with imageJ
     if tiff.pages[0].is_imagej:
         image_description = op["ImageDescription"]
-        if "image_description_1" in op:                                       #NANI?
-            image_description = op["image_description_1"]
+        if "ImageDescription1" in op:                                   #NANI?
+            image_description = op["ImageDescription1"]
         _logger.debug(
             "Image_description tag: {0}".format(image_description))
         if 'ImageJ' in image_description:
@@ -305,8 +305,8 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
     if '65025' in op:
         intensity_axis['scale'] = op['65025']   # intensity scale
 
-    # for FEI Helios tiff files (apparently, works also for Quanta):
-    elif 'FEI_HELIOS' in op or 'FEI_SFEG' in op:
+    # scales for FEI, ZEISS or TVIPS:
+    if 'FEI_HELIOS' in op or 'FEI_SFEG' in op:
         _logger.debug("Reading FEI tif metadata")
         try:
             op['fei_metadata'] = op['FEI_HELIOS']
@@ -316,10 +316,8 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
             del op['FEI_SFEG']
         scales['x'] = float(op['fei_metadata']['Scan']['PixelWidth'])
         scales['y'] = float(op['fei_metadata']['Scan']['PixelHeight'])
-        for key in ['x', 'y']:
-            units[key] = 'm'
+        units.update({'x': 'm', 'y': 'm'})
 
-    # for Zeiss SEM tiff files:
     elif 'CZ_SEM' in op:
         _logger.debug("Reading Zeiss tif metadata")
         if 'ap_image_pixel_size' in op['CZ_SEM']:
@@ -328,19 +326,18 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
                 scales[key] = ps
                 units[key] = units0
 
-    # for TVIPS tiff files:
-    elif 'tvips_metadata' in op:
+    elif 'TVIPS' in op:
         _logger.debug("Reading TVIPS tif metadata")
-        if 'pixel_size_x' in op[
-                'tvips_metadata'] and 'pixel_size_y' in op['tvips_metadata']:
-            scales['x'] = op['tvips_metadata']['pixel_size_x']
-            scales['y'] = op['tvips_metadata']['pixel_size_y']
-
+        if 'PixelSizeX' in op['TVIPS'] and 'PixelSizeY' in op['TVIPS']:
+            _logger.debug("getting TVIPS scale from PixelSizeX")
+            scales['x'] = op['TVIPS']['PixelSizeX']
+            scales['y'] = op['TVIPS']['PixelSizeY']
+            units.update({'x': 'nm', 'y': 'nm'})
         else:
+            _logger.debug("getting TVIPS scale from XYResolution")
             scales['x'], scales['y'] = _get_scales_from_x_y_resolution(
                 op, factor=1e-2)
-        for key in ['x', 'y']:
-            units[key] = 'm'
+            units.update({'x': 'm', 'y': 'm'})
 
     if force_read_resolution and 'ResolutionUnit' in op \
             and 'XResolution' in op:
@@ -480,7 +477,7 @@ class Metadata:
         self.mapping = {}
         self.get_mapping_FEI()
         self.get_mapping_Zeiss()
-        if 'TVPIS' in self.original_metadata:
+        if 'TVIPS' in self.original_metadata:
             self.get_mapping_TVIPS()
 
     def get_additional_metadata(self):
@@ -596,7 +593,7 @@ class Metadata:
 
     def get_mapping_TVIPS(self):
         try:
-            if self.original_metadata['TVIPS']['tem_mode'] == 3:
+            if self.original_metadata['TVIPS']['TemMode'] == 3:
                 mapped_magnification = 'camera_length'
             else:
                 mapped_magnification = 'magnification'
@@ -605,28 +602,27 @@ class Metadata:
 
         # mapping TVIPSs metadata
         mapping_TVIPS = {
-            'TVIPS.tem_magnification':
+            'TVIPS.TemMagnification':
             ("Acquisition_instrument.TEM.%s" % mapped_magnification, None),
-            'TVIPS.camera_type':
+            'TVIPS.CameraType':
             ("Acquisition_instrument.TEM.Detector.Camera.name", None),
-            'TVIPS.exposure_time':
+            'TVIPS.ExposureTime':
             ("Acquisition_instrument.TEM.Detector.Camera.exposure",
              lambda x: float(x) * 1e-3),
-            'TVIPS.tem_high_tension':
+            'TVIPS.TemHighTension':
             ("Acquisition_instrument.TEM.beam_energy", lambda x: float(x) * 1e-3),
-            'TVIPS.comment':
+            'TVIPS.Comment':
             ("General.notes", self._parse_string),
-            'TVIPS.date':
+            'TVIPS.Date':
             ("General.date", self._parse_tvips_date),
-            'TVIPS.time':
+            'TVIPS.Time':
             ("General.time", self._parse_tvips_time),
         }
         self.mapping.update(mapping_TVIPS)
 
     def _get_additional_metadata_TVIPS(self):
-        if 'tem_stage_position' in self.original_metadata['TVIPS']:
-            stage = self.original_metadata[
-                'TVIPS']['tem_stage_position']
+        if 'TemStagePosition' in self.original_metadata['TVIPS']:
+            stage = self.original_metadata['TVIPS']['TemStagePosition']
             # Guess on what is x, y, z, tilt_alpha and tilt_beta...
             self.md.set_item(
                 "Acquisition_instrument.TEM.Stage.x", stage[0] * 1E3)
