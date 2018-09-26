@@ -65,6 +65,8 @@ class SkewNormal(Component):
         # Boundaries
         self.A.bmin = 0.
         self.A.bmax = None
+        self.scale.bmin = 0
+        self.scale.bmax = None
         
         # Gradients
         self.x0.grad = self.grad_x0
