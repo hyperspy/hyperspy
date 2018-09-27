@@ -7782,7 +7782,10 @@ def read_cz_sem(fh, byteorder, dtype, count, offsetsize):
             try:
                 name, value = line.split('=')
             except ValueError:
-                continue
+                try:
+                    name, value = line.split(':', 1)
+                except ValueError:    
+                    continue
             value = value.strip()
             unit = ''
             try:

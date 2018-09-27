@@ -306,7 +306,7 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
         intensity_axis['scale'] = op['65025']   # intensity scale
 
     # scales for FEI, ZEISS or TVIPS:
-    if 'FEI_HELIOS' in op or 'FEI_SFEG' in op:
+    elif tiff.pages[0].is_fei:
         _logger.debug("Reading FEI tif metadata")
         try:
             op['fei_metadata'] = op['FEI_HELIOS']
@@ -318,15 +318,22 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
         scales['y'] = float(op['fei_metadata']['Scan']['PixelHeight'])
         units.update({'x': 'm', 'y': 'm'})
 
-    elif 'CZ_SEM' in op:
-        _logger.debug("Reading Zeiss tif metadata")
-        if 'ap_image_pixel_size' in op['CZ_SEM']:
-            (ps, units0) = op['CZ_SEM']['ap_image_pixel_size'][1:]
-            for key in ['x', 'y']:
-                scales[key] = ps
-                units[key] = units0
+    elif tiff.pages[0].is_sem:
+        _logger.debug("Reading Zeiss tif pixel_scale")
+        # op['CZ_SEM'][''] is containing structure of primary
+        # (and not so primary) not described SEM parameters in SI units.
+        # tifffiles returns flattened version of the structure (tuple)
+        # and the scale in it is under index 3.
+        # The scale is tied with physical display and needs to be multiplied
+        # with factor, which is the  1024 div with horizontal pixel number.
+        # CZ_SEM tiff can contain lesser reolution scale in described tags
+        # as 'ap_image_pixel_size' and/or 'ap_pixel_size', which depending
+        # from ZEISS software version can be absent.
+        scale_in_m = op['CZ_SEM'][''][3] * 1024 / tiff.pages[0].shape[1]
+        scales.update({'x': scale_in_m, 'y': scale_in_m})
+        units.update({'x': 'm', 'y': 'm'})
 
-    elif 'TVIPS' in op:
+    elif tiff.pages[0].is_tvips:
         _logger.debug("Reading TVIPS tif metadata")
         if 'PixelSizeX' in op['TVIPS'] and 'PixelSizeY' in op['TVIPS']:
             _logger.debug("getting TVIPS scale from PixelSizeX")
@@ -570,7 +577,7 @@ class Metadata:
             ("Acquisition_instrument.SEM.Stage.rotation", self._parse_tuple_Zeiss),
             'CZ_SEM.ap_stage_at_t':
             ("Acquisition_instrument.SEM.Stage.tilt", self._parse_tuple_Zeiss),
-            'CZ_SEM.ap_free_wd':
+            'CZ_SEM.ap_wd':
             ("Acquisition_instrument.SEM.working_distance",
              lambda tup: self._parse_tuple_Zeiss_with_units(tup, to_units='mm')),
             'CZ_SEM.dp_dwell_time':
@@ -581,11 +588,10 @@ class Metadata:
              lambda tup: self._parse_tuple_Zeiss_with_units(tup, to_units='nA')),
             'CZ_SEM.sv_serial_number':
             ("Acquisition_instrument.SEM.microscope", self._parse_tuple_Zeiss),
-            # I have not find the corresponding metadata....
-            #'CZ_SEM.???':
-            #("General.date", lambda tup: parser.parse(tup[1]).date().isoformat()),
-            #'CZ_SEM.???':
-            #("General.time", lambda tup: parser.parse(tup[1]).time().isoformat()),
+            'CZ_SEM.ap_date':
+            ("General.date", lambda tup: parser.parse(tup[1]).date().isoformat()),
+            'CZ_SEM.ap_time':
+            ("General.time", lambda tup: parser.parse(tup[1]).time().isoformat()),
             'CZ_SEM.sv_user_name':
             ("General.authors", self._parse_tuple_Zeiss),
         }

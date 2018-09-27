@@ -429,9 +429,11 @@ def test_read_Zeiss_SEM_scale_metadata_1k_image():
                                              'dwell_time': 5e-08,
                                              'magnification': 105.0,
                                              'microscope': 'Merlin-61-08',
-                                             'working_distance': 14.8}},
+                                             'working_distance': 14.81}},
           'General': {'authors': 'LIM',
+                      'date': '2015-12-23',
                       'original_filename': 'test_tiff_Zeiss_SEM_1k.tif',
+                      'time': '09:40:32',
                       'title': ''},
           'Signal': {'binned': False, 'signal_type': ''},
           '_HyperSpy': {'Folding': {'original_axes_manager': None,
@@ -443,8 +445,39 @@ def test_read_Zeiss_SEM_scale_metadata_1k_image():
     s = hs.load(fname, convert_units=True)
     assert s.axes_manager[0].units == 'um'
     assert s.axes_manager[1].units == 'um'
-    assert_allclose(s.axes_manager[0].scale, 2.615, rtol=1E-5)
-    assert_allclose(s.axes_manager[1].scale, 2.615, rtol=1E-5)
+    assert_allclose(s.axes_manager[0].scale, 2.614514, rtol=1E-6)
+    assert_allclose(s.axes_manager[1].scale, 2.614514, rtol=1E-6)
+    assert s.data.dtype == 'uint8'
+    assert_deep_almost_equal(s.metadata.as_dictionary(), md)
+
+
+def test_read_Zeiss_SEM_scale_metadata_512_image():
+    md = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 245.8,
+                                                       'tilt': 0.0,
+                                                       'x': 62.9961,
+                                                       'y': 65.3168,
+                                                       'z': 44.678},
+                                             'beam_energy': 5.0,
+                                             'magnification': '50.00 K X',
+                                             'microscope': 'ULTRA 55-36-06',
+                                             'working_distance': 3.9}},
+          'General': {'authors': 'LIBERATO',
+                      'date': '2018-09-25',
+                      'original_filename': 'test_tiff_Zeiss_SEM_512pix.tif',
+                      'time': '08:20:42',
+                      'title': ''},
+          'Signal': {'binned': False, 'signal_type': ''},
+          '_HyperSpy': {'Folding': {'original_axes_manager': None,
+                                    'original_shape': None,
+                                    'signal_unfolded': False,
+                                    'unfolded': False}}}
+
+    fname = os.path.join(MY_PATH2, 'test_tiff_Zeiss_SEM_512pix.tif')
+    s = hs.load(fname, convert_units=True)
+    assert s.axes_manager[0].units == 'um'
+    assert s.axes_manager[1].units == 'um'
+    assert_allclose(s.axes_manager[0].scale, 0.011649976, rtol=1E-6)
+    assert_allclose(s.axes_manager[1].scale, 0.011649976, rtol=1E-6)
     assert s.data.dtype == 'uint8'
     assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
