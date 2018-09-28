@@ -36,7 +36,7 @@ import pytest
 
 from hyperspy.io import load
 from hyperspy.signals import BaseSignal, Signal2D, Signal1D, EDSTEMSpectrum
-from hyperspy.misc.test_utils import assert_warns, assert_deep_almost_equal
+from hyperspy.misc.test_utils import assert_deep_almost_equal
 from hyperspy.misc.io.fei_stream_readers import sparse_installed
 
 
@@ -300,11 +300,11 @@ class TestFeiEMD():
 
     @pytest.mark.parametrize("lazy", (True, False))
     def test_fei_emd_image(self, lazy):
-        stage = {'tilt_alpha': '0.006',
-                 'tilt_beta': '0.000',
-                 'x': '-0.000009',
-                 'y': '0.000144',
-                 'z': '0.000029'}
+        stage = {'tilt_alpha': 0.006,
+                 'tilt_beta': 0.000,
+                 'x': -0.000009,
+                 'y': 0.000144,
+                 'z': 0.000029}
         md = {'Acquisition_instrument': {'TEM': {'beam_energy': 200.0,
                                                  'camera_length': 98.0,
                                                  'magnification': 40000.0,
