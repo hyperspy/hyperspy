@@ -402,6 +402,8 @@ def test_read_FEI_SEM_scale_metadata_8bits():
     assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 3.3724, rtol=1E-5)
     assert s.data.dtype == 'uint8'
+    FEI_Helios_metadata['General'][
+        'original_filename'] = 'FEI-Helios-Ebeam-8bits.tif'
     assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
 
 

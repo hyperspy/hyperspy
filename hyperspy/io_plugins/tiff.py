@@ -507,6 +507,7 @@ def _parse_string(value):
         return None
     return value
 
+
 mapping_fei = {
     'fei_metadata.Beam.HV':
     ("Acquisition_instrument.SEM.beam_energy", lambda x: float(x) * 1e-3),
@@ -618,3 +619,5 @@ def get_metadata_mapping(tiff_page, op):
         except KeyError:
             mapped_magnification = 'magnification'
         return get_tvips_mapping(mapped_magnification)
+    else:
+        return {}
