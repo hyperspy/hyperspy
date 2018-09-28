@@ -353,7 +353,7 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
     if '65025' in op:
         intensity_axis['scale'] = op['65025']   # intensity scale
     
-    return scales, units, offsets, intensity_axis, op
+    return scales, units, offsets, intensity_axis
 
 
 def _get_scales_from_x_y_resolution(op, factor=1):
