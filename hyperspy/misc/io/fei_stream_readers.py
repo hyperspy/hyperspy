@@ -193,24 +193,33 @@ def stream_to_sparse_COO_array(
         If True, sum all the frames
 
     """
-    if sum_frames:
-        coords, data, shape = _stream_to_sparse_COO_array_sum_frames(
-            stream_data=stream_data,
-            shape=spatial_shape,
-            channels=channels,
-            rebin_energy=rebin_energy,
-            first_frame=first_frame,
-            last_frame=last_frame,
-        )
+    # workaround for empty stream, numba "doesn't support" empty list, see
+    # https://github.com/numba/numba/pull/2184
+    if np.allclose(stream_data, np.full_like(stream_data, 65535)):
+        coords=[]
+        data=[]
+        shape = [spatial_shape[0], spatial_shape[1], channels // rebin_energy]
+        if not sum_frames:
+            shape.insert(0, last_frame - first_frame)
     else:
-        coords, data, shape = _stream_to_sparse_COO_array(
-            stream_data=stream_data,
-            shape=spatial_shape,
-            channels=channels,
-            rebin_energy=rebin_energy,
-            first_frame=first_frame,
-            last_frame=last_frame,
-        )
+        if sum_frames:
+            coords, data, shape = _stream_to_sparse_COO_array_sum_frames(
+                stream_data=stream_data,
+                shape=spatial_shape,
+                channels=channels,
+                rebin_energy=rebin_energy,
+                first_frame=first_frame,
+                last_frame=last_frame,
+            )
+        else:
+            coords, data, shape = _stream_to_sparse_COO_array(
+                stream_data=stream_data,
+                shape=spatial_shape,
+                channels=channels,
+                rebin_energy=rebin_energy,
+                first_frame=first_frame,
+                last_frame=last_frame,
+            )
     dense_sparse = DenseSliceCOO(coords=coords, data=data, shape=shape)
     dask_sparse = da.from_array(dense_sparse, chunks="auto")
     return dask_sparse
