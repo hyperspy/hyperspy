@@ -1,25 +1,20 @@
 import numpy as np
 import dask.array as da
+import sparse
 
 from hyperspy.decorators import jit_ifnumba
 
 
-try:
-    import sparse
-    sparse_installed = True
+class DenseSliceCOO(sparse.COO):
+    """Just like sparse.COO, but returning a dense array on indexing/slicing"""
 
-    class DenseSliceCOO(sparse.COO):
-        """Just like sparse.COO, but returning a dense array on indexing/slicing"""
-
-        def __getitem__(self, *args, **kwargs):
-            obj = super().__getitem__(*args, **kwargs)
-            try:
-                return obj.todense()
-            except AttributeError:
-                # Indexing, unlike slicing, returns directly the content
-                return obj
-except ImportError:
-    sparse_installed = False
+    def __getitem__(self, *args, **kwargs):
+        obj = super().__getitem__(*args, **kwargs)
+        try:
+            return obj.todense()
+        except AttributeError:
+            # Indexing, unlike slicing, returns directly the content
+            return obj
 
 
 @jit_ifnumba()
@@ -198,11 +193,6 @@ def stream_to_sparse_COO_array(
         If True, sum all the frames
 
     """
-    if not sparse_installed:
-        raise ImportError(
-            "The python-sparse package is not installed and it is required "
-            "for lazy loading of SIs stored in FEI EMD stream format."
-        )
     if sum_frames:
         coords, data, shape = _stream_to_sparse_COO_array_sum_frames(
             stream_data=stream_data,
