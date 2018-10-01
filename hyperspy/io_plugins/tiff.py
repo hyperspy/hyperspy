@@ -22,9 +22,9 @@ from datetime import datetime, timedelta
 from dateutil import parser
 import pint
 from hyperspy.external.tifffile import imsave, TiffFile, TIFF
-
-import numpy as np
 import traits.api as t
+import numpy as np
+
 from hyperspy.misc import rgb_tools
 from hyperspy.misc.date_time_tools import get_date_time_from_metadata
 
@@ -269,21 +269,8 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
     
         return scales, units, offsets, intensity_axis
     
-    # for files created with imageJ, FEI, ZEISS or TVIPS
-    if 'imagej' in tiff.flags:
-        imagej_metadata = tiff.imagej_metadata
-        if 'ImageJ' in imagej_metadata:
-            _logger.debug("Reading ImageJ tif metadata")
-            # ImageJ write the unit in the image description
-            if 'unit' in imagej_metadata:
-                if imagej_metadata['unit'] == 'micron':
-                    units.update({'x': 'µm', 'y': 'µm'})
-                scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op)
-            if 'spacing' in imagej_metadata:
-                scales['z'] = imagej_metadata['spacing']
-        return scales, units, offsets, intensity_axis
-
-    elif 'fei' in tiff.flags:
+    # for files created with FEI, ZEISS or TVIPS (no DM or ImageJ metadata)
+    if 'fei' in tiff.flags:
         _logger.debug("Reading FEI tif metadata")
         op['fei_metadata'] = tiff.fei_metadata
         try:
@@ -298,7 +285,7 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
     elif 'sem' in tiff.flags:
         _logger.debug("Reading Zeiss tif pixel_scale")
         # op['CZ_SEM'][''] is containing structure of primary
-        # (and not so primary) not described SEM parameters in SI units.
+        # not described SEM parameters in SI units.
         # tifffiles returns flattened version of the structure (as tuple)
         # and the scale in it is at index 3.
         # The scale is tied with physical display and needs to be multiplied
@@ -326,7 +313,7 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
             units.update({'x': 'm', 'y': 'm'})
         return scales, units, offsets, intensity_axis
     
-    # for files created with DM
+    # for files containing DM metadata
     if '65003' in op:
         _logger.debug("Reading Gatan DigitalMicrograph tif metadata")
         units['y'] = op['65003']  # x units
@@ -352,6 +339,19 @@ def _parse_scale_unit(tiff, op, shape, force_read_resolution):
         intensity_axis['offset'] = op['65024']   # intensity offset
     if '65025' in op:
         intensity_axis['scale'] = op['65025']   # intensity scale
+    
+    # for files containing ImageJ metadata
+    if 'imagej' in tiff.flags:
+        imagej_metadata = tiff.imagej_metadata
+        if 'ImageJ' in imagej_metadata:
+            _logger.debug("Reading ImageJ tif metadata")
+            # ImageJ write the unit in the image description
+            if 'unit' in imagej_metadata:
+                if imagej_metadata['unit'] == 'micron':
+                    units.update({'x': 'µm', 'y': 'µm'})
+                scales['x'], scales['y'] = _get_scales_from_x_y_resolution(op)
+            if 'spacing' in imagej_metadata:
+                scales['z'] = imagej_metadata['spacing']
     
     return scales, units, offsets, intensity_axis
 
