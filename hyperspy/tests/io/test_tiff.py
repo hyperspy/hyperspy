@@ -54,18 +54,18 @@ def test_read_unit_um():
         assert s2.metadata.General.time == s.metadata.General.time
 
 
-#def test_write_read_intensity_axes_DM():
-#    s = hs.load(os.path.join(MY_PATH2, 'test_dm_image_um_unit.dm3'))
-#    s.metadata.Signal.set_item('quantity', 'Electrons (Counts)')
-#    d = {'gain_factor': 5.0,
-#         'gain_offset': 2.0}
-#    s.metadata.Signal.set_item('Noise_properties.Variance_linear_model', d)
-#    with tempfile.TemporaryDirectory() as tmpdir:
-#        fname = os.path.join(tmpdir, 'tiff_files', 'test_export_um_unit2.tif')
-#        s.save(fname, overwrite=True, export_scale=True)
-#        s2 = hs.load(fname)
-#        assert_deep_almost_equal(s.metadata.Signal.as_dictionary(),
-#                                 s2.metadata.Signal.as_dictionary())
+def test_write_read_intensity_axes_DM():
+    s = hs.load(os.path.join(MY_PATH2, 'test_dm_image_um_unit.dm3'))
+    s.metadata.Signal.set_item('quantity', 'Electrons (Counts)')
+    d = {'gain_factor': 5.0,
+         'gain_offset': 2.0}
+    s.metadata.Signal.set_item('Noise_properties.Variance_linear_model', d)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        fname = os.path.join(tmpdir, 'tiff_files', 'test_export_um_unit2.tif')
+        s.save(fname, overwrite=True, export_scale=True)
+        s2 = hs.load(fname)
+        assert_deep_almost_equal(s.metadata.Signal.as_dictionary(),
+                                 s2.metadata.Signal.as_dictionary())
 
 
 def test_read_unit_from_imagej():
