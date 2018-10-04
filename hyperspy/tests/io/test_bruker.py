@@ -10,7 +10,7 @@ from hyperspy.io import load
 from hyperspy import signals
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
-test_files = ['16x16_instructively_packed_16bit_compressed.bcf',
+test_files = ['30x30_instructively_packed_16bit_compressed.bcf',
               '16x16_12bit_packed_8bit.bcf',
               'P45_the_default_job.bcf',
               'test_TEM.bcf',
@@ -18,7 +18,7 @@ test_files = ['16x16_instructively_packed_16bit_compressed.bcf',
               'over16bit.bcf',
               'bcf_v2_50x50px.bcf',
               'bcf-edx-ebsd.bcf']
-np_file = ['16x16_16bit.npy', '16x16_16bit_ds.npy']
+np_file = ['30x30_16bit.npy', '30x30_16bit_ds.npy']
 spx_files = ['extracted_from_bcf.spx',
              'bruker_nano.spx']
 
@@ -35,11 +35,11 @@ def test_load_16bit():
     bse, hype = s
     # Bruker saves all images in true 16bit:
     assert bse.data.dtype == np.uint16
-    assert bse.data.shape == (16, 16)
+    assert bse.data.shape == (30, 30)
     np_filename = os.path.join(my_path, 'bruker_data', np_file[0])
     np.testing.assert_array_equal(hype.data[:, :, 222:224],
                                   np.load(np_filename))
-    assert hype.data.shape == (16, 16, 2048)
+    assert hype.data.shape == (30, 30, 2048)
 
 
 def test_load_16bit_reduced():
@@ -48,11 +48,11 @@ def test_load_16bit_reduced():
     s = load(filename, downsample=4, cutoff_at_kV=10)
     bse, hype = s
     # sem images are never downsampled
-    assert bse.data.shape == (16, 16)
+    assert bse.data.shape == (30, 30)
     np_filename = os.path.join(my_path, 'bruker_data', np_file[1])
     np.testing.assert_array_equal(hype.data[:, :, 222:224],
                                   np.load(np_filename))
-    assert hype.data.shape == (4, 4, 1047)
+    assert hype.data.shape == (8, 8, 1047)
     # Bruker saves all images in true 16bit:
     assert bse.data.dtype == np.uint16
     # hypermaps should always return unsigned integers:
@@ -80,49 +80,49 @@ def test_hyperspy_wrap():
     hype = load(filename, select_type='spectrum_image')
     assert_allclose(
         hype.axes_manager[0].scale,
-        0.966497572879043,
+        1.66740910949362,
         atol=1E-12)
     assert_allclose(
         hype.axes_manager[1].scale,
-        0.966497572879043,
+        1.66740910949362,
         atol=1E-12)
     assert hype.axes_manager[1].units == 'µm'
-    assert_allclose(hype.axes_manager[2].scale, 0.009997)
-    assert_allclose(hype.axes_manager[2].offset, -0.47095867)
+    assert_allclose(hype.axes_manager[2].scale, 0.009999)
+    assert_allclose(hype.axes_manager[2].offset, -0.47225277)
     assert hype.axes_manager[2].units == 'keV'
 
-    md_ref = {'Acquisition_instrument': {
-        'SEM': {
-            'Detector': {
-                'EDS': {
-                    'azimuth_angle': 90.0,
-                    'detector_type': 'XFlash 6|10',
-                    'elevation_angle': 35.0,
-                    'energy_resolution_MnKa': 130.0,
-                    'real_time': 73.882112}},
+    md_ref = {
+        'Acquisition_instrument': {
+            'SEM': {
+                'beam_energy': 20,
+                'magnification': 1819.22595,
+                'Detector': {
+                    'EDS': {
+                        'elevation_angle': 35.0,
+                        'detector_type': 'XFlash 6|10',
+                        'azimuth_angle': 90.0,
+                        'real_time': 70.07298,
+                        'energy_resolution_MnKa': 130.0}},
             'Stage': {
-                'rotation': 325.54632,
                 'tilt_alpha': 0.0,
-                'x': 67358.85,
-                'y': 62116.44,
-                'z': 38818.15},
-            'beam_energy': 20,
-            'magnification': 3138.54272}},
+                'rotation': 326.10089,
+                'x': 66940.81,
+                'y': 54233.16,
+                'z': 39194.77}}},
         'General': {
-            'date': '2018-09-12',
-            'original_filename': '16x16_instructively_packed_16bit_compressed.bcf',
-            'time': '13:01:53',
-            'title': 'EDX'},
+            'original_filename':
+                '30x30_instructively_packed_16bit_compressed.bcf',
+            'title': 'EDX',
+            'date': '2018-10-04',
+            'time': '13:02:07'},
         'Sample': {
-            'elements': ['Al', 'C', 'Ca', 'Ce', 'Cr', 'Dy', 'Fe', 'Gd', 'La',
-                         'Mg', 'Mn', 'Nb', 'Nd', 'O', 'Si', 'Sm', 'Sr', 'Ti',
-                         'V',  'Y', 'Zr'],
-            'name': 'Map data',
-            'xray_lines': ['Al_Ka', 'C_Ka', 'Ca_Ka', 'Ce_La', 'Cr_Ka',
-                           'Dy_La', 'Fe_Ka', 'Gd_La', 'La_La', 'Mg_Ka',
-                           'Mn_Ka', 'Nb_La', 'Nd_La', 'O_Ka', 'Si_Ka',
-                           'Sm_La', 'Sr_La', 'Ti_Ka', 'V_Ka', 'Y_La',
-                           'Zr_La']},
+            'name': 'chevkinite',
+            'elements': ['Al', 'C', 'Ca', 'Ce', 'Fe', 'Gd', 'K', 'Mg', 'Na',
+                         'Nd', 'O', 'P', 'Si', 'Sm', 'Th', 'Ti'],
+            'xray_lines': ['Al_Ka', 'C_Ka', 'Ca_Ka', 'Ce_La', 'Fe_Ka',
+                           'Gd_La', 'K_Ka', 'Mg_Ka', 'Na_Ka', 'Nd_La',
+                           'O_Ka', 'P_Ka', 'Si_Ka', 'Sm_La', 'Th_Ma',
+                           'Ti_Ka']},
         'Signal': {
             'binned': True,
             'quantity': 'X-rays (Counts)',
@@ -135,14 +135,14 @@ def test_hyperspy_wrap():
 
     filename_omd = os.path.join(my_path,
                                 'bruker_data',
-                                '16x16_original_metadata.json')
+                                '30x30_original_metadata.json')
     with open(filename_omd) as fn:
         # original_metadata:
         omd_ref = json.load(fn)
     assert_deep_almost_equal(hype.metadata.as_dictionary(), md_ref)
     assert_deep_almost_equal(hype.original_metadata.as_dictionary(), omd_ref)
-    assert hype.metadata.General.date == "2018-09-12"
-    assert hype.metadata.General.time == "13:01:53"
+    assert hype.metadata.General.date == "2018-10-04"
+    assert hype.metadata.General.time == "13:02:07"
     assert hype.metadata.Signal.quantity == "X-rays (Counts)"
 
 
@@ -152,11 +152,11 @@ def test_hyperspy_wrap_downsampled():
     hype = load(filename, select_type='spectrum_image', downsample=5)
     assert_allclose(
         hype.axes_manager[0].scale,
-        4.832487864395215,
+        8.337045547468101,
         atol=1E-12)
     assert_allclose(
         hype.axes_manager[1].scale,
-        4.832487864395215,
+        8.337045547468101,
         atol=1E-12)
     assert hype.axes_manager[1].units == 'µm'
 
