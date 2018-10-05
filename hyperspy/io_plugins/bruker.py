@@ -57,7 +57,7 @@ from zlib import decompress as unzip_block
 import logging
 import re
 from math import ceil
-from os.path import splitext
+from os.path import splitext, basename
 
 _logger = logging.getLogger(__name__)
 
@@ -951,7 +951,7 @@ class BCF_reader(SFS_reader):
     def add_filename_to_general(self, item):
         """hypy helper method"""
         item['metadata']['General']['original_filename'] = \
-            self.filename.split('/')[-1]
+            basename(self.filename)
 
 def spx_reader(filename, lazy=False):
     with open(filename, 'br') as fn:
@@ -981,7 +981,7 @@ def spx_reader(filename, lazy=False):
                             gen_detector_node(spectrum),
                          'beam_energy': spectrum.hv}
                },
-                'General': {'original_filename': filename.split('/')[-1],
+                'General': {'original_filename': basename(filename),
                             'title': 'EDX',
                             'date': spectrum.date,
                              'time': spectrum.time},
@@ -1305,7 +1305,7 @@ For more information, check the 'Installing HyperSpy' section in the documentati
                      detector=True,
                      index=index)
              },
-                 'General': {'original_filename': obj_bcf.filename.split('/')[-1],
+                 'General': {'original_filename': basename(obj_bcf.filename),
                              'title': 'EDX',
                              'date': obj_bcf.header.date,
                              'time': obj_bcf.header.time},
