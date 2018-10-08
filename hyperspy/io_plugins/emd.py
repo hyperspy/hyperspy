@@ -1095,7 +1095,7 @@ class FeiEMDReader(object):
         return mapping
 
     def _convert_element_list(self, d):
-        atomic_number_list = d[d.keys()[0]]['elementSelection']
+        atomic_number_list = d[list(d)[0]]['elementSelection']
         return [atomic_number2name[int(atomic_number)]
                 for atomic_number in atomic_number_list]
 
