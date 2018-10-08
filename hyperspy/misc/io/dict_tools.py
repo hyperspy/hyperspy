@@ -10,11 +10,15 @@ def return_item(dictionary, path,  sep='.'):
     """
     current_level = dictionary
     path_list = path.split(sep)
-    for i in path_list:
-        if type(current_level) == dict and i in current_level:         
+    for i in path_list[:-1]:
+        if isinstance(current_level, dict) and i in current_level:         
             current_level = current_level[i]
         else:
             return
+    if path_list[-1] in current_level:
+        current_level = current_level[path_list[-1]]
+    else:
+        return
     return current_level
 
 
@@ -59,11 +63,13 @@ Can't set the value at node '{0}' as the key '{1}' is already preocupied
 with dictionary""".format(path, sub_paths[-1]))
 
 
-def map_dict_to_dict(dict_to, dict_from, mapping_dict):
+def map_dict_to_dict(dict_to, dict_from, mapping_dict, sep='.',
+                     force_overwrite=False):
     for path_from, (path_to, function) in mapping_dict.items():
-        value = return_node(dict_from, path_from)
+        value = return_item(dict_from, path_from, sep=sep)
         if value:
             if function is not None:
                 value = function(value)
             if value is not None:
-                set_item(dict_to, path_to, value) 
+                set_item(dict_to, path_to, value, sep=sep,
+                         force_overwrite=force_overwrite) 
