@@ -32,6 +32,7 @@ from hyperspy.misc.utils import stack as stack_method
 from hyperspy.io_plugins import io_plugins, default_write_ext
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.ui_registry import get_gui
+from hyperspy.misc.io.dict_tools import map_dict_to_dict
 
 _logger = logging.getLogger(__name__)
 
@@ -318,6 +319,10 @@ def load_with_reader(filename, reader, signal_type=None, convert_units=False,
     objects = []
 
     for signal_dict in file_data_list:
+        if "mapping" in signal_dict:
+            map_dict_to_dict(signal_dict["metadata"],
+                             signal_dict["original_metadata"],
+                             signal_dict["mapping"])
         if 'metadata' in signal_dict:
             if "Signal" not in signal_dict["metadata"]:
                 signal_dict["metadata"]["Signal"] = {}
@@ -450,14 +455,6 @@ def dict2signal(signal_dict, lazy=False):
     if "post_process" in signal_dict:
         for f in signal_dict['post_process']:
             signal = f(signal)
-    if "mapping" in signal_dict:
-        for opattr, (mpattr, function) in signal_dict["mapping"].items():
-            if opattr in signal.original_metadata:
-                value = signal.original_metadata.get_item(opattr)
-                if function is not None:
-                    value = function(value)
-                if value is not None:
-                    signal.metadata.set_item(mpattr, value)
     if "metadata" in signal_dict and "Markers" in mp:
         markers_dict = markers_metadata_dict_to_markers(
             mp['Markers'],
