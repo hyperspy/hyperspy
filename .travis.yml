@@ -5,6 +5,7 @@ env:
   global:
     - DISPLAY=99.0
     - MPLBACKEND="agg"
+    - TEST_DEPS="coveralls pytest pytest-cov pytest-mpl"
 
 matrix:
   include:
@@ -54,8 +55,8 @@ before_script: # configure a headless display to test plot generation
 
 script:
   - python -c 'import matplotlib.pyplot as plt; print(plt.get_backend())';
-  - pip install coverage coveralls pytest pytest-cov pytest-mpl;
-    py.test --mpl --cov=hyperspy --pyargs hyperspy;
+  - conda install -y -c conda-forge $TEST_DEPS;
+  - pytest --mpl --cov=hyperspy --pyargs hyperspy;
 
 #after_failure: # run only on failure in case there is a need to check matplotlib image comparison
 # This needs a service to upload the artifacts (and corresponding configuration)
