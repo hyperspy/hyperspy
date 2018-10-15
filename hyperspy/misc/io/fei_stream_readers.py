@@ -24,8 +24,11 @@ def _stream_to_sparse_COO_array_sum_frames(
     frame_number = 0
     ysize, xsize = shape
     frame_size = xsize * ysize
-    data_list = []
-    coords_list = []
+    # workaround for empty stream, numba "doesn't support" empty list, see
+    # https://github.com/numba/numba/pull/2184
+    # add first element and remove it at the end
+    data_list = [0]
+    coords_list = [(0, 0, 0)]
     data = 0
     count_channel = None
     for value in stream_data:
@@ -89,8 +92,9 @@ def _stream_to_sparse_COO_array_sum_frames(
         data_list.append(data)
 
     final_shape = (ysize, xsize, channels // rebin_energy)
-    coords = np.array(coords_list).T
-    data = np.array(data_list)
+    # Remove first element, see comments above
+    coords = np.array(coords_list)[1:].T
+    data = np.array(data_list)[1:]
     return coords, data, final_shape
 
 
@@ -101,8 +105,11 @@ def _stream_to_sparse_COO_array(
     frame_number = 0
     ysize, xsize = shape
     frame_size = xsize * ysize
-    data_list = []
-    coords = []
+    # workaround for empty stream, numba "doesn't support" empty list, see
+    # https://github.com/numba/numba/pull/2184
+    # add first element and remove it at the end
+    data_list = [0]
+    coords = [(0, 0, 0, 0)]
     data = 0
     count_channel = None
     for value in stream_data:
@@ -170,8 +177,9 @@ def _stream_to_sparse_COO_array(
 
     final_shape = (last_frame - first_frame, ysize, xsize,
                    channels // rebin_energy)
-    coords = np.array(coords).T
-    data = np.array(data_list)
+    # Remove first element, see comments above
+    coords = np.array(coords)[1:].T
+    data = np.array(data_list)[1:]
     return coords, data, final_shape
 
 
@@ -193,33 +201,24 @@ def stream_to_sparse_COO_array(
         If True, sum all the frames
 
     """
-    # workaround for empty stream, numba "doesn't support" empty list, see
-    # https://github.com/numba/numba/pull/2184
-    if np.allclose(stream_data, np.full_like(stream_data, 65535)):
-        coords=[]
-        data=[]
-        shape = [spatial_shape[0], spatial_shape[1], channels // rebin_energy]
-        if not sum_frames:
-            shape.insert(0, last_frame - first_frame)
+    if sum_frames:
+        coords, data, shape = _stream_to_sparse_COO_array_sum_frames(
+            stream_data=stream_data,
+            shape=spatial_shape,
+            channels=channels,
+            rebin_energy=rebin_energy,
+            first_frame=first_frame,
+            last_frame=last_frame,
+        )
     else:
-        if sum_frames:
-            coords, data, shape = _stream_to_sparse_COO_array_sum_frames(
-                stream_data=stream_data,
-                shape=spatial_shape,
-                channels=channels,
-                rebin_energy=rebin_energy,
-                first_frame=first_frame,
-                last_frame=last_frame,
-            )
-        else:
-            coords, data, shape = _stream_to_sparse_COO_array(
-                stream_data=stream_data,
-                shape=spatial_shape,
-                channels=channels,
-                rebin_energy=rebin_energy,
-                first_frame=first_frame,
-                last_frame=last_frame,
-            )
+        coords, data, shape = _stream_to_sparse_COO_array(
+            stream_data=stream_data,
+            shape=spatial_shape,
+            channels=channels,
+            rebin_energy=rebin_energy,
+            first_frame=first_frame,
+            last_frame=last_frame,
+        )
     dense_sparse = DenseSliceCOO(coords=coords, data=data, shape=shape)
     dask_sparse = da.from_array(dense_sparse, chunks="auto")
     return dask_sparse
