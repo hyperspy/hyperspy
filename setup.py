@@ -71,17 +71,12 @@ extras_require = {
     "gui-jupyter": ["hyperspy_gui_ipywidgets"],
     "gui-traitsui": ["hyperspy_gui_traitsui"],
     "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
+    "test": ["pytest>=3", "pytest-mpl", "matplotlib>=2.0.2"],
+    "doc": ["sphinx>=1.7", "sphinx_rtd_theme"],
     "speed": ["numba"],
-    "test": ["pytest>=3", "pytest-mpl", "matplotlib==2.2.3"], # for testing
-    "doc": ["sphinx>=1.7", "sphinx_rtd_theme"], # required to build the doc
-}
 
-# Don't include "test" and "doc" requirements since "all" is designed to be 
-# used for user installation.
-filter_extras_require = {x:extras_require[x] for x in extras_require.keys() 
-        if x not in ["test", "doc"]}
-extras_require["all"] = list(itertools.chain(*list(
-        filter_extras_require.values())))
+}
+extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
 
 def update_version(version):

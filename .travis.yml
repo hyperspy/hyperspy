@@ -5,7 +5,6 @@ env:
   global:
     - DISPLAY=99.0
     - MPLBACKEND="agg"
-    - TEST_DEPS="coveralls pytest pytest-cov pytest-mpl"
 
 matrix:
   include:
@@ -34,8 +33,8 @@ before_install:
 install:
 
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      DEPS="numpy scipy matplotlib=2.2.3 ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython ipyparallel dask traits traitsui numexpr numba";
-    else DEPS="ipython numpy scipy matplotlib=2.2.3 h5py sympy scikit-image numexpr";
+      DEPS="pip numpy scipy matplotlib=2.2.3 ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython ipyparallel dask traits traitsui numexpr numba";
+    else DEPS="pip ipython numpy scipy matplotlib=2.2.3 h5py sympy scikit-image numexpr";
     fi
   - conda create -n testenv --yes python=$PYTHON;
     source activate testenv;
@@ -55,8 +54,8 @@ before_script: # configure a headless display to test plot generation
 
 script:
   - python -c 'import matplotlib.pyplot as plt; print(plt.get_backend())';
-  - pip install $TEST_DEPS;
-  - pytest --mpl --cov=hyperspy --pyargs hyperspy;
+  - pip install coverage coveralls pytest pytest-cov pytest-mpl;
+    py.test --mpl --cov=hyperspy --pyargs hyperspy;
 
 #after_failure: # run only on failure in case there is a need to check matplotlib image comparison
 # This needs a service to upload the artifacts (and corresponding configuration)
