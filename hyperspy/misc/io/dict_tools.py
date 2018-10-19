@@ -1,3 +1,63 @@
+from collections import defaultdict
+from ast import literal_eval
+import re
+
+# MSXML bug-workarounds:
+# Define re with two capturing groups with comma in between.
+# A first group looks for numeric value after <tag> (the '>' char) with or
+# without minus sign, second group looks for numeric value with following
+# closing <\tag> (the '<' char); '([Ee]-?\d*)' part (optionally a third group)
+# checks for scientific notation (e.g. 8,843E-7 -> 'E-7');
+# compiled pattern is binary, as raw xml string is binary.:
+msxml_faulty_dec_patterns = re.compile(b'(>-?\\d+),(\\d*([Ee]-?\\d*)?<)')
+
+
+def fix_msxml(xml_string):
+    """return fixed xml string from xml produced with xml-standard
+    by-design incomplient MSXML implementation."""
+    # comma -> dot in decimals:
+    fixed_xml = msxml_faulty_dec_patterns.sub(b'\\1.\\2', xml_string)
+    
+    return fixed_xml
+
+
+def interpret(string):
+    """interpret any string and return casted to appropriate
+    dtype python object
+    """
+    try:
+        return literal_eval(string)
+    except (ValueError, SyntaxError):
+        # SyntaxError due to:
+        # literal_eval have problems with strings like this '8842_80'
+        return string
+
+
+def dictionarize(et):
+    """translate and return the python dictionary/list tree
+    from xml.etree.ElementTree.ElementTree instance"""
+    d = {et.tag: {} if et.attrib else None}
+    children = et.getchildren()
+    if children:
+        dd = defaultdict(list)
+        for dc in map(dictionarize, children):
+            for key, val in dc.items():
+                dd[key].append(val)
+        d = {et.tag: {key: interpret(val[0]) if len(
+            val) == 1 else val for key, val in dd.items()}}
+    if et.attrib:
+        d[et.tag].update(('@_' + key, interpret(val))
+                         for key, val in et.attrib.items())
+    if et.text:
+        if 0 < len(et.text) <=32:
+            d.update({et.tag: {'#val': interpret(et.text)} 
+                      if (et.attrib or et.getchildren())
+                      else interpret(et.text)})
+        else:
+            d.update({et.tag: {'#ET_val': et}})
+    return d
+
+
 def return_item(dictionary, path,  sep='.'):
     """return the node/item from the (nested/tree-like) dictionary
     at given path.

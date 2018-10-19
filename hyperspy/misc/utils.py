@@ -219,11 +219,8 @@ class DictionaryTreeBrowser(object):
 
     """
 
-    def __init__(self, dictionary=None, double_lines=False):
+    def __init__(self, dictionary={}, double_lines=False):
         self._double_lines = double_lines
-        if not dictionary:
-            dictionary = {}
-        super(DictionaryTreeBrowser, self).__init__()
         self.add_dictionary(dictionary, double_lines=double_lines)
 
     def add_dictionary(self, dictionary, double_lines=False):

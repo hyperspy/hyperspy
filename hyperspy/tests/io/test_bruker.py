@@ -205,7 +205,8 @@ def test_fast_bcf():
 
 
 def test_decimal_regex():
-    from hyperspy.io_plugins.bruker import fix_dec_patterns
+    # The health of bruker reader depends from this passing
+    from hyperspy.misc.io.dict_tools import fix_msxml
     dummy_xml_positive = [b'<dummy_tag>85,658</dummy_tag>',
                           b'<dummy_tag>85,658E-8</dummy_tag>',
                           b'<dummy_tag>-85,658E-8</dummy_tag>',
@@ -214,9 +215,9 @@ def test_decimal_regex():
     dummy_xml_negative = [b'<dum_tag>12,25,23,45,56,12,45</dum_tag>',
                           b'<dum_tag>12e1,23,-24E-5</dum_tag>']
     for i in dummy_xml_positive:
-        assert b'85.658' in fix_dec_patterns.sub(b'\\1.\\2', i)
+        assert b'85.658' in fix_msxml(i)
     for j in dummy_xml_negative:
-        assert b'.' not in fix_dec_patterns.sub(b'\\1.\\2', j)
+        assert b'.' not in fix_msxml(j)
 
 def test_all_spx_loads():
     for spxfile in spx_files:

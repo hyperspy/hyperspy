@@ -43,11 +43,8 @@ reads_spectrum_image = True
 writes = False
 
 import io
-
-from collections import defaultdict
 import xml.etree.ElementTree as ET
 import codecs
-from ast import literal_eval
 from datetime import datetime, timedelta
 import numpy as np
 import dask.array as da
@@ -55,9 +52,12 @@ import dask.delayed as dd
 from struct import unpack as strct_unp
 from zlib import decompress as unzip_block
 import logging
-import re
+
 from math import ceil
 from os.path import splitext, basename
+
+from hyperspy.misc.io.dict_tools import dictionarize, map_dict_to_dict, \
+    interpret, fix_msxml
 
 _logger = logging.getLogger(__name__)
 
@@ -71,14 +71,6 @@ except ImportError:  # pragma: no cover
     fast_unbcf = False
     _logger.info("""unbcf_fast library is not present...
 Falling back to slow python only backend.""")
-
-# define re with two capturing groups with comma in between
-# firstgroup looks for numeric value after <tag> (the '>' char) with or
-# without minus sign, second group looks for numeric value with following
-# closing <\tag> (the '<' char); '([Ee]-?\d*)' part (optionally a third group)
-# checks for scientific notation (e.g. 8,843E-7 -> 'E-7');
-# compiled pattern is binary, as raw xml string is binary.:
-fix_dec_patterns = re.compile(b'(>-?\\d+),(\\d*([Ee]-?\\d*)?<)')
 
 
 class Container(object):
@@ -297,9 +289,6 @@ class SFS_reader(object):
     SFS can contain other compression which is not implemented here.
     It is also not able to read encrypted sfs containers.
 
-    This class can be used stand alone or inherited in construction of
-    file readers using sfs technolgy.
-
     Attributes:
     filename
 
@@ -372,7 +361,8 @@ class SFS_reader(object):
         # and finaly set the Virtual file system:
         self.vfs = dict_tree['root']
 
-    def _flat_items_to_dict(self, paths, temp_item_list):
+    @staticmethod
+    def _flat_items_to_dict(paths, temp_item_list):
         """place items from flat list into dictionary tree
         of virtual file system
         """
@@ -445,44 +435,6 @@ class SFS_reader(object):
         return item
 
 
-def interpret(string):
-    """interpret any string and return casted to appropriate
-    dtype python object
-    """
-    try:
-        return literal_eval(string)
-    except (ValueError, SyntaxError):
-        # SyntaxError due to:
-        # literal_eval have problems with strings like this '8842_80'
-        return string
-
-
-def dictionarize(t):
-    d = {t.tag: {} if t.attrib else None}
-    children = list(t)
-    if children:
-        dd = defaultdict(list)
-        for dc in map(dictionarize, children):
-            for k, v in dc.items():
-                dd[k].append(v)
-        d = {t.tag: {k: interpret(v[0]) if len(
-            v) == 1 else v for k, v in dd.items()}}
-    if t.attrib:
-        d[t.tag].update(('XmlClass' + k if list(t) else k, interpret(v))
-                        for k, v in t.attrib.items())
-    if t.text:
-        text = t.text.strip()
-        if children or t.attrib:
-            if text:
-                d[t.tag]['#text'] = interpret(text)
-        else:
-            d[t.tag] = interpret(text)
-    if 'ClassInstance' in d:
-        return d['ClassInstance']
-    else:
-        return d
-
-
 class EDXSpectrum(object):
 
     def __init__(self, spectrum):
@@ -516,11 +468,7 @@ class EDXSpectrum(object):
 
         # decode silly hidden detector layer info:
         det_l_str = self.detector_metadata['DetLayers']
-        dec_det_l_str = codecs.decode(det_l_str.encode('ascii'), 'base64')
-        mini_xml = ET.fromstring(unzip_block(dec_det_l_str))
-        self.detector_metadata['DetLayers'] = {}  # Overwrite with dict
-        for i in list(mini_xml):
-            self.detector_metadata['DetLayers'][i.tag] = dict(i.attrib)
+        self.detector_metadata['DetLayers'] = unhide_detector(det_l_str)
 
         # map stuff from esma xml branch:
         self.esma_metadata = dictionarize(esma_header)
@@ -878,7 +826,7 @@ class BCF_reader(SFS_reader):
                 self.available_indexes.append(int(i[-1]))
         self.def_index = min(self.available_indexes)
         header_byte_str = header_file.get_as_BytesIO_string().getvalue()
-        hd_bt_str = fix_dec_patterns.sub(b'\\1.\\2', header_byte_str)
+        hd_bt_str = fix_msxml(header_byte_str)
         self.header = HyperHeader(
             hd_bt_str, self.available_indexes, instrument=instrument)
         self.hypermap = {}
@@ -1360,6 +1308,7 @@ def get_mapping(mode):
         ("Acquisition_instrument.%s.Stage.z" % mode, None),
     }
 
+
 def guess_mode(hv):
     """there is no way to determine what kind of instrument
     was used from metadata: TEM or SEM.
@@ -1376,6 +1325,7 @@ def guess_mode(hv):
         "keyword.")
     return mode
 
+
 def gen_detector_node(spectrum):
     eds_dict = {'EDS': {'elevation_angle': spectrum.elev_angle,
                         'detector_type': spectrum.detector_type,}}
@@ -1386,6 +1336,7 @@ def gen_detector_node(spectrum):
         eds_dict['EDS']['live_time'] = spectrum.hardware_metadata['LifeTime'] / 1000
     return eds_dict
 
+
 def gen_iso_date_time(node):
     date_xml = node.find('./Date')
     time_xml = node.find('./Time')
@@ -1395,3 +1346,13 @@ def gen_iso_date_time(node):
         date = dt.date().isoformat()
         time = dt.time().isoformat()
         return date, time
+
+
+def unhide_detector(xml_node):
+    """decode and return dict with silly hidden detector parameters"""
+    dec_xml_node = codecs.decode(xml_node.encode('ascii'), 'base64')
+    mini_xml = ET.fromstring(unzip_block(dec_xml_node))
+    layers = {}
+    for i in mini_xml.getchildren():
+        layers[i.tag] = dict(i.attrib)
+    return layers
