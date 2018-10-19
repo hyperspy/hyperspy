@@ -501,7 +501,7 @@ def fei_check(filename):
         if 'Version' in list(f.keys()):
             version = f.get('Version')
             v_dict = json.loads(version.value[0].decode('utf-8'))
-            if v_dict['format'] == 'Velox':
+            if v_dict['format'] in ['Velox', 'DevelopersKit']:
                 return True
 
 
@@ -870,10 +870,10 @@ class FeiEMDReader(object):
 
         spectrum_stream_group = self.d_grp.get("SpectrumStream")
         if spectrum_stream_group is None:
-            _logger.warning("No spectrum stream is present in the file. It ",
-                            "is possible that the file has been pruned: use ",
+            _logger.warning("No spectrum stream is present in the file. It "
+                            "is possible that the file has been pruned: use "
                             "Velox to read the spectrum image (proprietary "
-                            "format). If you want to open FEI emd file with ",
+                            "format). If you want to open FEI emd file with "
                             "HyperSpy don't prune the file when saving it in "
                             "Velox.")
             return
