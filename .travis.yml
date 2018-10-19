@@ -17,6 +17,7 @@ matrix:
   - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='True'
   - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
     os: osx
+  - env: export PYTHON=3.7; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
     language: generic
   allow_failures:
   - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
