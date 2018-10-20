@@ -112,6 +112,8 @@ deploy:
     #secure: RRqUkx9H5VuFNITmm+YzgB0qnqgVGPH1yrPVxb4oCD+FAjcTch2WZAiPEKn4L6w6
     #   ericpre:
     #secure: ae8XsPI+vKJI9AWm0r9+ec71CIkXcnCHlNIQ57v+87hh5k1xuAAxIOi1CFKEmmZv
+    # francisco-dlp
+    secure: ziv2aenVNPt0QKxSpAmkGIHRkv51FNhiiLo9epCeeURGaTjvQOlJBiAy3mzB5lRf
   artifact: win_wheels  # upload wheels to release assets
   draft: false
   prerelease: false
