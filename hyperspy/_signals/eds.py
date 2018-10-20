@@ -168,13 +168,14 @@ class EDS_mixin:
         # modify time spend per spectrum
         s = super().sum(axis=axis, out=out)
         s = out or s
-        if "Acquisition_instrument.SEM" in s.metadata:
+        mp = None
+        if s.metadata.get_item("Acquisition_instrument.SEM"):
             mp = s.metadata.Acquisition_instrument.SEM
             mp_old = self.metadata.Acquisition_instrument.SEM
-        else:
+        elif s.metadata.get_item("Acquisition_instrument.TEM"):
             mp = s.metadata.Acquisition_instrument.TEM
             mp_old = self.metadata.Acquisition_instrument.TEM
-        if mp.has_item('Detector.EDS.live_time'):
+        if mp is not None and mp.has_item('Detector.EDS.live_time'):
             mp.Detector.EDS.live_time = mp_old.Detector.EDS.live_time * \
                 self.data.size / s.data.size
         if out is None:
