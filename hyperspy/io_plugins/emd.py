@@ -1043,31 +1043,30 @@ class FeiEMDReader(object):
                 "Acquisition_instrument.TEM.microscope", None),
             'Stage.AlphaTilt': (
                 "Acquisition_instrument.TEM.Stage.tilt_alpha",
-                lambda x: '{:.3f}'.format(np.degrees(float(x)))),
+                lambda x: round(np.degrees(float(x)), 3)),
             'Stage.BetaTilt': (
                 "Acquisition_instrument.TEM.Stage.tilt_beta",
-                lambda x: '{:.3f}'.format(np.degrees(float(x)))),
+                lambda x: round(np.degrees(float(x)), 3)),
             'Stage.Position.x': (
                 "Acquisition_instrument.TEM.Stage.x",
-                lambda x: '{:.6f}'.format(float(x))
-            ),
+                lambda x: round(float(x), 6)),
             'Stage.Position.y': (
                 "Acquisition_instrument.TEM.Stage.y",
-                lambda x: '{:.6f}'.format(float(x))),
+                lambda x: round(float(x), 6)),
             'Stage.Position.z': (
                 "Acquisition_instrument.TEM.Stage.z",
-                lambda x: '{:.6f}'.format(float(x))),
+                lambda x: round(float(x), 6)),
             'ImportedDataParameter.Number_of_frames': (
                 "Acquisition_instrument.TEM.Detector.EDS.number_of_frames", None),
             'DetectorMetadata.ElevationAngle': (
                 "Acquisition_instrument.TEM.Detector.EDS.elevation_angle",
-                lambda x: '{:.3f}'.format(np.degrees(float(x)))),
+                lambda x: round(float(x), 3)),
             'DetectorMetadata.Gain': (
                 "Signal.Noise_properties.Variance_linear_model.gain_factor",
-                lambda x: '{:.6f}'.format(float(x))),
+                lambda x: float(x)),
             'DetectorMetadata.Offset': (
                 "Signal.Noise_properties.Variance_linear_model.gain_offset",
-                lambda x: '{:.6f}'.format(float(x))),
+                lambda x: float(x)),
         }
 
         # Parse individual metadata for each EDS detector
