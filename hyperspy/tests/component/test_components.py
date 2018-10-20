@@ -40,6 +40,7 @@ class TestPowerLaw:
         m[0].A.value = 1000
         m[0].r.value = 4
         self.m = m
+        self.s = s
 
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
     def test_estimate_parameters(self, only_current, binned):
@@ -61,6 +62,10 @@ class TestPowerLaw:
         assert_allclose(g.A.map["values"][1], A_value)
         assert_allclose(g.r.map["values"][1], r_value)
 
+    def test_EDS_missing_data(self):
+        g = hs.model.components1D.PowerLaw()
+        s2 = hs.signals.EDSTEMSpectrum(self.s.data)
+        g.estimate_parameters(s2, None, None)
 
 class TestDoublePowerLaw:
 
