@@ -16,7 +16,6 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import sys
 from contextlib import contextmanager
 import warnings
 import re
@@ -35,14 +34,6 @@ def ignore_warning(message="", category=None):
             warnings.filterwarnings('ignore', message)
         yield
 
-# In Python 3.7, the private re._pattern_type is removed.
-# Python 3.5+ have typing.re.Pattern
-# Solution adapted from Pandas
-if sys.version_info >= (3, 5):
-    import typing
-    Pattern = typing.re.Pattern
-else:
-    Pattern = type(re.compile(''))
 
 # TODO: Remove _all_warnings when moved to Python > 3.4,
 # ref http://bugs.python.org/issue4180
@@ -157,7 +148,7 @@ def assert_warns(message=None, category=None):
     If you use the "|" operator in a pattern, you can catch one of several warnings.
     Finally, you can use "|\A\Z" in a pattern to signify it as optional.
     """
-    if isinstance(message, (str, Pattern)):
+    if isinstance(message, (str, type(re.compile('')))):
         message = [message]
     elif message is None:
         message = tuple()
