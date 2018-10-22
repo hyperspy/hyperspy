@@ -81,7 +81,7 @@ after_success:
   fi
 
 before_deploy:
-- export DISTRIB=$(ls ./dist/*.whl);
+- export DISTRIB=$(ls ./dist/*);
 
 deploy:
   provider: releases
