@@ -3,6 +3,21 @@ What's new
 
 Current Version
 ===============
+
+.. _changes_1.4.1:
+
+v1.4.1
+++++++
+
+This is a maintenance release. Follow the following links for details on all
+the `bugs fixed
+<https://github.com/hyperspy/hyperspy/issues?q=label%3A"type%3A+bug"+is%3Aclosed+milestone%3Av1.4.1>`_
+and `enhancements
+<https://github.com/hyperspy/hyperspy/issues?q=is%3Aclosed+milestone%3Av1.4.1+label%3A"type%3A+enhancement">`_.
+
+This release fixes compatibility issues with Python 3.7.
+
+
 .. _changes_1.4:
 
 v1.4
