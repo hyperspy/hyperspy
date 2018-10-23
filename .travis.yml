@@ -8,18 +8,26 @@ env:
 
 matrix:
   include:
+    # All tests run for the latest supported Python version in Linux
+  - env: export PYTHON=3.7; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+  - env: export PYTHON=3.7; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='True'
+    # Only standard test for older supported versions of Python in Linux
+  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
   - env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
-  - env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+    # All tests, but the min requirements test run for the latest supported Python version in OSx
+  - env: export PYTHON=3.7; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
     os: osx
     language: generic
   - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
-  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
-  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='True'
-  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+    os: osx
+    language: generic
+  - env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
     os: osx
     language: generic
   allow_failures:
-  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
+    # Only test for the latest supported version as chances are that it'll
+    # contain the most up-to-date external libraries.
+  - env: export PYTHON=3.7; FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
 
 before_install:
   - if [[ $TRAVIS_OS_NAME == 'osx' ]] ; then
@@ -33,8 +41,8 @@ before_install:
 install:
 
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      DEPS="pip numpy scipy matplotlib ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython ipyparallel dask traits traitsui numexpr";
-    else DEPS="pip ipython numpy scipy matplotlib h5py sympy scikit-image numexpr";
+      DEPS="pip numpy scipy matplotlib=2.2.3 ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython ipyparallel dask traits traitsui numexpr numba";
+    else DEPS="pip ipython numpy scipy matplotlib=2.2.3 h5py sympy scikit-image numexpr";
     fi
   - conda create -n testenv --yes python=$PYTHON;
     source activate testenv;
@@ -75,7 +83,7 @@ after_success:
   fi
 
 before_deploy:
-- export DISTRIB=$(ls ./dist/*.whl);
+- export DISTRIB=$(ls ./dist/*);
 
 deploy:
   provider: releases
