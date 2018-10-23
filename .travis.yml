@@ -14,12 +14,14 @@ matrix:
     # Only standard test for older supported versions of Python in Linux
   - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
   - env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
-    # Only standard test for latest supported versions of Python in OSx
-    # Testing older supported versions create important overheads (~3x slower
-    # testing) without adding much as if it works for older version in Linux it
-    # should also works for OSx, unless there is some issue with external
-    # packages, but that's not a HyperSpy issue.
+    # All tests, but the min requirements test run for the latest supported Python version in OSx
   - env: export PYTHON=3.7; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+    os: osx
+    language: generic
+  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+    os: osx
+    language: generic
+  - env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
     os: osx
     language: generic
   allow_failures:
