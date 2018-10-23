@@ -8,18 +8,24 @@ env:
 
 matrix:
   include:
-  - env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
-  - env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
-    os: osx
-    language: generic
+    # All tests run for the latest supported Python version in Linux
+  - env: export PYTHON=3.7; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+  - env: export PYTHON=3.7; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='True'
+    # Only standard test for older supported versions of Python in Linux
   - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
-  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
-  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='True'
-  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+  - env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+    # Only standard test for latest supported versions of Python in OSx
+    # Testing older supported versions create important overheads (~3x slower
+    # testing) without adding much as if it works for older version in Linux it
+    # should also works for OSx, unless there is some issue with external
+    # packages, but that's not a HyperSpy issue.
+  - env: export PYTHON=3.7; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
     os: osx
     language: generic
   allow_failures:
-  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
+    # Only test for the latest supported version as chances are that it'll
+    # contain the most up-to-date external libraries.
+  - env: export PYTHON=3.7; FAIL_ON_EXTERNAL_DEPRECATION='True'; MINIMAL_ENV='False'
 
 before_install:
   - if [[ $TRAVIS_OS_NAME == 'osx' ]] ; then
@@ -75,7 +81,7 @@ after_success:
   fi
 
 before_deploy:
-- export DISTRIB=$(ls ./dist/*.whl);
+- export DISTRIB=$(ls ./dist/*);
 
 deploy:
   provider: releases

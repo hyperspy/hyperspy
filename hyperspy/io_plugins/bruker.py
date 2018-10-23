@@ -519,7 +519,7 @@ class EDXSpectrum(object):
         dec_det_l_str = codecs.decode(det_l_str.encode('ascii'), 'base64')
         mini_xml = ET.fromstring(unzip_block(dec_det_l_str))
         self.detector_metadata['DetLayers'] = {}  # Overwrite with dict
-        for i in mini_xml.getchildren():
+        for i in list(mini_xml):
             self.detector_metadata['DetLayers'][i.tag] = dict(i.attrib)
 
         # map stuff from esma xml branch:
