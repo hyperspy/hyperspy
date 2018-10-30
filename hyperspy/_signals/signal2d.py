@@ -380,7 +380,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         chunk_size: {None, int}
             If int and `reference`=='stat' the number of images used
             as reference are limited to the given value.
-        roi : tuple of ints or floats (left, right, top bottom)
+        roi : tuple of ints or floats (left, right, top, bottom)
              Define the region of interest. If int(float) the position
              is given axis index(value).
         sobel : bool
@@ -392,7 +392,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         plot : bool or "reuse"
             If True plots the images after applying the filters and
             the phase correlation. If 'reuse', it will also plot the images,
-            but it will only use one figure, and continously update the images
+            but it will only use one figure, and continuously update the images
             in that figure as it progresses through the stack.
         dtype : str or dtype
             Typecode or data-type in which the calculations must be
