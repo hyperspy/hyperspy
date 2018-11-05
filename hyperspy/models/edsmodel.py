@@ -291,7 +291,7 @@ class EDSModel(Model1D):
         self.append(background)
         self.background_components.append(background)
 
-    def add_physical_background(self, E0='from_metadata', detector='Polymer_C', quantification=None,absorption_model='quadrilateral', coating_thickness=0, TOA='from_metadata'):
+    def add_physical_background(self, E0='from_metadata', detector='Polymer_C', quantification=None,absorption_model='quadrilateral', coating_thickness=0, TOA='from_metadata', Phase_map=None):
         """
         Add a background based on physical property of the interraction e-/mater (see Zanetta et al. 2018)
     
@@ -350,7 +350,7 @@ class EDSModel(Model1D):
         if TOA == 'from_metadata':
             TOA = self.signal.get_take_off_angle()
             
-        background = create_component.Physical_background(E0=E0,detector=detector, quantification=quantification, absorption_model=absorption_model, coating_thickness=coating_thickness,TOA=TOA)
+        background = create_component.Physical_background(E0=E0,detector=detector, quantification=quantification, absorption_model=absorption_model, coating_thickness=coating_thickness,TOA=TOA, Phase_map=Phase_map)
         background.name = "Bremsstrahlung"
         background.isbackground = True
         self.append(background)
