@@ -285,7 +285,7 @@ class Physical_background(Component):
 
         carto=self._whitelist['carto']
         if carto is not None:
-            index=self.model._signal.axes_manager.coordinates
+            index=self.model._signal.axes_manager.indices
             phaseN=carto[int(index[1]),int(index[0])]
             Mu=self._whitelist['Mu'][int(phaseN-1)]
             Mu=np.array(Mu,dtype=float)
