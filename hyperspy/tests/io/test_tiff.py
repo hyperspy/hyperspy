@@ -2,9 +2,9 @@ import os
 import tempfile
 
 import numpy as np
-import traits.api as t
 from numpy.testing import assert_allclose
 import pytest
+import traits.api as t
 
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import assert_deep_almost_equal
@@ -204,7 +204,7 @@ def test_saving_with_custom_tag():
         s.save(fname, extratags=extratag, overwrite=True)
         s2 = hs.load(fname)
         assert (s2.original_metadata['Number_65000'] ==
-                b"Random metadata")
+                "Random metadata")
 
 
 def _test_read_unit_from_dm():
@@ -402,6 +402,8 @@ def test_read_FEI_SEM_scale_metadata_8bits():
     assert_allclose(s.axes_manager[0].scale, 3.3724, rtol=1E-5)
     assert_allclose(s.axes_manager[1].scale, 3.3724, rtol=1E-5)
     assert s.data.dtype == 'uint8'
+    FEI_Helios_metadata['General'][
+        'original_filename'] = 'FEI-Helios-Ebeam-8bits.tif'
     assert_deep_almost_equal(s.metadata.as_dictionary(), FEI_Helios_metadata)
 
 
@@ -429,9 +431,11 @@ def test_read_Zeiss_SEM_scale_metadata_1k_image():
                                              'dwell_time': 5e-08,
                                              'magnification': 105.0,
                                              'microscope': 'Merlin-61-08',
-                                             'working_distance': 14.8}},
+                                             'working_distance': 14.81}},
           'General': {'authors': 'LIM',
+                      'date': '2015-12-23',
                       'original_filename': 'test_tiff_Zeiss_SEM_1k.tif',
+                      'time': '09:40:32',
                       'title': ''},
           'Signal': {'binned': False, 'signal_type': ''},
           '_HyperSpy': {'Folding': {'original_axes_manager': None,
@@ -443,9 +447,40 @@ def test_read_Zeiss_SEM_scale_metadata_1k_image():
     s = hs.load(fname, convert_units=True)
     assert s.axes_manager[0].units == 'um'
     assert s.axes_manager[1].units == 'um'
-    assert_allclose(s.axes_manager[0].scale, 2.615, rtol=1E-5)
-    assert_allclose(s.axes_manager[1].scale, 2.615, rtol=1E-5)
-    assert s.data.dtype == 'uint16'
+    assert_allclose(s.axes_manager[0].scale, 2.614514, rtol=1E-6)
+    assert_allclose(s.axes_manager[1].scale, 2.614514, rtol=1E-6)
+    assert s.data.dtype == 'uint8'
+    assert_deep_almost_equal(s.metadata.as_dictionary(), md)
+
+
+def test_read_Zeiss_SEM_scale_metadata_512_image():
+    md = {'Acquisition_instrument': {'SEM': {'Stage': {'rotation': 245.8,
+                                                       'tilt': 0.0,
+                                                       'x': 62.9961,
+                                                       'y': 65.3168,
+                                                       'z': 44.678},
+                                             'beam_energy': 5.0,
+                                             'magnification': '50.00 K X',
+                                             'microscope': 'ULTRA 55-36-06',
+                                             'working_distance': 3.9}},
+          'General': {'authors': 'LIBERATO',
+                      'date': '2018-09-25',
+                      'original_filename': 'test_tiff_Zeiss_SEM_512pix.tif',
+                      'time': '08:20:42',
+                      'title': ''},
+          'Signal': {'binned': False, 'signal_type': ''},
+          '_HyperSpy': {'Folding': {'original_axes_manager': None,
+                                    'original_shape': None,
+                                    'signal_unfolded': False,
+                                    'unfolded': False}}}
+
+    fname = os.path.join(MY_PATH2, 'test_tiff_Zeiss_SEM_512pix.tif')
+    s = hs.load(fname, convert_units=True)
+    assert s.axes_manager[0].units == 'um'
+    assert s.axes_manager[1].units == 'um'
+    assert_allclose(s.axes_manager[0].scale, 0.011649976, rtol=1E-6)
+    assert_allclose(s.axes_manager[1].scale, 0.011649976, rtol=1E-6)
+    assert s.data.dtype == 'uint8'
     assert_deep_almost_equal(s.metadata.as_dictionary(), md)
 
 
@@ -466,7 +501,7 @@ def test_read_RGB_Zeiss_optical_scale_metadata():
 def test_read_BW_Zeiss_optical_scale_metadata():
     fname = os.path.join(MY_PATH2, 'optical_Zeiss_AxioVision_BW.tif')
     s = hs.load(fname, force_read_resolution=True, convert_units=True)
-    assert s.data.dtype == np.uint16
+    assert s.data.dtype == np.uint8
     assert s.data.shape == (10, 13)
     assert s.axes_manager[0].units == 'um'
     assert s.axes_manager[1].units == 'um'
@@ -479,7 +514,7 @@ def test_read_BW_Zeiss_optical_scale_metadata():
 def test_read_BW_Zeiss_optical_scale_metadata_convert_units_false():
     fname = os.path.join(MY_PATH2, 'optical_Zeiss_AxioVision_BW.tif')
     s = hs.load(fname, force_read_resolution=True, convert_units=False)
-    assert s.data.dtype == np.uint16
+    assert s.data.dtype == np.uint8
     assert s.data.shape == (10, 13)
     assert s.axes_manager[0].units == 'µm'
     assert s.axes_manager[1].units == 'µm'
@@ -490,7 +525,7 @@ def test_read_BW_Zeiss_optical_scale_metadata_convert_units_false():
 def test_read_BW_Zeiss_optical_scale_metadata2():
     fname = os.path.join(MY_PATH2, 'optical_Zeiss_AxioVision_BW.tif')
     s = hs.load(fname, force_read_resolution=True, convert_units=True)
-    assert s.data.dtype == np.uint16
+    assert s.data.dtype == np.uint8
     assert s.data.shape == (10, 13)
     assert s.axes_manager[0].units == 'um'
     assert s.axes_manager[1].units == 'um'
@@ -503,7 +538,7 @@ def test_read_BW_Zeiss_optical_scale_metadata2():
 def test_read_BW_Zeiss_optical_scale_metadata3():
     fname = os.path.join(MY_PATH2, 'optical_Zeiss_AxioVision_BW.tif')
     s = hs.load(fname, force_read_resolution=False)
-    assert s.data.dtype == np.uint16
+    assert s.data.dtype == np.uint8
     assert s.data.shape == (10, 13)
     assert s.axes_manager[0].units == t.Undefined
     assert s.axes_manager[1].units == t.Undefined

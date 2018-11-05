@@ -36,6 +36,10 @@ class Test_metadata:
         s.metadata.Acquisition_instrument.TEM.beam_energy = 15.0
         self.signal = s
 
+    def test_sum_minimum_missing(self):
+        s = EDSTEMSpectrum(np.ones((4, 2, 1024)))
+        s.sum()
+
     def test_sum_live_time1(self):
         s = self.signal
         old_metadata = s.metadata.deepcopy()

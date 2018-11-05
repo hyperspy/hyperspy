@@ -26,7 +26,7 @@ def add_np(doctest_namespace):
 def setup_module(mod):
     if pytest.config.getoption("--pdb"):
         import dask
-        dask.set_options(get=dask.async.get_sync)
+        dask.set_options(get=dask.local.get_sync)
 
 
 @pytest.fixture

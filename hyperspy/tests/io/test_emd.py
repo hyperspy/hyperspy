@@ -36,8 +36,7 @@ import pytest
 
 from hyperspy.io import load
 from hyperspy.signals import BaseSignal, Signal2D, Signal1D, EDSTEMSpectrum
-from hyperspy.misc.test_utils import assert_warns, assert_deep_almost_equal
-from hyperspy.misc.io.fei_stream_readers import sparse_installed
+from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
 my_path = os.path.dirname(__file__)
@@ -300,11 +299,11 @@ class TestFeiEMD():
 
     @pytest.mark.parametrize("lazy", (True, False))
     def test_fei_emd_image(self, lazy):
-        stage = {'tilt_alpha': '0.006',
-                 'tilt_beta': '0.000',
-                 'x': '-0.000009',
-                 'y': '0.000144',
-                 'z': '0.000029'}
+        stage = {'tilt_alpha': 0.006,
+                 'tilt_beta': 0.000,
+                 'x': -0.000009,
+                 'y': 0.000144,
+                 'z': 0.000029}
         md = {'Acquisition_instrument': {'TEM': {'beam_energy': 200.0,
                                                  'camera_length': 98.0,
                                                  'magnification': 40000.0,
@@ -360,8 +359,6 @@ class TestFeiEMD():
 
     @pytest.mark.parametrize("lazy", (True, False))
     def test_fei_emd_si(self, lazy):
-        if lazy and not sparse_installed:
-            pytest.skip("python sparse is not installed")
         signal = load(os.path.join(self.fei_files_path, 'fei_emd_si.emd'),
                       lazy=lazy)
         if lazy:
@@ -373,8 +370,6 @@ class TestFeiEMD():
 
     @pytest.mark.parametrize("lazy", (True, False))
     def test_fei_emd_si_non_square_10frames(self, lazy):
-        if lazy and not sparse_installed:
-            pytest.skip("python sparse is not installed")
         s = load(os.path.join(
             self.fei_files_path, 'fei_SI_SuperX-HAADF_10frames_10x50.emd'),
             lazy=lazy)
@@ -500,8 +495,6 @@ class TestFeiEMD():
 
     @pytest.mark.parametrize("lazy", (True, False))
     def test_fei_emd_si_non_square_20frames(self, lazy):
-        if lazy and not sparse_installed:
-            pytest.skip("python sparse is not installed")
         s = load(os.path.join(
             self.fei_files_path,
             'fei_SI_SuperX-HAADF_20frames_10x50.emd'),
@@ -526,8 +519,6 @@ class TestFeiEMD():
 
     @pytest.mark.parametrize("lazy", (True, False))
     def test_fei_emd_si_non_square_20frames_2eV(self, lazy):
-        if lazy and not sparse_installed:
-            pytest.skip("python sparse is not installed")
         s = load(os.path.join(
             self.fei_files_path,
             'fei_SI_SuperX-HAADF_20frames_10x50_2ev.emd'),
@@ -552,8 +543,6 @@ class TestFeiEMD():
 
     @pytest.mark.parametrize("lazy", (True, False))
     def test_fei_emd_si_frame_range(self, lazy):
-        if lazy and not sparse_installed:
-            pytest.skip("python sparse is not installed")
         signal = load(os.path.join(self.fei_files_path, 'fei_emd_si.emd'),
                       first_frame=2, last_frame=4, lazy=lazy)
         fei_si = np.load(os.path.join(self.fei_files_path,
@@ -567,8 +556,6 @@ class TestFeiEMD():
     @pytest.mark.parametrize(["lazy", "sum_EDS_detectors"],
                              _generate_parameters())
     def test_fei_si_4detectors(self, lazy, sum_EDS_detectors):
-        if lazy and not sparse_installed:
-            pytest.skip("python sparse is not installed")
         fname = os.path.join(self.fei_files_path,
                              'fei_SI_EDS-HAADF-4detectors_2frames.emd')
         signal = load(fname, sum_EDS_detectors=sum_EDS_detectors, lazy=lazy)
