@@ -34,9 +34,9 @@ def Wpercent(model,E0,quantification):
     model: EDS model
     E0: int
             The Beam energy
-    quantification: None or a list or an array
+    quantification: None / list /or array
             if quantification is None, this function calculate an  approximation of a quantification based on peaks ratio thanks to the function s.get_lines_intensity(). 
-            if quantification is the result of the hyperspy quantification function. This function only convert the result in an array with the same navigation shape than the model and a length equal to the number of elements 
+            if quantification is the result of the hyperspy quantification function (only for TEM analysis). This function only convert the result in an array with the same navigation shape than the model and a length equal to the number of elements 
             if quantification is already an array of weight percent, directly keep the array
     """
  	
@@ -125,7 +125,7 @@ def Wpercent(model,E0,quantification):
 
 def Mucoef(model,quanti): # this function calculate the absorption coefficient for all energy. This, correspond to the Mu parameter in the function
     """
-    Calculate the mass absorption coefficient for all energy of the model axis for each pixel. Need the weigth percent array defined by the Wpercent function
+    Calculate the mass absorption coefficient for all energy of the model axis for each pixel. Need a weigth percent array defined by the Wpercent function
     Return the Mu parameter as a signal (all energy) with same number of elements than the model
     This parameter is calculated at each iteration during the fit
     Parameters
@@ -148,7 +148,7 @@ def Mucoef(model,quanti): # this function calculate the absorption coefficient f
 
 def Cabsorption(model): # this function calculate the absorption coefficient for all energy. This, correspond to the MuC parameter in the function
     """
-    Calculate the mass absorption coefficient due to the coating layer for all energy 
+    Calculate the mass absorption coefficient due to the thin coating layer for all energy 
     Parameters
     ----------
     model: EDS model
@@ -173,7 +173,7 @@ def Windowabsorption(model,detector):
             String can be 'Polymer_C' / 'Super_X' / '12µm_BE' / '25µm_BE' / '100µm_BE' / 'Polymer_C2' / 'Polymer_C3' 
             Data are contain in a dictionnary in hyperspy repository
             
-            An array with values of detector efficiency can be used if personnal data are needed 
+            An np.array with values of detector efficiency can be used if personnal data are needed 
     """	
     if type(detector) is str:
         a=np.array(detector_efficiency[detector])
@@ -196,17 +196,11 @@ class Physical_background(Component):
 
     """
     Background component based on kramer's law and absorption coefficients
-    Attributes
+
+    Fitted attributes
     ----------
     coefficients : float (length = 2) 
     	The only two free parameters of this component. If the function fix_background is used those two coefficients are fixed
-    E0 : int
-    	The beam energy of the acquisition
-    Window : int 
-    	Contain the signal of the detector efficiency (calculated thanks to the function Windowabsorption())
-    quanti: dictionnary
-    	Contain the referenced variable quantification (none, result of CL quantification or an array) 
-	This dictionnary is call in the function Wpercent() to calculate an array of weight percent with the same dimension than the model and a length which correspond to the number of elements filled in the metadata
     """
 
     def __init__(self, E0, detector, quantification, absorption_model,TOA,coating_thickness,Phase_map):
@@ -241,8 +235,19 @@ class Physical_background(Component):
         self.coefficients.bmin=0
         self.coefficients.bmax=1e6
         
-    def initialize(self): # this function is necessary to initialize the quant map
+    def initialize(self):
 
+        """
+        Function
+        
+        This function is a necessary step to fit the physical background function
+        
+        It allow to initialize the quant map but also the different curves needed for the absorption correction.
+        Curves initialized here are: the absorption by the thin window in front of the detector,
+        the mass absorption curves of the different phases if a phase map is indicated,
+        and the curve of absorption by the coating layer.
+        """
+        
         E0=self.E0.value
         Cthickness=self.coating_thickness.value
         

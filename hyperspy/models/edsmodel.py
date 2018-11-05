@@ -290,7 +290,7 @@ class EDSModel(Model1D):
         self.append(background)
         self.background_components.append(background)
 
-    def add_physical_background(self, E0='from_metadata', detector='Polymer_C', quantification=None,absorption_model='quadrilateral', coating_thickness=0, TOA='from_metadata', Phase_map=None):
+    def add_physical_background(self, E0='from_metadata', detector='Polymer_C', quantification=None, absorption_model='quadrilateral', coating_thickness=0, TOA='from_metadata', Phase_map=None):
         """
         Add a background based on physical property of the interraction e-/mater (see Zanetta et al. 2018)
     
@@ -304,27 +304,35 @@ class EDSModel(Model1D):
                 If an integer is write, this value will be used during the fit
 
         detector: str or array
-            The string is the type of detector used during the acquisition
-                String can be 'Polymer_C' / 'Super_X' / '12µm_BE' / '25µm_BE' / '100µm_BE' / 'Polymer_C2' / 'Polymer_C3' 
+            - The string is the type of detector used during the acquisition
+                String can be 'Polymer_C' / 'Super_X' / '12µm_BE' / '25µm_BE' / '100µm_BE'
+                / 'Polymer_C2' / 'Polymer_C3' 
                 It will be used to calculate the detector efficiency
-            An array of value representing the detector efficiency can also be passed
+            - An array of value representing the detector efficiency can also be passed
                 
         quantification: None or Muti_Base_Signal or array
-            If quantification is None, an approximation based on peaks ratio is used
-            However if the acquisition instrument is a TEM it is more consistent to perform a quantification before the use of "add_physical_background"
-                In this case variable which contain the result of the quantification can be directly filled
-                The function automatically detect if data are in weight_percent or in atomic_percent
-                Otherwise, an array which contain the quantification (with map dimension and number or elements set in metadata) can be directly passed
-                This quantmap have to be an array not a list !
+            - If quantification is None, an approximation based on peaks ratio is used
+            - However if the acquisition instrument is a TEM it is more consistent to perform a quantification before use "add_physical_background". In this case variable which contain the result of the quantification can be directly filled. The function automatically detect if data are in weight_percent or in atomic_percent
+            - Otherwise, an array which contain the quantification (with map dimension and number or elements set in metadata) can be directly passed
+            This quantmap have to be an array not a list !
+                
         absorption_model:  str
             The type of distribution for x-ray generation
             String can be 'quadrilateral' or 'CL'
             The quadrilateral method refers to the quadrilateral model of Love&Scott (see documentation).
             While 'CL' refers to the cliff lorimer method where the depth distribution of X-ray production is a constant and equal to unity.
+            
         Coating_thickness: float
-            The thickness of the carbon deposit on the sample in nanometers. The Deafault is coating_thickness=0nm.
-        TOA
+            The thickness of the carbon deposition on the sample in nanometers. The Deafault is coating_thickness=0nm.
+            
+        TOA: int
              TOA(take off angle) is the angle with which the X-rays leave the surface towards the detector. Parameters are read in metadata but an integer can be passed
+
+        Phase_map: None or array
+             Map of integer between 0 and N, where N is the number of mineral phases.
+             The objective is to calculate a finite number of mass absorption coefficient curves instead of calculate a new curve in each point.
+             It is assumed that all pixel classified in the same phase (i.e. displaying the same number) exhibit the same composition and therefore the same mass absorption curve.
+             This allow to speed up the fitting procedure.
              
         Caution ! : The number of elements have to be equal to the number of Xray_lines. It's preferable to remove secondary lines and keep only higher energy lines
 
