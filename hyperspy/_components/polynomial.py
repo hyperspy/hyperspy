@@ -20,6 +20,7 @@ import numpy as np
 
 from hyperspy.component import Component
 from hyperspy.misc.utils import ordinal
+from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 
 
 class Polynomial(Component):
@@ -50,7 +51,10 @@ class Polynomial(Component):
         return len(self.coefficients.value) - 1
 
     def function(self, x):
-        return np.polyval(self.coefficients.value, x)
+        return self._function(x, self.coefficients.value)
+
+    def _function(self, x, coefficients):
+        return np.polyval(coefficients, x)
 
     def grad_one_coefficient(self, x, index):
         """Returns the gradient of one coefficient"""
@@ -92,13 +96,12 @@ class Polynomial(Component):
         """
         super(Polynomial, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
-        binned = signal.metadata.Signal.binned
         i1, i2 = axis.value_range_to_indices(x1, x2)
         if only_current is True:
             estimation = np.polyfit(axis.axis[i1:i2],
                                     signal()[i1:i2],
                                     self.get_polynomial_order())
-            if binned is True:
+            if self.binned:
                 self.coefficients.value = estimation / axis.scale
             else:
                 self.coefficients.value = estimation
@@ -119,8 +122,18 @@ class Polynomial(Component):
                 # Shape needed to fit coefficients.map:
                 cmap_shape = nav_shape + (self.get_polynomial_order() + 1, )
                 self.coefficients.map['values'][:] = cmaps.reshape(cmap_shape)
-                if binned is True:
+                if self.binned:
                     self.coefficients.map["values"] /= axis.scale
                 self.coefficients.map['is_set'][:] = True
             self.fetch_stored_values()
             return True
+
+    def function_nd(self, axis):
+        """%s
+
+        """
+        x = axis[np.newaxis, :]
+        coefficients = self.coefficients.map["values"][..., np.newaxis]
+        return self._function(x, coefficients)
+
+    function_nd.__doc__ %= FUNCTION_ND_DOCSTRING

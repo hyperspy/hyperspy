@@ -134,7 +134,7 @@ have used a :py:class:`~._signals.signal2d.Signal2D` instead e.g.:
 Indeed, for data analysis purposes,
 one may like to operate with an image stack as if it was a set of spectra or
 viceversa. One can easily switch between these two alternative ways of
-classifiying the dimensions of a three-dimensional dataset by
+classifying the dimensions of a three-dimensional dataset by
 :ref:`transforming between BaseSignal subclasses
 <transforming.signal>`.
 
@@ -326,7 +326,7 @@ A number of mathematical operations are available
 in :py:class:`~.signal.BaseSignal`. Most of them are just wrapped numpy
 functions.
 
-The methods that perform mathematical opearation over one or more axis at a
+The methods that perform mathematical operation over one or more axis at a
 time are:
 
 * :py:meth:`~.signal.BaseSignal.sum`
@@ -453,6 +453,7 @@ features differ from numpy):
 
   + Allow independent indexing of signal and navigation dimensions
   + Support indexing with decimal numbers.
+  + Support indexing with units.
   + Use the image order for indexing i.e. [x, y, z,...] (HyperSpy) vs
     [...,z,y,x] (numpy)
 
@@ -494,8 +495,8 @@ First consider indexing a single spectrum, which has only one signal dimension
     >>> s.isig[5::2].data
     array([5, 7, 9])
 
-
-Unlike numpy, HyperSpy supports indexing using decimal numbers, in which case
+Unlike numpy, HyperSpy supports indexing using decimal numbers or string 
+(containing a decimal number and an units), in which case
 HyperSpy indexes using the axis scales instead of the indices.
 
 .. code-block:: python
@@ -514,7 +515,9 @@ HyperSpy indexes using the axis scales instead of the indices.
     array([1, 2, 3])
     >>> s.isig[0.5:4:2].data
     array([1, 3])
-
+    >>> s.axes_manager[0].units = 'µm'
+    >>> s.isig[:'2000 nm'].data
+    array([0, 1, 2, 3])
 
 Importantly the original :py:class:`~.signal.BaseSignal` and its "indexed self"
 share their data and, therefore, modifying the value of the data in one
@@ -667,7 +670,7 @@ Signal operations
 .. versionadded:: 0.8.3
 
 :py:class:`~.signal.BaseSignal` supports all the Python binary arithmetic
-opearations (+, -, \*, //, %, divmod(), pow(), \*\*, <<, >>, &, ^, \|),
+operations (+, -, \*, //, %, divmod(), pow(), \*\*, <<, >>, &, ^, \|),
 augmented binary assignments (+=, -=, \*=, /=, //=, %=, \*\*=, <<=, >>=, &=,
 ^=, \|=), unary operations (-, +, abs() and ~) and rich comparisons operations
 (<, <=, ==, x!=y, <>, >, >=).
@@ -684,7 +687,7 @@ for the navigation and signal axes.
 In the following example `s2` has only one navigation axis while `s` has two.
 However, because the size of their first navigation axis is the same, their
 dimensions are compatible and `s2` is
-broacasted to match `s`'s dimensions.
+broadcasted to match `s`'s dimensions.
 
 .. code-block:: python
 
@@ -718,7 +721,7 @@ is raised.
     ValueError: Invalid dimensions for this operation
 
 
-Broacasting operates exactly in the same way for the signal axes:
+Broadcasting operates exactly in the same way for the signal axes:
 
 .. code-block:: python
 
@@ -791,10 +794,12 @@ to make a horizontal "collage" of the image stack:
     >>> for image, angle in zip(image_stack, (0, 45, 90, 135, 180)):
     ...    image.data[:] = scipy.ndimage.rotate(image.data, angle=angle,
     ...    reshape=False)
+    >>> # clip data to integer range:
+    >>> image_stack.data = np.clip(image_stack.data, 0, 255)
     >>> collage = hs.stack([image for image in image_stack], axis=0)
-    >>> collage.plot()
+    >>> collage.plot(scalebar=False)
 
-.. figure::  images/rotate_lena.png
+.. figure::  images/rotate_ascent.png
   :align:   center
   :width:   500
 
@@ -820,10 +825,12 @@ using an external function can be more easily accomplished using the
     >>> image_stack.map(scipy.ndimage.rotate,
     ...                            angle=45,
     ...                            reshape=False)
+    >>> # clip data to integer range
+    >>> image_stack.data = np.clip(image_stack.data, 0, 255)
     >>> collage = hs.stack([image for image in image_stack], axis=0)
     >>> collage.plot()
 
-.. figure::  images/rotate_lena_apply_simple.png
+.. figure::  images/rotate_ascent_apply_simple.png
   :align:   center
   :width:   500
 
@@ -839,14 +846,11 @@ arguments as in the following example.
     >>> image_stack.axes_manager[1].name = "x"
     >>> image_stack.axes_manager[2].name = "y"
     >>> angles = hs.signals.BaseSignal(np.array([0, 45, 90, 135]))
-    >>> modes = hs.signals.BaseSignal(np.array(['constant', 'nearest', 'reflect', 'wrap']))
     >>> image_stack.map(scipy.ndimage.rotate,
     ...                            angle=angles.T,
-    ...                            reshape=False,
-    ...                            mode=modes.T)
-    calculating 100% |#############################################| ETA:  00:00:00Cropping
+    ...                            reshape=False)
 
-.. figure::  images/rotate_lena_apply_ndkwargs.png
+.. figure::  images/rotate_ascent_apply_ndkwargs.png
   :align:   center
   :width:   500
 
@@ -914,6 +918,21 @@ The execution can be sped up by passing ``parallel`` keyword to the
     >>> s.map(slow_func, parallel=True)
     100%|██████████████████████████████████████| 20/20 [00:02<00:00,  6.73it/s]
 
+.. versionadded:: 1.4
+    Iterating over signal using a parameter with no navigation dimension.
+
+In this case, the parameter is cyclically iterated over the navigation
+dimension of the input signal. In the example below, signal s is
+multiplied by a cosine parameter d, which is repeated over the
+navigation dimension of s.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.random.rand(10, 512))
+    >>> d = hs.signals.Signal1D(np.cos(np.linspace(0., 2*np.pi, 512)))
+    >>> s.map(lambda A, B: A * B, B=d)
+    100%|██████████| 10/10 [00:00<00:00, 2573.19it/s]
+
 
 Cropping
 ^^^^^^^^
@@ -961,8 +980,8 @@ lazily:
     <LazyEDSSEMSpectrum, title: EDS SEM Spectrum, dimensions: (|512)>
 
 
-On the other hand, the following rebining operation requires interpolation and
-cannot be peformed lazily:
+On the other hand, the following rebinning operation requires interpolation and
+cannot be performed lazily:
 
 .. code-block:: python
 
@@ -1026,13 +1045,13 @@ with same dimension.
     >>> image = hs.stack([hs.stack([image]*3,axis=0)]*3,axis=1)
     >>> image.plot()
 
-.. figure::  images/stack_lena_3_3.png
+.. figure::  images/stack_ascent_3_3.png
   :align:   center
   :width:   500
 
   Stacking example.
 
-An object can be splitted into several objects
+An object can be split into several objects
 with the :py:meth:`~.signal.BaseSignal.split` method. This function can be used
 to reverse the :py:func:`~.utils.stack` function:
 
@@ -1041,12 +1060,43 @@ to reverse the :py:func:`~.utils.stack` function:
     >>> image = image.split()[0].split()[0]
     >>> image.plot()
 
-.. figure::  images/split_lena_3_3.png
+.. figure::  images/split_ascent_3_3.png
   :align:   center
   :width:   400
 
   Splitting example.
 
+
+.. _signal.fft:
+
+FFT and iFFT
+^^^^^^^^^^^^
+
+.. versionadded:: 1.4 
+   :py:meth:`~.signal.BaseSignal.fft` and :py:meth:`~.signal.BaseSignal.ifft` method and ``fft_shift`` and ``power_spectrum``
+   ``plot`` keyword arguments.
+
+The Fast Fourier transform and its inverse can be applied on a signal with the :py:meth:`~.signal.BaseSignal.fft` and the :py:meth:`~.signal.BaseSignal.ifft` methods.
+
+.. code-block:: python
+
+    >>> im = hs.datasets.example_signals.object_hologram()
+    >>> im.fft().plot()
+
+.. figure::  images/hologram_fft.png
+  :align:   center
+  :width:   400
+
+Note that for visual inspection of FFT, it is common to plot the power spectrum (absolute value of the complex signal) on a logarithmic scale rather than the FFT itself as it is done in the example above.
+By default, in case of FFT, HyperSpy plots the power spectrum and shifts the zero frequency component to the center of the signal. This can be changed 
+by setting ``power_spectrum=False`` and ``fft_shift=False`` parameters of the plot method.
+
+By default, both methods calculate FFT and IFFT with origin at (0, 0) (not in the centre of FFT). Use ``fft_shift=True`` option to
+calculate FFT and the inverse with origin shifted in the centre. ROIs doesn't work when the FFT is plotted with ``fft_shift=True``.
+
+.. code-block:: python
+
+    >>> im_ifft = im.fft(fft_shift=True).ifft(fft_shift=True)
 
 .. _signal.change_dtype:
 
@@ -1080,21 +1130,22 @@ type in place, e.g.:
    Support for RGB signals.
 
 In addition to all standard numpy dtypes, HyperSpy supports four extra dtypes
-for RGB images **for visualization purposes only**: rgb8, rgba8, rgb16 and
-rgba16. This includes of course multi-dimensional RGB images.
+for RGB images **for visualization purposes only**: ``rgb8``, ``rgba8``,
+``rgb16`` and ``rgba16``. This includes of course multi-dimensional RGB images.
 
-The requirements for changing from and to any rgbx dtype are more strict
-than for most other dtype conversions. To change to a rgbx dtype the
-`signal_dimension` must be 1 and its size 3(4) 3(4) for rgb(rgba) dtypes and the
-dtype must be uint8(uint16) for rgbx8(rgbx16).  After conversion the
-`signal_dimension` becomes 2.
+The requirements for changing from and to any ``rgbx`` dtype are more strict
+than for most other dtype conversions. To change to a ``rgbx`` dtype the
+``signal_dimension`` must be 1 and its size 3 (4) 3(4) for ``rgb`` (or
+``rgba``) dtypes and the dtype must be ``uint8`` (``uint16``) for
+``rgbx8`` (``rgbx16``). After conversion the ``signal_dimension`` becomes 2.
 
-Most operations on signals with RGB dytpes will fail. For processing simply
-change their dtype to uint8(uint16).The dtype of images of dtype rgbx8(rgbx16)
-can only be changed to uint8(uint16) and the `signal_dimension` becomes 1.
+Most operations on signals with RGB dtypes will fail. For processing simply
+change their dtype to ``uint8`` (``uint16``).The dtype of images of
+dtype ``rgbx8`` (``rgbx16``) can only be changed to ``uint8`` (``uint16``) and
+the ``signal_dimension`` becomes 1.
 
 In the following example we create a 1D signal with signal size 3 and with
-`dtype` `"uint16"` and change its dtype to `"rgb16"` for plotting.
+dtype ``uint16`` and change its dtype to ``rgb16`` for plotting.
 
 .. code-block:: python
 
@@ -1103,9 +1154,15 @@ In the following example we create a 1D signal with signal size 3 and with
     >>> offset_factor = 0.16
     >>> size_factor = 3
     >>> Y, X = np.ogrid[0:lx, 0:ly]
-    >>> rgb_test[:,:,0] = (X - lx / 2 - lx*offset_factor) ** 2 + (Y - ly / 2 - ly*offset_factor) ** 2 < lx * ly / size_factor **2
-    >>> rgb_test[:,:,1] = (X - lx / 2 + lx*offset_factor) ** 2 + (Y - ly / 2 - ly*offset_factor) ** 2 < lx * ly / size_factor **2
-    >>> rgb_test[:,:,2] = (X - lx / 2) ** 2 + (Y - ly / 2 + ly*offset_factor) ** 2 < lx * ly / size_factor **2
+    >>> rgb_test[:,:,0] = (X - lx / 2 - lx*offset_factor) ** 2 + \
+    ...                   (Y - ly / 2 - ly*offset_factor) ** 2 < \
+    ...                   lx * ly / size_factor **2
+    >>> rgb_test[:,:,1] = (X - lx / 2 + lx*offset_factor) ** 2 + \
+    ...                   (Y - ly / 2 - ly*offset_factor) ** 2 < \
+    ...                   lx * ly / size_factor **2
+    >>> rgb_test[:,:,2] = (X - lx / 2) ** 2 + \
+    ...                   (Y - ly / 2 + ly*offset_factor) ** 2 \
+    ...                   < lx * ly / size_factor **2
     >>> rgb_test *= 2**16 - 1
     >>> s = hs.signals.Signal1D(rgb_test)
     >>> s.change_dtype("uint16")
@@ -1187,6 +1244,8 @@ trivially:
     >>> s4 = hs.signals.BaseSignal(np.random.rand(4, 4, 4, 4)) # 4D signal
     >>> hs.plot.plot_images(hs.transpose(s2, s3, s4, signal_axes=2))
 
+.. _signal.transpose_optimize:
+
 The :py:meth:`~.signal.BaseSignal.transpose` method accepts keyword argument
 ``optimize``, which is ``False`` by default, meaning modifying the output
 signal data **always modifies the original data** i.e. the data is just a view
@@ -1200,7 +1259,8 @@ The convenience methods :py:meth:`~.signal.BaseSignal.as_signal1D` and
 :py:meth:`~.signal.BaseSignal.transpose`, but always optimize the data
 for iteration over the navigation axes if required. Hence, these methods do not
 always return a view of the original data. If a copy of the data is required
-use `:py:meth:`~.signal.BaseSignal.deepcopy` on the output of any of these
+use
+:py:meth:`~.signal.BaseSignal.deepcopy` on the output of any of these
 methods e.g.:
 
 .. code-block:: python
@@ -1215,12 +1275,13 @@ Basic statistical analysis
 
 :py:meth:`~.signal.BaseSignal.get_histogram` computes the histogram and
 conveniently returns it as signal instance. It provides methods to
-calculate the bins. :py:meth:`~.signal.BaseSignal.print_summary_statistics` prints
-the five-number summary statistics of the data.
+calculate the bins. :py:meth:`~.signal.BaseSignal.print_summary_statistics`
+prints the five-number summary statistics of the data.
 
 These two methods can be combined with
 :py:meth:`~.signal.BaseSignal.get_current_signal` to compute the histogram or
 print the summary statistics of the signal at the current coordinates, e.g:
+
 .. code-block:: python
 
     >>> s = hs.signals.EELSSpectrum(np.random.normal(size=(10,100)))
@@ -1254,7 +1315,8 @@ with histograms of several random chi-square distributions:
 
 .. code-block:: python
 
-    >>> img = hs.signals.Signal2D([np.random.chisquare(i+1,[100,100]) for i in range(5)])
+    >>> img = hs.signals.Signal2D([np.random.chisquare(i+1,[100,100]) for
+    ...                            i in range(5)])
     >>> hs.plot.plot_histograms(img,legend='auto')
 
 .. figure::  images/plot_histograms_chisquare.png
@@ -1285,10 +1347,10 @@ heterocedastic noise where the variance is equal to the expected value. The
 :class:`~.signal.BaseSignal` method can help setting the variance of data with
 semi-poissonian noise. With the default arguments, this method simply sets the
 variance attribute to the given ``expected_value``. However, more generally
-(although then noise is not strictly poissonian), the variance may be proportional
-to the expected value. Moreover, when the noise is a mixture of white
-(gaussian) and poissonian noise, the variance is described by the following
-linear model:
+(although then noise is not strictly poissonian), the variance may be
+proportional to the expected value. Moreover, when the noise is a mixture of
+white (gaussian) and poissonian noise, the variance is described by the
+following linear model:
 
     .. math::
 
@@ -1298,9 +1360,9 @@ Where `a` is the ``gain_factor``, `b` is the ``gain_offset`` (the Gaussian
 noise variance) and `c` the ``correlation_factor``. The correlation
 factor accounts for correlation of adjacent signal elements that can
 be modelled as a convolution with a Gaussian point spread function.
-:meth:`~.signal.BaseSignal.estimate_poissonian_noise_variance` can be used to set
-the noise properties when the variance can be described by this linear model,
-for example:
+:meth:`~.signal.BaseSignal.estimate_poissonian_noise_variance` can be used to
+set the noise properties when the variance can be described by this linear
+model, for example:
 
 
 .. code-block:: python
@@ -1443,8 +1505,8 @@ Once created, a ROI can be used to return a part of any compatible signal:
     >>> imr
     <Signal2D, title: , dimensions: (|4, 3)>
 
-ROIs can also be used :ref:`interactively <interactive-label>` with widgets. The
-following examples shows how to interactively apply ROIs to an image. Note
+ROIs can also be used :ref:`interactively <interactive-label>` with widgets.
+The following examples shows how to interactively apply ROIs to an image. Note
 that *it is necessary* to plot the signal onto which the widgets will be
 added before calling :py:meth:`~.roi.BaseInteractiveROI.interactive`.
 
@@ -1452,7 +1514,8 @@ added before calling :py:meth:`~.roi.BaseInteractiveROI.interactive`.
 
     >>> import scipy.misc
     >>> im = hs.signals.Signal2D(scipy.misc.ascent())
-    >>> rectangular_roi = hs.roi.RectangularROI(left=30, right=500, top=200, bottom=400)
+    >>> rectangular_roi = hs.roi.RectangularROI(left=30, right=500,
+    ...                                         top=200, bottom=400)
     >>> line_roi = hs.roi.Line2DROI(0, 0, 512, 512, 1)
     >>> point_roi = hs.roi.Point2DROI(256, 256)
     >>> im.plot()
@@ -1516,17 +1579,16 @@ order to increase responsiveness.
    >>> im.plot()
    >>> roi = hs.roi.RectangularROI(left=30, right=500, top=200, bottom=400)
    >>> im_roi = roi.interactive(im, color="red")
-   >>> roi_hist =hs.interactive(im_roi.get_histogram, event=im_roi.axes_manager.events.any_axis_changed, recompute_out_event=None)
+   >>> roi_hist =hs.interactive(im_roi.get_histogram,
+   ...                          event=im_roi.axes_manager.events.\
+   ...                                any_axis_changed,
+   ...                          recompute_out_event=None)
    >>> roi_hist.plot()
 
 
-.. figure::  images/image_with_rect_roi.png
+.. figure::  images/image_with_rect_roi.gif
   :align:   center
-  :width:   500
-
-.. figure::  images/roi_hist.png
-  :align:   center
-  :width:   500
+  :width:   100%
 
 .. versionadded:: 1.3
     ROIs can be used in place of slices when indexing and to define a
@@ -1551,34 +1613,82 @@ signal range in functions taken a ``signal_range`` argument. For example:
 
 
 All ROIs have a :meth:`gui` method that displays an user interface if
-any hyperspy GUI is installed (e.g. hyperspy_gui_ipywidgets or
-hyperspy_gui_traitsui).
+a hyperspy GUI is installed (currently only works with the
+``hyperspy_gui_ipywidgets`` GUI), enabling precise control of the ROI
+parameters:
 
+.. code-block:: python
 
+    >>> # continuing from above:
+    >>> roi.gui()
 
+.. figure::  images/roi_gui_control.gif
+  :align:   center
+  :width:   100%
+
+.. versionadded:: 1.4
+    :meth:`~.roi.Line2DROI.angle` can be used to calculate an angle between
+    ROI line and one of the axes providing its name through optional argument ``axis``:
+
+.. code-block:: python
+
+    >>> import scipy
+    >>> holo = hs.datasets.example_signals.object_hologram()
+    >>> roi = hs.roi.Line2DROI(x1=465.577, y1=445.15, x2=169.4, y2=387.731, linewidth=0)
+    >>> holo.plot()
+    >>> ss = roi.interactive(holo)
+
+.. figure::  images/roi_line2d_holo.png
+  :align:   center
+  :width:   500
+
+.. code-block:: python
+
+    >>> roi.angle(axis='y')
+    -100.97166759025453
+
+By default output of the method is in degrees, though radians can be selected as follows:
+
+.. code-block:: python
+
+    >>> roi.angle(axis='vertical', units='radians')
+    -1.7622880506791903
+
+Conveniently, :meth:`~.roi.Line2DROI.angle` can be used to rotate image to align
+selected features with respect to vertical or horizontal axis:
+
+.. code-block:: python
+
+>>> holo.map(scipy.ndimage.rotate, angle=roi.angle(axis='horizontal'), inplace=False).plot()
+
+.. figure::  images/roi_line2d_rotate.png
+  :align:   center
+  :width:   500
 
 .. _complex_data-label:
 
 Handling complex data
 ---------------------
 
-The HyperSpy :py:class:`~.hyperspy.signals.ComplexSignal` signal class and its subclasses
-for 1-dimensional and 2-dimensional data allow the user to access complex properties like the
-`real` and `imag` parts of the data or the `amplitude` (also known as the modulus) and `phase`
-(also known as angle or argument) directly. Getting and setting those properties can be done
-as follows:
+The HyperSpy :py:class:`~.hyperspy.signals.ComplexSignal` signal class and its
+subclasses for 1-dimensional and 2-dimensional data allow the user to access
+complex properties like the `real` and `imag` parts of the data or the
+`amplitude` (also known as the modulus) and `phase` (also known as angle or
+argument) directly. Getting and setting those properties can be done as
+follows:
 
 .. code-block:: python
 
-  >>> real = s.real      # real is a new HyperSpy signal accessing the same data
+  >>> real = s.real      # real is a new HS signal accessing the same data
   >>> s.real = new_real  # new_real can be an array or signal
-  >>> imag = s.imag      # imag  is a new HyperSpy signal accessing the same data
+  >>> imag = s.imag      # imag  is a new HS signal accessing the same data
   >>> s.imag = new_imag  # new_imag can be an array or signal
 
 It is important to note that `data` passed to the constructor of a
-:py:class:`~._signals.complex_signal.ComplexSignal` (or to a subclass), which is not already
-complex, will be converted to the numpy standard of `np.complex`/`np.complex128`. `data` which
-is already complex will be passed as is.
+:py:class:`~._signals.complex_signal.ComplexSignal` (or to a subclass), which
+is not already complex, will be converted to the numpy standard of
+`np.complex`/`np.complex128`. `data` which is already complex will be passed
+as is.
 
 To transform a real signal into a complex one use:
 
@@ -1586,40 +1696,41 @@ To transform a real signal into a complex one use:
 
     >>> s.change_dtype(complex)
 
-Changing the `dtype` of a complex signal to something real is not clearly defined and thus not
-directly possible. Use the `real`, `imag`, `amplitude` or `phase` properties instead to extract
-the real data that is desired.
+Changing the `dtype` of a complex signal to something real is not clearly
+defined and thus not directly possible. Use the `real`, `imag`, `amplitude`
+or `phase` properties instead to extract the real data that is desired.
 
 
 Calculate the angle / phase / argument
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :py:func:`~hyperspy.signals.ComplexSignal.angle` function can be used to calculate the
-angle, which is equivalent to using the `phase` property if no argument is used. If the data is
-real, the angle will be 0 for positive values and 2$\pi$ for negative values. If the `deg`
-parameter is set to `True`, the result will be given in degrees, otherwise in rad (default).
-The underlying function is the :py:func:`~numpy.angle` function.
-:py:func:`~hyperspy.signals.ComplexSignal.angle` will return an appropriate HyperSpy signal.
+The :py:func:`~hyperspy.signals.ComplexSignal.angle` function can be used to
+calculate the angle, which is equivalent to using the `phase` property if no
+argument is used. If the data is real, the angle will be 0 for positive
+values and 2$\pi$ for negative values. If the `deg` parameter is set to
+`True`, the result will be given in degrees, otherwise in rad (default). The
+underlying function is the :py:func:`~numpy.angle` function.
+:py:func:`~hyperspy.signals.ComplexSignal.angle` will return an appropriate
+HyperSpy signal.
 
 
 Phase unwrapping
 ^^^^^^^^^^^^^^^^
 
-With the :py:func:`~hyperspy.signals.ComplexSignal.unwrapped_phase` method the complex phase
-of a signal can be unwrapped and returned as a new signal. The underlying method is
-:py:func:`~skimage.restoration.unwrap`, which uses the algorithm described in:
-Miguel Arevallilo Herraez, David R. Burton, Michael J. Lalor, and Munther A. Gdeisat,
-“Fast two-dimensional phase-unwrapping algorithm based on sorting by reliability following
-a noncontinuous path”, Journal Applied Optics, Vol. 41, No. 35, pp. 7437, 2002.
-(doi: 10.1364/AO.41.007437).
+With the :py:func:`~hyperspy.signals.ComplexSignal.unwrapped_phase` method the
+complex phase of a signal can be unwrapped and returned as a new signal. The
+underlying method is :py:func:`~skimage.restoration.unwrap`, which uses the
+algorithm described in :ref:`[Herraez] <Herraez>`.
 
 
 Add a linear phase ramp
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-For 2-dimensional complex images, a linear phase ramp can be added to the signal via the
-:py:func:`~._signals.complex_signal2d.Complex2Dmixin.add_phase_ramp` method. The parameters
-`ramp_x` and `ramp_y` dictate the slope of the ramp in `x`- and `y` direction, while the offset
-is determined by the `offset` parameter. The fulcrum of the linear ramp is at the origin
-and the slopes are given in units of the axis with the according scale taken into account.
-Both are available via the :py:class:`~.axes.AxesManager` of the signal.
+For 2-dimensional complex images, a linear phase ramp can be added to the
+signal via the
+:py:func:`~._signals.complex_signal2d.Complex2Dmixin.add_phase_ramp` method.
+The parameters `ramp_x` and `ramp_y` dictate the slope of the ramp in `x`-
+and `y` direction, while the offset is determined by the `offset` parameter.
+The fulcrum of the linear ramp is at the origin and the slopes are given in
+units of the axis with the according scale taken into account. Both are
+available via the :py:class:`~.axes.AxesManager` of the signal.

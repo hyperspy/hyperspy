@@ -36,6 +36,8 @@ class MPL_HyperExplorer(object):
     def __init__(self):
         self.signal_data_function = None
         self.navigator_data_function = None
+        # args to pass to `__call__`
+        self.signal_data_function_kwargs = {}
         self.axes_manager = None
         self.signal_title = ''
         self.navigator_title = ''
@@ -49,7 +51,12 @@ class MPL_HyperExplorer(object):
     def plot_signal(self):
         # This method should be implemented by the subclasses.
         # Doing nothing is good enough for signal_dimension==0 though.
-        return
+        if self.axes_manager.signal_dimension == 0:
+            return
+        if self.signal_data_function_kwargs.get('fft_shift', False):
+            self.axes_manager = self.axes_manager.deepcopy()
+            for axis in self.axes_manager.signal_axes:
+                axis.offset = -axis.high_value / 2.
 
     def plot_navigator(self,
                        colorbar=True,
@@ -146,13 +153,18 @@ class MPL_HyperExplorer(object):
         if self.navigator_plot:
             self.navigator_plot.close()
 
+    @property
     def is_active(self):
-        if self.signal_plot and self.signal_plot.figure:
+        if self.signal_plot and self.signal_plot.figure is not None:
             return True
         else:
             return False
 
     def plot(self, **kwargs):
+        # Parse the kwargs for plotting complex data
+        for key in ['power_spectrum', 'fft_shift']:
+            if key in kwargs:
+                self.signal_data_function_kwargs[key] = kwargs.pop(key)
         if self.pointer is None:
             pointer = self.assign_pointer()
             if pointer is not None:

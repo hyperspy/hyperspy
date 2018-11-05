@@ -29,7 +29,7 @@ from scipy.ndimage.filters import gaussian_filter1d
 try:
     from statsmodels.nonparametric.smoothers_lowess import lowess
     statsmodels_installed = True
-except:
+except BaseException:
     statsmodels_installed = False
 
 from hyperspy.signal import BaseSignal
@@ -38,23 +38,22 @@ from hyperspy.signal_tools import SpikesRemoval
 from hyperspy.models.model1d import Model1D
 
 
-from hyperspy.misc.utils import stack, signal_range_from_roi
+from hyperspy.misc.utils import signal_range_from_roi
 from hyperspy.defaults_parser import preferences
-from hyperspy.external.progressbar import progressbar
-from hyperspy._signals.lazy import lazyerror
 from hyperspy.signal_tools import (
     Signal1DCalibration,
     SmoothingSavitzkyGolay,
     SmoothingLowess,
     SmoothingTV,
     ButterworthFilter)
-from hyperspy.ui_registry import get_gui, DISPLAY_DT, TOOLKIT_DT
+from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
 from hyperspy.signal_tools import BackgroundRemoval
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.signal_tools import IntegrateArea
 from hyperspy import components1d
 from hyperspy._signals.lazy import LazySignal
+from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
 
 _logger = logging.getLogger(__name__)
 
@@ -63,44 +62,53 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
                       medfilt_radius=5, maxpeakn=30000, peakgroup=10,
                       subchannel=True,):
     """Find peaks along a 1D line.
+
     Function to locate the positive peaks in a noisy x-y data set.
     Detects peaks by looking for downward zero-crossings in the first
     derivative that exceed 'slope_thresh'.
     Returns an array containing position, height, and width of each peak.
     Sorted by position.
-    'slope_thresh' and 'amp_thresh', control sensitivity: higher values will
-    neglect smaller features.
+    'slope_thresh' and 'amp_thresh', control sensitivity: higher values
+    will neglect wider peaks (slope) and smaller features (amp),
+    respectively.
+
     Parameters
-    ---------
+    ----------
+
     y : array
         1D input array, e.g. a spectrum
     x : array (optional)
         1D array describing the calibration of y (must have same shape as y)
     slope_thresh : float (optional)
-                   1st derivative threshold to count the peak
-                   default is set to 0.5
-                   higher values will neglect smaller features.
+                   1st derivative threshold to count the peak;
+                   higher values will neglect broader features;
+                   default is set to 0.
     amp_thresh : float (optional)
-                 intensity threshold above which
-                 default is set to 10% of max(y)
-                 higher values will neglect smaller features.
+                 intensity threshold below which peaks are ignored;
+                 higher values will neglect smaller features;
+                 default is set to 10% of max(y).
     medfilt_radius : int (optional)
                      median filter window to apply to smooth the data
-                     (see scipy.signal.medfilt)
-                     if 0, no filter will be applied.
-                     default is set to 5
+                     (see scipy.signal.medfilt);
+                     if 0, no filter will be applied;
+                     default is set to 5.
     peakgroup : int (optional)
-                number of points around the "top part" of the peak
-                default is set to 10
+                number of points around the "top part" of the peak that
+                are taken to estimate the peak height; for spikes or
+                very narrow peaks, keep PeakGroup=1 or 2; for broad or
+                noisy peaks, make PeakGroup larger to reduce the effect
+                of noise;
+                default is set to 10.
     maxpeakn : int (optional)
-              number of maximum detectable peaks
-              default is set to 30000
+              number of maximum detectable peaks;
+              default is set to 30000.
     subchannel : bool (optional)
-             default is set to True
+             default is set to True.
     Returns
     -------
-    P : structured array of shape (npeaks) and fields: position, width, height
-        contains position, height, and width of each peak
+    P : structured array of shape (npeaks)
+        contains fields: 'position', 'width', and 'height' for each peak.
+
     Examples
     --------
     >>> x = np.arange(0,50,0.01)
@@ -225,7 +233,9 @@ def _estimate_shift1D(data, **kwargs):
     ip = kwargs.get('ip', 5)
     data_slice = kwargs.get('data_slice', slice(None))
     if bool(mask):
-        return np.nan
+        # asarray is required for consistensy as argmax
+        # returns a numpy scalar array
+        return np.asarray(np.nan)
     data = data[data_slice]
     if interpolate is True:
         data = interpolate1D(ip, data)
@@ -240,7 +250,7 @@ def _shift1D(data, **kwargs):
     offset = kwargs.get('offset', 0.)
     scale = kwargs.get('scale', 1.)
     size = kwargs.get('size', 2)
-    if np.isnan(shift):
+    if np.isnan(shift) or shift == 0:
         return data
     axis = np.linspace(offset, offset + scale * (size - 1), size)
 
@@ -384,6 +394,7 @@ _spikes_diagnosis,
                 show_progressbar=None):
         """Shift the data in place over the signal axis by the amount specified
         by an array.
+
         Parameters
         ----------
         shift_array : numpy array
@@ -394,9 +405,7 @@ _spikes_diagnosis,
             'nearest', 'zero', 'slinear', 'quadratic, 'cubic') or as an
             integer specifying the order of the spline interpolator to
             use.
-        crop : bool
-            If True automatically crop the signal axis at both ends if
-            needed.
+        %s
         expand : bool
             If True, the data will be expanded to fit all data after alignment.
             Overrides `crop`.
@@ -410,6 +419,7 @@ _spikes_diagnosis,
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
+
         """
         if not np.any(shift_array):
             # Nothing to do, the shift array if filled with zeros
@@ -484,11 +494,14 @@ _spikes_diagnosis,
                           ragged=False)
 
         if crop and not expand:
+            _logger.debug("Cropping %s from index %i to %i"
+                          % (self, ilow, ihigh))
             self.crop(axis.index_in_axes_manager,
                       ilow,
                       ihigh)
 
         self.events.data_changed.trigger(obj=self)
+    shift1D.__doc__ %= CROP_PARAMETER_DOC
 
     def interpolate_in_between(self, start, end, delta=3, parallel=None,
                                show_progressbar=None, **kwargs):
@@ -592,10 +605,15 @@ _spikes_diagnosis,
             `preferences`.
         Returns
         -------
-        An array with the result of the estimation in the axis units.
+        An array with the result of the estimation in the axis units. although
+        the computation is performed in batches if the signal is lazy, the
+        result is computed in memory because it depends on the current state
+        of the axes that could change later on in the workflow.
+
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
+
         """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
@@ -622,7 +640,6 @@ _spikes_diagnosis,
             _estimate_shift1D,
             iterating_kwargs=iterating_kwargs,
             data_slice=slice(i1, i2),
-            mask=None,
             ref=ref,
             ip=ip,
             interpolate=interpolate,
@@ -638,6 +655,11 @@ _spikes_diagnosis,
         if interpolate is True:
             shift_array = shift_array / ip
         shift_array *= axis.scale
+        if self._lazy:
+            # We must compute right now because otherwise any changes to the
+            # axes_manager of the signal later in the workflow may result in
+            # a wrong shift_array
+            shift_array = shift_array.compute()
         return shift_array
 
     def align1D(self,
@@ -659,10 +681,12 @@ _spikes_diagnosis,
         This method can only estimate the shift by comparing
         unidimensional
         features that should not change the position.
+
         To decrease memory usage, time of computation and improve
         accuracy it is convenient to select the feature of interest
         setting the `start` and `end` keywords. By default interpolation is
         used to obtain subpixel precision.
+
         Parameters
         ----------
         start, end : {int | float | None}
@@ -685,9 +709,7 @@ _spikes_diagnosis,
             'nearest', 'zero', 'slinear', 'quadratic, 'cubic') or as an
             integer specifying the order of the spline interpolator to
             use.
-        crop : bool
-            If True automatically crop the signal axis at both ends if
-            needed.
+        %s
         expand : bool
             If True, the data will be expanded to fit all data after alignment.
             Overrides `crop`.
@@ -743,6 +765,7 @@ _spikes_diagnosis,
                            fill_value=fill_value,
                            expand=expand,
                            show_progressbar=show_progressbar)
+    align1D.__doc__ %= CROP_PARAMETER_DOC
 
     def integrate_in_range(self, signal_range='interactive',
                            display=True, toolkit=None):
@@ -1000,7 +1023,7 @@ _spikes_diagnosis,
 
     def _remove_background_cli(
             self, signal_range, background_estimator, fast=True,
-            show_progressbar=None):
+            zero_fill=False, show_progressbar=None):
         signal_range = signal_range_from_roi(signal_range)
         from hyperspy.models.model1d import Model1D
         model = Model1D(self)
@@ -1010,25 +1033,51 @@ _spikes_diagnosis,
             signal_range[0],
             signal_range[1],
             only_current=False)
-        if not fast:
+        if fast and not self._lazy:
+            try:
+                axis = self.axes_manager.signal_axes[0].axis
+                result = Signal1D(self.data -
+                                  background_estimator.function_nd(axis))
+            except MemoryError:
+                result = self - model.as_signal(
+                    show_progressbar=show_progressbar)
+        else:
             model.set_signal_range(signal_range[0], signal_range[1])
             model.multifit(show_progressbar=show_progressbar)
-        return self - model.as_signal(show_progressbar=show_progressbar)
+            model.reset_signal_range()
+            result = self - model.as_signal(show_progressbar=show_progressbar)
+
+        if zero_fill:
+            if self._lazy:
+                low_idx = result.axes_manager[-1].value2index(signal_range[0])
+                z = da.zeros(low_idx, chunks=(low_idx,))
+                cropped_da = result.data[low_idx:]
+                result.data = da.concatenate([z, cropped_da])
+            else:
+                result.isig[:signal_range[0]] = 0
+        return result
 
     def remove_background(
             self,
             signal_range='interactive',
-            background_type='PowerLaw',
+            background_type='Power Law',
             polynomial_order=2,
             fast=True,
+            zero_fill=False,
+            plot_remainder=True,
             show_progressbar=None, display=True, toolkit=None):
-        signal_range = signal_range_from_roi(signal_range)
+
         self._check_signal_dimension_equals_one()
         if signal_range == 'interactive':
-            br = BackgroundRemoval(self)
+            br = BackgroundRemoval(self, background_type=background_type,
+                                   polynomial_order=polynomial_order,
+                                   fast=fast,
+                                   plot_remainder=plot_remainder,
+                                   show_progressbar=show_progressbar,
+                                   zero_fill=zero_fill)
             return br.gui(display=display, toolkit=toolkit)
         else:
-            if background_type == 'PowerLaw':
+            if background_type in ('PowerLaw', 'Power Law'):
                 background_estimator = components1d.PowerLaw()
             elif background_type == 'Gaussian':
                 background_estimator = components1d.Gaussian()
@@ -1046,6 +1095,7 @@ _spikes_diagnosis,
                 signal_range=signal_range,
                 background_estimator=background_estimator,
                 fast=fast,
+                zero_fill=zero_fill,
                 show_progressbar=show_progressbar)
             return spectra
     remove_background.__doc__ = \
@@ -1069,6 +1119,17 @@ _spikes_diagnosis,
             If False, the signal is fitted using non-linear least squares
             afterwards.This is slower compared to the estimation but
             possibly more accurate.
+        zero_fill : bool
+            If True, all spectral channels lower than the lower bound of the
+            fitting range will be set to zero (this is the default behavior
+            of Gatan's DigitalMicrograph). Setting this value to False
+            allows for inspection of the quality of background fit throughout
+            the pre-fitting region.
+        plot_remainder : bool
+            If True, add a (green) line previewing the remainder signal after
+            background removal. This preview is obtained from a Fast calculation
+            so the result may be different if a NLLS calculation is finally
+            performed.
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
@@ -1166,6 +1227,11 @@ _spikes_diagnosis,
         SignalDimensionError if the signal dimension is not 1.
 
         """
+        if not np.issubdtype(self.data.dtype, np.floating):
+            raise TypeError("The data dtype should be `float`. It can be "
+                            "changed by using the `change_dtype('float')` "
+                            "method of the signal.")
+
         # TODO: generalize it
         self._check_signal_dimension_equals_one()
         if channels is None:
@@ -1183,6 +1249,7 @@ _spikes_diagnosis,
                 nav_chunks = dc.chunks[:-1]
             zeros = da.zeros(nav_shape + (offset,),
                              chunks=nav_chunks + ((offset,),))
+
         if side == 'left' or side == 'both':
             if self._lazy:
                 tapered = dc[..., offset:channels + offset]
@@ -1210,6 +1277,7 @@ _spikes_diagnosis,
                     np.hanning(2 * channels)[-channels:])
                 if offset != 0:
                     dc[..., -offset:] *= 0.
+
         if self._lazy:
             self.data = dc
         self.events.data_changed.trigger(obj=self)
@@ -1229,53 +1297,53 @@ _spikes_diagnosis,
         peak.
 
         'slope_thresh' and 'amp_thresh', control sensitivity: higher
-        values will
-        neglect smaller features.
+        values will neglect broad peaks (slope) and smaller features (amp),
+        respectively.
 
-
-        peakgroup is the number of points around the top peak to search
-        around
+        peakgroup is the number of points around the top of the peak
+        that are taken to estimate the peak height. For spikes or very
+        narrow peaks, keep PeakGroup=1 or 2; for broad or noisy peaks,
+        make PeakGroup larger to reduce the effect of noise.
 
         Parameters
-        ---------
-
+        ----------
 
         slope_thresh : float (optional)
-                       1st derivative threshold to count the peak
-                       default is set to 0.5
-                       higher values will neglect smaller features.
+                       1st derivative threshold to count the peak;
+                       higher values will neglect broader features;
+                       default is set to 0.
 
         amp_thresh : float (optional)
-                     intensity threshold above which
-                     default is set to 10% of max(y)
-                     higher values will neglect smaller features.
+                     intensity threshold below which peaks are ignored;
+                     higher values will neglect smaller features;
+                     default is set to 10% of max(y).
 
         medfilt_radius : int (optional)
                      median filter window to apply to smooth the data
-                     (see scipy.signal.medfilt)
-                     if 0, no filter will be applied.
-                     default is set to 5
+                     (see scipy.signal.medfilt);
+                     if 0, no filter will be applied;
+                     default is set to 5.
 
         peakgroup : int (optional)
                     number of points around the "top part" of the peak
+                    that are taken to estimate the peak height;
                     default is set to 10
 
         maxpeakn : int (optional)
-                   number of maximum detectable peaks
-                   default is set to 5000
+                   number of maximum detectable peaks;
+                   default is set to 5000.
 
-        subpix : bool (optional)
-                 default is set to True
+        subchannel : bool (optional)
+                 default is set to True.
 
         parallel : {None, bool}
             Perform the operation in a threaded (parallel) manner.
 
         Returns
         -------
-        peaks : structured array of shape _navigation_shape_in_array in which
-        each cell contains an array that contains as many structured arrays as
-        peaks where found at that location and which fields: position, height,
-        width, contains position, height, and width of each peak.
+        peaks : structured array of shape (npeaks)
+            contains fields: 'position', 'width', and 'height' for each peak.
+
 
         Raises
         ------

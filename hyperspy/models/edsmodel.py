@@ -32,7 +32,6 @@ from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 import hyperspy.components1d as create_component
 
-
 _logger = logging.getLogger(__name__)
 
 eV2keV = 1000.
@@ -291,6 +290,7 @@ class EDSModel(Model1D):
         self.append(background)
         self.background_components.append(background)
 
+<<<<<<< HEAD
     def add_physical_background(self, E0='from_metadata', detector='Polymer_C', quantification=None,absorption_model='quadrilateral', coating_thickness=0, TOA='from_metadata', Phase_map=None):
         """
         Add a background based on physical property of the interraction e-/mater (see Zanetta et al. 2018)
@@ -356,6 +356,8 @@ class EDSModel(Model1D):
         self.append(background)
         self.background_components.append(background)
 
+=======
+>>>>>>> RELEASE_next_minor
     def free_background(self):
         """
         Free the yscale of the background components.

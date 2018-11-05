@@ -23,13 +23,27 @@ import numpy as np
 import dask.array as da
 import traits.api as t
 from traits.trait_errors import TraitError
+import pint
+import logging
 
 from hyperspy.events import Events, Event
 from hyperspy.misc.utils import isiterable, ordinal
 from hyperspy.misc.math_tools import isfloat
-from hyperspy.ui_registry import add_gui_method, get_gui, DISPLAY_DT, TOOLKIT_DT
+from hyperspy.ui_registry import add_gui_method, get_gui
+from hyperspy.defaults_parser import preferences
+
 
 import warnings
+
+_logger = logging.getLogger(__name__)
+_ureg = pint.UnitRegistry()
+
+
+FACTOR_DOCSTRING = \
+    """factor : float (default: 0.25)
+            'factor' is an adjustable value used to determine the prefix of
+            the units. The product `factor * scale * size` is passed to the
+            pint `to_compact` method to determine the prefix."""
 
 
 class ndindex_nat(np.ndindex):
@@ -56,13 +70,140 @@ def generate_axis(offset, scale, size, offset_index=0):
     Numpy array
 
     """
+
     return np.linspace(offset - offset_index * scale,
                        offset + scale * (size - 1 - offset_index),
                        size)
 
 
+class UnitConversion:
+
+    def __init__(self, units=t.Undefined, scale=1.0, offset=0.0):
+        self.units = units
+        self.scale = scale
+        self.offset = units
+
+    def _ignore_conversion(self, units):
+        if units == t.Undefined:
+            return True
+        try:
+            _ureg(units)
+        except pint.errors.UndefinedUnitError:
+            warnings.warn('Unit "{}" not supported for conversion. Nothing '
+                          'done.'.format(units),
+                          UserWarning)
+            return True
+        return False
+
+    def _convert_compact_units(self, factor=0.25, inplace=True):
+        """ Convert units to "human-readable" units, which means with a
+            convenient prefix.
+
+            Parameters
+            ----------
+            %s
+        """
+        if self._ignore_conversion(self.units):
+            return
+        scale = self.scale * _ureg(self.units)
+        scale_size = factor * scale * self.size
+        converted_units = '{:~}'.format(scale_size.to_compact().units)
+        return self._convert_units(converted_units, inplace=inplace)
+
+    _convert_compact_units.__doc__ %= FACTOR_DOCSTRING
+
+    def _get_index_from_value_with_units(self, value):
+        value = _ureg.parse_expression(value)
+        if not hasattr(value, 'units'):
+            raise ValueError('"{}" should contains an units.'.format(value))
+        return self.value2index(value.to(self.units).magnitude)
+
+    def _convert_units(self, converted_units, inplace=True):
+        if self._ignore_conversion(converted_units) or \
+                self._ignore_conversion(self.units):
+            return
+        scale_pint = self.scale * _ureg(self.units)
+        offset_pint = self.offset * _ureg(self.units)
+        scale = float(scale_pint.to(_ureg(converted_units)).magnitude)
+        offset = float(offset_pint.to(_ureg(converted_units)).magnitude)
+        units = '{:~}'.format(scale_pint.to(_ureg(converted_units)).units)
+        if inplace:
+            self.scale = scale
+            self.offset = offset
+            self.units = units
+        else:
+            return scale, offset, units
+
+    def convert_to_units(self, units=None, inplace=True, factor=0.25):
+        """ Convert the scale and the units of the current axis. If the unit
+        of measure is not supported by the pint library, the scale and units
+        are not modified.
+
+        Parameters
+        ----------
+        units : {str | None}
+            Default = None
+            If str, the axis will be converted to the provided units.
+            If `"auto"`, automatically determine the optimal units to avoid
+            using too large or too small numbers. This can be tweaked by the
+            `factor` argument.
+        inplace : bool
+            If `True`, convert the axis in place. if `False` return the
+            `scale`, `offset` and `units`.
+        %s
+        """
+        if units is None:
+            out = self._convert_compact_units(factor, inplace=inplace)
+        else:
+            out = self._convert_units(units, inplace=inplace)
+        return out
+
+    convert_to_units.__doc__ %= FACTOR_DOCSTRING
+
+    def _get_quantity(self, attribute='scale'):
+        if attribute == 'scale' or attribute == 'offset':
+            units = self.units
+            if units == t.Undefined:
+                units = ''
+            return self.__dict__[attribute] * _ureg(units)
+        else:
+            raise ValueError('`attribute` argument can only take the `scale` '
+                             'or the `offset` value.')
+
+    def _set_quantity(self, value, attribute='scale'):
+        if attribute == 'scale' or attribute == 'offset':
+            units = '' if self.units == t.Undefined else self.units
+            if isinstance(value, str):
+                value = _ureg.parse_expression(value)
+            if isinstance(value, float):
+                value = value * _ureg(units)
+
+            # to be consistent, we also need to convert the other one
+            # (scale or offset) when both units differ.
+            if value.units != units and value.units != '' and units != '':
+                other = 'offset' if attribute == 'scale' else 'scale'
+                other_quantity = self._get_quantity(other).to(value.units)
+                self.__dict__[other] = float(other_quantity.magnitude)
+
+            self.units = '{:~}'.format(value.units)
+            self.__dict__[attribute] = float(value.magnitude)
+        else:
+            raise ValueError('`attribute` argument can only take the `scale` '
+                             'or the `offset` value.')
+
+    @property
+    def units(self):
+        return self._units
+
+    @units.setter
+    def units(self, s):
+        if s == '':
+            self._units = t.Undefined
+        self._units = s
+
+
 @add_gui_method(toolkey="DataAxis")
-class DataAxis(t.HasTraits):
+class DataAxis(t.HasTraits, UnitConversion):
     name = t.Str()
     units = t.Str()
     scale = t.Float()
@@ -87,7 +228,7 @@ class DataAxis(t.HasTraits):
                  offset=0.,
                  units=t.Undefined,
                  navigate=t.Undefined):
-        super(DataAxis, self).__init__()
+        super().__init__()
         self.events = Events()
         self.events.index_changed = Event("""
             Event that triggers when the index of the `DataAxis` changes
@@ -200,6 +341,11 @@ class DataAxis(t.HasTraits):
         else:
             return value
 
+    def _parse_string_for_slice(self, value):
+        if isinstance(value, str):
+            value = self._get_index_from_value_with_units(value)
+        return value
+
     def _get_array_slices(self, slice_):
         """Returns a slice to slice the corresponding data axis without
         changing the offset and scale of the DataAxis.
@@ -226,6 +372,10 @@ class DataAxis(t.HasTraits):
                 start = self._get_positive_index(slice_)
             stop = start + 1
             step = None
+
+        start = self._parse_string_for_slice(start)
+        stop = self._parse_string_for_slice(stop)
+        step = self._parse_string_for_slice(step)
 
         if isfloat(step):
             step = int(round(step / self.scale))
@@ -460,6 +610,22 @@ class DataAxis(t.HasTraits):
             self.trait_set(**changed)
             any_changes = True
         return any_changes
+
+    @property
+    def scale_as_quantity(self):
+        return self._get_quantity('scale')
+
+    @scale_as_quantity.setter
+    def scale_as_quantity(self, value):
+        self._set_quantity(value, 'scale')
+
+    @property
+    def offset_as_quantity(self):
+        return self._get_quantity('offset')
+
+    @offset_as_quantity.setter
+    def offset_as_quantity(self, value):
+        self._set_quantity(value, 'offset')
 
 
 @add_gui_method(toolkey="AxesManager")
@@ -825,6 +991,103 @@ class AxesManager(t.HasTraits):
     def _on_offset_changed(self):
         self.events.any_axis_changed.trigger(obj=self)
 
+    def convert_units(self, axes=None, units=None, same_units=True,
+                      factor=0.25):
+        """ Convert the scale and the units of the selected axes. If the unit
+        of measure is not supported by the pint library, the scale and units
+        are not changed.
+
+        Parameters
+        ----------
+        axes : {int | string | iterable of `DataAxis` | None}
+            Default = None
+            Convert to a convenient scale and units on the specified axis.
+            If int, the axis can be specified using the index of the
+            axis in `axes_manager`.
+            If string, argument can be `navigation` or `signal` to select the
+            navigation or signal axes. The axis name can also be provided.
+            If `None`, convert all axes.
+        units : {list of string of the same length than axes | str | None}
+            Default = None
+            If list, the selected axes will be converted to the provided units.
+            If str, the navigation or signal axes will be converted to the
+            provided units.
+            If `None`, the scale and the units are converted to the appropriate
+            scale and units to avoid displaying scalebar with >3 digits or too
+            small number. This can be tweaked by the `factor` argument.
+        same_units : bool
+            If `True`, force to keep the same units if the units of
+            the axes differs. It only applies for the same kind of axis,
+            `navigation` or `signal`. By default the converted units of the
+            first axis is used for all axes. If `False`, convert all axes
+            individually.
+        %s
+        """
+        convert_navigation = convert_signal = True
+
+        if axes is None:
+            axes = self.navigation_axes + self.signal_axes
+            convert_navigation = (len(self.navigation_axes) > 0)
+        elif axes == 'navigation':
+            axes = self.navigation_axes
+            convert_signal = False
+            convert_navigation = (len(self.navigation_axes) > 0)
+        elif axes == 'signal':
+            axes = self.signal_axes
+            convert_navigation = False
+        elif isinstance(axes, (DataAxis, int, str)):
+            if not isinstance(axes, DataAxis):
+                axes = self[axes]
+            axes = (axes, )
+            convert_navigation = axes[0].navigate
+            convert_signal = not convert_navigation
+        else:
+            raise TypeError(
+                'Axes type `{}` is not correct.'.format(type(axes)))
+
+        if isinstance(units, str) or units is None:
+            units = [units] * len(axes)
+        elif isinstance(units, list):
+            if len(units) != len(axes):
+                raise ValueError('Length of the provided units list {} should '
+                                 'be the same than the length of the provided '
+                                 'axes {}.'.format(units, axes))
+        else:
+            raise TypeError('Units type `{}` is not correct. It can be a '
+                            '`string`, a `list` of string or `None`.'
+                            ''.format(type(units)))
+
+        if same_units:
+            if convert_navigation:
+                units_nav = units[:self.navigation_dimension]
+                self._convert_axes_to_same_units(self.navigation_axes,
+                                                 units_nav, factor)
+            if convert_signal:
+                offset = self.navigation_dimension if convert_navigation else 0
+                units_sig = units[offset:]
+                self._convert_axes_to_same_units(self.signal_axes,
+                                                 units_sig, factor)
+        else:
+            for axis, unit in zip(axes, units):
+                axis.convert_to_units(unit, factor=factor)
+
+    convert_units.__doc__ %= FACTOR_DOCSTRING
+
+    def _convert_axes_to_same_units(self, axes, units, factor=0.25):
+        # Check if the units are supported
+        for axis in axes:
+            if axis._ignore_conversion(axis.units):
+                return
+
+        # Set the same units for all axes, use the unit of the first axis
+        # as reference
+        axes[0].convert_to_units(units[0], factor=factor)
+        unit = axes[0].units  # after conversion, in case units[0] was None.
+        for axis in axes[1:]:
+            # Convert only the units have the same dimensionality
+            if _ureg(axis.units).dimensionality == _ureg(unit).dimensionality:
+                axis.convert_to_units(unit, factor=factor)
+
     def update_axes_attributes_from(self, axes,
                                     attributes=["scale", "offset", "units"]):
         """Update the axes attributes to match those given.
@@ -925,27 +1188,62 @@ class AxesManager(t.HasTraits):
             axis.navigate = tl.pop(0)
 
     def key_navigator(self, event):
-        if len(self.navigation_axes) not in (1, 2):
+        'Set hotkeys for controlling the indices of the navigator plot'
+
+        if self.navigation_dimension == 0:
+            # No hotkeys exist that do anything in this case
             return
-        x = self.navigation_axes[0]
-        try:
-            if event.key == "right" or event.key == "6":
-                x.index += self._step
-            elif event.key == "left" or event.key == "4":
-                x.index -= self._step
-            elif event.key == "pageup":
-                self._step += 1
-            elif event.key == "pagedown":
-                if self._step > 1:
-                    self._step -= 1
-            if len(self.navigation_axes) == 2:
-                y = self.navigation_axes[1]
-                if event.key == "up" or event.key == "8":
-                    y.index -= self._step
-                elif event.key == "down" or event.key == "2":
-                    y.index += self._step
-        except TraitError:
-            pass
+
+        # keyDict values are (axis_index, direction)
+        # Using arrow keys without Ctrl will be deprecated in 2.0
+        mod01 = preferences.Plot.modifier_dims_01
+        mod23 = preferences.Plot.modifier_dims_23
+        mod45 = preferences.Plot.modifier_dims_45
+
+        dim0_decrease = mod01 + '+' + preferences.Plot.dims_024_decrease
+        dim0_increase = mod01 + '+' + preferences.Plot.dims_024_increase
+        dim1_decrease = mod01 + '+' + preferences.Plot.dims_135_decrease
+        dim1_increase = mod01 + '+' + preferences.Plot.dims_135_increase
+        dim2_decrease = mod23 + '+' + preferences.Plot.dims_024_decrease
+        dim2_increase = mod23 + '+' + preferences.Plot.dims_024_increase
+        dim3_decrease = mod23 + '+' + preferences.Plot.dims_135_decrease
+        dim3_increase = mod23 + '+' + preferences.Plot.dims_135_increase
+        dim4_decrease = mod45 + '+' + preferences.Plot.dims_024_decrease
+        dim4_increase = mod45 + '+' + preferences.Plot.dims_024_increase
+        dim5_decrease = mod45 + '+' + preferences.Plot.dims_135_decrease
+        dim5_increase = mod45 + '+' + preferences.Plot.dims_135_increase
+
+        keyDict = {
+            # axes 0, 1
+            **dict.fromkeys(['left', dim0_decrease, '4'], (0, -1)),
+            **dict.fromkeys(['right', dim0_increase, '6'], (0, +1)),
+            **dict.fromkeys(['up', dim1_decrease, '8'], (1, -1)),
+            **dict.fromkeys(['down', dim1_increase, '2'], (1, +1)),
+            # axes 2, 3
+            **dict.fromkeys([dim2_decrease], (2, -1)),
+            **dict.fromkeys([dim2_increase], (2, +1)),
+            **dict.fromkeys([dim3_decrease], (3, -1)),
+            **dict.fromkeys([dim3_increase], (3, +1)),
+            # axes 4, 5
+            **dict.fromkeys([dim4_decrease], (4, -1)),
+            **dict.fromkeys([dim4_increase], (4, +1)),
+            **dict.fromkeys([dim5_decrease], (5, -1)),
+            **dict.fromkeys([dim5_increase], (5, +1)),
+        }
+
+        if event.key == 'pageup':
+            self._step += 1
+        elif event.key == 'pagedown':
+            if self._step > 1:
+                self._step -= 1
+        else:
+            try:
+                # may raise keyerror
+                axes_index, direction = keyDict[event.key]
+                axes = self.navigation_axes[axes_index]  # may raise indexerror
+                axes.index += direction * self._step  # may raise traiterror
+            except (KeyError, IndexError, TraitError):
+                pass
 
     def copy(self):
         return copy.copy(self)
@@ -1087,8 +1385,14 @@ class AxesManager(t.HasTraits):
                 "The number of coordinates must be equal to the "
                 "navigation dimension that is %i" %
                 self.navigation_dimension)
-        for value, axis in zip(coordinates, self.navigation_axes):
-            axis.value = value
+        changes = False
+        with self.events.indices_changed.suppress():
+            for value, axis in zip(coordinates, self.navigation_axes):
+                changes = changes or (axis.value != value)
+                axis.value = value
+        # Trigger only if the indices are changed
+        if changes:
+            self.events.indices_changed.trigger(obj=self)
 
     @property
     def indices(self):
@@ -1118,8 +1422,14 @@ class AxesManager(t.HasTraits):
                 "The number of indices must be equal to the "
                 "navigation dimension that is %i" %
                 self.navigation_dimension)
-        for index, axis in zip(indices, self.navigation_axes):
-            axis.index = index
+        changes = False
+        with self.events.indices_changed.suppress():
+            for index, axis in zip(indices, self.navigation_axes):
+                changes = changes or (axis.index != index)
+                axis.index = index
+        # Trigger only if the indices are changed
+        if changes:
+            self.events.indices_changed.trigger(obj=self)
 
     def _get_axis_attribute_values(self, attr):
         return [getattr(axis, attr) for axis in self._axes]

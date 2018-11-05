@@ -38,7 +38,6 @@ full_support = False
 # Recognised file extension
 file_extensions = ['blo', 'BLO']
 default_extension = 0
-
 # Writing capabilities:
 writes = [(2, 2), (2, 1), (2, 0)]
 magics = [0x0102]
@@ -107,23 +106,29 @@ def get_header_from_signal(signal, endianess='<'):
         note = signal.original_metadata['blockfile_header']['Note']
     else:
         note = ''
-    if signal.axes_manager.navigation_dimension == 2:
-        NX, NY = signal.axes_manager.navigation_shape
-        SX = signal.axes_manager.navigation_axes[0].scale
-        SY = signal.axes_manager.navigation_axes[1].scale
-    elif signal.axes_manager.navigation_dimension == 1:
-        NX = signal.axes_manager.navigation_shape[0]
+    # The navigation and signal units are 'nm' and 'cm', respectively, so we
+    # convert the units accordingly before saving the signal
+    axes_manager = signal.axes_manager.deepcopy()
+    axes_manager.convert_units('navigation', 'nm')
+    axes_manager.convert_units('signal', 'cm')
+
+    if axes_manager.navigation_dimension == 2:
+        NX, NY = axes_manager.navigation_shape
+        SX = axes_manager.navigation_axes[0].scale
+        SY = axes_manager.navigation_axes[1].scale
+    elif axes_manager.navigation_dimension == 1:
+        NX = axes_manager.navigation_shape[0]
         NY = 1
-        SX = signal.axes_manager.navigation_axes[0].scale
+        SX = axes_manager.navigation_axes[0].scale
         SY = SX
-    elif signal.axes_manager.navigation_dimension == 0:
+    elif axes_manager.navigation_dimension == 0:
         NX = NY = SX = SY = 1
 
-    DP_SZ = signal.axes_manager.signal_shape
+    DP_SZ = axes_manager.signal_shape
     if DP_SZ[0] != DP_SZ[1]:
         raise ValueError('Blockfiles require signal shape to be square!')
     DP_SZ = DP_SZ[0]
-    SDP = 100. / signal.axes_manager.signal_axes[0].scale
+    SDP = 100. / axes_manager.signal_axes[0].scale
 
     offset2 = NX * NY + header['Data_offset_1']
     # Based on inspected files, the DPs are stored at 16-bit boundary...
@@ -166,9 +171,9 @@ def file_reader(filename, endianess='<', mmap_mode=None,
     # It seems it uses "\x00" for padding, so we remove it
     try:
         header['Note'] = note.decode("latin1").strip("\x00")
-    except:
+    except BaseException:
         # Not sure about the encoding so, if it fails, we carry on
-        _logger.warn(
+        _logger.warning(
             "Reading the Note metadata of this file failed. "
             "You can help improving "
             "HyperSpy by reporting the issue in "

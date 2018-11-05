@@ -2,10 +2,10 @@ from unittest import mock
 import sys
 
 import numpy as np
-import numpy.random
 import dask.array as da
-from numpy.testing import assert_array_equal, assert_allclose
+from numpy.testing import assert_array_equal, assert_almost_equal
 import pytest
+import numpy.testing as nt
 
 from hyperspy import signals
 from hyperspy.decorators import lazifyTestClass
@@ -14,7 +14,7 @@ from hyperspy.components1d import Gaussian
 
 
 def _verify_test_sum_x_E(self, s):
-    np.testing.assert_array_equal(self.signal.data.sum(), s.data)
+    nt.assert_array_equal(self.signal.data.sum(), s.data)
     assert s.data.ndim == 1
     # Check that there is still one signal axis.
     assert s.axes_manager.signal_dimension == 1
@@ -28,19 +28,25 @@ class Test1D:
         gaussian.A.value = 20
         gaussian.sigma.value = 10
         gaussian.centre.value = 50
-        self.signal = signals.Signal1D(gaussian.function(np.arange(0, 100, 0.01)))
+        self.signal = signals.Signal1D(
+            gaussian.function(np.arange(0, 100, 0.01)))
         self.signal.axes_manager[0].scale = 0.01
 
     def test_integrate1D(self):
         integrated_signal = self.signal.integrate1D(axis=0)
         assert np.allclose(integrated_signal.data, 20,)
-        
+
 
 @lazifyTestClass
 class Test2D:
 
     def setup_method(self, method):
-        self.signal = signals.Signal1D(np.arange(5 * 10).reshape(5, 10))
+        self.signal = signals.Signal1D(
+            np.arange(
+                5 *
+                10).reshape(
+                5,
+                10))  # dtype int
         self.signal.axes_manager[0].name = "x"
         self.signal.axes_manager[1].name = "E"
         self.signal.axes_manager[0].scale = 0.5
@@ -48,7 +54,7 @@ class Test2D:
 
     def test_sum_x(self):
         s = self.signal.sum("x")
-        np.testing.assert_array_equal(self.signal.data.sum(0), s.data)
+        nt.assert_array_equal(self.signal.data.sum(0), s.data)
         assert s.data.ndim == 1
         assert s.axes_manager.navigation_dimension == 0
 
@@ -70,47 +76,206 @@ class Test2D:
         s1.crop(0, 2, 4)
         assert m.data_changed.called
         s2.crop("x", 2, 4)
-        np.testing.assert_array_almost_equal(s1.data, s2.data)
+        nt.assert_array_almost_equal(s1.data, s2.data)
 
     def test_crop_int(self):
         s = self.signal
         d = self.data
         s.crop(0, 2, 4)
-        np.testing.assert_array_almost_equal(s.data, d[2:4, :])
+        nt.assert_array_almost_equal(s.data, d[2:4, :])
 
     def test_crop_float(self):
         s = self.signal
         d = self.data
         s.crop(0, 2, 2.)
-        np.testing.assert_array_almost_equal(s.data, d[2:4, :])
+        nt.assert_array_almost_equal(s.data, d[2:4, :])
+
+    def test_crop_float_no_unit_convertion_signal1D(self):
+        # Should convert the unit to eV
+        d = np.arange(5 * 10 * 2000).reshape(5, 10, 2000)
+        s = signals.Signal1D(d)
+        s.axes_manager.signal_axes[0].name = "E"
+        s.axes_manager.signal_axes[0].scale = 0.05
+        s.axes_manager.signal_axes[0].units = "keV"
+        s.crop('E', 0.0, 1.0, convert_units=False)
+        nt.assert_almost_equal(s.axes_manager.signal_axes[0].scale, 0.05)
+        assert s.axes_manager.signal_axes[0].units == "keV"
+        nt.assert_allclose(s.data, d[:, :, :20])
+
+        # Should keep the unit to keV
+        s = signals.Signal1D(d)
+        s.axes_manager.signal_axes[0].name = "E"
+        s.axes_manager.signal_axes[0].scale = 0.05
+        s.axes_manager.signal_axes[0].units = "keV"
+        s.crop('E', 0.0, 50.0, convert_units=False)
+        nt.assert_almost_equal(s.axes_manager.signal_axes[0].scale, 0.05)
+        assert s.axes_manager.signal_axes[0].units == "keV"
+        nt.assert_allclose(s.data, d[:, :, :1000])
+
+    def test_crop_float_unit_convertion_signal1D(self):
+        # Should convert the unit to eV
+        d = np.arange(5 * 10 * 2000).reshape(5, 10, 2000)
+        s = signals.Signal1D(d)
+        s.axes_manager.signal_axes[0].name = "E"
+        s.axes_manager.signal_axes[0].scale = 0.05
+        s.axes_manager.signal_axes[0].units = "keV"
+        s.crop('E', 0.0, 1.0, convert_units=True)
+        nt.assert_almost_equal(s.axes_manager.signal_axes[0].scale, 50.0)
+        assert s.axes_manager.signal_axes[0].units == "eV"
+        nt.assert_allclose(s.data, d[:, :, :20])
+
+        # Should keep the unit to keV
+        s = signals.Signal1D(d)
+        s.axes_manager.signal_axes[0].name = "E"
+        s.axes_manager.signal_axes[0].scale = 0.05
+        s.axes_manager.signal_axes[0].units = "keV"
+        s.crop('E', 0.0, 50.0, convert_units=True)
+        nt.assert_almost_equal(s.axes_manager.signal_axes[0].scale, 0.05)
+        assert s.axes_manager.signal_axes[0].units == "keV"
+        nt.assert_allclose(s.data, d[:, :, :1000])
+
+    def test_crop_float_no_unit_convertion_signal2D(self):
+        # Should convert the unit to nm
+        d = np.arange(512 * 512).reshape(512, 512)
+        s = signals.Signal2D(d)
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[0].scale = 0.01
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].name = 'y'
+        s.axes_manager[1].scale = 0.01
+        s.axes_manager[1].units = 'µm'
+        s.crop(0, 0.0, 0.5, convert_units=False)
+        s.crop(1, 0.0, 0.5, convert_units=False)
+        nt.assert_almost_equal(s.axes_manager[0].scale, 0.01)
+        assert s.axes_manager[0].units == "µm"
+        nt.assert_allclose(s.data, d[:50, :50])
+
+        # Should keep the unit to µm
+        d = np.arange(512 * 512).reshape(512, 512)
+        s = signals.Signal2D(d)
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[0].scale = 0.01
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].name = 'y'
+        s.axes_manager[1].scale = 0.01
+        s.axes_manager[1].units = 'µm'
+        s.crop(0, 0.0, 5.0, convert_units=False)
+        s.crop(1, 0.0, 5.0, convert_units=False)
+        nt.assert_almost_equal(s.axes_manager[0].scale, 0.01)
+        assert s.axes_manager[0].units == "µm"
+        nt.assert_allclose(s.data, d[:500, :500])
+
+    def test_crop_float_unit_convertion_signal2D(self):
+        # Should convert the unit to nm
+        d = np.arange(512 * 512).reshape(512, 512)
+        s = signals.Signal2D(d)
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[0].scale = 0.01
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].name = 'y'
+        s.axes_manager[1].scale = 0.01
+        s.axes_manager[1].units = 'µm'
+        s.crop(0, 0.0, 0.5, convert_units=True)  # also convert the other axis
+        s.crop(1, 0.0, 500.0, convert_units=True)
+        nt.assert_almost_equal(s.axes_manager[0].scale, 10.0)
+        nt.assert_almost_equal(s.axes_manager[1].scale, 10.0)
+        assert s.axes_manager[0].units == 'nm'
+        assert s.axes_manager[1].units == 'nm'
+        nt.assert_allclose(s.data, d[:50, :50])
+
+        # Should keep the unit to µm
+        d = np.arange(512 * 512).reshape(512, 512)
+        s = signals.Signal2D(d)
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[0].scale = 0.01
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].name = 'y'
+        s.axes_manager[1].scale = 0.01
+        s.axes_manager[1].units = 'µm'
+        s.crop(0, 0.0, 5.0, convert_units=True)
+        s.crop(1, 0.0, 5.0, convert_units=True)
+        nt.assert_almost_equal(s.axes_manager[0].scale, 0.01)
+        nt.assert_almost_equal(s.axes_manager[1].scale, 0.01)
+        assert s.axes_manager[0].units == "um"
+        assert s.axes_manager[1].units == "um"
+        nt.assert_allclose(s.data, d[:500, :500])
+
+    def test_crop_image_unit_convertion_signal2D(self):
+        # Should not convert the unit
+        d = np.arange(512 * 512).reshape(512, 512)
+        s = signals.Signal2D(d)
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[0].scale = 0.01
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].name = 'y'
+        s.axes_manager[1].scale = 0.01
+        s.axes_manager[1].units = 'µm'
+        s.crop_image(0, 0.5, 0.0, 0.5)
+        nt.assert_almost_equal(s.axes_manager[0].scale, 0.01)
+        nt.assert_almost_equal(s.axes_manager[1].scale, 0.01)
+        assert s.axes_manager[0].units == 'µm'
+        assert s.axes_manager[1].units == 'µm'
+        nt.assert_allclose(s.data, d[:50, :50])
+
+        # Should convert the unit to nm
+        d = np.arange(512 * 512).reshape(512, 512)
+        s = signals.Signal2D(d)
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[0].scale = 0.01
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].name = 'y'
+        s.axes_manager[1].scale = 0.01
+        s.axes_manager[1].units = 'µm'
+        s.crop_image(0, 0.5, 0.0, 0.5, convert_units=True)
+        nt.assert_almost_equal(s.axes_manager[0].scale, 10.0)
+        nt.assert_almost_equal(s.axes_manager[1].scale, 10.0)
+        assert s.axes_manager[0].units == 'nm'
+        assert s.axes_manager[1].units == 'nm'
+        nt.assert_allclose(s.data, d[:50, :50])
+
+        # Should keep the unit to µm
+        d = np.arange(512 * 512).reshape(512, 512)
+        s = signals.Signal2D(d)
+        s.axes_manager[0].name = 'x'
+        s.axes_manager[0].scale = 0.01
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].name = 'y'
+        s.axes_manager[1].scale = 0.01
+        s.axes_manager[1].units = 'µm'
+        s.crop_image(0, 5.0, 0.0, 5.0, convert_units=True)
+        nt.assert_almost_equal(s.axes_manager[0].scale, 0.01)
+        nt.assert_almost_equal(s.axes_manager[1].scale, 0.01)
+        assert s.axes_manager[0].units == "um"
+        assert s.axes_manager[1].units == "um"
+        nt.assert_allclose(s.data, d[:500, :500])
 
     def test_split_axis0(self):
         result = self.signal.split(0, 2)
         assert len(result) == 2
-        np.testing.assert_array_almost_equal(result[0].data, self.data[:2, :])
-        np.testing.assert_array_almost_equal(result[1].data, self.data[2:4, :])
+        nt.assert_array_almost_equal(result[0].data, self.data[:2, :])
+        nt.assert_array_almost_equal(result[1].data, self.data[2:4, :])
 
     def test_split_axis1(self):
         result = self.signal.split(1, 2)
         assert len(result) == 2
-        np.testing.assert_array_almost_equal(result[0].data, self.data[:, :5])
-        np.testing.assert_array_almost_equal(result[1].data, self.data[:, 5:])
+        nt.assert_array_almost_equal(result[0].data, self.data[:, :5])
+        nt.assert_array_almost_equal(result[1].data, self.data[:, 5:])
 
     def test_split_axisE(self):
         result = self.signal.split("E", 2)
         assert len(result) == 2
-        np.testing.assert_array_almost_equal(result[0].data, self.data[:, :5])
-        np.testing.assert_array_almost_equal(result[1].data, self.data[:, 5:])
+        nt.assert_array_almost_equal(result[0].data, self.data[:, :5])
+        nt.assert_array_almost_equal(result[1].data, self.data[:, 5:])
 
     def test_split_default(self):
         result = self.signal.split()
         assert len(result) == 5
-        np.testing.assert_array_almost_equal(result[0].data, self.data[0])
+        nt.assert_array_almost_equal(result[0].data, self.data[0])
 
     def test_histogram(self):
         result = self.signal.get_histogram(3)
         assert isinstance(result, signals.Signal1D)
-        assert_array_equal(result.data, np.array([17, 16, 17]))
+        nt.assert_array_equal(result.data, np.array([17, 16, 17]))
         assert result.metadata.Signal.binned
 
     def test_estimate_poissonian_noise_copy_data(self):
@@ -121,7 +286,7 @@ class Test2D:
     def test_estimate_poissonian_noise_noarg(self):
         self.signal.estimate_poissonian_noise_variance()
         variance = self.signal.metadata.Signal.Noise_properties.variance
-        np.testing.assert_array_equal(variance.data, self.signal.data)
+        nt.assert_array_equal(variance.data, self.signal.data)
 
     def test_estimate_poissonian_noise_with_args(self):
         self.signal.estimate_poissonian_noise_variance(
@@ -130,8 +295,8 @@ class Test2D:
             gain_offset=1,
             correlation_factor=0.5)
         variance = self.signal.metadata.Signal.Noise_properties.variance
-        np.testing.assert_array_equal(variance.data,
-                                      (self.signal.data * 2 + 1) * 0.5)
+        nt.assert_array_equal(variance.data,
+                              (self.signal.data * 2 + 1) * 0.5)
 
     def test_unfold_image(self):
         s = self.signal
@@ -152,11 +317,17 @@ class Test2D:
         # Just test if it doesn't raise an exception
         self.signal._print_summary()
 
+    def test_print_summary_statistics(self):
+        # Just test if it doesn't raise an exception
+        self.signal.print_summary_statistics()
+        if self.signal._lazy:
+            self.signal.print_summary_statistics(rechunk=False)
+
     def test_numpy_unfunc_one_arg_titled(self):
         self.signal.metadata.General.title = "yes"
         result = np.exp(self.signal)
         assert isinstance(result, signals.Signal1D)
-        np.testing.assert_array_equal(result.data, np.exp(self.signal.data))
+        nt.assert_array_equal(result.data, np.exp(self.signal.data))
         assert result.metadata.General.title == "exp(yes)"
 
     def test_numpy_unfunc_one_arg_untitled(self):
@@ -170,7 +341,7 @@ class Test2D:
         s2.metadata.General.title = "B"
         result = np.add(s1, s2)
         assert isinstance(result, signals.Signal1D)
-        np.testing.assert_array_equal(result.data, np.add(s1.data, s2.data))
+        nt.assert_array_equal(result.data, np.add(s1.data, s2.data))
         assert result.metadata.General.title == "add(A, B)"
 
     def test_numpy_unfunc_two_arg_untitled(self):
@@ -182,13 +353,56 @@ class Test2D:
     def test_numpy_func(self):
         result = np.angle(self.signal)
         assert isinstance(result, np.ndarray)
-        np.testing.assert_array_equal(result, np.angle(self.signal.data))
+        nt.assert_array_equal(result, np.angle(self.signal.data))
+
+    def test_add_gaussian_noise(self):
+        s = self.signal
+        s.change_dtype("float64")
+        kwargs = {}
+        if s._lazy:
+            data = s.data.compute()
+            from dask.array.random import seed, normal
+            kwargs["chunks"] = s.data.chunks
+        else:
+            data = s.data.copy()
+            from numpy.random import seed, normal
+        seed(1)
+        s.add_gaussian_noise(std=1.0)
+        seed(1)
+        if s._lazy:
+            s.compute()
+        np.testing.assert_array_almost_equal(
+            s.data - data, normal(scale=1.0, size=data.shape, **kwargs))
+
+    def test_add_poisson_noise(self):
+        s = self.signal
+        kwargs = {}
+        if s._lazy:
+            data = s.data.compute()
+            from dask.array.random import seed, poisson
+            kwargs["chunks"] = s.data.chunks
+        else:
+            data = s.data.copy()
+            from numpy.random import seed, poisson
+        seed(1)
+        s.add_poissonian_noise(keep_dtype=False)
+        if s._lazy:
+            s.compute()
+        seed(1)
+        np.testing.assert_array_almost_equal(
+            s.data, poisson(lam=data, **kwargs))
+        s.change_dtype("float64")
+        seed(1)
+        s.add_poissonian_noise(keep_dtype=True)
+        if s._lazy:
+            s.compute()
+        assert s.data.dtype == np.dtype("float64")
 
 
 def _test_default_navigation_signal_operations_over_many_axes(self, op):
     s = getattr(self.signal, op)()
     ar = getattr(self.data, op)(axis=(0, 1))
-    np.testing.assert_array_equal(ar, s.data)
+    nt.assert_array_equal(ar, s.data)
     assert s.data.ndim == 1
     assert s.axes_manager.signal_dimension == 1
     assert s.axes_manager.navigation_dimension == 0
@@ -208,7 +422,7 @@ class Test3D:
     def test_indexmin(self):
         s = self.signal.indexmin('E')
         ar = self.data.argmin(2)
-        np.testing.assert_array_equal(ar, s.data)
+        nt.assert_array_equal(ar, s.data)
         assert s.data.ndim == 2
         assert s.axes_manager.signal_dimension == 0
         assert s.axes_manager.navigation_dimension == 2
@@ -216,7 +430,7 @@ class Test3D:
     def test_indexmax(self):
         s = self.signal.indexmax('E')
         ar = self.data.argmax(2)
-        np.testing.assert_array_equal(ar, s.data)
+        nt.assert_array_equal(ar, s.data)
         assert s.data.ndim == 2
         assert s.axes_manager.signal_dimension == 0
         assert s.axes_manager.navigation_dimension == 2
@@ -224,7 +438,7 @@ class Test3D:
     def test_valuemin(self):
         s = self.signal.valuemin('x')
         ar = self.signal.axes_manager['x'].index2value(self.data.argmin(1))
-        np.testing.assert_array_equal(ar, s.data)
+        nt.assert_array_equal(ar, s.data)
         assert s.data.ndim == 2
         assert s.axes_manager.signal_dimension == 1
         assert s.axes_manager.navigation_dimension == 1
@@ -232,7 +446,7 @@ class Test3D:
     def test_valuemax(self):
         s = self.signal.valuemax('x')
         ar = self.signal.axes_manager['x'].index2value(self.data.argmax(1))
-        np.testing.assert_array_equal(ar, s.data)
+        nt.assert_array_equal(ar, s.data)
         assert s.data.ndim == 2
         assert s.axes_manager.signal_dimension == 1
         assert s.axes_manager.navigation_dimension == 1
@@ -263,17 +477,16 @@ class Test3D:
         assert var.data.shape == (1, 2, 6)
         from hyperspy.misc.array_tools import rebin
 
-        if self.signal._lazy:
-            from distutils.version import LooseVersion
-            import dask
-            if LooseVersion(np.__version__) >= "1.12.0" and \
-               LooseVersion(dask.__version__) <= "0.13.0":
-                pytest.skip("Dask not up to date with new numpy")
-
         np.testing.assert_array_equal(rebin(self.signal.data, scale=(2, 2, 1)),
                                       var.data)
         np.testing.assert_array_equal(rebin(self.signal.data, scale=(2, 2, 1)),
                                       new_s.data)
+        if self.signal._lazy:
+            new_s = self.signal.rebin(scale=(2, 2, 1), rechunk=False)
+            np.testing.assert_array_equal(rebin(self.signal.data, scale=(2, 2, 1)),
+                                          var.data)
+            np.testing.assert_array_equal(rebin(self.signal.data, scale=(2, 2, 1)),
+                                          new_s.data)
 
     def test_rebin_no_variance(self):
         new_s = self.signal.rebin(scale=(2, 2, 1))
@@ -286,18 +499,31 @@ class Test3D:
         new_s = self.signal.rebin(scale=(2, 2, 1))
         assert new_s.metadata.Signal.Noise_properties.variance == 0.3
 
+    def test_rebin_dtype(self):
+        s = signals.Signal1D(np.arange(1000).reshape(10, 10, 10))
+        s.change_dtype(np.uint8)
+        s2 = s.rebin(scale=(3, 3, 1), crop=False)
+        assert s.sum() == s2.sum()
+
     def test_swap_axes_simple(self):
         s = self.signal
         if s._lazy:
-            pytest.skip("LazyS do not support axes swapping")
+            chunks = s.data.chunks
         assert s.swap_axes(0, 1).data.shape == (4, 2, 6)
         assert s.swap_axes(0, 2).axes_manager.shape == (6, 2, 4)
-        assert s.swap_axes(0, 2).data.flags['C_CONTIGUOUS']
+        if not s._lazy:
+            assert not s.swap_axes(0, 2).data.flags['C_CONTIGUOUS']
+            assert s.swap_axes(0, 2, optimize=True).data.flags['C_CONTIGUOUS']
+        else:
+            cks = s.data.chunks
+            assert s.swap_axes(0, 1).data.chunks == (cks[1], cks[0], cks[2])
+            # This data shape does not require rechunking
+            assert s.swap_axes(
+                0, 1, optimize=True).data.chunks == (
+                cks[1], cks[0], cks[2])
 
     def test_swap_axes_iteration(self):
         s = self.signal
-        if s._lazy:
-            pytest.skip("LazyS do not support axes swapping")
         s = s.swap_axes(0, 2)
         assert s.axes_manager._getitem_tuple[:2] == (0, 0)
         s.axes_manager.indices = (2, 1)
@@ -443,7 +669,7 @@ class Test4D:
         s = self.s
         diff = s.diff(axis=2, order=2)
         diff_data = np.diff(s.data, n=2, axis=0)
-        np.testing.assert_array_equal(diff.data, diff_data)
+        nt.assert_array_equal(diff.data, diff_data)
 
     def test_diff_axis(self):
         s = self.s
@@ -459,31 +685,21 @@ class Test4D:
         assert self.s.rollaxis("z", "x").data.shape == (4, 3, 5, 6)
 
     def test_unfold_spectrum(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         self.s.unfold()
         assert self.s.data.shape == (60, 6)
 
     def test_unfold_spectrum_returns_true(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         assert self.s.unfold()
 
     def test_unfold_spectrum_signal_returns_false(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         assert not self.s.unfold_signal_space()
 
     def test_unfold_image(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         im.unfold()
         assert im.data.shape == (30, 12)
 
     def test_image_signal_unfolded_deepcopy(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         im.unfold()
         # The following could fail if the constructor was not taking the fact
@@ -492,21 +708,15 @@ class Test4D:
         im.deepcopy()
 
     def test_image_signal_unfolded_false(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         assert not im.metadata._HyperSpy.Folding.signal_unfolded
 
     def test_image_signal_unfolded_true(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         im.unfold()
         assert im.metadata._HyperSpy.Folding.signal_unfolded
 
     def test_image_signal_unfolded_back_to_false(self):
-        if self.s._lazy:
-            pytest.skip("LazyS do not support folding")
         im = self.s.to_signal2D()
         im.unfold()
         im.fold()
@@ -537,7 +747,8 @@ class TestDerivative:
 
     def test_derivative_data(self):
         der = self.s.derivative(axis=0, order=4)
-        assert_allclose(der.data, np.sin(der.axes_manager[0].axis), atol=1e-2)
+        nt.assert_allclose(der.data, np.sin(
+            der.axes_manager[0].axis), atol=1e-2)
 
 
 @lazifyTestClass
@@ -566,6 +777,8 @@ class TestOutArg:
 
     def test_get_histogram(self):
         self._run_single(self.s.get_histogram, self.s, {})
+        if self.s._lazy:
+            self._run_single(self.s.get_histogram, self.s, {"rechunk": False})
 
     def test_sum(self):
         self._run_single(self.s.sum, self.s, dict(axis=('x', 'z')))
@@ -675,7 +888,7 @@ class TestOutArg:
         s.data = np.arange(s.data.size).reshape(s.data.shape)
         s.data = np.ma.masked_array(s.data, mask=mask)
         sr = s.mean(axis=('x', 'z',))
-        np.testing.assert_array_equal(
+        nt.assert_array_equal(
             sr.data.shape, [ax.size for ax in s.axes_manager[('y', 'E')]])
         print(sr.data.tolist())
         ref = [[202.28571428571428, 203.28571428571428, 182.0,
@@ -685,7 +898,7 @@ class TestOutArg:
                [168.0, 161.8, 162.8, 185.4, 197.71428571428572,
                 178.14285714285714],
                [240.0, 184.33333333333334, 260.0, 229.0, 173.2, 167.0]]
-        np.testing.assert_array_equal(sr.data, ref)
+        nt.assert_array_equal(sr.data, ref)
 
     def test_masked_array_sum(self):
         s = self.s
@@ -694,7 +907,18 @@ class TestOutArg:
         mask = (s.data > 0.5)
         s.data = np.ma.masked_array(np.ones_like(s.data), mask=mask)
         sr = s.sum(axis=('x', 'z',))
-        np.testing.assert_array_equal(sr.data.sum(), (~mask).sum())
+        nt.assert_array_equal(sr.data.sum(), (~mask).sum())
+
+    @pytest.mark.parametrize('mask', (True, False))
+    def test_sum_no_navigation_axis(self, mask):
+        s = signals.Signal1D(np.arange(100))
+        if mask:
+            s.data = np.ma.masked_array(s.data, mask=(s < 50))
+        # Since s haven't any navigation axis, it returns the same signal as
+        # default
+        np.testing.assert_array_equal(s, s.sum())
+        # When we specify an axis, it actually takes the sum.
+        np.testing.assert_array_equal(s.data.sum(), s.sum(axis=0))
 
     def test_masked_arrays_out(self):
         s = self.s
@@ -824,7 +1048,8 @@ class TestTranspose:
 
     def test_optimize(self):
         if self.s._lazy:
-            pytest.skip("LazyS do not support optimizations")
+            pytest.skip(
+                "LazyS optimization is tested in test_lazy_tranpose_rechunk")
         t = self.s.transpose(signal_axes=['f', 'a', 'b'], optimize=False)
         assert t.data.base is self.s.data
 
@@ -835,12 +1060,11 @@ class TestTranspose:
 def test_lazy_transpose_rechunks():
     ar = da.ones((50, 50, 256, 256), chunks=(5, 5, 256, 256))
     s = signals.Signal2D(ar).as_lazy()
-    s1 = s.T
-    chunks = s1.data.chunks
-    assert len(chunks[0]) != 1
-    assert len(chunks[1]) != 1
-    assert len(chunks[2]) == 1
-    assert len(chunks[3]) == 1
+    s1 = s.T  # By default it does not rechunk
+    cks = s.data.chunks
+    assert s1.data.chunks == (cks[2], cks[3], cks[0], cks[1])
+    s2 = s.transpose(optimize=True)
+    assert s2.data.chunks != s1.data.chunks
 
 
 def test_lazy_changetype_rechunk():
@@ -860,8 +1084,44 @@ def test_lazy_changetype_rechunk():
     assert chunks_newest == chunks_new
 
 
-def test_spikes_removal_tool():
+def test_lazy_changetype_rechunk_False():
+    ar = da.ones((50, 50, 256, 256), chunks=(5, 5, 256, 256), dtype='uint8')
+    s = signals.Signal2D(ar).as_lazy()
+    s._make_lazy(rechunk=True)
+    assert s.data.dtype is np.dtype('uint8')
+    chunks_old = s.data.chunks
+    s.change_dtype('float', rechunk=False)
+    assert s.data.dtype is np.dtype('float')
+    assert chunks_old == s.data.chunks
+
+
+def test_lazy_reduce_rechunk():
+    s = signals.Signal1D(da.ones((10, 100), chunks=(1, 2))).as_lazy()
+    reduce_methods = (s.sum, s.mean, s.max, s.std, s.var, s.nansum, s.nanmax, s.nanmin,
+                      s.nanmean, s.nanstd, s.nanvar, s.indexmin, s.indexmax, s.valuemax,
+                      s.valuemin)
+    for rm in reduce_methods:
+        assert rm(
+            axis=0).data.chunks == (
+            (100,),)  # The data has been rechunked
+        assert rm(
+            axis=0, rechunk=False).data.chunks == (
+            (2,) * 50,)  # The data has not been rechunked
+
+
+def test_lazy_diff_rechunk():
+    s = signals.Signal1D(da.ones((10, 100), chunks=(1, 2))).as_lazy()
+    for rm in (s.derivative, s.diff):
+        # The data has been rechunked
+        assert rm(axis=-1).data.chunks == ((10,), (99,))
+        assert rm(axis=-1, rechunk=False).data.chunks == ((1,) *
+                                                          10, (1,) * 99)  # The data has not been rechunked
+
+
+def test_spikes_removal_tool(mpl_cleanup):
     s = signals.Signal1D(np.ones((2, 3, 30)))
+    np.random.seed(1)
+    s.add_gaussian_noise(1E-5)
     # Add three spikes
     s.data[1, 0, 1] += 2
     s.data[0, 2, 29] += 1
@@ -881,17 +1141,18 @@ def test_spikes_removal_tool():
     assert s.axes_manager.indices == (2, 0)
     sr.add_noise = False
     sr.apply()
-    assert s.data[0, 2, 29] == 1
+    assert_almost_equal(s.data[0, 2, 29], 1, decimal=5)
     assert s.axes_manager.indices == (0, 1)
     sr.apply()
-    assert s.data[1, 0, 1] == 1
+    assert_almost_equal(s.data[1, 0, 1], 1, decimal=5)
     assert s.axes_manager.indices == (2, 1)
     np.random.seed(1)
     sr.add_noise = True
+    sr.default_spike_width = 3
     sr.interpolator_kind = "Spline"
     sr.spline_order = 3
     sr.apply()
-    assert s.data[1, 2, 14] == 0
+    assert_almost_equal(s.data[1, 2, 14], 1, decimal=5)
     assert s.axes_manager.indices == (0, 0)
 
 
@@ -901,21 +1162,21 @@ class TestLinearRebin:
         spectrum = signals.EDSTEMSpectrum(np.ones([3, 5, 1]))
         scale = (1.5, 2.5, 1)
         res = spectrum.rebin(scale=scale, crop=True)
-        np.testing.assert_allclose(res.data, 3.75 * np.ones((1, 3, 1)))
+        nt.assert_allclose(res.data, 3.75 * np.ones((1, 3, 1)))
         for axis in res.axes_manager._axes:
             assert scale[axis.index_in_axes_manager] == axis.scale
         res = spectrum.rebin(scale=scale, crop=False)
-        np.testing.assert_allclose(res.data.sum(), spectrum.data.sum())
+        nt.assert_allclose(res.data.sum(), spectrum.data.sum())
 
     def test_linear_upsize(self):
         spectrum = signals.EDSTEMSpectrum(np.ones([4, 5, 10]))
         scale = [0.3, 0.2, .5]
         res = spectrum.rebin(scale=scale)
-        np.testing.assert_allclose(res.data, 0.03 * np.ones((20, 16, 20)))
+        nt.assert_allclose(res.data, 0.03 * np.ones((20, 16, 20)))
         for axis in res.axes_manager._axes:
             assert scale[axis.index_in_axes_manager] == axis.scale
         res = spectrum.rebin(scale=scale, crop=False)
-        np.testing.assert_allclose(res.data.sum(), spectrum.data.sum())
+        nt.assert_allclose(res.data.sum(), spectrum.data.sum())
 
     def test_linear_downscale_out(self):
         spectrum = signals.EDSTEMSpectrum(np.ones([4, 1, 1]))
@@ -923,10 +1184,10 @@ class TestLinearRebin:
         res = spectrum.rebin(scale=scale)
         spectrum.data[2][0] = 5
         spectrum.rebin(scale=scale, out=res)
-        np.testing.assert_allclose(res.data, [[[0.4]],
-                                              [[0.4]], [[0.4]], [
-                                                  [0.4]], [[0.4]], [[2.]],
-                                              [[2.]], [[1.2]], [[0.4]], [[0.4]]])
+        nt.assert_allclose(res.data, [[[0.4]],
+                                      [[0.4]], [[0.4]], [
+            [0.4]], [[0.4]], [[2.]],
+            [[2.]], [[1.2]], [[0.4]], [[0.4]]])
         for axis in res.axes_manager._axes:
             assert scale[axis.index_in_axes_manager] == axis.scale
 
@@ -936,9 +1197,9 @@ class TestLinearRebin:
         res = spectrum.rebin(scale=scale)
         spectrum.data[2][0] = 5
         spectrum.rebin(scale=scale, out=res)
-        np.testing.assert_allclose(res.data, [[[0.4]],
-                                              [[0.4]], [[0.4]], [
-                                                  [0.4]], [[0.4]], [[2.]],
-                                              [[2.]], [[1.2]], [[0.4]], [[0.4]]], atol=1e-3)
+        nt.assert_allclose(res.data, [[[0.4]],
+                                      [[0.4]], [[0.4]], [
+            [0.4]], [[0.4]], [[2.]],
+            [[2.]], [[1.2]], [[0.4]], [[0.4]]], atol=1e-3)
         for axis in res.axes_manager._axes:
             assert scale[axis.index_in_axes_manager] == axis.scale

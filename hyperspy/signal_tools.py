@@ -32,7 +32,6 @@ from hyperspy.axes import AxesManager
 from hyperspy.drawing.widgets import VerticalLineWidget
 from hyperspy import components1d
 from hyperspy.component import Component
-from hyperspy import drawing
 from hyperspy.ui_registry import add_gui_method
 
 _logger = logging.getLogger(__name__)
@@ -58,7 +57,7 @@ class SpanSelectorInSignal1D(t.HasTraits):
         pass
 
     def span_selector_switch(self, on):
-        if not self.signal._plot.is_active():
+        if not self.signal._plot.is_active:
             return
 
         if on is True:
@@ -74,11 +73,16 @@ class SpanSelectorInSignal1D(t.HasTraits):
             self.span_selector = None
 
     def update_span_selector_traits(self, *args, **kwargs):
-        if not self.signal._plot.is_active():
+        if not self.signal._plot.is_active:
             return
-        self.ss_left_value = self.span_selector.rect.get_x()
-        self.ss_right_value = self.ss_left_value + \
-            self.span_selector.rect.get_width()
+        x0 = self.span_selector.rect.get_x()
+        if x0 < self.axis.low_value:
+            x0 = self.axis.low_value
+        self.ss_left_value = x0
+        x1 = self.ss_left_value + self.span_selector.rect.get_width()
+        if x1 > self.axis.high_value:
+            x1 = self.axis.high_value
+        self.ss_right_value = x1
 
     def reset_span_selector(self):
         self.span_selector_switch(False)
@@ -136,7 +140,7 @@ class LineInSignal1D(t.HasTraits):
         self.signal._plot.signal_plot.figure.canvas.draw_idle()
 
     def switch_on_off(self, obj, trait_name, old, new):
-        if not self.signal._plot.is_active():
+        if not self.signal._plot.is_active:
             return
 
         if new is True and old is False:
@@ -153,7 +157,7 @@ class LineInSignal1D(t.HasTraits):
             self.draw()
 
     def update_position(self, *args, **kwargs):
-        if not self.signal._plot.is_active():
+        if not self.signal._plot.is_active:
             return
         self.position = self.axes_manager.coordinates[0]
 
@@ -212,12 +216,12 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
 
     def apply(self):
         if np.isnan(self.ss_left_value) or np.isnan(self.ss_right_value):
-            _logger.warn("Select a range by clicking on the signal figure "
-                         "and dragging before pressing Apply.")
+            _logger.warning("Select a range by clicking on the signal figure "
+                            "and dragging before pressing Apply.")
             return
         elif self.left_value is t.Undefined or self.right_value is t.Undefined:
-            _logger.warn("Select the new left and right values before "
-                         "pressing apply.")
+            _logger.warning("Select the new left and right values before "
+                            "pressing apply.")
             return
         axis = self.axis
         axis.scale = self.scale
@@ -255,7 +259,7 @@ class Smoothing(t.HasTraits):
                 try:
                     # PySide
                     return np.array(self.line_color.getRgb()) / 255.
-                except:
+                except BaseException:
                     return matplotlib.colors.to_rgb(self.line_color_ipy)
         else:
             return matplotlib.colors.to_rgb(self.line_color_ipy)
@@ -270,8 +274,7 @@ class Smoothing(t.HasTraits):
         self.plot()
 
     def plot(self):
-        if self.signal._plot is None or not \
-                self.signal._plot.is_active():
+        if self.signal._plot is None or not self.signal._plot.is_active:
             self.signal.plot()
         hse = self.signal._plot
         l1 = hse.signal_plot.ax_lines[0]
@@ -300,13 +303,13 @@ class Smoothing(t.HasTraits):
 
         self.signal._plot.signal_plot.create_right_axis()
         self.smooth_diff_line = drawing.signal1d.Signal1DLine()
+        self.smooth_diff_line.axes_manager = self.signal.axes_manager
         self.smooth_diff_line.data_function = self.diff_model2plot
         self.smooth_diff_line.set_line_properties(
             color=self.line_color_rgb,
             type='line')
         self.signal._plot.signal_plot.add_line(self.smooth_diff_line,
                                                ax='right')
-        self.smooth_diff_line.axes_manager = self.signal.axes_manager
 
     def _line_color_ipy_changed(self):
         if hasattr(self, "line_color"):
@@ -321,13 +324,14 @@ class Smoothing(t.HasTraits):
         self.smooth_diff_line = None
 
     def _differential_order_changed(self, old, new):
-        if old == 0:
-            self.turn_diff_line_on(new)
-            self.smooth_diff_line.plot()
         if new == 0:
             self.turn_diff_line_off()
             return
-        self.smooth_diff_line.update(force_replot=False)
+        if old == 0:
+            self.turn_diff_line_on(new)
+            self.smooth_diff_line.plot()
+        else:
+            self.smooth_diff_line.update(force_replot=False)
 
     def _line_color_changed(self, old, new):
         self.smooth_line.line_properties = {
@@ -335,7 +339,12 @@ class Smoothing(t.HasTraits):
         if self.smooth_diff_line is not None:
             self.smooth_diff_line.line_properties = {
                 'color': self.line_color_rgb}
-        self.update_lines()
+        try:
+            # it seems that changing the properties can be done before the
+            # first rendering event, which can cause issue with blitting
+            self.update_lines()
+        except AttributeError:
+            pass
 
     def diff_model2plot(self, axes_manager=None):
         smoothed = np.diff(self.model2plot(axes_manager),
@@ -343,7 +352,7 @@ class Smoothing(t.HasTraits):
         return smoothed
 
     def close(self):
-        if self.signal._plot.is_active():
+        if self.signal._plot.is_active:
             if self.differential_order != 0:
                 self.turn_diff_line_off()
             self.smooth_line.close()
@@ -383,13 +392,13 @@ class SmoothingSavitzkyGolay(Smoothing):
         if nwl > self.polynomial_order:
             self.window_length = nwl
         else:
-            _logger.warn(
+            _logger.warning(
                 "The window length must be greater than the polynomial order")
 
     def _polynomial_order_changed(self, old, new):
         if self.window_length <= new:
             self.window_length = new + 2 if new % 2 else new + 1
-            _logger.warn(
+            _logger.warning(
                 "Polynomial order must be < window length. "
                 "Window length set to %i.", self.window_length)
         self.update_lines()
@@ -400,7 +409,7 @@ class SmoothingSavitzkyGolay(Smoothing):
     def _differential_order_changed(self, old, new):
         if new > self.polynomial_order:
             self.polynomial_order += 1
-            _logger.warn(
+            _logger.warning(
                 "Differential order must be <= polynomial order. "
                 "Polynomial order set to %i.", self.polynomial_order)
         super(
@@ -608,11 +617,8 @@ class IntegrateArea(SpanSelectorInSignal1D):
         self.signal = signal
         self.axis = self.signal.axes_manager.signal_axes[0]
         self.span_selector = None
-        if not hasattr(self.signal, '_plot'):
-            self.signal.plot()
-        elif self.signal._plot is None:
-            self.signal.plot()
-        elif self.signal._plot.is_active() is False:
+        if (not hasattr(self.signal, '_plot') or self.signal._plot is None or
+                not self.signal._plot.is_active):
             self.signal.plot()
         self.span_selector_switch(on=True)
 
@@ -647,7 +653,14 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
     fast = t.Bool(True,
                   desc=("Perform a fast (analytic, but possibly less accurate)"
                         " estimation of the background. Otherwise use "
-                        "non-linear least squares."))
+                        "use non-linear least squares."))
+    zero_fill = t.Bool(
+        False,
+        desc=("Set all spectral channels lower than the lower \n"
+              "bound of the fitting range to zero (this is the \n"
+              "default behavior of Gatan's DigitalMicrograph). \n"
+              "Otherwise leave the pre-fitting region as-is \n"
+              "(useful for inspecting quality of background fit)."))
     background_estimator = t.Instance(Component)
     bg_line_range = t.Enum('from_left_range',
                            'full',
@@ -655,18 +668,31 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                            default='full')
     hi = t.Int(0)
 
-    def __init__(self, signal):
+    def __init__(self, signal, background_type='Power Law', polynomial_order=2,
+                 fast=True, plot_remainder=True, zero_fill=False,
+                 show_progressbar=None):
         super(BackgroundRemoval, self).__init__(signal)
+        # setting the polynomial order will change the backgroud_type to
+        # polynomial, so we set it before setting the background type
+        self.polynomial_order = polynomial_order
+        self.background_type = background_type
         self.set_background_estimator()
+        self.fast = fast
+        self.plot_remainder = plot_remainder
+        self.zero_fill = zero_fill
+        self.show_progressbar = show_progressbar
         self.bg_line = None
+        self.rm_line = None
 
     def on_disabling_span_selector(self):
         if self.bg_line is not None:
             self.bg_line.close()
             self.bg_line = None
+        if self.rm_line is not None:
+            self.rm_line.close()
+            self.rm_line = None
 
     def set_background_estimator(self):
-
         if self.background_type == 'Power Law':
             self.background_estimator = components1d.PowerLaw()
             self.bg_line_range = 'from_left_range'
@@ -708,6 +734,17 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.bg_line.autoscale = False
         self.bg_line.plot()
 
+    def create_remainder_line(self):
+        self.rm_line = drawing.signal1d.Signal1DLine()
+        self.rm_line.data_function = self.rm_to_plot
+        self.rm_line.set_line_properties(
+            color='green',
+            type='line',
+            scaley=False)
+        self.signal._plot.signal_plot.add_line(self.rm_line)
+        self.rm_line.autoscale = False
+        self.rm_line.plot()
+
     def bg_to_plot(self, axes_manager=None, fill_with=np.nan):
         # First try to update the estimation
         self.background_estimator.estimate_parameters(
@@ -736,20 +773,30 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             to_return *= self.axis.scale
         return to_return
 
+    def rm_to_plot(self, axes_manager=None, fill_with=np.nan):
+        return self.signal() - self.bg_line.line.get_ydata()
+
     def span_selector_changed(self):
         if self.ss_left_value is np.nan or self.ss_right_value is np.nan or\
                 self.ss_right_value <= self.ss_left_value:
             return
         if self.background_estimator is None:
             return
-        if self.bg_line is None and \
-            self.background_estimator.estimate_parameters(
-                self.signal, self.ss_left_value,
-                self.ss_right_value,
-                only_current=True) is True:
-            self.create_background_line()
+        res = self.background_estimator.estimate_parameters(
+            self.signal, self.ss_left_value,
+            self.ss_right_value,
+            only_current=True)
+        if self.bg_line is None:
+            if res:
+                self.create_background_line()
         else:
             self.bg_line.update()
+        if self.plot_remainder:
+            if self.rm_line is None:
+                if res:
+                    self.create_remainder_line()
+            else:
+                self.rm_line.update()
 
     def apply(self):
         if self.signal._plot:
@@ -763,7 +810,9 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             signal_range=(self.ss_left_value, self.ss_right_value),
             background_type=background_type,
             fast=self.fast,
-            polynomial_order=self.polynomial_order)
+            zero_fill=self.zero_fill,
+            polynomial_order=self.polynomial_order,
+            show_progressbar=self.show_progressbar)
         self.signal.data = new_spectra.data
         self.signal.events.data_changed.trigger(self)
         if plot:
@@ -912,14 +961,15 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self._reset_line()
         ncoordinates = len(self.coordinates)
         spike = self.detect_spike()
-        while not spike and (
-                (self.index < ncoordinates - 1 and back is False) or
-                (self.index > 0 and back is True)):
-            if back is False:
-                self.index += 1
-            else:
-                self.index -= 1
-            spike = self.detect_spike()
+        with self.signal.axes_manager.events.indices_changed.suppress():
+            while not spike and (
+                    (self.index < ncoordinates - 1 and back is False) or
+                    (self.index > 0 and back is True)):
+                if back is False:
+                    self.index += 1
+                else:
+                    self.index -= 1
+                spike = self.detect_spike()
 
         if spike is False:
             m = SimpleMessage()
@@ -930,6 +980,8 @@ class SpikesRemoval(SpanSelectorInSignal1D):
                 # This is only available for traitsui, ipywidgets has a
                 # progress bar instead.
                 pass
+            except ValueError as error:
+                _logger.warning(error)
             self.index = 0
             self._reset_line()
             return
@@ -958,7 +1010,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self.reset_span_selector()
         self.update_spectrum_line()
         if len(self.coordinates) > 1:
-            self.signal._plot.pointer._update_patch_position()
+            self.signal._plot.pointer._on_navigate(self.signal.axes_manager)
 
     def update_spectrum_line(self):
         self.line.auto_update = True
@@ -1004,6 +1056,7 @@ class SpikesRemoval(SpanSelectorInSignal1D):
             color='blue',
             type='line')
         self.signal._plot.signal_plot.add_line(self.interpolated_line)
+        self.interpolated_line.auto_update = False
         self.interpolated_line.autoscale = False
         self.interpolated_line.plot()
 

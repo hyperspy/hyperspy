@@ -19,9 +19,10 @@ import numpy as np
 import pytest
 
 from hyperspy.misc.test_utils import update_close_figure, sanitize_dict
-from hyperspy.signals import Signal2D, Signal1D
-from hyperspy.utils import markers
+from hyperspy.signals import Signal2D, Signal1D, BaseSignal
+from hyperspy.utils import markers, stack
 from hyperspy.drawing.marker import dict2marker
+from hyperspy.datasets.example_signals import EDS_TEM_Spectrum
 
 
 default_tol = 2.0
@@ -462,3 +463,64 @@ def test_plot_line_markers(mpl_cleanup):
 @update_close_figure
 def test_plot_line_markers_close():
     return _test_plot_line_markers()
+
+
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_eds_lines():
+    a = EDS_TEM_Spectrum()
+    s = stack([a, a * 5])
+    s.plot(True)
+    s.axes_manager.navigation_axes[0].index = 1
+    return s._plot.signal_plot.figure
+
+
+def test_iterate_markers():
+    from skimage.feature import peak_local_max
+    import scipy.misc
+    ims = BaseSignal(scipy.misc.face()).as_signal2D([1, 2])
+    index = np.array([peak_local_max(im.data, min_distance=100,
+                                     num_peaks=4) for im in ims])
+    # Add multiple markers
+    for i in range(4):
+        xs = index[:, i, 1]
+        ys = index[:, i, 0]
+        m = markers.point(x=xs, y=ys, color='red')
+        ims.add_marker(m, plot_marker=True, permanent=True)
+        m = markers.text(x=10 + xs, y=10 + ys, text=str(i), color='k')
+        ims.add_marker(m, plot_marker=True, permanent=True)
+    xs = index[:, :, 1]
+    ys = index[:, :, 0]
+    m = markers.rectangle(np.min(xs, 1),
+                          np.min(ys, 1),
+                          np.max(xs, 1),
+                          np.max(ys, 1),
+                          color='green')
+    ims.add_marker(m, plot_marker=True, permanent=True)
+
+    for im in ims:
+        m_original = ims.metadata.Markers
+        m_iterated = im.metadata.Markers
+        for key in m_original.keys():
+            mo = m_original[key]
+            mi = m_iterated[key]
+            assert mo.__class__.__name__ == mi.__class__.__name__
+            assert mo.name == mi.name
+            assert mo.get_data_position('x1') == mi.get_data_position('x1')
+            assert mo.get_data_position('y1') == mi.get_data_position('y1')
+            assert mo.get_data_position('text') == mi.get_data_position('text')
+            assert mo.marker_properties['color'] == \
+                mi.marker_properties['color']
+
+
+@update_close_figure
+def test_plot_eds_markers_close():
+    s = EDS_TEM_Spectrum()
+    s.plot(True)
+    return s
+
+
+def test_plot_eds_markers_no_energy():
+    s = EDS_TEM_Spectrum()
+    del s.metadata.Acquisition_instrument.TEM.beam_energy
+    s.plot(True)

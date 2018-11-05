@@ -37,12 +37,10 @@ _logger = logging.getLogger(__name__)
 format_name = 'HSPY'
 description = \
     'The default file format for HyperSpy based on the HDF5 standard'
-
 full_support = False
 # Recognised file extension
 file_extensions = ['hspy', 'hdf5']
 default_extension = 0
-
 # Writing capabilities
 writes = True
 version = "3.0"
@@ -475,7 +473,7 @@ def dict2hdfgroup(dictionary, group, **kwds):
         else:
             try:
                 group.attrs[key] = value
-            except:
+            except BaseException:
                 _logger.exception(
                     "The hdf5 writer could not write the following "
                     "information in the file: %s : %s", key, value)
@@ -527,11 +525,14 @@ def get_signal_chunks(shape, dtype, signal_axes=None):
     return tuple(int(x) for x in chunks)
 
 
-def overwrite_dataset(group, data, key, signal_axes=None, **kwds):
-    if signal_axes is None:
-        chunks = True
-    else:
-        chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
+def overwrite_dataset(group, data, key, signal_axes=None, chunks=None, **kwds):
+    if chunks is None:
+        if signal_axes is None:
+            # Use automatic h5py chunking
+            chunks = True
+        else:
+            # Optimise the chunking to contain at least one signal per chunk
+            chunks = get_signal_chunks(data.shape, data.dtype, signal_axes)
 
     maxshape = tuple(None for _ in data.shape)
 
@@ -546,6 +547,8 @@ def overwrite_dataset(group, data, key, signal_axes=None, **kwds):
                                    chunks=chunks,
                                    shuffle=True,))
 
+            # If chunks is True, the `chunks` attribute of `dset` below
+            # contains the chunk shape guessed by h5py
             dset = group.require_dataset(key, **these_kwds)
             got_data = True
         except TypeError:
@@ -556,10 +559,13 @@ def overwrite_dataset(group, data, key, signal_axes=None, **kwds):
         # just a reference to already created thing
         pass
     else:
+        _logger.info("Chunks used for saving: %s" % str(dset.chunks))
         if isinstance(data, da.Array):
             da.store(data.rechunk(dset.chunks), dset)
+        elif data.flags.c_contiguous:
+            dset.write_direct(data)
         else:
-            da.store(da.from_array(data, chunks=dset.chunks), dset)
+            dset[:] = data
 
 
 def hdfgroup2dict(group, dictionary=None, lazy=False):
@@ -727,7 +733,7 @@ def file_writer(filename,
             smd.record_by = ""
         try:
             write_signal(signal, expg, **kwds)
-        except:
+        except BaseException:
             raise
         finally:
             del smd.record_by

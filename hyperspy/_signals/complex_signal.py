@@ -94,8 +94,12 @@ class ComplexSignal_mixin:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if not np.issubdtype(self.data.dtype, complex):
-            self.data = self.data.astype(complex)
+        # _plot_kwargs store the plot kwargs argument for convenience when
+        # plotting ROI in order to use the same plotting options than the
+        # original plot
+        self._plot_kwargs = {}
+        if not np.issubdtype(self.data.dtype, np.complexfloating):
+            self.data = self.data.astype(np.complexfloating)
 
     def change_dtype(self, dtype):
         """Change the data type.
@@ -107,7 +111,7 @@ class ComplexSignal_mixin:
             complex dtypes are allowed. If real valued properties are required use `real`,
             `imag`, `amplitude` and `phase` instead.
         """
-        if np.issubdtype(dtype, complex):
+        if np.issubdtype(dtype, np.complexfloating):
             self.data = self.data.astype(dtype)
         else:
             raise AttributeError(
@@ -115,8 +119,8 @@ class ComplexSignal_mixin:
 
     @format_title('angle')
     def angle(self, angle, deg=False):
-        """Return the angle (also known as phase or argument). If the data is real, the angle is 0
-        for positive values and 2$\pi$ for negative values.
+        r"""Return the angle (also known as phase or argument). If the data is real, the angle is 0
+        for positive values and :math:`2\pi` for negative values.
 
         Parameters
         ----------
@@ -177,25 +181,37 @@ class ComplexSignal_mixin:
             phase.metadata.General.title)
         return phase  # Now unwrapped!
 
-    def plot(self, navigator="auto", axes_manager=None,
-             representation='cartesian', same_axes=True, **kwargs):
+    def __call__(self, axes_manager=None, power_spectrum=False,
+                 fft_shift=False):
+        value = super().__call__(axes_manager=axes_manager,
+                                 fft_shift=fft_shift)
+        if power_spectrum:
+            value = np.abs(value)**2
+        return value
+
+    def plot(self, power_spectrum=False, navigator="auto", axes_manager=None,
+             representation='cartesian', norm="auto", fft_shift=False,
+             same_axes=True, **kwargs):
         """%s
         %s
         %s
 
         """
+        if norm is "auto":
+            norm = 'log' if power_spectrum else 'linear'
+
+        kwargs.update({'norm': norm,
+                       'fft_shift': fft_shift,
+                       'navigator': navigator,
+                       'axes_manager': self.axes_manager})
         if representation == 'cartesian':
-            if same_axes and self.axes_manager.signal_dimension == 1:
+            if ((same_axes and self.axes_manager.signal_dimension == 1) or
+                    power_spectrum):
+                kwargs['power_spectrum'] = power_spectrum
                 super().plot(**kwargs)
             else:
-                self.real.plot(
-                    navigator=navigator,
-                    axes_manager=self.axes_manager,
-                    **kwargs)
-                self.imag.plot(
-                    navigator=navigator,
-                    axes_manager=self.axes_manager,
-                    **kwargs)
+                self.real.plot(**kwargs)
+                self.imag.plot(**kwargs)
         elif representation == 'polar':
             if same_axes and self.axes_manager.signal_dimension == 1:
                 amp = self.amplitude
@@ -203,17 +219,17 @@ class ComplexSignal_mixin:
                 amp.imag = self.phase
                 amp.plot(**kwargs)
             else:
-                self.amplitude.plot(
-                    navigator=navigator,
-                    axes_manager=self.axes_manager,
-                    **kwargs)
-                self.phase.plot(
-                    navigator=navigator,
-                    axes_manager=self.axes_manager,
-                    **kwargs)
+                self.amplitude.plot(**kwargs)
+                self.phase.plot(**kwargs)
         else:
             raise ValueError('{}'.format(representation) +
                              'is not a valid input for representation (use "cartesian" or "polar")!')
+
+        self._plot_kwargs = {'power_spectrum': power_spectrum,
+                             'representation': representation,
+                             'norm': norm,
+                             'fft_shift': fft_shift,
+                             'same_axes': same_axes}
     plot.__doc__ %= BASE_PLOT_DOCSTRING, COMPLEX_DOCSTRING, KWARGS_DOCSTRING
 
 
@@ -265,7 +281,7 @@ class LazyComplexSignal(ComplexSignal, LazySignal):
 
     @format_title('absolute')
     def _get_amplitude(self):
-        amplitude = da.numpy_compat.builtins.abs(self)
+        amplitude = abs(self)
         return super(ComplexSignal, self)._get_amplitude(amplitude)
 
     def _get_phase(self):
@@ -293,7 +309,7 @@ class LazyComplexSignal(ComplexSignal, LazySignal):
     def _set_phase(self, phase):
         if isinstance(phase, BaseSignal):
             phase = phase.data.real
-        self.data = da.numpy_compat.builtins.abs(self.data) * \
+        self.data = abs(self.data) * \
             da.exp(1j * phase)
         self.events.data_changed.trigger(self)
 

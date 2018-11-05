@@ -39,7 +39,7 @@ description = ''
 full_support = False
 file_extensions = ('msa', 'ems', 'mas', 'emsa', 'EMS', 'MAS', 'EMSA', 'MSA')
 default_extension = 0
-
+# Writing capabilities
 writes = [(1, 0), ]
 # ----------------------
 
@@ -198,13 +198,13 @@ def parse_msa_string(string, filename=None):
         if clean_par in keywords:
             try:
                 parameters[parameter] = keywords[clean_par]['dtype'](value)
-            except:
+            except BaseException:
                 # Normally the offending mispelling is a space in the scientic
                 # notation, e.g. 2.0 E-06, so we try to correct for it
                 try:
                     parameters[parameter] = keywords[clean_par]['dtype'](
                         value.replace(' ', ''))
-                except:
+                except BaseException:
                     _logger.exception(
                         "The %s keyword value, %s could not be converted to "
                         "the right type", parameter, value)
@@ -230,16 +230,16 @@ def parse_msa_string(string, filename=None):
         try:
             time = dt.strptime(parameters['TIME'], "%H:%M")
             mapped.set_item('General.time', time.time().isoformat())
-        except:
+        except BaseException:
             if 'TIME' in parameters and parameters['TIME']:
-                _logger.warn('The time information could not be retrieved')
+                _logger.warning('The time information could not be retrieved')
         try:
             date = dt.strptime(parameters['DATE'], "%d-%b-%Y")
             mapped.set_item('General.date', date.date().isoformat())
-        except:
+        except BaseException:
             if 'DATE' in parameters and parameters['DATE']:
-                _logger.warn('The date information could not be retrieved')
-    except:
+                _logger.warning('The date information could not be retrieved')
+    except BaseException:
         warnings.warn("I couldn't read the date information due to"
                       "an unexpected error. Please report this error to "
                       "the developers")
@@ -335,7 +335,7 @@ def file_writer(filename, signal, format=None, separator=', ',
                 if md.has_item("General.time"):
                     time = dt.strptime(md.General.time, "%H:%M:%S")
                     loc_kwds['TIME'] = time.strftime("%H:%M")
-            except:
+            except BaseException:
                 warnings.warn(
                     "I couldn't write the date information due to"
                     "an unexpected error. Please report this error to "

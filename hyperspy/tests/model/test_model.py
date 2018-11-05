@@ -8,6 +8,9 @@ from hyperspy.misc.utils import slugify
 from hyperspy.decorators import lazifyTestClass
 
 
+RTOL = 1E-6
+
+
 class TestModelJacobians:
 
     def setup_method(self, method):
@@ -472,7 +475,7 @@ class TestModel1D:
             getattr(m.components,
                     slugify(g1.name, valid_variable_name=True)) is g1)
 
-    def test_components_class_change_name_del_default(self):
+    def test_components_class_change_name_del_default2(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
         m.append(g1)
@@ -620,13 +623,14 @@ class TestModelFitBinned:
 
     def test_fit_leastsq(self):
         self.m.fit(fitter="leastsq")
-        np.testing.assert_allclose(self.m[0].A.value, 9976.14526082, 1)
-        np.testing.assert_allclose(self.m[0].centre.value, -0.110610727064)
-        np.testing.assert_allclose(self.m[0].sigma.value, 1.98380707571, 5)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14526082, RTOL)
+        np.testing.assert_allclose(
+            self.m[0].centre.value, -0.110610727064, RTOL)
+        np.testing.assert_allclose(self.m[0].sigma.value, 1.98380707571, RTOL)
 
     def test_fit_mpfit(self):
         self.m.fit(fitter="mpfit")
-        np.testing.assert_allclose(self.m[0].A.value, 9976.14526286, 5)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14526286)
         np.testing.assert_allclose(self.m[0].centre.value, -0.110610718444,
                                    atol=1E-6)
         np.testing.assert_allclose(self.m[0].sigma.value, 1.98380707614,
@@ -634,7 +638,7 @@ class TestModelFitBinned:
 
     def test_fit_odr(self):
         self.m.fit(fitter="odr")
-        np.testing.assert_allclose(self.m[0].A.value, 9976.14531979, 3)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14531979)
         np.testing.assert_allclose(self.m[0].centre.value, -0.110610724054,
                                    atol=1e-7)
         np.testing.assert_allclose(self.m[0].sigma.value, 1.98380709939)
@@ -653,7 +657,7 @@ class TestModelFitBinned:
 
     def test_fit_odr_grad(self):
         self.m.fit(fitter="odr", grad=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9976.14531979, 3)
+        np.testing.assert_allclose(self.m[0].A.value, 9976.14531979)
         np.testing.assert_allclose(self.m[0].centre.value, -0.110610724054,
                                    atol=1e-7)
         np.testing.assert_allclose(self.m[0].sigma.value, 1.98380709939)
@@ -662,7 +666,7 @@ class TestModelFitBinned:
         self.m[0].centre.bmin = 0.5
         # self.m[0].bounded = True
         self.m.fit(fitter="mpfit", bounded=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046)
         np.testing.assert_allclose(self.m[0].centre.value, 0.5)
         np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
@@ -671,15 +675,15 @@ class TestModelFitBinned:
         self.m[0].centre.bmin = 0.5
         # self.m[0].bounded = True
         self.m.fit(fitter="leastsq", bounded=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 3)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046)
         np.testing.assert_allclose(self.m[0].centre.value, 0.5)
-        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
+        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966, RTOL)
 
     def test_fit_bounded_lbfgs(self):
         self.m[0].centre.bmin = 0.5
         # self.m[0].bounded = True
         self.m.fit(fitter="L-BFGS-B", bounded=True, grad=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046)
         np.testing.assert_allclose(self.m[0].centre.value, 0.5)
         np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
@@ -688,7 +692,7 @@ class TestModelFitBinned:
         self.m[0].centre.value = -1
         # self.m[0].bounded = True
         self.m.fit(fitter="mpfit", bounded=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046)
         np.testing.assert_allclose(self.m[0].centre.value, 0.5)
         np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
@@ -697,16 +701,16 @@ class TestModelFitBinned:
         self.m[0].centre.value = -1
         # self.m[0].bounded = True
         self.m.fit(fitter="leastsq", bounded=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 3)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046)
         np.testing.assert_allclose(self.m[0].centre.value, 0.5)
-        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
+        np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966, RTOL)
 
     def test_fit_bounded_bad_starting_values_lbfgs(self):
         self.m[0].centre.bmin = 0.5
         self.m[0].centre.value = -1
         # self.m[0].bounded = True
         self.m.fit(fitter="L-BFGS-B", bounded=True, grad=True)
-        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046, 4)
+        np.testing.assert_allclose(self.m[0].A.value, 9991.65422046)
         np.testing.assert_allclose(self.m[0].centre.value, 0.5)
         np.testing.assert_allclose(self.m[0].sigma.value, 2.08398236966)
 
@@ -861,12 +865,14 @@ class TestModelScalarVariance:
 class TestModelSignalVariance:
 
     def setup_method(self, method):
-        variance = hs.signals.Signal1D(np.arange(100, 300).reshape(
-            (2, 100)))
+        variance = hs.signals.Signal1D(
+            np.arange(100, 300, dtype="float64").reshape((2, 100)))
         s = variance.deepcopy()
         np.random.seed(1)
         std = 10
+        np.random.seed(1)
         s.add_gaussian_noise(std)
+        np.random.seed(1)
         s.add_poissonian_noise()
         s.metadata.set_item("Signal.Noise_properties.variance",
                             variance + std ** 2)
@@ -877,10 +883,10 @@ class TestModelSignalVariance:
 
     def test_std1_red_chisq(self):
         self.m.multifit(fitter="leastsq", method="ls", show_progressbar=None)
-        np.testing.assert_allclose(self.m.red_chisq.data[0],
-                                   0.79693355673230915)
-        np.testing.assert_allclose(self.m.red_chisq.data[1],
-                                   0.91453032901427167)
+        np.testing.assert_allclose(self.m.red_chisq.data[0], 0.813109,
+                                   atol=1e-5)
+        np.testing.assert_allclose(self.m.red_chisq.data[1], 0.697727,
+                                   atol=1e-5)
 
 
 @lazifyTestClass
@@ -1000,6 +1006,61 @@ class TestSetCurrentValuesTo:
         assert (self.comps[1].offset.map["values"] == 2).all()
 
 
+def test_fetch_values_from_arrays():
+    m = hs.signals.Signal1D(np.arange(10)).create_model()
+    gaus = hs.model.components1D.Gaussian(A=100, sigma=10, centre=3)
+    m.append(gaus)
+    values = np.array([1.2, 3.4, 5.6])
+    stds = values - 1
+    m.fetch_values_from_array(values, array_std=stds)
+    parameters = sorted(gaus.free_parameters, key=lambda x: x.name)
+    for v, s, p in zip(values, stds, parameters):
+        assert p.value == v
+        assert p.std == s
+
+
+def sets_second_parameter_to_two(model, parameters, data, weights=None):
+    return np.abs(parameters[1] - 2)
+
+
+class TestCustomOptimisation:
+
+    def setup_method(self, method):
+        s = hs.signals.Signal1D([1., 2, 3, 5, 7, 12, 8, 6, 3, 2, 2])
+        # data that should fit with A=49, centre=5.13, sigma=2.0
+        self.m = s.create_model()
+        self.m.append(hs.model.components1D.Gaussian())
+
+    def test_custom_function(self):
+        m = self.m
+        m.fit(method='custom', min_function=sets_second_parameter_to_two,
+              fitter='TNC')
+        assert m[0].centre.value == 2.
+
+    def test_no_function(self):
+        with pytest.raises(ValueError):
+            self.m.fit(method='custom')
+
+    def test_no_gradient(self):
+        with pytest.raises(ValueError):
+            self.m.fit(method='custom',
+                       min_function=lambda *args: 1,
+                       grad=True
+                       )
+
+    def test_custom_gradient_function(self):
+        from unittest import mock
+        gradf = mock.Mock(return_value=[10, 1, 10])
+        self.m.fit(method='custom',
+                   fitter='BFGS',
+                   min_function=sets_second_parameter_to_two,
+                   grad=True,
+                   min_function_grad=gradf)
+        assert gradf.called
+        assert all([args[0] is self.m for args, kwargs in
+                    gradf.call_args_list])
+
+
 class TestAsSignal:
 
     def setup_method(self, method):
@@ -1030,19 +1091,22 @@ class TestAsSignal:
                                   show_progressbar=False, parallel=False)
             np.testing.assert_allclose(s1.data, s.data)
 
-    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_all_components_simple(self, parallel):
         s = self.m.as_signal(show_progressbar=False, parallel=parallel)
         assert np.all(s.data == 4.)
 
-    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_one_component_simple(self, parallel):
         s = self.m.as_signal(component_list=[0], show_progressbar=False,
                              parallel=parallel)
         assert np.all(s.data == 2.)
         assert self.m[1].active
 
-    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_all_components_multidim(self, parallel):
         self.m[0].active_is_multidimensional = True
 
@@ -1055,7 +1119,8 @@ class TestAsSignal:
             s.data, np.array([np.ones((2, 5)) * 2, np.ones((2, 5)) * 4]))
         assert self.m[0].active_is_multidimensional
 
-    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_one_component_multidim(self, parallel):
         self.m[0].active_is_multidimensional = True
 

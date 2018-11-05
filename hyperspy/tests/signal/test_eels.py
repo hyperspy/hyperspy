@@ -151,6 +151,21 @@ class TestAlignZLP:
         np.testing.assert_allclose(zlpc.data.mean(), 0)
         np.testing.assert_allclose(zlpc.data.std(), 0)
 
+    def test_align_zero_loss_peak_calibrate_true_with_mask(self):
+        s = self.signal
+        mask = s._get_navigation_signal(dtype="bool").T
+        mask.data[[3, 5]] = (True, True)
+        s.align_zero_loss_peak(
+            calibrate=True,
+            print_stats=False,
+            show_progressbar=None,
+            mask=mask)
+        zlpc = s.estimate_zero_loss_peak_centre(mask=mask)
+        np.testing.assert_allclose(np.nanmean(zlpc.data), 0,
+                                   atol=np.finfo(float).eps)
+        np.testing.assert_allclose(np.nanstd(zlpc.data), 0,
+                                   atol=np.finfo(float).eps)
+
     def test_align_zero_loss_peak_calibrate_false(self):
         s = self.signal
         s.align_zero_loss_peak(
@@ -185,6 +200,15 @@ class TestAlignZLP:
         # maximum value for the aligned spectrum
         assert np.allclose(zlp_max, 8)
 
+    def test_align_zero_loss_peak_crop_false(self):
+        s = self.signal
+        original_size = s.axes_manager.signal_axes[0].size
+        s.align_zero_loss_peak(
+            crop=False,
+            print_stats=False,
+            show_progressbar=None)
+        assert original_size == s.axes_manager.signal_axes[0].size
+
 
 @lazifyTestClass
 class TestPowerLawExtrapolation:
@@ -208,6 +232,7 @@ class TestPowerLawExtrapolation:
         s = sc.power_law_extrapolation(extrapolation_size=100)
         np.testing.assert_allclose(s.data, self.s.data, atol=10e-3)
 
+
 @lazifyTestClass
 class TestFourierRatioDeconvolution:
 
@@ -222,3 +247,41 @@ class TestFourierRatioDeconvolution:
         s_ll.axes_manager[0].offset = -50
         s.fourier_ratio_deconvolution(s_ll,
                                       extrapolate_lowloss=extrapolate_lowloss)
+
+
+class TestRebin:
+    def setup_method(self, method):
+        # Create an empty spectrum
+        s = signals.EELSSpectrum(np.ones((4, 2, 1024)))
+        self.signal = s
+
+    def test_rebin_without_dwell_time(self):
+        s = self.signal
+        s.rebin(scale=(2, 2, 1))
+
+    def test_rebin_dwell_time(self):
+        s = self.signal
+        s.metadata.add_node("Acquisition_instrument.TEM.Detector.EELS")
+        s_mdEELS = s.metadata.Acquisition_instrument.TEM.Detector.EELS
+        s_mdEELS.dwell_time = 0.1
+        s_mdEELS.exposure = 0.5
+        s2 = s.rebin(scale=(2, 2, 8))
+        s2_mdEELS = s2.metadata.Acquisition_instrument.TEM.Detector.EELS
+        assert s2_mdEELS.dwell_time == (0.1 * 2 * 2)
+        assert s2_mdEELS.exposure == (0.5 * 2 * 2)
+
+        def test_rebin_exposure(self):
+            s = self.signal
+            s.metadata.exposure = 10.2
+            s2 = s.rebin(scale=(2, 2, 8))
+            assert s2.metadata.exposure == (10.2 * 2 * 2)
+
+    def test_offset_after_rebin(self):
+        s = self.signal
+        s.axes_manager[0].offset = 1
+        s.axes_manager[1].offset = 2
+        s.axes_manager[2].offset = 3
+        s2 = s.rebin(scale=(2, 2, 1))
+        assert s2.axes_manager[0].offset == 1.5
+        assert s2.axes_manager[1].offset == 2.5
+        assert s2.axes_manager[2].offset == s.axes_manager[2].offset

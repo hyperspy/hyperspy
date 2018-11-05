@@ -299,7 +299,8 @@ class TestSmoothing:
         self.rtol = 1e-7
         self.atol = 0
 
-    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_lowess(self, parallel):
         pytest.importorskip("statsmodels")
         from statsmodels.nonparametric.smoothers_lowess import lowess
@@ -321,7 +322,8 @@ class TestSmoothing:
         np.testing.assert_allclose(self.s.data, data,
                                    rtol=self.rtol, atol=self.atol)
 
-    @pytest.mark.parametrize('parallel', [pytest.mark.parallel(True), False])
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_tv(self, parallel):
         weight = 1
         data = np.asanyarray(self.s.data, dtype='float')
@@ -357,7 +359,6 @@ class TestSmoothing:
 @pytest.mark.parametrize('offset', [3, 0])
 def test_hanning(lazy, offset):
     sig = hs.signals.Signal1D(np.random.rand(5, 20))
-    ind = 2
     if lazy:
         sig = sig.as_lazy()
     data = np.array(sig.data)
@@ -373,3 +374,16 @@ def test_hanning(lazy, offset):
     assert channels == sig.hanning_taper(side='both', channels=channels,
                                          offset=offset)
     np.testing.assert_allclose(data, sig.data)
+
+
+@pytest.mark.parametrize('float_data', [True, False])
+def test_hanning_wrong_type(float_data):
+    sig = hs.signals.Signal1D(np.arange(100).reshape(5, 20))
+    if float_data:
+        sig.change_dtype('float')
+
+    if float_data:
+        sig.hanning_taper()
+    else:
+        with pytest.raises(TypeError):
+            sig.hanning_taper()

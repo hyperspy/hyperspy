@@ -17,6 +17,22 @@ of the dataset.
 Its modular structure makes it easy to add features to analyze different kinds
 of signals.
 
+HyperSpy extensions
+-------------------
+
+In this document we refer to external programs that build on HyperSpy as
+"HyperSpy extensions". Those programs can e.g. provide extra data analysis tools
+file formats, add graphical user interfaces, provide
+extra blind source separation algorithms etc.
+
+There are multiple HyperSpy extensions. For a list of extensions hosted
+publicly in GitHub search for the GitHub topic `hyperspy-extension <https://github.com/topics/hyperspy-extension>`_
+
+.. note::
+    From version 2.0, HyperSpy will be split into a core package (HyperSpy)
+    that will provide the common infrastructure and a number of HyperSpy
+    extensions.
+
 Our vision
 ----------
 
@@ -50,7 +66,7 @@ that sets its character:
   and the
   `traitsui GUI <https://github.com/hyperspy/hyperspy_gui_traitsui>`_. If you
   need a full, standalone GUI, `HyperSpyUI <http://hyperspy.org/hyperspyUI/>`_
-  is for you. 
+  is for you.
 * We see HyperSpy as a collaborative project, and therefore we care
   about making it easy for others to contribute to it. In other words,
   we want to minimise the “user becomes developer” threshold. To achieve this
