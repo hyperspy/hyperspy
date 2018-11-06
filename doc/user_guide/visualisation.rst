@@ -22,6 +22,9 @@ acquired by recording two signals in parallel in a FIB/SEM.
 if the object is single spectrum or an image one window will appear when
 calling the plot method.
 
+
+.. _visualization_md:
+
 Multidimensional spectral data
 ==============================
 
@@ -46,6 +49,10 @@ the x-axis if 1D:
    :width:   500
 
    Visualisation of a 1D spectrum image.
+
+
+.. versionadded:: 1.4
+   Customizable keyboard shortcuts to navigate multi-dimensional datasets.
 
 To change the current coordinates, click on the pointer (which will be a line
 or a square depending on the dimensions of the data) and drag it around. It is
@@ -81,19 +88,23 @@ can be too small to be dragged or even seen. It
 is possible to change the size of the cursors by pressing the ``+`` and ``-``
 keys  **when the navigator window is selected**.
 
-=======================   =============================
-key                       function
-=======================   =============================
-e                         Switch second pointer on/off
-Ctrl + Arrows             Change coordinates for dimensions 0 and 1 (typically x and y)
-Shift + Arrows            Change coordinates for dimensions 2 and 3
-Alt + Arrows              Change coordinates for dimensions 4 and 5
-PageUp                    Increase step size
-PageDown                  Decrease step size
-``+``                         Increase pointer size
-``-``                         Decrease pointer size
-``h``                     Launch the contrast adjustment tool (only for Signal2D)
-=======================   =============================
+The following keyboard shortcuts are available when the 1D signal figure is in focus:
+
+.. table:: Keyboard shortcuts available on the signal figure of 1D signal data
+
+    =======================   =============================
+    key                       function
+    =======================   =============================
+    e                         Switch second pointer on/off
+    Ctrl + Arrows             Change coordinates for dimensions 0 and 1 (typically x and y)
+    Shift + Arrows            Change coordinates for dimensions 2 and 3
+    Alt + Arrows              Change coordinates for dimensions 4 and 5
+    PageUp                    Increase step size
+    PageDown                  Decrease step size
+    ``+``                     Increase pointer size when the navigator is an image
+    ``-``                     Decrease pointer size when the navigator is an image
+    ``l``                     switch the scale of the y-axis between logarithmic and linear
+    =======================   =============================
 
 To close all the figures run the following command:
 
@@ -133,7 +144,27 @@ a spectrum or an image obtained by summing over the image dimensions:
    Visualisation of a 2D image stack.
 
 
-The same keys can be used to explore an image stack.
+.. versionadded:: 1.4
+   ``l`` keyboard shortcut
+
+The following keyboard shortcuts are availalbe when the 2D signal figure is in focus:
+
+.. table:: Keyboard shortcuts available on the signal figure of 2D signal data
+
+    =======================   =============================
+    key                       function
+    =======================   =============================
+    Ctrl + Arrows             Change coordinates for dimensions 0 and 1 (typically x and y)
+    Shift + Arrows            Change coordinates for dimensions 2 and 3
+    Alt + Arrows              Change coordinates for dimensions 4 and 5
+    PageUp                    Increase step size
+    PageDown                  Decrease step size
+    ``+``                     Increase pointer size when the navigator is an image
+    ``-``                     Decrease pointer size when the navigator is an image
+    ``h``                     Launch the contrast adjustment tool
+    ``l``                     switch the norm of the intensity between logarithmic and linear
+    =======================   =============================
+
 
 .. _plot.customize_images:
 
@@ -162,9 +193,18 @@ arguments are supported as well:
 
    Custom colormap and switched off scalebar in an image.
 
-.. versionadded:: 1.1.2
 
-Same options can be passed to the navigator, albeit separately, by specifying
+.. versionadded:: 1.4
+   ``norm`` keyword argument
+
+The ``norm`` keyword argument can be used to select between linear, logarithmic or
+custom (using a matplotlib norm) intensity scale. The default, "auto", automatically
+selects a logarithmic scale when plotting a power spectrum.
+
+.. versionadded:: 1.1.2
+   Passing keyword arguments to the navigator plot.
+
+The same options can be passed to the navigator, albeit separately, by specifying
 them as a dictionary in ``navigator_kwds`` argument when plotting:
 
 .. code-block:: python

@@ -3,7 +3,7 @@ import sys
 
 import numpy as np
 import dask.array as da
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_almost_equal
 import pytest
 import numpy.testing as nt
 
@@ -175,7 +175,7 @@ class Test2D:
         s.axes_manager[1].name = 'y'
         s.axes_manager[1].scale = 0.01
         s.axes_manager[1].units = 'µm'
-        s.crop(0, 0.0, 0.5, convert_units=True) # also convert the other axis
+        s.crop(0, 0.0, 0.5, convert_units=True)  # also convert the other axis
         s.crop(1, 0.0, 500.0, convert_units=True)
         nt.assert_almost_equal(s.axes_manager[0].scale, 10.0)
         nt.assert_almost_equal(s.axes_manager[1].scale, 10.0)
@@ -216,7 +216,7 @@ class Test2D:
         assert s.axes_manager[0].units == 'µm'
         assert s.axes_manager[1].units == 'µm'
         nt.assert_allclose(s.data, d[:50, :50])
-        
+
         # Should convert the unit to nm
         d = np.arange(512 * 512).reshape(512, 512)
         s = signals.Signal2D(d)
@@ -498,6 +498,12 @@ class Test3D:
             'Signal.Noise_properties.variance', 0.3)
         new_s = self.signal.rebin(scale=(2, 2, 1))
         assert new_s.metadata.Signal.Noise_properties.variance == 0.3
+
+    def test_rebin_dtype(self):
+        s = signals.Signal1D(np.arange(1000).reshape(10, 10, 10))
+        s.change_dtype(np.uint8)
+        s2 = s.rebin(scale=(3, 3, 1), crop=False)
+        assert s.sum() == s2.sum()
 
     def test_swap_axes_simple(self):
         s = self.signal
@@ -1112,8 +1118,10 @@ def test_lazy_diff_rechunk():
                                                           10, (1,) * 99)  # The data has not been rechunked
 
 
-def test_spikes_removal_tool():
+def test_spikes_removal_tool(mpl_cleanup):
     s = signals.Signal1D(np.ones((2, 3, 30)))
+    np.random.seed(1)
+    s.add_gaussian_noise(1E-5)
     # Add three spikes
     s.data[1, 0, 1] += 2
     s.data[0, 2, 29] += 1
@@ -1133,17 +1141,18 @@ def test_spikes_removal_tool():
     assert s.axes_manager.indices == (2, 0)
     sr.add_noise = False
     sr.apply()
-    assert s.data[0, 2, 29] == 1
+    assert_almost_equal(s.data[0, 2, 29], 1, decimal=5)
     assert s.axes_manager.indices == (0, 1)
     sr.apply()
-    assert s.data[1, 0, 1] == 1
+    assert_almost_equal(s.data[1, 0, 1], 1, decimal=5)
     assert s.axes_manager.indices == (2, 1)
     np.random.seed(1)
     sr.add_noise = True
+    sr.default_spike_width = 3
     sr.interpolator_kind = "Spline"
     sr.spline_order = 3
     sr.apply()
-    assert s.data[1, 2, 14] == 0
+    assert_almost_equal(s.data[1, 2, 14], 1, decimal=5)
     assert s.axes_manager.indices == (0, 0)
 
 

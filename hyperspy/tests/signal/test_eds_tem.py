@@ -36,6 +36,10 @@ class Test_metadata:
         s.metadata.Acquisition_instrument.TEM.beam_energy = 15.0
         self.signal = s
 
+    def test_sum_minimum_missing(self):
+        s = EDSTEMSpectrum(np.ones((4, 2, 1024)))
+        s.sum()
+
     def test_sum_live_time1(self):
         s = self.signal
         old_metadata = s.metadata.deepcopy()
@@ -84,6 +88,16 @@ class Test_metadata:
         print(old_metadata, self.signal.metadata)    # Captured on error
         assert (old_metadata.as_dictionary() ==
                 self.signal.metadata.as_dictionary()), "Source metadata changed"
+
+    def test_offset_after_rebin(self):
+        s = self.signal
+        s.axes_manager[0].offset = 1
+        s.axes_manager[1].offset = 2
+        s.axes_manager[2].offset = 3
+        s2 = s.rebin(scale=(2, 2, 1))
+        assert s2.axes_manager[0].offset == 1.5
+        assert s2.axes_manager[1].offset == 2.5
+        assert s2.axes_manager[2].offset == s.axes_manager[2].offset
 
     def test_add_elements(self):
         s = self.signal

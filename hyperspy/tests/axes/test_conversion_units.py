@@ -104,7 +104,7 @@ class TestUnitConversion:
     def test_convert_to_units_not_in_place(self):
         self._set_units_scale_size(t.Undefined, 1.0)
         out = self.uc.convert_to_units('nm', inplace=False)
-        assert out == None  # unit conversion is ignored
+        assert out is None  # unit conversion is ignored
         assert self.uc.units == t.Undefined
         nt.assert_almost_equal(self.uc.scale, 1.0)
 

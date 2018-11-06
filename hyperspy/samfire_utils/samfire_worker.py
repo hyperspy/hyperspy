@@ -115,7 +115,7 @@ class Worker:
                     try:
                         getattr(self.model[comp_name],
                                 parameter_name).value = value
-                    except:
+                    except BaseException:
                         e = sys.exc_info()[0]
                         to_send = ('Error',
                                    (self.identity,
@@ -165,6 +165,13 @@ class Worker:
         self.value_dict = value_dict
 
         self.fitting_kwargs = self.value_dict.pop('fitting_kwargs', {})
+        if 'min_function' in self.fitting_kwargs:
+            self.fitting_kwargs['min_function'] = dill.loads(
+                self.fitting_kwargs['min_function'])
+        if 'min_function_grad' in self.fitting_kwargs and isinstance(
+                self.fitting_kwargs['min_function_grad'], bytes):
+            self.fitting_kwargs['min_function_grad'] = dill.loads(
+                self.fitting_kwargs['min_function_grad'])
         self.model.signal.data[:] = self.value_dict.pop('signal.data')
 
         if self.model.signal.metadata.has_item(

@@ -2,9 +2,14 @@ import os.path
 import os
 import tempfile
 import gc
+import urllib.request
+import zipfile
+import hashlib
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
+import pytest
+import requests
 
 from hyperspy.io import load
 from hyperspy import signals
@@ -12,17 +17,42 @@ from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
 MY_PATH = os.path.dirname(__file__)
+ZIPF = os.path.join(MY_PATH, "edax_files.zip")
 TMP_DIR = tempfile.TemporaryDirectory()
+TEST_FILES_OK = os.path.isfile(ZIPF)
+REASON = ""
+SHA256SUM = "e217c71efbd208da4b52e9cf483443f9da2175f2924a96447ed393086fe32008"
+
+
+# The test files are not included in HyperSpy v1.4 because their file size is 36.5MB
+# taking the HyperSpy source distribution file size above PyPI's 60MB limit.
+# As a temporary solution, we attempt to download the test files from GitHub
+# and skip the tests if the download fails.
+if not TEST_FILES_OK:
+    try:
+        r = requests.get(
+            "https://github.com/hyperspy/hyperspy/blob/e7a323a3bb9b237c24bd9267d2cc4fcb31bb99f3/hyperspy/tests/io/edax_files.zip?raw=true")
+
+        SHA256SUM_GOT = hashlib.sha256(r.content).hexdigest()
+        if SHA256SUM_GOT == SHA256SUM:
+            ZIPF = os.path.join(TMP_DIR.name, "edax_files.zip")
+            with open(ZIPF, 'wb') as f:
+                f.write(r.content)
+            TEST_FILES_OK = True
+        else:
+            REASON = "wrong sha256sum of downloaded file. Expected: %s, got: %s" % SHA256SUM, SHA256SUM_GOT
+    except BaseException as e:
+        REASON = "download of EDAX test files failed: %s" % e
 
 
 def setup_module():
-    import zipfile
-    zipf = os.path.join(MY_PATH, "edax_files.zip")
-    with zipfile.ZipFile(zipf, 'r') as zipped:
-        zipped.extractall(TMP_DIR.name)
-        # print(TMP_DIR.name)
-        # print(os.listdir(TMP_DIR.name))
-        # print(spd_fname)
+    if TEST_FILES_OK:
+        with zipfile.ZipFile(ZIPF, 'r') as zipped:
+            zipped.extractall(TMP_DIR.name)
+
+
+pytestmark = pytest.mark.skipif(not TEST_FILES_OK,
+                                reason=REASON)
 
 
 def teardown_module():

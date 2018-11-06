@@ -111,6 +111,25 @@ def _generate_parameter_plot_images():
     return vmin, vmax
 
 
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_log_scale(mpl_cleanup):
+    test_plot = _TestPlot(ndim=0, sdim=2)
+    test_plot.signal += 1  # need to avoid zeros in log
+    test_plot.signal.plot(norm='log')
+    return test_plot.signal._plot.signal_plot.figure
+
+
+@pytest.mark.parametrize("fft_shift", [True, False])
+@pytest.mark.mpl_image_compare(
+    baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
+def test_plot_FFT(mpl_cleanup, fft_shift):
+    s = hs.datasets.example_signals.object_hologram()
+    s2 = s.isig[:128, :128].fft()
+    s2.plot(fft_shift=fft_shift, axes_ticks=True, power_spectrum=True)
+    return s2._plot.signal_plot.figure
+
+
 @pytest.mark.parametrize(("vmin", "vmax"), (_generate_parameter_plot_images(),
                                             (None, None)))
 @pytest.mark.mpl_image_compare(

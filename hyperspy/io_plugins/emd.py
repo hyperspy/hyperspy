@@ -54,7 +54,7 @@ reads_images = True
 reads_spectrum = True
 reads_spectrum_image = True
 # Writing features
-writes = True # Only Berkeley emd
+writes = True  # Only Berkeley emd
 EMD_VERSION = '0.2'
 # ----------------------
 
@@ -501,7 +501,7 @@ def fei_check(filename):
         if 'Version' in list(f.keys()):
             version = f.get('Version')
             v_dict = json.loads(version.value[0].decode('utf-8'))
-            if v_dict['format'] == 'Velox':
+            if v_dict['format'] in ['Velox', 'DevelopersKit']:
                 return True
 
 
@@ -798,7 +798,7 @@ class FeiEMDReader(object):
                 'metadata': md,
                 'original_metadata': original_metadata,
                 'mapping': self._get_mapping(map_selected_element=False,
-                        parse_individual_EDS_detector_metadata=False)}
+                                             parse_individual_EDS_detector_metadata=False)}
 
     def _parse_frame_time(self, original_metadata, factor=1):
         try:
@@ -870,10 +870,10 @@ class FeiEMDReader(object):
 
         spectrum_stream_group = self.d_grp.get("SpectrumStream")
         if spectrum_stream_group is None:
-            _logger.warning("No spectrum stream is present in the file. It ",
-                            "is possible that the file has been pruned: use ",
+            _logger.warning("No spectrum stream is present in the file. It "
+                            "is possible that the file has been pruned: use "
                             "Velox to read the spectrum image (proprietary "
-                            "format). If you want to open FEI emd file with ",
+                            "format). If you want to open FEI emd file with "
                             "HyperSpy don't prune the file when saving it in "
                             "Velox.")
             return
@@ -969,7 +969,7 @@ class FeiEMDReader(object):
             original_metadata = stream.original_metadata
             original_metadata.update(self.original_metadata)
             self.dictionaries.append({'data': stream.spectrum_image,
-    'axes': axes,
+                                      'axes': axes,
                                       'metadata': md,
                                       'original_metadata': original_metadata,
                                       'mapping': self._get_mapping(
@@ -1004,15 +1004,15 @@ class FeiEMDReader(object):
         meta_gen['original_filename'] = os.path.split(self.filename)[1]
         if self.detector_name is not None:
             meta_gen['title'] = self.detector_name
-        # We have only one entry in the original_metadata, so we can't use 
-        # the mapping of the original_metadata to set the date and time in 
+        # We have only one entry in the original_metadata, so we can't use
+        # the mapping of the original_metadata to set the date and time in
         # the metadata: need to set it manually here
         try:
             if 'AcquisitionStartDatetime' in om['Acquisition'].keys():
-                unix_time = om['Acquisition']['AcquisitionStartDatetime']['DateTime']              
+                unix_time = om['Acquisition']['AcquisitionStartDatetime']['DateTime']
             # Workaround when the 'AcquisitionStartDatetime' key is missing
             # This timestamp corresponds to when the data is stored
-            elif (not isinstance(om['CustomProperties'], str) and 
+            elif (not isinstance(om['CustomProperties'], str) and
                   'Detectors[BM-Ceta].TimeStamp' in om['CustomProperties'].keys()):
                 unix_time = float(
                     om['CustomProperties']['Detectors[BM-Ceta].TimeStamp']['value']) / 1E6
@@ -1043,31 +1043,30 @@ class FeiEMDReader(object):
                 "Acquisition_instrument.TEM.microscope", None),
             'Stage.AlphaTilt': (
                 "Acquisition_instrument.TEM.Stage.tilt_alpha",
-                lambda x: '{:.3f}'.format(np.degrees(float(x)))),
+                lambda x: round(np.degrees(float(x)), 3)),
             'Stage.BetaTilt': (
                 "Acquisition_instrument.TEM.Stage.tilt_beta",
-                lambda x: '{:.3f}'.format(np.degrees(float(x)))),
+                lambda x: round(np.degrees(float(x)), 3)),
             'Stage.Position.x': (
                 "Acquisition_instrument.TEM.Stage.x",
-                lambda x: '{:.6f}'.format(float(x))
-            ),
+                lambda x: round(float(x), 6)),
             'Stage.Position.y': (
                 "Acquisition_instrument.TEM.Stage.y",
-                lambda x: '{:.6f}'.format(float(x))),
+                lambda x: round(float(x), 6)),
             'Stage.Position.z': (
                 "Acquisition_instrument.TEM.Stage.z",
-                lambda x: '{:.6f}'.format(float(x))),
+                lambda x: round(float(x), 6)),
             'ImportedDataParameter.Number_of_frames': (
                 "Acquisition_instrument.TEM.Detector.EDS.number_of_frames", None),
             'DetectorMetadata.ElevationAngle': (
                 "Acquisition_instrument.TEM.Detector.EDS.elevation_angle",
-                lambda x: '{:.3f}'.format(np.degrees(float(x)))),
+                lambda x: round(float(x), 3)),
             'DetectorMetadata.Gain': (
                 "Signal.Noise_properties.Variance_linear_model.gain_factor",
-                lambda x: '{:.6f}'.format(float(x))),
+                lambda x: float(x)),
             'DetectorMetadata.Offset': (
                 "Signal.Noise_properties.Variance_linear_model.gain_offset",
-                lambda x: '{:.6f}'.format(float(x))),
+                lambda x: float(x)),
         }
 
         # Parse individual metadata for each EDS detector

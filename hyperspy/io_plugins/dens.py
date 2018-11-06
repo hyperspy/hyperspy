@@ -35,6 +35,7 @@ default_extension = 0
 # Writing capabilities
 writes = False
 
+
 def _cnv_time(timestr):
     try:
         t = datetime.strptime(timestr.decode(), '%H:%M:%S.%f')

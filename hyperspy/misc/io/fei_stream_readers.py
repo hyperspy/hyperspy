@@ -1,25 +1,20 @@
 import numpy as np
 import dask.array as da
+import sparse
 
 from hyperspy.decorators import jit_ifnumba
 
 
-try:
-    import sparse
-    sparse_installed = True
+class DenseSliceCOO(sparse.COO):
+    """Just like sparse.COO, but returning a dense array on indexing/slicing"""
 
-    class DenseSliceCOO(sparse.COO):
-        """Just like sparse.COO, but returning a dense array on indexing/slicing"""
-
-        def __getitem__(self, *args, **kwargs):
-            obj = super().__getitem__(*args, **kwargs)
-            try:
-                return obj.todense()
-            except AttributeError:
-                # Indexing, unlike slicing, returns directly the content
-                return obj
-except ImportError:
-    sparse_installed = False
+    def __getitem__(self, *args, **kwargs):
+        obj = super().__getitem__(*args, **kwargs)
+        try:
+            return obj.todense()
+        except AttributeError:
+            # Indexing, unlike slicing, returns directly the content
+            return obj
 
 
 @jit_ifnumba()
@@ -29,8 +24,11 @@ def _stream_to_sparse_COO_array_sum_frames(
     frame_number = 0
     ysize, xsize = shape
     frame_size = xsize * ysize
-    data_list = []
-    coords_list = []
+    # workaround for empty stream, numba "doesn't support" empty list, see
+    # https://github.com/numba/numba/pull/2184
+    # add first element and remove it at the end
+    data_list = [0]
+    coords_list = [(0, 0, 0)]
     data = 0
     count_channel = None
     for value in stream_data:
@@ -94,8 +92,9 @@ def _stream_to_sparse_COO_array_sum_frames(
         data_list.append(data)
 
     final_shape = (ysize, xsize, channels // rebin_energy)
-    coords = np.array(coords_list).T
-    data = np.array(data_list)
+    # Remove first element, see comments above
+    coords = np.array(coords_list)[1:].T
+    data = np.array(data_list)[1:]
     return coords, data, final_shape
 
 
@@ -106,8 +105,11 @@ def _stream_to_sparse_COO_array(
     frame_number = 0
     ysize, xsize = shape
     frame_size = xsize * ysize
-    data_list = []
-    coords = []
+    # workaround for empty stream, numba "doesn't support" empty list, see
+    # https://github.com/numba/numba/pull/2184
+    # add first element and remove it at the end
+    data_list = [0]
+    coords = [(0, 0, 0, 0)]
     data = 0
     count_channel = None
     for value in stream_data:
@@ -175,8 +177,9 @@ def _stream_to_sparse_COO_array(
 
     final_shape = (last_frame - first_frame, ysize, xsize,
                    channels // rebin_energy)
-    coords = np.array(coords).T
-    data = np.array(data_list)
+    # Remove first element, see comments above
+    coords = np.array(coords)[1:].T
+    data = np.array(data_list)[1:]
     return coords, data, final_shape
 
 
@@ -198,11 +201,6 @@ def stream_to_sparse_COO_array(
         If True, sum all the frames
 
     """
-    if not sparse_installed:
-        raise ImportError(
-            "The python-sparse package is not installed and it is required "
-            "for lazy loading of SIs stored in FEI EMD stream format."
-        )
     if sum_frames:
         coords, data, shape = _stream_to_sparse_COO_array_sum_frames(
             stream_data=stream_data,

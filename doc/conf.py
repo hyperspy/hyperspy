@@ -31,7 +31,7 @@ sys.path.append(os.path.abspath('sphinxext'))
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinxcontrib.napoleon',
+    'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
     'sphinx.ext.imgmath',
     'sphinx.ext.autosummary',
@@ -232,8 +232,22 @@ man_pages = [
 
 # Add the hyperspy website to the intersphinx domains
 intersphinx_mapping = {'hyperspyweb': ('http://hyperspy.org/', None),
-                       'matplotlib': ('http://matplotlib.org', None)}
+                       'matplotlib': ('https://matplotlib.org', None)}
+
+# -- Options for Sphinx API doc ----------------------------------------------
+# Adapted from https://github.com/isogeo/isogeo-api-py-minsdk/blob/master/docs/conf.py
+# run api doc
+
+
+def run_apidoc(_):
+    from sphinx.ext.apidoc import main
+
+    cur_dir = os.path.normpath(os.path.dirname(__file__))
+    output_path = os.path.join(cur_dir, 'api')
+    modules = os.path.normpath(os.path.join(cur_dir, "../hyperspy"))
+    main(['-e', '-f', '-P', '-o', output_path, modules])
 
 
 def setup(app):
+    app.connect('builder-inited', run_apidoc)
     app.add_javascript('copybutton.js')
