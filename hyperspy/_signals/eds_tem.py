@@ -357,7 +357,7 @@ class EDSTEM_mixin:
             navigation_mask = self.vacuum_mask(navigation_mask, closing).data
         elif navigation_mask is not None:
             navigation_mask = navigation_mask.data
-        xray_lines = self.metadata.Sample.xray_lines
+        xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
         composition = utils.stack(intensities, lazy=False)
         if method == 'CL':
             composition.data = utils_eds.quantification_cliff_lorimer(

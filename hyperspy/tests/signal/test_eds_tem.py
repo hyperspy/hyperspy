@@ -271,6 +271,21 @@ class Test_quantification:
         res = utils_eds.zeta_to_edx_cross_section(factors, elements)
         np.testing.assert_allclose(res, [3, 6], atol=1e-3)
 
+    def test_quant_element_order(self):
+        s = self.signal
+        s.set_elements([])
+        s.set_lines([])
+        lines = ['Zn_Ka', 'Al_Ka']
+        kfactors = [2.0009344042484134, 1]
+        intensities = s.get_lines_intensity(xray_lines=lines)
+        res = s.quantification(intensities, method='CL', factors=kfactors,
+                               composition_units='weight')
+        assert res[0].metadata.Sample.xray_lines[0] == 'Zn_Ka'
+        assert res[1].metadata.Sample.xray_lines[0] == 'Al_Ka'
+        np.testing.assert_allclose(res[1].data, np.array([
+            [22.70779, 22.70779],
+            [22.70779, 22.70779]]), atol=1e-3)
+
 
 @lazifyTestClass
 class Test_vacum_mask:
