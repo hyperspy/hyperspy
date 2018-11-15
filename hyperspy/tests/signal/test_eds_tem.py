@@ -180,6 +180,8 @@ class Test_quantification:
         s.add_lines(xray_lines)
         s.axes_manager[0].scale = 0.5
         s.axes_manager[1].scale = 0.5
+        s.axes_manager[0].units = 'nm'
+        s.axes_manager[1].units = 'nm'
         self.signal = s
 
     def test_metadata(self):
@@ -224,6 +226,22 @@ class Test_quantification:
         np.testing.assert_allclose(res[0][1].data, np.array(
             [[80.962287987, 80.962287987],
              [80.962287987, 80.962287987]]), atol=1e-3)
+
+    def test_quant_cross_section_units(self):
+        s = self.signal
+        s2 = self._signals
+        s.axes_manager[0].units = 'µm'
+        s.axes_manager[1].units = 'µm'
+        s.axes_manager[0].scale = 0.5/1000
+        s.axes_manager[1].scale = 0.5/1000
+
+        method = 'cross_section'
+        factors = [3, 5]
+        intensities = s.get_lines_intensity()
+        np.testing.assert_array_equal(s.quantification(intensities,
+                                                       method, factors),
+                                      s2.quantification(intensities,
+                                                        method, factors))
 
     def test_quant_cross_section(self):
         s = self.signal
