@@ -252,14 +252,11 @@ def test_plot_images_cmap_mpl_colors():
 def test_plot_images_cmap_mpl_colors_w_single_cbar():
     # This should give an error, so test for that
     test_im_plot = _TestIteratedSignal()
-    with pytest.raises(ValueError) as val_error:
+    with pytest.raises(ValueError):
         hs.plot.plot_images(test_im_plot.signal,
                             axes_decor='off',
                             cmap='mpl_colors',
                             colorbar='single')
-    assert str(val_error.value) == 'Cannot use a single colorbar with ' \
-                                   'multiple colormaps. Please check for ' \
-                                   'compatible arguments.'
 
 
 def test_plot_images_bogus_cmap():
