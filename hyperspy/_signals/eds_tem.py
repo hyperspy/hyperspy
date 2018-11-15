@@ -627,6 +627,10 @@ class EDSTEM_mixin:
                 if probe_area in parameters:
                     area = parameters.TEM.probe_area
                 else:
+                    if self.axes_manager[0].units != 'nm':
+                        self.axes_manager[0].convert_to_units('nm')
+                    if self.axes_manager[1].units != 'nm':
+                        self.axes_manager[1].convert_to_units('nm')
                     pixel1 = self.axes_manager[0].scale
                     pixel2 = self.axes_manager[1].scale
                     if pixel1 == 1 or pixel2 == 1:
