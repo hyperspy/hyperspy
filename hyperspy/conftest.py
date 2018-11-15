@@ -27,3 +27,5 @@ def setup_module(mod):
     if pytest.config.getoption("--pdb"):
         import dask
         dask.set_options(get=dask.local.get_sync)
+
+from matplotlib.testing.conftest import mpl_test_settings
