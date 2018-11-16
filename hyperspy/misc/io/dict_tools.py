@@ -34,8 +34,13 @@ def interpret(string):
 
 
 def dictionarize(et):
-    """translate and return the python dictionary/list tree
-    from xml.etree.ElementTree.ElementTree instance"""
+    """
+    Translate and return the python dictionary/list tree
+    from xml.etree.ElementTree.ElementTree instance.
+    The nodes containing longer than 32 chars text are 
+    not evaluated and placed into dictionary as etree
+    objects of the node, for eventual further processing.
+    """
     d = {et.tag: {} if et.attrib else None}
     children = et.getchildren()
     if children:

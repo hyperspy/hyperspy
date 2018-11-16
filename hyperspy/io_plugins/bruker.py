@@ -50,7 +50,7 @@ import numpy as np
 import dask.array as da
 import dask.delayed as dd
 from struct import unpack as strct_unp
-from zlib import decompress as unzip_block
+from zlib import decompress
 import logging
 
 from math import ceil
@@ -251,7 +251,7 @@ but compression signature is missing in the header. Aborting....""")
             offset += 16
             raw_string = self.read_piece(offset, cpr_size)
             offset += cpr_size
-            yield unzip_block(raw_string)
+            yield decompress(raw_string)
 
     def get_iter_and_properties(self):
         """Generate and return the iterator of data chunks and
@@ -435,68 +435,57 @@ class SFS_reader(object):
         return item
 
 
-class EDXSpectrum(object):
+def parse_edx_spectrum(spec_xml):
+    """
+    parse the bruker EDS spectrum xml (etree) part
+    generate and return dictionary with {data and original_metadata}.
 
-    def __init__(self, spectrum):
-        """
-        Wrap the objectified bruker EDS spectrum xml part
-        to the python object, leaving all the xml and bruker clutter behind.
+    Arguments:
+    spec_xml -- etree xml object, where spec_xml.attrib['Type'] should
+        be 'TRTSpectrum'
+    """
+    TRTHeader = spec_xml.find('./TRTHeaderedClass')
+    hardware_header = TRTHeader.find(
+        "./ClassInstance[@Type='TRTSpectrumHardwareHeader']")
+    detector_header = TRTHeader.find("./ClassInstance[@Type='TRTDetectorHeader']")
+    esma_header = TRTHeader.find("./ClassInstance[@Type='TRTESMAHeader']")
+    # what TRT means? 'R' could stand for Rontek (the original company for EDS)
+    # ESMA could stand for Electron Scanning Microscope Analysis
+    spectrum_header = spec_xml.find("./ClassInstance[@Type='TRTSpectrumHeader']")
 
-        Arguments:
-        spectrum -- etree xml object, where spectrum.attrib['Type'] should
-            be 'TRTSpectrum'
-        """
-        TRTHeader = spectrum.find('./TRTHeaderedClass')
-        hardware_header = TRTHeader.find(
-            "./ClassInstance[@Type='TRTSpectrumHardwareHeader']")
-        detector_header = TRTHeader.find(
-            "./ClassInstance[@Type='TRTDetectorHeader']")
-        esma_header = TRTHeader.find(
-            "./ClassInstance[@Type='TRTESMAHeader']")
-        # what TRT means?
-        # ESMA could stand for Electron Scanning Microscope Analysis
-        spectrum_header = spectrum.find(
-            "./ClassInstance[@Type='TRTSpectrumHeader']")
+    om = {} # original_metadata
+    om['Hardware'] = dictionarize(hardware_header)
+    om['Detector'] = dictionarize(detector_header)
 
-        # map stuff from harware xml branch:
-        self.hardware_metadata = dictionarize(hardware_header)
-        self.amplification = self.hardware_metadata['Amplification']  # USED
+    # decode silly hidden detector layer info:
+    det_layers_xml = om['Detector']['DetLayers']
+    om['Detector']['DetLayers'] = unhide_detector(det_layers_xml)
 
-        # map stuff from detector xml branch
-        self.detector_metadata = dictionarize(detector_header)
-        self.detector_type = self.detector_metadata['Type']  # USED
+    om['Analysis'] = dictionarize(esma_header)
+    om['Spectrum'] = dictionarize(spectrum_header)
 
-        # decode silly hidden detector layer info:
-        det_l_str = self.detector_metadata['DetLayers']
-        self.detector_metadata['DetLayers'] = unhide_detector(det_l_str)
+    # main data:
+    data = np.fromstring(spectrum.find('./Channels').text, dtype='Q', sep=",")
+    
 
-        # map stuff from esma xml branch:
-        self.esma_metadata = dictionarize(esma_header)
-        # USED:
-        self.hv = self.esma_metadata['PrimaryEnergy']
-        self.elev_angle = self.esma_metadata['ElevationAngle']
-        date_time = gen_iso_date_time(spectrum_header)
-        if date_time is not None:
-            self.date, self.time = date_time
-        
-        # map stuff from spectra xml branch:
-        self.spectrum_metadata = dictionarize(spectrum_header)
-        self.offset = self.spectrum_metadata['CalibAbs']
-        self.scale = self.spectrum_metadata['CalibLin']
+    return {'data': data,
+            'axes': [{'name': 'Energy',
+                      'size': len(data),
+                      'offset': spectrum.offset,
+                      'scale': spectrum.scale,
+                      'units': 'keV'}],     
+            'original_metadata': om}
 
-        # main data:
-        self.data = np.fromstring(spectrum.find('./Channels').text,
-                                  dtype='Q', sep=",")
 
-    def energy_to_channel(self, energy, kV=True):
-        """ convert energy to channel index,
-        optional kwarg 'kV' (default: True) should be set to False
-        if given energy units is in V"""
-        if not kV:
-            en_temp = energy / 1000.
-        else:
-            en_temp = energy
-        return int(round((en_temp - self.offset) / self.scale))
+def energy_to_channel(energy, edx_dict, kV=True):
+    """ convert energy to channel index,
+    optional kwarg 'kV' (default: True) should be set to False
+    if given energy units is in V"""
+    if not kV:
+        en_temp = energy / 1000.
+    else:
+        en_temp = energy
+    return int(round((en_temp - self.offset) / self.scale))
 
 
 class HyperHeader(object):
@@ -536,8 +525,8 @@ class HyperHeader(object):
         self.elements = {}
         self._set_elements(root)
         self.line_counter = interpret(root.find('./LineCounter').text)
-        self.channel_count = int(root.find('./ChCount').text)
-        self.mapping_count = int(root.find('./DetectorCount').text)
+        self.channel_count = int(root.find('./ChCount').text)       # NOT USED
+        self.mapping_count = int(root.find('./DetectorCount').text) # NOT USED
         #self.channel_factors = {}
         self.spectra_data = {}
         self._set_sum_edx(root, indexes)
@@ -547,7 +536,7 @@ class HyperHeader(object):
         TRTSEMStageData, TRTDSPConfiguration).
 
         BCF can contain basic parameters of SEM column, and optionaly
-        the stage. This metadata can be not fully or at all availbale to
+        the stage. This metadata can be not fully or at all available to
         Esprit and saved into bcf file as it depends from license and
         the link and implementation state between the microscope's
         software and Bruker system.
@@ -826,9 +815,9 @@ class BCF_reader(SFS_reader):
                 self.available_indexes.append(int(i[-1]))
         self.def_index = min(self.available_indexes)
         header_byte_str = header_file.get_as_BytesIO_string().getvalue()
-        hd_bt_str = fix_msxml(header_byte_str)
+        header_byte_str = fix_msxml(header_byte_str)
         self.header = HyperHeader(
-            hd_bt_str, self.available_indexes, instrument=instrument)
+            header_byte_str, self.available_indexes, instrument=instrument)
         self.hypermap = {}
 
     def check_index_valid(self, index):
@@ -901,7 +890,8 @@ class BCF_reader(SFS_reader):
         item['metadata']['General']['original_filename'] = \
             basename(self.filename)
 
-def spx_reader(filename, lazy=False):
+
+def spx_reader(filename, lazy=False, mode=None):
     with open(filename, 'br') as fn:
         xml_str = fn.read()
     root = ET.fromstring(xml_str)
@@ -912,7 +902,8 @@ def spx_reader(filename, lazy=False):
         name = 'Undefinded'
         _logger.info("spectra have no name. Giving it 'Undefined' name")
     spectrum = EDXSpectrum(sp_node)
-    mode = guess_mode(spectrum.hv)
+    if mode is None:
+        mode = guess_mode(spectrum.hv)
     results_xml = sp_node.find("./ClassInstance[@Type='TRTResult']")
     elements_xml = sp_node.find("./ClassInstance[@Type='TRTPSEElementList']")
     hy_spec = {'data': spectrum.data,
@@ -927,12 +918,12 @@ def spx_reader(filename, lazy=False):
                {'Acquisition_instrument': {
                  mode: {'Detector':
                             gen_detector_node(spectrum),
-                         'beam_energy': spectrum.hv}
+                            'beam_energy': spectrum.hv}
                },
                 'General': {'original_filename': basename(filename),
                             'title': 'EDX',
                             'date': spectrum.date,
-                             'time': spectrum.time},
+                            'time': spectrum.time},
                  'Sample': {'name': name},
                  'Signal': {'signal_type': 'EDS_%s' % mode,
                             'record_by': 'spectrum',
@@ -1011,7 +1002,7 @@ def py_parse_hypermap(virtual_file, shape, dtype, downsample=1):
             # x index of pixel (uint32);
             # number of channels for whole mapping (unit16);
             # number of channels for pixel (uint16);
-            # dummy placehollder (same value in every known bcf) (32bit);
+            # dummy placeholder (same value in every known bcf) (32bit);
             # flag distinguishing packing data type (16bit):
             #    0 - 16bit packed pulses, 1 - 12bit packed pulses,
             #    >1 - instructively packed spectra;
@@ -1208,7 +1199,7 @@ def bcf_hyperspectra(obj_bcf, index=None, downsample=None, cutoff_at_kV=None,  #
     """
     global warn_once
     if (fast_unbcf == False) and warn_once:
-        _logger.warning("""unbcf_fast library is not present...
+        _logger.warning("""unbcf_fast library is not present...  #TODO outdated
 Parsing BCF with Python-only backend, which is slow... please wait.
 If parsing is uncomfortably slow, first install cython, then reinstall hyperspy.
 For more information, check the 'Installing HyperSpy' section in the documentation.""")
@@ -1245,14 +1236,11 @@ For more information, check the 'Installing HyperSpy' section in the documentati
                        'offset': eds_metadata.offset,
                        'scale': eds_metadata.scale,
                        'units': 'keV'}],
-             'metadata':
-             # where is no way to determine what kind of instrument was used:
-             # TEM or SEM
-             {'Acquisition_instrument': {
-                 mode: obj_bcf.header.get_acq_instrument_dict(
-                     detector=True,
-                     index=index)
-             },
+             'metadata': {
+                 'Acquisition_instrument': {
+                     mode: obj_bcf.header.get_acq_instrument_dict(
+                         detector=True,
+                         index=index) },
                  'General': {'original_filename': basename(obj_bcf.filename),
                              'title': 'EDX',
                              'date': obj_bcf.header.date,
@@ -1326,6 +1314,7 @@ def guess_mode(hv):
     return mode
 
 
+# mapped
 def gen_detector_node(spectrum):
     eds_dict = {'EDS': {'elevation_angle': spectrum.elev_angle,
                         'detector_type': spectrum.detector_type,}}
@@ -1349,10 +1338,18 @@ def gen_iso_date_time(node):
 
 
 def unhide_detector(xml_node):
-    """decode and return dict with silly hidden detector parameters"""
+    """decode and return dict from silly hidden detector parameters"""
     dec_xml_node = codecs.decode(xml_node.encode('ascii'), 'base64')
-    mini_xml = ET.fromstring(unzip_block(dec_xml_node))
-    layers = {}
-    for i in mini_xml.getchildren():
-        layers[i.tag] = dict(i.attrib)
+    mini_xml = ET.fromstring(decompress(dec_xml_node))
+    layers = {i.tag: dict(i.attrib) for i in mini_xml.getchildren()}
     return layers
+
+
+
+spectrum_mapping = {
+    'esma_metadata.ElevationAngle': ('EDS.elevation_angle', None),
+    'detector_metadata.Type': ('EDS.detector_type', None),
+    'esma_metadata.AzimutAngle': ('EDS.azimuth_angle', None),
+    'hardware_metadata.RealTime': ('EDS.real_time', lambda x: x / 1000),
+    'hardware_metadata.LifeTime': ('EDS.live_time', lambda x: x / 1000)
+    }
