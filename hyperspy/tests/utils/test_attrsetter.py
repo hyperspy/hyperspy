@@ -13,11 +13,9 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.import
-# nose.tools
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-
-import nose.tools as nt
+import pytest
 
 from hyperspy.misc.utils import attrsetter
 from hyperspy.misc.utils import DictionaryTreeBrowser
@@ -35,7 +33,7 @@ class DummyThing(object):
 
 class TestAttrSetter:
 
-    def setUp(self):
+    def setup_method(self, method):
         tree = DictionaryTreeBrowser(
             {
                 "Node1": {"leaf11": 11,
@@ -52,20 +50,20 @@ class TestAttrSetter:
     def test_dtb_settattr(self):
         t = self.tree
         attrsetter(t, 'Node1.leaf11', 119)
-        nt.assert_equal(t.Node1.leaf11, 119)
+        assert t.Node1.leaf11 == 119
         attrsetter(t, 'Leaf3', 39)
-        nt.assert_equal(t.Leaf3, 39)
+        assert t.Leaf3 == 39
 
-    @nt.raises(AttributeError)
     def test_wrong_item(self):
         t = self.tree
-        attrsetter(t, 'random.name.with.more.than.one', 13)
+        with pytest.raises(AttributeError):
+            attrsetter(t, 'random.name.with.more.than.one', 13)
 
     def test_dummy(self):
         d = self.dummy
         d.multiply()
         attrsetter(d, 'another.name', 'New dummy')
-        nt.assert_equal(d.another.name, 'New dummy')
+        assert d.another.name == 'New dummy'
         d.another.multiply()
         attrsetter(d, 'another.another.name', 'super New dummy')
-        nt.assert_equal(d.another.another.name, 'super New dummy')
+        assert d.another.another.name == 'super New dummy'

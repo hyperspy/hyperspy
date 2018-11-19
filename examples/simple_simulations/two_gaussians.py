@@ -1,6 +1,6 @@
-"""Creates a 2D hyperspectrum consisting of two gaussians and plots it.
+"""Creates a 2D hyperspectrum consisting of two Gaussians and plots it.
 
-This example can serve as starting point to test other functionalities on the
+This example can serve as starting point to test other functionality on the
 simulated hyperspectrum.
 
 """
@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 
 # Create an empty spectrum
-s = hs.signals.Spectrum(np.zeros((32, 32, 1024)))
+s = hs.signals.Signal1D(np.zeros((32, 32, 1024)))
 
 # Generate some simple data: two Gaussians with random centers and area
 
@@ -18,11 +18,11 @@ s = hs.signals.Spectrum(np.zeros((32, 32, 1024)))
 m = s.create_model()
 
 # Define the first gaussian
-gs1 = hs.model.components.Gaussian()
+gs1 = hs.model.components1D.Gaussian()
 # Add it to the model
 m.append(gs1)
 
-# Set the sparameters
+# Set the parameters
 gs1.sigma.value = 10
 # Make the center vary in the -5,5 range around 128
 gs1.centre.map['values'][:] = 256 + (np.random.random((32, 32)) - 0.5) * 10
@@ -33,7 +33,7 @@ gs1.A.map['values'][:] = 10000 * np.random.random((32, 32))
 gs1.A.map['is_set'][:] = True
 
 # Second gaussian
-gs2 = hs.model.components.Gaussian()
+gs2 = hs.model.components1D.Gaussian()
 # Add it to the model
 m.append(gs2)
 

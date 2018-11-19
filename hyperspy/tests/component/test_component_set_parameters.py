@@ -16,27 +16,26 @@
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
 
-import nose.tools
-from hyperspy.components import Gaussian
+from hyperspy.components1d import Gaussian
 
 
 class TestSetParameters:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.gaussian = Gaussian()
 
     def test_set_parameters_not_free1(self):
         g = self.gaussian
         g.set_parameters_not_free()
         free_parameters = len(g.free_parameters)
-        nose.tools.assert_equal(free_parameters, 0)
+        assert free_parameters == 0
 
     def test_set_parameters_not_free2(self):
         g = self.gaussian
         g.set_parameters_not_free(parameter_name_list=['A'])
         free_parameters = len(g.free_parameters)
         parameters = len(g.parameters) - 1
-        nose.tools.assert_equal(free_parameters, parameters)
+        assert free_parameters == parameters
 
     def test_set_parameters_free1(self):
         g = self.gaussian
@@ -44,7 +43,7 @@ class TestSetParameters:
         g.set_parameters_free()
         free_parameters = len(g.free_parameters)
         parameters = len(g.parameters)
-        nose.tools.assert_equal(free_parameters, parameters)
+        assert free_parameters == parameters
 
     def test_set_parameters_free2(self):
         g = self.gaussian
@@ -54,4 +53,4 @@ class TestSetParameters:
         g.set_parameters_free(parameter_name_list=['A'])
         free_parameters = len(g.free_parameters)
         parameters = len(g.parameters) - 2
-        nose.tools.assert_equal(free_parameters, parameters)
+        assert free_parameters == parameters

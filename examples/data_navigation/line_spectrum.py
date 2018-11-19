@@ -6,7 +6,7 @@ import hyperspy.api as hs
 import matplotlib.pyplot as plt
 
 # Create a line spectrum with random data
-s = hs.signals.Spectrum(np.random.random((100, 1024)))
+s = hs.signals.Signal1D(np.random.random((100, 1024)))
 
 # Define the axis properties
 s.axes_manager.signal_axes[0].name = 'Energy'

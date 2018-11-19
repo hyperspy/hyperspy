@@ -83,7 +83,7 @@ class IPythonConsoleLexer(Lexer):
                 curcode += line[continue_prompt.end():]
             elif output_prompt is not None:
                 # Use the 'error' token for output.  We should probably make
-                # our own token, but error is typicaly in a bright color like
+                # our own token, but error is typically in a bright color like
                 # red, so it works fine for our output prompts.
                 insertions.append((len(curcode),
                                    [(0, Generic.Error, output_prompt.group())]))
@@ -110,6 +110,7 @@ def setup(app):
     # sphinx, by all means fix it here.  At least having this setup.py
     # suppresses the sphinx warning we'd get without it.
     pass
+
 
 #-----------------------------------------------------------------------------
 # Register the extension as a valid pygments lexer

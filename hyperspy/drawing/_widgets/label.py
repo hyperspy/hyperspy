@@ -24,18 +24,17 @@ from hyperspy.drawing.widgets import Widget1DBase
 
 class LabelWidget(Widget1DBase):
 
-    """A draggable text widget. Adds the attributes 'string', 'text_color' and
-    'bbox'. These are all arguments for matplotlib's Text artist. The default
+    """A draggable text widget. Adds the attributes 'string' and 'bbox'.
+    These are all arguments for matplotlib's Text artist. The default
     y-coordinate of the label is set to 0.9.
     """
 
-    def __init__(self, axes_manager):
-        super(LabelWidget, self).__init__(axes_manager)
+    def __init__(self, axes_manager, color='black', **kwargs):
+        super(LabelWidget, self).__init__(axes_manager, color=color, **kwargs)
         self._string = ''
         self._snap_position = False
         if not self.axes:
             self._pos = np.array((0, 0.9))
-        self.text_color = 'black'
         self.bbox = None
 
     def _get_string(self):
@@ -98,7 +97,8 @@ class LabelWidget(Widget1DBase):
             self._pos[0],
             self._pos[1],
             self.string,
-            color=self.text_color,
+            color=self.color,
+            alpha=self.alpha,
             picker=5,
             transform=trans,
             horizontalalignment='left',

@@ -17,10 +17,12 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from hyperspy.component import Component
 from scipy.interpolate import interp1d
+from hyperspy.component import Component
+from hyperspy.ui_registry import add_gui_method
 
 
+@add_gui_method(toolkey="ScalableFixedPattern_Component")
 class ScalableFixedPattern(Component):
 
     """Fixed pattern component with interpolation support.
@@ -44,8 +46,8 @@ class ScalableFixedPattern(Component):
 
     .. code-block:: ipython
 
-        In [1]: s = load('my_spectrum.hdf5')
-        In [2] : my_fixed_pattern = components.ScalableFixedPattern(s))
+        In [1]: s = load('my_spectrum.hspy')
+        In [2]: my_fixed_pattern = components.ScalableFixedPattern(s))
 
     Attributes
     ----------
@@ -62,23 +64,24 @@ class ScalableFixedPattern(Component):
 
     """
 
-    def __init__(self, spectrum):
+    def __init__(self, signal1D, yscale=1.0, xscale=1.0,
+                 shift=0.0, interpolate=True):
 
         Component.__init__(self, ['yscale', 'xscale', 'shift'])
 
         self._position = self.shift
-        self._whitelist['spectrum'] = ('init,sig', spectrum)
-        self.spectrum = spectrum
+        self._whitelist['signal1D'] = ('init,sig', signal1D)
+        self.signal = signal1D
         self.yscale.free = True
-        self.yscale.value = 1.
-        self.xscale.value = 1.
-        self.shift.value = 0.
+        self.yscale.value = yscale
+        self.xscale.value = xscale
+        self.shift.value = shift
 
         self.prepare_interpolator()
         # Options
         self.isbackground = True
         self.convolved = False
-        self.interpolate = True
+        self.interpolate = interpolate
 
     def prepare_interpolator(self, kind='linear', fill_value=0, **kwargs):
         """Prepare interpolation.
@@ -87,9 +90,9 @@ class ScalableFixedPattern(Component):
         ----------
         x : array
             The spectral axis of the fixed pattern
-        kind: str or int, optional
+        kind : str or int, optional
             Specifies the kind of interpolation as a string
-            ('linear','nearest', 'zero', 'slinear', 'quadratic, 'cubic')
+            ('linear', 'nearest', 'zero', 'slinear', 'quadratic, 'cubic')
             or as an integer specifying the order of the spline interpolator
             to use. Default is 'linear'.
 
@@ -105,8 +108,8 @@ class ScalableFixedPattern(Component):
         """
 
         self.f = interp1d(
-            self.spectrum.axes_manager.signal_axes[0].axis,
-            self.spectrum.data.squeeze(),
+            self.signal.axes_manager.signal_axes[0].axis,
+            self.signal.data.squeeze(),
             kind=kind,
             bounds_error=False,
             fill_value=fill_value,
@@ -117,9 +120,9 @@ class ScalableFixedPattern(Component):
             result = self.yscale.value * self.f(
                 x * self.xscale.value - self.shift.value)
         else:
-            result = self.yscale.value * self.spectrum.data
-        if self.spectrum.metadata.Signal.binned is True:
-            return result / self.spectrum.axes_manager.signal_axes[0].scale
+            result = self.yscale.value * self.signal.data
+        if self.signal.metadata.Signal.binned is True:
+            return result / self.signal.axes_manager.signal_axes[0].scale
         else:
             return result
 

@@ -1,25 +1,27 @@
 """
 The Signal class and its specilized subclasses:
 
-    Signal
+    BaseSignal
         For generic data with arbitrary signal_dimension. All other signal
         classes inherit from this one. It should only be used with none of
         the others is appropriated.
-    Spectrum
+    Signal1D
         For generic data with signal_dimension equal 1, i.e. spectral data of
         n-dimensions. The signal is unbinned by default.
-    Image
+    Signal2D
         For generic data with signal_dimension equal 2, i.e. image data of
         n-dimensions. The signal is unbinned by default.
-    Simulation
-        For generic simulated data with arbitrary signal_dimension. All other
-        simulation signal classes inherit from this one. It should only be used
-        with none of the others is appropriated.
+    ComplexSignal
+        For generic complex data with arbitrary signal_dimension.
+    ComplexSignal1D
+        For generic complex data with signal_dimension equal 1, i.e. spectral
+        data of n-dimensions. The signal is unbinned by default.
+    ComplexSignal2D
+        For generic complex data with signal_dimension equal 2, i.e. image
+        data of n-dimensions. The signal is unbinned by default.
     EELSSpectrum
         For electron energy-loss data with signal_dimension equal 1, i.e.
         spectral data of n-dimensions. The signal is binned by default.
-    EELSSpectrumSimulation, SpectrumSimulation, ImageSimulation
-        Simulation versions of EELSSpectrum, Spectrum and Image.
     EDSTEMSpectrum
         For electron energy-dispersive X-rays data acquired in a transmission
         electron microscopy with signal_dimension equal 1, i.e.
@@ -31,20 +33,20 @@ The Signal class and its specilized subclasses:
     DielectricFunction
         For dielectric function data with signal_dimension equal 1. The signal
         is unbinned by default.
-
+    HolographyImage
+        For 2D-images taken via electron holography. Electron wave as
+        ComplexSignal2D can be reconstructed from them.
 """
 
 # -*- coding: utf-8 -*-
-
-from hyperspy._signals.spectrum import Spectrum
-from hyperspy._signals.image import Image
+from hyperspy.signal import BaseSignal
+from hyperspy._signals.signal1d import Signal1D
+from hyperspy._signals.signal2d import Signal2D
 from hyperspy._signals.eels import EELSSpectrum
 from hyperspy._signals.eds_sem import EDSSEMSpectrum
 from hyperspy._signals.eds_tem import EDSTEMSpectrum
+from hyperspy._signals.complex_signal import ComplexSignal
+from hyperspy._signals.complex_signal1d import ComplexSignal1D
+from hyperspy._signals.complex_signal2d import ComplexSignal2D
 from hyperspy._signals.dielectric_function import DielectricFunction
-from hyperspy._signals.simulation import Simulation
-from hyperspy._signals.image_simulation import ImageSimulation
-from hyperspy._signals.spectrum_simulation import SpectrumSimulation
-from hyperspy._signals.eels_spectrum_simulation import (
-    EELSSpectrumSimulation)
-from hyperspy.signal import Signal
+from hyperspy._signals.hologram_image import HologramImage

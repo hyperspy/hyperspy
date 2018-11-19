@@ -25,7 +25,7 @@ from hyperspy.component import Component
 
 class Arctan(Component):
 
-    """Arctan function components
+    """Arctan function component
 
     f(x) = A*arctan{k*(x-x0)}
 
@@ -59,7 +59,7 @@ class Arctan(Component):
         self._whitelist['minimum_at_zero'] = ('init', minimum_at_zero)
 
         self.isbackground = False
-        self.isconvolved = False
+        self.convolved = False
         self._position = self.x0
 
     def function(self, x):

@@ -32,15 +32,8 @@ full_support = False
 # Recognised file extension
 file_extensions = ['dens', 'DENS']
 default_extension = 0
-
 # Writing capabilities
 writes = False
-
-
-mapping = {
-    'DENS_header.date':
-    ("General.time", None),
-}
 
 
 def _cnv_time(timestr):
@@ -74,10 +67,12 @@ def file_reader(filename, *args, **kwds):
         header_line = str(f.readline())
         try:
             R0, a, b, c = [float(v.split('=')[1]) for v in calib]
-            date = datetime.strptime(date, "%d/%m/'%y %H:%M")
+            date0 = datetime.strptime(date, "%d/%m/'%y %H:%M")
+            date = '%s' % date0.date()
+            time = '%s' % date0.time()
         except ValueError:
             _bad_file(filename)
-        original_metadata = dict(R0=R0, a=a, b=b, c=c, date=date,
+        original_metadata = dict(R0=R0, a=a, b=b, c=c, date=date0,
                                  version=version)
 
         if header_line.strip() != (
@@ -103,8 +98,11 @@ def file_reader(filename, *args, **kwds):
     interp_axis = times[0] + dt * np.array(range(len(times)))
     temp_interp = interp(interp_axis)
 
-    metadata = {'General': {'original_filename': os.path.split(filename)[1]},
-                "Signal": {'signal_type': "temperature", }, }
+    metadata = {'General': {'original_filename': os.path.split(filename)[1],
+                            'date': date,
+                            'time': time},
+                "Signal": {'signal_type': "",
+                           'quantity': "Temperature (Celsius)"}, }
 
     axes = [{
         'size': len(temp_interp),
@@ -120,7 +118,6 @@ def file_reader(filename, *args, **kwds):
                   'axes': axes,
                   'metadata': metadata,
                   'original_metadata': {'DENS_header': original_metadata},
-                  'mapping': mapping,
                   }
 
     return [dictionary, ]

@@ -1,7 +1,8 @@
 include *.txt
 include *.rst
+recursive-include hyperspy *.pyx
 recursive-include bin *.py
 recursive-include doc *.txt *.rst
 recursive-include examples *.py *.rst *.txt
-
+include hyperspy/misc/etc/test_compilers.c
 

@@ -1,9 +1,54 @@
-from nose.tools import assert_equal
 import os.path
+import tempfile
 
 from hyperspy.io import load
+from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 my_path = os.path.dirname(__file__)
+
+example1_TEM = {'Detector': {'EELS': {'collection_angle': 3.4,
+                                      'collection_angle_units': "mR",
+                                      'dwell_time': 100.0,
+                                      'dwell_time_units': "ms"}},
+                'beam_current': 12.345,
+                'beam_current_units': "nA",
+                'beam_energy': 120.0,
+                'beam_energy_units': "kV",
+                'convergence_angle': 1.5,
+                'convergence_angle_units': "mR"}
+
+example1_metadata = {'Acquisition_instrument': {'TEM': example1_TEM},
+                     'General': {'original_filename': "example1.msa",
+                                 'title': "NIO EELS OK SHELL",
+                                 'date': "1991-10-01",
+                                 'time': "12:00:00"},
+                     'Sample': {'thickness': 50.0,
+                                'thickness_units': "nm"},
+                     'Signal': {'binned': True,
+                                # bit silly...
+                                'quantity': "Counts (Intensity)",
+                                'signal_type': 'EELS'},
+                     '_HyperSpy': {'Folding': {'original_axes_manager': None,
+                                               'unfolded': False,
+                                               'original_shape': None,
+                                               'signal_unfolded': False}}}
+minimum_md_om = {
+    'COMMENT': 'File created by HyperSpy version 1.1.2+dev',
+    'DATATYPE': 'Y',
+    'DATE': '',
+    'FORMAT': 'EMSA/MAS Spectral Data File',
+    'NCOLUMNS': 1.0,
+    'NPOINTS': 1.0,
+    'OFFSET': 0.0,
+    'OWNER': '',
+    'SIGNALTYPE': '',
+    'TIME': '',
+    'TITLE': '',
+    'VERSION': '1.0',
+    'XLABEL': '',
+    'XPERCHAN': 1.0,
+    'XUNITS': ''}
+
 
 example1_parameters = {
     'BEAMDIAM -nm': 100.0,
@@ -34,6 +79,37 @@ example1_parameters = {
     'XUNITS': 'eV',
     'YLABEL': 'Counts',
     'YUNITS': 'Intensity'}
+
+example2_TEM = {'Detector': {'EDS': {'EDS_det': "SIWLS",
+                                     'azimuth_angle': 90.0,
+                                     'azimuth_angle_units': "dg",
+                                     'elevation_angle': 20.0,
+                                     'elevation_angle_units': 'dg',
+                                     'live_time': 100.0,
+                                     'live_time_units': "s",
+                                     'real_time': 150.0,
+                                     'real_time_units': "s"}},
+                'beam_current': 12.345,
+                'beam_current_units': "nA",
+                'beam_energy': 120.0,
+                'beam_energy_units': "kV",
+                'Stage': {'tilt_alpha': 45.0,
+                          'tilt_alpha_units': "dg"}}
+
+example2_metadata = {'Acquisition_instrument': {'TEM': example2_TEM},
+                     'General': {'original_filename': "example2.msa",
+                                 'title': "NIO Windowless Spectra OK NiL",
+                                 'date': "1991-10-01",
+                                 'time': "12:00:00"},
+                     'Sample': {'thickness': 50.0,
+                                'thickness_units': "nm"},
+                     'Signal': {'binned': False,
+                                'quantity': "X-RAY INTENSITY (Intensity)",
+                                'signal_type': 'EDS'},
+                     '_HyperSpy': {'Folding': {'original_axes_manager': None,
+                                               'unfolded': False,
+                                               'original_shape': None,
+                                               'signal_unfolded': False}}}
 
 example2_parameters = {
     'ALPHA-1': '3.1415926535',
@@ -82,14 +158,14 @@ example2_parameters = {
 
 class TestExample1:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = load(os.path.join(
             my_path,
             "msa_files",
             "example1.msa"))
 
     def test_data(self):
-        assert_equal(
+        assert (
             [4066.0,
              3996.0,
              3932.0,
@@ -110,24 +186,39 @@ class TestExample1:
              4613.0,
              4637.0,
              4429.0,
-             4217.0], self.s.data.tolist())
+             4217.0] == self.s.data.tolist())
 
     def test_parameters(self):
-        assert_equal(
-            example1_parameters,
+        assert (
+            example1_parameters ==
             self.s.original_metadata.as_dictionary())
+
+    def test_metadata(self):
+        assert_deep_almost_equal(self.s.metadata.as_dictionary(),
+                                 example1_metadata)
+
+    def test_write_load_cycle(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fname2 = os.path.join(tmpdir, "example1-export.msa")
+            self.s.save(fname2)
+            s2 = load(fname2)
+            assert (s2.metadata.General.original_filename ==
+                    "example1-export.msa")
+            s2.metadata.General.original_filename = "example1.msa"
+            assert_deep_almost_equal(self.s.metadata.as_dictionary(),
+                                     s2.metadata.as_dictionary())
 
 
 class TestExample2:
 
-    def setUp(self):
+    def setup_method(self, method):
         self.s = load(os.path.join(
             my_path,
             "msa_files",
             "example2.msa"))
 
     def test_data(self):
-        assert_equal(
+        assert (
             [65.82,
              67.872,
              65.626,
@@ -207,9 +298,29 @@ class TestExample2:
              101.59,
              80.107,
              58.657,
-             49.442], self.s.data.tolist())
+             49.442] == self.s.data.tolist())
 
     def test_parameters(self):
-        assert_equal(
-            example2_parameters,
+        assert (
+            example2_parameters ==
             self.s.original_metadata.as_dictionary())
+
+    def test_metadata(self):
+        assert_deep_almost_equal(self.s.metadata.as_dictionary(),
+                                 example2_metadata)
+
+    def test_write_load_cycle(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fname2 = os.path.join(tmpdir, "example2-export.msa")
+            self.s.save(fname2)
+            s2 = load(fname2)
+            assert (s2.metadata.General.original_filename ==
+                    "example2-export.msa")
+            s2.metadata.General.original_filename = "example2.msa"
+            assert_deep_almost_equal(self.s.metadata.as_dictionary(),
+                                     s2.metadata.as_dictionary())
+
+
+def test_minimum_metadata_example():
+    s = load(os.path.join(my_path, "msa_files", "minimum_metadata.msa"))
+    assert minimum_md_om == s.original_metadata.as_dictionary()

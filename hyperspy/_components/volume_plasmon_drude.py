@@ -23,23 +23,22 @@ from hyperspy.component import Component
 
 class VolumePlasmonDrude(Component):
 
-    """Drude volume plasmon energy loss function component
+    r"""Drude volume plasmon energy loss function component, the energy loss
+    function is defined as:
 
     .. math::
 
-       Energy loss function defined as:
+       f(E) = \frac{E(\Delta E_p)E_p^2}{(E^2-E_p^2)^2+(E\Delta E_p)^2}
 
-       f(E) = \\frac{E(\Delta E_p)E_p^2}{(E^2-E_p^2)^2+(E\Delta E_p)^2}
-
-    +------------+-----------------+
-    | Parameter  |    Attribute    |
-    +------------+-----------------+
-    |    E_p     |  plasmon_energy |
-    +------------+-----------------+
-    | delta_E_p  |fwhm|
-    +------------+-----------------+
-    | intensity  |   intensity     |
-    +------------+-----------------+
+    +------------------+-----------------+
+    | Parameter        |    Attribute    |
+    +------------------+-----------------+
+    |:math:`E_p`       |  plasmon_energy |
+    +------------------+-----------------+
+    |:math:`\Delta E_p`|      fwhm       |
+    +------------------+-----------------+
+    | intensity        |   intensity     |
+    +------------------+-----------------+
 
     Notes
     -----
@@ -50,13 +49,13 @@ class VolumePlasmonDrude(Component):
 
     """
 
-    def __init__(self):
+    def __init__(self, intensity=1., plasmon_energy=15., fwhm=1.5):
         Component.__init__(self, ['intensity', 'plasmon_energy',
                                   'fwhm'])
         self._position = self.plasmon_energy
-        self.intensity.value = 1
-        self.plasmon_energy.value = 7.1
-        self.fwhm.value = 2.3
+        self.intensity.value = intensity
+        self.plasmon_energy.value = plasmon_energy
+        self.fwhm.value = fwhm
         self.plasmon_energy.grad = self.grad_plasmon_energy
         self.fwhm.grad = self.grad_fwhm
         self.intensity.grad = self.grad_intensity

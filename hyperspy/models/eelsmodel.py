@@ -20,22 +20,13 @@ import copy
 import warnings
 import logging
 
-from hyperspy.models.model1D import Model1D
-from hyperspy.components import EELSCLEdge
-from hyperspy.components import PowerLaw
-from hyperspy.defaults_parser import preferences
-from hyperspy import components
+from hyperspy.models.model1d import Model1D
+from hyperspy.components1d import EELSCLEdge
+from hyperspy.components1d import PowerLaw
+from hyperspy import components1d
 from hyperspy._signals.eels import EELSSpectrum
 
 _logger = logging.getLogger(__name__)
-
-
-def _give_me_delta(master, slave):
-    return lambda x: x + slave - master
-
-
-def _give_me_idelta(master, slave):
-    return lambda x: x - slave + master
 
 
 class EELSModel(Model1D):
@@ -44,7 +35,7 @@ class EELSModel(Model1D):
 
     Parameters
     ----------
-    spectrum : an Spectrum (or any Spectrum subclass) instance
+    spectrum : a Signal1D (or any Signal1D subclass) instance
     auto_background : boolean
         If True, and if spectrum is an EELS instance adds automatically
         a powerlaw to the model and estimate the parameters by the
@@ -52,7 +43,7 @@ class EELSModel(Model1D):
     auto_add_edges : boolean
         If True, and if spectrum is an EELS instance, it will
         automatically add the ionization edges as defined in the
-        Spectrum instance. Adding a new element to the spectrum using
+        Signal1D instance. Adding a new element to the spectrum using
         the components.EELSSpectrum.add_elements method automatically
         add the corresponding ionisation edges to the model.
     ll : {None, EELSSpectrum}
@@ -70,10 +61,19 @@ class EELSModel(Model1D):
 
     """
 
-    def __init__(self, spectrum, auto_background=True,
+    def __init__(self, signal1D, auto_background=True,
                  auto_add_edges=True, ll=None,
                  GOS=None, dictionary=None):
-        Model1D.__init__(self, spectrum)
+        Model1D.__init__(self, signal1D)
+
+        # When automatically setting the fine structure energy regions,
+        # the fine structure of an EELS edge component is automatically
+        # disable if the next ionisation edge onset distance to the
+        # higher energy side of the fine structure region is lower that
+        # the value of this parameter
+        self._min_distance_between_edges_for_fine_structure = 0
+        self._preedge_safe_window_width = 2
+        self.signal1D = signal1D
         self._suspend_auto_fine_structure_width = False
         self.convolved = False
         self.low_loss = ll
@@ -89,18 +89,17 @@ class EELSModel(Model1D):
             background = PowerLaw()
             self.append(background)
 
-        if self.spectrum.subshells and auto_add_edges is True:
+        if self.signal.subshells and auto_add_edges is True:
             self._add_edges_from_subshells_names()
 
     @property
-    def spectrum(self):
-        return self._spectrum
+    def signal1D(self):
+        return self._signal
 
-    @spectrum.setter
-    def spectrum(self, value):
+    @signal1D.setter
+    def signal1D(self, value):
         if isinstance(value, EELSSpectrum):
-            self._spectrum = value
-            self.spectrum._are_microscope_parameters_missing()
+            self._signal = value
         else:
             raise ValueError(
                 "This attribute can only contain an EELSSpectrum "
@@ -110,7 +109,7 @@ class EELSModel(Model1D):
     def append(self, component):
         super(EELSModel, self).append(component)
         if isinstance(component, EELSCLEdge):
-            tem = self.spectrum.metadata.Acquisition_instrument.TEM
+            tem = self.signal.metadata.Acquisition_instrument.TEM
             component.set_microscope_parameters(
                 E0=tem.beam_energy,
                 alpha=tem.convergence_angle,
@@ -182,8 +181,14 @@ class EELSModel(Model1D):
         ----------
         e_shells : list of strings
         """
+        if self.signal._are_microscope_parameters_missing():
+            raise ValueError(
+                "The required microscope parameters are not defined in "
+                "the EELS spectrum signal metadata. Use "
+                "``set_microscope_parameters`` to set them."
+            )
         if e_shells is None:
-            e_shells = list(self.spectrum.subshells)
+            e_shells = list(self.signal.subshells)
         e_shells.sort()
         master_edge = EELSCLEdge(e_shells.pop(), self.GOS)
         # If self.GOS was None, the GOS is set by eels_cl_edge so
@@ -207,20 +212,15 @@ class EELSModel(Model1D):
                 edge = EELSCLEdge(e_shells.pop(), GOS=self.GOS)
 
                 edge.intensity.twin = master_edge.intensity
-                delta = _give_me_delta(master_edge.GOS.onset_energy,
-                                       edge.GOS.onset_energy)
-                idelta = _give_me_idelta(master_edge.GOS.onset_energy,
-                                         edge.GOS.onset_energy)
-                edge.onset_energy.twin_function = delta
-                edge.onset_energy.twin_inverse_function = idelta
                 edge.onset_energy.twin = master_edge.onset_energy
+                edge.onset_energy.twin_function_expr = "x + {}".format(
+                    (edge.GOS.onset_energy - master_edge.GOS.onset_energy))
                 edge.free_onset_energy = False
                 self.append(edge)
 
     def resolve_fine_structure(
             self,
-            preedge_safe_window_width=preferences.EELS.
-            preedge_safe_window_width,
+            preedge_safe_window_width=2,
             i1=0):
         """Adjust the fine structure of all edges to avoid overlapping
 
@@ -231,7 +231,8 @@ class EELSModel(Model1D):
         ----------
         preedge_safe_window_width : float
             minimum distance between the fine structure of an ionization edge
-            and that of the following one.
+            and that of the following one. Default 2 (eV).
+
         """
 
         if self._suspend_auto_fine_structure_width is True:
@@ -253,11 +254,11 @@ class EELSModel(Model1D):
                     self._active_edges[i2].onset_energy.value -
                     self._active_edges[i1].onset_energy.value)
                 if (self._active_edges[i1].fine_structure_width >
-                        distance_between_edges - preedge_safe_window_width):
-                    min_d = preferences.EELS.\
-                        min_distance_between_edges_for_fine_structure
+                        distance_between_edges -
+                        self._preedge_safe_window_width):
+                    min_d = self._min_distance_between_edges_for_fine_structure
                     if (distance_between_edges -
-                            preedge_safe_window_width) <= min_d:
+                            self._preedge_safe_window_width) <= min_d:
                         _logger.info((
                             "Automatically deactivating the fine structure "
                             "of edge number %d to avoid conflicts with edge "
@@ -268,15 +269,16 @@ class EELSModel(Model1D):
                         self.resolve_fine_structure(i1=i2)
                     else:
                         new_fine_structure_width = (
-                            distance_between_edges - preedge_safe_window_width)
+                            distance_between_edges -
+                            self._preedge_safe_window_width)
                         _logger.info((
                             "Automatically changing the fine structure "
                             "width of edge %d from %s eV to %s eV to avoid "
                             "conflicts with edge number %d") % (
-                                i1 + 1,
-                                self._active_edges[i1].fine_structure_width,
-                                new_fine_structure_width,
-                                i2 + 1))
+                            i1 + 1,
+                            self._active_edges[i1].fine_structure_width,
+                            new_fine_structure_width,
+                            i2 + 1))
                         self._active_edges[i1].fine_structure_width = \
                             new_fine_structure_width
                         self.resolve_fine_structure(i1=i2)
@@ -427,7 +429,7 @@ class EELSModel(Model1D):
         if iee is not None:
             to_disable = [edge for edge in self._active_edges
                           if edge.onset_energy.value >= iee]
-            E2 = iee - preferences.EELS.preedge_safe_window_width
+            E2 = iee - self._preedge_safe_window_width
             self.disable_edges(to_disable)
         else:
             E2 = None
@@ -455,7 +457,7 @@ class EELSModel(Model1D):
         """
         if powerlaw is None:
             for component in self._active_background_components:
-                if isinstance(component, components.PowerLaw):
+                if isinstance(component, components1d.PowerLaw):
                     if powerlaw is None:
                         powerlaw = component
                     else:
@@ -476,10 +478,10 @@ class EELSModel(Model1D):
                 E2 = ea[-1]
             else:
                 E2 = E2 - \
-                    preferences.EELS.preedge_safe_window_width
+                    self._preedge_safe_window_width
 
         if not powerlaw.estimate_parameters(
-                self.spectrum, E1, E2, only_current=False):
+                self.signal, E1, E2, only_current=False):
             _logger.warning(
                 "The power law background parameters could not "
                 "be estimated.\n"
@@ -491,7 +493,6 @@ class EELSModel(Model1D):
         ea = self.axis.axis[self.channel_switches]
         if start_energy is None:
             start_energy = ea[0]
-        preedge_safe_window_width = preferences.EELS.preedge_safe_window_width
         # Declare variables
         active_edges = self._active_edges
         edge = active_edges[edgenumber]
@@ -515,7 +516,7 @@ class EELSModel(Model1D):
         else:
             nextedgeenergy = (
                 active_edges[edgenumber + i].onset_energy.value -
-                preedge_safe_window_width)
+                self._preedge_safe_window_width)
 
         # Backup the fsstate
         to_activate_fs = []

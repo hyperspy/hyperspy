@@ -17,15 +17,17 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from operator import attrgetter
+import warnings
 import inspect
 import copy
 import types
 from io import StringIO
 import codecs
 import collections
-import tempfile
 import unicodedata
 from contextlib import contextmanager
+from hyperspy.misc.signal_tools import broadcast_signals
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 import numpy as np
 
@@ -47,18 +49,18 @@ def attrsetter(target, attrs, value):
         -------
         First create a signal and model pair:
 
-        >>> s = hs.signals.Spectrum(np.arange(10))
+        >>> s = hs.signals.Signal1D(np.arange(10))
         >>> m = s.create_model()
-        >>> m.spectrum.data
+        >>> m.signal.data
         array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
         Now set the data of the model with attrsetter
-        >>> attrsetter(m, 'spectrum.data', np.arange(10)+2)
-        >>> m.spectrum.data
+        >>> attrsetter(m, 'signal1D.data', np.arange(10)+2)
+        >>> self.signal.data
         array([2, 3, 4, 5, 6, 7, 8, 9, 10, 10])
 
         The behaviour is identical to
-        >>> m.spectrum.data = np.arange(10) + 2
+        >>> self.signal.data = np.arange(10) + 2
 
 
     """
@@ -149,15 +151,14 @@ def slugify(value, valid_variable_name=False):
         try:
             # Convert to unicode using the default encoding
             value = str(value)
-        except:
+        except BaseException:
             # Try latin1. If this does not work an exception is raised.
             value = str(value, "latin1")
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
     value = value.translate(None, _slugify_strip_re_data).decode().strip()
     value = value.replace(' ', '_')
-    if valid_variable_name is True:
-        if value[:1].isdigit():
-            value = 'Number_' + value
+    if valid_variable_name and not value.isidentifier():
+        value = 'Number_' + value
     return value
 
 
@@ -251,7 +252,6 @@ class DictionaryTreeBrowser(object):
 
     def _get_print_items(self, padding='', max_len=78):
         """Prints only the attributes that are not methods
-
         """
         from hyperspy.defaults_parser import preferences
 
@@ -342,8 +342,8 @@ class DictionaryTreeBrowser(object):
     def __setattr__(self, key, value):
         if key.startswith('_sig_'):
             key = key[5:]
-            from hyperspy.signal import Signal
-            value = Signal(**value)
+            from hyperspy.signal import BaseSignal
+            value = BaseSignal(**value)
         slugified_key = str(slugify(key, valid_variable_name=True))
         if isinstance(value, dict):
             if self.has_item(slugified_key):
@@ -374,7 +374,7 @@ class DictionaryTreeBrowser(object):
         """Returns its dictionary representation.
 
         """
-        from hyperspy.signal import Signal
+        from hyperspy.signal import BaseSignal
         par_dict = {}
         for key_, item_ in self.__dict__.items():
             if not isinstance(item_, types.MethodType):
@@ -383,9 +383,11 @@ class DictionaryTreeBrowser(object):
                     continue
                 if isinstance(item_['_dtb_value_'], DictionaryTreeBrowser):
                     item = item_['_dtb_value_'].as_dictionary()
-                elif isinstance(item_['_dtb_value_'], Signal):
+                elif isinstance(item_['_dtb_value_'], BaseSignal):
                     item = item_['_dtb_value_']._to_dictionary()
                     key = '_sig_' + key
+                elif hasattr(item_['_dtb_value_'], '_to_dictionary'):
+                    item = item_['_dtb_value_']._to_dictionary()
                 else:
                     item = item_['_dtb_value_']
                 par_dict.__setitem__(key, item)
@@ -432,8 +434,9 @@ class DictionaryTreeBrowser(object):
         else:
             return False
 
-    def get_item(self, item_path):
-        """Given a path, return True if it exists.
+    def get_item(self, item_path, default=None):
+        """Given a path, return it's value if it exists, or default
+        value if missing.
 
         The nodes of the path are separated using periods.
 
@@ -442,6 +445,9 @@ class DictionaryTreeBrowser(object):
         item_path : Str
             A string describing the path with each item separated by
             full stops (periods)
+        default :
+            The value to return if the path does not exist.
+
 
         Examples
         --------
@@ -467,11 +473,11 @@ class DictionaryTreeBrowser(object):
             else:
                 item = self[attrib]
                 if isinstance(item, type(self)):
-                    return item.get_item(item_path)
+                    return item.get_item(item_path, default)
                 else:
-                    raise AttributeError("Item not in dictionary browser")
+                    return default
         else:
-            raise AttributeError("Item not in dictionary browser")
+            return default
 
     def __contains__(self, item):
         return self.has_item(item_path=item)
@@ -586,7 +592,7 @@ def ensure_unicode(stuff, encoding='utf8', encoding2='latin-1'):
         string = stuff
     try:
         string = string.decode(encoding)
-    except:
+    except BaseException:
         string = string.decode(encoding2, errors='ignore')
     return string
 
@@ -673,10 +679,7 @@ def find_subclasses(mod, cls):
 
 
 def isiterable(obj):
-    if isinstance(obj, collections.Iterable):
-        return True
-    else:
-        return False
+    return isinstance(obj, collections.Iterable)
 
 
 def ordinal(value):
@@ -746,19 +749,15 @@ def closest_power_of_two(n):
     return int(2 ** np.ceil(np.log2(n)))
 
 
-def without_nans(data):
-    return data[~np.isnan(data)]
-
-
 def stack(signal_list, axis=None, new_axis_name='stack_element',
-          mmap=False, mmap_dir=None,):
+          lazy=None, **kwargs):
     """Concatenate the signals in the list over a given axis or a new axis.
 
     The title is set to that of the first signal in the list.
 
     Parameters
     ----------
-    signal_list : list of Signal instances
+    signal_list : list of BaseSignal instances
     axis : {None, int, str}
         If None, the signals are stacked over a new axis. The data must
         have the same dimensions. Otherwise the
@@ -770,114 +769,135 @@ def stack(signal_list, axis=None, new_axis_name='stack_element',
         If an axis with this name already
         exists it automatically append '-i', where `i` are integers,
         until it finds a name that is not yet in use.
-    mmap: bool
-        If True and stack is True, then the data is stored
-        in a memory-mapped temporary file.The memory-mapped data is
-        stored on disk, and not directly loaded into memory.
-        Memory mapping is especially useful for accessing small
-        fragments of large files without reading the entire file into
-        memory.
-    mmap_dir : string
-        If mmap_dir is not None, and stack and mmap are True, the memory
-        mapped file will be created in the given directory,
-        otherwise the default directory is used.
+    lazy: {bool, None}
+        Returns a LazySignal if True. If None, only returns lazy rezult if at
+        least one is lazy.
 
     Returns
     -------
-    signal : Signal instance (or subclass, determined by the objects in
+    signal : BaseSignal instance (or subclass, determined by the objects in
         signal list)
 
     Examples
     --------
     >>> data = np.arange(20)
-    >>> s = hs.stack([hs.signals.Spectrum(data[:10]),
-    ...               hs.signals.Spectrum(data[10:])])
+    >>> s = hs.stack([hs.signals.Signal1D(data[:10]),
+    ...               hs.signals.Signal1D(data[10:])])
     >>> s
-    <Spectrum, title: Stack of , dimensions: (2, 10)>
+    <Signal1D, title: Stack of , dimensions: (2, 10)>
     >>> s.data
     array([[ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9],
            [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]])
 
     """
+    from itertools import zip_longest
+    from hyperspy.signals import BaseSignal
+    import dask.array as da
+    from numbers import Number
+    # TODO: remove next time
+    deprecated = ['mmap', 'mmap_dir']
+    warn_str = "'{}' argument is deprecated, please use 'lazy' instead"
+    for k in deprecated:
+        if k in kwargs:
+            lazy = True
+            warnings.warn(warn_str.format(k), VisibleDeprecationWarning)
 
     axis_input = copy.deepcopy(axis)
+    signal_list = list(signal_list)
+    # Get the real signal with the most axes to get metadata/class/etc
+    # first = sorted(filter(lambda _s: isinstance(_s, BaseSignal), signal_list),
+    #                key=lambda _s: _s.data.ndim)[-1]
+    first = next(filter(lambda _s: isinstance(_s, BaseSignal), signal_list))
 
-    for i, obj in enumerate(signal_list):
-        if i == 0:
-            if axis is None:
-                original_shape = obj.data.shape
-                stack_shape = tuple([len(signal_list), ]) + original_shape
-                tempf = None
-                if mmap is False:
-                    data = np.empty(stack_shape,
-                                    dtype=obj.data.dtype)
-                else:
-                    tempf = tempfile.NamedTemporaryFile(
-                        dir=mmap_dir)
-                    data = np.memmap(tempf,
-                                     dtype=obj.data.dtype,
-                                     mode='w+',
-                                     shape=stack_shape,)
+    # Cast numbers as signals. Will broadcast later
 
-                signal = type(obj)(data=data)
-                signal.axes_manager._axes[
-                    1:] = copy.deepcopy(
-                    obj.axes_manager._axes)
-                axis_name = new_axis_name
-                axis_names = [axis_.name for axis_ in
-                              signal.axes_manager._axes[1:]]
-                j = 1
-                while axis_name in axis_names:
-                    axis_name = new_axis_name + "_%i" % j
-                    j += 1
-                eaxis = signal.axes_manager._axes[0]
-                eaxis.name = axis_name
-                eaxis.navigate = True  # This triggers _update_parameters
-                signal.metadata = copy.deepcopy(obj.metadata)
-                # Get the title from 1st object
-                signal.metadata.General.title = (
-                    "Stack of " + obj.metadata.General.title)
-                signal.original_metadata = DictionaryTreeBrowser({})
-            else:
-                axis = obj.axes_manager[axis]
-                signal = obj.deepcopy()
+    for i, _s in enumerate(signal_list):
+        if isinstance(_s, BaseSignal):
+            pass
+        elif isinstance(_s, Number):
+            sig = BaseSignal(_s)
+            signal_list[i] = sig
+        else:
+            raise ValueError("{} type cannot be stacked.".format(type(_s)))
 
-            signal.original_metadata.add_node('stack_elements')
+    if lazy is None:
+        lazy = any(_s._lazy for _s in signal_list)
+    if not isinstance(lazy, bool):
+        raise ValueError("'lazy' argument has to be None, True or False")
 
-        # Store parameters
-        signal.original_metadata.stack_elements.add_node(
-            'element%i' % i)
-        node = signal.original_metadata.stack_elements[
-            'element%i' % i]
-        node.original_metadata = \
-            obj.original_metadata.as_dictionary()
-        node.metadata = \
-            obj.metadata.as_dictionary()
-
-        if axis is None:
-            if obj.data.shape != original_shape:
-                raise IOError(
-                    "Only files with data of the same shape can be stacked")
-            signal.data[i, ...] = obj.data
-            del obj
-    if axis is not None:
-        signal.data = np.concatenate([signal_.data for signal_ in signal_list],
-                                     axis=axis.index_in_array)
+    # Cast all as lazy if required
+    for i, _s in enumerate(signal_list):
+        if not _s._lazy:
+            signal_list[i] = _s.as_lazy()
+    if len(signal_list) > 1:
+        newlist = broadcast_signals(*signal_list, ignore_axis=axis_input)
+        if axis is not None:
+            step_sizes = [s.axes_manager[axis].size for s in newlist]
+            axis = newlist[0].axes_manager[axis]
+        datalist = [s.data for s in newlist]
+        newdata = da.stack(datalist, axis=0) if axis is None else \
+            da.concatenate(datalist, axis=axis.index_in_array)
+        if axis_input is None:
+            signal = first.__class__(newdata)
+            signal._lazy = True
+            signal._assign_subclass()
+            signal.axes_manager._axes[1:] = copy.deepcopy(
+                newlist[0].axes_manager._axes)
+            axis_name = new_axis_name
+            axis_names = [
+                axis_.name for axis_ in signal.axes_manager._axes[
+                    1:]]
+            j = 1
+            while axis_name in axis_names:
+                axis_name = new_axis_name + "_%i" % j
+                j += 1
+            eaxis = signal.axes_manager._axes[0]
+            eaxis.name = axis_name
+            eaxis.navigate = True  # This triggers _update_parameters
+            signal.metadata = copy.deepcopy(first.metadata)
+            # Get the title from 1st object
+            signal.metadata.General.title = (
+                "Stack of " + first.metadata.General.title)
+            signal.original_metadata = DictionaryTreeBrowser({})
+        else:
+            signal = newlist[0]._deepcopy_with_new_data(newdata)
+            signal._lazy = True
+            signal._assign_subclass()
         signal.get_dimensions_from_data()
+        signal.original_metadata.add_node('stack_elements')
 
-    if axis_input is None:
-        axis_input = signal.axes_manager[-1 + 1j].index_in_axes_manager
-        step_sizes = 1
+        for i, obj in enumerate(signal_list):
+            signal.original_metadata.stack_elements.add_node('element%i' % i)
+            node = signal.original_metadata.stack_elements['element%i' % i]
+            node.original_metadata = \
+                obj.original_metadata.as_dictionary()
+            node.metadata = \
+                obj.metadata.as_dictionary()
+
+        if axis_input is None:
+            axis_input = signal.axes_manager[-1 + 1j].index_in_axes_manager
+            step_sizes = 1
+
+        signal.metadata._HyperSpy.set_item('Stacking_history.axis', axis_input)
+        signal.metadata._HyperSpy.set_item('Stacking_history.step_sizes',
+                                           step_sizes)
+        if np.all([
+                s.metadata.has_item('Signal.Noise_properties.variance')
+                for s in signal_list
+        ]):
+            variance = stack([
+                s.metadata.Signal.Noise_properties.variance for s in signal_list
+            ], axis)
+            signal.metadata.set_item(
+                'Signal.Noise_properties.variance', variance)
     else:
-        step_sizes = [obj.axes_manager[axis_input].size
-                      for obj in signal_list]
+        signal = signal_list[0]
 
-    signal.metadata._HyperSpy.set_item(
-        'Stacking_history.axis',
-        axis_input)
-    signal.metadata._HyperSpy.set_item(
-        'Stacking_history.step_sizes',
-        step_sizes)
+    # Leave as lazy or compute
+    if lazy:
+        signal = signal.as_lazy()
+    else:
+        signal.compute(False)
 
     return signal
 
@@ -887,3 +907,149 @@ def shorten_name(name, req_l):
         return name[:req_l - 2] + '..'
     else:
         return name
+
+
+def transpose(*args, signal_axes=None, navigation_axes=None, optimize=False):
+    """Transposes all passed signals according to the specified options.
+
+    For parameters see ``BaseSignal.transpose``.
+
+    Examples
+    --------
+
+    >>> signal_iterable = [hs.signals.BaseSignal(np.random.random((2,)*(i+1)))
+                           for i in range(3)]
+    >>> signal_iterable
+    [<BaseSignal, title: , dimensions: (|2)>,
+     <BaseSignal, title: , dimensions: (|2, 2)>,
+     <BaseSignal, title: , dimensions: (|2, 2, 2)>]
+    >>> hs.transpose(*signal_iterable, signal_axes=1)
+    [<BaseSignal, title: , dimensions: (|2)>,
+     <BaseSignal, title: , dimensions: (2|2)>,
+     <BaseSignal, title: , dimensions: (2, 2|2)>]
+    >>> hs.transpose(signal1, signal2, signal3, signal_axes=["Energy"])
+    """
+    from hyperspy.signal import BaseSignal
+    if not all(map(isinstance, args, (BaseSignal for _ in args))):
+        raise ValueError("Not all pased objects are signals")
+    return [sig.transpose(signal_axes=signal_axes,
+                          navigation_axes=navigation_axes,
+                          optimize=optimize) for sig in args]
+
+
+def create_map_objects(function, nav_size, iterating_kwargs, **kwargs):
+    """To be used in _map_iterate of BaseSignal and LazySignal.
+
+    Moved to a separate method to reduce code duplication.
+    """
+    from hyperspy.signal import BaseSignal
+    from itertools import repeat
+
+    iterators = tuple(signal[1]._cycle_signal()
+                      if isinstance(signal[1], BaseSignal) else signal[1]
+                      for signal in iterating_kwargs)
+    # make all kwargs iterating for simplicity:
+    iterating = tuple(key for key, value in iterating_kwargs)
+    for k, v in kwargs.items():
+        if k not in iterating:
+            iterating += k,
+            iterators += repeat(v, nav_size),
+
+    def figure_out_kwargs(data):
+        _kwargs = {k: v for k, v in zip(iterating, data[1:])}
+        for k, v in iterating_kwargs:
+            if (isinstance(v, BaseSignal) and
+                isinstance(_kwargs[k], np.ndarray) and
+                    len(_kwargs[k]) == 1):
+                _kwargs[k] = _kwargs[k][0]
+        return data[0], _kwargs
+
+    def func(*args):
+        dat, these_kwargs = figure_out_kwargs(*args)
+        return function(dat, **these_kwargs)
+
+    return func, iterators
+
+
+def map_result_construction(signal,
+                            inplace,
+                            result,
+                            ragged,
+                            sig_shape=None,
+                            lazy=False):
+    from hyperspy.signals import BaseSignal
+    from hyperspy._lazy_signals import LazySignal
+    res = None
+    if inplace:
+        sig = signal
+    else:
+        res = sig = signal._deepcopy_with_new_data()
+    if ragged:
+        sig.data = result
+        sig.axes_manager.remove(sig.axes_manager.signal_axes)
+        sig.__class__ = LazySignal if lazy else BaseSignal
+        sig.__init__(**sig._to_dictionary(add_models=True))
+
+    else:
+        if not sig._lazy and sig.data.shape == result.shape and np.can_cast(
+                result.dtype, sig.data.dtype):
+            sig.data[:] = result
+        else:
+            sig.data = result
+
+        # remove if too many axes
+        sig.axes_manager.remove(sig.axes_manager.signal_axes[len(sig_shape):])
+        # add additional required axes
+        for ind in range(
+                len(sig_shape) - sig.axes_manager.signal_dimension, 0, -1):
+            sig.axes_manager._append_axis(sig_shape[-ind], navigate=False)
+    sig.get_dimensions_from_data()
+    if not sig.axes_manager._axes:
+        add_scalar_axis(sig)
+    return res
+
+
+def multiply(iterable):
+    """Return product of sequence of numbers.
+
+    Equivalent of functools.reduce(operator.mul, iterable, 1).
+
+    >>> product([2**8, 2**30])
+    274877906944
+    >>> product([])
+    1
+
+    """
+    prod = 1
+    for i in iterable:
+        prod *= i
+    return prod
+
+
+def iterable_not_string(thing):
+    return isinstance(thing, collections.Iterable) and \
+        not isinstance(thing, str)
+
+
+def signal_range_from_roi(signal_range):
+    from hyperspy.roi import SpanROI
+    if isinstance(signal_range, SpanROI):
+        return (signal_range.left, signal_range.right)
+    else:
+        return signal_range
+
+
+def deprecation_warning(msg):
+    warnings.warn(msg, VisibleDeprecationWarning)
+
+
+def add_scalar_axis(signal):
+    am = signal.axes_manager
+    from hyperspy.signal import BaseSignal
+    signal.__class__ = BaseSignal
+    am.remove(am._axes)
+    am._append_axis(size=1,
+                    scale=1,
+                    offset=0,
+                    name="Scalar",
+                    navigate=False)

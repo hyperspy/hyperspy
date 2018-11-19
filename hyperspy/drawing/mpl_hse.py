@@ -23,10 +23,10 @@ import numpy as np
 from traits.api import Undefined
 
 from hyperspy.drawing.mpl_he import MPL_HyperExplorer
-from hyperspy.drawing import spectrum, utils
+from hyperspy.drawing import signal1d
 
 
-class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
+class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
 
     """Plots the current spectrum to the screen and a map with a cursor
     to explore the SI.
@@ -34,7 +34,7 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
     """
 
     def __init__(self):
-        super(MPL_HyperSpectrum_Explorer, self).__init__()
+        super(MPL_HyperSignal1D_Explorer, self).__init__()
         self.xlabel = ''
         self.ylabel = ''
         self.right_pointer = None
@@ -73,73 +73,77 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
         else:
             self.remove_right_pointer()
 
-    def plot_signal(self):
+    def plot_signal(self, **kwargs):
+        super().plot_signal()
         if self.signal_plot is not None:
-            self.signal_plot.plot()
+            self.signal_plot.plot(**kwargs)
             return
         # Create the figure
-        self.xlabel = '%s' % str(self.axes_manager.signal_axes[0])
-        if self.axes_manager.signal_axes[0].units is not Undefined:
-            self.xlabel += ' (%s)' % self.axes_manager.signal_axes[0].units
-        self.ylabel = 'Intensity'
         self.axis = self.axes_manager.signal_axes[0]
-        sf = spectrum.SpectrumFigure(title=self.signal_title +
+        sf = signal1d.Signal1DFigure(title=self.signal_title +
                                      " Signal")
+        sf.axis = self.axis
+        if sf.ax is None:
+            sf.create_axis()
+        sf.axes_manager = self.axes_manager
+        self.xlabel = '{}'.format(self.axes_manager.signal_axes[0])
+        if self.axes_manager.signal_axes[0].units is not Undefined:
+            self.xlabel += ' ({})'.format(
+                self.axes_manager.signal_axes[0].units)
+        self.ylabel = self.quantity_label if self.quantity_label is not '' \
+            else 'Intensity'
         sf.xlabel = self.xlabel
         sf.ylabel = self.ylabel
-        sf.axis = self.axis
-        sf.create_axis()
-        sf.axes_manager = self.axes_manager
+
         self.signal_plot = sf
         # Create a line to the left axis with the default indices
-        sl = spectrum.SpectrumLine()
-        sl.autoscale = True
+        sl = signal1d.Signal1DLine()
+        is_complex = np.iscomplexobj(self.signal_data_function())
+        sl.autoscale = True if not is_complex else False
         sl.data_function = self.signal_data_function
+        kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
         sl.plot_indices = True
         if self.pointer is not None:
             color = self.pointer.color
         else:
             color = 'red'
         sl.set_line_properties(color=color, type='step')
-        # Add the line to the figure
-
+        # Add the line to the figure:
         sf.add_line(sl)
         # If the data is complex create a line in the left axis with the
         # default coordinates
-        sl = spectrum.SpectrumLine()
-        sl.data_function = self.signal_data_function
-        sl.plot_coordinates = True
-        sl.get_complex = any(np.iscomplex(sl.data_function()))
-        if sl.get_complex:
+        if is_complex:
+            sl = signal1d.Signal1DLine()
+            sl.autoscale = True
+            sl.data_function = self.signal_data_function
+            sl.plot_coordinates = True
+            sl._plot_imag = True
             sl.set_line_properties(color="blue", type='step')
             # Add extra line to the figure
             sf.add_line(sl)
 
         self.signal_plot = sf
-        sf.plot()
-        if self.navigator_plot is not None and sf.figure is not None:
-            utils.on_figure_window_close(self.navigator_plot.figure,
-                                         self._on_navigator_plot_closing)
-            utils.on_figure_window_close(sf.figure,
-                                         self.close_navigator_plot)
-            self._key_nav_cid = \
+        sf.plot(**kwargs)
+        if sf.figure is not None:
+            if self.axes_manager.navigation_axes:
                 self.signal_plot.figure.canvas.mpl_connect(
-                    'key_press_event',
-                    self.axes_manager.key_navigator)
-            self._key_nav_cid = \
+                    'key_press_event', self.axes_manager.key_navigator)
+            if self.navigator_plot is not None:
+                self.navigator_plot.events.closed.connect(
+                    self._on_navigator_plot_closing, [])
+                sf.events.closed.connect(self.close_navigator_plot, [])
+                self.signal_plot.figure.canvas.mpl_connect(
+                    'key_press_event', self.key2switch_right_pointer)
                 self.navigator_plot.figure.canvas.mpl_connect(
-                    'key_press_event',
-                    self.axes_manager.key_navigator)
-            self.signal_plot.figure.canvas.mpl_connect(
-                'key_press_event', self.key2switch_right_pointer)
-            self.navigator_plot.figure.canvas.mpl_connect(
-                'key_press_event', self.key2switch_right_pointer)
+                    'key_press_event', self.key2switch_right_pointer)
+                self.navigator_plot.figure.canvas.mpl_connect(
+                    'key_press_event', self.axes_manager.key_navigator)
 
     def key2switch_right_pointer(self, event):
         if event.key == "e":
             self.right_pointer_on = not self.right_pointer_on
 
-    def add_right_pointer(self):
+    def add_right_pointer(self, **kwargs):
         if self.signal_plot.right_axes_manager is None:
             self.signal_plot.right_axes_manager = \
                 copy.deepcopy(self.axes_manager)
@@ -147,7 +151,10 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
             pointer = self.assign_pointer()
             self.right_pointer = pointer(
                 self.signal_plot.right_axes_manager)
-            self.right_pointer.size = self.pointer.size
+            # The following is necessary because e.g. a line pointer does not
+            # have size
+            if hasattr(self.pointer, "size"):
+                self.right_pointer.size = self.pointer.size
             self.right_pointer.color = 'blue'
             self.right_pointer.connect_navigate()
             self.right_pointer.set_mpl_ax(self.navigator_plot.ax)
@@ -157,7 +164,7 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
                     self._pointer_nav_dim:]:
                 self.signal_plot.right_axes_manager._axes[
                     axis.index_in_array] = axis
-        rl = spectrum.SpectrumLine()
+        rl = signal1d.Signal1DLine()
         rl.autoscale = True
         rl.data_function = self.signal_data_function
         rl.set_line_properties(color=self.right_pointer.color,
@@ -166,8 +173,15 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
         self.signal_plot.add_line(rl, ax='right')
         rl.plot_indices = True
         rl.text_position = (1., 1.05,)
-        rl.plot()
+        rl.plot(**kwargs)
         self.right_pointer_on = True
+        if hasattr(self.signal_plot.figure, 'tight_layout'):
+            try:
+                self.signal_plot.figure.tight_layout()
+            except BaseException:
+                # tight_layout is a bit brittle, we do this just in case it
+                # complains
+                pass
 
     def remove_right_pointer(self):
         for line in self.signal_plot.right_ax_lines:
@@ -175,4 +189,3 @@ class MPL_HyperSpectrum_Explorer(MPL_HyperExplorer):
             line.close()
         self.right_pointer.close()
         self.right_pointer = None
-        self.navigator_plot.update()

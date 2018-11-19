@@ -23,16 +23,17 @@ import logging
 import numpy as np
 from scipy.interpolate import splev
 
-from hyperspy.defaults_parser import preferences
 from hyperspy.component import Component
 from hyperspy.misc.eels.hartree_slater_gos import HartreeSlaterGOS
 from hyperspy.misc.eels.hydrogenic_gos import HydrogenicGOS
 from hyperspy.misc.eels.effective_angle import effective_angle
+from hyperspy.ui_registry import add_gui_method
 
 
 _logger = logging.getLogger(__name__)
 
 
+@add_gui_method(toolkey="EELSCLEdge_Component")
 class EELSCLEdge(Component):
 
     """EELS core loss ionisation edge from hydrogenic or tabulated
@@ -81,12 +82,10 @@ class EELSCLEdge(Component):
         Decreasing the value increases the level of smoothing.
 
     fine_structure_active : bool
-        Activates/deactivates the fine structure feature. Its
-        default value can be choosen in the preferences.
+        Activates/deactivates the fine structure feature.
 
     """
-    _fine_structure_smoothing = \
-        preferences.EELS.fine_structure_smoothing
+    _fine_structure_smoothing = 0.3
 
     def __init__(self, element_subshell, GOS=None):
         # Declare the parameters
@@ -103,8 +102,8 @@ class EELSCLEdge(Component):
         self.name = "_".join([self.element, self.subshell])
         self.energy_scale = None
         self.effective_angle.free = False
-        self.fine_structure_active = preferences.EELS.fine_structure_active
-        self.fine_structure_width = preferences.EELS.fine_structure_width
+        self.fine_structure_active = False
+        self.fine_structure_width = 30.
         self.fine_structure_coeff.ext_force_positive = False
         self.GOS = None
         # Set initial actions
@@ -213,7 +212,7 @@ class EELSCLEdge(Component):
                 self.GOS.onset_energy,
                 self.convergence_angle,
                 self.collection_angle)
-        except:
+        except BaseException:
             # All the parameters may not be defined yet...
             pass
 
@@ -306,6 +305,15 @@ class EELSCLEdge(Component):
         """Returns the number of counts in barns
 
         """
+        shift = self.onset_energy.value - self.GOS.onset_energy
+        if shift != self.GOS.energy_shift:
+            # Because hspy Events are not executed in any given order,
+            # an external function could be in the same event execution list
+            # as _integrate_GOS and be executed first. That can potentially
+            # cause an error that enforcing _integrate_GOS here prevents. Note
+            # that this is suboptimal because _integrate_GOS is computed twice
+            # unnecessarily.
+            self._integrate_GOS()
         Emax = self.GOS.energy_axis[-1] + self.GOS.energy_shift
         cts = np.zeros((len(E)))
         bsignal = (E >= self.onset_energy.value)
@@ -341,7 +349,7 @@ class EELSCLEdge(Component):
                 "The provided fine structure file "
                 "doesn't match the size of the current fine structure")
 
-    def get_fine_structure_as_spectrum(self):
+    def get_fine_structure_as_signal1D(self):
         """Returns a spectrum containing the fine structure.
 
         Notes

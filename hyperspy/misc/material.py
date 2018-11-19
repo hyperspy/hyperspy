@@ -35,7 +35,8 @@ def _weight_to_atomic(weight_percent, elements):
     atomic_weights = np.array(
         [elements_db[element]['General_properties']['atomic_weight']
             for element in elements])
-    atomic_percent = np.array(list(map(np.divide, weight_percent, atomic_weights)))
+    atomic_percent = np.array(
+        list(map(np.divide, weight_percent, atomic_weights)))
     sum_weight = atomic_percent.sum(axis=0) / 100.
     for i, el in enumerate(elements):
         atomic_percent[i] /= sum_weight
@@ -67,15 +68,17 @@ def weight_to_atomic(weight_percent, elements='auto'):
     array([ 93.19698614,   6.80301386])
 
     """
-    from hyperspy.signals import Signal
+    from hyperspy.signals import BaseSignal
     elements = _elements_auto(weight_percent, elements)
 
-    if isinstance(weight_percent[0], Signal):
+    if isinstance(weight_percent[0], BaseSignal):
         atomic_percent = stack(weight_percent)
         atomic_percent.data = _weight_to_atomic(
             atomic_percent.data, elements)
         atomic_percent.data = np.nan_to_num(atomic_percent.data)
         atomic_percent = atomic_percent.split()
+        for i, el in enumerate(elements):
+            atomic_percent[i].metadata.General.title = 'atomic percent of ' + el
         return atomic_percent
     else:
         return _weight_to_atomic(weight_percent, elements)
@@ -110,7 +113,8 @@ def _atomic_to_weight(atomic_percent, elements):
     atomic_weights = np.array(
         [elements_db[element]['General_properties']['atomic_weight']
             for element in elements])
-    weight_percent = np.array(list(map(np.multiply, atomic_percent, atomic_weights)))
+    weight_percent = np.array(
+        list(map(np.multiply, atomic_percent, atomic_weights)))
     sum_atomic = weight_percent.sum(axis=0) / 100.
     for i, el in enumerate(elements):
         weight_percent[i] /= sum_atomic
@@ -142,13 +146,15 @@ def atomic_to_weight(atomic_percent, elements='auto'):
     array([ 88.00501989,  11.99498011])
 
     """
-    from hyperspy.signals import Signal
+    from hyperspy.signals import BaseSignal
     elements = _elements_auto(atomic_percent, elements)
-    if isinstance(atomic_percent[0], Signal):
+    if isinstance(atomic_percent[0], BaseSignal):
         weight_percent = stack(atomic_percent)
         weight_percent.data = _atomic_to_weight(
             weight_percent.data, elements)
         weight_percent = weight_percent.split()
+        for i, el in enumerate(elements):
+            atomic_percent[i].metadata.General.title = 'weight percent of ' + el
         return weight_percent
     else:
         return _atomic_to_weight(atomic_percent, elements)
@@ -181,7 +187,7 @@ def _density_of_mixture(weight_percent,
     Examples
     --------
     Calculate the density of modern bronze given its weight percent:
-    >>> hs.material.density_of_mixture((88, 12),("Cu", "Sn"))
+    >>> hs.material.density_of_mixture([88, 12],['Cu', 'Sn'])
     8.6903187973131466
 
     """
@@ -237,13 +243,13 @@ def density_of_mixture(weight_percent,
     Examples
     --------
     Calculate the density of modern bronze given its weight percent:
-    >>> hs.material.density_of_mixture((88, 12),("Cu", "Sn"))
+    >>> hs.material.density_of_mixture([88, 12],['Cu', 'Sn'])
     8.6903187973131466
 
     """
-    from hyperspy.signals import Signal
+    from hyperspy.signals import BaseSignal
     elements = _elements_auto(weight_percent, elements)
-    if isinstance(weight_percent[0], Signal):
+    if isinstance(weight_percent[0], BaseSignal):
         density = weight_percent[0]._deepcopy_with_new_data(
             _density_of_mixture(stack(weight_percent).data,
                                 elements, mean=mean))
@@ -288,7 +294,6 @@ def mass_absorption_coefficient(element, energies):
     S.A., and Zucker, D.S. (2005), X-Ray Form Factor, Attenuation and
     Scattering Tables (version 2.1).
     """
-
     energies_db = np.array(ffast_mac[element].energies_keV)
     macs = np.array(ffast_mac[element].mass_absorption_coefficient_cm2g)
     energies = copy.copy(energies)
@@ -302,7 +307,7 @@ def mass_absorption_coefficient(element, energies):
     mac_res = np.exp(np.log(macs[index - 1]) +
                      np.log(macs[index] / macs[index - 1]) *
                      (np.log(energies / energies_db[index - 1]) /
-                     np.log(energies_db[index] / energies_db[index - 1])))
+                      np.log(energies_db[index] / energies_db[index - 1])))
     return np.nan_to_num(mac_res)
 
 
@@ -354,7 +359,7 @@ def _mass_absorption_mixture(weight_percent,
     if hasattr(weight_percent[0], '__iter__'):
         weight_fraction = np.array(weight_percent)
         weight_fraction /= np.sum(weight_fraction, 0)
-        mac_res = np.zeros([len(energies)]+list(weight_fraction.shape[1:]))
+        mac_res = np.zeros([len(energies)] + list(weight_fraction.shape[1:]))
         for element, weight in zip(elements, weight_fraction):
             mac_re = mass_absorption_coefficient(element, energies)
             mac_res += np.array([weight * ma for ma in mac_re])
@@ -412,12 +417,12 @@ def mass_absorption_mixture(weight_percent,
     Scattering Tables (version 2.1).
 
     """
-    from hyperspy.signals import Signal
+    from hyperspy.signals import BaseSignal
     elements = _elements_auto(weight_percent, elements)
     energies = _lines_auto(weight_percent, energies)
-    if isinstance(weight_percent[0], Signal):
+    if isinstance(weight_percent[0], BaseSignal):
         weight_per = np.array([wt.data for wt in weight_percent])
-        mac_res = stack([weight_percent[0].deepcopy()]*len(energies))
+        mac_res = stack([weight_percent[0].deepcopy()] * len(energies))
         mac_res.data = \
             _mass_absorption_mixture(weight_per, elements, energies)
         mac_res = mac_res.split()

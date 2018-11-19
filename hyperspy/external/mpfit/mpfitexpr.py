@@ -52,13 +52,13 @@ def mpfitexpr(func, x, y, err, start_params, check=True, full_output=False,
 
     if imports is not None:
         for i in imports:
-            #exec '%s=__import__("%s")'%(a,b) in globals(),locals()
+            # exec '%s=__import__("%s")'%(a,b) in globals(),locals()
             hash[i] = __import__(i)
 
     def myfunc(p, fjac=None, x=None, y=None, err=None):
         return [0, eval('(y-(%s))/err' % func, hash, locals())]
 
-    myre = "[^a-zA-Z]p\[(\d+)\]"
+    myre = r"[^a-zA-Z]p\[(\d+)\]"
     r = re.compile(myre)
     maxp = -1
     for m in re.finditer(r, func):

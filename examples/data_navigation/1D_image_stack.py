@@ -6,7 +6,7 @@ import hyperspy.api as hs
 import matplotlib.pyplot as plt
 
 # Create an image stack with random data
-im = hs.signals.Image(np.random.random((16, 32, 32)))
+im = hs.signals.Signal2D(np.random.random((16, 32, 32)))
 
 # Define the axis properties
 im.axes_manager.signal_axes[0].name = 'X'

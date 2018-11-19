@@ -17,19 +17,18 @@
 
 
 import numpy as np
-from nose.tools import assert_true, assert_equal
 
-from hyperspy._signals.spectrum import Spectrum
-from hyperspy.components import Gaussian
+from hyperspy._signals.signal1d import Signal1D
+from hyperspy.components1d import Gaussian
 
 
 class TestSetParameterInModel:
 
-    def setUp(self):
+    def setup_method(self, method):
         g1 = Gaussian()
         g2 = Gaussian()
         g3 = Gaussian()
-        s = Spectrum(np.arange(10))
+        s = Signal1D(np.arange(10))
         m = s.create_model()
         m.append(g1)
         m.append(g2)
@@ -45,9 +44,9 @@ class TestSetParameterInModel:
         g2 = self.g2
         g3 = self.g3
         m.set_parameters_not_free()
-        assert_equal(len(g1.free_parameters), 0)
-        assert_equal(len(g2.free_parameters), 0)
-        assert_equal(len(g3.free_parameters), 0)
+        assert len(g1.free_parameters) == 0
+        assert len(g2.free_parameters) == 0
+        assert len(g3.free_parameters) == 0
 
     def test_set_parameter_in_model_free(self):
         m = self.model
@@ -58,9 +57,9 @@ class TestSetParameterInModel:
         g2.sigma.free = False
         g3.centre.free = False
         m.set_parameters_free()
-        assert_equal(len(g1.free_parameters), len(g1.parameters))
-        assert_equal(len(g2.free_parameters), len(g2.parameters))
-        assert_equal(len(g3.free_parameters), len(g3.parameters))
+        assert len(g1.free_parameters) == len(g1.parameters)
+        assert len(g2.free_parameters) == len(g2.parameters)
+        assert len(g3.free_parameters) == len(g3.parameters)
 
     def test_set_parameter_in_model1(self):
         m = self.model
@@ -68,9 +67,9 @@ class TestSetParameterInModel:
         g2 = self.g2
         g3 = self.g3
         m.set_parameters_not_free([g1, g2])
-        assert_equal(len(g1.free_parameters), 0)
-        assert_equal(len(g2.free_parameters), 0)
-        assert_equal(len(g3.free_parameters), len(g3.parameters))
+        assert len(g1.free_parameters) == 0
+        assert len(g2.free_parameters) == 0
+        assert len(g3.free_parameters) == len(g3.parameters)
 
     def test_set_parameter_in_model2(self):
         m = self.model
@@ -79,9 +78,9 @@ class TestSetParameterInModel:
         g3 = self.g3
         m.set_parameters_not_free()
         m.set_parameters_free([g3])
-        assert_equal(len(g1.free_parameters), 0)
-        assert_equal(len(g2.free_parameters), 0)
-        assert_equal(len(g3.free_parameters), len(g3.parameters))
+        assert len(g1.free_parameters) == 0
+        assert len(g2.free_parameters) == 0
+        assert len(g3.free_parameters) == len(g3.parameters)
 
     def test_set_parameter_in_model3(self):
         m = self.model
@@ -89,15 +88,15 @@ class TestSetParameterInModel:
         g2 = self.g2
         g3 = self.g3
         m.set_parameters_not_free(parameter_name_list=['A'])
-        assert_true(not g1.A.free)
-        assert_true(g1.sigma.free)
-        assert_true(g1.centre.free)
-        assert_true(not g2.A.free)
-        assert_true(g2.sigma.free)
-        assert_true(g2.centre.free)
-        assert_true(not g3.A.free)
-        assert_true(g3.sigma.free)
-        assert_true(g3.centre.free)
+        assert not g1.A.free
+        assert g1.sigma.free
+        assert g1.centre.free
+        assert not g2.A.free
+        assert g2.sigma.free
+        assert g2.centre.free
+        assert not g3.A.free
+        assert g3.sigma.free
+        assert g3.centre.free
 
     def test_set_parameter_in_model4(self):
         m = self.model
@@ -105,15 +104,15 @@ class TestSetParameterInModel:
         g2 = self.g2
         g3 = self.g3
         m.set_parameters_not_free([g2], parameter_name_list=['A'])
-        assert_true(g1.A.free)
-        assert_true(g1.sigma.free)
-        assert_true(g1.centre.free)
-        assert_true(not g2.A.free)
-        assert_true(g2.sigma.free)
-        assert_true(g2.centre.free)
-        assert_true(g3.A.free)
-        assert_true(g3.sigma.free)
-        assert_true(g3.centre.free)
+        assert g1.A.free
+        assert g1.sigma.free
+        assert g1.centre.free
+        assert not g2.A.free
+        assert g2.sigma.free
+        assert g2.centre.free
+        assert g3.A.free
+        assert g3.sigma.free
+        assert g3.centre.free
 
     def test_set_parameter_in_model5(self):
         m = self.model
@@ -122,12 +121,12 @@ class TestSetParameterInModel:
         g3 = self.g3
         m.set_parameters_not_free()
         m.set_parameters_free([g1], parameter_name_list=['centre'])
-        assert_true(not g1.A.free)
-        assert_true(not g1.sigma.free)
-        assert_true(g1.centre.free)
-        assert_true(not g2.A.free)
-        assert_true(not g2.sigma.free)
-        assert_true(not g2.centre.free)
-        assert_true(not g3.A.free)
-        assert_true(not g3.sigma.free)
-        assert_true(not g3.centre.free)
+        assert not g1.A.free
+        assert not g1.sigma.free
+        assert g1.centre.free
+        assert not g2.A.free
+        assert not g2.sigma.free
+        assert not g2.centre.free
+        assert not g3.A.free
+        assert not g3.sigma.free
+        assert not g3.centre.free

@@ -1,32 +1,56 @@
-import nose.tools as nt
+# -*- coding: utf-8 -*-
+# Copyright 2007-2016 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import pytest
 
-from hyperspy.signals import Image, Spectrum
+from hyperspy.signals import Signal2D, Signal1D
 from hyperspy.roi import (Point1DROI, Point2DROI, SpanROI, RectangularROI,
                           Line2DROI, CircleROI)
 
 
 class TestROIs():
 
-    def setUp(self):
+    def setup_method(self, method):
         np.random.seed(0)  # Same random every time, Line2DROi test requires it
-        self.s_s = Spectrum(np.random.rand(50, 60, 4))
+        self.s_s = Signal1D(np.random.rand(50, 60, 4))
         self.s_s.axes_manager[0].scale = 5
         self.s_s.axes_manager[0].units = 'nm'
         self.s_s.axes_manager[1].scale = 5
         self.s_s.axes_manager[1].units = 'nm'
 
         # 4D dataset
-        self.s_i = Image(np.random.rand(100, 100, 4, 4))
+        self.s_i = Signal2D(np.random.rand(100, 100, 4, 4))
+
+        # Generate ROI for test of angle measurements
+        self.r = []
+        t = np.tan(30. / 180. * np.pi)
+        for x in [-1., -t, t, 1]:
+            for y in [-1., -t, t, 1]:
+                self.r.append(Line2DROI(x1=0., x2=x, y1=0., y2=y))
 
     def test_point1d_spectrum(self):
         s = self.s_s
         r = Point1DROI(35)
         sr = r(s)
         scale = s.axes_manager[0].scale
-        nt.assert_equal(sr.axes_manager.navigation_shape,
-                        s.axes_manager.navigation_shape[1:])
+        assert (sr.axes_manager.navigation_shape ==
+                s.axes_manager.navigation_shape[1:])
         np.testing.assert_equal(
             sr.data, s.data[:, int(35 / scale), ...])
 
@@ -47,8 +71,8 @@ class TestROIs():
         r = Point1DROI(35)
         sr = r(s)
         scale = s.axes_manager[0].scale
-        nt.assert_equal(sr.axes_manager.navigation_shape,
-                        s.axes_manager.navigation_shape[1:])
+        assert (sr.axes_manager.navigation_shape ==
+                s.axes_manager.navigation_shape[1:])
         np.testing.assert_equal(
             sr.data, s.data[:, int(35 / scale), ...])
 
@@ -57,8 +81,8 @@ class TestROIs():
         r = Point2DROI(35, 40)
         sr = r(s)
         scale = s.axes_manager[0].scale
-        nt.assert_equal(sr.axes_manager.navigation_shape,
-                        s.axes_manager.navigation_shape[2:])
+        assert (sr.axes_manager.navigation_shape ==
+                s.axes_manager.navigation_shape[2:])
         np.testing.assert_equal(
             sr.data, s.data[int(40 / scale), int(35 / scale), ...])
 
@@ -67,8 +91,8 @@ class TestROIs():
         r = Point2DROI(1, 2)
         sr = r(s, axes=s.axes_manager.signal_axes)
         scale = s.axes_manager.signal_axes[0].scale
-        nt.assert_equal(sr.axes_manager.signal_shape,
-                        s.axes_manager.signal_shape[2:])
+        assert (sr.axes_manager.signal_shape ==
+                s.axes_manager.signal_shape[2:])
         np.testing.assert_equal(
             sr.data, s.data[..., int(2 / scale), int(1 / scale)])
 
@@ -78,10 +102,51 @@ class TestROIs():
         sr = r(s)
         scale = s.axes_manager[0].scale
         n = (30 - 15) / scale
-        nt.assert_equal(sr.axes_manager.navigation_shape,
-                        (n, ) + s.axes_manager.navigation_shape[1:])
+        assert (sr.axes_manager.navigation_shape ==
+                (n, ) + s.axes_manager.navigation_shape[1:])
         np.testing.assert_equal(
             sr.data, s.data[:, int(15 / scale):int(30 // scale), ...])
+
+    def test_span_spectrum_nav_boundary_roi(self, mpl_cleanup):
+        s = Signal1D(np.random.rand(60, 4))
+        r = SpanROI(0, 60)
+        # Test adding roi to plot
+        s.plot(navigator='spectrum')
+        r.add_widget(s)
+        np.testing.assert_equal(r(s).data, s.data)
+
+        s.axes_manager[0].scale = 0.2
+        r2 = SpanROI(0, 12)
+        # Test adding roi to plot
+        s.plot(navigator='spectrum')
+        w2 = r2.add_widget(s)
+        np.testing.assert_equal(r2(s).data, s.data)
+
+        w2.set_bounds(x=-10)  # below min x
+        assert w2._pos[0] == 0
+        w2.set_bounds(width=0.1)  # below min width
+        assert w2._size[0] == 0.2
+        w2.set_bounds(width=30.0)  # above max width
+        assert w2._size[0] == 12
+
+        # the combination of the two is not valid
+        w2.set_bounds(x=10, width=20)
+        assert w2._pos[0] == 0
+        assert w2._size[0] == 12
+
+        w2.set_bounds(x=10)
+        w2.set_bounds(width=20)
+        assert w2._pos[0] == 0
+        assert w2._size[0] == 12
+
+    def test_widget_initialisation(self, mpl_cleanup):
+        s = Signal1D(np.arange(2 * 4 * 6).reshape(2, 4, 6))
+        s.axes_manager[0].scale = 0.5
+        s.axes_manager[1].scale = 1.0
+
+        roi_nav = RectangularROI(0, 0, 1, 0.5)
+        s.plot()
+        roi_nav.add_widget(s)
 
     def test_span_spectrum_sig(self):
         s = self.s_s
@@ -89,7 +154,7 @@ class TestROIs():
         sr = r(s, axes=s.axes_manager.signal_axes)
         scale = s.axes_manager.signal_axes[0].scale
         n = (3 - 1) / scale
-        nt.assert_equal(sr.axes_manager.signal_shape, (n, ))
+        assert sr.axes_manager.signal_shape == (n, )
         np.testing.assert_equal(sr.data, s.data[...,
                                                 int(1 / scale):int(3 / scale)])
 
@@ -103,10 +168,75 @@ class TestROIs():
         scale1 = s.axes_manager[1].scale
         n = ((int(round(2.3 / scale0)), int(round(3.5 / scale0)),),
              (int(round(5.6 / scale1)), int(round(12.2 / scale1)),))
-        nt.assert_equal(sr.axes_manager.navigation_shape,
-                        (n[0][1] - n[0][0], n[1][1] - n[1][0]))
+        assert (sr.axes_manager.navigation_shape ==
+                (n[0][1] - n[0][0], n[1][1] - n[1][0]))
         np.testing.assert_equal(
             sr.data, s.data[n[1][0]:n[1][1], n[0][0]:n[0][1], ...])
+
+    def test_rect_image_boundary_roi(self, mpl_cleanup):
+        s = self.s_i
+        r = RectangularROI(0, 0, 100, 100)
+        # Test adding roi to plot
+        s.plot()
+        w = r.add_widget(s)
+        np.testing.assert_equal(r(s).data, s.data)
+
+        # width and height should range between 1 and axes shape
+        with pytest.raises(ValueError):
+            w.width = 101
+        with pytest.raises(ValueError):
+            w.height = 101
+
+        s.axes_manager[0].scale = 0.2
+        s.axes_manager[1].scale = 0.8
+        r2 = RectangularROI(0, 0, 20, 80)
+        # Test adding roi to plot
+        s.plot()
+        w2 = r2.add_widget(s)
+        np.testing.assert_equal(r2(s).data, s.data)
+
+        w2.set_bounds(x=-10)  # below min x
+        assert w2._pos[0] == 0
+        w2.set_bounds(width=0.1)  # below min width
+        assert w2._size[0] == 0.2
+        w2.set_bounds(width=30.0)  # above max width
+        assert w2._size[0] == 20
+
+        w2.set_bounds(y=0)  # min y
+        w2.set_bounds(height=0.7)  # below min height
+        assert w2._size[1] == 0.8
+        w2.set_bounds(height=90.0)  # about max height
+        assert w2._size[1] == 80.0
+
+        # by indices
+        # width and height should range between 1 and axes shape
+        with pytest.raises(ValueError):
+            w2.width = 0
+        with pytest.raises(ValueError):
+            w2.height = 0
+        with pytest.raises(ValueError):
+            w2.width = 101
+        with pytest.raises(ValueError):
+            w2.height = 101
+
+        # the combination of the two is not valid
+        w2.set_bounds(x=10, width=20)
+        assert w2._pos[0] == 0.0
+        assert w2._size[0] == 20.0
+
+        # the combination of the two is not valid
+        w2.set_bounds(y=40, height=60)
+        assert w2._pos[1] == 0
+        assert w2._size[1] == 80
+
+        w2.set_bounds(x=10)
+        w2.set_bounds(width=20)
+        assert w2._pos[0] == 0
+        assert w2._size[0] == 20
+        w2.set_bounds(y=10)
+        w2.set_bounds(height=79.2)
+        assert w2._pos[1] == 0.0
+        assert w2._size[1] == 79.2
 
     def test_circle_spec(self):
         s = self.s_s
@@ -117,15 +247,15 @@ class TestROIs():
         sr_ann = r_ann(s)
         scale = s.axes_manager[0].scale
         n = int(round(40 / scale))
-        nt.assert_equal(sr.axes_manager.navigation_shape, (n, n))
-        nt.assert_equal(sr_ann.axes_manager.navigation_shape, (n, n))
+        assert sr.axes_manager.navigation_shape == (n, n)
+        assert sr_ann.axes_manager.navigation_shape == (n, n)
         # Check that mask is same for all images:
         for i in range(n):
             for j in range(n):
-                nt.assert_true(np.all(sr.data.mask[j, i, :] == True) or
-                               np.all(sr.data.mask[j, i, :] == False))
-                nt.assert_true(np.all(sr_ann.data.mask[j, i, :] == True) or
-                               np.all(sr_ann.data.mask[j, i, :] == False))
+                assert (np.all(sr.data.mask[j, i, :] == True) or
+                        np.all(sr.data.mask[j, i, :] == False))
+                assert (np.all(sr_ann.data.mask[j, i, :] == True) or
+                        np.all(sr_ann.data.mask[j, i, :] == False))
         # Check that the correct elements has been masked out:
         mask = sr.data.mask[:, :, 0]
         print(mask)   # To help debugging, this shows the shape of the mask
@@ -140,87 +270,94 @@ class TestROIs():
              26, 27, 28, 29, 30, 33, 34, 35, 36, 37, 38, 41, 42, 43, 44, 45, 46,
              48, 50, 51, 52, 53, 55, 56, 57, 62, 63])
         # Check that mask works for sum
-        nt.assert_equal(np.sum(sr.data), (n**2 - 3 * 4) * 4)
-        nt.assert_equal(np.sum(sr_ann.data), 4 * 5 * 4)
+        assert np.sum(sr.data) == (n**2 - 3 * 4) * 4
+        assert np.sum(sr_ann.data) == 4 * 5 * 4
+
+        s.plot()
+        r_signal = r.interactive(signal=s)
+        r_ann_signal = r_ann.interactive(signal=s)
+
+        assert np.sum(r_signal.sum().data) == (n**2 - 3 * 4) * 4
+        assert np.sum(r_ann_signal.sum().data) == 4 * 5 * 4
 
     def test_2d_line_spec_plot(self):
         r = Line2DROI(10, 10, 150, 50, 5)
         s = self.s_s
         s2 = r(s)
-        np.testing.assert_almost_equal(s2.data, np.array(
+        np.testing.assert_allclose(s2.data, np.array(
             [[0.96779467, 0.5468849, 0.27482357, 0.59223042],
-             [0.75928245, 0.36454463, 0.50106317, 0.37638916],
-             [0.93916091, 0.50631222, 0.99980858, 0.19725947],
-             [0.8075638, 0.05100731, 0.62716071, 0.50245307],
-             [0.88118825, 0.91641901, 0.2715511, 0.60754536],
-             [0.8996517, 0.11646325, 0.16318171, 0.6962192],
-             [0.01497626, 0.4573887, 0.64439714, 0.06037948],
-             [0.72362309, 0.28890677, 0.97364152, 0.85953663],
-             [0.72362309, 0.28890677, 0.97364152, 0.85953663],
-             [0.24783865, 0.1928807, 0.21518258, 0.33911841],
-             [0.50438632, 0.55765081, 0.31787285, 0.614175],
-             [0.04143613, 0.40084015, 0.79034035, 0.64846836],
-             [0.08067386, 0.79973013, 0.16217087, 0.19457452],
-             [0.54601389, 0.8121854, 0.81069635, 0.71423997],
-             [0.83030369, 0.1979076, 0.10475427, 0.05690645],
-             [0.30969465, 0.60847027, 0.76278635, 0.54082552],
-             [0.61242728, 0.11588176, 0.60404942, 0.83680764],
-             [0.57727334, 0.36670814, 0.04252509, 0.43254571],
-             [0.89750871, 0.44035511, 0.6426097, 0.38146028],
-             [0.32126274, 0.6520685, 0.47213129, 0.05101303],
-             [0.30668186, 0.51515877, 0.69551083, 0.28720246],
-             [0.95568239, 0.12785748, 0.77676417, 0.31861386],
-             [0.80813283, 0.93128198, 0.28999035, 0.39246662],
-             [0.80813283, 0.93128198, 0.28999035, 0.39246662],
-             [0.3329224, 0.95850972, 0.8414333, 0.28555722],
-             [0.84350086, 0.93051062, 0.82974137, 0.52569971],
-             [0.97002278, 0.82518232, 0.92972355, 0.52315373],
-             [0.23035238, 0.43235565, 0.04142909, 0.04025669],
-             [0.54124516, 0.89630549, 0.5923778, 0.25663082],
-             [0.60156, 0.51353417, 0.78213733, 0.8870782],
-             [0.08783705, 0.59293514, 0.39825928, 0.55032904]]
-        ))
+             [0.89676116, 0.40673335, 0.55207828, 0.27165277],
+                [0.27734027, 0.52437981, 0.11738029, 0.15984529],
+                [0.04680635, 0.97073144, 0.00386035, 0.17857997],
+                [0.61286675, 0.0813696, 0.8818965, 0.71962016],
+                [0.96638997, 0.50763555, 0.30040368, 0.54950057],
+                [0.22956744, 0.50686296, 0.73685316, 0.09767637],
+                [0.5149222, 0.93841202, 0.22864655, 0.67714114],
+                [0.5149222, 0.93841202, 0.22864655, 0.67714114],
+                [0.59288027, 0.0100637, 0.4758262, 0.70877039],
+                [0.80546244, 0.58610794, 0.56928692, 0.51208072],
+                [0.97176308, 0.36384478, 0.78791575, 0.55529411],
+                [0.39563367, 0.95546593, 0.59831597, 0.11891694],
+                [0.4175392, 0.78158173, 0.69374702, 0.91634033],
+                [0.44679332, 0.83699037, 0.22182403, 0.49394526],
+                [0.92961874, 0.66721471, 0.79807902, 0.55099397],
+                [0.98046646, 0.58866215, 0.04551071, 0.1979828],
+                [0.70340703, 0.35307496, 0.15442542, 0.31268984],
+                [0.88432423, 0.95853234, 0.20751273, 0.78846839],
+                [0.27334874, 0.88713154, 0.16554561, 0.66595992],
+                [0.08421126, 0.97389332, 0.70063334, 0.84181574],
+                [0.15946909, 0.41702974, 0.42681952, 0.26810926],
+                [0.13159685, 0.03921054, 0.02523183, 0.27155029],
+                [0.13159685, 0.03921054, 0.02523183, 0.27155029],
+                [0.46185344, 0.72624328, 0.4748717, 0.90405082],
+                [0.52917427, 0.54280647, 0.71405379, 0.51655594],
+                [0.13307599, 0.77345467, 0.4062725, 0.96309389],
+                [0.28351378, 0.26307878, 0.3335074, 0.57231702],
+                [0.89486974, 0.17628164, 0.2796788, 0.58167984],
+                [0.64937273, 0.5006921, 0.28355772, 0.2861476],
+                [0.31342052, 0.19085, 0.90192363, 0.85839813]]
+        ), rtol=0.05)
         r.linewidth = 50
         s3 = r(s)
-        np.testing.assert_almost_equal(s3.data, np.array(
-            [[0.44265776, 0.35745439, 0.27446296, 0.41595865],
-             [0.26916342, 0.37715306, 0.32971154, 0.33530845],
-             [0.35426084, 0.47282874, 0.44090125, 0.35714432],
-             [0.4460463, 0.44976548, 0.40195731, 0.53014602],
-             [0.5426024, 0.53311424, 0.54084761, 0.3422711],
-             [0.45614115, 0.43188745, 0.25545383, 0.44532886],
-             [0.46822001, 0.62948798, 0.3153703, 0.43942564],
-             [0.47173014, 0.67098345, 0.25334107, 0.37146341],
-             [0.51756393, 0.37361861, 0.43797954, 0.4143497],
-             [0.42342347, 0.54374975, 0.63824925, 0.46078933],
-             [0.59427019, 0.49465564, 0.50841493, 0.64876998],
-             [0.55886454, 0.48120671, 0.53824089, 0.59540268],
-             [0.57945739, 0.64865535, 0.44827414, 0.50337253],
-             [0.53121262, 0.47216267, 0.55630321, 0.4016824],
-             [0.43845159, 0.47476225, 0.40063072, 0.35417257],
-             [0.45185363, 0.42844148, 0.5125228, 0.47386537],
-             [0.45610424, 0.56858719, 0.60593161, 0.47611862],
-             [0.47861857, 0.57419121, 0.51392978, 0.59486733],
-             [0.47641588, 0.54820991, 0.52233701, 0.57604036],
-             [0.34994652, 0.4514264, 0.57328452, 0.57024109],
-             [0.34159438, 0.59016962, 0.56304279, 0.4982093],
-             [0.55053388, 0.65012605, 0.55998794, 0.47428968],
-             [0.51392427, 0.56827423, 0.74809453, 0.60156568],
-             [0.64152041, 0.56110823, 0.57792954, 0.49621454],
-             [0.53466093, 0.55640288, 0.42431698, 0.50720362],
-             [0.59924828, 0.39606699, 0.56290688, 0.59880921],
-             [0.43478479, 0.46415729, 0.41994764, 0.5724431],
-             [0.26896758, 0.41500659, 0.47386699, 0.56557835],
-             [0.62045775, 0.49978237, 0.62594581, 0.48231989],
-             [0.3378933, 0.62744914, 0.61643326, 0.57795806],
-             [0.4226275, 0.53682311, 0.58369682, 0.43471438]]
+        np.testing.assert_allclose(s3.data, np.array(
+            [[0.40999384, 0.27111487, 0.3345655, 0.47553854],
+             [0.44475117, 0.40330205, 0.48113292, 0.26780132],
+                [0.57911599, 0.38999298, 0.38509116, 0.37418655],
+                [0.29175157, 0.37856367, 0.34420691, 0.48316543],
+                [0.55975912, 0.57155145, 0.57640677, 0.39718605],
+                [0.41300845, 0.45929259, 0.27489573, 0.40120352],
+                [0.46271229, 0.60908378, 0.25796662, 0.46526239],
+                [0.37843991, 0.54919334, 0.40469436, 0.48612034],
+                [0.44717148, 0.44934708, 0.29064827, 0.51334849],
+                [0.3966089, 0.59853786, 0.50392157, 0.39123649],
+                [0.50281456, 0.62863149, 0.43051921, 0.32015553],
+                [0.40527468, 0.44258442, 0.55694228, 0.41142292],
+                [0.47856163, 0.49720026, 0.62012372, 0.47537808],
+                [0.46695064, 0.5159018, 0.53532036, 0.4691573],
+                [0.44267241, 0.46886762, 0.37363574, 0.54369291],
+                [0.76138395, 0.54406653, 0.47305104, 0.45083095],
+                [0.74812744, 0.53414434, 0.38487816, 0.44611049],
+                [0.59011489, 0.5456799, 0.41782293, 0.5948403],
+                [0.47546595, 0.52536805, 0.39267032, 0.58787463],
+                [0.39387115, 0.4784124, 0.36765754, 0.46951847],
+                [0.54076839, 0.69257203, 0.44540576, 0.39236971],
+                [0.41195904, 0.5148879, 0.51199686, 0.63694563],
+                [0.44885787, 0.46886977, 0.42150512, 0.52556669],
+                [0.60826081, 0.3987657, 0.55875628, 0.5293137],
+                [0.44151911, 0.4188617, 0.37734811, 0.51166705],
+                [0.52878209, 0.41050467, 0.57149806, 0.52577575],
+                [0.50474464, 0.3294767, 0.63519013, 0.56126315],
+                [0.37607782, 0.58086952, 0.45089019, 0.62929377],
+                [0.59956085, 0.5173887, 0.64790597, 0.49865165],
+                [0.57646846, 0.46468029, 0.45267259, 0.44889072],
+                [0.4382186, 0.49576157, 0.6192481, 0.45031413]]
         ))
 
     def test_2d_line_img_plot(self):
         s = self.s_i
         r = Line2DROI(0, 0, 4, 4, 1)
         s2 = r(s)
-        nt.assert_true(np.allclose(s2.data, np.array(
+        assert np.allclose(s2.data, np.array(
             [[[0.5646904, 0.83974605, 0.37688365, 0.499676],
               [0.08130241, 0.3241552, 0.91565131, 0.85345237],
               [0.5941565, 0.90536555, 0.42692772, 0.93761072],
@@ -255,10 +392,10 @@ class TestROIs():
               [0.13656701, 0.40578067, 0.64221493, 0.46036815],
               [0.30466093, 0.88706533, 0.30914269, 0.01833664],
               [0.56143007, 0.09026307, 0.81898535, 0.4518825]]]
-        )))
+        ))
         r.linewidth = 10
         s3 = r(s)
-        nt.assert_true(np.allclose(s3.data, np.array(
+        assert np.allclose(s3.data, np.array(
             [[[0., 0., 0., 0.],
               [0., 0., 0., 0.],
               [0., 0., 0., 0.],
@@ -293,13 +430,39 @@ class TestROIs():
               [0.49091568, 0.54173188, 0.51292652, 0.53813843],
               [0.56463766, 0.73848284, 0.41183566, 0.37515417],
               [0.48426503, 0.23582684, 0.45947953, 0.49322732]]]
-        )))
+        ))
+
+    def test_line2droi_angle(self):
+        # 1. Testing quantitative measurement for different quadrants:
+        r = self.r
+        r_angles = np.array([rr.angle() for rr in r])
+        angles_h = np.array([-135., -150., 150., 135.,
+                             -120., -135., 135., 120.,
+                             -60., -45., 45., 60.,
+                             -45., -30, 30., 45.])
+        angles_v = np.array([-135., -120., -60., -45.,
+                             -150., -135., -45., -30.,
+                             150., 135., 45., 30.,
+                             135., 120., 60., 45.])
+        assert np.allclose(r_angles, angles_h)
+        r_angles = np.array([rr.angle(axis='vertical') for rr in r])
+        assert np.allclose(r_angles, angles_v)
+
+        # 2. Testing unit conversation
+        r = Line2DROI(np.random.rand(), np.random.rand(), np.random.rand(), np.random.rand())
+        assert r.angle(units='degrees') == (r.angle(units='radians') / np.pi * 180.)
+
+        # 3. Testing raises:
+        with pytest.raises(ValueError):
+            r.angle(units='meters')
+        with pytest.raises(ValueError):
+            r.angle(axis='z')
 
 
 class TestInteractive:
 
-    def setup(self):
-        self.s = Spectrum(np.arange(2000).reshape((20, 10, 10)))
+    def setup_method(self, method):
+        self.s = Signal1D(np.arange(2000).reshape((20, 10, 10)))
 
     def test_out(self):
         s = self.s
@@ -307,7 +470,7 @@ class TestInteractive:
         sr = r(s)
         d = s.data.sum()
         sr.data += 2
-        nt.assert_equal(d + sr.data.size * 2, s.data.sum())
+        assert d + sr.data.size * 2 == s.data.sum()
         r.x += 2
         sr2 = r(s)
         r(s, out=sr)
@@ -330,7 +493,7 @@ class TestInteractive:
     def test_interactive_special_case(self):
         s = self.s.inav[0]
         r = CircleROI(3, 5, 2)
-        sr = r.interactive(s, None)
+        sr = r.interactive(s, None, color="blue")
         np.testing.assert_array_equal(np.where(sr.data.mask.flatten())[0],
                                       [0, 3, 12, 15])
         r.r_inner = 1
