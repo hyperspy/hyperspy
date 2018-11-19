@@ -1,4 +1,3 @@
-
 import numpy as np
 import math
 from scipy import constants
@@ -459,8 +458,9 @@ def _quantification_cliff_lorimer(intensities,
 
 
 def quantification_zeta_factor(intensities,
-                               zfactors,
-                               dose):
+                                zfactors,
+                                dose,
+                                absorption_correction):
     """
     Quantification using the zeta-factor method
 
@@ -482,13 +482,15 @@ def quantification_zeta_factor(intensities,
     A numpy.array containing the weight fraction with the same
     shape as intensities and mass thickness in kg/m^2.
     """
+    if absorption_correction is None:
+        absorption_correction = np.ones_like(intensities, dtype='float') # default to ones
 
     sumzi = np.zeros_like(intensities[0], dtype='float')
     composition = np.zeros_like(intensities, dtype='float')
-    for intensity, zfactor in zip(intensities, zfactors):
-        sumzi = sumzi + intensity * zfactor
-    for i, (intensity, zfactor) in enumerate(zip(intensities, zfactors)):
-        composition[i] = intensity * zfactor / sumzi
+    for intensity, zfactor, abs_corr in zip(intensities, zfactors, absorption_correction):
+        sumzi = sumzi + intensity * zfactor * abs_corr
+    for i, (intensity, zfactor, abs_corr) in enumerate(zip(intensities, zfactors, absorption_correction)):
+        composition[i] = intensity * zfactor * abs_corr / sumzi
     mass_thickness = sumzi / dose
     return composition, mass_thickness
 
@@ -527,6 +529,17 @@ def quantification_cross_section(intensities,
     total_atoms = np.cumsum(number_of_atoms, axis=0)[-1]
     composition = number_of_atoms / total_atoms
 
+    total_atoms = np.zeros_like(intensities[0], dtype='float')
+    composition = np.zeros_like(intensities, dtype='float')
+    number_of_atoms = np.zeros_like(intensities, dtype='float')
+    for intensity, cross_section in zip(intensities, cross_sections):
+        total_atoms = total_atoms + (intensity/(dose * cross_section * 1e-10))
+    for i, (intensity, cross_section) in enumerate(zip(intensities,
+              cross_sections)):
+        number_of_atoms[i] = (intensity) / (dose * cross_section * 1e-10)
+        composition[i] = number_of_atoms[i] / total_atoms
+    return composition, number_of_atoms
+=======
     return composition, number_of_atoms
 
 
