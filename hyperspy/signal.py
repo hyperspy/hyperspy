@@ -4568,6 +4568,13 @@ class BaseSignal(FancySlicing,
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
         >>> s.plot(plot_markers=True) #doctest: +SKIP
 
+        Add permanent marker to signal with 2 navigation dimensions
+
+        >>> s = hs.signals.Signal1D(np.random.random((2, 3, 10)))
+        >>> marker = hs.markers.vertical_line([[1, 3, 5], [2, 4, 6]])
+        >>> s.add_marker(marker, permanent=True)
+        >>> s.plot(plot_markers=True) #doctest: +SKIP
+
         Add permanent marker which changes with navigation position, and
         do not add it to a current plot
 
@@ -4609,7 +4616,7 @@ class BaseSignal(FancySlicing,
             name_list = self.metadata.Markers.keys()
         marker_name_suffix = 1
         for m in marker_list:
-            marker_data_shape = m._get_data_shape()
+            marker_data_shape = m._get_data_shape()[::-1]
             if (not (len(marker_data_shape) == 0)) and (
                     marker_data_shape != self.axes_manager.navigation_shape):
                 raise ValueError(
