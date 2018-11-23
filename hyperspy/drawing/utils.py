@@ -1319,7 +1319,7 @@ def plot_spectra(
             ax.legend(legend, loc=legend_loc)
             _reverse_legend(ax, legend_loc)
             if legend_picking is True:
-                animate_legend(figure=fig)
+                animate_legend(fig=fig, ax=ax)
     elif style == 'cascade':
         if fig is None:
             fig = plt.figure(**kwargs)
@@ -1364,7 +1364,7 @@ def plot_spectra(
     return ax
 
 
-def animate_legend(figure='last'):
+def animate_legend(fig=None, ax=None):
     """Animate the legend of a figure.
 
     A spectrum can be toggle on and off by clicking on the legended line.
@@ -1372,8 +1372,10 @@ def animate_legend(figure='last'):
     Parameters
     ----------
 
-    figure: 'last' | matplotlib.figure
-        If 'last' pick the last figure
+    fig: None | matplotlib.figure
+        If None pick the current figure using "plt.gcf"
+    ax:  None | matplotlib.axes
+        If None pick the current axes using "plt.gca".
 
     Note
     ----
@@ -1381,11 +1383,10 @@ def animate_legend(figure='last'):
     Code inspired from legend_picking.py in the matplotlib gallery
 
     """
-    if figure == 'last':
-        figure = plt.gcf()
+    if fig is None:
+        fig = plt.gcf()
+    if ax is None:
         ax = plt.gca()
-    else:
-        ax = figure.axes[0]
     lines = ax.lines[::-1]
     lined = dict()
     leg = ax.get_legend()
@@ -1397,18 +1398,19 @@ def animate_legend(figure='last'):
         # on the pick event, find the orig line corresponding to the
         # legend proxy line, and toggle the visibility
         legline = event.artist
-        origline = lined[legline]
-        vis = not origline.get_visible()
-        origline.set_visible(vis)
-        # Change the alpha on the line in the legend so we can see what lines
-        # have been toggled
-        if vis:
-            legline.set_alpha(1.0)
-        else:
-            legline.set_alpha(0.2)
-        figure.canvas.draw_idle()
+        if legline.axes == ax:
+            origline = lined[legline]
+            vis = not origline.get_visible()
+            origline.set_visible(vis)
+            # Change the alpha on the line in the legend so we can see what lines
+            # have been toggled
+            if vis:
+                legline.set_alpha(1.0)
+            else:
+                legline.set_alpha(0.2)
+            fig.canvas.draw_idle()
 
-    figure.canvas.mpl_connect('pick_event', onpick)
+    fig.canvas.mpl_connect('pick_event', onpick)
 
 
 def plot_histograms(signal_list,
