@@ -1316,7 +1316,7 @@ def plot_spectra(
                            color=color,
                            line_style=line_style,)
         if legend is not None:
-            plt.legend(legend, loc=legend_loc)
+            ax.legend(legend, loc=legend_loc)
             _reverse_legend(ax, legend_loc)
             if legend_picking is True:
                 animate_legend(figure=fig)
