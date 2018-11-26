@@ -360,7 +360,10 @@ class EDSTEM_mixin:
         elif navigation_mask is not None:
             navigation_mask = navigation_mask.data
 
+        xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
+
         composition = utils.stack(intensities, lazy=False)
+
         if method == 'CL':
             composition.data = utils_eds.quantification_cliff_lorimer(
                 composition.data, kfactors=factors,
@@ -760,6 +763,7 @@ class EDSTEM_mixin:
         elif navigation_mask is not None:
             navigation_mask = navigation_mask.data
         xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
+
         composition = utils.stack(intensities, lazy=False)
 
         #Begin by determining an initial composition without absorption correction.
@@ -767,13 +771,38 @@ class EDSTEM_mixin:
             composition.data = utils_eds.quantification_cliff_lorimer(
                 composition.data, kfactors=factors,
                 mask=navigation_mask) * 100.
+
         elif method == 'zeta':
-            results = utils_eds.quantification_zeta_factor(
-                composition.data, zfactors=factors,
-                dose=self._get_dose(method, **kwargs))
-            composition.data = results[0] * 100.
-            mass_thickness = intensities[0].deepcopy()
-            mass_thickness.data = results[1]
+            int_stack = utils.stack(intensities)
+
+            comp_old = utils.stack(intensities)
+            comp_old.data = np.zeros_like(comp_old.data)
+
+            toa = self.get_take_off_angle()
+            abs_corr = None # initial
+
+            it = 0
+            MAX_ITERATIONS = 30
+
+            while True:
+                results = utils_eds.quantification_zeta_factor(
+                    int_stack.data, zfactors=factors,
+                    dose=self._get_dose(method), absorption_correction=abs_corr)
+                composition.data = results[0] * 100.
+                mass_thickness = intensities[0].deepcopy()
+                mass_thickness.data = results[1]
+
+                res_max = np.max((composition - comp_old).data)
+
+                if not absorption_correction or res_max < (conv_crit/100):
+                    break
+                elif it >= MAX_ITERATIONS:
+                    raise Exception('Absorption correction failed as solution did not converge '
+                                    'after %d iterations' % (MAX_ITERATIONS))
+
+                comp_old.data = composition.data
+                abs_corr = _get_absorption_correction_terms(utils.material.atomic_to_weight(composition.split()), mass_thickness, toa)
+
             mass_thickness.metadata.General.title = 'Mass thickness'
         elif method == 'cross_section':
             results = utils_eds.quantification_cross_section(
@@ -786,35 +815,6 @@ class EDSTEM_mixin:
         else:
             raise ValueError('Please specify method for quantification,'
                              'as \'CL\', \'zeta\' or \'cross_section\'')
-
-        if absorption_correction == 'True':
-            #begin by finding absorption correction factors from file.
-            if method == 'CL':
-                if mass_thickness == 'Auto':
-                #check that a mass_thickness has been supplied for CL method.
-                    raise ValueError('Please specify mass_thickness in order to apply absorption correction for \'CL\' method')
-                else:
-                    while (abs(dif) > Crit/100).any():
-                        composition.data = new_composition
-
-
-                        new_result, ac_factor = util_eds.correction_cliff_lorimer(mass_thickness, composition.data)
-
-            elif method == 'zeta':
-
-                while (abs(dif) > Crit/100).any():
-                    composition.data = new_composition
-
-
-                    new_result, ac_factor = util_eds.correction_zetafactor(mass_thickness, composition.data)
-
-            elif method == 'cross_section':
-
-                while (abs(dif) > Crit/100).any():
-                    composition.data = new_composition
-
-
-                    new_result, ac_factor = util_eds.correction_cross_section(mass_thickness, composition.data)
 
         composition = composition.split()
         if composition_units == 'atomic':
