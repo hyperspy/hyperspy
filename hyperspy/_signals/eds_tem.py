@@ -651,7 +651,7 @@ class EDSTEM_mixin:
         else:
             raise Exception('Method need to be \'zeta\' or \'cross_section\'.')
 
-def _get_absorption_correction_terms(weight_percent, mass_thickness, take_off_angle): # take_off_angle, temporary value for testing
+def _get_abs_corr_zeta(weight_percent, mass_thickness, take_off_angle): # take_off_angle, temporary value for testing
     """
     Calculate absorption correction terms.
 
@@ -668,11 +668,12 @@ def _get_absorption_correction_terms(weight_percent, mass_thickness, take_off_an
     toa_rad = np.radians(take_off_angle)
     csc_toa = 1.0/np.sin(toa_rad)
 
-    mac = utils.stack(utils.material.mass_absorption_mixture(weight_percent=weight_percent)) * 0.1 # convert from cm^2/g to m^2/kg
-    x = mac * mass_thickness * csc_toa
-    x.data = x.data/(1.0 - np.exp(-(x.data)))
+     # convert from cm^2/g to m^2/kg
+    mac = utils.stack(utils.material.mass_absorption_mixture(weight_percent=weight_percent)) * 0.1
+    acf = mac * mass_thickness * csc_toa
+    acf.data = acf.data/(1.0 - np.exp(-(x.data)))
 
-    return x.data
+    return acf.data
 
     def ac_quantification(self,
                        intensities,
@@ -773,7 +774,6 @@ def _get_absorption_correction_terms(weight_percent, mass_thickness, take_off_an
 
         composition = utils.stack(intensities, lazy=False)
 
-        #Begin by determining an initial composition without absorption correction.
         if method == 'CL':
             composition.data = utils_eds.quantification_cliff_lorimer(
                 composition.data, kfactors=factors,
@@ -793,8 +793,10 @@ def _get_absorption_correction_terms(weight_percent, mass_thickness, take_off_an
 
             while True:
                 results = utils_eds.quantification_zeta_factor(
-                    int_stack.data, zfactors=factors,
-                    dose=self._get_dose(method), absorption_correction=abs_corr)
+                    int_stack.data,
+                    zfactors=factors,
+                    dose=self._get_dose(method),
+                    absorption_correction=abs_corr)
                 composition.data = results[0] * 100.
                 mass_thickness = intensities[0].deepcopy()
                 mass_thickness.data = results[1]
@@ -804,18 +806,51 @@ def _get_absorption_correction_terms(weight_percent, mass_thickness, take_off_an
                 if not absorption_correction or res_max < (conv_crit/100):
                     break
                 elif it >= MAX_ITERATIONS:
-                    raise Exception('Absorption correction failed as solution did not converge '
-                                    'after %d iterations' % (MAX_ITERATIONS))
+                    raise Exception('Absorption correction failed as solution '
+                                    'did not converge after %d iterations'
+                                    % (MAX_ITERATIONS))
 
                 comp_old.data = composition.data
-                abs_corr = _get_absorption_correction_terms(utils.material.atomic_to_weight(composition.split()), mass_thickness, toa)
+                abs_corr = _get_abs_corr_zeta(composition.split(),
+                                              mass_thickness,
+                                              toa)
 
             mass_thickness.metadata.General.title = 'Mass thickness'
         elif method == 'cross_section':
-            results = utils_eds.quantification_cross_section(
-                composition.data,
-                cross_sections=factors,
-                dose=self._get_dose(method, **kwargs))
+            int_stack = utils.stack(intensities)
+
+            comp_old = utils.stack(intensities)
+            comp_old.data = np.zeros_like(comp_old.data)
+
+            toa = self.get_take_off_angle()
+            abs_corr = None # initial
+
+            it = 0
+            MAX_ITERATIONS = 30
+
+            while True:
+                results = utils_eds.quantification_cross_section(
+                    int_stack.data,
+                     cross_sections=factors
+                    dose=self._get_dose(method, **kwargs),
+                    absorption_correction=abs_corr)
+                composition.data = results[0] * 100.
+                number_of_atoms = composition._deepcopy_with_new_data(results[1])
+
+                res_max = np.max((composition - comp_old).data)
+
+                if not absorption_correction or res_max < (conv_crit/100):
+                    break
+                elif it >= MAX_ITERATIONS:
+                    raise Exception('Absorption correction failed as solution '
+                                    'did not converge after %d iterations'
+                                    % (MAX_ITERATIONS))
+
+                comp_old.data = composition.data
+                abs_corr = _get_abs_corr_cross_section(composition.split(),
+                                                       number_of_atoms,
+                                                       toa)
+
             composition.data = results[0] * 100
             number_of_atoms = composition._deepcopy_with_new_data(results[1])
             number_of_atoms = number_of_atoms.split()
