@@ -482,6 +482,9 @@ def quantification_zeta_factor(intensities,
     A numpy.array containing the weight fraction with the same
     shape as intensities and mass thickness in kg/m^2.
     """
+    if absorption_correction is None:
+        # default to ones
+        absorption_correction = np.ones_like(intensities, dtype='float')
 
     sumzi = np.zeros_like(intensities[0], dtype='float')
     composition = np.zeros_like(intensities, dtype='float')
@@ -495,7 +498,8 @@ def quantification_zeta_factor(intensities,
 
 def quantification_cross_section(intensities,
                                  cross_sections,
-                                 dose):
+                                 dose,
+                                 absorption_correction):
     """
     Quantification using EDX cross sections
     Calculate the atomic compostion and the number of atoms per pixel
@@ -520,6 +524,11 @@ def quantification_cross_section(intensities,
     numpy.array of the number of atoms counts for each element, with the same
     shape as the intensity input.
     """
+
+    if absorption_correction is None:
+        # default to ones
+        absorption_correction = np.ones_like(intensities, dtype='float')
+
     shp = len(intensities.shape) - 1
     slices = (slice(None),) + (None,) * shp
     x_sections = np.array(cross_sections, dtype='float')[slices]
