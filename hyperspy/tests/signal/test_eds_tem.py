@@ -229,7 +229,7 @@ class Test_quantification:
 
     def test_quant_cross_section_units(self):
         s = self.signal
-        s2 = self._signals
+        s2 = self.signal
         s.axes_manager[0].units = 'µm'
         s.axes_manager[1].units = 'µm'
         s.axes_manager[0].scale = 0.5/1000
