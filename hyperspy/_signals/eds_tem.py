@@ -371,7 +371,8 @@ class EDSTEM_mixin:
         elif method == 'zeta':
             results = utils_eds.quantification_zeta_factor(
                 composition.data, zfactors=factors,
-                dose=self._get_dose(method, **kwargs))
+                dose=self._get_dose(method, **kwargs),
+                absorption_correction=None)
             composition.data = results[0] * 100.
             mass_thickness = intensities[0].deepcopy()
             mass_thickness.data = results[1]
@@ -380,7 +381,8 @@ class EDSTEM_mixin:
             results = utils_eds.quantification_cross_section(
                 composition.data,
                 cross_sections=factors,
-                dose=self._get_dose(method, **kwargs))
+                dose=self._get_dose(method, **kwargs),
+                absorption_correction=None)
             composition.data = results[0] * 100
             number_of_atoms = composition._deepcopy_with_new_data(results[1])
             number_of_atoms = number_of_atoms.split()
@@ -667,29 +669,6 @@ class EDSTEM_mixin:
         else:
             raise Exception('Method need to be \'zeta\' or \'cross_section\'.')
 
-def _get_abs_corr_zeta(weight_percent, mass_thickness, take_off_angle): # take_off_angle, temporary value for testing
-    """
-    Calculate absorption correction terms.
-
-    Parameters
-    ----------
-    weight_percent: list of signal
-        Composition in weight percent.
-    mass_thickness: signal
-        Density-thickness map in kg/m^2
-    take_off_angle: float
-        X-ray take-off angle in degrees.
-    """
-
-    toa_rad = np.radians(take_off_angle)
-    csc_toa = 1.0/np.sin(toa_rad)
-
-     # convert from cm^2/g to m^2/kg
-    mac = utils.stack(utils.material.mass_absorption_mixture(weight_percent=weight_percent)) * 0.1
-    acf = mac * mass_thickness * csc_toa
-    acf.data = acf.data/(1.0 - np.exp(-(x.data)))
-
-    return acf.data
 
     def ac_quantification(self,
                        intensities,
@@ -827,9 +806,9 @@ def _get_abs_corr_zeta(weight_percent, mass_thickness, take_off_angle): # take_o
                                     % (MAX_ITERATIONS))
 
                 comp_old.data = composition.data
-                abs_corr = _get_abs_corr_zeta(composition.split(),
-                                              mass_thickness,
-                                              toa)
+                abs_corr = utils_eds.get_abs_corr_zeta(composition.split(),
+                                                       mass_thickness,
+                                                       toa)
 
             mass_thickness.metadata.General.title = 'Mass thickness'
         elif method == 'cross_section':
@@ -847,7 +826,7 @@ def _get_abs_corr_zeta(weight_percent, mass_thickness, take_off_angle): # take_o
             while True:
                 results = utils_eds.quantification_cross_section(
                     int_stack.data,
-                     cross_sections=factors
+                    cross_sections=factors,
                     dose=self._get_dose(method, **kwargs),
                     absorption_correction=abs_corr)
                 composition.data = results[0] * 100.

@@ -496,6 +496,30 @@ def quantification_zeta_factor(intensities,
     return composition, mass_thickness
 
 
+def get_abs_corr_zeta(weight_percent, mass_thickness, take_off_angle): # take_off_angle, temporary value for testing
+    """
+    Calculate absorption correction terms.
+
+    Parameters
+    ----------
+    weight_percent: list of signal
+        Composition in weight percent.
+    mass_thickness: signal
+        Density-thickness map in kg/m^2
+    take_off_angle: float
+        X-ray take-off angle in degrees.
+    """
+
+    toa_rad = np.radians(take_off_angle)
+    csc_toa = 1.0/np.sin(toa_rad)
+
+     # convert from cm^2/g to m^2/kg
+    mac = utils.stack(utils.material.mass_absorption_mixture(weight_percent=weight_percent)) * 0.1
+    acf = mac * mass_thickness * csc_toa
+    acf.data = acf.data/(1.0 - np.exp(-(x.data)))
+
+    return acf.data
+
 def quantification_cross_section(intensities,
                                  cross_sections,
                                  dose,
@@ -536,7 +560,55 @@ def quantification_cross_section(intensities,
     total_atoms = np.cumsum(number_of_atoms, axis=0)[-1]
     composition = number_of_atoms / total_atoms
 
+    total_atoms = np.zeros_like(intensities[0], dtype='float')
+    composition = np.zeros_like(intensities, dtype='float')
+    number_of_atoms = np.zeros_like(intensities, dtype='float')
+
+    for i, intensity, cross_section in enumerare(zip(intensities,
+                                            cross_sections):
+        number_of_atoms[i] = (intensity) / (dose * cross_section * 1e-10) *
+                            absorption_correction
+        total_atoms = total_atoms + number_of_atoms[i]
+
+    for i in range(len(cross_sections):
+        composition[i] = number_of_atoms[i] / total_atoms
+
     return composition, number_of_atoms
+
+
+def get_abs_corr_cross_section(no_of_atoms, mass_thickness, take_off_angle): # take_off_angle, temporary value for testing
+    """
+    Calculate absorption correction terms.
+
+    Parameters
+    ----------
+    no_of_atoms: list of signal
+        Stack of maps with number of atoms per pixel.
+    take_off_angle: float
+        X-ray take-off angle in degrees.
+    """
+
+    Av = constants.Avogadro
+    parameters = no_of_atoms.metadata.Acquisition_instrument.TEM
+    atomic_weights = np.array(
+        [elements_db[element]['General_properties']['atomic_weight']
+            for element in elements])
+
+    for i, intensity_map in enumerate(no_of_atoms):
+        lines.append(intensity_map.metadata.Sample.xray_lines)
+        elements.append(intensity_map.metadata.Sample.elements)
+    number_of_atoms = (no_of_atoms).data
+
+     # convert from cm^2/g to m^2/kg
+    mac = utils.stack(utils.material.mass_absorption_mixture(weight_percent=weight_percent)) * 0.1
+    
+    constant = 1/(Av * math.sin(theta) * probe_area * 1E-16)
+    expo = (rho * total_mass * constant)
+    correction = expo/(1 - math.e**(-expo))
+    acf = mac * mass_thickness * csc_toa
+    acf.data = acf.data/(1.0 - np.exp(-(x.data)))
+
+    return acf.data
 
 
 def edx_cross_section_to_zeta(cross_sections, elements):
