@@ -17,42 +17,42 @@ environment:
        PYTHON_MAJOR: 3
        PYTHON_ARCH: "32"
        CONDA_PY: "35"
-       DEPS: "numpy scipy ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
+       DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
 
      - PYTHON: "C:\\Miniconda35-x64"
        PYTHON_VERSION: "3.5.x"
        PYTHON_MAJOR: 3
        PYTHON_ARCH: "64"
        CONDA_PY: "35"
-       DEPS: "numpy scipy ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
+       DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
 
      - PYTHON: "C:\\Miniconda36"
        PYTHON_VERSION: "3.6.x"
        PYTHON_MAJOR: 3
        PYTHON_ARCH: "32"
        CONDA_PY: "36"
-       DEPS: "numpy scipy ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
+       DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
 
      - PYTHON: "C:\\Miniconda36-x64"
        PYTHON_VERSION: "3.6.x"
        PYTHON_MAJOR: 3
        PYTHON_ARCH: "64"
        CONDA_PY: "36"
-       DEPS: "numpy scipy ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
+       DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill trsetuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
 
      - PYTHON: "C:\\Miniconda37"
        PYTHON_VERSION: "3.7.x"
        PYTHON_MAJOR: 3
        PYTHON_ARCH: "32"
        CONDA_PY: "37"
-       DEPS: "numpy scipy ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
+       DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
 
      - PYTHON: "C:\\Miniconda37-x64"
        PYTHON_VERSION: "3.7.x"
        PYTHON_MAJOR: 3
        PYTHON_ARCH: "64"
        CONDA_PY: "37"
-       DEPS: "numpy scipy ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
+       DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
 
 
 init:
