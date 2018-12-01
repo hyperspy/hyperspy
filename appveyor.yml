@@ -15,7 +15,7 @@ environment:
     # Uncomment python35 build only to generate python35 wheels for a new release. This saves significant amount to time when testing. 
     # - PYTHON: "C:\\Miniconda35"
     # - PYTHON: "C:\\Miniconda35-x64"
-     - PYTHON: "C:\\Miniconda36"
+    # - PYTHON: "C:\\Miniconda36"
      - PYTHON: "C:\\Miniconda36-x64"
      - PYTHON: "C:\\Miniconda37"
      - PYTHON: "C:\\Miniconda37-x64"
