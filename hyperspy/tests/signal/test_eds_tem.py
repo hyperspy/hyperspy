@@ -228,8 +228,8 @@ class Test_quantification:
              [80.962287987, 80.962287987]]), atol=1e-3)
 
     def test_quant_cross_section_units(self):
-        s = self.signal
-        s2 = self.signal
+        s = self.signal.deepcopy()
+        s2 = self.signal.deepcopy()
         s.axes_manager[0].units = 'µm'
         s.axes_manager[1].units = 'µm'
         s.axes_manager[0].scale = 0.5/1000
@@ -238,10 +238,12 @@ class Test_quantification:
         method = 'cross_section'
         factors = [3, 5]
         intensities = s.get_lines_intensity()
-        np.testing.assert_array_equal(s.quantification(intensities,
-                                                       method, factors),
-                                      s2.quantification(intensities,
-                                                        method, factors))
+        res = s.quantification(intensities, method, factors)
+        res2 = s2.quantification(intensities, method, factors)
+        np.testing.assert_allclose(res[0][0].data, res2[0][0].data)
+        # Check that the quantification doesn't change the units of the signal
+        assert s.axes_manager[0].units == 'µm'
+        assert s.axes_manager[1].units == 'µm'
 
     def test_quant_cross_section(self):
         s = self.signal
