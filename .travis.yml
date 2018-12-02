@@ -48,10 +48,9 @@ install:
     source activate testenv;
     conda install -y -c conda-forge $DEPS;
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      pip install .[all];
-    else pip install .;
+      pip install -e .[all];
+    else pip install -e .[tests];
     fi
-  - python setup.py build_ext --inplace;
 
 before_script: # configure a headless display to test plot generation
   - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then sh -e /etc/init.d/xvfb start; fi
@@ -62,8 +61,8 @@ before_script: # configure a headless display to test plot generation
 
 script:
   - python -c 'import matplotlib.pyplot as plt; print(plt.get_backend())';
-  - pip install coverage coveralls pytest pytest-cov pytest-mpl;
-    py.test --mpl --cov=hyperspy --pyargs hyperspy;
+  - pip install coverage coveralls pytest-cov;
+    pytest --mpl --cov=hyperspy --pyargs hyperspy;
 
 #after_failure: # run only on failure in case there is a need to check matplotlib image comparison
 # This needs a service to upload the artifacts (and corresponding configuration)

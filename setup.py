@@ -71,13 +71,19 @@ extras_require = {
     "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
     "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
-    "test": ["pytest>=3", "pytest-mpl"],
-    "doc": ["sphinx>=1.7", "sphinx_rtd_theme"],
     "speed": ["numba"],
-
+    "tests": ["pytest>=3", "pytest-mpl", "matplotlib>2.2.3"], # for testing
+    "docs": ["sphinx>=1.7", "sphinx_rtd_theme"], # required to build the docs
 }
-extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
+# Don't include "tests" and "docs" requirements since "all" is designed to be 
+# used for user installation.
+runtime_extras_require = {x:extras_require[x] for x in extras_require.keys() 
+        if x not in ["tests", "docs"]}
+extras_require["all"] = list(itertools.chain(*list(
+        runtime_extras_require.values())))
+
+extras_require["dev"] = list(itertools.chain(*list(extras_require.values())))
 
 def update_version(version):
     release_path = "hyperspy/Release.py"

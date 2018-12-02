@@ -4,7 +4,7 @@ shallow_clone: true
 environment:
 
   global:
-    TEST_DEPS: "pytest pytest-cov pytest-mpl wheel"
+    TEST_DEPS: "pytest pytest-cov wheel"
     MPLBACKEND: "agg"
 
 
@@ -77,15 +77,14 @@ install:
   - "conda install -yq -c conda-forge %DEPS%"
 
   - ps: Add-AppveyorMessage "Installing hyperspy..."
-  - "pip install .[all]"
+  - "pip install .[dev]"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 
 test_script:
   # Run the project tests
   - ps: Add-AppveyorMessage "Running tests..."
-  - "python setup.py build_ext --inplace"
-  - "py.test --mpl"
+  - "pytest --mpl"
   - "python setup.py clean"
   - ps: Add-AppveyorMessage "Testing completed."
 
