@@ -77,7 +77,7 @@ install:
   - "conda install -yq -c conda-forge %DEPS%"
 
   - ps: Add-AppveyorMessage "Installing hyperspy..."
-  - "pip install .[dev]"
+  - "pip install \"matplotlib>=3.0.0\" & pip install .[dev]"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 

@@ -72,7 +72,9 @@ extras_require = {
     "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
     "speed": ["numba"],
-    "tests": ["pytest>=3", "pytest-mpl", "matplotlib>2.2.3"], # for testing
+    # bug in pip: matplotib is ignored here because it is already present in
+    # install_requires.
+    "tests": ["pytest>=3", "pytest-mpl", "matplotlib>=3.0.0"], # for testing
     "docs": ["sphinx>=1.7", "sphinx_rtd_theme"], # required to build the docs
 }
 
