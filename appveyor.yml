@@ -10,12 +10,12 @@ environment:
 
 
   matrix:
-    # Pre-installed Python versions, which Appveyor may upgrade to
-    # a later point release.
-    # Uncomment python35 build only to generate python35 wheels for a new release. This saves significant amount to time when testing. 
-    # - PYTHON: "C:\\Miniconda35"
-    # - PYTHON: "C:\\Miniconda35-x64"
-    # - PYTHON: "C:\\Miniconda36"
+     - PYTHON: "C:\\Miniconda35"
+       skip_non_tags: true
+     - PYTHON: "C:\\Miniconda35-x64"
+       skip_non_tags: true
+     - PYTHON: "C:\\Miniconda36"
+       skip_non_tags: true
      - PYTHON: "C:\\Miniconda36-x64"
      - PYTHON: "C:\\Miniconda37"
      - PYTHON: "C:\\Miniconda37-x64"
