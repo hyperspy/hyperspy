@@ -11,14 +11,23 @@ environment:
 
   matrix:
      - PYTHON: "C:\\Miniconda35"
-       skip_non_tags: true
+       TAG_SCENARIO: true
      - PYTHON: "C:\\Miniconda35-x64"
-       skip_non_tags: true
+       TAG_SCENARIO: true
      - PYTHON: "C:\\Miniconda36"
-       skip_non_tags: true
+       TAG_SCENARIO: true
      - PYTHON: "C:\\Miniconda36-x64"
      - PYTHON: "C:\\Miniconda37"
      - PYTHON: "C:\\Miniconda37-x64"
+
+for:
+-
+  # tagged scenario
+  matrix:
+    only:
+      - TAG_SCENARIO: true
+
+  skip_non_tags: true
 
 
 init:
