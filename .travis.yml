@@ -18,13 +18,14 @@ matrix:
   - env: export PYTHON=3.7; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
     os: osx
     language: generic
-    # Uncomment these build to generate wheels
-  # - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
-  #  os: osx
-  #  language: generic
-  #- env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
-  #  os: osx
-  #  language: generic
+  - env: export PYTHON=3.6; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+    os: osx
+    language: generic
+    if: tag IS present
+  - env: export PYTHON=3.5; FAIL_ON_EXTERNAL_DEPRECATION='False'; MINIMAL_ENV='False'
+    os: osx
+    language: generic
+    if: tag IS present
   allow_failures:
     # Only test for the latest supported version as chances are that it'll
     # contain the most up-to-date external libraries.
