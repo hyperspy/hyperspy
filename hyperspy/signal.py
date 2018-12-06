@@ -3242,7 +3242,7 @@ class BaseSignal(FancySlicing,
         >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
-        >>> s.var(-1).data.shape
+        >>> s.integrate_simpson(-1).data.shape
         (64,64)
 
         """
@@ -3434,7 +3434,7 @@ class BaseSignal(FancySlicing,
         >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
-        >>> s.var(-1).data.shape
+        >>> s.integrate1D(-1).data.shape
         (64,64)
 
         """
@@ -3468,7 +3468,7 @@ class BaseSignal(FancySlicing,
         >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
-        >>> s.indexmax(-1).data.shape
+        >>> s.indexmin(-1).data.shape
         (64,64)
 
         """

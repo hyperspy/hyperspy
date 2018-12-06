@@ -2,7 +2,6 @@ import os.path
 import os
 import tempfile
 import gc
-import urllib.request
 import zipfile
 import hashlib
 
@@ -13,7 +12,6 @@ import requests
 
 from hyperspy.io import load
 from hyperspy import signals
-from hyperspy.misc.test_utils import assert_deep_almost_equal
 
 
 MY_PATH = os.path.dirname(__file__)
