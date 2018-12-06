@@ -50,7 +50,7 @@ install:
     source activate testenv;
     conda install -y -c conda-forge $DEPS;
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      pip install .[dev] && pip install 'matplotlib>=3.0.0';
+      pip install .[mrcz] && pip install 'matplotlib>=3.0.0';
     else pip install "matplotlib>=3.0.0" && pip install .[tests];
     fi
 
@@ -63,7 +63,7 @@ before_script: # configure a headless display to test plot generation
 
 script:
   - python -c 'import matplotlib.pyplot as plt; print(plt.get_backend())';
-  - pip install coverage coveralls pytest-cov;
+  - pip install coverage coveralls pytest-cov pytest-mpl;
     pytest --mpl --cov=hyperspy --pyargs hyperspy;
 
 #after_failure: # run only on failure in case there is a need to check matplotlib image comparison
