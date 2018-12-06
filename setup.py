@@ -64,6 +64,7 @@ install_req = ['scipy>=0.15',
                'statsmodels',
                'numexpr',
                'sparse',
+               'imageio',
                ]
 
 extras_require = {
