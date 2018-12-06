@@ -1102,6 +1102,7 @@ _spikes_diagnosis,
         """
         Remove the background, either in place using a gui or returned as a new
         spectrum using the command line.
+
         Parameters
         ----------
         signal_range : tuple, optional
@@ -1135,21 +1136,26 @@ _spikes_diagnosis,
             `preferences`.
         %s
         %s
+
         Examples
         --------
         Using gui, replaces spectrum s
+
         >>> s = hs.signals.Signal1D(range(1000))
         >>> s.remove_background() #doctest: +SKIP
 
         Using command line, returns a spectrum
+
         >>> s1 = s.remove_background(signal_range=(400,450), background_type='PowerLaw')
 
         Using a full model to fit the background
+
         >>> s1 = s.remove_background(signal_range=(400,450), fast=False)
 
         Raises
         ------
         SignalDimensionError if the signal dimension is not 1.
+
         """ % (DISPLAY_DT, TOOLKIT_DT)
 
     @interactive_range_selector
