@@ -28,12 +28,4 @@ def setup_module(mod):
         import dask
         dask.set_options(get=dask.local.get_sync)
 
-
-@pytest.fixture
-def mpl_cleanup():
-    from matplotlib.testing.decorators import _do_cleanup
-
-    original_units_registry = matplotlib.units.registry.copy()
-    original_settings = matplotlib.rcParams.copy()
-    yield
-    _do_cleanup(original_units_registry, original_settings)
+from matplotlib.testing.conftest import mpl_test_settings

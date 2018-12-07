@@ -219,9 +219,9 @@ def parse_msa_string(string, filename=None):
     # The data parameter needs some extra care
     # It is necessary to change the locale to US english to read the date
     # keyword
-    loc = locale.getlocale(locale.LC_TIME)
     # Setting locale can raise an exception because
     # their name depends on library versions, platform etc.
+    # https://docs.python.org/3.7/library/locale.html
     try:
         if os_name == 'posix':
             locale.setlocale(locale.LC_TIME, ('en_US', 'utf8'))
@@ -232,18 +232,17 @@ def parse_msa_string(string, filename=None):
             mapped.set_item('General.time', time.time().isoformat())
         except BaseException:
             if 'TIME' in parameters and parameters['TIME']:
-                _logger.warning('The time information could not be retrieved')
+                _logger.warning('The time information could not be retrieved.')
         try:
             date = dt.strptime(parameters['DATE'], "%d-%b-%Y")
             mapped.set_item('General.date', date.date().isoformat())
         except BaseException:
             if 'DATE' in parameters and parameters['DATE']:
-                _logger.warning('The date information could not be retrieved')
-    except BaseException:
-        warnings.warn("I couldn't read the date information due to"
-                      "an unexpected error. Please report this error to "
-                      "the developers")
-    locale.setlocale(locale.LC_TIME, loc)  # restore saved locale
+                _logger.warning('The date information could not be retrieved.')
+    except locale.Error:
+        _logger.warning("The date and time could not be retrieved because the "
+                        "english US locale is not installed on the system.")
+    locale.setlocale(locale.LC_TIME, '')  # restore user’s default settings 
 
     axes = [{
         'size': len(y),
