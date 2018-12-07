@@ -105,7 +105,7 @@ def _generate_parameter():
                          _generate_parameter())
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_sig_nav(mpl_cleanup, ndim, sdim, plot_type, data_type):
+def test_plot_sig_nav(ndim, sdim, plot_type, data_type):
     test_plot = _TestPlot(ndim, sdim, data_type)
     test_plot.signal.plot()
     return _get_figure(test_plot, data_type, plot_type)

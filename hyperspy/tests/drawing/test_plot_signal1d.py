@@ -97,7 +97,7 @@ class TestPlotSpectra():
                              ids=_generate_ids(style))
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
-    def test_plot_spectra(self, mpl_cleanup, style, fig, ax):
+    def test_plot_spectra(self, style, fig, ax):
         if fig:
             fig = plt.figure()
         if ax:
@@ -115,7 +115,7 @@ class TestPlotSpectra():
                              ids=_generate_ids(style))
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
-    def test_plot_spectra_rev(self, mpl_cleanup, style, fig, ax):
+    def test_plot_spectra_rev(self, style, fig, ax):
         if fig:
             fig = plt.figure()
         if ax:
@@ -131,7 +131,7 @@ class TestPlotSpectra():
     @pytest.mark.parametrize("figure", ['1nav', '1sig', '2nav', '2sig'])
     @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                    tolerance=default_tol, style=style_pytest_mpl)
-    def test_plot_spectra_sync(self, mpl_cleanup, figure):
+    def test_plot_spectra_sync(self, figure):
         s1 = hs.signals.Signal1D(scipy.misc.face()).as_signal1D(0).inav[:, :3]
         s2 = s1.deepcopy() * -1
         hs.plot.plot_signals([s1, s2])
@@ -144,7 +144,7 @@ class TestPlotSpectra():
         if figure == '2sig':
             return s2._plot.navigator_plot.figure
 
-    def test_plot_spectra_legend_pick(self, mpl_cleanup):
+    def test_plot_spectra_legend_pick(self):
         x = np.linspace(0., 2., 512)
         n = np.arange(1, 5)
         x_pow_n = x[None, :]**n[:, None]
@@ -211,7 +211,7 @@ def _generate_parameter():
 
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_log_scale(mpl_cleanup):
+def test_plot_log_scale():
     s = Signal1D(np.exp(-np.arange(100) / 5.0))
     s.plot(norm='log')
     return s._plot.signal_plot.figure
@@ -221,7 +221,7 @@ def test_plot_log_scale(mpl_cleanup):
                          _generate_parameter())
 @pytest.mark.mpl_image_compare(baseline_dir=baseline_dir,
                                tolerance=default_tol, style=style_pytest_mpl)
-def test_plot_two_cursors(mpl_cleanup, ndim, plot_type):
+def test_plot_two_cursors(ndim, plot_type):
     s = _test_plot_two_cursors(ndim=ndim)
     if plot_type == "sig":
         return s._plot.signal_plot.figure
