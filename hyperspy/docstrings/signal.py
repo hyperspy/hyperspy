@@ -43,3 +43,19 @@ RECHUNK_ARG = \
     """rechunk: bool
            Only has effect when operating on lazy signal. If `True` (default),
            the data may be automatically rechunked before performing this operation."""
+
+SHOW_PROGRESSBAR_ARG = \
+    """show_progressbar : {None, bool}
+           If True, display a progress bar. If None the default from the 
+           preferences settings is used."""
+
+PARALLEL_ARG = \
+    """parallel : {None, bool}
+           If True, perform computation in parallel using multiple cores. If 
+           None the default from the preferences settings is used."""
+
+PARALLEL_INT_ARG = \
+    """parallel : {None, bool, int}
+           If True, perform computation in parallel using multiple cores. If 
+           int, use as many cores as specified. If None the default from 
+           the preferences settings is used."""
