@@ -43,17 +43,16 @@ before_install:
 install:
 
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      DEPS="pip numpy scipy matplotlib=2.2.3 ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython ipyparallel dask traits traitsui numexpr numba";
-    else DEPS="pip ipython numpy scipy matplotlib=2.2.3 h5py sympy scikit-image numexpr";
+      DEPS="pip numpy scipy matplotlib>2.2.3 ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython ipyparallel dask traits traitsui numexpr numba";
+    else DEPS="pip ipython numpy scipy matplotlib>2.2.3 h5py sympy scikit-image numexpr";
     fi
   - conda create -n testenv --yes python=$PYTHON;
     source activate testenv;
     conda install -y -c conda-forge $DEPS;
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      pip install .[all];
-    else pip install .;
+      pip install .[mrcz] && pip install 'matplotlib>=3.0.0';
+    else pip install "matplotlib>=3.0.0" && pip install .[tests];
     fi
-  - python setup.py build_ext --inplace;
 
 before_script: # configure a headless display to test plot generation
   - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then sh -e /etc/init.d/xvfb start; fi
@@ -64,8 +63,8 @@ before_script: # configure a headless display to test plot generation
 
 script:
   - python -c 'import matplotlib.pyplot as plt; print(plt.get_backend())';
-  - pip install coverage coveralls pytest pytest-cov pytest-mpl;
-    py.test --mpl --cov=hyperspy --pyargs hyperspy;
+  - pip install coverage coveralls pytest-cov pytest-mpl;
+    pytest --mpl --cov=hyperspy --pyargs hyperspy;
 
 #after_failure: # run only on failure in case there is a need to check matplotlib image comparison
 # This needs a service to upload the artifacts (and corresponding configuration)

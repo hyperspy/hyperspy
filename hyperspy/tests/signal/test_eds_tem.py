@@ -330,7 +330,7 @@ class Test_eds_markers:
                                        weight_percents=[50, 50])
         self.signal = s
 
-    def test_plot_auto_add(self, mpl_cleanup):
+    def test_plot_auto_add(self):
         s = self.signal
         s.plot(xray_lines=True)
         # Should contain 6 lines
@@ -338,7 +338,7 @@ class Test_eds_markers:
             sorted(s._xray_markers.keys()) ==
             ['Al_Ka', 'Al_Kb', 'Zn_Ka', 'Zn_Kb', 'Zn_La', 'Zn_Lb1'])
 
-    def test_manual_add_line(self, mpl_cleanup):
+    def test_manual_add_line(self):
         s = self.signal
         s.add_xray_lines_markers(['Zn_La'])
         assert (
@@ -348,7 +348,7 @@ class Test_eds_markers:
         # Check that the line has both a vertical line marker and text marker:
         assert len(s._xray_markers['Zn_La']) == 2
 
-    def test_manual_remove_element(self, mpl_cleanup):
+    def test_manual_remove_element(self):
         s = self.signal
         s.add_xray_lines_markers(['Zn_Ka', 'Zn_Kb', 'Zn_La'])
         s.remove_xray_lines_markers(['Zn_Kb'])

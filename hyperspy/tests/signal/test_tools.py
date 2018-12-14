@@ -1118,7 +1118,7 @@ def test_lazy_diff_rechunk():
                                                           10, (1,) * 99)  # The data has not been rechunked
 
 
-def test_spikes_removal_tool(mpl_cleanup):
+def test_spikes_removal_tool():
     s = signals.Signal1D(np.ones((2, 3, 30)))
     np.random.seed(1)
     s.add_gaussian_noise(1E-5)
