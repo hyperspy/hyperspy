@@ -110,3 +110,165 @@ class TestRemoveBackground1DPowerLaw:
         assert np.allclose(s1.isig[10:], np.zeros(len(s1.data[10:])),
                            atol=self.atol_zero_fill)
         assert np.allclose(s1.data[:10], np.zeros(10))
+
+
+def compare_axes_manager_metadata(s0, s1):
+    assert s0.data.shape == s1.data.shape
+    assert s0.axes_manager.shape == s1.axes_manager.shape
+    for iaxis in range(len(s0.axes_manager._axes)):
+        a0, a1 = s0.axes_manager[iaxis], s1.axes_manager[iaxis]
+        assert a0.name == a1.name
+        assert a0.units == a1.units
+        assert a0.scale == a1.scale
+        assert a0.offset == a1.offset
+    assert s0.metadata.General.title == s1.metadata.General.title
+
+
+class TestRemoveBackgroundMetadataAxesManagerCopy1D:
+
+    def setup_method(self, method):
+        s = signals.Signal1D(np.arange(10, 100)[::-1])
+        s.axes_manager[0].name = 'axis0'
+        s.axes_manager[0].units = 'units0'
+        s.axes_manager[0].scale = 0.9
+        s.axes_manager[0].offset = 1.
+        s.metadata.General.title = "atitle"
+        self.s = s
+
+    def test_non_fast(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50), fast=False)
+        compare_axes_manager_metadata(s, s_r)
+
+    def test_fast(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50), fast=True)
+        compare_axes_manager_metadata(s, s_r)
+
+    def test_non_zero_fill(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50), zero_fill=False)
+        compare_axes_manager_metadata(s, s_r)
+
+    def test_zero_fill(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50), zero_fill=True)
+        compare_axes_manager_metadata(s, s_r)
+
+    def test_non_show_progressbar(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50), show_progressbar=False)
+        compare_axes_manager_metadata(s, s_r)
+
+    def test_show_progressbar(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50), show_progressbar=True)
+        compare_axes_manager_metadata(s, s_r)
+
+    def test_non_plot_remainder(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50), plot_remainder=False)
+        compare_axes_manager_metadata(s, s_r)
+
+    def test_background_type_powerlaw(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50),
+                                  background_type='Power Law')
+        compare_axes_manager_metadata(s, s_r)
+
+    def test_background_type_offset(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50),
+                                  background_type='Offset')
+        compare_axes_manager_metadata(s, s_r)
+
+    def test_background_type_Polynomial_order_2(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50),
+                                  background_type='Polynomial',
+                                  polynomial_order=2)
+        compare_axes_manager_metadata(s, s_r)
+
+    def test_background_type_Polynomial_order_3(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50),
+                                  background_type='Polynomial',
+                                  polynomial_order=3)
+        compare_axes_manager_metadata(s, s_r)
+
+
+class TestRemoveBackgroundMetadataAxesManagerCopy2D:
+
+    def setup_method(self, method):
+        s = signals.Signal1D(np.arange(10, 210)[::-1].reshape(2, 100))
+        s.axes_manager[0].name = 'axis0'
+        s.axes_manager[1].name = 'axis1'
+        s.axes_manager[0].units = 'units0'
+        s.axes_manager[1].units = 'units1'
+        s.axes_manager[0].scale = 0.9
+        s.axes_manager[1].scale = 1.1
+        s.axes_manager[0].offset = 1.
+        s.axes_manager[1].offset = 1.2
+        s.metadata.General.title = "atitle"
+        self.s = s
+
+    def test_non_fast(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50), fast=False)
+        compare_axes_manager_metadata(s, s_r)
+
+    def test_fast(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50), fast=True)
+        compare_axes_manager_metadata(s, s_r)
+
+    def test_non_zero_fill(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50), zero_fill=False)
+        compare_axes_manager_metadata(s, s_r)
+
+    def test_zero_fill(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50), zero_fill=True)
+        compare_axes_manager_metadata(s, s_r)
+
+    def test_non_show_progressbar(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50), show_progressbar=False)
+        compare_axes_manager_metadata(s, s_r)
+
+    def test_show_progressbar(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50), show_progressbar=True)
+        compare_axes_manager_metadata(s, s_r)
+
+    def test_non_plot_remainder(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50), plot_remainder=False)
+        compare_axes_manager_metadata(s, s_r)
+
+    def test_background_type_powerlaw(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50),
+                                  background_type='Power Law')
+        compare_axes_manager_metadata(s, s_r)
+
+    def test_background_type_offset(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50),
+                                  background_type='Offset')
+        compare_axes_manager_metadata(s, s_r)
+
+    def test_background_type_Polynomial_order_2(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50),
+                                  background_type='Polynomial',
+                                  polynomial_order=2)
+        compare_axes_manager_metadata(s, s_r)
+
+    def test_background_type_Polynomial_order_3(self):
+        s = self.s
+        s_r = s.remove_background(signal_range=(2, 50),
+                                  background_type='Polynomial',
+                                  polynomial_order=3)
+        compare_axes_manager_metadata(s, s_r)
