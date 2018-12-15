@@ -1036,8 +1036,7 @@ _spikes_diagnosis,
         if fast and not self._lazy:
             try:
                 axis = self.axes_manager.signal_axes[0].axis
-                result = self - Signal1D(
-                        background_estimator.function_nd(axis))
+                result = self - background_estimator.function_nd(axis)
             except MemoryError:
                 result = self - model.as_signal(
                     show_progressbar=show_progressbar)
