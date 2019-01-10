@@ -186,7 +186,7 @@ class UnitConversion:
                 self.__dict__[other] = float(other_quantity.magnitude)
 
             self.units = '{:~}'.format(value.units)
-            self.__dict__[attribute] = float(value.magnitude)
+            setattr(self, attribute, float(value.magnitude))
         else:
             raise ValueError('`attribute` argument can only take the `scale` '
                              'or the `offset` value.')
