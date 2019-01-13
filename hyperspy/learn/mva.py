@@ -1282,7 +1282,7 @@ class LearningResults(object):
             if value.dtype == np.dtype('object'):
                 value = None
             # Unwrap values stored as 0D numpy arrays to raw datatypes
-            if isinstance(value, np.ndarray) and value.shape == ():
+            if isinstance(value, np.ndarray) and value.ndim == 0:
                 value = value.item()
             setattr(self, key, value)
         _logger.info("\n%s loaded correctly" % filename)
