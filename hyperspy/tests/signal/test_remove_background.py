@@ -17,11 +17,11 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import pytest
 
 from hyperspy import signals
 from hyperspy import components1d
 from hyperspy.decorators import lazifyTestClass
-
 
 @lazifyTestClass
 class TestRemoveBackground1DGaussian:
@@ -134,65 +134,21 @@ class TestRemoveBackgroundMetadataAxesManagerCopy1D:
         s.metadata.General.title = "atitle"
         self.s = s
 
-    def test_non_fast(self):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50), fast=False)
-        compare_axes_manager_metadata(s, s_r)
-
-    def test_fast(self):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50), fast=True)
-        compare_axes_manager_metadata(s, s_r)
-
-    def test_non_zero_fill(self):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50), zero_fill=False)
-        compare_axes_manager_metadata(s, s_r)
-
-    def test_zero_fill(self):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50), zero_fill=True)
-        compare_axes_manager_metadata(s, s_r)
-
-    def test_non_show_progressbar(self):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50), show_progressbar=False)
-        compare_axes_manager_metadata(s, s_r)
-
-    def test_show_progressbar(self):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50), show_progressbar=True)
-        compare_axes_manager_metadata(s, s_r)
-
-    def test_non_plot_remainder(self):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50), plot_remainder=False)
-        compare_axes_manager_metadata(s, s_r)
-
-    def test_background_type_powerlaw(self):
+    @pytest.mark.parametrize('fast', [True, False])
+    @pytest.mark.parametrize('zero_fill', [True, False])
+    @pytest.mark.parametrize('show_progressbar', [True, False])
+    @pytest.mark.parametrize('plot_remainder', [True, False])
+    @pytest.mark.parametrize('background_type', ['Power Law', 'Offset',
+                                                 'Polynomial'])
+    def test_non_fast(self, fast, zero_fill, show_progressbar, plot_remainder,
+                      background_type):
         s = self.s
         s_r = s.remove_background(signal_range=(2, 50),
-                                  background_type='Power Law')
-        compare_axes_manager_metadata(s, s_r)
-
-    def test_background_type_offset(self):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50),
-                                  background_type='Offset')
-        compare_axes_manager_metadata(s, s_r)
-
-    def test_background_type_Polynomial_order_2(self):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50),
-                                  background_type='Polynomial',
-                                  polynomial_order=2)
-        compare_axes_manager_metadata(s, s_r)
-
-    def test_background_type_Polynomial_order_3(self):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50),
-                                  background_type='Polynomial',
-                                  polynomial_order=3)
+                                  fast=fast,
+                                  zero_fill=zero_fill,
+                                  show_progressbar=show_progressbar,
+                                  plot_remainder=plot_remainder,
+                                  background_type=background_type)
         compare_axes_manager_metadata(s, s_r)
 
 
@@ -211,63 +167,19 @@ class TestRemoveBackgroundMetadataAxesManagerCopy2D:
         s.metadata.General.title = "atitle"
         self.s = s
 
-    def test_non_fast(self):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50), fast=False)
-        compare_axes_manager_metadata(s, s_r)
-
-    def test_fast(self):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50), fast=True)
-        compare_axes_manager_metadata(s, s_r)
-
-    def test_non_zero_fill(self):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50), zero_fill=False)
-        compare_axes_manager_metadata(s, s_r)
-
-    def test_zero_fill(self):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50), zero_fill=True)
-        compare_axes_manager_metadata(s, s_r)
-
-    def test_non_show_progressbar(self):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50), show_progressbar=False)
-        compare_axes_manager_metadata(s, s_r)
-
-    def test_show_progressbar(self):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50), show_progressbar=True)
-        compare_axes_manager_metadata(s, s_r)
-
-    def test_non_plot_remainder(self):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50), plot_remainder=False)
-        compare_axes_manager_metadata(s, s_r)
-
-    def test_background_type_powerlaw(self):
+    @pytest.mark.parametrize('fast', [True, False])
+    @pytest.mark.parametrize('zero_fill', [True, False])
+    @pytest.mark.parametrize('show_progressbar', [True, False])
+    @pytest.mark.parametrize('plot_remainder', [True, False])
+    @pytest.mark.parametrize('background_type', ['Power Law', 'Offset',
+                                                 'Polynomial'])
+    def test_non_fast(self, fast, zero_fill, show_progressbar, plot_remainder,
+                      background_type):
         s = self.s
         s_r = s.remove_background(signal_range=(2, 50),
-                                  background_type='Power Law')
-        compare_axes_manager_metadata(s, s_r)
-
-    def test_background_type_offset(self):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50),
-                                  background_type='Offset')
-        compare_axes_manager_metadata(s, s_r)
-
-    def test_background_type_Polynomial_order_2(self):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50),
-                                  background_type='Polynomial',
-                                  polynomial_order=2)
-        compare_axes_manager_metadata(s, s_r)
-
-    def test_background_type_Polynomial_order_3(self):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50),
-                                  background_type='Polynomial',
-                                  polynomial_order=3)
+                                  fast=fast,
+                                  zero_fill=zero_fill,
+                                  show_progressbar=show_progressbar,
+                                  plot_remainder=plot_remainder,
+                                  background_type=background_type)
         compare_axes_manager_metadata(s, s_r)
