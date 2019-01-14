@@ -22,6 +22,8 @@ import pytest
 from hyperspy import signals
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 from hyperspy.decorators import lazifyTestClass
+from tempfile import TemporaryDirectory
+from os.path import join
 
 
 class TestNdAxes:
@@ -289,3 +291,21 @@ class TestNonFloatTypeError:
         self.s_float.decomposition()
         with pytest.raises(TypeError):
             self.s_int.decomposition()
+
+
+class TestLoadDecompositionResults:
+
+    def setup_method(self, method):
+        self.s = signals.Signal1D([[1.1, 1.2, 1.4, 1.3], [1.5, 1.5, 1.4, 1.2]])
+
+    def test_load_decomposition_results(self):
+        # Test whether the sequence of loading learning results and then
+        # saving the signal causes errors. See #2093.
+        with TemporaryDirectory() as tmpdir:
+            self.s.decomposition()
+            fname1 = join(tmpdir, "results.npz")
+            self.s.learning_results.save(fname1)
+            self.s.learning_results.load(fname1)
+            fname2 = join(tmpdir, "output.hspy")
+            self.s.save(fname2)
+            assert isinstance(self.s.learning_results.decomposition_algorithm, str)
