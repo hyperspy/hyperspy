@@ -36,6 +36,9 @@ style_pytest_mpl = 'default'
 
 style = ['default', 'overlap', 'cascade', 'mosaic', 'heatmap']
 
+@pytest.fixture
+def mpl_generate_path_cmdopt(request):
+    return request.config.getoption("--mpl-generate-path")
 
 def _generate_filename_list(style):
     path = os.path.dirname(__file__)
@@ -48,7 +51,28 @@ def _generate_filename_list(style):
                                                '%s%i.png' % (filename, i)))
     return filename_list2
 
+@pytest.fixture
+def setup_teardown(request, scope="class"):
+    mpl_generate_path_cmdopt = request.config.getoption("--mpl-generate-path")
+    # SETUP
+    # duplicate baseline images to match the test_name when the
+    # parametrized 'test_plot_spectra' are run. For a same 'style', the
+    # expected images are the same.
+    if mpl_generate_path_cmdopt is None:
+        for filename in _generate_filename_list(style):
+            copyfile("%s.png" % filename[:-5], filename)
+    yield
+    # TEARDOWN
+    # Create the baseline images: copy one baseline image for each test
+    # and remove the other ones.
+    if mpl_generate_path_cmdopt:
+        for filename in _generate_filename_list(style):
+            copyfile(filename, "%s.png" % filename[:-5])
+    # Delete the images that have been created in 'setup_class'
+    for filename in _generate_filename_list(style):
+        os.remove(filename)
 
+@pytest.mark.usefixtures("setup_teardown")
 class TestPlotSpectra():
 
     s = hs.signals.Signal1D(scipy.misc.ascent()[100:160:10])
@@ -58,25 +82,6 @@ class TestPlotSpectra():
     s_reverse.axes_manager[1].offset = 512
     s_reverse.axes_manager[1].scale = -1
 
-    @classmethod
-    def setup_class(cls):
-        # duplicate baseline images to match the test_name when the
-        # parametrized 'test_plot_spectra' are run. For a same 'style', the
-        # expected images are the same.
-        if pytest.config.getoption("--mpl-generate-path") is None:
-            for filename in _generate_filename_list(style):
-                copyfile("%s.png" % filename[:-5], filename)
-
-    @classmethod
-    def teardown_class(cls):
-        # Create the baseline images: copy one baseline image for each test
-        # and remove the other ones.
-        if pytest.config.getoption("--mpl-generate-path"):
-            for filename in _generate_filename_list(style):
-                copyfile(filename, "%s.png" % filename[:-5])
-        # Delete the images that have been created in 'setup_class'
-        for filename in _generate_filename_list(style):
-            os.remove(filename)
 
     def _generate_parameters(style):
         parameters = []
