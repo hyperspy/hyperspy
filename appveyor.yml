@@ -47,10 +47,12 @@ install:
 
   # Install the dependencies of the project.
   - ps: Add-AppveyorMessage "Installing conda packages..."
-  - "conda install -yq -c conda-forge %DEPS% %TEST_DEPS%"
+  - 'conda update -y conda'
+  - "conda install -y -c conda-forge hyperspy-base --only-deps"
+  - "conda install -y -c conda-forge cython %TEST_DEPS%"
 
   - ps: Add-AppveyorMessage "Installing hyperspy..."
-  - "pip install \"matplotlib>=3.0.0\" & pip install .[mrcz]"
+  - "pip install .[all]"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 

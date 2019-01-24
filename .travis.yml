@@ -43,15 +43,16 @@ before_install:
 install:
 
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      DEPS="pip numpy scipy matplotlib>2.2.3 ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython ipyparallel dask traits traitsui numexpr numba";
+      DEPS="pip numpy scipy matplotlib>2.2.3 ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython ipyparallel dask traits traitsui numexpr numba python-blosc";
     else DEPS="pip ipython numpy scipy matplotlib>2.2.3 h5py sympy scikit-image numexpr";
     fi
-  - conda create -n testenv --yes python=$PYTHON;
+  - conda update -y conda;
+    conda create -n testenv --yes python=$PYTHON;
     source activate testenv;
     conda install -y -c conda-forge $DEPS;
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      pip install .[mrcz] && pip install 'matplotlib>=3.0.0';
-    else pip install "matplotlib>=3.0.0" && pip install .[tests];
+      pip install .[all];
+    else pip install .[tests];
     fi
 
 before_script: # configure a headless display to test plot generation
