@@ -5,7 +5,7 @@ environment:
 
   global:
     TEST_DEPS: "pytest pytest-cov pytest-mpl wheel"
-    DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba python-blosc tqdm pint requests imageio"
+    DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba python-blosc tqdm pint requests imageio traits"
     MPLBACKEND: "agg"
 
   matrix:
@@ -66,6 +66,8 @@ install:
 
   - ps: Add-AppveyorMessage "Installing hyperspy..."
   - "pip install .[tests] mrcz"
+  # install pillow with pip as workaround for the DLL issue on win64 from defaults
+  - "pip install -I pillow"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 
