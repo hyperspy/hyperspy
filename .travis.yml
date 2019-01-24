@@ -47,9 +47,10 @@ install:
     else DEPS="pip ipython numpy scipy matplotlib>2.2.3 h5py sympy scikit-image numexpr";
     fi
   - conda update -y conda;
+    conda config --append channels conda-forge;
     conda create -n testenv --yes python=$PYTHON;
     source activate testenv;
-    conda install -y -c conda-forge $DEPS pytest-cov;
+    conda install -y $DEPS pytest-cov;
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
       pip install .[tests] mrcz;
     else pip install .[tests];
