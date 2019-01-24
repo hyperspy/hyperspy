@@ -51,7 +51,7 @@ install:
   # Setup miniconda environment.
   - ps: Add-AppveyorMessage "Setup miniconda environment..."
   - "conda update -y conda"
-  - "conda config --append channels conda-forge;"
+  - "conda config --append channels conda-forge"
   - "conda create -y -n testenv python=%PY_VERSION%"
   - "activate testenv"
 

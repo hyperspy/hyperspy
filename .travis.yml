@@ -5,6 +5,7 @@ env:
   global:
     - DISPLAY=99.0
     - MPLBACKEND="agg"
+    - TEST_DEPS="pytest pytest-cov pytest-mpl wheel"
 
 matrix:
   include:
@@ -50,10 +51,10 @@ install:
     conda config --append channels conda-forge;
     conda create -n testenv --yes python=$PYTHON;
     source activate testenv;
-    conda install -y $DEPS pytest-cov;
+    conda install -y $DEPS $TEST_DEPS;
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      pip install .[tests] mrcz;
-    else pip install .[tests];
+      pip install .[mrcz];
+    else pip install .;
     fi
 
 before_script: # configure a headless display to test plot generation
