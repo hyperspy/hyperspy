@@ -64,7 +64,7 @@ install:
   - "conda install -y -c conda-forge %DEPS% %TEST_DEPS%"
 
   - ps: Add-AppveyorMessage "Installing hyperspy..."
-  - "pip install .[all]"
+  - "pip install .[tests] mrcz"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 

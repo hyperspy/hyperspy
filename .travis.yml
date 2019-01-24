@@ -49,9 +49,9 @@ install:
   - conda update -y conda;
     conda create -n testenv --yes python=$PYTHON;
     source activate testenv;
-    conda install -y -c conda-forge $DEPS;
+    conda install -y -c conda-forge $DEPS pytest-cov;
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      pip install .[all];
+      pip install .[tests] mrcz;
     else pip install .[tests];
     fi
 
@@ -64,8 +64,7 @@ before_script: # configure a headless display to test plot generation
 
 script:
   - python -c 'import matplotlib.pyplot as plt; print(plt.get_backend())';
-  - pip install coverage coveralls pytest-cov pytest-mpl;
-    pytest --mpl --cov=hyperspy --pyargs hyperspy;
+  - pytest --mpl --cov=hyperspy --pyargs hyperspy;
 
 #after_failure: # run only on failure in case there is a need to check matplotlib image comparison
 # This needs a service to upload the artifacts (and corresponding configuration)
