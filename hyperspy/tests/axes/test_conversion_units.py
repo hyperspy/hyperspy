@@ -200,6 +200,8 @@ class TestDataAxis:
         assert self.axis.scale == 2.5
         nt.assert_almost_equal(self.axis.offset, 5.0)
         assert self.axis.units == 'nm'
+        # Test that the axis array has been recomputed
+        nt.assert_almost_equal(self.axis.axis[1], 7.5)
 
     def test_scale_as_quantity_setter_string_no_previous_units(self):
         axis = DataAxis(size=2048, scale=12E-12, offset=5.0)
