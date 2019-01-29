@@ -336,7 +336,7 @@ MRC
 
 This is a format widely used for tomographic data. Our implementation is based
 on `this specification
-<http://ami.scripps.edu/software/mrctools/mrc_specification.php>`_. We also
+<https://www2.mrc-lmb.cam.ac.uk/research/locally-developed-software/image-processing-software/>`_. We also
 partly support FEI's custom header. We do not provide writing features for this
 format, but, as it is an open format, we may implement this feature in the
 future on demand.
