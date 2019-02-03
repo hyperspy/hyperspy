@@ -5,7 +5,7 @@ environment:
 
   global:
     TEST_DEPS: "pytest pytest-cov pytest-mpl wheel"
-    DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba tqdm pint requests imageio traits mrcz"
+    DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba tqdm pint requests imageio traits"
     MPLBACKEND: "agg"
 
   matrix:
@@ -51,12 +51,12 @@ install:
   # Setup miniconda environment.
   - ps: Add-AppveyorMessage "Setup miniconda environment..."
   - "conda update -y conda"
+  - "conda config --append channels conda-forge"
   # Workaround for https://github.com/conda/conda/issues/7144
   # see https://github.com/appveyor/ci/issues/2270
   - set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%PATH%
-  - "conda config --append channels conda-forge"
   - "conda create -y -n testenv python=%PY_VERSION%"
-  - "conda activate testenv"
+  - "activate testenv"
 
   # Check that we have the expected version and architecture for Python
   - "python --version"
@@ -65,6 +65,7 @@ install:
 
   # Install the dependencies of hyperspy.
   - ps: Add-AppveyorMessage "Installing conda packages..."
+  - if "%PLATFORM%"=="x64" set DEPS=%DEPS% mrcz
   - "conda install -y %DEPS% %TEST_DEPS%"
 
   - ps: Add-AppveyorMessage "Installing hyperspy..."
@@ -112,3 +113,4 @@ deploy:
   force_update: true
   on:
     appveyor_repo_tag: true        # deploy on tag push only
+
