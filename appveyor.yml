@@ -53,7 +53,7 @@ install:
   - "conda update -y conda"
   - "conda config --append channels conda-forge"
   - "conda create -y -n testenv python=%PY_VERSION%"
-  - "activate testenv"
+  - "conda activate testenv"
 
   # Check that we have the expected version and architecture for Python
   - "python --version"
