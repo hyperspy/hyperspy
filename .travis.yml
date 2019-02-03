@@ -44,7 +44,7 @@ before_install:
 install:
 
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      DEPS="pip numpy scipy matplotlib>2.2.3 ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython ipyparallel dask traits traitsui numexpr numba python-blosc";
+      DEPS="pip numpy scipy matplotlib>2.2.3 ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython ipyparallel dask traits traitsui numexpr numba mrcz";
     else DEPS="pip ipython numpy scipy matplotlib>2.2.3 h5py sympy scikit-image numexpr";
     fi
   - conda update -y conda;
@@ -53,7 +53,7 @@ install:
     source activate testenv;
     conda install -y $DEPS $TEST_DEPS;
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      pip install .[mrcz];
+      pip install .;
     else pip install .;
     fi
 

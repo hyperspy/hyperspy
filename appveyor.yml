@@ -5,7 +5,7 @@ environment:
 
   global:
     TEST_DEPS: "pytest pytest-cov pytest-mpl wheel"
-    DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba python-blosc tqdm pint requests imageio traits"
+    DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba tqdm pint requests imageio traits mrcz"
     MPLBACKEND: "agg"
 
   matrix:
@@ -65,7 +65,7 @@ install:
   - "conda install -y %DEPS% %TEST_DEPS%"
 
   - ps: Add-AppveyorMessage "Installing hyperspy..."
-  - "pip install .[tests] mrcz"
+  - "pip install .[tests]"
   # install pillow with pip as workaround for the DLL issue on win64 from defaults
   - "pip install -I pillow"
 
