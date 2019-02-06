@@ -623,9 +623,8 @@ class EDS_mixin:
         # signal_to_index = self.axes_manager.navigation_dimension - 2
         for i, (Xray_line, window) in enumerate(
                 zip(xray_lines, integration_windows)):
-            line_energy, line_FWHM = self._get_line_energy(Xray_line,
-                                                           FWHM_MnKa='auto')
             element, line = utils_eds._get_element_and_line(Xray_line)
+            line_energy = self._get_line_energy(Xray_line)
             img = self.isig[window[0]:window[1]].integrate1D(-1)
             if np.issubdtype(img.data.dtype, np.integer):
                 # The operations below require a float dtype with the default

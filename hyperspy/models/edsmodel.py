@@ -809,9 +809,9 @@ class EDSModel(Model1D):
         ----------
         xray_lines: list of str or None or 'from_metadata'
             If None, all main X-ray lines (alpha)
-            If 'from_metadata', take the Xray_lines stored in the `metadata`
-            of the spectrum. Alternatively, provide an iterable containing
-            a list of valid X-ray lines symbols.
+            If 'from_metadata', take the lines listed in `xray_lines` in the 
+            `metadata` of the spectrum. Alternatively, provide an iterable 
+            containing a list of valid X-ray lines symbols.
         plot_result : bool
             If True, plot the calculated line intensities. If the current
             object is a single spectrum it prints the result instead.
@@ -840,6 +840,7 @@ class EDSModel(Model1D):
                                                 self], xray_lines)
         if not xray_lines:
             raise ValueError("These X-ray lines are not part of the model.")
+        self.signal.set_lines(xray_lines)
         for xray_line in xray_lines:
             element, line = utils_eds._get_element_and_line(xray_line)
             line_energy = self.signal._get_line_energy(xray_line)
@@ -854,6 +855,7 @@ class EDSModel(Model1D):
                  line_energy,
                  self.signal.axes_manager.signal_axes[0].units,
                  self.signal.metadata.General.title))
+            img.axes_manager.set_signal_dimension(0)
             if plot_result and img.axes_manager.signal_dimension == 0:
                 print("%s at %s %s : Intensity = %.2f"
                       % (xray_line,

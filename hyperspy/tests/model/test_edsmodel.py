@@ -29,7 +29,7 @@ class TestlineFit:
         m.fit()
         np.testing.assert_allclose([i.data for i in
                                     m.get_lines_intensity()],
-                                   [[0.5], [0.2], [0.3]], atol=10 - 4)
+                                   [[0.5], [0.2], [0.3]], atol=1E-4)
 
     def _check_model_creation(self):
         s = self.s
@@ -169,7 +169,14 @@ class TestlineFit:
             '$\\mathrm{Fe}_{\\mathrm{Kb}}$',
             '$\\mathrm{Zn}_{\\mathrm{Ka}}$']
 
-
+    def test_get_lines_intensity(self):
+        s = self.s
+        m = s.create_model()
+        m.fix_background()
+        m.fit()
+        intensities = m.get_lines_intensity()
+        quant = s.quantification(intensities, method='CL',
+                                 factors=[1.0, 1.0, 1.0])
 @lazifyTestClass
 class TestMaps:
 

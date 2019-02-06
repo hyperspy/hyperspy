@@ -286,7 +286,7 @@ class EDSTEM_mixin:
     def quantification(self,
                        intensities,
                        method,
-                       factors='auto',
+                       factors,
                        composition_units='atomic',
                        navigation_mask=1.0,
                        closing=True,
