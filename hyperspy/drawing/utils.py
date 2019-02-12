@@ -388,6 +388,7 @@ def _make_overlap_plot(spectra, ax, color="blue", line_style='-'):
     for spectrum_index, (spectrum, color, line_style) in enumerate(
             zip(spectra, color, line_style)):
         x_axis = spectrum.axes_manager.signal_axes[0]
+        spectrum = _transpose_if_required(spectrum, 1)
         ax.plot(x_axis.axis, spectrum.data, color=color, ls=line_style)
         set_xaxis_lims(ax, x_axis)
     _set_spectrum_xlabel(spectra if isinstance(spectra, hs.signals.BaseSignal)
@@ -411,6 +412,7 @@ def _make_cascade_subplot(
     for spectrum_index, (spectrum, color, line_style) in enumerate(
             zip(spectra, color, line_style)):
         x_axis = spectrum.axes_manager.signal_axes[0]
+        spectrum = _transpose_if_required(spectrum, 1)
         data_to_plot = ((spectrum.data - spectrum.data.min()) /
                         float(max_value) + spectrum_index * padding)
         ax.plot(x_axis.axis, data_to_plot, color=color, ls=line_style)
@@ -430,6 +432,16 @@ def _plot_spectrum(spectrum, ax, color="blue", line_style='-'):
 def _set_spectrum_xlabel(spectrum, ax):
     x_axis = spectrum.axes_manager.signal_axes[0]
     ax.set_xlabel("%s (%s)" % (x_axis.name, x_axis.units))
+
+
+def _transpose_if_required(signal, expected_dimension):
+    # EDS profiles or maps have signal dimension = 0 and navigation dimension
+    # 1 or 2. For convenience transpose the signal if possible
+    if (signal.axes_manager.signal_dimension == 0 and 
+        signal.axes_manager.navigation_dimension == expected_dimension):
+        return signal.T
+    else:
+        return signal
 
 
 def plot_images(images,
@@ -608,6 +620,10 @@ def plot_images(images,
             raise ValueError("`images` must be a list of image signals or a "
                              "multi-dimensional signal."
                              " " + repr(type(images)) + " was given.")
+
+    # For list of EDS maps, transpose the BaseSignal
+    if isinstance(images, (list, tuple)):
+        images = [_transpose_if_required(image, 2) for image in images]
 
     # If input is >= 1D signal (e.g. for multi-dimensional plotting),
     # copy it and put it in a list so labeling works out as (x,y) when plotting
@@ -1342,6 +1358,7 @@ def plot_spectra(
             legend = [legend] * len(spectra)
         for spectrum, ax, color, line_style, legend in zip(
                 spectra, subplots, color, line_style, legend):
+            spectrum = _transpose_if_required(spectrum, 1)
             _plot_spectrum(spectrum, ax, color=color, line_style=line_style)
             ax.set_ylabel('Intensity')
             if legend is not None:
@@ -1355,6 +1372,8 @@ def plot_spectra(
     elif style == 'heatmap':
         if not isinstance(spectra, hyperspy.signal.BaseSignal):
             import hyperspy.utils
+            spectra = [_transpose_if_required(spectrum, 1) for spectrum in 
+                       spectra]
             spectra = hyperspy.utils.stack(spectra)
         with spectra.unfolded():
             ax = _make_heatmap_subplot(spectra)
