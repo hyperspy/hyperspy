@@ -325,7 +325,7 @@ def file_writer(filename, signal, format=None, separator=', ',
             # their name depends on library versions, platform etc.
             loc = locale.getlocale(locale.LC_TIME)
             if os_name == 'posix':
-                locale.setlocale(locale.LC_TIME, ('en_US', 'latin-1'))
+                locale.setlocale(locale.LC_TIME, ('en_US', 'utf8'))
             elif os_name == 'windows':
                 locale.setlocale(locale.LC_TIME, 'english')
             try:
