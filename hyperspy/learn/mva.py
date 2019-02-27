@@ -39,7 +39,6 @@ from hyperspy.learn.rpca import rpca_godec, orpca
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack, ordinal
-from pymcr.mcr import McrAls
 
 _logger = logging.getLogger(__name__)
 
@@ -781,8 +780,8 @@ class MVA():
             factors.data = factors.data.T
 
         if self.learning_results.poissonian_noise_normalized is True:
-            spec_weight_vec = self._root_bH.T
-            im_weight_vec = self._root_aG
+            spec_weight_vec = self._root_bH.T.squeeze()
+            im_weight_vec = self._root_aG.squeeze()
         else:
             spec_weight_vec = None
             im_weight_vec = None
