@@ -34,22 +34,6 @@ def _thresh(X, lambda1):
     return np.sign(X) * ((res > 0) * res)
 
 
-def _normalize(arr, ar_min=None, ar_max=None, undo=False):
-    if not undo:
-        if ar_min is None:
-            ar_min = arr.min()
-        if ar_max is None:
-            ar_max = arr.max()
-    else:
-        if ar_min is None or ar_max is None:
-            raise ValueError("min / max values have to be passed when undoing "
-                             "the normalization")
-    if undo:
-        return (arr * (ar_max - ar_min)) + ar_min
-    else:
-        return (arr - ar_min) / (ar_max - ar_min)
-
-
 def rpca_godec(X, rank, fast=False, lambda1=None,
                power=None, tol=None, maxiter=None):
     """
@@ -132,11 +116,6 @@ def rpca_godec(X, rank, fast=False, lambda1=None,
                         "Defaulting to 1e3")
         maxiter = 1e3
 
-    # Get min & max of data matrix for scaling
-    X_max = np.max(X)
-    X_min = np.min(X)
-    X = (X - X_min) / X_max
-
     # Initialize L and E
     L = X
     E = np.zeros(L.shape)
@@ -178,9 +157,9 @@ def rpca_godec(X, rank, fast=False, lambda1=None,
         G = G.T
 
     # Rescale
-    Xhat = (L * X_max) + X_min
-    Ehat = (E * X_max) + X_min
-    Ghat = (G * X_max) + X_min
+    Xhat = L
+    Ehat = E
+    Ghat = G
 
     # Do final SVD
     U, S, Vh = svd(Xhat)
@@ -305,18 +284,7 @@ class ORPCA:
         if isinstance(X, np.ndarray):
             n, m = X.shape
             iterating = False
-            if normalize:
-                self.X_min = X.min()
-                self.X_max = X.max()
-                self.normalize = normalize
-                # actually scale the data to be between 0 and 1, not just close
-                # to it..
-                X = _normalize(X, ar_min=self.X_min, ar_max=self.X_max)
-                # X = (X - self.X_min) / (self.X_max - self.X_min)
         else:
-            if normalize:
-                _logger.warning("Normalization with an iterator is not"
-                                " possible, option ignored.")
             x = next(X)
             m = len(x)
             X = chain([x], X)
@@ -360,9 +328,6 @@ class ORPCA:
                     X = chain(iter(Y2.T.copy()), X)
                 else:
                     Y2 = X[:self.training_samples, :].T
-                # normalize the init data here..
-                # Y2 = (Y2 - Y2.min()) / (Y2.max() - Y2.min())
-                Y2 = _normalize(Y2)
             elif self.init == 'rand':
                 Y2 = np.random.randn(m, self.rank)
             L, _ = scipy.linalg.qr(Y2, mode='economic')
@@ -452,13 +417,6 @@ class ORPCA:
             # both keep an indicator that we had something and remove the
             # duplicate data
             self.E = [1]
-            if self.normalize:
-                Ehat = _normalize(Ehat, ar_min=self.X_min, ar_max=self.X_max,
-                                  undo=True)
-
-        if self.normalize:
-            Xhat = _normalize(Xhat, ar_min=self.X_min, ar_max=self.X_max,
-                              undo=True)
 
         # Do final SVD
         U, S, Vh = self.svd(Xhat)

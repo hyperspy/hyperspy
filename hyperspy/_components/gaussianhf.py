@@ -51,6 +51,11 @@ class GaussianHF(Expression):
         fwhm: float
             The full width half maximum value, i.e. the width of the gaussian
             at half the value of gaussian peak (at centre).
+        **kwargs
+            Extra keyword arguments are passes to the ``Expression`` component.
+            An useful keyword argument that can be used to speed up the
+            component is `module`. See the ``Expression`` component
+            documentation for details.
 
     The helper properties `sigma` and `A` are also defined for compatibility
     with `Gaussian` component.
@@ -61,7 +66,8 @@ class GaussianHF(Expression):
 
     """
 
-    def __init__(self, height=1., fwhm=1., centre=0.):
+    def __init__(self, height=1., fwhm=1., centre=0., module="numexpr",
+                 **kwargs):
         super(GaussianHF, self).__init__(
             expression="height * exp(-(x - centre)**2 * 4 * log(2)/fwhm**2)",
             name="GaussianHF",
@@ -69,11 +75,13 @@ class GaussianHF(Expression):
             fwhm=fwhm,
             centre=centre,
             position="centre",
+            module=module,
             autodoc=False,
+            **kwargs,
         )
 
         # Boundaries
-        self.height.bmin = None
+        self.height.bmin = 0.
         self.height.bmax = None
 
         self.fwhm.bmin = 0.
@@ -119,7 +127,7 @@ class GaussianHF(Expression):
 
         """
 
-        binned = signal.metadata.Signal.binned
+        super(GaussianHF, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
                                                               only_current)
@@ -128,7 +136,7 @@ class GaussianHF(Expression):
             self.centre.value = centre
             self.fwhm.value = sigma * sigma2fwhm
             self.height.value = float(height)
-            if binned is True:
+            if self.binned:
                 self.height.value /= axis.scale
             return True
         else:
@@ -136,7 +144,7 @@ class GaussianHF(Expression):
                 self._create_arrays()
             self.height.map['values'][:] = height
 
-            if binned is True:
+            if self.binned:
                 self.height.map['values'][:] /= axis.scale
             self.height.map['is_set'][:] = True
             self.fwhm.map['values'][:] = sigma * sigma2fwhm

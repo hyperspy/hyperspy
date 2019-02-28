@@ -1,0 +1,3 @@
+python:
+   pip_install: true
+

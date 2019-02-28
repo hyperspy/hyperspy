@@ -22,10 +22,12 @@ import numpy as np
 import numpy.testing as nt
 from numpy.testing import assert_allclose
 import pytest
+import scipy.constants as constants
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
 from scipy.interpolate import interp2d
+from hyperspy.datasets.example_signals import reference_hologram
 
 
 @pytest.mark.parametrize('lazy', [True, False])
@@ -292,6 +294,147 @@ def test_reconstruct_phase_multi(parallel, lazy):
     with pytest.raises(AttributeError):
         holo_image3.reconstruct_phase(
             sb_size=40, sb_unit='mrad')
+
+
+def _generate_parameters():
+    parameters = []
+    for parallel in [False, True]:
+        for lazy in [False, True]:
+            for single_values in [False, True]:
+                for fcalgo in ['fourier', 'statistical']:
+                    parameters.append([parallel,
+                                       lazy,
+                                       single_values,
+                                       fcalgo])
+    return parameters
+
+
+@pytest.mark.parametrize('parallel, lazy, single_values, fringe_contrast_algorithm',
+                         _generate_parameters())
+def test_statistics(parallel, lazy, single_values, fringe_contrast_algorithm):
+    # Parameters measured using Gatan HoloWorks:
+    REF_FRINGE_SPACING = 3.48604
+    REF_FRINGE_SAMPLING = 3.7902
+
+    # Measured using the definition of fringe contrast from the centre of image
+    REF_FRINGE_CONTRAST = 0.0736
+
+    RTOL = 1e-5
+
+    # 0. Prepare test data and derived statistical parameters
+
+    ref_carrier_freq = 1. / REF_FRINGE_SAMPLING
+    ref_carrier_freq_nm = 1. / REF_FRINGE_SPACING
+
+    ref_holo = hs.stack([reference_hologram(), reference_hologram()])
+    ref_holo = hs.stack([ref_holo, ref_holo, ref_holo])
+
+    ht = ref_holo.metadata.Acquisition_instrument.TEM.beam_energy
+    momentum = 2 * constants.m_e * constants.elementary_charge * ht * \
+        1000 * (1 + constants.elementary_charge * ht *
+                1000 / (2 * constants.m_e * constants.c ** 2))
+    wavelength = constants.h / np.sqrt(momentum) * 1e9  # in nm
+    ref_carrier_freq_mrad = ref_carrier_freq_nm * 1000 * wavelength
+
+    if lazy:
+        ref_holo.as_lazy()
+
+    # 1. Test core functionality
+
+    stats = ref_holo.statistics(high_cf=True,
+                                parallel=parallel,
+                                single_values=single_values,
+                                fringe_contrast_algorithm=fringe_contrast_algorithm)
+    if single_values:
+        # Fringe contrast in experimental conditions can be only an estimate
+        # therefore tolerance is 10%:
+        assert_allclose(
+            stats['Fringe contrast'],
+            REF_FRINGE_CONTRAST,
+            rtol=0.1)
+
+        assert_allclose(
+            stats['Fringe sampling (px)'],
+            REF_FRINGE_SAMPLING,
+            rtol=RTOL)
+        assert_allclose(
+            stats['Fringe spacing (nm)'],
+            REF_FRINGE_SPACING,
+            rtol=RTOL)
+        assert_allclose(
+            stats['Carrier frequency (1 / nm)'],
+            ref_carrier_freq_nm,
+            rtol=RTOL)
+        assert_allclose(
+            stats['Carrier frequency (1/px)'],
+            ref_carrier_freq,
+            rtol=RTOL)
+        assert_allclose(
+            stats['Carrier frequency (mrad)'],
+            ref_carrier_freq_mrad,
+            rtol=RTOL)
+    else:
+        ref_fringe_contrast_stack = np.repeat(
+            REF_FRINGE_CONTRAST, 6).reshape((3, 2))
+        ref_fringe_sampling_stack = np.repeat(
+            REF_FRINGE_SAMPLING, 6).reshape((3, 2))
+        ref_fringe_spacing_stack = np.repeat(
+            REF_FRINGE_SPACING, 6).reshape((3, 2))
+        ref_carrier_freq_nm_stack = np.repeat(
+            ref_carrier_freq_nm, 6).reshape((3, 2))
+        ref_carrier_freq_stack = np.repeat(ref_carrier_freq, 6).reshape((3, 2))
+        ref_carrier_freq_mrad_stack = np.repeat(
+            ref_carrier_freq_mrad, 6).reshape((3, 2))
+
+        # Fringe contrast in experimental conditions can be only an estimate
+        # therefore tolerance is 10%:
+        assert_allclose(
+            stats['Fringe contrast'].data,
+            ref_fringe_contrast_stack,
+            rtol=0.1)
+
+        assert_allclose(
+            stats['Fringe sampling (px)'].data,
+            ref_fringe_sampling_stack,
+            rtol=RTOL)
+        assert_allclose(
+            stats['Fringe spacing (nm)'].data,
+            ref_fringe_spacing_stack,
+            rtol=RTOL)
+        assert_allclose(
+            stats['Carrier frequency (1 / nm)'].data,
+            ref_carrier_freq_nm_stack,
+            rtol=RTOL)
+        assert_allclose(
+            stats['Carrier frequency (1/px)'].data,
+            ref_carrier_freq_stack,
+            rtol=RTOL)
+        assert_allclose(
+            stats['Carrier frequency (mrad)'].data,
+            ref_carrier_freq_mrad_stack,
+            rtol=RTOL)
+
+    # 2. Test raises:
+    holo_raise = hs.signals.HologramImage(np.random.random(20).reshape((5, 4)))
+
+    # 2a. Test raise for absent units:
+    with pytest.raises(ValueError):
+        holo_raise.statistics(sb_position=(1, 1))
+    holo_raise.axes_manager.signal_axes[0].units = 'nm'
+    holo_raise.axes_manager.signal_axes[1].units = 'nm'
+
+    # 2b. Test raise for absent beam_energy:
+    with pytest.raises(AttributeError):
+        holo_raise.statistics(sb_position=(1, 1))
+    holo_raise.set_microscope_parameters(beam_energy=300.)
+
+    # 2c. Test raise for wrong value of `fringe_contrast_algorithm`
+    with pytest.raises(ValueError):
+        holo_raise.statistics(
+            sb_position=(
+                1,
+                1),
+            fringe_contrast_algorithm='pure_guess')
 
 
 if __name__ == '__main__':

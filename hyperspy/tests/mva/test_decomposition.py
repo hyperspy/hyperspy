@@ -21,6 +21,9 @@ import pytest
 
 from hyperspy import signals
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
+from hyperspy.decorators import lazifyTestClass
+from tempfile import TemporaryDirectory
+from os.path import join
 
 
 class TestNdAxes:
@@ -89,6 +92,34 @@ class TestNdAxes:
                                              s2.learning_results.loadings)
         # Check that views of the data don't change. See #871
         np.testing.assert_array_equal(s1.inav[0, 0, 0].data, s1n000.data)
+
+
+@lazifyTestClass
+class TestGetModel:
+    def setup_method(self, method):
+        np.random.seed(100)
+        sources = signals.Signal1D(np.random.standard_t(.5, size=(3, 100)))
+        np.random.seed(100)
+        maps = signals.Signal2D(np.random.standard_t(.5, size=(3, 4, 5)))
+        self.s = (sources.inav[0] * maps.inav[0].T
+                  + sources.inav[1] * maps.inav[1].T
+                  + sources.inav[2] * maps.inav[2].T)
+
+    def test_get_decomposition_model(self):
+        s = self.s
+        s.decomposition(algorithm='svd')
+        sc = self.s.get_decomposition_model(3)
+        rms = np.sqrt(((sc.data - s.data)**2).sum())
+        assert rms < 5e-7
+
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    def test_get_bss_model(self):
+        s = self.s
+        s.decomposition(algorithm='svd')
+        s.blind_source_separation(3)
+        sc = self.s.get_bss_model()
+        rms = np.sqrt(((sc.data - s.data)**2).sum())
+        assert rms < 5e-7
 
 
 class TestGetExplainedVarinaceRatio:
@@ -247,3 +278,34 @@ class TestReturnInfo:
                 algorithm=algorithm,
                 return_info=False,
                 output_dimension=1) is None
+
+
+class TestNonFloatTypeError:
+
+    def setup_method(self, method):
+        self.s_int = signals.Signal1D(
+            (np.random.random((20, 100)) * 20).astype('int'))
+        self.s_float = signals.Signal1D(np.random.random((20, 100)))
+
+    def test_decomposition_error(self):
+        self.s_float.decomposition()
+        with pytest.raises(TypeError):
+            self.s_int.decomposition()
+
+
+class TestLoadDecompositionResults:
+
+    def setup_method(self, method):
+        self.s = signals.Signal1D([[1.1, 1.2, 1.4, 1.3], [1.5, 1.5, 1.4, 1.2]])
+
+    def test_load_decomposition_results(self):
+        # Test whether the sequence of loading learning results and then
+        # saving the signal causes errors. See #2093.
+        with TemporaryDirectory() as tmpdir:
+            self.s.decomposition()
+            fname1 = join(tmpdir, "results.npz")
+            self.s.learning_results.save(fname1)
+            self.s.learning_results.load(fname1)
+            fname2 = join(tmpdir, "output.hspy")
+            self.s.save(fname2)
+            assert isinstance(self.s.learning_results.decomposition_algorithm, str)

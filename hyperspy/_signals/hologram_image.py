@@ -21,6 +21,7 @@ from collections import OrderedDict
 import scipy.constants as constants
 import numpy as np
 from dask.array import Array as daArray
+from pint import UnitRegistry, UndefinedUnitError
 
 from hyperspy._signals.signal2d import Signal2D
 from hyperspy.signal import BaseSignal
@@ -28,6 +29,7 @@ from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.lazy import LazySignal
 from hyperspy.misc.holography.reconstruct import (
     reconstruct, estimate_sideband_position, estimate_sideband_size)
+from hyperspy.misc.holography.tools import calculate_carrier_frequency, estimate_fringe_contrast_fourier
 
 _logger = logging.getLogger(__name__)
 
@@ -35,6 +37,96 @@ _logger = logging.getLogger(__name__)
 def _first_nav_pixel_data(s):
     return s._data_aligned_with_axes[(0, ) *
                                      s.axes_manager.navigation_dimension]
+
+
+def _parse_sb_position(s, reference, sb_position, sb, high_cf, parallel):
+
+    if sb_position is None:
+        _logger.warning('Sideband position is not specified. The sideband '
+                        'will be found automatically which may cause '
+                        'wrong results.')
+        if reference is None:
+            sb_position = s.estimate_sideband_position(
+                sb=sb, high_cf=high_cf, parallel=parallel)
+        else:
+            sb_position = reference.estimate_sideband_position(
+                sb=sb, high_cf=high_cf, parallel=parallel)
+
+    else:
+        if isinstance(sb_position, BaseSignal) and \
+                not sb_position._signal_dimension == 1:
+            raise ValueError('sb_position dimension has to be 1.')
+
+        if not isinstance(sb_position, Signal1D):
+            sb_position = Signal1D(sb_position)
+            if isinstance(sb_position.data, daArray):
+                sb_position = sb_position.as_lazy()
+
+        if not sb_position.axes_manager.signal_size == 2:
+            raise ValueError('sb_position should to have signal size of 2.')
+
+    if sb_position.axes_manager.navigation_size != s.axes_manager.navigation_size:
+        if sb_position.axes_manager.navigation_size:
+            raise ValueError('Sideband position dimensions do not match'
+                             ' neither reference nor hologram dimensions.')
+        # sb_position navdim=0, therefore map function should not iterate:
+        else:
+            sb_position_temp = sb_position.data
+    else:
+        sb_position_temp = sb_position.deepcopy()
+    return sb_position, sb_position_temp
+
+
+def _parse_sb_size(s, reference, sb_position, sb_size, parallel):
+    # Default value is 1/2 distance between sideband and central band
+    if sb_size is None:
+        if reference is None:
+            sb_size = s.estimate_sideband_size(
+                sb_position, parallel=parallel)
+        else:
+            sb_size = reference.estimate_sideband_size(
+                sb_position, parallel=parallel)
+    else:
+        if not isinstance(sb_size, BaseSignal):
+            if isinstance(sb_size,
+                          (np.ndarray, daArray)) and sb_size.size > 1:
+                # transpose if np.array of multiple instances
+                sb_size = BaseSignal(sb_size).T
+            else:
+                sb_size = BaseSignal(sb_size)
+            if isinstance(sb_size.data, daArray):
+                sb_size = sb_size.as_lazy()
+
+    if sb_size.axes_manager.navigation_size != s.axes_manager.navigation_size:
+        if sb_size.axes_manager.navigation_size:
+            raise ValueError('Sideband size dimensions do not match '
+                             'neither reference nor hologram dimensions.')
+        # sb_position navdim=0, therefore map function should not iterate:
+        else:
+            sb_size_temp = np.float64(sb_size.data)
+    else:
+        sb_size_temp = sb_size.deepcopy()
+    return sb_size, sb_size_temp
+
+
+def _estimate_fringe_contrast_statistical(holo):
+    """
+    Estimates average fringe contrast of a hologram using statistical definition:
+    V = STD / MEAN.
+
+    Parameters
+    ----------
+    holo_data: ndarray
+        The data of the hologram.
+
+    Returns
+    -------
+    Fringe contrast as a float
+    """
+
+    axes = holo.axes_manager.signal_axes
+
+    return holo.std(axes) / holo.mean(axes)
 
 
 class HologramImage(Signal2D):
@@ -295,70 +387,19 @@ class HologramImage(Signal2D):
                              ' holograms do not match')
 
         # Parsing sideband position:
-        if sb_position is None:
-            _logger.warning('Sideband position is not specified. The sideband '
-                            'will be found automatically which may cause '
-                            'wrong results.')
-            if reference is None:
-                sb_position = self.estimate_sideband_position(
-                    sb=sb, high_cf=high_cf, parallel=parallel)
-            else:
-                sb_position = reference.estimate_sideband_position(
-                    sb=sb, high_cf=high_cf, parallel=parallel)
+        (sb_position, sb_position_temp) = _parse_sb_position(self,
+                                                             reference,
+                                                             sb_position,
+                                                             sb,
+                                                             high_cf,
+                                                             parallel)
 
-        else:
-            if isinstance(sb_position, BaseSignal) and \
-               not sb_position._signal_dimension == 1:
-                raise ValueError('sb_position dimension has to be 1')
-
-            if not isinstance(sb_position, Signal1D):
-                sb_position = Signal1D(sb_position)
-                if isinstance(sb_position.data, daArray):
-                    sb_position = sb_position.as_lazy()
-
-            if not sb_position.axes_manager.signal_size == 2:
-                raise ValueError('sb_position should to have signal size of 2')
-
-        if sb_position.axes_manager.navigation_size != self.axes_manager.navigation_size:
-            if sb_position.axes_manager.navigation_size:
-                raise ValueError('Sideband position dimensions do not match'
-                                 ' neither reference nor hologram dimensions.')
-            # sb_position navdim=0, therefore map function should not iterate:
-            else:
-                sb_position_temp = sb_position.data
-        else:
-            sb_position_temp = sb_position.deepcopy()
-
-        # Parsing sideband size
-
-        # Default value is 1/2 distance between sideband and central band
-        if sb_size is None:
-            if reference is None:
-                sb_size = self.estimate_sideband_size(
-                    sb_position, parallel=parallel)
-            else:
-                sb_size = reference.estimate_sideband_size(
-                    sb_position, parallel=parallel)
-        else:
-            if not isinstance(sb_size, BaseSignal):
-                if isinstance(sb_size,
-                              (np.ndarray, daArray)) and sb_size.size > 1:
-                    # transpose if np.array of multiple instances
-                    sb_size = BaseSignal(sb_size).T
-                else:
-                    sb_size = BaseSignal(sb_size)
-                if isinstance(sb_size.data, daArray):
-                    sb_size = sb_size.as_lazy()
-
-        if sb_size.axes_manager.navigation_size != self.axes_manager.navigation_size:
-            if sb_size.axes_manager.navigation_size:
-                raise ValueError('Sideband size dimensions do not match '
-                                 'neither reference nor hologram dimensions.')
-            # sb_position navdim=0, therefore map function should not iterate:
-            else:
-                sb_size_temp = np.float64(sb_size.data)
-        else:
-            sb_size_temp = sb_size.deepcopy()
+        # Parsing sideband size:
+        (sb_size, sb_size_temp) = _parse_sb_size(self,
+                                                 reference,
+                                                 sb_position,
+                                                 sb_size,
+                                                 parallel)
 
         # Standard edge smoothness of sideband aperture 5% of sb_size
         if sb_smoothness is None:
@@ -407,7 +448,7 @@ class HologramImage(Signal2D):
             )
             try:
                 ht = self.metadata.Acquisition_instrument.TEM.beam_energy
-            except:
+            except BaseException:
                 raise AttributeError("Please define the beam energy."
                                      "You can do this e.g. by using the "
                                      "set_microscope_parameters method")
@@ -542,6 +583,185 @@ class HologramImage(Signal2D):
             _logger.info('Reconstruction parameters stored in metadata')
 
         return wave_image
+
+    def statistics(self,
+                   sb_position=None,
+                   sb='lower',
+                   high_cf=False,
+                   fringe_contrast_algorithm='statistical',
+                   apodization='hanning',
+                   single_values=True,
+                   show_progressbar=False,
+                   parallel=None):
+        """
+        Calculates following statistics for off-axis electron holograms:
+
+        1. Fringe contrast using either statistical definition or
+        Fourier space approach (see description of `fringe_contrast_algorithm` parameter)
+        2. Fringe sampling (in pixels)
+        3. Fringe spacing (in calibrated units)
+        4. Carrier frequency (in calibrated units, radians and 1/px)
+
+        Parameters
+        ----------
+        sb_position : tuple, :class:`~hyperspy.signals.Signal1D, None
+            The sideband position (y, x), referred to the non-shifted FFT.
+            It has to be tuple or to have the same dimensionality as the hologram.
+            If None, sideband is determined automatically from FFT.
+        sb : str, None
+            Select which sideband is selected. 'upper', 'lower', 'left' or 'right'.
+        high_cf : bool, optional
+            If False, the highest carrier frequency allowed for the sideband location is equal to
+            half of the Nyquist frequency (Default: False).
+        fringe_contrast_algorithm : str
+            Select fringe contrast algorithm between:
+
+            'fourier'
+                fringe contrast is estimated as:
+                2 * <I(k_0)> / <I(0)>,
+                where I(k_0) is intensity of sideband and I(0) is the intensity of central band (FFT origin).
+                This method delivers also reasonable estimation if
+                interference pattern do not cover full field of view.
+            'statistical'
+                fringe contrast is estimated by dividing standard deviation by mean
+                of the hologram intensity in real space. This algorithm relays on that the fringes are regular and
+                covering entire field of view.
+
+            (Default: 'statistical')
+        apodization: str or None, optional
+            Used with `fringe_contrast_algorithm='fourier'`. If 'hanning' or 'hamming' apodization window
+            will be applied in real space before FFT for estimation of fringe contrast.
+            Apodization is typically needed to suppress striking  due to sharp edges of the image,
+            which often results in underestimation of the fringe contrast. (Default: 'hanning')
+        single_values : bool, optional
+            If True calculates statistics only for the first navigation pixels and
+            returns the values as single floats (Default: True)
+        show_progressbar : bool, optional
+            Shows progressbar while iterating over different slices of the
+            signal (passes the parameter to map method). (Default: False)
+        parallel : bool, None, optional
+            Run the reconstruction in parallel
+
+        Returns
+        -------
+        statistics_dict :
+            Dictionary with the statistics
+
+        Examples
+        --------
+        >>> import hyperspy.api as hs
+        >>> s = hs.datasets.example_signals.reference_hologram()
+        >>> sb_position = s.estimate_sideband_position(high_cf=True)
+        >>> s.statistics(sb_position=sb_position)
+        {'Fringe spacing (nm)': 3.4860442674236256,
+        'Carrier frequency (1/px)': 0.26383819985575441,
+        'Carrier frequency (mrad)': 0.56475154609203482,
+        'Fringe contrast': 0.071298357213623778,
+        'Fringe sampling (px)': 3.7902017241882331,
+        'Carrier frequency (1 / nm)': 0.28685808994016415}
+        """
+
+        # Testing match of navigation axes of reference and self
+        # (exception: reference nav_dim=1):
+
+        # Parsing sideband position:
+        (sb_position, sb_position_temp) = _parse_sb_position(
+            self, None, sb_position, sb, high_cf, parallel)
+
+        # Calculate carrier frequency in 1/px and fringe sampling:
+        fourier_sampling = 1. / np.array(self.axes_manager.signal_shape)
+        if single_values:
+            carrier_freq_px = calculate_carrier_frequency(_first_nav_pixel_data(self),
+                                                          sb_position=_first_nav_pixel_data(
+                                                              sb_position),
+                                                          scale=fourier_sampling)
+        else:
+            carrier_freq_px = self.map(calculate_carrier_frequency,
+                                       sb_position=sb_position,
+                                       scale=fourier_sampling,
+                                       inplace=False,
+                                       ragged=False,
+                                       show_progressbar=show_progressbar,
+                                       parallel=parallel)
+        fringe_sampling = np.divide(1., carrier_freq_px)
+
+        ureg = UnitRegistry()
+        try:
+            units = ureg.parse_expression(
+                str(self.axes_manager.signal_axes[0].units))
+        except UndefinedUnitError:
+            raise ValueError('Signal axes units should be defined.')
+
+        # Calculate carrier frequency in 1/units and fringe spacing in units:
+        f_sampling_units = np.divide(
+            1.,
+            [a * b for a, b in
+             zip(self.axes_manager.signal_shape,
+                 (self.axes_manager.signal_axes[0].scale,
+                  self.axes_manager.signal_axes[1].scale))]
+        )
+        if single_values:
+            carrier_freq_units = calculate_carrier_frequency(_first_nav_pixel_data(self),
+                                                             sb_position=_first_nav_pixel_data(
+                                                                 sb_position),
+                                                             scale=f_sampling_units)
+        else:
+            carrier_freq_units = self.map(calculate_carrier_frequency,
+                                          sb_position=sb_position,
+                                          scale=f_sampling_units,
+                                          inplace=False,
+                                          ragged=False,
+                                          show_progressbar=show_progressbar,
+                                          parallel=parallel)
+        fringe_spacing = np.divide(1., carrier_freq_units)
+
+        # Calculate carrier frequency in mrad:
+        try:
+            ht = self.metadata.Acquisition_instrument.TEM.beam_energy
+        except BaseException:
+            raise AttributeError("Please define the beam energy."
+                                 "You can do this e.g. by using the "
+                                 "set_microscope_parameters method.")
+
+        momentum = 2 * constants.m_e * constants.elementary_charge * ht * \
+            1000 * (1 + constants.elementary_charge * ht *
+                    1000 / (2 * constants.m_e * constants.c ** 2))
+        wavelength = constants.h / np.sqrt(momentum) * 1e9  # in nm
+        carrier_freq_quantity = wavelength * \
+            ureg('nm') * carrier_freq_units / units * ureg('rad')
+        carrier_freq_mrad = carrier_freq_quantity.to('mrad').magnitude
+
+        # Calculate fringe contrast:
+        if fringe_contrast_algorithm == 'fourier':
+            if single_values:
+                fringe_contrast = estimate_fringe_contrast_fourier(_first_nav_pixel_data(self),
+                                                                   sb_position=_first_nav_pixel_data(
+                                                                       sb_position),
+                                                                   apodization=apodization)
+            else:
+                fringe_contrast = self.map(estimate_fringe_contrast_fourier,
+                                           sb_position=sb_position,
+                                           apodization=apodization,
+                                           inplace=False,
+                                           ragged=False,
+                                           show_progressbar=show_progressbar,
+                                           parallel=parallel)
+        elif fringe_contrast_algorithm == 'statistical':
+            if single_values:
+                fringe_contrast = _first_nav_pixel_data(
+                    self).std() / _first_nav_pixel_data(self).mean()
+            else:
+                fringe_contrast = _estimate_fringe_contrast_statistical(self)
+        else:
+            raise ValueError(
+                "fringe_contrast_algorithm can only be set to fourier or statistical.")
+
+        return {'Fringe contrast': fringe_contrast,
+                'Fringe sampling (px)': fringe_sampling,
+                'Fringe spacing ({:~})'.format(units.units): fringe_spacing,
+                'Carrier frequency (1/px)': carrier_freq_px,
+                'Carrier frequency ({:~})'.format((1. / units).units): carrier_freq_units,
+                'Carrier frequency (mrad)': carrier_freq_mrad}
 
 
 class LazyHologramImage(LazySignal, HologramImage):
