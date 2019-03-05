@@ -19,10 +19,9 @@
 import math
 import numpy as np
 from scipy.special import erf
-from hyperspy.component import Component
-from hyperspy._components.gaussian import _estimate_gaussian_parameters
+from hyperspy._components.expression import Expression
 
-class SkewNormal(Component):
+class SkewNormal(Expression):
 
     """Skew normal distribution component.
     
@@ -52,85 +51,38 @@ class SkewNormal(Component):
     The properties `mean` (position), `variance`, `skewness` and `mode` (=position of maximum) are defined for convenience.
     """
 
-    def __init__(self, x0=0, A=1, scale=1, shape=0):
-        # Define the parameters
-        Component.__init__(self, ['x0', 'A', 'scale', 'shape'])
-
-        # Set the initial values
-        self.x0.value = x0
-        self.A.value = A
-        self.scale.value = scale
-        self.shape.value = shape
+    def __init__(self, x0=0., A=1., scale=1., shape=0., module="numpy",
+                 **kwargs):
+        super(SkewNormal, self).__init__(
+            expression="2 * A * normpdf * normcdf; normpdf = exp(- t ** 2 / 2) / sqrt(2 * pi); normcdf = (1 + erf(shape * t / sqrt(2))) / 2; t = (x - x0) / scale",
+            name="SkewNormal",
+            x0=x0,
+            A=A,
+            scale=scale,
+            shape=shape,
+            module=module,
+            autodoc=False,
+            **kwargs,
+        )
 
         # Boundaries
         self.A.bmin = 0.
         self.A.bmax = None
+        
         self.scale.bmin = 0
         self.scale.bmax = None
         
-        # Gradients
-        self.x0.grad = self.grad_x0
-        self.A.grad = self.grad_A
-        self.scale.grad = self.grad_scale
-        self.shape.grad = self.grad_shape
-        self._position = self.x0
-
+        self.isbackground = False
+        self.convolved = True
+        
     # Define the function as a function of the already defined parameters, x
     # being the independent variable value
     def function(self, x):
-        x0 = self.x0.value
-        A = self.A.value
-        scale = self.scale.value
-        shape = self.shape.value
         t = (x - x0) / scale
         normpdf = np.exp(- t ** 2 / 2) / math.sqrt(2 * np.pi)
         normcdf = (1 + erf(shape * t / math.sqrt(2))) / 2
         return 2 * A * normpdf * normcdf
     
-    # Gradient functions
-    def grad_x0(self, x):
-        x0 = self.x0.value
-        A = self.A.value
-        scale = self.scale.value
-        shape = self.shape.value
-        t = (x - x0) / scale
-        normpdf = np.exp(- t ** 2 / 2) / math.sqrt(2 * np.pi)
-        normcdf = (1 + erf(shape * t / math.sqrt(2))) / 2
-        derpdf = -math.sqrt(2)*(-2*x + 2*x0)*np.exp(-(x - x0)**2/(2*scale**2))/(4*math.sqrt(pi)*scale**2)
-        dercdf = -math.sqrt(2)*shape*np.exp(-shape**2*(x - x0)**2/(2*scale**2))/(2*math.sqrt(pi)*scale)
-        return 2 * A * (normpdf * dercdf + derpdf * normcdf)
-    
-    def grad_A(self, x):
-        x0 = self.x0.value
-        scale = self.scale.value
-        shape = self.shape.value
-        t = (x - x0) / scale
-        normpdf = np.exp(- t ** 2 / 2) / math.sqrt(2 * np.pi)
-        normcdf = (1 + erf(shape * t / math.sqrt(2))) / 2
-        return 2 * normpdf * normcdf
-    
-    def grad_scale(self, x):
-        x0 = self.x0.value
-        A = self.A.value
-        scale = self.scale.value
-        shape = self.shape.value
-        t = (x - x0) / scale
-        normpdf = np.exp(- t ** 2 / 2) / math.sqrt(2 * np.pi)
-        normcdf = (1 + erf(shape * t / math.sqrt(2))) / 2
-        derpdf = math.sqrt(2)*(x - x0)**2*np.exp(-(x - x0)**2/(2*scale**2))/(2*math.sqrt(pi)*scale**3)
-        dercdf = -math.sqrt(2)*shape*(x - x0)*np.exp(-shape**2*(x - x0)**2/(2*scale**2))/(2*math.sqrt(pi)*scale**2)
-        return 2 * A * (normpdf * dercdf + derpdf * normcdf)
-    
-    def grad_shape(self, x):
-        x0 = self.x0.value
-        A = self.A.value
-        scale = self.scale.value
-        shape = self.shape.value
-        t = (x - x0) / scale
-        normpdf = np.exp(- t ** 2 / 2) / math.sqrt(2 * np.pi)
-        dercdf = math.sqrt(2)*(x - x0)*np.exp(-shape**2*(x - x0)**2/(2*scale**2))/(2*math.sqrt(pi)*scale)
-        return 2 * A * normpdf * dercdf
-
     @property
     def mean(self):
         delta = self.shape.value / np.sqrt(1 + self.shape.value**2)
