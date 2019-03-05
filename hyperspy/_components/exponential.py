@@ -18,10 +18,9 @@
 
 import numpy as np
 
-from hyperspy.component import Component
+from hyperspy._components.expression import Expression
 
-
-class Exponential(Component):
+class Exponential(Expression):
 
     """Exponentian function components
 
@@ -38,23 +37,15 @@ class Exponential(Component):
 
     """
 
-    def __init__(self):
-        Component.__init__(self, ['A', 'tau'])
+    def __init__(self, A=1., tau=1., module="numexpr", **kwargs):
+        super(Exponential, self).__init__(
+            expression="A * exp(-x / tau)",
+            name="Exponential",
+            A=A,
+            tau=tau,
+            module=module,
+            autodoc=False,
+            **kwargs,
+        )
+
         self.isbackground = False
-        self.A.grad = self.grad_A
-        self.tau.grad = self.grad_tau
-
-    def function(self, x):
-        """
-        """
-        A = self.A.value
-        tau = self.tau.value
-        return A * np.exp(-x / tau)
-
-    def grad_A(self, x):
-        return self.function(x) / self.A.value
-
-    def grad_tau(self, x):
-        A = self.A.value
-        tau = self.tau.value
-        return x * (np.exp(-x / tau)) * A / tau ** 2
