@@ -18,62 +18,46 @@
 
 import numpy as np
 
-from hyperspy.component import Component, Parameter
+from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
+from hyperspy._components.expression import Expression
 
-
-class Bleasdale(Component):
+class Bleasdale(Expression):
 
     """Bleasdale function component.
 
-    f(x) = (a+b*x)^(-1/c)
+    .. math::
+    
+        f(x) = (a+b*x)^(-1/c)
 
     Attributes
     ----------
     a : Float
     b : Float
     c : Float
+    
+    For (a+b*x)<=0, the component will return 0.
 
     """
-
-    def __init__(self):
-        # Define the parameters
-        Component.__init__(self, ('a', 'b', 'c'))
-        # Define the name of the component
-
+    
+    def __init__(self, a=1., b=1., c=1., module="numexpr", **kwargs):
+        super(Bleasdale, self).__init__(
+            expression="(a + b * x) ** (-1 / c)",
+            name="Bleasdale",
+            a=a,
+            b=b,
+            c=c,
+            module=module,
+            autodoc=False,
+            **kwargs)
+    
     def function(self, x):
-        """
-        """
-        a = self.a.value
-        b = self.b.value
-        c = self.c.value
-        abx = (a + b * x)
-        return np.where(abx > 0., abx ** (-1 / c), 0.)
+        return np.where((a + b * x) > 0., super().function(x), 0.)
 
-    def grad_a(self, x):
-        """
-        Returns d(function)/d(parameter_1)
-        """
-        a = self.a.value
-        b = self.b.value
-        c = self.c.value
+    def function_nd(self, axis):
+        """%s
 
-        return -(b * x + a) ** (-1. / c - 1.) / c
+        """
+        return np.where((a + b * axis) > 0, super().function_nd(axis), 0)
 
-    def grad_b(self, x):
-        """
-        Returns d(function)/d(parameter_1)
-        """
-        a = self.a.value
-        b = self.b.value
-        c = self.c.value
+    function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
 
-        return -(x * (b * x + a) ** (-1 / c - 1)) / c
-
-    def grad_c(self, x):
-        """
-        Returns d(function)/d(parameter_1)
-        """
-        a = self.a.value
-        b = self.b.value
-        c = self.c.value
-        return np.log(b * x + a) / (c ** 2. * (b * x + a) ** (1. / c))
