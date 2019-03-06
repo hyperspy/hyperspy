@@ -25,24 +25,24 @@ class RC(Expression):
     
     .. math::
 
-        f(x) = V0 + V * (1 - exp(-x / \tau))
+        f(x) = V0 + Vmax * (1 - exp(-x / \tau))
         
     Parameters
     -----------
         V0: float
             vertical offset
-        V: float
+        Vmax: float
             maximum voltage, asymptote of the function for lim(x->infty)
         tau: float
             tau=RC is the RC circuit time constant (voltage rise time)
     
     """
 
-    def __init__(self, V=1., V0=0., tau=1., module="numexpr", **kwargs):
+    def __init__(self, Vmax=1., V0=0., tau=1., module="numexpr", **kwargs):
         super(RC, self).__init__(
-            expression="V0 + V * (1 - exp(-x / tau))",
+            expression="V0 + Vmax * (1 - exp(-x / tau))",
             name="RC",
-            V=V,
+            Vmax=Vmax,
             V0=V0,
             tau=tau,
             module=module,
