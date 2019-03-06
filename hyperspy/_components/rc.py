@@ -16,24 +16,38 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
+from hyperspy._components.expression import Expression
 
-from hyperspy.component import Component
-
-
-class RC(Component):
+class RC(Expression):
 
     """
+    RC function component (based on the time-domain capacitor voltage response of an RC-circuit)
+    
+    .. math::
+
+        f(x) = V0 + V * (1 - exp(-x / \tau))
+        
+    Parameters
+    -----------
+        V0: float
+            vertical offset
+        V: float
+            maximum voltage, asymptote of the function for lim(x->infty)
+        tau: float
+            tau=RC is the RC circuit time constant (voltage rise time)
+    
     """
 
-    def __init__(self, V=1, V0=0, tau=1.):
-        Component.__init__(self, ('Vmax', 'V0', 'tau'))
-        self.Vmax.value, self.V0.value, self.tau.value = V, V0, tau
-
-    def function(self, x):
-        """
-        """
-        Vmax = self.Vmax.value
-        V0 = self.V0.value
-        tau = self.tau.value
-        return V0 + Vmax * (1 - np.exp(-x / tau))
+    def __init__(self, V=1., V0=0., tau=1., module="numexpr", **kwargs):
+        super(RC, self).__init__(
+            expression="V0 + V * (1 - exp(-x / tau))",
+            name="RC",
+            V=V,
+            V0=V0,
+            tau=tau,
+            module=module,
+            autodoc=False,
+            **kwargs,
+        )
+        
+        self.isbackground = True
