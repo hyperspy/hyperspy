@@ -20,9 +20,11 @@ from hyperspy._components.expression import Expression
 
 class Exponential(Expression):
 
-    """Exponentian function components
+    """Exponential function component
 
-    f(x) = A*e^{-x/k}
+    .. math::
+    
+        f(x) = A*e^{-x/k}
 
     +------------+-----------+
     | Parameter  | Attribute |
