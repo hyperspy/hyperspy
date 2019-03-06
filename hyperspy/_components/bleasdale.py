@@ -18,7 +18,6 @@
 
 import numpy as np
 
-from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 from hyperspy._components.expression import Expression
 
 class Bleasdale(Expression):
@@ -35,13 +34,13 @@ class Bleasdale(Expression):
     b : Float
     c : Float
     
-    For (a+b*x)<=0, the component will return 0.
+    For (a+b*x)<=0, the component will be set to `nan`.
 
     """
     
-    def __init__(self, a=1., b=1., c=1., module="numexpr", **kwargs):
+    def __init__(self, a=1., b=1., c=1., module="numpy", **kwargs):
         super(Bleasdale, self).__init__(
-            expression="(a + b * x) ** (-1 / c)",
+            expression="where((a+b*x)>0, (a + b * x) ** (-1 / c), 0)",
             name="Bleasdale",
             a=a,
             b=b,
@@ -49,15 +48,4 @@ class Bleasdale(Expression):
             module=module,
             autodoc=False,
             **kwargs)
-    
-    def function(self, x):
-        return np.where((a + b * x) > 0., super().function(x), 0.)
-
-    def function_nd(self, axis):
-        """%s
-
-        """
-        return np.where((a + b * axis) > 0, super().function_nd(axis), 0)
-
-    function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
 
