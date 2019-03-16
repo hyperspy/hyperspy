@@ -393,6 +393,8 @@ class Signal1DLine(object):
                 clipped_yreal = yreal[y1:y2]
                 y_min = min(y_min, clipped_yreal.min())
                 y_max = max(y_max, clipped_yreal.max())
+            if y_min == y_max:
+                y_min, y_max = y_min - 0.1, y_max + 0.1
             self.ax.set_ylim(y_min, y_max)
         if self.plot_indices is True:
             self.text.set_text(self.axes_manager.indices)
