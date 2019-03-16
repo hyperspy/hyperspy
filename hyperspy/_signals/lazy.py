@@ -82,6 +82,7 @@ class LazySignal(BaseSignal):
     (assuming storing the full result of computation in memory is not feasible)
     """
     _lazy = True
+    _non_lazy_signal_class = None
 
     def compute(self, progressbar=True, close_file=False):
         """Attempt to store the full signal in memory.
@@ -103,7 +104,8 @@ class LazySignal(BaseSignal):
                 self.close_file()
             self.data = data
         self._lazy = False
-        self._assign_subclass()
+        self._assign_subclass(
+                signal_class=self._non_lazy_signal_class)
 
     def close_file(self):
         """Closes the associated data file if any.

@@ -1560,6 +1560,7 @@ class BaseSignal(FancySlicing,
     _signal_dimension = -1
     _signal_type = ""
     _lazy = False
+    _lazy_signal_class = None
     _alias_signal_types = []
     _additional_slicing_targets = [
         "metadata.Signal.Noise_properties.variance",
@@ -1746,7 +1747,8 @@ class BaseSignal(FancySlicing,
         res = self._deepcopy_with_new_data(self.data,
                                            copy_variance=copy_variance)
         res._lazy = True
-        res._assign_subclass()
+        res._assign_subclass(
+                signal_class=self._lazy_signal_class)
         return res
 
     def _summary(self):
@@ -4403,15 +4405,18 @@ class BaseSignal(FancySlicing,
             out.events.data_changed.trigger(obj=out)
     as_signal2D.__doc__ %= (OUT_ARG, OPTIMIZE_ARG.replace('False', 'True'))
 
-    def _assign_subclass(self):
+    def _assign_subclass(self, signal_class=None):
         mp = self.metadata
-        self.__class__ = hyperspy.io.assign_signal_subclass(
-            dtype=self.data.dtype,
-            signal_dimension=self.axes_manager.signal_dimension,
-            signal_type=mp.Signal.signal_type
-            if "Signal.signal_type" in mp
-            else self._signal_type,
-            lazy=self._lazy)
+        if signal_class is None:
+            self.__class__ = hyperspy.io.assign_signal_subclass(
+                dtype=self.data.dtype,
+                signal_dimension=self.axes_manager.signal_dimension,
+                signal_type=mp.Signal.signal_type
+                if "Signal.signal_type" in mp
+                else self._signal_type,
+                lazy=self._lazy)
+        else:
+            self.__class__ = signal_class
         if self._alias_signal_types:  # In case legacy types exist:
             mp.Signal.signal_type = self._signal_type  # set to default!
         self.__init__(**self._to_dictionary(add_models=True))
