@@ -394,6 +394,7 @@ class Signal1DLine(object):
                 y_min = min(y_min, clipped_yreal.min())
                 y_max = max(y_max, clipped_yreal.max())
             if y_min == y_max:
+                # To avoid matplotlib UserWarning when calling `set_ylim`
                 y_min, y_max = y_min - 0.1, y_max + 0.1
             self.ax.set_ylim(y_min, y_max)
         if self.plot_indices is True:
