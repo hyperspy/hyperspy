@@ -122,64 +122,35 @@ def compare_axes_manager_metadata(s0, s1):
         assert a0.offset == a1.offset
     assert s0.metadata.General.title == s1.metadata.General.title
 
-
-class TestRemoveBackgroundMetadataAxesManagerCopy1D:
-
-    def setup_method(self, method):
+@pytest.mark.parametrize('nav_dim', [0, 1])
+@pytest.mark.parametrize('fast', [True, False])
+@pytest.mark.parametrize('zero_fill', [True, False])
+@pytest.mark.parametrize('show_progressbar', [True, False])
+@pytest.mark.parametrize('plot_remainder', [True, False])
+@pytest.mark.parametrize('background_type', ['Power Law', #'Polynomial',
+                                             'Offset'])
+# Add Polynomial background test once 
+# https://github.com/hyperspy/hyperspy/pull/1989 is merged.
+def test_remove_background_metadata_axes_manager_copy(nav_dim,
+                                                      fast,
+                                                      zero_fill,
+                                                      show_progressbar,
+                                                      plot_remainder,
+                                                      background_type):
+    if nav_dim == 0:
         s = signals.Signal1D(np.arange(10, 100)[::-1])
-        s.axes_manager[0].name = 'axis0'
-        s.axes_manager[0].units = 'units0'
-        s.axes_manager[0].scale = 0.9
-        s.axes_manager[0].offset = 1.
-        s.metadata.General.title = "atitle"
-        self.s = s
-
-    @pytest.mark.parametrize('fast', [True, False])
-    @pytest.mark.parametrize('zero_fill', [True, False])
-    @pytest.mark.parametrize('show_progressbar', [True, False])
-    @pytest.mark.parametrize('plot_remainder', [True, False])
-    @pytest.mark.parametrize('background_type', ['Power Law', 'Offset',
-                                                 'Polynomial'])
-    def test_non_fast(self, fast, zero_fill, show_progressbar, plot_remainder,
-                      background_type):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50),
-                                  fast=fast,
-                                  zero_fill=zero_fill,
-                                  show_progressbar=show_progressbar,
-                                  plot_remainder=plot_remainder,
-                                  background_type=background_type)
-        compare_axes_manager_metadata(s, s_r)
-
-
-class TestRemoveBackgroundMetadataAxesManagerCopy2D:
-
-    def setup_method(self, method):
+    else:
         s = signals.Signal1D(np.arange(10, 210)[::-1].reshape(2, 100))
-        s.axes_manager[0].name = 'axis0'
-        s.axes_manager[1].name = 'axis1'
-        s.axes_manager[0].units = 'units0'
-        s.axes_manager[1].units = 'units1'
-        s.axes_manager[0].scale = 0.9
-        s.axes_manager[1].scale = 1.1
-        s.axes_manager[0].offset = 1.
-        s.axes_manager[1].offset = 1.2
-        s.metadata.General.title = "atitle"
-        self.s = s
+    s.axes_manager[0].name = 'axis0'
+    s.axes_manager[0].units = 'units0'
+    s.axes_manager[0].scale = 0.9
+    s.axes_manager[0].offset = 1.
+    s.metadata.General.title = "atitle"
 
-    @pytest.mark.parametrize('fast', [True, False])
-    @pytest.mark.parametrize('zero_fill', [True, False])
-    @pytest.mark.parametrize('show_progressbar', [True, False])
-    @pytest.mark.parametrize('plot_remainder', [True, False])
-    @pytest.mark.parametrize('background_type', ['Power Law', 'Offset',
-                                                 'Polynomial'])
-    def test_non_fast(self, fast, zero_fill, show_progressbar, plot_remainder,
-                      background_type):
-        s = self.s
-        s_r = s.remove_background(signal_range=(2, 50),
-                                  fast=fast,
-                                  zero_fill=zero_fill,
-                                  show_progressbar=show_progressbar,
-                                  plot_remainder=plot_remainder,
-                                  background_type=background_type)
-        compare_axes_manager_metadata(s, s_r)
+    s_r = s.remove_background(signal_range=(2, 50),
+                              fast=fast,
+                              zero_fill=zero_fill,
+                              show_progressbar=show_progressbar,
+                              plot_remainder=plot_remainder,
+                              background_type=background_type)
+    compare_axes_manager_metadata(s, s_r)
