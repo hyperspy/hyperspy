@@ -22,6 +22,8 @@ import pytest
 from hyperspy import signals
 from hyperspy.misc.machine_learning.import_sklearn import sklearn_installed
 from hyperspy.decorators import lazifyTestClass
+from tempfile import TemporaryDirectory
+from os.path import join
 
 
 class TestNdAxes:
@@ -249,6 +251,9 @@ class TestReturnInfo:
             assert self.s.decomposition(
                 algorithm=algorithm, return_info=True, output_dimension=1) is None
 
+    # Warning filter can be removed after scikit-learn >= 0.22
+    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
+    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_decomposition_supported_return_true(self):
         for algorithm in ["RPCA_GoDec", "ORPCA"]:
@@ -257,12 +262,15 @@ class TestReturnInfo:
                 return_info=True,
                 output_dimension=1) is not None
         for algorithm in ["sklearn_pca", "nmf",
-                          "sparse_pca", "mini_batch_sparse_pca", ]:
+                          "sparse_pca", "mini_batch_sparse_pca"]:
             assert self.s.decomposition(
                 algorithm=algorithm,
                 return_info=True,
                 output_dimension=1) is not None
 
+    # Warning filter can be removed after scikit-learn >= 0.22
+    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
+    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_decomposition_supported_return_false(self):
         for algorithm in ["RPCA_GoDec", "ORPCA"]:
@@ -289,3 +297,21 @@ class TestNonFloatTypeError:
         self.s_float.decomposition()
         with pytest.raises(TypeError):
             self.s_int.decomposition()
+
+
+class TestLoadDecompositionResults:
+
+    def setup_method(self, method):
+        self.s = signals.Signal1D([[1.1, 1.2, 1.4, 1.3], [1.5, 1.5, 1.4, 1.2]])
+
+    def test_load_decomposition_results(self):
+        # Test whether the sequence of loading learning results and then
+        # saving the signal causes errors. See #2093.
+        with TemporaryDirectory() as tmpdir:
+            self.s.decomposition()
+            fname1 = join(tmpdir, "results.npz")
+            self.s.learning_results.save(fname1)
+            self.s.learning_results.load(fname1)
+            fname2 = join(tmpdir, "output.hspy")
+            self.s.save(fname2)
+            assert isinstance(self.s.learning_results.decomposition_algorithm, str)

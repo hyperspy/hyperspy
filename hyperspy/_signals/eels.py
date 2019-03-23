@@ -277,6 +277,7 @@ class EELSSpectrum_mixin:
                 value = value.compute()
             for signal in signals:
                 signal.axes_manager[-1].offset -= value
+                signal.events.data_changed.trigger(signal)
 
         def estimate_zero_loss_peak_centre(s, mask, signal_range):
             if signal_range:

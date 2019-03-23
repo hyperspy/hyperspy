@@ -22,9 +22,12 @@ def add_np(doctest_namespace):
     doctest_namespace['plt'] = plt
     doctest_namespace['hs'] = hs
 
+@pytest.fixture
+def pdb_cmdopt(request):
+    return request.config.getoption("--pdb")
 
-def setup_module(mod):
-    if pytest.config.getoption("--pdb"):
+def setup_module(mod, pdb_cmdopt):
+    if pdb_cmdopt:
         import dask
         dask.set_options(get=dask.local.get_sync)
 
