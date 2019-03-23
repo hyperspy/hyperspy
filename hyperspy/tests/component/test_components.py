@@ -64,7 +64,8 @@ class TestPowerLaw:
 
     def test_EDS_missing_data(self):
         g = hs.model.components1D.PowerLaw()
-        s2 = hs.signals.EDSTEMSpectrum(self.s.data)
+        s = self.m.as_signal(show_progressbar=None, parallel=False)
+        s2 = hs.signals.EDSTEMSpectrum(s.data)
         g.estimate_parameters(s2, None, None)
 
 class TestDoublePowerLaw:
