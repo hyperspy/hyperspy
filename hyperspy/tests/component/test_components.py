@@ -116,6 +116,7 @@ class TestOffset:
         assert_allclose(g.offset.value, 10)
 
 
+@pytest.mark.filterwarnings("ignore::")
 class TestPolynomial:
 
     def setup_method(self, method):
@@ -132,6 +133,66 @@ class TestPolynomial:
         s_3d = hs.signals.Signal1D(np.arange(1000).reshape(2, 5, 100))
         self.m_3d = s_3d.create_model()
         self.m_3d.append(hs.model.components1D.Polynomial(order=2))
+        # if same component is pased, axes_managers get mixed up, tests
+        # sometimes randomly fail
+        for _m in [self.m, self.m_2d, self.m_3d]:
+            _m[0].coefficients.value = coeff_values
+
+    def test_gradient(self):
+        c = self.m[0]
+        np.testing.assert_array_almost_equal(c.grad_coefficients(1),
+                                             np.array([[6, ], [4.5], [3.5]]))
+        assert c.grad_coefficients(np.arange(10)).shape == (3, 10)
+
+    @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
+    def test_estimate_parameters(self, only_current, binned):
+        self.m.signal.metadata.Signal.binned = binned
+        s = self.m.as_signal(show_progressbar=None, parallel=False)
+        assert s.metadata.Signal.binned == binned
+        g = hs.model.components1D.Polynomial(order=2)
+        g.estimate_parameters(s, None, None, only_current=only_current)
+        assert_allclose(g.coefficients.value[0], 0.5)
+        assert_allclose(g.coefficients.value[1], 2)
+        assert_allclose(g.coefficients.value[2], 3)
+
+    def test_2d_signal(self):
+        # This code should run smoothly, any exceptions should trigger failure
+        s = self.m_2d.as_signal(show_progressbar=None, parallel=False)
+        model = Model1D(s)
+        p = hs.model.components1D.Polynomial(order=2)
+        model.append(p)
+        p.estimate_parameters(s, 0, 100, only_current=False)
+        np.testing.assert_allclose(p.coefficients.map['values'],
+                                   np.tile([0.5, 2, 3], (10, 1)))
+
+    def test_3d_signal(self):
+        # This code should run smoothly, any exceptions should trigger failure
+        s = self.m_3d.as_signal(show_progressbar=None, parallel=False)
+        model = Model1D(s)
+        p = hs.model.components1D.Polynomial(order=2)
+        model.append(p)
+        p.estimate_parameters(s, 0, 100, only_current=False)
+        np.testing.assert_allclose(p.coefficients.map['values'],
+                                   np.tile([0.5, 2, 3], (2, 5, 1)))
+
+
+@pytest.mark.filterwarnings("ignore::")
+class TestPolynomial2:
+
+    def setup_method(self, method):
+        s = hs.signals.Signal1D(np.zeros(1024))
+        s.axes_manager[0].offset = -5
+        s.axes_manager[0].scale = 0.01
+        m = s.create_model()
+        m.append(hs.model.components1D.Polynomial2(order=2))
+        coeff_values = (0.5, 2, 3)
+        self.m = m
+        s_2d = hs.signals.Signal1D(np.arange(1000).reshape(10, 100))
+        self.m_2d = s_2d.create_model()
+        self.m_2d.append(hs.model.components1D.Polynomial2(order=2))
+        s_3d = hs.signals.Signal1D(np.arange(1000).reshape(2, 5, 100))
+        self.m_3d = s_3d.create_model()
+        self.m_3d.append(hs.model.components1D.Polynomial2(order=2))
         data = 50*np.ones(100)
         s_offset = hs.signals.Signal1D(data)
         self.m_offset = s_offset.create_model()
@@ -155,7 +216,7 @@ class TestPolynomial:
         self.m.signal.metadata.Signal.binned = binned
         s = self.m.as_signal(show_progressbar=None, parallel=False)
         s.metadata.Signal.binned = binned
-        p = hs.model.components1D.Polynomial(order=2)
+        p = hs.model.components1D.Polynomial2(order=2)
         p.estimate_parameters(s, None, None, only_current=only_current)
         assert_allclose(p.a2.value, 0.5)
         assert_allclose(p.a1.value, 2)
@@ -163,7 +224,7 @@ class TestPolynomial:
 
     def test_zero_order(self):
         m = self.m_offset
-        m.append(hs.model.components1D.Polynomial(order=0))
+        m.append(hs.model.components1D.Polynomial2(order=0))
         m.fit('leastsq')
         assert m[0].a0.value == 50
 
@@ -171,7 +232,7 @@ class TestPolynomial:
         # This code should run smoothly, any exceptions should trigger failure
         s = self.m_2d.as_signal(show_progressbar=None, parallel=False)
         model = Model1D(s)
-        p = hs.model.components1D.Polynomial(order=2)
+        p = hs.model.components1D.Polynomial2(order=2)
         model.append(p)
         p.estimate_parameters(s, 0, 100, only_current=False)
         np.testing.assert_allclose(p.a2.map['values'], 0.5)
@@ -182,12 +243,13 @@ class TestPolynomial:
         # This code should run smoothly, any exceptions should trigger failure
         s = self.m_3d.as_signal(show_progressbar=None, parallel=False)
         model = Model1D(s)
-        p = hs.model.components1D.Polynomial(order=2)
+        p = hs.model.components1D.Polynomial2(order=2)
         model.append(p)
         p.estimate_parameters(s, 0, 100, only_current=False)
         np.testing.assert_allclose(p.a2.map['values'], 0.5)
         np.testing.assert_allclose(p.a1.map['values'], 2)
         np.testing.assert_allclose(p.a0.map['values'], 3)
+
 
 class TestGaussian:
 
