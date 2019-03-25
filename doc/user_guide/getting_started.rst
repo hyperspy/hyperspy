@@ -209,6 +209,17 @@ signals:
 
     >>> hs.datasets.example_signals.EDS_TEM_Spectrum().plot()
 
+.. versionadded:: 1.4
+    :py:mod:`~.datasets.artificial_data`
+
+There are also artificial datasets, which are made to resemble real
+experimental data.
+
+.. code-block:: python
+
+    >>> s = hs.datasets.artificial_data.get_core_loss_eels_signal()
+    >>> s.plot()
+
 .. _eelsdb-label:
 
 .. versionadded:: 1.0
@@ -397,7 +408,68 @@ axes) you could use the navigation sliders:
 
    Navigation sliders ipywidgets GUI.
 
+Alternatively, the "current position" can be changed programmatically by
+directly accessing ``indices`` attribute of a Signal's
+:py:class:`~.axes.AxesManager`. This is particularly useful if trying to set
+a specific location with which to initialize a model's parameters to
+sensible values before preforming a fit over an entire spectrum image. The
+``indices`` must be provided as a tuple, with the same length as the number of
+navigation dimensions:
 
+.. code-block:: python
+
+    >>> s.axes_manager.indices = (5, 4)
+
+.. _quantity_and_converting_units:
+
+Using quantity and converting units
+-------------------------------------------
+
+The scale and the offset of each axis can be set and retrieved as quantity.
+
+.. code-block:: python
+
+    >>> s = hs.signals.Signal1D(np.arange(10))
+    >>> s.axes_manager[0].scale_as_quantity
+    1.0 dimensionless
+    >>> s.axes_manager[0].scale_as_quantity = '2.5 µm'
+    >>> s.axes_manager
+    <Axes manager, axes: (|10)>
+                Name |   size |  index |  offset |   scale |  units 
+    ================ | ====== | ====== | ======= | ======= | ====== 
+    ---------------- | ------ | ------ | ------- | ------- | ------ 
+         <undefined> |     10 |        |       0 |     2.5 |     µm
+    >>> s.axes_manager[0].offset_as_quantity = '2.5 nm'
+    <Axes manager, axes: (|10)>
+                Name |   size |  index |  offset |   scale |  units 
+    ================ | ====== | ====== | ======= | ======= | ====== 
+    ---------------- | ------ | ------ | ------- | ------- | ------ 
+         <undefined> |     10 |        |     2.5 | 2.5e+03 |     nm
+
+
+Internally, HyperSpy uses the `pint <http://pint.readthedocs.io>`_ library to manage the scale and offset quantities. The ``scale_as_quantity`` and ``offset_as_quantity`` attributes return pint object:
+
+.. code-block:: python
+
+    >>> q = s.axes_manager[0].offset_as_quantity
+    >>> type(q) # q is a pint quantity object
+    pint.quantity.build_quantity_class.<locals>.Quantity
+    >>> q
+    2.5 nanometer
+
+
+The ``convert_units`` method of the :py:class:`~.axes.AxesManager` converts units, which by default (no parameters provided) converts all axis units to an optimal units to avoid using too large or small number.
+
+Each axis can also be converted individually using the ``convert_to_units`` method of the :py:class:`~.axes.DataAxis`:
+
+.. code-block:: python
+
+    >>> axis = hs.hyperspy.axes.DataAxis(size=10, scale=0.1, offset=10, units='mm')
+    >>> axis.scale_as_quantity
+    0.1 millimeter
+    >>> axis.convert_to_units('µm')
+    >>> axis.scale_as_quantity
+    100.0 micrometer
 
 .. _saving:
 

@@ -18,6 +18,7 @@
 
 import os.path
 from os import remove
+import sys
 import gc
 import time
 import tempfile
@@ -225,6 +226,8 @@ class TestSavingMetadataContainers:
         assert isinstance(l.metadata.test[0], list)
         assert isinstance(l.metadata.test[1], tuple)
 
+    @pytest.mark.xfail(sys.platform == 'win32',
+                   reason="randomly fails in win32")
     def test_numpy_general_type(self, tmpfilepath):
         s = self.s
         s.metadata.set_item('test', [[1., 2], ['3', 4]])
@@ -235,6 +238,8 @@ class TestSavingMetadataContainers:
         assert isinstance(l.metadata.test[1][0], str)
         assert isinstance(l.metadata.test[1][1], str)
 
+    @pytest.mark.xfail(sys.platform == 'win32',
+                   reason="randomly fails in win32")
     def test_general_type_not_working(self, tmpfilepath):
         s = self.s
         s.metadata.set_item('test', (BaseSignal([1]), 0.1, 'test_string'))
@@ -355,12 +360,13 @@ class TestLoadingOOMReadOnly:
         assert self.shape == s.data.shape
         assert isinstance(s.data, da.Array)
         assert s._lazy
+        s.close_file()
 
     def teardown_method(self, method):
         gc.collect()        # Make sure any memmaps are closed first!
         try:
             remove('tmp.hdf5')
-        except:
+        except BaseException:
             # Don't fail tests if we cannot remove
             pass
 
@@ -403,7 +409,7 @@ class TestAxesConfiguration:
 
 class Test_permanent_markers_io:
 
-    def test_save_permanent_marker(self, mpl_cleanup):
+    def test_save_permanent_marker(self):
         s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(x=5, y=5)
         s.add_marker(m, permanent=True)
@@ -411,7 +417,7 @@ class Test_permanent_markers_io:
             filename = tmp + '/testsavefile.hdf5'
         s.save(filename)
 
-    def test_save_load_empty_metadata_markers(self, mpl_cleanup):
+    def test_save_load_empty_metadata_markers(self):
         s = Signal2D(np.arange(100).reshape(10, 10))
         m = markers.point(x=5, y=5)
         m.name = "test"
@@ -423,7 +429,7 @@ class Test_permanent_markers_io:
         s1 = load(filename)
         assert len(s1.metadata.Markers) == 0
 
-    def test_save_load_permanent_marker(self, mpl_cleanup):
+    def test_save_load_permanent_marker(self):
         x, y = 5, 2
         color = 'red'
         size = 10
@@ -444,7 +450,7 @@ class Test_permanent_markers_io:
         assert m1.marker_properties['color'] == color
         assert m1.name == name
 
-    def test_save_load_permanent_marker_all_types(self, mpl_cleanup):
+    def test_save_load_permanent_marker_all_types(self):
         x1, y1, x2, y2 = 5, 2, 1, 8
         s = Signal2D(np.arange(100).reshape(10, 10))
         m0_list = [
@@ -474,7 +480,7 @@ class Test_permanent_markers_io:
         for m0_dict, m1_dict in zip(m0_dict_list, m1_dict_list):
             assert m0_dict == m1_dict
 
-    def test_save_load_horizontal_line_marker(self, mpl_cleanup):
+    def test_save_load_horizontal_line_marker(self):
         y = 8
         color = 'blue'
         linewidth = 2.5
@@ -490,7 +496,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    def test_save_load_horizontal_line_segment_marker(self, mpl_cleanup):
+    def test_save_load_horizontal_line_segment_marker(self):
         x1, x2, y = 1, 5, 8
         color = 'red'
         linewidth = 1.2
@@ -507,7 +513,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    def test_save_load_vertical_line_marker(self, mpl_cleanup):
+    def test_save_load_vertical_line_marker(self):
         x = 9
         color = 'black'
         linewidth = 3.5
@@ -523,7 +529,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    def test_save_load_vertical_line_segment_marker(self, mpl_cleanup):
+    def test_save_load_vertical_line_segment_marker(self):
         x, y1, y2 = 2, 1, 3
         color = 'white'
         linewidth = 4.2
@@ -540,7 +546,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    def test_save_load_line_segment_marker(self, mpl_cleanup):
+    def test_save_load_line_segment_marker(self):
         x1, x2, y1, y2 = 1, 9, 4, 7
         color = 'cyan'
         linewidth = 0.7
@@ -557,7 +563,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    def test_save_load_point_marker(self, mpl_cleanup):
+    def test_save_load_point_marker(self):
         x, y = 9, 8
         color = 'purple'
         name = "point test"
@@ -573,7 +579,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    def test_save_load_rectangle_marker(self, mpl_cleanup):
+    def test_save_load_rectangle_marker(self):
         x1, x2, y1, y2 = 2, 4, 1, 3
         color = 'yellow'
         linewidth = 5
@@ -590,7 +596,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    def test_save_load_text_marker(self, mpl_cleanup):
+    def test_save_load_text_marker(self):
         x, y = 3, 9.5
         color = 'brown'
         name = "text_test"
@@ -607,7 +613,7 @@ class Test_permanent_markers_io:
         m1 = s1.metadata.Markers.get_item(name)
         assert san_dict(m1._to_dictionary()) == san_dict(m._to_dictionary())
 
-    def test_save_load_multidim_navigation_marker(self, mpl_cleanup):
+    def test_save_load_multidim_navigation_marker(self):
         x, y = (1, 2, 3), (5, 6, 7)
         name = 'test point'
         s = Signal2D(np.arange(300).reshape(3, 10, 10))

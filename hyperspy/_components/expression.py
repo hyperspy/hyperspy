@@ -1,5 +1,27 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2016 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 from functools import wraps
+import numpy as np
+
 from hyperspy.component import Component
+from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
+
 
 _CLASS_DOC = \
     """%s component (created with Expression).
@@ -231,3 +253,33 @@ class Expression(Component):
                         self,
                         Expression)
                     )
+
+    def _is_navigation_multidimensional(self):
+        if (self._axes_manager is None or not
+                self._axes_manager.navigation_dimension):
+            return False
+        else:
+            return True
+
+    def function_nd(self, *args):
+        """%s
+
+        """
+        if self._is2D:
+            x, y = args[0], args[1]
+            # navigation dimension is 0, f_nd same as f
+            if not self._is_navigation_multidimensional():
+                return self.function(x, y)
+            else:
+                return self._f(x[np.newaxis, ...], y[np.newaxis, ...],
+                               *[p.map['values'][..., np.newaxis, np.newaxis]
+                                 for p in self.parameters])
+        else:
+            x = args[0]
+            if not self._is_navigation_multidimensional():
+                return self.function(x)
+            else:
+                return self._f(x[np.newaxis, ...],
+                               *[p.map['values'][..., np.newaxis]
+                                 for p in self.parameters])
+    function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
