@@ -72,7 +72,7 @@ class Gaussian(Expression):
 
     .. math::
 
-        f(x) = \\frac{A}{\\sqrt{2\\pi sigma^{2}}}exp\\left[-\\frac{\\left(x-centre\\right)^{2}}{2sigma^{2}}\\right]
+        f(x) = \\frac{A}{\\sqrt{2 \\pi \\sigma^{2}}}exp\\left[-\\frac{\\left(x-centre\\right)^{2}}{2 \\sigma^{2}}\\right]
 
 
     For convenience the `fwhm` attribute can be used to get and set

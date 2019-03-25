@@ -139,33 +139,33 @@ class TestPolynomial:
         # if same component is pased, axes_managers get mixed up, tests
         # sometimes randomly fail
         for _m in [self.m, self.m_2d, self.m_3d]:
-            _m[0].a.value = coeff_values[0]
-            _m[0].b.value = coeff_values[1]
-            _m[0].c.value = coeff_values[2]
+            _m[0].a2.value = coeff_values[0]
+            _m[0].a1.value = coeff_values[1]
+            _m[0].a0.value = coeff_values[2]
 
     def test_gradient(self):
         poly = self.m[0]
-        assert poly.a.grad(1) == 1
-        assert poly.b.grad(1) == 1
-        assert poly.c.grad(1) == 1
-        assert poly.a.grad(np.arange(10)).shape == (10,)
+        assert poly.a2.grad(1) == 1
+        assert poly.a1.grad(1) == 1
+        assert poly.a0.grad(1) == 1
+        assert poly.a2.grad(np.arange(10)).shape == (10,)
 
     @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
     def test_estimate_parameters(self,  only_current, binned):
         self.m.signal.metadata.Signal.binned = binned
         s = self.m.as_signal(show_progressbar=None, parallel=False)
         s.metadata.Signal.binned = binned
-        g = hs.model.components1D.Polynomial(order=2)
-        g.estimate_parameters(s, None, None, only_current=only_current)
-        assert_allclose(g.a.value, 0.5)
-        assert_allclose(g.b.value, 2)
-        assert_allclose(g.c.value, 3)
+        p = hs.model.components1D.Polynomial(order=2)
+        p.estimate_parameters(s, None, None, only_current=only_current)
+        assert_allclose(p.a2.value, 0.5)
+        assert_allclose(p.a1.value, 2)
+        assert_allclose(p.a0.value, 3)
 
     def test_zero_order(self):
         m = self.m_offset
         m.append(hs.model.components1D.Polynomial(order=0))
         m.fit('leastsq')
-        assert m[0].a.value == 50
+        assert m[0].a0.value == 50
 
     def test_2d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
@@ -174,9 +174,9 @@ class TestPolynomial:
         p = hs.model.components1D.Polynomial(order=2)
         model.append(p)
         p.estimate_parameters(s, 0, 100, only_current=False)
-        np.testing.assert_allclose(p.a.map['values'], 0.5)
-        np.testing.assert_allclose(p.b.map['values'], 2)
-        np.testing.assert_allclose(p.c.map['values'], 3)
+        np.testing.assert_allclose(p.a2.map['values'], 0.5)
+        np.testing.assert_allclose(p.a1.map['values'], 2)
+        np.testing.assert_allclose(p.a0.map['values'], 3)
 
     def test_3d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
@@ -185,9 +185,9 @@ class TestPolynomial:
         p = hs.model.components1D.Polynomial(order=2)
         model.append(p)
         p.estimate_parameters(s, 0, 100, only_current=False)
-        np.testing.assert_allclose(p.a.map['values'], 0.5)
-        np.testing.assert_allclose(p.b.map['values'], 2)
-        np.testing.assert_allclose(p.c.map['values'], 3)
+        np.testing.assert_allclose(p.a2.map['values'], 0.5)
+        np.testing.assert_allclose(p.a1.map['values'], 2)
+        np.testing.assert_allclose(p.a0.map['values'], 3)
 
 class TestGaussian:
 

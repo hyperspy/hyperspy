@@ -16,37 +16,47 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import numpy as np
+
 from hyperspy._components.expression import Expression
 from hyperspy.misc.utils import ordinal
-import string
-import numpy as np
+
 
 class Polynomial(Expression):
 
     """n-order polynomial component.
 
     Polynomial component consisting of order + 1 parameters.
-    The highest order parameter is "a", followed by the rest of the alphabet, i.e.
-    f(x) = ax² + bx + c
-
-    Attributes
-    ----------
-
-    order : int
+    The parameters are named "a" followed by the corresponding order, 
+    i.e.
     
-    **kwargs:
+    .. math::
+
+        f(x) = a_{2} x^{2} + a_{1} x^{1} + a_{0}
+
+    Zero padding is used for polynomial of order > 10.
+
+    Parameters
+    ----------
+    order : int
+        Order of the polynomial.
+    **kwargs
         Keyword arguments can be used to initialise the value of the
-        parameters, i.e. a=2, b=3, c=1.
+        parameters, i.e. a2=2, a1=3, a0=1.
 
     """
 
-    def __init__(self, order=2, **kwargs):
-        letters = string.ascii_lowercase
-        expr = "+".join(["{}*x**{}".format(letter, power) for letter, power in zip(letters, range(order, -1, -1))])
+    def __init__(self, order=2, module="numexpr", **kwargs):
+        coeff_list = ['{}'.format(o).zfill(len(list(str(order)))) for o in
+                      range(order, -1, -1)]
+        expr = "+".join(["a{}*x**{}".format(c, o) for c, o in 
+                         zip(coeff_list, range(order, -1, -1))])
         name = "{} order Polynomial".format(ordinal(order))
         super(Polynomial, self).__init__(
             expression=expr, 
-            name=name, 
+            name=name,
+            module=module,
+            autodoc=False,
             **kwargs)
     
     def get_polynomial_order(self):
@@ -81,14 +91,14 @@ class Polynomial(Expression):
                                     signal()[i1:i2],
                                     self.get_polynomial_order())
             if self.binned:
-                for para, estim in zip(self.parameters, estimation):
+                for para, estim in zip(self.parameters[::-1], estimation):
                     para.value = estim / axis.scale
             else:
-                for para, estim in zip(self.parameters, estimation):
+                for para, estim in zip(self.parameters[::-1], estimation):
                     para.value = estim
             return True
         else:
-            if self.a.map is None:
+            if self.a0.map is None:
                 self._create_arrays()
             nav_shape = signal.axes_manager._navigation_shape_in_array
             with signal.unfolded():
@@ -106,11 +116,11 @@ class Polynomial(Expression):
                 fit = fit.reshape(cmap_shape)
 
                 if self.binned:
-                    for para, i in zip(self.parameters, range(fit.shape[-1])):
+                    for para, i in zip(self.parameters[::-1], range(fit.shape[-1])):
                         para.map['values'][:] = fit[...,i] / axis.scale
                         para.map['is_set'][:] = True
                 else:
-                    for para, i in zip(self.parameters, range(fit.shape[-1])):
+                    for para, i in zip(self.parameters[::-1], range(fit.shape[-1])):
                         para.map['values'][:] = fit[...,i]
                         para.map['is_set'][:] = True
             self.fetch_stored_values()

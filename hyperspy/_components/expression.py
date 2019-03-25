@@ -183,7 +183,8 @@ class Expression(Component):
         except:
             pass
         else:
-            raise AttributeError('Expression must contain a symbol, i.e. x, a, etc.')
+            raise AttributeError('Expression must contain a symbol, ',
+                                 'i.e. x, a, etc.')
         expr = _parse_substitutions(self._str_expression)
         # Extract x
         x = [symbol for symbol in expr.free_symbols if symbol.name == "x"]
