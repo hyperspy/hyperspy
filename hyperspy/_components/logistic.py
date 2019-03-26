@@ -20,7 +20,6 @@
 from hyperspy._components.expression import Expression
 
 
-
 class Logistic(Expression):
 
     """Logistic function (sigmoid/s-shaped curve) component
@@ -59,16 +58,4 @@ class Logistic(Expression):
             **kwargs)
 
         # Boundaries
-        self.a.bmin = None
-        self.a.bmax = None
-
-        self.b.bmin = None
-        self.b.bmax = None
-        
-        self.c.bmin = None
-        self.c.bmax = None
-
-        self.origin.bmin = None
-        self.origin.bmax = None
-
         self.isbackground = False
