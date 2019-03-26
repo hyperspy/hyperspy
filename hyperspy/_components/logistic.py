@@ -26,12 +26,12 @@ class Logistic(Expression):
 
     .. math::
     
-        f(x) = a / (1 + b * exp(-c * (x - origin)))
+        f(x) = \\frac{a}{1 + b \\mathrm{exp}\\left[-c \left((x - origin\\right)\\right]}
 
     Parameters
     -----------
     a : Float
-        The curve's maximum y-value, lim(x->infty)=a
+        The curve's maximum y-value, \\mathrm{lim}(x\\to\\infty) = a
     b : Float
         Additional parameter: 
         b>1 shifts origin to larger values
