@@ -105,6 +105,7 @@ def find_peaks_ohaver(y, x=None, slope_thresh=0., amp_thresh=None,
               default is set to 30000.
     subchannel : bool (optional)
              default is set to True.
+
     Returns
     -------
     P : structured array of shape (npeaks)
@@ -283,10 +284,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Parameters
         ----------
-        signal_mask: boolean array
+        signal_mask : boolean array
             Restricts the operation to the signal locations not marked
             as True (masked)
-        navigation_mask: boolean array
+        navigation_mask : boolean array
             Restricts the operation to the navigation locations not
             marked as True (masked).
 
@@ -337,16 +338,18 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Parameters
         ----------
-        signal_mask: boolean array
+        signal_mask : boolean array
             Restricts the operation to the signal locations not marked
             as True (masked)
-        navigation_mask: boolean array
+        navigation_mask : boolean array
             Restricts the operation to the navigation locations not
             marked as True (masked)
+        %s
+        %s
 
         See also
         --------
-        _spikes_diagnosis,
+        `_spikes_diagnosis`
 
         """
         self._check_signal_dimension_equals_one()
@@ -354,25 +357,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                            navigation_mask=navigation_mask,
                            signal_mask=signal_mask)
         return sr.gui(display=display, toolkit=toolkit)
-    spikes_removal_tool.__doc__ =\
-        """Graphical interface to remove spikes from EELS spectra.
-
-Parameters
-----------
-signal_mask: boolean array
-    Restricts the operation to the signal locations not marked
-    as True (masked)
-navigation_mask: boolean array
-    Restricts the operation to the navigation locations not
-    marked as True (masked)
-%s
-%s
-
-See also
---------
-`_spikes_diagnosis`
-
-""" % (DISPLAY_DT, TOOLKIT_DT)
+    spikes_removal_tool.__doc__ %= (DISPLAY_DT, TOOLKIT_DT)
 
     def create_model(self, dictionary=None):
         """Create a model for the current data.
@@ -419,7 +404,8 @@ See also
 
         Raises
         ------
-        SignalDimensionError if the signal dimension is not 1.
+        SignalDimensionError
+            If the signal dimension is not 1.
         """
         if not np.any(shift_array):
             # Nothing to do, the shift array if filled with zeros
@@ -510,10 +496,10 @@ See also
 
         Parameters
         ----------
-        start, end : {int | float}
+        start, end : int or float
             The limits of the interval. If int they are taken as the
             axis index. If float they are taken as the axis value.
-        delta : {int | float}
+        delta : int or float
             The windows around the (start, end) to use for interpolation
         %s
         %s
@@ -523,7 +509,8 @@ See also
 
         Raises
         ------
-        SignalDimensionError if the signal dimension is not 1.
+        SignalDimensionError
+            If the signal dimension is not 1.
         """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
@@ -583,7 +570,7 @@ See also
 
         Parameters
         ----------
-        start, end : {int | float | None}
+        start, end : int, float or None
             The limits of the interval. If int they are taken as the
             axis index. If float they are taken as the axis value.
         reference_indices : tuple of ints or None
@@ -598,7 +585,7 @@ See also
         number_of_interpolation_points : int
             Number of interpolation points. Warning: making this number
             too big can saturate the memory
-        mask : BaseSignal of bool data type.
+        mask : `BaseSignal` of bool.
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
@@ -607,15 +594,15 @@ See also
 
         Returns
         -------
-        An array with the result of the estimation in the axis units. although
-        the computation is performed in batches if the signal is lazy, the
-        result is computed in memory because it depends on the current state
-        of the axes that could change later on in the workflow.
+        An array with the result of the estimation in the axis units. \
+        Although the computation is performed in batches if the signal is \
+        lazy, the result is computed in memory because it depends on the \
+        current state of the axes that could change later on in the workflow.
 
         Raises
         ------
-        SignalDimensionError if the signal dimension is not 1.
-
+        SignalDimensionError
+            If the signal dimension is not 1.
         """
         if show_progressbar is None:
             show_progressbar = preferences.General.show_progressbar
@@ -693,7 +680,7 @@ See also
 
         Parameters
         ----------
-        start, end : {int | float | None}
+        start, end : int, float or None
             The limits of the interval. If int they are taken as the
             axis index. If float they are taken as the axis value.
         reference_indices : tuple of ints or None
@@ -724,7 +711,7 @@ See also
             A list of BaseSignal instances that has exactly the same
             dimensions as this one and that will be aligned using the shift map
             estimated using the this signal.
-        mask : BaseSignal of bool data type.
+        mask : `BaseSignal` or bool data type.
             It must have signal_dimension = 0 and navigation_shape equal to the
             current signal. Where mask is True the shift is not computed
             and set to nan.
@@ -736,7 +723,8 @@ See also
 
         Raises
         ------
-        SignalDimensionError if the signal dimension is not 1.
+        SignalDimensionError
+            If the signal dimension is not 1.
 
         See also
         --------
@@ -780,7 +768,7 @@ See also
 
         Parameters
         ----------
-        signal_range : {a tuple of this form (l, r), "interactive"}
+        signal_range : a tuple of this form (l, r) or "interactive"
             l and r are the left and right limits of the range. They can be
             numbers or None, where None indicates the extremes of the interval.
             If l and r are floats the `signal_range` will be in axis units (for
@@ -843,15 +831,11 @@ See also
         return integrated_signal1D
 
     def calibrate(self, display=True, toolkit=None):
-        self._check_signal_dimension_equals_one()
-        calibration = Signal1DCalibration(self)
-        return calibration.gui(display=display, toolkit=toolkit)
-    calibrate.__doc__ = \
         """
         Calibrate the spectral dimension using a gui.
         It displays a window where the new calibration can be set by:
             * setting the offset, units and scale directly
-            * selection a range by dragging the mouse on the spectrum figure 
+            * selecting a range by dragging the mouse on the spectrum figure 
               and setting the new values for the given range limits
 
         Parameters
@@ -865,14 +849,45 @@ See also
 
         Raises
         ------
-        SignalDimensionError if the signal dimension is not 1.
-        """ % (DISPLAY_DT, TOOLKIT_DT)
+        SignalDimensionError
+            If the signal dimension is not 1.
+        """
+        self._check_signal_dimension_equals_one()
+        calibration = Signal1DCalibration(self)
+        return calibration.gui(display=display, toolkit=toolkit)
+
+    calibrate.__doc__ %= (DISPLAY_DT, TOOLKIT_DT)
 
     def smooth_savitzky_golay(self,
                               polynomial_order=None,
                               window_length=None,
                               differential_order=0,
                               parallel=None, display=True, toolkit=None):
+        """
+        Apply a Savitzky-Golay filter to the data in place.
+        If `polynomial_order` or `window_length` or `differential_order` are
+        None the method is run in interactive mode.
+
+        Parameters
+        ----------
+        polynomial_order : int, optional
+            The order of the polynomial used to fit the samples.
+            `polyorder` must be less than `window_length`.
+        window_length : int, optional
+            The length of the filter window (i.e. the number of coefficients).
+            `window_length` must be a positive odd integer.
+        differential_order: int, optional
+            The order of the derivative to compute.  This must be a
+            nonnegative integer.  The default is 0, which means to filter
+            the data without differentiating.
+        %s
+        %s
+        %s
+
+        Notes
+        -----
+        More information about the filter in `scipy.signal.savgol_filter`.
+        """
         self._check_signal_dimension_equals_one()
         if (polynomial_order is not None and
                 window_length is not None):
@@ -889,38 +904,44 @@ See also
             if window_length is not None:
                 smoother.window_length = window_length
             return smoother.gui(display=display, toolkit=toolkit)
-    smooth_savitzky_golay.__doc__ = \
-        """
-        Apply a Savitzky-Golay filter to the data in place.
-        If `polynomial_order` or `window_length` or `differential_order` are
-        None the method is run in interactive mode.
 
-        Parameters
-        ----------
-        window_length : int
-            The length of the filter window (i.e. the number of coefficients).
-            `window_length` must be a positive odd integer.
-        polynomial_order : int
-            The order of the polynomial used to fit the samples.
-            `polyorder` must be less than `window_length`.
-        differential_order: int, optional
-            The order of the derivative to compute.  This must be a
-            nonnegative integer.  The default is 0, which means to filter
-            the data without differentiating.
-        %s
-        %s
-        %s
-
-        Notes
-        -----
-        More information about the filter in `scipy.signal.savgol_filter`.
-        """ % (PARALLEL_ARG, DISPLAY_DT, TOOLKIT_DT)
+    smooth_savitzky_golay.__doc__ %= (PARALLEL_ARG, DISPLAY_DT, TOOLKIT_DT)
 
     def smooth_lowess(self,
                       smoothing_parameter=None,
                       number_of_iterations=None,
                       show_progressbar=None,
                       parallel=None, display=True, toolkit=None):
+        """
+        Lowess data smoothing in place.
+        If `smoothing_parameter` or `number_of_iterations` are None the method
+        is run in interactive mode.
+
+        Parameters
+        ----------
+        smoothing_parameter: float or None
+            Between 0 and 1. The fraction of the data used
+            when estimating each y-value.
+        number_of_iterations: int or None
+            The number of residual-based reweightings
+            to perform.
+        %s
+        %s
+        %s
+        %s
+
+        Raises
+        ------
+        SignalDimensionError
+            If the signal dimension is not 1.
+        ImportError
+            If statsmodels is not installed.
+
+        Notes
+        -----
+        This method uses the lowess algorithm from the `statsmodels` library, 
+        which needs to be installed to use this method.
+        """
         if not statsmodels_installed:
             raise ImportError("statsmodels is not installed. This package is "
                               "required for this feature.")
@@ -942,47 +963,11 @@ See also
                      show_progressbar=show_progressbar,
                      ragged=False,
                      parallel=parallel)
-    smooth_lowess.__doc__ = \
-        """
-        Lowess data smoothing in place.
-        If `smoothing_parameter` or `number_of_iterations` are None the method
-        is run in interactive mode.
-
-        Parameters
-        ----------
-        smoothing_parameter: float or None
-            Between 0 and 1. The fraction of the data used
-            when estimating each y-value.
-        number_of_iterations: int or None
-            The number of residual-based reweightings
-            to perform.
-        %s
-        %s
-        %s
-        %s
-
-        Raises
-        ------
-        SignalDimensionError if the signal dimension is not 1.
-        ImportError if statsmodels is not installed.
-        Notes
-        -----
-        This method uses the lowess algorithm from statsmodels. statsmodels
-        is required for this method.
-        """ % (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, DISPLAY_DT, TOOLKIT_DT)
+    smooth_lowess.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, DISPLAY_DT,
+                              TOOLKIT_DT)
 
     def smooth_tv(self, smoothing_parameter=None, show_progressbar=None,
                   parallel=None, display=True, toolkit=None):
-        self._check_signal_dimension_equals_one()
-        if smoothing_parameter is None:
-            smoother = SmoothingTV(self)
-            return smoother.gui(display=display, toolkit=toolkit)
-        else:
-            self.map(_tv_denoise_1d, weight=smoothing_parameter,
-                     ragged=False,
-                     show_progressbar=show_progressbar,
-                     parallel=parallel)
-    smooth_tv.__doc__ = \
         """
         Total variation data smoothing in place.
 
@@ -998,13 +983,39 @@ See also
 
         Raises
         ------
-        SignalDimensionError if the signal dimension is not 1.
-        """ % (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, DISPLAY_DT, TOOLKIT_DT)
+        SignalDimensionError
+            If the signal dimension is not 1.
+        """
+        self._check_signal_dimension_equals_one()
+        if smoothing_parameter is None:
+            smoother = SmoothingTV(self)
+            return smoother.gui(display=display, toolkit=toolkit)
+        else:
+            self.map(_tv_denoise_1d, weight=smoothing_parameter,
+                     ragged=False,
+                     show_progressbar=show_progressbar,
+                     parallel=parallel)
+
+    smooth_tv.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG, DISPLAY_DT,
+                          TOOLKIT_DT)
 
     def filter_butterworth(self,
                            cutoff_frequency_ratio=None,
                            type='low',
                            order=2, display=True, toolkit=None):
+        """
+        Butterworth filter in place.
+
+        Parameters
+        ----------
+        %s
+        %s
+
+        Raises
+        ------
+        SignalDimensionError
+            If the signal dimension is not 1.
+        """
         self._check_signal_dimension_equals_one()
         smoother = ButterworthFilter(self)
         if cutoff_frequency_ratio is not None:
@@ -1014,18 +1025,8 @@ See also
             smoother.apply()
         else:
             return smoother.gui(display=display, toolkit=toolkit)
-    filter_butterworth.__doc__ = \
-        """
-        Butterworth filter in place.
 
-        Parameters
-        ----------
-        %s
-        %s
-        Raises
-        ------
-        SignalDimensionError if the signal dimension is not 1.
-        """ % (DISPLAY_DT, TOOLKIT_DT)
+    filter_butterworth.__doc__ %= (DISPLAY_DT, TOOLKIT_DT)
 
     def _remove_background_cli(
             self, signal_range, background_estimator, fast=True,
@@ -1072,50 +1073,17 @@ See also
             zero_fill=False,
             plot_remainder=True,
             show_progressbar=None, display=True, toolkit=None):
-
-        self._check_signal_dimension_equals_one()
-        if signal_range == 'interactive':
-            br = BackgroundRemoval(self, background_type=background_type,
-                                   polynomial_order=polynomial_order,
-                                   fast=fast,
-                                   plot_remainder=plot_remainder,
-                                   show_progressbar=show_progressbar,
-                                   zero_fill=zero_fill)
-            return br.gui(display=display, toolkit=toolkit)
-        else:
-            if background_type in ('PowerLaw', 'Power Law'):
-                background_estimator = components1d.PowerLaw()
-            elif background_type == 'Gaussian':
-                background_estimator = components1d.Gaussian()
-            elif background_type == 'Offset':
-                background_estimator = components1d.Offset()
-            elif background_type == 'Polynomial':
-                background_estimator = components1d.Polynomial(
-                    polynomial_order)
-            else:
-                raise ValueError(
-                    "Background type: " +
-                    background_type +
-                    " not recognized")
-            spectra = self._remove_background_cli(
-                signal_range=signal_range,
-                background_estimator=background_estimator,
-                fast=fast,
-                zero_fill=zero_fill,
-                show_progressbar=show_progressbar)
-            return spectra
-    remove_background.__doc__ = \
         """
         Remove the background, either in place using a gui or returned as a new
         spectrum using the command line.
 
         Parameters
         ----------
-        signal_range : tuple, optional
+        signal_range : "interactive", tuple of ints or floats, optional
             If this argument is not specified, the signal range has to be
             selected using a GUI. And the original spectrum will be replaced.
             If tuple is given, the a spectrum will be returned.
-        background_type : string
+        background_type : str
             The type of component which should be used to fit the background.
             Possible components: PowerLaw, Gaussian, Offset, Polynomial
             If Polynomial is used, the polynomial order can be specified
@@ -1158,9 +1126,42 @@ See also
 
         Raises
         ------
-        SignalDimensionError if the signal dimension is not 1.
+        SignalDimensionError
+            If the signal dimension is not 1.
+        """
 
-        """ % (SHOW_PROGRESSBAR_ARG, DISPLAY_DT, TOOLKIT_DT)
+        self._check_signal_dimension_equals_one()
+        if signal_range == 'interactive':
+            br = BackgroundRemoval(self, background_type=background_type,
+                                   polynomial_order=polynomial_order,
+                                   fast=fast,
+                                   plot_remainder=plot_remainder,
+                                   show_progressbar=show_progressbar,
+                                   zero_fill=zero_fill)
+            return br.gui(display=display, toolkit=toolkit)
+        else:
+            if background_type in ('PowerLaw', 'Power Law'):
+                background_estimator = components1d.PowerLaw()
+            elif background_type == 'Gaussian':
+                background_estimator = components1d.Gaussian()
+            elif background_type == 'Offset':
+                background_estimator = components1d.Offset()
+            elif background_type == 'Polynomial':
+                background_estimator = components1d.Polynomial(
+                    polynomial_order)
+            else:
+                raise ValueError(
+                    "Background type: " +
+                    background_type +
+                    " not recognized")
+            spectra = self._remove_background_cli(
+                signal_range=signal_range,
+                background_estimator=background_estimator,
+                fast=fast,
+                zero_fill=zero_fill,
+                show_progressbar=show_progressbar)
+            return spectra
+    remove_background.__doc__ %= (SHOW_PROGRESSBAR_ARG, DISPLAY_DT, TOOLKIT_DT)
 
     @interactive_range_selector
     def crop_signal1D(self, left_value=None, right_value=None,):
@@ -1168,7 +1169,7 @@ See also
 
         Parameters
         ----------
-        left_value, righ_value : {int | float | None}
+        left_value, righ_value : int, float or None
             If int the values are taken as indices. If float they are
             converted to indices using the spectral axis calibration.
             If left_value is None crops from the beginning of the axis.
@@ -1181,7 +1182,8 @@ See also
 
         Raises
         ------
-        SignalDimensionError if the signal dimension is not 1.
+        SignalDimensionError
+            If the signal dimension is not 1.
         """
         self._check_signal_dimension_equals_one()
         try:
@@ -1203,9 +1205,11 @@ See also
 
         Raises
         ------
-        ValueError if FWHM is equal or less than zero.
+        ValueError
+            If FWHM is equal or less than zero.
 
-        SignalDimensionError if the signal dimension is not 1.
+        SignalDimensionError
+            If the signal dimension is not 1.
         """
         self._check_signal_dimension_equals_one()
         if FWHM <= 0:
@@ -1220,9 +1224,9 @@ See also
 
         Parameters
         ----------
-        side : {'left', 'right', 'both'}
+        side : 'left', 'right' or 'both'
             Specify which side to use.
-        channels : {None, int}
+        channels : None or int
             The number of channels to taper. If None 5% of the total
             number of channels are tapered.
         offset : int
@@ -1233,7 +1237,8 @@ See also
 
         Raises
         ------
-        SignalDimensionError if the signal dimension is not 1.
+        SignalDimensionError
+            If the signal dimension is not 1.
         """
         if not np.issubdtype(self.data.dtype, np.floating):
             raise TypeError("The data dtype should be `float`. It can be "
@@ -1309,27 +1314,27 @@ See also
 
         Parameters
         ----------
-        slope_thresh : float (optional)
+        slope_thresh : float, optional
                        1st derivative threshold to count the peak;
                        higher values will neglect broader features;
                        default is set to 0.
-        amp_thresh : float (optional)
+        amp_thresh : float, optional
                      intensity threshold below which peaks are ignored;
                      higher values will neglect smaller features;
                      default is set to 10%% of max(y).
-        medfilt_radius : int (optional)
+        medfilt_radius : int, optional
                      median filter window to apply to smooth the data
                      (see scipy.signal.medfilt);
                      if 0, no filter will be applied;
                      default is set to 5.
-        peakgroup : int (optional)
+        peakgroup : int, optional
                     number of points around the "top part" of the peak
                     that are taken to estimate the peak height;
                     default is set to 10
-        maxpeakn : int (optional)
+        maxpeakn : int, optional
                    number of maximum detectable peaks;
                    default is set to 5000.
-        subchannel : bool (optional)
+        subchannel : bool, optional
                  default is set to True.
 
         %s
@@ -1342,7 +1347,8 @@ See also
 
         Raises
         ------
-        SignalDimensionError if the signal dimension is not 1.
+        SignalDimensionError
+            If the signal dimension is not 1.
         """
         # TODO: add scipy.signal.find_peaks_cwt
         self._check_signal_dimension_equals_one()
@@ -1379,7 +1385,7 @@ See also
         ----------
         factor : 0 < float < 1
             The default, 0.5, estimates the FWHM.
-        window : None, float
+        window : None or float
             The size of the window centred at the peak maximum
             used to perform the estimation.
             The window size must be chosen with care: if it is narrower

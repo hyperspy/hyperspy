@@ -2170,7 +2170,7 @@ class BaseSignal(FancySlicing,
             axis.size = int(dc.shape[axis.index_in_array])
 
     def crop(self, axis, start=None, end=None, convert_units=False):
-        """Crops the data in a given axis. The range is given in pixels
+        """Crops the data in a given axis. The range is given in pixels.
 
         Parameters
         ----------
@@ -2185,8 +2185,8 @@ class BaseSignal(FancySlicing,
             None crop from/to the low/high end of the axis.
         convert_units : bool
             Default is False
-            If True, convert the units using the 'convert_to_units' method of
-            the 'axes_manager'. If False, does nothing.
+            If True, convert the units using the `convert_to_units` method of
+            the `axes_manager`. If False, does nothing.
 
         """
         axis = self.axes_manager[axis]
