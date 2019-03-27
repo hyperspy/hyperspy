@@ -32,14 +32,14 @@ class Bleasdale(Expression):
 
     Parameters
     -----------
-    a : Float
+        a : Float
         
-    b : Float
+        b : Float
         
-    c : Float
+        c : Float
     
-    **kwargs
-        Extra keyword arguments are passed to the ``Expression`` component.
+        **kwargs
+            Extra keyword arguments are passed to the ``Expression`` component.
         
     
     For :math:`(a+b\\cdot x)\leq0`, the component will be set to nan.
