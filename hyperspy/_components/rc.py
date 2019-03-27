@@ -45,9 +45,6 @@ class RC(Expression):
             tau=RC is the RC circuit time constant (voltage rise time)
         **kwargs
             Extra keyword arguments are passed to the ``Expression`` component.
-            An useful keyword argument that can be used to speed up the
-            component is `module`. See the ``Expression`` component
-            documentation for details.
     
     """
 
