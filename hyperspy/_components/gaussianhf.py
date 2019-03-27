@@ -60,9 +60,6 @@ class GaussianHF(Expression):
             at half the value of gaussian peak (at centre).
         **kwargs
             Extra keyword arguments are passed to the ``Expression`` component.
-            An useful keyword argument that can be used to speed up the
-            component is `module`. See the ``Expression`` component
-            documentation for details.
 
     The helper properties `sigma` and `A` are also defined for compatibility
     with `Gaussian` component.
