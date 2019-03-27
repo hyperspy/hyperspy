@@ -28,11 +28,32 @@ _logger = logging.getLogger(__name__)
 
 class PowerLaw(Expression):
 
-    """Power law component
+    """Power law component.
+    
+    .. math::
+    
+      f(x) = A\\cdot(x-x_0)^{-r}
+      
+    ================= ===========
+     Variable          Parameter
+    ================= ===========
+     :math:`A`         A
+     :math:`x_0`       origin
+     :math:`r`         r
+    ================= ===========
 
-    f(x) = A*(x-origin)^-r
+    Parameters
+    -----------
+        A : float
+            Height parameter.
+        origin : float
+            Location parameter.
+        r : float
+            Power law coefficient.
+        **kwargs
+            Extra keyword arguments are passed to the ``Expression`` component.
 
-    The left_cutoff parameter can be used to set a lower threshold from which
+    The `left_cutoff` parameter can be used to set a lower threshold from which
     the component will return 0.
 
 
@@ -76,7 +97,7 @@ class PowerLaw(Expression):
 
     def estimate_parameters(self, signal, x1, x2, only_current=False,
                             out=False):
-        """Estimate the parameters by the two area method
+        """Estimate the parameters for the power law component by the two area method.
 
         Parameters
         ----------

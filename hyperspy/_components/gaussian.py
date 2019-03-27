@@ -68,12 +68,30 @@ def _estimate_gaussian_parameters(signal, x1, x2, only_current):
 
 class Gaussian(Expression):
 
-    """Normalized gaussian function component
+    """Normalized Gaussian function component.
 
     .. math::
 
-        f(x) = \\frac{A}{\\sqrt{2\\pi sigma^{2}}}exp\\left[-\\frac{\\left(x-centre\\right)^{2}}{2sigma^{2}}\\right]
+        f(x) = \\frac{A}{\\sigma \\sqrt{2\\pi}}\\exp\\left[-\\frac{\\left(x-x_0\\right)^{2}}{2\\sigma^{2}}\\right]
 
+    ================= ===========
+     Variable          Parameter
+    ================= ===========
+     :math:`A`         A
+     :math:`\\sigma`   sigma
+     :math:`x_0`       centre
+    ================= ===========
+
+    Parameters
+    -----------
+        A : float
+            Height scaled by :math:`\\sigma\\sqrt{(2\\pi)}`. ``GaussianHF`` implements the Gaussian function with a height parameter corresponding to the peak height.
+        sigma : float
+            Scale parameter of the Gaussian distribution. 
+        centre : float
+            Location of the Gaussian maximum (peak position).
+        **kwargs
+            Extra keyword arguments are passed to the ``Expression`` component.
 
     For convenience the `fwhm` attribute can be used to get and set
     the full-with-half-maximum.
@@ -107,7 +125,7 @@ class Gaussian(Expression):
         self.convolved = True
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
-        """Estimate the gaussian by calculating the momenta.
+        """Estimate the Gaussian by calculating the momenta.
 
         Parameters
         ----------
