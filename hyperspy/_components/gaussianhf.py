@@ -37,7 +37,7 @@ class GaussianHF(Expression):
 
     .. math::
 
-        f(x) = h \\sqrt{2\\pi}\\cdot\\exp{\\left[-\\frac{4 \\log{2}\\left(x-c\\right)^{2}}{W^{2}}\\right]}
+        f(x) = h\\cdot\\exp{\\left[-\\frac{4 \\log{2}\\left(x-c\\right)^{2}}{W^{2}}\\right]}
     
     ================= ===========
       Parameter        Attribute 
@@ -69,7 +69,7 @@ class GaussianHF(Expression):
 
     See also
     --------
-    hyperspy.components.Gaussian
+    hyperspy._components.gaussian.Gaussian
 
     """
 
