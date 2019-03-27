@@ -22,7 +22,7 @@ from hyperspy._components.expression import Expression
 
 class Logistic(Expression):
 
-    """Logistic function (sigmoid or s-shaped curve) component
+    """Logistic function (sigmoid or s-shaped curve) component.
 
     .. math::
     
@@ -38,9 +38,9 @@ class Logistic(Expression):
         0<b<1 shifts origin to smaller values;
         b<0 introduces an asymptote
     c : Float
-        logistic growth rate or steepness of the curve
+        Logistic growth rate or steepness of the curve
     origin : Float
-        position of the sigmoid's midpoint
+        Position of the sigmoid's midpoint
     **kwargs
         Extra keyword arguments are passed to the ``Expression`` component.
 
