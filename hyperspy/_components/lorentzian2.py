@@ -26,16 +26,27 @@ class Lorentzian2(Expression):
 
         f(x)=\frac{a}{\pi}\left[\frac{\gamma}{\left(x-x_{0}\right)^{2}+\gamma^{2}}\right]
 
-    +---------------------+-----------+
-    |     Parameter       | Attribute |
-    +---------------------+-----------+
-    +---------------------+-----------+
-    |      :math:`a`      |     A     |
-    +---------------------+-----------+
-    |    :math:`\gamma`   |   gamma   |
-    +---------------------+-----------+
-    |      :math:`x_0`    |  centre   |
-    +---------------------+-----------+
+    ================= ===========
+      Parameter        Attribute 
+    ================= ===========
+      :math:`a`         A     
+      :math:`\gamma`   gamma   
+      :math:`x_0`      centre   
+    ================= ===========
+    
+    Parameters
+    -----------
+        A : float
+            Height parameter, where :math:`A/\gamma` is the maximum of the peak.
+        gamma : float
+            Scale parameter corresponding to the half-width-at-half-maximum of the peak, which corresponds to the interquartile spread.
+        centre : float
+            Location of the peak maximum.
+        **kwargs
+            Extra keyword arguments are passed to the ``Expression`` component.
+            An useful keyword argument that can be used to speed up the
+            component is `module`. See the ``Expression`` component
+            documentation for details.
     
     For convenience the `fwhm` attribute can be used to get and set
     the full-with-half-maximum.
@@ -74,9 +85,9 @@ class Lorentzian2(Expression):
         self._gamma.value = value / 2
         
     @property
-    def gamma.value(self):
-        return self._gamma.value
+    def gamma(self):
+        return self._gamma
 
-    @fwhm.setter
-    def gamma.value(self, value):
-        self._gamma.value = value
+    @gamma.setter
+    def gamma(self, value):
+        self._gamma = value

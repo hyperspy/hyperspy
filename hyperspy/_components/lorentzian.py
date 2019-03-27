@@ -16,76 +16,78 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
+from hyperspy._components.expression import Expression
 
-from hyperspy.component import Component
+class Lorentzian2(Expression):
 
-
-class Lorentzian(Component):
-
-    r"""Cauchy-Lorentz distribution (a.k.a. Lorentzian function) component
+    r"""Cauchy-Lorentz distribution (a.k.a. Lorentzian function) component implemented as expression
 
     .. math::
 
         f(x)=\frac{a}{\pi}\left[\frac{\gamma}{\left(x-x_{0}\right)^{2}+\gamma^{2}}\right]
 
-    +---------------------+-----------+
-    |     Parameter       | Attribute |
-    +---------------------+-----------+
-    +---------------------+-----------+
-    |      :math:`a`      |     A     |
-    +---------------------+-----------+
-    |    :math:`\gamma`   |   gamma   |
-    +---------------------+-----------+
-    |      :math:`x_0`    |  centre   |
-    +---------------------+-----------+
+    ================= ===========
+      Parameter        Attribute 
+    ================= ===========
+      :math:`a`         A     
+      :math:`\gamma`   gamma   
+      :math:`x_0`      centre   
+    ================= ===========
+    
+    Parameters
+    -----------
+        A : float
+            Height parameter, where :math:`A/\gamma` is the maximum of the peak.
+        gamma : float
+            Scale parameter corresponding to the half-width-at-half-maximum of the peak, which corresponds to the interquartile spread.
+        centre : float
+            Location of the peak maximum.
+        **kwargs
+            Extra keyword arguments are passed to the ``Expression`` component.
+            An useful keyword argument that can be used to speed up the
+            component is `module`. See the ``Expression`` component
+            documentation for details.
+    
+    For convenience the `fwhm` attribute can be used to get and set
+    the full-with-half-maximum.
 
     """
 
-    def __init__(self, A=1., gamma=1., centre=0.):
-        Component.__init__(self, ('A', 'gamma', 'centre'))
-        self.A.value = A
-        self.gamma.value = gamma
-        self.centre.value = centre
+    def __init__(self, A=1., gamma=1., centre=0., module="numexpr", **kwargs):
+        super(Lorentzian2, self).__init__(
+            expression="A / pi * (_gamma / ((x - centre)**2 + _gamma**2))",
+            name="Lorentzian2",
+            A=A,
+            _gamma=gamma,
+            centre=centre,
+            position="centre",
+            module=module,
+            autodoc=False,
+            **kwargs)
 
         # Boundaries
         self.A.bmin = 0.
         self.A.bmax = None
-        self.gamma.bmin = None
-        self.gamma.bmax = None
-        self._position = self.centre
+
+        self._gamma.bmin = 0.
+        self._gamma.bmax = None
 
         self.isbackground = False
         self.convolved = True
 
-        # Gradients
-        self.A.grad = self.grad_A
-        self.gamma.grad = self.grad_gamma
-        self.centre.grad = self.grad_centre
 
-    def function(self, x):
-        """
-        """
-        A = self.A.value
-        gamma = self.gamma.value
-        centre = self.centre.value
+    @property
+    def fwhm(self):
+        return self._gamma.value * 2
 
-        return A / np.pi * (gamma / ((x - centre) ** 2 + gamma ** 2))
+    @fwhm.setter
+    def fwhm(self, value):
+        self._gamma.value = value / 2
+        
+    @property
+    def gamma(self):
+        return self._gamma
 
-    def grad_A(self, x):
-        """
-        """
-        return self.function(x) / self.A.value
-
-    def grad_gamma(self, x):
-        """
-        """
-        return self.A.value / (np.pi * (self.gamma.value ** 2 + (x - self.centre.value) ** 2)) - (
-            (2 * self.A.value * self.gamma.value ** 2) / (np.pi * (self.gamma.value ** 2 + (x - self.centre.value) ** 2) ** 2))
-
-    def grad_centre(self, x):
-        """
-        """
-        return (2 * (x - self.centre.value) * self.A.value * self.gamma.value) / \
-            (np.pi *
-             (self.gamma.value ** 2 + (x - self.centre.value) ** 2) ** 2)
+    @gamma.setter
+    def gamma(self, value):
+        self._gamma = value
