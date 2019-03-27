@@ -37,7 +37,7 @@ class Lorentzian(Expression):
     Parameters
     -----------
         A : float
-            Height parameter, where :math:`A/\gamma` is the maximum of the peak.
+            Height parameter, where :math:`A/(\gamma\pi)` is the maximum of the peak.
         gamma : float
             Scale parameter corresponding to the half-width-at-half-maximum of the peak, which corresponds to the interquartile spread.
         centre : float
