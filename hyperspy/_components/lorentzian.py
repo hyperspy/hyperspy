@@ -24,12 +24,12 @@ class Lorentzian(Expression):
 
     .. math::
 
-        f(x)=\frac{a}{\pi}\left[\frac{\gamma}{\left(x-x_{0}\right)^{2}+\gamma^{2}}\right]
+        f(x)=\frac{A}{\pi}\left[\frac{\gamma}{\left(x-x_{0}\right)^{2}+\gamma^{2}}\right]
 
     ================= ===========
-      Parameter        Attribute 
+     Variable          Parameter
     ================= ===========
-      :math:`a`         A     
+      :math:`A`         A     
       :math:`\gamma`   gamma   
       :math:`x_0`      centre   
     ================= ===========
