@@ -40,9 +40,6 @@ class Bleasdale(Expression):
     
     **kwargs
         Extra keyword arguments are passed to the ``Expression`` component.
-        An useful keyword argument that can be used to speed up the
-        component is `module`. See the ``Expression`` component
-        documentation for details.
         
     
     For :math:`(a+b\\cdot x)\leq0`, the component will be set to nan.
