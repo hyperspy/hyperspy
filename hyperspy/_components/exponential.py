@@ -24,15 +24,14 @@ class Exponential(Expression):
 
     .. math::
     
-        f(x) = A\\cdot\\mathrm{exp}\\left(-\\frac{x}{\\tau}\\right)
+        f(x) = A\\cdot\\exp\\left(-\\frac{x}{\\tau}\\right)
 
-    +-----------------+-----------+
-    |  Parameter      | Attribute |
-    +=================+===========+
-    | :math:`A`       |     A     |
-    +-----------------+-----------+
-    | :math:`\\tau`   |    tau    |
-    +-----------------+-----------+
+    ================= ===========
+      Parameter        Attribute 
+    ================= ===========
+     :math:`A`         A     
+     :math:`\\tau`     tau    
+    ================= ===========
 
     Parameters
     -----------

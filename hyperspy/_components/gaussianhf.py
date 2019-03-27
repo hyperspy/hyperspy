@@ -37,8 +37,15 @@ class GaussianHF(Expression):
 
     .. math::
 
-        f(x) = h \\sqrt{2\\pi}\\mathrm{exp}{\\left[-\\frac{4 \\log{2}\\left(x-c\\right)^{2}}{W^{2}}\\right]}
-
+        f(x) = h \\sqrt{2\\pi}\\cdot\\exp{\\left[-\\frac{4 \\log{2}\\left(x-c\\right)^{2}}{W^{2}}\\right]}
+    
+    ================= ===========
+      Parameter        Attribute 
+    ================= ===========
+     :math:`h`         height     
+     :math:`c`         centre
+     :math:`W`         fwhm    
+    ================= ===========
 
     Parameters
     -----------
