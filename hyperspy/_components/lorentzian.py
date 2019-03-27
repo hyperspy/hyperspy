@@ -20,7 +20,7 @@ from hyperspy._components.expression import Expression
 
 class Lorentzian2(Expression):
 
-    r"""Cauchy-Lorentz distribution (a.k.a. Lorentzian function) component implemented as expression
+    r"""Cauchy-Lorentz distribution (a.k.a. Lorentzian function) component.
 
     .. math::
 
