@@ -24,16 +24,27 @@ class Exponential(Expression):
 
     .. math::
     
-        f(x) = A*e^{-x/k}
+        f(x) = A\\cdot\\mathrm{exp}\\left(-\\frac{x}{\\tau}\\right)
 
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |     A      |     A     |
-    +------------+-----------+
-    |     k      |    tau    |
-    +------------+-----------+
+    +-----------------+-----------+
+    |  Parameter      | Attribute |
+    +=================+===========+
+    | :math:`A`       |     A     |
+    +-----------------+-----------+
+    | :math:`\\tau`   |    tau    |
+    +-----------------+-----------+
+
+    Parameters
+    -----------
+        A: float
+            Maximum intensity
+        tau: float
+            Scale parameter (time constant)
+        **kwargs
+            Extra keyword arguments are passed to the ``Expression`` component.
+            An useful keyword argument that can be used to speed up the
+            component is `module`. See the ``Expression`` component
+            documentation for details.
 
     """
 

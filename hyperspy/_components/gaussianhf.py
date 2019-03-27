@@ -29,8 +29,8 @@ class GaussianHF(Expression):
 
     """Normalized gaussian function component, with a fwhm parameter instead
     of the sigma parameter, and a height parameter instead of the A parameter
-    (scaling difference of sigma * sqrt(2*Pi)). This makes the parameter vs.
-    peak maximum independent of sigma, and thereby makes locking of the
+    (scaling difference of :math:`\\sigma \\sqrt{\\left(2\\pi\\right)}`). This makes the parameter vs.
+    peak maximum independent of :math:`\\sigma`, and thereby makes locking of the
     parameter more viable. As long as there is no binning, the height parameter
     corresponds directly to the peak maximum, if not, the value is scaled by a
     linear constant (signal_axis.scale).
@@ -52,7 +52,7 @@ class GaussianHF(Expression):
             The full width half maximum value, i.e. the width of the gaussian
             at half the value of gaussian peak (at centre).
         **kwargs
-            Extra keyword arguments are passes to the ``Expression`` component.
+            Extra keyword arguments are passed to the ``Expression`` component.
             An useful keyword argument that can be used to speed up the
             component is `module`. See the ``Expression`` component
             documentation for details.
