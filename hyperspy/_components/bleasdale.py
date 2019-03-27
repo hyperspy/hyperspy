@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+import numpy as np
+
 from hyperspy._components.expression import Expression
 
 class Bleasdale(Expression):
@@ -35,6 +37,7 @@ class Bleasdale(Expression):
     b : Float
         
     c : Float
+    
     **kwargs
         Extra keyword arguments are passed to the ``Expression`` component.
         An useful keyword argument that can be used to speed up the
@@ -46,9 +49,10 @@ class Bleasdale(Expression):
 
     """
     
-    def __init__(self, a=1., b=1., c=1., module="numpy", **kwargs):
+    def __init__(self, a=1., b=1., c=1., module="numexpr", **kwargs):
         super(Bleasdale, self).__init__(
-            expression="where((a+b*x)>0, (a + b * x) ** (-1 / c), 0)",
+            #expression="where((a+b*x)>0, (a + b * x) ** (-1 / c), 0.)",
+            expression="(a + b * x) ** (-1 / c)",
             name="Bleasdale",
             a=a,
             b=b,
@@ -57,3 +61,5 @@ class Bleasdale(Expression):
             autodoc=False,
             **kwargs)
 
+    def function(self, x):
+        return np.where((a+b*x)>0, super().function(x), 0.)
