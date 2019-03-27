@@ -34,13 +34,18 @@ class Logistic(Expression):
         The curve's maximum y-value,  :math:`\\mathrm{lim}_{x\\to\\infty}\\left(y\\right) = a`
     b : Float
         Additional parameter: 
-        b>1 shifts origin to larger values
-        0<b<1 shifts origin to smaller values
+        b>1 shifts origin to larger values;
+        0<b<1 shifts origin to smaller values;
         b<0 introduces an asymptote
     c : Float
         logistic growth rate or steepness of the curve
     origin : Float
         position of the sigmoid's midpoint
+    **kwargs
+        Extra keyword arguments are passed to the ``Expression`` component.
+        An useful keyword argument that can be used to speed up the
+        component is `module`. See the ``Expression`` component
+        documentation for details.    
 
     """
 
