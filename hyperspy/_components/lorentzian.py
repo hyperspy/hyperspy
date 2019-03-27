@@ -18,7 +18,7 @@
 
 from hyperspy._components.expression import Expression
 
-class Lorentzian2(Expression):
+class Lorentzian(Expression):
 
     r"""Cauchy-Lorentz distribution (a.k.a. Lorentzian function) component.
 
@@ -54,9 +54,9 @@ class Lorentzian2(Expression):
     """
 
     def __init__(self, A=1., gamma=1., centre=0., module="numexpr", **kwargs):
-        super(Lorentzian2, self).__init__(
+        super(Lorentzian, self).__init__(
             expression="A / pi * (_gamma / ((x - centre)**2 + _gamma**2))",
-            name="Lorentzian2",
+            name="Lorentzian",
             A=A,
             _gamma=gamma,
             centre=centre,
