@@ -20,11 +20,11 @@ from hyperspy._components.expression import Expression
 
 class Lorentzian2(Expression):
 
-    """Cauchy-Lorentz distribution (a.k.a. Lorentzian function) component implemented as expression
+    r"""Cauchy-Lorentz distribution (a.k.a. Lorentzian function) component implemented as expression
 
     .. math::
 
-        f(x)=\frac{a}{\pi}\left[\frac{\Gamma}{\left(x-x_{0}\right)^{2}+\Gamma^{2}}\right]
+        f(x)=\frac{a}{\pi}\left[\frac{\gamma}{\left(x-x_{0}\right)^{2}+\gamma^{2}}\right]
 
     +---------------------+-----------+
     |     Parameter       | Attribute |
@@ -32,7 +32,7 @@ class Lorentzian2(Expression):
     +---------------------+-----------+
     |      :math:`a`      |     A     |
     +---------------------+-----------+
-    |    :math:`\Gamma`   |   Gamma   |
+    |    :math:`\gamma`   |   gamma   |
     +---------------------+-----------+
     |      :math:`x_0`    |  centre   |
     +---------------------+-----------+
@@ -42,12 +42,12 @@ class Lorentzian2(Expression):
 
     """
 
-    def __init__(self, A=1., Gamma=1., centre=0., module="numexpr", **kwargs):
+    def __init__(self, A=1., gamma=1., centre=0., module="numexpr", **kwargs):
         super(Lorentzian2, self).__init__(
-            expression="A / pi * (Gamma / ((x - centre)**2 + Gamma**2))",
+            expression="A / pi * (_gamma / ((x - centre)**2 + _gamma**2))",
             name="Lorentzian2",
             A=A,
-            Gamma=Gamma,
+            _gamma=gamma,
             centre=centre,
             position="centre",
             module=module,
@@ -58,8 +58,8 @@ class Lorentzian2(Expression):
         self.A.bmin = 0.
         self.A.bmax = None
 
-        self.Gamma.bmin = 0.
-        self.Gamma.bmax = None
+        self._gamma.bmin = 0.
+        self._gamma.bmax = None
 
         self.isbackground = False
         self.convolved = True
@@ -67,8 +67,16 @@ class Lorentzian2(Expression):
 
     @property
     def fwhm(self):
-        return self.Gamma.value * 2
+        return self._gamma.value * 2
 
     @fwhm.setter
     def fwhm(self, value):
-        self.Gamma.value = value / 2
+        self._gamma.value = value / 2
+        
+    @property
+    def gamma.value(self):
+        return self._gamma.value
+
+    @fwhm.setter
+    def gamma.value(self, value):
+        self._gamma.value = value
