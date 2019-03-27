@@ -26,7 +26,16 @@ class Logistic(Expression):
 
     .. math::
     
-        f(x) = \\frac{a}{1 + b\\cdot \\mathrm{exp}\\left[-c \left((x - origin\\right)\\right]}
+        f(x) = \\frac{a}{1 + b\\cdot \\mathrm{exp}\\left[-c \left((x - x_0\\right)\\right]}
+
+    ================= ===========
+     Variable          Parameter
+    ================= ===========
+     :math:`A`         a
+     :math:`b`         b
+     :math:`c`         c
+     :math:`x_0`       origin
+    ================= ===========
 
     Parameters
     -----------
