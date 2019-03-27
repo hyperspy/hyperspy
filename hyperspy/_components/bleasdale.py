@@ -16,25 +16,33 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
-
 from hyperspy._components.expression import Expression
 
 class Bleasdale(Expression):
 
     """Bleasdale function component.
+    
+    Also called the Bleasdale-Nelder function. Originates from the description of the yield-density relationship in crop growth.
 
     .. math::
     
-        f(x) = (a+b*x)^(-1/c)
+        f(x) = \\left(a+b\\cdot x\\right)^{-1/c}
 
-    Attributes
-    ----------
+    Parameters
+    -----------
     a : Float
+        
     b : Float
+        
     c : Float
+    **kwargs
+        Extra keyword arguments are passed to the ``Expression`` component.
+        An useful keyword argument that can be used to speed up the
+        component is `module`. See the ``Expression`` component
+        documentation for details.
+        
     
-    For (a+b*x)<=0, the component will be set to `nan`.
+    For :math:`(a+b\\cdot x)\leq0`, the component will be set to zero.
 
     """
     
