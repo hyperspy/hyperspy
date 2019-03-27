@@ -44,9 +44,6 @@ class Lorentzian(Expression):
             Location of the peak maximum.
         **kwargs
             Extra keyword arguments are passed to the ``Expression`` component.
-            An useful keyword argument that can be used to speed up the
-            component is `module`. See the ``Expression`` component
-            documentation for details.
     
     For convenience the `fwhm` attribute can be used to get and set
     the full-with-half-maximum.
