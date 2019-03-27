@@ -40,7 +40,7 @@ class GaussianHF(Expression):
         f(x) = h\\cdot\\exp{\\left[-\\frac{4 \\log{2}\\left(x-c\\right)^{2}}{W^{2}}\\right]}
     
     ================= ===========
-      Parameter        Attribute 
+     Variable          Parameter
     ================= ===========
      :math:`h`         height     
      :math:`c`         centre

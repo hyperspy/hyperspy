@@ -27,7 +27,7 @@ class Exponential(Expression):
         f(x) = A\\cdot\\exp\\left(-\\frac{x}{\\tau}\\right)
 
     ================= ===========
-      Parameter        Attribute 
+     Variable          Parameter 
     ================= ===========
      :math:`A`         A     
      :math:`\\tau`     tau    
