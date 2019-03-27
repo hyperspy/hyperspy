@@ -45,11 +45,11 @@ class Bleasdale(Expression):
         documentation for details.
         
     
-    For :math:`(a+b\\cdot x)\leq0`, the component will be set to zero.
+    For :math:`(a+b\\cdot x)\leq0`, the component will be set to nan.
 
     """
     
-    def __init__(self, a=1., b=1., c=1., module="numexpr", **kwargs):
+    def __init__(self, a=1., b=1., c=1., module="numpy", **kwargs):
         super(Bleasdale, self).__init__(
             #expression="where((a+b*x)>0, (a + b * x) ** (-1 / c), 0.)",
             expression="(a + b * x) ** (-1 / c)",
@@ -62,4 +62,5 @@ class Bleasdale(Expression):
             **kwargs)
 
     def function(self, x):
-        return np.where((a+b*x)>0, super().function(x), 0.)
+        return np.where((a+b*x)>0, super().function(x), 0)
+
