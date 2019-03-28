@@ -2151,12 +2151,11 @@ class BaseSignal(FancySlicing,
                 self.plot()
 
     def update_plot(self):
-        if self._plot is not None:
-            if self._plot.is_active:
-                if self._plot.signal_plot is not None:
-                    self._plot.signal_plot.update()
-                if self._plot.navigator_plot is not None:
-                    self._plot.navigator_plot.update()
+        if self._plot is not None and self._plot.is_active:
+            if self._plot.signal_plot is not None:
+                self._plot.signal_plot.update()
+            if self._plot.navigator_plot is not None:
+                self._plot.navigator_plot.update()
 
     def get_dimensions_from_data(self):
         """Get the dimension parameters from the data_cube. Useful when
