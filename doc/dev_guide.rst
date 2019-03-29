@@ -176,7 +176,7 @@ First ensure pytest and its plugins are installed by:
    # Or, from a hyperspy local development directory
    pip install -e .[test]
    # Or just installing the dependencies using conda
-   conda install pytest pytest-mpl freetype
+   conda install -c conda-forge pytest pytest-mpl
 
 To run them:
 
