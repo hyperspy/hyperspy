@@ -479,7 +479,6 @@ class MVA():
                                 mask=None,
                                 on_loadings=False,
                                 reverse_component_criterion='factors',
-                                pretreatment=None,
                                 compute=False,
                                 **kwargs):
         """Blind source separation (BSS) on the result on the
@@ -492,6 +491,7 @@ class MVA():
         number_of_components : int
             number of principal components to pass to the BSS algorithm
         algorithm : {FastICA, JADE, CuBICA, TDSEP}
+            BSS algorithms available.
         diff_order : int
             Sometimes it is convenient to perform the BSS on the derivative of
             the signal. If diff_order is 0, the signal is not differentiated.
@@ -507,7 +507,7 @@ class MVA():
             navigation dimension must be 1 and the size greater than 1.
         comp_list : boolen numpy array
             choose the components to use by the boolean list. It permits
-             to choose non contiguous components.
+            to choose non contiguous components.
         mask : bool numpy array or Signal instance.
             If not None, the signal locations marked as True are masked. The
             mask shape must be equal to the signal shape
@@ -518,7 +518,6 @@ class MVA():
         reverse_component_criterion : str {'factors', 'loadings'}
             Use either the `factor` or the `loading` to determine if the 
             component needs to be reversed.
-        pretreatment: dict
         compute: bool
            If the decomposition results are lazy, compute the BSS components
            so that they are not lazy.
