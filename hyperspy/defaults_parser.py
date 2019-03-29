@@ -18,7 +18,6 @@
 
 
 import os.path
-from os import cpu_count
 import configparser
 import logging
 
@@ -26,7 +25,6 @@ import traits.api as t
 
 from hyperspy.misc.config_dir import config_path, os_name, data_path
 from hyperspy.misc.ipython_tools import turn_logging_on, turn_logging_off
-from hyperspy.io_plugins import default_write_ext
 from hyperspy.ui_registry import add_gui_method
 
 defaults_file = os.path.join(config_path, 'hyperspyrc')
@@ -41,7 +39,7 @@ def guess_gos_path():
         # installation
         # location in windows
         program_files = os.environ['PROGRAMFILES']
-        gos = 'Gatan\DigitalMicrograph\EELS Reference Data\H-S GOS Tables'
+        gos = 'Gatan\\DigitalMicrograph\\EELS Reference Data\\H-S GOS Tables'
         gos_path = os.path.join(program_files, gos)
 
         # Else, use the default location in the .hyperspy forlder
@@ -139,6 +137,27 @@ class GUIs(t.HasTraits):
         desc="Display warnings, if hyperspy_gui_ipywidgets or hyperspy_gui_traitsui are missing.")
 
 
+class PlotConfig(t.HasTraits):
+    dims_024_increase = t.Str('right',
+                              label='Navigate right'
+                              )
+    dims_024_decrease = t.Str('left',
+                              label='Navigate left',
+                              )
+    dims_135_increase = t.Str('down',
+                              label='Navigate down',
+                              )
+    dims_135_decrease = t.Str('up',
+                              label='Navigate up',
+                              )
+    modifier_dims_01 = t.Enum(['ctrl', 'alt', 'shift', 'ctrl+alt', 'ctrl+shift', 'alt+shift',
+                               'ctrl+alt+shift'], label='Modifier key for 1st and 2nd dimensions')  # 0 elem is default
+    modifier_dims_23 = t.Enum(['shift', 'alt', 'ctrl', 'ctrl+alt', 'ctrl+shift', 'alt+shift',
+                               'ctrl+alt+shift'], label='Modifier key for 3rd and 4th dimensions')  # 0 elem is default
+    modifier_dims_45 = t.Enum(['alt', 'ctrl', 'shift', 'ctrl+alt', 'ctrl+shift', 'alt+shift',
+                               'ctrl+alt+shift'], label='Modifier key for 5th and 6th dimensions')  # 0 elem is default
+
+
 class EDSConfig(t.HasTraits):
     eds_mn_ka = t.CFloat(130.,
                          label='Energy resolution at Mn Ka (eV)',
@@ -165,6 +184,7 @@ template = {
     'GUIs': GUIs(),
     'EELS': EELSConfig(),
     'EDS': EDSConfig(),
+    'Plot': PlotConfig(),
 }
 
 # Set the enums defaults
@@ -199,6 +219,7 @@ def dictionary_from_template(template):
     for section, traited_class in template.items():
         dictionary[section] = traited_class.get()
     return dictionary
+
 
 config = configparser.ConfigParser(allow_no_value=True)
 template2config(template, config)
@@ -235,17 +256,20 @@ class Preferences(t.HasTraits):
     EDS = t.Instance(EDSConfig)
     General = t.Instance(GeneralConfig)
     GUIs = t.Instance(GUIs)
+    Plot = t.Instance(PlotConfig)
 
     def save(self):
         config = configparser.ConfigParser(allow_no_value=True)
         template2config(template, config)
         config.write(open(defaults_file, 'w'))
 
+
 preferences = Preferences(
     EELS=template['EELS'],
     EDS=template['EDS'],
     General=template['General'],
     GUIs=template['GUIs'],
+    Plot=template['Plot'],
 )
 
 if preferences.General.logger_on:

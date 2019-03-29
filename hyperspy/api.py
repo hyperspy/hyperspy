@@ -21,4 +21,4 @@ except ImportError:
     if preferences.GUIs.warn_if_guis_are_missing:
         _logger.warning(
             "The traitsui GUI elements are not available, probably because the "
-            "hyperspy_gui_traitui package is not installed.")
+            "hyperspy_gui_traitsui package is not installed.")

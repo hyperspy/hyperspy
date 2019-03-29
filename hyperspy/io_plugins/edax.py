@@ -25,7 +25,7 @@ import logging
 import numpy as np
 from hyperspy.misc.array_tools import sarray2dict
 import traits.api as t
-from hyperspy.misc.elements import elements_db
+from hyperspy.misc.elements import atomic_number2name
 
 _logger = logging.getLogger(__name__)
 
@@ -46,24 +46,11 @@ full_support = False
 # Recognised file extension
 file_extensions = ['spd', 'SPD', 'spc', 'SPC']
 default_extension = 0
-
 # Writing capabilities
 writes = False
 
 spd_extensions = ('spd', 'SPD', 'Spd')
 spc_extensions = ('spc', 'SPC', 'Spc')
-
-# read dictionary of atomic numbers from HyperSpy, and add the elements that
-# do not currently exist in the database (in case anyone is doing EDS on
-# Ununpentium...)
-atomic_num_dict = dict((p.General_properties.Z, e) for (e, p) in elements_db)
-atomic_num_dict.update({93: 'Np', 94: 'Pu', 95: 'Am', 96: 'Cm', 97: 'Bk',
-                        98: 'Cf', 99: 'Es', 100: 'Fm', 101: 'Md', 102: 'No',
-                        103: 'Lr', 104: 'Rf', 105: 'Db', 106: 'Sg', 107: 'Bh',
-                        108: 'Hs', 109: 'Mt', 110: 'Ds', 111: 'Rg', 112: 'Cp',
-                        113: 'Uut', 114: 'Uuq', 115: 'Uup', 116: 'Uuh',
-                        117: 'Uus',
-                        118: 'Uuo'})
 
 
 def get_spd_dtype_list(endianess='<'):
@@ -518,7 +505,7 @@ def get_spc_dtype_list(load_all=False, endianess='<', version=0.61):
                 ('numZElements', end + 'i2'),  # 20800
                 ('zAtoms', end + '48i2'),  # 20802
                 ('zShells', end + '48i2'),  # 20898
-                ])
+            ])
 
     else:
         dtype_list = \
@@ -737,7 +724,7 @@ def _add_spc_metadata(metadata, spc_header):
     # Get elements stored in spectrum:
     num_elem = spc_header['numElem']
     if num_elem > 0:
-        element_list = sorted([atomic_num_dict[i] for
+        element_list = sorted([atomic_number2name[i] for
                                i in spc_header['at'][:num_elem]])
         metadata['Sample'] = {'elements': element_list}
         _logger.info(" Elemental information found in the spectral metadata "
@@ -818,7 +805,6 @@ def spc_reader(filename,
 
 def spd_reader(filename,
                endianess='<',
-               nav_units=None,
                spc_fname=None,
                ipr_fname=None,
                load_all_spc=False,
@@ -832,10 +818,6 @@ def spd_reader(filename,
         Name of SPD file to read
     endianess : char
         Byte-order of data to read
-    nav_units : 'nm', 'um', or None
-        Default navigation units for EDAX data is in microns, so this is the
-        default unit to save in the signal. Can also be specified as 'nm',
-        which will output a signal with nm scale instead.
     spc_fname : None or str
         Name of file from which to read the spectral calibration. If data
         was exported fully from EDAX TEAM software, an .spc file with the
@@ -846,14 +828,14 @@ def spd_reader(filename,
     ipr_fname : None or str
         Name of file from which to read the spatial calibration. If data
         was exported fully from EDAX TEAM software, an .ipr file with the
-        same name as the .spd (plus a \"_Img\" suffix) should be present.
+        same name as the .spd (plus a "_Img" suffix) should be present.
         If `None`, the default filename will be searched for.
         Otherwise, the name of the .ipr file to use for spatial calibration
         can be explicitly given as a string.
     load_all_spc : bool
         Switch to control if all of the .spc header is read, or just the
         important parts for import into HyperSpy
-    kwargs**
+    **kwargs
         Remaining arguments are passed to the Numpy ``memmap`` function
 
     Returns
@@ -921,6 +903,14 @@ def spd_reader(filename,
                           'reading .ipr {}'.format(ipr_fname))
             ipr_header = __get_ipr_header(f, endianess)
             original_metadata['ipr_header'] = sarray2dict(ipr_header)
+
+            # Workaround for type error when saving hdf5:
+            # save as list of strings instead of numpy unicode array
+            # see https://github.com/hyperspy/hyperspy/pull/2007 and
+            #     https://github.com/h5py/h5py/issues/289 for context
+            original_metadata['ipr_header']['charText'] = \
+                [np.string_(i) for i in
+                 original_metadata['ipr_header']['charText']]
     else:
         _logger.warning('Could not find .ipr file named {}.\n'
                         'No spatial calibration will be loaded.'
@@ -951,20 +941,13 @@ def spd_reader(filename,
         'units': 'keV' if read_spc else t.Undefined,
     }
 
-    # Handle navigation units input:
-    scale = 1000 if nav_units == 'nm' else 1
-    if nav_units is not 'nm':
-        if nav_units not in [None, 'um']:
-            _logger.warning("Did not understand nav_units input \"{}\". "
-                            "Defaulting to microns.\n".format(nav_units))
-        nav_units = r'$\mu m$'
-
+    nav_units = 'µm'
     # Create navigation axes dictionaries:
     x_axis = {
         'size': data.shape[1],
         'index_in_array': 1,
         'name': 'x',
-        'scale': original_metadata['ipr_header']['mppX'] * scale if read_ipr
+        'scale': original_metadata['ipr_header']['mppX'] if read_ipr
         else 1,
         'offset': 0,
         'units': nav_units if read_ipr else t.Undefined,
@@ -974,7 +957,7 @@ def spd_reader(filename,
         'size': data.shape[0],
         'index_in_array': 0,
         'name': 'y',
-        'scale': original_metadata['ipr_header']['mppY'] * scale if read_ipr
+        'scale': original_metadata['ipr_header']['mppY'] if read_ipr
         else 1,
         'offset': 0,
         'units': nav_units if read_ipr else t.Undefined,

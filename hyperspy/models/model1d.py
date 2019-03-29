@@ -17,18 +17,15 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-from contextlib import contextmanager
 
 import numpy as np
-import traits.api as t
 
 from hyperspy.model import BaseModel, ModelComponents, ModelSpecialSlicers
 import hyperspy.drawing.signal1d
 from hyperspy.axes import generate_axis
-from hyperspy.exceptions import WrongObjectError
+from hyperspy.exceptions import WrongObjectError, SignalDimensionError
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.drawing.widgets import VerticalLineWidget, LabelWidget
-from hyperspy.ui_registry import get_gui
 from hyperspy.events import EventSuppressor
 from hyperspy.signal_tools import SpanSelectorInSignal1D
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
@@ -56,11 +53,8 @@ class ComponentFit(SpanSelectorInSignal1D):
         self.fit_kwargs = kwargs
         self.only_current = only_current
         if signal_range == "interactive":
-            if not hasattr(self.model, '_plot'):
-                self.model.plot()
-            elif self.model._plot is None:
-                self.model.plot()
-            elif self.model._plot.is_active() is False:
+            if (not hasattr(self.model, '_plot') or self.model._plot is None or
+                    not self.model._plot.is_active):
                 self.model.plot()
             self.span_selector_switch(on=True)
 
@@ -377,7 +371,8 @@ class Model1D(BaseModel):
 
     remove.__doc__ = BaseModel.remove.__doc__
 
-    def __call__(self, non_convolved=False, onlyactive=False):
+    def __call__(self, non_convolved=False, onlyactive=False,
+                 component_list=None):
         """Returns the corresponding model for the current coordinates
 
         Parameters
@@ -387,6 +382,9 @@ class Model1D(BaseModel):
         only_active : bool
             If True, only the active components will be used to build the
             model.
+        component_list : list or None
+            If None, the sum of all the components is returned. If list, only
+            the provided components are returned
 
         cursor: 1 or 2
 
@@ -395,35 +393,31 @@ class Model1D(BaseModel):
         numpy array
         """
 
+        if component_list is None:
+            component_list = self
+        if not isinstance(component_list, (list, tuple)):
+            raise ValueError(
+                "'Component_list' parameter need to be a list or None")
+
+        if onlyactive:
+            component_list = [
+                component for component in component_list if component.active]
+
         if self.convolved is False or non_convolved is True:
             axis = self.axis.axis[self.channel_switches]
             sum_ = np.zeros(len(axis))
-            if onlyactive is True:
-                for component in self:
-                    if component.active:
-                        sum_ += component.function(axis)
-            else:
-                for component in self:
-                    sum_ += component.function(axis)
+            for component in component_list:
+                sum_ += component.function(axis)
             to_return = sum_
 
         else:  # convolved
             sum_convolved = np.zeros(len(self.convolution_axis))
             sum_ = np.zeros(len(self.axis.axis))
-            for component in self:  # Cut the parameters list
-                if onlyactive:
-                    if component.active:
-                        if component.convolved:
-                            sum_convolved += component.function(
-                                self.convolution_axis)
-                        else:
-                            sum_ += component.function(self.axis.axis)
+            for component in component_list:
+                if component.convolved:
+                    sum_convolved += component.function(self.convolution_axis)
                 else:
-                    if component.convolved:
-                        sum_convolved += component.function(
-                            self.convolution_axis)
-                    else:
-                        sum_ += component.function(self.axis.axis)
+                    sum_ += component.function(self.axis.axis)
 
             to_return = sum_ + np.convolve(
                 self.low_loss(self.axes_manager),
@@ -647,7 +641,7 @@ class Model1D(BaseModel):
             s = ns
         return s
 
-    def plot(self, plot_components=False):
+    def plot(self, plot_components=False, **kwargs):
         """Plots the current spectrum to the screen and a map with a
         cursor to explore the SI.
 
@@ -655,11 +649,14 @@ class Model1D(BaseModel):
         ----------
         plot_components : bool
             If True, add a line per component to the signal figure.
+        kwargs:
+            All extra keyword arguements are passed to ``Signal1D.plot``
+
 
         """
 
         # If new coordinates are assigned
-        self.signal.plot()
+        self.signal.plot(**kwargs)
         _plot = self.signal._plot
         l1 = _plot.signal_plot.ax_lines[0]
         color = l1.line.get_color()
@@ -687,7 +684,7 @@ class Model1D(BaseModel):
     @staticmethod
     def _connect_component_line(component):
         if hasattr(component, "_model_plot_line"):
-            f = component._model_plot_line.update
+            f = component._model_plot_line._auto_update_line
             component.events.active_changed.connect(f, [])
             for parameter in component.parameters:
                 parameter.events.value_changed.connect(f, [])
@@ -695,7 +692,7 @@ class Model1D(BaseModel):
     @staticmethod
     def _disconnect_component_line(component):
         if hasattr(component, "_model_plot_line"):
-            f = component._model_plot_line.update
+            f = component._model_plot_line._auto_update_line
             component.events.active_changed.disconnect(f)
             for parameter in component.parameters:
                 parameter.events.value_changed.disconnect(f)
@@ -781,8 +778,7 @@ class Model1D(BaseModel):
         disable_adjust_position
 
         """
-        if (self._plot is None or
-                self._plot.is_active() is False):
+        if self._plot is None or not self._plot.is_active:
             self.plot()
         if self._position_widgets:
             self.disable_adjust_position()

@@ -1,5 +1,27 @@
+# -*- coding: utf-8 -*-
+# Copyright 2007-2016 The HyperSpy developers
+#
+# This file is part of  HyperSpy.
+#
+#  HyperSpy is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+#  HyperSpy is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
+
 from functools import wraps
+import numpy as np
+
 from hyperspy.component import Component
+from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
+
 
 _CLASS_DOC = \
     """%s component (created with Expression).
@@ -124,13 +146,18 @@ class Expression(Component):
             self.compile_function(module=module, position=rotation_center)
         # Initialise component
         Component.__init__(self, self._parameter_strings)
-        self._whitelist['expression'] = ('init', expression)
-        self._whitelist['name'] = ('init', name)
-        self._whitelist['position'] = ('init', position)
+        # When creating components using Expression (for example GaussianHF)
+        # we shouldn't add anything else to the _whitelist as the
+        # component should be initizialized with its own kwargs.
+        # An exception is "module"
         self._whitelist['module'] = ('init', module)
-        if self._is2D:
-            self._whitelist['add_rotation'] = ('init', self._add_rotation)
-            self._whitelist['rotation_center'] = ('init', rotation_center)
+        if self.__class__ is Expression:
+            self._whitelist['expression'] = ('init', expression)
+            self._whitelist['name'] = ('init', name)
+            self._whitelist['position'] = ('init', position)
+            if self._is2D:
+                self._whitelist['add_rotation'] = ('init', self._add_rotation)
+                self._whitelist['rotation_center'] = ('init', rotation_center)
         self.name = name
         # Set the position parameter
         if position:
@@ -189,9 +216,10 @@ class Expression(Component):
                            modules=module, dummify=False)
 
         if self._is2D:
-            f = lambda x, y: self._f(x, y, *[p.value for p in self.parameters])
+            def f(x, y): return self._f(
+                x, y, *[p.value for p in self.parameters])
         else:
-            f = lambda x: self._f(x, *[p.value for p in self.parameters])
+            def f(x): return self._f(x, *[p.value for p in self.parameters])
         setattr(self, "function", f)
         parnames = [symbol.name for symbol in parameters]
         self._parameter_strings = parnames
@@ -216,3 +244,33 @@ class Expression(Component):
                         self,
                         Expression)
                     )
+
+    def _is_navigation_multidimensional(self):
+        if (self._axes_manager is None or not
+                self._axes_manager.navigation_dimension):
+            return False
+        else:
+            return True
+
+    def function_nd(self, *args):
+        """%s
+
+        """
+        if self._is2D:
+            x, y = args[0], args[1]
+            # navigation dimension is 0, f_nd same as f
+            if not self._is_navigation_multidimensional():
+                return self.function(x, y)
+            else:
+                return self._f(x[np.newaxis, ...], y[np.newaxis, ...],
+                               *[p.map['values'][..., np.newaxis, np.newaxis]
+                                 for p in self.parameters])
+        else:
+            x = args[0]
+            if not self._is_navigation_multidimensional():
+                return self.function(x)
+            else:
+                return self._f(x[np.newaxis, ...],
+                               *[p.map['values'][..., np.newaxis]
+                                 for p in self.parameters])
+    function_nd.__doc__ %= FUNCTION_ND_DOCSTRING

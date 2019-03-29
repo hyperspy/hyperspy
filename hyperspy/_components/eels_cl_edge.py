@@ -23,7 +23,6 @@ import logging
 import numpy as np
 from scipy.interpolate import splev
 
-from hyperspy.defaults_parser import preferences
 from hyperspy.component import Component
 from hyperspy.misc.eels.hartree_slater_gos import HartreeSlaterGOS
 from hyperspy.misc.eels.hydrogenic_gos import HydrogenicGOS
@@ -213,7 +212,7 @@ class EELSCLEdge(Component):
                 self.GOS.onset_energy,
                 self.convergence_angle,
                 self.collection_angle)
-        except:
+        except BaseException:
             # All the parameters may not be defined yet...
             pass
 
