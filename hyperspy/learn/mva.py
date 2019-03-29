@@ -478,7 +478,7 @@ class MVA():
                                 comp_list=None,
                                 mask=None,
                                 on_loadings=False,
-                                reverse_component_criterion='factor',
+                                reverse_component_criterion='factors',
                                 pretreatment=None,
                                 compute=False,
                                 **kwargs):
@@ -515,7 +515,7 @@ class MVA():
         on_loadings : bool
             If True, perform the BSS on the loadings of a previous
             decomposition. If False, performs it on the factors.
-        reverse_component_criterion : str {'factor', 'loading'}
+        reverse_component_criterion : str {'factors', 'loadings'}
             Use either the `factor` or the `loading` to determine if the 
             component needs to be reversed.
         pretreatment: dict
@@ -566,10 +566,6 @@ class MVA():
                              "greater than one, but the navigation "
                              "size of the given factors is %i." %
                              factors.axes_manager.navigation_size)
-
-        if reverse_component_criterion not in ['factor', 'loading']:
-            raise ValueError("`reverse_component_criterion` can take only "
-                             "`factor` or `loading` as parameter.")
 
         # Check mask dimensions
         if mask is not None:
@@ -688,7 +684,7 @@ class MVA():
         lr.unmixing_matrix = w
         lr.on_loadings = on_loadings
         self._unmix_components()
-        self._auto_reverse_bss_component(lr, reverse_component_criterion)
+        self._auto_reverse_bss_component(reverse_component_criterion)
         lr.bss_algorithm = algorithm
         lr.bss_node = str(lr.bss_node)
 
@@ -815,13 +811,16 @@ class MVA():
             lr.bss_factors = lr.bss_factors.compute()
             lr.bss_loadings = lr.bss_loadings.compute()
 
-    def _auto_reverse_bss_component(self, target, reverse_component_criterion):
-        n_components = target.bss_factors.shape[1]
+    def _auto_reverse_bss_component(self, reverse_component_criterion):
+        n_components = self.learning_results.bss_factors.shape[1]
         for i in range(n_components):
-            if reverse_component_criterion == 'factor':
-                values = target.bss_factors
+            if reverse_component_criterion == 'factors':
+                values = self.learning_results.bss_factors
+            elif reverse_component_criterion == 'loadings':
+                values = self.learning_results.bss_loadings
             else:
-                values = target.bss_loading
+                raise ValueError("`reverse_component_criterion` can take only "
+                                 "`factor` or `loading` as parameter.")
             minimum = np.nanmin(values[:, i])
             maximum = np.nanmax(values[:, i])
             if minimum < 0 and -minimum > maximum:
