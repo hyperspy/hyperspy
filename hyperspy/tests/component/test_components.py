@@ -24,9 +24,37 @@ import pytest
 import hyperspy.api as hs
 from hyperspy.models.model1d import Model1D
 from hyperspy.misc.test_utils import ignore_warning
+from hyperspy import components1d
 
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
+
+
+def get_components1d_list():
+    components1d_list = [c_name for c_name in
+                         dir(components1d) if '_' not in c_name]
+    # Remove EELSCLEdge, since it is tested elsewhere more appropriate
+    components1d_list.remove('EELSCLEdge')
+    return components1d_list
+
+
+@pytest.mark.parametrize('component_name', get_components1d_list())
+def test_creation_components1d(component_name):
+    s = hs.signals.Signal1D(np.zeros(1024))
+    s.axes_manager[0].offset = 100
+    s.axes_manager[0].scale = 0.01
+
+    kwargs = {}
+    if component_name == 'ScalableFixedPattern':
+        kwargs['signal1D'] = s
+    elif component_name == 'Expression':
+        kwargs.update({'expression':"a*x+b", "name":"linear"})
+
+    component = hs.model.components1D.__dict__[component_name](**kwargs)
+    component.function(np.arange(1, 100))
+
+    m = s.create_model()
+    m.append(component)
 
 
 class TestPowerLaw:
@@ -66,6 +94,7 @@ class TestPowerLaw:
         g = hs.model.components1D.PowerLaw()
         s2 = hs.signals.EDSTEMSpectrum(self.s.data)
         g.estimate_parameters(s2, None, None)
+
 
 class TestDoublePowerLaw:
 
