@@ -28,19 +28,19 @@ _logger = logging.getLogger(__name__)
 
 class PowerLaw(Expression):
 
-    """Power law component.
+    r"""Power law component.
     
     .. math::
     
-      f(x) = A\\cdot(x-x_0)^{-r}
+      f(x) = A\cdot(x-x_0)^{-r}
       
-    ================= ===========
-     Variable          Parameter
-    ================= ===========
-     :math:`A`         A
-     :math:`x_0`       origin
-     :math:`r`         r
-    ================= ===========
+    ============= =============
+     Variable      Parameter
+    ============= =============
+     :math:`A`     A
+     :math:`x_0`   origin
+     :math:`r`     r
+    ============= =============
 
     Parameters
     -----------
@@ -108,7 +108,6 @@ class PowerLaw(Expression):
         x2 : float
             Defines the right limit of the spectral range to use for the
             estimation.
-
         only_current : bool
             If False, estimates the parameters for the full dataset.
         out : bool

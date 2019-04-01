@@ -20,18 +20,18 @@ from hyperspy._components.expression import Expression
 
 class Exponential(Expression):
 
-    """Exponential function component
+    r"""Exponential function component.
 
     .. math::
     
-        f(x) = A\\cdot\\exp\\left(-\\frac{x}{\\tau}\\right)
+        f(x) = A\cdot\exp\left(-\frac{x}{\tau}\right)
 
-    ================= ===========
-     Variable          Parameter 
-    ================= ===========
-     :math:`A`         A     
-     :math:`\\tau`     tau    
-    ================= ===========
+    ============= =============
+    Variable       Parameter 
+    ============= =============
+    :math:`A`      A     
+    :math:`\tau`   tau    
+    ============= =============
 
     Parameters
     -----------

@@ -68,24 +68,24 @@ def _estimate_gaussian_parameters(signal, x1, x2, only_current):
 
 class Gaussian(Expression):
 
-    """Normalized Gaussian function component.
+    r"""Normalized Gaussian function component.
 
     .. math::
 
-        f(x) = \\frac{A}{\\sigma \\sqrt{2\\pi}}\\exp\\left[-\\frac{\\left(x-x_0\\right)^{2}}{2\\sigma^{2}}\\right]
+        f(x) = \frac{A}{\sigma \sqrt{2\pi}}\exp\left[-\frac{\left(x-x_0\right)^{2}}{2\sigma^{2}}\right]
 
-    ================= ===========
-     Variable          Parameter
-    ================= ===========
-     :math:`A`         A
-     :math:`\\sigma`   sigma
-     :math:`x_0`       centre
-    ================= ===========
+    ============== ===========
+    Variable         Parameter
+    ============== ===========
+    :math:`A`        A
+    :math:`\sigma`  sigma
+    :math:`x_0`      centre
+    ============== ===========
 
     Parameters
     -----------
         A : float
-            Height scaled by :math:`\\sigma\\sqrt{(2\\pi)}`. ``GaussianHF`` implements the Gaussian function with a height parameter corresponding to the peak height.
+            Height scaled by :math:`\sigma\sqrt{(2\pi)}`. ``GaussianHF`` implements the Gaussian function with a height parameter corresponding to the peak height.
         sigma : float
             Scale parameter of the Gaussian distribution. 
         centre : float
