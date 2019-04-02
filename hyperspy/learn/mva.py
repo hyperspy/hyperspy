@@ -129,7 +129,7 @@ class MVA():
         auto_transpose : bool
             If True, automatically transposes the data to boost performance.
             Only has effect when using the svd of fast_svd algorithms.
-        navigation_mask : boolean numpy array
+        navigation_mask : boolean numpy array or BaseSignal
             The navigation locations marked as True are not used in the
             decompostion.
         signal_mask : boolean numpy array
@@ -159,6 +159,8 @@ class MVA():
         plot_decomposition_factors, plot_decomposition_loadings, plot_lev
 
         """
+        from hyperspy.signal import BaseSignal
+
         to_return = None
         # Check if it is the wrong data type
         if self.data.dtype.char not in ['e', 'f', 'd']:  # If not float
@@ -199,6 +201,9 @@ class MVA():
         # Transform the data in a line spectrum
         self._unfolded4decomposition = self.unfold()
         try:
+            if isinstance(navigation_mask, BaseSignal):
+                self._check_navigation_mask(mask=navigation_mask)
+                navigation_mask = navigation_mask.data
             if hasattr(navigation_mask, 'ravel'):
                 navigation_mask = navigation_mask.ravel()
 
