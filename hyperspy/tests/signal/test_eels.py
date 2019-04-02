@@ -249,6 +249,7 @@ class TestFourierRatioDeconvolution:
                                       extrapolate_lowloss=extrapolate_lowloss)
 
 
+@lazifyTestClass
 class TestRebin:
     def setup_method(self, method):
         # Create an empty spectrum
@@ -285,3 +286,29 @@ class TestRebin:
         assert s2.axes_manager[0].offset == 1.5
         assert s2.axes_manager[1].offset == 2.5
         assert s2.axes_manager[2].offset == s.axes_manager[2].offset
+
+
+@lazifyTestClass
+class TestVacuumMask:
+
+    def setup_method(self, method):
+        s = signals.EELSSpectrum(np.array([np.linspace(0.001, 0.5, 20)] * 100).T)
+        np.random.seed(0)  # Same random every time
+        s.add_poissonian_noise()
+        s.inav[:10] += 20
+        self.signal = s
+
+    def test_vacuum_mask(self):
+        s = self.signal
+        assert not s.vacuum_mask().data[0]
+        assert not s.vacuum_mask().data[9]
+        assert s.vacuum_mask().data[10]
+        assert s.vacuum_mask().data[-1]
+
+    def test_vacuum_mask_threshold(self):
+        s = self.signal
+        assert s.vacuum_mask(threshold=20).data[0]
+        assert not s.vacuum_mask(threshold=20).data[1]
+        assert not s.vacuum_mask(threshold=20).data[9]
+        assert s.vacuum_mask(threshold=20).data[10]
+        assert s.vacuum_mask(threshold=20).data[-1]
