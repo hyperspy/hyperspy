@@ -144,6 +144,9 @@ def rebin(a, new_shape=None, scale=None, crop=True):
     Notes
     -----
     Fast re_bin function Adapted from scipy cookbook
+    If rebin function fails with error stating that the function is 'not binned
+    and therefore cannot be rebinned', add binned to metadata with:
+    >>> s.metadata.Signal.binned = True
 
     """
     # Series of if statements to check that only one out of new_shape or scale
@@ -164,6 +167,10 @@ def rebin(a, new_shape=None, scale=None, crop=True):
     # check whether or not interpolation is needed.
     if _requires_linear_rebin(arr=a, scale=scale):
         _logger.debug("Using linear_bin")
+        if np.issubdtype(a.dtype, np.integer):
+            # The _linear_bin function below requires a float dtype
+            # because of the default numpy casting rule ('same_kind').
+            a = a.astype("float", casting="safe", copy=False)
         return _linear_bin(a, scale, crop)
     else:
         _logger.debug("Using standard rebin with lazy support")
@@ -194,7 +201,7 @@ def rebin(a, new_shape=None, scale=None, crop=True):
             try:
                 return da.coarsen(np.sum, a, {i: int(f)
                                               for i, f in enumerate(scale)})
-            # we provide slightly better error message in hypersy context
+            # we provide slightly better error message in hyperspy context
             except ValueError:
                 raise ValueError("Rebinning does not align with data dask chunks."
                                  " Rebin fewer dimensions at a time to avoid this"
@@ -283,10 +290,6 @@ def _linear_bin(dat, scale, crop=True):
     if not hasattr(_linear_bin_loop, "__numba__"):
         _logger.warning("Install numba to speed up the computation of `rebin`")
 
-    all_integer = np.all([isinstance(n, numbers.Integral) for n in scale])
-    dtype = (dat.dtype if (all_integer or "complex" in dat.dtype.name)
-             else "float")
-
     for axis, s in enumerate(scale):
         # For each iteration of linear_bin the axis being interated over has to
         # be switched to axis[0] in order to carry out the interation loop.
@@ -294,6 +297,9 @@ def _linear_bin(dat, scale, crop=True):
         # The new dimension size is old_size/step, this is rounded down normally
         # but if crop is switched off it is rounded up to the nearest whole
         # number.
+        if not np.issubdtype(s, np.floating):
+            s = float(s)
+
         dim = (math.floor(dat.shape[0] / s) if crop
                else math.ceil(dat.shape[0] / s))
         # check function wont bin to zero.
@@ -303,7 +309,7 @@ def _linear_bin(dat, scale, crop=True):
             avoid this.")
         # Set up the result np.array to have a new axis[0] size for after
         # cropping.
-        result = np.zeros((dim,) + dat.shape[1:], dtype=dtype)
+        result = np.zeros((dim,) + dat.shape[1:])
         # Carry out binning over axis[0]
         _linear_bin_loop(result=result, data=dat, scale=s)
         # Swap axis[0] back to the original axis location.

@@ -21,7 +21,7 @@ import math
 import numpy as np
 import dask.array as da
 
-from hyperspy.component import Component
+from hyperspy._components.expression import Expression
 
 sqrt2pi = math.sqrt(2 * math.pi)
 sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
@@ -49,7 +49,7 @@ def _estimate_gaussian_parameters(signal, x1, x2, only_current):
     if isinstance(data, da.Array):
         _sum = da.sum
         _sqrt = da.sqrt
-        _abs = da.numpy_compat.builtins.abs
+        _abs = abs
     else:
         _sum = np.sum
         _sqrt = np.sqrt
@@ -66,24 +66,14 @@ def _estimate_gaussian_parameters(signal, x1, x2, only_current):
         return centre, height, sigma
 
 
-class Gaussian(Component):
+class Gaussian(Expression):
 
     """Normalized gaussian function component
 
     .. math::
 
-        f(x) = \\frac{a}{\\sqrt{2\\pi c^{2}}}exp\\left[-\\frac{\\left(x-b\\right)^{2}}{2c^{2}}\\right]
+        f(x) = \\frac{A}{\\sqrt{2\\pi sigma^{2}}}exp\\left[-\\frac{\\left(x-centre\\right)^{2}}{2sigma^{2}}\\right]
 
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |     a      |     A     |
-    +------------+-----------+
-    |     b      |  centre   |
-    +------------+-----------+
-    |     c      |   sigma   |
-    +------------+-----------+
 
     For convenience the `fwhm` attribute can be used to get and set
     the full-with-half-maximum.
@@ -94,49 +84,27 @@ class Gaussian(Component):
 
     """
 
-    def __init__(self, A=1., sigma=1., centre=0.):
-        Component.__init__(self, ['A', 'sigma', 'centre'])
-        self.A.value = A
-        self.sigma.value = sigma
-        self.centre.value = centre
-        self._position = self.centre
+    def __init__(self, A=1., sigma=1., centre=0., module="numexpr", **kwargs):
+        super(Gaussian, self).__init__(
+            expression="A * (1 / (sigma * sqrt(2*pi))) * exp(-(x - centre)**2 / (2 * sigma**2))",
+            name="Gaussian",
+            A=A,
+            sigma=sigma,
+            centre=centre,
+            position="centre",
+            module=module,
+            autodoc=False,
+            **kwargs)
 
         # Boundaries
         self.A.bmin = 0.
         self.A.bmax = None
 
-        self.sigma.bmin = None
+        self.sigma.bmin = 0.
         self.sigma.bmax = None
 
         self.isbackground = False
         self.convolved = True
-
-        # Gradients
-        self.A.grad = self.grad_A
-        self.sigma.grad = self.grad_sigma
-        self.centre.grad = self.grad_centre
-
-    def function(self, x):
-        A = self.A.value
-        s = self.sigma.value
-        c = self.centre.value
-        return A * (1 / (s * sqrt2pi)) * np.exp(-(x - c)**2 / (2 * s**2))
-
-    def grad_A(self, x):
-        return self.function(x) / self.A.value
-
-    def grad_sigma(self, x):
-        d2 = (x - self.centre.value)**2
-        s2 = self.sigma.value**2
-        A = self.A.value
-        return (d2 * A * np.exp(-d2 / (2 * s2))) / (sqrt2pi * s2**2) - \
-            (np.exp(-d2 / (2 * s2)) * A) / (sqrt2pi * s2)
-
-    def grad_centre(self, x):
-        d = x - self.centre.value
-        s = self.sigma.value
-        A = self.A.value
-        return (d * np.exp(-d**2 / (2 * s**2)) * A) / (sqrt2pi * s**3)
 
     def estimate_parameters(self, signal, x1, x2, only_current=False):
         """Estimate the gaussian by calculating the momenta.
@@ -176,7 +144,6 @@ class Gaussian(Component):
 
         """
         super(Gaussian, self)._estimate_parameters(signal)
-        binned = signal.metadata.Signal.binned
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,
                                                               only_current)
@@ -184,7 +151,7 @@ class Gaussian(Component):
             self.centre.value = centre
             self.sigma.value = sigma
             self.A.value = height * sigma * sqrt2pi
-            if binned is True:
+            if self.binned:
                 self.A.value /= axis.scale
             return True
         else:
@@ -192,7 +159,7 @@ class Gaussian(Component):
                 self._create_arrays()
             self.A.map['values'][:] = height * sigma * sqrt2pi
 
-            if binned is True:
+            if self.binned:
                 self.A.map['values'] /= axis.scale
             self.A.map['is_set'][:] = True
             self.sigma.map['values'][:] = sigma

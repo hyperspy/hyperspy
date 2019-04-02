@@ -381,8 +381,8 @@ def dasky_scotts_bin_width(data, return_bins=True):
 
     See Also
     --------
-    knuth_bin_width, 
-    freedman_bin_width, 
+    knuth_bin_width,
+    freedman_bin_width,
     astroML.plotting.hist
     """
     if not isinstance(data, da.Array):

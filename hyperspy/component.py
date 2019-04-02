@@ -1106,6 +1106,7 @@ class Component(t.HasTraits):
             _parameter.free = False
 
     def _estimate_parameters(self, signal):
+        self.binned = signal.metadata.Signal.binned
         if self._axes_manager != signal.axes_manager:
             self._axes_manager = signal.axes_manager
             self._create_arrays()
@@ -1135,6 +1136,10 @@ class Component(t.HasTraits):
             'parameters': [
                 p.as_dictionary(fullcopy) for p in self.parameters]}
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
+        from hyperspy.model import components
+        if self._id_name not in components.__dict__.keys():
+            import dill
+            dic['_class_dump'] = dill.dumps(self.__class__)
         return dic
 
     def _load_dictionary(self, dic):
