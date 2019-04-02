@@ -791,7 +791,7 @@ class EELSSpectrum_mixin:
                 'after_fourier_ratio_deconvolution')
         return cl
 
-    def richardson_lucy_deconvolution(self, psf, iterations=15, mask=None,
+    def richardson_lucy_deconvolution(self, psf, iterations=15,
                                       show_progressbar=None,
                                       parallel=None):
         """1D Richardson-Lucy Poissonian deconvolution of
@@ -799,17 +799,17 @@ class EELSSpectrum_mixin:
 
         Parameters
         ----------
-        iterations: int
-            Number of iterations of the deconvolution. Note that
-            increasing the value will increase the noise amplification.
-        psf: EELSSpectrum
+        psf : EELSSpectrum
             It must have the same signal dimension as the current
             spectrum and a spatial dimension of 0 or the same as the
             current spectrum.
+        iterations : int
+            Number of iterations of the deconvolution. Note that
+            increasing the value will increase the noise amplification.
         show_progressbar : None or bool
             If True, display a progress bar. If None the default is set in
             `preferences`.
-        parallel : {None,bool,int}
+        parallel : {None, bool, int}
             if True, the deconvolution will be performed in a threaded (parallel)
             manner.
 
@@ -825,8 +825,6 @@ class EELSSpectrum_mixin:
             show_progressbar = preferences.General.show_progressbar
         self._check_signal_dimension_equals_one()
         psf_size = psf.axes_manager.signal_axes[0].size
-        kernel = psf()
-        imax = kernel.argmax()
         maxval = self.axes_manager.navigation_size
         show_progressbar = show_progressbar and (maxval > 0)
 
@@ -840,6 +838,7 @@ class EELSSpectrum_mixin:
                 result *= np.convolve(kernel[::-1], signal /
                                       first)[mimax:mimax + psf_size]
             return result
+
         ds = self.map(deconv_function, kernel=psf, iterations=iterations,
                       psf_size=psf_size, show_progressbar=show_progressbar,
                       parallel=parallel, ragged=False, inplace=False)
@@ -896,29 +895,30 @@ class EELSSpectrum_mixin:
                 "Acquisition_instrument.TEM.Detector.EELS.collection_angle",
                 collection_angle)
     set_microscope_parameters.__doc__ = \
-        """
-        Set the microscope parameters that are necessary to calculate
-        the GOS.
+"""
+Set the microscope parameters that are necessary to calculate
+the GOS. If not all of them are defined, in interactive mode
+raises an UI item to fill the values.
 
-        If not all of them are defined, in interactive mode
-        raises an UI item to fill the values
+Parameters
+----------
 
-        beam_energy: float
-            The energy of the electron beam in keV
-        convengence_angle : float
-            The microscope convergence semi-angle in mrad.
-        collection_angle : float
-            The collection semi-angle in mrad.
-        {}
-        {}
-        """.format(TOOLKIT_DT, DISPLAY_DT)
+beam_energy:  float
+    The energy of the electron beam in keV.
+convengence_angle : float
+    The microscope convergence semi-angle in mrad.
+collection_angle : float
+    The collection semi-angle in mrad.
+{}
+{}
+""".format(TOOLKIT_DT, DISPLAY_DT)
 
     def power_law_extrapolation(self,
                                 window_size=20,
                                 extrapolation_size=1024,
                                 add_noise=False,
                                 fix_neg_r=False):
-        """Extrapolate the spectrum to the right using a powerlaw
+        """Extrapolate the spectrum to the right using a powerlaw.
 
 
         Parameters

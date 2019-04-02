@@ -3696,7 +3696,7 @@ class BaseSignal(FancySlicing,
             choice is made while processing. None is not allowed for Lazy
             signals!
         keyword arguments : any valid keyword argument
-            All extra keyword arguments are passed to the
+            All extra keyword arguments are passed to the function.
 
         Notes
         -----
