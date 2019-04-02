@@ -24,7 +24,7 @@ import dask.array as da
 import traits.api as t
 from scipy import constants
 
-from hyperspy.signal import BaseSetMetadataItems
+from hyperspy.signal import BaseSetMetadataItems, BaseSignal
 from hyperspy._signals.signal1d import (Signal1D, LazySignal1D)
 from hyperspy.misc.elements import elements as elements_db
 import hyperspy.axes
@@ -162,10 +162,10 @@ class EELSSpectrum_mixin:
 
         Parameters
         ----------
-        mask : Signal1D of bool data type.
+        mask : Signal1D of bool data type or bool array
             It must have signal_dimension = 0 and navigation_shape equal to the
-            current signal. Where mask is True the shift is not computed
-            and set to nan.
+            navigation shape of the current signal. Where mask is True the 
+            shift is not computed and set to nan.
 
         Returns
         -------
@@ -186,12 +186,14 @@ class EELSSpectrum_mixin:
         """
         self._check_signal_dimension_equals_one()
         self._check_navigation_mask(mask)
+        if isinstance(mask, BaseSignal):
+            mask = mask.data
         zlpc = self.valuemax(-1)
         if mask is not None:
             if zlpc._lazy:
-                zlpc.data = da.where(mask.data, np.nan, zlpc.data)
+                zlpc.data = da.where(mask, np.nan, zlpc.data)
             else:
-                zlpc.data[mask.data] = np.nan
+                zlpc.data[mask] = np.nan
         zlpc.set_signal_type("")
         title = self.metadata.General.title
         zlpc.metadata.General.title = "ZLP(%s)" % title
@@ -231,10 +233,10 @@ class EELSSpectrum_mixin:
         subpixel : bool
             If True, perform the alignment with subpixel accuracy
             using cross-correlation.
-        mask : Signal1D of bool data type.
-            It must have signal_dimension = 0 and navigation_shape equal to the
-            current signal. Where mask is True the shift is not computed
-            and set to nan.
+        mask : Signal1D of bool data type or bool array.
+            It must have signal_dimension = 0 and navigation_shape equal to 
+            the shape of the current signal. Where mask is True the shift is 
+            not computed and set to nan.
         signal_range : tuple of integers, tuple of floats. Optional
             Will only search for the ZLP within the signal_range. If given
             in integers, the range will be in index values. If given floats,

@@ -336,10 +336,10 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         Parameters
         ----------
-        signal_mask: boolean array
+        signal_mask: boolean array of signal of bool
             Restricts the operation to the signal locations not marked
             as True (masked)
-        navigation_mask: boolean array
+        navigation_mask: boolean array of signal of bool
             Restricts the operation to the navigation locations not
             marked as True (masked)
 
@@ -349,6 +349,12 @@ class Signal1D(BaseSignal, CommonSignal1D):
 
         """
         self._check_signal_dimension_equals_one()
+        self._check_signal_mask(signal_mask)
+        if isinstance(signal_mask, BaseSignal):
+            signal_mask = signal_mask.data
+        self._check_navigation_mask(navigation_mask)
+        if isinstance(navigation_mask, BaseSignal):
+            navigation_mask = navigation_mask.data
         sr = SpikesRemoval(self,
                            navigation_mask=navigation_mask,
                            signal_mask=signal_mask)

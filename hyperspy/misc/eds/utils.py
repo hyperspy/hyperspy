@@ -363,7 +363,7 @@ def quantification_cliff_lorimer(intensities,
     kfactors: list of float
         The list of kfactor in same order as intensities eg. kfactors =
         [1, 1.47, 1.72] for ['Al_Ka','Cr_Ka', 'Ni_Ka']
-    mask: array of bool
+    mask: array of bool of signal of bool
         The mask with the dimension of intensities[0]. If a pixel is True,
         the composition is set to zero.
 
@@ -391,6 +391,9 @@ def quantification_cliff_lorimer(intensities,
                     intens[index[0], i] = 1.
         intens = intens.reshape(dim)
         if mask is not None:
+            from hyperspy.signals import BaseSignal 
+            if isinstance(mask, BaseSignal):
+                mask = mask.data
             for i in range(dim[0]):
                 intens[i][mask] = 0
         return intens

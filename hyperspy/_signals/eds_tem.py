@@ -437,6 +437,11 @@ class EDSTEM_mixin:
         opnening: bool
             If true, applied a morphologic opening to the mask
 
+        Return
+        ------
+        mask: signal
+            The mask of the region
+
         Examples
         --------
         >>> # Simulate a spectrum image with vacuum region
@@ -447,11 +452,6 @@ class EDSTEM_mixin:
         >>> si = hs.stack([s]*3 + [s_vac])
         >>> si.vacuum_mask().data
         array([False, False, False,  True], dtype=bool)
-
-        Return
-        ------
-        mask: signal
-            The mask of the region
         """
         from scipy.ndimage.morphology import binary_dilation, binary_erosion
         mask = (self.max(-1) <= threshold)
