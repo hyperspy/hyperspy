@@ -21,8 +21,6 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 from hyperspy.components1d import Lorentzian
-from hyperspy.signals import Signal1D
-from hyperspy.utils import stack
 
 
 def test_function():
