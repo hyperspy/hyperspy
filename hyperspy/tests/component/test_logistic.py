@@ -21,9 +21,6 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 from hyperspy.components1d import Logistic
-from hyperspy.signals import Signal1D
-from hyperspy.utils import stack
-
 
 def test_function():
     g = Logistic()
@@ -31,6 +28,6 @@ def test_function():
     g.b.value = 2
     g.c.value = 3
     g.origin.value = 4
-    assert_allclose(g.function(2),1.5)
-    assert_allclose(g.function(4),0.3)
-
+    assert_allclose(g.function(10),1)
+    assert_allclose(g.function(4),1/3)
+    assert_allclose(g.function(0),3.07209674e-06)
