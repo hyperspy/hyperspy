@@ -24,7 +24,7 @@ from hyperspy.drawing.widgets import Widget1DBase
 
 class LabelWidget(Widget1DBase):
 
-    """A draggable text widget. Adds the attributes 'string' and 'bbox'. 
+    """A draggable text widget. Adds the attributes 'string' and 'bbox'.
     These are all arguments for matplotlib's Text artist. The default
     y-coordinate of the label is set to 0.9.
     """

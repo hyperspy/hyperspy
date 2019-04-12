@@ -9,12 +9,15 @@ from hyperspy._signals.lazy import (_reshuffle_mixed_blocks,
 from hyperspy import _lazy_signals
 
 
-@pytest.fixture
-def signal():
+def _signal():
     ar = da.from_array(np.arange(6. * 9 * 7 * 11).reshape((6, 9, 7, 11)),
                        chunks=((2, 1, 3), (4, 5), (7,), (11,))
                        )
     return _lazy_signals.LazySignal2D(ar)
+
+@pytest.fixture
+def signal():
+    return _signal()
 
 
 @pytest.mark.parametrize("sl", [(0, 0),
@@ -84,17 +87,17 @@ def test_blockiter_bothmasks(signal, flat, dtype, nm, sm):
     np.testing.assert_allclose(second_block, real_second)
 
 
-@pytest.mark.parametrize('sig', [signal(),
-                                 signal().data,
-                                 signal().data.compute()])
+@pytest.mark.parametrize('sig', [_signal(),
+                                 _signal().data,
+                                 _signal().data.compute()])
 def test_as_array_numpy(sig):
     thing = to_array(sig, chunks=None)
     assert isinstance(thing, np.ndarray)
 
 
-@pytest.mark.parametrize('sig', [signal(),
-                                 signal().data,
-                                 signal().data.compute()])
+@pytest.mark.parametrize('sig', [_signal(),
+                                 _signal().data,
+                                 _signal().data.compute()])
 def test_as_array_dask(sig):
     chunks = ((6,), (9,), (7,), (11,))
     thing = to_array(sig, chunks=chunks)

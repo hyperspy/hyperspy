@@ -10,15 +10,15 @@ from hyperspy.io import load
 from hyperspy import signals
 from hyperspy.misc.test_utils import assert_deep_almost_equal
 
-test_files = ['P45_instructively_packed_16bit_compressed.bcf',
-              'P45_12bit_packed_8bit.bcf',
+test_files = ['30x30_instructively_packed_16bit_compressed.bcf',
+              '16x16_12bit_packed_8bit.bcf',
               'P45_the_default_job.bcf',
               'test_TEM.bcf',
               'Hitachi_TM3030Plus.bcf',
               'over16bit.bcf',
               'bcf_v2_50x50px.bcf',
               'bcf-edx-ebsd.bcf']
-np_file = ['P45_16bit.npy', 'P45_16bit_ds.npy']
+np_file = ['30x30_16bit.npy', '30x30_16bit_ds.npy']
 spx_files = ['extracted_from_bcf.spx',
              'bruker_nano.spx']
 
@@ -32,31 +32,29 @@ def test_load_16bit():
     filename = os.path.join(my_path, 'bruker_data', test_files[0])
     print('testing bcf instructively packed 16bit...')
     s = load(filename)
-    bse, sei, hype = s
+    bse, hype = s
     # Bruker saves all images in true 16bit:
     assert bse.data.dtype == np.uint16
-    assert sei.data.dtype == np.uint16
-    assert bse.data.shape == (75, 100)
+    assert bse.data.shape == (30, 30)
     np_filename = os.path.join(my_path, 'bruker_data', np_file[0])
-    np.testing.assert_array_equal(hype.data[:22, :22, 222],
+    np.testing.assert_array_equal(hype.data[:, :, 222:224],
                                   np.load(np_filename))
-    assert hype.data.shape == (75, 100, 2048)
+    assert hype.data.shape == (30, 30, 2048)
 
 
 def test_load_16bit_reduced():
     filename = os.path.join(my_path, 'bruker_data', test_files[0])
     print('testing downsampled 16bit bcf...')
     s = load(filename, downsample=4, cutoff_at_kV=10)
-    bse, sei, hype = s
-    # sem images never are downsampled
-    assert bse.data.shape == (75, 100)
+    bse, hype = s
+    # sem images are never downsampled
+    assert bse.data.shape == (30, 30)
     np_filename = os.path.join(my_path, 'bruker_data', np_file[1])
-    np.testing.assert_array_equal(hype.data[:2, :2, 222],
+    np.testing.assert_array_equal(hype.data[:, :, 222:224],
                                   np.load(np_filename))
-    assert hype.data.shape == (19, 25, 1047)
+    assert hype.data.shape == (8, 8, 1047)
     # Bruker saves all images in true 16bit:
     assert bse.data.dtype == np.uint16
-    assert sei.data.dtype == np.uint16
     # hypermaps should always return unsigned integers:
     assert str(hype.data.dtype)[0] == 'u'
 
@@ -66,10 +64,9 @@ def test_load_8bit():
         filename = os.path.join(my_path, 'bruker_data', bcffile)
         print('testing simple 8bit bcf...')
         s = load(filename)
-        bse, sei, hype = s
+        bse, hype = s[0], s[-1]
         # Bruker saves all images in true 16bit:
         assert bse.data.dtype == np.uint16
-        assert sei.data.dtype == np.uint16
         # hypermaps should always return unsigned integers:
         assert str(hype.data.dtype)[0] == 'u'
 
@@ -83,56 +80,69 @@ def test_hyperspy_wrap():
     hype = load(filename, select_type='spectrum_image')
     assert_allclose(
         hype.axes_manager[0].scale,
-        8.7367850619778,
+        1.66740910949362,
         atol=1E-12)
     assert_allclose(
         hype.axes_manager[1].scale,
-        8.7367850619778,
+        1.66740910949362,
         atol=1E-12)
     assert hype.axes_manager[1].units == 'µm'
-    assert_allclose(hype.axes_manager[2].scale, 0.010001)
-    assert_allclose(hype.axes_manager[2].offset, -0.472397235)
+    assert_allclose(hype.axes_manager[2].scale, 0.009999)
+    assert_allclose(hype.axes_manager[2].offset, -0.47225277)
     assert hype.axes_manager[2].units == 'keV'
 
-    md_ref = {'_HyperSpy': {'Folding': {'original_shape': None,
-                                        'unfolded': False,
-                                        'original_axes_manager': None,
-                                        'signal_unfolded': False}},
-              'Sample': {'xray_lines': ['Al_Ka', 'Ca_Ka', 'Cl_Ka', 'Fe_Ka', 'K_Ka', 'Mg_Ka', 'Na_Ka', 'O_Ka', 'P_Ka', 'Si_Ka', 'Ti_Ka'],
-                         'elements': ['Al', 'Ca', 'Cl', 'Fe', 'K', 'Mg', 'Na', 'O', 'P', 'Si', 'Ti'],
-                         'name': 'Map data 232'},
-              'Acquisition_instrument': {'SEM': {'beam_energy': 20.0,
-                                                 'Detector': {'EDS': {'detector_type': 'XFlash 6|10',
-                                                                      'energy_resolution_MnKa': 130.0,
-                                                                      'elevation_angle': 35.0,
-                                                                      'azimuth_angle': 90.0,
-                                                                      'real_time': 328.8}},
-                                                 'magnification': 131.1433,
-                                                 'Stage': {'tilt_alpha': 0.5,
-                                                           'rotation': 329.49719,
-                                                           'x': 62409.2,
-                                                           'y': 36517.61,
-                                                           'z': 40234.7}}, },
-              'General': {'title': 'EDX',
-                          'time': '17:05:03',
-                          'original_filename': 'P45_instructively_packed_16bit_compressed.bcf',
-                          'date': '2016-04-01'},
-              'Signal': {'binned': True,
-                         'quantity': 'X-rays (Counts)',
-                         'signal_type': 'EDS_SEM'}}
+    md_ref = {
+        'Acquisition_instrument': {
+            'SEM': {
+                'beam_energy': 20,
+                'magnification': 1819.22595,
+                'Detector': {
+                    'EDS': {
+                        'elevation_angle': 35.0,
+                        'detector_type': 'XFlash 6|10',
+                        'azimuth_angle': 90.0,
+                        'real_time': 70.07298,
+                        'energy_resolution_MnKa': 130.0}},
+            'Stage': {
+                'tilt_alpha': 0.0,
+                'rotation': 326.10089,
+                'x': 66940.81,
+                'y': 54233.16,
+                'z': 39194.77}}},
+        'General': {
+            'original_filename':
+                '30x30_instructively_packed_16bit_compressed.bcf',
+            'title': 'EDX',
+            'date': '2018-10-04',
+            'time': '13:02:07'},
+        'Sample': {
+            'name': 'chevkinite',
+            'elements': ['Al', 'C', 'Ca', 'Ce', 'Fe', 'Gd', 'K', 'Mg', 'Na',
+                         'Nd', 'O', 'P', 'Si', 'Sm', 'Th', 'Ti'],
+            'xray_lines': ['Al_Ka', 'C_Ka', 'Ca_Ka', 'Ce_La', 'Fe_Ka',
+                           'Gd_La', 'K_Ka', 'Mg_Ka', 'Na_Ka', 'Nd_La',
+                           'O_Ka', 'P_Ka', 'Si_Ka', 'Sm_La', 'Th_Ma',
+                           'Ti_Ka']},
+        'Signal': {
+            'binned': True,
+            'quantity': 'X-rays (Counts)',
+            'signal_type': 'EDS_SEM'},
+        '_HyperSpy': {
+            'Folding': {'original_axes_manager': None,
+            'original_shape': None,
+            'signal_unfolded': False,
+            'unfolded': False}}}
 
-    md_ref['General']['original_filename'] = hype.metadata.General.original_filename
     filename_omd = os.path.join(my_path,
                                 'bruker_data',
-                                'test_original_metadata.json')
+                                '30x30_original_metadata.json')
     with open(filename_omd) as fn:
         # original_metadata:
         omd_ref = json.load(fn)
-    print(hype.metadata)
     assert_deep_almost_equal(hype.metadata.as_dictionary(), md_ref)
     assert_deep_almost_equal(hype.original_metadata.as_dictionary(), omd_ref)
-    assert hype.metadata.General.date == "2016-04-01"
-    assert hype.metadata.General.time == "17:05:03"
+    assert hype.metadata.General.date == "2018-10-04"
+    assert hype.metadata.General.time == "13:02:07"
     assert hype.metadata.Signal.quantity == "X-rays (Counts)"
 
 
@@ -142,11 +152,11 @@ def test_hyperspy_wrap_downsampled():
     hype = load(filename, select_type='spectrum_image', downsample=5)
     assert_allclose(
         hype.axes_manager[0].scale,
-        43.683925309889,
+        8.337045547468101,
         atol=1E-12)
     assert_allclose(
         hype.axes_manager[1].scale,
-        43.683925309889,
+        8.337045547468101,
         atol=1E-12)
     assert hype.axes_manager[1].units == 'µm'
 

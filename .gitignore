@@ -24,6 +24,7 @@ data/octave-core
 .spyderproject
 doc/_build/*
 doc/.build/*
+doc/api/*
 doc/user_guide/_build/*
 doc/user_guide/.build/*
 setup/windows/requires/*
@@ -42,3 +43,10 @@ hyperspy/io_plugins/unbcf_fast.c
 hyperspy/misc/etc/test_compilers.obj
 /.cache/
 /.spyproject/
+
+### Code ###
+# Visual Studio Code - https://code.visualstudio.com/
+.settings/
+.vscode/
+tsconfig.json
+jsconfig.json

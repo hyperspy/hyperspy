@@ -75,9 +75,14 @@ class SpanSelectorInSignal1D(t.HasTraits):
     def update_span_selector_traits(self, *args, **kwargs):
         if not self.signal._plot.is_active:
             return
-        self.ss_left_value = self.span_selector.rect.get_x()
-        self.ss_right_value = self.ss_left_value + \
-            self.span_selector.rect.get_width()
+        x0 = self.span_selector.rect.get_x()
+        if x0 < self.axis.low_value:
+            x0 = self.axis.low_value
+        self.ss_left_value = x0
+        x1 = self.ss_left_value + self.span_selector.rect.get_width()
+        if x1 > self.axis.high_value:
+            x1 = self.axis.high_value
+        self.ss_right_value = x1
 
     def reset_span_selector(self):
         self.span_selector_switch(False)
@@ -211,12 +216,12 @@ class Signal1DCalibration(SpanSelectorInSignal1D):
 
     def apply(self):
         if np.isnan(self.ss_left_value) or np.isnan(self.ss_right_value):
-            _logger.warn("Select a range by clicking on the signal figure "
-                         "and dragging before pressing Apply.")
+            _logger.warning("Select a range by clicking on the signal figure "
+                            "and dragging before pressing Apply.")
             return
         elif self.left_value is t.Undefined or self.right_value is t.Undefined:
-            _logger.warn("Select the new left and right values before "
-                         "pressing apply.")
+            _logger.warning("Select the new left and right values before "
+                            "pressing apply.")
             return
         axis = self.axis
         axis.scale = self.scale
@@ -387,13 +392,13 @@ class SmoothingSavitzkyGolay(Smoothing):
         if nwl > self.polynomial_order:
             self.window_length = nwl
         else:
-            _logger.warn(
+            _logger.warning(
                 "The window length must be greater than the polynomial order")
 
     def _polynomial_order_changed(self, old, new):
         if self.window_length <= new:
             self.window_length = new + 2 if new % 2 else new + 1
-            _logger.warn(
+            _logger.warning(
                 "Polynomial order must be < window length. "
                 "Window length set to %i.", self.window_length)
         self.update_lines()
@@ -404,7 +409,7 @@ class SmoothingSavitzkyGolay(Smoothing):
     def _differential_order_changed(self, old, new):
         if new > self.polynomial_order:
             self.polynomial_order += 1
-            _logger.warn(
+            _logger.warning(
                 "Differential order must be <= polynomial order. "
                 "Polynomial order set to %i.", self.polynomial_order)
         super(
@@ -648,7 +653,14 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
     fast = t.Bool(True,
                   desc=("Perform a fast (analytic, but possibly less accurate)"
                         " estimation of the background. Otherwise use "
-                        "non-linear least squares."))
+                        "use non-linear least squares."))
+    zero_fill = t.Bool(
+        False,
+        desc=("Set all spectral channels lower than the lower \n"
+              "bound of the fitting range to zero (this is the \n"
+              "default behavior of Gatan's DigitalMicrograph). \n"
+              "Otherwise leave the pre-fitting region as-is \n"
+              "(useful for inspecting quality of background fit)."))
     background_estimator = t.Instance(Component)
     bg_line_range = t.Enum('from_left_range',
                            'full',
@@ -657,7 +669,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
     hi = t.Int(0)
 
     def __init__(self, signal, background_type='Power Law', polynomial_order=2,
-                 fast=True, show_progressbar=None):
+                 fast=True, plot_remainder=True, zero_fill=False,
+                 show_progressbar=None):
         super(BackgroundRemoval, self).__init__(signal)
         # setting the polynomial order will change the backgroud_type to
         # polynomial, so we set it before setting the background type
@@ -665,13 +678,19 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.background_type = background_type
         self.set_background_estimator()
         self.fast = fast
+        self.plot_remainder = plot_remainder
+        self.zero_fill = zero_fill
         self.show_progressbar = show_progressbar
         self.bg_line = None
+        self.rm_line = None
 
     def on_disabling_span_selector(self):
         if self.bg_line is not None:
             self.bg_line.close()
             self.bg_line = None
+        if self.rm_line is not None:
+            self.rm_line.close()
+            self.rm_line = None
 
     def set_background_estimator(self):
         if self.background_type == 'Power Law':
@@ -715,6 +734,17 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.bg_line.autoscale = False
         self.bg_line.plot()
 
+    def create_remainder_line(self):
+        self.rm_line = drawing.signal1d.Signal1DLine()
+        self.rm_line.data_function = self.rm_to_plot
+        self.rm_line.set_line_properties(
+            color='green',
+            type='line',
+            scaley=False)
+        self.signal._plot.signal_plot.add_line(self.rm_line)
+        self.rm_line.autoscale = False
+        self.rm_line.plot()
+
     def bg_to_plot(self, axes_manager=None, fill_with=np.nan):
         # First try to update the estimation
         self.background_estimator.estimate_parameters(
@@ -743,20 +773,30 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             to_return *= self.axis.scale
         return to_return
 
+    def rm_to_plot(self, axes_manager=None, fill_with=np.nan):
+        return self.signal() - self.bg_line.line.get_ydata()
+
     def span_selector_changed(self):
         if self.ss_left_value is np.nan or self.ss_right_value is np.nan or\
                 self.ss_right_value <= self.ss_left_value:
             return
         if self.background_estimator is None:
             return
-        if self.bg_line is None and \
-            self.background_estimator.estimate_parameters(
-                self.signal, self.ss_left_value,
-                self.ss_right_value,
-                only_current=True) is True:
-            self.create_background_line()
+        res = self.background_estimator.estimate_parameters(
+            self.signal, self.ss_left_value,
+            self.ss_right_value,
+            only_current=True)
+        if self.bg_line is None:
+            if res:
+                self.create_background_line()
         else:
             self.bg_line.update()
+        if self.plot_remainder:
+            if self.rm_line is None:
+                if res:
+                    self.create_remainder_line()
+            else:
+                self.rm_line.update()
 
     def apply(self):
         if self.signal._plot:
@@ -770,6 +810,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             signal_range=(self.ss_left_value, self.ss_right_value),
             background_type=background_type,
             fast=self.fast,
+            zero_fill=self.zero_fill,
             polynomial_order=self.polynomial_order,
             show_progressbar=self.show_progressbar)
         self.signal.data = new_spectra.data
@@ -920,14 +961,15 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self._reset_line()
         ncoordinates = len(self.coordinates)
         spike = self.detect_spike()
-        while not spike and (
-                (self.index < ncoordinates - 1 and back is False) or
-                (self.index > 0 and back is True)):
-            if back is False:
-                self.index += 1
-            else:
-                self.index -= 1
-            spike = self.detect_spike()
+        with self.signal.axes_manager.events.indices_changed.suppress():
+            while not spike and (
+                    (self.index < ncoordinates - 1 and back is False) or
+                    (self.index > 0 and back is True)):
+                if back is False:
+                    self.index += 1
+                else:
+                    self.index -= 1
+                spike = self.detect_spike()
 
         if spike is False:
             m = SimpleMessage()

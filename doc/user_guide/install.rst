@@ -128,10 +128,9 @@ Alternatively you can select the extra functionalities required:
 * ``gui-traitsui`` to install required libraries to use the GUI elements based
   on `traitsui <http://docs.enthought.com/traitsui/>`_
 * ``test`` to install required libraries to run HyperSpy's unit tests.
-* ``lazy_FEI_EMD`` to install required libraries to load FEI spectrum imgages
-  lazily.
-* ``mrcz-blosc`` to install the blosc library to use compression with the mrcz plugin.
+* ``mrcz`` to install the mrcz plugin.
 * ``doc`` to install required libraries to build HyperSpy's documentation.
+* ``speed`` install optional libraries that speed up some functionalities.
 
 For example:
 

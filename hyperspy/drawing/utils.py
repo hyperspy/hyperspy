@@ -20,14 +20,16 @@ import copy
 import itertools
 import textwrap
 from traits import trait_base
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-import warnings
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.backend_bases import key_press_handler
+import warnings
+import numpy as np
 import hyperspy as hs
 from distutils.version import LooseVersion
 import logging
+
 
 _logger = logging.getLogger(__name__)
 
@@ -106,6 +108,7 @@ def centre_colormap_values(vmin, vmax):
 
 def create_figure(window_title=None,
                   _on_figure_window_close=None,
+                  disable_xyscale_keys=False,
                   **kwargs):
     """Create a matplotlib figure.
 
@@ -117,6 +120,8 @@ def create_figure(window_title=None,
     ----------
     window_title : string
     _on_figure_window_close : function
+    disable_xyscale_keys : bool, disable the `k`, `l` and `L` shortcuts which
+    toggle the x or y axis between linear and log scale.
 
     Returns
     -------
@@ -129,15 +134,27 @@ def create_figure(window_title=None,
         # remove non-alphanumeric characters to prevent file saving problems
         # This is a workaround for:
         #   https://github.com/matplotlib/matplotlib/issues/9056
-        reserved_characters = '<>"/\|?*'
+        reserved_characters = r'<>"/\|?*'
         for c in reserved_characters:
             window_title = window_title.replace(c, '')
         window_title = window_title.replace('\n', ' ')
         window_title = window_title.replace(':', ' -')
         fig.canvas.set_window_title(window_title)
+    if disable_xyscale_keys and hasattr(fig.canvas, 'toolbar'):
+        # hack the `key_press_handler` to disable the `k`, `l`, `L` shortcuts
+        manager = fig.canvas.manager
+        fig.canvas.mpl_disconnect(manager.key_press_handler_id)
+        manager.key_press_handler_id = manager.canvas.mpl_connect(
+            'key_press_event',
+            lambda event: key_press_handler_custom(event, manager.canvas))
     if _on_figure_window_close is not None:
         on_figure_window_close(fig, _on_figure_window_close)
     return fig
+
+
+def key_press_handler_custom(event, canvas):
+    if event.key not in ['k', 'l', 'L']:
+        key_press_handler(event, canvas, canvas.manager.toolbar)
 
 
 def on_figure_window_close(figure, function):
@@ -1299,10 +1316,10 @@ def plot_spectra(
                            color=color,
                            line_style=line_style,)
         if legend is not None:
-            plt.legend(legend, loc=legend_loc)
+            ax.legend(legend, loc=legend_loc)
             _reverse_legend(ax, legend_loc)
             if legend_picking is True:
-                animate_legend(figure=fig)
+                animate_legend(fig=fig, ax=ax)
     elif style == 'cascade':
         if fig is None:
             fig = plt.figure(**kwargs)
@@ -1347,7 +1364,7 @@ def plot_spectra(
     return ax
 
 
-def animate_legend(figure='last'):
+def animate_legend(fig=None, ax=None):
     """Animate the legend of a figure.
 
     A spectrum can be toggle on and off by clicking on the legended line.
@@ -1355,8 +1372,10 @@ def animate_legend(figure='last'):
     Parameters
     ----------
 
-    figure: 'last' | matplotlib.figure
-        If 'last' pick the last figure
+    fig: None | matplotlib.figure
+        If None pick the current figure using "plt.gcf"
+    ax:  None | matplotlib.axes
+        If None pick the current axes using "plt.gca".
 
     Note
     ----
@@ -1364,11 +1383,10 @@ def animate_legend(figure='last'):
     Code inspired from legend_picking.py in the matplotlib gallery
 
     """
-    if figure == 'last':
-        figure = plt.gcf()
+    if fig is None:
+        fig = plt.gcf()
+    if ax is None:
         ax = plt.gca()
-    else:
-        ax = figure.axes[0]
     lines = ax.lines[::-1]
     lined = dict()
     leg = ax.get_legend()
@@ -1380,18 +1398,19 @@ def animate_legend(figure='last'):
         # on the pick event, find the orig line corresponding to the
         # legend proxy line, and toggle the visibility
         legline = event.artist
-        origline = lined[legline]
-        vis = not origline.get_visible()
-        origline.set_visible(vis)
-        # Change the alpha on the line in the legend so we can see what lines
-        # have been toggled
-        if vis:
-            legline.set_alpha(1.0)
-        else:
-            legline.set_alpha(0.2)
-        figure.canvas.draw_idle()
+        if legline.axes == ax:
+            origline = lined[legline]
+            vis = not origline.get_visible()
+            origline.set_visible(vis)
+            # Change the alpha on the line in the legend so we can see what lines
+            # have been toggled
+            if vis:
+                legline.set_alpha(1.0)
+            else:
+                legline.set_alpha(0.2)
+            fig.canvas.draw_idle()
 
-    figure.canvas.mpl_connect('pick_event', onpick)
+    fig.canvas.mpl_connect('pick_event', onpick)
 
 
 def plot_histograms(signal_list,
