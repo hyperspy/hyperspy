@@ -28,6 +28,7 @@ class Logistic(Expression):
     
         f(x) = \frac{a}{1 + b\cdot \mathrm{exp}\left[-c \left((x - x_0\right)\right]}
 
+
     ============= =============
      Variable      Parameter
     ============= =============
