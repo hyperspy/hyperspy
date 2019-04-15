@@ -2190,6 +2190,10 @@ class BaseSignal(FancySlicing,
         """
         axis = self.axes_manager[axis]
         i1, i2 = axis._get_index(start), axis._get_index(end)
+        # To prevent an axis error, which may confuse users
+        if i1 is not None and i2 is not None and not i1 != i2:
+            raise ValueError("The `start` and `end` values need to be "
+                             "different.")
         if i1 is not None:
             new_offset = axis.axis[i1]
         # We take a copy to guarantee the continuity of the data
