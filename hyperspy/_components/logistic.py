@@ -22,25 +22,25 @@ from hyperspy._components.expression import Expression
 
 class Logistic(Expression):
 
-    """Logistic function (sigmoid or s-shaped curve) component.
+    r"""Logistic function (sigmoid or s-shaped curve) component.
 
     .. math::
     
-        f(x) = \\frac{a}{1 + b\\cdot \\mathrm{exp}\\left[-c \left((x - x_0\\right)\\right]}
+        f(x) = \frac{a}{1 + b\cdot \mathrm{exp}\left[-c \left((x - x_0\right)\right]}
 
-    ================= ===========
-     Variable          Parameter
-    ================= ===========
-     :math:`A`         a
-     :math:`b`         b
-     :math:`c`         c
-     :math:`x_0`       origin
-    ================= ===========
+    ============= =============
+     Variable      Parameter
+    ============= =============
+     :math:`A`     a
+     :math:`b`     b
+     :math:`c`     c
+     :math:`x_0`   origin
+    ============= =============
 
     Parameters
     -----------
     a : Float
-        The curve's maximum y-value,  :math:`\\mathrm{lim}_{x\\to\\infty}\\left(y\\right) = a`
+        The curve's maximum y-value,  :math:`\mathrm{lim}_{x\to\infty}\left(y\right) = a`
     b : Float
         Additional parameter: 
         b>1 shifts origin to larger values;
