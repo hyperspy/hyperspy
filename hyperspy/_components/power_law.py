@@ -38,18 +38,18 @@ class PowerLaw(Expression):
      Variable      Parameter
     ============= =============
      :math:`A`     A
-     :math:`x_0`   origin
      :math:`r`     r
+     :math:`x_0`   origin
     ============= =============
 
     Parameters
     -----------
         A : float
             Height parameter.
-        origin : float
-            Location parameter.
         r : float
             Power law coefficient.
+        origin : float
+            Location parameter.
         **kwargs
             Extra keyword arguments are passed to the ``Expression`` component.
 

@@ -43,8 +43,8 @@ class GaussianHF(Expression):
      Variable      Parameter 
     ============= =============
      :math:`h`     height    
+     :math:`W`     fwhm 
      :math:`c`     centre    
-     :math:`W`     fwhm      
     ============= =============
 
     Parameters
@@ -53,11 +53,11 @@ class GaussianHF(Expression):
             The height of the peak. If there is no binning, this corresponds
             directly to the maximum, otherwise the maximum divided by
             signal_axis.scale
-        centre: float
-            Location of the gaussian maximum, also the mean position.
         fwhm: float
             The full width half maximum value, i.e. the width of the gaussian
             at half the value of gaussian peak (at centre).
+        centre: float
+            Location of the gaussian maximum, also the mean position.
         **kwargs
             Extra keyword arguments are passed to the ``Expression`` component.
 
