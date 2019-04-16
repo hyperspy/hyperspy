@@ -46,10 +46,10 @@ class Bleasdale(Expression):
 
     """
     
-    def __init__(self, a=1., b=1., c=1., module="numpy", **kwargs):
+    def __init__(self, a=1., b=1., c=1., module="scipy", **kwargs):
         super(Bleasdale, self).__init__(
-            #expression="where((a+b*x)>0, (a + b * x) ** (-1 / c), 0.)",
-            expression="(a + b * x) ** (-1 / c)",
+            expression="where(abx>0, abx ** (-1 / c), 0); abx = (a + b * x)",
+            #expression="(a + b * x) ** (-1 / c)",
             name="Bleasdale",
             a=a,
             b=b,
@@ -58,6 +58,6 @@ class Bleasdale(Expression):
             autodoc=False,
             **kwargs)
 
-    def function(self, x):
-        return np.where((a+b*x)>0, super().function(x), 0)
+#    def function(self, x):
+#        return np.where((a+b*x)>0, super().function(x), 0.)
 
