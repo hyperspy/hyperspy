@@ -22,13 +22,13 @@ from hyperspy._components.expression import Expression
 
 class Bleasdale(Expression):
 
-    """Bleasdale function component.
+    r"""Bleasdale function component.
     
     Also called the Bleasdale-Nelder function. Originates from the description of the yield-density relationship in crop growth.
 
     .. math::
     
-        f(x) = \\left(a+b\\cdot x\\right)^{-1/c}
+        f(x) = \left(a+b\cdot x\right)^{-1/c}
 
     Parameters
     -----------
@@ -42,7 +42,7 @@ class Bleasdale(Expression):
             Extra keyword arguments are passed to the ``Expression`` component.
         
     
-    For :math:`(a+b\\cdot x)\leq0`, the component will be set to nan.
+    For :math:`(a+b\cdot x)\leq0`, the component will be set to nan.
 
     """
     
