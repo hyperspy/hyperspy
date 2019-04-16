@@ -16,14 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import math
 import numpy as np
-from scipy.special import erf
 from hyperspy._components.expression import Expression
 
 class SkewNormal(Expression):
 
-    """Skew normal distribution component.
+    r"""Skew normal distribution component.
     
     |  Asymmetric peak shape based on a normal distribution.
     |  For definition see https://en.wikipedia.org/wiki/Skew_normal_distribution
@@ -32,10 +30,10 @@ class SkewNormal(Expression):
     
     .. math::
 
-        f(x) &= 2 A \\phi(x) \\Phi(x) \\\\
-        \\phi(x) &= \\frac{1}{\\sqrt{2\\pi}}\\mathrm{exp}{\\left[-\\frac{t(x)^2}{2}\\right]} \\\\
-        \\Phi(x) &= \\frac{1}{2}\\left[1 + \\mathrm{erf}\\left(\\frac{shape~t(x)}{\\sqrt{2}}\\right)\\right] \\\\
-        t(x) &= \\frac{x-x0}{scale}
+        f(x) &= 2 A \phi(x) \Phi(x) \\
+        \phi(x) &= \frac{1}{\sqrt{2\pi}}\mathrm{exp}{\left[-\frac{t(x)^2}{2}\right]} \\
+        \Phi(x) &= \frac{1}{2}\left[1 + \mathrm{erf}\left(\frac{shape~t(x)}{\sqrt{2}}\right)\right] \\
+        t(x) &= \frac{x-x0}{scale}
     
     Parameters
     -----------
@@ -51,7 +49,7 @@ class SkewNormal(Expression):
     The properties `mean` (position), `variance`, `skewness` and `mode` (=position of maximum) are defined for convenience.
     """
 
-    def __init__(self, x0=0., A=1., scale=1., shape=0., module="numpy",
+    def __init__(self, x0=0., A=1., scale=1., shape=0., module="scipy",
                  **kwargs):
         super(SkewNormal, self).__init__(
             expression="2 * A * normpdf * normcdf; normpdf = exp(- t ** 2 / 2) / sqrt(2 * pi); normcdf = (1 + erf(shape * t / sqrt(2))) / 2; t = (x - x0) / scale",
@@ -67,22 +65,12 @@ class SkewNormal(Expression):
 
         # Boundaries
         self.A.bmin = 0.
-        self.A.bmax = None
         
         self.scale.bmin = 0
-        self.scale.bmax = None
         
         self.isbackground = False
         self.convolved = True
-        
-    # Define the function as a function of the already defined parameters, x
-    # being the independent variable value
-    def function(self, x):
-        t = (x - x0) / scale
-        normpdf = np.exp(- t ** 2 / 2) / math.sqrt(2 * np.pi)
-        normcdf = (1 + erf(shape * t / math.sqrt(2))) / 2
-        return 2 * A * normpdf * normcdf
-    
+            
     @property
     def mean(self):
         delta = self.shape.value / np.sqrt(1 + self.shape.value**2)
