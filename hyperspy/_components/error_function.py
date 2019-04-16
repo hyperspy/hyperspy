@@ -28,18 +28,30 @@ sqrt2pi = np.sqrt(2 * np.pi)
 
 class Erf(Expression):
 
-    r"""Error function component.
+r"""Error function component.
+
+    .. math::
+    
+        \frac{A}{2} \mathrm{erf}\left[\frac{(x - x_0)}{\sqrt{2} \sigma}\right]
+
+    ============== =============
+    Variable        Parameter 
+    ============== =============
+    :math:`A`       A
+    :math:`\simga`  sigma
+    :math:`x_0`     origin
+    ============== =============
 
     Parameters
     -----------
         A : float
-        
+            Height parameter.
         sigma : float
         
         origin : float
         
     """
-
+    
     def __init__(self, A=1., sigma=1., origin=0., module="scipy",
                  **kwargs):
         super(Erf, self).__init__(
