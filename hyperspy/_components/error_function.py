@@ -45,11 +45,11 @@ class Erf(Expression):
     Parameters
     -----------
         A : float
-            Height parameter.
+            The min/max values of the distribution are -A/2 and A/2.
         sigma : float
-        
+            Width of the distribution.
         origin : float
-        
+            Position of the zero crossing.
     """
     
     def __init__(self, A=1., sigma=1., origin=0., module="scipy",
