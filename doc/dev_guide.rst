@@ -164,18 +164,31 @@ outputs when coding. Writing tests can seem laborious but you'll probably
 soon find that they're very important as they force you to sanity check all
 you do.
 
-HyperSpy uses the `py.test <http://doc.pytest.org/>`_ library for testing. The
-tests reside in the ``hyperspy.tests`` module. To run them:
+HyperSpy uses the `pytest <http://doc.pytest.org/>`_ library for testing. The
+tests reside in the ``hyperspy.tests`` module. 
+
+First ensure pytest and its plugins are installed by:
+
+.. code:: bash
+   
+   # If using a standard hyperspy install
+   pip install hyperspy[test]
+   # Or, from a hyperspy local development directory
+   pip install -e .[test]
+   # Or just installing the dependencies using conda
+   conda install -c conda-forge pytest pytest-mpl
+
+To run them:
 
 .. code:: bash
 
-   py.test --pyargs hyperspy
+   pytest --mpl --pyargs hyperspy
 
 Or, from HyperSpy's project folder simply:
 
 .. code:: bash
 
-   py.test
+   pytest
 
 
 Useful hints on testing:
@@ -207,7 +220,7 @@ Useful hints on testing:
   PR page. This service can help you to find how well your code is being tested
   and exactly which part is not currently tested.
 * `pytest-sugar <https://pypi.python.org/pypi/pytest-sugar>`_ can be installed
-  to have a nicer look and feel of py.test in the console (encoding issue have
+  to have a nicer look and feel of pytest in the console (encoding issue have
   been reported in the Windows console).
 
 
@@ -234,7 +247,7 @@ If you need to add or change some plots, follow the workflow below:
     1. Write the tests using appropriate decorator such as
        ``@pytest.mark.mpl_image_compare``.
     2. If you need to generate new reference image in the folder
-       ``plot_test_dir``, for example, run: ``py.test
+       ``plot_test_dir``, for example, run: ``pytest
        --mpl-generate-path=plot_test_dir``
     3. Run again the tests and this time they should pass.
     4. Use ``git add`` to put the new file in the git repository.
@@ -252,7 +265,21 @@ variable and set accordingly the backend.
 
 See `pytest-mpl <https://pypi.python.org/pypi/pytest-mpl>`_ for more details.
 
+Exporting pytest results as HTML
+^^^^^^^^^^^^
+With ``pytest-html`` it is possible to export the results of running pytest 
+for easier viewing. I can be installed by conda:
 
+.. code:: bash
+
+   conda install pytest-html
+   
+and run by:
+
+.. code:: bash
+
+   pytest --mpl --html=report.html
+   
 Write documentation
 ^^^^^^^^^^^^^^^^^^^
 
