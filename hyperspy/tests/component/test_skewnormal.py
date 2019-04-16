@@ -18,30 +18,30 @@
 
 
 import numpy as np
+from numpy.testing import assert_allclose
 
 from hyperspy.components1d import SkewNormal
 from hyperspy.signals import Signal1D
 
 
-def test_function(A=1.,x0=1.,scale=1.,shape=5.,noise=0.02):
-    """ Test function for the skew normal distribution component.
+def test_function():
+    g = SkewNormal()
+    g.A.value = 2.5
+    g.x0.value = 0
+    g.scale.value = 1
+    g.shape.value = 0
+    assert_allclose(g.function(0),1,rtol=3e-3)
+    assert_allclose(g.function(6),1.52e-8,rtol=1e-3)
+    g.A.value = 5
+    g.x0.value = 4
+    g.scale.value = 3
+    g.shape.value = 2
+    assert_allclose(g.function(0),6.28e-3,rtol=1e-3)
+    assert_allclose(g.function(g.mean),2.855,rtol=1e-3)
     
-    Creates a simulated noisy skew normal distribution based on the input 
-    parameters and fits a skew normal component to this data.
-    
-    Parameters:
-    -----------
-        A : float
-            Height parameter of the peak.
-        x0 : float
-            Location of the peak position.
-        scale : float
-            Width (sigma) parameter.
-        shape: float 
-            Skewness (asymmetry) parameter.
-        noise: float
-            A * noise determines the magnitude of the added gaussian noise.
-    
+def test_fit(A=1,x0=0,shape=1,scale=1,noise=0.01):
+    """
+    Creates a simulated noisy skew normal distribution based on the input parameters and fits a skew normal component to this data.
     """
     # create skew normal signal and add noise
     g = SkewNormal(A=A,x0=x0,scale=scale,shape=shape)
@@ -60,3 +60,31 @@ def test_function(A=1.,x0=1.,scale=1.,shape=5.,noise=0.02):
     m.print_current_values() # print out parameter values
     m.plot() # plot fit
     return m
+
+def test_util_mean_get():
+    g1 = SkewNormal()
+    g1.shape.value = 0
+    g1.scale.value = 1
+    g1.x0.value = 1
+    assert_allclose(g1.mean, 1.0)
+
+def test_util_variance_get():
+    g1 = SkewNormal()
+    g1.shape.value = 0
+    g1.scale.value = 2
+    g1.x0.value = 1
+    assert_allclose(g1.variance, 4.0)
+    
+def test_util_skewness_get():
+    g1 = SkewNormal()
+    g1.shape.value = 30
+    g1.scale.value = 1
+    g1.x0.value = 1
+    assert_allclose(g1.skewness, 0.99,rtol=1e-3)
+
+def test_util_mode_get():
+    g1 = SkewNormal()
+    g1.shape.value = 0
+    g1.scale.value = 1
+    g1.x0.value = 1
+    assert_allclose(g1.mode, 1.0)

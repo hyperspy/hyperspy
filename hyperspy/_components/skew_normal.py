@@ -101,5 +101,8 @@ class SkewNormal(Expression):
         delta = self.shape.value / np.sqrt(1 + self.shape.value**2)
         muz = np.sqrt(2 / np.pi) * delta
         sigmaz = np.sqrt(1 - muz**2)
-        m0 = muz - self.skewness * sigmaz / 2 - np.sign(self.shape.value) / 2 * np.exp(- 2 * np.pi / np.abs(self.shape.value))
-        return self.x0.value + self.scale.value * m0
+        if self.shape.value==0:
+            return self.x0.value
+        else:
+            m0 = muz - self.skewness * sigmaz / 2 - np.sign(self.shape.value) / 2 * np.exp(- 2 * np.pi / np.abs(self.shape.value))
+            return self.x0.value + self.scale.value * m0
