@@ -28,17 +28,17 @@ sqrt2pi = np.sqrt(2 * np.pi)
 
 class Erf(Expression):
 
-r"""Error function component.
+    r"""Error function component.
 
     .. math::
     
-        \frac{A}{2} \mathrm{erf}\left[\frac{(x - x_0)}{\sqrt{2} \sigma}\right]
+        \frac{A}{2}~\mathrm{erf}\left[\frac{(x - x_0)}{\sqrt{2} \sigma}\right]
 
     ============== =============
     Variable        Parameter 
     ============== =============
     :math:`A`       A
-    :math:`\simga`  sigma
+    :math:`\sigma`  sigma
     :math:`x_0`     origin
     ============== =============
 
