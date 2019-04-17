@@ -93,7 +93,7 @@ To obtain a scree plot for your dataset, run the
    PCA scree plot
 
 .. versionadded:: 1.2.0
-   ``log``, ``threshold``, ``hline``, ``xaxis_type``, ``xaxis_labeling``,
+   ``log``, ``threshold``, ``hline``,``vline``, ``xaxis_type``, ``xaxis_labeling``,
    ``signal_fmt``, ``noise_fmt``, ``threshold``, ``xaxis_type`` keyword
    arguments.
 
@@ -104,7 +104,9 @@ the total variance specified, and the components above this value will be
 styled distinctly from the remaining components to show which are considered
 signal, as opposed to noise. Alternatively, by providing an integer value
 for ``threshold``, the line will be drawn at the specified component (see
-below). These options (together with many others), can be customized to
+below).  The "elbow" position can be auto-estimated and a vertical line drawn to
+represent the no of signicant pca components by specifying "vline" as True. 
+These options (together with many others), can be customized to
 develop a figure of your liking. See the documentation of
 :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio` for more details.
 
@@ -126,6 +128,15 @@ notation, specify the ``xaxis_type`` parameter:
    PCA scree plot with number-based axis labeling and a threshold value
    specified
 
+   
+.. figure::  images/screeplot3.png
+   :align:   center
+   :width:   500
+
+   PCA scree plot with number-based axis labeling and an estimate of the no of significant 
+   positions based on the "elbow" position
+   
+   
 .. versionadded:: 0.7
 
 Sometimes it can be useful to get the explained variance ratio as a spectrum,
