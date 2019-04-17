@@ -21,11 +21,13 @@ from hyperspy._components.expression import Expression
 class RC(Expression):
 
     r"""
-    RC function component (based on the time-domain capacitor voltage response of an RC-circuit)
+    RC function component (based on the time-domain capacitor voltage response 
+    of an RC-circuit)
     
     .. math::
 
-        f(x) = V_\mathrm{0} + V_\mathrm{max} \left[1 - \mathrm{exp}\left(- \frac{x}{\tau}\right)\right]
+        f(x) = V_\mathrm{0} + V_\mathrm{max} \left[1 - \mathrm{exp}\left(
+            -\frac{x}{\tau}\right)\right]
     
     ====================== ===========
     Variable                Parameter 
@@ -34,17 +36,19 @@ class RC(Expression):
     :math:`V_\mathrm{max}`  Vmax    
     :math:`\tau`            tau    
     ====================== ===========
-        
+    
+    
     Parameters
     -----------
-        V0: float
-            vertical offset
-        Vmax: float
-            maximum voltage, asymptote of the function for :math:`\mathrm{lim}_{x\to\infty}`
-        tau: float
-            tau=RC is the RC circuit time constant (voltage rise time)
-        **kwargs
-            Extra keyword arguments are passed to the ``Expression`` component.
+    V0: float
+        vertical offset
+    Vmax: float
+        maximum voltage, asymptote of the function for 
+        :math:`\mathrm{lim}_{x\to\infty}`
+    tau: float
+        tau=RC is the RC circuit time constant (voltage rise time)
+    **kwargs
+        Extra keyword arguments are passed to the ``Expression`` component.
     
     """
 
