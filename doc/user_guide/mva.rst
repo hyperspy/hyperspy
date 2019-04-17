@@ -104,8 +104,16 @@ the total variance specified, and the components above this value will be
 styled distinctly from the remaining components to show which are considered
 signal, as opposed to noise. Alternatively, by providing an integer value
 for ``threshold``, the line will be drawn at the specified component (see
-below).  The "elbow" position can be auto-estimated and a vertical line drawn to
-represent the no of signicant pca components by specifying "vline" as True. 
+below).  The no of significant components can be estimated and a vertical line drawn to
+represent this by specifying "vline" as True. In this case the elbow or knee is found 
+in the variance plot by estimating the distance from each point in the variance plot 
+to a line joining the first and last points of the plot.  The no of significant PCA components 
+is estimated as the elbow position + 1 and a vertical line placed there. 
+
+.. figure::  images/screeplot_elbow_method.png
+   :align:   center
+   :width:   500
+
 These options (together with many others), can be customized to
 develop a figure of your liking. See the documentation of
 :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio` for more details.
