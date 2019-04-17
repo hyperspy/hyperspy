@@ -24,7 +24,8 @@ class Lorentzian(Expression):
 
     .. math::
 
-        f(x)=\frac{A}{\pi}\left[\frac{\gamma}{\left(x-x_{0}\right)^{2}+\gamma^{2}}\right]
+        f(x)=\frac{A}{\pi}\left[\frac{\gamma}{\left(x-x_{0}\right)^{2}
+            +\gamma^{2}}\right]
 
     ================= ===========
      Variable          Parameter
@@ -36,14 +37,16 @@ class Lorentzian(Expression):
     
     Parameters
     -----------
-        A : float
-            Height parameter, where :math:`A/(\gamma\pi)` is the maximum of the peak.
-        gamma : float
-            Scale parameter corresponding to the half-width-at-half-maximum of the peak, which corresponds to the interquartile spread.
-        centre : float
-            Location of the peak maximum.
-        **kwargs
-            Extra keyword arguments are passed to the ``Expression`` component.
+    A : float
+        Height parameter, where :math:`A/(\gamma\pi)` is the maximum of the 
+        peak.
+    gamma : float
+        Scale parameter corresponding to the half-width-at-half-maximum of the 
+        peak, which corresponds to the interquartile spread.
+    centre : float
+        Location of the peak maximum.
+    **kwargs
+        Extra keyword arguments are passed to the ``Expression`` component.
     
     For convenience the `fwhm` attribute can be used to get and set
     the full-with-half-maximum.
