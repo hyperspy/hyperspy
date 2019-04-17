@@ -384,7 +384,7 @@ class MVA():
                     explained_variance / explained_variance.sum()
                 no_significant_components = \
                     self._estimate_elbow_position(
-                            explained_variance_ratio)
+                            explained_variance_ratio)+ 1
 
             # Store the results in learning_results
 
@@ -1066,8 +1066,8 @@ class MVA():
             if self.learning_results.no_significant_components is None:
                 vline = False
             else:
-                no_sig_components =\
-                    self.learning_results.no_significant_components
+                index_no_sig_components =\
+                    self.learning_results.no_significant_components-1
         else:
             vline = False
 
@@ -1131,7 +1131,7 @@ class MVA():
                        zorder=1)
 
         if vline:
-            ax.axvline(no_sig_components,
+            ax.axvline(index_no_sig_components,
                        linewidth=2,
                        color='gray',
                        linestyle='dashed',
@@ -1276,7 +1276,6 @@ class MVA():
         x2 = maxpoints
         y1 = np.log(error_estimate[0])
         x1 = 0
-            
         # loop 
         distance = np.zeros((maxpoints))
         for i in range(maxpoints):
@@ -1286,7 +1285,7 @@ class MVA():
             /np.math.sqrt((x2-x1)**2+(y2-y1)**2)  
             
         #Point with the largest distance is the "elbow"
-        elbow_position = np.argmax(distance) +1
+        elbow_position = np.argmax(distance)
         return elbow_position
 
 
