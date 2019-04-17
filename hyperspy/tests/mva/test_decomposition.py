@@ -251,6 +251,9 @@ class TestReturnInfo:
             assert self.s.decomposition(
                 algorithm=algorithm, return_info=True, output_dimension=1) is None
 
+    # Warning filter can be removed after scikit-learn >= 0.22
+    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
+    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_decomposition_supported_return_true(self):
         for algorithm in ["RPCA_GoDec", "ORPCA"]:
@@ -259,12 +262,15 @@ class TestReturnInfo:
                 return_info=True,
                 output_dimension=1) is not None
         for algorithm in ["sklearn_pca", "nmf",
-                          "sparse_pca", "mini_batch_sparse_pca", ]:
+                          "sparse_pca", "mini_batch_sparse_pca"]:
             assert self.s.decomposition(
                 algorithm=algorithm,
                 return_info=True,
                 output_dimension=1) is not None
 
+    # Warning filter can be removed after scikit-learn >= 0.22
+    # See sklearn.decomposition.sparse_pca.SparsePCA docstring
+    @pytest.mark.filterwarnings("ignore:normalize_components=False:DeprecationWarning")
     @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_decomposition_supported_return_false(self):
         for algorithm in ["RPCA_GoDec", "ORPCA"]:
