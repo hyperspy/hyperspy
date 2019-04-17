@@ -76,6 +76,9 @@ class SkewNormal(Expression):
 
     def __init__(self, x0=0., A=1., scale=1., shape=0., module="scipy",
                  **kwargs):
+        if LooseVersion(sympy.__version__) < LooseVersion("1.3"):
+            raise ImportError("The `SkewNormal` component requires "
+                              "SymPy >= 1.3")
         super(SkewNormal, self).__init__(
             expression="2 * A * normpdf * normcdf; normpdf = exp(- t ** 2 / 2) \
                 / sqrt(2 * pi); normcdf = (1 + erf(shape * t / sqrt(2))) / 2; \
@@ -89,10 +92,6 @@ class SkewNormal(Expression):
             autodoc=False,
             **kwargs,
         )
-
-        if LooseVersion(sympy.__version__) < LooseVersion("1.3"):
-            raise ImportError("The `SkewNormal` component requires \
-                SymPy >= ","1.3")
 
         # Boundaries
         self.A.bmin = 0.
