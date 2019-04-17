@@ -49,6 +49,7 @@ class Lorentzian(Expression):
     **kwargs
         Extra keyword arguments are passed to the ``Expression`` component.
     
+    
     For convenience the `fwhm` attribute can be used to get and set
     the full-with-half-maximum.
 
