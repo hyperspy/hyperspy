@@ -34,6 +34,7 @@ class Lorentzian(Expression):
       :math:`\gamma`   gamma   
       :math:`x_0`      centre   
     ================= ===========
+
     
     Parameters
     -----------
