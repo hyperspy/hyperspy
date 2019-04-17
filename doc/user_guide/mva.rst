@@ -107,12 +107,15 @@ for ``threshold``, the line will be drawn at the specified component (see
 below).  The no of significant components can be estimated and a vertical line drawn to
 represent this by specifying "vline" as True. In this case the elbow or knee is found 
 in the variance plot by estimating the distance from each point in the variance plot 
-to a line joining the first and last points of the plot.  The no of significant PCA components 
-is estimated as the elbow position + 1 and a vertical line placed there. 
+to a line joining the first and last points of the plot.  As the index starts at zero the 
+no of significant PCA components is the elbow position + 1. 
 
 .. figure::  images/screeplot_elbow_method.png
    :align:   center
    :width:   500
+
+More details about the elbow or knee finding technique can be found in
+:ref:`[Satopää2011] <Satopää2011>`.
 
 These options (together with many others), can be customized to
 develop a figure of your liking. See the documentation of

@@ -185,6 +185,11 @@ Bibliography
    “Efficient subpixel image registration algorithms",
    Optics Letters 33, 156-158 (2008). DOI:10.1364/OL.33.000156
 
+:ref:`[Satopää2011] <Satopää2011>`
+   Ville Satopää, Jeannie Albrecht, David Irwin, Barath Raghavan. 
+   "Finding a "Kneedle" in a Haystack: Detecting Knee Points in System Behavior.
+   31st International Conference on Distributed Computing Systems Workshops", 
+   pp. 166-171, Minneapolis, Minnesota, USA, June 2011.
 
 
 
