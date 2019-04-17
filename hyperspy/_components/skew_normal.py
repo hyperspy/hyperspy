@@ -21,16 +21,17 @@ from hyperspy._components.expression import Expression
 from distutils.version import LooseVersion
 import sympy
 
+
 class SkewNormal(Expression):
 
     r"""Skew normal distribution component.
-    
+
     |  Asymmetric peak shape based on a normal distribution.
-    |  For definition see 
+    |  For definition see
        https://en.wikipedia.org/wiki/Skew_normal_distribution
     |  See also http://azzalini.stat.unipd.it/SN/
-    |  
-    
+    |
+
     .. math::
 
         f(x) &= 2 A \phi(x) \Phi(x) \\
@@ -39,8 +40,8 @@ class SkewNormal(Expression):
         \Phi(x) &= \frac{1}{2}\left[1 + \mathrm{erf}\left(\frac{
             \alpha~t(x)}{\sqrt{2}}\right)\right] \\
         t(x) &= \frac{x-x_0}{\omega}
-    
-    
+
+
     +----------------+-------------+
     | Parameter      |  Attribute  |
     +----------------+-------------+
@@ -53,24 +54,24 @@ class SkewNormal(Expression):
     +----------------+-------------+
     | :math:`\alpha` |  shape      |
     +----------------+-------------+
-    
+
     Parameters
     -----------
     A : float
         Height parameter of the peak.
     x0 : float
-        Location of the peak position (not maximum, which is given by 
+        Location of the peak position (not maximum, which is given by
         the `mode` property).
     scale : float
         Width (sigma) parameter.
     shape: float
-        Skewness (asymmetry) parameter. For shape=0, the normal 
-        distribution (Gaussian) is obtained. The distribution is 
-        right skewed (longer tail to the right) if shape>0 and is 
+        Skewness (asymmetry) parameter. For shape=0, the normal
+        distribution (Gaussian) is obtained. The distribution is
+        right skewed (longer tail to the right) if shape>0 and is
         left skewed if shape<0.
-            
-    
-    The properties `mean` (position), `variance`, `skewness` and `mode` 
+
+
+    The properties `mean` (position), `variance`, `skewness` and `mode`
     (=position of maximum) are defined for convenience.
     """
 
@@ -95,9 +96,9 @@ class SkewNormal(Expression):
 
         # Boundaries
         self.A.bmin = 0.
-        
+
         self.scale.bmin = 0
-        
+
         self.isbackground = False
         self.convolved = True
 
@@ -116,13 +117,13 @@ class SkewNormal(Expression):
         delta = self.shape.value / np.sqrt(1 + self.shape.value**2)
         return (4 - np.pi)/2 * (delta * np.sqrt(2/np.pi))**3 / (1 - \
             2 * delta**2 / np.pi)**(3/2)
-        
+
     @property
     def mode(self):
         delta = self.shape.value / np.sqrt(1 + self.shape.value**2)
         muz = np.sqrt(2 / np.pi) * delta
         sigmaz = np.sqrt(1 - muz**2)
-        if self.shape.value==0:
+        if self.shape.value == 0:
             return self.x0.value
         else:
             m0 = muz - self.skewness * sigmaz / 2 - np.sign(self.shape.value) \
