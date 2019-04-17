@@ -33,14 +33,15 @@ class Exponential(Expression):
     :math:`\tau`   tau    
     ============= =============
 
+    
     Parameters
     -----------
-        A: float
-            Maximum intensity
-        tau: float
-            Scale parameter (time constant)
-        **kwargs
-            Extra keyword arguments are passed to the ``Expression`` component.
+    A: float
+        Maximum intensity
+    tau: float
+        Scale parameter (time constant)
+    **kwargs
+        Extra keyword arguments are passed to the ``Expression`` component.
 
     """
 

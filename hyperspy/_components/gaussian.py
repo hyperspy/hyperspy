@@ -72,7 +72,8 @@ class Gaussian(Expression):
 
     .. math::
 
-        f(x) = \frac{A}{\sigma \sqrt{2\pi}}\exp\left[-\frac{\left(x-x_0\right)^{2}}{2\sigma^{2}}\right]
+        f(x) = \frac{A}{\sigma \sqrt{2\pi}}\exp\left[
+            -\frac{\left(x-x_0\right)^{2}}{2\sigma^{2}}\right]
 
     ============== ===========
     Variable         Parameter
@@ -82,19 +83,24 @@ class Gaussian(Expression):
     :math:`x_0`      centre
     ============== ===========
 
+
     Parameters
     -----------
-        A : float
-            Height scaled by :math:`\sigma\sqrt{(2\pi)}`. ``GaussianHF`` implements the Gaussian function with a height parameter corresponding to the peak height.
-        sigma : float
-            Scale parameter of the Gaussian distribution. 
-        centre : float
-            Location of the Gaussian maximum (peak position).
-        **kwargs
-            Extra keyword arguments are passed to the ``Expression`` component.
+    A : float
+        Height scaled by :math:`\sigma\sqrt{(2\pi)}`. ``GaussianHF`` 
+        implements the Gaussian function with a height parameter 
+        corresponding to the peak height.
+    sigma : float
+        Scale parameter of the Gaussian distribution. 
+    centre : float
+        Location of the Gaussian maximum (peak position).
+    **kwargs
+        Extra keyword arguments are passed to the ``Expression`` component.
+
 
     For convenience the `fwhm` attribute can be used to get and set
     the full-with-half-maximum.
+
 
     See also
     --------
@@ -104,7 +110,8 @@ class Gaussian(Expression):
 
     def __init__(self, A=1., sigma=1., centre=0., module="numexpr", **kwargs):
         super(Gaussian, self).__init__(
-            expression="A * (1 / (sigma * sqrt(2*pi))) * exp(-(x - centre)**2 / (2 * sigma**2))",
+            expression="A * (1 / (sigma * sqrt(2*pi))) * exp(-(x - centre)**2 \
+                        / (2 * sigma**2))",
             name="Gaussian",
             A=A,
             sigma=sigma,

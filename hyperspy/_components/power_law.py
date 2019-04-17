@@ -42,16 +42,18 @@ class PowerLaw(Expression):
      :math:`x_0`   origin
     ============= =============
 
+
     Parameters
     -----------
-        A : float
-            Height parameter.
-        r : float
-            Power law coefficient.
-        origin : float
-            Location parameter.
-        **kwargs
-            Extra keyword arguments are passed to the ``Expression`` component.
+    A : float
+        Height parameter.
+    r : float
+        Power law coefficient.
+    origin : float
+        Location parameter.
+    **kwargs
+        Extra keyword arguments are passed to the ``Expression`` component.
+
 
     The `left_cutoff` parameter can be used to set a lower threshold from which
     the component will return 0.
@@ -97,7 +99,8 @@ class PowerLaw(Expression):
 
     def estimate_parameters(self, signal, x1, x2, only_current=False,
                             out=False):
-        """Estimate the parameters for the power law component by the two area method.
+        """Estimate the parameters for the power law component by the two area 
+        method.
 
         Parameters
         ----------
