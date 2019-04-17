@@ -27,13 +27,16 @@ class Lorentzian(Expression):
         f(x)=\frac{A}{\pi}\left[\frac{\gamma}{\left(x-x_{0}\right)^{2}
             +\gamma^{2}}\right]
 
-    ================= ===========
-     Variable          Parameter
-    ================= ===========
-      :math:`A`         A     
-      :math:`\gamma`   gamma   
-      :math:`x_0`      centre   
-    ================= ===========
+    +----------------+-------------+
+    | Variable       |  Parameter  |
+    +----------------+-------------+
+    +----------------+-------------+
+    |  :math:`A`     |   A         |
+    +----------------+-------------+
+    |  :math:`\gamma`|  gamma      |
+    +----------------+-------------+
+    |  :math:`x_0`   |  centre     |
+    +----------------+-------------+
 
     
     Parameters
