@@ -41,7 +41,8 @@ def test_function():
     
 def test_fit(A=1,x0=0,shape=1,scale=1,noise=0.01):
     """
-    Creates a simulated noisy skew normal distribution based on the input parameters and fits a skew normal component to this data.
+    Creates a simulated noisy skew normal distribution based on the input 
+    parameters and fits a skew normal component to this data.
     """
     # create skew normal signal and add noise
     g = SkewNormal(A=A,x0=x0,scale=scale,shape=shape)
