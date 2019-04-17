@@ -382,6 +382,9 @@ class MVA():
                     explained_variance_ratio is None:
                 explained_variance_ratio = \
                     explained_variance / explained_variance.sum()
+                no_significant_components = \
+                    self._estimate_elbow_position(
+                            explained_variance_ratio)
 
             # Store the results in learning_results
 
@@ -941,7 +944,8 @@ class MVA():
         return s
 
     def plot_explained_variance_ratio(self, n=30, log=True, threshold=0,
-                                      hline='auto', xaxis_type='index',
+                                      hline='auto', vline=False,
+                                      xaxis_type='index',
                                       xaxis_labeling=None, signal_fmt=None,
                                       noise_fmt=None, fig=None, ax=None,
                                       **kwargs):
@@ -972,6 +976,12 @@ class MVA():
             draw in the case  ``threshold`` is an int, or not given.
             If True, (and ``threshold`` is an int), the line will be drawn
             through the last component defined as signal.
+            If False, the line will not be drawn in any circumstance.
+        vline: {True, False} : Default : False
+            Whether or not to draw a vertical line illustrating an estimate of the
+            no of significant compontents. 
+            If True the line will be drawn at the estimated no of signicant
+            components which corresponds to the elbow position  + 1
             If False, the line will not be drawn in any circumstance.
         xaxis_type : {'index', 'number'}
             Determines the type of labeling applied to the x-axis.
@@ -1052,6 +1062,15 @@ class MVA():
             if n_signal_pcs == 0:
                 hline = False
 
+        if vline == True:
+            if self.learning_results.no_significant_components is None:
+                vline = False
+            else:
+                no_sig_components =\
+                    self.learning_results.no_significant_components
+        else:
+            vline = False
+
         # Handling hline logic
         if hline == 'auto':
             # Set cutoff to threshold if float
@@ -1106,6 +1125,13 @@ class MVA():
 
         if hline:
             ax.axhline(cutoff,
+                       linewidth=2,
+                       color='gray',
+                       linestyle='dashed',
+                       zorder=1)
+
+        if vline:
+            ax.axvline(no_sig_components,
                        linewidth=2,
                        color='gray',
                        linestyle='dashed',
@@ -1222,6 +1248,47 @@ class MVA():
         self.data[:] = self._data_before_treatments
         del self._data_before_treatments
 
+    def _estimate_elbow_position(self,error_estimate):
+        """
+        Estimate the elbow position of a curve
+        Used to estimate the no of significant components in PCA variance ratio
+        plot or other "elbow" type curves
+
+        Parameters
+        ----------
+        error_estimate : array
+
+        Returns
+        -------
+        elbow position : int
+        
+        Index of the elbow position (+1)
+        
+        """
+        maxpoints = min(20,len(error_estimate)-1)
+        # Find a line between first and last point 
+        # With a classic elbow scree plot the line from first to last
+        # more or less defines a triangle 
+        # The elbow should be the point which is the
+        # furthest distance from this line
+        #
+        y2 = np.log(error_estimate[maxpoints])
+        x2 = maxpoints
+        y1 = np.log(error_estimate[0])
+        x1 = 0
+            
+        # loop 
+        distance = np.zeros((maxpoints))
+        for i in range(maxpoints):
+            y0 = np.log(error_estimate[i])
+            x0=i
+            distance[i] = np.abs((x2-x1)*(y1-y0)-(x1-x0)*(y2-y1))\
+            /np.math.sqrt((x2-x1)**2+(y2-y1)**2)  
+            
+        #Point with the largest distance is the "elbow"
+        elbow_position = np.argmax(distance) +1
+        return elbow_position
+
 
 class LearningResults(object):
     # Decomposition
@@ -1229,6 +1296,7 @@ class LearningResults(object):
     loadings = None
     explained_variance = None
     explained_variance_ratio = None
+    no_significant_components = None
     decomposition_algorithm = None
     poissonian_noise_normalized = None
     output_dimension = None
