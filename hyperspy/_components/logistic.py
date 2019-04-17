@@ -26,7 +26,8 @@ class Logistic(Expression):
 
     .. math::
     
-        f(x) = \frac{a}{1 + b\cdot \mathrm{exp}\left[-c \left((x - x_0\right)\right]}
+        f(x) = \frac{a}{1 + b\cdot \mathrm{exp}\left[-c 
+            \left((x - x_0\right)\right]}
 
 
     ============= =============
@@ -38,10 +39,12 @@ class Logistic(Expression):
      :math:`x_0`   origin
     ============= =============
 
+
     Parameters
     -----------
     a : Float
-        The curve's maximum y-value,  :math:`\mathrm{lim}_{x\to\infty}\left(y\right) = a`
+        The curve's maximum y-value,  
+        :math:`\mathrm{lim}_{x\to\infty}\left(y\right) = a`
     b : Float
         Additional parameter: 
         b>1 shifts origin to larger values;
