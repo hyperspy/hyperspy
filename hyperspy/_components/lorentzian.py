@@ -28,7 +28,7 @@ class Lorentzian(Expression):
             +\gamma^{2}}\right]
 
     +----------------+-------------+
-    | Variable       |  Parameter  |
+    | Parameter      |  Attribute  |
     +----------------+-------------+
     +----------------+-------------+
     |  :math:`A`     |   A         |
