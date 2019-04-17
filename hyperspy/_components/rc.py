@@ -29,13 +29,16 @@ class RC(Expression):
         f(x) = V_\mathrm{0} + V_\mathrm{max} \left[1 - \mathrm{exp}\left(
             -\frac{x}{\tau}\right)\right]
     
-    ====================== ===========
-    Variable                Parameter 
-    ====================== ===========
-    :math:`V_\mathrm{0}`    V0     
-    :math:`V_\mathrm{max}`  Vmax    
-    :math:`\tau`            tau    
-    ====================== ===========
+    +-----------------------+-----------+
+    | Parameter             | Attribute |
+    +-----------------------+-----------+
+    +-----------------------+-----------+
+    | :math:`V_\mathrm{0}`  |  V0       |
+    +-----------------------+-----------+
+    | :math:`V_\mathrm{max}`|  Vmax     |
+    +-----------------------+-----------+
+    | :math:`\tau`          |  tau      |
+    +-----------------------+-----------+
     
     
     Parameters
@@ -64,4 +67,4 @@ class RC(Expression):
             **kwargs,
         )
         
-        self.isbackground = True
+        self.isbackground = False
