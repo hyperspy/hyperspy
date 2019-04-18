@@ -382,7 +382,7 @@ class MVA():
                     explained_variance_ratio is None:
                 explained_variance_ratio = \
                     explained_variance / explained_variance.sum()
-                no_significant_components = \
+                num_significant_components = \
                     self._estimate_elbow_position(
                             explained_variance_ratio)+ 1
 
@@ -1063,11 +1063,11 @@ class MVA():
                 hline = False
 
         if vline == True:
-            if self.learning_results.no_significant_components is None:
+            if self.learning_results.num_significant_components is None:
                 vline = False
             else:
                 index_no_sig_components =\
-                    self.learning_results.no_significant_components-1
+                    self.learning_results.num_significant_components - 1
         else:
             vline = False
 
@@ -1248,43 +1248,43 @@ class MVA():
         self.data[:] = self._data_before_treatments
         del self._data_before_treatments
 
-    def _estimate_elbow_position(self,error_estimate):
+    def _estimate_elbow_position(self, curve_values):
         """
-        Estimate the elbow position of a curve
-        Used to estimate the no of significant components in PCA variance ratio
-        plot or other "elbow" type curves
+        Estimate the elbow position of a scree plot curve 
+        Used to estimate the number of significant components in 
+        a PCA variance ratio plot or other "elbow" type curves
 
         Parameters
         ----------
-        error_estimate : array
+        error_estimate : numpy.ndarray
 
         Returns
         -------
         elbow position : int
         
         Index of the elbow position (+1)
-        
         """
-        maxpoints = min(20,len(error_estimate)-1)
+        maxpoints = min(20, len(curve_values) - 1)
         # Find a line between first and last point 
         # With a classic elbow scree plot the line from first to last
         # more or less defines a triangle 
         # The elbow should be the point which is the
         # furthest distance from this line
-        #
-        y2 = np.log(error_estimate[maxpoints])
+        
+        y2 = np.log(curve_values[maxpoints])
         x2 = maxpoints
-        y1 = np.log(error_estimate[0])
+        y1 = np.log(curve_values[0])
         x1 = 0
-        # loop 
-        distance = np.zeros((maxpoints))
+        
+        # loop through the curve values and calculate 
+        distance = np.zeros(maxpoints)
         for i in range(maxpoints):
-            y0 = np.log(error_estimate[i])
-            x0=i
-            distance[i] = np.abs((x2-x1)*(y1-y0)-(x1-x0)*(y2-y1))\
-            /np.math.sqrt((x2-x1)**2+(y2-y1)**2)  
+            y0 = np.log(curve_values[i])
+            x0 = i
+            distance[i] = np.abs((x2-x1)*(y1-y0)-(x1-x0)*(y2-y1))/\
+                          np.math.sqrt((x2-x1)**2+(y2-y1)**2)  
             
-        #Point with the largest distance is the "elbow"
+        # Point with the largest distance is the "elbow"
         elbow_position = np.argmax(distance)
         return elbow_position
 
@@ -1295,7 +1295,7 @@ class LearningResults(object):
     loadings = None
     explained_variance = None
     explained_variance_ratio = None
-    no_significant_components = None
+    num_significant_components = None
     decomposition_algorithm = None
     poissonian_noise_normalized = None
     output_dimension = None

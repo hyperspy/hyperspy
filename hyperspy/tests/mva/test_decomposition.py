@@ -143,14 +143,15 @@ class TestEstimateElbowPosition:
 
     def setup_method(self, method):
         s = signals.BaseSignal(np.empty(1))
-        s.learning_results.explained_variance_ratio = np.asarray([10e-1,5e-2,9e-3,1e-3,9e-5,5e-5,3.0e-5,\
-                                                                       2.2e-5,1.9e-5,1.8e-5,1.7e-5,1.6e-5])
+        s.learning_results.explained_variance_ratio = \
+            np.asarray([10e-1, 5e-2, 9e-3, 1e-3, 9e-5, 5e-5, 3.0e-5,
+                        2.2e-5, 1.9e-5, 1.8e-5, 1.7e-5, 1.6e-5])
         self.s = s
 
     def test_elbow_position(self):
-        variance = s.learning_results.explained_variance_ratio
+        variance = self.s.learning_results.explained_variance_ratio
         elbow = self.s._estimate_elbow_position(variance)
-        assert elbow = 4
+        assert elbow == 4
 
 
 class TestReverseDecompositionComponent:
