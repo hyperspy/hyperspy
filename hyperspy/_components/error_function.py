@@ -16,14 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-#import math
-
 import numpy as np
-#from scipy.special import erf
 
 from hyperspy._components.expression import Expression
-
-sqrt2pi = np.sqrt(2 * np.pi)
 
 
 class Erf(Expression):
@@ -32,7 +27,8 @@ class Erf(Expression):
 
     .. math::
     
-        \frac{A}{2}~\mathrm{erf}\left[\frac{(x - x_0)}{\sqrt{2} \sigma}\right]
+        \frac{A}{2}~\mathrm{erf}\left[\frac{(x - x_0)}{\sqrt{2} 
+            \sigma}\right]
 
     +----------------+-----------+
     | Parameter      | Attribute |
