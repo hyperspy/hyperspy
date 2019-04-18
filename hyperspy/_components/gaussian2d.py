@@ -23,7 +23,7 @@ sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 
 class Gaussian2D(Expression):
-    r"""Normalized 2D elliptical gaussian function component
+    r"""Normalized 2D elliptical Gaussian function component.
 
     .. math::
 
@@ -37,24 +37,24 @@ class Gaussian2D(Expression):
     +-----------------+------------+
     | :math:`A`       | A          |
     +-----------------+------------+
-    | :math:`x_0,y_0` | centre_x/y |
-    +-----------------+------------+
     | :math:`s_x,s_y` |  sigma_x/y |
+    +-----------------+------------+
+    | :math:`x_0,y_0` | centre_x/y |
     +-----------------+------------+
     
     
     Parameters
     ----------
     A : float
-        Amplitude (height of the peak).
-    centre_x : float
-        Location of the Gaussian maximum in `x` direction.
-    centre_x : float
-        Location of the Gaussian maximum in `y` direction.
+        Amplitude (height of the peak scaled by :math:`2 \pi s_x s_y`).
     sigma_x : float
-        Width of the peak in `x` direction.
+        Width (scale parameter) of the Gaussian distribution in `x` direction.
     sigma_y : float
-        Width of the peak in `y` direction.
+        Width (scale parameter) of the Gaussian distribution in `y` direction.
+    centre_x : float
+        Location of the Gaussian maximum (peak position) in `x` direction.
+    centre_x : float
+        Location of the Gaussian maximum (peak position) in `y` direction.
     
     
     For convenience the `fwhm_x` and `fwhm_y` attributes can be used to get 
