@@ -148,9 +148,9 @@ class TestEstimateElbowPosition:
         self.s = s
 
     def test_elbow_position(self):
-        variance = s.learning_results.explained_variance_ratio
+        variance = self.s.learning_results.explained_variance_ratio
         elbow = self.s._estimate_elbow_position(variance)
-        assert elbow = 4
+        assert elbow == 4
 
 
 class TestReverseDecompositionComponent:
@@ -263,7 +263,7 @@ class TestReturnInfo:
         for algorithm in ["svd", "fast_svd"]:
             print(algorithm)
             assert self.s.decomposition(
-                algorithm=algorithm, return_info=True, output_dimension=1) is None
+                algorithm=algorithm, return_info=True, output_dimension=2) is None
 
     # Warning filter can be removed after scikit-learn >= 0.22
     # See sklearn.decomposition.sparse_pca.SparsePCA docstring
@@ -274,13 +274,13 @@ class TestReturnInfo:
             assert self.s.decomposition(
                 algorithm=algorithm,
                 return_info=True,
-                output_dimension=1) is not None
+                output_dimension=2) is not None
         for algorithm in ["sklearn_pca", "nmf",
                           "sparse_pca", "mini_batch_sparse_pca"]:
             assert self.s.decomposition(
                 algorithm=algorithm,
                 return_info=True,
-                output_dimension=1) is not None
+                output_dimension=2) is not None
 
     # Warning filter can be removed after scikit-learn >= 0.22
     # See sklearn.decomposition.sparse_pca.SparsePCA docstring
@@ -291,13 +291,13 @@ class TestReturnInfo:
             assert self.s.decomposition(
                 algorithm=algorithm,
                 return_info=False,
-                output_dimension=1) is None
+                output_dimension=2) is None
         for algorithm in ["sklearn_pca", "nmf",
                           "sparse_pca", "mini_batch_sparse_pca", ]:
             assert self.s.decomposition(
                 algorithm=algorithm,
                 return_info=False,
-                output_dimension=1) is None
+                output_dimension=2) is None
 
 
 class TestNonFloatTypeError:
