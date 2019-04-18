@@ -150,7 +150,7 @@ class TestEstimateElbowPosition:
     def test_elbow_position(self):
         variance = s.learning_results.explained_variance_ratio
         elbow = self.s._estimate_elbow_position(variance)
-        assert elbow = 5
+        assert elbow = 4
 
 
 class TestReverseDecompositionComponent:
