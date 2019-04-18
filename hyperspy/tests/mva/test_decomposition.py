@@ -143,14 +143,23 @@ class TestEstimateElbowPosition:
 
     def setup_method(self, method):
         s = signals.BaseSignal(np.empty(1))
-        s.learning_results.explained_variance_ratio = np.asarray([10e-1,5e-2,9e-3,1e-3,9e-5,5e-5,3.0e-5,\
-                                                                       2.2e-5,1.9e-5,1.8e-5,1.7e-5,1.6e-5])
+        s.learning_results.explained_variance_ratio = np.asarray([10e-1, 5e-2, 9e-3, 1e-3, 9e-5, 5e-5, 3.0e-5,
+                                                                  2.2e-5, 1.9e-5, 1.8e-5, 1.7e-5, 1.6e-5])
         self.s = s
 
     def test_elbow_position(self):
         variance = self.s.learning_results.explained_variance_ratio
         elbow = self.s._estimate_elbow_position(variance)
         assert elbow == 4
+
+    def test_store_number_significant_components(self):
+        np.random.seed(1)
+        s = signals.Signal1D(np.random.random((20, 100)))
+        s.decomposition()
+        assert s.learning_results.no_significant_components == 2
+        # Check that no_significant_components is reset properly
+        s.decomposition(algorithm='nmf', output_dimension=2)
+        assert s.learning_results.no_significant_components is None
 
 
 class TestReverseDecompositionComponent:
@@ -328,4 +337,5 @@ class TestLoadDecompositionResults:
             self.s.learning_results.load(fname1)
             fname2 = join(tmpdir, "output.hspy")
             self.s.save(fname2)
-            assert isinstance(self.s.learning_results.decomposition_algorithm, str)
+            assert isinstance(
+                self.s.learning_results.decomposition_algorithm, str)
