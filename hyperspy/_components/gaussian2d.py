@@ -23,24 +23,42 @@ sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 
 class Gaussian2D(Expression):
-    """Normalized 2D elliptical gaussian function component
+    r"""Normalized 2D elliptical gaussian function component
 
     .. math::
 
-        f(x,y) = \\frac{A}{2\\pi s_x s_y}e^{-\\frac{\\left(x-x0\\right)
-        ^{2}}{2s_{x}^{2}}\\frac{\\left(y-y0\\right)^{2}}{2s_{y}^{2}}}
+        f(x,y) = \frac{A}{2\pi s_x s_y}\exp\left[-\frac{\left(x-x0\right)
+        ^{2}}{2s_{x}^{2}}\frac{\left(y-y0\right)^{2}}{2s_{y}^{2}}\right]
 
 
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |      a     | amplitude |
-    +------------+-----------+
-    |    x0,y0   |  centre   |
-    +------------+-----------+
-    |   s_x,s_y  |   sigma   |
-    +------------+-----------+
+    +-----------------+------------+
+    | Parameter       | Attribute  |
+    +-----------------+------------+
+    +-----------------+------------+
+    | :math:`A`       | A          |
+    +-----------------+------------+
+    | :math:`x_0,y_0` | centre_x/y |
+    +-----------------+------------+
+    | :math:`s_x,s_y` |  sigma_x/y |
+    +-----------------+------------+
+    
+    
+    Parameters
+    ----------
+    A : float
+        Amplitude (height of the peak).
+    centre_x : float
+        Location of the Gaussian maximum in `x` direction.
+    centre_x : float
+        Location of the Gaussian maximum in `y` direction.
+    sigma_x : float
+        Width of the peak in `x` direction.
+    sigma_y : float
+        Width of the peak in `y` direction.
+    
+    
+    For convenience the `fwhm_x` and `fwhm_y` attributes can be used to get 
+    and set the full-with-half-maxima along the two axes.
     """
 
     def __init__(self, A=1., sigma_x=1., sigma_y=1., centre_x=0., 
