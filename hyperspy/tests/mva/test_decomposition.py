@@ -152,6 +152,7 @@ class TestEstimateElbowPosition:
         elbow = self.s._estimate_elbow_position(variance)
         assert elbow == 4
 
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
     def test_store_number_significant_components(self):
         np.random.seed(1)
         s = signals.Signal1D(np.random.random((20, 100)))
