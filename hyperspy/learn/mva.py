@@ -978,10 +978,10 @@ class MVA():
             through the last component defined as signal.
             If False, the line will not be drawn in any circumstance.
         vline: {True, False} : Default : False
-            Whether or not to draw a vertical line illustrating an estimate of the
-            no of significant compontents. 
-            If True the line will be drawn at the estimated no of signicant
-            components which corresponds to the elbow position  + 1
+            Whether or not to draw a vertical line illustrating an estimate of
+            the number of significant components. If True, the line will be
+            drawn at the estimated number of significant components which
+            corresponds to the elbow position + 1.
             If False, the line will not be drawn in any circumstance.
         xaxis_type : {'index', 'number'}
             Determines the type of labeling applied to the x-axis.
@@ -1256,13 +1256,13 @@ class MVA():
 
         Parameters
         ----------
-        error_estimate : numpy.ndarray
+        curve_values : :class:`numpy.ndarray`
 
         Returns
         -------
         elbow position : int
-        
-        Index of the elbow position (+1)
+            Index of the elbow position in the input array (plus one),
+            as suggested in :ref:`[Satopää2011] <Satopää2011>`
         """
         maxpoints = min(20, len(curve_values) - 1)
         # Find a line between first and last point 
@@ -1314,13 +1314,15 @@ class LearningResults(object):
     signal_mask = None
 
     def save(self, filename, overwrite=None):
-        """Save the result of the decomposition and demixing analysis
+        """
+        Save the result of the decomposition and demixing analysis
+
         Parameters
         ----------
         filename : string
         overwrite : {True, False, None}
-            If True(False) overwrite(don't overwrite) the file if it exists.
-            If None (default) ask what to do if file exists.
+            If True (False) overwrite(don't overwrite) the file if it exists.
+            If None (default), ask what to do if file exists.
         """
         kwargs = {}
         for attribute in [
@@ -1338,8 +1340,10 @@ class LearningResults(object):
             np.savez(filename, **kwargs)
 
     def load(self, filename):
-        """Load the results of a previous decomposition and
-         demixing analysis from a file.
+        """
+        Load the results of a previous decomposition and demixing analysis
+        from a file.
+
         Parameters
         ----------
         filename : string
