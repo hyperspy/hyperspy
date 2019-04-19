@@ -217,7 +217,7 @@ class ORPCA:
 
     def __init__(self, rank, fast=False, lambda1=None, lambda2=None,
                  method=None, init=None, training_samples=None,
-                 subspace_learning_rate=None, subspace_momentum=None,
+                 subspace_learning_rate=None, subspace_momentum=None
                  learning_rate=None, momentum=None):
 
         self.nfeatures = None
@@ -260,7 +260,7 @@ class ORPCA:
                 _logger.warning("Momentum parameter for SGD algorithm is "
                                 "set to default: 0.5")
                 subspace_momentum = 0.5
-
+    
         if learning_rate is not None:
             warnings.warn(
                 "The argument `learning_rate` has been deprecated and may "
@@ -396,14 +396,14 @@ class ORPCA:
             elif self.method == 'SGD':
                 # Stochastic gradient descent
                 learn = self.subspace_learning_rate * (1 + self.subspace_learning_rate *
-                                                       thislambda1 * self.t)
+                                              thislambda1 * self.t)
                 self.L -= (np.dot(self.L, np.outer(r, r.T))
                            - np.outer((z - e), r.T)
                            + thislambda1 * self.L) / learn
             elif self.method == 'MomentumSGD':
                 # Stochastic gradient descent with momentum
                 learn = self.subspace_learning_rate * (1 + self.subspace_learning_rate *
-                                                       thislambda1 * self.t)
+                                              thislambda1 * self.t)
                 vold = self.subspace_momentum * self.vnew
                 self.vnew = (np.dot(self.L, np.outer(r, r.T))
                              - np.outer((z - e), r.T)
