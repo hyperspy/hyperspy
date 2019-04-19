@@ -25,6 +25,7 @@ import scipy.linalg
 from hyperspy.misc.machine_learning.import_sklearn import (
     fast_svd, sklearn_installed)
 from hyperspy.external.progressbar import progressbar
+from hyperspy.exceptions import VisibleDeprecationWarning
 
 _logger = logging.getLogger(__name__)
 
@@ -215,8 +216,9 @@ def _updatecol(X, A, B, I):
 class ORPCA:
 
     def __init__(self, rank, fast=False, lambda1=None, lambda2=None,
-                 method=None, subspace_learning_rate=None, init=None,
-                 training_samples=None, subspace_momentum=None):
+                 method=None, init=None, training_samples=None,
+                 subspace_learning_rate=None, subspace_momentum=None
+                 learning_rate=None, momentum=None):
 
         self.nfeatures = None
         self.normalize = False
@@ -258,6 +260,17 @@ class ORPCA:
                 _logger.warning("Momentum parameter for SGD algorithm is "
                                 "set to default: 0.5")
                 subspace_momentum = 0.5
+    
+        if learning_rate is not None:
+            warnings.warn(
+                "The argument `learning_rate` has been deprecated and may "
+                "be removed in future. Please use `subspace_learning_rate` instead.",
+                VisibleDeprecationWarning)
+        if momentum is not None:
+            warnings.warn(
+                "The argument `momentum` has been deprecated and may "
+                "be removed in future. Please use `subspace_momentum` instead.",
+                VisibleDeprecationWarning)
 
         self.rank = rank
         self.lambda1 = lambda1
@@ -436,9 +449,9 @@ def orpca(X, rank, fast=False,
           lambda1=None,
           lambda2=None,
           method=None,
-          subspace_learning_rate=None,
           init=None,
           training_samples=None,
+          subspace_learning_rate=None,
           subspace_momentum=None):
     """
     This function performs Online Robust PCA
@@ -463,10 +476,6 @@ def orpca(X, rank, fast=False,
         'SGD' - Stochastic gradient descent
         'MomentumSGD' - Stochastic gradient descent with momentum
         If None, set to 'CF'
-    subspace_learning_rate : {None, float}
-        Learning rate for the stochastic gradient
-        descent algorithm
-        If None, set to 1
     init : {None, 'qr', 'rand', np.ndarray}
         'qr'   - QR-based initialization
         'rand' - Random initialization
@@ -476,10 +485,18 @@ def orpca(X, rank, fast=False,
         Specifies the number of training samples to use in
         the 'qr' initialization
         If None, set to 10
+    subspace_learning_rate : {None, float}
+        Learning rate for the stochastic gradient
+        descent algorithm
+        If None, set to 1
     subspace_momentum : {None, float}
         Momentum parameter for 'MomentumSGD' method, should be
         a float between 0 and 1.
         If None, set to 0.5
+    learning_rate : {None, float}
+        Deprecated in favour of subspace_learning_rate
+    momentum : {None, float}
+        Deprecated in favour of subspace_momentum
 
     Returns
     -------
@@ -511,9 +528,12 @@ def orpca(X, rank, fast=False,
     X = X.T
     _orpca = ORPCA(rank, fast=fast, lambda1=lambda1,
                    lambda2=lambda2, method=method,
-                   subspace_learning_rate=subspace_learning_rate, init=init,
+                   init=init,
                    training_samples=training_samples,
-                   subspace_momentum=subspace_momentum)
+                   subspace_learning_rate=subspace_learning_rate,
+                   subspace_momentum=subspace_momentum,
+                   learning_rate=learning_rate,
+                   momentum=momentum)
     _orpca._setup(X, normalize=True)
     _orpca.fit(X)
     Xhat, Ehat, U, S, V = _orpca.finish()
