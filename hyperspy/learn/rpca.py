@@ -452,7 +452,9 @@ def orpca(X, rank, fast=False,
           init=None,
           training_samples=None,
           subspace_learning_rate=None,
-          subspace_momentum=None):
+          subspace_momentum=None,
+          learning_rate=None,
+          subspace_learning_rate=None):
     """
     This function performs Online Robust PCA
     with missing or corrupted data.
