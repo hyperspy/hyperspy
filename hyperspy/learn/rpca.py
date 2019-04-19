@@ -260,7 +260,7 @@ class ORPCA:
                 _logger.warning("Momentum parameter for SGD algorithm is "
                                 "set to default: 0.5")
                 subspace_momentum = 0.5
-    
+
         if learning_rate is not None:
             warnings.warn(
                 "The argument `learning_rate` has been deprecated and may "
@@ -374,10 +374,10 @@ class ORPCA:
                 _logger.info("Processing sample : %s" % (self.t + 1))
 
             # TODO: what about z.min()?
-            thislambda2 = self.lambda2  # * z.max()
-            thislambda1 = self.lambda1  # * z.max()
+            lambda2 = self.lambda2  # * z.max()
+            lambda1 = self.lambda1  # * z.max()
 
-            r, e = _solveproj(z, self.L, self.I, thislambda2)
+            r, e = _solveproj(z, self.L, self.I, lambda2)
 
             self.R.append(r)
             if not iterating:
@@ -396,18 +396,18 @@ class ORPCA:
             elif self.method == 'SGD':
                 # Stochastic gradient descent
                 learn = self.subspace_learning_rate * (1 + self.subspace_learning_rate *
-                                              thislambda1 * self.t)
+                                                       lambda1 * self.t)
                 self.L -= (np.dot(self.L, np.outer(r, r.T))
                            - np.outer((z - e), r.T)
-                           + thislambda1 * self.L) / learn
+                           + lambda1 * self.L) / learn
             elif self.method == 'MomentumSGD':
                 # Stochastic gradient descent with momentum
                 learn = self.subspace_learning_rate * (1 + self.subspace_learning_rate *
-                                              thislambda1 * self.t)
+                                                       lambda1 * self.t)
                 vold = self.subspace_momentum * self.vnew
                 self.vnew = (np.dot(self.L, np.outer(r, r.T))
                              - np.outer((z - e), r.T)
-                             + thislambda1 * self.L) / learn
+                             + lambda1 * self.L) / learn
                 self.L -= (vold + self.vnew)
             self.t += 1
 
