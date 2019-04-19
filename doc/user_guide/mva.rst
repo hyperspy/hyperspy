@@ -297,14 +297,18 @@ of components to keep. Setting this to a small number is recommended to keep
 the computation time small. Often it is useful to run a PCA decomposition first
 and use the scree plot to determine a value for "output_dimension".
 
-You can also use the online robust NMF method, based on the OPGD algorithm of
-:ref:`[Zhao2016] <Zhao2016>`. Note that this requites "output_dimension" to be
-specified. As with ORPCA described above, this is useful for corrupted datasets
-and for scenarios where the subspace is changing over time.
+Robust non-negative matrix factorization
+-----------------------------------
+
+In a similar manner to the online, robust ORPCA methods that complement PCA above,
+HyperSpy includes an online robust NMF method. This is based on the OPGD algorithm
+of :ref:`[Zhao2016] <Zhao2016>`. Note that this requires "output_dimension" to be specified.
+As with ORPCA described above, this is useful for corrupted datasets and for scenarios
+where the subspace, i.e. the underlying low-rank component, is changing over time.
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm='ONMF', output_dimension=3)
+   >>> s.decomposition(algorithm='ORNMF', output_dimension=3)
 
 Blind Source Separation
 =======================

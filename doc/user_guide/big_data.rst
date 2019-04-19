@@ -264,9 +264,9 @@ online algorithms:
 * **ORPCA** (``algorithm='ORPCA'``): performs Online Robust PCA. Please
   refer to the docstring of :py:meth:`~.learn.rpca.ORPCA` for details on
   usage and keyword arguments.
-* **NMF** (``algorithm='ONMF'``): performs Online Robust NMF, as per "OPGD"
+* **NMF** (``algorithm='ORNMF'``): performs Online Robust NMF, as per "OPGD"
   algorithm in :ref:`[Zhao2016] <Zhao2016>`. Please
-  refer to the docstring of :py:meth:`~.learn.onmf.ONMF` for details on
+  refer to the docstring of :py:meth:`~.learn.ornmf.ORNMF` for details on
   usage and keyword arguments.
 
 

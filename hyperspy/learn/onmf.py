@@ -103,7 +103,7 @@ def _solveproj(v, W, lambda1, kappa=1, h=None, r=None, vmax=None):
     return h, r
 
 
-class ONMF:
+class ORNMF:
     """This class performs Online Robust NMF
     with missing or corrupted data.
 
@@ -118,7 +118,7 @@ class ONMF:
 
     Notes
     -----
-    The ONMF code is based on a transcription of the OPGD algorithm MATLAB code
+    The ORNMF code is based on a transcription of the OPGD algorithm MATLAB code
     obtained from the authors of the following research paper:
         Zhao, Renbo, and Vincent YF Tan. "Online nonnegative matrix
         factorization with outliers." Acoustics, Speech and Signal Processing
@@ -129,7 +129,7 @@ class ONMF:
     (please see ORPCA implementation for details).
 
     A further modification has been made to allow for a changing subspace W,
-    where X ~= WH^T + E in the ONMF framework.
+    where X ~= WH^T + E in the ORNMF framework.
 
     """
 
@@ -346,7 +346,7 @@ class ONMF:
             return self.W, 0
 
 
-def onmf(X, rank,
+def ornmf(X, rank,
          lambda1=1,
          kappa=1,
          store_r=False,
@@ -356,7 +356,7 @@ def onmf(X, rank,
          subspace_learning_rate=1.,
          subspace_momentum=0.5):
 
-    _onmf = ONMF(rank,
+    _ornmf = ORNMF(rank,
                  lambda1=lambda1,
                  kappa=kappa,
                  store_r=store_r,
@@ -364,14 +364,14 @@ def onmf(X, rank,
                  subspace_tracking=subspace_tracking,
                  subspace_learning_rate=subspace_learning_rate,
                  subspace_momentum=subspace_momentum)
-    _onmf.fit(X)
+    _ornmf.fit(X)
     if project:
-        W = _onmf.W
-        H = _onmf.project(X)
+        W = _ornmf.W
+        H = _ornmf.project(X)
     else:
-        W, H = _onmf.finish()
+        W, H = _ornmf.finish()
 
     if store_r:
-        return np.dot(W, H), _onmf.R, W, H
+        return np.dot(W, H), _ornmf.R, W, H
     else:
         return W, H

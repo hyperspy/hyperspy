@@ -1,5 +1,5 @@
 import numpy as np
-from hyperspy.learn.onmf import onmf
+from hyperspy.learn.ornmf import ornmf
 
 
 def compare(a, b):
@@ -21,35 +21,35 @@ Y = X + E
 
 
 def test_default():
-    W, H = onmf(X, r)
+    W, H = ornmf(X, r)
     res = compare(np.dot(W, H), X.T)
     print(res)
     assert res < 0.06
 
 
 def test_corrupted_default():
-    W, H = onmf(Y, r)
+    W, H = ornmf(Y, r)
     res = compare(np.dot(W, H), X.T)
     print(res)
     assert res < 0.13
 
 
 def test_robust():
-    W, H = onmf(X, r, robust=True)
+    W, H = ornmf(X, r, robust=True)
     res = compare(np.dot(W, H), X.T)
     print(res)
     assert res < 0.05
 
 
 def test_corrupted_robust():
-    W, H = onmf(Y, r, robust=True)
+    W, H = ornmf(Y, r, robust=True)
     res = compare(np.dot(W, H), X.T)
     print(res)
     assert res < 0.11
 
 
 def test_subspace_tracking():
-    W, H = onmf(X, r, subspace_tracking=True)
+    W, H = ornmf(X, r, subspace_tracking=True)
     res = compare(np.dot(W, H), X.T)
     print(res)
     assert res < 0.2
