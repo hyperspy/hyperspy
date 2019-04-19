@@ -17,9 +17,9 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-
 from hyperspy._components.expression import Expression
-
+from distutils.version import LooseVersion
+import sympy
 
 class Erf(Expression):
 
@@ -54,6 +54,9 @@ class Erf(Expression):
     
     def __init__(self, A=1., sigma=1., origin=0., module="scipy",
                  **kwargs):
+        if LooseVersion(sympy.__version__) < LooseVersion("1.3"):
+            raise ImportError("The `SkewNormal` component requires "
+                              "SymPy >= 1.3")
         super(Erf, self).__init__(
             expression="A * erf((x - origin) / sqrt(2) / sigma) / 2",
             name="Erf",

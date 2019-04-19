@@ -19,9 +19,15 @@
 
 import numpy as np
 from numpy.testing import assert_allclose
+import pytest
+from distutils.version import LooseVersion
+import sympy
 
 from hyperspy.components1d import Erf
 
+pytestmark = pytest.mark.skipif(LooseVersion(sympy.__version__) <
+                                LooseVersion("1.3"),
+                                reason="This test requires SymPy >= 1.3")
 
 def test_function():
     g = Erf()
