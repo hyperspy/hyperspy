@@ -301,8 +301,11 @@ Robust non-negative matrix factorization
 -----------------------------------
 
 In a similar manner to the online, robust ORPCA methods that complement PCA above,
-HyperSpy includes an online robust NMF method. This is based on the OPGD algorithm
-of :ref:`[Zhao2016] <Zhao2016>`. Note that this requires "output_dimension" to be specified.
+HyperSpy includes an online robust NMF method. This is based on the OPGD (Online
+Proximal Gradient Descent) algorithm of :ref:`[Zhao2016] <Zhao2016>`.
+
+Note that this requires "output_dimension" to be specified.
+
 As with ORPCA described above, this is useful for corrupted datasets and for scenarios
 where the subspace, i.e. the underlying low-rank component, is changing over time.
 

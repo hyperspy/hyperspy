@@ -149,12 +149,14 @@ class ORNMF:
         store_r : bool
             If True, stores the sparse error matrix, False by default.
         robust : bool
-            If True, the original OPGD implementation is used for
-            corruption/outlier regularization, otherwise L2-norm. False by
-            default.
+            If True, the original OPGD (online proximal gradient descent)
+            implementation is used for corruption/outlier regularization,
+            otherwise L2-norm.
+            False by default.
         subspace_tracking : bool
             If True, uses stochastic gradient descent to accommodate a changing
-            subspace, W. False by default
+            subspace, W.
+            False by default
         subspace_learning_rate : float
             Learning rate for stochastic gradient descent.
         subspace_momentum : float
@@ -245,10 +247,13 @@ class ORNMF:
                 length = X.shape[0]
                 num = max(length // batch_size, 1)
                 X = np.array_split(X, num, axis=0)
+
         if isinstance(X, np.ndarray):
             num = X.shape[0]
             X = iter(X)
+
         r, h = self.r, self.h
+
         for v in progressbar(X, leave=False, total=num, disable=num == 1):
             h, r = _solveproj(v, self.W, self.lambda1, self.kappa, r=r, h=h)
             self.v = v
@@ -262,6 +267,7 @@ class ORNMF:
             if not self.subspace_tracking:
                 self.A += prod(h, h.T)
                 self.B += prod((v.T - r), h.T)
+
             self._solve_W()
             self.t += 1
         self.r = r

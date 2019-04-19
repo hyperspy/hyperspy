@@ -264,12 +264,10 @@ online algorithms:
 * **ORPCA** (``algorithm='ORPCA'``): performs Online Robust PCA. Please
   refer to the docstring of :py:meth:`~.learn.rpca.ORPCA` for details on
   usage and keyword arguments.
-* **NMF** (``algorithm='ORNMF'``): performs Online Robust NMF, as per "OPGD"
-  algorithm in :ref:`[Zhao2016] <Zhao2016>`. Please
-  refer to the docstring of :py:meth:`~.learn.ornmf.ORNMF` for details on
+* **NMF** (``algorithm='ORNMF'``): performs Online Robust NMF, as per the
+  "OPGD (Online Proximal Gradient Descent)" algorithm in :ref:`[Zhao2016] <Zhao2016>`.
+  Please refer to the docstring of :py:meth:`~.learn.ornmf.ORNMF` for details on
   usage and keyword arguments.
-
-
 
 Other minor differences
 ^^^^^^^^^^^^^^^^^^^^^^^
