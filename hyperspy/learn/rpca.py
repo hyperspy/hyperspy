@@ -215,8 +215,8 @@ def _updatecol(X, A, B, I):
 class ORPCA:
 
     def __init__(self, rank, fast=False, lambda1=None, lambda2=None,
-                 method=None, learning_rate=None, init=None,
-                 training_samples=None, momentum=None):
+                 method=None, subspace_learning_rate=None, init=None,
+                 training_samples=None, subspace_momentum=None):
 
         self.nfeatures = None
         self.normalize = False
@@ -248,16 +248,16 @@ class ORPCA:
                 _logger.warning("Number of training samples for 'qr' method "
                                 "not specified. Defaulting to %d samples" %
                                 training_samples)
-        if learning_rate is None:
+        if subspace_learning_rate is None:
             if method in ('SGD', 'MomentumSGD'):
                 _logger.warning("Learning rate for SGD algorithm is "
                                 "set to default: 1.0")
-                learning_rate = 1.0
-        if momentum is None:
+                subspace_learning_rate = 1.0
+        if subspace_momentum is None:
             if method == 'MomentumSGD':
                 _logger.warning("Momentum parameter for SGD algorithm is "
                                 "set to default: 0.5")
-                momentum = 0.5
+                subspace_momentum = 0.5
 
         self.rank = rank
         self.lambda1 = lambda1
@@ -265,8 +265,8 @@ class ORPCA:
         self.method = method
         self.init = init
         self.training_samples = training_samples
-        self.learning_rate = learning_rate
-        self.momentum = momentum
+        self.subspace_learning_rate = subspace_learning_rate
+        self.subspace_momentum = subspace_momentum
 
         # Check options are valid
         if method not in ('CF', 'BCD', 'SGD', 'MomentumSGD'):
@@ -276,8 +276,8 @@ class ORPCA:
         if init == 'qr' and training_samples < rank:
             raise ValueError(
                 "'training_samples' must be >= 'output_dimension'")
-        if method == 'MomentumSGD' and (momentum > 1. or momentum < 0.):
-            raise ValueError("'momentum' must be a float between 0 and 1")
+        if method == 'MomentumSGD' and (subspace_momentum > 1. or subspace_momentum < 0.):
+            raise ValueError("'subspace_momentum' must be a float between 0 and 1")
 
     def _setup(self, X, normalize=False):
 
@@ -382,16 +382,16 @@ class ORPCA:
                 self.L = _updatecol(self.L, self.A, self.B, self.I)
             elif self.method == 'SGD':
                 # Stochastic gradient descent
-                learn = self.learning_rate * (1 + self.learning_rate *
+                learn = self.subspace_learning_rate * (1 + self.subspace_learning_rate *
                                               thislambda1 * self.t)
                 self.L -= (np.dot(self.L, np.outer(r, r.T))
                            - np.outer((z - e), r.T)
                            + thislambda1 * self.L) / learn
             elif self.method == 'MomentumSGD':
                 # Stochastic gradient descent with momentum
-                learn = self.learning_rate * (1 + self.learning_rate *
+                learn = self.subspace_learning_rate * (1 + self.subspace_learning_rate *
                                               thislambda1 * self.t)
-                vold = self.momentum * self.vnew
+                vold = self.subspace_momentum * self.vnew
                 self.vnew = (np.dot(self.L, np.outer(r, r.T))
                              - np.outer((z - e), r.T)
                              + thislambda1 * self.L) / learn
@@ -436,10 +436,10 @@ def orpca(X, rank, fast=False,
           lambda1=None,
           lambda2=None,
           method=None,
-          learning_rate=None,
+          subspace_learning_rate=None,
           init=None,
           training_samples=None,
-          momentum=None):
+          subspace_momentum=None):
     """
     This function performs Online Robust PCA
     with missing or corrupted data.
@@ -463,7 +463,7 @@ def orpca(X, rank, fast=False,
         'SGD' - Stochastic gradient descent
         'MomentumSGD' - Stochastic gradient descent with momentum
         If None, set to 'CF'
-    learning_rate : {None, float}
+    subspace_learning_rate : {None, float}
         Learning rate for the stochastic gradient
         descent algorithm
         If None, set to 1
@@ -476,7 +476,7 @@ def orpca(X, rank, fast=False,
         Specifies the number of training samples to use in
         the 'qr' initialization
         If None, set to 10
-    momentum : {None, float}
+    subspace_momentum : {None, float}
         Momentum parameter for 'MomentumSGD' method, should be
         a float between 0 and 1.
         If None, set to 0.5
@@ -511,9 +511,9 @@ def orpca(X, rank, fast=False,
     X = X.T
     _orpca = ORPCA(rank, fast=fast, lambda1=lambda1,
                    lambda2=lambda2, method=method,
-                   learning_rate=learning_rate, init=init,
+                   subspace_learning_rate=subspace_learning_rate, init=init,
                    training_samples=training_samples,
-                   momentum=momentum)
+                   subspace_momentum=subspace_momentum)
     _orpca._setup(X, normalize=True)
     _orpca.fit(X)
     Xhat, Ehat, U, S, V = _orpca.finish()

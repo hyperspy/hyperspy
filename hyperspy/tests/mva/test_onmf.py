@@ -35,21 +35,21 @@ def test_corrupted_default():
 
 
 def test_robust():
-    W, H = ornmf(X, r, robust=True)
+    W, H = ornmf(X, r, method='RobustPGD')
     res = compare(np.dot(W, H), X.T)
     print(res)
     assert res < 0.05
 
 
 def test_corrupted_robust():
-    W, H = ornmf(Y, r, robust=True)
+    W, H = ornmf(Y, r, method='RobustPGD')
     res = compare(np.dot(W, H), X.T)
     print(res)
     assert res < 0.11
 
 
 def test_subspace_tracking():
-    W, H = ornmf(X, r, subspace_tracking=True)
+    W, H = ornmf(X, r, method='MomentumSGD')
     res = compare(np.dot(W, H), X.T)
     print(res)
     assert res < 0.2

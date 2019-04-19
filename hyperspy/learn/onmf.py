@@ -134,8 +134,7 @@ class ORNMF:
     """
 
     def __init__(self, rank, lambda1=1., kappa=1., store_r=False,
-                 robust=False, subspace_tracking=False,
-                 subspace_learning_rate=1., subspace_momentum=0.5):
+                 method=None, subspace_learning_rate=1., subspace_momentum=0.5):
         """Creates Online Robust NMF instance that can learn a representation
 
         Parameters
@@ -148,15 +147,11 @@ class ORNMF:
             Sparse error regularization parameter.
         store_r : bool
             If True, stores the sparse error matrix, False by default.
-        robust : bool
-            If True, the original OPGD (online proximal gradient descent)
-            implementation is used for corruption/outlier regularization,
-            otherwise L2-norm.
-            False by default.
-        subspace_tracking : bool
-            If True, uses stochastic gradient descent to accommodate a changing
-            subspace, W.
-            False by default
+        method : {None, 'PGD', 'RobustPGD', 'MomentumSGD'}
+            'PGD' - Proximal gradient descent
+            'RobustPGD' - Robust proximal gradient descent
+            'MomentumSGD' - Stochastic gradient descent with momentum
+            If None, set to PGD
         subspace_learning_rate : float
             Learning rate for stochastic gradient descent.
         subspace_momentum : float
@@ -164,7 +159,8 @@ class ORNMF:
             range 0 <= x <= 1.
 
         """
-        self.robust = robust
+        self.robust = False
+        self.subspace_tracking = False
         self.nfeatures = None
         self.rank = rank
         self.lambda1 = lambda1
@@ -172,14 +168,22 @@ class ORNMF:
         self.H = []
         self.t = 0
 
-        if robust and subspace_tracking:
-            raise NotImplementedError('"subspace_tracking" is not supported '
-                                      'with "robust"=True')
+        if method is None:
+            _logger.warning("No method specified. Defaulting to "
+                            "'PGD' (proximal gradient descent)")
+            method = 'PGD'
 
-        if subspace_momentum < 0. or subspace_momentum > 1:
-            raise ValueError('"subspace_momentum" must be in range [0, 1]')
+        if method not in ('PGD', 'RobustPGD', 'MomentumSGD'):
+            raise ValueError("'method' not recognised")
 
-        self.subspace_tracking = subspace_tracking
+        if method == 'RobustPGD':
+            self.robust = True
+
+        if method == 'MomentumSGD':
+            self.subspace_tracking = True
+            if subspace_momentum < 0. or subspace_momentum > 1:
+                raise ValueError('"subspace_momentum" must be in range [0, 1]')
+
         self.subspace_learning_rate = subspace_learning_rate
         self.subspace_momentum = subspace_momentum
 
@@ -196,10 +200,10 @@ class ORNMF:
                 self.X_min = X.min()
                 self.X_max = X.max()
                 self.normalize = normalize
-                # actually scale the data to be between 0 and 1, not just close
-                # to it..
+                # actually scale the data to be between 0 and 1,
+                # not just close to it..
                 X = _normalize(X, ar_min=self.X_min, ar_max=self.X_max)
-                # X = (X - self.X_min) / (self.X_max - self.X_min)
+
             avg = np.sqrt(X.mean() / m)
         else:
             if normalize:
@@ -357,8 +361,7 @@ def ornmf(X, rank,
          kappa=1,
          store_r=False,
          project=False,
-         robust=False,
-         subspace_tracking=False,
+         method=None,
          subspace_learning_rate=1.,
          subspace_momentum=0.5):
 
@@ -366,8 +369,7 @@ def ornmf(X, rank,
                  lambda1=lambda1,
                  kappa=kappa,
                  store_r=store_r,
-                 robust=robust,
-                 subspace_tracking=subspace_tracking,
+                 method=method,
                  subspace_learning_rate=subspace_learning_rate,
                  subspace_momentum=subspace_momentum)
     _ornmf.fit(X)

@@ -263,7 +263,7 @@ finding the correct minima. Usually a value between 1 and 2 works well:
    >>> s.decomposition(algorithm='ORPCA',
    ...                 output_dimension=3,
    ...                 method='SGD',
-   ...                 learning_rate=1.1)
+   ...                 subspace_learning_rate=1.1)
 
 The third method is MomentumSGD, which typically improves the convergence
 properties of stochastic gradient descent. This takes the further parameter
@@ -274,8 +274,13 @@ properties of stochastic gradient descent. This takes the further parameter
    >>> s.decomposition(algorithm='ORPCA',
    ...                 output_dimension=3,
    ...                 method='MomentumSGD',
-   ...                 learning_rate=1.1,
-   ...                 momentum=0.5)
+   ...                 subspace_learning_rate=1.1,
+   ...                 subspace_momentum=0.5)
+
+Using the SGD or MomentumSGD methods enables the subspace, subspace,
+i.e. the underlying low-rank component, to be tracked as it changes
+with each sample update. The BCD or closed-form solvers assume a fixed,
+static subspace.
 
 Non-negative matrix factorization
 ----------------------------
@@ -300,18 +305,38 @@ and use the scree plot to determine a value for "output_dimension".
 Robust non-negative matrix factorization
 -----------------------------------
 
-In a similar manner to the online, robust ORPCA methods that complement PCA above,
+In a similar manner to the online, robust methods that complement PCA above,
 HyperSpy includes an online robust NMF method. This is based on the OPGD (Online
 Proximal Gradient Descent) algorithm of :ref:`[Zhao2016] <Zhao2016>`.
 
 Note that this requires "output_dimension" to be specified.
 
-As with ORPCA described above, this is useful for corrupted datasets and for scenarios
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='ORNMF',
+                       output_dimension=3)
+
+As with ORPCA described above, the MomentumSGD method  is useful for scenarios
 where the subspace, i.e. the underlying low-rank component, is changing over time.
 
 .. code-block:: python
 
-   >>> s.decomposition(algorithm='ORNMF', output_dimension=3)
+   >>> s.decomposition(algorithm='ORNMF',
+                       output_dimension=3,
+                       method='MomentumSGD',
+                       subspace_learning_rate=1.1,
+                       subspace_momentum=0.5)
+
+
+The default and MomentumSGD solvers assumes an l2-norm minimization problem,
+which can still be sensitive to very heavily corrupted data. A more robust
+alternative is available, although it is typically much slower than the l2 approach
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='ORNMF',
+                       output_dimension=3,
+                       method='RobustPGD')
 
 Blind Source Separation
 =======================
