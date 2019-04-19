@@ -217,7 +217,7 @@ class ORPCA:
 
     def __init__(self, rank, fast=False, lambda1=None, lambda2=None,
                  method=None, init=None, training_samples=None,
-                 subspace_learning_rate=None, subspace_momentum=None
+                 subspace_learning_rate=None, subspace_momentum=None,
                  learning_rate=None, momentum=None):
 
         self.nfeatures = None
