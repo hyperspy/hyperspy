@@ -52,4 +52,18 @@ def test_subspace_tracking():
     W, H = ornmf(X, r, method='MomentumSGD')
     res = compare(np.dot(W, H), X.T)
     print(res)
-    assert res < 0.2
+    assert res < 2.0
+
+
+def test_subspace_tracking_learning_rate():
+    W, H = ornmf(X, r, method='MomentumSGD', subspace_learning_rate=0.1)
+    res = compare(np.dot(W, H), X.T)
+    print(res)
+    assert res < 2.0
+
+
+def test_subspace_tracking_momentum():
+    W, H = ornmf(X, r, method='MomentumSGD', subspace_momentum=0.9)
+    res = compare(np.dot(W, H), X.T)
+    print(res)
+    assert res < 2.0
