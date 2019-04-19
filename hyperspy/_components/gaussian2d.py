@@ -73,6 +73,7 @@ class Gaussian2D(Expression):
             sigma_y=sigma_y,
             centre_x=centre_x,
             centre_y=centre_y,
+            position = ("centre_x", "centre_y"),
             module=module,
             autodoc=False,
             **kwargs)
