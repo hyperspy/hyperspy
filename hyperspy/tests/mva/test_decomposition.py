@@ -153,6 +153,16 @@ class TestEstimateElbowPosition:
         elbow = self.s._estimate_elbow_position(variance)
         assert elbow == 4
 
+    @pytest.mark.skipif(not sklearn_installed, reason="sklearn not installed")
+    def test_store_number_significant_components(self):
+        np.random.seed(1)
+        s = signals.Signal1D(np.random.random((20, 100)))
+        s.decomposition()
+        assert s.learning_results.num_significant_components == 2
+        # Check that num_significant_components is reset properly
+        s.decomposition(algorithm='nmf', output_dimension=2)
+        assert s.learning_results.num_significant_components is None
+
 
 class TestReverseDecompositionComponent:
 
@@ -264,7 +274,7 @@ class TestReturnInfo:
         for algorithm in ["svd", "fast_svd"]:
             print(algorithm)
             assert self.s.decomposition(
-                algorithm=algorithm, return_info=True, output_dimension=1) is None
+                algorithm=algorithm, return_info=True, output_dimension=2) is None
 
     # Warning filter can be removed after scikit-learn >= 0.22
     # See sklearn.decomposition.sparse_pca.SparsePCA docstring
@@ -275,13 +285,13 @@ class TestReturnInfo:
             assert self.s.decomposition(
                 algorithm=algorithm,
                 return_info=True,
-                output_dimension=1) is not None
+                output_dimension=2) is not None
         for algorithm in ["sklearn_pca", "nmf",
                           "sparse_pca", "mini_batch_sparse_pca"]:
             assert self.s.decomposition(
                 algorithm=algorithm,
                 return_info=True,
-                output_dimension=1) is not None
+                output_dimension=2) is not None
 
     # Warning filter can be removed after scikit-learn >= 0.22
     # See sklearn.decomposition.sparse_pca.SparsePCA docstring
@@ -292,13 +302,13 @@ class TestReturnInfo:
             assert self.s.decomposition(
                 algorithm=algorithm,
                 return_info=False,
-                output_dimension=1) is None
+                output_dimension=2) is None
         for algorithm in ["sklearn_pca", "nmf",
                           "sparse_pca", "mini_batch_sparse_pca", ]:
             assert self.s.decomposition(
                 algorithm=algorithm,
                 return_info=False,
-                output_dimension=1) is None
+                output_dimension=2) is None
 
 
 class TestNonFloatTypeError:
@@ -329,4 +339,5 @@ class TestLoadDecompositionResults:
             self.s.learning_results.load(fname1)
             fname2 = join(tmpdir, "output.hspy")
             self.s.save(fname2)
-            assert isinstance(self.s.learning_results.decomposition_algorithm, str)
+            assert isinstance(
+                self.s.learning_results.decomposition_algorithm, str)

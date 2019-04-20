@@ -145,8 +145,10 @@ class MVA():
             If not None, the results of the decomposition will be projected in
             the selected masked area.
         return_info: bool, default False
-            The result of the decomposition is stored internally. However, some algorithms generate some extra
-            information that is not stored. If True (the default is False) return any extra information if available
+            The result of the decomposition is stored internally. However, 
+            some algorithms generate some extra information that is not 
+            stored. If True (the default is False) return any extra 
+            information if available
 
         Returns
         -------
@@ -238,6 +240,7 @@ class MVA():
             # algorithms
             explained_variance = None
             explained_variance_ratio = None
+            no_significant_components = None
             mean = None
 
             if algorithm == 'svd':
@@ -387,11 +390,11 @@ class MVA():
                             explained_variance_ratio)+ 1
 
             # Store the results in learning_results
-
             target.factors = factors
             target.loadings = loadings
             target.explained_variance = explained_variance
             target.explained_variance_ratio = explained_variance_ratio
+            target.num_significant_components = num_significant_components
             target.decomposition_algorithm = algorithm
             target.poissonian_noise_normalized = \
                 normalize_poissonian_noise
@@ -1267,7 +1270,7 @@ class MVA():
         maxpoints = min(20, len(curve_values) - 1)
         # Find a line between first and last point 
         # With a classic elbow scree plot the line from first to last
-        # more or less defines a triangle 
+        # more or less defines a triangle
         # The elbow should be the point which is the
         # furthest distance from this line
         
@@ -1275,7 +1278,6 @@ class MVA():
         x2 = maxpoints
         y1 = np.log(curve_values[0])
         x1 = 0
-        
         # loop through the curve values and calculate 
         distance = np.zeros(maxpoints)
         for i in range(maxpoints):
@@ -1283,7 +1285,6 @@ class MVA():
             x0 = i
             distance[i] = np.abs((x2-x1)*(y1-y0)-(x1-x0)*(y2-y1))/\
                           np.math.sqrt((x2-x1)**2+(y2-y1)**2)  
-            
         # Point with the largest distance is the "elbow"
         elbow_position = np.argmax(distance)
         return elbow_position
