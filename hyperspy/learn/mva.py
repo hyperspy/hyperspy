@@ -240,7 +240,7 @@ class MVA():
             # algorithms
             explained_variance = None
             explained_variance_ratio = None
-            no_significant_components = None
+            num_significant_components = None
             mean = None
 
             if algorithm == 'svd':
@@ -1069,7 +1069,7 @@ class MVA():
             if self.learning_results.num_significant_components is None:
                 vline = False
             else:
-                index_no_sig_components =\
+                index_num_sig_components =\
                     self.learning_results.num_significant_components - 1
         else:
             vline = False
@@ -1134,7 +1134,7 @@ class MVA():
                        zorder=1)
 
         if vline:
-            ax.axvline(index_no_sig_components,
+            ax.axvline(index_num_sig_components,
                        linewidth=2,
                        color='gray',
                        linestyle='dashed',
