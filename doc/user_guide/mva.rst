@@ -106,10 +106,12 @@ signal, as opposed to noise. Alternatively, by providing an integer value
 for ``threshold``, the line will be drawn at the specified component (see
 below).  The number of significant components can be estimated and a vertical
 line drawn to represent this by specifying ``vline`` as ``True``. In this case,
-the elbow or knee is found in the variance plot by estimating the distance from
-each point in the variance plot to a line joining the first and last points of
-the plot.  As the index starts at zero, the number of significant PCA components
-is the elbow index position + 1.
+the elbow or knee is found in the variance plot by estimating the distance 
+from each point in the variance plot to a line joining the first and last 
+points of the plot and selecting the point where this distance is largest. 
+In case of multiple occurrences of a maximum value the index corresponding 
+to the first occurrence is returned. As the index starts at zero, the number 
+of significant PCA components is the elbow index position + 1.
 
 .. figure::  images/screeplot_elbow_method.png
    :align:   center
