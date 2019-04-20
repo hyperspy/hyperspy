@@ -93,9 +93,9 @@ To obtain a scree plot for your dataset, run the
    PCA scree plot
 
 .. versionadded:: 1.2.0
-   ``log``, ``threshold``, ``hline``,``vline``, ``xaxis_type``, ``xaxis_labeling``,
-   ``signal_fmt``, ``noise_fmt``, ``threshold``, ``xaxis_type`` keyword
-   arguments.
+   ``log``, ``threshold``, ``hline``,``vline``, ``xaxis_type``,
+   ``xaxis_labeling``, ``signal_fmt``, ``noise_fmt``, ``threshold``,
+   ``xaxis_type`` keyword arguments.
 
 The default options for this method will plot a bare scree plot, but the
 method's arguments allow for a great deal of customization. For
@@ -104,11 +104,12 @@ the total variance specified, and the components above this value will be
 styled distinctly from the remaining components to show which are considered
 signal, as opposed to noise. Alternatively, by providing an integer value
 for ``threshold``, the line will be drawn at the specified component (see
-below).  The number of significant components can be estimated and a vertical line drawn to
-represent this by specifying ``vline`` as True. In this case, the elbow or knee is found 
-in the variance plot by estimating the distance from each point in the variance plot 
-to a line joining the first and last points of the plot.  As the index starts at zero the 
-number of significant PCA components is the elbow index position + 1. 
+below).  The number of significant components can be estimated and a vertical
+line drawn to represent this by specifying ``vline`` as ``True``. In this case,
+the elbow or knee is found in the variance plot by estimating the distance from
+each point in the variance plot to a line joining the first and last points of
+the plot.  As the index starts at zero, the number of significant PCA components
+is the elbow index position + 1.
 
 .. figure::  images/screeplot_elbow_method.png
    :align:   center
@@ -300,7 +301,7 @@ properties of stochastic gradient descent. This takes the further parameter
    ...                 momentum=0.5)
 
 Non-negative matrix factorization
-----------------------------
+---------------------------------
 
 Another popular decomposition method is non-negative matrix factorization
 (NMF), which can be accessed in HyperSpy with:

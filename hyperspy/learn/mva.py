@@ -385,15 +385,16 @@ class MVA():
                     explained_variance_ratio is None:
                 explained_variance_ratio = \
                     explained_variance / explained_variance.sum()
-                no_significant_components = \
-                    self._estimate_elbow_position(explained_variance_ratio) + 1
+                num_significant_components = \
+                    self._estimate_elbow_position(
+                            explained_variance_ratio)+ 1
 
             # Store the results in learning_results
             target.factors = factors
             target.loadings = loadings
             target.explained_variance = explained_variance
             target.explained_variance_ratio = explained_variance_ratio
-            target.no_significant_components = no_significant_components
+            target.num_significant_components = num_significant_components
             target.decomposition_algorithm = algorithm
             target.poissonian_noise_normalized = \
                 normalize_poissonian_noise
@@ -980,10 +981,10 @@ class MVA():
             through the last component defined as signal.
             If False, the line will not be drawn in any circumstance.
         vline: {True, False} : Default : False
-            Whether or not to draw a vertical line illustrating an estimate of the
-            no of significant compontents. 
-            If True the line will be drawn at the estimated no of signicant
-            components which corresponds to the elbow position  + 1
+            Whether or not to draw a vertical line illustrating an estimate of
+            the number of significant components. If True, the line will be
+            drawn at the estimated number of significant components which
+            corresponds to the elbow position + 1.
             If False, the line will not be drawn in any circumstance.
         xaxis_type : {'index', 'number'}
             Determines the type of labeling applied to the x-axis.
@@ -1065,11 +1066,11 @@ class MVA():
                 hline = False
 
         if vline == True:
-            if self.learning_results.no_significant_components is None:
+            if self.learning_results.num_significant_components is None:
                 vline = False
             else:
                 index_no_sig_components =\
-                    self.learning_results.no_significant_components-1
+                    self.learning_results.num_significant_components - 1
         else:
             vline = False
 
@@ -1250,42 +1251,40 @@ class MVA():
         self.data[:] = self._data_before_treatments
         del self._data_before_treatments
 
-    def _estimate_elbow_position(self, error_estimate):
+    def _estimate_elbow_position(self, curve_values):
         """
-        Estimate the elbow position of a curve
-        Used to estimate the no of significant components in PCA variance ratio
-        plot or other "elbow" type curves
+        Estimate the elbow position of a scree plot curve 
+        Used to estimate the number of significant components in 
+        a PCA variance ratio plot or other "elbow" type curves
 
         Parameters
         ----------
-        error_estimate : array
+        curve_values : :class:`numpy.ndarray`
 
         Returns
         -------
         elbow position : int
-
-        Index of the elbow position (+1)
-
+            Index of the elbow position in the input array (plus one),
+            as suggested in :ref:`[Satopää2011] <Satopää2011>`
         """
-        maxpoints = min(20, len(error_estimate)-1)
-        # Find a line between first and last point
+        maxpoints = min(20, len(curve_values) - 1)
+        # Find a line between first and last point 
         # With a classic elbow scree plot the line from first to last
         # more or less defines a triangle
         # The elbow should be the point which is the
         # furthest distance from this line
-        #
-        y2 = np.log(error_estimate[maxpoints])
+        
+        y2 = np.log(curve_values[maxpoints])
         x2 = maxpoints
-        y1 = np.log(error_estimate[0])
+        y1 = np.log(curve_values[0])
         x1 = 0
-        # loop
-        distance = np.zeros((maxpoints))
+        # loop through the curve values and calculate 
+        distance = np.zeros(maxpoints)
         for i in range(maxpoints):
-            y0 = np.log(error_estimate[i])
+            y0 = np.log(curve_values[i])
             x0 = i
-            distance[i] = np.abs((x2-x1)*(y1-y0)-(x1-x0)*(y2-y1))\
-                / np.math.sqrt((x2-x1)**2+(y2-y1)**2)
-
+            distance[i] = np.abs((x2-x1)*(y1-y0)-(x1-x0)*(y2-y1))/\
+                          np.math.sqrt((x2-x1)**2+(y2-y1)**2)  
         # Point with the largest distance is the "elbow"
         elbow_position = np.argmax(distance)
         return elbow_position
@@ -1297,7 +1296,7 @@ class LearningResults(object):
     loadings = None
     explained_variance = None
     explained_variance_ratio = None
-    no_significant_components = None
+    num_significant_components = None
     decomposition_algorithm = None
     poissonian_noise_normalized = None
     output_dimension = None
@@ -1316,13 +1315,15 @@ class LearningResults(object):
     signal_mask = None
 
     def save(self, filename, overwrite=None):
-        """Save the result of the decomposition and demixing analysis
+        """
+        Save the result of the decomposition and demixing analysis
+
         Parameters
         ----------
         filename : string
         overwrite : {True, False, None}
-            If True(False) overwrite(don't overwrite) the file if it exists.
-            If None (default) ask what to do if file exists.
+            If True (False) overwrite(don't overwrite) the file if it exists.
+            If None (default), ask what to do if file exists.
         """
         kwargs = {}
         for attribute in [
@@ -1340,8 +1341,10 @@ class LearningResults(object):
             np.savez(filename, **kwargs)
 
     def load(self, filename):
-        """Load the results of a previous decomposition and
-         demixing analysis from a file.
+        """
+        Load the results of a previous decomposition and demixing analysis
+        from a file.
+
         Parameters
         ----------
         filename : string

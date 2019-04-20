@@ -143,8 +143,9 @@ class TestEstimateElbowPosition:
 
     def setup_method(self, method):
         s = signals.BaseSignal(np.empty(1))
-        s.learning_results.explained_variance_ratio = np.asarray([10e-1, 5e-2, 9e-3, 1e-3, 9e-5, 5e-5, 3.0e-5,
-                                                                  2.2e-5, 1.9e-5, 1.8e-5, 1.7e-5, 1.6e-5])
+        s.learning_results.explained_variance_ratio = \
+            np.asarray([10e-1, 5e-2, 9e-3, 1e-3, 9e-5, 5e-5, 3.0e-5,
+                        2.2e-5, 1.9e-5, 1.8e-5, 1.7e-5, 1.6e-5])
         self.s = s
 
     def test_elbow_position(self):
@@ -157,10 +158,10 @@ class TestEstimateElbowPosition:
         np.random.seed(1)
         s = signals.Signal1D(np.random.random((20, 100)))
         s.decomposition()
-        assert s.learning_results.no_significant_components == 2
-        # Check that no_significant_components is reset properly
+        assert s.learning_results.num_significant_components == 2
+        # Check that num_significant_components is reset properly
         s.decomposition(algorithm='nmf', output_dimension=2)
-        assert s.learning_results.no_significant_components is None
+        assert s.learning_results.num_significant_components is None
 
 
 class TestReverseDecompositionComponent:
