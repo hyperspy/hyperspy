@@ -983,8 +983,8 @@ class MVA():
         vline: {True, False} : Default : False
             Whether or not to draw a vertical line illustrating an estimate of
             the number of significant components. If True, the line will be
-            drawn at the estimated number of significant components which
-            corresponds to the elbow position + 1.
+            drawn at the the knee or elbow position of the curve indicating the
+            number of significant components.
             If False, the line will not be drawn in any circumstance.
         xaxis_type : {'index', 'number'}
             Determines the type of labeling applied to the x-axis.
@@ -1264,7 +1264,7 @@ class MVA():
         Returns
         -------
         elbow position : int
-            Index of the elbow position in the input array (plus one),
+            Index of the elbow position in the input array,
             as suggested in :ref:`[Satopää2011] <Satopää2011>`
         """
         maxpoints = min(20, len(curve_values) - 1)
