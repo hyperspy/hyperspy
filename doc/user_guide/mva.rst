@@ -109,9 +109,9 @@ line drawn to represent this by specifying ``vline`` as ``True``. In this case,
 the elbow or knee is found in the variance plot by estimating the distance 
 from each point in the variance plot to a line joining the first and last 
 points of the plot and selecting the point where this distance is largest. 
-In case of multiple occurrences of a maximum value the index corresponding 
-to the first occurrence is returned. As the index starts at zero, the number 
-of significant PCA components is the elbow index position + 1.
+In the case of multiple occurrences of a maximum value the index corresponding 
+to the first occurrence is returned. As the index of the first component is zero, 
+the number of significant PCA components is the elbow index position + 1.
 
 .. figure::  images/screeplot_elbow_method.png
    :align:   center
