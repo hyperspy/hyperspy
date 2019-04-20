@@ -41,8 +41,8 @@ class Gaussian2D(Expression):
     +-----------------+------------+
     | :math:`x_0,y_0` | centre_x/y |
     +-----------------+------------+
-    
-    
+
+
     Parameters
     ----------
     A : float
@@ -55,14 +55,13 @@ class Gaussian2D(Expression):
         Location of the Gaussian maximum (peak position) in `x` direction.
     centre_x : float
         Location of the Gaussian maximum (peak position) in `y` direction.
-    
-    
+
     For convenience the `fwhm_x` and `fwhm_y` attributes can be used to get 
     and set the full-with-half-maxima along the two axes.
     """
 
-    def __init__(self, A=1., sigma_x=1., sigma_y=1., centre_x=0., 
-                    centre_y=0, module="numexpr", **kwargs):
+    def __init__(self, A=1., sigma_x=1., sigma_y=1., centre_x=0.,
+                 centre_y=0, module="numexpr", **kwargs):
         super(Gaussian2D, self).__init__(
             expression="A * (1 / (sigma_x * sigma_y * 2 * pi)) * \
                     exp(-((x - centre_x) ** 2 / (2 * sigma_x ** 2) \
@@ -73,7 +72,7 @@ class Gaussian2D(Expression):
             sigma_y=sigma_y,
             centre_x=centre_x,
             centre_y=centre_y,
-            position = ("centre_x", "centre_y"),
+            position=("centre_x", "centre_y"),
             module=module,
             autodoc=False,
             **kwargs)

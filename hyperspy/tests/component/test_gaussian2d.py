@@ -23,6 +23,7 @@ from numpy.testing import assert_allclose
 from hyperspy.components2d import Gaussian2D
 sigma2fwhm = 2 * np.sqrt(2 * np.log(2))
 
+
 def test_function():
     g = Gaussian2D()
     g.A.value = 14
@@ -30,22 +31,28 @@ def test_function():
     g.sigma_y.value = 2.
     g.centre_x.value = -5.
     g.centre_y.value = -5.
-    assert_allclose(g.function(-5,-5),1.1140846)
-    assert_allclose(g.function(-2,-3),0.007506643)
+    assert_allclose(g.function(-5, -5), 1.1140846)
+    assert_allclose(g.function(-2, -3), 0.007506643)
+    assert g._is2D
+    assert g._position_x == g.centre_x
+    assert g._position_y == g.centre_y
+
 
 def test_util_fwhm_set():
     g1 = Gaussian2D()
-    g1.fwhm_x=0.33
-    g1.fwhm_y=0.33
+    g1.fwhm_x = 0.33
+    g1.fwhm_y = 0.33
     g1.A.value = 1.0
     assert_allclose(g1.fwhm_x, g1.sigma_x.value * sigma2fwhm)
     assert_allclose(g1.fwhm_y, g1.sigma_y.value * sigma2fwhm)
 
+
 def test_util_fwhm_get():
-    g1 = Gaussian2D(sigma_x=0.33,sigma_y=0.33)
+    g1 = Gaussian2D(sigma_x=0.33, sigma_y=0.33)
     g1.A.value = 1.0
     assert_allclose(g1.fwhm_x, g1.sigma_x.value * sigma2fwhm)
     assert_allclose(g1.fwhm_y, g1.sigma_y.value * sigma2fwhm)
+
 
 def test_util_fwhm_getset():
     g1 = Gaussian2D()
