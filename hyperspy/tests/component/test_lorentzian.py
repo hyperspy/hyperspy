@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-
 import numpy as np
 from numpy.testing import assert_allclose
 
@@ -28,9 +27,8 @@ def test_function():
     g.A.value = 1.5*np.pi
     g.gamma.value = 1
     g.centre.value = 2
-    assert_allclose(g.function(2),1.5)
-    assert_allclose(g.function(4),0.3)
-
+    assert_allclose(g.function(2), 1.5)
+    assert_allclose(g.function(4), 0.3)
 
 def test_util_gamma_getset():
     g1 = Lorentzian()
