@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-
 import itertools
 import numpy as np
 from numpy.testing import assert_allclose
@@ -37,7 +36,6 @@ def test_function():
     assert g.function(2) == 1
     assert g.function(1) == 0.25
 
-
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
 def test_estimate_parameters_binned(only_current, binned):
     s = Signal1D(np.empty((100,)))
@@ -53,9 +51,8 @@ def test_estimate_parameters_binned(only_current, binned):
                                   only_current=only_current)
     assert g2.binned == binned
     # error of the estimate function is rather large, esp. when binned=FALSE
-    assert_allclose(g1.A.value, g2.A.value * factor,rtol=0.05)
+    assert_allclose(g1.A.value, g2.A.value * factor, rtol=0.05)
     assert abs(g2.r.value - g1.r.value) <= 2e-2
-
 
 @pytest.mark.parametrize(("binned"), (True, False))
 def test_function_nd(binned):
@@ -71,5 +68,4 @@ def test_function_nd(binned):
     factor = axis.scale if binned else 1
     g2.estimate_parameters(s2, axis.low_value, axis.high_value, False)
     assert g2.binned == binned
-    assert_allclose(g2.function_nd(axis.axis) * factor, s2.data,rtol=0.05)
-
+    assert_allclose(g2.function_nd(axis.axis) * factor, s2.data, rtol=0.05)

@@ -40,7 +40,7 @@ class GaussianHF(Expression):
 
         f(x) = h\cdot\exp{\left[-\frac{4 \log{2}
             \left(x-c\right)^{2}}{W^{2}}\right]}
-    
+
     ============= =============
      Variable      Parameter 
     ============= =============
@@ -51,7 +51,7 @@ class GaussianHF(Expression):
 
 
     Parameters
-    -----------
+    ----------
     height: float
         The height of the peak. If there is no binning, this corresponds
         directly to the maximum, otherwise the maximum divided by
@@ -132,7 +132,6 @@ class GaussianHF(Expression):
         >>> s.axes_manager._axes[-1].offset = -10
         >>> s.axes_manager._axes[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10, 10, False)
-
         """
 
         super(GaussianHF, self)._estimate_parameters(signal)

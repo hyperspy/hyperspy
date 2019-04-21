@@ -73,7 +73,7 @@ class Gaussian(Expression):
     .. math::
 
         f(x) = \frac{A}{\sigma \sqrt{2\pi}}\exp\left[
-            -\frac{\left(x-x_0\right)^{2}}{2\sigma^{2}}\right]
+               -\frac{\left(x-x_0\right)^{2}}{2\sigma^{2}}\right]
 
     ============== ===========
     Variable         Parameter
@@ -105,7 +105,6 @@ class Gaussian(Expression):
     See also
     --------
     hyperspy._components.gaussianhf.GaussianHF
-
     """
 
     def __init__(self, A=1., sigma=1., centre=0., module="numexpr", **kwargs):
@@ -166,8 +165,8 @@ class Gaussian(Expression):
         >>> s.axes_manager._axes[-1].offset = -10
         >>> s.axes_manager._axes[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10, 10, False)
-
         """
+        
         super(Gaussian, self)._estimate_parameters(signal)
         axis = signal.axes_manager.signal_axes[0]
         centre, height, sigma = _estimate_gaussian_parameters(signal, x1, x2,

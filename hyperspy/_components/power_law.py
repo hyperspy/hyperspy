@@ -29,11 +29,11 @@ _logger = logging.getLogger(__name__)
 class PowerLaw(Expression):
 
     r"""Power law component.
-    
+
     .. math::
-    
-      f(x) = A\cdot(x-x_0)^{-r}
-      
+
+        f(x) = A\cdot(x-x_0)^{-r}
+
     ============= =============
      Variable      Parameter
     ============= =============
@@ -44,7 +44,7 @@ class PowerLaw(Expression):
 
 
     Parameters
-    -----------
+    ----------
     A : float
         Height parameter.
     r : float
@@ -57,8 +57,6 @@ class PowerLaw(Expression):
 
     The `left_cutoff` parameter can be used to set a lower threshold from which
     the component will return 0.
-
-
     """
 
     def __init__(self, A=10e5, r=3., origin=0., module="numexpr", **kwargs):

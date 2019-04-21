@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-
 import itertools
 import numpy as np
 from numpy.testing import assert_allclose
@@ -37,9 +36,8 @@ def test_function():
     g.centre.value = 1
     g.sigma.value = 2 / sigma2fwhm
     g.A.value = 3 * sqrt2pi * g.sigma.value
-    assert_allclose(g.function(2),1.5)
-    assert_allclose(g.function(1),3)
-
+    assert_allclose(g.function(2), 1.5)
+    assert_allclose(g.function(1), 3)
 
 @pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
 def test_estimate_parameters_binned(only_current, binned):
@@ -59,7 +57,6 @@ def test_estimate_parameters_binned(only_current, binned):
     assert abs(g2.centre.value - g1.centre.value) <= 1e-3
     assert abs(g2.sigma.value - g1.sigma.value) <= 0.1
 
-
 @pytest.mark.parametrize(("binned"), (True, False))
 def test_function_nd(binned):
     s = Signal1D(np.empty((100,)))
@@ -76,18 +73,15 @@ def test_function_nd(binned):
     assert g2.binned == binned
     assert_allclose(g2.function_nd(axis.axis) * factor, s2.data)
 
-
 def test_util_fwhm_set():
     g1 = Gaussian()
     g1.fwhm = 1.0
     assert_allclose(g1.sigma.value, 1.0 / sigma2fwhm)
 
-
 def test_util_fwhm_get():
     g1 = Gaussian()
     g1.sigma.value = 1.0
     assert_allclose(g1.fwhm, 1.0 * sigma2fwhm)
-
 
 def test_util_fwhm_getset():
     g1 = Gaussian()

@@ -18,12 +18,13 @@
 
 from hyperspy._components.expression import Expression
 
+
 class Exponential(Expression):
 
     r"""Exponential function component.
 
     .. math::
-    
+
         f(x) = A\cdot\exp\left(-\frac{x}{\tau}\right)
 
     ============= =============
@@ -33,7 +34,7 @@ class Exponential(Expression):
     :math:`\tau`   tau    
     ============= =============
 
-    
+
     Parameters
     -----------
     A: float
@@ -42,7 +43,6 @@ class Exponential(Expression):
         Scale parameter (time constant)
     **kwargs
         Extra keyword arguments are passed to the ``Expression`` component.
-
     """
 
     def __init__(self, A=1., tau=1., module="numexpr", **kwargs):

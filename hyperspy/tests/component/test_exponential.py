@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-
 import numpy as np
 from numpy.testing import assert_allclose
 
@@ -28,6 +27,5 @@ def test_function():
     g.A.value = 2
     g.tau.value = 3
     assert g.function(0) == 2
-    assert_allclose(g.function(0.3),2*np.exp(-.1))
-    assert_allclose(g.function(-3),2*np.e)
-
+    assert_allclose(g.function(0.3), 2*np.exp(-.1))
+    assert_allclose(g.function(-3), 2*np.e)
