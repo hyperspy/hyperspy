@@ -19,15 +19,22 @@
 
 import numpy as np
 from numpy.testing import assert_allclose
+import pytest
+from distutils.version import LooseVersion
+import sympy
 
-from hyperspy.components1d import RC
+from hyperspy.components1d import Erf
 
+pytestmark = pytest.mark.skipif(LooseVersion(sympy.__version__) <
+                                LooseVersion("1.3"),
+                                reason="This test requires SymPy >= 1.3")
 
 def test_function():
-    g = RC()
-    g.V0.value = 1
-    g.Vmax.value = 2
-    g.tau.value = 3
-    assert g.function(0) == 1
-    assert_allclose(g.function(50), 3)
-    assert_allclose(g.function(-3), 3-2*np.e)
+    g = Erf()
+    g.A.value = 1
+    g.sigma.value = 2
+    g.origin.value = 3
+    assert g.function(3) == 0.
+    assert_allclose(g.function(15),0.5)
+    assert_allclose(g.function(1.951198),-0.2,rtol=1e-6)
+
