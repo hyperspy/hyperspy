@@ -59,6 +59,8 @@ class Lorentzian(Expression):
     """
 
     def __init__(self, A=1., gamma=1., centre=0., module="numexpr", **kwargs):
+        # We use `_gamma` internally to workaround the use of the `gamma` 
+        # function in sympy
         super(Lorentzian, self).__init__(
             expression="A / pi * (_gamma / ((x - centre)**2 + _gamma**2))",
             name="Lorentzian",
@@ -76,10 +78,10 @@ class Lorentzian(Expression):
 
         self._gamma.bmin = 0.
         self._gamma.bmax = None
+        self._gamma.name = 'gamma'
 
         self.isbackground = False
         self.convolved = True
-
 
     @property
     def fwhm(self):
