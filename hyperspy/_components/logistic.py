@@ -29,7 +29,6 @@ class Logistic(Expression):
         f(x) = \frac{a}{1 + b\cdot \mathrm{exp}\left[-c 
             \left((x - x_0\right)\right]}
 
-
     +----------------+-------------+
     | Parameter      | Attribute   |
     +----------------+-------------+
@@ -60,7 +59,6 @@ class Logistic(Expression):
         Position of the sigmoid's midpoint
     **kwargs
         Extra keyword arguments are passed to the ``Expression`` component.
-
     """
 
     def __init__(self, a=1., b=1., c=1., origin=0., module="numexpr", **kwargs):
