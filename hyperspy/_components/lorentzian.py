@@ -18,6 +18,7 @@
 
 from hyperspy._components.expression import Expression
 
+
 class Lorentzian(Expression):
 
     r"""Cauchy-Lorentz distribution (a.k.a. Lorentzian function) component.
@@ -38,7 +39,7 @@ class Lorentzian(Expression):
     |  :math:`x_0`   |  centre     |
     +----------------+-------------+
 
-    
+
     Parameters
     -----------
     A : float
@@ -51,11 +52,10 @@ class Lorentzian(Expression):
         Location of the peak maximum.
     **kwargs
         Extra keyword arguments are passed to the ``Expression`` component.
-    
-    
+
+
     For convenience the `fwhm` attribute can be used to get and set
     the full-with-half-maximum.
-
     """
 
     def __init__(self, A=1., gamma=1., centre=0., module="numexpr", **kwargs):
@@ -88,7 +88,7 @@ class Lorentzian(Expression):
     @fwhm.setter
     def fwhm(self, value):
         self._gamma.value = value / 2
-        
+
     @property
     def gamma(self):
         return self._gamma
