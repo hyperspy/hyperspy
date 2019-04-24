@@ -511,18 +511,13 @@ def ser_reader(filename, objects=None, *args, **kwds):
                     'offset': header['Dim-%i_CalibrationOffset' % idim][0],
                     'scale': header['Dim-%i_CalibrationDelta' % idim][0],
                     'units': units,
-                    #'size': header['Dim-%i_DimensionSize' % idim][0],
-                    'size': header['ValidNumberElements'][0],
+                    'size': header['Dim-%i_DimensionSize' % idim][0],
+                    #'size': header['ValidNumberElements'][0],
                     'name': name,
                 })
-                #array_shape[i] = header['Dim-%i_DimensionSize' % idim][0]
-                array_shape[i] = header['ValidNumberElements'][0]
-                
-        # Deal with issue when TotalNumberElements != ValidNumberElements for ndim==1
-        #if ndim == 1:# and record_by == 'spectrum':
-        #    array_shape[i] = header['ValidNumberElements'][0]
-        #    breakpoint()
-        #    axes[0]['size'] = header['ValidNumberElements'][0]
+                array_shape[i] = header['Dim-%i_DimensionSize' % idim][0]
+                #array_shape[i] = header['ValidNumberElements'][0]
+
                 
     # Spectral dimension
     if record_by == "spectrum":
@@ -630,7 +625,8 @@ def load_only_data(filename, array_shape, record_by, num_axes, data=None):
     # if the shapes of the retrieved array does not match that of the data
     # dimensions we must fill the rest with zeros or (better) nans if the
     # dtype is float
-    print(f'Load Only data: {filename}')
+    print(f'PAE Load Only data: {filename}')
+    
     if multiply(array_shape) != multiply(data['Array'].shape):
         dc = np.zeros(multiply(array_shape),
                       dtype=data['Array'].dtype)
