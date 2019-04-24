@@ -240,7 +240,7 @@ class MVA():
             # algorithms
             explained_variance = None
             explained_variance_ratio = None
-            num_significant_components = None
+            number_significant_components = None
             mean = None
 
             if algorithm == 'svd':
@@ -385,7 +385,7 @@ class MVA():
                     explained_variance_ratio is None:
                 explained_variance_ratio = \
                     explained_variance / explained_variance.sum()
-                num_significant_components = \
+                number_significant_components = \
                     self._estimate_elbow_position(
                             explained_variance_ratio)+ 1
 
@@ -394,7 +394,7 @@ class MVA():
             target.loadings = loadings
             target.explained_variance = explained_variance
             target.explained_variance_ratio = explained_variance_ratio
-            target.num_significant_components = num_significant_components
+            target.number_significant_components = number_significant_components
             target.decomposition_algorithm = algorithm
             target.poissonian_noise_normalized = \
                 normalize_poissonian_noise
@@ -1066,11 +1066,11 @@ class MVA():
                 hline = False
 
         if vline == True:
-            if self.learning_results.num_significant_components is None:
+            if self.learning_results.number_significant_components is None:
                 vline = False
             else:
-                index_num_sig_components =\
-                    self.learning_results.num_significant_components - 1
+                index_number_significant_components =\
+                    self.learning_results.number_significant_components - 1
         else:
             vline = False
 
@@ -1134,7 +1134,7 @@ class MVA():
                        zorder=1)
 
         if vline:
-            ax.axvline(index_num_sig_components,
+            ax.axvline(index_number_significant_components,
                        linewidth=2,
                        color='gray',
                        linestyle='dashed',
@@ -1296,7 +1296,7 @@ class LearningResults(object):
     loadings = None
     explained_variance = None
     explained_variance_ratio = None
-    num_significant_components = None
+    number_significant_components = None
     decomposition_algorithm = None
     poissonian_noise_normalized = None
     output_dimension = None
