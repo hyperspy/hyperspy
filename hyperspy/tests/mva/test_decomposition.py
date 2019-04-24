@@ -158,10 +158,10 @@ class TestEstimateElbowPosition:
         np.random.seed(1)
         s = signals.Signal1D(np.random.random((20, 100)))
         s.decomposition()
-        assert s.learning_results.num_significant_components == 2
-        # Check that num_significant_components is reset properly
+        assert s.learning_results.number_significant_components == 2
+        # Check that number_significant_components is reset properly
         s.decomposition(algorithm='nmf', output_dimension=2)
-        assert s.learning_results.num_significant_components is None
+        assert s.learning_results.number_significant_components is None
 
 
 class TestReverseDecompositionComponent:
