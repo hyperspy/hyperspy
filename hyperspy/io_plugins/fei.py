@@ -314,19 +314,19 @@ def load_ser_file(filename):
             data_offset = readLELong(f)
             data_offset_array = np.fromfile(f,
                                             dtype="<u4",
-                                            count=header["TotalNumberElements"][0])
+                                            count=header["ValidNumberElements"][0])
         else:
             data_offset = readLELongLong(f)
             data_offset_array = np.fromfile(f,
                                             dtype="<u8",
-                                            count=header["TotalNumberElements"][0])
+                                            count=header["ValidNumberElements"][0])
         data_dtype_list, shape = get_data_dtype_list(
             f,
             data_offset,
             guess_record_by(header['DataTypeID']))
         tag_dtype_list = get_data_tag_dtype_list(header['TagTypeID'])
         f.seek(data_offset)
-        data = np.empty(header["TotalNumberElements"][0],
+        data = np.empty(header["ValidNumberElements"][0],
                         dtype=np.dtype(data_dtype_list + tag_dtype_list))
         for i, offset in enumerate(data_offset_array):
             data[i] = np.fromfile(f,
@@ -511,11 +511,19 @@ def ser_reader(filename, objects=None, *args, **kwds):
                     'offset': header['Dim-%i_CalibrationOffset' % idim][0],
                     'scale': header['Dim-%i_CalibrationDelta' % idim][0],
                     'units': units,
-                    'size': header['Dim-%i_DimensionSize' % idim][0],
+                    #'size': header['Dim-%i_DimensionSize' % idim][0],
+                    'size': header['ValidNumberElements'][0],
                     'name': name,
                 })
-                array_shape[i] = \
-                    header['Dim-%i_DimensionSize' % idim][0]
+                #array_shape[i] = header['Dim-%i_DimensionSize' % idim][0]
+                array_shape[i] = header['ValidNumberElements'][0]
+                
+        # Deal with issue when TotalNumberElements != ValidNumberElements for ndim==1
+        #if ndim == 1:# and record_by == 'spectrum':
+        #    array_shape[i] = header['ValidNumberElements'][0]
+        #    breakpoint()
+        #    axes[0]['size'] = header['ValidNumberElements'][0]
+                
     # Spectral dimension
     if record_by == "spectrum":
         axes.append({
@@ -557,7 +565,13 @@ def ser_reader(filename, objects=None, *args, **kwds):
             'units': units,
         })
         array_shape.append(data['ArraySizeX'][0])
-
+    
+    # Deal with issue when TotalNumberElements != ValidNumberElements for ndim==1
+    if ndim == 1:# and record_by == 'spectrum':
+        array_shape[0] = header['ValidNumberElements'][0]
+        #breakpoint()
+        axes[0]['size'] = header['ValidNumberElements'][0]
+        
     # FEI seems to use the international system of units (SI) for the
     # spatial scale. However, we prefer to work in nm
     for axis in axes:
@@ -616,6 +630,7 @@ def load_only_data(filename, array_shape, record_by, num_axes, data=None):
     # if the shapes of the retrieved array does not match that of the data
     # dimensions we must fill the rest with zeros or (better) nans if the
     # dtype is float
+    print(f'Load Only data: {filename}')
     if multiply(array_shape) != multiply(data['Array'].shape):
         dc = np.zeros(multiply(array_shape),
                       dtype=data['Array'].dtype)
