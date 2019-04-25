@@ -65,6 +65,7 @@ install_req = ['scipy>=0.15',
                'numexpr',
                'sparse',
                'imageio',
+               'pymcr',
                ]
 
 extras_require = {

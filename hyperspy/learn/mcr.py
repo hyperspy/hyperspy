@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.linalg
-from pymcr.mcr import McrAls
+from pymcr.mcr import McrAR
 from hyperspy.misc.machine_learning.orthomax import orthomax
 import logging
 
@@ -25,7 +25,7 @@ def mcr(data, concentrations, purespectra, poisson_scale, im_weight_vec,
             data = (data.T / im_weight_vec).T / spec_weight_vec
             data = np.nan_to_num(data)
 
-        fitmcr = McrAls(max_iter=50, tol_err_change=1e-6)
+        fitmcr = McrAR(max_iter=50, tol_err_change=1e-6)
         fitmcr.fit(data.T, C=rot_spec, verbose=False)
 
         if poisson_scale:
@@ -48,7 +48,7 @@ def mcr(data, concentrations, purespectra, poisson_scale, im_weight_vec,
             data = (data.T / im_weight_vec).T / spec_weight_vec
             data = np.nan_to_num(data)
 
-        fitmcr = McrAls(max_iter=50, tol_err_change=1e-6)
+        fitmcr = McrAR(max_iter=50, tol_err_change=1e-6)
         fitmcr.fit(data, ST=rot_spec.T, verbose=False)
 
         if poisson_scale:
