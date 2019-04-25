@@ -333,7 +333,16 @@ class TestFEIReader():
             assert s.axes_manager[1].units == 'nm'
             assert (s.axes_manager[0].name == 'x')
             assert (s.axes_manager[1].name == 'y')
-
+    
+    def test_load_TotalNumberElements_ne_ValidNumberElements(self):
+        fname0 = os.path.join(self.dirpathold, 'X - Au NP EELS_2.ser')
+        s0 = load(fname0)
+        assert(s0.data.shape[0] == 1)
+        
+        fname1 = os.path.join(self.dirpathold, '03_Scanning Preview.emi')
+        s1 = load(fname1)
+        assert(s1.data.shape[0] == 5)
+    
     def test_read_STEM_TEM_mode(self):
         # TEM image
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
