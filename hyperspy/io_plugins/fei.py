@@ -497,6 +497,8 @@ def ser_reader(filename, objects=None, *args, **kwds):
         spatial_axes = ["x", "y"][:ndim]
         for i in range(ndim):
             idim = 1 + i if order == "C" else ndim - i
+            print('record_by = {}'.format(record_by))
+            print('header = {}'.format(header['Dim-%i_DimensionSize' % (i + 1)][0]))
             if (record_by == "spectrum" or
                     header['Dim-%i_DimensionSize' % (i + 1)][0] != 1):
                 units = (header['Dim-%i_Units' % (idim)][0].decode('utf-8')
@@ -562,10 +564,11 @@ def ser_reader(filename, objects=None, *args, **kwds):
         array_shape.append(data['ArraySizeX'][0])
     
     # Deal with issue when TotalNumberElements != ValidNumberElements for ndim==1
-    if ndim == 1:# and record_by == 'spectrum':
-        array_shape[0] = header['ValidNumberElements'][0]
-        #breakpoint()
-        axes[0]['size'] = header['ValidNumberElements'][0]
+    # There is possibly a better way to deal with this in load_only_data() function
+    # below. However, axes[0]['size'] will not be changed in load_only_data()
+    #if ndim == 1:# and record_by == 'spectrum':
+    #    array_shape[0] = header['ValidNumberElements'][0]
+    #    axes[0]['size'] = header['ValidNumberElements'][0]
         
     # FEI seems to use the international system of units (SI) for the
     # spatial scale. However, we prefer to work in nm
@@ -589,8 +592,8 @@ def ser_reader(filename, objects=None, *args, **kwds):
                           dtype=data['Array'].dtype)
     else:
         dc = load_only_data(filename, array_shape, record_by, len(axes),
-                            data=data)
-
+                            data=data,header=header)
+        
     original_metadata = OrderedDict()
     header_parameters = sarray2dict(header)
     sarray2dict(data, header_parameters)
@@ -617,22 +620,30 @@ def ser_reader(filename, objects=None, *args, **kwds):
     return dictionary
 
 
-def load_only_data(filename, array_shape, record_by, num_axes, data=None):
+def load_only_data(filename, array_shape, record_by, num_axes, data=None, header=None):
     if data is None:
-        _, data = load_ser_file(filename)
+        header, data = load_ser_file(filename)
     # If the acquisition stops before finishing the job, the stored file will
     # report the requested size even though no values are recorded. Therefore
     # if the shapes of the retrieved array does not match that of the data
     # dimensions we must fill the rest with zeros or (better) nans if the
     # dtype is float
     print(f'PAE Load Only data: {filename}')
-    
+    print('array_shape ?= dataArrayshape: {}, {}'.format(multiply(array_shape), multiply(data['Array'].shape)))
     if multiply(array_shape) != multiply(data['Array'].shape):
-        dc = np.zeros(multiply(array_shape),
-                      dtype=data['Array'].dtype)
-        if dc.dtype is np.dtype('f') or dc.dtype is np.dtype('f8'):
-            dc[:] = np.nan
-        dc[:data['Array'].ravel().shape[0]] = data['Array'].ravel()
+        if int(header['NumberDimensions']) == 1:
+            # No need to fill with zeros if TotalNumberElements != ValidNumberElements
+            # for series data. The valid data is always 0:ValidNumberElements
+            dc = data['Array'][0:header['ValidNumberElements'][0],...]
+            array_shape[0] = header['ValidNumberElements'][0]
+            #axes[0]['size'] = header['ValidNumberElements'][0]
+        else:
+            # Maps will need to be filled with zeros or nans
+            dc = np.zeros(multiply(array_shape),
+                          dtype=data['Array'].dtype)
+            if dc.dtype is np.dtype('f') or dc.dtype is np.dtype('f8'):
+                dc[:] = np.nan
+            dc[:data['Array'].ravel().shape[0]] = data['Array'].ravel()
     else:
         dc = data['Array']
 
@@ -644,7 +655,6 @@ def load_only_data(filename, array_shape, record_by, num_axes, data=None):
     if num_axes != len(dc.shape):
         raise IOError("Please report this issue to the HyperSpy developers.")
     return dc
-
 
 def _guess_units_from_mode(objects_dict, header):
     # in case the xml file doesn't contain the "Mode" or the header doesn't
