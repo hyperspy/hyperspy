@@ -43,6 +43,7 @@ hyperspy/io_plugins/unbcf_fast.c
 hyperspy/misc/etc/test_compilers.obj
 /.cache/
 /.spyproject/
+/.pytest_cache/
 
 ### Code ###
 # Visual Studio Code - https://code.visualstudio.com/
