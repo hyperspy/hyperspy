@@ -520,7 +520,18 @@ def ser_reader(filename, objects=None, *args, **kwds):
                 array_shape[i] = header['Dim-%i_DimensionSize' % idim][0]
                 #array_shape[i] = header['ValidNumberElements'][0]
 
-                
+        # Deal with issue when TotalNumberElements does not equal 
+        # ValidNumberElements for ndim==1.
+        if ndim == 1 and (header['TotalNumberElements'] 
+                != header['ValidNumberElements'][0]):
+            if header['ValidNumberElements'][0] == 1:
+                # no need for navigation dimension
+                array_shape = []
+                axes = []
+            else:
+                array_shape[0] = header['ValidNumberElements'][0]
+                axes[0]['size'] = header['ValidNumberElements'][0]
+
     # Spectral dimension
     if record_by == "spectrum":
         axes.append({
@@ -562,14 +573,14 @@ def ser_reader(filename, objects=None, *args, **kwds):
             'units': units,
         })
         array_shape.append(data['ArraySizeX'][0])
-    
+
     # Deal with issue when TotalNumberElements != ValidNumberElements for ndim==1
     # There is possibly a better way to deal with this in load_only_data() function
     # below. However, axes[0]['size'] will not be changed in load_only_data()
     #if ndim == 1:# and record_by == 'spectrum':
     #    array_shape[0] = header['ValidNumberElements'][0]
     #    axes[0]['size'] = header['ValidNumberElements'][0]
-        
+
     # FEI seems to use the international system of units (SI) for the
     # spatial scale. However, we prefer to work in nm
     for axis in axes:
@@ -593,7 +604,7 @@ def ser_reader(filename, objects=None, *args, **kwds):
     else:
         dc = load_only_data(filename, array_shape, record_by, len(axes),
                             data=data,header=header)
-        
+
     original_metadata = OrderedDict()
     header_parameters = sarray2dict(header)
     sarray2dict(data, header_parameters)
