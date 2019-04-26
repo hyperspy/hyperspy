@@ -172,14 +172,16 @@ def merge_color_channels(im_list, color_list=None,
     array: RGB matrix
 
     """
-    color_cycle = ['red', 'green', 'blue', 'magenta', 'yellow', 'cyan']
+    color_cycle = ['red', 'green', 'blue',
+                   'magenta', 'yellow', 'cyan',
+                   'orange','gray']
     if len(im_list) > 6:
         raise ValueError('List must be at most 6 images long')
     if color_list is None:
         color_list = color_cycle[0:len(im_list)]
     if not all(x in color_cycle for x in color_list):
-        raise ValueError("Invalid color. Only red, green, blue, cyan, yellow "
-                         "and magenta allowed")
+        raise ValueError("Invalid color. Only red, green, blue, magenta, "
+                         "yellow, cyan, orange, and gray allowed")
     
     height, width = im_list[0].data.shape[:2]
 
@@ -214,9 +216,21 @@ def merge_color_channels(im_list, color_list=None,
                     im_list[i].data/im_list[i].data.max()
                 images['cyan'][:, :, 2] = \
                     im_list[i].data/im_list[i].data.max()
+            elif color_list[i] == 'orange':
+                images['orange'][:, :, 0] = \
+                    im_list[i].data/im_list[i].data.max()
+                images['orange'][:, :, 1] = \
+                    im_list[i].data/im_list[i].data.max()/2
+            elif color_list[i] == 'gray':
+                images['gray'][:, :, 0] = \
+                    im_list[i].data/im_list[i].data.max()/2
+                images['gray'][:, :, 1] = \
+                    im_list[i].data/im_list[i].data.max()/2
+                images['gray'][:, :, 2] = \
+                    im_list[i].data/im_list[i].data.max()/2
             else:
                 raise ValueError("Unknown color. Must be red, green, blue, "
-                                 "yellow, magenta, or cyan")
+                                 "magenta, yellow, cyan, orange, or gray.")
         elif normalization == 'global':
             maxvals = np.zeros(len(im_list))
             for i in range(0, len(im_list)):
@@ -246,9 +260,21 @@ def merge_color_channels(im_list, color_list=None,
                     im_list[i].data/maxval
                 images['cyan'][:, :, 2] = \
                     im_list[i].data/maxval
+            elif color_list[i] == 'orange':
+                images['orange'][:, :, 0] = \
+                    im_list[i].data/maxval
+                images['orange'][:, :, 1] = \
+                    im_list[i].data/maxval/2
+            elif color_list[i] == 'gray':
+                images['gray'][:, :, 0] = \
+                    im_list[i].data/maxval/2
+                images['gray'][:, :, 1] = \
+                    im_list[i].data/maxval/2
+                images['gray'][:, :, 2] = \
+                    im_list[i].data/maxval/2
             else:
                 raise ValueError("Unknown color. Must be red, green, blue, "
-                                 "yellow, magenta, or cyan.")
+                                 "magenta, yellow, cyan, orange, or gray.")
         else:
             raise ValueError("Unknown normalization method."
                              "Must be 'individual' or 'global'.")
