@@ -570,14 +570,6 @@ def ser_reader(filename, objects=None, *args, **kwds):
         })
         array_shape.append(data['ArraySizeX'][0])
 
-    # Deal with issue when `TotalNumberElements != ValidNumberElements` for 
-    # ndim==1. There is possibly a better way to deal with this in the
-    # `load_only_data()` function below. However, axes[0]['size'] will not be 
-    # changed in `load_only_data()`
-    #if ndim == 1 and record_by == 'spectrum':
-    #    array_shape[0] = header['ValidNumberElements'][0]
-    #    axes[0]['size'] = header['ValidNumberElements'][0]
-
     # FEI seems to use the international system of units (SI) for the
     # spatial scale. However, we prefer to work in nm
     for axis in axes:
