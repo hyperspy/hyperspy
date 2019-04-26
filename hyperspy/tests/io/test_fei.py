@@ -418,10 +418,11 @@ class TestFEIReader():
     def test_load_multisignal_stack(self):
         fname0 = os.path.join(
             self.dirpathnew, '16x16-line_profile_horizontal_5x128x128_EDS.emi')
-        fname1 = os.path.join(
-            self.dirpathnew,
-            '16x16-line_profile_horizontal_5x128x128_EDS_copy.emi')
-        load([fname0, fname1], stack=True)
+        s = load([fname0, fname0], stack=True)
+        assert s[0].axes_manager.navigation_shape == (5, 2)
+        assert s[0].axes_manager.signal_shape == (4000, )
+        assert s[1].axes_manager.navigation_shape == (5, 2)
+        assert s[1].axes_manager.signal_shape == (128, 128)
 
     def test_load_multisignal_stack_mismatch(self):
         fname0 = os.path.join(
@@ -432,6 +433,7 @@ class TestFEIReader():
         with pytest.raises(ValueError) as cm:
             load([fname0, fname1], stack=True)
             cm.match("The number of sub-signals per file does not match*")
+        load([fname0, fname1])
 
     def test_date_time(self):
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
