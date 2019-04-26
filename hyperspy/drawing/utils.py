@@ -172,7 +172,7 @@ def merge_color_channels(im_list, color_list=None,
     array: RGB matrix
 
     """
-    color_cycle = ['red', 'green', 'blue', 'cyan', 'yellow', 'magenta']
+    color_cycle = ['red', 'green', 'blue', 'magenta', 'yellow', 'cyan']
     if len(im_list) > 6:
         raise ValueError('List must be at most 6 images long')
     if color_list is None:
