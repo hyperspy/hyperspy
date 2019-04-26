@@ -175,8 +175,8 @@ def merge_color_channels(im_list, color_list=None,
     color_cycle = ['red', 'green', 'blue',
                    'magenta', 'yellow', 'cyan',
                    'orange','gray']
-    if len(im_list) > 6:
-        raise ValueError('List must be at most 6 images long')
+    if len(im_list) > 8:
+        raise ValueError('List must be at most 8 images long')
     if color_list is None:
         color_list = color_cycle[0:len(im_list)]
     if not all(x in color_cycle for x in color_list):
