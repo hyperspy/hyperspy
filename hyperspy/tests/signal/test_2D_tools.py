@@ -15,12 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
-
-import sys
 from unittest import mock
 import pytest
-
-
 import numpy.testing as npt
 import numpy as np
 import scipy as sp
@@ -29,6 +25,14 @@ from scipy.ndimage import fourier_shift
 
 import hyperspy.api as hs
 from hyperspy.decorators import lazifyTestClass
+
+
+def _generate_parameters():
+    parameters = []
+    for normalize_corr in [False, True]:
+        for reference in ['current', 'cascade', 'stat']:
+            parameters.append([normalize_corr, reference])
+    return parameters
 
 
 @lazifyTestClass
@@ -60,7 +64,26 @@ class TestSubPixelAlign:
         shifts = self.shifts
         s.align2D(shifts=shifts)
         # Compare by broadcasting
-        np.testing.assert_allclose(s.data[4], s.data[0], rtol=1)
+        np.testing.assert_allclose(s.data[4], s.data[0], rtol=0.5)
+
+    @pytest.mark.parametrize(("normalize_corr", "reference"),
+                             _generate_parameters())
+    def test_estimate_subpix(self, normalize_corr, reference):
+        s = self.signal
+        shifts = s.estimate_shift2D(sub_pixel_factor=200,
+                                    normalize_corr=normalize_corr)
+        np.testing.assert_allclose(shifts, self.shifts, rtol=0.2, atol=0.2,
+                                   verbose=True)
+
+    @pytest.mark.parametrize(("plot"), [True, 'reuse'])
+    def test_estimate_subpix_plot(self, plot):
+        # To avoid this function plotting many figures and holding the test, we
+        # make sure the backend is set to `agg` in case it is set to something
+        # else in the testing environment
+        import matplotlib.pyplot as plt
+        plt.switch_backend('agg')
+        s = self.signal
+        s.estimate_shift2D(sub_pixel_factor=200, plot=plot)
 
 
 @lazifyTestClass
@@ -194,11 +217,13 @@ ans[0] = np.array([[xref, yref]])
 
 datasets = [dense, sparse0d, sparse1d, sparse2d]
 
+
 @pytest.mark.parametrize('method', peak_methods)
 @pytest.mark.parametrize('dataset', datasets)
 def test_creates_signal(method, dataset):
     peaks = dataset.find_peaks2D(method=method)
     assert isinstance(peaks, hs.signals.BaseSignal)
+
 
 @pytest.mark.parametrize('method', peak_methods)
 @pytest.mark.parametrize('dataset', datasets)
@@ -208,6 +233,7 @@ def test_peaks_match_input(method, dataset):
     peaks_shape = peaks.axes_manager.navigation_shape[::-1] if peaks.axes_manager.navigation_size > 0 else (1,)
     npt.assert_equal(peaks_shape, signal_shape)
 
+
 @pytest.mark.parametrize('method', peak_methods)
 @pytest.mark.parametrize('dataset', datasets)
 def test_peaks_are_coordinates(method, dataset):
@@ -215,10 +241,12 @@ def test_peaks_are_coordinates(method, dataset):
     peak_shapes = np.array([peak.shape for peak in peaks.data.flatten()])
     assert np.all(peak_shapes[:, 1] == 2)
 
+
 @pytest.mark.parametrize('method', peak_methods)
 def test_gets_right_answer(method):
     peaks = ref.find_peaks2D()
     assert np.all(peaks.data[0] == ans[0])
+
 
 if __name__ == '__main__':
     import pytest

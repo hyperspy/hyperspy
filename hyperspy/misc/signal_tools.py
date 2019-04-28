@@ -22,18 +22,36 @@ import numpy as np
 import dask.array as da
 
 
-def are_signals_aligned(*args):
+def _get_shapes(am, ignore_axis):
+    if ignore_axis is not None:
+        try:
+            ignore_axis = am[ignore_axis]
+        except ValueError:
+            pass
+    sigsh = tuple(axis.size if (ignore_axis is None or axis is not
+                                ignore_axis)
+                  else 1 for axis in am.signal_axes) if am.signal_dimension != 0 else ()
+
+    navsh = tuple(axis.size if (ignore_axis is None or axis is not
+                                ignore_axis)
+                  else 1 for axis in am.navigation_axes) if am.navigation_dimension != 0 else ()
+    return sigsh, navsh
+
+
+def are_signals_aligned(*args, ignore_axis=None):
     if len(args) < 2:
         raise ValueError(
             "This function requires at least two signal instances")
     args = list(args)
     am = args.pop().axes_manager
 
+    sigsh, navsh = _get_shapes(am, ignore_axis)
     while args:
         amo = args.pop().axes_manager
-        if not (are_aligned(am.signal_shape[::-1], amo.signal_shape[::-1]) and
-                are_aligned(am.navigation_shape[::-1],
-                            amo.navigation_shape[::-1])):
+        sigsho, navsho = _get_shapes(amo, ignore_axis)
+
+        if not (are_aligned(sigsh[::-1], sigsho[::-1]) and
+                are_aligned(navsh[::-1], navsho[::-1])):
             return False
     return True
 
@@ -59,7 +77,7 @@ def broadcast_signals(*args, ignore_axis=None):
         raise ValueError(
             "This function requires at least two signal instances")
     args = list(args)
-    if not are_signals_aligned(*args):
+    if not are_signals_aligned(*args, ignore_axis=ignore_axis):
         raise ValueError("The signals cannot be broadcasted")
     else:
         if ignore_axis is not None:

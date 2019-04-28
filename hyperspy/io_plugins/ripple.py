@@ -25,10 +25,10 @@ import codecs
 import os.path
 from io import StringIO
 import logging
+import traits.api as t
 
 import numpy as np
 
-from hyperspy.misc.io.utils_readfile import *
 from hyperspy import Release
 from hyperspy.misc.utils import DictionaryTreeBrowser
 
@@ -483,7 +483,7 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
         mp.set_item('Acquisition_instrument.TEM.convergence_angle',
                     rpl_info['convergence-angle'])
     if 'tilt-stage' in rpl_info:
-        mp.set_item('Acquisition_instrument.TEM.Stage.tilt_a',
+        mp.set_item('Acquisition_instrument.TEM.Stage.tilt_alpha',
                     rpl_info['tilt-stage'])
     if 'collection-angle' in rpl_info:
         mp.set_item('Acquisition_instrument.TEM.Detector.EELS.' +
@@ -509,6 +509,8 @@ def file_reader(filename, rpl_info=None, encoding="latin-1",
     if 'live-time' in rpl_info:
         mp.set_item('Acquisition_instrument.TEM.Detector.EDS.live_time',
                     rpl_info['live-time'])
+
+    units = [t.Undefined if unit == '<undefined>' else unit for unit in units]
 
     axes = []
     index_in_array = 0
@@ -654,8 +656,8 @@ def file_writer(filename, signal, encoding='latin-1', *args, **kwds):
         if mp.has_item('Detector.EDS.elevation_angle'):
             keys_dictionary[
                 'elevation-angle'] = mp.Detector.EDS.elevation_angle
-        if mp.has_item('Stage.tilt_a'):
-            keys_dictionary['tilt-stage'] = mp.Stage.tilt_a
+        if mp.has_item('Stage.tilt_alpha'):
+            keys_dictionary['tilt-stage'] = mp.Stage.tilt_alpha
         if mp.has_item('Detector.EDS.azimuth_angle'):
             keys_dictionary['azimuth-angle'] = mp.Detector.EDS.azimuth_angle
         if mp.has_item('Detector.EDS.live_time'):

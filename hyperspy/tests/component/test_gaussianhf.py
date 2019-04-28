@@ -17,14 +17,20 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import itertools
 import numpy as np
 from numpy.testing import assert_allclose
+import pytest
 
 from hyperspy.components1d import GaussianHF
 from hyperspy.signals import Signal1D
+from hyperspy.utils import stack
 
 sqrt2pi = np.sqrt(2 * np.pi)
 sigma2fwhm = 2 * np.sqrt(2 * np.log(2))
+
+
+TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
 
 
 def test_function():
@@ -53,21 +59,42 @@ def test_integral_as_signal():
     assert_allclose(s_out.data, ref)
 
 
-def test_estimate_parameters_binned():
+@pytest.mark.parametrize(("only_current", "binned"), TRUE_FALSE_2_TUPLE)
+def test_estimate_parameters_binned(only_current, binned):
+    s = Signal1D(np.empty((100,)))
+    s.metadata.Signal.binned = binned
+    axis = s.axes_manager.signal_axes[0]
+    axis.scale = 2.
+    axis.offset = -30
+    g1 = GaussianHF(50015.156, 23, 10)
+    s.data = g1.function(axis.axis)
+    g2 = GaussianHF()
+    factor = axis.scale if binned else 1
+    assert g2.estimate_parameters(s, axis.low_value, axis.high_value,
+                                  only_current=only_current)
+    assert g2.binned == binned
+    assert_allclose(g1.height.value, g2.height.value * factor)
+    assert abs(g2.centre.value - g1.centre.value) <= 1e-3
+    assert abs(g2.fwhm.value - g1.fwhm.value) <= 0.1
+
+
+@pytest.mark.parametrize(("binned"), (True, False))
+def test_function_nd(binned):
     s = Signal1D(np.empty((100,)))
     axis = s.axes_manager.signal_axes[0]
     axis.scale = 2.
     axis.offset = -30
     g1 = GaussianHF(50015.156, 23, 10)
     s.data = g1.function(axis.axis)
-    s.metadata.Signal.binned = True
+    s.metadata.Signal.binned = binned
+
+    s2 = stack([s] * 2)
     g2 = GaussianHF()
-    g2.estimate_parameters(s, axis.low_value, axis.high_value, True)
-    assert_allclose(
-        g1.height.value / axis.scale,
-        g2.height.value)
-    assert abs(g2.centre.value - g1.centre.value) <= 1e-3
-    assert abs(g2.fwhm.value - g1.fwhm.value) <= 0.1
+    factor = axis.scale if binned else 1
+    g2.estimate_parameters(s2, axis.low_value, axis.high_value, False)
+    assert g2.binned == binned
+    # TODO: sort out while the rtol to be so high...
+    assert_allclose(g2.function_nd(axis.axis) * factor, s2.data, rtol=0.05)
 
 
 def test_util_sigma_set():

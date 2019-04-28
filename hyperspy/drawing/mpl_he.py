@@ -16,11 +16,15 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from functools import partial
+import logging
 
 from traits.api import Undefined
 
 from hyperspy.drawing import widgets, signal1d, image
-from hyperspy.gui.axes import navigation_sliders
+from hyperspy.ui_registry import get_gui
+
+
+_logger = logging.getLogger(__name__)
 
 
 class MPL_HyperExplorer(object):
@@ -32,6 +36,8 @@ class MPL_HyperExplorer(object):
     def __init__(self):
         self.signal_data_function = None
         self.navigator_data_function = None
+        # args to pass to `__call__`
+        self.signal_data_function_kwargs = {}
         self.axes_manager = None
         self.signal_title = ''
         self.navigator_title = ''
@@ -45,7 +51,12 @@ class MPL_HyperExplorer(object):
     def plot_signal(self):
         # This method should be implemented by the subclasses.
         # Doing nothing is good enough for signal_dimension==0 though.
-        return
+        if self.axes_manager.signal_dimension == 0:
+            return
+        if self.signal_data_function_kwargs.get('fft_shift', False):
+            self.axes_manager = self.axes_manager.deepcopy()
+            for axis in self.axes_manager.signal_axes:
+                axis.offset = -axis.high_value / 2.
 
     def plot_navigator(self,
                        colorbar=True,
@@ -64,9 +75,7 @@ class MPL_HyperExplorer(object):
         if self.navigator_data_function is None:
             return
         if self.navigator_data_function is "slider":
-            navigation_sliders(
-                self.axes_manager.navigation_axes,
-                title=self.signal_title + " navigation sliders")
+            self._get_navigation_sliders()
             return
         title = title or self.signal_title + " Navigator" if self.signal_title else ""
         if self.navigator_plot is not None:
@@ -94,9 +103,7 @@ class MPL_HyperExplorer(object):
             sf.plot()
             self.pointer.set_mpl_ax(sf.ax)
             if self.axes_manager.navigation_dimension > 1:
-                navigation_sliders(
-                    self.axes_manager.navigation_axes,
-                    title=self.signal_title + " navigation sliders")
+                self._get_navigation_sliders()
                 for axis in self.axes_manager.navigation_axes[:-2]:
                     axis.events.index_changed.connect(sf.update, [])
                     sf.events.closed.connect(
@@ -123,9 +130,7 @@ class MPL_HyperExplorer(object):
                 imf.yaxis = self.axes_manager.navigation_axes[1]
                 imf.xaxis = self.axes_manager.navigation_axes[0]
                 if self.axes_manager.navigation_dimension > 2:
-                    navigation_sliders(
-                        self.axes_manager.navigation_axes,
-                        title=self.signal_title + " navigation sliders")
+                    self._get_navigation_sliders()
                     for axis in self.axes_manager.navigation_axes[2:]:
                         axis.events.index_changed.connect(imf.update, [])
                         imf.events.closed.connect(
@@ -137,14 +142,29 @@ class MPL_HyperExplorer(object):
             self.pointer.set_mpl_ax(imf.ax)
             self.navigator_plot = imf
 
+    def _get_navigation_sliders(self):
+        try:
+            self.axes_manager.gui_navigation_sliders(
+                title=self.signal_title + " navigation sliders")
+        except (ValueError, ImportError) as e:
+            _logger.warning("Navigation sliders not available. " + str(e))
+
     def close_navigator_plot(self):
         if self.navigator_plot:
             self.navigator_plot.close()
 
+    @property
     def is_active(self):
-        return True if self.signal_plot.figure else False
+        if self.signal_plot and self.signal_plot.figure is not None:
+            return True
+        else:
+            return False
 
     def plot(self, **kwargs):
+        # Parse the kwargs for plotting complex data
+        for key in ['power_spectrum', 'fft_shift']:
+            if key in kwargs:
+                self.signal_data_function_kwargs[key] = kwargs.pop(key)
         if self.pointer is None:
             pointer = self.assign_pointer()
             if pointer is not None:
