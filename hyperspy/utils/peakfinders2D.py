@@ -16,12 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-import matplotlib.pyplot as plt
 import numpy as np
-from skimage.feature import peak_local_max
 import scipy.ndimage as ndi
-import scipy as sp
 import copy
+
 
 NO_PEAKS = np.array([[np.nan, np.nan]])
 

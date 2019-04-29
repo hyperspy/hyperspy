@@ -18,10 +18,13 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy as sp
 import numpy.ma as ma
 import dask.array as da
 import logging
 from scipy.fftpack import fftn, ifftn
+from scipy import ndimage
+from skimage.feature import peak_local_max
 from skimage.feature.register_translation import _upsampled_dft
 
 from hyperspy.defaults_parser import preferences
@@ -32,7 +35,10 @@ from hyperspy._signals.lazy import LazySignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
-from hyperspy.utils.peakfinders2D import *
+from hyperspy.utils.peakfinders2D import (
+        find_peaks_max, find_peaks_minmax, find_peaks_zaefferer,
+        find_peaks_stat, find_peaks_log, find_peaks_dog)
+
 
 _logger = logging.getLogger(__name__)
 
@@ -45,7 +51,7 @@ def shift_image(im, shift=0, interpolation_order=1, fill_value=np.nan):
         else:
             # Disable interpolation
             order = 0
-        return sp.ndimage.shift(im, shift, cval=fill_value, order=order)
+        return ndimage.shift(im, shift, cval=fill_value, order=order)
     else:
         return im
 
@@ -73,8 +79,8 @@ def hanning2d(M, N):
 
 
 def sobel_filter(im):
-    sx = sp.ndimage.sobel(im, axis=0, mode='constant')
-    sy = sp.ndimage.sobel(im, axis=1, mode='constant')
+    sx = ndimage.sobel(im, axis=0, mode='constant')
+    sy = ndimage.sobel(im, axis=1, mode='constant')
     sob = np.hypot(sx, sy)
     return sob
 
