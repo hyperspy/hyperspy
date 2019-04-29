@@ -120,7 +120,7 @@ class LazySignal(BaseSignal):
         if arrkey:
             try:
                 self.data.dask[arrkey].file.close()
-            except AttributeError as e:
+            except AttributeError:
                 _logger.exception("Failed to close lazy Signal file")
 
     def _get_dask_chunks(self, axis=None, dtype=None):
@@ -516,8 +516,13 @@ class LazySignal(BaseSignal):
             sig_dtype = np.dtype('O')
         else:
             one_compute = all_delayed[0].compute()
-            sig_shape = one_compute.shape
-            sig_dtype = one_compute.dtype
+            # No signal dimension for scalar
+            if np.isscalar(one_compute):
+                sig_shape = ()
+                sig_dtype = type(one_compute)
+            else:
+                sig_shape = one_compute.shape
+                sig_dtype = one_compute.dtype
         pixels = [
             da.from_delayed(
                 res, shape=sig_shape, dtype=sig_dtype) for res in all_delayed

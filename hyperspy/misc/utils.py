@@ -1046,7 +1046,8 @@ def deprecation_warning(msg):
 def add_scalar_axis(signal):
     am = signal.axes_manager
     from hyperspy.signal import BaseSignal
-    signal.__class__ = BaseSignal
+    from hyperspy._signals.lazy import LazySignal
+    signal.__class__ = LazySignal if signal._lazy else BaseSignal
     am.remove(am._axes)
     am._append_axis(size=1,
                     scale=1,

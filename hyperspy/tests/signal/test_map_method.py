@@ -298,17 +298,26 @@ def test_new_axes(parallel):
     assert 0 == sl.axes_manager.navigation_dimension
 
 
-def test_singleton():
+@pytest.mark.parametrize('lazy', [True, False])
+@pytest.mark.parametrize('ragged', [True, False, None])
+def test_singleton(lazy, ragged):
     sig = hs.signals.Signal2D(np.empty((3, 2)))
+    if lazy:
+        sig = sig.as_lazy()
+        from hyperspy._signals.lazy import LazySignal
+        if ragged is None:
+            ragged = False
     sig.axes_manager[0].name = 'x'
     sig.axes_manager[1].name = 'y'
 
     # One without arguments
-    sig1 = sig.map(lambda x: 3, inplace=False)
-    sig2 = sig.map(np.sum, inplace=False)
-    sig.map(np.sum)
+    sig1 = sig.map(lambda x: 3, inplace=False, ragged=ragged)
+    sig2 = sig.map(np.sum, inplace=False, ragged=ragged)
+    sig.map(np.sum, ragged=ragged)
     for _s in (sig1, sig2, sig):
         assert len(_s.axes_manager._axes) == 1
         assert _s.axes_manager[0].name == 'Scalar'
         assert isinstance(_s, hs.signals.BaseSignal)
         assert not isinstance(_s, hs.signals.Signal1D)
+        if lazy:
+            assert isinstance(_s, LazySignal)
