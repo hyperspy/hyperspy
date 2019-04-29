@@ -43,8 +43,8 @@ try:
     io_plugins.append(hspy)
     from hyperspy.io_plugins import emd
     io_plugins.append(emd)
-    from hyperspy.io_plugins import usid
-    io_plugins.append(usid)
+    from hyperspy.io_plugins import usid_hdf5
+    io_plugins.append(usid_hdf5)
 except ImportError:
     _logger.warning('The HDF5 IO features are not available. '
                     'Installation of h5py is highly recommended')
