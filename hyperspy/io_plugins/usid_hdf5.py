@@ -35,6 +35,26 @@ version = "0.0.5.1"
 
 
 def __get_dim_dict(labels, units, val_func, ignore_non_linear_dims=True):
+    """
+    Gets a list of dictionaries that correspond to axes for HyperSpy Signal objects
+
+    Parameters
+    ----------
+    labels : list
+        List of strings denoting the names of the dimension
+    units : list
+        List of strings denoting the units for the dimensions
+    val_func : callable
+        Function that will return the values over which a dimension was varied
+    ignore_non_linear_dims : bool, Optional. Default = True
+        If set to True, a warning will be raised instead of a ValueError when a dimension is encountered which was
+        non-linearly.
+
+    Returns
+    -------
+    dict
+        Dictionary of dictionaries that correspond to axes for HyperSpy Signal objects
+    """
     dim_dict = dict()
     for dim_name, units in zip(labels, units):
         dim_vals = val_func(dim_name)
@@ -69,6 +89,21 @@ def __get_dim_dict(labels, units, val_func, ignore_non_linear_dims=True):
 
 
 def __assemble_dim_list(dim_dict, dim_names):
+    """
+    Assembles a list of dictionary objects (axes) in the same order as specified in dim_names
+
+    Parameters
+    ----------
+    dim_dict : dict
+        Dictionary of dictionaries that correspond to axes for HyperSpy Signal objects
+    dim_names : list
+        List of strings denoting the names of the dimension
+
+    Returns
+    -------
+    list
+        List of dictionaries that correspond to axes for HyperSpy Signal objects
+    """
     dim_list = []
     for dim_name in dim_names:
         try:
@@ -79,6 +114,21 @@ def __assemble_dim_list(dim_dict, dim_names):
 
 
 def __split_descriptor(desc):
+    """
+    Splits a string such as "Quantity [units]" or "Quantity (units)" into the quantity and unit strings
+
+    Parameters
+    ----------
+    desc : str
+        Descriptor of a dimension or the main dataset itself
+
+    Returns
+    -------
+    quant : str
+        Name of the physical quantity
+    units : str
+        Units corresponding to the physical quantity
+    """
     ind = desc.rfind('(')
     if ind < 0:
         ind = desc.rfind('[')
@@ -94,8 +144,36 @@ def __split_descriptor(desc):
     return quant, units
 
 
-def __convert_to_hs_signal(ndim_form, quantity, units, converter, dim_dict_list, spec_dim_names,
+def __convert_to_hs_signal(ndim_form, quantity, units, dim_dict_list, dim_names,
                            h5_path, h5_dset_path, sig_type='', verbose=False):
+    """
+    Packages required components that make up a Signal object
+
+    Parameters
+    ----------
+    ndim_form : numpy.ndarray
+        N-dimensional form of the main dataset
+    quantity : str
+        Physical quantity of the measurement
+    units : str
+        Corresponding units
+    dim_dict_list : list
+        List of dictionaries that instruct the axes corresponding to the main dataset
+    dim_names : list
+        Names of dimensions. UNUSED
+    h5_path : str
+        Absolute path of the original USID HDF5 file
+    h5_dset_path : str
+        Absolute path of the USIDataset within the HDF5 file
+    sig_type : str
+        Type of measurement
+    verbose : bool. UNUSED
+        Whether or not to print debugging statements
+
+    Returns
+    -------
+
+    """
 
     sig = {'data': ndim_form,
            'axes': dim_dict_list,
@@ -104,22 +182,6 @@ def __convert_to_hs_signal(ndim_form, quantity, units, converter, dim_dict_list,
                'General': {'original_filename': h5_path, 'dataset_path': h5_dset_path,
                            'original_file_type': 'USID HDF5', 'pyUSID_version': usid.__version__}
            }}
-
-    """
-    # NOT sure how to apply transposes etc. This information is lost!
-    if len(spec_dim_names) == 0:
-        if verbose:
-            print('No Spectroscopic dimensions - so transposing')
-        sig = sig.transpose()
-    else:
-        if verbose:
-            print('Explicitely stating spec dims')
-        sig = sig.as_signal2D(spec_dim_names)
-    if verbose:
-        print('Signal after separation of dimensions:')
-        print(sig)
-        print(sig.axes_manager)
-    """
     return sig
 
 
@@ -177,15 +239,7 @@ def usidataset_to_signal(h5_main, verbose=False, ignore_non_linear_dims=True):
 
     _, is_complex, is_compound, _, _ = usid.dtype_utils.check_dtype(h5_main)
 
-    """
-    converter = BaseSignal
-    if is_complex:
-        converter = ComplexSignal
-    """
-    converter = None
-
     trunc_func = partial(__convert_to_hs_signal,
-                         converter=converter,
                          dim_dict_list=dim_list,
                          spec_dim_names=list(spec_dict.keys()),
                          h5_path=h5_main.file.filename,
@@ -210,10 +264,29 @@ def usidataset_to_signal(h5_main, verbose=False, ignore_non_linear_dims=True):
 # ######################## UTILITIES THAT SIMPLIFY WRITING TO H5USID FILES #############################################
 
 
-def __flatten_nested_dictionary(d, parent_key='', sep='-'):
-    # https://stackoverflow.com/questions/6027558/flatten-nested-dictionaries-compressing-keys
+def __flatten_nested_dictionary(nested_dict, parent_key='', sep='-'):
+    """
+    Flattens a nested dictionary
+
+    Parameters
+    ----------
+    nested_dict : dict
+        Nested dictionary
+    parent_key : str, Optional
+        Name of current parent
+    sep : str, Optional. Default='-'
+        Separator between the keys of different levels
+
+    Returns
+    -------
+    dict
+        Dictionary whose keys are flattened to a single level
+    Notes
+    -----
+    Taken from https://stackoverflow.com/questions/6027558/flatten-nested-dictionaries-compressing-keys
+    """
     items = []
-    for k, v in d.items():
+    for k, v in nested_dict.items():
         new_key = parent_key + sep + k if parent_key else k
         if isinstance(v, collections.MutableMapping):
             items.extend(__flatten_nested_dictionary(v, new_key, sep=sep).items())
@@ -319,7 +392,7 @@ def file_reader(filename, path_to_main_dataset=None, verbose=False, ignore_non_l
         else:
             all_main_dsets = usid.hdf_utils.get_all_main(h5_f)
             if len(all_main_dsets) > 0:
-                warn('{} contains multiple USID Main datasets. {} has been selected as the desired dataset.'
+                warn('{} contains multiple USID Main datasets.\n{}\nhas been selected as the desired dataset.'
                      'If this is not the desired dataset, please supply the path to the main dataset via'
                      'the "path_to_main_dataset" keyword argument'.format(h5_f, all_main_dsets[0]))
             h5_dset = all_main_dsets[0]
