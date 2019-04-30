@@ -31,6 +31,8 @@ from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.lazy import LazySignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
+from hyperspy.roi import RectangularROI
+from hyperspy.interactive import interactive
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
 
@@ -536,6 +538,29 @@ class Signal2D(BaseSignal, CommonSignal2D):
             shifts = np.array(shifts)
             del ref
         return shifts
+
+    def fft_live(self):
+        nav_dim = self.axes_manager.navigation_dimension
+        if nav_dim != 0:
+            raise NotImplementedError(
+                    "fft_live only works for signals with with 0 navigation "
+                    "dimensions, not {0} dimensions".format(nav_dim))
+        xaxis = self.axes_manager.signal_axes[0].axis
+        yaxis = self.axes_manager.signal_axes[1].axis
+        left = xaxis[0] + (xaxis[-1] - xaxis[0]) * 0.1
+        right = xaxis[0] + (xaxis[-1] - xaxis[0]) * 0.2
+        top = yaxis[0] + (yaxis[-1] - yaxis[0]) * 0.1
+        bottom = yaxis[0] + (yaxis[-1] - yaxis[0]) * 0.2
+
+        roi = RectangularROI(left=left, right=right,
+                                    top=top, bottom=bottom)
+        self.plot()
+        s_roi = roi.interactive(self, color='red')
+        roi_fft = interactive(
+                s_roi.fft, event=s_roi.axes_manager.events.any_axis_changed,
+                recompute_out_event=None)
+        roi_fft.plot(power_spectrum=True, fft_shift=True, cmap='viridis')
+        return roi_fft
 
     def align2D(self, crop=True, fill_value=np.nan, shifts=None, expand=False,
                 roi=None,
