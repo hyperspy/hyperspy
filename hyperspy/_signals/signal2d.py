@@ -696,7 +696,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         convert_units : bool
             Default is False
             If True, convert the signal units using the 'convert_to_units'
-            method of the 'axes_manager'. If False, does nothing.
+            method of the `axes_manager`. If False, does nothing.
 
         See also:
         ---------
@@ -743,50 +743,68 @@ class Signal2D(BaseSignal, CommonSignal2D):
         ramp += ramp_y * yy
         self.data += ramp
 
-    def find_peaks2D(self, method='skimage', *args, **kwargs):
-        """Find peaks in a 2D signal/image.
+    def find_peaks2D(self, method='local_max', show_progressbar=None, 
+                     parallel=None, *args, **kwargs):
+        """Find peaks in a 2D signal.
         Function to locate the positive peaks in an image using various, user
         specified, methods. Returns a structured array containing the peak
         positions.
+
         Parameters
-        ---------
+        ----------
         method : str
-                 Select peak finding algorithm to implement. Available methods
-                 are:
-                     'max' - simple local maximum search
-                     'skimage' - call the peak finder implemented in
-                                 scikit-image which uses a maximum filter
-                     'minmax' - finds peaks by comparing maximum filter results
-                                with minimum filter, calculates centers of mass
-                     'zaefferer' - based on gradient thresholding and refinement
-                                   by local region of interest optimisation
-                     'stat' - statistical approach requiring no free params.
-                     'massiel' - finds peaks in each direction and compares the
-                                 positions where these coincide.
-                     'laplacian_of_gaussians' - a blob finder implemented in
-                                                `scikit-image` which uses the
-                                                laplacian of Gaussian matrices
-                                                approach.
-                     'difference_of_gaussians' - a blob finder implemented in
-                                                 `scikit-image` which uses
-                                                 the difference of Gaussian
-                                                 matrices approach.
+             Select peak finding algorithm to implement. Available methods
+             are:
+                 'local_max' - simple local maximum search using the 
+                 `scikit-image` `peaks_local_max` function.
+
+                 'max' - simple local maximum search - call the peak finder 
+                 implemented in `scikit-image` which uses a maximum filter
+
+                 'minmax' - finds peaks by comparing maximum filter results
+                 with minimum filter, calculates centers of mass
+
+                 'zaefferer' - based on gradient thresholding and refinement
+                 by local region of interest optimisation
+
+                 'stat' - statistical approach requiring no free params.
+                 'massiel' - finds peaks in each direction and compares the
+                 positions where these coincide.
+
+                 'laplacian_of_gaussians' - a blob finder implemented in
+                 `scikit-image` which uses the laplacian of Gaussian 
+                 matrices approach.
+
+                 'difference_of_gaussians' - a blob finder implemented in
+                 `scikit-image` which uses the difference of Gaussian 
+                 matrices approach.
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
+        parallel : {None,bool,int}
+            if True, the computation will be performed in a threaded (parallel)
+            manner. See `parallel` keyword of the `map` method for more 
+            information. 
+
         *args : associated with above methods
+
         **kwargs : associated with above methods.
+
         Returns
         -------
-        peaks: structured array of shape _navigation_shape_in_array in which
-               each cell contains an array with dimensions (npeaks, 2) that
-               contains the x, y pixel coordinates of peaks found in each image.
+        peaks : structured numpy array
+                Array of shape `_navigation_shape_in_array` in which each cell 
+                contains an array with dimensions (npeaks, 2) that contains 
+                the x, y pixel coordinates of peaks found in each image.
         """
         method_dict = {
-            'skimage': peak_local_max,
+            'local_max': peak_local_max,
             'max': find_peaks_max,
             'minmax': find_peaks_minmax,
             'zaefferer': find_peaks_zaefferer,
             'stat': find_peaks_stat,
-            'laplacian_of_gaussians':  find_peaks_log,
-            'difference_of_gaussians': find_peaks_dog,
+            'laplacian_of_gaussian':  find_peaks_log,
+            'difference_of_gaussian': find_peaks_dog,
         }
         if method in method_dict:
             method = method_dict[method]
@@ -794,7 +812,9 @@ class Signal2D(BaseSignal, CommonSignal2D):
             raise NotImplementedError("The method `{}` is not implemented. "
                                       "See documentation for available "
                                       "implementations.".format(method))
-        peaks = self.map(method, *args, **kwargs, inplace=False, ragged=True)
+        peaks = self.map(method, show_progressbar=show_progressbar, 
+                         parallel=parallel, inplace=False, 
+                         ragged=True, *args, **kwargs)
 
         return peaks
 

@@ -57,7 +57,7 @@ def find_peaks_minmax(z, separation=5., threshold=10.):
     peaks = np.array(
         ndi.center_of_mass(z, labeled, range(1, num_objects + 1)))
 
-    return clean_peaks(peaks)
+    return clean_peaks(np.round(peaks).astype(int))
 
 
 def find_peaks_max(z, alpha=3., size=10):
@@ -118,7 +118,8 @@ def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
         The minimum gradient required to begin a peak search.
     window_size : int
         The size of the square window within which a peak search is
-        conducted. If odd, will round down to even.
+        conducted. If odd, will round down to even. The size must be larger 
+        than 2.
     distance_cutoff : float
         The maximum distance a peak may be from the initial
         high-gradient point.
@@ -128,6 +129,7 @@ def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
     peaks : numpy.ndarray
         (n_peaks, 2)
         Peak pixel coordinates.
+
     Notes
     -----
     Implemented as described in Zaefferer "New developments of computer-aided
@@ -174,6 +176,9 @@ def find_peaks_zaefferer(z, grad_threshold=0.1, window_size=40,
                                                             1] ** 2
         return gradient_of_image
 
+    if window_size < 2:
+        raise ValueError("`window_size` must be >= 2.")
+
     # Generate an ordered list of matrix coordinates.
     if len(z.shape) != 2:
         raise ValueError("'z' should be a 2-d image matrix.")
@@ -205,6 +210,7 @@ def find_peaks_stat(z, alpha=1., window_radius=10, convergence_ratio=0.05):
     """
     Method to locate positive peaks in an image based on statistical refinement
     and difference with respect to mean intensity.
+
     Parameters
     ----------
     z : ndarray
@@ -218,11 +224,13 @@ def find_peaks_stat(z, alpha=1., window_radius=10, convergence_ratio=0.05):
     convergence_ratio : float
         The algorithm will stop finding peaks when the proportion of new peaks
         being found is less than `convergence_ratio`.
+
     Returns
     -------
     ndarray
         (n_peaks, 2)
         Array of peak coordinates.
+
     Notes
     -----
     Implemented as described in the PhD thesis of Thomas White (2009) the
@@ -315,7 +323,7 @@ def find_peaks_stat(z, alpha=1., window_radius=10, convergence_ratio=0.05):
             [np.mean(peak, axis=0) for peak in peaks])  # 7
         return peak_centers
 
-    return clean_peaks(stat_peak_finder(z))
+    return clean_peaks(np.round(stat_peak_finder(z)).astype(int))
 
 
 def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
@@ -351,7 +359,7 @@ def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
                      sigma_ratio=sigma_ratio, threshold=threshold,
                      overlap=overlap)
     try:
-        centers = blobs[:, :2]
+        centers = np.round(blobs[:, :2]).astype(int)
     except IndexError:
         return NO_PEAKS
     clean_centers = []
@@ -363,7 +371,7 @@ def find_peaks_dog(z, min_sigma=1., max_sigma=50., sigma_ratio=1.6,
     return np.array(clean_centers)
 
 
-def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10.,
+def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10,
                    threshold=0.2, overlap=0.5, log_scale=False):
     """
     Finds peaks via the Laplacian of Gaussian Matrices method from
@@ -374,8 +382,8 @@ def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10.,
     z : ndarray
         Array of image intensities.
     min_sigma, max_sigma, num_sigma, threshold, overlap, log_scale :
-        Additional parameters to be passed to the algorithm. See
-        `blob_log` documentation for details:
+        Additional parameters to be passed to the ``blob_log`` method of the 
+        ``scikit-image`` library. See its documentation for details:
         http://scikit-image.org/docs/dev/api/skimage.feature.html#blob-log
 
     Returns
@@ -387,13 +395,15 @@ def find_peaks_log(z, min_sigma=1., max_sigma=50., num_sigma=10.,
     """
     from skimage.feature import blob_log
     z = z / np.max(z)
+    if isinstance(num_sigma, float):
+        raise ValueError("`num_sigma` parameter should be an integer.")
     blobs = blob_log(z, min_sigma=min_sigma, max_sigma=max_sigma,
                      num_sigma=num_sigma, threshold=threshold, overlap=overlap,
                      log_scale=log_scale)
     # Attempt to return only peak positions. If no peaks exist, return an
     # empty array.
     try:
-        centers = blobs[:, :2]
+        centers = np.round(blobs[:, :2]).astype(int)
     except IndexError:
         return NO_PEAKS
     return centers

@@ -3693,8 +3693,9 @@ class BaseSignal(FancySlicing,
         ragged : {None, bool}
             Indicates if results for each navigation pixel are of identical
             shape (and/or numpy arrays to begin with). If None, appropriate
-            choice is made while processing. None is not allowed for Lazy
-            signals!
+            choice is made while processing. If True in case of lazy signal, 
+            the signal will be compute at the end of the mapping. None is not 
+            allowed for Lazy signals!
         keyword arguments : any valid keyword argument
             All extra keyword arguments are passed to the
 

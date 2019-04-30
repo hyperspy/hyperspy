@@ -21,9 +21,10 @@ import numpy.testing as nt
 from scipy.stats import norm
 
 from hyperspy.signals import Signal2D, BaseSignal
+from hyperspy._signals.lazy import LazySignal
 from hyperspy.decorators import lazifyTestClass
 
-   
+
 def _generate_dataset():
     coefficients = np.array(
         [350949.04890400 + 0.j, -22003.98742841 + 51494.56650429j,
@@ -37,7 +38,7 @@ def _generate_dataset():
     dense[coordinates[0], coordinates[1]] = coefficients
     dense = Signal2D(np.real(np.fft.ifft2(dense)))
     dense = dense.isig[500:550, 500:550]
-    
+
     coefficients = np.array(
         [10, 5, 86, 221, 6, 95, 70, 12, 255, 5, 255, 3, 23,
          24, 77, 255, 11, 255, 8, 35, 195, 165, 27, 255, 8, 14,
@@ -60,68 +61,91 @@ def _generate_dataset():
     for (x0, y0), a in zip(coordinates, coefficients):
         sparse += a * norm.pdf(xs, x0)*norm.pdf(ys, y0)
     sparse = sparse[50:100, 50:100]
-    sparse0d = Signal2D(sparse)
-    sparse1d = Signal2D(np.array([sparse for i in range(2)]))
-    sparse2d = Signal2D(np.array([[sparse for i in range(2)] for j in range(2)]))
+    sparse_nav0d = Signal2D(sparse)
+    sparse_nav1d = Signal2D(np.stack([sparse]*2))
+    sparse_nav2d = Signal2D(np.stack([[sparse]*2]*3))
+    shifts = np.array([[2*i, 2*i] for i in range(sparse_nav2d.axes_manager.navigation_size)])
+    sparse_nav2d_shifted = sparse_nav2d.deepcopy()
+    sparse_nav2d_shifted.align2D(shifts=shifts, fill_value=0)
 
-    return dense, sparse0d, sparse1d, sparse2d
+    return dense, sparse_nav0d, sparse_nav1d, sparse_nav2d, sparse_nav2d_shifted
 
 
-PEAK_METHODS = ['skimage', 'max', 'minmax', 'zaefferer', 'stat', 
-                'laplacian_of_gaussians', 'difference_of_gaussians']
+def _generate_reference():
+    xref, yref = 72, 72
+    ref = np.zeros((144, 144))
+    xs, ys = np.ogrid[:144, :144]
+    ref += 100 * norm.pdf(xs, xref)*norm.pdf(ys, yref)
+    return Signal2D(ref), xref, yref
+
+
+PEAK_METHODS = ['local_max', 'max', 'minmax', 'zaefferer', 'stat', 
+                'laplacian_of_gaussian', 'difference_of_gaussian']
 DATASETS = _generate_dataset()
-DATASETS_NAME = ["dense", "sparse0d", "sparse1d", "sparse2d"]
+DATASETS_NAME = ["dense", "sparse_nav0d", "sparse_nav1d", "sparse_nav2d"]
 
 
 @lazifyTestClass
 class TestFindPeaks2D:
 
     def setup_method(self, method):
+        # All these signal needs to be in the `setup_method` to get "lazified"
         self.dense = DATASETS[0]
-        self.sparse0d = DATASETS[1]
-        self.sparse1d = DATASETS[2]
-        self.sparse2d = DATASETS[3]
+        self.sparse_nav0d = DATASETS[1]
+        self.sparse_nav1d = DATASETS[2]
+        self.sparse_nav2d = DATASETS[3]
+        self.sparse_nav2d_shifted = DATASETS[4]
+        self.ref, self.xref, self.yref = _generate_reference()
 
     @pytest.mark.parametrize('method', PEAK_METHODS)
     @pytest.mark.parametrize('dataset_name', DATASETS_NAME)
     @pytest.mark.parametrize('parallel', [True, False])
-    def test_peaks_match_input(self, method, dataset_name, parallel):
+    def test_find_peaks(self, method, dataset_name, parallel):
         if method=='stat':
             pytest.importorskip("sklearn")
         dataset = getattr(self, dataset_name)
+        # Parallel is not used in `map` for lazy signal
+        if parallel and dataset._lazy:
+            pytest.skip("Parallel=True is ignored for lazy signal.")
+
+
         peaks = dataset.find_peaks2D(method=method, parallel=parallel)
         assert isinstance(peaks, BaseSignal)
+        assert not isinstance(peaks, LazySignal)
 
-        if dataset.axes_manager.navigation_size > 0:
-            signal_shape = dataset.axes_manager.navigation_shape[::-1]
-            peaks_shape = peaks.axes_manager.navigation_shape[::-1]
+        # Check navigation shape
+        nt.assert_equal(dataset.axes_manager.navigation_shape,
+                        peaks.axes_manager.navigation_shape)
+        if dataset.axes_manager.navigation_size == 0:
+            shape = (1,)
         else:
-            signal_shape = peaks_shape = (1,)   
-        nt.assert_equal(peaks_shape, signal_shape)
+            shape = dataset.axes_manager.navigation_shape[::-1]
+        assert peaks.data.shape == shape
+        assert peaks.data[0].shape[-1] == 2
 
-    @pytest.mark.parametrize('method', PEAK_METHODS)
-    @pytest.mark.parametrize('dataset_name', DATASETS_NAME)
     @pytest.mark.parametrize('parallel', [True, False])
-    def test_peaks_are_coordinates(self, method, dataset_name, parallel):
-        if method=='stat':
-            pytest.importorskip("sklearn")
-        dataset = getattr(self, dataset_name)
-        peaks = dataset.find_peaks2D(method=method, parallel=parallel)
-        peak_shapes = np.array([peak.shape for peak in peaks.data.flatten()])
-        assert np.all(peak_shapes[:, 1] == 2) 
+    def test_ordering_results(self, parallel):
+        peaks = self.sparse_nav2d_shifted.find_peaks2D(parallel=parallel)
+
+        nt.assert_equal(peaks.inav[0, 0].data,
+                        np.array([[33, 29],
+                                  [27,  1],
+                                  [22, 23],
+                                  [10, 17]]))
+        nt.assert_equal(peaks.inav[0, 1].data,
+                        np.array([[35,  3],
+                                  [29, 25],
+                                  [18, 19],
+                                  [ 6, 13]]))
 
     @pytest.mark.parametrize('method', PEAK_METHODS)
     @pytest.mark.parametrize('parallel', [True, False])
     def test_gets_right_answer(self, method, parallel):
         if method=='stat':
             pytest.importorskip("sklearn")
-        xref, yref = 72, 72
-        ref = np.zeros((144, 144))
-        xs, ys = np.ogrid[:144, :144]
-        ref += 100 * norm.pdf(xs, xref)*norm.pdf(ys, yref)
-        ref = Signal2D(ref)
-        ans = np.empty((1,), dtype=object)
-        ans[0] = np.array([[xref, yref]])
 
-        peaks = ref.find_peaks2D(parallel=parallel)
-        assert np.all(peaks.data[0] == ans[0])
+        ans = np.empty((1,), dtype=object)
+        ans[0] = np.array([[self.xref, self.yref]])
+
+        peaks = self.ref.find_peaks2D(method=method, parallel=parallel)
+        nt.assert_allclose(peaks.data[0], ans[0])
