@@ -5,6 +5,7 @@ import h5py
 from hyperspy import api as hs
 try:
     import pyUSID as usid
+    pyusid_installed = True
 except ModuleNotFoundError:
     pyusid_installed = False
 
