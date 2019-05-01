@@ -6,7 +6,7 @@ from hyperspy import api as hs
 try:
     import pyUSID as usid
     pyusid_installed = True
-except ModuleNotFoundError:
+except BaseException:
     pyusid_installed = False
 
 pytestmark = pytest.mark.skipif(not pyusid_installed, reason="pyUSID not installed")
