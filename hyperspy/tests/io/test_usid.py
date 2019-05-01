@@ -224,6 +224,8 @@ class TestHS2USIDedgeAxes:
         with pytest.raises(ValueError):
             sig.save(file_path)
 
+# ################################ h5USID to HyperSpy Signal(s)  #######################################################
+
 
 class TestUSID2HSbase:
 
@@ -234,7 +236,7 @@ class TestUSID2HSbase:
         phy_quant = 'Current'
         phy_unit = 'nA'
         # Rearrange to slow to fast which is what python likes
-        data_2d = ndata.transpose(1, 0)
+        data_2d = ndata.transpose([1, 0])
         data_2d = data_2d.reshape(-1, 1)
         tran = usid.NumpyTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -251,7 +253,7 @@ class TestUSID2HSbase:
         phy_quant = 'Current'
         phy_unit = 'nA'
         # Rearrange to slow to fast which is what python likes
-        data_2d = ndata.transpose(1, 0)
+        data_2d = ndata.transpose([1, 0])
         data_2d = data_2d.reshape(1, -1)
         tran = usid.NumpyTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -269,7 +271,7 @@ class TestUSID2HSbase:
         phy_quant = 'Current'
         phy_unit = 'nA'
         # Rearrange to slow to fast which is what python likes
-        data_2d = ndata.transpose(1, 0, 3, 2)
+        data_2d = ndata.transpose([1, 0, 3, 2])
         data_2d = data_2d.reshape(np.prod(data_2d.shape[:2]), np.prod(data_2d.shape[2:]))
         tran = usid.NumpyTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -278,7 +280,7 @@ class TestUSID2HSbase:
         
         new_sig = hs.load(file_path)
         compare_signal_from_usid(file_path, ndata, new_sig,
-                                   sig_type=hs.signals.BaseSignal, axes_to_spec=['Bias', 'Frequency'])
+                                 sig_type=hs.signals.BaseSignal, axes_to_spec=['Bias', 'Frequency'])
 
 
 class TestUSID2HSdtype:
@@ -291,7 +293,7 @@ class TestUSID2HSdtype:
         phy_quant = 'Current'
         phy_unit = 'nA'
         # Rearrange to slow to fast which is what python likes
-        data_2d = ndata.transpose(1, 0, 3, 2)
+        data_2d = ndata.transpose([1, 0, 3, 2])
         data_2d = data_2d.reshape(np.prod(data_2d.shape[:2]), np.prod(data_2d.shape[2:]))
         tran = usid.NumpyTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -300,7 +302,7 @@ class TestUSID2HSdtype:
         
         new_sig = hs.load(file_path)
         compare_signal_from_usid(file_path, ndata, new_sig,
-                                   sig_type=hs.signals.ComplexSignal, axes_to_spec=['Bias', 'Frequency'])
+                                 sig_type=hs.signals.ComplexSignal, axes_to_spec=['Bias', 'Frequency'])
         
     def test_compound(self):  
         pos_dims = [usid.Dimension('X', 'nm', [-250, 750]), usid.Dimension('Y', 'um', np.linspace(0, 60, num=7))]
@@ -319,7 +321,7 @@ class TestUSID2HSdtype:
         phy_quant = 'Current'
         phy_unit = 'nA'
         # Rearrange to slow to fast which is what python likes
-        data_2d = ndata.transpose(1, 0, 3, 2)
+        data_2d = ndata.transpose([1, 0, 3, 2])
         data_2d = data_2d.reshape(np.prod(data_2d.shape[:2]), np.prod(data_2d.shape[2:]))
         tran = usid.NumpyTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -329,14 +331,13 @@ class TestUSID2HSdtype:
         objects = hs.load(file_path)
         assert isinstance(objects, list)
         assert len(objects) == 2
-        
-        [amp_sig, phase_sig] = objects
+
         # 1. Validate object type
         for new_sig, ndim_data, comp_name in zip(objects, [amp_vals, phase_vals], ['amp', 'phas']):
             compare_signal_from_usid(file_path, ndim_data, new_sig,
-                                       sig_type=hs.signals.BaseSignal,
-                                       axes_to_spec=['Bias', 'Frequency'],
-                                       compound_comp_name=comp_name)
+                                     sig_type=hs.signals.BaseSignal,
+                                     axes_to_spec=['Bias', 'Frequency'],
+                                     compound_comp_name=comp_name)
             
     def test_non_linear_dimension(self):
         pos_dims = [usid.Dimension('X', 'nm', [-250, 750]), usid.Dimension('Y', 'um', np.linspace(0, 60, num=5))]
@@ -346,14 +347,12 @@ class TestUSID2HSdtype:
         phy_quant = 'Current'
         phy_unit = 'nA'
         # Rearrange to slow to fast which is what python likes
-        data_2d = ndata.transpose(1, 0, 3, 2)
+        data_2d = ndata.transpose([1, 0, 3, 2])
         data_2d = data_2d.reshape(np.prod(data_2d.shape[:2]), np.prod(data_2d.shape[2:]))
         tran = usid.NumpyTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
             file_path = tmp_dir + 'usid_n_pos_n_spec_non_lin_dim.h5'
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit, pos_dims, spec_dims)
-
-        # In[10]:
 
         with pytest.raises(ValueError):
             _ = hs.load(file_path)
@@ -373,7 +372,7 @@ class TestUSID2HSmultiDsets:
         phy_quant = 'Current'
         phy_unit = 'nA'
         # Rearrange to slow to fast which is what python likes
-        data_2d = ndata.transpose(1, 0, 3, 2)
+        data_2d = ndata.transpose([1, 0, 3, 2])
         data_2d = data_2d.reshape(np.prod(data_2d.shape[:2]), np.prod(data_2d.shape[2:]))
         tran = usid.NumpyTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -386,7 +385,7 @@ class TestUSID2HSmultiDsets:
         phy_quant = 'Current'
         phy_unit = 'nA'
         # Rearrange to slow to fast which is what python likes
-        data_2d_2 = ndata_2.transpose(1, 0)
+        data_2d_2 = ndata_2.transpose([1, 0])
         data_2d_2 = data_2d_2.reshape(-1, 1)
         
         with h5py.File(file_path, mode='r+') as h5_f:
@@ -397,8 +396,7 @@ class TestUSID2HSmultiDsets:
         with pytest.warns(UserWarning) as _:
             new_sig = hs.load(file_path)
         compare_signal_from_usid(file_path, ndata, new_sig, axes_to_spec=['Bias', 'Frequency'])
-        
-        
+
     def test_pick_specific(self):
         pos_dims = [usid.Dimension('X', 'nm', [-250, 750]), usid.Dimension('Y', 'um', np.linspace(0, 60, num=7))]
         spec_dims = [usid.Dimension('Frequency', 'kHz', [300, 350, 400]),
@@ -407,7 +405,7 @@ class TestUSID2HSmultiDsets:
         phy_quant = 'Current'
         phy_unit = 'nA'
         # Rearrange to slow to fast which is what python likes
-        data_2d = ndata.transpose(1, 0, 3, 2)
+        data_2d = ndata.transpose([1, 0, 3, 2])
         data_2d = data_2d.reshape(np.prod(data_2d.shape[:2]), np.prod(data_2d.shape[2:]))
         tran = usid.NumpyTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -420,7 +418,7 @@ class TestUSID2HSmultiDsets:
         phy_quant = 'Current'
         phy_unit = 'nA'
         # Rearrange to slow to fast which is what python likes
-        data_2d_2 = ndata_2.transpose(1, 0)
+        data_2d_2 = ndata_2.transpose([1, 0])
         data_2d_2 = data_2d_2.reshape(-1, 1)
         
         with h5py.File(file_path, mode='r+') as h5_f:
@@ -439,7 +437,7 @@ class TestUSID2HSmultiDsets:
         phy_quant = 'Current'
         phy_unit = 'nA'
         # Rearrange to slow to fast which is what python likes
-        data_2d = ndata.transpose(1, 0)
+        data_2d = ndata.transpose([1, 0])
         data_2d = data_2d.reshape(1, -1)
         tran = usid.NumpyTranslator()
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -452,23 +450,21 @@ class TestUSID2HSmultiDsets:
         phy_quant = 'Current'
         phy_unit = 'nA'
         # Rearrange to slow to fast which is what python likes
-        data_2d_2 = ndata_2.transpose(1, 0)
+        data_2d_2 = ndata_2.transpose([1, 0])
         data_2d_2 = data_2d_2.reshape(-1, 1)
         
         with h5py.File(file_path, mode='r+') as h5_f:
             h5_meas_grp = h5_f.create_group('Measurement_001')
             _ = usid.hdf_utils.write_main_dataset(h5_meas_grp, data_2d_2, 'Raw_Data',
                                                   phy_quant, phy_unit, pos_dims, spec_dims)
-            usid.hdf_utils.print_tree(h5_f, main_dsets_only=True)
         
         objects = hs.load(file_path, path_to_main_dataset=None)
         assert isinstance(objects, list)
         assert len(objects) == 2
-        
-        [meas_0, meas_1] = objects
+
         # 1. Validate object type
         for new_sig, ndim_data, dset_path in zip(objects, [ndata, ndata_2],
                                                  ['/Measurement_000/Channel_000/Raw_Data',
                                                   'Measurement_001/Raw_Data']):
             compare_signal_from_usid(file_path, ndim_data, new_sig,
-                                       dset_path=dset_path)
+                                     dset_path=dset_path)
