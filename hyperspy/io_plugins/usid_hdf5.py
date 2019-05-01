@@ -71,13 +71,15 @@ def __get_dim_dict(labels, units, val_func, ignore_non_linear_dims=True):
                 if var / step_avg < 1E-3:
                     step_size = [step_avg]
                 else:
+                    # TODO: return such dimensions as Signals
                     if ignore_non_linear_dims:
                         warn('Ignoring non-linearity of dimension: {}'.format(dim_name))
                         step_size = [1]
                         dim_vals[0] = 0
                     else:
-                        raise ValueError('Cannot load provided dataset. '
-                                         'Parameter: {} was varied non-linearly'.format(dim_name))
+                        raise ValueError('Cannot load provided dataset. Parameter: {} was varied non-linearly. '
+                                         'Supply keyword argument "ignore_non_linear_dims=True" to ignore this '
+                                         'error'.format(dim_name))
 
         step_size = step_size[0]
         dim_dict[dim_name] = {'size': len(dim_vals),
@@ -323,7 +325,7 @@ def __axes_list_to_dimensions(axes_list, data_shape, is_spec):
 # ######################################################################################################################
 
 
-def file_reader(filename, path_to_main_dataset='', verbose=False, ignore_non_linear_dims=False, **kwds):
+def file_reader(filename, dset_path='', verbose=False, ignore_non_linear_dims=True, **kwds):
     """
     Reads a USID Main dataset present in an HDF5 file into a HyperSpy Signal
 
@@ -331,7 +333,7 @@ def file_reader(filename, path_to_main_dataset='', verbose=False, ignore_non_lin
     ----------
     filename : str
         path to HDF5 file
-    path_to_main_dataset : str, Optional.
+    dset_path : str, Optional.
         Absolute path of USID Main HDF5 dataset.
         Default - '' - the very first Main Dataset will be used
         If None - all Main Datasets will be read
@@ -352,7 +354,7 @@ def file_reader(filename, path_to_main_dataset='', verbose=False, ignore_non_lin
         raise FileNotFoundError('No file found at: {}'.format(filename))
 
     with h5py.File(filename, mode='r') as h5_f:
-        if path_to_main_dataset is None:
+        if dset_path is None:
             all_main_dsets = usid.hdf_utils.get_all_main(h5_f)
             signals = []
             for h5_dset in all_main_dsets:
@@ -361,18 +363,18 @@ def file_reader(filename, path_to_main_dataset='', verbose=False, ignore_non_lin
                                                   ignore_non_linear_dims=ignore_non_linear_dims)
             return signals
         else:
-            if not isinstance(path_to_main_dataset, str):
-                raise TypeError('path_to_main_dataset should be a string')
-            if len(path_to_main_dataset) > 0:
-                h5_dset = h5_f[path_to_main_dataset]
+            if not isinstance(dset_path, str):
+                raise TypeError('dset_path should be a string')
+            if len(dset_path) > 0:
+                h5_dset = h5_f[dset_path]
                 # All other checks will be handled by helper function
             else:
                 all_main_dsets = usid.hdf_utils.get_all_main(h5_f)
                 if len(all_main_dsets) > 1:
                     warn('{} contains multiple USID Main datasets.\n{}\nhas been selected as the desired dataset.'
                          'If this is not the desired dataset, please supply the path to the main dataset via'
-                         'the "path_to_main_dataset" keyword argument.\nTo read all datasets, '
-                         'use path_to_main_dataset=None'.format(h5_f, all_main_dsets[0].name))
+                         ' the "dset_path" keyword argument.\nTo read all datasets, '
+                         'use "dset_path=None"'.format(h5_f, all_main_dsets[0].name))
                 h5_dset = all_main_dsets[0]
             return __usidataset_to_signal(h5_dset, verbose=verbose, ignore_non_linear_dims=ignore_non_linear_dims)
 
@@ -391,7 +393,8 @@ def file_writer(filename, object2save):
     if not isinstance(filename, str):
         raise TypeError('filename should be a string')
     if os.path.exists(filename):
-        raise FileExistsError('A file already exists at: {}. Please delete the file at the location or specify a '
+        raise FileExistsError('Appending is not yet supported. A file already exists at: {}. '
+                              'Please delete the file at the location or specify a '
                               'different path for the file'.format(filename))
     """
     # CANNOT import BaseSignal! Probably circular import
@@ -438,7 +441,7 @@ def file_writer(filename, object2save):
         pos_dims = __axes_list_to_dimensions(object2save.axes_manager.navigation_axes, object2save.data.shape, False)
         spec_dims = __axes_list_to_dimensions(object2save.axes_manager.signal_axes, [], True)
 
-    # TODO: Does HyperSpy store the physical quantity and units somewhere?
+    #  Does HyperSpy store the physical quantity and units somewhere?
     tran = usid.NumpyTranslator()
     _ = tran.translate(filename, 'Raw_Data', data_2d, 'Unknown Quantity', 'Unknown Units', pos_dims, spec_dims,
                        parm_dict=parm_dict)

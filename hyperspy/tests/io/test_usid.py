@@ -358,10 +358,10 @@ class TestUSID2HSdtype:
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit, pos_dims, spec_dims)
 
         with pytest.raises(ValueError):
-            _ = hs.load(file_path)
+            _ = hs.load(file_path, ignore_non_linear_dims=False)
 
         with pytest.warns(UserWarning) as _:
-            new_sig = hs.load(file_path, ignore_non_linear_dims=True)
+            new_sig = hs.load(file_path)
         compare_signal_from_usid(file_path, ndata, new_sig, axes_to_spec=['Bias', 'Frequency'], invalid_axes=True)
 
 
@@ -430,7 +430,7 @@ class TestUSID2HSmultiDsets:
                                                   phy_quant, phy_unit, pos_dims, spec_dims)
         
         dset_path = '/Measurement_001/Raw_Data'
-        new_sig = hs.load(file_path, path_to_main_dataset=dset_path)
+        new_sig = hs.load(file_path, dset_path=dset_path)
         compare_signal_from_usid(file_path, ndata_2, new_sig, dset_path=dset_path)
         
     def test_read_all(self):
@@ -461,7 +461,7 @@ class TestUSID2HSmultiDsets:
             _ = usid.hdf_utils.write_main_dataset(h5_meas_grp, data_2d_2, 'Raw_Data',
                                                   phy_quant, phy_unit, pos_dims, spec_dims)
         
-        objects = hs.load(file_path, path_to_main_dataset=None)
+        objects = hs.load(file_path, dset_path=None)
         assert isinstance(objects, list)
         assert len(objects) == 2
 
