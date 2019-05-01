@@ -2,10 +2,7 @@ import tempfile
 import pytest
 import numpy as np
 import h5py
-import sys
-sys.path.append('/Users/syz/PycharmProjects/pyUSID/')
 import pyUSID as usid
-sys.path.append('/Users/syz/PycharmProjects/hyperspy/')
 from hyperspy import api as hs
 
 
