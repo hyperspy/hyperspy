@@ -129,11 +129,12 @@ def __split_descriptor(desc):
     units : str
         Units corresponding to the physical quantity
     """
+    desc = desc.strip()
     ind = desc.rfind('(')
     if ind < 0:
         ind = desc.rfind('[')
         if ind < 0:
-            return '', ''
+            return desc, ''
 
     quant = desc[:ind].strip()
     units = desc[ind:]
@@ -144,8 +145,8 @@ def __split_descriptor(desc):
     return quant, units
 
 
-def __convert_to_hs_signal(ndim_form, quantity, units, dim_dict_list, dim_names,
-                           h5_path, h5_dset_path, sig_type='', verbose=False):
+def __convert_to_signal_dict(ndim_form, quantity, units, dim_dict_list,
+                             h5_path, h5_dset_path, sig_type=''):
     """
     Packages required components that make up a Signal object
 
@@ -159,16 +160,12 @@ def __convert_to_hs_signal(ndim_form, quantity, units, dim_dict_list, dim_names,
         Corresponding units
     dim_dict_list : list
         List of dictionaries that instruct the axes corresponding to the main dataset
-    dim_names : list
-        Names of dimensions. UNUSED
     h5_path : str
         Absolute path of the original USID HDF5 file
     h5_dset_path : str
         Absolute path of the USIDataset within the HDF5 file
     sig_type : str
         Type of measurement
-    verbose : bool. UNUSED
-        Whether or not to print debugging statements
 
     Returns
     -------
@@ -185,7 +182,7 @@ def __convert_to_hs_signal(ndim_form, quantity, units, dim_dict_list, dim_names,
     return sig
 
 
-def usidataset_to_signal(h5_main, verbose=False, ignore_non_linear_dims=True):
+def __usidataset_to_signal(h5_main, verbose=False, ignore_non_linear_dims=True):
     """
     Converts a single specified USIDataset object to one or more Signal objects
     Parameters
@@ -239,9 +236,8 @@ def usidataset_to_signal(h5_main, verbose=False, ignore_non_linear_dims=True):
 
     _, is_complex, is_compound, _, _ = usid.dtype_utils.check_dtype(h5_main)
 
-    trunc_func = partial(__convert_to_hs_signal,
+    trunc_func = partial(__convert_to_signal_dict,
                          dim_dict_list=dim_list,
-                         spec_dim_names=list(spec_dict.keys()),
                          h5_path=h5_main.file.filename,
                          h5_dset_path=h5_main.name)
 
@@ -254,9 +250,9 @@ def usidataset_to_signal(h5_main, verbose=False, ignore_non_linear_dims=True):
         for name in ds_nd.dtype.names:
             q_sub, u_sub = __split_descriptor(name)
             # TODO: Check to make sure that this will work with Dask.array
-            sig.append(trunc_func(ds_nd[name], q_sub, u_sub, sig_type=quant, verbose=verbose))
+            sig.append(trunc_func(ds_nd[name], q_sub, u_sub, sig_type=quant))
     else:
-        sig = [trunc_func(ds_nd, quant, units, verbose=verbose)]
+        sig = [trunc_func(ds_nd, quant, units)]
 
     return sig
 
@@ -295,13 +291,16 @@ def __flatten_nested_dictionary(nested_dict, parent_key='', sep='-'):
     return dict(items)
 
 
-def __axes_list_to_dimensions(axes_list, data_shape):
+def __axes_list_to_dimensions(axes_list, data_shape, is_spec):
     dim_list = []
+    dim_type = 'Pos'
+    if is_spec:
+        dim_type = 'Spec'
     # for dim_ind, (dim_size, dim) in enumerate(zip(data_shape, axes_list)):
     for dim_ind in range(len(data_shape)):
         dim_size = data_shape[len(data_shape) - 1 - dim_ind]
         dim = axes_list[dim_ind]
-        dim_name = 'Unknown_Dimension_' + str(dim_ind)
+        dim_name = dim_type + '_Dim_' + str(dim_ind)
         if isinstance(dim.name, str):
             temp = dim.name.strip()
             if len(temp) > 0:
@@ -312,7 +311,7 @@ def __axes_list_to_dimensions(axes_list, data_shape):
             if len(temp) > 0:
                 dim_units = temp
                 # use REAL dimension size rather than what is presented in the axes manager
-        print(dim_name, dim.size, dim_size) # dim_units, dim.offset, dim.scale,
+        # print(dim_name, dim.size, dim_size) # dim_units, dim.offset, dim.scale,
         dim_list.append(usid.Dimension(dim_name, dim_units,
                                        np.arange(dim.offset,
                                                  dim.offset + dim_size * dim.scale,
@@ -324,39 +323,7 @@ def __axes_list_to_dimensions(axes_list, data_shape):
 # ######################################################################################################################
 
 
-def read_all_main_datasets(filename, verbose=False, ignore_non_linear_dims=False):
-    """
-    Reads all USID Main datasets present in the provided HDF5 file into HyperSpy Signal objects
-
-    Parameters
-    ----------
-    filename : str
-        path to HDF5 file
-    verbose : bool, Optional. Default = False
-        Whether or not to print debugging statements
-    ignore_non_linear_dims : bool, Optional
-        If True, parameters that were varied non-linearly in the desired dataset will result in Exceptions.
-        Else, all such non-linearly varied parameters will be treated as linearly varied parameters and
-        a Signal object will be generated.
-
-    Returns
-    -------
-    list of hyperspy.signals.Signal object
-    """
-    if not isinstance(filename, str):
-        raise TypeError('filename should be a string')
-    if not os.path.isfile(filename):
-        raise FileNotFoundError('No file found at: {}'.format(filename))
-
-    with h5py.File(filename, mode='r') as h5_f:
-        all_main_dsets = usid.hdf_utils.get_all_main(h5_f)
-        signals = []
-        for dset in all_main_dsets:
-            signals.append(usidataset_to_signal(dset, verbose=verbose, ignore_non_linear_dims=ignore_non_linear_dims))
-        return signals
-
-
-def file_reader(filename, path_to_main_dataset=None, verbose=False, ignore_non_linear_dims=False, **kwds):
+def file_reader(filename, path_to_main_dataset='', verbose=False, ignore_non_linear_dims=False, **kwds):
     """
     Reads a USID Main dataset present in an HDF5 file into a HyperSpy Signal
 
@@ -364,9 +331,10 @@ def file_reader(filename, path_to_main_dataset=None, verbose=False, ignore_non_l
     ----------
     filename : str
         path to HDF5 file
-    path_to_main_dataset : str, Optional. Default = None
+    path_to_main_dataset : str, Optional.
         Absolute path of USID Main HDF5 dataset.
-        If None, the very first Main Dataset will be used
+        Default - '' - the very first Main Dataset will be used
+        If None - all Main Datasets will be read
     verbose : bool, Optional. Default = False
         Whether or not to print debugging statements
     ignore_non_linear_dims : bool, Optional
@@ -384,19 +352,29 @@ def file_reader(filename, path_to_main_dataset=None, verbose=False, ignore_non_l
         raise FileNotFoundError('No file found at: {}'.format(filename))
 
     with h5py.File(filename, mode='r') as h5_f:
-        if path_to_main_dataset is not None:
+        if path_to_main_dataset is None:
+            all_main_dsets = usid.hdf_utils.get_all_main(h5_f)
+            signals = []
+            for h5_dset in all_main_dsets:
+                # Note that the function returns a list already. Should not append
+                signals += __usidataset_to_signal(h5_dset, verbose=verbose,
+                                                  ignore_non_linear_dims=ignore_non_linear_dims)
+            return signals
+        else:
             if not isinstance(path_to_main_dataset, str):
                 raise TypeError('path_to_main_dataset should be a string')
-            h5_dset = h5_f[path_to_main_dataset]
-            # All other checks will be handled by helper function
-        else:
-            all_main_dsets = usid.hdf_utils.get_all_main(h5_f)
-            if len(all_main_dsets) > 0:
-                warn('{} contains multiple USID Main datasets.\n{}\nhas been selected as the desired dataset.'
-                     'If this is not the desired dataset, please supply the path to the main dataset via'
-                     'the "path_to_main_dataset" keyword argument'.format(h5_f, all_main_dsets[0]))
-            h5_dset = all_main_dsets[0]
-        return usidataset_to_signal(h5_dset, verbose=verbose, ignore_non_linear_dims=ignore_non_linear_dims)
+            if len(path_to_main_dataset) > 0:
+                h5_dset = h5_f[path_to_main_dataset]
+                # All other checks will be handled by helper function
+            else:
+                all_main_dsets = usid.hdf_utils.get_all_main(h5_f)
+                if len(all_main_dsets) > 1:
+                    warn('{} contains multiple USID Main datasets.\n{}\nhas been selected as the desired dataset.'
+                         'If this is not the desired dataset, please supply the path to the main dataset via'
+                         'the "path_to_main_dataset" keyword argument.\nTo read all datasets, '
+                         'use path_to_main_dataset=None'.format(h5_f, all_main_dsets[0].name))
+                h5_dset = all_main_dsets[0]
+            return __usidataset_to_signal(h5_dset, verbose=verbose, ignore_non_linear_dims=ignore_non_linear_dims)
 
 
 def file_writer(filename, object2save):
@@ -441,24 +419,24 @@ def file_writer(filename, object2save):
         data_2d = data_2d.reshape(np.prod(object2save.data.shape[:num_pos_dims]),
                                   np.prod(object2save.data.shape[num_pos_dims:]))
         pos_dims = __axes_list_to_dimensions(object2save.axes_manager.navigation_axes,
-                                             object2save.data.shape[:num_pos_dims])
+                                             object2save.data.shape[:num_pos_dims], False)
         spec_dims = __axes_list_to_dimensions(object2save.axes_manager.signal_axes,
-                                              object2save.data.shape[num_pos_dims:])
+                                              object2save.data.shape[num_pos_dims:], True)
     elif num_pos_dims == 0:
         # only spectroscopic:
         # Reverse order of dimensions:
         data_2d = data_2d.transpose(list(range(len(object2save.data.shape)))[::-1])
         # now flatten to 2D:
         data_2d = data_2d.reshape(1, -1)
-        pos_dims = __axes_list_to_dimensions(object2save.axes_manager.navigation_axes, [])
-        spec_dims = __axes_list_to_dimensions(object2save.axes_manager.signal_axes, object2save.data.shape)
+        pos_dims = __axes_list_to_dimensions(object2save.axes_manager.navigation_axes, [], False)
+        spec_dims = __axes_list_to_dimensions(object2save.axes_manager.signal_axes, object2save.data.shape, True)
     else:
         # Reverse order of dimensions:
         data_2d = data_2d.transpose(list(range(len(object2save.data.shape)))[::-1])
         # now flatten to 2D:
         data_2d = data_2d.reshape(-1, 1)
-        pos_dims = __axes_list_to_dimensions(object2save.axes_manager.navigation_axes, object2save.data.shape)
-        spec_dims = __axes_list_to_dimensions(object2save.axes_manager.signal_axes, [])
+        pos_dims = __axes_list_to_dimensions(object2save.axes_manager.navigation_axes, object2save.data.shape, False)
+        spec_dims = __axes_list_to_dimensions(object2save.axes_manager.signal_axes, [], True)
 
     # TODO: Does HyperSpy store the physical quantity and units somewhere?
     tran = usid.NumpyTranslator()
