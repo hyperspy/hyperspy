@@ -2,8 +2,13 @@ import tempfile
 import pytest
 import numpy as np
 import h5py
-import pyUSID as usid
 from hyperspy import api as hs
+try:
+    import pyUSID as usid
+except ModuleNotFoundError:
+    pyusid_installed = False
+
+pytestmark = pytest.mark.skipif(not pyusid_installed, reason="pyUSID not installed")
 
 
 # ################################ HELPER FUNCTIONS ####################################################################
