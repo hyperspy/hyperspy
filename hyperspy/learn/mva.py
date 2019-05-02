@@ -686,12 +686,13 @@ class MVA():
         lr.bss_node = str(lr.bss_node)
 
     def mcrals(self,
-            number_of_components=None,
-            simplicity='spatial',
-            factors=None,
-            comp_list=None,
-            mask=None,
-            compute=False):
+               number_of_components=None,
+               simplicity='spatial',
+               factors=None,
+               comp_list=None,
+               mask=None,
+               compute=False,
+               verbosity='error',):
         """Multivariate curve resolution (MCR) on the result on the
         decomposition.
 
@@ -711,16 +712,20 @@ class MVA():
             navigation dimension must be 1 and the size greater than 1.
         comp_list : boolen numpy array
             choose the components to use by the boolean list. It permits
-             to choose non contiguous components.
+            to choose non contiguous components.
         mask : bool numpy array or Signal instance.
             If not None, the signal locations marked as True are masked. The
             mask shape must be equal to the signal shape
             (navigation shape) when `on_loadings` is False (True).
-        compute: bool
-           If the decomposition results are lazy, compute the BSS components
-           so that they are not lazy.
-           Default is False.
-
+        compute : bool
+            If the decomposition results are lazy, compute the BSS components
+            so that they are not lazy.
+            Default is False.
+        verbosity : str
+            One of ``['error', 'warning', 'info', 'debug']``
+            Controls the verbosity of the external pyMCR routines. The
+            strings provided correspond to levels of the ``logging`` module.
+            Default is ``'error'`` (only critical failure output).
         """
         from hyperspy.signal import BaseSignal
 
@@ -785,6 +790,13 @@ class MVA():
         else:
             spec_weight_vec = None
             im_weight_vec = None
+
+        # Set logging level for pyMCR:
+        levels = {'error': logging.ERROR,
+                  'warning': logging.WARNING,
+                  'info': logging.INFO,
+                  'debug': logging.DEBUG}
+        logging.getLogger('pymcr.mcr').setLevel(levels[verbosity])
 
         # Perform MCR
         if simplicity == 'spatial':
