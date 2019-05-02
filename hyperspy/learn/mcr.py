@@ -60,10 +60,9 @@ def mcr(data, concentrations, purespectra, poisson_scale, im_weight_vec,
             spec_out = fitmcr.ST_opt_.T
 
     else:
-        raise ValueError(""
-                         "'simplicity' must be either 'spatial' or"
+        raise ValueError("'simplicity' must be either 'spatial' or"
                          "'spectral'."
-                         "%s was provided." % str(simplicity))
+                         "{} was provided.".format(str(simplicity)))
 
     spec_out = spec_out/spec_out.sum(0)
     conc_out = conc_out/spec_out.sum(0)
