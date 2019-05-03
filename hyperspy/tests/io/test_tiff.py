@@ -426,6 +426,8 @@ def test_read_Zeiss_SEM_scale_metadata_1k_image():
                                                        'x': 75.6442,
                                                        'y': 60.4901,
                                                        'z': 25.193},
+                                             'Detector':{'detector_type':
+                                                 'HE-SE2'},
                                              'beam_current': 1.0,
                                              'beam_energy': 25.0,
                                              'dwell_time': 5e-08,

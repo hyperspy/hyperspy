@@ -565,6 +565,9 @@ mapping_cz_sem = {
     'CZ_SEM.ap_iprobe':
     ("Acquisition_instrument.SEM.beam_current",
      lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='nA')),
+    'CZ_SEM.dp_detector_type':
+    ("Acquisition_instrument.SEM.Detector.detector_type",
+      lambda tup: _parse_tuple_Zeiss(tup)),
     'CZ_SEM.sv_serial_number':
     ("Acquisition_instrument.SEM.microscope", _parse_tuple_Zeiss),
     'CZ_SEM.ap_date':
