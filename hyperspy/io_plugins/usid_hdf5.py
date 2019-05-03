@@ -424,7 +424,7 @@ def file_reader(filename, dset_path='', ignore_non_linear_dims=True, **kwds):
                                          ignore_non_linear_dims)
 
 
-def file_writer(filename, object2save):
+def file_writer(filename, object2save, *args, **kwds):
     """
     Writes a HyperSpy Signal object to a HDF5 file formatted according to USID
 
@@ -493,7 +493,7 @@ def file_writer(filename, object2save):
     if not append:
         tran = usid.NumpyTranslator()
         _ = tran.translate(filename, dset_name, data_2d, phy_quant, phy_units,
-                           pos_dims, spec_dims, parm_dict=parm_dict)
+                           pos_dims, spec_dims, parm_dict=parm_dict, **kwds)
     else:
         with h5py.File(filename, mode='r+') as h5_f:
             h5_grp = usid.hdf_utils.create_indexed_group(h5_f, 'Measurement')
@@ -501,4 +501,4 @@ def file_writer(filename, object2save):
             h5_grp = usid.hdf_utils.create_indexed_group(h5_grp, 'Channel')
             _ = usid.hdf_utils.write_main_dataset(h5_grp, data_2d, dset_name,
                                                   phy_quant, phy_units,
-                                                  pos_dims,  spec_dims)
+                                                  pos_dims,  spec_dims, **kwds)
