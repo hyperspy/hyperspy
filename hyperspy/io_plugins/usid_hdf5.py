@@ -432,12 +432,7 @@ def file_writer(filename, object2save):
                               'exists at:\n{}.\n Please delete the file at the'
                               ' location or specify a different path for the '
                               'file'.format(filename))
-    """
-    # CANNOT import BaseSignal! Probably circular import
-    if not isinstance(object2save, BaseSignal):
-        raise TypeError('object2save should be a valid 
-        hyperspy.signals.BaseSignal object')
-    """
+
     hs_shape = object2save.data.shape
 
     # Not sure how to safely ignore spurious / additional dimensions
