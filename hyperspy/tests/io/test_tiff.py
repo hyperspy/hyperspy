@@ -431,7 +431,7 @@ def test_read_Zeiss_SEM_scale_metadata_1k_image():
                                              'dwell_time': 5e-08,
                                              'magnification': 105.0,
                                              'microscope': 'Merlin-61-08',
-                                             'working_distance': 14.81}},
+                                             'working_distance': 14.808}},
           'General': {'authors': 'LIM',
                       'date': '2015-12-23',
                       'original_filename': 'test_tiff_Zeiss_SEM_1k.tif',

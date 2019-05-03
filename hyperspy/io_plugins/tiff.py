@@ -487,7 +487,7 @@ def _parse_tuple_Zeiss_with_units(tup, to_units=None):
     (value, parse_units) = tup[1:]
     if to_units is not None:
         v = value * ureg(parse_units)
-        value = float("%.3e" % v.to(to_units).magnitude)
+        value = float("%.6e" % v.to(to_units).magnitude)
     return value
 
 
@@ -544,11 +544,14 @@ mapping_cz_sem = {
     'CZ_SEM.ap_mag':
     ("Acquisition_instrument.SEM.magnification", _parse_tuple_Zeiss),
     'CZ_SEM.ap_stage_at_x':
-    ("Acquisition_instrument.SEM.Stage.x", _parse_tuple_Zeiss),
+    ("Acquisition_instrument.SEM.Stage.x",
+     lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='mm')),
     'CZ_SEM.ap_stage_at_y':
-    ("Acquisition_instrument.SEM.Stage.y", _parse_tuple_Zeiss),
+    ("Acquisition_instrument.SEM.Stage.y",
+     lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='mm')),
     'CZ_SEM.ap_stage_at_z':
-    ("Acquisition_instrument.SEM.Stage.z", _parse_tuple_Zeiss),
+    ("Acquisition_instrument.SEM.Stage.z",
+     lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='mm')),
     'CZ_SEM.ap_stage_at_r':
     ("Acquisition_instrument.SEM.Stage.rotation", _parse_tuple_Zeiss),
     'CZ_SEM.ap_stage_at_t':
