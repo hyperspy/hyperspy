@@ -996,8 +996,9 @@ In order to prevent accidental misinterpretation of information downstream, the 
 Writing
 ^^^^^^^
 Signals can be written to new h5USID files using the standard ``.save()`` function.
-No keyword arguments can / need to be supplied.
-Appending to existing h5USID files can be added upon request.
+Setting the ``overwrite`` keyword argument to ``True`` will append to the specified
+HDF5 file. All other keyword arguments will be passed to
+`pyUSID.hdf_utils.write_main_dataset() <https://pycroscopy.github.io/pyUSID/_autosummary/_autosummary/pyUSID.io.hdf_utils.html#pyUSID.io.hdf_utils.write_main_dataset>`_
 
 .. code-block:: python
 
