@@ -559,7 +559,7 @@ mapping_cz_sem = {
     'CZ_SEM.dp_dwell_time':
     ("Acquisition_instrument.SEM.dwell_time",
      lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='s')),
-    'CZ_SEM.ap_beam_current':
+    'CZ_SEM.ap_iprobe':
     ("Acquisition_instrument.SEM.beam_current",
      lambda tup: _parse_tuple_Zeiss_with_units(tup, to_units='nA')),
     'CZ_SEM.sv_serial_number':
