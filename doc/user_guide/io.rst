@@ -212,7 +212,7 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +--------------------+--------+--------+--------+
     | EDAX .spc and .spd |    Yes |    No  |    Yes |
     +--------------------+--------+--------+--------+
-    | h5USID .h5         |    Yes |    No  |    No  |
+    | h5USID .h5         |    Yes |   Yes  |    No  |
     +--------------------+--------+--------+--------+
 
 .. _hspy-format:
@@ -911,6 +911,9 @@ Requirements
    `installation of pyUSID <https://pycroscopy.github.io/pyUSID/install.html>`_.
 2. Files must use the ``.h5`` file extension in order to use this io plugin.
    Using the ``.hdf5`` extension will default to HyperSpy's own plugin
+3. For now, this plugin will only work with numpy arrays / non-lazy signals.
+   Lazy operations are actively being developed in pyUSID and will be made
+   available shortly in this plugin.
 
 Reading
 ^^^^^^^
@@ -989,8 +992,6 @@ In order to prevent accidental misinterpretation of information downstream, the 
     >>> hs.load("sample.h5")
     ValueError: Cannot load provided dataset. Parameter: Bias was varied non-linearly.
     Supply keyword argument "ignore_non_linear_dims=True" to ignore this error
-
-Lazy reads will be made available in an upcoming version of pyUSID and HyperSpy.
 
 Writing
 ^^^^^^^
