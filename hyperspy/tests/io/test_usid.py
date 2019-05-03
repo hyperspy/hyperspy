@@ -97,11 +97,15 @@ def _validate_metadata_from_h5dset(sig, h5_dset, compound_comp_name=None):
 
 
 def compare_usid_from_signal(sig, h5_path, empty_pos=False, empty_spec=False,
-                             **kwargs):
+                             dset_path=None, **kwargs):
     with h5py.File(h5_path, mode='r') as h5_f:
         # 1. Validate that what has been written is a USID Main dataset
-        _array_translator_basic_checks(h5_f)
-        h5_main = usid.hdf_utils.get_all_main(h5_f)[0]
+        if dset_path is None:
+            _array_translator_basic_checks(h5_f)
+            h5_main = usid.hdf_utils.get_all_main(h5_f)[0]
+        else:
+            h5_main = usid.USIDataset(h5_f[dset_path])
+
         usid_data = h5_main.get_n_dim_form().squeeze()
         # 2. Validate that raw data has been written correctly:
         assert np.allclose(sig.data, usid_data)
@@ -162,6 +166,7 @@ def compare_signal_from_usid(file_path, ndata, new_sig, axes_to_spec=[],
         # 5. Validate that metadata has been read in correctly:
         _validate_metadata_from_h5dset(new_sig, h5_main,
                                        compound_comp_name=compound_comp_name)
+
 
 def gen_2pos_2spec():
     pos_dims = [usid.Dimension('X', 'nm', [-250, 750]),
@@ -252,6 +257,40 @@ class TestHS2USIDallKnown:
 
         compare_usid_from_signal(sig, file_path, empty_pos=False,
                                  empty_spec=False)
+
+    def test_append_to_existing_file(self):
+        sig = hs.signals.BaseSignal(np.random.randint(0, high=100,
+                                                      size=(2, 3)),
+                                    axes=[{'size': 2, 'name': 'X',
+                                           'units': 'nm', 'scale': 0.2,
+                                           'offset': 1},
+                                          {'size': 3, 'name': 'Y',
+                                           'units': 'um', 'scale': 0.1,
+                                           'offset': 2}])
+        sig = sig.transpose()
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            file_path = tmp_dir + 'usid_n_pos_0_spec_real.h5'
+        sig.save(file_path)
+
+        compare_usid_from_signal(sig, file_path, empty_pos=False,
+                                 empty_spec=True)
+
+        sig = hs.signals.BaseSignal(np.random.randint(0, high=100,
+                                                      size=(2, 3)),
+                                    axes=[{'size': 2, 'name': 'Freq',
+                                           'units': 'Hz', 'scale': 30,
+                                           'offset': 300},
+                                          {'size': 3, 'name': 'Bias',
+                                           'units': 'V', 'scale': 0.25,
+                                           'offset': -0.25}])
+
+        sig.save(file_path, overwrite=True)
+
+        new_dset_path = '/Measurement_001/Channel_000/Raw_Data'
+
+        compare_usid_from_signal(sig, file_path, empty_pos=True,
+                                 empty_spec=False, dset_path=new_dset_path)
 
 
 class TestHS2USIDedgeAxes:
