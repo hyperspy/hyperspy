@@ -58,9 +58,19 @@ def _get_dim_dict(labels, units, val_func, ignore_non_linear_dims=True):
     dict
         Dictionary of dictionaries that correspond to axes for HyperSpy Signal
         objects
+
+    Notes
+    -----
+    For a future release of HyperSpy:
+    If a dimension was varied non-linearly, one would need to set the
+    appropriate quantity in the quantity equal to dim_vals. At that point,
+    the typical offset and scale parameters would be (hopefully) ignored.
     """
     dim_dict = dict()
     for dim_name, units in zip(labels, units):
+        # dim_vals below contains the full 1D tensor that shows how a dimension
+        # was varied. If the parameter was varied linearly, the offset, size,
+        # and scale can be extracted easily.
         dim_vals = val_func(dim_name)
         if len(dim_vals) == 1:
             # Empty dimension!
@@ -75,7 +85,7 @@ def _get_dim_dict(labels, units, val_func, ignore_non_linear_dims=True):
                 if var / step_avg < 1E-3:
                     step_size = [step_avg]
                 else:
-                    # TODO: return such dimensions as Signals
+                    # Non-linear dimension! - see notes above
                     if ignore_non_linear_dims:
                         warn('Ignoring non-linearity of dimension: '
                              '{}'.format(dim_name))
