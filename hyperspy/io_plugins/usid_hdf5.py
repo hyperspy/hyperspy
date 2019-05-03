@@ -435,13 +435,9 @@ def file_writer(filename, object2save):
     object2save : hyperspy.signals.Signal
         A HyperSpy signal
     """
-    if not isinstance(filename, str):
-        raise TypeError('filename should be a string')
+    append = False
     if os.path.exists(filename):
-        raise FileExistsError('Appending is not yet supported. A file already '
-                              'exists at:\n{}.\n Please delete the file at the'
-                              ' location or specify a different path for the '
-                              'file'.format(filename))
+        append = True
 
     hs_shape = object2save.data.shape
 
@@ -490,7 +486,19 @@ def file_writer(filename, object2save):
         spec_dims = _axes_list_to_dimensions(sig_axes, [], True)
 
     #  Does HyperSpy store the physical quantity and units somewhere?
-    tran = usid.NumpyTranslator()
-    _ = tran.translate(filename, 'Raw_Data', data_2d, 'Unknown Quantity',
-                       'Unknown Units', pos_dims, spec_dims,
-                       parm_dict=parm_dict)
+    phy_quant = 'Unknown Quantity'
+    phy_units = 'Unknown Units'
+    dset_name = 'Raw_Data'
+
+    if not append:
+        tran = usid.NumpyTranslator()
+        _ = tran.translate(filename, dset_name, data_2d, phy_quant, phy_units,
+                           pos_dims, spec_dims, parm_dict=parm_dict)
+    else:
+        with h5py.File(filename, mode='r+') as h5_f:
+            h5_grp = usid.hdf_utils.create_indexed_group(h5_f, 'Measurement')
+            usid.hdf_utils.write_simple_attrs(h5_grp, parm_dict)
+            h5_grp = usid.hdf_utils.create_indexed_group(h5_grp, 'Channel')
+            _ = usid.hdf_utils.write_main_dataset(h5_grp, data_2d, dset_name,
+                                                  phy_quant, phy_units,
+                                                  pos_dims,  spec_dims)
