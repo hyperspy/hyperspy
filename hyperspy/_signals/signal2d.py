@@ -33,6 +33,7 @@ from hyperspy.misc.math_tools import symmetrize, antisymmetrize
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.lazy import LazySignal
 from hyperspy._signals.common_signal2d import CommonSignal2D
+from hyperspy.signal_tools import PeaksFinder2D
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
 from hyperspy.utils.peakfinders2D import (
@@ -744,7 +745,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         self.data += ramp
 
     def find_peaks2D(self, method='local_max', show_progressbar=None, 
-                     parallel=None, *args, **kwargs):
+                     parallel=None, current_index=False, *args, **kwargs):
         """Find peaks in a 2D signal.
         Function to locate the positive peaks in an image using various, user
         specified, methods. Returns a structured array containing the peak
@@ -771,11 +772,11 @@ class Signal2D(BaseSignal, CommonSignal2D):
                  'massiel' - finds peaks in each direction and compares the
                  positions where these coincide.
 
-                 'laplacian_of_gaussians' - a blob finder implemented in
+                 'laplacian_of_gaussian' - a blob finder implemented in
                  `scikit-image` which uses the laplacian of Gaussian 
                  matrices approach.
 
-                 'difference_of_gaussians' - a blob finder implemented in
+                 'difference_of_gaussian' - a blob finder implemented in
                  `scikit-image` which uses the difference of Gaussian 
                  matrices approach.
         show_progressbar : None or bool
@@ -784,7 +785,9 @@ class Signal2D(BaseSignal, CommonSignal2D):
         parallel : {None,bool,int}
             if True, the computation will be performed in a threaded (parallel)
             manner. See `parallel` keyword of the `map` method for more 
-            information. 
+            information.
+        current_index : bool
+            if True, the computation will be performed for the current index.
 
         *args : associated with above methods
 
@@ -812,24 +815,18 @@ class Signal2D(BaseSignal, CommonSignal2D):
             raise NotImplementedError("The method `{}` is not implemented. "
                                       "See documentation for available "
                                       "implementations.".format(method))
-        peaks = self.map(method, show_progressbar=show_progressbar, 
-                         parallel=parallel, inplace=False, 
-                         ragged=True, *args, **kwargs)
+        if current_index:
+            peaks = method(self.__call__(), *args, **kwargs)
+        else:
+            peaks = self.map(method, show_progressbar=show_progressbar, 
+                             parallel=parallel, inplace=False, 
+                             ragged=True, *args, **kwargs)
 
         return peaks
 
-    def find_peaks2D_interactive(self):
-        from hyperspy.gui import peakfinder2D
-        """
-        Find peaks using an interactive tool.
-
-        Notes
-        -----
-        Requires `ipywidgets` and `traitlets` to be installed.
-
-        """
-        peakfinder = peakfinder2D.PeakFinderUIIPYW()
-        peakfinder.interactive(self)
+    def find_peaks2D_interactive(self, display=True, toolkit=None):
+        pf2D = PeaksFinder2D(self)
+        return pf2D.gui(display=display, toolkit=toolkit)
 
 
 class LazySignal2D(LazySignal, Signal2D):

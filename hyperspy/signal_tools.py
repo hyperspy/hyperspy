@@ -1145,6 +1145,140 @@ class SpikesRemoval(SpanSelectorInSignal1D):
         self.find()
 
 
+@add_gui_method(toolkey="Signal2D.find_peaks2D")
+class PeaksFinder2D(t.HasTraits):
+    method = t.Enum(
+        'Local max',
+        'Max',
+        'Minmax',
+        'Zaefferer',
+        'Stat',
+        'Laplacian of Gaussian',
+        'Difference of Gaussian',
+        default='Local Max')
+    # For "local max" method
+    local_max_distance = t.Range(1, 20, value=3)
+    local_max_threshold = t.Range(0, 20., value=10)
+    # For "max" method
+    max_alpha = t.Range(0, 6., value=3)
+    max_size = t.Range(1, 20, value=10)
+    # For "minmax" method
+    minmax_separation = t.Range(0, 6., value=3)
+    minmax_threshold = t.Range(0, 20., value=10)
+    # For "Zaefferer" method
+    zaefferer_grad_threshold = t.Range(0, 0.2, value=0.1)
+    zaefferer_window_size = t.Range(2, 80, value=40)
+    zaefferer_distance_cutoff = t.Range(1, 100., value=50)
+    # For "stat" method
+    stat_alpha = t.Range(0, 2., value=1)
+    stat_window_radius = t.Range(1, 20, value=10)
+    stat_convergence_ratio = t.Range(0, 0.1, value=0.05)
+    # For "Laplacian of Gaussian" method
+    log_min_sigma = t.Range(0, 2., value=1)
+    log_max_sigma = t.Range(0, 100., value=50)
+    log_num_sigma = t.Range(0, 20., value=10)
+    log_threshold = t.Range(0, 0.4, value=0.2)
+    log_overlap = t.Range(0, 1., value=0.5)
+    log_log_scale = t.Bool(False)
+    # For "Difference of Gaussian" method
+    dog_min_sigma = t.Range(0, 2., value=1)
+    dog_max_sigma = t.Range(0, 100., value=50)
+    dog_sigma_ratio = t.Range(0, 3.2, value=1.6)
+    dog_threshold = t.Range(0, 0.4, value=0.2)
+    dog_overlap = t.Range(0, 1., value=0.5)
+
+    compute_over_navigation_axes = t.Button()
+
+    def __init__(self, signal):
+        if signal.axes_manager.signal_dimension != 2:
+            raise SignalDimensionError(
+                signal.axes.signal_dimension, 2)
+
+        self.signal = signal
+        if (not hasattr(self.signal, '_plot') or self.signal._plot is None or
+                not self.signal._plot.is_active):
+            self.signal.plot()
+        if self.signal.axes_manager.navigation_size > 0:
+            # TODO: Add button to find peaks over all navigations dim.
+            pass
+        self._update_peak_finding()
+
+    def _method_changed(self, old, new):
+        self._update_peak_finding(method=new)
+
+    def _update_peak_finding(self, method=None):
+        if method is None:
+            method = self.method.lower().replace(' ', '_')
+        self._find_peaks_current_index(method=method)
+        self._plot_markers()
+
+    def _get_all_parameters(self):
+        if self.method == "Local max":
+            return {"min_distance":self.local_max_distance,
+                    "threshold_abs":self.local_max_threshold}
+        if self.method == "Max":
+            return {"alpha":self.max_alpha, "size":self.max_size}
+        if self.method == "Minmax":
+            return {"separation":self.minmax_separation,
+                    "threshold":self.minmax_threshold}
+        if self.method == "Zaefferer":
+            return {"grad_threshold":self.zaefferer_grad_threshold,
+                    "window_size":self.zaefferer_window_size,
+                    "distance_cutoff":self.zaefferer_distance_cutoff}
+        if self.method == "Stat":
+            return {"alpha":self.stat_alpha,
+                    "window_radius":self.stat_window_radius,
+                    "convergence_ratio":self.stat_convergence_ratio}
+        if self.method == "Laplacian of Gaussian":
+            return {"min_sigma":self.log_min_sigma,
+                    "max_sigma":self.log_max_sigma,
+                    "num_sigma":self.log_num_sigma,
+                    "threshold":self.log_threshold,
+                    "overlap":self.log_overlap,
+                    "log_scale":self.log_log_scale}
+        if self.method == "Difference of Gaussian":
+            return {"min_sigma":self.dog_min_sigma,
+                    "max_sigma":self.dog_max_sigma,
+                    "sigma_ratio":self.dog_sigma_ratio,
+                    "threshold":self.dog_threshold,
+                    "overlap":self.dog_overlap}
+
+    def _find_peaks_current_index(self, method):
+        method = method.lower().replace(' ', '_')
+        self.peaks = self.signal.find_peaks2D(method, current_index=True,
+                                              **self._get_all_parameters())
+
+    def _plot_markers(self):
+        if hasattr(self.signal, '_plot') and self.signal._plot is not None:
+            self.signal._plot.signal_plot.remove_markers()
+        peaks_markers = self._peaks_to_marker()
+        self.signal.add_marker(peaks_markers)
+
+    def _peaks_to_marker(self, markersize=20, add_numbers=True,
+                         color='red'):
+        # make marker_list for current index
+        from hyperspy.drawing._markers.point import Point
+
+        x_axis = self.signal.axes_manager.signal_axes[0]
+        y_axis = self.signal.axes_manager.signal_axes[1]
+
+        marker_list = [Point(x=x_axis.index2value(x),
+                             y=y_axis.index2value(y),
+                             color=color,
+                             size=markersize)
+            for x, y in zip(self.peaks[:, 1], self.peaks[:, 0])]
+
+        return marker_list
+
+    def _set_random_navigation_index(self):
+        pass
+
+    def compute_navigation(self):
+        method = self.method.lower().replace(' ', '_')
+        self.peaks = self.signal.find_peaks2D(method, current_index=False,
+                                              **self._get_all_parameters())
+
+
 # For creating a text handler in legend (to label derivative magnitude)
 class DerivativeTextParameters(object):
 

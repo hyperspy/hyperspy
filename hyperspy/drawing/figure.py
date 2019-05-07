@@ -95,6 +95,16 @@ class BlittedFigure(object):
         self.ax_markers.append(marker)
         marker.events.closed.connect(lambda obj: self.ax_markers.remove(obj))
 
+    def remove_markers(self, render_figure=False):
+        """ Remove all markers """
+        for marker in self.ax_markers:
+            marker.close(render_figure=False)
+        if render_figure:
+            if self.ax.figure.canvas.supports_blit:
+                self.ax.hspy_fig._update_animated()
+            else:
+                self.ax.figure.canvas.draw_idle()
+
     def _on_close(self):
         if self.figure is None:
             return  # Already closed
