@@ -25,6 +25,7 @@ import matplotlib.colors
 import matplotlib.pyplot as plt
 import matplotlib.text as mpl_text
 import traits.api as t
+from traits.api import *
 
 from hyperspy import drawing
 from hyperspy.exceptions import SignalDimensionError
@@ -1171,7 +1172,7 @@ class PeaksFinder2D(t.HasTraits):
     zaefferer_distance_cutoff = t.Range(1, 100., value=50)
     # For "stat" method
     stat_alpha = t.Range(0, 2., value=1)
-    stat_window_radius = t.Range(1, 20, value=10)
+    stat_window_radius = t.Range(5, 20, value=10)
     stat_convergence_ratio = t.Range(0, 0.1, value=0.05)
     # For "Laplacian of Gaussian" method
     log_min_sigma = t.Range(0, 2., value=1)
@@ -1194,6 +1195,8 @@ class PeaksFinder2D(t.HasTraits):
             raise SignalDimensionError(
                 signal.axes.signal_dimension, 2)
 
+        self._set_parameters_observer()
+
         self.signal = signal
         if (not hasattr(self.signal, '_plot') or self.signal._plot is None or
                 not self.signal._plot.is_active):
@@ -1203,16 +1206,33 @@ class PeaksFinder2D(t.HasTraits):
             pass
         self._update_peak_finding()
 
-    def _method_changed(self, old, new):
-        self._update_peak_finding(method=new)
-
     def _update_peak_finding(self, method=None):
         if method is None:
             method = self.method.lower().replace(' ', '_')
         self._find_peaks_current_index(method=method)
         self._plot_markers()
 
-    def _get_all_parameters(self):
+    def _method_changed(self, old, new):
+        self._update_peak_finding(method=new)
+
+    def _parameter_changed(self, old, new):
+        self._update_peak_finding()     
+
+    def _set_parameters_observer(self):
+        for parameter in ['local_max_distance', 'local_max_threshold',
+                          'max_alpha', 'max_size',
+                          'minmax_separation', 'minmax_threshold',
+                          'zaefferer_grad_threshold', 'zaefferer_window_size',
+                          'zaefferer_distance_cutoff',
+                          'stat_alpha', 'stat_window_radius',
+                          'stat_convergence_ratio',
+                          'log_min_sigma', 'log_max_sigma', 'log_num_sigma',
+                          'log_threshold', 'log_overlap', 'log_log_scale',
+                          'dog_min_sigma', 'dog_max_sigma', 'dog_sigma_ratio',
+                          'dog_threshold', 'dog_overlap']:
+            self.on_trait_change(self._parameter_changed, parameter)
+
+    def _get_parameters(self):
         if self.method == "Local max":
             return {"min_distance":self.local_max_distance,
                     "threshold_abs":self.local_max_threshold}
@@ -1246,7 +1266,7 @@ class PeaksFinder2D(t.HasTraits):
     def _find_peaks_current_index(self, method):
         method = method.lower().replace(' ', '_')
         self.peaks = self.signal.find_peaks2D(method, current_index=True,
-                                              **self._get_all_parameters())
+                                              **self._get_parameters())
 
     def _plot_markers(self):
         if hasattr(self.signal, '_plot') and self.signal._plot is not None:
@@ -1276,7 +1296,7 @@ class PeaksFinder2D(t.HasTraits):
     def compute_navigation(self):
         method = self.method.lower().replace(' ', '_')
         self.peaks = self.signal.find_peaks2D(method, current_index=False,
-                                              **self._get_all_parameters())
+                                              **self._get_parameters())
 
 
 # For creating a text handler in legend (to label derivative magnitude)
