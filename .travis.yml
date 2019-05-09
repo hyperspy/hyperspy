@@ -44,7 +44,7 @@ before_install:
 install:
 
   - if [[ $MINIMAL_ENV == 'False' ]] ; then
-      DEPS="pip numpy scipy matplotlib>2.2.3 ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython ipyparallel dask traits traitsui numexpr numba mrcz pyUSID";
+      DEPS="pip numpy scipy matplotlib>2.2.3 ipython h5py sympy scikit-learn dill natsort setuptools scikit-image cython ipyparallel dask traits traitsui numexpr numba mrcz pyUSID>=0.0.6.1";
     else DEPS="pip ipython numpy scipy matplotlib>2.2.3 h5py sympy scikit-image numexpr";
     fi
   - conda update -y conda;
