@@ -522,32 +522,6 @@ class TestUSID2HSdtype:
 
 class TestUSID2HSmultiDsets:
 
-    def test_auto_pick_first_if_unspecified(self):
-        pos_dims, spec_dims, ndata, data_2d = gen_2pos_2spec()
-        phy_quant = 'Current'
-        phy_unit = 'nA'
-        tran = usid.NumpyTranslator()
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            file_path = tmp_dir + 'usid_n_pos_n_spec.h5'
-        _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
-                           pos_dims, spec_dims)
-
-        pos_dims, spec_dims, ndata_2, data_2d_2 = gen_2dim(all_pos=True)
-        phy_quant = 'Current'
-        phy_unit = 'nA'
-        
-        with h5py.File(file_path, mode='r+') as h5_f:
-            h5_meas_grp = h5_f.create_group('Measurement_001')
-            _ = usid.hdf_utils.write_main_dataset(h5_meas_grp, data_2d_2,
-                                                  'Raw_Data', phy_quant,
-                                                  phy_unit, pos_dims,
-                                                  spec_dims)
-        
-        with pytest.warns(UserWarning) as _:
-            new_sig = hs.load(file_path)
-        compare_signal_from_usid(file_path, ndata, new_sig,
-                                 axes_to_spec=['Bias', 'Frequency'])
-
     def test_pick_specific(self):
         pos_dims, spec_dims, ndata, data_2d = gen_2pos_2spec()
         phy_quant = 'Current'
@@ -575,7 +549,7 @@ class TestUSID2HSmultiDsets:
         compare_signal_from_usid(file_path, ndata_2, new_sig,
                                  dset_path=dset_path)
         
-    def test_read_all(self):
+    def test_read_all_by_default(self):
         pos_dims, spec_dims, ndata, data_2d = gen_2dim(all_pos=False)
         phy_quant = 'Current'
         phy_unit = 'nA'
@@ -596,7 +570,7 @@ class TestUSID2HSmultiDsets:
                                                   phy_unit, pos_dims,
                                                   spec_dims)
         
-        objects = hs.load(file_path, dset_path=None)
+        objects = hs.load(file_path)
         assert isinstance(objects, list)
         assert len(objects) == 2
 

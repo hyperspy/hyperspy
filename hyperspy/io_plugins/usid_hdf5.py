@@ -379,7 +379,7 @@ def _axes_list_to_dimensions(axes_list, data_shape, is_spec):
 # ####### REQUIRED FUNCTIONS FOR AN IO PLUGIN #################################
 
 
-def file_reader(filename, dset_path='', ignore_non_linear_dims=True, **kwds):
+def file_reader(filename, dset_path=None, ignore_non_linear_dims=True, **kwds):
     """
     Reads a USID Main dataset present in an HDF5 file into a HyperSpy Signal
 
@@ -389,8 +389,11 @@ def file_reader(filename, dset_path='', ignore_non_linear_dims=True, **kwds):
         path to HDF5 file
     dset_path : str, Optional.
         Absolute path of USID Main HDF5 dataset.
-        Default - '' - the very first Main Dataset will be used
-        If None - all Main Datasets will be read
+        Default - None - all Main Datasets will be read. Given that HDF5 files
+         can accommodate very large datasets, lazy reading is strongly
+         recommended.
+        If a string like '/Measurement_000/Channel_000/My_Dataset' is provided,
+          the specific dataset will be loaded.
     ignore_non_linear_dims : bool, Optional
         If True, parameters that were varied non-linearly in the desired
         dataset will result in Exceptions.
@@ -411,6 +414,11 @@ def file_reader(filename, dset_path='', ignore_non_linear_dims=True, **kwds):
     # with h5py.File(filename, mode='r') as h5_f:
     h5_f = h5py.File(filename, mode='r')
     if dset_path is None:
+        """
+        if not kwds.get('lazy', True):
+            warn('In order to safely load multiple large datasets to memory, '
+                 'please consider setting the kwarg lazy=True')
+        """
         all_main_dsets = usid.hdf_utils.get_all_main(h5_f)
         signals = []
         for h5_dset in all_main_dsets:
@@ -423,20 +431,7 @@ def file_reader(filename, dset_path='', ignore_non_linear_dims=True, **kwds):
     else:
         if not isinstance(dset_path, str):
             raise TypeError('dset_path should be a string')
-        if len(dset_path) > 0:
-            h5_dset = h5_f[dset_path]
-            # All other checks will be handled by helper function
-        else:
-            all_main_dsets = usid.hdf_utils.get_all_main(h5_f)
-            if len(all_main_dsets) > 1:
-                warn('{} contains multiple USID Main datasets.\n{}\nhas '
-                     'been selected as the desired dataset. If this is not'
-                     ' the desired dataset, please supply the path to the'
-                     ' main USID dataset via the "dset_path" keyword '
-                     'argument.\nTo read all datasets, '
-                     'use "dset_path=None"'
-                     '.'.format(h5_f, all_main_dsets[0].name))
-            h5_dset = all_main_dsets[0]
+        h5_dset = h5_f[dset_path]
         return _usidataset_to_signal(h5_dset,
                                      ignore_non_linear_dims=
                                      ignore_non_linear_dims, **kwds)
