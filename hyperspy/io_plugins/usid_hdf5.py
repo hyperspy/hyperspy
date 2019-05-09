@@ -75,30 +75,23 @@ def _get_dim_dict(labels, units, val_func, ignore_non_linear_dims=True):
             # Empty dimension!
             continue
         else:
-            step_size = np.unique(np.diff(dim_vals))
-            if len(step_size) > 1:
-                # often we end up here. In most cases,
-                step_avg = step_size.max()
-                step_size -= step_avg
-                var = np.mean(np.abs(step_size))
-                if var / step_avg < 1E-3:
-                    step_size = [step_avg]
+            try:
+                step_size = usid.write_utils.get_slope(dim_vals)
+            except ValueError:
+                # Non-linear dimension! - see notes above
+                if ignore_non_linear_dims:
+                    warn('Ignoring non-linearity of dimension: '
+                         '{}'.format(dim_name))
+                    step_size = 1
+                    dim_vals[0] = 0
                 else:
-                    # Non-linear dimension! - see notes above
-                    if ignore_non_linear_dims:
-                        warn('Ignoring non-linearity of dimension: '
-                             '{}'.format(dim_name))
-                        step_size = [1]
-                        dim_vals[0] = 0
-                    else:
-                        raise ValueError('Cannot load provided dataset. '
-                                         'Parameter: {} was varied '
-                                         'non-linearly. Supply keyword '
-                                         'argument "ignore_non_linear_dims='
-                                         'True" to ignore this '
-                                         'error'.format(dim_name))
+                    raise ValueError('Cannot load provided dataset. '
+                                     'Parameter: {} was varied '
+                                     'non-linearly. Supply keyword '
+                                     'argument "ignore_non_linear_dims='
+                                     'True" to ignore this '
+                                     'error'.format(dim_name))
 
-        step_size = step_size[0]
         dim_dict[dim_name] = {'size': len(dim_vals),
                               'name': dim_name,
                               'units': units,
@@ -161,15 +154,13 @@ def _split_descriptor(desc):
 
     quant = desc[:ind].strip()
     units = desc[ind:]
-    units = units.replace('(', '')
-    units = units.replace(')', '')
-    units = units.replace('[', '')
-    units = units.replace(']', '')
+    for item in '()[]':
+        units = units.replace(item, '')
     return quant, units
 
 
 def _convert_to_signal_dict(ndim_form, quantity, units, dim_dict_list,
-                            h5_path, h5_dset_path, sig_type='',
+                            h5_path, h5_dset_path, name, sig_type='',
                             group_attrs={}):
     """
     Packages required components that make up a Signal object
@@ -189,8 +180,12 @@ def _convert_to_signal_dict(ndim_form, quantity, units, dim_dict_list,
         Absolute path of the original USID HDF5 file
     h5_dset_path : str
         Absolute path of the USIDataset within the HDF5 file
-    sig_type : str
+    name : str
+        Name of the HDF5 dataset
+    sig_type : str, Optional
         Type of measurement
+    group_attrs : dict, Optional. Default = {}
+        Any attributes at the channel and group levels
 
     Returns
     -------
@@ -201,7 +196,8 @@ def _convert_to_signal_dict(ndim_form, quantity, units, dim_dict_list,
            'axes': dim_dict_list,
            'metadata': {
                'Signal': {'signal_type': sig_type},
-               'General': {'original_filename': h5_path}
+               'General': {'original_filename': h5_path,
+                           'title': name}
                         },
            'original_metadata': {'quantity': quantity,
                                  'units': units,
@@ -296,6 +292,7 @@ def _usidataset_to_signal(h5_main, ignore_non_linear_dims=True, lazy=True,
                          dim_dict_list=dim_list,
                          h5_path=h5_main.file.filename,
                          h5_dset_path=h5_main.name,
+                         name=h5_main.name.split('/')[-1],
                          group_attrs=group_attrs)
 
     # Extracting the quantity and units of the main dataset
