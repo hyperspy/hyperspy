@@ -1,6 +1,7 @@
 import tempfile
 import pytest
 import numpy as np
+import dask.array as da
 import h5py
 from hyperspy import api as hs
 try:
@@ -75,10 +76,8 @@ def _split_descriptor(desc):
 
     quant = desc[:ind].strip()
     units = desc[ind:]
-    units = units.replace('(', '')
-    units = units.replace(')', '')
-    units = units.replace('[', '')
-    units = units.replace(']', '')
+    for item in '()[]':
+        units = units.replace(item, '')
     return quant, units
 
 
@@ -91,9 +90,11 @@ def _validate_metadata_from_h5dset(sig, h5_dset, compound_comp_name=None):
     assert sig.original_metadata.quantity == quant
     assert sig.original_metadata.units == units
     assert sig.metadata.General.original_filename == h5_dset.file.filename
+    assert sig.metadata.General.title == h5_dset.name.split('/')[-1]
     assert sig.original_metadata.dataset_path == h5_dset.name
     assert sig.original_metadata.original_file_type == 'USID HDF5'
     assert sig.original_metadata.pyUSID_version == usid.__version__
+
 
 
 def compare_usid_from_signal(sig, h5_path, empty_pos=False, empty_spec=False,
@@ -293,6 +294,20 @@ class TestHS2USIDallKnown:
                                  empty_spec=False, dset_path=new_dset_path)
 
 
+class TestHS2USIDlazy:
+
+    def test_base_nd(self):
+        sig = hs.signals.Signal2D(da.random.randint(0, high=100,
+                                                    size=(2, 3, 5, 7),
+                                                    chunks='auto'))
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            file_path = tmp_dir + 'usid_n_pos_n_spec_dask.h5'
+        sig.save(file_path)
+
+        compare_usid_from_signal(sig, file_path, empty_pos=False,
+                                 empty_spec=False, axes_defined=False)
+
+
 class TestHS2USIDedgeAxes:
 
     def test_no_axes(self):
@@ -387,7 +402,7 @@ class TestUSID2HSbase:
                                  sig_type=hs.signals.BaseSignal,
                                  axes_to_spec=[])
         
-    def test_n_pos_m_spec(self):
+    def base_n_pos_m_spec(self, lazy):
         phy_quant = 'Current'
         phy_unit = 'nA'
         pos_dims, spec_dims, ndata, data_2d = gen_2pos_2spec()
@@ -397,10 +412,16 @@ class TestUSID2HSbase:
         _ = tran.translate(file_path, 'Blah', data_2d, phy_quant, phy_unit,
                            pos_dims, spec_dims)
         
-        new_sig = hs.load(file_path)
+        new_sig = hs.load(file_path, lazy=lazy)
         compare_signal_from_usid(file_path, ndata, new_sig,
                                  sig_type=hs.signals.BaseSignal,
                                  axes_to_spec=['Bias', 'Frequency'])
+
+    def test_n_pos_m_spec(self):
+        self.base_n_pos_m_spec(False)
+
+    def test_lazy_load(self):
+        self.base_n_pos_m_spec(True)
 
 
 class TestUSID2HSdtype:
@@ -534,12 +555,13 @@ class TestUSID2HSmultiDsets:
 
         with h5py.File(file_path, mode='r+') as h5_f:
             h5_meas_grp = h5_f.create_group('Measurement_001')
-            _ = usid.hdf_utils.write_main_dataset(h5_meas_grp, data_2d_2,
+            h5_chan_grp = h5_meas_grp.create_group('Channel_000')
+            _ = usid.hdf_utils.write_main_dataset(h5_chan_grp, data_2d_2,
                                                   'Raw_Data', phy_quant,
                                                   phy_unit, pos_dims,
                                                   spec_dims)
         
-        dset_path = '/Measurement_001/Raw_Data'
+        dset_path = '/Measurement_001/Channel_000/Raw_Data'
         new_sig = hs.load(file_path, dset_path=dset_path)
         compare_signal_from_usid(file_path, ndata_2, new_sig,
                                  dset_path=dset_path)
@@ -561,7 +583,7 @@ class TestUSID2HSmultiDsets:
         with h5py.File(file_path, mode='r+') as h5_f:
             h5_meas_grp = h5_f.create_group('Measurement_001')
             _ = usid.hdf_utils.write_main_dataset(h5_meas_grp, data_2d_2,
-                                                  'Raw_Data', phy_quant,
+                                                  'Spat_Map', phy_quant,
                                                   phy_unit, pos_dims,
                                                   spec_dims)
         
@@ -570,7 +592,7 @@ class TestUSID2HSmultiDsets:
         assert len(objects) == 2
 
         dset_names = ['/Measurement_000/Channel_000/Raw_Data',
-                      'Measurement_001/Raw_Data']
+                      'Measurement_001/Spat_Map']
 
         # 1. Validate object type
         for new_sig, ndim_data, dset_path in zip(objects,
