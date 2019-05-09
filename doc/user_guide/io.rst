@@ -925,32 +925,31 @@ Reading the sole dataset within a h5USID file:
     <Signal2D, title: HAADF, dimensions: (|128, 128)>
 
 If multiple datasets are present within the h5USID file and you try the same command again,
-a warning will hint at using a keyword argument. The reader will read in the first USID dataset
-it finds:
+**all** available datasets will be loaded.
+
+.. note::
+
+    Given that HDF5 files can accommodate very large datasets, setting ``lazy=True``
+    is strongly recommended if the contents of the HDF5 file are not known apriori.
+    This prevents issues with regard to loading datasets far larger than memory.
+
+    Also note that setting ``lazy=True`` leaves the file handle to the HDF5 file open.
+    If it is important that the files be closed after reading, set ``lazy=False``.
 
 .. code-block:: python
 
     >>> hs.load("sample.h5")
-    UserWarning: <HDF5 file "sample.h5" (mode r)> contains multiple USID Main datasets.
-    /Measurement_000/Channel_000/Raw_Data
-    has been selected as the desired dataset.If this is not the desired dataset, please supply the path
-    to the dataset via the "dset_path" keyword argument.
-    To read all USID datasets, use "dset_path=None"
-    <Signal2D, title: HAADF, dimensions: (|128, 128)>
+    [<Signal2D, title: HAADF, dimensions: (|128, 128)>,
+    <Signal1D, title: EELS, dimensions: (|64, 64, 1024)>]
 
 We can load a specific dataset using the ``dset_path`` keyword argument. setting it to the
-absolute path of the desired dataset will cause the single dataset to be loaded. Setting
-it to ``None`` will extract all available USID datasets in the h5USID file
+absolute path of the desired dataset will cause the single dataset to be loaded.
 
 .. code-block:: python
 
     >>> # Loading a specific dataset
     >>> hs.load("sample.h5", dset_path='/Measurement_004/Channel_003')
     <Signal2D, title: HAADF, dimensions: (|128, 128)>
-    >>> # Loading all available datasets:
-    >>> hs.load("sample.h5", dset_path=None)
-    [<Signal2D, title: HAADF, dimensions: (|128, 128)>,
-    <Signal1D, title: EELS, dimensions: (|64, 64, 1024)>]
 
 h5USID files support the storage of HDF5 dataset with
 `compound data types <https://pycroscopy.github.io/USID/usid_model.html#compound-datasets>`_.
