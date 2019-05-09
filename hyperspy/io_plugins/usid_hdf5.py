@@ -5,7 +5,6 @@ from functools import partial
 import collections
 import h5py
 import numpy as np
-import dask.array as da
 import pyUSID as usid
 
 _logger = logging.getLogger(__name__)
@@ -31,7 +30,7 @@ writes_spectrum = True
 writes_spectrum_image = True
 # Writing capabilities
 writes = True
-version = "0.0.5.1"
+version = usid.__version__
 
 # ######### UTILITIES THAT SIMPLIFY READING FROM H5USID FILES #################
 
@@ -170,7 +169,8 @@ def _split_descriptor(desc):
 
 
 def _convert_to_signal_dict(ndim_form, quantity, units, dim_dict_list,
-                            h5_path, h5_dset_path, sig_type=''):
+                            h5_path, h5_dset_path, sig_type='',
+                            group_attrs={}):
     """
     Packages required components that make up a Signal object
 
@@ -207,13 +207,15 @@ def _convert_to_signal_dict(ndim_form, quantity, units, dim_dict_list,
                                  'units': units,
                                  'dataset_path': h5_dset_path,
                                  'original_file_type': 'USID HDF5',
-                                 'pyUSID_version': usid.__version__
+                                 'pyUSID_version': usid.__version__,
+                                 'parameters': group_attrs
                                  },
            }
     return sig
 
 
-def _usidataset_to_signal(h5_main, ignore_non_linear_dims=True):
+def _usidataset_to_signal(h5_main, ignore_non_linear_dims=True, lazy=True,
+                          *kwds):
     """
     Converts a single specified USIDataset object to one or more Signal objects
     Parameters
@@ -226,6 +228,9 @@ def _usidataset_to_signal(h5_main, ignore_non_linear_dims=True):
         Else, all such non-linearly varied parameters will be treated as
         linearly varied parameters and
         a Signal object will be generated.
+    lazy : bool, Optional
+        If set to True, data will be read as a Dask array.
+        Else, data will be read in as a numpy array
 
     Returns
     -------
@@ -234,7 +239,7 @@ def _usidataset_to_signal(h5_main, ignore_non_linear_dims=True):
     Signal objects.
     """
     h5_main = usid.USIDataset(h5_main)
-    # TODO: Cannot handle data without N-dimensional form
+    # TODO: Cannot handle data without N-dimensional form yet
     # First get dictionary of axes that HyperSpy likes to see. Ignore singular
     # dimensions
     pos_dict = _get_dim_dict(h5_main.pos_dim_labels,
@@ -253,14 +258,27 @@ def _usidataset_to_signal(h5_main, ignore_non_linear_dims=True):
     _logger.info('Dimensions: Positions: {}, Spectroscopic: {}'
                  '.'.format(num_pos_dims, num_spec_dims))
 
-    ret_vals = usid.hdf_utils.reshape_to_n_dims(h5_main, get_labels=True)
+    ret_vals = usid.hdf_utils.reshape_to_n_dims(h5_main, get_labels=True,
+                                                lazy=lazy)
     ds_nd, success, dim_labs = ret_vals
 
-    if success != True:
+    if success is not True:
         raise ValueError('Dataset could not be reshaped!')
     ds_nd = ds_nd.squeeze()
     _logger.info('N-dimensional shape: {}'.format(ds_nd.shape))
     _logger.info('N-dimensional labels: {}'.format(dim_labs))
+
+    # Capturing metadata present in conventional h5USID files:
+    group_attrs = dict()
+    h5_chan_grp = h5_main.parent
+    if isinstance(h5_chan_grp, h5py.Group):
+        if 'Channel' in h5_chan_grp.name.split('/')[-1]:
+            group_attrs = usid.hdf_utils.get_attributes(h5_chan_grp)
+            h5_meas_grp = h5_main.parent
+            if isinstance(h5_meas_grp, h5py.Group):
+                if 'Measurement' in h5_meas_grp.name.split('/')[-1]:
+                    temp = usid.hdf_utils.get_attributes(h5_meas_grp)
+                    group_attrs.update(temp)
 
     """
     Normally, we might have been done but the order of the dimensions may be 
@@ -277,7 +295,8 @@ def _usidataset_to_signal(h5_main, ignore_non_linear_dims=True):
     trunc_func = partial(_convert_to_signal_dict,
                          dim_dict_list=dim_list,
                          h5_path=h5_main.file.filename,
-                         h5_dset_path=h5_main.name)
+                         h5_dset_path=h5_main.name,
+                         group_attrs=group_attrs)
 
     # Extracting the quantity and units of the main dataset
     quant, units = _split_descriptor(h5_main.data_descriptor)
@@ -287,7 +306,6 @@ def _usidataset_to_signal(h5_main, ignore_non_linear_dims=True):
         # Iterate over each dimension name:
         for name in ds_nd.dtype.names:
             q_sub, u_sub = _split_descriptor(name)
-            # TODO: Check to make sure that this will work with Dask.array
             sig.append(trunc_func(ds_nd[name], q_sub, u_sub, sig_type=quant))
     else:
         sig = [trunc_func(ds_nd, quant, units)]
@@ -391,37 +409,44 @@ def file_reader(filename, dset_path='', ignore_non_linear_dims=True, **kwds):
     if not os.path.isfile(filename):
         raise FileNotFoundError('No file found at: {}'.format(filename))
 
-    with h5py.File(filename, mode='r') as h5_f:
-        if dset_path is None:
-            all_main_dsets = usid.hdf_utils.get_all_main(h5_f)
-            signals = []
-            for h5_dset in all_main_dsets:
-                # Note that the function returns a list already.
-                # Should not append
-                signals += _usidataset_to_signal(h5_dset,
-                                                 ignore_non_linear_dims=
-                                                 ignore_non_linear_dims)
-            return signals
+    # Need to keep h5 file handle open indefinitely if lazy
+    # Using "with" will cause the file to be closed
+    # with h5py.File(filename, mode='r') as h5_f:
+    h5_f = h5py.File(filename, mode='r')
+    if dset_path is None:
+        all_main_dsets = usid.hdf_utils.get_all_main(h5_f)
+        signals = []
+        for h5_dset in all_main_dsets:
+            # Note that the function returns a list already.
+            # Should not append
+            signals += _usidataset_to_signal(h5_dset,
+                                             ignore_non_linear_dims=
+                                             ignore_non_linear_dims, **kwds)
+        return signals
+    else:
+        if not isinstance(dset_path, str):
+            raise TypeError('dset_path should be a string')
+        if len(dset_path) > 0:
+            h5_dset = h5_f[dset_path]
+            # All other checks will be handled by helper function
         else:
-            if not isinstance(dset_path, str):
-                raise TypeError('dset_path should be a string')
-            if len(dset_path) > 0:
-                h5_dset = h5_f[dset_path]
-                # All other checks will be handled by helper function
-            else:
-                all_main_dsets = usid.hdf_utils.get_all_main(h5_f)
-                if len(all_main_dsets) > 1:
-                    warn('{} contains multiple USID Main datasets.\n{}\nhas '
-                         'been selected as the desired dataset. If this is not'
-                         ' the desired dataset, please supply the path to the'
-                         ' main USID dataset via the "dset_path" keyword '
-                         'argument.\nTo read all datasets, '
-                         'use "dset_path=None"'
-                         '.'.format(h5_f, all_main_dsets[0].name))
-                h5_dset = all_main_dsets[0]
-            return _usidataset_to_signal(h5_dset,
-                                         ignore_non_linear_dims=
-                                         ignore_non_linear_dims)
+            all_main_dsets = usid.hdf_utils.get_all_main(h5_f)
+            if len(all_main_dsets) > 1:
+                warn('{} contains multiple USID Main datasets.\n{}\nhas '
+                     'been selected as the desired dataset. If this is not'
+                     ' the desired dataset, please supply the path to the'
+                     ' main USID dataset via the "dset_path" keyword '
+                     'argument.\nTo read all datasets, '
+                     'use "dset_path=None"'
+                     '.'.format(h5_f, all_main_dsets[0].name))
+            h5_dset = all_main_dsets[0]
+        return _usidataset_to_signal(h5_dset,
+                                     ignore_non_linear_dims=
+                                     ignore_non_linear_dims, **kwds)
+
+    # At least close the file handle if not lazy load
+    if not kwds.get('lazy', True):
+        h5_f.close()
 
 
 def file_writer(filename, object2save, *args, **kwds):
