@@ -1188,7 +1188,10 @@ class PeaksFinder2D(t.HasTraits):
     dog_threshold = t.Range(0, 0.4, value=0.2)
     dog_overlap = t.Range(0, 1., value=0.5)
 
+    random_navigation_position = t.Button()
     compute_over_navigation_axes = t.Button()
+
+    show_navigation_sliders = t.Bool(False)
 
     def __init__(self, signal):
         if signal.axes_manager.signal_dimension != 2:
@@ -1196,14 +1199,17 @@ class PeaksFinder2D(t.HasTraits):
                 signal.axes.signal_dimension, 2)
 
         self._set_parameters_observer()
+        self.on_trait_change(self.set_random_navigation_position,
+                             'random_navigation_position')
 
         self.signal = signal
         if (not hasattr(self.signal, '_plot') or self.signal._plot is None or
                 not self.signal._plot.is_active):
             self.signal.plot()
         if self.signal.axes_manager.navigation_size > 0:
-            # TODO: Add button to find peaks over all navigations dim.
-            pass
+            self.show_navigation_sliders = True
+            self.signal.axes_manager.events.indices_changed.connect(
+                self._update_peak_finding, [])
         self._update_peak_finding()
 
     def _update_peak_finding(self, method=None):
@@ -1216,7 +1222,7 @@ class PeaksFinder2D(t.HasTraits):
         self._update_peak_finding(method=new)
 
     def _parameter_changed(self, old, new):
-        self._update_peak_finding()     
+        self._update_peak_finding()
 
     def _set_parameters_observer(self):
         for parameter in ['local_max_distance', 'local_max_threshold',
@@ -1290,13 +1296,16 @@ class PeaksFinder2D(t.HasTraits):
 
         return marker_list
 
-    def _set_random_navigation_index(self):
-        pass
-
     def compute_navigation(self):
         method = self.method.lower().replace(' ', '_')
-        self.peaks = self.signal.find_peaks2D(method, current_index=False,
-                                              **self._get_parameters())
+        with self.signal.axes_manager.events.indices_changed.suppress():
+            self.signal.peaks = self.signal.find_peaks2D(
+                    method, current_index=False, **self._get_parameters())
+
+    def set_random_navigation_position(self):
+        index = np.random.randint(0, self.signal.axes_manager._max_index)
+        self.signal.axes_manager.indices = np.unravel_index(index, 
+            tuple(self.signal.axes_manager._navigation_shape_in_array))[::-1]
 
 
 # For creating a text handler in legend (to label derivative magnitude)
