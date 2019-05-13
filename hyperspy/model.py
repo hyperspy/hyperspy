@@ -49,6 +49,8 @@ from hyperspy.events import Events, Event, EventSuppressor
 import warnings
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.ui_registry import add_gui_method
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_INT_ARG
+
 
 _logger = logging.getLogger(__name__)
 
@@ -428,21 +430,16 @@ class BaseModel(list):
         out_of_range_to_nan : bool
             If True the spectral range that is not fitted is filled with nans.
             Default True.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
+        %s
         out : {None, BaseSignal}
             The signal where to put the result into. Convenient for parallel
             processing. If None (default), creates a new one. If passed, it is
             assumed to be of correct shape and dtype and not checked.
-        parallel : bool, int
-            If True or more than 1, perform the recreation parallel using as
-            many threads as specified. If True, as many threads as CPU cores
-            available are used.
+        %s
 
         Returns
         -------
-        spectrum : An instance of the same class as `spectrum`.
+        BaseSignal : An instance of the same class as `BaseSignal`.
 
         Examples
         --------
@@ -519,6 +516,8 @@ class BaseModel(list):
                     zip(models, data_slices, range(int(parallel))))
             _ = next(_map)
         return signal
+
+    as_signal.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_INT_ARG)
 
     def _as_signal_iter(self, component_list=None, out_of_range_to_nan=True,
                         show_progressbar=None, data=None):
@@ -1268,9 +1267,7 @@ class BaseModel(list):
         autosave_every : int
             Save the result of fitting every given number of spectra.
             Default 10.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
+        %s
         interactive_plot : bool
             If True, update the plot for every position as they are processed.
             Note that this slows down the fitting by a lot, but it allows for
@@ -1337,6 +1334,8 @@ class BaseModel(list):
                 'Deleting the temporary file %s pixels' % (
                     autosave_fn + 'npz'))
             os.remove(autosave_fn + '.npz')
+
+    multifit.__doc__ %= (SHOW_PROGRESSBAR_ARG)
 
     def save_parameters2file(self, filename):
         """Save the parameters array in binary format.

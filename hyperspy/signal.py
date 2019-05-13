@@ -52,7 +52,8 @@ from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
-    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG, RECHUNK_ARG)
+    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
+    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
 from hyperspy.docstrings.plot import BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
@@ -2170,7 +2171,7 @@ class BaseSignal(FancySlicing,
             axis.size = int(dc.shape[axis.index_in_array])
 
     def crop(self, axis, start=None, end=None, convert_units=False):
-        """Crops the data in a given axis. The range is given in pixels
+        """Crops the data in a given axis. The range is given in pixels.
 
         Parameters
         ----------
@@ -2185,8 +2186,8 @@ class BaseSignal(FancySlicing,
             None crop from/to the low/high end of the axis.
         convert_units : bool
             Default is False
-            If True, convert the units using the 'convert_to_units' method of
-            the 'axes_manager'. If False, does nothing.
+            If True, convert the units using the `convert_to_units` method of
+            the `axes_manager`. If False, does nothing.
 
         """
         axis = self.axes_manager[axis]
@@ -3686,12 +3687,8 @@ class BaseSignal(FancySlicing,
 
         function : function
             A function that can be applied to the signal.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
-        parallel : {None,bool,int}
-            if True, the mapping will be performed in a threaded (parallel)
-            manner.
+        %s
+        %s
         inplace : bool
             if True (default), the data is replaced by the result. Otherwise a
             new signal with the results is returned.
@@ -3784,6 +3781,8 @@ class BaseSignal(FancySlicing,
             self.events.data_changed.trigger(obj=self)
         return res
 
+    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+
     def _map_all(self, function, inplace=True, **kwargs):
         """The function has to have either 'axis' or 'axes' keyword argument,
         and hence support operating on the full dataset efficiently.
@@ -3810,9 +3809,8 @@ class BaseSignal(FancySlicing,
             where the key-value pairs will be passed as kwargs for the
             callable, and the values will be iterated together with the signal
             navigation.
-        parallel : {None, bool}
-            if True, the mapping will be performed in a threaded (parallel)
-            manner. If None the default from `preferences` is used.
+        %s
+        %s
         inplace : bool
             if True (default), the data is replaced by the result. Otherwise a
             new signal with the results is returned.
@@ -3821,9 +3819,6 @@ class BaseSignal(FancySlicing,
             shape (and/or numpy arrays to begin with). If None, appropriate
             choice is made while processing. None is not allowed for Lazy
             signals!
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
         **kwargs
             passed to the function as constant kwargs
 
@@ -3931,6 +3926,8 @@ class BaseSignal(FancySlicing,
         res = map_result_construction(self, inplace, res_data, ragged,
                                       sig_shape)
         return res
+
+    _map_iterate.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
 
     def copy(self):
         try:
