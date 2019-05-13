@@ -175,8 +175,10 @@ class TestlineFit:
         m.fix_background()
         m.fit()
         intensities = m.get_lines_intensity()
-        quant = s.quantification(intensities, method='CL',
-                                 factors=[1.0, 1.0, 1.0])
+        _ = s.quantification(intensities, method='CL', factors=[1.0, 1.0, 1.0],
+                             composition_units='weight')
+
+
 @lazifyTestClass
 class TestMaps:
 
@@ -222,5 +224,5 @@ class TestMaps:
                     w[i, x, y] = ws[i] * mix
         xray_lines = s._get_lines_from_elements(
             s.metadata.Sample.elements, only_lines=('Ka',))
-        np.testing.assert_allclose(
-            [i.data for i in m.get_lines_intensity(xray_lines)], w, atol=1e-7)
+        for fitted, expected in zip(m.get_lines_intensity(xray_lines), w):
+            np.testing.assert_allclose(fitted, expected, atol=1e-7)
