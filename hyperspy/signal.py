@@ -2036,11 +2036,9 @@ class BaseSignal(FancySlicing,
                 navigator = None
         # Navigator properties
         if axes_manager.navigation_axes:
-            if navigator is "slider":
-                self._plot.navigator_data_function = "slider"
-            elif navigator is None:
-                self._plot.navigator_data_function = None
-            elif isinstance(navigator, BaseSignal):
+            # check first if we have a signal to avoid comparion of signal with 
+            # string
+            if isinstance(navigator, BaseSignal):
                 # Dynamic navigator
                 if (axes_manager.navigation_shape ==
                         navigator.axes_manager.signal_shape +
@@ -2058,6 +2056,10 @@ class BaseSignal(FancySlicing,
                     raise ValueError(
                         "The navigator dimensions are not compatible with "
                         "those of self.")
+            elif navigator == "slider":
+                self._plot.navigator_data_function = "slider"
+            elif navigator is None:
+                self._plot.navigator_data_function = None
             elif navigator == "data":
                 if np.issubdtype(self.data.dtype, np.complexfloating):
                     self._plot.navigator_data_function = lambda axes_manager=None: np.abs(
@@ -2151,12 +2153,11 @@ class BaseSignal(FancySlicing,
                 self.plot()
 
     def update_plot(self):
-        if self._plot is not None:
-            if self._plot.is_active:
-                if self._plot.signal_plot is not None:
-                    self._plot.signal_plot.update()
-                if self._plot.navigator_plot is not None:
-                    self._plot.navigator_plot.update()
+        if self._plot is not None and self._plot.is_active:
+            if self._plot.signal_plot is not None:
+                self._plot.signal_plot.update()
+            if self._plot.navigator_plot is not None:
+                self._plot.navigator_plot.update()
 
     def get_dimensions_from_data(self):
         """Get the dimension parameters from the data_cube. Useful when
@@ -2489,14 +2490,14 @@ class BaseSignal(FancySlicing,
         axis = self.axes_manager[axis_in_manager].index_in_array
         len_axis = self.axes_manager[axis_in_manager].size
 
-        if number_of_parts is 'auto' and step_sizes is 'auto':
+        if number_of_parts == 'auto' and step_sizes == 'auto':
             step_sizes = 1
             number_of_parts = len_axis
-        elif number_of_parts is not 'auto' and step_sizes is not 'auto':
+        elif number_of_parts != 'auto' and step_sizes != 'auto':
             raise ValueError(
                 "You can define step_sizes or number_of_parts "
                 "but not both.")
-        elif step_sizes is 'auto':
+        elif step_sizes == 'auto':
             if number_of_parts > shape[axis]:
                 raise ValueError(
                     "The number of parts is greater than "
