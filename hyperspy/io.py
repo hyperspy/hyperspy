@@ -84,7 +84,7 @@ def load(filenames=None,
         if acquired from an electron-transparent sample — as it is usually
         the case in a transmission electron  microscope (TEM) —,
         "EDS_SEM" if acquired from a non electron-transparent sample
-        — as it is usually the case in a scanning electron  microscope (SEM) —.
+        — as it is usually the case in a scanning electron  microscope (SEM).
         If "" (empty string) the value is not read from the file and is
         considered undefined.
     stack : bool
@@ -112,7 +112,7 @@ def load(filenames=None,
         If True, convert the units using the `convert_to_units` method of
         the `axes_manager`. If False, does nothing. The default is False.
     print_info: bool
-        For SEMPER unf- and EMD (Berkley)-files, if True (default is False)
+        For SEMPER unf- and EMD (Berkeley)-files, if True (default is False)
         additional information read during loading is printed for a quick
         overview.
     downsample : int (1–4095)
@@ -122,38 +122,38 @@ def load(filenames=None,
         pixel. This allows to improve signal and conserve the memory with the
         cost of lower resolution.
     cutoff_at_kV : {None, int, float}
-       For Bruker bcf files, if set to numerical (default is None)
-       bcf is parsed into array with depth cutoff at coresponding given energy.
-       This allows to conserve the memory, with cutting-off unused spectra's
-       tail, or force enlargement of the spectra size.
-    select_type: {'spectrum_image', 'image', 'single_spectrum', None}
-       If `None` (default), all data are loaded.
-       For Bruker bcf and FEI emd files: if one of 'spectrum_image', 'image' or
-       'single_spectrum', the loader return single_spectrumns either only the
-       spectrum image or only the images (including EDS map for FEI emd files)
-       or only the single spectra (for FEI emd files).
+        For Bruker bcf files, if set to numerical (default is None)
+        bcf is parsed into array with depth cutoff at coresponding given energy.
+        This allows to conserve the memory, with cutting-off unused spectra's
+        tail, or force enlargement of the spectra size.
+    select_type : {'spectrum_image', 'image', 'single_spectrum', None}
+        If `None` (default), all data are loaded.
+        For Bruker bcf and Velox emd files: if one of 'spectrum_image', 'image' 
+        or 'single_spectrum', the loader return single_spectrumns either only 
+        the spectrum image or only the images (including EDS map for Velox emd 
+        files) or only the single spectra (for Velox emd files).
     first_frame : int (default 0)
-       Only for FEI emd files: load only the data acquired after the specified
-       fname.
+        Only for Velox emd files: load only the data acquired after the 
+        specified fname.
     last_frame : None or int (default None)
-       Only for FEI emd files: load only the data acquired up to specified
-       fname. If None, load up the data to the end.
+        Only for Velox emd files: load only the data acquired up to specified
+        fname. If None, load up the data to the end.
     sum_frames : bool (default is True)
-       Only for FEI emd files: load each EDS frame individually.
+        Only for Velox emd files: if False, load each EDS frame individually.
     sum_EDS_detectors : bool (default is True)
-       Only for FEI emd files: load each frame individually. If True, the signal
-       from the different detector are summed. If False, a distinct signal is
-       returned for each EDS detectors.
+        Only for Velox emd files: if True, the signal from the different 
+        detector are summed. If False, a distinct signal is returned for each 
+        EDS detectors.
     rebin_energy : int, a multiple of the length of the energy dimension (default 1)
-       Only for FEI emd files: rebin the energy axis by the integer provided
-       during loading in order to save memory space.
-    SI_data_dtype : numpy.dtype
-       Only for FEI emd files: set the dtype of the spectrum image data in
-       order to save memory space. If None, the default dtype from the FEI emd
-       file is used.
+        Only for Velox emd files: rebin the energy axis by the integer provided
+        during loading in order to save memory space.
+    SI_dtype : numpy.dtype
+        Only for Velox emd files: set the dtype of the spectrum image data in
+        order to save memory space. If None, the default dtype from the Velox emd
+        file is used.
     load_SI_image_stack : bool (default False)
-       Load the stack of STEM images acquired simultaneously as the EDS
-       spectrum image.
+        Only for Velox emd files: if True, load the stack of STEM images 
+        acquired simultaneously as the EDS spectrum image.
     dataset_name : string or list, optional
         For filetypes which support several datasets in the same file, this
         will only load the specified dataset. Several datasets can be loaded
@@ -167,6 +167,7 @@ def load(filenames=None,
     Examples
     --------
     Loading a single file providing the signal type:
+
     >>> d = hs.load('file.dm3', signal_type="EDS_TEM")
 
     Loading multiple files:
