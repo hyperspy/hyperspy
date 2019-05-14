@@ -23,16 +23,16 @@ from hyperspy.component import Component
 
 class HeavisideStep(Component):
 
-    """The Heaviside step function
+    r"""The Heaviside step function.
 
     .. math::
 
         f(x) =
-        \\begin{cases}
-          0     $ \\quad \\text{if } x < n \\\\
-          A/2     $ \\quad \\text{if } x = n \\\\
-          A     $ \\quad \\text{if } x > n \\\\
-        \\end{cases}
+        \begin{cases}
+          0     & \quad \text{if } x < n \\
+          A/2   & \quad \text{if } x = n \\
+          A     & \quad \text{if } x > n \\
+        \end{cases}
 
     """
 
