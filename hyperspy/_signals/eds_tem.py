@@ -357,7 +357,6 @@ class EDSTEM_mixin:
             navigation_mask = self.vacuum_mask(navigation_mask, closing).data
         elif navigation_mask is not None:
             navigation_mask = navigation_mask.data
-        xray_lines = self.metadata.Sample.xray_lines
         composition = utils.stack(intensities, lazy=False)
         if method == 'CL':
             composition.data = utils_eds.quantification_cliff_lorimer(
@@ -389,7 +388,8 @@ class EDSTEM_mixin:
         else:
             if method == 'cross_section':
                 composition = utils.material.atomic_to_weight(composition)
-        for i, xray_line in enumerate(xray_lines):
+        for i, intensity in enumerate(intensities):
+            xray_line = intensity.metadata.Sample.xray_lines[0]
             element, line = utils_eds._get_element_and_line(xray_line)
             composition[i].metadata.General.title = composition_units + \
                 ' percent of ' + element
@@ -401,9 +401,7 @@ class EDSTEM_mixin:
                 print("%s (%s): Composition = %.2f %s percent"
                       % (element, xray_line, composition[i].data,
                          composition_units))
-        if method == 'cross_section':
-            for i, xray_line in enumerate(xray_lines):
-                element, line = utils_eds._get_element_and_line(xray_line)
+            if method == 'cross_section':
                 number_of_atoms[i].metadata.General.title = \
                     'atom counts of ' + element
                 number_of_atoms[i].metadata.set_item("Sample.elements",

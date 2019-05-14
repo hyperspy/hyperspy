@@ -169,6 +169,14 @@ class TestlineFit:
             '$\\mathrm{Fe}_{\\mathrm{Kb}}$',
             '$\\mathrm{Zn}_{\\mathrm{Ka}}$']
 
+
+    def test_quantification_2_elements(self):
+        s = self.s
+        m = s.create_model()
+        m.fit()
+        intensities = m.get_lines_intensity(['Fe_Ka', 'Cr_Ka'])
+        _ = s.quantification(intensities, method='CL', factors=[1.0, 1.0])
+
     def test_get_lines_intensity(self):
         s = self.s
         m = s.create_model()
