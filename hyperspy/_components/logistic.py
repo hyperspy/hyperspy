@@ -16,34 +16,48 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-
 from hyperspy._components.expression import Expression
 
 
 class Logistic(Expression):
 
-    """Logistic function (sigmoid or s-shaped curve) component.
+    r"""Logistic function (sigmoid or s-shaped curve) component.
 
     .. math::
     
-        f(x) = \\frac{a}{1 + b\\cdot \\mathrm{exp}\\left[-c \left(x - origin\\right)\\right]}
+        f(x) = \frac{a}{1 + b\cdot \mathrm{exp}\left[-c 
+            \left((x - x_0\right)\right]}
+
+    +----------------+-------------+
+    | Parameter      | Attribute   |
+    +----------------+-------------+
+    +----------------+-------------+
+    | :math:`A`      | a           |
+    +----------------+-------------+ 
+    | :math:`b`      | b           |
+    +----------------+-------------+ 
+    | :math:`c`      | c           |
+    +----------------+-------------+ 
+    | :math:`x_0`    | origin      |
+    +----------------+-------------+
+
 
     Parameters
     -----------
     a : Float
-        The curve's maximum y-value,  :math:`\\mathrm{lim}_{x\\to\\infty}\\left(y\\right) = a`
+        The curve's maximum y-value,  
+        :math:`\mathrm{lim}_{x\to\infty}\left(y\right) = a`
     b : Float
+        Additional parameter: 
         b>1 shifts origin to larger values;
         0<b<1 shifts origin to smaller values;
-        b<0 introduces an asymptote.
+        b<0 introduces an asymptote
     c : Float
-        Logistic growth rate or steepness of the curve.
+        Logistic growth rate or steepness of the curve
     origin : Float
-        Position of the sigmoid's midpoint.
+        Position of the sigmoid's midpoint
     **kwargs
         Extra keyword arguments are passed to the ``Expression`` component.
-        See the ``Expression`` component documentation for details.
-
     """
 
     def __init__(self, a=1., b=1., c=1., origin=0., module="numexpr", **kwargs):
@@ -59,4 +73,5 @@ class Logistic(Expression):
             autodoc=False,
             **kwargs)
 
+        # Boundaries
         self.isbackground = False
