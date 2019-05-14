@@ -517,6 +517,19 @@ class EDS_mixin:
         lines.sort()
         return lines
 
+    def _parse_xray_lines(self, xray_lines, only_one, only_lines):
+        only_lines = utils_eds._parse_only_lines(only_lines)
+        xray_lines = self._get_xray_lines(xray_lines, only_one=only_one,
+                                          only_lines=only_lines)
+        xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
+            xray_lines)
+        for xray in xray_not_here:
+            warnings.warn("%s is not in the data energy range." % xray +
+                          "You can remove it with" +
+                          "s.metadata.Sample.xray_lines.remove('%s')"
+                          % xray)
+        return xray_lines
+
     def get_lines_intensity(self,
                             xray_lines=None,
                             integration_windows=2.,
@@ -537,7 +550,7 @@ class EDS_mixin:
 
         Parameters
         ----------
-        xray_lines: {None, "best", list of string}
+        xray_lines: {None, list of string}
             If None,
             if `metadata.Sample.elements.xray_lines` contains a
             list of lines use those.
@@ -604,16 +617,7 @@ class EDS_mixin:
 
         """
 
-        only_lines = utils_eds._parse_only_lines(only_lines)
-        xray_lines = self._get_xray_lines(xray_lines, only_one=only_one,
-                                          only_lines=only_lines)
-        xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
-            xray_lines)
-        for xray in xray_not_here:
-            warnings.warn("%s is not in the data energy range." % xray +
-                          "You can remove it with" +
-                          "s.metadata.Sample.xray_lines.remove('%s')"
-                          % xray)
+        xray_lines = self._parse_xray_lines(xray_lines, only_one, only_lines)
         if hasattr(integration_windows, '__iter__') is False:
             integration_windows = self.estimate_integration_windows(
                 windows_width=integration_windows, xray_lines=xray_lines)
