@@ -30,16 +30,14 @@ class Erf(Expression):
         \frac{A}{2}~\mathrm{erf}\left[\frac{(x - x_0)}{\sqrt{2} 
             \sigma}\right]
 
-    +----------------+-----------+
-    | Parameter      | Attribute |
-    +----------------+-----------+
-    +----------------+-----------+
-    | :math:`A`      | A         |
-    +----------------+-----------+
-    | :math:`\sigma` | sigma     |
-    +----------------+-----------+
-    | :math:`x_0`    | origin    |
-    +----------------+-----------+
+
+    ============== =============
+    Variable        Parameter 
+    ============== =============
+    :math:`A`       A 
+    :math:`\sigma`  sigma 
+    :math:`x_0`     origin 
+    ============== =============
     
 
     Parameters
@@ -55,7 +53,7 @@ class Erf(Expression):
     def __init__(self, A=1., sigma=1., origin=0., module="scipy",
                  **kwargs):
         if LooseVersion(sympy.__version__) < LooseVersion("1.3"):
-            raise ImportError("The `SkewNormal` component requires "
+            raise ImportError("The `ErrorFunction` component requires "
                               "SymPy >= 1.3")
         super(Erf, self).__init__(
             expression="A * erf((x - origin) / sqrt(2) / sigma) / 2",

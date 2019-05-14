@@ -36,24 +36,21 @@ class SkewNormal(Expression):
 
         f(x) &= 2 A \phi(x) \Phi(x) \\
         \phi(x) &= \frac{1}{\sqrt{2\pi}}\mathrm{exp}{\left[
-            -\frac{t(x)^2}{2}\right]} \\
+                   -\frac{t(x)^2}{2}\right]} \\
         \Phi(x) &= \frac{1}{2}\left[1 + \mathrm{erf}\left(\frac{
-            \alpha~t(x)}{\sqrt{2}}\right)\right] \\
+                   \alpha~t(x)}{\sqrt{2}}\right)\right] \\
         t(x) &= \frac{x-x_0}{\omega}
 
 
-    +----------------+-------------+
-    | Parameter      |  Attribute  |
-    +----------------+-------------+
-    +----------------+-------------+
-    | :math:`A`      |  A          |
-    +----------------+-------------+
-    | :math:`x_0`    |  x0         |
-    +----------------+-------------+
-    | :math:`\omega` |  scale      |
-    +----------------+-------------+
-    | :math:`\alpha` |  shape      |
-    +----------------+-------------+
+    ============== =============
+    Variable        Parameter 
+    ============== =============
+    :math:`A`       A 
+    :math:`x_0`     x0 
+    :math:`\omega`  scale 
+    :math:`\alpha`  shape 
+    ============== =============
+
 
     Parameters
     -----------

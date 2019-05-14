@@ -30,15 +30,13 @@ class VolumePlasmonDrude(Component):
 
        f(E) = \frac{E(\Delta E_p)E_p^2}{(E^2-E_p^2)^2+(E\Delta E_p)^2}
 
-    +------------------+-----------------+
-    | Parameter        |    Attribute    |
-    +------------------+-----------------+
-    |:math:`E_p`       |  plasmon_energy |
-    +------------------+-----------------+
-    |:math:`\Delta E_p`|      fwhm       |
-    +------------------+-----------------+
-    | intensity        |   intensity     |
-    +------------------+-----------------+
+    ================== ===============
+    Variable            Parameter 
+    ================== ===============
+    :math:`E_p`         plasmon_energy 
+    :math:`\Delta E_p`  fwhm 
+    intensity           intensity 
+    ================== ===============
 
     Notes
     -----
