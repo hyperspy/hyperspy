@@ -34,6 +34,12 @@ class HeavisideStep(Component):
           A     & \quad \text{if } x > n \\
         \end{cases}
 
+    Parameters
+    -----------
+    A : float
+        
+    n : float
+        
     """
 
     def __init__(self, A=1, n=0):

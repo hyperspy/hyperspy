@@ -25,22 +25,27 @@ from hyperspy.component import Component
 
 class Arctan(Component):
 
-    """Arctan function component
+    r"""Arctan function component.
 
-    f(x) = A*arctan{k*(x-x0)}
+    .. math::
+    
+        f(x) = A \cdot \arctan\left[ k \left( x-x_0 \right)\right]
 
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |     A      |     A     |
-    +------------+-----------+
-    |     k      |     k     |
-    +------------+-----------+
-    |     x      |     x     |
-    +------------+-----------+
-    |     x0     |     x0    |
-    +------------+-----------+
+    ============ =============
+    Variable      Parameter 
+    ============ =============
+    :math:`A`     A 
+    :math:`k`     k 
+    :math:`x`     x 
+    :math:`x_0`   x0 
+    ============ =============
+
+    Parameters
+    -----------
+    A : float
+    k : float
+    x : float
+    x0 : float
 
     """
 
