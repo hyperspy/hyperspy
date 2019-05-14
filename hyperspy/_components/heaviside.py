@@ -36,9 +36,10 @@ class HeavisideStep(Component):
 
     Parameters
     -----------
+    n : float
+        
     A : float
         
-    n : float
         
     """
 

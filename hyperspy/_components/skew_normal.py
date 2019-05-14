@@ -45,8 +45,8 @@ class SkewNormal(Expression):
     ============== =============
     Variable        Parameter 
     ============== =============
-    :math:`A`       A 
     :math:`x_0`     x0 
+    :math:`A`       A 
     :math:`\omega`  scale 
     :math:`\alpha`  shape 
     ============== =============
@@ -54,11 +54,11 @@ class SkewNormal(Expression):
 
     Parameters
     -----------
-    A : float
-        Height parameter of the peak.
     x0 : float
         Location of the peak position (not maximum, which is given by
         the `mode` property).
+    A : float
+        Height parameter of the peak.
     scale : float
         Width (sigma) parameter.
     shape: float

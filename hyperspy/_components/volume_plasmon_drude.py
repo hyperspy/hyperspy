@@ -33,10 +33,16 @@ class VolumePlasmonDrude(Component):
     ================== ===============
     Variable            Parameter 
     ================== ===============
+    intensity           intensity 
     :math:`E_p`         plasmon_energy 
     :math:`\Delta E_p`  fwhm 
-    intensity           intensity 
     ================== ===============
+
+    Parameters
+    ----------
+    intensity : float
+    plasmon_energy : float
+    fwhm : float
 
     Notes
     -----

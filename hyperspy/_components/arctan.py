@@ -36,7 +36,6 @@ class Arctan(Component):
     ============ =============
     :math:`A`     A 
     :math:`k`     k 
-    :math:`x`     x 
     :math:`x_0`   x0 
     ============ =============
 
@@ -44,7 +43,6 @@ class Arctan(Component):
     -----------
     A : float
     k : float
-    x : float
     x0 : float
 
     """
