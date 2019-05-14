@@ -34,8 +34,8 @@ class ScalableFixedPattern(Component):
     ============ =============
      Variable     Parameter 
     ============ =============
-     a            yscale 
-     b            xscale 
+     :math:`a`    yscale 
+     :math:`b`    xscale 
      :math:`x_0`  shift 
     ============ =============
 
