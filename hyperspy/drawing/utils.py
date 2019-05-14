@@ -310,15 +310,15 @@ def plot_signals(signal_list, sync=True, navigator="auto",
             navigator_list = []
         if navigator is None:
             navigator_list.extend([None] * len(signal_list))
-        elif navigator is "slider":
-            navigator_list.append("slider")
-            navigator_list.extend([None] * (len(signal_list) - 1))
         elif isinstance(navigator, hyperspy.signal.BaseSignal):
             navigator_list.append(navigator)
             navigator_list.extend([None] * (len(signal_list) - 1))
-        elif navigator is "spectrum":
+        elif navigator == "slider":
+            navigator_list.append("slider")
+            navigator_list.extend([None] * (len(signal_list) - 1))
+        elif navigator == "spectrum":
             navigator_list.extend(["spectrum"] * len(signal_list))
-        elif navigator is "auto":
+        elif navigator == "auto":
             navigator_list.extend(["auto"] * len(signal_list))
         else:
             raise ValueError(
@@ -592,7 +592,7 @@ def plot_images(images,
 
     """
     def __check_single_colorbar(cbar):
-        if cbar is 'single':
+        if cbar == 'single':
             raise ValueError('Cannot use a single colorbar with multiple '
                              'colormaps. Please check for compatible '
                              'arguments.')
@@ -696,7 +696,7 @@ def plot_images(images,
 
     if label is None:
         pass
-    elif label is 'auto':
+    elif label == 'auto':
         # Use some heuristics to try to get base string of similar titles
 
         label_list = [x.metadata.General.title for x in images]
@@ -759,7 +759,7 @@ def plot_images(images,
             label = 'titles'
             div_num = 0
 
-    elif label is 'titles':
+    elif label == 'titles':
         # Set label_list to each image's pre-defined title
         label_list = [x.metadata.General.title for x in images]
 
@@ -808,13 +808,13 @@ def plot_images(images,
 
     # Determine how many non-rgb Images there are
     non_rgb = list(itertools.compress(images, [not j for j in isrgb]))
-    if len(non_rgb) is 0 and colorbar is not None:
+    if len(non_rgb) == 0 and colorbar is not None:
         colorbar = None
         warnings.warn("Sorry, colorbar is not implemented for RGB images.")
 
     # Find global min and max values of all the non-rgb images for use with
     # 'single' scalebar
-    if colorbar is 'single':
+    if colorbar == 'single':
         # get a g_saturated_pixels from saturated_pixels
         if isinstance(saturated_pixels, list):
             g_saturated_pixels = min(np.array([v for v in saturated_pixels]))
@@ -903,7 +903,7 @@ def plot_images(images,
                                 "Using 'auto' as default.")
                 aspect = 'auto'
 
-            if aspect is 'auto':
+            if aspect == 'auto':
                 if float(yaxis.size) / xaxis.size < min_asp:
                     factor = min_asp * float(xaxis.size) / yaxis.size
                 elif float(yaxis.size) / xaxis.size > min_asp ** -1:
@@ -911,9 +911,9 @@ def plot_images(images,
                 else:
                     factor = 1
                 asp = np.abs(factor * float(xaxis.scale) / yaxis.scale)
-            elif aspect is 'square':
+            elif aspect == 'square':
                 asp = abs(extent[1] - extent[0]) / abs(extent[3] - extent[2])
-            elif aspect is 'equal':
+            elif aspect == 'equal':
                 asp = 1
             elif isinstance(aspect, (int, float)):
                 asp = aspect
@@ -926,7 +926,7 @@ def plot_images(images,
             # Plot image data, using vmin and vmax to set bounds,
             # or allowing them to be set automatically if using individual
             # colorbars
-            if colorbar is 'single' and not isrgb[i]:
+            if colorbar == 'single' and not isrgb[i]:
                 axes_im = ax.imshow(data,
                                     cmap=cm,
                                     extent=extent,
@@ -949,7 +949,7 @@ def plot_images(images,
                     isinstance(yaxis.units, trait_base._Undefined) or \
                     isinstance(xaxis.name, trait_base._Undefined) or \
                     isinstance(yaxis.name, trait_base._Undefined):
-                if axes_decor is 'all':
+                if axes_decor == 'all':
                     _logger.warning(
                         'Axes labels were requested, but one '
                         'or both of the '
@@ -986,13 +986,13 @@ def plot_images(images,
             set_axes_decor(ax, axes_decor)
 
             # If using independent colorbars, add them
-            if colorbar is 'multi' and not isrgb[i]:
+            if colorbar == 'multi' and not isrgb[i]:
                 div = make_axes_locatable(ax)
                 cax = div.append_axes("right", size="5%", pad=0.05)
                 plt.colorbar(axes_im, cax=cax)
 
             # Add scalebars as necessary
-            if (scalelist and idx in scalebar) or scalebar is 'all':
+            if (scalelist and idx in scalebar) or scalebar == 'all':
                 ax.scalebar = ScaleBar(
                     ax=ax,
                     units=axes[0].units,
@@ -1005,7 +1005,7 @@ def plot_images(images,
 
     # If using a single colorbar, add it, and do tight_layout, ensuring that
     # a colorbar is only added based off of non-rgb Images:
-    if colorbar is 'single':
+    if colorbar == 'single':
         foundim = None
         for i in range(len(isrgb)):
             if (not isrgb[i]) and foundim is None:
@@ -1033,7 +1033,7 @@ def plot_images(images,
     if scalebar is None or scalebar is False:
         # Do nothing if no scalebars are called for
         pass
-    elif scalebar is 'all':
+    elif scalebar == 'all':
         # scalebars were taken care of in the plotting loop
         pass
     elif scalelist:
@@ -1063,7 +1063,7 @@ def plot_images(images,
         clim = subplots[inx].images[0].get_clim()
 
         sbar = False
-        if (scalelist and inx in scalebar) or scalebar is 'all':
+        if (scalelist and inx in scalebar) or scalebar == 'all':
             sbar = True
 
         im.plot(colorbar=bool(colorbar),
@@ -1081,12 +1081,12 @@ def plot_images(images,
 
 
 def set_axes_decor(ax, axes_decor):
-    if axes_decor is 'off':
+    if axes_decor == 'off':
         ax.axis('off')
-    elif axes_decor is 'ticks':
+    elif axes_decor == 'ticks':
         ax.set_xlabel('')
         ax.set_ylabel('')
-    elif axes_decor is 'all':
+    elif axes_decor == 'all':
         pass
     elif axes_decor is None:
         ax.set_xlabel('')

@@ -34,6 +34,7 @@ from hyperspy.misc.utils import (
     isiterable, closest_power_of_two, underline, signal_range_from_roi)
 from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.signal1d import CROP_PARAMETER_DOC
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
 
 
 _logger = logging.getLogger(__name__)
@@ -241,9 +242,7 @@ class EELSSpectrum_mixin:
             the range will be in spectrum values. Useful if there are features
             in the spectrum which are more intense than the ZLP.
             Default is searching in the whole signal.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
+        %s
         %s
 
         Examples
@@ -253,10 +252,12 @@ class EELSSpectrum_mixin:
         >>> s_ll.align_zero_loss_peak()
 
         Aligning both the lowloss signal and another signal
+
         >>> s = hs.signals.EELSSpectrum(np.range(1000))
         >>> s_ll.align_zero_loss_peak(also_align=[s])
 
         Aligning within a narrow range of the lowloss signal
+
         >>> s_ll.align_zero_loss_peak(signal_range=(-10.,10.))
 
 
@@ -277,6 +278,7 @@ class EELSSpectrum_mixin:
                 value = value.compute()
             for signal in signals:
                 signal.axes_manager[-1].offset -= value
+                signal.events.data_changed.trigger(signal)
 
         def estimate_zero_loss_peak_centre(s, mask, signal_range):
             if signal_range:
@@ -338,7 +340,7 @@ class EELSSpectrum_mixin:
                 self, mask=mask, signal_range=signal_range)
             substract_from_offset(np.nanmean(zlpc.data),
                                   also_align + [self])
-    align_zero_loss_peak.__doc__ %= CROP_PARAMETER_DOC
+    align_zero_loss_peak.__doc__ %= (SHOW_PROGRESSBAR_ARG, CROP_PARAMETER_DOC)
 
     def estimate_elastic_scattering_intensity(
             self, threshold, show_progressbar=None):
@@ -354,10 +356,7 @@ class EELSSpectrum_mixin:
             threshold value in the energy units. Alternatively a constant
             threshold can be specified in energy/index units by passing
             float/int.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
-
+        %s
 
         Returns
         -------
@@ -415,6 +414,7 @@ class EELSSpectrum_mixin:
             I0.tmp_parameters.extension = \
                 self.tmp_parameters.extension
         return I0
+    estimate_elastic_scattering_intensity.__doc__ %= SHOW_PROGRESSBAR_ARG
 
     def estimate_elastic_scattering_threshold(self,
                                               window=10.,
@@ -803,14 +803,10 @@ class EELSSpectrum_mixin:
             It must have the same signal dimension as the current
             spectrum and a spatial dimension of 0 or the same as the
             current spectrum.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
-        parallel : {None,bool,int}
-            if True, the deconvolution will be performed in a threaded (parallel)
-            manner.
+        %s
+        %s
 
-        Notes:
+        Notes
         -----
         For details on the algorithm see Gloter, A., A. Douiri,
         M. Tence, and C. Colliex. “Improving Energy Resolution of
@@ -848,6 +844,9 @@ class EELSSpectrum_mixin:
             ds.tmp_parameters.filename += (
                 '_after_R-L_deconvolution_%iiter' % iterations)
         return ds
+
+    richardson_lucy_deconvolution.__doc__ %= (SHOW_PROGRESSBAR_ARG,
+                                              PARALLEL_ARG)
 
     def _are_microscope_parameters_missing(self, ignore_parameters=[]):
         """

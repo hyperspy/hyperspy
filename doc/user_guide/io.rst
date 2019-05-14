@@ -206,7 +206,7 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +--------------------+--------+--------+--------+
     | EMD (NCEM)         |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
-    | EMD (FEI)          |    Yes |    No  |    Yes |
+    | EMD (Velox)        |    Yes |    No  |    Yes |
     +--------------------+--------+--------+--------+
     | Protochips log     |    Yes |    No  |    No  |
     +--------------------+--------+--------+--------+
@@ -336,7 +336,7 @@ MRC
 
 This is a format widely used for tomographic data. Our implementation is based
 on `this specification
-<http://ami.scripps.edu/software/mrctools/mrc_specification.php>`_. We also
+<https://www2.mrc-lmb.cam.ac.uk/research/locally-developed-software/image-processing-software/>`_. We also
 partly support FEI's custom header. We do not provide writing features for this
 format, but, as it is an open format, we may implement this feature in the
 future on demand.
@@ -775,22 +775,23 @@ asdf
 
 .. _emd_fei-format:
 
-EMD (FEI)
+EMD (Velox)
 ^^^^^^^^^
 
-This is a non-compliant variant of the standard EMD format developed by FEI.
-HyperSpy supports importing images, EDS spectrum and EDS
+This is a non-compliant variant of the standard EMD format developed by 
+Thermo-Fisher (former FEI). HyperSpy supports importing images, EDS spectrum and EDS
 spectrum streams (spectrum images stored in a sparse format). For spectrum
 streams, there are several loading options (described below) to control the frames
 and detectors to load and if to sum them on loading.  The default is
 to import the sum over all frames and over all detectors in order to decrease
 the data size in memory.
 
-Note that pruned FEI EMD files only contain the spectrum image in a proprietary
-format that HyperSpy cannot read. Therefore,
-don't prune FEI EMD files in you intend to read them with HyperSpy.
-Note also that loading a spectrum image can be slow if `numba
-<http://numba.pydata.org/>`_ is not installed.
+
+.. note::
+
+    Pruned Velox EMD files only contain the spectrum image in a proprietary
+    format that HyperSpy cannot read. Therefore, don't prune FEI EMD files in 
+    you intend to read them with HyperSpy.
 
 .. code-block:: python
 
@@ -801,13 +802,15 @@ Note also that loading a spectrum image can be slow if `numba
 
 .. note::
 
-    To enable lazy loading of EDX spectrum images in this format it may be
-    necessary to install `sparse <http://sparse.pydata.org/en/latest/>`_. See
-    See also :ref:`install-with-python-installers`. Note also that currently
-    only lazy uncompression rather than lazy loading is implemented. This
-    means that it is not currently possible to read EDX SI FEI EMD files with
-    size bigger than the available memory.
+    Currently only lazy uncompression rather than lazy loading is implemented. 
+    This means that it is not currently possible to read EDS SI Veloz EMD files 
+    with size bigger than the available memory.
 
+
+.. note::
+
+    Loading a spectrum image can be slow if 
+    `numba <http://numba.pydata.org/>`_ is not installed.
 
 
 .. warning::
