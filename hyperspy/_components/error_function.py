@@ -27,7 +27,7 @@ class Erf(Expression):
 
     .. math::
     
-        \frac{A}{2}~\mathrm{erf}\left[\frac{(x - x_0)}{\sqrt{2} 
+        f(x) = \frac{A}{2}~\mathrm{erf}\left[\frac{(x - x_0)}{\sqrt{2} 
             \sigma}\right]
 
 
