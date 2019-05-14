@@ -27,42 +27,50 @@ sigma2fwhm = 2 * math.sqrt(2 * math.log(2))
 
 class GaussianHF(Expression):
 
-    """Normalized gaussian function component, with a fwhm parameter instead
-    of the sigma parameter, and a height parameter instead of the A parameter
-    (scaling difference of sigma * sqrt(2*Pi)). This makes the parameter vs.
-    peak maximum independent of sigma, and thereby makes locking of the
-    parameter more viable. As long as there is no binning, the height parameter
-    corresponds directly to the peak maximum, if not, the value is scaled by a
-    linear constant (signal_axis.scale).
+    r"""Normalized gaussian function component, with a `fwhm` parameter instead
+    of the sigma parameter, and a `height` parameter instead of the `A` 
+    parameter (scaling difference of :math:`\sigma \sqrt{\left(2\pi\right)}`). 
+    This makes the parameter vs. peak maximum independent of :math:`\sigma`, 
+    and thereby makes locking of the parameter more viable. As long as there 
+    is no binning, the `height` parameter corresponds directly to the peak 
+    maximum, if not, the value is scaled by a linear constant 
+    (`signal_axis.scale`).
 
     .. math::
 
-        f(x) = h \\sqrt{2\\pi}\\mathrm{exp}{\\left[-\\frac{4 \\log{2}\\left(x-c\\right)^{2}}{W^{2}}\\right]}
+        f(x) = h\cdot\exp{\left[-\frac{4 \log{2}
+            \left(x-c\right)^{2}}{W^{2}}\right]}
+
+    ============= =============
+     Variable      Parameter 
+    ============= =============
+     :math:`h`     height    
+     :math:`W`     fwhm 
+     :math:`c`     centre    
+    ============= =============
 
 
     Parameters
-    -----------
-        height: float
-            The height of the peak. If there is no binning, this corresponds
-            directly to the maximum, otherwise the maximum divided by
-            signal_axis.scale
-        centre: float
-            Location of the gaussian maximum, also the mean position.
-        fwhm: float
-            The full width half maximum value, i.e. the width of the gaussian
-            at half the value of gaussian peak (at centre).
-        **kwargs
-            Extra keyword arguments are passes to the ``Expression`` component.
-            An useful keyword argument that can be used to speed up the
-            component is `module`. See the ``Expression`` component
-            documentation for details.
+    ----------
+    height: float
+        The height of the peak. If there is no binning, this corresponds
+        directly to the maximum, otherwise the maximum divided by
+        signal_axis.scale
+    fwhm: float
+        The full width half maximum value, i.e. the width of the gaussian
+        at half the value of gaussian peak (at centre).
+    centre: float
+        Location of the gaussian maximum, also the mean position.
+    **kwargs
+        Extra keyword arguments are passed to the ``Expression`` component.
+
 
     The helper properties `sigma` and `A` are also defined for compatibility
     with `Gaussian` component.
 
     See also
     --------
-    hyperspy.components.Gaussian
+    hyperspy._components.gaussian.Gaussian
 
     """
 
@@ -124,7 +132,6 @@ class GaussianHF(Expression):
         >>> s.axes_manager._axes[-1].offset = -10
         >>> s.axes_manager._axes[-1].scale = 0.01
         >>> g.estimate_parameters(s, -10, 10, False)
-
         """
 
         super(GaussianHF, self)._estimate_parameters(signal)
