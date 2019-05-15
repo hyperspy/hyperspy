@@ -57,7 +57,7 @@ from zlib import decompress as unzip_block
 import logging
 import re
 from math import ceil
-from os.path import splitext
+from os.path import splitext, basename
 
 _logger = logging.getLogger(__name__)
 
@@ -519,7 +519,7 @@ class EDXSpectrum(object):
         dec_det_l_str = codecs.decode(det_l_str.encode('ascii'), 'base64')
         mini_xml = ET.fromstring(unzip_block(dec_det_l_str))
         self.detector_metadata['DetLayers'] = {}  # Overwrite with dict
-        for i in mini_xml.getchildren():
+        for i in list(mini_xml):
             self.detector_metadata['DetLayers'][i.tag] = dict(i.attrib)
 
         # map stuff from esma xml branch:
@@ -951,7 +951,7 @@ class BCF_reader(SFS_reader):
     def add_filename_to_general(self, item):
         """hypy helper method"""
         item['metadata']['General']['original_filename'] = \
-            self.filename.split('/')[-1]
+            basename(self.filename)
 
 def spx_reader(filename, lazy=False):
     with open(filename, 'br') as fn:
@@ -981,7 +981,7 @@ def spx_reader(filename, lazy=False):
                             gen_detector_node(spectrum),
                          'beam_energy': spectrum.hv}
                },
-                'General': {'original_filename': filename.split('/')[-1],
+                'General': {'original_filename': basename(filename),
                             'title': 'EDX',
                             'date': spectrum.date,
                              'time': spectrum.time},
@@ -1190,8 +1190,8 @@ def file_reader(filename, *args, **kwds):
         return spx_reader(filename, *args, **kwds)
 
 
-def bcf_reader(filename, select_type=None, index=None, downsample=1,  # noqa
-               cutoff_at_kV=None, instrument=None, lazy=False):
+def bcf_reader(filename, select_type=None, index=None,  # noqa
+               downsample=1, cutoff_at_kV=None, instrument=None, lazy=False):
     """Reads a bruker bcf file and loads the data into the appropriate class,
     then wraps it into appropriate hyperspy required list of dictionaries
     used by hyperspy.api.load() method.
@@ -1305,7 +1305,7 @@ For more information, check the 'Installing HyperSpy' section in the documentati
                      detector=True,
                      index=index)
              },
-                 'General': {'original_filename': obj_bcf.filename.split('/')[-1],
+                 'General': {'original_filename': basename(obj_bcf.filename),
                              'title': 'EDX',
                              'date': obj_bcf.header.date,
                              'time': obj_bcf.header.time},

@@ -24,6 +24,7 @@ import logging
 from distutils.version import LooseVersion
 
 import numpy as np
+import dill
 import scipy
 import scipy.odr as odr
 from scipy.optimize import (leastsq, least_squares,
@@ -48,6 +49,8 @@ from hyperspy.events import Events, Event, EventSuppressor
 import warnings
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.ui_registry import add_gui_method
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_INT_ARG
+
 
 _logger = logging.getLogger(__name__)
 
@@ -62,6 +65,15 @@ class DummyComponentsContainer:
 components = DummyComponentsContainer()
 components.__dict__.update(components1d.__dict__)
 components.__dict__.update(components2d.__dict__)
+
+
+def reconstruct_component(comp_dictionary, **init_args):
+    _id = comp_dictionary['_id_name']
+    try:
+        _class = getattr(components, _id)
+    except AttributeError:
+        _class = dill.loads(comp_dictionary['_class_dump'])
+    return _class(**init_args)
 
 
 class ModelComponents(object):
@@ -112,7 +124,7 @@ class BaseModel(list):
 
     A model is constructed as a linear combination of :mod:`components` that
     are added to the model using :meth:`append` or :meth:`extend`. There
-    are many predifined components available in the in the :mod:`components`
+    are many predefined components available in the in the :mod:`components`
     module. If needed, new components can be created easily using the code of
     existing components as a template.
 
@@ -137,7 +149,7 @@ class BaseModel(list):
         Reduced chi-squared.
     components : `ModelComponents` instance
         The components of the model are attributes of this class. This provides
-        a convinient way to access the model components when working in IPython
+        a convenient way to access the model components when working in IPython
         as it enables tab completion.
 
     Methods
@@ -206,7 +218,7 @@ class BaseModel(list):
 
         self.events = Events()
         self.events.fitted = Event("""
-            Event that triggers after fitting changed at least one paramter.
+            Event that triggers after fitting changed at least one parameter.
 
             The event triggers after the fitting step was finished, and only of
             at least one of the parameters changed.
@@ -282,7 +294,7 @@ class BaseModel(list):
                     if 'init' in parse_flag_string(flags_str):
                         init_args[k] = reconstruct_object(flags_str, comp[k])
 
-                self.append(getattr(components, comp['_id_name'])(**init_args))
+                self.append(reconstruct_component(comp, **init_args))
                 id_dict.update(self[-1]._load_dictionary(comp))
             # deal with twins:
             for comp in dic['components']:
@@ -407,31 +419,27 @@ class BaseModel(list):
     def as_signal(self, component_list=None, out_of_range_to_nan=True,
                   show_progressbar=None, out=None, parallel=None):
         """Returns a recreation of the dataset using the model.
-        the spectral range that is not fitted is filled with nans.
+        The spectral range that is not fitted is filled with nans.
 
         Parameters
         ----------
-        component_list : list of hyperspy components, optional
+        component_list : list of HyperSpy components, optional
             If a list of components is given, only the components given in the
             list is used in making the returned spectrum. The components can
             be specified by name, index or themselves.
         out_of_range_to_nan : bool
             If True the spectral range that is not fitted is filled with nans.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
+            Default True.
+        %s
         out : {None, BaseSignal}
             The signal where to put the result into. Convenient for parallel
             processing. If None (default), creates a new one. If passed, it is
             assumed to be of correct shape and dtype and not checked.
-        parallel : bool, int
-            If True or more than 1, perform the recreation parallely using as
-            many threads as specified. If True, as many threads as CPU cores
-            available are used.
+        %s
 
         Returns
         -------
-        spectrum : An instance of the same class as `spectrum`.
+        BaseSignal : An instance of the same class as `BaseSignal`.
 
         Examples
         --------
@@ -509,6 +517,8 @@ class BaseModel(list):
             _ = next(_map)
         return signal
 
+    as_signal.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_INT_ARG)
+
     def _as_signal_iter(self, component_list=None, out_of_range_to_nan=True,
                         show_progressbar=None, data=None):
         # Note that show_progressbar can be an int to determine the progressbar
@@ -548,7 +558,7 @@ class BaseModel(list):
 
     @property
     def _plot_active(self):
-        if self._plot is not None and self._plot.is_active() is True:
+        if self._plot is not None and self._plot.is_active:
             return True
         else:
             return False
@@ -776,7 +786,7 @@ class BaseModel(list):
 
         Parameters
         ----------
-        only_fixed : bool
+        only_fixed : bool, optional
             If True, only the fixed parameters are fetched.
 
         See Also
@@ -790,14 +800,27 @@ class BaseModel(list):
             for component in self:
                 component.fetch_stored_values(only_fixed=only_fixed)
 
-    def _fetch_values_from_p0(self, p_std=None):
-        """Fetch the parameter values from the output of the optimzer `self.p0`
+    def fetch_values_from_array(self, array, array_std=None):
+        """Fetch the parameter values from the given array, optionally also
+        fetching the standard deviations.
 
         Parameters
         ----------
-        p_std : array
-            array containing the corresponding standard deviatio
-            n
+        array : array
+            array with the parameter values
+        array_std : {None, array}
+            array with the standard deviations of parameters
+        """
+        self.p0 = array
+        self._fetch_values_from_p0(p_std=array_std)
+
+    def _fetch_values_from_p0(self, p_std=None):
+        """Fetch the parameter values from the output of the optimizer `self.p0`
+
+        Parameters
+        ----------
+        p_std : array, optional
+            array containing the corresponding standard deviation.
 
         """
         comp_p_std = None
@@ -896,7 +919,7 @@ class BaseModel(list):
         fitter : {"leastsq", "mpfit", "odr", "Nelder-Mead",
                  "Powell", "CG", "BFGS", "Newton-CG", "L-BFGS-B", "TNC",
                  "Differential Evolution"}
-            The optimization algorithm used to perform the fitting. Deafault
+            The optimization algorithm used to perform the fitting. Default
             is "leastsq".
 
                 "leastsq" performs least-squares optimization, and supports
@@ -923,10 +946,13 @@ class BaseModel(list):
             If `variance` is a `Signal` instance of the same `navigation_dimension`
             as the signal, and `method` is "ls", then weighted least squares
             is performed.
-        method : {'ls', 'ml'}
+        method : {'ls', 'ml', 'custom'}
             Choose 'ls' (default) for least-squares and 'ml' for Poisson
             maximum likelihood estimation. The latter is not available when
-            'fitter' is "leastsq", "odr" or "mpfit".
+            'fitter' is "leastsq", "odr" or "mpfit". 'custom' allows passing
+            your own minimisation function as a kwarg "min_function", with
+            optional gradient kwarg "min_function_grad". See User Guide for
+            details.
         grad : bool
             If True, the analytical gradient is used if defined to
             speed up the optimization.
@@ -988,6 +1014,20 @@ class BaseModel(list):
                 # this has to be done before setting the p0,
                 # so moved things around
                 self.ensure_parameters_in_bounds()
+        min_function = kwargs.pop('min_function', None)
+        min_function_grad = kwargs.pop('min_function_grad', None)
+        if method == 'custom':
+            if not callable(min_function):
+                raise ValueError('Custom minimization requires "min_function" '
+                                 'kwarg with a callable')
+            if grad is not False:
+                if min_function_grad is None:
+                    raise ValueError('Custom gradient function should be '
+                                     'supplied with "min_function_grad" kwarg')
+            from functools import partial
+            min_function = partial(min_function, self)
+            if callable(min_function_grad):
+                min_function_grad = partial(min_function_grad, self)
 
         with cm(update_on_resume=True):
             self.p_std = None
@@ -1008,12 +1048,12 @@ class BaseModel(list):
                 grad_ml = self._gradient_ml
                 grad_ls = self._gradient_ls
 
-            if method == 'ml':
+            if method in ['ml', 'custom']:
                 weights = None
                 if fitter in ("leastsq", "odr", "mpfit"):
                     raise NotImplementedError(
-                        "Maximum likelihood estimation is not supported "
-                        'for the "leastsq", "mpfit" or "odr" optimizers')
+                        '"leastsq", "mpfit" and "odr" optimizers only support'
+                        'least squares ("ls") method')
             elif method == "ls":
                 metadata = self.signal.metadata
                 if "Signal.Noise_properties.variance" not in metadata:
@@ -1039,7 +1079,7 @@ class BaseModel(list):
                 weights = 1. / np.sqrt(variance)
             else:
                 raise ValueError(
-                    'method must be "ls" or "ml" but %s given' %
+                    'method must be "ls", "ml" or "custom" but %s given' %
                     method)
             args = (self.signal()[np.where(self.channel_switches)],
                     weights)
@@ -1098,7 +1138,7 @@ class BaseModel(list):
                     self.signal()[np.where(self.channel_switches)],
                     sx=None,
                     sy=(1 / weights if weights is not None else None))
-                myodr = odr.ODR(mydata, modelo, beta0=self.p0[:])
+                myodr = odr.ODR(mydata, modelo, beta0=self.p0[:], **kwargs)
                 myoutput = myodr.run()
                 result = myoutput.beta
                 self.p_std = myoutput.sd_beta
@@ -1118,7 +1158,7 @@ class BaseModel(list):
                               'y': self.signal()[self.channel_switches],
                               'weights': weights},
                           autoderivative=autoderivative,
-                          quiet=1)
+                          quiet=1, **kwargs)
                 self.p0 = m.params
 
                 if hasattr(self, 'axis') and (self.axis.size > len(self.p0)) \
@@ -1136,6 +1176,9 @@ class BaseModel(list):
                 elif method == "ls":
                     tominimize = self._errfunc2
                     fprime = grad_ls
+                elif method == 'custom':
+                    tominimize = min_function
+                    fprime = min_function_grad
 
                 # OPTIMIZERS
                 # Derivative-free methods
@@ -1211,22 +1254,20 @@ class BaseModel(list):
         Parameters
         ----------
 
-        mask : {None, numpy.array}
+        mask : NumPy array, optional
             To mask (do not fit) at certain position pass a numpy.array
             of type bool where True indicates that the data will not be
             fitted at the given position.
         fetch_only_fixed : bool
             If True, only the fixed parameters values will be updated
-            when changing the positon.
+            when changing the positon. Default False.
         autosave : bool
             If True, the result of the fit will be saved automatically
-            with a frequency defined by autosave_every.
+            with a frequency defined by autosave_every. Default False.
         autosave_every : int
             Save the result of fitting every given number of spectra.
-
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
+            Default 10.
+        %s
         interactive_plot : bool
             If True, update the plot for every position as they are processed.
             Note that this slows down the fitting by a lot, but it allows for
@@ -1293,6 +1334,8 @@ class BaseModel(list):
                 'Deleting the temporary file %s pixels' % (
                     autosave_fn + 'npz'))
             os.remove(autosave_fn + '.npz')
+
+    multifit.__doc__ %= (SHOW_PROGRESSBAR_ARG)
 
     def save_parameters2file(self, filename):
         """Save the parameters array in binary format.
@@ -1586,11 +1629,11 @@ class BaseModel(list):
         Parameters
         ----------
         parameter_name : string
-            Name of the parameter whos value will be changed
+            Name of the parameter whose value will be changed
         value : number
             The new value of the parameter
         component_list : list of hyperspy components, optional
-            A list of components whos parameters will changed. The components
+            A list of components whose parameters will changed. The components
             can be specified by name, index or themselves.
 
         only_current : bool, default False
@@ -1691,7 +1734,7 @@ class BaseModel(list):
         value : bool
             The new value of the 'active' parameter
         component_list : list of hyperspy components, optional
-            A list of components whos parameters will changed. The components
+            A list of components whose parameters will changed. The components
             can be specified by name, index or themselves.
 
         only_current : bool, default False
@@ -1809,7 +1852,7 @@ class ModelSpecialSlicers(object):
                 flags_str, value = v
                 if 'init' in parse_flag_string(flags_str):
                     init_args[k] = value
-            _model.append(getattr(components, comp._id_name)(**init_args))
+            _model.append(comp.__class__(**init_args))
         copy_slice_from_whitelist(self.model,
                                   _model,
                                   dims,
