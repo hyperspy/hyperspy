@@ -273,9 +273,9 @@ class EDSTEM_mixin:
         elif 'Acquisition_instrument.SEM' in ref.metadata:
             mp_ref = ref.metadata.Acquisition_instrument.SEM
         else:
-            raise ValueError("The reference has no metadata." +
-                             "Acquisition_instrument.TEM" +
-                             "\n or metadata.Acquisition_instrument.SEM ")
+            raise ValueError("The reference has no metadata "
+                             "'Acquisition_instrument.TEM '"
+                             "or 'metadata.Acquisition_instrument.SEM'.")
 
         mp = self.metadata
         mp.Acquisition_instrument.TEM = mp_ref.deepcopy()
@@ -353,10 +353,13 @@ class EDSTEM_mixin:
         --------
         vacuum_mask
         """
-        if isinstance(navigation_mask, float):
+        if self.axes_manager.navigation_size == 0:
+            navigation_mask = None
+        elif isinstance(navigation_mask, float):
             navigation_mask = self.vacuum_mask(navigation_mask, closing).data
         elif navigation_mask is not None:
             navigation_mask = navigation_mask.data
+
         composition = utils.stack(intensities, lazy=False)
         if method == 'CL':
             composition.data = utils_eds.quantification_cliff_lorimer(
@@ -379,8 +382,9 @@ class EDSTEM_mixin:
             number_of_atoms = composition._deepcopy_with_new_data(results[1])
             number_of_atoms = number_of_atoms.split()
         else:
-            raise ValueError('Please specify method for quantification,'
-                             'as \'CL\', \'zeta\' or \'cross_section\'')
+            raise ValueError("Please specify method for quantification, "
+                             "as 'CL', 'zeta' or 'cross_section'.")
+
         composition = composition.split()
         if composition_units == 'atomic':
             if method != 'cross_section':
@@ -418,8 +422,8 @@ class EDSTEM_mixin:
         elif method == 'CL':
             return composition
         else:
-            raise ValueError('Please specify method for quantification, as \
-            ''CL\', \'zeta\' or \'cross_section\'')
+            raise ValueError("Please specify method for quantification, as "
+                             "'CL', 'zeta' or 'cross_section'.")
 
     def vacuum_mask(self, threshold=1.0, closing=True, opening=False):
         """
