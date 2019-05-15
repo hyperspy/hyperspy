@@ -76,11 +76,11 @@ class Gaussian(Expression):
                -\frac{\left(x-x_0\right)^{2}}{2\sigma^{2}}\right]
 
     ============== ===========
-    Variable         Parameter
+    Variable        Parameter
     ============== ===========
-    :math:`A`        A
+    :math:`A`       A
     :math:`\sigma`  sigma
-    :math:`x_0`      centre
+    :math:`x_0`     centre
     ============== ===========
 
 

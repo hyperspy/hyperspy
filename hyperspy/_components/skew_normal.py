@@ -36,32 +36,29 @@ class SkewNormal(Expression):
 
         f(x) &= 2 A \phi(x) \Phi(x) \\
         \phi(x) &= \frac{1}{\sqrt{2\pi}}\mathrm{exp}{\left[
-            -\frac{t(x)^2}{2}\right]} \\
+                   -\frac{t(x)^2}{2}\right]} \\
         \Phi(x) &= \frac{1}{2}\left[1 + \mathrm{erf}\left(\frac{
-            \alpha~t(x)}{\sqrt{2}}\right)\right] \\
+                   \alpha~t(x)}{\sqrt{2}}\right)\right] \\
         t(x) &= \frac{x-x_0}{\omega}
 
 
-    +----------------+-------------+
-    | Parameter      |  Attribute  |
-    +----------------+-------------+
-    +----------------+-------------+
-    | :math:`A`      |  A          |
-    +----------------+-------------+
-    | :math:`x_0`    |  x0         |
-    +----------------+-------------+
-    | :math:`\omega` |  scale      |
-    +----------------+-------------+
-    | :math:`\alpha` |  shape      |
-    +----------------+-------------+
+    ============== =============
+    Variable        Parameter 
+    ============== =============
+    :math:`x_0`     x0 
+    :math:`A`       A 
+    :math:`\omega`  scale 
+    :math:`\alpha`  shape 
+    ============== =============
+
 
     Parameters
     -----------
-    A : float
-        Height parameter of the peak.
     x0 : float
         Location of the peak position (not maximum, which is given by
         the `mode` property).
+    A : float
+        Height parameter of the peak.
     scale : float
         Width (sigma) parameter.
     shape: float

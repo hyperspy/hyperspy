@@ -25,17 +25,22 @@ from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 
 class Offset(Component):
 
-    """Component to add a constant value in the y-axis
+    r"""Component to add a constant value in the y-axis.
 
-    f(x) = k + x
+    .. math::
+    
+        f(x) = k + x
 
-    +------------+-----------+
-    | Parameter  | Attribute |
-    +------------+-----------+
-    +------------+-----------+
-    |     k      |  offset   |
-    +------------+-----------+
+    ============ =============
+    Variable      Parameter 
+    ============ =============
+    :math:`k`     offset   
+    ============ =============
 
+    Parameters
+    -----------
+    offset : float 
+        
     """
 
     def __init__(self, offset=0.):
