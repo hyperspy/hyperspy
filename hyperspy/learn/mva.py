@@ -1277,7 +1277,7 @@ class LearningResults(object):
         ----------
         filename : string
         """
-        decomposition = np.load(filename)
+        decomposition = np.load(filename, allow_pickle=True)
         for key, value in decomposition.items():
             if value.dtype == np.dtype('object'):
                 value = None
