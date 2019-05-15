@@ -1501,7 +1501,8 @@ class BaseModel(list):
             if only_active is False or component.active:
                 component.plot(only_free=only_free)
 
-    def print_current_values(self, only_free=True, skip_multi=False):
+    def print_current_values(self, only_free=True, skip_multi=False,
+                             component_list=None):
         """Print the value of each parameter of the model.
 
         Parameters
@@ -1511,10 +1512,13 @@ class BaseModel(list):
             be printed.
         skip_multi : bool
             If True, parameters with attribute "__iter__" are not printed
-
+        component_list : None or list of components.
+            If None, print all components.
         """
         print("Components\tParameter\tValue")
-        for component in self:
+        if component_list is None:
+            component_list = self
+        for component in component_list:
             if component.active:
                 if component.name:
                     print(component.name)
