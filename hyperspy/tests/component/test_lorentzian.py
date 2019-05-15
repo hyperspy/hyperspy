@@ -32,8 +32,8 @@ def test_function():
 
 def test_util_gamma_getset():
     g1 = Lorentzian()
-    g1.gamma.value = 1.0
-    assert_allclose(g1.gamma.value, 1.0)
+    g1.gamma.value = 3.0
+    assert_allclose(g1.gamma.value, 3.0)
 
 def test_util_fwhm_set():
     g1 = Lorentzian()
@@ -42,5 +42,10 @@ def test_util_fwhm_set():
 
 def test_util_fwhm_get():
     g1 = Lorentzian()
-    g1.gamma.value = 1.0
-    assert_allclose(g1.fwhm, 2.0)
+    g1.gamma.value = 2.0
+    assert_allclose(g1.fwhm, 4.0)
+
+def test_util_fwhm_getset():
+    g1 = Lorentzian()
+    g1.fwhm = 4.0
+    assert_allclose(g1.fwhm, 4.0)
