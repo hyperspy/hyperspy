@@ -20,14 +20,16 @@ import copy
 import itertools
 import textwrap
 from traits import trait_base
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-import warnings
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.backend_bases import key_press_handler
+import warnings
+import numpy as np
 import hyperspy as hs
 from distutils.version import LooseVersion
 import logging
+
 
 _logger = logging.getLogger(__name__)
 
@@ -106,6 +108,7 @@ def centre_colormap_values(vmin, vmax):
 
 def create_figure(window_title=None,
                   _on_figure_window_close=None,
+                  disable_xyscale_keys=False,
                   **kwargs):
     """Create a matplotlib figure.
 
@@ -117,6 +120,8 @@ def create_figure(window_title=None,
     ----------
     window_title : string
     _on_figure_window_close : function
+    disable_xyscale_keys : bool, disable the `k`, `l` and `L` shortcuts which
+    toggle the x or y axis between linear and log scale.
 
     Returns
     -------
@@ -129,15 +134,27 @@ def create_figure(window_title=None,
         # remove non-alphanumeric characters to prevent file saving problems
         # This is a workaround for:
         #   https://github.com/matplotlib/matplotlib/issues/9056
-        reserved_characters = '<>"/\|?*'
+        reserved_characters = r'<>"/\|?*'
         for c in reserved_characters:
             window_title = window_title.replace(c, '')
         window_title = window_title.replace('\n', ' ')
         window_title = window_title.replace(':', ' -')
         fig.canvas.set_window_title(window_title)
+    if disable_xyscale_keys and hasattr(fig.canvas, 'toolbar'):
+        # hack the `key_press_handler` to disable the `k`, `l`, `L` shortcuts
+        manager = fig.canvas.manager
+        fig.canvas.mpl_disconnect(manager.key_press_handler_id)
+        manager.key_press_handler_id = manager.canvas.mpl_connect(
+            'key_press_event',
+            lambda event: key_press_handler_custom(event, manager.canvas))
     if _on_figure_window_close is not None:
         on_figure_window_close(fig, _on_figure_window_close)
     return fig
+
+
+def key_press_handler_custom(event, canvas):
+    if event.key not in ['k', 'l', 'L']:
+        key_press_handler(event, canvas, canvas.manager.toolbar)
 
 
 def on_figure_window_close(figure, function):
@@ -293,15 +310,15 @@ def plot_signals(signal_list, sync=True, navigator="auto",
             navigator_list = []
         if navigator is None:
             navigator_list.extend([None] * len(signal_list))
-        elif navigator is "slider":
-            navigator_list.append("slider")
-            navigator_list.extend([None] * (len(signal_list) - 1))
         elif isinstance(navigator, hyperspy.signal.BaseSignal):
             navigator_list.append(navigator)
             navigator_list.extend([None] * (len(signal_list) - 1))
-        elif navigator is "spectrum":
+        elif navigator == "slider":
+            navigator_list.append("slider")
+            navigator_list.extend([None] * (len(signal_list) - 1))
+        elif navigator == "spectrum":
             navigator_list.extend(["spectrum"] * len(signal_list))
-        elif navigator is "auto":
+        elif navigator == "auto":
             navigator_list.extend(["auto"] * len(signal_list))
         else:
             raise ValueError(
@@ -575,7 +592,7 @@ def plot_images(images,
 
     """
     def __check_single_colorbar(cbar):
-        if cbar is 'single':
+        if cbar == 'single':
             raise ValueError('Cannot use a single colorbar with multiple '
                              'colormaps. Please check for compatible '
                              'arguments.')
@@ -679,7 +696,7 @@ def plot_images(images,
 
     if label is None:
         pass
-    elif label is 'auto':
+    elif label == 'auto':
         # Use some heuristics to try to get base string of similar titles
 
         label_list = [x.metadata.General.title for x in images]
@@ -742,7 +759,7 @@ def plot_images(images,
             label = 'titles'
             div_num = 0
 
-    elif label is 'titles':
+    elif label == 'titles':
         # Set label_list to each image's pre-defined title
         label_list = [x.metadata.General.title for x in images]
 
@@ -791,13 +808,13 @@ def plot_images(images,
 
     # Determine how many non-rgb Images there are
     non_rgb = list(itertools.compress(images, [not j for j in isrgb]))
-    if len(non_rgb) is 0 and colorbar is not None:
+    if len(non_rgb) == 0 and colorbar is not None:
         colorbar = None
         warnings.warn("Sorry, colorbar is not implemented for RGB images.")
 
     # Find global min and max values of all the non-rgb images for use with
     # 'single' scalebar
-    if colorbar is 'single':
+    if colorbar == 'single':
         # get a g_saturated_pixels from saturated_pixels
         if isinstance(saturated_pixels, list):
             g_saturated_pixels = min(np.array([v for v in saturated_pixels]))
@@ -886,7 +903,7 @@ def plot_images(images,
                                 "Using 'auto' as default.")
                 aspect = 'auto'
 
-            if aspect is 'auto':
+            if aspect == 'auto':
                 if float(yaxis.size) / xaxis.size < min_asp:
                     factor = min_asp * float(xaxis.size) / yaxis.size
                 elif float(yaxis.size) / xaxis.size > min_asp ** -1:
@@ -894,9 +911,9 @@ def plot_images(images,
                 else:
                     factor = 1
                 asp = np.abs(factor * float(xaxis.scale) / yaxis.scale)
-            elif aspect is 'square':
+            elif aspect == 'square':
                 asp = abs(extent[1] - extent[0]) / abs(extent[3] - extent[2])
-            elif aspect is 'equal':
+            elif aspect == 'equal':
                 asp = 1
             elif isinstance(aspect, (int, float)):
                 asp = aspect
@@ -909,7 +926,7 @@ def plot_images(images,
             # Plot image data, using vmin and vmax to set bounds,
             # or allowing them to be set automatically if using individual
             # colorbars
-            if colorbar is 'single' and not isrgb[i]:
+            if colorbar == 'single' and not isrgb[i]:
                 axes_im = ax.imshow(data,
                                     cmap=cm,
                                     extent=extent,
@@ -932,7 +949,7 @@ def plot_images(images,
                     isinstance(yaxis.units, trait_base._Undefined) or \
                     isinstance(xaxis.name, trait_base._Undefined) or \
                     isinstance(yaxis.name, trait_base._Undefined):
-                if axes_decor is 'all':
+                if axes_decor == 'all':
                     _logger.warning(
                         'Axes labels were requested, but one '
                         'or both of the '
@@ -969,13 +986,13 @@ def plot_images(images,
             set_axes_decor(ax, axes_decor)
 
             # If using independent colorbars, add them
-            if colorbar is 'multi' and not isrgb[i]:
+            if colorbar == 'multi' and not isrgb[i]:
                 div = make_axes_locatable(ax)
                 cax = div.append_axes("right", size="5%", pad=0.05)
                 plt.colorbar(axes_im, cax=cax)
 
             # Add scalebars as necessary
-            if (scalelist and idx in scalebar) or scalebar is 'all':
+            if (scalelist and idx in scalebar) or scalebar == 'all':
                 ax.scalebar = ScaleBar(
                     ax=ax,
                     units=axes[0].units,
@@ -988,7 +1005,7 @@ def plot_images(images,
 
     # If using a single colorbar, add it, and do tight_layout, ensuring that
     # a colorbar is only added based off of non-rgb Images:
-    if colorbar is 'single':
+    if colorbar == 'single':
         foundim = None
         for i in range(len(isrgb)):
             if (not isrgb[i]) and foundim is None:
@@ -1016,7 +1033,7 @@ def plot_images(images,
     if scalebar is None or scalebar is False:
         # Do nothing if no scalebars are called for
         pass
-    elif scalebar is 'all':
+    elif scalebar == 'all':
         # scalebars were taken care of in the plotting loop
         pass
     elif scalelist:
@@ -1046,7 +1063,7 @@ def plot_images(images,
         clim = subplots[inx].images[0].get_clim()
 
         sbar = False
-        if (scalelist and inx in scalebar) or scalebar is 'all':
+        if (scalelist and inx in scalebar) or scalebar == 'all':
             sbar = True
 
         im.plot(colorbar=bool(colorbar),
@@ -1064,12 +1081,12 @@ def plot_images(images,
 
 
 def set_axes_decor(ax, axes_decor):
-    if axes_decor is 'off':
+    if axes_decor == 'off':
         ax.axis('off')
-    elif axes_decor is 'ticks':
+    elif axes_decor == 'ticks':
         ax.set_xlabel('')
         ax.set_ylabel('')
-    elif axes_decor is 'all':
+    elif axes_decor == 'all':
         pass
     elif axes_decor is None:
         ax.set_xlabel('')
@@ -1299,10 +1316,10 @@ def plot_spectra(
                            color=color,
                            line_style=line_style,)
         if legend is not None:
-            plt.legend(legend, loc=legend_loc)
+            ax.legend(legend, loc=legend_loc)
             _reverse_legend(ax, legend_loc)
             if legend_picking is True:
-                animate_legend(figure=fig)
+                animate_legend(fig=fig, ax=ax)
     elif style == 'cascade':
         if fig is None:
             fig = plt.figure(**kwargs)
@@ -1347,7 +1364,7 @@ def plot_spectra(
     return ax
 
 
-def animate_legend(figure='last'):
+def animate_legend(fig=None, ax=None):
     """Animate the legend of a figure.
 
     A spectrum can be toggle on and off by clicking on the legended line.
@@ -1355,8 +1372,10 @@ def animate_legend(figure='last'):
     Parameters
     ----------
 
-    figure: 'last' | matplotlib.figure
-        If 'last' pick the last figure
+    fig: None | matplotlib.figure
+        If None pick the current figure using "plt.gcf"
+    ax:  None | matplotlib.axes
+        If None pick the current axes using "plt.gca".
 
     Note
     ----
@@ -1364,11 +1383,10 @@ def animate_legend(figure='last'):
     Code inspired from legend_picking.py in the matplotlib gallery
 
     """
-    if figure == 'last':
-        figure = plt.gcf()
+    if fig is None:
+        fig = plt.gcf()
+    if ax is None:
         ax = plt.gca()
-    else:
-        ax = figure.axes[0]
     lines = ax.lines[::-1]
     lined = dict()
     leg = ax.get_legend()
@@ -1380,18 +1398,19 @@ def animate_legend(figure='last'):
         # on the pick event, find the orig line corresponding to the
         # legend proxy line, and toggle the visibility
         legline = event.artist
-        origline = lined[legline]
-        vis = not origline.get_visible()
-        origline.set_visible(vis)
-        # Change the alpha on the line in the legend so we can see what lines
-        # have been toggled
-        if vis:
-            legline.set_alpha(1.0)
-        else:
-            legline.set_alpha(0.2)
-        figure.canvas.draw_idle()
+        if legline.axes == ax:
+            origline = lined[legline]
+            vis = not origline.get_visible()
+            origline.set_visible(vis)
+            # Change the alpha on the line in the legend so we can see what lines
+            # have been toggled
+            if vis:
+                legline.set_alpha(1.0)
+            else:
+                legline.set_alpha(0.2)
+            fig.canvas.draw_idle()
 
-    figure.canvas.mpl_connect('pick_event', onpick)
+    fig.canvas.mpl_connect('pick_event', onpick)
 
 
 def plot_histograms(signal_list,

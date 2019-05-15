@@ -53,6 +53,13 @@ BASE_PLOT_DOCSTRING = \
         plot_markers : bool, default True
             Plot markers added using s.add_marker(marker, permanent=True).
             Note, a large number of markers might lead to very slow plotting.
+        norm : {'auto', 'linear', 'log', mpl `Normalize` instance or subclass},
+            default is 'auto'.
+            Plot the intensity scale on a linear or logarithmic scale. If
+            'auto', plot the intensity on a linear scale except when
+            `power_spectrum` is True, which can be used only for compatible
+            signal. For Signal2D, a matplotlib `Normalize` subclass or
+            instance can be provided.
             """
 
 PLOT2D_DOCSTRING = \
@@ -78,17 +85,26 @@ PLOT2D_DOCSTRING = \
         centre_colormap : {"auto", True, False}
             If True the centre of the color scheme is set to zero. This is
             specially useful when using diverging color schemes. If "auto"
-            (default), diverging color schemes are automatically centred."""
+            (default), diverging color schemes are automatically centred.
+        min_aspect : float
+            Set the minimum aspect ratio of the image and the figure. To
+            keep the image in the aspect limit the pixels are made
+            rectangular."""
 
 COMPLEX_DOCSTRING = \
-    """representation : {'cartesian' or 'polar'}
+    """power_spectrum : bool, default is False.
+            If True, plot the power spectrum instead of the actual signal, if
+            False, plot the real and imaginary parts of the complex signal.
+        representation : {'cartesian' or 'polar'}
             Determines if the real and imaginary part of the complex data is plotted ('cartesian',
             default), or if the amplitude and phase should be used ('polar').
         same_axes : bool, default True
             If True (default) plot the real and
             imaginary parts (or amplitude and phase) in the same figure if
             the signal is one-dimensional.
-
+        fft_shift : bool, default False
+            If True, shift the zero-frequency component.
+            See `numpy.fft.fftshift` for more details.
         """
 
 KWARGS_DOCSTRING = \

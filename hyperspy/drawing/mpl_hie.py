@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from hyperspy.drawing import image, utils
+from hyperspy.drawing import image
 from hyperspy.drawing.mpl_he import MPL_HyperExplorer
 
 
@@ -27,11 +27,13 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
                     scalebar=True,
                     scalebar_color="white",
                     axes_ticks=None,
+                    axes_off=False,
                     saturated_pixels=0,
                     vmin=None,
                     vmax=None,
                     no_nans=False,
                     centre_colormap="auto",
+                    norm="auto",
                     **kwargs
                     ):
         """Plot image.
@@ -49,6 +51,8 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
             If True, plot the axes ticks. If None axes_ticks are only
             plotted when the scale bar is not plotted. If False the axes ticks
             are never plotted.
+        axes_off : bool, optional
+            If True, the axes labels are not plotted.
         saturated_pixels: scalar
             The percentage of pixels that are left out of the bounds. For
             example, the low and high bounds of a value of 1 are the
@@ -64,6 +68,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         if self.signal_plot is not None:
             self.signal_plot.plot(**kwargs)
             return
+        super().plot_signal()
         imf = image.ImagePlot()
         imf.axes_manager = self.axes_manager
         imf.data_function = self.signal_data_function
@@ -73,11 +78,14 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.quantity_label = self.quantity_label
         imf.scalebar = scalebar
         imf.axes_ticks = axes_ticks
+        imf.axes_off = axes_off
         imf.vmin, imf.vmax = vmin, vmax
         imf.saturated_pixels = saturated_pixels
         imf.no_nans = no_nans
         imf.scalebar_color = scalebar_color
         imf.centre_colormap = centre_colormap
+        imf.norm = norm
+        kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
         imf.plot(**kwargs)
         self.signal_plot = imf
 

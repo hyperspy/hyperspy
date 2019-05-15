@@ -35,19 +35,19 @@ import warnings
 import os
 import subprocess
 import itertools
-import re
 
 # stuff to check presence of compiler:
 import distutils.sysconfig
 import distutils.ccompiler
 from distutils.errors import CompileError, DistutilsPlatformError
 
+
 setup_path = os.path.dirname(__file__)
 
 import hyperspy.Release as Release
 
 install_req = ['scipy>=0.15',
-               'matplotlib>=2.0.0, !=2.1.0, !=2.1.1',
+               'matplotlib>=2.2.3',
                'numpy>=1.10, !=1.13.0',
                'traits>=4.5.0',
                'natsort',
@@ -62,24 +62,31 @@ install_req = ['scipy>=0.15',
                'scikit-image>=0.13',
                'pint>=0.8',
                'statsmodels',
-               'mrcz>=0.3.6',
+               'numexpr',
+               'sparse',
+               'imageio',
                ]
 
 extras_require = {
     "learning": ['scikit-learn'],
-    "gui-jupyter": ["hyperspy_gui_ipywidgets"],
-    "gui-traitsui": ["hyperspy_gui_traitsui"],
-    "mrcz-blosc": ["blosc>=1.5"],
-    "lazy_FEI_EMD": ['sparse'],
-    "test": ["pytest>=3", "pytest-mpl", "matplotlib>=2.0.2"],
-    "doc": ["sphinx", "numpydoc", "sphinxcontrib-napoleon", "sphinx_rtd_theme"],
+    "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
+    "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
+    "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
+    "speed": ["numba"],
+    # bug in pip: matplotib is ignored here because it is already present in
+    # install_requires.
+    "tests": ["pytest>=3.6", "pytest-mpl", "matplotlib>=3.0.0"], # for testing
+    "docs": ["sphinx>=1.7", "sphinx_rtd_theme"], # required to build the docs
 }
-extras_require["all"] = list(itertools.chain(*list(extras_require.values())))
 
-# the hack to deal with setuptools + installing the package in ReadTheDoc:
-if 'readthedocs.org' in sys.executable:
-    install_req = []
+# Don't include "tests" and "docs" requirements since "all" is designed to be 
+# used for user installation.
+runtime_extras_require = {x:extras_require[x] for x in extras_require.keys() 
+        if x not in ["tests", "docs"]}
+extras_require["all"] = list(itertools.chain(*list(
+        runtime_extras_require.values())))
 
+extras_require["dev"] = list(itertools.chain(*list(extras_require.values())))
 
 def update_version(version):
     release_path = "hyperspy/Release.py"
@@ -304,6 +311,7 @@ with update_version_when_dev() as version:
                 'tests/drawing/plot_signal2d/*.png',
                 'tests/drawing/plot_markers/*.png',
                 'tests/drawing/plot_widgets/*.png',
+                'tests/drawing/plot_signal_tools/*.png',
                 'tests/io/blockfile_data/*.blo',
                 'tests/io/dens_data/*.dens',
                 'tests/io/dm_stackbuilder_plugin/test_stackbuilder_imagestack.dm3',
@@ -314,7 +322,6 @@ with update_version_when_dev() as version:
                 'tests/io/dm4_2D_data/*.dm4',
                 'tests/io/dm4_3D_data/*.dm4',
                 'tests/io/dm3_locale/*.dm3',
-                'tests/io/edax_files.zip',
                 'tests/io/FEI_new/*.emi',
                 'tests/io/FEI_new/*.ser',
                 'tests/io/FEI_new/*.npy',

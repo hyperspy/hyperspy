@@ -24,6 +24,7 @@ import logging
 from distutils.version import LooseVersion
 
 import numpy as np
+import dill
 import scipy
 import scipy.odr as odr
 from scipy.optimize import (leastsq, least_squares,
@@ -50,6 +51,9 @@ from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.ui_registry import add_gui_method
 from hyperspy.misc.model_tools import current_model_values
 from IPython.display import display_pretty, display
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_INT_ARG
+
+
 _logger = logging.getLogger(__name__)
 
 # components is just a container for all (1D and 2D) components, to be able to
@@ -63,6 +67,15 @@ class DummyComponentsContainer:
 components = DummyComponentsContainer()
 components.__dict__.update(components1d.__dict__)
 components.__dict__.update(components2d.__dict__)
+
+
+def reconstruct_component(comp_dictionary, **init_args):
+    _id = comp_dictionary['_id_name']
+    try:
+        _class = getattr(components, _id)
+    except AttributeError:
+        _class = dill.loads(comp_dictionary['_class_dump'])
+    return _class(**init_args)
 
 
 class ModelComponents(object):
@@ -283,7 +296,7 @@ class BaseModel(list):
                     if 'init' in parse_flag_string(flags_str):
                         init_args[k] = reconstruct_object(flags_str, comp[k])
 
-                self.append(getattr(components, comp['_id_name'])(**init_args))
+                self.append(reconstruct_component(comp, **init_args))
                 id_dict.update(self[-1]._load_dictionary(comp))
             # deal with twins:
             for comp in dic['components']:
@@ -419,21 +432,16 @@ class BaseModel(list):
         out_of_range_to_nan : bool
             If True the spectral range that is not fitted is filled with nans.
             Default True.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
+        %s
         out : {None, BaseSignal}
             The signal where to put the result into. Convenient for parallel
             processing. If None (default), creates a new one. If passed, it is
             assumed to be of correct shape and dtype and not checked.
-        parallel : bool, int
-            If True or more than 1, perform the recreation parallel using as
-            many threads as specified. If True, as many threads as CPU cores
-            available are used.
+        %s
 
         Returns
         -------
-        spectrum : An instance of the same class as `spectrum`.
+        BaseSignal : An instance of the same class as `BaseSignal`.
 
         Examples
         --------
@@ -510,6 +518,8 @@ class BaseModel(list):
                     zip(models, data_slices, range(int(parallel))))
             _ = next(_map)
         return signal
+
+    as_signal.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_INT_ARG)
 
     def _as_signal_iter(self, component_list=None, out_of_range_to_nan=True,
                         show_progressbar=None, data=None):
@@ -792,6 +802,20 @@ class BaseModel(list):
             for component in self:
                 component.fetch_stored_values(only_fixed=only_fixed)
 
+    def fetch_values_from_array(self, array, array_std=None):
+        """Fetch the parameter values from the given array, optionally also
+        fetching the standard deviations.
+
+        Parameters
+        ----------
+        array : array
+            array with the parameter values
+        array_std : {None, array}
+            array with the standard deviations of parameters
+        """
+        self.p0 = array
+        self._fetch_values_from_p0(p_std=array_std)
+
     def _fetch_values_from_p0(self, p_std=None):
         """Fetch the parameter values from the output of the optimizer `self.p0`
 
@@ -924,10 +948,13 @@ class BaseModel(list):
             If `variance` is a `Signal` instance of the same `navigation_dimension`
             as the signal, and `method` is "ls", then weighted least squares
             is performed.
-        method : {'ls', 'ml'}
+        method : {'ls', 'ml', 'custom'}
             Choose 'ls' (default) for least-squares and 'ml' for Poisson
             maximum likelihood estimation. The latter is not available when
-            'fitter' is "leastsq", "odr" or "mpfit".
+            'fitter' is "leastsq", "odr" or "mpfit". 'custom' allows passing
+            your own minimisation function as a kwarg "min_function", with
+            optional gradient kwarg "min_function_grad". See User Guide for
+            details.
         grad : bool
             If True, the analytical gradient is used if defined to
             speed up the optimization.
@@ -989,6 +1016,20 @@ class BaseModel(list):
                 # this has to be done before setting the p0,
                 # so moved things around
                 self.ensure_parameters_in_bounds()
+        min_function = kwargs.pop('min_function', None)
+        min_function_grad = kwargs.pop('min_function_grad', None)
+        if method == 'custom':
+            if not callable(min_function):
+                raise ValueError('Custom minimization requires "min_function" '
+                                 'kwarg with a callable')
+            if grad is not False:
+                if min_function_grad is None:
+                    raise ValueError('Custom gradient function should be '
+                                     'supplied with "min_function_grad" kwarg')
+            from functools import partial
+            min_function = partial(min_function, self)
+            if callable(min_function_grad):
+                min_function_grad = partial(min_function_grad, self)
 
         with cm(update_on_resume=True):
             self.p_std = None
@@ -1009,12 +1050,12 @@ class BaseModel(list):
                 grad_ml = self._gradient_ml
                 grad_ls = self._gradient_ls
 
-            if method == 'ml':
+            if method in ['ml', 'custom']:
                 weights = None
                 if fitter in ("leastsq", "odr", "mpfit"):
                     raise NotImplementedError(
-                        "Maximum likelihood estimation is not supported "
-                        'for the "leastsq", "mpfit" or "odr" optimizers')
+                        '"leastsq", "mpfit" and "odr" optimizers only support'
+                        'least squares ("ls") method')
             elif method == "ls":
                 metadata = self.signal.metadata
                 if "Signal.Noise_properties.variance" not in metadata:
@@ -1040,7 +1081,7 @@ class BaseModel(list):
                 weights = 1. / np.sqrt(variance)
             else:
                 raise ValueError(
-                    'method must be "ls" or "ml" but %s given' %
+                    'method must be "ls", "ml" or "custom" but %s given' %
                     method)
             args = (self.signal()[np.where(self.channel_switches)],
                     weights)
@@ -1099,7 +1140,7 @@ class BaseModel(list):
                     self.signal()[np.where(self.channel_switches)],
                     sx=None,
                     sy=(1 / weights if weights is not None else None))
-                myodr = odr.ODR(mydata, modelo, beta0=self.p0[:])
+                myodr = odr.ODR(mydata, modelo, beta0=self.p0[:], **kwargs)
                 myoutput = myodr.run()
                 result = myoutput.beta
                 self.p_std = myoutput.sd_beta
@@ -1119,7 +1160,7 @@ class BaseModel(list):
                               'y': self.signal()[self.channel_switches],
                               'weights': weights},
                           autoderivative=autoderivative,
-                          quiet=1)
+                          quiet=1, **kwargs)
                 self.p0 = m.params
 
                 if hasattr(self, 'axis') and (self.axis.size > len(self.p0)) \
@@ -1137,6 +1178,9 @@ class BaseModel(list):
                 elif method == "ls":
                     tominimize = self._errfunc2
                     fprime = grad_ls
+                elif method == 'custom':
+                    tominimize = min_function
+                    fprime = min_function_grad
 
                 # OPTIMIZERS
                 # Derivative-free methods
@@ -1225,9 +1269,7 @@ class BaseModel(list):
         autosave_every : int
             Save the result of fitting every given number of spectra.
             Default 10.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
+        %s
         interactive_plot : bool
             If True, update the plot for every position as they are processed.
             Note that this slows down the fitting by a lot, but it allows for
@@ -1294,6 +1336,8 @@ class BaseModel(list):
                 'Deleting the temporary file %s pixels' % (
                     autosave_fn + 'npz'))
             os.remove(autosave_fn + '.npz')
+
+    multifit.__doc__ %= (SHOW_PROGRESSBAR_ARG)
 
     def save_parameters2file(self, filename):
         """Save the parameters array in binary format.
@@ -1799,7 +1843,7 @@ class ModelSpecialSlicers(object):
                 flags_str, value = v
                 if 'init' in parse_flag_string(flags_str):
                     init_args[k] = value
-            _model.append(getattr(components, comp._id_name)(**init_args))
+            _model.append(comp.__class__(**init_args))
         copy_slice_from_whitelist(self.model,
                                   _model,
                                   dims,

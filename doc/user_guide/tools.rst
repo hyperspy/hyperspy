@@ -453,6 +453,7 @@ features differ from numpy):
 
   + Allow independent indexing of signal and navigation dimensions
   + Support indexing with decimal numbers.
+  + Support indexing with units.
   + Use the image order for indexing i.e. [x, y, z,...] (HyperSpy) vs
     [...,z,y,x] (numpy)
 
@@ -494,8 +495,8 @@ First consider indexing a single spectrum, which has only one signal dimension
     >>> s.isig[5::2].data
     array([5, 7, 9])
 
-
-Unlike numpy, HyperSpy supports indexing using decimal numbers, in which case
+Unlike numpy, HyperSpy supports indexing using decimal numbers or string 
+(containing a decimal number and an units), in which case
 HyperSpy indexes using the axis scales instead of the indices.
 
 .. code-block:: python
@@ -514,7 +515,9 @@ HyperSpy indexes using the axis scales instead of the indices.
     array([1, 2, 3])
     >>> s.isig[0.5:4:2].data
     array([1, 3])
-
+    >>> s.axes_manager[0].units = 'µm'
+    >>> s.isig[:'2000 nm'].data
+    array([0, 1, 2, 3])
 
 Importantly the original :py:class:`~.signal.BaseSignal` and its "indexed self"
 share their data and, therefore, modifying the value of the data in one
@@ -1063,30 +1066,37 @@ to reverse the :py:func:`~.utils.stack` function:
 
   Splitting example.
 
+
+.. _signal.fft:
+
 FFT and iFFT
 ^^^^^^^^^^^^
+
+.. versionadded:: 1.4 
+   :py:meth:`~.signal.BaseSignal.fft` and :py:meth:`~.signal.BaseSignal.ifft` method and ``fft_shift`` and ``power_spectrum``
+   ``plot`` keyword arguments.
 
 The Fast Fourier transform and its inverse can be applied on a signal with the :py:meth:`~.signal.BaseSignal.fft` and the :py:meth:`~.signal.BaseSignal.ifft` methods.
 
 .. code-block:: python
 
-    >>> import numpy as np
     >>> im = hs.datasets.example_signals.object_hologram()
-    >>> np.log(im.fft(shifted=True).amplitude).plot()
+    >>> im.fft().plot()
 
 .. figure::  images/hologram_fft.png
   :align:   center
   :width:   400
 
-Note that for visual inspection of FFT it is common to plot logarithm of amplitude rather than FFT itself as it is done
-    in the example above.
+Note that for visual inspection of FFT, it is common to plot the power spectrum (absolute value of the complex signal) on a logarithmic scale rather than the FFT itself as it is done in the example above.
+By default, in case of FFT, HyperSpy plots the power spectrum and shifts the zero frequency component to the center of the signal. This can be changed 
+by setting ``power_spectrum=False`` and ``fft_shift=False`` parameters of the plot method.
 
-By default both methods calculate FFT and IFFT with origin at (0, 0) (not in the centre of FFT). Use `shifted=True` option to
-calculate FFT and the inverse with origin shifted in the centre.
+By default, both methods calculate FFT and IFFT with origin at (0, 0) (not in the centre of FFT). Use ``fft_shift=True`` option to
+calculate FFT and the inverse with origin shifted in the centre. ROIs doesn't work when the FFT is plotted with ``fft_shift=True``.
 
 .. code-block:: python
 
-    >>> im_ifft = im.fft(shifted=True).ifft(shifted=True)
+    >>> im_ifft = im.fft(fft_shift=True).ifft(fft_shift=True)
 
 .. _signal.change_dtype:
 
@@ -1616,6 +1626,44 @@ parameters:
   :align:   center
   :width:   100%
 
+.. versionadded:: 1.4
+    :meth:`~.roi.Line2DROI.angle` can be used to calculate an angle between
+    ROI line and one of the axes providing its name through optional argument ``axis``:
+
+.. code-block:: python
+
+    >>> import scipy
+    >>> holo = hs.datasets.example_signals.object_hologram()
+    >>> roi = hs.roi.Line2DROI(x1=465.577, y1=445.15, x2=169.4, y2=387.731, linewidth=0)
+    >>> holo.plot()
+    >>> ss = roi.interactive(holo)
+
+.. figure::  images/roi_line2d_holo.png
+  :align:   center
+  :width:   500
+
+.. code-block:: python
+
+    >>> roi.angle(axis='y')
+    -100.97166759025453
+
+By default output of the method is in degrees, though radians can be selected as follows:
+
+.. code-block:: python
+
+    >>> roi.angle(axis='vertical', units='radians')
+    -1.7622880506791903
+
+Conveniently, :meth:`~.roi.Line2DROI.angle` can be used to rotate image to align
+selected features with respect to vertical or horizontal axis:
+
+.. code-block:: python
+
+>>> holo.map(scipy.ndimage.rotate, angle=roi.angle(axis='horizontal'), inplace=False).plot()
+
+.. figure::  images/roi_line2d_rotate.png
+  :align:   center
+  :width:   500
 
 .. _complex_data-label:
 

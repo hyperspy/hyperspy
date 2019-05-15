@@ -49,8 +49,12 @@ full_support = False  # Hopefully?
 # Recognised file extension
 file_extensions = ('emd', 'EMD')
 default_extension = 0
+# Reading capabilities
+reads_images = True
+reads_spectrum = True
+reads_spectrum_image = True
 # Writing features
-writes = True
+writes = True  # Only Berkeley emd
 EMD_VERSION = '0.2'
 # ----------------------
 
@@ -294,7 +298,7 @@ class EMD(object):
             signal.metadata.General.title = name
         else:
             # Take title of Signal!
-            if signal.metadata.General.title is not '':
+            if signal.metadata.General.title != '':
                 name = signal.metadata.General.title
             else:  # Take default!
                 name = '__unnamed__'
@@ -496,8 +500,8 @@ def fei_check(filename):
     with h5py.File(filename, 'r') as f:
         if 'Version' in list(f.keys()):
             version = f.get('Version')
-            v_dict = json.loads(version.value[0].decode('utf-8'))
-            if v_dict['format'] == 'Velox':
+            v_dict = json.loads(version[0].decode('utf-8'))
+            if v_dict['format'] in ['Velox', 'DevelopersKit']:
                 return True
 
 
@@ -794,7 +798,7 @@ class FeiEMDReader(object):
                 'metadata': md,
                 'original_metadata': original_metadata,
                 'mapping': self._get_mapping(map_selected_element=False,
-                        parse_individual_EDS_detector_metadata=False)}
+                                             parse_individual_EDS_detector_metadata=False)}
 
     def _parse_frame_time(self, original_metadata, factor=1):
         try:
@@ -814,7 +818,7 @@ class FeiEMDReader(object):
             self.map_label_dict = {}
             for key in key_list:
                 v = json.loads(
-                    image_display_group[key].value[0].decode('utf-8'))
+                    image_display_group[key][0].decode('utf-8'))
                 data_key = v['dataPath'].split('/')[-1]  # key in data group
                 self.map_label_dict[data_key] = v['display']['label']
         except KeyError:
@@ -830,10 +834,10 @@ class FeiEMDReader(object):
                     sub_dict = {}
                     for subgroup_key in _get_keys_from_group(subgroup):
                         v = json.loads(
-                            subgroup[subgroup_key].value[0].decode('utf-8'))
+                            subgroup[subgroup_key][0].decode('utf-8'))
                         sub_dict[subgroup_key] = v
                 else:
-                    sub_dict = json.loads(subgroup.value[0].decode('utf-8'))
+                    sub_dict = json.loads(subgroup[0].decode('utf-8'))
                 d[group_key] = sub_dict
         except IndexError:
             _logger.warning("Some metadata can't be read.")
@@ -851,7 +855,7 @@ class FeiEMDReader(object):
                     sig[next(iter(sig))]
                     ["SpectrumImageSettings"][0].decode("utf8")
                 )["endFramePosition"])
-        except Exception as e:
+        except Exception:
             _logger.exception(
                 "Failed to read the number of frames from Data/SpectrumImage")
             self.number_of_frames = None
@@ -866,10 +870,10 @@ class FeiEMDReader(object):
 
         spectrum_stream_group = self.d_grp.get("SpectrumStream")
         if spectrum_stream_group is None:
-            _logger.warning("No spectrum stream is present in the file. It ",
-                            "is possible that the file has been pruned: use ",
+            _logger.warning("No spectrum stream is present in the file. It "
+                            "is possible that the file has been pruned: use "
                             "Velox to read the spectrum image (proprietary "
-                            "format). If you want to open FEI emd file with ",
+                            "format). If you want to open FEI emd file with "
                             "HyperSpy don't prune the file when saving it in "
                             "Velox.")
             return
@@ -965,7 +969,7 @@ class FeiEMDReader(object):
             original_metadata = stream.original_metadata
             original_metadata.update(self.original_metadata)
             self.dictionaries.append({'data': stream.spectrum_image,
-    'axes': axes,
+                                      'axes': axes,
                                       'metadata': md,
                                       'original_metadata': original_metadata,
                                       'mapping': self._get_mapping(
@@ -1000,15 +1004,15 @@ class FeiEMDReader(object):
         meta_gen['original_filename'] = os.path.split(self.filename)[1]
         if self.detector_name is not None:
             meta_gen['title'] = self.detector_name
-        # We have only one entry in the original_metadata, so we can't use 
-        # the mapping of the original_metadata to set the date and time in 
+        # We have only one entry in the original_metadata, so we can't use
+        # the mapping of the original_metadata to set the date and time in
         # the metadata: need to set it manually here
         try:
             if 'AcquisitionStartDatetime' in om['Acquisition'].keys():
-                unix_time = om['Acquisition']['AcquisitionStartDatetime']['DateTime']              
+                unix_time = om['Acquisition']['AcquisitionStartDatetime']['DateTime']
             # Workaround when the 'AcquisitionStartDatetime' key is missing
             # This timestamp corresponds to when the data is stored
-            elif (not isinstance(om['CustomProperties'], str) and 
+            elif (not isinstance(om['CustomProperties'], str) and
                   'Detectors[BM-Ceta].TimeStamp' in om['CustomProperties'].keys()):
                 unix_time = float(
                     om['CustomProperties']['Detectors[BM-Ceta].TimeStamp']['value']) / 1E6
@@ -1039,31 +1043,30 @@ class FeiEMDReader(object):
                 "Acquisition_instrument.TEM.microscope", None),
             'Stage.AlphaTilt': (
                 "Acquisition_instrument.TEM.Stage.tilt_alpha",
-                lambda x: '{:.3f}'.format(np.degrees(float(x)))),
+                lambda x: round(np.degrees(float(x)), 3)),
             'Stage.BetaTilt': (
                 "Acquisition_instrument.TEM.Stage.tilt_beta",
-                lambda x: '{:.3f}'.format(np.degrees(float(x)))),
+                lambda x: round(np.degrees(float(x)), 3)),
             'Stage.Position.x': (
                 "Acquisition_instrument.TEM.Stage.x",
-                lambda x: '{:.6f}'.format(float(x))
-            ),
+                lambda x: round(float(x), 6)),
             'Stage.Position.y': (
                 "Acquisition_instrument.TEM.Stage.y",
-                lambda x: '{:.6f}'.format(float(x))),
+                lambda x: round(float(x), 6)),
             'Stage.Position.z': (
                 "Acquisition_instrument.TEM.Stage.z",
-                lambda x: '{:.6f}'.format(float(x))),
+                lambda x: round(float(x), 6)),
             'ImportedDataParameter.Number_of_frames': (
                 "Acquisition_instrument.TEM.Detector.EDS.number_of_frames", None),
             'DetectorMetadata.ElevationAngle': (
                 "Acquisition_instrument.TEM.Detector.EDS.elevation_angle",
-                lambda x: '{:.3f}'.format(np.degrees(float(x)))),
+                lambda x: round(float(x), 3)),
             'DetectorMetadata.Gain': (
                 "Signal.Noise_properties.Variance_linear_model.gain_factor",
-                lambda x: '{:.6f}'.format(float(x))),
+                lambda x: float(x)),
             'DetectorMetadata.Offset': (
                 "Signal.Noise_properties.Variance_linear_model.gain_offset",
-                lambda x: '{:.6f}'.format(float(x))),
+                lambda x: float(x)),
         }
 
         # Parse individual metadata for each EDS detector
@@ -1129,7 +1132,7 @@ class FeiSpectrumStream(object):
         # Parse acquisition settings to get bin_count and dtype
         acquisition_settings_group = stream_group['AcquisitionSettings']
         acquisition_settings = json.loads(
-            acquisition_settings_group.value[0].decode('utf-8'))
+            acquisition_settings_group[0].decode('utf-8'))
         self.bin_count = int(acquisition_settings['bincount'])
         if self.bin_count % self.reader.rebin_energy != 0:
             raise ValueError('The `rebin_energy` needs to be a divisor of the',

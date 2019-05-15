@@ -40,6 +40,7 @@ class VerticalLine(MarkerBase):
     >>> s.add_marker(m)
 
     Adding a marker permanently to a signal
+
     >>> s = hs.signals.Signal1D(np.random.random((100, 100)))
     >>> m = hs.plot.markers.vertical_line(x=30)
     >>> s.add_marker(m, permanent=True)

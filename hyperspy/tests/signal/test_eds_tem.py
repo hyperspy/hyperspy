@@ -36,6 +36,10 @@ class Test_metadata:
         s.metadata.Acquisition_instrument.TEM.beam_energy = 15.0
         self.signal = s
 
+    def test_sum_minimum_missing(self):
+        s = EDSTEMSpectrum(np.ones((4, 2, 1024)))
+        s.sum()
+
     def test_sum_live_time1(self):
         s = self.signal
         old_metadata = s.metadata.deepcopy()
@@ -84,6 +88,16 @@ class Test_metadata:
         print(old_metadata, self.signal.metadata)    # Captured on error
         assert (old_metadata.as_dictionary() ==
                 self.signal.metadata.as_dictionary()), "Source metadata changed"
+
+    def test_offset_after_rebin(self):
+        s = self.signal
+        s.axes_manager[0].offset = 1
+        s.axes_manager[1].offset = 2
+        s.axes_manager[2].offset = 3
+        s2 = s.rebin(scale=(2, 2, 1))
+        assert s2.axes_manager[0].offset == 1.5
+        assert s2.axes_manager[1].offset == 2.5
+        assert s2.axes_manager[2].offset == s.axes_manager[2].offset
 
     def test_add_elements(self):
         s = self.signal
@@ -257,6 +271,21 @@ class Test_quantification:
         res = utils_eds.zeta_to_edx_cross_section(factors, elements)
         np.testing.assert_allclose(res, [3, 6], atol=1e-3)
 
+    def test_quant_element_order(self):
+        s = self.signal
+        s.set_elements([])
+        s.set_lines([])
+        lines = ['Zn_Ka', 'Al_Ka']
+        kfactors = [2.0009344042484134, 1]
+        intensities = s.get_lines_intensity(xray_lines=lines)
+        res = s.quantification(intensities, method='CL', factors=kfactors,
+                               composition_units='weight')
+        assert res[0].metadata.Sample.xray_lines[0] == 'Zn_Ka'
+        assert res[1].metadata.Sample.xray_lines[0] == 'Al_Ka'
+        np.testing.assert_allclose(res[1].data, np.array([
+            [22.70779, 22.70779],
+            [22.70779, 22.70779]]), atol=1e-3)
+
 
 @lazifyTestClass
 class Test_vacum_mask:
@@ -316,7 +345,7 @@ class Test_eds_markers:
                                        weight_percents=[50, 50])
         self.signal = s
 
-    def test_plot_auto_add(self, mpl_cleanup):
+    def test_plot_auto_add(self):
         s = self.signal
         s.plot(xray_lines=True)
         # Should contain 6 lines
@@ -324,7 +353,7 @@ class Test_eds_markers:
             sorted(s._xray_markers.keys()) ==
             ['Al_Ka', 'Al_Kb', 'Zn_Ka', 'Zn_Kb', 'Zn_La', 'Zn_Lb1'])
 
-    def test_manual_add_line(self, mpl_cleanup):
+    def test_manual_add_line(self):
         s = self.signal
         s.add_xray_lines_markers(['Zn_La'])
         assert (
@@ -334,7 +363,7 @@ class Test_eds_markers:
         # Check that the line has both a vertical line marker and text marker:
         assert len(s._xray_markers['Zn_La']) == 2
 
-    def test_manual_remove_element(self, mpl_cleanup):
+    def test_manual_remove_element(self):
         s = self.signal
         s.add_xray_lines_markers(['Zn_Ka', 'Zn_Kb', 'Zn_La'])
         s.remove_xray_lines_markers(['Zn_Kb'])

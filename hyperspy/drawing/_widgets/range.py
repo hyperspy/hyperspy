@@ -378,18 +378,19 @@ class ModifiableSpanSelector(SpanSelector):
         if initial_range is not None:
             self.range = initial_range
 
-        for cid in self.cids:
-            self.canvas.mpl_disconnect(cid)
+        self.disconnect_events()
         # And connect to the new ones
-        self.cids.append(
-            self.canvas.mpl_connect('button_press_event', self.mm_on_press))
-        self.cids.append(
-            self.canvas.mpl_connect('button_release_event',
-                                    self.mm_on_release))
-        self.cids.append(
-            self.canvas.mpl_connect('draw_event', self.update_background))
+        self.connect_event('button_press_event', self.mm_on_press)
+        self.connect_event('button_release_event', self.mm_on_release)
+        self.connect_event('draw_event', self.update_background)
+
         self.rect.set_visible(True)
         self.rect.contains = self.contains
+
+    def update(self, *args):
+        # Override the SpanSelector `update` method to blit properly all
+        # artirts before we go to "modify mode" in `set_initial`.
+        self.draw_patch()
 
     def draw_patch(self, *args):
         """Update the patch drawing.
@@ -591,9 +592,8 @@ class ModifiableSpanSelector(SpanSelector):
         self.on_move_cid = None
 
     def turn_off(self):
-        for cid in self.cids:
-            self.canvas.mpl_disconnect(cid)
+        self.disconnect_events()
         if self.on_move_cid is not None:
-            self.canvas.mpl_disconnect(cid)
+            self.canvas.mpl_disconnect(self.on_move_cid)
         self.ax.patches.remove(self.rect)
         self.ax.figure.canvas.draw_idle()
