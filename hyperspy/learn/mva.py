@@ -39,6 +39,8 @@ from hyperspy.learn.rpca import rpca_godec, orpca
 from scipy import linalg
 from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack, ordinal
+from contextlib import redirect_stdout
+import io
 
 _logger = logging.getLogger(__name__)
 
@@ -800,21 +802,27 @@ class MVA():
 
         # Perform MCR
         if simplicity == 'spatial':
-            factors, loadings = mcr(self.data,
-                                    loadings.data,
-                                    factors.data,
-                                    self.learning_results.poissonian_noise_normalized,
-                                    im_weight_vec,
-                                    spec_weight_vec,
-                                    simplicity='spatial')
+            f = io.StringIO()
+            with redirect_stdout(f):
+                factors, loadings = mcr(self.data,
+                                        loadings.data,
+                                        factors.data,
+                                        self.learning_results.poissonian_noise_normalized,
+                                        im_weight_vec,
+                                        spec_weight_vec,
+                                        simplicity='spatial')
         elif simplicity == 'spectral':
-            factors, loadings = mcr(self.data,
-                                    loadings.data,
-                                    factors.data,
-                                    self.learning_results.poissonian_noise_normalized,
-                                    im_weight_vec,
-                                    spec_weight_vec,
-                                    simplicity='spectral')
+            f = io.StringIO()
+            with redirect_stdout(f):
+                factors, loadings = mcr(self.data,
+                                        loadings.data,
+                                        factors.data,
+                                        self.learning_results.poissonian_noise_normalized,
+                                        im_weight_vec,
+                                        spec_weight_vec,
+                                        simplicity='spectral')
+        
+        _logger.info("PyMCR result: %s" % f.getvalue())
         self.learning_results.mcr_factors = factors
         self.learning_results.mcr_loadings = loadings
 
