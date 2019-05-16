@@ -33,6 +33,7 @@ class VerticalLineWidget(Widget1DBase):
         ax = self.ax
         self.patch = [ax.axvline(self._pos[0],
                                  color=self.color,
+                                 alpha=self.alpha,
                                  picker=5)]
 
     def _onmousemove(self, event):

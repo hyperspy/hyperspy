@@ -177,8 +177,8 @@ class MarkerBase(object):
         render_figure : bool, optional, default True
             If True, will render the figure after adding the marker.
             If False, the marker will be added to the plot, but will the figure
-            will not be rendered. This is useful when plotting many markers, 
-            since rendering the figure after adding each marker will slow 
+            will not be rendered. This is useful when plotting many markers,
+            since rendering the figure after adding each marker will slow
             things down.
         """
         if self.ax is None:

@@ -331,8 +331,8 @@ def test_statistics(parallel, lazy, single_values, fringe_contrast_algorithm):
 
     ht = ref_holo.metadata.Acquisition_instrument.TEM.beam_energy
     momentum = 2 * constants.m_e * constants.elementary_charge * ht * \
-               1000 * (1 + constants.elementary_charge * ht *
-                       1000 / (2 * constants.m_e * constants.c ** 2))
+        1000 * (1 + constants.elementary_charge * ht *
+                1000 / (2 * constants.m_e * constants.c ** 2))
     wavelength = constants.h / np.sqrt(momentum) * 1e9  # in nm
     ref_carrier_freq_mrad = ref_carrier_freq_nm * 1000 * wavelength
 
@@ -346,30 +346,73 @@ def test_statistics(parallel, lazy, single_values, fringe_contrast_algorithm):
                                 single_values=single_values,
                                 fringe_contrast_algorithm=fringe_contrast_algorithm)
     if single_values:
-        # Fringe contrast in experimental conditions can be only an estimate therefore tolerance is 10%:
-        assert_allclose(stats['Fringe contrast'], REF_FRINGE_CONTRAST, rtol=0.1)
+        # Fringe contrast in experimental conditions can be only an estimate
+        # therefore tolerance is 10%:
+        assert_allclose(
+            stats['Fringe contrast'],
+            REF_FRINGE_CONTRAST,
+            rtol=0.1)
 
-        assert_allclose(stats['Fringe sampling (px)'], REF_FRINGE_SAMPLING, rtol=RTOL)
-        assert_allclose(stats['Fringe spacing (nm)'], REF_FRINGE_SPACING, rtol=RTOL)
-        assert_allclose(stats['Carrier frequency (1 / nm)'], ref_carrier_freq_nm, rtol=RTOL)
-        assert_allclose(stats['Carrier frequency (1/px)'], ref_carrier_freq, rtol=RTOL)
-        assert_allclose(stats['Carrier frequency (mrad)'], ref_carrier_freq_mrad, rtol=RTOL)
+        assert_allclose(
+            stats['Fringe sampling (px)'],
+            REF_FRINGE_SAMPLING,
+            rtol=RTOL)
+        assert_allclose(
+            stats['Fringe spacing (nm)'],
+            REF_FRINGE_SPACING,
+            rtol=RTOL)
+        assert_allclose(
+            stats['Carrier frequency (1 / nm)'],
+            ref_carrier_freq_nm,
+            rtol=RTOL)
+        assert_allclose(
+            stats['Carrier frequency (1/px)'],
+            ref_carrier_freq,
+            rtol=RTOL)
+        assert_allclose(
+            stats['Carrier frequency (mrad)'],
+            ref_carrier_freq_mrad,
+            rtol=RTOL)
     else:
-        ref_fringe_contrast_stack = np.repeat(REF_FRINGE_CONTRAST, 6).reshape((3, 2))
-        ref_fringe_sampling_stack = np.repeat(REF_FRINGE_SAMPLING, 6).reshape((3, 2))
-        ref_fringe_spacing_stack = np.repeat(REF_FRINGE_SPACING, 6).reshape((3, 2))
-        ref_carrier_freq_nm_stack = np.repeat(ref_carrier_freq_nm, 6).reshape((3, 2))
+        ref_fringe_contrast_stack = np.repeat(
+            REF_FRINGE_CONTRAST, 6).reshape((3, 2))
+        ref_fringe_sampling_stack = np.repeat(
+            REF_FRINGE_SAMPLING, 6).reshape((3, 2))
+        ref_fringe_spacing_stack = np.repeat(
+            REF_FRINGE_SPACING, 6).reshape((3, 2))
+        ref_carrier_freq_nm_stack = np.repeat(
+            ref_carrier_freq_nm, 6).reshape((3, 2))
         ref_carrier_freq_stack = np.repeat(ref_carrier_freq, 6).reshape((3, 2))
-        ref_carrier_freq_mrad_stack = np.repeat(ref_carrier_freq_mrad, 6).reshape((3, 2))
+        ref_carrier_freq_mrad_stack = np.repeat(
+            ref_carrier_freq_mrad, 6).reshape((3, 2))
 
-        # Fringe contrast in experimental conditions can be only an estimate therefore tolerance is 10%:
-        assert_allclose(stats['Fringe contrast'].data, ref_fringe_contrast_stack, rtol=0.1)
+        # Fringe contrast in experimental conditions can be only an estimate
+        # therefore tolerance is 10%:
+        assert_allclose(
+            stats['Fringe contrast'].data,
+            ref_fringe_contrast_stack,
+            rtol=0.1)
 
-        assert_allclose(stats['Fringe sampling (px)'].data, ref_fringe_sampling_stack, rtol=RTOL)
-        assert_allclose(stats['Fringe spacing (nm)'].data, ref_fringe_spacing_stack, rtol=RTOL)
-        assert_allclose(stats['Carrier frequency (1 / nm)'].data, ref_carrier_freq_nm_stack, rtol=RTOL)
-        assert_allclose(stats['Carrier frequency (1/px)'].data, ref_carrier_freq_stack, rtol=RTOL)
-        assert_allclose(stats['Carrier frequency (mrad)'].data, ref_carrier_freq_mrad_stack, rtol=RTOL)
+        assert_allclose(
+            stats['Fringe sampling (px)'].data,
+            ref_fringe_sampling_stack,
+            rtol=RTOL)
+        assert_allclose(
+            stats['Fringe spacing (nm)'].data,
+            ref_fringe_spacing_stack,
+            rtol=RTOL)
+        assert_allclose(
+            stats['Carrier frequency (1 / nm)'].data,
+            ref_carrier_freq_nm_stack,
+            rtol=RTOL)
+        assert_allclose(
+            stats['Carrier frequency (1/px)'].data,
+            ref_carrier_freq_stack,
+            rtol=RTOL)
+        assert_allclose(
+            stats['Carrier frequency (mrad)'].data,
+            ref_carrier_freq_mrad_stack,
+            rtol=RTOL)
 
     # 2. Test raises:
     holo_raise = hs.signals.HologramImage(np.random.random(20).reshape((5, 4)))
@@ -387,7 +430,12 @@ def test_statistics(parallel, lazy, single_values, fringe_contrast_algorithm):
 
     # 2c. Test raise for wrong value of `fringe_contrast_algorithm`
     with pytest.raises(ValueError):
-        holo_raise.statistics(sb_position=(1, 1), fringe_contrast_algorithm='pure_guess')
+        holo_raise.statistics(
+            sb_position=(
+                1,
+                1),
+            fringe_contrast_algorithm='pure_guess')
+
 
 if __name__ == '__main__':
 

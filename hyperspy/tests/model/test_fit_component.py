@@ -154,24 +154,24 @@ class TestFitSeveralComponent:
                                    rtol=self.rtol,
                                    atol=10e-3)
 
+
 class TestFitSI:
 
     def setup_method(self, method):
-        s = Signal1D(np.random.random((2,2,8)))
+        s = Signal1D(np.random.random((2, 2, 8)))
         m = s.create_model()
         G = Gaussian()
         m.append(G)
 
         self.model = m
         self.G = G
-    
+
     def test_fit_spectrum_image(self):
         m = self.model
         G = self.G
-        m.fit_component(G, signal_range=(2,7), only_current=False)
-        m.axes_manager.indices = (0,0)
+        m.fit_component(G, signal_range=(2, 7), only_current=False)
+        m.axes_manager.indices = (0, 0)
         A = G.A.value
-        m.axes_manager.indices = (1,1)
+        m.axes_manager.indices = (1, 1)
         B = G.A.value
         assert not A == B
-        

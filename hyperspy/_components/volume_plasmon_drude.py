@@ -23,22 +23,26 @@ from hyperspy.component import Component
 
 class VolumePlasmonDrude(Component):
 
-    r"""Drude volume plasmon energy loss function component, the energy loss 
+    r"""Drude volume plasmon energy loss function component, the energy loss
     function is defined as:
 
     .. math::
 
        f(E) = \frac{E(\Delta E_p)E_p^2}{(E^2-E_p^2)^2+(E\Delta E_p)^2}
 
-    +------------------+-----------------+
-    | Parameter        |    Attribute    |
-    +------------------+-----------------+
-    |:math:`E_p`       |  plasmon_energy |
-    +------------------+-----------------+
-    |:math:`\Delta E_p`|      fwhm       |
-    +------------------+-----------------+
-    | intensity        |   intensity     |
-    +------------------+-----------------+
+    ================== ===============
+    Variable            Parameter 
+    ================== ===============
+    intensity           intensity 
+    :math:`E_p`         plasmon_energy 
+    :math:`\Delta E_p`  fwhm 
+    ================== ===============
+
+    Parameters
+    ----------
+    intensity : float
+    plasmon_energy : float
+    fwhm : float
 
     Notes
     -----
