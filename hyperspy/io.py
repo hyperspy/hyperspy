@@ -20,6 +20,7 @@ import os
 import glob
 import warnings
 import logging
+import importlib
 
 import numpy as np
 from natsort import natsorted
@@ -29,7 +30,7 @@ from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.io.tools import overwrite as overwrite_method
 from hyperspy.misc.utils import (strlist2enumeration, find_subclasses)
 from hyperspy.misc.utils import stack as stack_method
-from rsciio import io_plugins, default_write_ext
+from rsciio import IO_PLUGINS
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.ui_registry import get_gui
 
@@ -294,27 +295,26 @@ def load_single_file(filename, **kwds):
     extension = os.path.splitext(filename)[1][1:]
 
     i = 0
-    while extension.lower() not in io_plugins[i].file_extensions and \
-            i < len(io_plugins) - 1:
+    while extension.lower() not in IO_PLUGINS[i][file_extensions] and \
+            i < len(IO_PLUGINS) - 1:
         i += 1
-    if i == len(io_plugins):
+    if i == len(IO_PLUGINS):
         # Try to load it with the python imaging library
         try:
-            from rsciio import image
-            reader = image
-            return load_with_reader(filename, reader, **kwds)
+            from rsciio.image import api
+            return load_with_reader(filename, api, **kwds)
         except BaseException:
             raise IOError('If the file format is supported'
                           ' please report this error')
     else:
-        reader = io_plugins[i]
+        reader = IO_PLUGINS[i]
         return load_with_reader(filename=filename, reader=reader, **kwds)
 
 
 def load_with_reader(filename, reader, signal_type=None, convert_units=False,
                      **kwds):
     lazy = kwds.get('lazy', False)
-    file_data_list = reader.file_reader(filename,
+    file_data_list = importlib.import_module[reader["api"]].file_reader(filename,
                                         **kwds)
     objects = []
 
@@ -474,8 +474,14 @@ def save(filename, signal, overwrite=None, **kwds):
         extension = "hspy"
         filename = filename + '.' + extension
     writer = None
-    for plugin in io_plugins:
-        if extension.lower() in plugin.file_extensions:
+
+    default_write_ext = set()
+    for plugin in IO_PLUGINS:
+        if plugin["writes"]:
+            default_write_ext.add(
+                plugin.file_extensions[plugin["default_extension"]])
+    for plugin in IO_PLUGINS:
+        if extension.lower() in plugin["file_extensions"]:
             writer = plugin
             break
 
@@ -488,15 +494,15 @@ def save(filename, signal, overwrite=None, **kwds):
         # Check if the writer can write
         sd = signal.axes_manager.signal_dimension
         nd = signal.axes_manager.navigation_dimension
-        if writer.writes is False:
+        if writer["writes"] is False:
             raise ValueError('Writing to this format is not '
                              'supported, supported file extensions are: %s ' %
                              strlist2enumeration(default_write_ext))
-        if writer.writes is not True and (sd, nd) not in writer.writes:
-            yes_we_can = [plugin.format_name for plugin in io_plugins
-                          if plugin.writes is True or
-                          plugin.writes is not False and
-                          (sd, nd) in plugin.writes]
+        if writer["writes"] is not True and (sd, nd) not in writer["writes"]:
+            yes_we_can = [plugin["format_name"] for plugin in IO_PLUGINS
+                          if plugin["writes"] is True or
+                          plugin["writes"] is not False and
+                          (sd, nd) in plugin["writes"]]
             raise IOError('This file format cannot write this data. '
                           'The following formats can: %s' %
                           strlist2enumeration(yes_we_can))
@@ -512,7 +518,7 @@ def save(filename, signal, overwrite=None, **kwds):
             raise ValueError("`overwrite` parameter can only be None, True or "
                              "False.")
         if write:
-            writer.file_writer(filename, signal, **kwds)
+            importlib[writer["api"]].file_writer(filename, signal, **kwds)
             _logger.info('The %s file was created' % filename)
             folder, filename = os.path.split(os.path.abspath(filename))
             signal.tmp_parameters.set_item('folder', folder)
