@@ -466,6 +466,10 @@ due to ``matplotlib`` GUI backends and default font sizes. To change the
 font size globally, use the command ``matplotlib.rcParams.update({'font
 .size': 8})``.
 
+.. versionadded:: 1.5
+   Add support for plotting :py:class:`~.signal.BaseSignal` with navigation 
+   dimension 2 and signal dimension 0.
+
 A common usage for :py:func:`~.drawing.utils.plot_images` is to view the
 different slices of a multidimensional image (a *hyperimage*):
 
@@ -705,6 +709,10 @@ Plotting several spectra
 same figure. It supports different styles, the default
 being "overlap". The default style is configurable in :ref:`preferences
 <configuring-hyperspy-label>`.
+
+.. versionadded:: 1.5
+   Add support for plotting :py:class:`~.signal.BaseSignal` with navigation 
+   dimension 1 and signal dimension 0.
 
 In the following example we create a list of 9 single spectra (gaussian
 functions with different sigma values) and plot them in the same figure using

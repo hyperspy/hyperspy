@@ -476,8 +476,8 @@ def plot_images(images,
     ----------
     images : list of Signal2D or BaseSignal
         `images` should be a list of Signals to plot. For `BaseSignal` with
-        navigation dimensions of 2, the signal will be tranposed, which is
-        convenient to plot EDS maps.
+        navigation dimensions 2 and signal dimension 0, the signal will be 
+        tranposed to form a `Signal2D`.
         Multi-dimensional images will have each plane plotted as a separate
         image.
         If any signal shape is not suitable, a ValueError will be raised.
@@ -1209,8 +1209,8 @@ def plot_spectra(
     spectra : list of Signal1D or BaseSignal
         Ordered spectra list of signal to plot. If `style` is "cascade" or 
         "mosaic" the spectra can have different size and axes. For `BaseSignal`
-        with navigation dimensions of 1, the signal will be tranposed, which is
-        convenient to plot EDS linescan.
+        with navigation dimensions 1 and signal dimension 0, the signal will be
+        tranposed to form a `Signal1D`.
     style : {'overlap', 'cascade', 'mosaic', 'heatmap'}
         The style of the plot.
     color : matplotlib color or a list of them or `None`
