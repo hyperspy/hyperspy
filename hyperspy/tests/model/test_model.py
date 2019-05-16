@@ -485,6 +485,7 @@ class TestModel1D:
         with pytest.raises(AttributeError):
             getattr(m.components, slugify(invalid_name))
 
+    @pytest.mark.filterwarnings("ignore:The `Polynomial2`")
     def test_snap_parameter_bounds(self):
         m = self.model
         g1 = hs.model.components1D.Gaussian()
@@ -495,7 +496,7 @@ class TestModel1D:
         m.append(g3)
         g4 = hs.model.components1D.Gaussian()
         m.append(g4)
-        p = hs.model.components1D.Polynomial(3)
+        p = hs.model.components1D.Polynomial2(3)
         m.append(p)
 
         g1.A.value = 3.
@@ -533,18 +534,18 @@ class TestModel1D:
         g4.centre.bmax = -1
         g4.sigma.value = 1
         g4.sigma.bmin = 10
-        p.a.value = 1
-        p.b.value = 2
-        p.c.value = 3
-        p.d.value = 4
-        p.a.bmin = 2
-        p.b.bmin = 2
-        p.c.bmin = 2
-        p.d.bmin = 2
-        p.a.bmax = 3
-        p.b.bmax = 3
-        p.c.bmax = 3
-        p.d.bmax = 3
+        p.a0.value = 1
+        p.a1.value = 2
+        p.a2.value = 3
+        p.a3.value = 4
+        p.a0.bmin = 2
+        p.a1.bmin = 2
+        p.a2.bmin = 2
+        p.a3.bmin = 2
+        p.a0.bmax = 3
+        p.a1.bmax = 3
+        p.a2.bmax = 3
+        p.a3.bmax = 3
 
         m.ensure_parameters_in_bounds()
         np.testing.assert_allclose(g1.A.value, 3.)
@@ -562,10 +563,10 @@ class TestModel1D:
         np.testing.assert_allclose(g3.sigma.value, 0.)
         np.testing.assert_allclose(g4.sigma.value, 1)
 
-        np.testing.assert_almost_equal(p.a.value, 2)
-        np.testing.assert_almost_equal(p.b.value, 2)
-        np.testing.assert_almost_equal(p.c.value, 3)
-        np.testing.assert_almost_equal(p.d.value, 3)
+        np.testing.assert_almost_equal(p.a0.value, 2)
+        np.testing.assert_almost_equal(p.a1.value, 2)
+        np.testing.assert_almost_equal(p.a2.value, 3)
+        np.testing.assert_almost_equal(p.a3.value, 3)
 
 class TestModel2D:
 
@@ -730,6 +731,7 @@ class TestModelFitBinned:
             self.m.fit(method="dummy")
 
 
+@pytest.mark.filterwarnings("ignore:The `Polynomial2`")
 @lazifyTestClass
 class TestModelWeighted:
 
@@ -742,27 +744,27 @@ class TestModelWeighted:
         s.axes_manager[0].offset = 10
         s.add_poissonian_noise()
         m = s.create_model()
-        m.append(hs.model.components1D.Polynomial(1))
+        m.append(hs.model.components1D.Polynomial2(1))
         self.m = m
 
     def test_fit_leastsq_binned(self):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="leastsq", method="ls")
-        for result, expected in zip([self.m[0].a.value, self.m[0].b.value],
+        for result, expected in zip([self.m[0].a1.value, self.m[0].a0.value],
         (9.9165596693502778, 1.6628238107916631)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_odr_binned(self):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="odr", method="ls")
-        for result, expected in zip([self.m[0].a.value, self.m[0].b.value],
+        for result, expected in zip([self.m[0].a1.value, self.m[0].a0.value],
                                     (9.9165596548961972, 1.6628247412317521)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
     def test_fit_mpfit_binned(self):
         self.m.signal.metadata.Signal.binned = True
         self.m.fit(fitter="mpfit", method="ls")
-        for result, expected in zip([self.m[0].a.value, self.m[0].b.value],
+        for result, expected in zip([self.m[0].a1.value, self.m[0].a0.value],
                                     (9.9165596607108739, 1.6628243846485873)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -772,7 +774,7 @@ class TestModelWeighted:
             fitter="Nelder-Mead",
             method="ls",
         )
-        for result, expected in zip([self.m[0].a.value, self.m[0].b.value],
+        for result, expected in zip([self.m[0].a1.value, self.m[0].a0.value],
                                     (9.9137288425667442, 1.8446013472266145)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -780,7 +782,7 @@ class TestModelWeighted:
         self.m.signal.metadata.Signal.binned = False
         self.m.fit(fitter="leastsq", method="ls")
         for result, expected in zip(
-                [self.m[0].a.value, self.m[0].b.value],
+                [self.m[0].a1.value, self.m[0].a0.value],
                 (0.99165596391487121, 0.16628254242532492)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -788,7 +790,7 @@ class TestModelWeighted:
         self.m.signal.metadata.Signal.binned = False
         self.m.fit(fitter="odr", method="ls")
         for result, expected in zip(
-                [self.m[0].a.value, self.m[0].b.value],
+                [self.m[0].a1.value, self.m[0].a0.value],
                 (0.99165596548961943, 0.16628247412317315)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -796,7 +798,7 @@ class TestModelWeighted:
         self.m.signal.metadata.Signal.binned = False
         self.m.fit(fitter="mpfit", method="ls")
         for result, expected in zip(
-                [self.m[0].a.value, self.m[0].b.value],
+                [self.m[0].a1.value, self.m[0].a0.value],
                 (0.99165596295068958, 0.16628257462820528)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -807,7 +809,7 @@ class TestModelWeighted:
             method="ls",
         )
         for result, expected in zip(
-                [self.m[0].a.value, self.m[0].b.value],
+                [self.m[0].a1.value, self.m[0].a0.value],
                 (0.99136169230026261, 0.18483060534056939)):
             np.testing.assert_allclose(result, expected, atol=1E-5)
 
@@ -872,6 +874,7 @@ class TestModelScalarVariance:
         np.testing.assert_allclose(self.m.red_chisq.data, 0.86206965)
 
 
+@pytest.mark.filterwarnings("ignore:The definition of the `Polynomial`")
 @lazifyTestClass
 class TestModelSignalVariance:
 

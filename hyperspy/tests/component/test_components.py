@@ -45,6 +45,8 @@ def get_components1d_name_list():
     return components1d_name_list
 
 
+@pytest.mark.filterwarnings("ignore:The `Polynomial2`")
+@pytest.mark.filterwarnings("ignore:The definition of the `Polynomial`")
 @pytest.mark.parametrize('component_name', get_components1d_name_list())
 def test_creation_components1d(component_name):
     s = hs.signals.Signal1D(np.zeros(1024))
@@ -161,7 +163,7 @@ class TestOffset:
         assert_allclose(o.function_nd(axis.axis), s.data)
 
 
-@pytest.mark.filterwarnings("ignore::")
+@pytest.mark.filterwarnings("ignore:The definition of the `Polynomial`")
 class TestPolynomial:
 
     def setup_method(self, method):
@@ -230,7 +232,7 @@ class TestPolynomial:
     #     assert_allclose(p.function_nd(axis.axis), s.data)
 
 
-@pytest.mark.filterwarnings("ignore::")
+@pytest.mark.filterwarnings("ignore:The `Polynomial2`")
 class TestPolynomial2:
 
     def setup_method(self, method):

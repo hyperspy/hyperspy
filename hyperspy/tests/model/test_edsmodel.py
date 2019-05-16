@@ -1,12 +1,14 @@
 
 import numpy as np
-from hyperspy.misc.test_utils import assert_warns
+import pytest
 
+from hyperspy.misc.test_utils import assert_warns
 from hyperspy.misc.eds import utils as utils_eds
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.decorators import lazifyTestClass
 
 
+@pytest.mark.filterwarnings("ignore:The definition of the `Polynomial`")
 @lazifyTestClass
 class TestlineFit:
 
@@ -170,6 +172,7 @@ class TestlineFit:
             '$\\mathrm{Zn}_{\\mathrm{Ka}}$']
 
 
+@pytest.mark.filterwarnings("ignore:The definition of the `Polynomial`")
 @lazifyTestClass
 class TestMaps:
 
