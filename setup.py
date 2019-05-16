@@ -47,7 +47,6 @@ install_req = ['scipy>=0.15',
                'tqdm>=0.4.9',
                'sympy',
                'dill',
-               'h5py',
                'python-dateutil>=2.5.0',
                'ipyparallel',
                'dask[array]>=0.18',
@@ -56,14 +55,12 @@ install_req = ['scipy>=0.15',
                'statsmodels',
                'numexpr',
                'sparse',
-               'imageio',
                ]
 
 extras_require = {
     "learning": ['scikit-learn'],
     "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
     "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
-    "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
     "speed": ["numba"],
     # bug in pip: matplotib is ignored here because it is already present in
     # install_requires.
@@ -136,7 +133,6 @@ with update_version_when_dev() as version:
                   'hyperspy.datasets',
                   'hyperspy._components',
                   'hyperspy.datasets',
-                  'hyperspy.io_plugins',
                   'hyperspy.docstrings',
                   'hyperspy.drawing',
                   'hyperspy.drawing._markers',

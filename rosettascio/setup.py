@@ -262,14 +262,14 @@ setup(
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
+        "scipy",
         'numpy>=1.10, !=1.13.0',
         'traits>=4.5.0',
-        'natsort',
         'h5py',
-        'scikit-image>=0.13',
         'pint>=0.8',
         'sparse',
         'imageio',
+        'dask[array]>=0.18',
     ],  # Optional
 
     # List additional groups of dependencies here (e.g. development
@@ -282,6 +282,7 @@ setup(
     # projects.
     extras_require={  # Optional
         "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
+        "tests": ["pytest>=3.6", ],  # for testing
     },
 
     # If there are data files included in your packages that need to be
