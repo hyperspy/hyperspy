@@ -63,6 +63,7 @@ class TestCloseFigure():
         s._plot.close()
         self._assert_figure_state_after_close(s._plot.signal_plot)
 
+    @pytest.mark.filterwarnings("ignore:The definition of the `Polynomial`")
     @pytest.mark.parametrize('navigator', ["auto", "slider", "spectrum"])
     @pytest.mark.parametrize('nav_dim', [1, 2])
     @pytest.mark.parametrize('sig_dim', [1, 2])

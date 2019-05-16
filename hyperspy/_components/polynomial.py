@@ -163,7 +163,7 @@ class Polynomial2(Expression):
     Parameters
     ----------
     order : int
-        Order of the polynomial.
+        Order of the polynomial, must be different from 0.
     **kwargs
         Keyword arguments can be used to initialise the value of the
         parameters, i.e. a2=2, a1=3, a0=1.
@@ -176,6 +176,8 @@ class Polynomial2(Expression):
             "The `Polynomial2` component will be renamed to `Polynomial` in "
             "v2.0.")
         deprecation_warning(msg)
+        if order == 0:
+            raise ValueError("Polynomial of order 0 is not supported.")
         coeff_list = ['{}'.format(o).zfill(len(list(str(order)))) for o in
                       range(order, -1, -1)]
         expr = "+".join(["a{}*x**{}".format(c, o) for c, o in 

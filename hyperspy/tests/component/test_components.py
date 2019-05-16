@@ -222,15 +222,6 @@ class TestPolynomial:
         np.testing.assert_allclose(p.coefficients.map['values'],
                                    np.tile([0.5, 2, 3], (2, 5, 1)))
 
-    # For https://github.com/hyperspy/hyperspy/pull/1989
-    # def test_function_nd(self):
-    #     s = self.m.as_signal(show_progressbar=None, parallel=False)
-    #     s = hs.stack([s]*2)
-    #     p = hs.model.components1D.Polynomial(order=2)
-    #     p.estimate_parameters(s, None, None, only_current=False)
-    #     axis = s.axes_manager.signal_axes[0]
-    #     assert_allclose(p.function_nd(axis.axis), s.data)
-
 
 @pytest.mark.filterwarnings("ignore:The `Polynomial2`")
 class TestPolynomial2:
@@ -305,6 +296,13 @@ class TestPolynomial2:
         np.testing.assert_allclose(p.a1.map['values'], 2)
         np.testing.assert_allclose(p.a0.map['values'], 3)
 
+    def test_function_nd(self):
+        s = self.m.as_signal(show_progressbar=None, parallel=False)
+        s = hs.stack([s]*2)
+        p = hs.model.components1D.Polynomial2(order=2)
+        p.estimate_parameters(s, None, None, only_current=False)
+        axis = s.axes_manager.signal_axes[0]
+        assert_allclose(p.function_nd(axis.axis), s.data)
 
 class TestGaussian:
 

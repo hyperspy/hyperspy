@@ -31,6 +31,8 @@ from hyperspy._signals.eds import EDSSpectrum
 from hyperspy.misc.elements import elements as elements_db
 from hyperspy.misc.eds import utils as utils_eds
 import hyperspy.components1d as create_component
+from hyperspy.misc.test_utils import ignore_warning
+
 
 _logger = logging.getLogger(__name__)
 
@@ -284,7 +286,8 @@ class EDSModel(Model1D):
         order: int
             The order of the polynomial
         """
-        background = create_component.Polynomial(order=order)
+        with ignore_warning(message="The definition of the `Polynomial`"):
+            background = create_component.Polynomial(order=order)
         background.name = 'background_order_' + str(order)
         background.isbackground = True
         self.append(background)

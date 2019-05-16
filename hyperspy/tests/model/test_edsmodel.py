@@ -8,7 +8,6 @@ from hyperspy.misc.elements import elements as elements_db
 from hyperspy.decorators import lazifyTestClass
 
 
-@pytest.mark.filterwarnings("ignore:The definition of the `Polynomial`")
 @lazifyTestClass
 class TestlineFit:
 
@@ -172,7 +171,6 @@ class TestlineFit:
             '$\\mathrm{Zn}_{\\mathrm{Ka}}$']
 
 
-@pytest.mark.filterwarnings("ignore:The definition of the `Polynomial`")
 @lazifyTestClass
 class TestMaps:
 
