@@ -98,7 +98,8 @@ compiler = distutils.ccompiler.new_compiler()
 assert isinstance(compiler, distutils.ccompiler.CCompiler)
 distutils.sysconfig.customize_compiler(compiler)
 try:
-    compiler.compile([os.path.join(setup_path, 'tests_data', 'test_compilers.c')])
+    compiler.compile(
+        [os.path.join(setup_path, 'tests_data', 'test_compilers.c')])
 except (CompileError, DistutilsPlatformError):
     warnings.warn("""WARNING: C compiler can't be found.
 Only slow pure python alternative functions will be available.
@@ -242,7 +243,7 @@ setup(
     #   py_modules=["my_module"],
     #
 
-    ext_modules=extensions, # For Cython code
+    ext_modules=extensions,  # For Cython code
     cmdclass={
         'recythonize': Recythonize, },
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),  # Required
