@@ -191,7 +191,7 @@ def test_wrong_file():
 
 def test_fast_bcf():
     thingy = pytest.importorskip("rsciio.unbcf_fast")
-    from rsciio import bruker
+    from rsciio.bruker import api as bruker
     for bcffile in test_files:
         filename = os.path.join(my_path, 'bruker_data', bcffile)
         thingy = bruker.BCF_reader(filename)
@@ -205,7 +205,7 @@ def test_fast_bcf():
 
 
 def test_decimal_regex():
-    from rsciio.bruker import fix_dec_patterns
+    from rsciio.bruker.api import fix_dec_patterns
     dummy_xml_positive = [b'<dummy_tag>85,658</dummy_tag>',
                           b'<dummy_tag>85,658E-8</dummy_tag>',
                           b'<dummy_tag>-85,658E-8</dummy_tag>',

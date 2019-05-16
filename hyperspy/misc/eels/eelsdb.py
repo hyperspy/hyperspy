@@ -2,7 +2,7 @@
 import requests
 import logging
 
-from rsciio.msa import parse_msa_string
+from rsciio.msa.api import parse_msa_string
 from hyperspy.io import dict2signal
 
 _logger = logging.getLogger(__name__)

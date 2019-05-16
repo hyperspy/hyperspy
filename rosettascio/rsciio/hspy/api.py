@@ -32,6 +32,7 @@ from hyperspy.axes import AxesManager
 _logger = logging.getLogger(__name__)
 
 
+version = "3.0"
 # -----------------------
 # File format description
 # -----------------------

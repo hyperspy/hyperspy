@@ -295,7 +295,7 @@ def load_single_file(filename, **kwds):
     extension = os.path.splitext(filename)[1][1:]
 
     i = 0
-    while extension.lower() not in IO_PLUGINS[i][file_extensions] and \
+    while extension.lower() not in IO_PLUGINS[i]["file_extensions"] and \
             i < len(IO_PLUGINS) - 1:
         i += 1
     if i == len(IO_PLUGINS):
@@ -314,7 +314,7 @@ def load_single_file(filename, **kwds):
 def load_with_reader(filename, reader, signal_type=None, convert_units=False,
                      **kwds):
     lazy = kwds.get('lazy', False)
-    file_data_list = importlib.import_module[reader["api"]].file_reader(filename,
+    file_data_list = importlib.import_module(reader["api"]).file_reader(filename,
                                                                         **kwds)
     objects = []
 
@@ -518,7 +518,7 @@ def save(filename, signal, overwrite=None, **kwds):
             raise ValueError("`overwrite` parameter can only be None, True or "
                              "False.")
         if write:
-            importlib[writer["api"]].file_writer(filename, signal, **kwds)
+            importlib.import_module(writer["api"]).file_writer(filename, signal, **kwds)
             _logger.info('The %s file was created' % filename)
             folder, filename = os.path.split(os.path.abspath(filename))
             signal.tmp_parameters.set_item('folder', folder)

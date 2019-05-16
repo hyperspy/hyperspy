@@ -26,7 +26,7 @@ import pytest
 from rsciio.tests.generate_dm_testing_files import (dm3_data_types,
                                                     dm4_data_types)
 from hyperspy.io import load
-from rsciio.digital_micrograph import DigitalMicrographReader, ImageObject
+from rsciio.digital_micrograph.api import DigitalMicrographReader, ImageObject
 
 MY_PATH = os.path.dirname(__file__)
 

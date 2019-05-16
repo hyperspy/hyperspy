@@ -9,7 +9,7 @@ import numpy.testing as npt
 
 from hyperspy.io import load
 import hyperspy.signals as signals
-from rsciio import ripple
+from rsciio.ripple import api as ripple
 
 
 # Tuple of tuples (data shape, signal_dimensions)
