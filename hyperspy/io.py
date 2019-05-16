@@ -518,7 +518,9 @@ def save(filename, signal, overwrite=None, **kwds):
             raise ValueError("`overwrite` parameter can only be None, True or "
                              "False.")
         if write:
-            importlib.import_module(writer["api"]).file_writer(filename, signal, **kwds)
+            importlib.import_module(
+                writer["api"]).file_writer(
+                filename, signal, **kwds)
             _logger.info('The %s file was created' % filename)
             folder, filename = os.path.split(os.path.abspath(filename))
             signal.tmp_parameters.set_item('folder', folder)
