@@ -92,3 +92,6 @@ class Lorentzian(Expression):
     def gamma(self):
         return self._gamma
 
+    @property
+    def grad_gamma(self):
+        return self.grad__gamma
