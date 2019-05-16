@@ -54,11 +54,12 @@ def mcrals(self,
     from hyperspy.signal import BaseSignal
 
     lr = self.learning_results
-
+    data = self.data
+    
     if factors is None:
         if not hasattr(lr, 'factors') or lr.factors is None:
             raise AttributeError(
-                'A decomposition must be performed before MCR or factors'
+                'A decomposition must be performed before MCR or factors '
                 'must be provided.')
         else:
             factors = self.get_decomposition_factors()
@@ -125,90 +126,65 @@ def mcrals(self,
 
     # Perform MCR
     if simplicity == 'spatial':
-        f = io.StringIO()
-        with redirect_stdout(f):
-            factors, loadings = mcr(self.data,
-                                    loadings.data,
-                                    factors.data,
-                                    self.learning_results.
-                                    poissonian_noise_normalized,
-                                    im_weight_vec,
-                                    spec_weight_vec,
-                                    simplicity='spatial')
-    elif simplicity == 'spectral':
-        f = io.StringIO()
-        with redirect_stdout(f):
-            factors, loadings = mcr(self.data,
-                                    loadings.data,
-                                    factors.data,
-                                    self.learning_results.
-                                    poissonian_noise_normalized,
-                                    im_weight_vec,
-                                    spec_weight_vec,
-                                    simplicity='spectral')
-
-    _logger.info("PyMCR result: %s" % f.getvalue())
-    # self.learning_results.mcr_factors = factors
-    # self.learning_results.mcr_loadings = loadings
-    return factors, loadings
-
-
-def mcr(data, concentrations, purespectra, poisson_scale, im_weight_vec,
-        spec_weight_vec, simplicity):
-
-    if simplicity == 'spatial':
-        rot_conc, rotation = orthomax(concentrations.T, gamma=1)
-        rot_conc = np.array(rot_conc)
+        rot_loadings, rotation = orthomax(loadings.data.T, gamma=1)
+        rot_loadings = np.array(rot_loadings)
         rotation = np.array(rotation)
-        rot_spec = np.dot(purespectra, rotation)
-        rot_spec = np.sign(rot_spec.sum(0)) * rot_spec
+        rot_factors = np.dot(factors.data, rotation)
+        rot_factors = np.sign(rot_factors.sum(0)) * rot_factors
 
-        rot_spec[rot_spec < 0] = 0
-        if poisson_scale:
-            rot_spec = (rot_spec.T / spec_weight_vec).T
-            rot_spec = np.nan_to_num(rot_spec)
+        rot_factors[rot_factors < 0] = 0
+        if self.learning_results.poissonian_noise_normalized is True:
+            rot_factors = (rot_factors.T / spec_weight_vec).T
+            rot_factors = np.nan_to_num(rot_factors)
             data = (data.T / im_weight_vec).T / spec_weight_vec
             data = np.nan_to_num(data)
 
         fitmcr = McrAR(max_iter=50, tol_err_change=1e-6)
-        fitmcr.fit(data.T, C=rot_spec, verbose=False)
+        f = io.StringIO()
+        with redirect_stdout(f):
+            fitmcr.fit(data.T, C=rot_factors, verbose=False)
+        _logger.info("PyMCR result: %s" % f.getvalue())
 
-        if poisson_scale:
-            conc_out = (fitmcr.ST_opt_ * im_weight_vec).T
-            spec_out = (fitmcr.C_opt_.T * spec_weight_vec).T
+        if self.learning_results.poissonian_noise_normalized is True:
+            loadings_out = (fitmcr.ST_opt_ * im_weight_vec).T
+            factors_out = (fitmcr.C_opt_.T * spec_weight_vec).T
             data = (data.T * im_weight_vec).T / spec_weight_vec
         else:
-            conc_out = fitmcr.ST_opt_.T
-            spec_out = fitmcr.C_opt_
+            loadings_out = fitmcr.ST_opt_.T
+            factors_out = fitmcr.C_opt_
 
     elif simplicity == 'spectral':
-        rot_spec, rotation = orthomax(purespectra, gamma=1)
-        rot_spec = np.array(rot_spec)
+        rot_factors, rotation = orthomax(factors.data, gamma=1)
+        rot_factors = np.array(rot_factors)
         rotation = np.array(rotation)
-        rot_spec = np.sign(rot_spec.sum(0)) * rot_spec
-        rot_spec[rot_spec < 0] = 0
-        if poisson_scale:
-            rot_spec = (rot_spec.T / spec_weight_vec).T
-            rot_spec = np.nan_to_num(rot_spec)
+        rot_factors = np.sign(rot_factors.sum(0)) * rot_factors
+        rot_factors[rot_factors < 0] = 0
+        if self.learning_results.poissonian_noise_normalized is True:
+            rot_factors = (rot_spec.T / spec_weight_vec).T
+            rot_factors = np.nan_to_num(rot_factors)
             data = (data.T / im_weight_vec).T / spec_weight_vec
             data = np.nan_to_num(data)
 
         fitmcr = McrAR(max_iter=50, tol_err_change=1e-6)
-        fitmcr.fit(data, ST=rot_spec.T, verbose=False)
+        f = io.StringIO()
+        with redirect_stdout(f):
+            fitmcr.fit(data, ST=rot_factors.T, verbose=False)
+        _logger.info("PyMCR result: %s" % f.getvalue())
 
-        if poisson_scale:
-            conc_out = (fitmcr.C_opt_.T * im_weight_vec).T
-            spec_out = (fitmcr.ST_opt_ * spec_weight_vec).T
+        if self.learning_results.poissonian_noise_normalized is True:
+            loadings_out = (fitmcr.C_opt_.T * im_weight_vec).T
+            factors_out = (fitmcr.ST_opt_ * spec_weight_vec).T
             data = (data.T * im_weight_vec).T / spec_weight_vec
         else:
-            conc_out = fitmcr.C_opt_
-            spec_out = fitmcr.ST_opt_.T
+            loadings_out = fitmcr.C_opt_
+            factors_out = fitmcr.ST_opt_.T
 
     else:
         raise ValueError("'simplicity' must be either 'spatial' or"
                          "'spectral'."
                          "{} was provided.".format(str(simplicity)))
 
-    spec_out = spec_out/spec_out.sum(0)
-    conc_out = conc_out/spec_out.sum(0)
-    return spec_out, conc_out
+    factors_out = factors_out/factors_out.sum(0)
+    loadings_out = loadings_out/loadings_out.sum(0)
+
+    return factors_out, loadings_out
