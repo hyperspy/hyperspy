@@ -29,7 +29,7 @@ from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.io.tools import overwrite as overwrite_method
 from hyperspy.misc.utils import (strlist2enumeration, find_subclasses)
 from hyperspy.misc.utils import stack as stack_method
-from hyperspy.io_plugins import io_plugins, default_write_ext
+from rsciio import io_plugins, default_write_ext
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.ui_registry import get_gui
 
@@ -300,7 +300,7 @@ def load_single_file(filename, **kwds):
     if i == len(io_plugins):
         # Try to load it with the python imaging library
         try:
-            from hyperspy.io_plugins import image
+            from rsciio import image
             reader = image
             return load_with_reader(filename, reader, **kwds)
         except BaseException:

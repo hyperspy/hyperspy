@@ -31,7 +31,7 @@ import pytest
 from distutils.version import LooseVersion
 
 from hyperspy.io import load
-from hyperspy.io_plugins.hspy import get_signal_chunks
+from rsciio.hspy import get_signal_chunks
 from hyperspy.signal import BaseSignal
 from hyperspy._signals.signal1d import Signal1D
 from hyperspy._signals.signal2d import Signal2D

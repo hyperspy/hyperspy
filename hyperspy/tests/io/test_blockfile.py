@@ -26,7 +26,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
-from hyperspy.io_plugins.blockfile import get_default_header
+from rsciio.blockfile import get_default_header
 from hyperspy.misc.array_tools import sarray2dict
 import hyperspy.api as hs
 from hyperspy.misc.test_utils import assert_deep_almost_equal

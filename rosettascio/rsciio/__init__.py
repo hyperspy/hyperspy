@@ -19,7 +19,7 @@
 
 import logging
 
-from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc, ripple,
+from rsciio import (msa, digital_micrograph, fei, mrc, ripple,
                                  tiff, semper_unf, blockfile, dens, emd,
                                  protochips, edax, bruker)
 
@@ -31,30 +31,30 @@ io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff, semper_unf,
 _logger = logging.getLogger(__name__)
 
 try:
-    from hyperspy.io_plugins import netcdf
+    from rsciio import netcdf
     io_plugins.append(netcdf)
 except ImportError:
     pass
-    # NetCDF is obsolate and is only provided for users who have
-    # old EELSLab files. Therefore, we silenly ignore if missing.
+    # NetCDF is obsolete and is only provided for users who have
+    # old EELSLab files. Therefore, we silently ignore if missing.
 
 try:
-    from hyperspy.io_plugins import hspy
+    from rsciio import hspy
     io_plugins.append(hspy)
-    from hyperspy.io_plugins import emd
+    from rsciio import emd
     io_plugins.append(emd)
 except ImportError:
     _logger.warning('The HDF5 IO features are not available. '
                     'It is highly reccomended to install h5py')
 
 try:
-    from hyperspy.io_plugins import image
+    from rsciio import image
     io_plugins.append(image)
 except ImportError:
     _logger.info('The Signal2D (PIL) IO features are not available')
 
 try:
-    from hyperspy.io_plugins import mrcz
+    from rsciio import mrcz
     io_plugins.append(mrcz)
 except ImportError:
     _logger.info('The mrcz IO plugin is not available because '
