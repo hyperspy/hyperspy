@@ -178,18 +178,21 @@ class Expression(Component):
     def compile_function(self, module="numpy", position=False):
         import sympy
         from sympy.utilities.lambdify import lambdify
-        try:# Expression is just a constant
-            int(self._str_expression)
-        except:
+        try:  # Expression is just a constant
+            float(self._str_expression)
+        except ValueError:
             pass
         else:
-            raise AttributeError('Expression must contain a symbol, ',
-                                 'i.e. x, a, etc.')
+            raise ValueError('Expression must contain a symbol, i.e. x, a, '
+                             'etc.')
         expr = _parse_substitutions(self._str_expression)
         # Extract x
         x = [symbol for symbol in expr.free_symbols if symbol.name == "x"]
         if not x: # Expression is just a parameter, no x -> Offset
-            x = ['x']
+            # lambdify doesn't support constant
+            # https://github.com/sympy/sympy/issues/5642
+            # x = [sympy.Symbol('x')]
+            raise ValueError('Expression must contain the "x" symbol.')            
         x = x[0]
         # Extract y
         y = [symbol for symbol in expr.free_symbols if symbol.name == "y"]

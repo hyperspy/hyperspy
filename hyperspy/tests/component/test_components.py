@@ -280,9 +280,8 @@ class TestPolynomial2:
 
     def test_zero_order(self):
         m = self.m_offset
-        m.append(hs.model.components1D.Polynomial2(order=0))
-        m.fit('leastsq')
-        assert m[0].a0.value == 50
+        with pytest.raises(ValueError):
+            m.append(hs.model.components1D.Polynomial2(order=0))
 
     def test_2d_signal(self):
         # This code should run smoothly, any exceptions should trigger failure
@@ -382,6 +381,15 @@ class TestExpression:
 
     def test_function_nd(self):
         assert self.g.function_nd(0) == 1
+
+
+def test_expression_symbols():
+    with pytest.raises(ValueError):
+        hs.model.components1D.Expression(expression="10.0", name="offset")
+    with pytest.raises(ValueError):
+        hs.model.components1D.Expression(expression="10", name="offset")
+    with pytest.raises(ValueError):
+        hs.model.components1D.Expression(expression="10*offset", name="Offset")    
 
 
 def test_expression_substitution():
