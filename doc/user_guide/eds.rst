@@ -12,7 +12,7 @@ This chapter describes step-by-step the analysis of an EDS
 spectrum (SEM or TEM).
 
 .. NOTE::
-    See also the `EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-	demos/blob/master/electron_microscopy/EDS/>`_ .
+    See also the `EDS tutorials <http://nbviewer.ipython.org/github/hyperspy/hyperspy-	demos/blob/master/electron_microscopy/EDS/>`_.
 
 Spectrum loading and parameters
 -------------------------------
@@ -388,7 +388,7 @@ Plotting
 --------
 
 You can visualize an EDS spectrum using the
-:py:meth:`~._signals.eds.EDSSpectrum.plot` method (see
+:py:meth:`~._signals.eds.EDS_mixin.plot` method (see
 :ref:`visualisation<visualization-label>`). For example:
 
 .. code-block:: python
@@ -414,10 +414,10 @@ Plotting X-ray lines
 .. versionadded:: 0.8
 
 X-ray lines can be added as plot labels with
-:py:meth:`~._signals.eds.EDSSpectrum.plot`. The lines are either retrieved
-from "metadata.Sample.Xray_lines", or selected with the same method as
+:py:meth:`~._signals.eds.EDS_mixin.plot`. The lines are either retrieved
+from `metadata.Sample.Xray_lines`, or selected with the same method as
 :py:meth:`~._signals.eds.EDS_mixin.add_lines` using the elements in
-"metadata.Sample.elements".
+`metadata.Sample.elements`.
 
 .. code-block:: python
 
@@ -468,7 +468,7 @@ The sample and data used in this section are described in
     >>>     z.extractall()
 
 The width of integration is defined by extending the energy resolution of
-Mn Ka to the peak energy ("energy_resolution_MnKa" in metadata):
+Mn Ka to the peak energy (`energy_resolution_MnKa` in the metadata):
 
 .. code-block:: python
 
@@ -481,16 +481,22 @@ Mn Ka to the peak energy ("energy_resolution_MnKa" in metadata):
 
    Iron map as computed and displayed by ``get_lines_intensity``
 
-The X-ray lines defined in "metadata.Sample.Xray_lines" (see above)
-are used by default:
+The X-ray lines defined in `metadata.Sample.Xray_lines` are used by default.
+The EDS maps can be plotted using :py:func:`~.drawing.utils.plot_images`, see :ref:`plotting several images<plot.images>` 
+for more information in setting plotting parameters.
 
 .. code-block:: python
 
     >>> s = hs.load('core_shell.hdf5')
-    >>> s.set_lines(['Fe_Ka', 'Pt_La'])
-    >>> s.get_lines_intensity()
-    [<Signal2D, title: X-ray line intensity of Core shell: Fe_Ka at 6.40 keV, dimensions: (|64, 64)>,
-    <Signal2D, title: X-ray line intensity of Core shell: Pt_La at 9.44 keV, dimensions: (|64, 64)>]
+    >>> s.metadata.Sample
+    ├── elements = ['Fe', 'Pt']
+    └── xray_lines =['Fe_Ka', 'Pt_La']
+    >>> eds_maps = s.get_lines_intensity()
+    >>> hs.plot.plot_images(eds_maps, axes_decor='off', scalebar='all')
+
+.. figure::  images/EDS_get_lines_intensity_all.png
+   :align:   center
+   :width:   500
 
 Finally, the windows of integration can be visualised using
 :py:meth:`~._signals.eds.EDS_mixin.plot` method:

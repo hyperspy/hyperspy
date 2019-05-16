@@ -574,7 +574,7 @@ Another example for this function is plotting EDS line intensities see
 :ref:`EDS chapter <get_lines_intensity>`. One can use the following commands
 to get a representative figure of the X-ray line intensities of an EDS
 spectrum image. This example also demonstrates changing the colormap (with
-`cmap`),adding scalebars to the plots (with `scalebar`), and changing the
+`cmap`), adding scalebars to the plots (with `scalebar`), and changing the
 `padding` between the images. The padding is specified as a dictionary,
 which is used to call subplots_adjust method of matplotlib
 (see `documentation <http://matplotlib.org/api/figure_api.html#matplotlib.figure.Figure.subplots_adjust>`_).
@@ -583,7 +583,7 @@ which is used to call subplots_adjust method of matplotlib
 
     >>> si_EDS = hs.load("core_shell.hdf5")
     >>> im = si_EDS.get_lines_intensity()
-    >>> hs.plot.plot_images(hs.transpose(im[0], im[1]),
+    >>> hs.plot.plot_images(im,
     ...     tight_layout=True, cmap='RdYlBu_r', axes_decor='off',
     ...     colorbar='single', saturated_pixels=2, scalebar='all',
     ...     scalebar_color='black', suptitle_fontsize=16,
@@ -614,7 +614,7 @@ generator:
 
     >>> si_EDS = hs.load("core_shell.hdf5")
     >>> im = si_EDS.get_lines_intensity()
-    >>> hs.plot.plot_images(hs.transpose(im[0], im[1]),
+    >>> hs.plot.plot_images(im,
     >>>    tight_layout=True, cmap=['viridis', 'plasma'], axes_decor='off',
     >>>    colorbar='multi', saturated_pixels=2, scalebar=[0],
     >>>    scalebar_color='white', suptitle_fontsize=16)
