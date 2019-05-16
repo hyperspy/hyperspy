@@ -33,7 +33,7 @@ except BaseException:
 from hyperspy.misc.machine_learning import import_sklearn
 import hyperspy.misc.io.tools as io_tools
 from hyperspy.learn.svd_pca import svd_pca
-from hyperspy.learn.mcr import mcr
+from hyperspy.learn.mcr import mcrals
 from hyperspy.learn.mlpca import mlpca
 from hyperspy.learn.rpca import rpca_godec, orpca
 from scipy import linalg
@@ -197,7 +197,10 @@ class MVA():
                 raise ValueError("With the robust PCA algorithms ('RPCA_GoDec' "
                                  "and 'ORPCA'), the output_dimension "
                                  "must be specified")
-
+        if algorithm == 'MCR':
+            if output_dimension is None:
+                raise ValueError("With the MCR algorithm, the "
+                                 "output_dimension must be specified")
         # Apply pre-treatments
         # Transform the data in a line spectrum
         self._unfolded4decomposition = self.unfold()
@@ -347,6 +350,7 @@ class MVA():
                 factors = V
                 explained_variance_ratio = S ** 2 / Sobj
                 explained_variance = S ** 2 / len(factors)
+
             elif algorithm == 'RPCA_GoDec':
                 _logger.info("Performing Robust PCA with GoDec")
 
@@ -374,6 +378,18 @@ class MVA():
 
                 if return_info:
                     to_return = (X, E)
+
+            elif algorithm == 'MCR':
+                _logger.info("Performing MCR")
+
+                factors, loadings = mcrals(self,
+                                           number_of_components=output_dimension,
+                                           simplicity='spatial',
+                                           factors=None,
+                                           comp_list=None,
+                                           mask=None,
+                                           compute=False,)
+
             else:
                 raise ValueError('Algorithm not recognised. '
                                  'Nothing done')
