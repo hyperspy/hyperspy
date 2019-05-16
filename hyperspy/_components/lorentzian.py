@@ -92,6 +92,3 @@ class Lorentzian(Expression):
     def gamma(self):
         return self._gamma
 
-    @gamma.setter
-    def gamma(self, value):
-        self._gamma = value
