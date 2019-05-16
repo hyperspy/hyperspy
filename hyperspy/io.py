@@ -129,12 +129,12 @@ def load(filenames=None,
         tail, or force enlargement of the spectra size.
     select_type : {'spectrum_image', 'image', 'single_spectrum', None}
         If `None` (default), all data are loaded.
-        For Bruker bcf and Velox emd files: if one of 'spectrum_image', 'image' 
-        or 'single_spectrum', the loader return single_spectrumns either only 
-        the spectrum image or only the images (including EDS map for Velox emd 
+        For Bruker bcf and Velox emd files: if one of 'spectrum_image', 'image'
+        or 'single_spectrum', the loader return single_spectrumns either only
+        the spectrum image or only the images (including EDS map for Velox emd
         files) or only the single spectra (for Velox emd files).
     first_frame : int (default 0)
-        Only for Velox emd files: load only the data acquired after the 
+        Only for Velox emd files: load only the data acquired after the
         specified fname.
     last_frame : None or int (default None)
         Only for Velox emd files: load only the data acquired up to specified
@@ -142,8 +142,8 @@ def load(filenames=None,
     sum_frames : bool (default is True)
         Only for Velox emd files: if False, load each EDS frame individually.
     sum_EDS_detectors : bool (default is True)
-        Only for Velox emd files: if True, the signal from the different 
-        detector are summed. If False, a distinct signal is returned for each 
+        Only for Velox emd files: if True, the signal from the different
+        detector are summed. If False, a distinct signal is returned for each
         EDS detectors.
     rebin_energy : int, a multiple of the length of the energy dimension (default 1)
         Only for Velox emd files: rebin the energy axis by the integer provided
@@ -153,7 +153,7 @@ def load(filenames=None,
         order to save memory space. If None, the default dtype from the Velox emd
         file is used.
     load_SI_image_stack : bool (default False)
-        Only for Velox emd files: if True, load the stack of STEM images 
+        Only for Velox emd files: if True, load the stack of STEM images
         acquired simultaneously as the EDS spectrum image.
     dataset_name : string or list, optional
         For filetypes which support several datasets in the same file, this
@@ -315,7 +315,7 @@ def load_with_reader(filename, reader, signal_type=None, convert_units=False,
                      **kwds):
     lazy = kwds.get('lazy', False)
     file_data_list = importlib.import_module[reader["api"]].file_reader(filename,
-                                        **kwds)
+                                                                        **kwds)
     objects = []
 
     for signal_dict in file_data_list:

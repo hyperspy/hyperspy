@@ -35,7 +35,6 @@ from hyperspy.misc.utils import DictionaryTreeBrowser
 _logger = logging.getLogger(__name__)
 
 
-
 # The format only support the followng data types
 newline = ('\n', '\r\n')
 comment = ';'
