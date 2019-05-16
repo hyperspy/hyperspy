@@ -153,7 +153,6 @@ with update_version_when_dev() as version:
                   'hyperspy.tests.component',
                   'hyperspy.tests.datasets',
                   'hyperspy.tests.drawing',
-                  'hyperspy.tests.io',
                   'hyperspy.tests.model',
                   'hyperspy.tests.mva',
                   'hyperspy.tests.samfire',

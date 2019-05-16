@@ -23,7 +23,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
-from hyperspy.tests.io.generate_dm_testing_files import (dm3_data_types,
+from rsciio.tests.generate_dm_testing_files import (dm3_data_types,
                                                          dm4_data_types)
 from hyperspy.io import load
 from rsciio.digital_micrograph import DigitalMicrographReader, ImageObject
