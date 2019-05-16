@@ -28,7 +28,7 @@ class DoublePowerLaw(Expression):
     """
 
     def __init__(self, A=1e-5, r=3., origin=0., shift=20., ratio=1.,
-                 **kwargs):
+                 module="numexpr", **kwargs):
         super(DoublePowerLaw, self).__init__(
             expression="A * (ratio * (x - origin - shift) ** -r + (x - origin) ** -r)",
             name="DoublePowerLaw",
@@ -39,6 +39,7 @@ class DoublePowerLaw(Expression):
             ratio=ratio,
             position="origin",
             autodoc=True,
+            module=module,
             **kwargs,
         )
 
