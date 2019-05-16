@@ -16,6 +16,22 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
+
+def _is_iter(val):
+    "Checks if value is a list or tuple"
+    return type(val) == tuple or type(val) == list
+
+
+def _iter_join(val):
+    "Joins values of iterable parameters for the fancy view, unless it is None, then blank"
+    return "(" + ", ".join(["{:6g}".format(v) for v in val]) + ")" if val else ""
+
+
+def _non_iter(val):
+    "Returns formatted string for a value unless it is None, then blank"
+    return "{:6g}".format(val) if val else ""
+
+
 class current_component_values():
     """Convenience class that makes use of __repr__ methods for nice printing in
      the notebook"""
@@ -56,13 +72,13 @@ class current_component_values():
         text += "\n"
         for para in self.parameters:
             if not self.only_free or self.only_free and para.free:
-                if type(para.value) == tuple or type(para.value) == list:
-                    std = para.std if type(para.std) == tuple or type(
-                        para.std) == list else len(para.value) * ['']
-                    bmin = para.bmin if type(para.bmin) == tuple or type(
-                        para.bmin) == list else len(para.value) * ['']
-                    bmax = para.bmax if type(para.bmax) == tuple or type(
-                        para.bmax) == list else len(para.value) * ['']
+                if _is_iter(para.value):
+                    # iterables (polynomial.value) must be handled separately
+                    # `blank` results in a column of spaces
+                    blank = len(para.value) * ['']
+                    std = para.std if _is_iter(para.std) else blank
+                    bmin = para.bmin if _is_iter(para.bmin) else blank
+                    bmax = para.bmax if _is_iter(para.bmax) else blank
                     for i, (v, s, bn, bx) in enumerate(zip(para.value, std, bmin, bmax)):
                         if i == 0:
                             text += signature.format(para.name[:size['name']], str(para.free)[:size['free']], str(
@@ -89,10 +105,21 @@ class current_component_values():
         text += para_head
         for para in self.parameters:
             if not self.only_free or self.only_free and para.free:
+                if _is_iter(para.value):
+                    # iterables (polynomial.value) must be handled separately
+                    value = _iter_join(para.value)
+                    std = _iter_join(para.std)
+                    bmin = _iter_join(para.bmin)
+                    bmax = _iter_join(para.bmax)
+                else:
+                    value = _non_iter(para.value)
+                    std = _non_iter(para.std)
+                    bmin = _non_iter(para.bmin)
+                    bmax = _non_iter(para.bmax)
+
                 text += """<tr><td>{0}</td><td>{1}</td><td>{2}</td>
                     <td>{3}</td><td>{4}</td><td>{5}</td></tr>""".format(
-                        para.name, para.free, para.value, para.std, para.bmin, para.bmax
-                )
+                        para.name, para.free, value, std, bmin, bmax)
         text += "</table>"
         return text
 
