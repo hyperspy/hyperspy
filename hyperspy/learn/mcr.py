@@ -12,8 +12,6 @@ _logger = logging.getLogger(__name__)
 def mcrals(self,
            number_of_components=None,
            simplicity='spatial',
-           factors=None,
-           comp_list=None,
            mask=None,
            compute=False,
            verbosity='error',):
@@ -55,15 +53,9 @@ def mcrals(self,
 
     lr = self.learning_results
     data = self.data
-    
-    if factors is None:
-        if not hasattr(lr, 'factors') or lr.factors is None:
-            raise AttributeError(
-                'A decomposition must be performed before MCR or factors '
-                'must be provided.')
-        else:
-            factors = self.get_decomposition_factors()
-            loadings = self.get_decomposition_loadings()
+
+    factors = self.get_decomposition_factors()
+    loadings = self.get_decomposition_loadings()
 
     # Check factors
     if not isinstance(factors, BaseSignal):
@@ -160,7 +152,7 @@ def mcrals(self,
         rot_factors = np.sign(rot_factors.sum(0)) * rot_factors
         rot_factors[rot_factors < 0] = 0
         if self.learning_results.poissonian_noise_normalized is True:
-            rot_factors = (rot_spec.T / spec_weight_vec).T
+            rot_factors = (rot_factors.T / spec_weight_vec).T
             rot_factors = np.nan_to_num(rot_factors)
             data = (data.T / im_weight_vec).T / spec_weight_vec
             data = np.nan_to_num(data)
