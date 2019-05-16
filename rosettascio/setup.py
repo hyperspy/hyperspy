@@ -7,6 +7,8 @@ https://github.com/pypa/sampleproject
 
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages, Extension, Command
+import os
+import warnings
 from os import path
 # io.open is needed for projects that support Python 2.7
 # It ensures open() defaults to text mode with universal newlines,
@@ -19,15 +21,15 @@ import distutils.sysconfig
 import distutils.ccompiler
 from distutils.errors import CompileError, DistutilsPlatformError
 
-here = path.abspath(path.dirname(__file__))
+setup_path = path.abspath(path.dirname(__file__))
 
 # Get the long description from the README file
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
+with open(path.join(setup_path, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 # Extensions. Add your extension here:
-raw_extensions = [Extension("hyperspy.io_plugins.unbcf_fast",
-                            [os.path.join('hyperspy', 'io_plugins', 'unbcf_fast.pyx')]),
+raw_extensions = [Extension("rsciio.unbcf_fast",
+                            [os.path.join('rsciio', 'unbcf_fast.pyx')]),
                   ]
 
 cleanup_list = []
@@ -96,8 +98,7 @@ compiler = distutils.ccompiler.new_compiler()
 assert isinstance(compiler, distutils.ccompiler.CCompiler)
 distutils.sysconfig.customize_compiler(compiler)
 try:
-    compiler.compile([os.path.join(setup_path, 'hyperspy', 'misc', 'etc',
-                                   'test_compilers.c')])
+    compiler.compile([os.path.join(setup_path, 'tests_data', 'test_compilers.c')])
 except (CompileError, DistutilsPlatformError):
     warnings.warn("""WARNING: C compiler can't be found.
 Only slow pure python alternative functions will be available.
