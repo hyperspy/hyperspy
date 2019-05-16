@@ -25,7 +25,6 @@ import logging
 from distutils.version import LooseVersion
 
 
-
 _logger = logging.getLogger(__name__)
 
 
@@ -61,7 +60,9 @@ class ProtochipsCSV(object):
     def _parse_header(self):
         with open(self.filename, 'r') as f:
             s = f.readline()
-            self.column_name = s.replace(', ', ',').replace('\n', '').split(',')
+            self.column_name = s.replace(
+                ', ', ',').replace(
+                '\n', '').split(',')
             if not self._is_protochips_csv_file():
                 raise IOError(invalid_file_error)
             self._read_all_metadata_header(f)

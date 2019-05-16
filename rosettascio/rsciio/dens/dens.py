@@ -23,7 +23,6 @@ import scipy
 from datetime import datetime
 
 
-
 def _cnv_time(timestr):
     try:
         t = datetime.strptime(timestr.decode(), '%H:%M:%S.%f')

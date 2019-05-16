@@ -37,8 +37,8 @@ _logger = logging.getLogger(__name__)
 # http://www.amc.anl.gov/ANLSoftwareLibrary/02-MMSLib/XEDS/EMMFF/EMMFF.IBM/Emmff.Total
 
 US_MONTHS_D2A = {
-    "01" : "JAN",
-    "02" : "FEB",
+    "01": "JAN",
+    "02": "FEB",
     "03": "MAR",
     "04": "APR",
     "05": "MAY",
@@ -226,7 +226,9 @@ def parse_msa_string(string, filename=None):
             time = dt.strptime(parameters['TIME'], "%H:%M")
             mapped.set_item('General.time', time.time().isoformat())
         except ValueError as e:
-            _logger.warning('Possible malformed TIME field in msa file. The time information could not be retrieved.: %s' % e)
+            _logger.warning(
+                'Possible malformed TIME field in msa file. The time information could not be retrieved.: %s' %
+                e)
     else:
         _logger.warning('TIME information missing.')
 
@@ -239,10 +241,9 @@ def parse_msa_string(string, filename=None):
                 date = dt.strptime("-".join((day, month, year)), "%d-%m-%Y")
                 mapped.set_item('General.date', date.date().isoformat())
             else:
-                    _logger.warning(malformed_date_error)
-        except ValueError as e: # Error raised if split does not return 3 elements in this case
+                _logger.warning(malformed_date_error)
+        except ValueError as e:  # Error raised if split does not return 3 elements in this case
             _logger.warning(malformed_date_error + ": %s" % e)
-
 
     axes = [{
         'size': len(y),
@@ -325,7 +326,7 @@ def file_writer(filename, signal, format=None, separator=', ',
             date_str = date.strftime("%d-%m-%Y")
             day, month, year = date_str.split("-")
             month = US_MONTHS_D2A[month]
-            loc_kwds['DATE'] = "-".join((day, month, year)) 
+            loc_kwds['DATE'] = "-".join((day, month, year))
         if md.has_item("General.time"):
             time = dt.strptime(md.General.time, "%H:%M:%S")
             loc_kwds['TIME'] = time.strftime("%H:%M")

@@ -38,7 +38,6 @@ from hyperspy.docstrings.signal import OPTIMIZE_ARG
 _logger = logging.getLogger(__name__)
 
 
-
 class DigitalMicrographReader(object):
 
     """ Class to read Gatan Digital Micrograph (TM) files.

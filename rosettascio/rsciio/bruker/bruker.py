@@ -320,7 +320,7 @@ class SFS_reader(object):
         SFSTreeItem
         """
         with open(self.filename, 'rb') as fn:
-            #check if file tree do not exceed one chunk:
+            # check if file tree do not exceed one chunk:
             n_file_tree_chunks = ceil((self.n_tree_items * 0x200) /
                                       (self.chunksize - 0x20))
             if n_file_tree_chunks == 1:
@@ -514,7 +514,7 @@ class EDXSpectrum(object):
         date_time = gen_iso_date_time(spectrum_header)
         if date_time is not None:
             self.date, self.time = date_time
-        
+
         # map stuff from spectra xml branch:
         self.spectrum_metadata = dictionarize(spectrum_header)
         self.offset = self.spectrum_metadata['CalibAbs']
@@ -631,30 +631,33 @@ class HyperHeader(object):
         """parse image from bruker xml image node."""
         if overview:
             rect_node = xml_node.find("./ChildClassInstances"
-                "/ClassInstance["
-                #"@Type='TRTRectangleOverlayElement' and "
-                "@Name='Map']/TRTSolidOverlayElement/"
-                "TRTBasicLineOverlayElement/TRTOverlayElement")
+                                      "/ClassInstance["
+                                      #"@Type='TRTRectangleOverlayElement' and "
+                                      "@Name='Map']/TRTSolidOverlayElement/"
+                                      "TRTBasicLineOverlayElement/TRTOverlayElement")
             if rect_node is not None:
-                over_rect = dictionarize(rect_node)['TRTOverlayElement']['Rect']
+                over_rect = dictionarize(rect_node)[
+                    'TRTOverlayElement']['Rect']
                 rect = {'y1': over_rect['Top'] * self.y_res,
                         'x1': over_rect['Left'] * self.x_res,
                         'y2': over_rect['Bottom'] * self.y_res,
                         'x2': over_rect['Right'] * self.x_res}
                 over_dict = {'marker_type': 'Rectangle',
-                            'plot_on_signal': True,
-                            'data': rect,
-                            'marker_properties': {'color': 'yellow',
-                                                'linewidth': 2}}
+                             'plot_on_signal': True,
+                             'data': rect,
+                             'marker_properties': {'color': 'yellow',
+                                                   'linewidth': 2}}
         image = Container()
         image.width = int(xml_node.find('./Width').text)  # in pixels
         image.height = int(xml_node.find('./Height').text)  # in pixels
-        image.dtype = 'u' + xml_node.find('./ItemSize').text  # in bytes ('u1','u2','u4') 
+        # in bytes ('u1','u2','u4')
+        image.dtype = 'u' + xml_node.find('./ItemSize').text
         image.plane_count = int(xml_node.find('./PlaneCount').text)
         image.images = []
         for i in range(image.plane_count):
             img = xml_node.find("./Plane" + str(i))
-            raw = codecs.decode((img.find('./Data').text).encode('ascii'),'base64')
+            raw = codecs.decode(
+                (img.find('./Data').text).encode('ascii'), 'base64')
             array1 = np.frombuffer(raw, dtype=image.dtype)
             if any(array1):
                 item = self.gen_hspy_item_dict_basic()
@@ -869,7 +872,7 @@ class BCF_reader(SFS_reader):
 
     def check_index_valid(self, index):
         """check and return if index is valid"""
-        if type(index) != int:
+        if not isinstance(index, int):
             raise TypeError("provided index should be integer")
         if index not in self.available_indexes:
             raise IndexError("requisted index is not in the list of available indexes. "
@@ -937,6 +940,7 @@ class BCF_reader(SFS_reader):
         item['metadata']['General']['original_filename'] = \
             basename(self.filename)
 
+
 def spx_reader(filename, lazy=False):
     with open(filename, 'br') as fn:
         xml_str = fn.read()
@@ -961,24 +965,24 @@ def spx_reader(filename, lazy=False):
                # where is no way to determine what kind of instrument was used:
                # TEM or SEM
                {'Acquisition_instrument': {
-                 mode: {'Detector':
-                            gen_detector_node(spectrum),
-                         'beam_energy': spectrum.hv}
+                   mode: {'Detector':
+                          gen_detector_node(spectrum),
+                          'beam_energy': spectrum.hv}
                },
-                'General': {'original_filename': basename(filename),
-                            'title': 'EDX',
-                            'date': spectrum.date,
-                             'time': spectrum.time},
-                 'Sample': {'name': name},
-                 'Signal': {'signal_type': 'EDS_%s' % mode,
-                            'record_by': 'spectrum',
-                            'quantity': 'X-rays (Counts)'}
+                   'General': {'original_filename': basename(filename),
+                               'title': 'EDX',
+                               'date': spectrum.date,
+                               'time': spectrum.time},
+                   'Sample': {'name': name},
+                   'Signal': {'signal_type': 'EDS_%s' % mode,
+                              'record_by': 'spectrum',
+                              'quantity': 'X-rays (Counts)'}
                },
                'original_metadata': {'Hardware': spectrum.hardware_metadata,
                                      'Detector': spectrum.detector_metadata,
                                      'Analysis': spectrum.esma_metadata,
-                                     'Spectrum': spectrum.spectrum_metadata,}
-              }
+                                     'Spectrum': spectrum.spectrum_metadata, }
+               }
     if results_xml is not None:
         hy_spec['original_metadata']['Results'] = dictionarize(results_xml)
     if elements_xml is not None:
@@ -1344,6 +1348,7 @@ def get_mapping(mode):
         ("Acquisition_instrument.%s.Stage.z" % mode, None),
     }
 
+
 def guess_mode(hv):
     """there is no way to determine what kind of instrument
     was used from metadata: TEM or SEM.
@@ -1360,15 +1365,17 @@ def guess_mode(hv):
         "keyword.")
     return mode
 
+
 def gen_detector_node(spectrum):
     eds_dict = {'EDS': {'elevation_angle': spectrum.elev_angle,
-                        'detector_type': spectrum.detector_type,}}
+                        'detector_type': spectrum.detector_type, }}
     if 'AzimutAngle' in spectrum.esma_metadata:
         eds_dict['EDS']['azimuth_angle'] = spectrum.esma_metadata['AzimutAngle']
     if 'RealTime' in spectrum.hardware_metadata:
         eds_dict['EDS']['real_time'] = spectrum.hardware_metadata['RealTime'] / 1000
         eds_dict['EDS']['live_time'] = spectrum.hardware_metadata['LifeTime'] / 1000
     return eds_dict
+
 
 def gen_iso_date_time(node):
     date_xml = node.find('./Date')

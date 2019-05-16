@@ -31,7 +31,6 @@ from hyperspy.misc.array_tools import sarray2dict
 _logger = logging.getLogger(__name__)
 
 
-
 def get_std_dtype_list(endianess='<'):
     end = endianess
     dtype_list = \

@@ -47,7 +47,7 @@ mapping = {
         ("Signal.Noise_properties.Variance_linear_model.gain_factor",
          _parse_metadata),
     # There is no metadata field for spherical aberration
-    #'mrcz_header.C3':
+    # 'mrcz_header.C3':
     #("Acquisition_instrument.TEM.C3", lambda x: x),
 }
 

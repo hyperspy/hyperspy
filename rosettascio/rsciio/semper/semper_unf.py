@@ -88,7 +88,6 @@ from hyperspy.misc.array_tools import sarray2dict
 _logger = logging.getLogger(__name__)
 
 
-
 class SemperFormat(object):
 
     """Class for importing and exporting SEMPER `.unf`-files.
