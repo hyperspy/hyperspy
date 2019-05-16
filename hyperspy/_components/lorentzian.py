@@ -73,9 +73,8 @@ class Lorentzian(Expression):
         self.A.bmin = 0.
         self.A.bmax = None
 
-        self._gamma.bmin = 0.
+        self._gamma.bmin = None
         self._gamma.bmax = None
-        self._gamma.name = 'gamma'
 
         self.isbackground = False
         self.convolved = True
