@@ -63,6 +63,26 @@ class TestImage:
 
     @pytest.mark.parametrize('parallel',
                              [pytest.param(True, marks=pytest.mark.parallel), False])
+    def test_variable_sigma_navdim0(self, parallel):
+        s = self.im
+
+        sigma = hs.signals.BaseSignal(np.array([1, ]))
+        sigma.axes_manager.set_signal_dimension(0)
+
+        s.map(gaussian_filter,
+              sigma=sigma, show_progressbar=None,
+              parallel=parallel, ragged=self.ragged)
+        np.testing.assert_allclose(s.data, np.array(
+            [[[1.68829507, 2.2662213, 2.84414753],
+              [3.42207377, 4., 4.57792623],
+              [5.15585247, 5.7337787, 6.31170493]],
+
+             [[10.68829507, 11.2662213, 11.84414753],
+              [12.42207377, 13., 13.57792623],
+              [14.15585247, 14.7337787, 15.31170493]]]))
+
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
     def test_axes_argument(self, parallel):
         s = self.im
         s.map(rotate, angle=45, reshape=False, show_progressbar=None,
@@ -119,6 +139,30 @@ class TestSignal1D:
         np.testing.assert_allclose(s.data, np.array(
             ([[0.42207377, 1., 1.57792623],
               [3.42207377, 4., 4.57792623]])))
+        assert m.data_changed.called
+
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    def test_variable_signal_parameter(self, parallel):
+        s = self.s
+        m = mock.Mock()
+        s.events.data_changed.connect(m.data_changed)
+        s.map(lambda A, B: A - B, B=s, show_progressbar=None,
+              parallel=parallel, ragged=self.ragged)
+        np.testing.assert_allclose(s.data, np.zeros_like(s.data))
+        assert m.data_changed.called
+
+    @pytest.mark.parametrize('parallel',
+                             [pytest.param(True, marks=pytest.mark.parallel), False])
+    def test_constant_signal_parameter(self, parallel):
+        s = self.s
+        m = mock.Mock()
+        s.events.data_changed.connect(m.data_changed)
+        s.map(lambda A, B: A - B, B=s.inav[0], show_progressbar=None,
+              parallel=parallel, ragged=self.ragged)
+        np.testing.assert_allclose(s.data, np.array(
+            ([[0., 0., 0.],
+              [3., 3., 3.]])))
         assert m.data_changed.called
 
     @pytest.mark.parametrize('parallel',

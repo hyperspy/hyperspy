@@ -38,6 +38,7 @@ class Bleasdale(Component):
     def __init__(self):
         # Define the parameters
         Component.__init__(self, ('a', 'b', 'c'))
+        self.c.value = 1.0
         # Define the name of the component
 
     def function(self, x):

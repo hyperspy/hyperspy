@@ -34,6 +34,7 @@ class HorizontalLineWidget(Widget1DBase):
         self.patch = [ax.axhline(
             self._pos[0],
             color=self.color,
+            alpha=self.alpha,
             picker=5)]
 
     def _onmousemove(self, event):

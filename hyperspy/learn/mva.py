@@ -1277,10 +1277,13 @@ class LearningResults(object):
         ----------
         filename : string
         """
-        decomposition = np.load(filename)
+        decomposition = np.load(filename, allow_pickle=True)
         for key, value in decomposition.items():
             if value.dtype == np.dtype('object'):
                 value = None
+            # Unwrap values stored as 0D numpy arrays to raw datatypes
+            if isinstance(value, np.ndarray) and value.ndim == 0:
+                value = value.item()
             setattr(self, key, value)
         _logger.info("\n%s loaded correctly" % filename)
         # For compatibility with old version ##################
@@ -1318,11 +1321,6 @@ class LearningResults(object):
         if hasattr(self, 'ica_factors'):
             self.bss_factors = self.ica_factors
             del self.ica_factors
-        #
-        # Output_dimension is an array after loading, convert it to int
-        if hasattr(self, 'output_dimension') and self.output_dimension \
-                is not None:
-            self.output_dimension = int(self.output_dimension)
         _logger.info(self._summary())
 
     def summary(self):

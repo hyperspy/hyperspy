@@ -168,13 +168,14 @@ class EDS_mixin:
         # modify time spend per spectrum
         s = super().sum(axis=axis, out=out)
         s = out or s
-        if "Acquisition_instrument.SEM" in s.metadata:
+        mp = None
+        if s.metadata.get_item("Acquisition_instrument.SEM"):
             mp = s.metadata.Acquisition_instrument.SEM
             mp_old = self.metadata.Acquisition_instrument.SEM
-        else:
+        elif s.metadata.get_item("Acquisition_instrument.TEM"):
             mp = s.metadata.Acquisition_instrument.TEM
             mp_old = self.metadata.Acquisition_instrument.TEM
-        if mp.has_item('Detector.EDS.live_time'):
+        if mp is not None and mp.has_item('Detector.EDS.live_time'):
             mp.Detector.EDS.live_time = mp_old.Detector.EDS.live_time * \
                 self.data.size / s.data.size
         if out is None:
@@ -192,12 +193,19 @@ class EDS_mixin:
         aimd = m.metadata.Acquisition_instrument
         if "Acquisition_instrument.SEM.Detector.EDS.real_time" in m.metadata:
             aimd.SEM.Detector.EDS.real_time *= time_factor
+        elif "Acquisition_instrument.TEM.Detector.EDS.real_time" in m.metadata:
+            aimd.TEM.Detector.EDS.real_time *= time_factor
+        else:
+            _logger.info(
+                "real_time could not be found in the metadata and has not been updated.")
         if "Acquisition_instrument.SEM.Detector.EDS.live_time" in m.metadata:
             aimd.SEM.Detector.EDS.live_time *= time_factor
-        if "Acquisition_instrument.TEM.Detector.EDS.real_time" in m.metadata:
-            aimd.TEM.Detector.EDS.real_time *= time_factor
-        if "Acquisition_instrument.TEM.Detector.EDS.live_time" in m.metadata:
+        elif "Acquisition_instrument.TEM.Detector.EDS.live_time" in m.metadata:
             aimd.TEM.Detector.EDS.live_time *= time_factor
+        else:
+            _logger.info(
+                "Live_time could not be found in the metadata and has not been updated.")
+
         if out is None:
             return m
         else:
@@ -474,7 +482,7 @@ class EDS_mixin:
         only_lines = utils_eds._parse_only_lines(only_lines)
         try:
             beam_energy = self._get_beam_energy()
-        except:
+        except BaseException:
             # Fall back to the high_value of the energy axis
             beam_energy = self.axes_manager.signal_axes[0].high_value
         lines = []

@@ -37,12 +37,10 @@ _logger = logging.getLogger(__name__)
 format_name = 'HSPY'
 description = \
     'The default file format for HyperSpy based on the HDF5 standard'
-
 full_support = False
 # Recognised file extension
 file_extensions = ['hspy', 'hdf5']
 default_extension = 0
-
 # Writing capabilities
 writes = True
 version = "3.0"
