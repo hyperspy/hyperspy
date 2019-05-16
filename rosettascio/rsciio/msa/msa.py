@@ -31,16 +31,6 @@ from hyperspy.misc.utils import DictionaryTreeBrowser
 
 _logger = logging.getLogger(__name__)
 
-# Plugin characteristics
-# ----------------------
-format_name = 'MSA'
-description = ''
-full_support = False
-file_extensions = ('msa', 'ems', 'mas', 'emsa', 'EMS', 'MAS', 'EMSA', 'MSA')
-default_extension = 0
-# Writing capabilities
-writes = [(1, 0), ]
-# ----------------------
 
 # For a description of the EMSA/MSA format, incluiding the meaning of the
 # following keywords:

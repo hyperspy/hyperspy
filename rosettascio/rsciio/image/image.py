@@ -23,18 +23,6 @@ from imageio import imread, imwrite
 
 from hyperspy.misc import rgb_tools
 
-# Plugin characteristics
-# ----------------------
-format_name = 'Signal2D'
-description = 'Import/Export standard image formats using PIL or freeimage'
-full_support = False
-file_extensions = ['png', 'bmp', 'dib', 'gif', 'jpeg', 'jpe', 'jpg',
-                   'msp', 'pcx', 'ppm', "pbm", "pgm", 'xbm', 'spi', ]
-default_extension = 0  # png
-# Writing features
-writes = [(2, 0), ]
-# ----------------------
-
 
 # TODO Extend it to support SI
 def file_writer(filename, signal, file_format='png', **kwds):

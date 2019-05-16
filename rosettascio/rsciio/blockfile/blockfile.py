@@ -30,16 +30,6 @@ from hyperspy.misc.date_time_tools import serial_date_to_ISO_format, datetime_to
 _logger = logging.getLogger(__name__)
 
 
-# Plugin characteristics
-# ----------------------
-format_name = 'Blockfile'
-description = 'Read/write support for ASTAR blockfiles'
-full_support = False
-# Recognised file extension
-file_extensions = ['blo', 'BLO']
-default_extension = 0
-# Writing capabilities:
-writes = [(2, 2), (2, 1), (2, 0)]
 magics = [0x0102]
 
 

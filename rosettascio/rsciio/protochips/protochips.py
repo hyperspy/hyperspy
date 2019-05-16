@@ -25,20 +25,6 @@ import logging
 from distutils.version import LooseVersion
 
 
-# Plugin characteristics
-# ----------------------
-format_name = 'Protochips'
-description = 'Reads Protochips log files (heating/baising and gas cell)'
-full_support = False
-# Recognised file extension
-file_extensions = ['csv', 'CSV']
-default_extension = 0
-# Reading capabilities
-reads_images = False
-reads_spectrum = False
-reads_spectrum_image = False
-# Writing capabilities
-writes = False
 
 _logger = logging.getLogger(__name__)
 

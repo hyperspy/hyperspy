@@ -88,18 +88,6 @@ from hyperspy.misc.array_tools import sarray2dict
 _logger = logging.getLogger(__name__)
 
 
-# Plugin characteristics
-# ----------------------
-format_name = 'SEMPER UNF (unformatted)'
-description = 'Read data from SEMPER UNF files.'
-full_support = True  # Hopefully?
-# Recognised file extension
-file_extensions = ('unf', 'UNF')
-default_extension = 0
-# Writing features
-writes = [(1, 0), (1, 1), (1, 2), (2, 0), (2, 1)]  # All up to 3D
-# ----------------------
-
 
 class SemperFormat(object):
 
