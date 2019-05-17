@@ -479,7 +479,7 @@ def save(filename, signal, overwrite=None, **kwds):
     for plugin in IO_PLUGINS:
         if plugin["writes"]:
             default_write_ext.add(
-                plugin.file_extensions[plugin["default_extension"]])
+                plugin["file_extensions"][plugin["default_extension"]])
     for plugin in IO_PLUGINS:
         if extension.lower() in plugin["file_extensions"]:
             writer = plugin
@@ -498,7 +498,7 @@ def save(filename, signal, overwrite=None, **kwds):
             raise ValueError('Writing to this format is not '
                              'supported, supported file extensions are: %s ' %
                              strlist2enumeration(default_write_ext))
-        if writer["writes"] is not True and (sd, nd) not in writer["writes"]:
+        if writer["writes"] is not True and [sd, nd] not in writer["writes"]:
             yes_we_can = [plugin["format_name"] for plugin in IO_PLUGINS
                           if plugin["writes"] is True or
                           plugin["writes"] is not False and

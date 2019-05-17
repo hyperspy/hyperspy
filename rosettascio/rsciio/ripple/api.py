@@ -34,6 +34,7 @@ from hyperspy.misc.utils import DictionaryTreeBrowser
 
 _logger = logging.getLogger(__name__)
 
+file_extensions = ("rpl", "RPL")
 
 # The format only support the followng data types
 newline = ('\n', '\r\n')

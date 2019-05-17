@@ -44,6 +44,7 @@ import hyperspy.misc.io.fei_stream_readers as stream_readers
 
 _logger = logging.getLogger(__name__)
 
+EMD_VERSION = '0.2'
 
 def calculate_chunks(shape, dtype, chunk_size_mb=100):
     """Calculate chunks to get target chunk size.
