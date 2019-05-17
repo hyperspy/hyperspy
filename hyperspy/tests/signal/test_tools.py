@@ -90,6 +90,13 @@ class Test2D:
         s.crop(0, 2, 2.)
         nt.assert_array_almost_equal(s.data, d[2:4, :])
 
+    def test_crop_start_end_equal(self):
+        s = self.signal
+        with pytest.raises(ValueError):
+            s.crop(0, 2, 2)
+        with pytest.raises(ValueError):
+            s.crop(0, 2., 2.)
+
     def test_crop_float_no_unit_convertion_signal1D(self):
         # Should convert the unit to eV
         d = np.arange(5 * 10 * 2000).reshape(5, 10, 2000)
@@ -1118,7 +1125,7 @@ def test_lazy_diff_rechunk():
                                                           10, (1,) * 99)  # The data has not been rechunked
 
 
-def test_spikes_removal_tool(mpl_cleanup):
+def test_spikes_removal_tool():
     s = signals.Signal1D(np.ones((2, 3, 30)))
     np.random.seed(1)
     s.add_gaussian_noise(1E-5)

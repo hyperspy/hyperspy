@@ -52,7 +52,8 @@ from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.slicing import SpecialSlicers, FancySlicing
 from hyperspy.misc.utils import slugify
 from hyperspy.docstrings.signal import (
-    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG, RECHUNK_ARG)
+    ONE_AXIS_PARAMETER, MANY_AXIS_PARAMETER, OUT_ARG, NAN_FUNC, OPTIMIZE_ARG,
+    RECHUNK_ARG, SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
 from hyperspy.docstrings.plot import BASE_PLOT_DOCSTRING, KWARGS_DOCSTRING
 from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
@@ -2036,11 +2037,9 @@ class BaseSignal(FancySlicing,
                 navigator = None
         # Navigator properties
         if axes_manager.navigation_axes:
-            if navigator is "slider":
-                self._plot.navigator_data_function = "slider"
-            elif navigator is None:
-                self._plot.navigator_data_function = None
-            elif isinstance(navigator, BaseSignal):
+            # check first if we have a signal to avoid comparion of signal with 
+            # string
+            if isinstance(navigator, BaseSignal):
                 # Dynamic navigator
                 if (axes_manager.navigation_shape ==
                         navigator.axes_manager.signal_shape +
@@ -2058,6 +2057,10 @@ class BaseSignal(FancySlicing,
                     raise ValueError(
                         "The navigator dimensions are not compatible with "
                         "those of self.")
+            elif navigator == "slider":
+                self._plot.navigator_data_function = "slider"
+            elif navigator is None:
+                self._plot.navigator_data_function = None
             elif navigator == "data":
                 if np.issubdtype(self.data.dtype, np.complexfloating):
                     self._plot.navigator_data_function = lambda axes_manager=None: np.abs(
@@ -2151,12 +2154,11 @@ class BaseSignal(FancySlicing,
                 self.plot()
 
     def update_plot(self):
-        if self._plot is not None:
-            if self._plot.is_active:
-                if self._plot.signal_plot is not None:
-                    self._plot.signal_plot.update()
-                if self._plot.navigator_plot is not None:
-                    self._plot.navigator_plot.update()
+        if self._plot is not None and self._plot.is_active:
+            if self._plot.signal_plot is not None:
+                self._plot.signal_plot.update()
+            if self._plot.navigator_plot is not None:
+                self._plot.navigator_plot.update()
 
     def get_dimensions_from_data(self):
         """Get the dimension parameters from the data_cube. Useful when
@@ -2169,7 +2171,7 @@ class BaseSignal(FancySlicing,
             axis.size = int(dc.shape[axis.index_in_array])
 
     def crop(self, axis, start=None, end=None, convert_units=False):
-        """Crops the data in a given axis. The range is given in pixels
+        """Crops the data in a given axis. The range is given in pixels.
 
         Parameters
         ----------
@@ -2184,12 +2186,16 @@ class BaseSignal(FancySlicing,
             None crop from/to the low/high end of the axis.
         convert_units : bool
             Default is False
-            If True, convert the units using the 'convert_to_units' method of
-            the 'axes_manager'. If False, does nothing.
+            If True, convert the units using the `convert_to_units` method of
+            the `axes_manager`. If False, does nothing.
 
         """
         axis = self.axes_manager[axis]
         i1, i2 = axis._get_index(start), axis._get_index(end)
+        # To prevent an axis error, which may confuse users
+        if i1 is not None and i2 is not None and not i1 != i2:
+            raise ValueError("The `start` and `end` values need to be "
+                             "different.")
         if i1 is not None:
             new_offset = axis.axis[i1]
         # We take a copy to guarantee the continuity of the data
@@ -2489,14 +2495,14 @@ class BaseSignal(FancySlicing,
         axis = self.axes_manager[axis_in_manager].index_in_array
         len_axis = self.axes_manager[axis_in_manager].size
 
-        if number_of_parts is 'auto' and step_sizes is 'auto':
+        if number_of_parts == 'auto' and step_sizes == 'auto':
             step_sizes = 1
             number_of_parts = len_axis
-        elif number_of_parts is not 'auto' and step_sizes is not 'auto':
+        elif number_of_parts != 'auto' and step_sizes != 'auto':
             raise ValueError(
                 "You can define step_sizes or number_of_parts "
                 "but not both.")
-        elif step_sizes is 'auto':
+        elif step_sizes == 'auto':
             if number_of_parts > shape[axis]:
                 raise ValueError(
                     "The number of parts is greater than "
@@ -3242,7 +3248,7 @@ class BaseSignal(FancySlicing,
         >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
-        >>> s.var(-1).data.shape
+        >>> s.integrate_simpson(-1).data.shape
         (64,64)
 
         """
@@ -3434,7 +3440,7 @@ class BaseSignal(FancySlicing,
         >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
-        >>> s.var(-1).data.shape
+        >>> s.integrate1D(-1).data.shape
         (64,64)
 
         """
@@ -3468,7 +3474,7 @@ class BaseSignal(FancySlicing,
         >>> s = BaseSignal(np.random.random((64,64,1024)))
         >>> s.data.shape
         (64,64,1024)
-        >>> s.indexmax(-1).data.shape
+        >>> s.indexmin(-1).data.shape
         (64,64)
 
         """
@@ -3681,12 +3687,8 @@ class BaseSignal(FancySlicing,
 
         function : function
             A function that can be applied to the signal.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
-        parallel : {None,bool,int}
-            if True, the mapping will be performed in a threaded (parallel)
-            manner.
+        %s
+        %s
         inplace : bool
             if True (default), the data is replaced by the result. Otherwise a
             new signal with the results is returned.
@@ -3779,6 +3781,8 @@ class BaseSignal(FancySlicing,
             self.events.data_changed.trigger(obj=self)
         return res
 
+    map.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+
     def _map_all(self, function, inplace=True, **kwargs):
         """The function has to have either 'axis' or 'axes' keyword argument,
         and hence support operating on the full dataset efficiently.
@@ -3805,9 +3809,8 @@ class BaseSignal(FancySlicing,
             where the key-value pairs will be passed as kwargs for the
             callable, and the values will be iterated together with the signal
             navigation.
-        parallel : {None, bool}
-            if True, the mapping will be performed in a threaded (parallel)
-            manner. If None the default from `preferences` is used.
+        %s
+        %s
         inplace : bool
             if True (default), the data is replaced by the result. Otherwise a
             new signal with the results is returned.
@@ -3816,9 +3819,6 @@ class BaseSignal(FancySlicing,
             shape (and/or numpy arrays to begin with). If None, appropriate
             choice is made while processing. None is not allowed for Lazy
             signals!
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
         **kwargs
             passed to the function as constant kwargs
 
@@ -3926,6 +3926,8 @@ class BaseSignal(FancySlicing,
         res = map_result_construction(self, inplace, res_data, ragged,
                                       sig_shape)
         return res
+
+    _map_iterate.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
 
     def copy(self):
         try:

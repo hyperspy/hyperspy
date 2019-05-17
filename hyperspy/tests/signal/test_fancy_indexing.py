@@ -133,8 +133,9 @@ class Test1D:
     def test_units_error(self):
         self.signal.axes_manager[0].scale = 0.5
         self.signal.axes_manager[0].units = 'µm'
-        with pytest.raises(ValueError, message='should contains an units'):
-            s = self.signal.isig[:'4000.0']
+        with pytest.raises(ValueError):
+            self.signal.isig[:'4000.0']
+            pytest.fail("should contains an units")
 
 
 class Test2D:

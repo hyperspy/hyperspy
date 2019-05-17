@@ -5,8 +5,6 @@ For use in things like docstrings or to test HyperSpy functionalities.
 """
 
 import numpy as np
-from hyperspy import components1d, components2d
-from hyperspy.signals import EELSSpectrum, Signal2D
 
 
 def get_low_loss_eels_signal():
@@ -31,6 +29,10 @@ def get_low_loss_eels_signal():
     get_core_loss_eels_line_scan_signal : get EELS core loss line scan
 
     """
+
+    from hyperspy.signals import EELSSpectrum
+    from hyperspy import components1d
+
     x = np.arange(-100, 400, 0.5)
     zero_loss = components1d.Gaussian(A=100, centre=4.1, sigma=1)
     plasmon = components1d.Gaussian(A=100, centre=60, sigma=20)
@@ -97,6 +99,10 @@ def get_core_loss_eels_signal(add_powerlaw=False):
     get_core_loss_eels_line_scan_signal : get EELS core loss line scan
 
     """
+
+    from hyperspy.signals import EELSSpectrum
+    from hyperspy import components1d
+
     x = np.arange(400, 800, 1)
     arctan = components1d.Arctan(A=1, k=0.2, x0=688)
     arctan.minimum_at_zero = True
@@ -143,6 +149,10 @@ def get_low_loss_eels_line_scan_signal():
     get_core_loss_eels_line_scan_signal : core loss signal with the same size
 
     """
+
+    from hyperspy.signals import EELSSpectrum
+    from hyperspy import components1d
+
     x = np.arange(-100, 400, 0.5)
     zero_loss = components1d.Gaussian(A=100, centre=4.1, sigma=1)
     plasmon = components1d.Gaussian(A=100, centre=60, sigma=20)
@@ -188,6 +198,10 @@ def get_core_loss_eels_line_scan_signal():
     get_low_loss_eels_line_scan_signal : get low loss signal with the same size
 
     """
+
+    from hyperspy.signals import EELSSpectrum
+    from hyperspy import components1d
+
     x = np.arange(400, 800, 1)
     arctan_mn = components1d.Arctan(A=1, k=0.2, x0=688)
     arctan_mn.minimum_at_zero = True
@@ -272,6 +286,9 @@ def get_atomic_resolution_tem_signal2d():
     >>> s.plot()
 
     """
+    from hyperspy.signals import Signal2D
+    from hyperspy import components2d
+    
     sX, sY = 2, 2
     x_array, y_array = np.mgrid[0:200, 0:200]
     image = np.zeros_like(x_array, dtype=np.float32)
@@ -281,5 +298,6 @@ def get_atomic_resolution_tem_signal2d():
             gaussian2d.centre_x.value = x
             gaussian2d.centre_y.value = y
             image += gaussian2d.function(x_array, y_array)
+    
     s = Signal2D(image)
     return s

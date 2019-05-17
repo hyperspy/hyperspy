@@ -40,6 +40,7 @@ class HorizontalLine(MarkerBase):
     >>> s.add_marker(m)
 
     Adding a marker permanently to a signal
+
     >>> s = hs.signals.Signal1D(np.random.random([10, 100]))
     >>> m = hs.plot.markers.horizontal_line(y=5, color='green')
     >>> s.add_marker(m, permanent=True)
