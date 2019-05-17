@@ -268,16 +268,6 @@ Windows
 * If HyperSpy fails to start in Windows try installing the Microsoft Visual
   before reporting a bug.
 
-* Concerning older installations with the "Hyperspy here" context menus: Due to
-  a `Python bug <http://bugs.python.org/issue13276>`_ sometimes uninstalling
-  HyperSpy does not uninstall the "Hyperspy here" entries in the context menu.
-  Please run the following code in a Windows Terminal (command line prompt)
-  with administrator rights to remove the entries manually:
-
-  .. code-block:: bash
-
-    $ uninstall_hyperspy_here
-
 
 * If HyperSpy raises a MemoryError exception:
 
