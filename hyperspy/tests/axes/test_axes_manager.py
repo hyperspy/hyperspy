@@ -21,7 +21,8 @@ from unittest import mock
 
 from hyperspy.axes import AxesManager
 from hyperspy.signals import BaseSignal, Signal1D, Signal2D
-from numpy import arange
+from hyperspy.defaults_parser import preferences
+from numpy import arange, zeros
 
 
 class TestAxesManager:
@@ -263,3 +264,46 @@ def test_setting_indices_coordinates():
     s.axes_manager.indices = (2, 2)
     assert s.axes_manager.indices == (2, 2)
     assert m.call_count == 6
+
+
+class TestAxesHotkeys:
+
+    def setup_method(self, method):
+        s = Signal1D(zeros(7 * (5,)))
+        self.am = s.axes_manager
+
+    def test_hotkeys_in_six_dimensions(self):
+        'Step twice increasing and once decreasing all axes'
+
+        mod01 = preferences.Plot.modifier_dims_01
+        mod23 = preferences.Plot.modifier_dims_23
+        mod45 = preferences.Plot.modifier_dims_45
+
+        dim0_decrease = mod01 + '+' + preferences.Plot.dims_024_decrease
+        dim0_increase = mod01 + '+' + preferences.Plot.dims_024_increase
+        dim1_decrease = mod01 + '+' + preferences.Plot.dims_135_decrease
+        dim1_increase = mod01 + '+' + preferences.Plot.dims_135_increase
+        dim2_decrease = mod23 + '+' + preferences.Plot.dims_024_decrease
+        dim2_increase = mod23 + '+' + preferences.Plot.dims_024_increase
+        dim3_decrease = mod23 + '+' + preferences.Plot.dims_135_decrease
+        dim3_increase = mod23 + '+' + preferences.Plot.dims_135_increase
+        dim4_decrease = mod45 + '+' + preferences.Plot.dims_024_decrease
+        dim4_increase = mod45 + '+' + preferences.Plot.dims_024_increase
+        dim5_decrease = mod45 + '+' + preferences.Plot.dims_135_decrease
+        dim5_increase = mod45 + '+' + preferences.Plot.dims_135_increase
+
+        steps = [dim0_increase, dim0_increase, dim0_decrease, dim1_increase,
+                 dim1_increase, dim1_decrease, dim2_increase, dim2_increase, dim2_decrease,
+                 dim3_increase, dim3_increase, dim3_decrease, dim4_increase,
+                 dim4_increase, dim4_decrease, dim5_increase, dim5_increase, dim5_decrease]
+
+        class fake_key_event():
+            'Fake event handler for plot key press'
+
+            def __init__(self, key):
+                self.key = key
+
+        for step in steps:
+            self.am.key_navigator(fake_key_event(step))
+
+        assert self.am.indices == (1, 1, 1, 1, 1, 1)

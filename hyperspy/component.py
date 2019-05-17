@@ -819,6 +819,14 @@ class Component(t.HasTraits):
             parameter._axes_manager = value
         self.__axes_manager = value
 
+    @property
+    def _is_navigation_multidimensional(self):
+        if (self._axes_manager is None or not
+                self._axes_manager.navigation_dimension):
+            return False
+        else:
+            return True
+
     def _get_active(self):
         if self.active_is_multidimensional is True:
             # The following should set
@@ -1106,6 +1114,7 @@ class Component(t.HasTraits):
             _parameter.free = False
 
     def _estimate_parameters(self, signal):
+        self.binned = signal.metadata.Signal.binned
         if self._axes_manager != signal.axes_manager:
             self._axes_manager = signal.axes_manager
             self._create_arrays()
@@ -1135,6 +1144,10 @@ class Component(t.HasTraits):
             'parameters': [
                 p.as_dictionary(fullcopy) for p in self.parameters]}
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
+        from hyperspy.model import components
+        if self._id_name not in components.__dict__.keys():
+            import dill
+            dic['_class_dump'] = dill.dumps(self.__class__)
         return dic
 
     def _load_dictionary(self, dic):

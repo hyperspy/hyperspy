@@ -21,10 +21,12 @@ import logging
 
 from hyperspy.io_plugins import (msa, digital_micrograph, fei, mrc, ripple,
                                  tiff, semper_unf, blockfile, dens, emd,
-                                 protochips, edax, bcf)
+                                 protochips, edax, bruker)
+
 
 io_plugins = [msa, digital_micrograph, fei, mrc, ripple, tiff, semper_unf,
-              blockfile, dens, emd, protochips, edax, bcf]
+              blockfile, dens, emd, protochips, edax, bruker]
+
 
 _logger = logging.getLogger(__name__)
 
@@ -51,6 +53,12 @@ try:
 except ImportError:
     _logger.info('The Signal2D (PIL) IO features are not available')
 
+try:
+    from hyperspy.io_plugins import mrcz
+    io_plugins.append(mrcz)
+except ImportError:
+    _logger.info('The mrcz IO plugin is not available because '
+                 'the mrcz Python package is not installed.')
 default_write_ext = set()
 for plugin in io_plugins:
     if plugin.writes:
