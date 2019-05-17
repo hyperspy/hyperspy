@@ -68,7 +68,7 @@ class Expression(Component):
 
     def __init__(self, expression, name, position=None, module="numpy",
                  autodoc=True, add_rotation=False, rotation_center=None,
-                 **kwargs):
+                 rename_pars={}, **kwargs):
         """Create a component from a string expression.
 
         It automatically generates the partial derivatives and the
@@ -102,6 +102,12 @@ class Expression(Component):
             is not defined, otherwise the center is the coordinates specified
             by `position`. Alternatively a tuple with the (x, y) coordinates
             of the center can be provided.
+        rename_pars: dictionary
+            The desired name of a parameter may sometimes coincide with e.g.
+            the name of a scientific function, what prevents using it in the
+            `expression`. `rename_parameters` is a dictionary to map the name
+            of the parameter in the `expression`` to the desired name of the
+            parameter in the `Component`. For example: {"_gamma": "gamma"}.
         **kwargs
              Keyword arguments can be used to initialise the value of the
              parameters.
@@ -140,6 +146,7 @@ class Expression(Component):
         import sympy
         self._add_rotation = add_rotation
         self._str_expression = expression
+        self._rename_pars = rename_pars
         if rotation_center is None:
             self.compile_function(module=module, position=position)
         else:
@@ -155,6 +162,7 @@ class Expression(Component):
             self._whitelist['expression'] = ('init', expression)
             self._whitelist['name'] = ('init', name)
             self._whitelist['position'] = ('init', position)
+            self._whitelist['rename_pars'] = ('init', rename_pars)
             if self._is2D:
                 self._whitelist['add_rotation'] = ('init', self._add_rotation)
                 self._whitelist['rotation_center'] = ('init', rotation_center)
@@ -221,13 +229,15 @@ class Expression(Component):
         else:
             def f(x): return self._f(x, *[p.value for p in self.parameters])
         setattr(self, "function", f)
-        parnames = [symbol.name for symbol in parameters]
+        parnames = [symbol.name if symbol.name not in self._rename_pars else self._rename_pars[symbol.name]
+                    for symbol in parameters]
         self._parameter_strings = parnames
         ffargs = _fill_function_args_2d if self._is2D else _fill_function_args
         for parameter in parameters:
             grad_expr = sympy.diff(eval_expr, parameter)
+            name = parameter.name if parameter.name not in self._rename_pars else self._rename_pars[parameter.name]
             setattr(self,
-                    "_f_grad_%s" % parameter.name,
+                    "_f_grad_%s" % name,
                     lambdify(variables + parameters,
                              grad_expr.evalf(),
                              modules=module,
@@ -235,12 +245,12 @@ class Expression(Component):
                     )
 
             setattr(self,
-                    "grad_%s" % parameter.name,
+                    "grad_%s" % name,
                     ffargs(
                         getattr(
                             self,
                             "_f_grad_%s" %
-                            parameter.name)).__get__(
+                            name)).__get__(
                         self,
                         Expression)
                     )
