@@ -129,7 +129,7 @@ Alternatively you can select the extra functionalities required:
   on `traitsui <http://docs.enthought.com/traitsui/>`_
 * ``test`` to install required libraries to run HyperSpy's unit tests.
 * ``mrcz`` to install the mrcz plugin.
-* ``doc`` to install required libraries to build HyperSpy's documentation.
+* ``build-doc`` to install required libraries to build HyperSpy's documentation.
 * ``speed`` install optional libraries that speed up some functionalities.
 
 For example:
@@ -208,18 +208,13 @@ development mode:
 
 All required dependencies are automatically installed by pip. However, for
 extra functionality you may need to install some extra dependencies, see
-:ref:`install-dependencies`. Note the pip installer requires root to install,
-so for Ubuntu:
+:ref:`install-dependencies`. If using your system python distribution, it is
+recommanded to install using the --user flag:
 
 .. code-block:: bash
 
     $ cd hyperspy
-    $ sudo pip install -e ./
-
-With development mode setup.py generates or updates git post-checkout hook,
-which will cleanup the cythonized c files, cythonize it again and run
-```build_ext --inplace``` after the next checkout.
-
+    $ pip install -e --user ./
 
 ..
     If using Arch Linux, the latest checkout of the master development branch
@@ -251,9 +246,7 @@ Installing the required libraries
 
 
 In addition to the libraries that are automatically installed when installing
-HyperSpy using ``pip`` (see :ref:`install-with-python-installers`), if HyperSpy
-is going to be installed from  source, Cython is also required. Also, to
-compile the documentation sphinx_rtd_theme is required.
+HyperSpy using ``pip`` (see :ref:`install-with-python-installers`).
 
 In case some of the required libraries are not automatically installed when
 installing from source in a conda environment, these can be obtained beforehand
@@ -262,7 +255,7 @@ by installing and removing hyperspy from that environment;
 .. code-block:: bash
     $ conda install hyperspy
     $ conda remove hyperspy
-    $ sudo pip install -e ./
+    $ pip install -e ./
 
 .. _known-issues:
 
