@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with HyperSpy. If not, see <http://www.gnu.org/licenses/>.
 
+import pytest
 
-from hyperspy.components1d import Gaussian
 from hyperspy.datasets.example_signals import EDS_SEM_Spectrum
 
 
@@ -25,8 +25,10 @@ class TestSetParameters:
     def setup_method(self):
         self.model = EDS_SEM_Spectrum().create_model()
 
-    def test_component_print_current_values(self):
-        self.model[0].print_current_values(fancy=False)
+    @pytest.mark.parametrize("fancy", (True, False))
+    def test_component_print_current_values(self, fancy):
+        self.model[0].print_current_values(fancy=fancy)
 
-    def test_model_print_current_values(self):
-        self.model.print_current_values(fancy=False)
+    @pytest.mark.parametrize("fancy", (True, False))
+    def test_model_print_current_values(self, fancy):
+        self.model.print_current_values(fancy=fancy)
