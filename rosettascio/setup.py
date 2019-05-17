@@ -28,8 +28,8 @@ with open(path.join(setup_path, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 # Extensions. Add your extension here:
-raw_extensions = [Extension("rsciio.unbcf_fast",
-                            [os.path.join('rsciio', 'unbcf_fast.pyx')]),
+raw_extensions = [Extension("rsciio.bruker.unbcf_fast",
+                            [os.path.join('rsciio', 'bruker', 'unbcf_fast.pyx')]),
                   ]
 
 cleanup_list = []
