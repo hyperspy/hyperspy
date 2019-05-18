@@ -119,7 +119,6 @@ passed) can perform data smoothing with different algorithms:
 
 Spike removal
 --------------
-.. versionadded:: 0.5
 
 :py:meth:`~._signals.signal1d.Signal1D.spikes_removal_tool` provides an user
 interface to remove spikes from spectra.

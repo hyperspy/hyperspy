@@ -250,9 +250,6 @@ filename e.g.:
     >>> s.save('test.hdf5')
 
 
-.. versionadded:: 0.8
-    Saving list, tuples and signals present in :py:attr:`~.metadata`.
-
 When saving to ``hspy``, all supported objects in the signal's
 :py:attr:`~.metadata` is stored. This includes  lists, tuples and signals.
 Please note that in order to increase saving efficiency and speed, if possible,

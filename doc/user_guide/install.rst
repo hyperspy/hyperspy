@@ -24,8 +24,6 @@ Those experienced with Python may like to
 HyperSpy Bundle for Microsoft Windows
 -------------------------------------
 
-.. versionadded:: 0.6
-
 The easiest way to install HyperSpy in Windows is installing the HyperSpy
 Bundle. This is a customised `WinPython <http://winpython.github.io/>`_
 distribution that includes HyperSpy, all its dependencies and many other
