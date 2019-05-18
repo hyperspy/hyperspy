@@ -257,10 +257,11 @@ attribute name, component name and component type will be printed:
 In fact, components may be created automatically in some cases. For example, if
 the :py:class:`~._signals.signal1d.Signal1D` is recognised as EELS data, a
 power-law background component will automatically be placed in the model. To
-add a component first we have to create an instance of the component. Once
+add a component, first we have to create an instance of the component. Once
 the instance has been created we can add the component to the model using
-the :py:meth:`~.model.BaseModel.append` method, e.g. for a type of data that
-can be modelled using Gaussians we might proceed as follows:
+the :py:meth:`~.model.BaseModel.append` and :py:meth:`~.model.BaseModel.extend` 
+methods for one or more components respectively. As an example for a type of data 
+that can be modelled using Gaussians we might proceed as follows:
 
 
 .. code-block:: python
@@ -855,8 +856,13 @@ passed, using the following signature:
 Bounded optimisation
 ^^^^^^^^^^^^^^^^^^^^
 
-Problems of ill-conditioning and divergence can be ameliorated by using bounded
-optimization. Currently, not all optimizers support bounds - see the
+Problems of ill-conditioning and divergence can be improved by using bounded
+optimization. All components' parameters have the attributes `parameter.bmin` and 
+`parameter.bmax` ("bounded min" and "bounded max"). When fitting using the 
+`bounded=True` argument by `m.fit(bounded=True)` or `m.multifit(bounded=True)`, 
+these attributes set the minimum and maximum values allowed for `parameter.value`.
+
+Currently, not all optimizers support bounds - see the
 :ref:`table above <optimizers-table>`. In the following example a gaussian
 histogram is fitted using a :class:`~._components.gaussian.Gaussian`
 component using mpfit and bounds on the ``centre`` parameter.
@@ -1182,8 +1188,9 @@ Batch setting of parameter attributes
 -------------------------------------
 .. versionadded:: 0.6
 
-The following methods can be used to ease the task of setting some important
-parameter attributes:
+The following model methods can be used to ease the task of setting some important
+parameter attributes. These can also be used on a per-component basis, by calling them
+on individual components.
 
 * :py:meth:`~.model.BaseModel.set_parameters_not_free`
 * :py:meth:`~.model.BaseModel.set_parameters_free`
