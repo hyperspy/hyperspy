@@ -86,7 +86,7 @@ and if set to `False`, the units will not be converted. The default is `False`.
 
 More details on lazy evaluation support in :ref:`big-data-label`.
 
-.. load-multiple-label::
+.. load-multiple-label:
 
 Loading multiple files
 ----------------------
@@ -294,6 +294,7 @@ possible to customise the chunk shape using the ``chunks`` keyword. For example,
 ``(20, 20, 256)`` chunks instead of the default ``(7, 7, 2048)`` chunks for this signal:
 
 .. code-block:: python
+
     >>> s = hs.signals.Signal1D(np.random.random((100, 100, 2048)))
     >>> s.save("test_chunks", chunks=(20, 20, 256), overwrite=True)
 
@@ -370,22 +371,29 @@ install the `mrcz` and optionally the `blosc` Python packages.
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^
 
-`do_async`:   currently supported within Hyperspy for writing only, this will save
-              the file in a background thread and return immediately. Defaults
-              to `False`.
+`do_async`: 
+  currently supported within Hyperspy for writing only, this will save 
+  the file in a background thread and return immediately. Defaults
+  to `False`.
+
 .. Warning::
 
     There is no method currently implemented within Hyperspy to tell if an
     asychronous write has finished.
 
-`compressor`: The compression codec, one of [`None`,`'zlib`',`'zstd'`, `'lz4'`].
-              Defaults to `None`.
-`clevel`:     The compression level, an `int` from 1 to 9. Defaults to 1.
-`n_threads`:  The number of threads to use for `blosc` compression. Defaults to
-              the maximum number of virtual cores (including Intel Hyperthreading)
-              on your system, which is recommended for best performance. If \
-              `do_asyc = True` you may wish to leave one thread free for the
-              Python GIL.
+
+`compressor`: 
+  The compression codec, one of [`None`,`'zlib`',`'zstd'`, `'lz4'`]. Defaults to `None`.
+
+`clevel`: 
+  The compression level, an `int` from 1 to 9. Defaults to 1.
+
+`n_threads`: 
+  The number of threads to use for `blosc` compression. Defaults to
+  the maximum number of virtual cores (including Intel Hyperthreading)
+  on your system, which is recommended for best performance. If \
+  `do_asyc = True` you may wish to leave one thread free for the
+  Python GIL.
 
 The recommended compression codec is 'zstd' (zStandard) with `clevel=1` for
 general use. If speed is critical, use 'lz4' (LZ4) with `clevel=9`. Integer data
