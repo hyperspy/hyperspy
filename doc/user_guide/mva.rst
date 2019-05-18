@@ -276,7 +276,7 @@ properties of stochastic gradient descent. This takes the further parameter
    ...                 momentum=0.5)
 
 Non-negative matrix factorization
-----------------------------
+---------------------------------
 
 Another popular decomposition method is non-negative matrix factorization
 (NMF), which can be accessed in HyperSpy with:

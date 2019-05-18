@@ -67,10 +67,11 @@ voltage, convergence and collection semi-angles etc.
 
 
 
-.. _model_components-label:
 
 Creating components for the model
 ---------------------------------
+
+.. _model_components-label:
 
 In HyperSpy a model consists of a linear combination of components
 and various components are available in one (:py:mod:`~.components1d`)and
@@ -231,8 +232,6 @@ mailing list <http://groups.google.com/group/hyperspy-users>`.
 Adding components to the model
 ------------------------------
 
-.. _model_components-label:
-
 To print the current components in a model use
 :py:attr:`~.model.BaseModel.components`. A table with component number,
 attribute name, component name and component type will be printed:
@@ -382,7 +381,7 @@ To enable this feature for a given component set the
 .. _model_indexing-label:
 
 Indexing the model
---------------
+------------------
 
 Often it is useful to consider only part of the model - for example at
 a particular location (i.e. a slice in the navigation space) or energy range

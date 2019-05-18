@@ -773,7 +773,7 @@ asdf
 .. _emd_fei-format:
 
 EMD (Velox)
-^^^^^^^^^
+^^^^^^^^^^^
 
 This is a non-compliant variant of the standard EMD format developed by 
 Thermo-Fisher (former FEI). HyperSpy supports importing images, EDS spectrum and EDS
