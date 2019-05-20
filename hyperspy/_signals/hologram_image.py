@@ -30,6 +30,7 @@ from hyperspy._signals.lazy import LazySignal
 from hyperspy.misc.holography.reconstruct import (
     reconstruct, estimate_sideband_position, estimate_sideband_size)
 from hyperspy.misc.holography.tools import calculate_carrier_frequency, estimate_fringe_contrast_fourier
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
 
 _logger = logging.getLogger(__name__)
 
@@ -193,11 +194,8 @@ class HologramImage(Signal2D):
         high_cf : bool, optional
             If False, the highest carrier frequency allowed for the sideband location is equal to
             half of the Nyquist frequency (Default: True).
-        show_progressbar : boolean
-            Shows progressbar while iterating over different slices of the signal (passes the
-            parameter to map method).
-        parallel : bool
-            Estimate the positions in parallel
+        %s
+        %s
 
         Returns
         -------
@@ -231,6 +229,8 @@ class HologramImage(Signal2D):
 
         return sb_position
 
+    estimate_sideband_position.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+
     def estimate_sideband_size(self,
                                sb_position,
                                show_progressbar=False,
@@ -244,8 +244,7 @@ class HologramImage(Signal2D):
             The sideband position (y, x), referred to the non-shifted FFT.
         show_progressbar: boolean
             Shows progressbar while iterating over different slices of the signal (passes the parameter to map method).
-        parallel : bool
-            Estimate the sizes in parallel
+        %s
 
         Returns
         -------
@@ -271,6 +270,8 @@ class HologramImage(Signal2D):
             ragged=False)
 
         return sb_size
+
+    estimate_sideband_size.__doc__ %= (PARALLEL_ARG)
 
     def reconstruct_phase(self,
                           reference=None,
@@ -324,11 +325,8 @@ class HologramImage(Signal2D):
             shape.
         plotting : boolean
             Shows details of the reconstruction (i.e. SB selection).
-        show_progressbar : boolean
-            Shows progressbar while iterating over different slices of the
-            signal (passes the parameter to map method).
-        parallel : bool
-            Run the reconstruction in parallel
+        %s
+        %s
         store_parameters : boolean
             Store reconstruction parameters in metadata
 
@@ -584,6 +582,8 @@ class HologramImage(Signal2D):
 
         return wave_image
 
+    reconstruct_phase.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
+
     def statistics(self,
                    sb_position=None,
                    sb='lower',
@@ -636,11 +636,8 @@ class HologramImage(Signal2D):
         single_values : bool, optional
             If True calculates statistics only for the first navigation pixels and
             returns the values as single floats (Default: True)
-        show_progressbar : bool, optional
-            Shows progressbar while iterating over different slices of the
-            signal (passes the parameter to map method). (Default: False)
-        parallel : bool, None, optional
-            Run the reconstruction in parallel
+        %s
+        %s
 
         Returns
         -------
@@ -762,6 +759,8 @@ class HologramImage(Signal2D):
                 'Carrier frequency (1/px)': carrier_freq_px,
                 'Carrier frequency ({:~})'.format((1. / units).units): carrier_freq_units,
                 'Carrier frequency (mrad)': carrier_freq_mrad}
+
+    statistics.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG)
 
 
 class LazyHologramImage(LazySignal, HologramImage):

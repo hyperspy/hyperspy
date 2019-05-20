@@ -26,22 +26,25 @@ def test_mlp_agg_for_CI_testing():
     if check_running_tests_in_CI():
         assert matplotlib.get_backend() == 'agg'
 
+@pytest.fixture
+def mpl_cmdopt(request):
+    return request.config.getoption("--mpl")
 
 def test_mpl_version():
     # for simplicity, only matplotlib 2.x is supported for testing
     assert LooseVersion(matplotlib.__version__) >= LooseVersion('2.0.0')
 
 
-# Skip if mpl plugin is not called, because it will not failed (no image
-# comparison)
-@pytest.mark.skipif(not pytest.config.getvalue("mpl"),
-                    reason="'mpl' plugin not called.")
 @pytest.mark.xfail(reason="Check if plotting tests are working: if this test passes,"
                    " it means that the image comparison of the plotting test are"
                    " not working.",
                    strict=True)
 @pytest.mark.mpl_image_compare(baseline_dir='', tolerance=2)
-def test_plotting_test_working(mpl_cleanup):
+def test_plotting_test_working(mpl_cmdopt):
+    # Skip if --mpl command line option is not present, because it will always
+    # pass the image comparison test and, therefore, this test will always fail.
+    if not mpl_cmdopt:
+        pytest.skip("No --mpl command line option")
     # If this test passes, it means that the plotting tests are not working!
     # In this case, the test will be reported as failed because the xfail is
     # 'strict'.

@@ -5,87 +5,78 @@ environment:
 
   global:
     TEST_DEPS: "pytest pytest-cov pytest-mpl wheel"
+    DEPS: "numpy scipy matplotlib ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba tqdm pint requests imageio traits"
     MPLBACKEND: "agg"
 
-
   matrix:
+     - PY_VERSION: 3.7
+       PLATFORM: x64
+     - PY_VERSION: 3.7
+       PLATFORM: x86
+     - PY_VERSION: 3.6
+       PLATFORM: x64
+     - PY_VERSION: 3.6
+       PLATFORM: x86
+       TAG_SCENARIO: true
+     - PY_VERSION: 3.5
+       PLATFORM: x64
+       TAG_SCENARIO: true
+     - PY_VERSION: 3.5
+       PLATFORM: x86
+       TAG_SCENARIO: true
 
-    # Pre-installed Python versions, which Appveyor may upgrade to
-    # a later point release.
-     - PYTHON: "C:\\Miniconda35"
-       PYTHON_VERSION: "3.5.x"
-       PYTHON_MAJOR: 3
-       PYTHON_ARCH: "32"
-       CONDA_PY: "35"
-       DEPS: "numpy scipy matplotlib=2.2.3 ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
+for:
+-
+  # tagged scenario
+  matrix:
+    only:
+      - TAG_SCENARIO: true
 
-     - PYTHON: "C:\\Miniconda35-x64"
-       PYTHON_VERSION: "3.5.x"
-       PYTHON_MAJOR: 3
-       PYTHON_ARCH: "64"
-       CONDA_PY: "35"
-       DEPS: "numpy scipy matplotlib=2.2.3 ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
-
-     - PYTHON: "C:\\Miniconda36"
-       PYTHON_VERSION: "3.6.x"
-       PYTHON_MAJOR: 3
-       PYTHON_ARCH: "32"
-       CONDA_PY: "36"
-       DEPS: "numpy scipy matplotlib=2.2.3 ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
-
-     - PYTHON: "C:\\Miniconda36-x64"
-       PYTHON_VERSION: "3.6.x"
-       PYTHON_MAJOR: 3
-       PYTHON_ARCH: "64"
-       CONDA_PY: "36"
-       DEPS: "numpy scipy matplotlib=2.2.3 ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
-
-     - PYTHON: "C:\\Miniconda37"
-       PYTHON_VERSION: "3.7.x"
-       PYTHON_MAJOR: 3
-       PYTHON_ARCH: "32"
-       CONDA_PY: "37"
-       DEPS: "numpy scipy matplotlib=2.2.3 ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
-
-     - PYTHON: "C:\\Miniconda37-x64"
-       PYTHON_VERSION: "3.7.x"
-       PYTHON_MAJOR: 3
-       PYTHON_ARCH: "64"
-       CONDA_PY: "37"
-       DEPS: "numpy scipy matplotlib=2.2.3 ipython h5py sympy scikit-learn dill setuptools natsort scikit-image cython ipyparallel dask numexpr sparse numba"
+  skip_non_tags: true
 
 
 init:
-  - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
+  - "ECHO %PYTHON%"
   - "ECHO %APPVEYOR_BUILD_FOLDER%"
   - "ECHO %CMD_IN_ENV%"
 
 install:
   - ps: Add-AppveyorMessage "Starting install..."
-  # Prepend Python to the PATH
-  - "SET ORIGPATH=%PATH%"
-  - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+
+  # Activate miniconda root environment
+  - if "%PLATFORM%"=="x86" set MINICONDA="C:\\Miniconda37"
+  - if "%PLATFORM%"=="x64" set MINICONDA="C:\\Miniconda37-x64"
+  - "%MINICONDA%\\Scripts\\activate.bat"
+
+  # Setup miniconda environment.
+  - ps: Add-AppveyorMessage "Setup miniconda environment..."
+  # Disable update conda until the following issue is solved
+  # https://github.com/conda/conda/issues/7144
+  # https://github.com/appveyor/ci/issues/2270
+  # - "conda update -y conda"
+  - "conda config --append channels conda-forge"
+  - "conda create -y -n testenv python=%PY_VERSION%"
+  - "activate testenv"
 
   # Check that we have the expected version and architecture for Python
   - "python --version"
   - "python -c \"import sys; print(sys.version)\""  # this gives more info
   - "python -c \"import struct; print(struct.calcsize('P') * 8)\""
 
-  # Install the dependencies of the project.
+  # Install the dependencies of hyperspy.
   - ps: Add-AppveyorMessage "Installing conda packages..."
-  - "conda install -yq -c conda-forge %TEST_DEPS%"
-  - "conda install -yq -c conda-forge %DEPS%"
+  - if "%PLATFORM%"=="x64" set DEPS=%DEPS% mrcz
+  - "conda install -y %DEPS% %TEST_DEPS%"
 
   - ps: Add-AppveyorMessage "Installing hyperspy..."
-  - "pip install .[all]"
+  - "pip install .[tests]"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 
 test_script:
   # Run the project tests
   - ps: Add-AppveyorMessage "Running tests..."
-  - "python setup.py build_ext --inplace"
-  - "py.test --mpl"
+  - "pytest --mpl"
   - "python setup.py clean"
   - ps: Add-AppveyorMessage "Testing completed."
 
@@ -120,3 +111,4 @@ deploy:
   force_update: true
   on:
     appveyor_repo_tag: true        # deploy on tag push only
+
