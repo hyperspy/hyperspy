@@ -33,7 +33,7 @@ from hyperspy.misc.utils import stack as stack_method
 from hyperspy.io_plugins import io_plugins, default_write_ext
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.ui_registry import get_gui
-from hyperspy.extensions import EXTENSIONS
+from hyperspy.extensions import ALL_EXTENSIONS
 
 _logger = logging.getLogger(__name__)
 
@@ -373,7 +373,7 @@ def assign_signal_subclass(dtype,
     if not isinstance(signal_dimension, int) or signal_dimension < 0:
         raise ValueError("signal_dimension must be a positive interger")
 
-    signals = {key: value for key, value in EXTENSIONS["signals"].items()
+    signals = {key: value for key, value in ALL_EXTENSIONS["signals"].items()
                if value["lazy"] == lazy}
     dtype_matches = {key: value for key, value in signals.items()
                      if value["dtype"] == dtype}

@@ -346,7 +346,7 @@ with update_version_when_dev() as version:
                 'tests/io/protochips_data/*.npy',
                 'tests/io/protochips_data/*.csv',
                 'tests/signal/test_find_peaks1D_ohaver/test_find_peaks1D_ohaver.hdf5',
-                'hyperspy_extensions.yaml',
+                'hyperspy_extension.yaml',
             ],
         },
         author=Release.authors['all'][0],
