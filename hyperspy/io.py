@@ -377,12 +377,12 @@ def assign_signal_subclass(dtype,
                if value["lazy"] == lazy}
     dtype_matches = {key: value for key, value in signals.items()
                      if value["dtype"] == dtype}
-    print(dtype_matches)
     dtype_dim_matches = {key: value for key, value in dtype_matches.items()
                          if signal_dimension == value["signal_dimension"]}
     dtype_dim_type_matches = {key: value for key, value in dtype_dim_matches.items()
-                              if signal_type == value["signal_type"]}
-    print(dtype_dim_type_matches)
+                              if signal_type == value["signal_type"] or
+                              "signal_type_aliases" in value and
+                              signal_type in value["signal_type_aliases"]}
     if dtype_dim_type_matches:
         # Perfect match found
         signal_dict = dtype_dim_type_matches

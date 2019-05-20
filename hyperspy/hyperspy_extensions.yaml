@@ -41,7 +41,7 @@ signals:
     dtype: complex
     lazy: False
     import: hyperspy._signals.complex_signal
-  ComplexLazySignal:
+  LazyComplexSignal:
     signal_type: ""
     signal_dimension: -1
     dtype: complex
@@ -53,7 +53,7 @@ signals:
     dtype: complex
     lazy: False
     import: hyperspy._signals.complex_signal1d
-  ComplexLazySignal1D:
+  LazyComplexSignal1D:
     signal_type: ""
     signal_dimension: 1
     dtype: complex
@@ -65,32 +65,36 @@ signals:
     dtype: complex
     lazy: False
     import: hyperspy._signals.complex_signal2d
-  ComplexLazySignal2D:
+  LazyComplexSignal2D:
     signal_type: ""
     signal_dimension: 2
     dtype: complex
     lazy: True
     import: hyperspy._signals.complex_signal2d
   HologramImage:
-    signal_type: hologram_image 
+    signal_type: hologram
     signal_dimension: 2
-    dtype: complex
+    dtype: real
     lazy: False
     import: hyperspy._signals.hologram_image
   LazyHologramImage:
-    signal_type: hologram_image   
+    signal_type: hologram
     signal_dimension: 2
-    dtype: complex
+    dtype: real
     lazy: True
     import: hyperspy._signals.hologram_image
   EELSSpectrum:
     signal_type: EELS
+    signal_type_aliases:
+      - TEM EELS
     signal_dimension: 1
     dtype: real
     lazy: False
     import: hyperspy._signals.eels
   LazyEELSSpectrum:
     signal_type: EELS
+    signal_type_aliases:
+      - TEM EELS
     signal_dimension: 1
     dtype: real
     lazy: True
@@ -121,12 +125,16 @@ signals:
     import: hyperspy._signals.eds_sem
   DielectricFunction:
     signal_type: DielectricFunction 
+    signal_type_aliases:
+      - dielectric function
     signal_dimension: 1
     dtype: complex
     lazy: False
     import: hyperspy._signals.dielectric_function
   LazyDielectricFunction:
     signal_type: DielectricFunction
+    signal_type_aliases:
+      - dielectric function
     signal_dimension: 1
     dtype: complex
     lazy: True
