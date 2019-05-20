@@ -1,5 +1,5 @@
 """
-The Signal class and its specilized subclasses:
+The Signal class and its specialized subclasses:
 
     BaseSignal
         For generic data with arbitrary signal_dimension. All other signal
