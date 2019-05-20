@@ -1,133 +1,133 @@
 signals:
-  - BaseSignal:
-    - signal_type: real 
-    - signal_dimension: -1
-    - dtype: real
-    - lazy: False
-    - import: hyperspy.signal
-  - LazySignal:
-    - signal_type: real 
-    - signal_dimension: -1
-    - dtype: real
-    - lazy: True
-    - import: hyperspy._signals.lazy
-  - Signal1D:
-    - signal_type: 
-    - signal_dimension: 1
-    - dtype: real
-    - lazy: False
-    - import: hyperspy._signals.signal1d
-  - LazySignal1D:
-    - signal_type: 
-    - signal_dimension: 1
-    - dtype: real
-    - lazy: True
-    - import: hyperspy._signals.signal1d
-  - Signal2D:
-    - signal_type: 
-    - signal_dimension: 2
-    - dtype: real
-    - lazy: False
-    - import: hyperspy._signals.signal2d
-  - LazySignal2D:
-    - signal_type: 
-    - signal_dimension: 2
-    - dtype: real
-    - lazy: True
-    - import: hyperspy._signals.signal2d
-  - ComplexSignal:
-    - signal_type: 
-    - signal_dimension: -1
-    - dtype: complex
-    - lazy: False
-    - import: hyperspy._signals.complex_signal
-  - ComplexLazySignal:
-    - signal_type: 
-    - signal_dimension: -1
-    - dtype: complex
-    - lazy: True
-    - import: hyperspy._signals.complex_signal
-  - ComplexSignal1D:
-    - signal_type: 
-    - signal_dimension: 1
-    - dtype: complex
-    - lazy: False
-    - import: hyperspy._signals.complex_signal1d
-  - ComplexLazySignal1D:
-    - signal_type: 
-    - signal_dimension: 1
-    - dtype: complex
-    - lazy: True
-    - import: hyperspy._signals.complex_signal1d
-  - ComplexSignal2D:
-    - signal_type: 
-    - signal_dimension: 2
-    - dtype: complex
-    - lazy: False
-    - import: hyperspy._signals.complex_signal2d
-  - ComplexLazySignal2D:
-    - signal_type: 
-    - signal_dimension: 2
-    - dtype: complex
-    - lazy: True
-    - import: hyperspy._signals.complex_signal2d
-  - HologramImage:
-    - signal_type: hologram_image 
-    - signal_dimension: 2
-    - dtype: complex
-    - lazy: False
-    - import: hyperspy._signals.hologram_image
-  - LazyHologramImage:
-    - signal_type: hologram_image   
-    - signal_dimension: 2
-    - dtype: complex
-    - lazy: True
-    - import: hyperspy._signals.hologram_image
-  - EELSSpectrum:
-    - signal_type: EELS
-    - signal_dimension: 1
-    - dtype: real
-    - lazy: False
-    - import: hyperspy._signals.eels
-  - LazyEELSSpectrum:
-    - signal_type: EELS
-    - signal_dimension: 1
-    - dtype: real
-    - lazy: True
-    - import: hyperspy._signals.eels
-  - EDSTEMSpectrum:
-    - signal_type: EDS_TEM
-    - signal_dimension: 1
-    - dtype: real
-    - lazy: False
-    - import: hyperspy._signals.eds_tem
-  - LazyEDSTEMSpectrum:
-    - signal_type: EDS_TEM
-    - signal_dimension: 1
-    - dtype: real
-    - lazy: True
-    - import: hyperspy._signals.eds_tem
-  - EDSSEMSpectrum:
-    - signal_type: EDS_SEM
-    - signal_dimension: 1
-    - dtype: real
-    - lazy: False
-    - import: hyperspy._signals.eds_sem
-  - LazyEDSSEMSpectrum:
-    - signal_type: EDS_SEM
-    - signal_dimension: 1
-    - dtype: real
-    - lazy: True
-    - import: hyperspy._signals.eds_sem
-  - DielectricFunction:
-    - signal_type: DielectricFunction 
-    - signal_dimension: 1
-    - dtype: complex
-    - lazy: False
-    - import: hyperspy._signals.dielectric_function
-  - LazyDielectricFunction:
-    - signal_type: DielectricFunction
-    - signal_dimension: 1
-    - dtype: complex
-    - lazy: True
-    - import: hyperspy._signals.dielectric_function
+  BaseSignal:
+    signal_type: real 
+    signal_dimension: -1
+    dtype: real
+    lazy: False
+    import: hyperspy.signal
+  LazySignal:
+    signal_type: real 
+    signal_dimension: -1
+    dtype: real
+    lazy: True
+    import: hyperspy._signals.lazy
+  Signal1D:
+    signal_type: 
+    signal_dimension: 1
+    dtype: real
+    lazy: False
+    import: hyperspy._signals.signal1d
+  LazySignal1D:
+    signal_type: 
+    signal_dimension: 1
+    dtype: real
+    lazy: True
+    import: hyperspy._signals.signal1d
+  Signal2D:
+    signal_type: 
+    signal_dimension: 2
+    dtype: real
+    lazy: False
+    import: hyperspy._signals.signal2d
+  LazySignal2D:
+    signal_type: 
+    signal_dimension: 2
+    dtype: real
+    lazy: True
+    import: hyperspy._signals.signal2d
+  ComplexSignal:
+    signal_type: 
+    signal_dimension: -1
+    dtype: complex
+    lazy: False
+    import: hyperspy._signals.complex_signal
+  ComplexLazySignal:
+    signal_type: 
+    signal_dimension: -1
+    dtype: complex
+    lazy: True
+    import: hyperspy._signals.complex_signal
+  ComplexSignal1D:
+    signal_type: 
+    signal_dimension: 1
+    dtype: complex
+    lazy: False
+    import: hyperspy._signals.complex_signal1d
+  ComplexLazySignal1D:
+    signal_type: 
+    signal_dimension: 1
+    dtype: complex
+    lazy: True
+    import: hyperspy._signals.complex_signal1d
+  ComplexSignal2D:
+    signal_type: 
+    signal_dimension: 2
+    dtype: complex
+    lazy: False
+    import: hyperspy._signals.complex_signal2d
+  ComplexLazySignal2D:
+    signal_type: 
+    signal_dimension: 2
+    dtype: complex
+    lazy: True
+    import: hyperspy._signals.complex_signal2d
+  HologramImage:
+    signal_type: hologram_image 
+    signal_dimension: 2
+    dtype: complex
+    lazy: False
+    import: hyperspy._signals.hologram_image
+  LazyHologramImage:
+    signal_type: hologram_image   
+    signal_dimension: 2
+    dtype: complex
+    lazy: True
+    import: hyperspy._signals.hologram_image
+  EELSSpectrum:
+    signal_type: EELS
+    signal_dimension: 1
+    dtype: real
+    lazy: False
+    import: hyperspy._signals.eels
+  LazyEELSSpectrum:
+    signal_type: EELS
+    signal_dimension: 1
+    dtype: real
+    lazy: True
+    import: hyperspy._signals.eels
+  EDSTEMSpectrum:
+    signal_type: EDS_TEM
+    signal_dimension: 1
+    dtype: real
+    lazy: False
+    import: hyperspy._signals.eds_tem
+  LazyEDSTEMSpectrum:
+    signal_type: EDS_TEM
+    signal_dimension: 1
+    dtype: real
+    lazy: True
+    import: hyperspy._signals.eds_tem
+  EDSSEMSpectrum:
+    signal_type: EDS_SEM
+    signal_dimension: 1
+    dtype: real
+    lazy: False
+    import: hyperspy._signals.eds_sem
+  LazyEDSSEMSpectrum:
+    signal_type: EDS_SEM
+    signal_dimension: 1
+    dtype: real
+    lazy: True
+    import: hyperspy._signals.eds_sem
+  DielectricFunction:
+    signal_type: DielectricFunction 
+    signal_dimension: 1
+    dtype: complex
+    lazy: False
+    import: hyperspy._signals.dielectric_function
+  LazyDielectricFunction:
+    signal_type: DielectricFunction
+    signal_dimension: 1
+    dtype: complex
+    lazy: True
+    import: hyperspy._signals.dielectric_function
