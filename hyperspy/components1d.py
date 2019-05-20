@@ -32,16 +32,15 @@ For more details see each component docstring.
 """
 
 
-
 # -*- coding: utf-8 -*-
 from hyperspy.extensions import EXTENSIONS as _EXTENSIONS
 import importlib
 
 _g = globals()
 for _component, _specs in _EXTENSIONS["components1D"].items():
-        _g[_component] = getattr(
-            importlib.import_module(
-                _specs["import"]), _component)
+    _g[_component] = getattr(
+        importlib.import_module(
+            _specs["import"]), _component)
 
 del importlib
 
