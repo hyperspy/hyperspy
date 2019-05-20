@@ -139,3 +139,57 @@ signals:
     dtype: complex
     lazy: True
     import: hyperspy._signals.dielectric_function
+
+components1D:
+  Arctan:
+    import: hyperspy._components.arctan
+  Bleasdale:
+    import: hyperspy._components.bleasdale
+  DoublePowerLaw:
+    import: hyperspy._components.eels_double_power_law
+  EELSCLEdge:
+    import: hyperspy._components.eels_cl_edge
+  Erf:
+    import: hyperspy._components.error_function
+  Exponential:
+    import: hyperspy._components.exponential
+  Expression:
+    import: hyperspy._components.expression
+  Gaussian:
+    import: hyperspy._components.gaussian
+  GaussianHF:
+    import: hyperspy._components.gaussianhf
+  HeavisideStep:
+    import: hyperspy._components.heaviside
+  Logistic:
+    import: hyperspy._components.logistic
+  Lorentzian:
+    import: hyperspy._components.lorentzian
+  Offset:
+    import: hyperspy._components.offset
+  PESCoreLineShape:
+    import: hyperspy._components.pes_core_line_shape
+  Polynomial:
+    import: hyperspy._components.polynomial
+  PowerLaw:
+    import: hyperspy._components.power_law
+  RC:
+    import: hyperspy._components.rc
+  SEE:
+    import: hyperspy._components.pes_see
+  ScalableFixedPattern:
+    import: hyperspy._components.scalable_fixed_pattern
+  SkewNormal:
+    import: hyperspy._components.skew_normal
+  Vignetting:
+    import: hyperspy._components.eels_vignetting
+  Voigt:
+    import: hyperspy._components.voigt
+  VolumePlasmonDrude:
+    import: hyperspy._components.volume_plasmon_drude
+
+components2D:
+  Expression:
+    import: hyperspy._components.expression
+  Gaussian2D:
+    import: hyperspy._components.gaussian2d
