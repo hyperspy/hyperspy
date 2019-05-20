@@ -20,13 +20,48 @@ import itertools
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
+import inspect
 
 import hyperspy.api as hs
 from hyperspy.models.model1d import Model1D
 from hyperspy.misc.test_utils import ignore_warning
+from hyperspy import components1d
+from hyperspy.component import Component
 
 
 TRUE_FALSE_2_TUPLE = [p for p in itertools.product((True, False), repeat=2)]
+
+
+def get_components1d_name_list():
+
+    components1d_name_list = []
+    for c_name in dir(components1d):
+        obj = getattr(components1d, c_name)
+        if inspect.isclass(obj) and issubclass(obj, Component):
+            components1d_name_list.append(c_name)
+
+    # Remove EELSCLEdge, since it is tested elsewhere more appropriate
+    components1d_name_list.remove('EELSCLEdge')
+    return components1d_name_list
+
+
+@pytest.mark.parametrize('component_name', get_components1d_name_list())
+def test_creation_components1d(component_name):
+    s = hs.signals.Signal1D(np.zeros(1024))
+    s.axes_manager[0].offset = 100
+    s.axes_manager[0].scale = 0.01
+
+    kwargs = {}
+    if component_name == 'ScalableFixedPattern':
+        kwargs['signal1D'] = s
+    elif component_name == 'Expression':
+        kwargs.update({'expression':"a*x+b", "name":"linear"})
+
+    component = getattr(components1d, component_name)(**kwargs)
+    component.function(np.arange(1, 100))
+
+    m = s.create_model()
+    m.append(component)
 
 
 class TestPowerLaw:
@@ -64,8 +99,10 @@ class TestPowerLaw:
 
     def test_EDS_missing_data(self):
         g = hs.model.components1D.PowerLaw()
-        s2 = hs.signals.EDSTEMSpectrum(self.s.data)
+        s = self.m.as_signal(show_progressbar=None, parallel=False)
+        s2 = hs.signals.EDSTEMSpectrum(s.data)
         g.estimate_parameters(s2, None, None)
+
 
 class TestDoublePowerLaw:
 
@@ -112,9 +149,17 @@ class TestOffset:
         self.m.signal.metadata.Signal.binned = binned
         s = self.m.as_signal(show_progressbar=None, parallel=False)
         assert s.metadata.Signal.binned == binned
-        g = hs.model.components1D.Offset()
-        g.estimate_parameters(s, None, None, only_current=only_current)
-        assert_allclose(g.offset.value, 10)
+        o = hs.model.components1D.Offset()
+        o.estimate_parameters(s, None, None, only_current=only_current)
+        assert_allclose(o.offset.value, 10)
+
+    def test_function_nd(self):
+        s = self.m.as_signal(show_progressbar=None, parallel=False)
+        s = hs.stack([s]*2)
+        o = hs.model.components1D.Offset()
+        o.estimate_parameters(s, None, None, only_current=False)
+        axis = s.axes_manager.signal_axes[0]
+        assert_allclose(o.function_nd(axis.axis), s.data)
 
 
 class TestPolynomial:
@@ -174,6 +219,15 @@ class TestPolynomial:
         p.estimate_parameters(s, 0, 100, only_current=False)
         np.testing.assert_allclose(p.coefficients.map['values'],
                                    np.tile([0.5, 2, 3], (2, 5, 1)))
+
+    # For https://github.com/hyperspy/hyperspy/pull/1989
+    # def test_function_nd(self):
+    #     s = self.m.as_signal(show_progressbar=None, parallel=False)
+    #     s = hs.stack([s]*2)
+    #     p = hs.model.components1D.Polynomial(order=2)
+    #     p.estimate_parameters(s, None, None, only_current=False)
+    #     axis = s.axes_manager.signal_axes[0]
+    #     assert_allclose(p.function_nd(axis.axis), s.data)
 
 
 class TestGaussian:

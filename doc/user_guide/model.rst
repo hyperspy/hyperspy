@@ -449,11 +449,22 @@ terminal view with the argument ``fancy=False``. One can also filter for only ac
 components and only showing component with free parameters with the arguments
 ``only_active`` and ``only_free``, respectively.
 
-The :py:attr:`~.component.Component.parameters` attribute of a
-:py:class:`~.component.Component` contains a list of the parameters
+The current coordinates can be either set by navigating the :py:meth:`~.model.BaseModel.plot`, or specified by
+pixel indices in ``m.axes_manager.indices`` or as calibrated coordinates in
+``m.axes_manager.coordinates``.
+
+:py:attr:`~.component.Component.parameters` contains a list of the parameters
 of a component and :py:attr:`~.component.Component.free_parameters` lists only
-the free parameters. The value of a particular parameter can be accessed in the
-:py:attr:`~.component.Parameter.value`.
+the free parameters.
+
+The value of a particular parameter in the current coordinates can be 
+accessed by :py:attr:`component.Parameter.value` (e.g. ``Gaussian.A.value``).
+To access an array of the value of the parameter across all
+navigation pixels, :py:attr:`component.Parameter.map['values']` (e.g. ``Gaussian.A.map["values"]``) can be used. 
+On its own, :py:attr:`component.Parameter.map` returns a NumPy array with three elements:
+``'values'``, ``'std'`` and ``'is_set'``. The first two give the value and standard error for
+each index. The last element shows whether the value has been set in a given index, either
+by a fitting procedure or manually.
 
 If a model contains several components with the same parameters, it is possible
 to change them all by using :py:meth:`~.model.BaseModel.set_parameters_value`.
