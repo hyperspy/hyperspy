@@ -1,5 +1,6 @@
 import os.path
 import tempfile
+import copy
 
 from hyperspy.io import load
 from hyperspy.misc.test_utils import assert_deep_almost_equal
@@ -207,6 +208,24 @@ class TestExample1:
             s2.metadata.General.original_filename = "example1.msa"
             assert_deep_almost_equal(self.s.metadata.as_dictionary(),
                                      s2.metadata.as_dictionary())
+
+class TestExample1WrongDate:
+
+    def setup_method(self, method):
+        self.s = load(os.path.join(
+            my_path,
+            "msa_files",
+            "example1_wrong_date.msa"))
+
+    def test_metadata(self):
+        md = copy.copy(example1_metadata)
+        del md["General"]["date"]
+        del md["General"]["time"]
+        md["General"]["original_filename"] = "example1_wrong_date.msa"
+        assert_deep_almost_equal(self.s.metadata.as_dictionary(),
+                                 md)
+
+
 
 
 class TestExample2:

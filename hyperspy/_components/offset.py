@@ -112,8 +112,12 @@ class Offset(Component):
         """%s
 
         """
-        x = axis[np.newaxis, :]
-        o = self.offset.map['values'][..., np.newaxis]
+        if self._is_navigation_multidimensional:
+            x = axis[np.newaxis, :]
+            o = self.offset.map['values'][..., np.newaxis]
+        else:
+            x = axis
+            o = self.offset.value
         return self._function(x, o)
 
     function_nd.__doc__ %= FUNCTION_ND_DOCSTRING

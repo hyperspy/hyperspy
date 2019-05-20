@@ -57,8 +57,13 @@ the x-axis if 1D:
 To change the current coordinates, click on the pointer (which will be a line
 or a square depending on the dimensions of the data) and drag it around. It is
 also possible to move the pointer by using the numpad arrows **when numlock is
-on and the spectrum or navigator figure is selected**. When using the keyboard
-arrows the PageUp and PageDown keys change the stepsize.
+on and the spectrum or navigator figure is selected**. When using the numpad
+arrows the PageUp and PageDown keys change the size of the step.
+
+The current coordinates can be either set by navigating the
+:py:meth:`~.signal.BaseSignal.plot`, or specified by pixel indices
+in ``s.axes_manager.indices`` or as calibrated coordinates in
+``s.axes_manager.coordinates``.
 
 An extra cursor can be added by pressing the ``e`` key. Pressing ``e`` once
 more will disable the extra cursor:
@@ -466,6 +471,10 @@ due to ``matplotlib`` GUI backends and default font sizes. To change the
 font size globally, use the command ``matplotlib.rcParams.update({'font
 .size': 8})``.
 
+.. versionadded:: 1.5
+   Add support for plotting :py:class:`~.signal.BaseSignal` with navigation 
+   dimension 2 and signal dimension 0.
+
 A common usage for :py:func:`~.drawing.utils.plot_images` is to view the
 different slices of a multidimensional image (a *hyperimage*):
 
@@ -574,7 +583,7 @@ Another example for this function is plotting EDS line intensities see
 :ref:`EDS chapter <get_lines_intensity>`. One can use the following commands
 to get a representative figure of the X-ray line intensities of an EDS
 spectrum image. This example also demonstrates changing the colormap (with
-`cmap`),adding scalebars to the plots (with `scalebar`), and changing the
+`cmap`), adding scalebars to the plots (with `scalebar`), and changing the
 `padding` between the images. The padding is specified as a dictionary,
 which is used to call subplots_adjust method of matplotlib
 (see `documentation <http://matplotlib.org/api/figure_api.html#matplotlib.figure.Figure.subplots_adjust>`_).
@@ -583,7 +592,7 @@ which is used to call subplots_adjust method of matplotlib
 
     >>> si_EDS = hs.load("core_shell.hdf5")
     >>> im = si_EDS.get_lines_intensity()
-    >>> hs.plot.plot_images(hs.transpose(im[0], im[1]),
+    >>> hs.plot.plot_images(im,
     ...     tight_layout=True, cmap='RdYlBu_r', axes_decor='off',
     ...     colorbar='single', saturated_pixels=2, scalebar='all',
     ...     scalebar_color='black', suptitle_fontsize=16,
@@ -614,7 +623,7 @@ generator:
 
     >>> si_EDS = hs.load("core_shell.hdf5")
     >>> im = si_EDS.get_lines_intensity()
-    >>> hs.plot.plot_images(hs.transpose(im[0], im[1]),
+    >>> hs.plot.plot_images(im,
     >>>    tight_layout=True, cmap=['viridis', 'plasma'], axes_decor='off',
     >>>    colorbar='multi', saturated_pixels=2, scalebar=[0],
     >>>    scalebar_color='white', suptitle_fontsize=16)
@@ -705,6 +714,10 @@ Plotting several spectra
 same figure. It supports different styles, the default
 being "overlap". The default style is configurable in :ref:`preferences
 <configuring-hyperspy-label>`.
+
+.. versionadded:: 1.5
+   Add support for plotting :py:class:`~.signal.BaseSignal` with navigation 
+   dimension 1 and signal dimension 0.
 
 In the following example we create a list of 9 single spectra (gaussian
 functions with different sigma values) and plot them in the same figure using
