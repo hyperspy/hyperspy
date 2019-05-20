@@ -20,18 +20,20 @@ import os
 import glob
 import warnings
 import logging
+import importlib
 
 import numpy as np
 from natsort import natsorted
-from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 
+from hyperspy.drawing.marker import markers_metadata_dict_to_markers
 from hyperspy.misc.io.tools import ensure_directory
 from hyperspy.misc.io.tools import overwrite as overwrite_method
-from hyperspy.misc.utils import (strlist2enumeration, find_subclasses)
+from hyperspy.misc.utils import strlist2enumeration
 from hyperspy.misc.utils import stack as stack_method
 from hyperspy.io_plugins import io_plugins, default_write_ext
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.ui_registry import get_gui
+from hyperspy.extensions import EXTENSIONS
 
 _logger = logging.getLogger(__name__)
 
@@ -359,9 +361,6 @@ def assign_signal_subclass(dtype,
     Signal or subclass
 
     """
-    import hyperspy.signals
-    import hyperspy._lazy_signals
-    from hyperspy.signal import BaseSignal
     # Check if parameter values are allowed:
     if np.issubdtype(dtype, np.complexfloating):
         dtype = 'complex'
@@ -373,32 +372,44 @@ def assign_signal_subclass(dtype,
         raise ValueError('Data type "{}" not understood!'.format(dtype.name))
     if not isinstance(signal_dimension, int) or signal_dimension < 0:
         raise ValueError("signal_dimension must be a positive interger")
-    base_signals = find_subclasses(hyperspy.signals, BaseSignal)
-    lazy_signals = find_subclasses(hyperspy._lazy_signals,
-                                   hyperspy._lazy_signals.LazySignal)
-    if lazy:
-        signals = lazy_signals
-    else:
-        signals = {
-            k: v for k,
-            v in base_signals.items() if k not in lazy_signals}
-    dtype_matches = [s for s in signals.values() if dtype == s._dtype]
-    dtype_dim_matches = [s for s in dtype_matches
-                         if signal_dimension == s._signal_dimension]
-    dtype_dim_type_matches = [s for s in dtype_dim_matches if signal_type == s._signal_type
-                              or signal_type in s._alias_signal_types]
+
+    signals = {key : value for key, value in EXTENSIONS["signals"].items()
+               if value["lazy"] == lazy}
+    dtype_matches = {key: value for key, value in signals.items()
+                     if value["dtype"] == dtype}
+    print(dtype_matches)
+    dtype_dim_matches = {key: value for key,value in dtype_matches.items()
+                         if signal_dimension == value["signal_dimension"]}
+    dtype_dim_type_matches = {key: value for key, value in dtype_dim_matches.items()
+                              if signal_type == value["signal_type"]}
+    print(dtype_dim_type_matches)
     if dtype_dim_type_matches:
-        # Perfect match found, return it.
-        return dtype_dim_type_matches[0]
-    elif [s for s in dtype_dim_matches if s._signal_type == ""]:
-        # just signal_dimension and dtype matches
-        # Return a general class for the given signal dimension.
-        return [s for s in dtype_dim_matches if s._signal_type == ""][0]
+        # Perfect match found
+        signal_dict = dtype_dim_type_matches
     else:
-        # no signal_dimension match either, hence return the general subclass for
-        # correct dtype
-        return [s for s in dtype_matches if s._signal_dimension == -
-                1 and s._signal_type == ""][0]
+        # If the following dict is not empty, only signal_dimension and dtype match.
+        # The dict should contain a general class for the given signal
+        # dimension.
+        signal_dict = {key: value for key, value in dtype_dim_matches.items()
+                       if value["signal_type"] == ""}
+        if not signal_dict:
+            # no signal_dimension match either, hence select the general subclass for
+            # correct dtype
+            signal_dict = {key: value for key, value in dtype_matches.items()
+                           if value["signal_dimension"] == -1
+                           and value["signal_type"] == ""}
+    # Sanity check
+    if len(signal_dict) > 1:
+        _logger.warning(
+            "There is more than one kind of signal that match the current specifications, "
+            "which is not expected."
+            "Please report this issue to the HyperSpy developers.")
+    # Regardless of the number of signals in the dict we assign one.
+    # The following should only raise an error if the base classes
+    # are not correctly registered.
+    for key, value in signal_dict.items():
+        signal_class = getattr(importlib.import_module(value["import"]), key)
+        return signal_class
 
 
 def dict2signal(signal_dict, lazy=False):
