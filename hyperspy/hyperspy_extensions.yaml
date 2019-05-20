@@ -1,72 +1,72 @@
 signals:
   BaseSignal:
-    signal_type: real 
+    signal_type: ""
     signal_dimension: -1
     dtype: real
     lazy: False
     import: hyperspy.signal
   LazySignal:
-    signal_type: real 
+    signal_type: ""
     signal_dimension: -1
     dtype: real
     lazy: True
     import: hyperspy._signals.lazy
   Signal1D:
-    signal_type: 
+    signal_type: ""
     signal_dimension: 1
     dtype: real
     lazy: False
     import: hyperspy._signals.signal1d
   LazySignal1D:
-    signal_type: 
+    signal_type: ""
     signal_dimension: 1
     dtype: real
     lazy: True
     import: hyperspy._signals.signal1d
   Signal2D:
-    signal_type: 
+    signal_type: ""
     signal_dimension: 2
     dtype: real
     lazy: False
     import: hyperspy._signals.signal2d
   LazySignal2D:
-    signal_type: 
+    signal_type: ""
     signal_dimension: 2
     dtype: real
     lazy: True
     import: hyperspy._signals.signal2d
   ComplexSignal:
-    signal_type: 
+    signal_type: ""
     signal_dimension: -1
     dtype: complex
     lazy: False
     import: hyperspy._signals.complex_signal
   ComplexLazySignal:
-    signal_type: 
+    signal_type: ""
     signal_dimension: -1
     dtype: complex
     lazy: True
     import: hyperspy._signals.complex_signal
   ComplexSignal1D:
-    signal_type: 
+    signal_type: ""
     signal_dimension: 1
     dtype: complex
     lazy: False
     import: hyperspy._signals.complex_signal1d
   ComplexLazySignal1D:
-    signal_type: 
+    signal_type: ""
     signal_dimension: 1
     dtype: complex
     lazy: True
     import: hyperspy._signals.complex_signal1d
   ComplexSignal2D:
-    signal_type: 
+    signal_type: ""
     signal_dimension: 2
     dtype: complex
     lazy: False
     import: hyperspy._signals.complex_signal2d
   ComplexLazySignal2D:
-    signal_type: 
+    signal_type: ""
     signal_dimension: 2
     dtype: complex
     lazy: True
