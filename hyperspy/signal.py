@@ -4525,7 +4525,7 @@ class BaseSignal(FancySlicing,
             self, marker, plot_on_signal=True, plot_marker=True,
             permanent=False, plot_signal=True, render_figure=True):
         """
-        Add a marker to the signal or navigator plot.
+        Add one or several markers to the signal or navigator plot.
 
         Plot the signal, if not yet plotted
 
@@ -4535,6 +4535,9 @@ class BaseSignal(FancySlicing,
             The marker or iterable (list, tuple, ...) of markers to add.
             See `plot.markers`. If you want to add a large number of markers,
             add them as an iterable, since this will be much faster.
+            For signals with navigation dimensions, the markers can be
+            made to change for different navigation indices. See the examples
+            for info.
         plot_on_signal : bool, default True
             If True, add the marker to the signal
             If False, add the marker to the navigator
@@ -4556,26 +4559,28 @@ class BaseSignal(FancySlicing,
         >>> im.add_marker(m)
 
         Adding to a 1D signal, where the point will change
-        when the navigation index is changed
+        when the navigation index is changed.
 
         >>> s = hs.signals.Signal1D(np.random.random((3, 100)))
         >>> marker = hs.markers.point((19, 10, 60), (0.2, 0.5, 0.9))
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
-        >>> s.plot(plot_markers=True) #doctest: +SKIP
 
         Add permanent marker
 
         >>> s = hs.signals.Signal2D(np.random.random((100, 100)))
-        >>> marker = hs.markers.point(50, 60)
+        >>> marker = hs.markers.point(50, 60, color='red')
         >>> s.add_marker(marker, permanent=True, plot_marker=True)
-        >>> s.plot(plot_markers=True) #doctest: +SKIP
 
-        Add permanent marker to signal with 2 navigation dimensions
+        Add permanent marker to signal with 2 navigation dimensions.
+        The signal has navigation dimensions (3, 2), as the dimensions
+        gets flipped compared to the output from np.random.random.
+        To add a vertical line marker which changes for different navigation
+        indices, the list used to make the marker must be a nested list:
+        2 lists with 3 elements each (2 x 3).
 
         >>> s = hs.signals.Signal1D(np.random.random((2, 3, 10)))
         >>> marker = hs.markers.vertical_line([[1, 3, 5], [2, 4, 6]])
         >>> s.add_marker(marker, permanent=True)
-        >>> s.plot(plot_markers=True) #doctest: +SKIP
 
         Add permanent marker which changes with navigation position, and
         do not add it to a current plot
@@ -4623,7 +4628,9 @@ class BaseSignal(FancySlicing,
                     marker_data_shape != self.axes_manager.navigation_shape):
                 raise ValueError(
                     "Navigation shape of the marker must be 0 or the "
-                    "same navigation shape as this signal.")
+                    "inverse navigation shape as this signal. If the "
+                    "navigation dimensions for the signal is (2, 3), "
+                    "the marker dimension must be (3, 2).")
             if (m.signal is not None) and (m.signal is not self):
                 raise ValueError("Markers can not be added to several signals")
             m._plot_on_signal = plot_on_signal
