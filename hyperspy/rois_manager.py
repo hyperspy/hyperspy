@@ -23,7 +23,7 @@ from hyperspy.roi import (BaseInteractiveROI, SpanROI, RectangularROI,
 
 
 class ROIsManager:
-    
+
     """ Class to manager widgets (add, store and remove) to a figure.
 
     Attributes
@@ -41,29 +41,30 @@ class ROIsManager:
 
     def __init__(self, signal):
         self.signal = signal
+        self._index = 0
         self._rois_list = []
 
         # Default name of the metadata node to store widget
         self.metadata_node_name = 'ROIs'
         # TODO: fix issue with overlaying span
 
-    def add_ROIs(self, rois, signal):
+    def add_ROIs(self, roi, signal):
         """
         Add one or several ROIs.
         
         Parameters
         ----------
-        rois : ROI, coordinates, list of ROIs, list of coordinates
+        roi : ROI, coordinates, list of ROIs, list of coordinates
             If coordinates, the coordinates should match the dimension of the
             figure on which the roi is added.
         """
-        if isinstance(rois, list):
-            for roi in rois:
-                self._add_ROI(signal, roi)
+        if isinstance(roi, list):
+            for _roi in roi:
+                self._add_ROI(signal, _roi)
         else:
-            self._add_ROI(signal, rois)
+            self._add_ROI(signal, roi)
 
-    def _add_ROI(self, signal, roi=None):
+    def _add_ROI(self, signal, roi):
         axes = None
         if isinstance(roi, BaseInteractiveROI):
             pass
@@ -74,9 +75,8 @@ class ROIsManager:
                 axes = self.signal.axes_manager.navigation_axes
             roi = roi_dict_to_roi(roi)
         else:
-            raise ValueError("Please check the 'rois' parameter.")
+            raise ValueError("Please check the 'roi' parameter.")
         roi.add_widget(signal, axes=axes)
-        self._rois_list.append(roi)
 
     def create_ROI_interactively(self, figure):
         """
@@ -99,7 +99,6 @@ class ROIsManager:
             roi = SpanROI(None, None)
             axes = figure.axis
         roi.add_widget(self.signal, axes=axes, set_initial_value=False)
-        self._rois_list.append(roi)
 
     def remove_roi(self, roi):
         """

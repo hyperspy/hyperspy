@@ -279,6 +279,10 @@ class BaseInteractiveROI(BaseROI):
         super(BaseInteractiveROI, self).__init__()
         self.widgets = set()
         self._applying_widget_change = False
+        self.color = 'green'
+        self.alpha = 0.5
+        self.snap_position = True
+        self.on_signal = True
 
     def update(self):
         """Function responsible for updating anything that depends on the ROI.
@@ -403,7 +407,7 @@ class BaseInteractiveROI(BaseROI):
         self._update_widgets(exclude=(widget,))
         self.events.changed.trigger(self)
 
-    def add_widget(self, signal, axes=None, widget=None, color='green',
+    def add_widget(self, signal, axes=None, widget=None, color=None,
                    set_initial_value=True, **kwargs):
         """Add a widget to visually represent the ROI, and connect it so any
         changes in either are reflected in the other. Note that only one
@@ -435,6 +439,8 @@ class BaseInteractiveROI(BaseROI):
         kwargs:
             All keyword argument are passed to the widget constructor.
         """
+        if color is None:
+            color = self.color
         axes = self._parse_axes(axes, signal.axes_manager,)
         if widget is None:
             widget = self._get_widget_type(
@@ -458,7 +464,11 @@ class BaseInteractiveROI(BaseROI):
 
             ax = _get_mpl_ax(signal._plot, axes)
             widget.set_mpl_ax(ax, set_initial_value=set_initial_value)
-            signal.rois_manager.append(self)
+            signal.rois_manager._rois_list.append(self)
+        if "alpha" not in kwargs.keys():
+            widget.alpha = self.alpha
+        if "snap_position" not in kwargs.keys():
+            widget.snap_position = self.snap_position
         with widget.events.changed.suppress_callback(self._on_widget_change):
             self._apply_roi2widget(widget)
 
@@ -485,35 +495,93 @@ class BaseInteractiveROI(BaseROI):
             w = self.signal_map.pop(signal)[0]
             self._remove_widget(w)
 
+    def get_properties(self):
+        return {"color": self.color, "alpha":self.alpha,
+                "snap_position":self.snap_position}
+
     def set_properties(self, **kwargs):
-        widget = self._get_widget()
-        for item in kwargs.items():
-            setattr(widget, item[0], item[1])
-
-    @property
-    def parameters(self, **kwargs):
-        return {}
-
-    @parameters.setter
-    def parameters(self, **kwargs):
-        paramater_key = self.paramaters.keys()
+        properties_keys = self.get_properties().keys()
         for args in kwargs.items():
-            if args in paramater_key:
+            if args[0] in properties_keys:
                 setattr(self, args[0], args[1])
 
+    def get_parameters(self, **kwargs):
+        # To be implemented by subclass
+        pass
+
+    def set_parameters(self, **kwargs):
+        paramaters_keys = self.get_parameters().keys()
+        for args in kwargs.items():
+            if args[0] in paramaters_keys:
+                setattr(self, args[0], args[1])
+
+    @property
+    def color(self):
+        if len(self.widgets):
+            return self._get_widget().color
+        else:
+            return self._color
+
+    @color.setter
+    def color(self, value):
+        if len(self.widgets):
+            self._get_widget().color = value
+        else:
+            self._color = value
+
+    @property
+    def alpha(self):
+        if len(self.widgets):
+            return self._get_widget().alpha
+        else:
+            return self._alpha
+
+    @alpha.setter
+    def alpha(self, value):
+        if len(self.widgets):
+            self._get_widget().alpha = value
+        else:
+            self._alpha = value
+
+    @property
+    def snap_position(self):
+        if len(self.widgets):
+            return self._get_widget().snap_position
+        else:
+            return self._snap_position
+
+    @snap_position.setter
+    def snap_position(self, value):
+        if len(self.widgets):
+            self._get_widget().snap_position = value
+        else:
+            self._snap_position = value
+
+    @property
+    def on_signal(self):
+        if len(self.widgets):
+            return not self._get_widget()._navigating
+        else:
+            return self._on_signal
+
+    @on_signal.setter
+    def on_signal(self, value):
+        if len(self.widgets):
+            self._get_widget()._navigating = not value
+        else:
+            self._on_signal = value
+
     def _get_widget(self):
-        return next(iter(self.widgets))
+        if len(self.widgets):
+            return next(iter(self.widgets))
 
     def to_dictionary(self):
-        widget = self._get_widget()
         roi_dict = {
             'roi_type': self.__class__.__name__,
             'name': self.name,
-            'parameters': self.parameters,
-            'properties': {'color':widget.color,
-                           'alpha':widget.alpha,
-                           'snap_position':widget.snap_position},
-            'on_signal': not widget._navigating,
+            'parameters': self.get_parameters(),
+            'properties': self.get_properties(),
+            'on_signal': self.on_signal,
         }
         return roi_dict
 
@@ -601,9 +669,9 @@ class Point1DROI(BasePointROI):
             self.__class__.__name__,
             self.value)
 
-    @property
-    def parameters(self, **kwargs):
+    def get_parameters(self, **kwargs):
         return {"value": self.value}
+
 
 @add_gui_method(toolkey="Point2DROI")
 class Point2DROI(BasePointROI):
@@ -645,9 +713,9 @@ class Point2DROI(BasePointROI):
             self.__class__.__name__,
             self.x, self.y)
 
-    @property
-    def parameters(self, **kwargs):
+    def get_parameters(self, **kwargs):
         return {"x": self.x, "y": self.y}
+
 
 @add_gui_method(toolkey="SpanROI")
 class SpanROI(BaseInteractiveROI):
@@ -712,8 +780,7 @@ class SpanROI(BaseInteractiveROI):
             self.left,
             self.right)
 
-    @property
-    def parameters(self, **kwargs):
+    def get_parameters(self, **kwargs):
         return {"left": self.left, "right": self.right}
 
 
@@ -731,6 +798,9 @@ class RectangularROI(BaseInteractiveROI):
     def __init__(self, left, top, right, bottom):
         super(RectangularROI, self).__init__()
         self._bounds_check = True   # Use reponsibly!
+        if left is None or left is None or right is None or bottom is None:
+            top = bottom = left = right = t.Undefined
+
         self.top, self.bottom, self.left, self.right = top, bottom, left, right
 
     def is_valid(self):
@@ -854,10 +924,10 @@ class RectangularROI(BaseInteractiveROI):
             self.right,
             self.bottom)
 
-    @property
-    def parameters(self, **kwargs):
+    def get_parameters(self, **kwargs):
         return {"left": self.left, "top": self.top,
                 "right": self.right, "bottom": self.bottom}
+
 
 @add_gui_method(toolkey="CircleROI")
 class CircleROI(BaseInteractiveROI):
@@ -1021,10 +1091,10 @@ class CircleROI(BaseInteractiveROI):
                 self.r,
                 self.r_inner)
 
-    @property
-    def parameters(self, **kwargs):
-        # TODO
-        pass
+    def get_parameters(self, **kwargs):
+        return {"cx": self.cx, "cy": self.cy,
+                "r": self.r, "r_inner": self.r_inner}
+
 
 @add_gui_method(toolkey="Line2DROI")
 class Line2DROI(BaseInteractiveROI):
@@ -1338,18 +1408,12 @@ class Line2DROI(BaseInteractiveROI):
             self.y2,
             self.linewidth)
 
-    @property
     def parameters(self, **kwargs):
         return {"x1": self.x1, "y1": self.y1, "x2": self.x2, "y2": self.y2,
                 "linewidth": self.linewidth}
 
-    @parameters.setter
-    def parameters(self, **kwargs):
-        for args in kwargs.items():
-            setattr(self. args[0], args[1])
-
 
 def roi_dict_to_roi(roi_dict):
     roi = globals()[roi_dict['roi_type']](**roi_dict['parameters'])
-    # roi.set_properties(**roi_dict['roi_properties'])
+    roi.set_properties(**roi_dict['properties'])
     return(roi)

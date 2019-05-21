@@ -4655,17 +4655,24 @@ class BaseSignal(FancySlicing,
         if plot_marker and render_figure:
             self._render_figure()
 
-    def add_ROIs(self, roi_dict):
-        if self._plot is None:
-            self.plot()
-        if isinstance(roi_dict, list):
-            for _roi_dict in roi_dict:
-                self._add_ROI(_roi_dict)
-        else:
-            self._add_ROI(roi_dict)
+    def add_ROIs(self, roi, plot_signal=True):
+        """
+        Add one or several ROIs to the signal.
 
-    def _add_ROI(self, roi_dict):
-        self.rois_manager.add_ROIs(roi_dict, self)
+        Parameters
+        ----------
+        roi : (list of) ROI object or (list of) dictionary 
+            ROI object needs to be created through the hyperpy.api.roi
+
+        plot_signal : bool
+            Plot the signal and add the ROI(s) to the figure
+
+        """
+        # TODO: when `plot_signal=False` add the roi to the rois_manager but
+        # don't call `add_widget`, add option to plot roi when plotting signal
+        if plot_signal and self._plot is None:
+            self.plot()
+        self.rois_manager.add_ROIs(roi, self)
 
     def add_ROIs_from_metadata(self, metadata_node=None):
         if metadata_node is None:
