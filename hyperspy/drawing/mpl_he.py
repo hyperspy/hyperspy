@@ -90,6 +90,7 @@ class MPL_HyperExplorer(object):
             sf.ylabel = r'$\Sigma\mathrm{data\,over\,all\,other\,axes}$'
             sf.axis = axis
             sf.axes_manager = self.axes_manager
+            sf.rois_manager = self.rois_manager
             self.navigator_plot = sf
             # Create a line to the left axis with the default
             # indices
@@ -112,6 +113,7 @@ class MPL_HyperExplorer(object):
         elif len(self.navigator_data_function().shape) >= 2:
             imf = image.ImagePlot()
             imf.data_function = self.navigator_data_function
+            imf.rois_manager = self.rois_manager
             imf.colorbar = colorbar
             imf.scalebar = scalebar
             imf.scalebar_color = scalebar_color

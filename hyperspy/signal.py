@@ -59,6 +59,7 @@ from hyperspy.events import Events, Event
 from hyperspy.interactive import interactive
 from hyperspy.misc.signal_tools import (are_signals_aligned,
                                         broadcast_signals)
+from hyperspy.rois_manager import ROIsManager
 
 from hyperspy.exceptions import VisibleDeprecationWarning
 
@@ -1591,6 +1592,7 @@ class BaseSignal(FancySlicing,
         """
         self._create_metadata()
         self.models = ModelManager(self)
+        self.rois_manager = ROIsManager(self)
         self.learning_results = LearningResults()
         kwds['data'] = data
         self._load_dictionary(kwds)
@@ -1980,6 +1982,7 @@ class BaseSignal(FancySlicing,
                 "for plotting as a 2D signal.")
 
         self._plot.axes_manager = axes_manager
+        self._plot.rois_manager = self.rois_manager
         self._plot.signal_data_function = self.__call__
 
         if self.metadata.has_item("Signal.quantity"):
@@ -4652,14 +4655,46 @@ class BaseSignal(FancySlicing,
         if plot_marker and render_figure:
             self._render_figure()
 
-    def _render_figure(self, plot=['signal_plot', 'navigation_plot']):
+    def add_ROIs(self, roi_dict):
+        if self._plot is None:
+            self.plot()
+        if isinstance(roi_dict, list):
+            for _roi_dict in roi_dict:
+                self._add_ROI(_roi_dict)
+        else:
+            self._add_ROI(roi_dict)
+
+    def _add_ROI(self, roi_dict):
+        self.rois_manager.add_ROIs(roi_dict, self)
+
+    def add_ROIs_from_metadata(self, metadata_node=None):
+        if metadata_node is None:
+            metadata_node = 'Widgets'
+        if isinstance(metadata_node, str):
+            metadata_node = self.metadata.get_item(metadata_node)
+        if metadata_node is None:
+            raise ValueError("The metadata node can't be found.")
+        self.add_ROIs([item[1] for item in metadata_node])
+
+    def add_ROIs_to_metadata(self, metadata_name=None):
+        if len(self.rois_manager) > 0:
+            if metadata_name is None:
+                metadata_name = 'ROIs'
+            # Add the node only if there is a widget 
+            if not self.metadata.has_item(metadata_name):
+                self.metadata.add_node(metadata_name)
+            metadata_node = self.metadata.get_item(metadata_name)
+            self.rois_manager.add_ROIs_to_metadata(metadata_node)
+
+    def _render_figure(self, plot=['signal_plot', 'navigator_plot']):
         for p in plot:
             if hasattr(self._plot, p):
                 p = getattr(self._plot, p)
-                if p.figure.canvas.supports_blit:
-                    p.ax.hspy_fig._update_animated()
-                else:
-                    p.ax.hspy_fig._draw_animated()
+                if p is not None:
+                    if p.figure.canvas.supports_blit:
+                        p.ax.hspy_fig._update_animated()
+                    else:
+                        p.ax.hspy_fig._draw_animated()
 
     def _plot_permanent_markers(self):
         marker_name_list = self.metadata.Markers.keys()

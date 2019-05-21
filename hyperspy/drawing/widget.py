@@ -59,6 +59,7 @@ class WidgetBase(object):
         self.patch = []
         self.color = color
         self.alpha = alpha
+        self.name = ""
         self.cids = list()
         self.blit = True
         self.events = Events()
@@ -490,6 +491,13 @@ class DraggableWidgetBase(WidgetBase):
             return
         if self.picked is True:
             self.picked = False
+
+    def mouse_on_widget(self, event):
+        if self.patch:
+            contains, attrd = self.patch[0].contains(event)
+            return contains
+        else:
+            return False
 
 
 class Widget1DBase(DraggableWidgetBase):

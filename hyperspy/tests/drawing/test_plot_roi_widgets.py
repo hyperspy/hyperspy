@@ -141,3 +141,17 @@ class TestPlotROI():
         p = roi.Line2DROI(x1=0.01, y1=0.01, x2=0.1, y2=0.03)
         p.add_widget(signal=objs["im"], axes=objs["axes"], color="cyan")
         return objs["figure"]
+
+
+class TestROIsManager:
+
+    def setup_method(self):
+        s = Signal1D(np.arange(100))
+        self.s = s
+
+    def test_add_widget(self):
+        s = self.s
+        p = roi.SpanROI(25.0, 45.0)
+        s.plot()
+        p.add_widget(s)
+        assert len(s.rois_manager) == 1
