@@ -60,10 +60,13 @@ _logger = logging.getLogger(__name__)
 _COMPONENTS = ALL_EXTENSIONS["components1D"]
 _COMPONENTS.update(ALL_EXTENSIONS["components1D"])
 
+
 def reconstruct_component(comp_dictionary, **init_args):
     _id = comp_dictionary['_id_name']
     if _id in _COMPONENTS:
-        _class = getattr(importlib.import_module(_COMPONENTS[_id]["import"]), _id)
+        _class = getattr(
+            importlib.import_module(
+                _COMPONENTS[_id]["import"]), _id)
     else:
         _class = dill.loads(comp_dictionary['_class_dump'])
     return _class(**init_args)
@@ -1493,7 +1496,8 @@ class BaseModel(list):
             if only_active is False or component.active:
                 component.plot(only_free=only_free)
 
-    def print_current_values(self, only_free=False, only_active=False, fancy=True):
+    def print_current_values(self, only_free=False,
+                             only_active=False, fancy=True):
         """Prints the current values of the parameters of all components.
         Parameters
         ----------

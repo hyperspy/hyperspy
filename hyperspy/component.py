@@ -1195,16 +1195,16 @@ class Component(t.HasTraits):
                     \ndictionary['_id_name'] = %s" % (self._id_name, dic['_id_name']))
 
     def print_current_values(self, only_free=False, fancy=True):
-            """Prints the current values of the component's parameters.
-            Parameters
-            ----------
-            only_free : bool
-                If True, only free parameters will be printed.
-            fancy : bool
-                If True, attempts to print using html rather than text in the notebook.
-            """
-            if fancy:
-                display(current_component_values(self, only_free=only_free))
-            else:
-                display_pretty(current_component_values(
-                    self, only_free=only_free))
+        """Prints the current values of the component's parameters.
+        Parameters
+        ----------
+        only_free : bool
+            If True, only free parameters will be printed.
+        fancy : bool
+            If True, attempts to print using html rather than text in the notebook.
+        """
+        if fancy:
+            display(current_component_values(self, only_free=only_free))
+        else:
+            display_pretty(current_component_values(
+                self, only_free=only_free))
