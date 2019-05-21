@@ -222,6 +222,28 @@ class TestPolynomial:
         np.testing.assert_allclose(p.coefficients.map['values'],
                                    np.tile([0.5, 2, 3], (2, 5, 1)))
 
+    @pytest.mark.filterwarnings("ignore:The `Polynomial2`")
+    def test_conversion_dictionary_to_polynomial2(self):
+        from hyperspy._components.polynomial import convert_to_polynomial
+        s = hs.signals.Signal1D(np.zeros(1024))
+        s.axes_manager[0].offset = -5
+        s.axes_manager[0].scale = 0.01
+        poly = hs.model.components1D.Polynomial(order=2)
+        poly.coefficients.value = [1, 2, 3]
+        poly.coefficients.value = [1, 2, 3]
+        poly.coefficients._bounds = ((None, None), (10, 0.0), (None, None))
+        poly_dict = poly.as_dictionary(True)
+        poly2_dict = convert_to_polynomial(poly_dict)
+
+        poly2 = hs.model.components1D.Polynomial2(order=2)
+        poly2._id_name = 'Polynomial'
+        _ = poly2._load_dictionary(poly2_dict)
+        assert poly2.a2.value == 1
+        assert poly2.a2._bounds == (None, None)
+        assert poly2.a1.value == 2
+        assert poly2.a1._bounds == (10, 0.0)
+        assert poly2.a0.value == 3
+
 
 @pytest.mark.filterwarnings("ignore:The `Polynomial2`")
 class TestPolynomial2:
@@ -303,6 +325,7 @@ class TestPolynomial2:
         p.estimate_parameters(s, None, None, only_current=False)
         axis = s.axes_manager.signal_axes[0]
         assert_allclose(p.function_nd(axis.axis), s.data)
+
 
 class TestGaussian:
 

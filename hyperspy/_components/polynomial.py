@@ -17,11 +17,16 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import logging
+
 
 from hyperspy.component import Component
 from hyperspy._components.expression import Expression
 from hyperspy.misc.utils import ordinal
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
+
+
+_logger = logging.getLogger(__name__)
 
 
 class Polynomial(Component):
@@ -253,3 +258,24 @@ class Polynomial2(Expression):
                         para.map['is_set'][:] = True
             self.fetch_stored_values()
             return True
+
+
+def convert_to_polynomial(poly_dict):
+    """
+    Convert the dictionary from the old to the new polynomial definition
+    """
+    _logger.info("Converting the polynomial to the new definition")
+    poly_order = poly_dict['order']
+    coeff_list = ['{}'.format(o).zfill(len(list(str(poly_dict['order'])))) 
+                  for o in range(poly_dict['order'], -1, -1)]
+    poly2_dict = dict(poly_dict)
+    coefficient_dict = poly_dict['parameters'][0]
+    poly2_dict['parameters'] = []
+    for i, coeff in enumerate(coeff_list):
+        param_dict = dict(coefficient_dict)
+        param_dict['_id_name'] = 'a{}'.format(coeff)
+        for v in ['value', '_bounds']:
+            param_dict[v] = coefficient_dict[v][i]
+        poly2_dict['parameters'].append(param_dict)
+
+    return poly2_dict
