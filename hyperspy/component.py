@@ -1146,8 +1146,8 @@ class Component(t.HasTraits):
             'parameters': [
                 p.as_dictionary(fullcopy) for p in self.parameters]}
         export_to_dictionary(self, self._whitelist, dic, fullcopy)
-        from hyperspy.model import components
-        if self._id_name not in components.__dict__.keys():
+        from hyperspy.model import _COMPONENTS
+        if self._id_name not in _COMPONENTS:
             import dill
             dic['_class_dump'] = dill.dumps(self.__class__)
         return dic

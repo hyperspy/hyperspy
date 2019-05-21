@@ -33,7 +33,7 @@ For more details see each component docstring.
 
 
 # -*- coding: utf-8 -*-
-from hyperspy.extensions import ALL_EXTENSIONS as _EXTENSIONS
+from hyperspy.extensions import EXTENSIONS as _EXTENSIONS
 import importlib
 
 _g = globals()

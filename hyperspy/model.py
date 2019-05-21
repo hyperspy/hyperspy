@@ -22,6 +22,7 @@ import tempfile
 import numbers
 import logging
 from distutils.version import LooseVersion
+import importlib
 
 import numpy as np
 import dill
@@ -36,7 +37,7 @@ from hyperspy.external.progressbar import progressbar
 from hyperspy.defaults_parser import preferences
 from hyperspy.external.mpfit.mpfit import mpfit
 from hyperspy.component import Component
-from hyperspy import components1d, components2d
+from hyperspy.extensions import ALL_EXTENSIONS
 from hyperspy.signal import BaseSignal
 from hyperspy.misc.export_dictionary import (export_to_dictionary,
                                              load_from_dictionary,
@@ -56,24 +57,14 @@ from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_INT_ARG
 
 _logger = logging.getLogger(__name__)
 
-# components is just a container for all (1D and 2D) components, to be able to
-# search in a single object for matching components when recreating a model.
-
-
-class DummyComponentsContainer:
-    pass
-
-
-components = DummyComponentsContainer()
-components.__dict__.update(components1d.__dict__)
-components.__dict__.update(components2d.__dict__)
-
+_COMPONENTS = ALL_EXTENSIONS["components1D"]
+_COMPONENTS.update(ALL_EXTENSIONS["components1D"])
 
 def reconstruct_component(comp_dictionary, **init_args):
     _id = comp_dictionary['_id_name']
-    try:
-        _class = getattr(components, _id)
-    except AttributeError:
+    if _id in _COMPONENTS:
+        _class = getattr(importlib.import_module(_COMPONENTS[_id]["import"]), _id)
+    else:
         _class = dill.loads(comp_dictionary['_class_dump'])
     return _class(**init_args)
 
