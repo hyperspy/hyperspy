@@ -628,9 +628,22 @@ def guess_vertical_or_horizontal(axes, signal):
 
 @add_gui_method(toolkey="Point1DROI")
 class Point1DROI(BasePointROI):
+    """Selects a single point in a 1D space.
 
-    """Selects a single point in a 1D space. The coordinate of the point in the
-    1D space is stored in the 'value' trait.
+    Attribute
+    ---------
+    value : float
+        The position of the ROI.
+
+    Examples
+    --------
+
+    Add a Point2DRoi to a signal (signal needs to be plotted):
+
+    >>> s = hs.signals.Signal1D(np.arange(100))
+    >>> s.plot()
+    >>> point_roi = hs.roi.Point1DROI(x=45.0)
+    >>> point_roi.add_widget(s)
     """
     value = t.CFloat(t.Undefined)
     _ndim = 1
@@ -675,9 +688,25 @@ class Point1DROI(BasePointROI):
 
 @add_gui_method(toolkey="Point2DROI")
 class Point2DROI(BasePointROI):
+    """Selects a single point in a 2D space.
 
-    """Selects a single point in a 2D space. The coordinates of the point in
-    the 2D space are stored in the traits 'x' and 'y'.
+    Attributes
+    ----------
+    x : float
+        The x position of the ROI.
+
+    y : float
+        The y position of the ROI.
+
+    Examples
+    --------
+
+    Add a Point2DRoi to a signal (signal needs to be plotted):
+
+    >>> s = hs.signals.Signal2D(np.random.random((2,3,4,5)))
+    >>> s.plot()
+    >>> point_roi = hs.roi.Point2D(x=3.0, y=1.0)
+    >>> point_roi.add_widget(s)
     """
     x, y = (t.CFloat(t.Undefined),) * 2
     _ndim = 2
@@ -719,9 +748,24 @@ class Point2DROI(BasePointROI):
 
 @add_gui_method(toolkey="SpanROI")
 class SpanROI(BaseInteractiveROI):
+    """Selects a range in a 1D space.
 
-    """Selects a range in a 1D space. The coordinates of the range in
-    the 1D space are stored in the traits 'left' and 'right'.
+    Attributes
+    ----------
+    left : float
+        The left position of the ROI.
+    right : float
+        The right position of the ROI.
+
+    Examples
+    --------
+
+    Add a SpanROI to a signal (signal needs to be plotted):
+
+    >>> s = hs.signals.Signal1D(np.arange(100))
+    >>> s.plot()
+    >>> range_roi = hs.roi.SpanROI(left=45.0, right=60.0)
+    >>> range_roi.add_widget(s)
     """
     left, right = (t.CFloat(t.Undefined),) * 2
     _ndim = 1
@@ -786,11 +830,43 @@ class SpanROI(BaseInteractiveROI):
 
 @add_gui_method(toolkey="RectangularROI")
 class RectangularROI(BaseInteractiveROI):
+    """Selects a range in a 2D space.
 
-    """Selects a range in a 2D space. The coordinates of the range in
-    the 2D space are stored in the traits 'left', 'right', 'top' and 'bottom'.
-    Convenience properties 'x', 'y', 'width' and 'height' are also available,
-    but cannot be used for initialization.
+    Attributes
+    ----------
+    left : float
+        The left position of the ROI.
+    right : float
+        The right position of the ROI.
+    top : float
+        The top position of the ROI.
+    bottom : float
+        The bottom position of the ROI.
+
+    Other attributes
+    ----------------
+    For convenience, the following properties are also available but cannot 
+    be used for initialization.
+
+    x : float
+        The x position of the ROI.
+    y : float
+        The y position of the ROI.
+    width : float
+        The width position of the ROI.
+    height : float
+        The height position of the ROI.
+
+    Examples
+    --------
+
+    Add a RectangularROI to a signal (signal needs to be plotted):
+
+    >>> s = hs.signals.Signal2D(np.random.random((10, 10)))
+    >>> s.plot()
+    >>> rectangle_roi = hs.roi.RectangularROI(left=2.0, right=4.0,
+                                              top=5, bottom=8)
+    >>> rectangle_roi.add_widget(s)
     """
     top, bottom, left, right = (t.CFloat(t.Undefined),) * 4
     _ndim = 2
@@ -931,6 +1007,30 @@ class RectangularROI(BaseInteractiveROI):
 
 @add_gui_method(toolkey="CircleROI")
 class CircleROI(BaseInteractiveROI):
+    """Provides a circular ROI or an annular ROI in a 2D space.
+
+    Attributes
+    ----------
+    cx : float
+        The x position of the center of the ROI.
+    cy : float
+        The y position of the centre of the ROI.
+    r : float
+        The radius of the outer circle the ROI.
+    r_inner : float
+        The radius of the inner circle the ROI. Use r_inner>0 to set the ROI 
+        to an annular disk
+
+    Examples
+    --------
+
+    Add a CircleROI to a signal (signal needs to be plotted):
+
+    >>> s = hs.signals.Signal2D(np.arange(100).reshape((100, 100)))
+    >>> s.plot()
+    >>> circle_roi = hs.roi.CircleROI(cx=50, cy=50, r=40, r_inner=20)
+    >>> circle_roi.add_widget(s)
+    """
 
     cx, cy, r, r_inner = (t.CFloat(t.Undefined),) * 4
     _ndim = 2
