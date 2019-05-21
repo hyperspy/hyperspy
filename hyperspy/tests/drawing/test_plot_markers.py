@@ -159,7 +159,7 @@ class TestMarkers:
                 vertical_line = s._plot.signal_plot.figure.axes[0].lines[1]
                 assert value == vertical_line.get_data()[0]
 
-    def test_add_marker_signal2d_navigation_dim(self, mpl_cleanup):
+    def test_add_marker_signal2d_navigation_dim(self):
         s = Signal2D(np.zeros((3, 50, 50)))
         m0 = markers.point(5, 5)
         m1 = markers.point((5, 10), (10, 15))
