@@ -78,17 +78,32 @@ class ROIsManager:
         roi.add_widget(signal, axes=axes)
         self._rois_list.append(roi)
 
-    def _create_ROI(self):
-        # if Signal1DFigure, add SpanROI as default ROI
-        if self.is_signal1d_figure:
-            roi = SpanROI()
-        # if Signal2DFigure, add RectangularROI as default ROI
+    def create_ROI_interactively(self, figure):
+        """
+        Create ROI interactively: the ROI will be created when cliking on the
+        figure.
+
+        Parameters
+        ----------
+        figure : Figure object
+            The figure on which the ROI will be created      
+
+        """
+        if hasattr(figure, "xaxis"):
+            # for Signal2DFigure, add RectangularROI as default ROI
+            raise ValueError("Currently not implemented.")
+            roi = RectangularROI(None, None, None, None)
+            axes = [figure.xaxis, figure.yaxis]
         else:
-            roi = RectangularROI()
-        return roi
+            # for Signal1DFigure, add SpanROI as default ROI
+            roi = SpanROI(None, None)
+            axes = figure.axis
+        roi.add_widget(self.signal, axes=axes, set_initial_value=False)
+        self._rois_list.append(roi)
 
     def remove_roi(self, roi):
-        """Remove a roi. The roi can be selected either by providing
+        """
+        Remove a roi. The roi can be selected either by providing
         the roi itself or its index in the `_rois_list`.
         """
         if isinstance(roi, int):

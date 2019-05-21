@@ -86,6 +86,7 @@ class MPL_HyperSignal1D_Explorer(MPL_HyperExplorer):
         if sf.ax is None:
             sf.create_axis()
         sf.axes_manager = self.axes_manager
+        sf.rois_manager = self.rois_manager
         self.xlabel = '{}'.format(self.axes_manager.signal_axes[0])
         if self.axes_manager.signal_axes[0].units is not Undefined:
             self.xlabel += ' ({})'.format(

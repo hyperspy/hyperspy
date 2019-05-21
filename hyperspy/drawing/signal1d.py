@@ -39,12 +39,13 @@ class Signal1DFigure(BlittedFigure):
     """
 
     def __init__(self, title=""):
-        super(Signal1DFigure, self).__init__()
+        super().__init__()
         self.figure = None
         self.ax = None
         self.right_ax = None
         self.ax_lines = list()
         self.right_ax_lines = list()
+        self.axis = None
         self.axes_manager = None
         self.right_axes_manager = None
 

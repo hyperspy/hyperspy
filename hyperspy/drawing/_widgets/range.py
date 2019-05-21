@@ -76,9 +76,10 @@ class RangeWidget(ResizableDraggableWidgetBase):
                 self.ax = None
         self.__is_on = value
 
-    def _add_patch_to(self, ax):
+    def _add_patch_to(self, ax, set_initial_value=True):
         self.span = ModifiableSpanSelector(ax, **self._SpanSelector_kwargs)
-        self.span.set_initial(self._get_range())
+        if set_initial_value:
+            self.span.set_initial(self._get_range())
         self.span.bounds_check = True
         self.span.snap_position = self.snap_position
         self.span.snap_size = self.snap_size
@@ -412,7 +413,7 @@ class ModifiableSpanSelector(SpanSelector):
             return False, {}
         x_pt = self._get_point_size_in_data_units()
         hit = self._range[0] - x_pt, self._range[1] + x_pt
-        if hit[0] < self._get_mouse_position < hit[1]:
+        if hit[0] < self._get_mouse_position(mouseevent) < hit[1]:
             return True, {}
         return False, {}
 
