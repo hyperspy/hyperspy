@@ -36,6 +36,8 @@ if os.path.isfile(_external_exts_f):
                 if "signals" in ext_ext:
                     ALL_EXTENSIONS["signals"].update(ext_ext["signals"])
                 if "components1D" in ext_ext:
-                    ALL_EXTENSIONS["components1D"].update(ext_ext["components1D"])
+                    ALL_EXTENSIONS["components1D"].update(
+                        ext_ext["components1D"])
                 if "components2D" in ext_ext:
-                    ALL_EXTENSIONS["components2D"].update(ext_ext["components2D"])
+                    ALL_EXTENSIONS["components2D"].update(
+                        ext_ext["components2D"])
