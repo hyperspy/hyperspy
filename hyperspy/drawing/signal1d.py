@@ -25,6 +25,7 @@ import logging
 import inspect
 
 from hyperspy.drawing.figure import BlittedFigure
+from hyperspy.drawing.toolbar_tool import SpanROITool
 from hyperspy.drawing import utils
 from hyperspy.events import Event, Events
 from hyperspy.exceptions import VisibleDeprecationWarning
@@ -54,6 +55,8 @@ class Signal1DFigure(BlittedFigure):
         self.ylabel = ''
         self.title = title
         self.create_figure()
+
+        self._init_toolbar()
         self.create_axis()
 
         # Color cycles
@@ -61,6 +64,21 @@ class Signal1DFigure(BlittedFigure):
             'line': utils.ColorCycle(),
             'step': utils.ColorCycle(),
             'scatter': utils.ColorCycle(), }
+
+    def _init_toolbar(self):
+        # in case there is an API changes in matplotlib
+        try:
+            # Catch matplotlib warning about the new Tool classes 
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                toolmanager = self.figure.canvas.manager.toolmanager
+                toolmanager.add_tool("SpanROI", SpanROITool)
+                self.figure.canvas.manager.toolbar.add_tool(
+                        toolmanager.get_tool("SpanROI"), "toolgroup")
+                toolmanager.toolmanager_connect("tool_trigger_SpanROI",
+                                                self.add_ROI_interactively)
+        except:
+            pass
 
     def create_axis(self):
         self.ax = self.figure.add_subplot(111)
@@ -142,7 +160,7 @@ class Signal1DFigure(BlittedFigure):
             return  # Already closed
         for line in self.ax_lines + self.right_ax_lines:
             line.close()
-        super(Signal1DFigure, self)._on_close()
+        super()._on_close()
         _logger.debug('Signal1DFigure Closed.')
 
     def update(self):

@@ -4,6 +4,9 @@ import logging
 
 _logger = logging.getLogger(__name__)
 
+import matplotlib
+# Necessary to add tool to the toolbar
+matplotlib.rcParams["toolbar"] = "toolmanager"
 
 from hyperspy import docstrings
 

@@ -48,21 +48,21 @@ class ROIsManager:
         self.metadata_node_name = 'ROIs'
         # TODO: fix issue with overlaying span
 
-    def add_ROIs(self, roi, signal):
+    def add_ROIs(self, roi):
         """
         Add one or several ROIs.
-        
+
         Parameters
         ----------
-        roi : ROI, coordinates, list of ROIs, list of coordinates
-            If coordinates, the coordinates should match the dimension of the
-            figure on which the roi is added.
+        roi : ROI or dictionary or iterable of ROIs, dictionary
+            Dictionary can be obtained from a ROI using the `to_dictionary` 
+            method.
         """
         if isinstance(roi, list):
             for _roi in roi:
-                self._add_ROI(signal, _roi)
+                self._add_ROI(self.signal, _roi)
         else:
-            self._add_ROI(signal, roi)
+            self._add_ROI(self.signal, roi)
 
     def _add_ROI(self, signal, roi):
         axes = None

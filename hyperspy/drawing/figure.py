@@ -27,7 +27,7 @@ from hyperspy.drawing import utils
 _logger = logging.getLogger(__name__)
 
 
-class BlittedFigure(object):
+class BlittedFigure:
 
     def __init__(self):
         self._draw_event_cid = None
@@ -59,6 +59,9 @@ class BlittedFigure(object):
         if self.figure.canvas.supports_blit:
             self._draw_event_cid = self.figure.canvas.mpl_connect(
                 'draw_event', self._on_blit_draw)
+
+    def add_ROI_interactively(self, event=None):
+        self.rois_manager.create_ROI_interactively(self)
 
     def _on_blit_draw(self, *args):
         fig = self.figure
