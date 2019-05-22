@@ -1,9 +1,13 @@
 
 import logging
-import yaml
 import os
 import importlib
 import copy
+import pkgutil
+
+
+import pkg_resources
+import yaml
 
 import hyperspy.misc.config_dir
 
@@ -18,26 +22,27 @@ with open(_ext_f, 'r') as stream:
 # import unless needed
 ALL_EXTENSIONS = copy.deepcopy(EXTENSIONS)
 
-_external_exts_f = os.path.join(
-    hyperspy.misc.config_dir.config_path,
-    "hspy_extensions.yaml")
+_ext_extensions = [
+    entry_point.module_name
+    for entry_point in pkg_resources.iter_entry_points('hyperspy.extensions')]
 
-if os.path.isfile(_external_exts_f):
-    with open(_external_exts_f, 'r') as stream:
-        external_exts = yaml.safe_load(stream)
-        for ext_ext_mod in external_exts:
-            _logger.info("Loading extension %s" % ext_ext_mod)
-            path = os.path.join(
-                os.path.dirname(
-                    importlib.import_module(ext_ext_mod).__file__),
-                "hyperspy_extension.yaml")
-            with open(path, 'r') as stream:
-                ext_ext = yaml.safe_load(stream)
-                if "signals" in ext_ext:
-                    ALL_EXTENSIONS["signals"].update(ext_ext["signals"])
-                if "components1D" in ext_ext:
-                    ALL_EXTENSIONS["components1D"].update(
-                        ext_ext["components1D"])
-                if "components2D" in ext_ext:
-                    ALL_EXTENSIONS["components2D"].update(
-                        ext_ext["components2D"])
+for _ext_ext_mod in _ext_extensions:
+    _logger.info("Enabling extension %s" % _ext_ext_mod)
+    _path = os.path.join(
+        os.path.dirname(pkgutil.get_loader(_ext_ext_mod).get_filename()),
+        "hyperspy_extension.yaml")
+
+    if os.path.isfile(_path):
+        with open(_path, 'r') as stream:
+            _ext_ext = yaml.safe_load(stream)
+            if "signals" in _ext_ext:
+                ALL_EXTENSIONS["signals"].update(_ext_ext["signals"])
+            if "components1D" in _ext_ext:
+                ALL_EXTENSIONS["components1D"].update(
+                    _ext_ext["components1D"])
+            if "components2D" in _ext_ext:
+                ALL_EXTENSIONS["components2D"].update(
+                    _ext_ext["components2D"])
+    else:
+        _logger.error("Failed to load hyperspy extension from {0}. Please report this issue to the {0} developers".format(_ext_ext_mod))
+
