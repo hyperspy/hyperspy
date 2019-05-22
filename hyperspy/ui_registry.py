@@ -15,9 +15,10 @@ import functools
 import types
 
 from hyperspy.misc.utils import isiterable
+from hyperspy.extensions import ALL_EXTENSIONS
 
 
-UI_REGISTRY = {}
+UI_REGISTRY = {toolkey: {} for toolkey in ALL_EXTENSIONS["guis"]["toolkeys"]}
 
 TOOLKIT_REGISTRY = set()
 KNOWN_TOOLKITS = set(("ipywidgets", "traitsui"))
@@ -54,18 +55,6 @@ def register_widget(toolkit, toolkey):
     return decorator
 
 
-def register_toolkey(toolkey):
-    """Register a toolkey.
-
-    Parameters
-    ----------
-    toolkey: string
-
-    """
-    if toolkey in UI_REGISTRY:
-        raise NameError(
-            "Another tool has been registered with the same name.")
-    UI_REGISTRY[toolkey] = {}
 
 
 def _toolkits_to_string(toolkits):
@@ -197,15 +186,9 @@ Parameters
 
 def add_gui_method(toolkey):
     def decorator(cls):
-        register_toolkey(toolkey)
         # Not using functools.partialmethod because it is not possible to set
         # the docstring that way.
         setattr(cls, "gui", get_partial_gui(toolkey))
         setattr(cls.gui, "__doc__", GUI_DT)
         return cls
     return decorator
-
-
-register_toolkey("interactive_range_selector")
-register_toolkey("navigation_sliders")
-register_toolkey("load")

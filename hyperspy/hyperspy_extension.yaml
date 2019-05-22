@@ -193,3 +193,37 @@ components2D:
     import: hyperspy._components.expression
   Gaussian2D:
     import: hyperspy._components.gaussian2d
+
+guis:
+  toolkeys:
+    - interactive_range_selector
+    - navigation_sliders
+    - load
+    - Preferences
+    - DataAxis
+    - AxesManager
+    - Parameter
+    - Component
+    - EELSCLEdge_Component
+    - ScalableFixedPattern_Component
+    - Signal1D.calibrate
+    - Signal1D.smooth_savitzky_golay
+    - Signal1D.smooth_lowess
+    - Signal1D.smooth_total_variation
+    - Signal1D.smooth_butterworth
+    - Signal1D.contrast_editor
+    - Signal1D.integrate_in_range
+    - Signal1D.remove_background
+    - SimpleMessage
+    - Signal1D.spikes_removal_tool
+    - Point1DROI
+    - Point2DROI
+    - SpanROI
+    - RectangularROI
+    - CircleROI
+    - Line2DROI
+    - Model
+    - Model1D.fit_component
+    - microscope_parameters_EELS
+    - microscope_parameters_EDS_TEM
+    - microscope_parameters_EDS_SEM
