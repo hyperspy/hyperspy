@@ -124,7 +124,7 @@ def __get_spc_header(f, endianess, load_all_spc):
     version = np.fromfile(f,
                           dtype=[('version', '{}f4'.format(endianess))],
                           count=1)
-    version = round(np.asscalar(version)[0], 2)  # convert to scalar
+    version = round(float(version.item()[0]), 2)  # convert to scalar
     f.seek(0)
 
     spc_header = np.fromfile(f,
@@ -570,7 +570,7 @@ def __get_ipr_header(f, endianess):
     version = np.fromfile(f,
                           dtype=[('version', '{}i2'.format(endianess))],
                           count=1)
-    version = np.asscalar(version)[0]  # convert to scalar
+    version = version.item()[0]  # convert to scalar
     f.seek(0)
     _logger.debug(' .ipr version is {}'.format(version))
 

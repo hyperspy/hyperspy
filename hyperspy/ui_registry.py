@@ -176,14 +176,15 @@ def get_partial_gui(toolkey):
 
 
 DISPLAY_DT = """display : bool
-    If True, display the user interface widgets. If False, return the widgets
-    container in a dictionary, usually for customisation or testing."""
+            If True, display the user interface widgets. If False, return the 
+            widgets container in a dictionary, usually for customisation or 
+            testing."""
 
 TOOLKIT_DT = """toolkit : str, iterable of strings or None
-    If None (default), all available widgets are displayed or returned. If
-    string, only the widgets of the selected toolkit are displayed if available.
-    If an interable of toolkit strings, the widgets of all listed toolkits are
-    displayed or returned."""
+            If None (default), all available widgets are displayed or returned. 
+            If string, only the widgets of the selected toolkit are displayed 
+            if available. If an interable of toolkit strings, the widgets of 
+            all listed toolkits are displayed or returned."""
 GUI_DT = """Display or return interactive GUI element if available.
 
 Parameters

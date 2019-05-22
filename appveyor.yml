@@ -70,8 +70,6 @@ install:
 
   - ps: Add-AppveyorMessage "Installing hyperspy..."
   - "pip install .[tests]"
-  # install pillow with pip as workaround for the DLL issue on win64 from defaults
-  - "pip install -I pillow"
 
 build: false  # Not a C# project, build stuff at the test step instead.
 

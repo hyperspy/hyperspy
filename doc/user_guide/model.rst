@@ -95,6 +95,7 @@ The following components are currently available for one-dimensional models:
 * :py:class:`~._components.gaussianhf.GaussianHF`
 * :py:class:`~._components.lorentzian.Lorentzian`
 * :py:class:`~._components.voigt.Voigt`
+* :py:class:`~._components.skew_normal.SkewNormal`
 * :py:class:`~._components.polynomial.Polynomial`
 * :py:class:`~._components.logistic.Logistic`
 * :py:class:`~._components.bleasdale.Bleasdale`
@@ -359,6 +360,28 @@ It is possible to "switch off" a component by setting its
 switched off, to all effects it is as if it was not part of the model. To
 switch it on simply set the ``active`` attribute back to ``True``.
 
+The current values of a component can be visualised using the 
+:py:attr:`~.component.Component.print_current_values()` method. The 
+IPython display function elegantly presents it using HTML 
+and allows for correct copying and pasting into Excel spreadsheets.
+Alternatively, a simpler form can be shown by setting the 
+``fancy`` argument to ``False``
+
+.. code-block:: python
+
+    >>> m = s.create_model()
+    >>> m.fit()
+    >>> G = m[1]
+    >>> G.print_current_values(fancy=False)
+    Gaussian: Al_Ka
+    Active: True
+    Parameter Name |  Free |      Value |        Std |        Min
+    ============== | ===== | ========== | ========== | ==========
+                 A |  True | 62894.6824 | 1039.40944 |        0.0
+             sigma | False | 0.03253440 |       None |       None
+            centre | False |     1.4865 |       None |       None
+
+
 .. versionadded:: 0.7.1 :py:attr:`~.component.Component.active_is_multidimensional`
 
 In multidimensional signals it is possible to store the value of the
@@ -392,7 +415,7 @@ To enable this feature for a given component set the
 .. _model_indexing-label:
 
 Indexing the model
---------------
+------------------
 
 .. versionadded:: 1.0 model indexing
 
@@ -418,14 +441,30 @@ are automatically recomputed for the resulting slices.
 Getting and setting parameter values and attributes
 ---------------------------------------------------
 
-:py:meth:`~.model.BaseModel.print_current_values` prints the value of the
-parameters of the components in the current coordinates.
+:py:meth:`~.model.BaseModel.print_current_values()` prints the properties of the
+parameters of the components in the current coordinates. In the Jupyter Notebook,
+the default view is HTML-formatted, which allows for formatted copying
+into other software, such as Excel. This can be changed to a standard
+terminal view with the argument ``fancy=False``. One can also filter for only active
+components and only showing component with free parameters with the arguments
+``only_active`` and ``only_free``, respectively.
 
-The :py:attr:`~.component.Component.parameters` attribute of a
-:py:class:`~.component.Component` contains a list of the parameters
+The current coordinates can be either set by navigating the :py:meth:`~.model.BaseModel.plot`, or specified by
+pixel indices in ``m.axes_manager.indices`` or as calibrated coordinates in
+``m.axes_manager.coordinates``.
+
+:py:attr:`~.component.Component.parameters` contains a list of the parameters
 of a component and :py:attr:`~.component.Component.free_parameters` lists only
-the free parameters. The value of a particular parameter can be accessed in the
-:py:attr:`~.component.Parameter.value`.
+the free parameters.
+
+The value of a particular parameter in the current coordinates can be 
+accessed by :py:attr:`component.Parameter.value` (e.g. ``Gaussian.A.value``).
+To access an array of the value of the parameter across all
+navigation pixels, :py:attr:`component.Parameter.map['values']` (e.g. ``Gaussian.A.map["values"]``) can be used. 
+On its own, :py:attr:`component.Parameter.map` returns a NumPy array with three elements:
+``'values'``, ``'std'`` and ``'is_set'``. The first two give the value and standard error for
+each index. The last element shows whether the value has been set in a given index, either
+by a fitting procedure or manually.
 
 If a model contains several components with the same parameters, it is possible
 to change them all by using :py:meth:`~.model.BaseModel.set_parameters_value`.
@@ -465,15 +504,14 @@ of all parameters in a component to `True` use
 
     >>> g = hs.model.components1D.Gaussian()
     >>> g.free_parameters
-    set([<Parameter A of Gaussian component>,
-        <Parameter sigma of Gaussian component>,
-        <Parameter centre of Gaussian component>])
+    [<Parameter A of Gaussian component>,
+    <Parameter sigma of Gaussian component>,
+    <Parameter centre of Gaussian component>]
     >>> g.set_parameters_not_free()
-    set([])
     >>> g.set_parameters_free(parameter_name_list=['A','centre'])
-    set([<Parameter A of Gaussian component>,
-         <Parameter centre of Gaussian component>])
-
+    >>> g.free_parameters
+    [<Parameter A of Gaussian component>,
+    <Parameter centre of Gaussian component>]
 
 Similar functions exist for :py:class:`~.model.BaseModel`:
 :py:meth:`~.model.BaseModel.set_parameters_free` and
@@ -488,20 +526,20 @@ components and parameter-names can also be specified. For example:
     >>> m.extend([g1,g2])
     >>> m.set_parameters_not_free()
     >>> g1.free_parameters
-    set([])
+    []
     >>> g2.free_parameters
-    set([])
+    []
     >>> m.set_parameters_free(parameter_name_list=['A'])
     >>> g1.free_parameters
-    set([<Parameter A of Gaussian component>])
+    [<Parameter A of Gaussian component>]
     >>> g2.free_parameters
-    set([<Parameter A of Gaussian component>])
+    [<Parameter A of Gaussian component>]
     >>> m.set_parameters_free([g1], parameter_name_list=['sigma'])
     >>> g1.free_parameters
-    set([<Parameter A of Gaussian component>,
-         <Parameter sigma of Gaussian component>])
+    [<Parameter A of Gaussian component>,
+         <Parameter sigma of Gaussian component>]
     >>> g2.free_parameters
-    set([<Parameter A of Gaussian component>])
+    [<Parameter A of Gaussian component>]
 
 
 The value of a parameter can be coupled to the value of another by setting the
@@ -512,56 +550,58 @@ For example:
 .. code-block:: python
 
     >>> gaussian.parameters # Print the parameters of the gaussian components
-    (A, sigma, centre)
+    (<Parameter A of Carbon component>,
+    <Parameter sigma of Carbon component>,
+    <Parameter centre of Carbon component>)
     >>> gaussian.centre.free = False # Fix the centre
     >>> gaussian.free_parameters  # Print the free parameters
-    set([A, sigma])
-    >>> m.print_current_values() # Print the current value of all free param.
-    Components	Parameter	Value
-    Normalized Gaussian
-            A	1.000000
-            sigma	1.000000
-    Normalized Gaussian
-            centre	0.000000
-            A	1.000000
-            sigma	1.000000
-    Normalized Gaussian
-            A	1.000000
-            sigma	1.000000
-            centre	0.000000
+    [<Parameter A of Carbon component>, <Parameter sigma of Carbon component>]
+    >>> m.print_current_values(only_free=True, fancy=False) # Print the values of all free parameters.
+    Model1D: 
+    Gaussian: Carbon
+    Active: True
+    Parameter Name |  Free |      Value |        Std |        Min |        Max
+    ============== | ===== | ========== | ========== | ========== | ==========
+                 A |  True |        1.0 |       None |        0.0 |       None
+             sigma |  True |        1.0 |       None |       None |       None
+
+    Gaussian: Long Hydrogen name
+    Active: True
+    Parameter Name |  Free |      Value |        Std |        Min |        Max
+    ============== | ===== | ========== | ========== | ========== | ==========
+                 A |  True |        1.0 |       None |        0.0 |       None
+             sigma |  True |        1.0 |       None |       None |       None
+            centre |  True |        0.0 |       None |       None |       None
+
+    Gaussian: Nitrogen
+    Active: True
+    Parameter Name |  Free |      Value |        Std |        Min |        Max
+    ============== | ===== | ========== | ========== | ========== | ==========
+                 A |  True |        1.0 |       None |        0.0 |       None
+             sigma |  True |        1.0 |       None |       None |       None
+            centre |  True |        0.0 |       None |       None |       None
+
     >>> # Couple the A parameter of gaussian2 to the A parameter of gaussian 3:
     >>> gaussian2.A.twin = gaussian3.A
-    >>> gaussian2.A.value = 10 # Set the gaussian2 centre value to 10
-    >>> m.print_current_values()
-    Components	Parameter	Value
-    Carbon
-            sigma	1.000000
-            A	1.000000
-            centre	0.000000
-    Hydrogen
-            sigma	1.000000
-            A	10.000000
-            centre	10.000000
-    Nitrogen
-            sigma	1.000000
-            A	10.000000
-            centre	0.000000
+    >>> gaussian2.A.value = 10 # Set the gaussian2 A value to 10
+    >>> gaussian3.print_current_values(fancy=False)
+    Gaussian: Nitrogen
+    Active: True
+    Parameter Name |  Free |      Value |        Std |        Min |        Max
+    ============== | ===== | ========== | ========== | ========== | ==========
+                 A |  True |       10.0 |       None |        0.0 |       None
+             sigma |  True |        1.0 |       None |       None |       None
+            centre |  True |        0.0 |       None |       None |       None
 
     >>> gaussian3.A.value = 5 # Set the gaussian1 centre value to 5
-    >>> m.print_current_values()
-    Components	Parameter	Value
-    Carbon
-            sigma	1.000000
-            A	1.000000
-            centre	0.000000
-    Hydrogen
-            sigma	1.000000
-            A	5.000000
-            centre	10.000000
-    Nitrogen
-            sigma	1.000000
-            A	5.000000
-            centre	0.000000
+    >>> gaussian2.print_current_values(fancy=False)
+    Gaussian: Long Hydrogen name
+    Active: True
+    Parameter Name |  Free |      Value |        Std |        Min |        Max
+    ============== | ===== | ========== | ========== | ========== | ==========
+                 A | False |        5.0 |       None |        0.0 |       None
+             sigma |  True |        1.0 |       None |       None |       None
+            centre |  True |        0.0 |       None |       None |       None
 
 .. deprecated:: 1.2.0
     Setting the :py:attr:`~.component.Parameter.twin_function` and
@@ -585,38 +625,26 @@ example:
     >>> gaussian2.A.twin_function_expr = "x**2"
     >>> gaussian2.A.twin_inverse_function_expr = "sqrt(abs(x))"
     >>> gaussian2.A.value = 4
-    >>> m.print_current_values()
-    Components	Parameter	Value
-    Carbon
-            sigma	1.000000
-            A	1.000000
-            centre	0.000000
-    Hydrogen
-            sigma	1.000000
-            A	4.000000
-            centre	10.000000
-    Nitrogen
-            sigma	1.000000
-            A	2.000000
-            centre	0.000000
+    >>> gaussian3.print_current_values(fancy=False)
+    Gaussian: Nitrogen
+    Active: True
+    Parameter Name |  Free |      Value |        Std |        Min |        Max
+    ============== | ===== | ========== | ========== | ========== | ==========
+                 A |  True |        2.0 |       None |        0.0 |       None
+             sigma |  True |        1.0 |       None |       None |       None
+            centre |  True |        0.0 |       None |       None |       None
 
 .. code-block:: python
 
     >>> gaussian3.A.value = 4
-    >>> m.print_current_values()
-    Components	Parameter	Value
-    Carbon
-            sigma	1.000000
-            A	1.000000
-            centre	0.000000
-    Hydrogen
-            sigma	1.000000
-            A	16.000000
-            centre	10.000000
-    Nitrogen
-            sigma	1.000000
-            A	4.000000
-            centre	0.000000
+    >>> gaussian2.print_current_values(fancy=False)
+    Gaussian: Long Hydrogen name
+    Active: True
+    Parameter Name |  Free |      Value |        Std |        Min |        Max
+    ============== | ===== | ========== | ========== | ========== | ==========
+                 A | False |       16.0 |       None |        0.0 |       None
+             sigma |  True |        1.0 |       None |       None |       None
+            centre |  True |        0.0 |       None |       None |       None
 
 .. _model.fitting:
 
@@ -864,7 +892,7 @@ component using mpfit and bounds on the ``centre`` parameter.
 .. code-block:: python
 
     >>> s = hs.signals.BaseSignal(np.random.normal(loc=10, scale=0.01,
-    ... size=1e5)).get_histogram()
+    ... size=100000)).get_histogram()
     >>> s.metadata.Signal.binned = True
     >>> m = s.create_model()
     >>> g1 = hs.model.components1D.Gaussian()
@@ -874,12 +902,15 @@ component using mpfit and bounds on the ``centre`` parameter.
     >>> g1.centre.bmax = 14
     >>> g1.centre.bounded = True
     >>> m.fit(fitter="mpfit", bounded=True)
-    >>> m.print_current_values()
-    Components  Parameter   Value
-    Gaussian
-            sigma   0.00996345
-            A   99918.7
-            centre  9.99976
+    >>> m.print_current_values(fancy=False)
+    Model1D:  histogram
+    Gaussian: Gaussian
+    Active: True
+    Parameter Name |  Free |      Value |        Std |        Min |        Max
+    ============== | ===== | ========== | ========== | ========== | ==========
+                 A |  True | 99997.3481 | 232.333693 |        0.0 |       None
+             sigma |  True | 0.00999184 | 2.68064163 |       None |       None
+            centre |  True | 9.99980788 | 2.68064070 |        7.0 |       14.0
 
 Goodness of fit
 ^^^^^^^^^^^^^^^
