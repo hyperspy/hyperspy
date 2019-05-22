@@ -44,5 +44,5 @@ for _ext_ext_mod in _ext_extensions:
                 ALL_EXTENSIONS["components2D"].update(
                     _ext_ext["components2D"])
     else:
-        _logger.error("Failed to load hyperspy extension from {0}. Please report this issue to the {0} developers".format(_ext_ext_mod))
-
+        _logger.error(
+            "Failed to load hyperspy extension from {0}. Please report this issue to the {0} developers".format(_ext_ext_mod))
