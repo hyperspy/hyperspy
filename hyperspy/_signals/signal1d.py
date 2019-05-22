@@ -1066,7 +1066,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
     def remove_background(
             self,
             signal_range='interactive',
-            background_type='Power Law',
+            background_type='PowerLaw',
             polynomial_order=2,
             fast=True,
             zero_fill=False,
@@ -1139,7 +1139,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                                    zero_fill=zero_fill)
             return br.gui(display=display, toolkit=toolkit)
         else:
-            if background_type in ('PowerLaw', 'Power Law'):
+            if background_type == 'PowerLaw':
                 background_estimator = components1d.PowerLaw()
             elif background_type == 'Gaussian':
                 background_estimator = components1d.Gaussian()

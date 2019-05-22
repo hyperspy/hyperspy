@@ -644,11 +644,11 @@ class IntegrateArea(SpanSelectorInSignal1D):
 @add_gui_method(toolkey="Signal1D.remove_background")
 class BackgroundRemoval(SpanSelectorInSignal1D):
     background_type = t.Enum(
-        'Power Law',
+        'PowerLaw',
         'Gaussian',
         'Offset',
         'Polynomial',
-        default='Power Law')
+        default='PowerLaw')
     polynomial_order = t.Range(1, 10)
     fast = t.Bool(True,
                   desc=("Perform a fast (analytic, but possibly less accurate)"
@@ -668,7 +668,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
                            default='full')
     hi = t.Int(0)
 
-    def __init__(self, signal, background_type='Power Law', polynomial_order=2,
+    def __init__(self, signal, background_type='PowerLaw', polynomial_order=2,
                  fast=True, plot_remainder=True, zero_fill=False,
                  show_progressbar=None):
         super(BackgroundRemoval, self).__init__(signal)
@@ -693,7 +693,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.rm_line = None
 
     def set_background_estimator(self):
-        if self.background_type == 'Power Law':
+        if self.background_type == 'PowerLaw':
             self.background_estimator = components1d.PowerLaw()
             self.bg_line_range = 'from_left_range'
         elif self.background_type == 'Gaussian':
@@ -804,8 +804,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             plot = True
         else:
             plot = False
-        background_type = ("PowerLaw" if self.background_type == "Power Law"
-                           else self.background_type)
+        background_type = self.background_type
         new_spectra = self.signal.remove_background(
             signal_range=(self.ss_left_value, self.ss_right_value),
             background_type=background_type,

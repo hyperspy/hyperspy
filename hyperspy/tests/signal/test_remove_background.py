@@ -127,7 +127,7 @@ def compare_axes_manager_metadata(s0, s1):
 @pytest.mark.parametrize('zero_fill', [True, False])
 @pytest.mark.parametrize('show_progressbar', [True, False])
 @pytest.mark.parametrize('plot_remainder', [True, False])
-@pytest.mark.parametrize('background_type', ['Power Law', #'Polynomial',
+@pytest.mark.parametrize('background_type', ['PowerLaw', #'Polynomial',
                                              'Offset'])
 # Add Polynomial background test once 
 # https://github.com/hyperspy/hyperspy/pull/1989 is merged.

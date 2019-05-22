@@ -37,7 +37,7 @@ def test_plot_BackgroundRemoval():
     s.axes_manager[0].offset = 100
 
     br = BackgroundRemoval(s,
-                           background_type='Power Law',
+                           background_type='PowerLaw',
                            polynomial_order=2,
                            fast=True,
                            plot_remainder=True,
