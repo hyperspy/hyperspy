@@ -1139,7 +1139,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
                                    zero_fill=zero_fill)
             return br.gui(display=display, toolkit=toolkit)
         else:
-            if background_type == 'PowerLaw':
+            if background_type in ('PowerLaw', 'Power Law'):
                 background_estimator = components1d.PowerLaw()
             elif background_type == 'Gaussian':
                 background_estimator = components1d.Gaussian()
