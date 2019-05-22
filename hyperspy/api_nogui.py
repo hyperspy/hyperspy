@@ -70,15 +70,16 @@ For more details see their doctrings.
 # Remove the module to avoid polluting the namespace
 del docstrings
 
+from hyperspy.logger import set_log_level
+from hyperspy.defaults_parser import preferences
+set_log_level(preferences.General.logging_level)
 
 from hyperspy.Release import version as __version__
 from hyperspy import signals
 from hyperspy.io import load
-from hyperspy.defaults_parser import preferences
 from hyperspy.utils import *
 from hyperspy import datasets
-from hyperspy.logger import set_log_level
-set_log_level(preferences.General.logging_level)
+
 import logging
 _logger = logging.getLogger(__name__)
 
