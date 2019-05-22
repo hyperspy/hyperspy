@@ -27,20 +27,17 @@ class Gaussian2D(Expression):
 
     .. math::
 
-        f(x,y) = \frac{A}{2\pi s_x s_y}\exp\left[-\frac{\left(x-x0\right)
-        ^{2}}{2s_{x}^{2}}\frac{\left(y-y0\right)^{2}}{2s_{y}^{2}}\right]
+        f(x,y) = \frac{A}{2\pi s_x s_y}\exp\left[-\frac{\left(x-x_0\right)
+        ^{2}}{2s_{x}^{2}}\frac{\left(y-y_0\right)^{2}}{2s_{y}^{2}}\right]
 
 
-    +-----------------+------------+
-    | Parameter       | Attribute  |
-    +-----------------+------------+
-    +-----------------+------------+
-    | :math:`A`       | A          |
-    +-----------------+------------+
-    | :math:`s_x,s_y` |  sigma_x/y |
-    +-----------------+------------+
-    | :math:`x_0,y_0` | centre_x/y |
-    +-----------------+------------+
+    =============== =============
+    Variable         Parameter 
+    =============== =============
+    :math:`A`        A 
+    :math:`s_x,s_y`  sigma_x/y 
+    :math:`x_0,y_0`  centre_x/y 
+    =============== =============
 
 
     Parameters
@@ -56,6 +53,7 @@ class Gaussian2D(Expression):
     centre_x : float
         Location of the Gaussian maximum (peak position) in `y` direction.
 
+
     For convenience the `fwhm_x` and `fwhm_y` attributes can be used to get 
     and set the full-with-half-maxima along the two axes.
     """
@@ -64,8 +62,8 @@ class Gaussian2D(Expression):
                  centre_y=0, module="numexpr", **kwargs):
         super(Gaussian2D, self).__init__(
             expression="A * (1 / (sigma_x * sigma_y * 2 * pi)) * \
-                    exp(-((x - centre_x) ** 2 / (2 * sigma_x ** 2) \
-                    + (y - centre_y) ** 2 / (2 * sigma_y ** 2)))",
+                       exp(-((x - centre_x) ** 2 / (2 * sigma_x ** 2) \
+                       + (y - centre_y) ** 2 / (2 * sigma_y ** 2)))",
             name="Gaussian2D",
             A=A,
             sigma_x=sigma_x,

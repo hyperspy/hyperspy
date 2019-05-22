@@ -30,25 +30,22 @@ class RC(Expression):
         f(x) = V_\mathrm{0} + V_\mathrm{max} \left[1 - \mathrm{exp}\left(
             -\frac{x}{\tau}\right)\right]
 
-    +-----------------------+-----------+
-    | Parameter             | Attribute |
-    +-----------------------+-----------+
-    +-----------------------+-----------+
-    | :math:`V_\mathrm{0}`  |  V0       |
-    +-----------------------+-----------+
-    | :math:`V_\mathrm{max}`|  Vmax     |
-    +-----------------------+-----------+
-    | :math:`\tau`          |  tau      |
-    +-----------------------+-----------+
+    ====================== =============
+    Variable                Parameter 
+    ====================== =============
+    :math:`V_\mathrm{max}`  Vmax 
+    :math:`V_\mathrm{0}`    V0 
+    :math:`\tau`            tau 
+    ====================== =============
 
 
     Parameters
     -----------
-    V0 : float
-        vertical offset
     Vmax : float
         maximum voltage, asymptote of the function for 
         :math:`\mathrm{lim}_{x\to\infty}`
+    V0 : float
+        vertical offset
     tau : float
         tau=RC is the RC circuit time constant (voltage rise time)
     **kwargs

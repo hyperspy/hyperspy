@@ -62,35 +62,29 @@ class Lorentzian(Expression):
             expression="A / pi * (_gamma / ((x - centre)**2 + _gamma**2))",
             name="Lorentzian",
             A=A,
-            _gamma=gamma,
+            gamma=gamma,
             centre=centre,
             position="centre",
             module=module,
             autodoc=False,
+            rename_pars={"_gamma": "gamma"},
             **kwargs)
 
         # Boundaries
         self.A.bmin = 0.
         self.A.bmax = None
 
-        self._gamma.bmin = None
-        self._gamma.bmax = None
+        self.gamma.bmin = None
+        self.gamma.bmax = None
 
         self.isbackground = False
         self.convolved = True
 
     @property
     def fwhm(self):
-        return self._gamma.value * 2
+        return self.gamma.value * 2
 
     @fwhm.setter
     def fwhm(self, value):
-        self._gamma.value = value / 2
+        self.gamma.value = value / 2
 
-    @property
-    def gamma(self):
-        return self._gamma
-
-    @property
-    def grad_gamma(self):
-        return self.grad__gamma
