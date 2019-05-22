@@ -45,7 +45,8 @@ for _ext_ext_mod in _ext_extensions:
                     _ext_ext["components2D"])
             if "guis" in _ext_ext:
                 if "toolkey" in _ext_ext:
-                    ALL_EXTENSIONS["guis"]["toolkeys"].update(_ext_ext["guis"["toolkeys"]])
+                    ALL_EXTENSIONS["guis"]["toolkeys"].update(
+                        _ext_ext["guis"["toolkeys"]])
     else:
         _logger.error(
             "Failed to load hyperspy extension from {0}. Please report this issue to the {0} developers".format(_ext_ext_mod))
