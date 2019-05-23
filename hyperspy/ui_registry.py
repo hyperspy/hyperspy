@@ -13,6 +13,7 @@ widgets externally (usually for testing or customisation purposes).
 
 import functools
 import types
+import importlib
 
 from hyperspy.misc.utils import isiterable
 from hyperspy.extensions import ALL_EXTENSIONS
@@ -144,7 +145,8 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
         widgets = {}
     available_toolkits = set()
     used_toolkits = set()
-    for toolkit, f in UI_REGISTRY[toolkey].items():
+    for toolkit, specs in UI_REGISTRY[toolkey].items():
+        f = getattr(importlib.import_module(specs["module"]), specs["function"])
         if toolkit in toolkits:
             used_toolkits.add(toolkit)
             thisw = f(obj=self, display=display, **kwargs)
