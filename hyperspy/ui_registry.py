@@ -33,7 +33,6 @@ if "widgets" in ALL_EXTENSIONS["GUI"] and ALL_EXTENSIONS["GUI"]["widgets"]:
             UI_REGISTRY[toolkey][toolkit] = specs
 
 
-
 def register_widget(toolkit, toolkey):
     """Decorator to register a UI widget.
 
