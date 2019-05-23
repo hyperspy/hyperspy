@@ -18,10 +18,20 @@ from hyperspy.misc.utils import isiterable
 from hyperspy.extensions import ALL_EXTENSIONS
 
 
-UI_REGISTRY = {toolkey: {} for toolkey in ALL_EXTENSIONS["guis"]["toolkeys"]}
+UI_REGISTRY = {toolkey: {} for toolkey in ALL_EXTENSIONS["GUI"]["toolkeys"]}
 
 TOOLKIT_REGISTRY = set()
 KNOWN_TOOLKITS = set(("ipywidgets", "traitsui"))
+
+
+if "widgets" in ALL_EXTENSIONS["GUI"] and ALL_EXTENSIONS["GUI"]["widgets"]:
+    for toolkit, widgets in ALL_EXTENSIONS["GUI"]["widgets"].items():
+        TOOLKIT_REGISTRY.add(toolkit)
+        for toolkey, specs in widgets.items():
+            if not toolkey in UI_REGISTRY:
+                raise NameError("%s is not a registered toolkey" % toolkey)
+            UI_REGISTRY[toolkey][toolkit] = specs
+
 
 
 def register_widget(toolkit, toolkey):

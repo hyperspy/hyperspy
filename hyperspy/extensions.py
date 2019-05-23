@@ -17,6 +17,7 @@ _ext_f = os.path.join(
     os.path.abspath(os.path.dirname(__file__)), "hyperspy_extension.yaml")
 with open(_ext_f, 'r') as stream:
     EXTENSIONS = yaml.safe_load(stream)
+EXTENSIONS["GUI"]["widgets"] = {}
 
 # External extensions are not integrated into the API and not
 # import unless needed
@@ -47,6 +48,12 @@ for _ext_ext_mod in _ext_extensions:
                 if "toolkeys" in _ext_ext["GUI"]:
                     ALL_EXTENSIONS["GUI"]["toolkeys"].extend(
                         _ext_ext["GUI"]["toolkeys"])
+                if "widgets" in _ext_ext["GUI"]:
+                    for toolkit, specs in _ext_ext["GUI"]["widgets"].items():
+                        if toolkit not in ALL_EXTENSIONS["GUI"]["widgets"]:
+                            ALL_EXTENSIONS["GUI"]["widgets"][toolkit] = {}
+                        ALL_EXTENSIONS["GUI"]["widgets"][toolkit].update(specs)
+
     else:
         _logger.error(
             "Failed to load hyperspy extension from {0}. Please report this issue to the {0} developers".format(_ext_ext_mod))
