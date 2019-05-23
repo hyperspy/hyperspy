@@ -146,7 +146,10 @@ def get_gui(self, toolkey, display=True, toolkit=None, **kwargs):
     available_toolkits = set()
     used_toolkits = set()
     for toolkit, specs in UI_REGISTRY[toolkey].items():
-        f = getattr(importlib.import_module(specs["module"]), specs["function"])
+        f = getattr(
+            importlib.import_module(
+                specs["module"]),
+            specs["function"])
         if toolkit in toolkits:
             used_toolkits.add(toolkit)
             thisw = f(obj=self, display=display, **kwargs)
