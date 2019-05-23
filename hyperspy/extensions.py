@@ -46,7 +46,7 @@ for _ext_ext_mod in _ext_extensions:
             if "guis" in _ext_ext:
                 if "toolkeys" in _ext_ext["guis"]:
                     ALL_EXTENSIONS["guis"]["toolkeys"].extend(
-                        _ext_ext["guis"["toolkeys"]])
+                        _ext_ext["guis"]["toolkeys"])
     else:
         _logger.error(
             "Failed to load hyperspy extension from {0}. Please report this issue to the {0} developers".format(_ext_ext_mod))
