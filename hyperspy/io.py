@@ -408,7 +408,7 @@ def assign_signal_subclass(dtype,
     # The following should only raise an error if the base classes
     # are not correctly registered.
     for key, value in signal_dict.items():
-        signal_class = getattr(importlib.import_module(value["import"]), key)
+        signal_class = getattr(importlib.import_module(value["module"]), key)
         return signal_class
 
 

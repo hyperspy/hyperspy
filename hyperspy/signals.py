@@ -47,6 +47,6 @@ for _signal, _specs in _EXTENSIONS["signals"].items():
     if not _specs["lazy"]:
         _g[_signal] = getattr(
             importlib.import_module(
-                _specs["import"]), _signal)
+                _specs["module"]), _signal)
 
 del importlib

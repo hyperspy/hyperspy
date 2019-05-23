@@ -66,7 +66,7 @@ def reconstruct_component(comp_dictionary, **init_args):
     if _id in _COMPONENTS:
         _class = getattr(
             importlib.import_module(
-                _COMPONENTS[_id]["import"]), _id)
+                _COMPONENTS[_id]["module"]), _id)
     else:
         _class = dill.loads(comp_dictionary['_class_dump'])
     return _class(**init_args)

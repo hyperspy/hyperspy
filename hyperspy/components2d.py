@@ -36,7 +36,7 @@ _g = globals()
 for _component, _specs in _EXTENSIONS["components2D"].items():
     _g[_component] = getattr(
         importlib.import_module(
-            _specs["import"]), _component)
+            _specs["module"]), _component)
 
 del importlib
 # Generating the documentation

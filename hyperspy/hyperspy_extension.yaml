@@ -4,85 +4,85 @@ signals:
     signal_dimension: -1
     dtype: real
     lazy: False
-    import: hyperspy.signal
+    module: hyperspy.signal
   LazySignal:
     signal_type: ""
     signal_dimension: -1
     dtype: real
     lazy: True
-    import: hyperspy._signals.lazy
+    module: hyperspy._signals.lazy
   Signal1D:
     signal_type: ""
     signal_dimension: 1
     dtype: real
     lazy: False
-    import: hyperspy._signals.signal1d
+    module: hyperspy._signals.signal1d
   LazySignal1D:
     signal_type: ""
     signal_dimension: 1
     dtype: real
     lazy: True
-    import: hyperspy._signals.signal1d
+    module: hyperspy._signals.signal1d
   Signal2D:
     signal_type: ""
     signal_dimension: 2
     dtype: real
     lazy: False
-    import: hyperspy._signals.signal2d
+    module: hyperspy._signals.signal2d
   LazySignal2D:
     signal_type: ""
     signal_dimension: 2
     dtype: real
     lazy: True
-    import: hyperspy._signals.signal2d
+    module: hyperspy._signals.signal2d
   ComplexSignal:
     signal_type: ""
     signal_dimension: -1
     dtype: complex
     lazy: False
-    import: hyperspy._signals.complex_signal
+    module: hyperspy._signals.complex_signal
   LazyComplexSignal:
     signal_type: ""
     signal_dimension: -1
     dtype: complex
     lazy: True
-    import: hyperspy._signals.complex_signal
+    module: hyperspy._signals.complex_signal
   ComplexSignal1D:
     signal_type: ""
     signal_dimension: 1
     dtype: complex
     lazy: False
-    import: hyperspy._signals.complex_signal1d
+    module: hyperspy._signals.complex_signal1d
   LazyComplexSignal1D:
     signal_type: ""
     signal_dimension: 1
     dtype: complex
     lazy: True
-    import: hyperspy._signals.complex_signal1d
+    module: hyperspy._signals.complex_signal1d
   ComplexSignal2D:
     signal_type: ""
     signal_dimension: 2
     dtype: complex
     lazy: False
-    import: hyperspy._signals.complex_signal2d
+    module: hyperspy._signals.complex_signal2d
   LazyComplexSignal2D:
     signal_type: ""
     signal_dimension: 2
     dtype: complex
     lazy: True
-    import: hyperspy._signals.complex_signal2d
+    module: hyperspy._signals.complex_signal2d
   HologramImage:
     signal_type: hologram
     signal_dimension: 2
     dtype: real
     lazy: False
-    import: hyperspy._signals.hologram_image
+    module: hyperspy._signals.hologram_image
   LazyHologramImage:
     signal_type: hologram
     signal_dimension: 2
     dtype: real
     lazy: True
-    import: hyperspy._signals.hologram_image
+    module: hyperspy._signals.hologram_image
   EELSSpectrum:
     signal_type: EELS
     signal_type_aliases:
@@ -90,7 +90,7 @@ signals:
     signal_dimension: 1
     dtype: real
     lazy: False
-    import: hyperspy._signals.eels
+    module: hyperspy._signals.eels
   LazyEELSSpectrum:
     signal_type: EELS
     signal_type_aliases:
@@ -98,31 +98,31 @@ signals:
     signal_dimension: 1
     dtype: real
     lazy: True
-    import: hyperspy._signals.eels
+    module: hyperspy._signals.eels
   EDSTEMSpectrum:
     signal_type: EDS_TEM
     signal_dimension: 1
     dtype: real
     lazy: False
-    import: hyperspy._signals.eds_tem
+    module: hyperspy._signals.eds_tem
   LazyEDSTEMSpectrum:
     signal_type: EDS_TEM
     signal_dimension: 1
     dtype: real
     lazy: True
-    import: hyperspy._signals.eds_tem
+    module: hyperspy._signals.eds_tem
   EDSSEMSpectrum:
     signal_type: EDS_SEM
     signal_dimension: 1
     dtype: real
     lazy: False
-    import: hyperspy._signals.eds_sem
+    module: hyperspy._signals.eds_sem
   LazyEDSSEMSpectrum:
     signal_type: EDS_SEM
     signal_dimension: 1
     dtype: real
     lazy: True
-    import: hyperspy._signals.eds_sem
+    module: hyperspy._signals.eds_sem
   DielectricFunction:
     signal_type: DielectricFunction 
     signal_type_aliases:
@@ -130,7 +130,7 @@ signals:
     signal_dimension: 1
     dtype: complex
     lazy: False
-    import: hyperspy._signals.dielectric_function
+    module: hyperspy._signals.dielectric_function
   LazyDielectricFunction:
     signal_type: DielectricFunction
     signal_type_aliases:
@@ -138,61 +138,61 @@ signals:
     signal_dimension: 1
     dtype: complex
     lazy: True
-    import: hyperspy._signals.dielectric_function
+    module: hyperspy._signals.dielectric_function
 
 components1D:
   Arctan:
-    import: hyperspy._components.arctan
+    module: hyperspy._components.arctan
   Bleasdale:
-    import: hyperspy._components.bleasdale
+    module: hyperspy._components.bleasdale
   DoublePowerLaw:
-    import: hyperspy._components.eels_double_power_law
+    module: hyperspy._components.eels_double_power_law
   EELSCLEdge:
-    import: hyperspy._components.eels_cl_edge
+    module: hyperspy._components.eels_cl_edge
   Erf:
-    import: hyperspy._components.error_function
+    module: hyperspy._components.error_function
   Exponential:
-    import: hyperspy._components.exponential
+    module: hyperspy._components.exponential
   Expression:
-    import: hyperspy._components.expression
+    module: hyperspy._components.expression
   Gaussian:
-    import: hyperspy._components.gaussian
+    module: hyperspy._components.gaussian
   GaussianHF:
-    import: hyperspy._components.gaussianhf
+    module: hyperspy._components.gaussianhf
   HeavisideStep:
-    import: hyperspy._components.heaviside
+    module: hyperspy._components.heaviside
   Logistic:
-    import: hyperspy._components.logistic
+    module: hyperspy._components.logistic
   Lorentzian:
-    import: hyperspy._components.lorentzian
+    module: hyperspy._components.lorentzian
   Offset:
-    import: hyperspy._components.offset
+    module: hyperspy._components.offset
   PESCoreLineShape:
-    import: hyperspy._components.pes_core_line_shape
+    module: hyperspy._components.pes_core_line_shape
   Polynomial:
-    import: hyperspy._components.polynomial
+    module: hyperspy._components.polynomial
   PowerLaw:
-    import: hyperspy._components.power_law
+    module: hyperspy._components.power_law
   RC:
-    import: hyperspy._components.rc
+    module: hyperspy._components.rc
   SEE:
-    import: hyperspy._components.pes_see
+    module: hyperspy._components.pes_see
   ScalableFixedPattern:
-    import: hyperspy._components.scalable_fixed_pattern
+    module: hyperspy._components.scalable_fixed_pattern
   SkewNormal:
-    import: hyperspy._components.skew_normal
+    module: hyperspy._components.skew_normal
   Vignetting:
-    import: hyperspy._components.eels_vignetting
+    module: hyperspy._components.eels_vignetting
   Voigt:
-    import: hyperspy._components.voigt
+    module: hyperspy._components.voigt
   VolumePlasmonDrude:
-    import: hyperspy._components.volume_plasmon_drude
+    module: hyperspy._components.volume_plasmon_drude
 
 components2D:
   Expression:
-    import: hyperspy._components.expression
+    module: hyperspy._components.expression
   Gaussian2D:
-    import: hyperspy._components.gaussian2d
+    module: hyperspy._components.gaussian2d
 
 GUI:
   toolkeys:
