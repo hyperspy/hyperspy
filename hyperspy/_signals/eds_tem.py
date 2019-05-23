@@ -357,7 +357,8 @@ class EDSTEM_mixin:
             navigation_mask = self.vacuum_mask(navigation_mask, closing).data
         elif navigation_mask is not None:
             navigation_mask = navigation_mask.data
-        xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
+        xray_lines = [intensity.metadata.Sample.xray_lines[0]
+                      for intensity in intensities]
         composition = utils.stack(intensities, lazy=False)
         if method == 'CL':
             composition.data = utils_eds.quantification_cliff_lorimer(
@@ -589,7 +590,7 @@ class EDSTEM_mixin:
             spectrum image.
         navigation_axes : None or list of axis
             Define which navigation axes to compute the illumination area.
-            Only necessary with method='cross_section' and probe_area='auto' 
+            Only necessary with method='cross_section' and probe_area='auto'
             when the navigation dimension differs from the dimension intended
             to be measured.
 
@@ -632,8 +633,8 @@ class EDSTEM_mixin:
                 if probe_area in parameters:
                     area = parameters.TEM.probe_area
                 else:
-                    if (self.axes_manager.navigation_dimension > 2 and 
-                          navigation_axes is None):
+                    if (self.axes_manager.navigation_dimension > 2 and
+                            navigation_axes is None):
                         raise ValueError("With `probe_area='auto' and "
                                          "navigation dimension > 2, you need "
                                          "to specify the `navigation_axes` "
@@ -641,9 +642,9 @@ class EDSTEM_mixin:
                     scales = []
                     if navigation_axes is None:
                         navigation_axes = self.axes_manager.navigation_axes
-                    for axis in navigation_axes:         
+                    for axis in navigation_axes:
                         scales.append(
-                                axis.convert_to_units('nm', inplace=False)[0])
+                            axis.convert_to_units('nm', inplace=False)[0])
                     if len(scales) == 1:
                         area = scales[0] * scales[0]
                     elif len(scales) == 2:
@@ -652,7 +653,7 @@ class EDSTEM_mixin:
                         warnings.warn('Please note your probe_area is set to '
                                       'the default value of 1 nm². The '
                                       'function will still run. However if '
-                                      '1 nm² is not correct, please read the ' 
+                                      '1 nm² is not correct, please read the '
                                       'user documentations for how to set '
                                       'this properly.')
             return (live_time * beam_current * 1e-9) / (constants.e * area)

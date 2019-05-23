@@ -1104,7 +1104,8 @@ class Line2DROI(BaseInteractiveROI):
         elif units == 'radians':
             conversation = 1.
         else:
-            raise ValueError("Units are not recognized. Use  either 'degrees' or 'radians'.")
+            raise ValueError(
+                "Units are not recognized. Use  either 'degrees' or 'radians'.")
 
         if axis == 'horizontal':
             return np.arctan2(y, x) * conversation

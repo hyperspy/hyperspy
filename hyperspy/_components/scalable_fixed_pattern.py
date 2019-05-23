@@ -28,15 +28,15 @@ class ScalableFixedPattern(Component):
     r"""Fixed pattern component with interpolation support.
 
     .. math::
-    
+
         f(x) = a \cdot s \left(b \cdot x - x_0\right) + c
 
     ============ =============
-     Variable     Parameter 
+     Variable     Parameter
     ============ =============
-     :math:`a`    yscale 
-     :math:`b`    xscale 
-     :math:`x_0`  shift 
+     :math:`a`    yscale
+     :math:`b`    xscale
+     :math:`x_0`  shift
     ============ =============
 
 
