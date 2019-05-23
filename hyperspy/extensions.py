@@ -45,7 +45,7 @@ for _ext_ext_mod in _ext_extensions:
                     _ext_ext["components2D"])
             if "guis" in _ext_ext:
                 if "toolkeys" in _ext_ext["guis"]:
-                    ALL_EXTENSIONS["guis"]["toolkeys"].update(
+                    ALL_EXTENSIONS["guis"]["toolkeys"].extend(
                         _ext_ext["guis"["toolkeys"]])
     else:
         _logger.error(
