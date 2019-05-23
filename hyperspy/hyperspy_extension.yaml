@@ -194,36 +194,36 @@ components2D:
   Gaussian2D:
     import: hyperspy._components.gaussian2d
 
-guis:
+GUI:
   toolkeys:
-    - interactive_range_selector
-    - navigation_sliders
-    - load
-    - Preferences
-    - DataAxis
-    - AxesManager
-    - Parameter
-    - Component
-    - EELSCLEdge_Component
-    - ScalableFixedPattern_Component
-    - Signal1D.calibrate
-    - Signal1D.smooth_savitzky_golay
-    - Signal1D.smooth_lowess
-    - Signal1D.smooth_total_variation
-    - Signal1D.smooth_butterworth
-    - Signal1D.contrast_editor
-    - Signal1D.integrate_in_range
-    - Signal1D.remove_background
-    - SimpleMessage
-    - Signal1D.spikes_removal_tool
-    - Point1DROI
-    - Point2DROI
-    - SpanROI
-    - RectangularROI
-    - CircleROI
-    - Line2DROI
-    - Model
-    - Model1D.fit_component
-    - microscope_parameters_EELS
-    - microscope_parameters_EDS_TEM
-    - microscope_parameters_EDS_SEM
+    - hyperspy.interactive_range_selector
+    - hyperspy.navigation_sliders
+    - hyperspy.load
+    - hyperspy.Preferences
+    - hyperspy.DataAxis
+    - hyperspy.AxesManager
+    - hyperspy.Parameter
+    - hyperspy.Component
+    - hyperspy.EELSCLEdge_Component
+    - hyperspy.ScalableFixedPattern_Component
+    - hyperspy.Signal1D.calibrate
+    - hyperspy.Signal1D.smooth_savitzky_golay
+    - hyperspy.Signal1D.smooth_lowess
+    - hyperspy.Signal1D.smooth_total_variation
+    - hyperspy.Signal1D.smooth_butterworth
+    - hyperspy.Signal1D.contrast_editor
+    - hyperspy.Signal1D.integrate_in_range
+    - hyperspy.Signal1D.remove_background
+    - hyperspy.SimpleMessage
+    - hyperspy.Signal1D.spikes_removal_tool
+    - hyperspy.Point1DROI
+    - hyperspy.Point2DROI
+    - hyperspy.SpanROI
+    - hyperspy.RectangularROI
+    - hyperspy.CircleROI
+    - hyperspy.Line2DROI
+    - hyperspy.Model
+    - hyperspy.Model1D.fit_component
+    - hyperspy.microscope_parameters_EELS
+    - hyperspy.microscope_parameters_EDS_TEM
+    - hyperspy.microscope_parameters_EDS_SEM

@@ -34,7 +34,7 @@ from hyperspy.ui_registry import add_gui_method, DISPLAY_DT, TOOLKIT_DT
 _logger = logging.getLogger(__name__)
 
 
-@add_gui_method(toolkey="microscope_parameters_EDS_TEM")
+@add_gui_method(toolkey="hyperspy.microscope_parameters_EDS_TEM")
 class EDSTEMParametersUI(BaseSetMetadataItems):
     beam_energy = t.Float(t.Undefined,
                           label='Beam energy (keV)')

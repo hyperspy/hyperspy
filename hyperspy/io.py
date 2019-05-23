@@ -198,7 +198,7 @@ def load(filenames=None,
     if filenames is None:
         from hyperspy.signal_tools import Load
         load_ui = Load()
-        get_gui(load_ui, toolkey="load")
+        get_gui(load_ui, toolkey="hyperspy.load")
         if load_ui.filename:
             filenames = load_ui.filename
             lazy = load_ui.lazy

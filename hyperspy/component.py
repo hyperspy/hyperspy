@@ -52,7 +52,7 @@ class NoneFloat(t.CFloat):   # Lazy solution, but usable
         return super(NoneFloat, self).validate(object, name, value)
 
 
-@add_gui_method(toolkey="Parameter")
+@add_gui_method(toolkey="hyperspy.Parameter")
 class Parameter(t.HasTraits):
 
     """Model parameter
@@ -714,7 +714,7 @@ class Parameter(t.HasTraits):
         return view
 
 
-@add_gui_method(toolkey="Component")
+@add_gui_method(toolkey="hyperspy.Component")
 class Component(t.HasTraits):
     __axes_manager = None
 

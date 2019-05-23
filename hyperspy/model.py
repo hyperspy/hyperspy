@@ -109,7 +109,7 @@ class ModelComponents(object):
         return ans
 
 
-@add_gui_method(toolkey="Model")
+@add_gui_method(toolkey="hyperspy.Model")
 class BaseModel(list):
 
     """Model and data fitting tools applicable to signals of both one and two
