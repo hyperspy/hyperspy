@@ -103,6 +103,26 @@ class TestPowerLaw:
         s2 = hs.signals.EDSTEMSpectrum(s.data)
         g.estimate_parameters(s2, None, None)
 
+    def test_function_grad(self):
+        pl = hs.model.components1D.PowerLaw()
+        axis = np.arange(-50, 50)
+        for attr in ['function', 'grad_A', 'grad_r', 'grad_origin']:
+            values = getattr(pl, attr)((axis))
+            assert_allclose(values[:50], np.zeros((50)))
+            assert getattr(pl, attr)((axis))[50] == 0
+            if attr != 'grad_A':
+                 getattr(pl, attr)((axis))[51] > 0
+
+    def test_function_grad_cutoff(self):
+        pl = hs.model.components1D.PowerLaw(left_cutoff=10.)
+        axis = np.arange(50)
+        for attr in ['function', 'grad_A', 'grad_r', 'grad_origin']:
+            values = getattr(pl, attr)((axis))
+            assert_allclose(values[:10], np.zeros((10)))
+            assert getattr(pl, attr)((axis))[10] == 0
+            if attr != 'grad_A':
+                 getattr(pl, attr)((axis))[11] > 0
+
 
 class TestDoublePowerLaw:
 

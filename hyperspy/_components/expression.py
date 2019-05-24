@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from functools import wraps
+import logging
 import numpy as np
 import sympy
 from sympy import lambdify
@@ -24,6 +25,9 @@ from sympy.utilities.lambdify import lambdastr
 
 from hyperspy.component import Component
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
+
+
+_logger = logging.getLogger(__name__)
 
 
 _CLASS_DOC = \
@@ -237,6 +241,7 @@ class Expression(Component):
         parnames = [symbol.name for symbol in parameters]
         self._parameter_strings = parnames
 
+        grad_param = parameters
         if self._definition_condition is not None:
             # sympy diff doesn't work with where, so to calculate the gradient,
             # we need to remove the where and recreate the expr and parameters
@@ -246,17 +251,18 @@ class Expression(Component):
 
         ffargs = _fill_function_args_2d if self._is2D else _fill_function_args
         for parameter in parameters:
-            grad_expr = sympy.diff(expr.evalf(), parameter)
-            param = parameters
-            # if self._definition_condition is not None:
-            #     x = variables[0]
-            #     grad_str = lambdastr(x, grad_expr).split("lambda x: ")[1]
-            #     grad_expr = _parse_substitutions(
-            #             "where(%s, %s, 0)" % (self._definition_condition,
-            #                   grad_str))
+            grad_expr = sympy.diff(expr, parameter)
+            if self._definition_condition is not None:
+                grad_str = lambdastr(x, grad_expr).split("lambda x: ")[1]
+                grad_str = grad_str.replace('math.', '')
+                grad_expr = _parse_substitutions(
+                        "where(%s, %s, 0)" % (self._definition_condition,
+                              grad_str))
+            _logger.debug("grad of %s is %s" % (parameter.name, grad_expr))
+            setattr(self, "_f_grad_%s_expr" % parameter.name, grad_expr)
             setattr(self,
                     "_f_grad_%s" % parameter.name,
-                    lambdify(variables + param,
+                    lambdify(variables + grad_param,
                               grad_expr.evalf(),
                               modules=module,
                               dummify=False)
