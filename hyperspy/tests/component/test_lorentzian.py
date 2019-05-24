@@ -49,3 +49,20 @@ def test_util_fwhm_getset():
     g1 = Lorentzian()
     g1.fwhm = 4.0
     assert_allclose(g1.fwhm, 4.0)
+
+def test_util_height_set():
+    g1 = Lorentzian()
+    g1.gamma.value = 4.0
+    g1.height = 2.0/np.pi
+    assert_allclose(g1.A.value, 8)
+
+def test_util_height_get():
+    g1 = Lorentzian()
+    g1.gamma.value = 3.0
+    g1.A.value = np.pi*1.5
+    assert_allclose(g1.height, 0.5)
+
+def test_util_height_getset():
+    g1 = Lorentzian()
+    g1.height = 4.0
+    assert_allclose(g1.height, 4.0)

@@ -17,6 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from hyperspy._components.expression import Expression
+import numpy as np
 
 
 class Lorentzian(Expression):
@@ -51,8 +52,8 @@ class Lorentzian(Expression):
         Extra keyword arguments are passed to the ``Expression`` component.
 
 
-    For convenience the `fwhm` attribute can be used to get and set
-    the full-with-half-maximum.
+    For convenience the `fwhm` and `height` attributes can be used to get and set
+    the full-with-half-maximum and height, respectively.
     """
 
     def __init__(self, A=1., gamma=1., centre=0., module="numexpr", **kwargs):
@@ -88,3 +89,10 @@ class Lorentzian(Expression):
     def fwhm(self, value):
         self.gamma.value = value / 2
 
+    @property
+    def height(self):
+        return self.A.value / (self.gamma.value * np.pi)
+
+    @height.setter
+    def height(self, value):
+        self.A.value = value * (self.gamma.value * np.pi)
