@@ -40,6 +40,8 @@ class BlittedFigure(object):
                 obj:  SpectrumFigure instances
                     The instance that triggered the event.
             """, arguments=["obj"])
+        self.title = ""
+        self.ax_markers = list()
 
     def create_figure(self, **kwargs):
         """Create matplotlib figure
@@ -106,7 +108,9 @@ class BlittedFigure(object):
                 self.ax.figure.canvas.draw_idle()
 
     def _on_close(self):
+        _logger.debug('Closing `BlittedFigure`.')
         if self.figure is None:
+            _logger.debug('`BlittedFigure` already closed.')
             return  # Already closed
         for marker in self.ax_markers:
             marker.close(render_figure=False)
@@ -116,13 +120,15 @@ class BlittedFigure(object):
         if self._draw_event_cid:
             self.figure.canvas.mpl_disconnect(self._draw_event_cid)
             self._draw_event_cid = None
+        plt.close(self.figure)
+        self.figure = None
+        self.ax = None
+        self._background = None
+        _logger.debug('`BlittedFigure` closed.')
 
     def close(self):
-        figure = self.figure
+        _logger.debug('`close` `BlittedFigure` called.')
         self._on_close()   # Needs to trigger serially for a well defined state
-        plt.close(figure)
-        self.figure = None
-        self._background = None
 
     @property
     def title(self):

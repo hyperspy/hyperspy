@@ -49,6 +49,10 @@ from hyperspy.events import Events, Event, EventSuppressor
 import warnings
 from hyperspy.exceptions import VisibleDeprecationWarning
 from hyperspy.ui_registry import add_gui_method
+from hyperspy.misc.model_tools import current_model_values
+from IPython.display import display_pretty, display
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_INT_ARG
+
 
 _logger = logging.getLogger(__name__)
 
@@ -428,21 +432,16 @@ class BaseModel(list):
         out_of_range_to_nan : bool
             If True the spectral range that is not fitted is filled with nans.
             Default True.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
+        %s
         out : {None, BaseSignal}
             The signal where to put the result into. Convenient for parallel
             processing. If None (default), creates a new one. If passed, it is
             assumed to be of correct shape and dtype and not checked.
-        parallel : bool, int
-            If True or more than 1, perform the recreation parallel using as
-            many threads as specified. If True, as many threads as CPU cores
-            available are used.
+        %s
 
         Returns
         -------
-        spectrum : An instance of the same class as `spectrum`.
+        BaseSignal : An instance of the same class as `BaseSignal`.
 
         Examples
         --------
@@ -519,6 +518,8 @@ class BaseModel(list):
                     zip(models, data_slices, range(int(parallel))))
             _ = next(_map)
         return signal
+
+    as_signal.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_INT_ARG)
 
     def _as_signal_iter(self, component_list=None, out_of_range_to_nan=True,
                         show_progressbar=None, data=None):
@@ -1268,9 +1269,7 @@ class BaseModel(list):
         autosave_every : int
             Save the result of fitting every given number of spectra.
             Default 10.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
+        %s
         interactive_plot : bool
             If True, update the plot for every position as they are processed.
             Note that this slows down the fitting by a lot, but it allows for
@@ -1337,6 +1336,8 @@ class BaseModel(list):
                 'Deleting the temporary file %s pixels' % (
                     autosave_fn + 'npz'))
             os.remove(autosave_fn + '.npz')
+
+    multifit.__doc__ %= (SHOW_PROGRESSBAR_ARG)
 
     def save_parameters2file(self, filename):
         """Save the parameters array in binary format.
@@ -1501,35 +1502,24 @@ class BaseModel(list):
             if only_active is False or component.active:
                 component.plot(only_free=only_free)
 
-    def print_current_values(self, only_free=True, skip_multi=False):
-        """Print the value of each parameter of the model.
-
+    def print_current_values(self, only_free=False, only_active=False, fancy=True):
+        """Prints the current values of the parameters of all components.
         Parameters
         ----------
         only_free : bool
-            If True, only the value of the parameters that are free will
-            be printed.
-        skip_multi : bool
-            If True, parameters with attribute "__iter__" are not printed
-
+            If True, only components with free parameters will be printed. Within these,
+            only parameters which are free will be printed.
+        only_active : bool
+            If True, only values of active components will be printed
+        fancy : bool
+            If True, attempts to print using html rather than text in the notebook.
         """
-        print("Components\tParameter\tValue")
-        for component in self:
-            if component.active:
-                if component.name:
-                    print(component.name)
-                else:
-                    print(component._id_name)
-                parameters = component.free_parameters if only_free \
-                    else component.parameters
-                for parameter in parameters:
-                    if hasattr(parameter.value, '__iter__'):
-                        if not skip_multi:
-                            for idx in range(len(parameter.value)):
-                                print("\t\t%s[%d]\t%g" % (parameter.name, idx,
-                                                          parameter.value[idx]))
-                    else:
-                        print("\t\t%s\t%g" % (parameter.name, parameter.value))
+        if fancy:
+            display(current_model_values(
+                model=self, only_free=only_free, only_active=only_active))
+        else:
+            display_pretty(current_model_values(
+                model=self, only_free=only_free, only_active=only_active))
 
     def set_parameters_not_free(self, component_list=None,
                                 parameter_name_list=None):

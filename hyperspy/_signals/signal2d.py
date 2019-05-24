@@ -36,6 +36,7 @@ from hyperspy._signals.common_signal2d import CommonSignal2D
 from hyperspy.signal_tools import PeaksFinder2D
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
+from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
 from hyperspy.utils.peakfinders2D import (
         find_peaks_max, find_peaks_minmax, find_peaks_zaefferer,
         find_peaks_stat, find_peaks_log, find_peaks_dog)
@@ -403,9 +404,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         dtype : str or dtype
             Typecode or data-type in which the calculations must be
             performed.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
+        %s
         sub_pixel_factor : float
             Estimate shifts with a sub-pixel accuracy of 1/sub_pixel_factor
             parts of a pixel. Default is 1, i.e. no sub-pixel accuracy.
@@ -543,6 +542,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
             del ref
         return shifts
 
+    estimate_shift2D.__doc__ %= SHOW_PROGRESSBAR_ARG
+
     def align2D(self, crop=True, fill_value=np.nan, shifts=None, expand=False,
                 roi=None,
                 sobel=True,
@@ -582,7 +583,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
         interpolation_order: int, default 1.
             The order of the spline interpolation. Default is 1, linear
             interpolation.
-        parallel : {None, bool}
+        %s
 
         Returns
         -------
@@ -684,6 +685,8 @@ class Signal2D(BaseSignal, CommonSignal2D):
         self.events.data_changed.trigger(obj=self)
         if return_shifts:
             return shifts
+
+    align2D.__doc__ %= (PARALLEL_ARG)
 
     def crop_image(self, top=None, bottom=None,
                    left=None, right=None, convert_units=False):

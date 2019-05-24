@@ -18,7 +18,6 @@
 
 from datetime import datetime as dt
 import warnings
-import locale
 import codecs
 import os
 import logging
@@ -46,6 +45,23 @@ writes = [(1, 0), ]
 # For a description of the EMSA/MSA format, incluiding the meaning of the
 # following keywords:
 # http://www.amc.anl.gov/ANLSoftwareLibrary/02-MMSLib/XEDS/EMMFF/EMMFF.IBM/Emmff.Total
+
+US_MONTHS_D2A = {
+    "01" : "JAN",
+    "02" : "FEB",
+    "03": "MAR",
+    "04": "APR",
+    "05": "MAY",
+    "06": "JUN",
+    "07": "JUL",
+    "08": "AUG",
+    "09": "SEP",
+    "10": "OCT",
+    "11": "NOV",
+    "12": "DEC", }
+
+US_MONTH_A2D = dict([reversed(i) for i in US_MONTHS_D2A.items()])
+
 keywords = {
     # Required parameters
     'FORMAT': {'dtype': str, 'mapped_to': None},
@@ -215,34 +231,28 @@ def parse_msa_string(string, filename=None):
                 if units is not None:
                     mapped.set_item(keywords[clean_par]['mapped_to'] +
                                     '_units', units)
-
-    # The data parameter needs some extra care
-    # It is necessary to change the locale to US english to read the date
-    # keyword
-    # Setting locale can raise an exception because
-    # their name depends on library versions, platform etc.
-    # https://docs.python.org/3.7/library/locale.html
-    try:
-        if os_name == 'posix':
-            locale.setlocale(locale.LC_TIME, ('en_US', 'utf8'))
-        elif os_name == 'windows':
-            locale.setlocale(locale.LC_TIME, 'english')
+    if 'TIME' in parameters and parameters['TIME']:
         try:
             time = dt.strptime(parameters['TIME'], "%H:%M")
             mapped.set_item('General.time', time.time().isoformat())
-        except BaseException:
-            if 'TIME' in parameters and parameters['TIME']:
-                _logger.warning('The time information could not be retrieved.')
+        except ValueError as e:
+            _logger.warning('Possible malformed TIME field in msa file. The time information could not be retrieved.: %s' % e)
+    else:
+        _logger.warning('TIME information missing.')
+
+    malformed_date_error = 'Possibly malformed DATE in msa file. The date information could not be retrieved.'
+    if "DATE" in parameters and parameters["DATE"]:
         try:
-            date = dt.strptime(parameters['DATE'], "%d-%b-%Y")
-            mapped.set_item('General.date', date.date().isoformat())
-        except BaseException:
-            if 'DATE' in parameters and parameters['DATE']:
-                _logger.warning('The date information could not be retrieved.')
-    except locale.Error:
-        _logger.warning("The date and time could not be retrieved because the "
-                        "english US locale is not installed on the system.")
-    locale.setlocale(locale.LC_TIME, '')  # restore user’s default settings 
+            day, month, year = parameters["DATE"].split("-")
+            if month.upper() in US_MONTH_A2D:
+                month = US_MONTH_A2D[month.upper()]
+                date = dt.strptime("-".join((day, month, year)), "%d-%m-%Y")
+                mapped.set_item('General.date', date.date().isoformat())
+            else:
+                    _logger.warning(malformed_date_error)
+        except ValueError as e: # Error raised if split does not return 3 elements in this case
+            _logger.warning(malformed_date_error + ": %s" % e)
+
 
     axes = [{
         'size': len(y),
@@ -321,25 +331,14 @@ def file_writer(filename, signal, format=None, separator=', ',
         if format is None:
             format = 'Y'
         if md.has_item("General.date"):
-            # Setting locale can raise an exception because
-            # their name depends on library versions, platform etc.
-            loc = locale.getlocale(locale.LC_TIME)
-            if os_name == 'posix':
-                locale.setlocale(locale.LC_TIME, ('en_US', 'latin-1'))
-            elif os_name == 'windows':
-                locale.setlocale(locale.LC_TIME, 'english')
-            try:
-                date = dt.strptime(md.General.date, "%Y-%m-%d")
-                loc_kwds['DATE'] = date.strftime("%d-%b-%Y")
-                if md.has_item("General.time"):
-                    time = dt.strptime(md.General.time, "%H:%M:%S")
-                    loc_kwds['TIME'] = time.strftime("%H:%M")
-            except BaseException:
-                warnings.warn(
-                    "I couldn't write the date information due to"
-                    "an unexpected error. Please report this error to "
-                    "the developers")
-            locale.setlocale(locale.LC_TIME, loc)  # restore saved locale
+            date = dt.strptime(md.General.date, "%Y-%m-%d")
+            date_str = date.strftime("%d-%m-%Y")
+            day, month, year = date_str.split("-")
+            month = US_MONTHS_D2A[month]
+            loc_kwds['DATE'] = "-".join((day, month, year)) 
+        if md.has_item("General.time"):
+            time = dt.strptime(md.General.time, "%H:%M:%S")
+            loc_kwds['TIME'] = time.strftime("%H:%M")
     keys_from_signal = {
         # Required parameters
         'FORMAT': FORMAT,
