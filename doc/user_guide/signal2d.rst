@@ -11,16 +11,11 @@ signals in the Signal2D class.
 Two dimensional signal registration (alignment)
 -----------------------------------------------
 
-.. versionadded:: 0.5
-   :py:meth:`~._signals.signal2d.Signal2D.align2D` and
-   :py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D` methods.
-
-
 .. versionadded:: 1.4
    ``sub_pixel_factor`` keyword.
 
-
-The :py:meth:`~._signals.signal2d.Signal2D.align2D` method provides
+The :py:meth:`~._signals.signal2d.Signal2D.align2D` and 
+:py:meth:`~._signals.signal2d.Signal2D.estimate_shift2D` methods provide
 advanced image alignment functionality. Sub-pixel accuracy can be achieved
 by using skimage's upsampled matrix-multiplication DFT method
 :ref:`[Guizar2008] <Guizar2008>`—by setting the `sub_pixel_factor` keyword argument—

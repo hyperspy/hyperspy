@@ -176,8 +176,6 @@ The following keyboard shortcuts are availalbe when the 2D signal figure is in f
 Customising image plot
 ======================
 
-.. versionadded:: 0.8
-
 The image plot can be customised by passing additional arguments when plotting.
 Colorbar, scalebar and contrast controls are HyperSpy-specific, however
 `matplotlib.imshow
@@ -237,8 +235,6 @@ them as a dictionary in ``navigator_kwds`` argument when plotting:
 
 .. _plot.divergent_colormaps-label:
 
-
-.. versionadded:: 0.8.1
 
 When plotting using divergent colormaps, if ``centre_colormap`` is ``True``
 (default) the contrast is automatically adjusted so that zero corresponds to
@@ -458,8 +454,6 @@ other signals): :py:func:`~.drawing.utils.plot_images`,
 
 Plotting several images
 -----------------------
-
-.. versionadded:: 0.8
 
 :py:func:`~.drawing.utils.plot_images` is used to plot several images in the
 same figure. It supports many configurations and has many options available
@@ -1030,8 +1024,6 @@ each plot:
 
 Markers
 =======
-
-.. versionadded:: 0.8
 
 HyperSpy provides an easy access to the main marker of matplotlib. The markers
 can be used in a static way

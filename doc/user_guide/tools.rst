@@ -26,21 +26,6 @@ spectroscopy data analysis.
 The :ref:`table below <signal_subclasses_table-label>` summarises all the
 currently available specialised :py:class:`~.signal.BaseSignal` subclasses.
 
-.. versionchanged:: 1.0
-
-    The :py:class:`~._signals.signal1d.Signal1D`,
-    :py:class:`~._signals.signal2d.Signal2D` and :py:class:`~.signal.BaseSignal`
-    classes deprecated the old `Spectrum` `Image` and `Signal` classes.
-
-.. versionadded:: 1.0
-
-    New :py:class:`~._signals.complex_signal.ComplexSignal`,
-    :py:class:`~._signals.complex_signal1d.ComplexSignal1D` and
-    :py:class:`~._signals.complex_signal2d.Complex2D`
-    :py:class:`~.signal.BaseSignal` subclasses specialised in complex data.
-
-
-
 The :py:mod:`~.signals` module, which contains all available signal subclasses,
 is imported in the user namespace when loading HyperSpy. In the following
 example we create a Signal2D instance from a 2D numpy array:
@@ -258,8 +243,6 @@ The following example shows how to transform between different subclasses.
 Binned and unbinned signals
 ---------------------------
 
-.. versionadded:: 0.7
-
 Signals that are a histogram of a probability density function (pdf) should
 have the ``signal.metadata.Signal.binned`` attribute set to
 ``True``. This is because some methods operate differently in signals that are
@@ -320,8 +303,6 @@ subclasses.
 Mathematical operations
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionchanged:: 1.0
-
 A number of mathematical operations are available
 in :py:class:`~.signal.BaseSignal`. Most of them are just wrapped numpy
 functions.
@@ -368,21 +349,14 @@ Example:
 
 The following methods operate only on one axis at a time:
 
-.. versionadded:: 1.2
-   :py:meth:`~.signal.BaseSignal.valuemin`, :py:meth:`~.signal.BaseSignal.indexmin`
-
 * :py:meth:`~.signal.BaseSignal.diff`
 * :py:meth:`~.signal.BaseSignal.derivative`
 * :py:meth:`~.signal.BaseSignal.integrate_simpson`
 * :py:meth:`~.signal.BaseSignal.integrate1D`
-* :py:meth:`~.signal.BaseSignal.valuemax`
+* :py:meth:`~.signal.BaseSignal.indexmin`
 * :py:meth:`~.signal.BaseSignal.indexmax`
 * :py:meth:`~.signal.BaseSignal.valuemin`
-* :py:meth:`~.signal.BaseSignal.indexmin`
-
-.. versionadded:: 1.0
-   numpy ufunc operate on HyperSpy signals
-
+* :py:meth:`~.signal.BaseSignal.valuemax`
 
 .. _ufunc-label:
 
@@ -429,8 +403,6 @@ array instead of a :py:class:`~.signal.BaseSignal` instance e.g.:
 
 Indexing
 ^^^^^^^^
-.. versionadded:: 0.6
-.. versionchanged:: 0.8.1
 
 Indexing a :py:class:`~.signal.BaseSignal`  provides a powerful, convenient and
 Pythonic way to access and modify its data. In HyperSpy indexing is achieved
@@ -665,9 +637,6 @@ dimensions respectively:
 
 Signal operations
 ^^^^^^^^^^^^^^^^^
-.. versionadded:: 0.6
-
-.. versionadded:: 0.8.3
 
 :py:class:`~.signal.BaseSignal` supports all the Python binary arithmetic
 operations (+, -, \*, //, %, divmod(), pow(), \*\*, <<, >>, &, ^, \|),
@@ -809,8 +778,6 @@ to make a horizontal "collage" of the image stack:
 
 Iterating external functions with the map method
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. versionadded:: 0.7
 
 Performing an operation on the data at each coordinate, as in the previous example,
 using an external function can be more easily accomplished using the
@@ -1126,9 +1093,6 @@ type in place, e.g.:
         Data type: float64
 
 
-.. versionadded:: 0.7
-   Support for RGB signals.
-
 In addition to all standard numpy dtypes, HyperSpy supports four extra dtypes
 for RGB images **for visualization purposes only**: ``rgb8``, ``rgba8``,
 ``rgb16`` and ``rgba16``. This includes of course multi-dimensional RGB images.
@@ -1271,7 +1235,6 @@ methods e.g.:
 
 Basic statistical analysis
 --------------------------
-.. versionadded:: 0.7
 
 :py:meth:`~.signal.BaseSignal.get_histogram` computes the histogram and
 conveniently returns it as signal instance. It provides methods to
@@ -1393,8 +1356,6 @@ model, for example:
 Speeding up operations
 ----------------------
 
-.. versionadded:: 1.0
-
 Reusing a Signal for output
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1433,8 +1394,6 @@ operation.
 
 Interactive operations
 ----------------------
-
-.. versionadded:: 1.0
 
 
 The function :py:func:`~.interactive.interactive` ease the task of defining
@@ -1479,8 +1438,6 @@ The interactive operations can be chained.
 
 Region Of Interest (ROI)
 ------------------------
-
-.. versionadded:: 1.0
 
 A number of different ROIs are available:
 
