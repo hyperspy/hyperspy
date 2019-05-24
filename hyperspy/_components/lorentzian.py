@@ -16,9 +16,49 @@
 # You should have received a copy of the GNU General Public License
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
-from hyperspy._components.expression import Expression
 import numpy as np
+import dask.array as da
 
+from hyperspy._components.expression import Expression
+
+def _estimate_lorentzian_parameters(signal, x1, x2, only_current):
+    axis = signal.axes_manager.signal_axes[0]
+    i1, i2 = axis.value_range_to_indices(x1, x2)
+    X = axis.axis[i1:i2]
+    if only_current is True:
+        data = signal()[i1:i2]
+        X_shape = (len(X),)
+        i = 0
+        centre_shape = (1,)
+    else:
+        i = axis.index_in_array
+        data_gi = [slice(None), ] * len(signal.data.shape)
+        data_gi[axis.index_in_array] = slice(i1, i2)
+        data = signal.data[tuple(data_gi)]
+        X_shape = [1, ] * len(signal.data.shape)
+        X_shape[axis.index_in_array] = data.shape[i]
+        centre_shape = list(data.shape)
+        centre_shape[i] = 1
+
+    if isinstance(data, da.Array):
+        _cumsum = da.cumsum
+        _interp = da.interpsqrt
+    else:
+        _cumsum = np.cumsum
+        _interp = np.interp
+
+    cdf=_cumsum(data)
+    cdfnorm=cdf/cdf[-1:]
+    
+    centre = _interp(0.5,cdfnorm,X.reshape(X_shape))
+
+    gamma = (_interp(0.75,cdfnorm,X.reshape(X_shape)) - 
+            _interp(0.25,cdfnorm,X.reshape(X_shape))) / 2
+    height = data.max(i)
+    if isinstance(data, da.Array):
+        return da.compute(centre, height, gamma)
+    else:
+        return centre, height, gamma
 
 class Lorentzian(Expression):
 
@@ -80,6 +120,71 @@ class Lorentzian(Expression):
 
         self.isbackground = False
         self.convolved = True
+
+    def estimate_parameters(self, signal, x1, x2, only_current=False):
+        """Estimate the Lorentzian by calculating the median and half the
+        interquartile range.
+
+        Parameters
+        ----------
+        signal : Signal1D instance
+        x1 : float
+            Defines the left limit of the spectral range to use for the
+            estimation.
+        x2 : float
+            Defines the right limit of the spectral range to use for the
+            estimation.
+
+        only_current : bool
+            If False estimates the parameters for the full dataset.
+
+        Returns
+        -------
+        bool
+
+        Notes
+        -----
+        Adapted from gaussian.py and
+        https://en.wikipedia.org/wiki/Cauchy_distribution
+
+        Examples
+        --------
+
+        >>> g = hs.model.components1D.Lorentzian()
+        >>> x = np.arange(-10, 10, 0.01)
+        >>> data = np.zeros((32, 32, 2000))
+        >>> data[:] = g.function(x).reshape((1, 1, 2000))
+        >>> s = hs.signals.Signal1D(data)
+        >>> s.axes_manager._axes[-1].offset = -10
+        >>> s.axes_manager._axes[-1].scale = 0.01
+        >>> g.estimate_parameters(s, -10, 10, False)
+        """
+        
+        super(Lorentzian, self)._estimate_parameters(signal)
+        axis = signal.axes_manager.signal_axes[0]
+        centre, height, gamma = _estimate_lorentzian_parameters(signal, x1, x2,
+                                                              only_current)
+        if only_current is True:
+            self.centre.value = centre
+            self.gamma.value = gamma
+            self.A.value = height * self.gamma.value * np.pi
+            if self.binned:
+                self.A.value /= axis.scale
+            return True
+        else:
+            if self.A.map is None:
+                self._create_arrays()
+            self.A.map['values'][:] = height * self.gamma.value * np.pi
+
+            if self.binned:
+                self.A.map['values'] /= axis.scale
+            self.A.map['is_set'][:] = True
+            self.gamma.map['values'][:] = gamma
+            self.gamma.map['is_set'][:] = True
+            self.centre.map['values'][:] = centre
+            self.centre.map['is_set'][:] = True
+            self.fetch_stored_values()
+            return True
 
     @property
     def fwhm(self):
