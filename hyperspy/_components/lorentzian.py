@@ -53,7 +53,7 @@ class Lorentzian(Expression):
 
 
     For convenience the `fwhm` and `height` attributes can be used to get and set
-    the full-with-half-maximum and height, respectively.
+    the full-with-half-maximum and height of the distribution, respectively.
     """
 
     def __init__(self, A=1., gamma=1., centre=0., module="numexpr", **kwargs):
@@ -95,4 +95,4 @@ class Lorentzian(Expression):
 
     @height.setter
     def height(self, value):
-        self.A.value = value * (self.gamma.value * np.pi)
+        self.A.value = value * self.gamma.value * np.pi
