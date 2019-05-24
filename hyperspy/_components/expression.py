@@ -253,8 +253,12 @@ class Expression(Component):
         for parameter in parameters:
             grad_expr = sympy.diff(expr, parameter)
             if self._definition_condition is not None:
-                grad_str = lambdastr(x, grad_expr).split("lambda x: ")[1]
-                grad_str = grad_str.replace('math.', '')
+                # Get the grad_expr as a string, add the where condition and
+                # convert it back to sympy expression
+                grad_str = lambdastr(x, grad_expr)
+                # We need to parse the str to remove the "lambda" and "math."
+                # to workaround error when passing it to sympify
+                grad_str = grad_str.split("lambda x:")[1].replace('math.', '')
                 grad_expr = _parse_substitutions(
                         "where(%s, %s, 0)" % (self._definition_condition,
                               grad_str))
