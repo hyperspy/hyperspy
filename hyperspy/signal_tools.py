@@ -644,16 +644,16 @@ class IntegrateArea(SpanSelectorInSignal1D):
 @add_gui_method(toolkey="Signal1D.remove_background")
 class BackgroundRemoval(SpanSelectorInSignal1D):
     background_type = t.Enum(
-        'PowerLaw',
+        'Power law',
         'Gaussian',
         'Offset',
         'Polynomial',
-        default='PowerLaw')
+        default='Power law')
     polynomial_order = t.Range(1, 10)
     fast = t.Bool(True,
                   desc=("Perform a fast (analytic, but possibly less accurate)"
-                        " estimation of the background. Otherwise use "
-                        "use non-linear least squares."))
+                        "estimation of the background. Otherwise use "
+                        "non-linear least squares."))
     zero_fill = t.Bool(
         False,
         desc=("Set all spectral channels lower than the lower \n"
@@ -675,6 +675,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         # setting the polynomial order will change the backgroud_type to
         # polynomial, so we set it before setting the background type
         self.polynomial_order = polynomial_order
+        if background_type in ['Power Law', 'PowerLaw']:
+            background_type = 'Power law'
         self.background_type = background_type
         self.set_background_estimator()
         self.fast = fast
@@ -693,7 +695,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.rm_line = None
 
     def set_background_estimator(self):
-        if self.background_type == 'PowerLaw':
+        if self.background_type == 'Power law':
             self.background_estimator = components1d.PowerLaw()
             self.bg_line_range = 'from_left_range'
         elif self.background_type == 'Gaussian':
@@ -804,7 +806,7 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             plot = True
         else:
             plot = False
-        background_type = ("PowerLaw" if self.background_type == "Power Law"
+        background_type = ("PowerLaw" if self.background_type == "Power law"
                            else self.background_type)
         new_spectra = self.signal.remove_background(
             signal_range=(self.ss_left_value, self.ss_right_value),
