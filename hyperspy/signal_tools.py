@@ -1272,6 +1272,7 @@ class PeaksFinder2D(t.HasTraits):
     def _find_peaks_current_index(self, method):
         method = method.lower().replace(' ', '_')
         self.peaks = self.signal.find_peaks2D(method, current_index=True,
+                                              interactive=False,
                                               **self._get_parameters())
 
     def _plot_markers(self):

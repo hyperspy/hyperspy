@@ -747,8 +747,9 @@ class Signal2D(BaseSignal, CommonSignal2D):
         ramp += ramp_y * yy
         self.data += ramp
 
-    def find_peaks2D(self, method='local_max', show_progressbar=None, 
-                     parallel=None, current_index=False, *args, **kwargs):
+    def find_peaks2D(self, method='local_max', interactive=True,
+                     current_index=False, show_progressbar=None,
+                     parallel=None,  display=True, toolkit=None, **kwargs):
         """Find peaks in a 2D signal.
         Function to locate the positive peaks in an image using various, user
         specified, methods. Returns a structured array containing the peak
@@ -782,15 +783,16 @@ class Signal2D(BaseSignal, CommonSignal2D):
                  'difference_of_gaussian' - a blob finder implemented in
                  `scikit-image` which uses the difference of Gaussian 
                  matrices approach.
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
-        parallel : {None,bool,int}
-            if True, the computation will be performed in a threaded (parallel)
-            manner. See `parallel` keyword of the `map` method for more 
-            information.
+        interactive : bool
+            If True, the method parameter can be adjusted interactively using
+            a GUI and the results will be saved to the attribute `peaks`.
+            If False, the results will be returned.
         current_index : bool
             if True, the computation will be performed for the current index.
+        %s
+        %s
+        %s
+        %s
 
         *args : associated with above methods
 
@@ -818,18 +820,21 @@ class Signal2D(BaseSignal, CommonSignal2D):
             raise NotImplementedError("The method `{}` is not implemented. "
                                       "See documentation for available "
                                       "implementations.".format(method))
+        if interactive:
+            pf2D = PeaksFinder2D(self)
+            return pf2D.gui(display=display, toolkit=toolkit)
+
         if current_index:
-            peaks = method(self.__call__(), *args, **kwargs)
+            peaks = method(self.__call__(), **kwargs)
         else:
             peaks = self.map(method, show_progressbar=show_progressbar, 
                              parallel=parallel, inplace=False, 
-                             ragged=True, *args, **kwargs)
+                             ragged=True, **kwargs)
 
         return peaks
 
-    def find_peaks2D_interactive(self, display=True, toolkit=None):
-        pf2D = PeaksFinder2D(self)
-        return pf2D.gui(display=display, toolkit=toolkit)
+    find_peaks2D.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_ARG,
+                             DISPLAY_DT, TOOLKIT_DT)
 
 
 class LazySignal2D(LazySignal, Signal2D):
