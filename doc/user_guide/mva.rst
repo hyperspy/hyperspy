@@ -142,16 +142,12 @@ notation, specify the ``xaxis_type`` parameter:
    PCA scree plot with number-based axis labeling and a threshold value
    specified
 
-   
 .. figure::  images/screeplot3.png
    :align:   center
    :width:   500
 
    PCA scree plot with number-based axis labeling and an estimate of the no of significant 
    positions based on the "elbow" position
-   
-   
-.. versionadded:: 0.7
 
 
 Sometimes it can be useful to get the explained variance ratio as a spectrum,

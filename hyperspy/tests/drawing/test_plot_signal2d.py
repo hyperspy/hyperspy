@@ -443,3 +443,12 @@ def test_plot_images_not_signal():
 
     with pytest.raises(ValueError):
         hs.plot.plot_images('not a list of signal')
+
+
+def test_plot_images_tranpose():
+    a = hs.signals.BaseSignal(np.arange(100).reshape(10, 10))
+    b = hs.signals.BaseSignal(np.arange(100).reshape(10, 10)).T
+
+    hs.plot.plot_images([a, b.T])
+    hs.plot.plot_images([a, b])
+
