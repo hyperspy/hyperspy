@@ -109,7 +109,8 @@ class TestFindPeaks2D:
             pytest.skip("Parallel=True is ignored for lazy signal.")
 
 
-        peaks = dataset.find_peaks2D(method=method, parallel=parallel)
+        peaks = dataset.find_peaks2D(method=method, parallel=parallel,
+                                     interactive=False)
         assert isinstance(peaks, BaseSignal)
         assert not isinstance(peaks, LazySignal)
 
@@ -125,7 +126,8 @@ class TestFindPeaks2D:
 
     @pytest.mark.parametrize('parallel', [True, False])
     def test_ordering_results(self, parallel):
-        peaks = self.sparse_nav2d_shifted.find_peaks2D(parallel=parallel)
+        peaks = self.sparse_nav2d_shifted.find_peaks2D(parallel=parallel,
+                                                       interactive=False)
 
         nt.assert_equal(peaks.inav[0, 0].data,
                         np.array([[33, 29],
@@ -147,5 +149,6 @@ class TestFindPeaks2D:
         ans = np.empty((1,), dtype=object)
         ans[0] = np.array([[self.xref, self.yref]])
 
-        peaks = self.ref.find_peaks2D(method=method, parallel=parallel)
+        peaks = self.ref.find_peaks2D(method=method, parallel=parallel,
+                                      interactive=False)
         nt.assert_allclose(peaks.data[0], ans[0])

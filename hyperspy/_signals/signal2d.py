@@ -37,6 +37,7 @@ from hyperspy.signal_tools import PeaksFinder2D
 from hyperspy.docstrings.plot import (
     BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING)
 from hyperspy.docstrings.signal import SHOW_PROGRESSBAR_ARG, PARALLEL_ARG
+from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.utils.peakfinders2D import (
         find_peaks_max, find_peaks_minmax, find_peaks_zaefferer,
         find_peaks_stat, find_peaks_log, find_peaks_dog)
