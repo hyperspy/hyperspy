@@ -48,16 +48,12 @@ class Bleasdale(Expression):
     
     def __init__(self, a=1., b=1., c=1., module="numexpr", **kwargs):
         super(Bleasdale, self).__init__(
-            #expression="where(abx>0, abx ** (-1 / c), 0); abx = (a + b * x)",
             expression="(a + b * x) ** (-1 / c)",
             name="Bleasdale",
             a=a,
             b=b,
             c=c,
+            definition_condition="(a + b * x) > 0",
             module=module,
             autodoc=False,
             **kwargs)
-
-    def function(self, x):
-        return np.where((a+b*x)>0, super().function(x), 0.)
-

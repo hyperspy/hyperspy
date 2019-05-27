@@ -153,6 +153,7 @@ notation, specify the ``xaxis_type`` parameter:
    
 .. versionadded:: 0.7
 
+
 Sometimes it can be useful to get the explained variance ratio as a spectrum,
 for example to plot several scree plots obtained using
 different data pre-treatmentd in the same figure using
@@ -377,7 +378,6 @@ clicking on their corresponding line in the legend.
 
 Obtaining the results as BaseSignal instances
 =============================================
-.. versionadded:: 0.7
 
 The decomposition and BSS results are internally stored as numpy arrays in the
 :py:class:`~.signal.BaseSignal` class. Frequently it is useful to obtain the

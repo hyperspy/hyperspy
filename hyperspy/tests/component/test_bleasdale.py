@@ -27,6 +27,7 @@ def test_function():
     g.a.value = 1
     g.b.value = 2
     g.c.value = 2
+    assert g.function(-0.5) == 0
     assert g.function(0) == 1
     assert g.function(12) == 0.2
     assert_allclose(g.function(-.48),5)

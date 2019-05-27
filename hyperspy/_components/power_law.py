@@ -19,7 +19,6 @@
 import numpy as np
 import logging
 
-from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
 from hyperspy._components.expression import Expression
 
 
@@ -59,13 +58,16 @@ class PowerLaw(Expression):
     the component will return 0.
     """
 
-    def __init__(self, A=10e5, r=3., origin=0., module="numexpr", **kwargs):
-        super(PowerLaw, self).__init__(
-            expression="A *( x - origin) ** -r",
+    def __init__(self, A=10e5, r=3., origin=0., left_cutoff=0.0, 
+                 module="numexpr", **kwargs):
+        super().__init__(
+            expression="A*(-origin + x)**-r",
             name="PowerLaw",
             A=A,
             r=r,
             origin=origin,
+            left_cutoff=left_cutoff,
+            definition_condition="x > left_cutoff",
             position="origin",
             module=module,
             autodoc=False,
@@ -73,7 +75,7 @@ class PowerLaw(Expression):
         )
 
         self.origin.free = False
-        self.left_cutoff = 0.
+        self.left_cutoff.free = False
 
         # Boundaries
         self.A.bmin = 0.
@@ -83,17 +85,6 @@ class PowerLaw(Expression):
 
         self.isbackground = True
         self.convolved = False
-
-    def function(self, x):
-        return np.where(x > self.left_cutoff, super().function(x), 0)
-
-    def function_nd(self, axis):
-        """%s
-
-        """
-        return np.where(axis > self.left_cutoff, super().function_nd(axis), 0)
-
-    function_nd.__doc__ %= FUNCTION_ND_DOCSTRING
 
     def estimate_parameters(self, signal, x1, x2, only_current=False,
                             out=False):

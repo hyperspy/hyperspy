@@ -57,8 +57,13 @@ the x-axis if 1D:
 To change the current coordinates, click on the pointer (which will be a line
 or a square depending on the dimensions of the data) and drag it around. It is
 also possible to move the pointer by using the numpad arrows **when numlock is
-on and the spectrum or navigator figure is selected**. When using the keyboard
-arrows the PageUp and PageDown keys change the stepsize.
+on and the spectrum or navigator figure is selected**. When using the numpad
+arrows the PageUp and PageDown keys change the size of the step.
+
+The current coordinates can be either set by navigating the
+:py:meth:`~.signal.BaseSignal.plot`, or specified by pixel indices
+in ``s.axes_manager.indices`` or as calibrated coordinates in
+``s.axes_manager.coordinates``.
 
 An extra cursor can be added by pressing the ``e`` key. Pressing ``e`` once
 more will disable the extra cursor:
@@ -171,8 +176,6 @@ The following keyboard shortcuts are availalbe when the 2D signal figure is in f
 Customising image plot
 ======================
 
-.. versionadded:: 0.8
-
 The image plot can be customised by passing additional arguments when plotting.
 Colorbar, scalebar and contrast controls are HyperSpy-specific, however
 `matplotlib.imshow
@@ -232,8 +235,6 @@ them as a dictionary in ``navigator_kwds`` argument when plotting:
 
 .. _plot.divergent_colormaps-label:
 
-
-.. versionadded:: 0.8.1
 
 When plotting using divergent colormaps, if ``centre_colormap`` is ``True``
 (default) the contrast is automatically adjusted so that zero corresponds to
@@ -453,8 +454,6 @@ other signals): :py:func:`~.drawing.utils.plot_images`,
 
 Plotting several images
 -----------------------
-
-.. versionadded:: 0.8
 
 :py:func:`~.drawing.utils.plot_images` is used to plot several images in the
 same figure. It supports many configurations and has many options available
@@ -1017,8 +1016,6 @@ each plot:
 
 Markers
 =======
-
-.. versionadded:: 0.8
 
 HyperSpy provides an easy access to the main marker of matplotlib. The markers
 can be used in a static way

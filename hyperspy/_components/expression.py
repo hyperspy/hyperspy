@@ -17,10 +17,17 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 from functools import wraps
+import logging
 import numpy as np
+import sympy
+from sympy import lambdify
+from sympy.utilities.lambdify import lambdastr
 
 from hyperspy.component import Component
 from hyperspy.docstrings.parameters import FUNCTION_ND_DOCSTRING
+
+
+_logger = logging.getLogger(__name__)
 
 
 _CLASS_DOC = \
@@ -50,7 +57,6 @@ def _fill_function_args_2d(fn):
 
 
 def _parse_substitutions(string):
-    import sympy
     splits = map(str.strip, string.split(';'))
     expr = sympy.sympify(next(splits))
     # We substitute one by one manually, as passing all at the same time does
@@ -68,15 +74,15 @@ class Expression(Component):
 
     def __init__(self, expression, name, position=None, module="numpy",
                  autodoc=True, add_rotation=False, rotation_center=None,
-                 **kwargs):
+                 definition_condition=None, **kwargs):
         """Create a component from a string expression.
 
         It automatically generates the partial derivatives and the
         class docstring.
 
-        Parameters
+        Parameters`
         ----------
-        expression: str
+        expression : str
             Component function in SymPy text expression format with
             substitutions separated by `;`. See examples and the SymPy
             documentation for details. The only additional constraint is that
@@ -86,22 +92,25 @@ class Expression(Component):
             documentation for details.
         name : str
             Name of the component.
-        position: str, optional
+        position : str, optional
             The parameter name that defines the position of the component if
             applicable. It enables interative adjustment of the position of the
             component in the model. For 2D components, a tuple must be passed
             with the name of the two parameters e.g. `("x0", "y0")`.
-        module: {"numpy", "numexpr"}, default "numpy"
+        module : {"numpy", "numexpr"}, default "numpy"
             Module used to evaluate the function. numexpr is often faster but
             it supports fewer functions and requires installing numexpr.
         add_rotation: bool, default False
             This is only relevant for 2D components. If `True` it automatically
             adds `rotation_angle` parameter.
-        rotation_center: {None, tuple}
+        rotation_center : {None, tuple}
             If None, the rotation center is the center i.e. (0, 0) if `position`
             is not defined, otherwise the center is the coordinates specified
             by `position`. Alternatively a tuple with the (x, y) coordinates
             of the center can be provided.
+        definition_condition : str
+            Define the condition where the component is define. Where False, 
+            the component return 0.
         **kwargs
              Keyword arguments can be used to initialise the value of the
              parameters.
@@ -136,10 +145,9 @@ class Expression(Component):
          <Parameter two of my function component>)
 
         """
-
-        import sympy
         self._add_rotation = add_rotation
         self._str_expression = expression
+        self._definition_condition = definition_condition
         if rotation_center is None:
             self.compile_function(module=module, position=position)
         else:
@@ -176,15 +184,24 @@ class Expression(Component):
                 name, sympy.latex(_parse_substitutions(expression)))
 
     def compile_function(self, module="numpy", position=False):
-        import sympy
-        from sympy.utilities.lambdify import lambdify
-        expr = _parse_substitutions(self._str_expression)
+        if self._definition_condition is not None:
+            str_expression = "where(%s, %s, 0)" % (
+                    self._definition_condition, self._str_expression)
+        else:
+            str_expression = self._str_expression
+        expr = _parse_substitutions(str_expression)
+
         # Extract x
         x, = [symbol for symbol in expr.free_symbols if symbol.name == "x"]
         # Extract y
         y = [symbol for symbol in expr.free_symbols if symbol.name == "y"]
+
         self._is2D = True if y else False
         if self._is2D:
+            if self._definition_condition is not None:
+                raise NotImplementedError(
+                        "The `definition_condition` paramater is not "
+                        "supported for 2D components.")
             y = y[0]
         if self._is2D and self._add_rotation:
             position = position or (0, 0)
@@ -223,15 +240,36 @@ class Expression(Component):
         setattr(self, "function", f)
         parnames = [symbol.name for symbol in parameters]
         self._parameter_strings = parnames
+
+        grad_param = parameters
+        if self._definition_condition is not None:
+            # sympy diff doesn't work with where, so to calculate the gradient,
+            # we need to remove the where and recreate the expr and parameters
+            expr = _parse_substitutions(self._str_expression)
+            parameters = [s for s in expr.free_symbols if s.name != 'x']
+            parameters.sort(key=lambda x: x.name)
+
         ffargs = _fill_function_args_2d if self._is2D else _fill_function_args
         for parameter in parameters:
-            grad_expr = sympy.diff(eval_expr, parameter)
+            grad_expr = sympy.diff(expr, parameter)
+            if self._definition_condition is not None:
+                # Get the grad_expr as a string, add the where condition and
+                # convert it back to sympy expression
+                grad_str = lambdastr(x, grad_expr)
+                # We need to parse the str to remove the "lambda" and "math."
+                # to workaround error when passing it to sympify
+                grad_str = grad_str.split("lambda x:")[1].replace('math.', '')
+                grad_expr = _parse_substitutions(
+                        "where(%s, %s, 0)" % (self._definition_condition,
+                              grad_str))
+            _logger.debug("grad of %s is %s" % (parameter.name, grad_expr))
+            setattr(self, "_f_grad_%s_expr" % parameter.name, grad_expr)
             setattr(self,
                     "_f_grad_%s" % parameter.name,
-                    lambdify(variables + parameters,
-                             grad_expr.evalf(),
-                             modules=module,
-                             dummify=False)
+                    lambdify(variables + grad_param,
+                              grad_expr.evalf(),
+                              modules=module,
+                              dummify=False)
                     )
 
             setattr(self,
@@ -245,13 +283,6 @@ class Expression(Component):
                         Expression)
                     )
 
-    def _is_navigation_multidimensional(self):
-        if (self._axes_manager is None or not
-                self._axes_manager.navigation_dimension):
-            return False
-        else:
-            return True
-
     def function_nd(self, *args):
         """%s
 
@@ -259,7 +290,7 @@ class Expression(Component):
         if self._is2D:
             x, y = args[0], args[1]
             # navigation dimension is 0, f_nd same as f
-            if not self._is_navigation_multidimensional():
+            if not self._is_navigation_multidimensional:
                 return self.function(x, y)
             else:
                 return self._f(x[np.newaxis, ...], y[np.newaxis, ...],
@@ -267,7 +298,7 @@ class Expression(Component):
                                  for p in self.parameters])
         else:
             x = args[0]
-            if not self._is_navigation_multidimensional():
+            if not self._is_navigation_multidimensional:
                 return self.function(x)
             else:
                 return self._f(x[np.newaxis, ...],
