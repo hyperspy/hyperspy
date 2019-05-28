@@ -333,16 +333,25 @@ class TestFEIReader():
             assert s.axes_manager[1].units == 'nm'
             assert (s.axes_manager[0].name == 'x')
             assert (s.axes_manager[1].name == 'y')
-    
+
     def test_load_TotalNumberElements_ne_ValidNumberElements(self):
         fname0 = os.path.join(self.dirpathold, 'X - Au NP EELS_2.ser')
         s0 = load(fname0)
-        assert(s0.data.shape[0] == 1)
-        
+        assert s0.data.shape == (2048, )
+        assert s0.axes_manager.navigation_axes == ( )
+        assert_allclose(s0.axes_manager[0].offset, 2160, rtol=1E-5)
+        assert_allclose(s0.axes_manager[0].scale, 0.2, rtol=1E-5)
+
         fname1 = os.path.join(self.dirpathold, '03_Scanning Preview.emi')
         s1 = load(fname1)
-        assert(s1.data.shape[0] == 5)
-    
+        assert s1.data.shape == (5, 128, 128)
+        nav_axes = s1.axes_manager.navigation_axes
+        sig_axes = s1.axes_manager.signal_axes
+        assert nav_axes[0].size == 5
+        assert sig_axes[0].size == sig_axes[1].size == 128
+        assert_allclose(sig_axes[0].scale, 0.38435, rtol=1E-5)
+        assert_allclose(sig_axes[1].scale, 0.38435, rtol=1E-5)
+
     def test_read_STEM_TEM_mode(self):
         # TEM image
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
@@ -409,10 +418,11 @@ class TestFEIReader():
     def test_load_multisignal_stack(self):
         fname0 = os.path.join(
             self.dirpathnew, '16x16-line_profile_horizontal_5x128x128_EDS.emi')
-        fname1 = os.path.join(
-            self.dirpathnew,
-            '16x16-line_profile_horizontal_5x128x128_EDS_copy.emi')
-        load([fname0, fname1], stack=True)
+        s = load([fname0, fname0], stack=True)
+        assert s[0].axes_manager.navigation_shape == (5, 2)
+        assert s[0].axes_manager.signal_shape == (4000, )
+        assert s[1].axes_manager.navigation_shape == (5, 2)
+        assert s[1].axes_manager.signal_shape == (128, 128)
 
     def test_load_multisignal_stack_mismatch(self):
         fname0 = os.path.join(
@@ -423,6 +433,7 @@ class TestFEIReader():
         with pytest.raises(ValueError) as cm:
             load([fname0, fname1], stack=True)
             cm.match("The number of sub-signals per file does not match*")
+        load([fname0, fname1])
 
     def test_date_time(self):
         fname0 = os.path.join(self.dirpathold, '64x64_TEM_images_acquire.emi')
