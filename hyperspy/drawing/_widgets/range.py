@@ -282,7 +282,7 @@ class ModifiableSpanSelector(SpanSelector):
         self._range = None
         self.step_ax = None
         self.bounds_check = False
-        self.buttonDown = False
+        self._button_down = False
         self.snap_size = False
         self.snap_position = False
         self.events = Events()
@@ -417,11 +417,11 @@ class ModifiableSpanSelector(SpanSelector):
         return False, {}
 
     def release(self, event):
-        """When the button is realeased, the span stays in the screen and the
+        """When the button is released, the span stays in the screen and the
         iteractivity machinery passes to modify mode"""
-        if self.pressv is None or (self.ignore(event) and not self.buttonDown):
+        if self.pressv is None or (self.ignore(event) and not self._button_down):
             return
-        self.buttonDown = False
+        self._button_down = False
         self.update_range()
         self.set_initial()
 
@@ -434,9 +434,9 @@ class ModifiableSpanSelector(SpanSelector):
         return x_pt
 
     def mm_on_press(self, event):
-        if self.ignore(event) and not self.buttonDown:
+        if self.ignore(event) and not self._button_down:
             return
-        self.buttonDown = True
+        self._button_down = True
 
         x_pt = self._get_point_size_in_data_units()
 
@@ -493,7 +493,7 @@ class ModifiableSpanSelector(SpanSelector):
         self._range = (r0, r1)
 
     def move_left(self, event):
-        if self.buttonDown is False or self.ignore(event):
+        if self._button_down is False or self.ignore(event):
             return
         x = self._get_mouse_position(event)
         if self.step_ax is not None:
@@ -531,7 +531,7 @@ class ModifiableSpanSelector(SpanSelector):
         self.draw_patch()
 
     def move_right(self, event):
-        if self.buttonDown is False or self.ignore(event):
+        if self._button_down is False or self.ignore(event):
             return
         x = self._get_mouse_position(event)
         if self.step_ax is not None:
@@ -564,7 +564,7 @@ class ModifiableSpanSelector(SpanSelector):
         self.draw_patch()
 
     def move_rect(self, event):
-        if self.buttonDown is False or self.ignore(event):
+        if self._button_down is False or self.ignore(event):
             return
         x_increment = self._get_mouse_position(event) - self.pressv
         if self.step_ax is not None:
@@ -585,9 +585,9 @@ class ModifiableSpanSelector(SpanSelector):
         self.draw_patch()
 
     def mm_on_release(self, event):
-        if self.buttonDown is False or self.ignore(event):
+        if self._button_down is False or self.ignore(event):
             return
-        self.buttonDown = False
+        self._button_down = False
         self.canvas.mpl_disconnect(self.on_move_cid)
         self.on_move_cid = None
 
