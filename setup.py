@@ -69,7 +69,7 @@ install_req = ['scipy>=0.15',
                ]
 
 extras_require = {
-    "learning": ['scikit-learn', 'pymcr'],
+    "learning": ['scikit-learn', 'pymcr>=0.3.1'],
     "gui-jupyter": ["hyperspy_gui_ipywidgets>=1.1.0"],
     "gui-traitsui": ["hyperspy_gui_traitsui>=1.1.0"],
     "mrcz": ["blosc>=1.5", 'mrcz>=0.3.6'],
