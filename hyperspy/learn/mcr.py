@@ -132,7 +132,11 @@ def mcrals(self,
             data = (data.T / im_weight_vec).T / spec_weight_vec
             data = np.nan_to_num(data)
 
-        fitmcr = McrAR(max_iter=50, tol_err_change=1e-6)
+        fitmcr = McrAR(max_iter=100, st_regr='OLS', c_regr='OLS',
+              c_constraints=[ConstraintNonneg(), ConstraintNorm()],
+              st_constraints=[ConstraintNonneg()],
+              tol_increase=1.0, tol_n_increase=10, tol_err_change=1e-14,
+              tol_n_above_min=10)
         f = io.StringIO()
         with redirect_stdout(f):
             fitmcr.fit(data.T, C=rot_factors, verbose=False)
