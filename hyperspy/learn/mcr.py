@@ -1,5 +1,6 @@
 import numpy as np
 from pymcr.mcr import McrAR
+from pymcr.constraints import ConstraintNonneg, ConstraintNorm
 from hyperspy.misc.machine_learning.orthomax import orthomax
 from hyperspy.misc.utils import stack
 import logging
