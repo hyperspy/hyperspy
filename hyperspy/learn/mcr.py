@@ -15,12 +15,31 @@ def mcrals(self,
            simplicity='spatial',
            mask=None,
            compute=False,
-           verbosity='error',):
-    """Multivariate curve resolution (MCR) on the result on the
-    decomposition.
+           verbosity='error',
+           c_regr='OLS',
+           st_regr='OLS',
+           max_iter=100,
+           c_constraints=[ConstraintNonneg(), ConstraintNorm()],
+           st_constraints=[ConstraintNonneg()],
+           tol_increase=1.0,
+           tol_n_increase=10,
+           tol_err_change=1e-14,
+           tol_n_above_min=10):
+    """Perform multivariate curve resolution (MCR) on the result on the
+    decomposition. MCR is carried out using the PyMCR library, details of
+    which can be found at the following link:
 
-    Available options: Assume simplicity in either the spatial or the
-    spectral domain
+    https://github.com/hyperspy/hyperspy/pull/url
+
+    If spatial simplicity is chosen, a varimax rotation is computed on the
+    SVD loadings.  This rotation is applied to the factors, which are then
+    fit to the input data via MCR until the convergence criteria are met.
+    If spectral simplicity is chosen, the varimax rotation is calculated
+    directly on the factors prior to MCR.
+
+    In addition, prior to MCR fitting, the rotated factors are flipped if
+    necessary so that they are mostly positive. This is required since a
+    non-negativity constraint is applied.
 
     Parameters
     ----------
@@ -49,6 +68,24 @@ def mcrals(self,
         Controls the verbosity of the external pyMCR routines. The
         strings provided correspond to levels of the ``logging`` module.
         Default is ``'error'`` (only critical failure output).
+    c_regr : str
+        Must be either 'OLS' or 'NNLS'. Default is 'OLS".
+    st_regr : str
+        Must be either 'OLS' or 'NNLS'. Default is 'OLS'.
+    max_iter : int
+        Default value is 100
+    c_constraints : list
+        Default is [ConstraintNonneg(), ConstraintNorm()]
+    st_constraints : list
+        Default is [ConstraintNonneg()]
+    tol_increase : float
+        Default is 1.0
+    tol_n_increase : int
+        Default is 10
+    tol_err_change : float
+        Default is 1e-14
+    tol_n_above_min : int
+        Default is 10
     """
     from hyperspy.signal import BaseSignal
 
@@ -132,11 +169,15 @@ def mcrals(self,
             data = (data.T / im_weight_vec).T / spec_weight_vec
             data = np.nan_to_num(data)
 
-        fitmcr = McrAR(max_iter=100, st_regr='OLS', c_regr='OLS',
-              c_constraints=[ConstraintNonneg(), ConstraintNorm()],
-              st_constraints=[ConstraintNonneg()],
-              tol_increase=1.0, tol_n_increase=10, tol_err_change=1e-14,
-              tol_n_above_min=10)
+        fitmcr = McrAR(max_iter=max_iter,
+                       st_regr=st_regr,
+                       c_regr=c_regr,
+                       c_constraints=c_constraints,
+                       st_constraints=st_constraints,
+                       tol_increase=tol_increase,
+                       tol_n_increase=tol_n_increase,
+                       tol_err_change=tol_err_change,
+                       tol_n_above_min=tol_n_above_min)
         f = io.StringIO()
         with redirect_stdout(f):
             fitmcr.fit(data.T, C=rot_factors, verbose=False)
@@ -162,11 +203,15 @@ def mcrals(self,
             data = (data.T / im_weight_vec).T / spec_weight_vec
             data = np.nan_to_num(data)
 
-        fitmcr = McrAR(max_iter=100, st_regr='OLS', c_regr='OLS',
-              c_constraints=[ConstraintNonneg(), ConstraintNorm()],
-              st_constraints=[ConstraintNonneg()],
-              tol_increase=1.0, tol_n_increase=10, tol_err_change=1e-14,
-              tol_n_above_min=10)
+        fitmcr = McrAR(max_iter=max_iter,
+                       st_regr=st_regr,
+                       c_regr=c_regr,
+                       c_constraints=c_constraints,
+                       st_constraints=st_constraints,
+                       tol_increase=tol_increase,
+                       tol_n_increase=tol_n_increase,
+                       tol_err_change=tol_err_change,
+                       tol_n_above_min=tol_n_above_min)
         f = io.StringIO()
         with redirect_stdout(f):
             fitmcr.fit(data, ST=rot_factors.T, verbose=False)

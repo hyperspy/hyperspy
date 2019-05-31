@@ -119,7 +119,7 @@ class MVA():
         normalize_poissonian_noise : bool
             If True, scale the SI to normalize Poissonian noise
         algorithm : 'svd' | 'fast_svd' | 'mlpca' | 'fast_mlpca' | 'nmf' |
-            'sparse_pca' | 'mini_batch_sparse_pca' | 'RPCA_GoDec' | 'ORPCA'
+            'sparse_pca' | 'mini_batch_sparse_pca' | 'RPCA_GoDec' | 'ORPCA' | 'MCR'
         output_dimension : None or int
             number of components to keep/calculate
         centre : None | 'variables' | 'trials'
