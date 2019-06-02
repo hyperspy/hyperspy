@@ -467,7 +467,7 @@ def convert_xml_to_dict(xml_object):
     return op
 
 
-def ser_reader(filename, objects=None, *args, **kwds):
+def ser_reader(filename, objects=None, lazy=False, only_valid_data=True):
     """Reads the information from the file and returns it in the HyperSpy
     required format.
 
@@ -519,7 +519,7 @@ def ser_reader(filename, objects=None, *args, **kwds):
         # Deal with issue when TotalNumberElements does not equal 
         # ValidNumberElements for ndim==1.
         if ndim == 1 and (header['TotalNumberElements'] 
-                != header['ValidNumberElements'][0]):
+                != header['ValidNumberElements'][0]) and only_valid_data:
             if header['ValidNumberElements'][0] == 1:
                 # no need for navigation dimension
                 array_shape = []
@@ -582,17 +582,18 @@ def ser_reader(filename, objects=None, *args, **kwds):
 
     # Remove Nones from array_shape caused by squeezing size 1 dimensions
     array_shape = [dim for dim in array_shape if dim is not None]
-    lazy = kwds.pop('lazy', False)
     if lazy:
         from dask import delayed
         from dask.array import from_delayed
         val = delayed(load_only_data, pure=True)(filename, array_shape,
-                                                 record_by, len(axes))
+                                                 record_by, len(axes), 
+                                                 only_valid_data=only_valid_data)
         dc = from_delayed(val, shape=array_shape,
                           dtype=data['Array'].dtype)
     else:
         dc = load_only_data(filename, array_shape, record_by, len(axes),
-                            data=data,header=header)
+                            data=data, header=header,
+                            only_valid_data=only_valid_data)
 
     original_metadata = OrderedDict()
     header_parameters = sarray2dict(header)
@@ -621,7 +622,7 @@ def ser_reader(filename, objects=None, *args, **kwds):
 
 
 def load_only_data(filename, array_shape, record_by, num_axes, data=None,
-                   header=None):
+                   header=None, only_valid_data=True):
     if data is None:
         header, data = load_ser_file(filename)
     # If the acquisition stops before finishing the job, the stored file will
@@ -630,7 +631,7 @@ def load_only_data(filename, array_shape, record_by, num_axes, data=None,
     # dimensions we must fill the rest with zeros or (better) nans if the
     # dtype is float
     if multiply(array_shape) != multiply(data['Array'].shape):
-        if int(header['NumberDimensions']) == 1:
+        if int(header['NumberDimensions']) == 1 and only_valid_data:
             # No need to fill with zeros if `TotalNumberElements != 
             # ValidNumberElements` for series data. 
             # The valid data is always `0:ValidNumberElements`
