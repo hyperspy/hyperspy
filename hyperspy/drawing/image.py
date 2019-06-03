@@ -34,6 +34,7 @@ from hyperspy.misc import rgb_tools
 from hyperspy.drawing.figure import BlittedFigure
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.docstrings.plot import PLOT2D_DOCSTRING
+from hyperspy.misc.test_utils import ignore_warning
 
 
 _logger = logging.getLogger(__name__)
@@ -196,8 +197,14 @@ class ImagePlot(BlittedFigure):
     def optimize_contrast(self, data):
         if (self._vmin_user is not None and self._vmax_user is not None):
             return
-        self._vmin_auto, self._vmax_auto = utils.contrast_stretching(
-            data, self.saturated_pixels)
+        with ignore_warning(category=RuntimeWarning):
+            # In case of "All-NaN slices"
+            vmin, vmax = utils.contrast_stretching(data, self.saturated_pixels)
+        if vmin == np.nan:
+            vmin = None
+        if vmax == np.nan:
+            vmax = None
+        self._vmin_auto, self._vmax_auto = vmin, vmax
 
     def create_figure(self, max_size=None, min_size=2, **kwargs):
         """Create matplotlib figure
