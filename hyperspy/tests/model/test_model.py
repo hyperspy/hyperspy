@@ -1202,3 +1202,23 @@ class TestAdjustPosition:
         assert len(list(self.m._position_widgets.values())[0]) == 2
         self.m.disable_adjust_position()
         assert len(self.m._position_widgets) == 0
+
+
+def test_as_signal_parallel():
+    import numpy as np
+    import hyperspy.api as hs
+
+    np.random.seed(1)
+    s = hs.signals.Signal1D(np.random.random((50, 10)))
+
+    m = s.create_model()
+    m.append(hs.model.components1D.PowerLaw())
+    m.set_signal_range(2, 5)
+    m.multifit(show_progressbar=False)
+
+    s1 = m.as_signal(out_of_range_to_nan=True, parallel=True,
+                     show_progressbar=False)
+    s2 = m.as_signal(out_of_range_to_nan=True, parallel=True,
+                     show_progressbar=False)
+
+    np.testing.assert_allclose(s1, s2)
