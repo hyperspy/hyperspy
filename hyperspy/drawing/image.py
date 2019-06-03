@@ -353,9 +353,9 @@ class ImagePlot(BlittedFigure):
                     row = -1
                 if col >= 0 and row >= 0:
                     z = data[row, col]
-                    return 'x=%1.4g, y=%1.4g, intensity=%1.4g' % (x, y, z)
-                else:
-                    return 'x=%1.4g, y=%1.4g' % (x, y)
+                    if np.isfinite(z):
+                        return 'x=%1.4g, y=%1.4g, intensity=%1.4g' % (x, y, z)
+                return 'x=%1.4g, y=%1.4g' % (x, y)
             self.ax.format_coord = format_coord
             old_vmax, old_vmin = self.vmax, self.vmin
             self.optimize_contrast(data)
