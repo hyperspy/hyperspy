@@ -181,3 +181,9 @@ def test_plot_nav2_sig2_close():
     test_plot = _TestPlot(ndim=2, sdim=2, data_type="real")
     test_plot.signal.plot()
     return test_plot.signal
+
+
+def test_plot_float16():
+    s = hs.signals.Signal2D(np.random.random(size=(100,100)).astype('float16'))
+    with pytest.raises(TypeError):
+        s.plot()

@@ -1959,6 +1959,13 @@ class BaseSignal(FancySlicing,
 
         if axes_manager is None:
             axes_manager = self.axes_manager
+        if self.data.dtype == np.float16 and len(axes_manager.signal_axes) == 2:
+            raise TypeError("Plotting float16 images is not supported by "
+                            "Matplotlib, it is possible to change the type of "
+                            "the data by using the the type using the "
+                            "`change_dtype` method , e.g. "
+                            "`s.change_dtype('float32')`.")
+
         if self.is_rgbx is True:
             if axes_manager.navigation_size < 2:
                 navigator = None

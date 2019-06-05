@@ -125,6 +125,13 @@ To close all the figures run the following command:
     learn how to pan/zoom and more  `in the matplotlib documentation
     <http://matplotlib.sourceforge.net/users/navigation_toolbar.html>`_
 
+
+.. NOTE::
+
+    Plotting ``float16`` image is not supported by matplotlib; however, it is possible to
+    to convert the type of the data by using the ``change_dtype`` method, e.g. 
+    `s.change_dtype('float32')`.
+
 Multidimensional image data
 ===========================
 
