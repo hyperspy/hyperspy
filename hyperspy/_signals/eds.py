@@ -518,6 +518,19 @@ class EDS_mixin:
         lines.sort()
         return lines
 
+    def _parse_xray_lines(self, xray_lines, only_one, only_lines):
+        only_lines = utils_eds._parse_only_lines(only_lines)
+        xray_lines = self._get_xray_lines(xray_lines, only_one=only_one,
+                                          only_lines=only_lines)
+        xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
+            xray_lines)
+        for xray in xray_not_here:
+            warnings.warn("%s is not in the data energy range." % xray +
+                          "You can remove it with" +
+                          "s.metadata.Sample.xray_lines.remove('%s')"
+                          % xray)
+        return xray_lines
+
     def get_lines_intensity(self,
                             xray_lines=None,
                             integration_windows=2.,
@@ -538,7 +551,7 @@ class EDS_mixin:
 
         Parameters
         ----------
-        xray_lines: {None, "best", list of string}
+        xray_lines: {None, list of string}
             If None,
             if `metadata.Sample.elements.xray_lines` contains a
             list of lines use those.
@@ -605,16 +618,7 @@ class EDS_mixin:
 
         """
 
-        only_lines = utils_eds._parse_only_lines(only_lines)
-        xray_lines = self._get_xray_lines(xray_lines, only_one=only_one,
-                                          only_lines=only_lines)
-        xray_lines, xray_not_here = self._get_xray_lines_in_spectral_range(
-            xray_lines)
-        for xray in xray_not_here:
-            warnings.warn("%s is not in the data energy range." % xray +
-                          "You can remove it with" +
-                          "s.metadata.Sample.xray_lines.remove('%s')"
-                          % xray)
+        xray_lines = self._parse_xray_lines(xray_lines, only_one, only_lines)
         if hasattr(integration_windows, '__iter__') is False:
             integration_windows = self.estimate_integration_windows(
                 windows_width=integration_windows, xray_lines=xray_lines)
@@ -624,9 +628,8 @@ class EDS_mixin:
         # signal_to_index = self.axes_manager.navigation_dimension - 2
         for i, (Xray_line, window) in enumerate(
                 zip(xray_lines, integration_windows)):
-            line_energy, line_FWHM = self._get_line_energy(Xray_line,
-                                                           FWHM_MnKa='auto')
             element, line = utils_eds._get_element_and_line(Xray_line)
+            line_energy = self._get_line_energy(Xray_line)
             img = self.isig[window[0]:window[1]].integrate1D(-1)
             if np.issubdtype(img.data.dtype, np.integer):
                 # The operations below require a float dtype with the default
