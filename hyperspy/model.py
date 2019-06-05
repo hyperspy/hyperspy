@@ -483,7 +483,6 @@ class BaseModel(list):
 
         if parallel is False:
             self._as_signal_iter(component_list=component_list,
-                                 out_of_range_to_nan=out_of_range_to_nan,
                                  show_progressbar=show_progressbar, data=data)
         else:
             am = self.axes_manager
