@@ -617,7 +617,10 @@ with it, all of them will be read and returned as a list.
 Extra loading arguments
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-- `only_valid_data` : bool, in case of series or linescan data with the acquisition stopped before the end: if True, load only the acquired data. If False, the empty data are filled with zeros. The default is True.
+- `only_valid_data` : bool, in case of series or linescan data with the 
+acquisition stopped before the end: if True, load only the acquired data. 
+If False, the empty data are filled with zeros. The default is False and this 
+default value will change to True in version 2.0.
 
 .. _unf-format:
 

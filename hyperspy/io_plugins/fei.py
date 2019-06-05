@@ -467,7 +467,7 @@ def convert_xml_to_dict(xml_object):
     return op
 
 
-def ser_reader(filename, objects=None, lazy=False, only_valid_data=True):
+def ser_reader(filename, objects=None, lazy=False, only_valid_data=False):
     """Reads the information from the file and returns it in the HyperSpy
     required format.
 
@@ -622,7 +622,7 @@ def ser_reader(filename, objects=None, lazy=False, only_valid_data=True):
 
 
 def load_only_data(filename, array_shape, record_by, num_axes, data=None,
-                   header=None, only_valid_data=True):
+                   header=None, only_valid_data=False):
     if data is None:
         header, data = load_ser_file(filename)
     # If the acquisition stops before finishing the job, the stored file will
