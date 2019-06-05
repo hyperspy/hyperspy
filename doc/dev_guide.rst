@@ -24,7 +24,7 @@ it's only the specifics that change.
 
 The best way to start understanding how HyperSpy works and to build a broad
 overview of the code as it stands is to use it -- so what are you waiting for?
-`Download HyperSpy <http://hyperspy.org/download.html>`_.
+`Install HyperSpy <http://hyperspy.org/hyperspy-doc/current/user_guide/install.html>`_.
 
 The user-guide also provides a good overview of all the parts of the code that
 are currently implemented as well as much information about how everything
