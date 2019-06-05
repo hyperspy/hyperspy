@@ -477,6 +477,10 @@ class BaseModel(list):
             parallel = int(parallel)
         if parallel < 2:
             parallel = False
+        if out_of_range_to_nan is True:
+            channel_switches_backup = copy.copy(self.channel_switches)
+            self.channel_switches[:] = True
+
         if parallel is False:
             self._as_signal_iter(component_list=component_list,
                                  out_of_range_to_nan=out_of_range_to_nan,
@@ -490,7 +494,6 @@ class BaseModel(list):
             if not len(nav_shape) or size < 4:
                 # no or not enough navigation, just run without threads
                 return self.as_signal(component_list=component_list,
-                                      out_of_range_to_nan=out_of_range_to_nan,
                                       show_progressbar=show_progressbar,
                                       out=signal, parallel=False)
             parallel = min(parallel, size / 2)
@@ -511,16 +514,19 @@ class BaseModel(list):
                     lambda thing: thing[0]._as_signal_iter(
                         data=thing[1],
                         component_list=component_list,
-                        out_of_range_to_nan=out_of_range_to_nan,
                         show_progressbar=thing[2] + 1 if show_progressbar else False),
                     zip(models, data_slices, range(int(parallel))))
             _ = next(_map)
+
+        if out_of_range_to_nan is True:
+            self.channel_switches[:] = channel_switches_backup
+
         return signal
 
     as_signal.__doc__ %= (SHOW_PROGRESSBAR_ARG, PARALLEL_INT_ARG)
 
-    def _as_signal_iter(self, component_list=None, out_of_range_to_nan=True,
-                        show_progressbar=None, data=None):
+    def _as_signal_iter(self, component_list=None, show_progressbar=None,
+                        data=None):
         # Note that show_progressbar can be an int to determine the progressbar
         # position for a thread-friendly bars. Otherwise race conditions are
         # ugly...
@@ -540,9 +546,6 @@ class BaseModel(list):
                             continue    # Keep active_map
                         component_.active_is_multidimensional = False
                     component_.active = active
-            if out_of_range_to_nan is True:
-                channel_switches_backup = copy.copy(self.channel_switches)
-                self.channel_switches[:] = True
             maxval = self.axes_manager.navigation_size
             enabled = show_progressbar and (maxval > 0)
             pbar = progressbar(total=maxval, disable=not enabled,
@@ -553,8 +556,6 @@ class BaseModel(list):
                     np.where(self.channel_switches)] = self.__call__(
                     non_convolved=not self.convolved, onlyactive=True).ravel()
                 pbar.update(1)
-            if out_of_range_to_nan is True:
-                self.channel_switches[:] = channel_switches_backup
 
     @property
     def _plot_active(self):
