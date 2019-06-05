@@ -1074,15 +1074,17 @@ class MVA():
         # Some default formatting for signal markers
         if signal_fmt is None:
             signal_fmt = {'c': '#C24D52',
-                          's': 100,
+                         'linestyle': '',
                           'marker': "^",
+                          'markersize': 10,
                           'zorder': 3}
 
         # Some default formatting for noise markers
         if noise_fmt is None:
             noise_fmt = {'c': '#4A70B0',
-                         's': 100,
+                         'linestyle': '',
                          'marker': 'o',
+                         'markersize': 10,
                          'zorder': 3}
 
         # Sane defaults for xaxis labeling
@@ -1102,7 +1104,7 @@ class MVA():
             ax = fig.add_subplot(111)
 
         if log:
-            ax.semilogy()
+            ax.set_yscale("log")
 
         if hline:
             ax.axhline(cutoff,
@@ -1116,18 +1118,18 @@ class MVA():
             index_offset = 1
 
         if n_signal_pcs == n:
-            ax.scatter(range(index_offset, index_offset + n),
+            ax.plot(range(index_offset, index_offset + n),
                        s.isig[:n].data,
                        **signal_fmt)
         elif n_signal_pcs > 0:
-            ax.scatter(range(index_offset, index_offset + n_signal_pcs),
+            ax.plot(range(index_offset, index_offset + n_signal_pcs),
                        s.isig[:n_signal_pcs].data,
                        **signal_fmt)
-            ax.scatter(range(index_offset + n_signal_pcs, index_offset + n),
+            ax.plot(range(index_offset + n_signal_pcs, index_offset + n),
                        s.isig[n_signal_pcs:n].data,
                        **noise_fmt)
         else:
-            ax.scatter(range(index_offset, index_offset + n),
+            ax.plot(range(index_offset, index_offset + n),
                        s.isig[:n].data,
                        **noise_fmt)
 
