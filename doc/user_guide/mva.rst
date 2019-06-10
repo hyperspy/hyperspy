@@ -93,15 +93,9 @@ To obtain a scree plot for your dataset, run the
    PCA scree plot
 
 .. versionadded:: 1.2.0
-<<<<<<< HEAD
    ``log``, ``threshold``, ``hline``,``vline``, ``xaxis_type``, ``xaxis_labeling``,
    ``signal_fmt``, ``noise_fmt``, ``threshold``, ``xaxis_type`` keyword
    arguments.
-=======
-   ``log``, ``threshold``, ``hline``,``vline``, ``xaxis_type``,
-   ``xaxis_labeling``, ``signal_fmt``, ``noise_fmt``, ``threshold``,
-   ``xaxis_type`` keyword arguments.
->>>>>>> 6017d62b9601a9984c1252186d9d1a7ab05c2031
 
 The default options for this method will plot a bare scree plot, but the
 method's arguments allow for a great deal of customization. For
@@ -110,11 +104,7 @@ the total variance specified, and the components above this value will be
 styled distinctly from the remaining components to show which are considered
 signal, as opposed to noise. Alternatively, by providing an integer value
 for ``threshold``, the line will be drawn at the specified component (see
-<<<<<<< HEAD
-below).  The "elbow" position can be auto-estimated and a vertical line drawn to
-represent the no of signicant pca components by specifying "vline" as True. 
-=======
-below).  The number of significant components can be estimated and a vertical
+The number of significant components can be estimated and a vertical
 line drawn to represent this by specifying ``vline`` as ``True``. In this case,
 the elbow or knee is found in the variance plot by estimating the distance 
 from each point in the variance plot to a line joining the first and last 
@@ -153,24 +143,15 @@ notation, specify the ``xaxis_type`` parameter:
    PCA scree plot with number-based axis labeling and a threshold value
    specified
 
-<<<<<<< HEAD
-   
-=======
-
->>>>>>> 6017d62b9601a9984c1252186d9d1a7ab05c2031
 .. figure::  images/screeplot3.png
    :align:   center
    :width:   500
 
    PCA scree plot with number-based axis labeling and an estimate of the no of significant 
    positions based on the "elbow" position
-<<<<<<< HEAD
-   
+ 
    
 .. versionadded:: 0.7
-=======
-
->>>>>>> 6017d62b9601a9984c1252186d9d1a7ab05c2031
 
 Sometimes it can be useful to get the explained variance ratio as a spectrum,
 for example to plot several scree plots obtained using
