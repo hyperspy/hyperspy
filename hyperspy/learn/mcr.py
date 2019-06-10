@@ -29,7 +29,7 @@ def mcrals(self,
     decomposition. MCR is carried out using the PyMCR library, details of
     which can be found at the following link:
 
-    https://github.com/hyperspy/hyperspy/pull/url
+    https://github.com/usnistgov/pyMCR
 
     If spatial simplicity is chosen, a varimax rotation is computed on the
     SVD loadings.  This rotation is applied to the factors, which are then
@@ -46,15 +46,10 @@ def mcrals(self,
     number_of_components : int
         number of principal components to pass to the MCR algorithm
     simplicity : str
+        Should be either 'spatial' or 'spectral'.
         Data is rotated to enforce simplicity in either the spatial or
-        the spectral domains prior to MCR fitting.
-    factors : Signal or numpy array.
-        Factors to decompose. If None, the BSS is performed on the
-        factors of a previous decomposition. If a Signal instance the
-        navigation dimension must be 1 and the size greater than 1.
-    comp_list : boolen numpy array
-        choose the components to use by the boolean list. It permits
-        to choose non contiguous components.
+        the spectral domains prior to MCR fitting depending on the value
+        provided.
     mask : bool numpy array or Signal instance.
         If not None, the signal locations marked as True are masked. The
         mask shape must be equal to the signal shape
@@ -92,35 +87,60 @@ def mcrals(self,
     lr = self.learning_results
     data = self.data
 
+    # DONE: check for learning results here
+    # should only perform MCR is a previous decomposition was performed (
+    # using same check as for `blind_source_separation()`
+    if not hasattr(lr, 'factors') or lr.factors is None:
+        raise ValueError("The 'MCR' algorithm operates on a previous "
+                         "decomposition output, and this signal's "
+                         "`learning_results` was None. Please run an SVD or "
+                         "other PCA decomposition with `s.decomposition()` "
+                         "prior to using the MCR technique.")
+
+    # DONE: MCR bombs if one spectral channel is completely zero; check for
+    #  all-zero spectral channel and raise exception about failure
+    # sum over all navigation axes and check if any channels (or pixels,
+    # etc.) are zero. This means pyMCR will fail
+    if 0 in self.sum(range(len(self.axes_manager.navigation_axes))).data:
+        self.fold()  # return to "normal" navigation space
+        # find channels/pixels where values are uniformly zero:
+        zeros = np.where(self.sum(range(len(
+            self.axes_manager.navigation_axes))) == 0)
+        raise ValueError("The 'MCR' algorithm diverges in the event any "
+                         "signal dimension is uniformly zero over the entire "
+                         "navigation space. To prevent confusion over the "
+                         "output, no MCR has been performed. Please remove "
+                         "spectral channels (or signal locations) where the "
+                         "data is zero at all locations and try the MCR again."
+                         "The zero values were detected at navigation "
+                         f"position(s): {zeros})")
+
+    # DONE: docs for simplicity should give explicit values
+
     factors = self.get_decomposition_factors()
     loadings = self.get_decomposition_loadings()
 
     # Check factors
     if not isinstance(factors, BaseSignal):
         raise ValueError(
-            "`factors` must be a BaseSignal instance, but an object of type "
-            "%s was provided." %
-            type(factors))
+            f"`factors` must be a BaseSignal instance, but an object of type "
+            f"{type(factors)} was provided.")
 
     # Check factor dimensions
     if factors.axes_manager.navigation_dimension != 1:
-        raise ValueError("`factors` must have navigation dimension"
-                         "equal one, but the navigation dimension "
-                         "of the given factors is %i." %
-                         factors.axes_manager.navigation_dimension
-                         )
+        raise ValueError(f"`factors` must have navigation dimension"
+                         f"equal one, but the navigation dimension "
+                         f"of the given factors is "
+                         f"{factors.axes_manager.navigation_dimension}.")
     elif factors.axes_manager.navigation_size < 2:
-        raise ValueError("`factors` must have navigation size"
-                         "greater than one, but the navigation "
-                         "size of the given factors is %i." %
-                         factors.axes_manager.navigation_size
-                         )
+        raise ValueError(f"`factors` must have navigation size"
+                         f"greater than one, but the navigation "
+                         f"size of the given factors is"
+                         f"{factors.axes_manager.navigation_size}.")
 
     # Select components to fit
     if number_of_components is not None:
         comp_list = range(number_of_components)
-    elif comp_list is not None:
-        number_of_components = len(comp_list)
     else:
         if lr.output_dimension is not None:
             number_of_components = lr.output_dimension
@@ -160,6 +180,7 @@ def mcrals(self,
         rot_loadings = np.array(rot_loadings)
         rotation = np.array(rotation)
         rot_factors = np.dot(factors.data, rotation)
+        # Flipping as necessary to make the factors "mostly" positive:
         rot_factors = np.sign(rot_factors.sum(0)) * rot_factors
 
         rot_factors[rot_factors < 0] = 0
@@ -181,7 +202,7 @@ def mcrals(self,
         f = io.StringIO()
         with redirect_stdout(f):
             fitmcr.fit(data.T, C=rot_factors, verbose=False)
-        _logger.info("PyMCR result: %s" % f.getvalue())
+        _logger.info(f"PyMCR result: {f.getvalue()}")
 
         if self.learning_results.poissonian_noise_normalized is True:
             loadings_out = (fitmcr.ST_opt_ * im_weight_vec).T
@@ -215,7 +236,7 @@ def mcrals(self,
         f = io.StringIO()
         with redirect_stdout(f):
             fitmcr.fit(data, ST=rot_factors.T, verbose=False)
-        _logger.info("PyMCR result: %s" % f.getvalue())
+        _logger.info(f"PyMCR result: {f.getvalue()}")
 
         if self.learning_results.poissonian_noise_normalized is True:
             loadings_out = (fitmcr.C_opt_.T * im_weight_vec).T
@@ -226,9 +247,9 @@ def mcrals(self,
             factors_out = fitmcr.ST_opt_.T
 
     else:
-        raise ValueError("'simplicity' must be either 'spatial' or"
-                         "'spectral'."
-                         "{} was provided.".format(str(simplicity)))
+        raise ValueError(f"'simplicity' must be either 'spatial' or"
+                         f"'spectral'."
+                         f"{str(simplicity)} was provided.")
 
     factors_out = factors_out/factors_out.sum(0)
     loadings_out = loadings_out/loadings_out.sum(0)
