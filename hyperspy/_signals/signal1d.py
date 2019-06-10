@@ -48,6 +48,7 @@ from hyperspy.signal_tools import (
     ButterworthFilter)
 from hyperspy.ui_registry import DISPLAY_DT, TOOLKIT_DT
 from hyperspy.misc.tv_denoise import _tv_denoise_1d
+from hyperspy.misc.math.filter.snip  import snip_method
 from hyperspy.signal_tools import BackgroundRemoval
 from hyperspy.decorators import interactive_range_selector
 from hyperspy.signal_tools import IntegrateArea
@@ -1057,11 +1058,57 @@ _spikes_diagnosis,
                 result.isig[:signal_range[0]] = 0
         return result
 
+
+    def _remove_snip_background(self,width=26, decrease_factor=1.414,
+                iter_num=16,width_threshold=1,inplace=False,
+                parallel=None,show_progressbar=None):
+        
+        """ Remove a SNIP background from this signal
+        
+        Ref: 
+
+        Parameters
+        ----------
+        width : int
+             SNIP filter width = twice FWHM of peaks in the data
+             The width is in channels or index values
+             
+        decrease factor : float
+            The initial filter is reduced by this factor after each iteration
+            
+        width_threshold : int
+            The width continue to reduce to a min value or no less than 
+            width_threshold.  This has to be >=1
+            
+        parallel : {None, bool}
+
+        show_progressbar : None or bool
+            If True, display a progress bar. If None the default is set in
+            `preferences`.
+
+        """        
+        def snip_back_function(dat,**kwargs):
+            dat_back  = snip_method(dat,**kwargs)
+            return dat - dat_back
+        
+        back_signal = self._map_iterate(snip_back_function,width=width, 
+                          decrease_factor=decrease_factor,
+                    iter_num=iter_num,width_threshold=width_threshold, 
+                    inplace=inplace,ragged=False,
+                    parallel=parallel, show_progressbar=show_progressbar)
+        if self._lazy:
+            back_signal.compute()            
+        self.events.data_changed.trigger(obj=self)   
+        return back_signal  
+
+
     def remove_background(
             self,
             signal_range='interactive',
             background_type='Power Law',
             polynomial_order=2,
+            snip_width=10,
+            snip_iterations=16,
             fast=True,
             zero_fill=False,
             plot_remainder=True,
@@ -1071,12 +1118,20 @@ _spikes_diagnosis,
         if signal_range == 'interactive':
             br = BackgroundRemoval(self, background_type=background_type,
                                    polynomial_order=polynomial_order,
+                                   snip_width=snip_width,
+                                   snip_iterations=snip_iterations,
                                    fast=fast,
+                                   zero_fill=zero_fill,
                                    plot_remainder=plot_remainder,
-                                   show_progressbar=show_progressbar,
-                                   zero_fill=zero_fill)
+                                   show_progressbar=show_progressbar)
             return br.gui(display=display, toolkit=toolkit)
         else:
+            #f background_type == "Snip":
+            #    spectra =  self._remove_snip_background(
+            #    width=snip_width,
+            #    iter_num=snip_iterations,
+            #    show_progressbar=show_progressbar)
+            #else:
             if background_type in ('PowerLaw', 'Power Law'):
                 background_estimator = components1d.PowerLaw()
             elif background_type == 'Gaussian':
@@ -1086,6 +1141,9 @@ _spikes_diagnosis,
             elif background_type == 'Polynomial':
                 background_estimator = components1d.Polynomial(
                     polynomial_order)
+            elif background_type == 'Snip':
+                background_estimator = components1d.Snip(
+                    snip_width,snip_iterations)
             else:
                 raise ValueError(
                     "Background type: " +
@@ -1097,6 +1155,8 @@ _spikes_diagnosis,
                 fast=fast,
                 zero_fill=zero_fill,
                 show_progressbar=show_progressbar)
+            
+            
             return spectra
     remove_background.__doc__ = \
         """

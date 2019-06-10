@@ -34,6 +34,7 @@ from hyperspy import components1d
 from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
 
+
 _logger = logging.getLogger(__name__)
 
 
@@ -648,8 +649,11 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         'Gaussian',
         'Offset',
         'Polynomial',
+        'Snip',
         default='Power Law')
     polynomial_order = t.Range(1, 10)
+    snip_width = t.Range(1, 50)
+    snip_iterations = t.Range(1, 50)
     fast = t.Bool(True,
                   desc=("Perform a fast (analytic, but possibly less accurate)"
                         " estimation of the background. Otherwise use "
@@ -669,12 +673,15 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
     hi = t.Int(0)
 
     def __init__(self, signal, background_type='Power Law', polynomial_order=2,
+                 snip_width=10,snip_iterations=16,
                  fast=True, plot_remainder=True, zero_fill=False,
                  show_progressbar=None):
         super(BackgroundRemoval, self).__init__(signal)
         # setting the polynomial order will change the backgroud_type to
         # polynomial, so we set it before setting the background type
         self.polynomial_order = polynomial_order
+        self.snip_width = snip_width
+        self.snip_iterations = snip_iterations
         self.background_type = background_type
         self.set_background_estimator()
         self.fast = fast
@@ -706,10 +713,23 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             self.background_estimator = components1d.Polynomial(
                 self.polynomial_order)
             self.bg_line_range = 'full'
+        elif self.background_type == 'Snip':
+            self.background_estimator = components1d.Snip(self.snip_width,
+                                                          self.snip_iterations)
+            self.bg_line_range = 'full'
+
+    def _snip_width_changed(self, old, new):
+        self.background_estimator = components1d.Snip(width=new)
+        self.span_selector_changed()
+
+    def _snip_iterations_changed(self, old, new):
+        self.background_estimator = components1d.Snip(iterations=new)
+        self.span_selector_changed()
 
     def _polynomial_order_changed(self, old, new):
         self.background_estimator = components1d.Polynomial(new)
         self.span_selector_changed()
+
 
     def _background_type_changed(self, old, new):
         self.set_background_estimator()
@@ -750,27 +770,29 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
         self.background_estimator.estimate_parameters(
             self.signal, self.ss_left_value, self.ss_right_value,
             only_current=True)
-
-        if self.bg_line_range == 'from_left_range':
-            bg_array = np.zeros(self.axis.axis.shape)
-            bg_array[:] = fill_with
-            from_index = self.axis.value2index(self.ss_left_value)
-            bg_array[from_index:] = self.background_estimator.function(
-                self.axis.axis[from_index:])
-            to_return = bg_array
-        elif self.bg_line_range == 'full':
-            to_return = self.background_estimator.function(self.axis.axis)
-        elif self.bg_line_range == 'ss_range':
-            bg_array = np.zeros(self.axis.axis.shape)
-            bg_array[:] = fill_with
-            from_index = self.axis.value2index(self.ss_left_value)
-            to_index = self.axis.value2index(self.ss_right_value)
-            bg_array[from_index:] = self.background_estimator.function(
-                self.axis.axis[from_index:to_index])
-            to_return = bg_array
-
-        if self.signal.metadata.Signal.binned is True:
-            to_return *= self.axis.scale
+        if self.background_type !="Snip":
+            if self.bg_line_range == 'from_left_range':
+                bg_array = np.zeros(self.axis.axis.shape)
+                bg_array[:] = fill_with
+                from_index = self.axis.value2index(self.ss_left_value)
+                bg_array[from_index:] = self.background_estimator.function(
+                    self.axis.axis[from_index:])
+                to_return = bg_array
+            elif self.bg_line_range == 'full':
+                to_return = self.background_estimator.function(self.axis.axis)
+            elif self.bg_line_range == 'ss_range':
+                bg_array = np.zeros(self.axis.axis.shape)
+                bg_array[:] = fill_with
+                from_index = self.axis.value2index(self.ss_left_value)
+                to_index = self.axis.value2index(self.ss_right_value)
+                bg_array[from_index:] = self.background_estimator.function(
+                    self.axis.axis[from_index:to_index])
+                to_return = bg_array
+            if self.signal.metadata.Signal.binned is True:
+                to_return *= self.axis.scale
+        else:
+               to_return = self.background_estimator.function(self.signal.data)
+               
         return to_return
 
     def rm_to_plot(self, axes_manager=None, fill_with=np.nan):
@@ -811,6 +833,8 @@ class BackgroundRemoval(SpanSelectorInSignal1D):
             background_type=background_type,
             fast=self.fast,
             zero_fill=self.zero_fill,
+            snip_width=self.snip_width,
+            snip_iterations=self.snip_iterations,            
             polynomial_order=self.polynomial_order,
             show_progressbar=self.show_progressbar)
         self.signal.data = new_spectra.data
