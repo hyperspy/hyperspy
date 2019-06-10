@@ -1119,7 +1119,7 @@ class Signal1D(BaseSignal, CommonSignal1D):
             zero_fill=False,
             plot_remainder=True,
             show_progressbar=None, display=True, toolkit=None):
-<<<<<<< HEAD
+
 
         self._check_signal_dimension_equals_one()
         if signal_range == 'interactive':
@@ -1133,12 +1133,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
                                    show_progressbar=show_progressbar)
             return br.gui(display=display, toolkit=toolkit)
         else:
-            #f background_type == "Snip":
-            #    spectra =  self._remove_snip_background(
-            #    width=snip_width,
-            #    iter_num=snip_iterations,
-            #    show_progressbar=show_progressbar)
-            #else:
             if background_type in ('PowerLaw', 'Power Law'):
                 background_estimator = components1d.PowerLaw()
             elif background_type == 'Gaussian':
@@ -1164,97 +1158,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 show_progressbar=show_progressbar)
             
             
-            return spectra
-    remove_background.__doc__ = \
-=======
->>>>>>> 6017d62b9601a9984c1252186d9d1a7ab05c2031
-        """
-        Remove the background, either in place using a gui or returned as a new
-        spectrum using the command line.
-
-        Parameters
-        ----------
-        signal_range : "interactive", tuple of ints or floats, optional
-            If this argument is not specified, the signal range has to be
-            selected using a GUI. And the original spectrum will be replaced.
-            If tuple is given, the a spectrum will be returned.
-        background_type : str
-            The type of component which should be used to fit the background.
-            Possible components: PowerLaw, Gaussian, Offset, Polynomial
-            If Polynomial is used, the polynomial order can be specified
-        polynomial_order : int, default 2
-            Specify the polynomial order if a Polynomial background is used.
-        fast : bool
-            If True, perform an approximative estimation of the parameters.
-            If False, the signal is fitted using non-linear least squares
-            afterwards.This is slower compared to the estimation but
-            possibly more accurate.
-        zero_fill : bool
-            If True, all spectral channels lower than the lower bound of the
-            fitting range will be set to zero (this is the default behavior
-            of Gatan's DigitalMicrograph). Setting this value to False
-            allows for inspection of the quality of background fit throughout
-            the pre-fitting region.
-        plot_remainder : bool
-            If True, add a (green) line previewing the remainder signal after
-            background removal. This preview is obtained from a Fast calculation
-            so the result may be different if a NLLS calculation is finally
-            performed.
-        %s
-        %s
-        %s
-
-        Examples
-        --------
-        Using gui, replaces spectrum s
-
-        >>> s = hs.signals.Signal1D(range(1000))
-        >>> s.remove_background() #doctest: +SKIP
-
-        Using command line, returns a spectrum
-
-        >>> s1 = s.remove_background(signal_range=(400,450), background_type='PowerLaw')
-
-        Using a full model to fit the background
-
-        >>> s1 = s.remove_background(signal_range=(400,450), fast=False)
-
-        Raises
-        ------
-        SignalDimensionError
-            If the signal dimension is not 1.
-        """
-
-        self._check_signal_dimension_equals_one()
-        if signal_range == 'interactive':
-            br = BackgroundRemoval(self, background_type=background_type,
-                                   polynomial_order=polynomial_order,
-                                   fast=fast,
-                                   plot_remainder=plot_remainder,
-                                   show_progressbar=show_progressbar,
-                                   zero_fill=zero_fill)
-            return br.gui(display=display, toolkit=toolkit)
-        else:
-            if background_type in ('PowerLaw', 'Power Law'):
-                background_estimator = components1d.PowerLaw()
-            elif background_type == 'Gaussian':
-                background_estimator = components1d.Gaussian()
-            elif background_type == 'Offset':
-                background_estimator = components1d.Offset()
-            elif background_type == 'Polynomial':
-                background_estimator = components1d.Polynomial(
-                    polynomial_order)
-            else:
-                raise ValueError(
-                    "Background type: " +
-                    background_type +
-                    " not recognized")
-            spectra = self._remove_background_cli(
-                signal_range=signal_range,
-                background_estimator=background_estimator,
-                fast=fast,
-                zero_fill=zero_fill,
-                show_progressbar=show_progressbar)
             return spectra
     remove_background.__doc__ %= (SHOW_PROGRESSBAR_ARG, DISPLAY_DT, TOOLKIT_DT)
 
