@@ -1071,7 +1071,6 @@ class MVA():
             else:
                 index_number_significant_components =\
                     self.learning_results.number_significant_components - 1
->>>>>>> 6017d62b9601a9984c1252186d9d1a7ab05c2031
         else:
             vline = False
 
@@ -1253,7 +1252,6 @@ class MVA():
         _logger.info("Undoing data pre-treatments")
         self.data[:] = self._data_before_treatments
         del self._data_before_treatments
-
 
     def _estimate_elbow_position(self, curve_values):
         """

@@ -93,9 +93,9 @@ To obtain a scree plot for your dataset, run the
    PCA scree plot
 
 .. versionadded:: 1.2.0
-   ``log``, ``threshold``, ``hline``,``vline``, ``xaxis_type``, ``xaxis_labeling``,
-   ``signal_fmt``, ``noise_fmt``, ``threshold``, ``xaxis_type`` keyword
-   arguments.
+   ``log``, ``threshold``, ``hline``,``vline``, ``xaxis_type``,
+   ``xaxis_labeling``, ``signal_fmt``, ``noise_fmt``, ``threshold``,
+   ``xaxis_type`` keyword arguments.
 
 The default options for this method will plot a bare scree plot, but the
 method's arguments allow for a great deal of customization. For
@@ -104,7 +104,7 @@ the total variance specified, and the components above this value will be
 styled distinctly from the remaining components to show which are considered
 signal, as opposed to noise. Alternatively, by providing an integer value
 for ``threshold``, the line will be drawn at the specified component (see
-The number of significant components can be estimated and a vertical
+below).  The number of significant components can be estimated and a vertical
 line drawn to represent this by specifying ``vline`` as ``True``. In this case,
 the elbow or knee is found in the variance plot by estimating the distance 
 from each point in the variance plot to a line joining the first and last 
@@ -120,7 +120,6 @@ the number of significant PCA components is the elbow index position + 1.
 More details about the elbow or knee finding technique can be found in
 :ref:`[Satopää2011] <Satopää2011>`.
 
->>>>>>> 6017d62b9601a9984c1252186d9d1a7ab05c2031
 These options (together with many others), can be customized to
 develop a figure of your liking. See the documentation of
 :py:meth:`~.learn.mva.MVA.plot_explained_variance_ratio` for more details.
@@ -143,15 +142,14 @@ notation, specify the ``xaxis_type`` parameter:
    PCA scree plot with number-based axis labeling and a threshold value
    specified
 
+
 .. figure::  images/screeplot3.png
    :align:   center
    :width:   500
 
    PCA scree plot with number-based axis labeling and an estimate of the no of significant 
    positions based on the "elbow" position
- 
-   
-.. versionadded:: 0.7
+
 
 Sometimes it can be useful to get the explained variance ratio as a spectrum,
 for example to plot several scree plots obtained using

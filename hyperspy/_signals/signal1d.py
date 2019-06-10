@@ -1064,50 +1064,6 @@ class Signal1D(BaseSignal, CommonSignal1D):
                 result.isig[:signal_range[0]] = 0
         return result
 
-
-    def _remove_snip_background(self,width=26, decrease_factor=1.414,
-                iter_num=16,width_threshold=1,inplace=False,
-                parallel=None,show_progressbar=None):
-        
-        """ Remove a SNIP background from this signal
-        
-        Ref: 
-
-        Parameters
-        ----------
-        width : int
-             SNIP filter width = twice FWHM of peaks in the data
-             The width is in channels or index values
-             
-        decrease factor : float
-            The initial filter is reduced by this factor after each iteration
-            
-        width_threshold : int
-            The width continue to reduce to a min value or no less than 
-            width_threshold.  This has to be >=1
-            
-        parallel : {None, bool}
-
-        show_progressbar : None or bool
-            If True, display a progress bar. If None the default is set in
-            `preferences`.
-
-        """        
-        def snip_back_function(dat,**kwargs):
-            dat_back  = snip_method(dat,**kwargs)
-            return dat - dat_back
-        
-        back_signal = self._map_iterate(snip_back_function,width=width, 
-                          decrease_factor=decrease_factor,
-                    iter_num=iter_num,width_threshold=width_threshold, 
-                    inplace=inplace,ragged=False,
-                    parallel=parallel, show_progressbar=show_progressbar)
-        if self._lazy:
-            back_signal.compute()            
-        self.events.data_changed.trigger(obj=self)   
-        return back_signal  
-
-
     def remove_background(
             self,
             signal_range='interactive',
