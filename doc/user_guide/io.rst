@@ -86,7 +86,7 @@ and if set to `False`, the units will not be converted. The default is `False`.
 
 More details on lazy evaluation support in :ref:`big-data-label`.
 
-.. load-multiple-label::
+.. load-multiple-label:
 
 Loading multiple files
 ----------------------
@@ -206,7 +206,7 @@ HyperSpy. The "lazy" column specifies if lazy evaluation is supported.
     +--------------------+--------+--------+--------+
     | EMD (NCEM)         |    Yes |    Yes |    Yes |
     +--------------------+--------+--------+--------+
-    | EMD (FEI)          |    Yes |    No  |    Yes |
+    | EMD (Velox)        |    Yes |    No  |    Yes |
     +--------------------+--------+--------+--------+
     | Protochips log     |    Yes |    No  |    No  |
     +--------------------+--------+--------+--------+
@@ -249,9 +249,6 @@ filename e.g.:
     >>> s = hs.signals.BaseSignal([0])
     >>> s.save('test.hdf5')
 
-
-.. versionadded:: 0.8
-    Saving list, tuples and signals present in :py:attr:`~.metadata`.
 
 When saving to ``hspy``, all supported objects in the signal's
 :py:attr:`~.metadata` is stored. This includes  lists, tuples and signals.
@@ -297,6 +294,7 @@ possible to customise the chunk shape using the ``chunks`` keyword. For example,
 ``(20, 20, 256)`` chunks instead of the default ``(7, 7, 2048)`` chunks for this signal:
 
 .. code-block:: python
+
     >>> s = hs.signals.Signal1D(np.random.random((100, 100, 2048)))
     >>> s.save("test_chunks", chunks=(20, 20, 256), overwrite=True)
 
@@ -336,7 +334,7 @@ MRC
 
 This is a format widely used for tomographic data. Our implementation is based
 on `this specification
-<http://ami.scripps.edu/software/mrctools/mrc_specification.php>`_. We also
+<https://www2.mrc-lmb.cam.ac.uk/research/locally-developed-software/image-processing-software/>`_. We also
 partly support FEI's custom header. We do not provide writing features for this
 format, but, as it is an open format, we may implement this feature in the
 future on demand.
@@ -373,22 +371,29 @@ install the `mrcz` and optionally the `blosc` Python packages.
 Extra saving arguments
 ^^^^^^^^^^^^^^^^^^^^^^
 
-`do_async`:   currently supported within Hyperspy for writing only, this will save
-              the file in a background thread and return immediately. Defaults
-              to `False`.
+`do_async`: 
+  currently supported within Hyperspy for writing only, this will save 
+  the file in a background thread and return immediately. Defaults
+  to `False`.
+
 .. Warning::
 
     There is no method currently implemented within Hyperspy to tell if an
     asychronous write has finished.
 
-`compressor`: The compression codec, one of [`None`,`'zlib`',`'zstd'`, `'lz4'`].
-              Defaults to `None`.
-`clevel`:     The compression level, an `int` from 1 to 9. Defaults to 1.
-`n_threads`:  The number of threads to use for `blosc` compression. Defaults to
-              the maximum number of virtual cores (including Intel Hyperthreading)
-              on your system, which is recommended for best performance. If \
-              `do_asyc = True` you may wish to leave one thread free for the
-              Python GIL.
+
+`compressor`: 
+  The compression codec, one of [`None`,`'zlib`',`'zstd'`, `'lz4'`]. Defaults to `None`.
+
+`clevel`: 
+  The compression level, an `int` from 1 to 9. Defaults to 1.
+
+`n_threads`: 
+  The number of threads to use for `blosc` compression. Defaults to
+  the maximum number of virtual cores (including Intel Hyperthreading)
+  on your system, which is recommended for best performance. If \
+  `do_asyc = True` you may wish to leave one thread free for the
+  Python GIL.
 
 The recommended compression codec is 'zstd' (zStandard) with `clevel=1` for
 general use. If speed is critical, use 'lz4' (LZ4) with `clevel=9`. Integer data
@@ -581,30 +586,30 @@ available publicly available from EDAX and are on Github
 SpcMap-spd.file.format.pdf>`_, and
 `.ipr <https://github.com/hyperspy/hyperspy/files/29507/ImageIPR.pdf>`_).
 
-Extra loading arguments for ``.spd`` file
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Extra loading arguments for SPD file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - `spc_fname` : {None, str}, name of file from which to read the spectral calibration. If data was exported fully from EDAX TEAM software, an .spc file with the same name as the .spd should be present. If `None`, the default filename will be searched for. Otherwise, the name of the ``.spc`` file to use for calibration can be explicitly given as a string.
 - `ipr_fname` : {None, str}, name of file from which to read the spatial calibration. If data was exported fully from EDAX TEAM software, an ``.ipr`` file with the same name as the ``.spd`` (plus a "_Img" suffix) should be present.  If `None`, the default filename will be searched for. Otherwise, the name of the ``.ipr`` file to use for spatial calibration can be explicitly given as a string.
 - **kwargs: remaining arguments are passed to the Numpy ``memmap`` function.
 
-Extra loading arguments for ``.spd`` and ``.spc`` files
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+Extra loading arguments for SPD and SPC files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 - `load_all_spc` : bool, switch to control if all of the ``.spc`` header is read, or just the important parts for import into HyperSpy.
 
 
 .. _fei-format:
 
-FEI TIA ser and emi
+FEI TIA SER and EMI
 -------------------
 
 HyperSpy can read ``ser`` and ``emi`` files but the reading features are not
 complete (and probably they will be unless FEI releases the specifications of
 the format). That said we know that this is an important feature and if loading
 a particular ser or emi file fails for you, please report it as an issue in the
-`issues tracker <github.com/hyperspy/hyperspy/issues>`_ to make us aware of the
-problem.
+`issues tracker <https://github.com/hyperspy/hyperspy/issues>`_ to make us 
+aware of the problem.
 
 HyperSpy (unlike TIA) can read data directly from the ``.ser`` files. However,
 by doing so, the information that is stored in the emi file is lost.
@@ -613,9 +618,18 @@ Therefore strongly recommend to load using the ``.emi`` file instead.
 When reading an ``.emi`` file if there are several ``.ser`` files associated
 with it, all of them will be read and returned as a list.
 
+
+Extra loading arguments
+^^^^^^^^^^^^^^^^^^^^^^^
+
+- `only_valid_data` : bool, in case of series or linescan data with the 
+acquisition stopped before the end: if True, load only the acquired data. 
+If False, the empty data are filled with zeros. The default is False and this 
+default value will change to True in version 2.0.
+
 .. _unf-format:
 
-SEMPER unf binary format
+SEMPER UNF binary format
 ------------------------
 
 SEMPER is a fully portable system of programs for image processing, particularly
@@ -775,22 +789,23 @@ asdf
 
 .. _emd_fei-format:
 
-EMD (FEI)
-^^^^^^^^^
+EMD (Velox)
+^^^^^^^^^^^
 
-This is a non-compliant variant of the standard EMD format developed by FEI.
-HyperSpy supports importing images, EDS spectrum and EDS
+This is a non-compliant variant of the standard EMD format developed by 
+Thermo-Fisher (former FEI). HyperSpy supports importing images, EDS spectrum and EDS
 spectrum streams (spectrum images stored in a sparse format). For spectrum
 streams, there are several loading options (described below) to control the frames
 and detectors to load and if to sum them on loading.  The default is
 to import the sum over all frames and over all detectors in order to decrease
 the data size in memory.
 
-Note that pruned FEI EMD files only contain the spectrum image in a proprietary
-format that HyperSpy cannot read. Therefore,
-don't prune FEI EMD files in you intend to read them with HyperSpy.
-Note also that loading a spectrum image can be slow if `numba
-<http://numba.pydata.org/>`_ is not installed.
+
+.. note::
+
+    Pruned Velox EMD files only contain the spectrum image in a proprietary
+    format that HyperSpy cannot read. Therefore, don't prune FEI EMD files in 
+    you intend to read them with HyperSpy.
 
 .. code-block:: python
 
@@ -801,13 +816,15 @@ Note also that loading a spectrum image can be slow if `numba
 
 .. note::
 
-    To enable lazy loading of EDX spectrum images in this format it may be
-    necessary to install `sparse <http://sparse.pydata.org/en/latest/>`_. See
-    See also :ref:`install-with-python-installers`. Note also that currently
-    only lazy uncompression rather than lazy loading is implemented. This
-    means that it is not currently possible to read EDX SI FEI EMD files with
-    size bigger than the available memory.
+    Currently only lazy uncompression rather than lazy loading is implemented. 
+    This means that it is not currently possible to read EDS SI Veloz EMD files 
+    with size bigger than the available memory.
 
+
+.. note::
+
+    Loading a spectrum image can be slow if 
+    `numba <http://numba.pydata.org/>`_ is not installed.
 
 
 .. warning::

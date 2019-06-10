@@ -273,9 +273,9 @@ class EDSTEM_mixin:
         elif 'Acquisition_instrument.SEM' in ref.metadata:
             mp_ref = ref.metadata.Acquisition_instrument.SEM
         else:
-            raise ValueError("The reference has no metadata." +
-                             "Acquisition_instrument.TEM" +
-                             "\n or metadata.Acquisition_instrument.SEM ")
+            raise ValueError("The reference has no metadata "
+                             "'Acquisition_instrument.TEM '"
+                             "or 'metadata.Acquisition_instrument.SEM'.")
 
         mp = self.metadata
         mp.Acquisition_instrument.TEM = mp_ref.deepcopy()
@@ -286,7 +286,7 @@ class EDSTEM_mixin:
     def quantification(self,
                        intensities,
                        method,
-                       factors='auto',
+                       factors,
                        composition_units='atomic',
                        navigation_mask=1.0,
                        closing=True,
@@ -353,11 +353,13 @@ class EDSTEM_mixin:
         --------
         vacuum_mask
         """
-        if isinstance(navigation_mask, float):
+        if self.axes_manager.navigation_size == 0:
+            navigation_mask = None
+        elif isinstance(navigation_mask, float):
             navigation_mask = self.vacuum_mask(navigation_mask, closing).data
         elif navigation_mask is not None:
             navigation_mask = navigation_mask.data
-        xray_lines = [intensity.metadata.Sample.xray_lines[0] for intensity in intensities]
+
         composition = utils.stack(intensities, lazy=False)
         if method == 'CL':
             composition.data = utils_eds.quantification_cliff_lorimer(
@@ -380,8 +382,9 @@ class EDSTEM_mixin:
             number_of_atoms = composition._deepcopy_with_new_data(results[1])
             number_of_atoms = number_of_atoms.split()
         else:
-            raise ValueError('Please specify method for quantification,'
-                             'as \'CL\', \'zeta\' or \'cross_section\'')
+            raise ValueError("Please specify method for quantification, "
+                             "as 'CL', 'zeta' or 'cross_section'.")
+
         composition = composition.split()
         if composition_units == 'atomic':
             if method != 'cross_section':
@@ -389,7 +392,8 @@ class EDSTEM_mixin:
         else:
             if method == 'cross_section':
                 composition = utils.material.atomic_to_weight(composition)
-        for i, xray_line in enumerate(xray_lines):
+        for i, intensity in enumerate(intensities):
+            xray_line = intensity.metadata.Sample.xray_lines[0]
             element, line = utils_eds._get_element_and_line(xray_line)
             composition[i].metadata.General.title = composition_units + \
                 ' percent of ' + element
@@ -401,9 +405,7 @@ class EDSTEM_mixin:
                 print("%s (%s): Composition = %.2f %s percent"
                       % (element, xray_line, composition[i].data,
                          composition_units))
-        if method == 'cross_section':
-            for i, xray_line in enumerate(xray_lines):
-                element, line = utils_eds._get_element_and_line(xray_line)
+            if method == 'cross_section':
                 number_of_atoms[i].metadata.General.title = \
                     'atom counts of ' + element
                 number_of_atoms[i].metadata.set_item("Sample.elements",
@@ -420,8 +422,8 @@ class EDSTEM_mixin:
         elif method == 'CL':
             return composition
         else:
-            raise ValueError('Please specify method for quantification, as \
-            ''CL\', \'zeta\' or \'cross_section\'')
+            raise ValueError("Please specify method for quantification, as "
+                             "'CL', 'zeta' or 'cross_section'.")
 
     def vacuum_mask(self, threshold=1.0, closing=True, opening=False):
         """
@@ -561,7 +563,7 @@ class EDSTEM_mixin:
         return model
 
     def _get_dose(self, method, beam_current='auto', live_time='auto',
-                  probe_area='auto', **kwargs):
+                  probe_area='auto', navigation_axes=None, **kwargs):
         """
         Calculates the total electron dose for the zeta-factor or cross section
         methods of quantification.
@@ -581,16 +583,21 @@ class EDSTEM_mixin:
             Probe current in nA
         live_time: float
             Acquisiton time in s, compensated for the dead time of the detector.
-        probe_area: float
-            The illumination area of the electron beam in nm\xB2.
-            If not set the value is extracted from the scale axes_manager.
+        probe_area: float or 'auto'
+            The illumination area of the electron beam in nm².
+            If 'auto' the value is extracted from the scale axes_manager.
             Therefore we assume the probe is oversampling such that
             the illumination area can be approximated to the pixel area of the
             spectrum image.
+        navigation_axes : None or list of axis
+            Define which navigation axes to compute the illumination area.
+            Only necessary with method='cross_section' and probe_area='auto' 
+            when the navigation dimension differs from the dimension intended
+            to be measured.
 
         Returns
         --------
-        Dose in electrons (zeta factor) or electrons per nm\xB2 (cross_section)
+        Dose in electrons (zeta factor) or electrons per nm² (cross_section)
 
         See also
         --------
@@ -599,50 +606,63 @@ class EDSTEM_mixin:
 
         parameters = self.metadata.Acquisition_instrument.TEM
 
-        if beam_current is 'auto':
+        if beam_current == 'auto':
             if 'beam_current' not in parameters:
-                raise Exception('Electron dose could not be calculated as\
-                     beam_current is not set.'
-                                'The beam current can be set by calling \
-                                set_microscope_parameters()')
+                raise Exception('Electron dose could not be calculated as '
+                                '`beam_current` is not set. The beam current '
+                                'can be set by calling '
+                                '`set_microscope_parameters()`')
             else:
                 beam_current = parameters.beam_current
 
         if live_time == 'auto':
             live_time = parameters.Detector.EDS.live_time
             if 'live_time' not in parameters.Detector.EDS:
-                raise Exception('Electron dose could not be calculated as \
-                live_time is not set. '
-                                'The beam_current can be set by calling \
-                                set_microscope_parameters()')
+                raise Exception('Electron dose could not be calculated as '
+                                'live_time is not set. '
+                                'The beam_current can be set by calling '
+                                '`set_microscope_parameters()`')
             elif live_time == 1:
                 warnings.warn('Please note that your real time is set to '
-                              'the default value of 0.5 s. If this is not \
-                              correct, you should change it using '
-                              'set_microscope_parameters() and run \
-                              quantification again.')
+                              'the default value of 0.5 s. If this is not '
+                              'correct, you should change it using '
+                              '`set_microscope_parameters()` and run the '
+                              'quantification again.')
 
         if method == 'cross_section':
             if probe_area == 'auto':
                 if probe_area in parameters:
                     area = parameters.TEM.probe_area
                 else:
-                    pixel1 = self.axes_manager[0].scale
-                    pixel2 = self.axes_manager[1].scale
-                    if pixel1 == 1 or pixel2 == 1:
-                        warnings.warn('Please note your probe_area is set to'
-                                      'the default value of 1 nm\xB2. The \
-                                      function will still run. However if'
-                                      '1 nm\xB2 is not correct, please read the \
-                                      user documentations for how to set this \
-                                      properly.')
-                    area = pixel1 * pixel2
+                    if (self.axes_manager.navigation_dimension > 2 and 
+                          navigation_axes is None):
+                        raise ValueError("With `probe_area='auto' and "
+                                         "navigation dimension > 2, you need "
+                                         "to specify the `navigation_axes` "
+                                         "parameter.")
+                    scales = []
+                    if navigation_axes is None:
+                        navigation_axes = self.axes_manager.navigation_axes
+                    for axis in navigation_axes:         
+                        scales.append(
+                                axis.convert_to_units('nm', inplace=False)[0])
+                    if len(scales) == 1:
+                        area = scales[0] * scales[0]
+                    elif len(scales) == 2:
+                        area = scales[0] * scales[1]
+                    if scales[0] == 1 or scales[1] == 1:
+                        warnings.warn('Please note your probe_area is set to '
+                                      'the default value of 1 nm². The '
+                                      'function will still run. However if '
+                                      '1 nm² is not correct, please read the ' 
+                                      'user documentations for how to set '
+                                      'this properly.')
             return (live_time * beam_current * 1e-9) / (constants.e * area)
             # 1e-9 is included here because the beam_current is in nA.
         elif method == 'zeta':
             return live_time * beam_current * 1e-9 / constants.e
         else:
-            raise Exception('Method need to be \'zeta\' or \'cross_section\'.')
+            raise Exception("Method need to be 'zeta' or 'cross_section'.")
 
 
 class EDSTEMSpectrum(EDSTEM_mixin, EDSSpectrum):

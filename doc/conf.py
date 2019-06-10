@@ -232,7 +232,8 @@ man_pages = [
 
 # Add the hyperspy website to the intersphinx domains
 intersphinx_mapping = {'hyperspyweb': ('http://hyperspy.org/', None),
-                       'matplotlib': ('https://matplotlib.org', None)}
+                       'matplotlib': ('https://matplotlib.org', None),
+                       'numpy': ('https://docs.scipy.org/doc/numpy', None)}
 
 # -- Options for Sphinx API doc ----------------------------------------------
 # Adapted from https://github.com/isogeo/isogeo-api-py-minsdk/blob/master/docs/conf.py

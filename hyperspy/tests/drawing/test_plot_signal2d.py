@@ -443,3 +443,30 @@ def test_plot_images_not_signal():
 
     with pytest.raises(ValueError):
         hs.plot.plot_images('not a list of signal')
+
+
+def test_plot_images_tranpose():
+    a = hs.signals.BaseSignal(np.arange(100).reshape(10, 10))
+    b = hs.signals.BaseSignal(np.arange(100).reshape(10, 10)).T
+
+    hs.plot.plot_images([a, b.T])
+    hs.plot.plot_images([a, b])
+
+
+def test_plot_with_non_finite_value():
+    s = hs.signals.Signal2D(np.array([[np.nan, 2.0] for v in range(2)]))
+    s.plot()
+    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+
+    s = hs.signals.Signal2D(np.array([[np.nan, np.nan] for v in range(2)]))
+    s.plot()
+    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+
+    s = hs.signals.Signal2D(np.array([[-np.inf, np.nan] for v in range(2)]))
+    s.plot()
+    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+
+    s = hs.signals.Signal2D(np.array([[np.inf, np.nan] for v in range(2)]))
+    s.plot()
+    s.axes_manager.events.indices_changed.trigger(s.axes_manager)
+

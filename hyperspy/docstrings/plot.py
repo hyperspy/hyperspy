@@ -3,18 +3,9 @@
 
 """
 
-BASE_PLOT_DOCSTRING = \
-    """Plot the signal at the current coordinates.
 
-        For multidimensional datasets an optional figure,
-        the "navigator", with a cursor to navigate that data is
-        raised. In any case it is possible to navigate the data using
-        the sliders. Currently only signals with signal_dimension equal to
-        0, 1 and 2 can be plotted.
-
-        Parameters
-        ----------
-        navigator : {"auto", None, "slider", "spectrum", Signal}
+BASE_PLOT_DOCSTRING_PARAMETERS = \
+    """navigator : {"auto", None, "slider", "spectrum", Signal}
             If "auto", if navigation_dimension > 0, a navigator is
             provided to explore the data.
             If navigation_dimension is 1 and the signal is an image
@@ -62,6 +53,21 @@ BASE_PLOT_DOCSTRING = \
             instance can be provided.
             """
 
+
+BASE_PLOT_DOCSTRING = \
+    """Plot the signal at the current coordinates.
+
+        For multidimensional datasets an optional figure,
+        the "navigator", with a cursor to navigate that data is
+        raised. In any case it is possible to navigate the data using
+        the sliders. Currently only signals with signal_dimension equal to
+        0, 1 and 2 can be plotted.
+
+        Parameters
+        ----------
+        %s""" % BASE_PLOT_DOCSTRING_PARAMETERS
+
+
 PLOT2D_DOCSTRING = \
     """colorbar : bool, optional
             If true, a colorbar is plotted for non-RGB images.
@@ -91,6 +97,7 @@ PLOT2D_DOCSTRING = \
             keep the image in the aspect limit the pixels are made
             rectangular."""
 
+
 COMPLEX_DOCSTRING = \
     """power_spectrum : bool, default is False.
             If True, plot the power spectrum instead of the actual signal, if
@@ -107,6 +114,8 @@ COMPLEX_DOCSTRING = \
             See `numpy.fft.fftshift` for more details.
         """
 
+
 KWARGS_DOCSTRING = \
     """**kwargs, optional
-            Additional key word arguments passed to matplotlib.imshow()"""
+            Only for 2D signals: additional key word arguments for 
+            `matplotlib.pyplot.imshow`."""

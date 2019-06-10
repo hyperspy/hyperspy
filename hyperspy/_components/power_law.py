@@ -28,14 +28,35 @@ _logger = logging.getLogger(__name__)
 
 class PowerLaw(Expression):
 
-    """Power law component
+    r"""Power law component.
 
-    f(x) = A*(x-origin)^-r
+    .. math::
 
-    The left_cutoff parameter can be used to set a lower threshold from which
+        f(x) = A\cdot(x-x_0)^{-r}
+
+    ============= =============
+     Variable      Parameter
+    ============= =============
+     :math:`A`     A
+     :math:`r`     r
+     :math:`x_0`   origin
+    ============= =============
+
+
+    Parameters
+    ----------
+    A : float
+        Height parameter.
+    r : float
+        Power law coefficient.
+    origin : float
+        Location parameter.
+    **kwargs
+        Extra keyword arguments are passed to the ``Expression`` component.
+
+
+    The `left_cutoff` parameter can be used to set a lower threshold from which
     the component will return 0.
-
-
     """
 
     def __init__(self, A=10e5, r=3., origin=0., module="numexpr", **kwargs):
@@ -76,7 +97,8 @@ class PowerLaw(Expression):
 
     def estimate_parameters(self, signal, x1, x2, only_current=False,
                             out=False):
-        """Estimate the parameters by the two area method
+        """Estimate the parameters for the power law component by the two area 
+        method.
 
         Parameters
         ----------
@@ -87,7 +109,6 @@ class PowerLaw(Expression):
         x2 : float
             Defines the right limit of the spectral range to use for the
             estimation.
-
         only_current : bool
             If False, estimates the parameters for the full dataset.
         out : bool
