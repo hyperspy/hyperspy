@@ -382,7 +382,6 @@ class MVA():
 
                 factors, loadings = mcrals(self,
                                            number_of_components=output_dimension,
-                                           simplicity='spatial',
                                            mask=None,
                                            compute=False,
                                            **kwargs)

@@ -110,7 +110,7 @@ def mcrals(self,
                          "prior to using the MCR technique.")
 
     # DONE: MCR bombs if one spectral channel is completely zero; check for
-    #  all-zero spectral channel and raise exception about failure
+    # all-zero spectral channel and raise exception about failure
     # sum over all navigation axes and check if any channels (or pixels,
     # etc.) are zero. This means pyMCR will fail
     if 0 in self.sum(range(len(self.axes_manager.navigation_axes))).data:
@@ -119,7 +119,7 @@ def mcrals(self,
         zeros = np.where(self.sum(range(len(
             self.axes_manager.navigation_axes))) == 0)
         raise ValueError("The 'MCR' algorithm diverges in the event any "
-                         "signal dimension is uniformly zero over the entire "
+                         "signal dimension is uniformly zero over the entire"
                          "navigation space. To prevent confusion over the "
                          "output, no MCR has been performed. Please remove "
                          "spectral channels (or signal locations) where the "
