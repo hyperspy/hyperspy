@@ -68,23 +68,35 @@ def mcrals(self,
         Controls the verbosity of the external pyMCR routines. The
         strings provided correspond to levels of the ``logging`` module.
         Default is ``'error'`` (only critical failure output).
-    c_regr : str
+    c_regr : str, class
+        Regression class (or string) for calculating the C matrix.
         Must be either 'OLS' or 'NNLS'. Default is 'OLS".
     st_regr : str
+        Regression class (or string) for calculating the S^T matrix.
         Must be either 'OLS' or 'NNLS'. Default is 'OLS'.
     max_iter : int
+        Maximum number of iterations. One iteration calculates both C and S^T.
         Default value is 100
     c_constraints : list
+        List of constraints applied to calculation of C matrix
         Default is [ConstraintNonneg(), ConstraintNorm()]
     st_constraints : list
+        List of constraints applied to calculation of S^T matrix
         Default is [ConstraintNonneg()]
     tol_increase : float
+        Factor increase to allow in err attribute. Set to 0 for no increase
+        allowed. E.g., setting to 1.0 means the err can double per iteration.
         Default is 1.0
     tol_n_increase : int
+        Number of consecutive iterations for which the err attribute can
+        increase
         Default is 10
     tol_err_change : float
+        If err changes less than tol_err_change, per iteration, break.
         Default is 1e-14
     tol_n_above_min : int
+        Number of half-iterations that can be performed without reaching a
+        new error-minimum
         Default is 10
     """
     from hyperspy.signal import BaseSignal
