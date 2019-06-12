@@ -384,7 +384,8 @@ class MVA():
                                            number_of_components=output_dimension,
                                            simplicity='spatial',
                                            mask=None,
-                                           compute=False,)
+                                           compute=False,
+                                           **kwargs)
 
             else:
                 raise ValueError('Algorithm not recognised. '
