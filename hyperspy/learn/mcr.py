@@ -263,7 +263,7 @@ def mcrals(self,
                          f"'spectral'."
                          f"{str(simplicity)} was provided.")
 
-    factors_out = factors_out/factors_out.sum(0)
-    loadings_out = loadings_out/loadings_out.sum(0)
+    factors_out = factors_out / factors_out.sum(0)
+    loadings_out = loadings_out / loadings_out.sum(0)
 
     return factors_out, loadings_out
