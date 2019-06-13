@@ -188,7 +188,8 @@ Bibliography
 .. _pymcr:
 
 :ref:`[pymcr] <pymcr>`
-   [`link <https://github.com/usnistgov/pyMCR/>`_]
+   The PyMCR package.  Citation available soon.
+   [`link <https://pages.nist.gov/pyMCR/>`_]
 
 
 Peer-review articles with results obtained using HyperSpy
