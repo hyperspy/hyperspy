@@ -1,5 +1,5 @@
 import numpy as np
-
+import pytest
 from hyperspy._signals.signal1d import Signal1D
 
 
@@ -121,3 +121,46 @@ class TestMCR2D:
 
         assert (factors.data.shape[0] == 3)
         assert(factors.data.shape[1] == self.s.data.shape[2])
+
+
+class TestDataIntegrity:
+
+    def setup_method(self, method):
+        orig_factors = np.random.random(size=(3, 1000))
+        np.random.seed(1)
+        orig_loadings = np.random.random((100, 3))
+        self.s = Signal1D(np.dot(orig_loadings, orig_factors))
+        self.s.isig[50] = 0
+        self.s.decomposition()
+
+    def test_zero_catch(self):
+        with pytest.raises(ValueError):
+            self.s.decomposition(algorithm='MCR', output_dimension=3,
+                                 simplicity='spatial')
+
+    def test_no_factors(self):
+        self.s.learning_results.factors = None
+        with pytest.raises(ValueError):
+            self.s.decomposition(algorithm='MCR', output_dimension=3,
+                                 simplicity='spatial')
+
+    def test_factor_signal(self):
+        self.s.learning_results.factors = np.ones([100, 100])
+        with pytest.raises(ValueError):
+            self.s.decomposition(algorithm='MCR', output_dimension=3,
+                                 simplicity='spatial')
+
+
+class TestParameters:
+
+    def setup_method(self, method):
+        orig_factors = np.random.random(size=(3, 1000))
+        np.random.seed(1)
+        orig_loadings = np.random.random((100, 3))
+        self.s = Signal1D(np.dot(orig_loadings, orig_factors))
+        self.s.isig[50] = 0
+        self.s.decomposition()
+
+    def test_simplicity(self):
+        with pytest.raises(ValueError):
+            self.s.decomposition(algorithm='MCR', simplicity='something')
