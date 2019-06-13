@@ -297,6 +297,27 @@ of components to keep. Setting this to a small number is recommended to keep
 the computation time small. Often it is useful to run a PCA decomposition first
 and use the scree plot to determine a value for "output_dimension".
 
+Multivariate Curve Resolution (MCR)
+----------------------------
+
+MCR is a similar method to NMF.  In Hyperspy, MCR can be employed via:
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='MCR', output_dimension=3)
+
+As in NMF, the components are forced to be strictly non-negative.  The implementation
+relies on the PyMCR package, see
+github.com/pymcr
+
+For MCR, a SVD decomposition must be carried out first via
+
+.. code-block:: python
+    >>> s.decomposition()
+
+In addtiion, for the MCR decomposition the "output_dimension" argument, which determines 
+the number of components to keep, argument must be provided. 
+
 Blind Source Separation
 =======================
 
