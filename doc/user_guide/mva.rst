@@ -313,7 +313,7 @@ github.com/pymcr
 For MCR, a SVD decomposition must be carried out first via
 
 .. code-block:: python
-    >>> s.decomposition()
+   >>> s.decomposition()
 
 In addtiion, for the MCR decomposition the "output_dimension" argument, which determines 
 the number of components to keep, argument must be provided. 
@@ -323,11 +323,11 @@ variance between the calculated loadings in the spatial domain.  The second, spe
 maximizes variance between the spectral factors.  These are selected via the 'simplicity' argument:
 
 .. code-block:: python
-    ### Spatial simplicity
-    >>> s.decomposition(algorithm='MCR', output_dimension=3, simplicty='spatial')
+   ### Spatial simplicity
+   >>> s.decomposition(algorithm='MCR', output_dimension=3, simplicty='spatial')
 
-    ### Spectral simplicity
-    >>> s.decomposition(algorithm='MCR', output_dimension=3, simplicity='spectral')
+   ### Spectral simplicity
+   >>> s.decomposition(algorithm='MCR', output_dimension=3, simplicity='spectral')
 
 Blind Source Separation
 =======================
