@@ -300,28 +300,31 @@ and use the scree plot to determine a value for "output_dimension".
 Multivariate Curve Resolution (MCR)
 ----------------------------
 
-MCR is a similar method to NMF.  In Hyperspy, MCR can be employed via:
+In MCR, the factored output of an SVD decomposition is used as the initial
+input for an alternative least squares fit to the original data.
+
+In Hyperspy, MCR can be employed via:
 
 .. code-block:: python
 
    >>> s.decomposition(algorithm='MCR', output_dimension=3)
 
 As in NMF, the components are forced to be strictly non-negative.  The implementation
-relies on the PyMCR package, see
-github.com/pymcr
+relies on the :ref:`PyMCR <pymcr>` package.
 
-For MCR, a SVD decomposition must be carried out first via
+For MCR, a SVD decomposition must first be carried via
 
 .. code-block:: python
 
    >>> s.decomposition()
 
-In addtiion, for the MCR decomposition the "output_dimension" argument, which determines 
-the number of components to keep, argument must be provided. 
+When executing the MCR algorithm, "output_dimension" argument, which determines 
+the number of components to fit, must be provided.
 
-MCR can be carried out using one of two conditions.  The first, spatial simplicity, maximizes
-variance between the calculated loadings in the spatial domain.  The second, spectral simplicity,
-maximizes variance between the spectral factors.  These are selected via the 'simplicity' argument:
+MCR can be carried out using one of two conditions.  The first, spatial 
+simplicity, maximizes variance between the calculated loadings in the spatial
+domain.  The second, spectral simplicity, maximizes variance between the 
+spectral factors.  These are selected via the 'simplicity' argument:
 
 .. code-block:: python
 
