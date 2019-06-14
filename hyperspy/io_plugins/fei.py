@@ -31,6 +31,7 @@ import traits.api as t
 from hyperspy.misc.array_tools import sarray2dict
 from hyperspy.misc.utils import DictionaryTreeBrowser, multiply
 
+
 _logger = logging.getLogger(__name__)
 
 
