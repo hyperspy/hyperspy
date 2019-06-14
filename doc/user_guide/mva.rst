@@ -297,6 +297,43 @@ of components to keep. Setting this to a small number is recommended to keep
 the computation time small. Often it is useful to run a PCA decomposition first
 and use the scree plot to determine a value for "output_dimension".
 
+Multivariate Curve Resolution (MCR)
+----------------------------
+
+In MCR, the factored output of an SVD decomposition is used as the initial
+input for an alternative least squares fit to the original data.
+
+In Hyperspy, MCR can be employed via:
+
+.. code-block:: python
+
+   >>> s.decomposition(algorithm='MCR', output_dimension=3)
+
+As in NMF, the components are forced to be strictly non-negative.  The implementation
+relies on the :ref:`PyMCR <pymcr>` package.
+
+For MCR, a SVD decomposition must first be carried via
+
+.. code-block:: python
+
+   >>> s.decomposition()
+
+When executing the MCR algorithm, "output_dimension" argument, which determines 
+the number of components to fit, must be provided.
+
+MCR can be carried out using one of two conditions.  The first, spatial 
+simplicity, maximizes variance between the calculated loadings in the spatial
+domain.  The second, spectral simplicity, maximizes variance between the 
+spectral factors.  These are selected via the 'simplicity' argument:
+
+.. code-block:: python
+
+   ### Spatial simplicity
+   >>> s.decomposition(algorithm='MCR', output_dimension=3, simplicty='spatial')
+
+   ### Spectral simplicity
+   >>> s.decomposition(algorithm='MCR', output_dimension=3, simplicity='spectral')
+
 Blind Source Separation
 =======================
 

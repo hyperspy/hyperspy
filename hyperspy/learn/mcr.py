@@ -99,33 +99,14 @@ def mcrals(self,
     lr = self.learning_results
     data = self.data
 
-    # DONE: check for learning results here
     # should only perform MCR is a previous decomposition was performed (
-    # using same check as for `blind_source_separation()`
+    # using same check as for ``blind_source_separation()``
     if not hasattr(lr, 'factors') or lr.factors is None:
         raise ValueError("The 'MCR' algorithm operates on a previous "
                          "decomposition output, and this signal's "
                          "`learning_results` was None. Please run an SVD or "
                          "other PCA decomposition with `s.decomposition()` "
                          "prior to using the MCR technique.")
-
-    # DONE: MCR bombs if one spectral channel is completely zero; check for
-    # all-zero spectral channel and raise exception about failure
-    # sum over all navigation axes and check if any channels (or pixels,
-    # etc.) are zero. This means pyMCR will fail
-    if 0 in self.sum(range(len(self.axes_manager.navigation_axes))).data:
-        self.fold()  # return to "normal" navigation space
-        # find channels/pixels where values are uniformly zero:
-        zeros = np.where(self.sum(range(len(
-            self.axes_manager.navigation_axes))) == 0)
-        raise ValueError("The 'MCR' algorithm diverges in the event any "
-                         "signal dimension is uniformly zero over the entire"
-                         "navigation space. To prevent confusion over the "
-                         "output, no MCR has been performed. Please remove "
-                         "spectral channels (or signal locations) where the "
-                         "data is zero at all locations and try the MCR again."
-                         "The zero values were detected at navigation "
-                         f"position(s): {zeros})")
 
     # DONE: docs for simplicity should give explicit values
 
@@ -262,6 +243,24 @@ def mcrals(self,
         raise ValueError(f"'simplicity' must be either 'spatial' or"
                          f"'spectral'."
                          f"{str(simplicity)} was provided.")
+
+    # MCR can return NaNs at certain channels in the event a signal channel
+    # was zero at all navigation positions, so strip out the NaN values
+    # before normalization and raise a warning if they're present:
+    if np.isnan(factors_out).sum():
+        _logger.warning('NaN values were detected in the MCR factors. They '
+                        'have been replaced with zeros, but please check that '
+                        'the output is as expected. This is typically caused '
+                        'by the presence of uniformly zero-valued signal '
+                        'channels.')
+        factors_out = np.nan_to_num(factors_out)
+    if np.isnan(loadings_out).sum():
+        _logger.warning('NaN values were detected in the MCR loadings. They '
+                        'have been replaced with zeros, but please check that '
+                        'the output is as expected. This is typically caused '
+                        'by the presence of uniformly zero-valued signal '
+                        'channels.')
+        loadings_out = np.nan_to_num(loadings_out)
 
     factors_out = factors_out / factors_out.sum(0)
     loadings_out = loadings_out / loadings_out.sum(0)
