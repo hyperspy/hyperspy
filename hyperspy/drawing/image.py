@@ -20,7 +20,7 @@ import math
 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize, LogNorm
+from matplotlib.colors import Normalize, LogNorm, SymLogNorm
 from traits.api import Undefined
 import logging
 import inspect
@@ -192,7 +192,6 @@ class ImagePlot(BlittedFigure):
                 self._auto_scalebar = False
                 self._auto_axes_ticks = True
         self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
-        # print(self._aspect)
 
     def optimize_contrast(self, data):
         if (self._vmin_user is not None and self._vmax_user is not None):
@@ -257,14 +256,8 @@ class ImagePlot(BlittedFigure):
         if self.figure is None:
             self.create_figure()
             self.create_axis()
-        data = self.data_function(axes_manager=self.axes_manager,
-                                  **self.data_function_kwargs)
-        if rgb_tools.is_rgbx(data):
-            self.colorbar = False
-            data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
-        self.optimize_contrast(data)
-        if (not self.axes_manager or
-                self.axes_manager.navigation_size == 0):
+
+        if (not self.axes_manager or self.axes_manager.navigation_size == 0):
             self.plot_indices = False
         if self.plot_indices is True:
             if self._text is not None:
@@ -334,13 +327,16 @@ class ImagePlot(BlittedFigure):
             else:
                 self.centre_colormap = False
         redraw_colorbar = False
-        data = rgb_tools.rgbx2regular_array(
-            self.data_function(axes_manager=self.axes_manager,
-                               **self.data_function_kwargs),
-            plot_friendly=True)
-        numrows, numcols = data.shape[:2]
+
+        data = self.data_function(axes_manager=self.axes_manager,
+                                  **self.data_function_kwargs)
+        if rgb_tools.is_rgbx(data):
+            self.colorbar = False
+            data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
+
         for marker in self.ax_markers:
             marker.update()
+
         if len(data.shape) == 2:
             def format_coord(x, y):
                 try:
@@ -357,6 +353,7 @@ class ImagePlot(BlittedFigure):
                         return 'x=%1.4g, y=%1.4g, intensity=%1.4g' % (x, y, z)
                 return 'x=%1.4g, y=%1.4g' % (x, y)
             self.ax.format_coord = format_coord
+
             old_vmax, old_vmin = self.vmax, self.vmin
             self.optimize_contrast(data)
             # If there is an image, any of the contrast bounds have changed and
@@ -366,6 +363,7 @@ class ImagePlot(BlittedFigure):
                 redraw_colorbar = True
                 ims[0].autoscale()
         redraw_colorbar = redraw_colorbar and self.colorbar
+
         if self.plot_indices is True:
             self._text.set_text(self.axes_manager.indices)
         if self.no_nans:
@@ -377,7 +375,11 @@ class ImagePlot(BlittedFigure):
 
         norm = copy.copy(self.norm)
         if norm == 'log':
-            norm = LogNorm(vmin=self.vmin, vmax=self.vmax)
+            if data.min() <= 0:
+                norm = SymLogNorm(linthresh=0.03, linscale=0.03,
+                                  vmin=self.vmin, vmax=self.vmax)
+            else:
+                norm = LogNorm(vmin=self.vmin, vmax=self.vmax)
         elif inspect.isclass(norm) and issubclass(norm, Normalize):
             norm = norm(vmin=self.vmin, vmax=self.vmax)
         elif norm not in ['auto', 'linear']:

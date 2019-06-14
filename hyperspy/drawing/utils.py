@@ -63,6 +63,9 @@ def contrast_stretching(data, saturated_pixels):
     if not 0 <= saturated_pixels <= 100:
         raise ValueError(
             "saturated_pixels must be a scalar in the range[0, 100]")
+    if np.ma.is_masked(data):
+        # If there is a mask, compressed the data to remove the masked data
+        data = np.ma.masked_less_equal(data, 0).compressed()
     vmin = np.nanpercentile(data, saturated_pixels / 2.)
     vmax = np.nanpercentile(data, 100 - saturated_pixels / 2.)
     return vmin, vmax
