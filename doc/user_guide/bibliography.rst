@@ -185,8 +185,11 @@ Bibliography
    “Efficient subpixel image registration algorithms",
    Optics Letters 33, 156-158 (2008). DOI:10.1364/OL.33.000156
 
+.. _pymcr:
 
-
+:ref:`[pymcr] <pymcr>`
+   The PyMCR package.  Citation available soon.
+   [`link <https://pages.nist.gov/pyMCR/>`_]
 
 
 Peer-review articles with results obtained using HyperSpy
