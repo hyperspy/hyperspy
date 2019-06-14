@@ -25,6 +25,7 @@ from traits.api import Undefined
 import logging
 import inspect
 import copy
+from skimage.exposure import adjust_gamma
 
 from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
@@ -97,6 +98,7 @@ class ImagePlot(BlittedFigure):
         self.no_nans = False
         self.centre_colormap = "auto"
         self.norm = "auto"
+        self.gamma = 1.0
 
     @property
     def vmax(self):
@@ -333,6 +335,9 @@ class ImagePlot(BlittedFigure):
         if rgb_tools.is_rgbx(data):
             self.colorbar = False
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
+
+        if self.gamma != 1.0:
+            data = adjust_gamma(data, self.gamma)
 
         for marker in self.ax_markers:
             marker.update()

@@ -34,6 +34,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
                     no_nans=False,
                     centre_colormap="auto",
                     norm="auto",
+                    gamma=1.0,
                     **kwargs
                     ):
         """Plot image.
@@ -61,6 +62,21 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
             `vmin` and `vmax` are used to normalize luminance data.
         no_nans : bool, optional
             If True, set nans to zero for plotting.
+        centre_colormap : {"auto", True, False}	
+            If True the centre of the color scheme is set to zero. This is	
+            specially useful when using diverging color schemes. If "auto"	
+            (default), diverging color schemes are automatically centred.
+        norm : {'auto', 'linear', 'log', mpl `Normalize` instance or subclass}, 
+            default is 'auto'.
+            Plot the intensity scale on a linear or logarithmic scale. If 
+            'auto', plot the intensity on a linear scale except when 
+            `power_spectrum` is True, which can be used only for compatible 
+            signal. For Signal2D, a matplotlib `Normalize` subclass or 
+            instance can be provided.
+        gamma : float
+            Value used for the gamma adjustement. Default is 1.0 (no 
+            adjustement). See ``skimage.exposure.adjust_gamma`` for more 
+            information.
         **kwargs, optional
             Additional key word arguments passed to matplotlib.imshow()
 
@@ -85,6 +101,7 @@ class MPL_HyperImage_Explorer(MPL_HyperExplorer):
         imf.scalebar_color = scalebar_color
         imf.centre_colormap = centre_colormap
         imf.norm = norm
+        imf.gamma = gamma
         kwargs['data_function_kwargs'] = self.signal_data_function_kwargs
         imf.plot(**kwargs)
         self.signal_plot = imf
