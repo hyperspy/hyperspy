@@ -8,3 +8,6 @@ omit =
     */setup.py
     */examples/*
     */continuous_integration/*
+
+[xml]
+directory = /hyperspy

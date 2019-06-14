@@ -44,6 +44,7 @@ hyperspy/misc/etc/test_compilers.obj
 /.cache/
 /.spyproject/
 /.pytest_cache/
+*.xml
 
 ### Code ###
 # Visual Studio Code - https://code.visualstudio.com/
