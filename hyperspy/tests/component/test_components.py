@@ -120,8 +120,7 @@ class TestPowerLaw:
             values = getattr(pl, attr)((axis))
             assert_allclose(values[:10], np.zeros((10)))
             assert getattr(pl, attr)((axis))[10] == 0
-            if attr != 'grad_A':
-                 getattr(pl, attr)((axis))[11] > 0
+            getattr(pl, attr)((axis))[11] > 0
 
 
 class TestDoublePowerLaw:

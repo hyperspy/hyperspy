@@ -234,28 +234,28 @@ class Expression(Component):
         parnames = [symbol.name for symbol in parameters]
         self._parameter_strings = parnames
 
-        if "where" in self._str_expression
-        ffargs = _fill_function_args_2d if self._is2D else _fill_function_args
-        for parameter in parameters:
-            grad_expr = sympy.diff(eval_expr, parameter)
-            setattr(self,
-                    "_f_grad_%s" % parameter.name,
-                    lambdify(variables + parameters,
-                              grad_expr.evalf(),
-                              modules=module,
-                              dummify=False)
-                    )
-
-            setattr(self,
-                    "grad_%s" % parameter.name,
-                    ffargs(
-                        getattr(
+        if not "where" in self._str_expression:
+            ffargs = _fill_function_args_2d if self._is2D else _fill_function_args
+            for parameter in parameters:
+                grad_expr = sympy.diff(eval_expr, parameter)
+                setattr(self,
+                        "_f_grad_%s" % parameter.name,
+                        lambdify(variables + parameters,
+                                  grad_expr.evalf(),
+                                  modules=module,
+                                  dummify=False)
+                        )
+    
+                setattr(self,
+                        "grad_%s" % parameter.name,
+                        ffargs(
+                            getattr(
+                                self,
+                                "_f_grad_%s" %
+                                parameter.name)).__get__(
                             self,
-                            "_f_grad_%s" %
-                            parameter.name)).__get__(
-                        self,
-                        Expression)
-                    )
+                            Expression)
+                        )
 
     def function_nd(self, *args):
         """%s

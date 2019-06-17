@@ -40,13 +40,12 @@ class PowerLaw(Expression):
     def __init__(self, A=10e5, r=3., origin=0., left_cutoff=0.0, 
                  module="numexpr", **kwargs):
         super().__init__(
-            expression="A*(-origin + x)**-r",
+            expression="where(left_cutoff<x, A*(-origin + x)**-r, 0)",
             name="PowerLaw",
             A=A,
             r=r,
             origin=origin,
             left_cutoff=left_cutoff,
-            definition_condition="x > left_cutoff",
             position="origin",
             module=module,
             autodoc=False,
@@ -151,3 +150,16 @@ class PowerLaw(Expression):
             self.r.map['is_set'][:] = True
             self.fetch_stored_values()
             return True
+
+    def grad_A(self, x):
+        return self.function(x) / self.A.value
+
+    def grad_r(self, x):
+        return np.where(x > self.left_cutoff.value, -self.A.value *
+                        np.log(x - self.origin.value) *
+                        (x - self.origin.value) ** (-self.r.value), 0)
+
+    def grad_origin(self, x):
+        return np.where(x > self.left_cutoff.value, self.r.value *
+                        (x - self.origin.value) ** (-self.r.value - 1) *
+                        self.A.value, 0)
