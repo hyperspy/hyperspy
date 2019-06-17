@@ -120,7 +120,7 @@ To close all the figures run the following command:
 
 .. NOTE::
 
-    This is a `matplotlib <http://matplotlib.sourceforge.net/>`_ command.
+    ``plt.close('all')`` is a `matplotlib <http://matplotlib.sourceforge.net/>`_ command.
     Matplotlib is the library that HyperSpy uses to produce the plots. You can
     learn how to pan/zoom and more  `in the matplotlib documentation
     <http://matplotlib.sourceforge.net/users/navigation_toolbar.html>`_
@@ -128,9 +128,9 @@ To close all the figures run the following command:
 
 .. NOTE::
 
-    Plotting ``float16`` image is not supported by matplotlib; however, it is possible to
-    to convert the type of the data by using the ``change_dtype`` method, e.g. 
-    `s.change_dtype('float32')`.
+    Plotting ``float16`` images is currently not supported by matplotlib; however, it is 
+    possible to convert the type of the data by using the 
+    :py:meth:`~.signal.BaseSignal.change_dtype` method, e.g. ``s.change_dtype('float32')``.
 
 Multidimensional image data
 ===========================
