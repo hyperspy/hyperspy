@@ -74,7 +74,7 @@ class Expression(Component):
 
     def __init__(self, expression, name, position=None, module="numpy",
                  autodoc=True, add_rotation=False, rotation_center=None,
-                 definition_condition=None, **kwargs):
+                 **kwargs):
         """Create a component from a string expression.
 
         It automatically generates the partial derivatives and the
@@ -108,9 +108,6 @@ class Expression(Component):
             is not defined, otherwise the center is the coordinates specified
             by `position`. Alternatively a tuple with the (x, y) coordinates
             of the center can be provided.
-        definition_condition : str
-            Define the condition where the component is define. Where False, 
-            the component return 0.
         **kwargs
              Keyword arguments can be used to initialise the value of the
              parameters.
@@ -119,6 +116,12 @@ class Expression(Component):
         -------
         recompile: useful to recompile the function and gradient with a
             a different module.
+
+        Note
+        ----
+        Sympy currently does not support the differentiation of function 
+        containing a "where" condition, therefore for such function, the 
+        gradient is not computed automatically.
 
         Examples
         --------
@@ -147,7 +150,6 @@ class Expression(Component):
         """
         self._add_rotation = add_rotation
         self._str_expression = expression
-        self._definition_condition = definition_condition
         if rotation_center is None:
             self.compile_function(module=module, position=position)
         else:
@@ -184,12 +186,7 @@ class Expression(Component):
                 name, sympy.latex(_parse_substitutions(expression)))
 
     def compile_function(self, module="numpy", position=False):
-        if self._definition_condition is not None:
-            str_expression = "where(%s, %s, 0)" % (
-                    self._definition_condition, self._str_expression)
-        else:
-            str_expression = self._str_expression
-        expr = _parse_substitutions(str_expression)
+        expr = _parse_substitutions(self._str_expression)
 
         # Extract x
         x, = [symbol for symbol in expr.free_symbols if symbol.name == "x"]
@@ -198,10 +195,6 @@ class Expression(Component):
 
         self._is2D = True if y else False
         if self._is2D:
-            if self._definition_condition is not None:
-                raise NotImplementedError(
-                        "The `definition_condition` paramater is not "
-                        "supported for 2D components.")
             y = y[0]
         if self._is2D and self._add_rotation:
             position = position or (0, 0)
@@ -241,32 +234,13 @@ class Expression(Component):
         parnames = [symbol.name for symbol in parameters]
         self._parameter_strings = parnames
 
-        grad_param = parameters
-        if self._definition_condition is not None:
-            # sympy diff doesn't work with where, so to calculate the gradient,
-            # we need to remove the where and recreate the expr and parameters
-            expr = _parse_substitutions(self._str_expression)
-            parameters = [s for s in expr.free_symbols if s.name != 'x']
-            parameters.sort(key=lambda x: x.name)
-
+        if "where" in self._str_expression
         ffargs = _fill_function_args_2d if self._is2D else _fill_function_args
         for parameter in parameters:
-            grad_expr = sympy.diff(expr, parameter)
-            if self._definition_condition is not None:
-                # Get the grad_expr as a string, add the where condition and
-                # convert it back to sympy expression
-                grad_str = lambdastr(x, grad_expr)
-                # We need to parse the str to remove the "lambda" and "math."
-                # to workaround error when passing it to sympify
-                grad_str = grad_str.split("lambda x:")[1].replace('math.', '')
-                grad_expr = _parse_substitutions(
-                        "where(%s, %s, 0)" % (self._definition_condition,
-                              grad_str))
-            _logger.debug("grad of %s is %s" % (parameter.name, grad_expr))
-            setattr(self, "_f_grad_%s_expr" % parameter.name, grad_expr)
+            grad_expr = sympy.diff(eval_expr, parameter)
             setattr(self,
                     "_f_grad_%s" % parameter.name,
-                    lambdify(variables + grad_param,
+                    lambdify(variables + parameters,
                               grad_expr.evalf(),
                               modules=module,
                               dummify=False)
