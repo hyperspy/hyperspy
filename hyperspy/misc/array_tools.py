@@ -373,39 +373,7 @@ def dict2sarray(dictionary, sarray=None, dtype=None):
 
 
 @jit_ifnumba()
-def get_bin_edges(a, bins):
-    bin_edges = np.zeros((bins+1,), dtype=np.float64)
-    a_min = a.min()
-    a_max = a.max()
-    delta = (a_max - a_min) / bins
-    for i in range(bin_edges.shape[0]):
-        bin_edges[i] = a_min + i * delta
-
-    bin_edges[-1] = a_max  # Avoid roundoff error on last point
-    return bin_edges
-
-
-@jit_ifnumba()
-def compute_bin(x, bin_edges):
-    # assuming uniform bins for now
-    n = bin_edges.shape[0] - 1
-    a_min = bin_edges[0]
-    a_max = bin_edges[-1]
-
-    # special case to mirror NumPy behavior for last bin
-    if x == a_max:
-        return n - 1 # a_max always in last bin
-
-    bin = int(n * (x - a_min) / (a_max - a_min))
-
-    if bin < 0 or bin >= n:
-        return None
-    else:
-        return bin
-
-
-@jit_ifnumba()
-def numba_histogram(data, bins):
+def numba_histogram(data, bins, ranges):
     """
     Parameters
     ----------
@@ -413,14 +381,16 @@ def numba_histogram(data, bins):
         Input data. The histogram is computed over the flattened array.
     bins : int
         Number of bins
+    ranges : (float, float)
+        The lower and upper range of the bins.
     """
-    # Taken from https://iscinumpy.gitlab.io/post/histogram-speeds-in-python/
+    # Adapted from https://iscinumpy.gitlab.io/post/histogram-speeds-in-python/
     hist = np.zeros((bins,), dtype=np.intp)
-    bin_edges = get_bin_edges(data, bins)
+    delta = 1/((ranges[1] - ranges[0]) / bins)
 
     for x in data.flat:
-        bin = compute_bin(x, bin_edges)
-        if bin is not None:
-            hist[int(bin)] += 1
+        i = (x - ranges[0]) * delta
+        if 0 <= i < bins:
+            hist[int(i)] += 1
 
-    return hist, bin_edges
+    return hist

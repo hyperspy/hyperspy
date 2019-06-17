@@ -561,7 +561,7 @@ class ImageContrastEditor(t.HasTraits):
         plt.tight_layout()
 
         self.image.axes_manager.events.indices_changed.connect(
-            self.reset, [])
+            self._reset, [])
 
         self.span_selector = None
         self.span_selector_switch(on=True)
@@ -598,18 +598,21 @@ class ImageContrastEditor(t.HasTraits):
         self.ss_left_value = self.span_selector.rect.get_x()
         self.ss_right_value = self.ss_left_value + \
             self.span_selector.rect.get_width()
-        self.reset(vmin=self.ss_left_value, vmax=self.ss_right_value)
+
+        self.vmin, self.vmax = self.ss_left_value, self.ss_right_value
+        self.image.vmin, self.image.vmax = self.vmin, self.vmax
+        self.image.update()
 
     def _get_histogram(self):
-        return numba_histogram(self._get_data(), bins=self.bins)
+        return numba_histogram(self._get_data(), bins=self.bins,
+                               ranges=(self.vmin, self.vmax))
 
     def plot_histogram(self):
-        self.bins = 100
-        self.xaxis = np.linspace(self.data_min, self.data_max, self.bins)
-        self.hist_data = self._get_histogram()[0]
+        self.xaxis = np.linspace(self.vmin, self.vmax, self.bins)
+        self.hist_data = self._get_histogram()
         self.hist = self.ax.fill_between(self.xaxis, self.hist_data,
                                          step="mid")
-        self.ax.set_xlim(self.data_min, self.data_max)
+        self.ax.set_xlim(self.vmin, self.vmax)
 
         self.gamma_line = self.ax.plot(*self._get_gamma_curve(),
                                        color='#ff7f0e')[0]
@@ -618,15 +621,15 @@ class ImageContrastEditor(t.HasTraits):
     def update_histogram(self):
         color = self.hist.get_facecolor()
         self.hist.remove()
-        hist_data = self._get_histogram()[0]
-        self.hist = self.ax.fill_between(self.xaxis, hist_data, step="mid",
-                                         color=color)
+        self.hist_data = self._get_histogram()
+        self.hist = self.ax.fill_between(self.xaxis, self.hist_data,
+                                         step="mid", color=color)
+        self.ax.set_ylim(0, self.hist_data.max())
         self.update_gamma_line()
         self.ax.figure.canvas.draw_idle()
 
     def _get_gamma_curve(self):
-        value = (self.xaxis-self.data_min)**self.gamma/self.data_max
-        return self.xaxis, value*self.data_max/value.max()*self.hist_data.max()
+        return self.xaxis, self.xaxis**self.gamma*self.hist_data.max()
 
     def update_gamma_line(self):
         self.gamma_line.set_data(*self._get_gamma_curve())
@@ -640,11 +643,14 @@ class ImageContrastEditor(t.HasTraits):
 
     def reset(self, update=True, vmin=None, vmax=None):
         data = self._get_data()
-        self.data_min, self.data_max = np.nanmin(data), np.nanmax(data)
+        data_min, data_max = np.nanmin(data), np.nanmax(data)
+        self._reset(update=update, vmin=data_min, vmax=data_max)
+
+    def _reset(self, update=True, vmin=None, vmax=None):
         if vmin is not None and vmax is not None:
             self.image.vmin, self.image.vmax = vmin, vmax
         else:
-            self.image.vmin, self.image.vmax = self.data_min, self.data_max
+            self.image.vmin, self.image.vmax = self.vmin, self.vmax
         if update:
             self.image.update()
             self.update_histogram()
