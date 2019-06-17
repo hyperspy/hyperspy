@@ -60,7 +60,7 @@ class ImagePlot(BlittedFigure):
     """ % PLOT2D_DOCSTRING
 
     def __init__(self):
-        super(ImagePlot, self).__init__()
+        super().__init__()
         self.data_function = None
         # Args to pass to `__call__`
         self.data_function_kwargs = {}

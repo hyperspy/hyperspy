@@ -17,9 +17,7 @@
 # along with  HyperSpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import numpy.testing as nt
 import pytest
-import matplotlib
 
 from hyperspy.signals import Signal2D, Signal1D
 from hyperspy.utils import roi
@@ -141,3 +139,141 @@ class TestPlotROI():
         p = roi.Line2DROI(x1=0.01, y1=0.01, x2=0.1, y2=0.03)
         p.add_widget(signal=objs["im"], axes=objs["axes"], color="cyan")
         return objs["figure"]
+
+
+class TestROIsManager:
+
+    def setup_method(self):
+        s = Signal1D(np.arange(100))
+        self.s = s
+
+    def test_add_widget(self):
+        s = self.s
+        p = roi.SpanROI(25.0, 45.0)
+        s.plot()
+        p.add_widget(s)
+        assert len(s.rois_manager) == 1
+
+    def test_add_widgets_list(self):
+        s = self.s
+        assert len(s.rois_manager) == 0
+        p0 = roi.SpanROI(25.0, 45.0)
+        p1 = roi.SpanROI(50.0, 60.0)
+        s.add_ROIs([p0, p1])
+        assert len(s.rois_manager) == 2
+        assert s.rois_manager[0] == p0
+        assert s.rois_manager[1] == p1
+
+    def test_add_widgets_list_to_dictionary(self):
+        s = self.s
+        assert len(s.rois_manager) == 0
+        p = roi.SpanROI(25.0, 45.0)
+        roi_dict = p.to_dictionary()
+        assert roi_dict == {'roi_type': 'SpanROI',
+                            'name': '',
+                            'parameters': {'left': 25.0, 'right': 45.0},
+                            'properties':
+                                {'color': 'green', 
+                                 'alpha': 0.5, 
+                                 'snap_position': True},
+                            'on_signal': True}
+
+    @pytest.mark.parametrize("plot", (True, False))
+    def test_add_widgets_list_from_dictionary(self, plot):
+        s = self.s
+        if plot:
+            s.plot()
+        assert len(s.rois_manager) == 0
+        p0 = roi.SpanROI(25.0, 45.0)
+        roi_dict0 = p0.to_dictionary()
+        roi_dict1 = p0.to_dictionary()
+        roi_dict1['parameters'] = {'left': 75.0, 'right': 85.0}
+        roi_dict1['properties']['color'] = 'blue'
+        roi_dict1['properties']['alpha'] = 0.25
+        s.add_ROIs([roi_dict0, roi_dict1])
+        assert len(s.rois_manager) == 2
+        roi0 = s.rois_manager[0]
+        roi1 = s.rois_manager[1]
+        assert roi0.color == 'green'
+        assert roi0.alpha == 0.5
+        assert roi1.color == 'blue'
+        assert roi1.alpha == 0.25
+
+    @pytest.mark.parametrize("plot", (True, False))
+    def test_add_widgets_list_from_dictionary_properties(self, plot):
+        s = self.s
+        if plot:
+            s.plot()
+        p0 = roi.SpanROI(25.0, 45.0)
+        roi_dict1 = p0.to_dictionary()
+        roi_dict1['parameters'] = {'left': 75.0, 'right': 85.0}
+        roi_dict1['properties']['color'] = 'blue'
+        roi_dict1['properties']['alpha'] = 0.25
+
+    @pytest.mark.parametrize("plot", (True, False))
+    def test_indexation(self, plot):
+        s = self.s
+        if plot:
+            s.plot()
+        p0 = roi.SpanROI(25.0, 45.0)
+        p1 = roi.SpanROI(60.0, 70.0)
+        s.add_ROIs([p0, p1])
+        assert s.rois_manager[0] == p0
+        assert s.rois_manager[1] == p1
+        s.rois_manager[0:1]
+
+    def test_Point1DROI(self):
+        s = self.s
+        roi0 = roi.Point1DROI(25.0)
+        roi_dict1 = roi0.to_dictionary()
+        roi_dict1['parameters'] = {'value': 75.0}
+        s.add_ROIs([roi0, roi_dict1])
+        assert len(s.rois_manager) == 2
+        s.rois_manager[0].value = 25.0
+        s.rois_manager[1].value = 75.0
+
+    def test_Point2DROI(self):
+        im = Signal2D(np.arange(100).reshape(10, 10))
+        roi0 = roi.Point2DROI(5.0, 4.0)
+        roi_dict1 = roi0.to_dictionary()
+        roi_dict1['parameters'] = {'x': 2.0, 'y':3.0}
+        im.add_ROIs([roi0, roi_dict1])
+        assert len(im.rois_manager) == 2
+        im.rois_manager[0].x = 5
+        im.rois_manager[0].y = 4
+        im.rois_manager[1].x = 2
+        im.rois_manager[1].y = 3
+
+    # def test_RectangularROI(self):
+    #     im = Signal2D(np.arange(100).reshape(10, 10))
+    #     roi0 = roi.RectangularROI(1, 3, 3, 1)
+    #     roi_dict1 = roi0.to_dictionary()
+    #     roi_dict1['parameters'] = {
+    #             'left': 2, 'top':5, 'right':6, 'bottom':2}
+    #     im.add_ROIs([roi0, roi_dict1])
+    #     assert len(im.rois_manager) == 2
+    #     im.rois_manager[0].left = 1
+    #     im.rois_manager[0].top = 2
+    #     im.rois_manager[0].right = 1
+    #     im.rois_manager[0].bottom = 3
+    #     im.rois_manager[1].left = 2
+    #     im.rois_manager[1].top = 5
+    #     im.rois_manager[1].right = 6
+    #     im.rois_manager[1].bottom = 2
+
+    # def test_CircleROI(self):
+    #     im = Signal2D(np.arange(100).reshape(10, 10))
+    #     roi0 = roi.CircleROI(4, 5, 1)
+    #     roi_dict1 = roi0.to_dictionary()
+    #     roi_dict1['parameters'] = {
+    #             'cx': 2, 'cy':2, 'r':2, 'r_inner':4}
+    #     im.add_ROIs([roi0, roi_dict1])
+    #     assert len(im.rois_manager) == 2
+    #     im.rois_manager[0].left = 1
+    #     im.rois_manager[0].top = 2
+    #     im.rois_manager[0].right = 1
+    #     im.rois_manager[0].bottom = 3
+    #     im.rois_manager[1].left = 2
+    #     im.rois_manager[1].top = 5
+    #     im.rois_manager[1].right = 6
+    #     im.rois_manager[1].bottom = 2

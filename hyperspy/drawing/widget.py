@@ -59,6 +59,7 @@ class WidgetBase(object):
         self.patch = []
         self.color = color
         self.alpha = alpha
+        self.name = ""
         self.cids = list()
         self.blit = True
         self.events = Events()
@@ -160,7 +161,7 @@ class WidgetBase(object):
             super(WidgetBase, self)._set_patch()
         # Must be provided by the subclass
 
-    def _add_patch_to(self, ax):
+    def _add_patch_to(self, ax, set_initial_value=True):
         """Create and add the matplotlib patches to 'ax'
         """
         self._set_patch()
@@ -171,7 +172,7 @@ class WidgetBase(object):
         if hasattr(super(WidgetBase, self), '_add_patch_to'):
             super(WidgetBase, self)._add_patch_to(ax)
 
-    def set_mpl_ax(self, ax):
+    def set_mpl_ax(self, ax, set_initial_value=True):
         """Set the matplotlib Axes that the widget will draw to. If the widget
         on state is True, it will also add the patch to the Axes, and connect
         to its default events.
@@ -184,7 +185,7 @@ class WidgetBase(object):
         self.ax = ax
         canvas = ax.figure.canvas
         if self.is_on() is True:
-            self._add_patch_to(ax)
+            self._add_patch_to(ax, set_initial_value=set_initial_value)
             self.connect(ax)
             canvas.draw_idle()
             self.select()
@@ -490,6 +491,13 @@ class DraggableWidgetBase(WidgetBase):
             return
         if self.picked is True:
             self.picked = False
+
+    def mouse_on_widget(self, event):
+        if self.patch:
+            contains, attrd = self.patch[0].contains(event)
+            return contains
+        else:
+            return False
 
 
 class Widget1DBase(DraggableWidgetBase):

@@ -64,6 +64,7 @@ class BaseROI(t.HasTraits):
     Provides some basic functionality that is likely to be shared between all
     ROIs, and serve as a common type that can be checked for.
     """
+    name = t.Str()
 
     def __init__(self):
         """Sets up events.changed event, and inits HasTraits.
@@ -278,6 +279,10 @@ class BaseInteractiveROI(BaseROI):
         super(BaseInteractiveROI, self).__init__()
         self.widgets = set()
         self._applying_widget_change = False
+        self.color = 'green'
+        self.alpha = 0.5
+        self.snap_position = True
+        self.on_signal = True
 
     def update(self):
         """Function responsible for updating anything that depends on the ROI.
@@ -402,8 +407,8 @@ class BaseInteractiveROI(BaseROI):
         self._update_widgets(exclude=(widget,))
         self.events.changed.trigger(self)
 
-    def add_widget(self, signal, axes=None, widget=None,
-                   color='green', **kwargs):
+    def add_widget(self, signal, axes=None, widget=None, color=None,
+                   set_initial_value=True, **kwargs):
         """Add a widget to visually represent the ROI, and connect it so any
         changes in either are reflected in the other. Note that only one
         widget can be added per signal/axes combination.
@@ -434,6 +439,8 @@ class BaseInteractiveROI(BaseROI):
         kwargs:
             All keyword argument are passed to the widget constructor.
         """
+        if color is None:
+            color = self.color
         axes = self._parse_axes(axes, signal.axes_manager,)
         if widget is None:
             widget = self._get_widget_type(
@@ -441,7 +448,7 @@ class BaseInteractiveROI(BaseROI):
                 signal.axes_manager, **kwargs)
             widget.color = color
 
-        # Remove existing ROI, if it exsists and axes match
+        # Remove existing ROI, if it exists and axes match
         if signal in self.signal_map and \
                 self.signal_map[signal][1] == axes:
             self.remove_widget(signal)
@@ -456,7 +463,12 @@ class BaseInteractiveROI(BaseROI):
                     repr(signal))
 
             ax = _get_mpl_ax(signal._plot, axes)
-            widget.set_mpl_ax(ax)
+            widget.set_mpl_ax(ax, set_initial_value=set_initial_value)
+            signal.rois_manager._rois_list.append(self)
+        if "alpha" not in kwargs.keys():
+            widget.alpha = self.alpha
+        if "snap_position" not in kwargs.keys():
+            widget.snap_position = self.snap_position
         with widget.events.changed.suppress_callback(self._on_widget_change):
             self._apply_roi2widget(widget)
 
@@ -482,6 +494,96 @@ class BaseInteractiveROI(BaseROI):
         if signal in self.signal_map:
             w = self.signal_map.pop(signal)[0]
             self._remove_widget(w)
+
+    def get_properties(self):
+        return {"color": self.color, "alpha":self.alpha,
+                "snap_position":self.snap_position}
+
+    def set_properties(self, **kwargs):
+        properties_keys = self.get_properties().keys()
+        for args in kwargs.items():
+            if args[0] in properties_keys:
+                setattr(self, args[0], args[1])
+
+    def get_parameters(self, **kwargs):
+        # To be implemented by subclass
+        pass
+
+    def set_parameters(self, **kwargs):
+        paramaters_keys = self.get_parameters().keys()
+        for args in kwargs.items():
+            if args[0] in paramaters_keys:
+                setattr(self, args[0], args[1])
+
+    @property
+    def color(self):
+        if len(self.widgets):
+            return self._get_widget().color
+        else:
+            return self._color
+
+    @color.setter
+    def color(self, value):
+        if len(self.widgets):
+            self._get_widget().color = value
+        else:
+            self._color = value
+
+    @property
+    def alpha(self):
+        if len(self.widgets):
+            return self._get_widget().alpha
+        else:
+            return self._alpha
+
+    @alpha.setter
+    def alpha(self, value):
+        if len(self.widgets):
+            self._get_widget().alpha = value
+        else:
+            self._alpha = value
+
+    @property
+    def snap_position(self):
+        if len(self.widgets):
+            return self._get_widget().snap_position
+        else:
+            return self._snap_position
+
+    @snap_position.setter
+    def snap_position(self, value):
+        if len(self.widgets):
+            self._get_widget().snap_position = value
+        else:
+            self._snap_position = value
+
+    @property
+    def on_signal(self):
+        if len(self.widgets):
+            return not self._get_widget()._navigating
+        else:
+            return self._on_signal
+
+    @on_signal.setter
+    def on_signal(self, value):
+        if len(self.widgets):
+            self._get_widget()._navigating = not value
+        else:
+            self._on_signal = value
+
+    def _get_widget(self):
+        if len(self.widgets):
+            return next(iter(self.widgets))
+
+    def to_dictionary(self):
+        roi_dict = {
+            'roi_type': self.__class__.__name__,
+            'name': self.name,
+            'parameters': self.get_parameters(),
+            'properties': self.get_properties(),
+            'on_signal': self.on_signal,
+        }
+        return roi_dict
 
 
 class BasePointROI(BaseInteractiveROI):
@@ -526,9 +628,22 @@ def guess_vertical_or_horizontal(axes, signal):
 
 @add_gui_method(toolkey="Point1DROI")
 class Point1DROI(BasePointROI):
+    """Selects a single point in a 1D space.
 
-    """Selects a single point in a 1D space. The coordinate of the point in the
-    1D space is stored in the 'value' trait.
+    Attribute
+    ---------
+    value : float
+        The position of the ROI.
+
+    Examples
+    --------
+
+    Add a Point2DRoi to a signal (signal needs to be plotted):
+
+    >>> s = hs.signals.Signal1D(np.arange(100))
+    >>> s.plot()
+    >>> point_roi = hs.roi.Point1DROI(x=45.0)
+    >>> point_roi.add_widget(s)
     """
     value = t.CFloat(t.Undefined)
     _ndim = 1
@@ -567,12 +682,31 @@ class Point1DROI(BasePointROI):
             self.__class__.__name__,
             self.value)
 
+    def get_parameters(self, **kwargs):
+        return {"value": self.value}
+
 
 @add_gui_method(toolkey="Point2DROI")
 class Point2DROI(BasePointROI):
+    """Selects a single point in a 2D space.
 
-    """Selects a single point in a 2D space. The coordinates of the point in
-    the 2D space are stored in the traits 'x' and 'y'.
+    Attributes
+    ----------
+    x : float
+        The x position of the ROI.
+
+    y : float
+        The y position of the ROI.
+
+    Examples
+    --------
+
+    Add a Point2DRoi to a signal (signal needs to be plotted):
+
+    >>> s = hs.signals.Signal2D(np.random.random((2,3,4,5)))
+    >>> s.plot()
+    >>> point_roi = hs.roi.Point2D(x=3.0, y=1.0)
+    >>> point_roi.add_widget(s)
     """
     x, y = (t.CFloat(t.Undefined),) * 2
     _ndim = 2
@@ -608,12 +742,30 @@ class Point2DROI(BasePointROI):
             self.__class__.__name__,
             self.x, self.y)
 
+    def get_parameters(self, **kwargs):
+        return {"x": self.x, "y": self.y}
+
 
 @add_gui_method(toolkey="SpanROI")
 class SpanROI(BaseInteractiveROI):
+    """Selects a range in a 1D space.
 
-    """Selects a range in a 1D space. The coordinates of the range in
-    the 1D space are stored in the traits 'left' and 'right'.
+    Attributes
+    ----------
+    left : float
+        The left position of the ROI.
+    right : float
+        The right position of the ROI.
+
+    Examples
+    --------
+
+    Add a SpanROI to a signal (signal needs to be plotted):
+
+    >>> s = hs.signals.Signal1D(np.arange(100))
+    >>> s.plot()
+    >>> range_roi = hs.roi.SpanROI(left=45.0, right=60.0)
+    >>> range_roi.add_widget(s)
     """
     left, right = (t.CFloat(t.Undefined),) * 2
     _ndim = 1
@@ -621,6 +773,9 @@ class SpanROI(BaseInteractiveROI):
     def __init__(self, left, right):
         super(SpanROI, self).__init__()
         self._bounds_check = True   # Use reponsibly!
+        if left is None or right is None:
+            left = right = t.Undefined
+
         self.left, self.right = left, right
 
     def is_valid(self):
@@ -650,6 +805,8 @@ class SpanROI(BaseInteractiveROI):
         self.left, self.right = value
 
     def _apply_roi2widget(self, widget):
+        if self.left is t.Undefined and self.right is t.Undefined:
+            return
         widget.set_bounds(left=self.left, right=self.right)
 
     def _get_widget_type(self, axes, signal):
@@ -667,14 +824,49 @@ class SpanROI(BaseInteractiveROI):
             self.left,
             self.right)
 
+    def get_parameters(self, **kwargs):
+        return {"left": self.left, "right": self.right}
+
 
 @add_gui_method(toolkey="RectangularROI")
 class RectangularROI(BaseInteractiveROI):
+    """Selects a range in a 2D space.
 
-    """Selects a range in a 2D space. The coordinates of the range in
-    the 2D space are stored in the traits 'left', 'right', 'top' and 'bottom'.
-    Convenience properties 'x', 'y', 'width' and 'height' are also available,
-    but cannot be used for initialization.
+    Attributes
+    ----------
+    left : float
+        The left position of the ROI.
+    right : float
+        The right position of the ROI.
+    top : float
+        The top position of the ROI.
+    bottom : float
+        The bottom position of the ROI.
+
+    Other attributes
+    ----------------
+    For convenience, the following properties are also available but cannot 
+    be used for initialization.
+
+    x : float
+        The x position of the ROI.
+    y : float
+        The y position of the ROI.
+    width : float
+        The width position of the ROI.
+    height : float
+        The height position of the ROI.
+
+    Examples
+    --------
+
+    Add a RectangularROI to a signal (signal needs to be plotted):
+
+    >>> s = hs.signals.Signal2D(np.random.random((10, 10)))
+    >>> s.plot()
+    >>> rectangle_roi = hs.roi.RectangularROI(left=2.0, right=4.0,
+                                              top=5, bottom=8)
+    >>> rectangle_roi.add_widget(s)
     """
     top, bottom, left, right = (t.CFloat(t.Undefined),) * 4
     _ndim = 2
@@ -682,6 +874,9 @@ class RectangularROI(BaseInteractiveROI):
     def __init__(self, left, top, right, bottom):
         super(RectangularROI, self).__init__()
         self._bounds_check = True   # Use reponsibly!
+        if left is None or left is None or right is None or bottom is None:
+            top = bottom = left = right = t.Undefined
+
         self.top, self.bottom, self.left, self.right = top, bottom, left, right
 
     def is_valid(self):
@@ -805,9 +1000,37 @@ class RectangularROI(BaseInteractiveROI):
             self.right,
             self.bottom)
 
+    def get_parameters(self, **kwargs):
+        return {"left": self.left, "top": self.top,
+                "right": self.right, "bottom": self.bottom}
+
 
 @add_gui_method(toolkey="CircleROI")
 class CircleROI(BaseInteractiveROI):
+    """Provides a circular ROI or an annular ROI in a 2D space.
+
+    Attributes
+    ----------
+    cx : float
+        The x position of the center of the ROI.
+    cy : float
+        The y position of the centre of the ROI.
+    r : float
+        The radius of the outer circle the ROI.
+    r_inner : float
+        The radius of the inner circle the ROI. Use r_inner>0 to set the ROI 
+        to an annular disk
+
+    Examples
+    --------
+
+    Add a CircleROI to a signal (signal needs to be plotted):
+
+    >>> s = hs.signals.Signal2D(np.arange(100).reshape((100, 100)))
+    >>> s.plot()
+    >>> circle_roi = hs.roi.CircleROI(cx=50, cy=50, r=40, r_inner=20)
+    >>> circle_roi.add_widget(s)
+    """
 
     cx, cy, r, r_inner = (t.CFloat(t.Undefined),) * 4
     _ndim = 2
@@ -967,6 +1190,10 @@ class CircleROI(BaseInteractiveROI):
                 self.cy,
                 self.r,
                 self.r_inner)
+
+    def get_parameters(self, **kwargs):
+        return {"cx": self.cx, "cy": self.cy,
+                "r": self.r, "r_inner": self.r_inner}
 
 
 @add_gui_method(toolkey="Line2DROI")
@@ -1280,3 +1507,13 @@ class Line2DROI(BaseInteractiveROI):
             self.x2,
             self.y2,
             self.linewidth)
+
+    def parameters(self, **kwargs):
+        return {"x1": self.x1, "y1": self.y1, "x2": self.x2, "y2": self.y2,
+                "linewidth": self.linewidth}
+
+
+def roi_dict_to_roi(roi_dict):
+    roi = globals()[roi_dict['roi_type']](**roi_dict['parameters'])
+    roi.set_properties(**roi_dict['properties'])
+    return(roi)

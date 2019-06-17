@@ -127,7 +127,10 @@ def create_figure(window_title=None,
     fig : plt.figure
 
     """
-    fig = plt.figure(**kwargs)
+    # Catch matplotlib warning about the new Tool classes
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        fig = plt.figure(**kwargs)
     if window_title is not None:
         # remove non-alphanumeric characters to prevent file saving problems
         # This is a workaround for:
