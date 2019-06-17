@@ -35,6 +35,7 @@ from hyperspy import components1d
 from hyperspy.component import Component
 from hyperspy.ui_registry import add_gui_method
 from hyperspy.drawing.figure import BlittedFigure
+from hyperspy.misc.array_tools import numba_histogram
 
 _logger = logging.getLogger(__name__)
 
@@ -554,12 +555,11 @@ class ImageContrastEditor(t.HasTraits):
         self.vmin, self.vmax = self.image.vmin, self.image.vmax
 
         self.reset(update=False)
+        self.bins = 100
         self.plot_histogram()
-        self.plot_gamma_curve()
 
         plt.tight_layout()
-        self.drawing = False
-        
+
         self.image.axes_manager.events.indices_changed.connect(
             self.reset, [])
 
@@ -599,36 +599,36 @@ class ImageContrastEditor(t.HasTraits):
         self.ss_right_value = self.ss_left_value + \
             self.span_selector.rect.get_width()
 
+    def _get_histogram(self):
+        return numba_histogram(self._get_data(), bins=self.bins)
+
     def plot_histogram(self):
-        pad = (self.vmax - self.vmin) * 0.05
-        self.vmin -= pad
-        self.vmax += pad
-        self.n, bins, self.patches = self.ax.hist(self._get_data(), bins=100,
-                                                  color='#1f77b4')
-        
+        self.bins = 100
+        self.xaxis = np.linspace(self.data_min, self.data_max, self.bins)
+        self.hist_data = self._get_histogram()[0]
+        self.hist = self.ax.fill_between(self.xaxis, self.hist_data,
+                                         step="mid")
         self.ax.set_xlim(self.data_min, self.data_max)
 
-        self.ax.figure.canvas.draw_idle()
-
-    def update_histogram(self):
-        for patch in self.patches:
-            self.ax.patches.remove(patch)
-        self.plot_histogram()
-        self.update_gamma_line()
-
-    def plot_gamma_curve(self):
-        self.gamma_line = self.ax.plot(*self.calculate_gamma_curve(),
+        self.gamma_line = self.ax.plot(*self._get_gamma_curve(),
                                        color='#ff7f0e')[0]
         self.gamma_line.set_animated(self.ax.figure.canvas.supports_blit)
+
+    def update_histogram(self):
+        color = self.hist.get_facecolor()
+        self.hist.remove()
+        hist_data = self._get_histogram()[0]
+        self.hist = self.ax.fill_between(self.xaxis, hist_data, step="mid",
+                                         color=color)
+        self.update_gamma_line()
         self.ax.figure.canvas.draw_idle()
 
-    def calculate_gamma_curve(self):
-        xaxis = np.linspace(self.data_min, self.data_max, len(self.n))
-        value = (xaxis-self.data_min)**self.gamma/self.n.max()
-        return xaxis, value*self.n.max()/value.max()
+    def _get_gamma_curve(self):
+        value = (self.xaxis-self.data_min)**self.gamma/self.data_max
+        return self.xaxis, value*self.data_max/value.max()*self.hist_data.max()
 
     def update_gamma_line(self):
-        self.gamma_line.set_data(*self.calculate_gamma_curve())
+        self.gamma_line.set_data(*self._get_gamma_curve())
         if self.ax.figure.canvas.supports_blit:
             self.hspy_fig._update_animated()
         else:
@@ -638,14 +638,12 @@ class ImageContrastEditor(t.HasTraits):
         return self.image.data_function().ravel()
 
     def reset(self, update=True):
-        data = self._get_data()       
+        data = self._get_data()
         self.data_min, self.data_max = np.nanmin(data), np.nanmax(data)
         self.image.vmin, self.image.vmax = self.data_min, self.data_max
-        if update and not self.drawing:
-            self.drawing = True
+        if update:
             self.image.update()
             self.update_histogram()
-            self.drawing = False
 
     def close(self):
         self.hspy_fig.close()
