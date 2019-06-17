@@ -550,21 +550,26 @@ class ImageContrastEditor(t.HasTraits):
         self.hspy_fig.create_figure()
         self.create_axis()
 
-        self.gamma_original = copy.copy(self.image.gamma)
+        # Copy the original value to be used when resetting the display
+        self.gamma_original = copy.deepcopy(self.image.gamma)
+        self.vmin_original = copy.deepcopy(self.image.vmin)
+        self.vmax_original = copy.deepcopy(self.image.vmax)
+
         self.gamma = self.image.gamma
-        self.vmin, self.vmax = self.image.vmin, self.image.vmax
-
-        self.reset(update=False)
-        self.bins = 100
-        self.plot_histogram()
-
-        plt.tight_layout()
-
-        self.image.axes_manager.events.indices_changed.connect(
-            self._reset, [])
+        # self._vmin and self._vmax are used to compute the histogram
+        # by default, the image display used these, except when there is a span
+        # selector on the histogram
+        self._vmin, self._vmax = self.image.vmin, self.image.vmax
 
         self.span_selector = None
         self.span_selector_switch(on=True)
+
+        self.bins = 100
+        self._reset(update=False, vmin=self._vmin, vmax=self._vmax)
+        self.plot_histogram()
+
+        self.image.axes_manager.events.indices_changed.connect(
+            self._reset, [])
 
     def create_axis(self):
         self.ax = self.hspy_fig.figure.add_subplot(111)
@@ -572,9 +577,6 @@ class ImageContrastEditor(t.HasTraits):
         self.ax.yaxis.set_animated(animated)
         self.ax.xaxis.set_animated(animated)
         self.hspy_fig.ax = self.ax
-
-    def on_disabling_span_selector(self):
-        pass
 
     def _gamma_changed(self, old, new):
         self.image.gamma = new
@@ -590,7 +592,6 @@ class ImageContrastEditor(t.HasTraits):
                     onmove_callback=self.update_span_selector_traits)
 
         elif self.span_selector is not None:
-            self.on_disabling_span_selector()
             self.span_selector.turn_off()
             self.span_selector = None
 
@@ -599,24 +600,26 @@ class ImageContrastEditor(t.HasTraits):
         self.ss_right_value = self.ss_left_value + \
             self.span_selector.rect.get_width()
 
-        self.vmin, self.vmax = self.ss_left_value, self.ss_right_value
-        self.image.vmin, self.image.vmax = self.vmin, self.vmax
+        self.image.vmin, self.image.vmax = self.ss_left_value, self.ss_right_value
         self.image.update()
+        self.update_gamma_line()
 
     def _get_histogram(self):
-        return numba_histogram(self._get_data(), bins=self.bins,
-                               ranges=(self.vmin, self.vmax))
+        return numba_histogram(self.image.data_function(), bins=self.bins,
+                               ranges=(self._vmin, self._vmax))
 
     def plot_histogram(self):
-        self.xaxis = np.linspace(self.vmin, self.vmax, self.bins)
         self.hist_data = self._get_histogram()
         self.hist = self.ax.fill_between(self.xaxis, self.hist_data,
                                          step="mid")
-        self.ax.set_xlim(self.vmin, self.vmax)
-
+        self.ax.set_xlim(self._vmin, self._vmax)
+        self.ax.set_ylim(0, self.hist_data.max())
+        self.ax.set_xticks([])
+        self.ax.set_yticks([])
         self.gamma_line = self.ax.plot(*self._get_gamma_curve(),
                                        color='#ff7f0e')[0]
         self.gamma_line.set_animated(self.ax.figure.canvas.supports_blit)
+        plt.tight_layout(pad=0)
 
     def update_histogram(self):
         color = self.hist.get_facecolor()
@@ -624,12 +627,17 @@ class ImageContrastEditor(t.HasTraits):
         self.hist_data = self._get_histogram()
         self.hist = self.ax.fill_between(self.xaxis, self.hist_data,
                                          step="mid", color=color)
-        self.ax.set_ylim(0, self.hist_data.max())
+        self.ax.set_xlim(self._vmin, self._vmax)
+        if self.hist_data.max() != 0:
+            self.ax.set_ylim(0, self.hist_data.max())
         self.update_gamma_line()
         self.ax.figure.canvas.draw_idle()
 
     def _get_gamma_curve(self):
-        return self.xaxis, self.xaxis**self.gamma*self.hist_data.max()
+        cmin, cmax = self._get_current_range()
+        xaxis = np.linspace(cmin, cmax, self.bins)
+        max_hist = self.hist_data.max()
+        return xaxis, ((xaxis-cmin)/(cmax-cmin))**self.gamma*max_hist
 
     def update_gamma_line(self):
         self.gamma_line.set_data(*self._get_gamma_curve())
@@ -638,19 +646,42 @@ class ImageContrastEditor(t.HasTraits):
         else:
             self.ax.figure.canvas.draw_idle()
 
-    def _get_data(self):
-        return self.image.data_function().ravel()
+    def apply(self):
+        if self.ss_left_value == self.ss_right_value:
+            return
+        # When we apply the selected range, the self._vmin and self._vmax is 
+        # set accordingly.
+        self._vmin, self._vmax = self.ss_left_value, self.ss_right_value
+        self._reset(vmin=self._vmin, vmax=self._vmax)
+        # set the xlim after range selection and calculate the histogram
+        self.ax.set_xlim(self._vmin, self._vmax)
+        # Remove the span selector and set the new one ready to use
+        self.span_selector_switch(False)
+        self.span_selector_switch(True)
 
     def reset(self, update=True, vmin=None, vmax=None):
-        data = self._get_data()
-        data_min, data_max = np.nanmin(data), np.nanmax(data)
-        self._reset(update=update, vmin=data_min, vmax=data_max)
+        # Reset the display as original
+        self.gamma = self.gamma_original
+        self._vmin = self.vmin_original
+        self._vmax = self.vmax_original
+        # Remove the span selector and set the new one ready to use
+        self.span_selector_switch(False)
+        self.span_selector_switch(True)
+        self._reset(update=update, vmin=self._vmin, vmax=self._vmax)
+
+    def _get_current_range(self):
+        if self.span_selector.range != (0, 0):
+            # if we have a span selector, use it to set the display
+            return self.ss_left_value, self.ss_right_value
+        else:
+            return self._vmin, self._vmax
 
     def _reset(self, update=True, vmin=None, vmax=None):
         if vmin is not None and vmax is not None:
             self.image.vmin, self.image.vmax = vmin, vmax
+            self.xaxis = np.linspace(self._vmin, self._vmax, self.bins)
         else:
-            self.image.vmin, self.image.vmax = self.vmin, self.vmax
+            self.image.vmin, self.image.vmax = self._get_current_range()
         if update:
             self.image.update()
             self.update_histogram()
