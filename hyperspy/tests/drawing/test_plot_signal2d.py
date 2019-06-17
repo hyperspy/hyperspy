@@ -87,7 +87,7 @@ def _generate_parameter():
                 for centre_colormap in [True, False]:
                     for min_aspect in [0.2, 0.7]:
                         parameters.append([scalebar, colorbar, axes_ticks,
-                                        centre_colormap, min_aspect])
+                                           centre_colormap, min_aspect])
     return parameters
 
 
