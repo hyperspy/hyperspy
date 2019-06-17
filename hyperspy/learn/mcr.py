@@ -260,7 +260,7 @@ def mcrals(self,
                         'channels.')
         loadings_out = np.nan_to_num(loadings_out)
 
-    factors_out = factors_out/factors_out.sum(0)
-    loadings_out = loadings_out/loadings_out.sum(0)
+    factors_out = factors_out / factors_out.sum(0)
+    loadings_out = loadings_out / loadings_out.sum(0)
 
     return factors_out, loadings_out
