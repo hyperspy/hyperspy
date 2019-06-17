@@ -563,8 +563,8 @@ class ImageContrastEditor(t.HasTraits):
         self.image.axes_manager.events.indices_changed.connect(
             self.reset, [])
 
-        # self.span_selector = None
-        # self.span_selector_switch(on=True)
+        self.span_selector = None
+        self.span_selector_switch(on=True)
 
     def create_axis(self):
         self.ax = self.hspy_fig.figure.add_subplot(111)
@@ -598,6 +598,7 @@ class ImageContrastEditor(t.HasTraits):
         self.ss_left_value = self.span_selector.rect.get_x()
         self.ss_right_value = self.ss_left_value + \
             self.span_selector.rect.get_width()
+        self.reset(vmin=self.ss_left_value, vmax=self.ss_right_value)
 
     def _get_histogram(self):
         return numba_histogram(self._get_data(), bins=self.bins)
@@ -637,10 +638,13 @@ class ImageContrastEditor(t.HasTraits):
     def _get_data(self):
         return self.image.data_function().ravel()
 
-    def reset(self, update=True):
+    def reset(self, update=True, vmin=None, vmax=None):
         data = self._get_data()
         self.data_min, self.data_max = np.nanmin(data), np.nanmax(data)
-        self.image.vmin, self.image.vmax = self.data_min, self.data_max
+        if vmin is not None and vmax is not None:
+            self.image.vmin, self.image.vmax = vmin, vmax
+        else:
+            self.image.vmin, self.image.vmax = self.data_min, self.data_max
         if update:
             self.image.update()
             self.update_histogram()
