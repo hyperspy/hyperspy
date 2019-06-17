@@ -25,7 +25,7 @@ from traits.api import Undefined
 import logging
 import inspect
 import copy
-from skimage.exposure import adjust_gamma
+from skimage.exposure import adjust_gamma, rescale_intensity
 
 from hyperspy.drawing import widgets
 from hyperspy.drawing import utils
@@ -336,9 +336,6 @@ class ImagePlot(BlittedFigure):
             self.colorbar = False
             data = rgb_tools.rgbx2regular_array(data, plot_friendly=True)
 
-        if self.gamma != 1.0:
-            data = adjust_gamma(data, self.gamma)
-
         for marker in self.ax_markers:
             marker.update()
 
@@ -377,6 +374,13 @@ class ImagePlot(BlittedFigure):
             vmin, vmax = utils.centre_colormap_values(self.vmin, self.vmax)
         else:
             vmin, vmax = self.vmin, self.vmax
+
+        if self.gamma != 1.0:
+            data = adjust_gamma(rescale_intensity(data,
+                        in_range=(self.vmin, self.vmax), out_range=(0, 1)),
+                        gamma=self.gamma)
+            data = rescale_intensity(data,
+                        in_range=(0, 1), out_range=(self.vmin, self.vmax))
 
         norm = copy.copy(self.norm)
         if norm == 'log':
