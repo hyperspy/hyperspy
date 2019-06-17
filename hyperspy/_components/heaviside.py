@@ -29,9 +29,9 @@ class HeavisideStep(Component):
 
         f(x) =
         \\begin{cases}
-          0     $ \\quad \\text{if } x < n \\\\
-          A/2     $ \\quad \\text{if } x = n \\\\
-          A     $ \\quad \\text{if } x > n \\\\
+        0 & x<n\\\\
+        \\frac{A}{2} & x=n\\\\
+        A & x>n
         \\end{cases}
 
     """
