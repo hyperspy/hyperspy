@@ -85,22 +85,24 @@ def _generate_parameter():
         for colorbar in [True, False]:
             for axes_ticks in [True, False]:
                 for centre_colormap in [True, False]:
-                    parameters.append([scalebar, colorbar, axes_ticks,
-                                       centre_colormap])
+                    for min_aspect in [0.2, 0.7]:
+                        parameters.append([scalebar, colorbar, axes_ticks,
+                                           centre_colormap, min_aspect])
     return parameters
 
 
 @pytest.mark.parametrize(("scalebar", "colorbar", "axes_ticks",
-                          "centre_colormap"),
+                          "centre_colormap", "min_aspect"),
                          _generate_parameter())
 @pytest.mark.mpl_image_compare(
     baseline_dir=baseline_dir, tolerance=default_tol, style=style_pytest_mpl)
-def test_plot(scalebar, colorbar, axes_ticks, centre_colormap):
+def test_plot(scalebar, colorbar, axes_ticks, centre_colormap, min_aspect):
     test_plot = _TestPlot(ndim=0, sdim=2)
     test_plot.signal.plot(scalebar=scalebar,
                           colorbar=colorbar,
                           axes_ticks=axes_ticks,
-                          centre_colormap=centre_colormap)
+                          centre_colormap=centre_colormap,
+                          min_aspect=min_aspect)
     return test_plot.signal._plot.signal_plot.figure
 
 

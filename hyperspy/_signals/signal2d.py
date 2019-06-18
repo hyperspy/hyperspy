@@ -301,6 +301,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
              vmax=None,
              no_nans=False,
              centre_colormap="auto",
+             min_aspect=0.1,
              **kwargs
              ):
         """%s
@@ -319,6 +320,7 @@ class Signal2D(BaseSignal, CommonSignal2D):
             vmax=vmax,
             no_nans=no_nans,
             centre_colormap=centre_colormap,
+            min_aspect=min_aspect,
             **kwargs
         )
     plot.__doc__ %= BASE_PLOT_DOCSTRING, PLOT2D_DOCSTRING, KWARGS_DOCSTRING
