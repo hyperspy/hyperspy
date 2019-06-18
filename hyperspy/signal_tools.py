@@ -541,6 +541,9 @@ class ImageContrastEditor(t.HasTraits):
     ss_left_value = t.Float()
     ss_right_value = t.Float()
     gamma = t.Range(0.0, 2.0, 1.0)
+    auto = t.Bool(True,
+                  desc="Reset the display automatically when changing "
+                  "navigator indices. Unselect to keep the same display.")
 
     def __init__(self, image):
         super(ImageContrastEditor, self).__init__()
@@ -556,16 +559,18 @@ class ImageContrastEditor(t.HasTraits):
         self.vmax_original = copy.deepcopy(self.image.vmax)
 
         self.gamma = self.image.gamma
+
         # self._vmin and self._vmax are used to compute the histogram
         # by default, the image display used these, except when there is a span
         # selector on the histogram
         self._vmin, self._vmax = self.image.vmin, self.image.vmax
+        self.bins = 100
+        self.xaxis = np.linspace(self._vmin, self._vmax, self.bins)
 
         self.span_selector = None
         self.span_selector_switch(on=True)
 
-        self.bins = 100
-        self._reset(update=False, vmin=self._vmin, vmax=self._vmax)
+        self._reset(auto=False, update=False)
         self.plot_histogram()
 
         self.image.axes_manager.events.indices_changed.connect(
@@ -583,13 +588,17 @@ class ImageContrastEditor(t.HasTraits):
         self.image.update()
         self.update_gamma_line()
 
+    def _auto_changed(self, old, new):
+        self._reset()
+
     def span_selector_switch(self, on):
         if on is True:
             self.span_selector = \
                 drawing.widgets.ModifiableSpanSelector(
                     self.ax,
                     onselect=self.update_span_selector_traits,
-                    onmove_callback=self.update_span_selector_traits)
+                    onmove_callback=self.update_span_selector_traits,
+                    rectprops={"alpha":0.25, "color":'r'})
 
         elif self.span_selector is not None:
             self.span_selector.turn_off()
@@ -600,12 +609,15 @@ class ImageContrastEditor(t.HasTraits):
         self.ss_right_value = self.ss_left_value + \
             self.span_selector.rect.get_width()
 
-        self.image.vmin, self.image.vmax = self.ss_left_value, self.ss_right_value
+        self.image.vmin, self.image.vmax = self._get_current_range()
         self.image.update()
         self.update_gamma_line()
 
+    def _get_data(self):
+        return self.image.data_function()
+
     def _get_histogram(self):
-        return numba_histogram(self.image.data_function(), bins=self.bins,
+        return numba_histogram(self._get_data(), bins=self.bins,
                                ranges=(self._vmin, self._vmax))
 
     def plot_histogram(self):
@@ -649,46 +661,80 @@ class ImageContrastEditor(t.HasTraits):
     def apply(self):
         if self.ss_left_value == self.ss_right_value:
             return
-        # When we apply the selected range, the self._vmin and self._vmax is 
-        # set accordingly.
-        self._vmin, self._vmax = self.ss_left_value, self.ss_right_value
-        self._reset(vmin=self._vmin, vmax=self._vmax)
+
+        # When we apply the selected range and update the xaxis
+        self._vmin, self._vmax = self._get_current_range()
+        self.xaxis = np.linspace(self._vmin, self._vmax, self.bins)
+        self._reset()
+
         # set the xlim after range selection and calculate the histogram
         self.ax.set_xlim(self._vmin, self._vmax)
+
         # Remove the span selector and set the new one ready to use
         self.span_selector_switch(False)
         self.span_selector_switch(True)
 
-    def reset(self, update=True, vmin=None, vmax=None):
+    def reset(self):
         # Reset the display as original
+        self._reset_original_settings()
+
+        # Remove the span selector and set the new one ready to use
+        self.span_selector_switch(False)
+        self.span_selector_switch(True)
+        self._reset(auto=self.auto)
+
+    def _reset_original_settings(self):
         self.gamma = self.gamma_original
         self._vmin = self.vmin_original
-        self._vmax = self.vmax_original
-        # Remove the span selector and set the new one ready to use
-        self.span_selector_switch(False)
-        self.span_selector_switch(True)
-        self._reset(update=update, vmin=self._vmin, vmax=self._vmax)
+        self._vmax = self.vmax_original        
 
     def _get_current_range(self):
-        if self.span_selector.range != (0, 0):
+        if self.span_selector._get_span_width != 0 :
+            print("span", self.span_selector.rect)
             # if we have a span selector, use it to set the display
             return self.ss_left_value, self.ss_right_value
         else:
+            print("no span", self.span_selector.rect)
             return self._vmin, self._vmax
 
-    def _reset(self, update=True, vmin=None, vmax=None):
-        if vmin is not None and vmax is not None:
-            self.image.vmin, self.image.vmax = vmin, vmax
-            self.xaxis = np.linspace(self._vmin, self._vmax, self.bins)
-        else:
-            self.image.vmin, self.image.vmax = self._get_current_range()
-        if update:
-            self.image.update()
-            self.update_histogram()
+    # def _reset(self, update=True, vmin=None, vmax=None, auto=None):
+    #     if auto is None:
+    #         auto = self.auto
+    #     if auto:
+    #         self.image.optimize_contrast(self._get_data(),
+    #                                      ignore_user_values=True)
+    #         self._vmin, self._vmax = self.image._vmin_auto, self.image._vmax_auto
+    #         self.image.vmin, self.image.vmax = self._get_current_range()
+    #         self.xaxis = np.linspace(self._vmin, self._vmax, self.bins)
+    #     elif vmin is not None and vmax is not None:
+    #         self.image.vmin, self.image.vmax = vmin, vmax
+    #         self.xaxis = np.linspace(self._vmin, self._vmax, self.bins)
+    #     else:
+    #         self.image.vmin, self.image.vmax = self._get_current_range()
+    #     if update:
+    #         self.image.update()
+    #         self.update_histogram()
 
     def close(self):
         self.hspy_fig.close()
 
+    def _reset(self, auto=None, update=True):
+        if auto is None:
+            auto = self.auto
+        
+        # Get the vmin and vmax values
+        if auto:
+            self.image.optimize_contrast(self._get_data(),
+                                          ignore_user_values=True)
+            vmin, vmax = self.image._vmin_auto, self.image._vmax_auto
+        else:
+            vmin, vmax = self._get_current_range()
+        
+        # Set the vmin and vmax values and update display
+        self.image.vmin, self.image.vmax = vmin, vmax
+        if update:
+            self.image.update()
+            self.update_histogram()
 
 @add_gui_method(toolkey="Signal1D.integrate_in_range")
 class IntegrateArea(SpanSelectorInSignal1D):

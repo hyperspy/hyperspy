@@ -195,8 +195,9 @@ class ImagePlot(BlittedFigure):
                 self._auto_axes_ticks = True
         self._aspect = np.abs(factor * xaxis.scale / yaxis.scale)
 
-    def optimize_contrast(self, data):
-        if (self._vmin_user is not None and self._vmax_user is not None):
+    def optimize_contrast(self, data, ignore_user_values=False):
+        if (self._vmin_user is not None and self._vmax_user is not None and
+            not ignore_user_values):
             return
         with ignore_warning(category=RuntimeWarning):
             # In case of "All-NaN slices"
