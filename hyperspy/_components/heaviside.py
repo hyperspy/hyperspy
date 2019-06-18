@@ -37,10 +37,10 @@ class HeavisideStep(Component):
     Parameters
     -----------
     n : float
-        
+
     A : float
-        
-        
+
+
     """
 
     def __init__(self, A=1, n=0):

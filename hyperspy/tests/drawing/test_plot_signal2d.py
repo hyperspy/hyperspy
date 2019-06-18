@@ -471,4 +471,3 @@ def test_plot_with_non_finite_value():
     s = hs.signals.Signal2D(np.array([[np.inf, np.nan] for v in range(2)]))
     s.plot()
     s.axes_manager.events.indices_changed.trigger(s.axes_manager)
-
