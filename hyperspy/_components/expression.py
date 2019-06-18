@@ -120,9 +120,9 @@ class Expression(Component):
 
         Note
         ----
-        Sympy currently does not support the differentiation of expression 
-        containing a "where" condition, therefore for such expression, it is 
-        advised to write the gradients explicitly.
+        As of version 1.4, Sympy's lambdify function—that the ``Expression`` components uses internally,
+        does not support the differentiation of some expressions, for example those
+        containing a "where" condition. In such cases, the gradients can be set manually if required.
 
         Examples
         --------
